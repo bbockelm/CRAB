@@ -1,0 +1,37 @@
+#
+#  This class is a collection of unrelated objects which should be
+#  accessible from almost any place of the program.
+#  The possible design alternative is to implement these objects
+#  as singletons.
+#
+
+###########################################################################
+#
+#   General information about the program
+#
+###########################################################################
+
+prog_name = 'crab'
+prog_version = (0, 1, 0)
+prog_version_str=`prog_version[0]`+'.'+`prog_version[1]`+'.'+`prog_version[2]`
+prog_authors = [
+    ['Federica Fanzago' , 'Federica.Fanzago@pd.infn.it' , 'INFN/Padova'],
+    ['Marco Corvo'      , 'Marco.Corvo@pd.infn.it'      , 'INFN/Padova'],
+    ['Stefano Lacaprara', 'Stefano.Lacaprara@pd.infn.it', 'INFN/Padova'],
+    ['Nikolai Smirnov'  , 'Nikolai.Smirnov@pd.infn.it'  , 'INFN/Padova'],
+    ]
+
+###########################################################################
+#
+#   Objects accessible from almost any place of the program.
+#
+###########################################################################
+
+logger     = None
+work_space = None
+scheduler  = None
+job_list   = None
+jobDB      = None
+
+# TODO: very bad place for this variable
+analisys_common_info = {}
