@@ -51,6 +51,7 @@ ls -Al
 
 #CRAB build_executable
 
+which $executable
 res=$?
 if [ $res -ne 0 ];then 
   echo "The executable not found on WN `hostname`" 

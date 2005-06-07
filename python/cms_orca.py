@@ -434,7 +434,7 @@ class Orca(JobType):
             out_box.append(self.version+'/'+out)
         return out_box
     
-    def writeScript_BuildExe(self, script, nj):
+    def writeScript_BuildExe(self, nj):
         """
         Put in the script the commands to build an executable
         or a library.
@@ -443,26 +443,22 @@ class Orca(JobType):
             msg = 'USER. Unknown build_mode '+self.build
             raise CrabException(msg)
 
+        txt = ""
+
         if os.path.isfile(self.tgz):
-            script.write('echo "tar xzvf ../'+os.path.basename(self.tgz)+'"\n')
-            script.write('tar xzvf ../'+os.path.basename(self.tgz)+'\n')
-            script.write('untar_status=$? \n')
-            #if common.use_jam:
-            #   script.write('perl $RUNTIME_AREA/'+ common.run_jam +' --name='+common.output_jam+' --event=untar_status --det="$untar_status" \n\n')
-            #   pass
-            script.write('if [ $untar_status -ne 0 ]; then \n')          
-            script.write('   echo "Untarring .tgz file failed ... exiting" \n')
-            script.write('   exit 1 \n')
-            script.write('else \n')
-            script.write('   echo "Successful untar" \n')
-            script.write('fi \n')
+            txt += 'echo "tar xzvf ../'+os.path.basename(self.tgz)+'"\n'
+            txt += 'tar xzvf ../'+os.path.basename(self.tgz)+'\n'
+            txt += 'untar_status=$? \n'
+            txt += 'if [ $untar_status -ne 0 ]; then \n'
+            txt += '   echo "Untarring .tgz file failed ... exiting" \n'
+            txt += '   exit 1 \n'
+            txt += 'else \n'
+            txt += '   echo "Successful untar" \n'
+            txt += 'fi \n'
+            # TODO: what does this code do here ?
             # SL check that lib/Linux__... is present
-            script.write('mkdir -p lib/Linux__2.4 \n')
-            script.write('eval `scram runtime -sh`'+'\n')
+            txt += 'mkdir -p lib/Linux__2.4 \n'
+            txt += 'eval `scram runtime -sh`'+'\n'
             pass
 
-        #if common.use_jam:
-        #   script.write('output_jam=`printenv`')
-        #   script.write('perl $RUNTIME_AREA/'+ common.run_jam +' --name='+common.output_jam+' --event=env_scram --det="$output_jam" \n\n')
-        
-        return
+        return txt

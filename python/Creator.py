@@ -16,44 +16,18 @@ class Creator(Actor):
         self.job_type_name = job_type_name
         self.job_type = None
         self.cfg_params = cfg_params
-
+        self.total_njobs = 0
+        self.ncjobs = 0                  # nb of jobs to be created
+        self.total_number_of_events = 0
+        self.job_number_of_events = 0
+        
         #
 
         self.createJobTypeObject()
 
         self.job_type.prepareSteeringCards()
 
-        # Set total number of jobs
-
-        try:
-            n = self.cfg_params['USER.total_number_of_events']
-            if n == 'all': n = '-1'
-            self.total_number_of_events = int(n)
-        except KeyError:
-            self.total_number_of_events = -1
-            pass
-        
-        # if total number of events is not specified
-        # then maybe JobType knows it.
-        if self.total_number_of_events == -1:
-            self.total_number_of_events = self.job_type.nEvents()
-            if self.total_number_of_events == -1:
-                msg = 'Cannot set total_number_of_events'
-                raise CrabException(msg)
-            pass
-        
-        try:
-            n = self.cfg_params['USER.job_number_of_events']
-            self.job_number_of_events = int(n)
-        except KeyError:
-            msg = 'Warning. '
-            msg += 'Number of events per job is not defined by user.\n'
-            msg += 'Set to the total number of events.'
-            common.logger.message(msg)
-            self.job_number_of_events = self.total_number_of_events
-            pass
-
-        self.total_njobs = int((self.total_number_of_events-1)/self.job_number_of_events)+1
+        self.defineTotalNumberOfJobs_()
 
         # Set number of jobs to be created
 
@@ -108,6 +82,42 @@ class Creator(Actor):
             pass
         #end of deprecated code
 
+        return
+
+    def defineTotalNumberOfJobs_(self):
+        """
+        Calculates the total number of jobs to be created.
+        """
+
+        try:
+            n = self.cfg_params['USER.total_number_of_events']
+            if n == 'all': n = '-1'
+            self.total_number_of_events = int(n)
+        except KeyError:
+            self.total_number_of_events = -1
+            pass
+        
+        # if total number of events is not specified
+        # then maybe JobType knows it.
+        if self.total_number_of_events == -1:
+            self.total_number_of_events = self.job_type.nEvents()
+            if self.total_number_of_events == -1:
+                msg = 'Cannot set total_number_of_events'
+                raise CrabException(msg)
+            pass
+        
+        try:
+            n = self.cfg_params['USER.job_number_of_events']
+            self.job_number_of_events = int(n)
+        except KeyError:
+            msg = 'Warning. '
+            msg += 'Number of events per job is not defined by user.\n'
+            msg += 'Set to the total number of events.'
+            common.logger.message(msg)
+            self.job_number_of_events = self.total_number_of_events
+            pass
+
+        self.total_njobs = int((self.total_number_of_events-1)/self.job_number_of_events)+1
         return
 
     def nJobs(self):
