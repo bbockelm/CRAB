@@ -247,7 +247,7 @@ class Crab:
                 pass
 
             elif ( opt == '-debug' ):
-                self.debug_level = val
+                self.debug_level = int(val)
                 pass
 
             elif ( opt == '-scheduler' ):
