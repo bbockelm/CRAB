@@ -74,7 +74,8 @@ class Logger :
         """
         if len(msg) == 0: return
         self.lock.acquire()
-        
+
+        # print whitespace first
         for i in range(len(msg)):
             if msg[i] in string.whitespace:
                 if not self.flag_quiet: print msg[i],
@@ -82,6 +83,7 @@ class Logger :
             else: break
             pass
 
+        # print the rest of the message prefixing with the program name
         msg0 = msg[i:]
         if not self.flag_quiet: print self.prog_name+'. '+msg0
         self.log_file.write(msg0+'\n')

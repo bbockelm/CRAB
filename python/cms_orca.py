@@ -3,7 +3,7 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
-import pubdb
+import PubDB
 import orcarcBuilder
 
 import os, string, re
@@ -33,15 +33,19 @@ class Orca(JobType):
             msg += '  LOCALRT env variable not set\n'
             msg += '  Did you do eval `scram runtime ...` from your ORCA area ?\n'
             raise CrabException(msg)
+        log.debug(6, "Orca::Orca(): SCRAM area is "+scramArea)
 
         try:
-            self.version = self.findSwVersion(scramArea)
+            self.version = self.findSwVersion_(scramArea)
+            log.debug(6, "Orca::Orca(): version = "+self.version)
             self.owner = cfg_params['USER.owner']
-            log.debug(1, "***** owner="+self.owner)
+            log.debug(6, "Orca::Orca(): owner = "+self.owner)
             self.dataset = cfg_params['USER.dataset']
-            log.debug(1, "***** dataset="+self.dataset)
+            log.debug(6, "Orca::Orca(): dataset = "+self.dataset)
             self.executable = cfg_params['USER.executable']
+            log.debug(6, "Orca::Orca(): executable = "+self.executable)
             self.orcarc_file = cfg_params['USER.orcarc_file']
+            log.debug(6, "Orca::Orca(): orcarc file = "+self.orcarc_file)
 
             # allow multiple output files
 
@@ -50,7 +54,7 @@ class Orca(JobType):
             tmp = cfg_params['USER.output_file']
             if tmp != '':
                 tmpOutFiles = string.split(cfg_params['USER.output_file'],',')
-                log.debug(1, 'tmpOutFiles '+str(tmpOutFiles))
+                log.debug(7, 'Orca::Orca(): output files '+str(tmpOutFiles))
                 for tmp in tmpOutFiles:
                     tmp=string.strip(tmp)
                     self.output_file.append(tmp)
@@ -86,6 +90,7 @@ class Orca(JobType):
             pass
         except KeyError:
             pass
+        log.debug(6, "Orca::Orca(): data tiers = "+str(self.dataTiers))
 
         try:
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
@@ -109,8 +114,10 @@ class Orca(JobType):
         except KeyError:
             self.first = 0
             pass
+        log.debug(6, "Orca::Orca(): total number of events = "+`self.total_number_of_events`)
+        log.debug(6, "Orca::Orca(): events per job = "+`self.job_number_of_events`)
+        log.debug(6, "Orca::Orca(): first event = "+`self.first`)
         
-        log.debug(1, "***** data_tier="+str(self.dataTiers))
         self.maxEvents=0 # max events available in any PubDB
         self.connectPubDB()
           
@@ -147,9 +154,12 @@ class Orca(JobType):
 
     def connectPubDB(self):
 
+        fun = "Orca::connectPubDB()"
+        
         self.allOrcarcs = []
         # first check if the info from PubDB have been already processed
         if os.path.exists(common.work_space.shareDir()+'PubDBSummaryFile') :
+            common.logger.debug(6, fun+": info from PubDB has been already processed -- use it")
             f = open( common.work_space.shareDir()+'PubDBSummaryFile', 'r' )
             for i in f.readlines():
                 a=string.split(i,' ')
@@ -164,12 +174,13 @@ class Orca(JobType):
             pass
 
         else:  # PubDB never queried
+            common.logger.debug(6, fun+": PubDB was never queried -- do it")
             # New PubDB class by SL
             try:
-                self.pubdb = pubdb.PubDB(self.owner,
+                self.pubdb = PubDB.PubDB(self.owner,
                                          self.dataset,
                                          self.dataTiers)
-            except pubdb.RefDBError:
+            except PubDB.RefDBError:
                 msg = 'ERROR ***: accessing PubDB'
                 raise CrabException(msg)
 
@@ -178,10 +189,14 @@ class Orca(JobType):
                 msg = 'Owner Dataset not published with asked dataTiers! '+\
                       self.owner+' '+ self.dataset+' '+self.dataTiers
                 raise CrabException(msg)
-            # print self.pubDBResults
-            # for aa in self.pubDBResults:
-            #   for tmp in aa:
-            #     tmp.dump()
+
+            common.logger.debug(6, fun+": PubDB info ("+`len(self.pubDBResults)`+"):\n")
+            for aa in self.pubDBResults:
+                for bb in aa:
+                    common.logger.debug(6, str(bb))
+                    pass
+                pass
+            common.logger.debug(6, fun+": End of PubDB info\n")
 
             self.builder = orcarcBuilder.orcarcBuilder()
 
@@ -230,11 +245,12 @@ class Orca(JobType):
             msg += `self.total_number_of_events`
             raise CrabException(msg)
 
+        common.logger.debug(6, "List of CEs: "+str(ces))
         self.analisys_common_info['sites']=ces
 
         return
 
-    def findSwVersion(self, path):
+    def findSwVersion_(self, path):
         """ Find Sw version using proper scram env """
         scramEnvFile = path+"/.SCRAM/Environment"
         reVer = re.compile(r'SCRAM_PROJECTVERSION')
@@ -259,7 +275,7 @@ class Orca(JobType):
         if os.path.exists(self.tgzNameWithPath):
             scramArea = os.environ["LOCALRT"]
             n = len(string.split(scramArea, '/'))
-            swVersion = self.findSwVersion(scramArea)
+            swVersion = self.findSwVersion_(scramArea)
             self.analisys_common_info['sw_version'] = swVersion
             return
 
@@ -270,7 +286,7 @@ class Orca(JobType):
           scramArea = os.environ["LOCALRT"]
           #print scramArea,'\n'
           n = len(string.split(scramArea, '/'))
-          swVersion = self.findSwVersion(scramArea)
+          swVersion = self.findSwVersion_(scramArea)
           #print swVersion,'\n'
           self.analisys_common_info['sw_version'] = swVersion
           swArea = os.environ["CMS_PATH"]

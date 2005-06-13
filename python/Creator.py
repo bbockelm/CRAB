@@ -24,10 +24,13 @@ class Creator(Actor):
         #
 
         self.createJobTypeObject()
+        common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
 
         self.job_type.prepareSteeringCards()
+        common.logger.debug(5, __name__+": Steering cards prepared")
 
         self.defineTotalNumberOfJobs_()
+        common.logger.debug(5, __name__+": total # of jobs = "+`self.total_njobs`)
 
         # Set number of jobs to be created
 
@@ -82,6 +85,7 @@ class Creator(Actor):
             pass
         #end of deprecated code
 
+        common.logger.debug(5, "Creator constructor finished")
         return
 
     def defineTotalNumberOfJobs_(self):
@@ -95,15 +99,6 @@ class Creator(Actor):
             self.total_number_of_events = int(n)
         except KeyError:
             self.total_number_of_events = -1
-            pass
-        
-        # if total number of events is not specified
-        # then maybe JobType knows it.
-        if self.total_number_of_events == -1:
-            self.total_number_of_events = self.job_type.nEvents()
-            if self.total_number_of_events == -1:
-                msg = 'Cannot set total_number_of_events'
-                raise CrabException(msg)
             pass
         
         try:
@@ -144,6 +139,8 @@ class Creator(Actor):
 
     def run(self):
 
+        common.logger.debug(5, "Creator::run() called")
+
         # Instantiate ScriptWriter
 
         script_writer = ScriptWriter('crab_template.sh')
@@ -155,6 +152,8 @@ class Creator(Actor):
             if njc == self.ncjobs : break
             st = common.jobDB.status(i)
             if st != 'X': continue
+
+            common.logger.debug(6, "Creator::run(): job # "+`i`)
 
             # Prepare configuration file
 

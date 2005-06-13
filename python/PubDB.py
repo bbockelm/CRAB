@@ -2,6 +2,7 @@
 import sys, os, string, re
 import urllib, urllister
 import urllib2
+import common
 
 # ####################################
 # Exception with use of refDB
@@ -28,7 +29,10 @@ class pubDBResult:
   def __init__(self,
                contents):
     self.contents=contents
+    return
 
+  def __str__(self):
+    return str(self.contents)
     
   def dump(self):
     print 'Contents : ',self.contents

@@ -1,5 +1,5 @@
 import sys, os, re, string
-import pubdb
+import PubDB
 import common
 
 ###########################################################################
@@ -16,13 +16,19 @@ class orcarc:
     self.initFile= initFile
     self.orcarcFile=orcarcFile
     self.Nevents=Nevents
+    return
+
+  def __repr__(self):
+    txt = ''
+    txt += "SE "+self.SE+'\n'
+    txt += "CE "+self.CE+'\n'
+    txt += "initFile "+self.initFile+'\n'
+    txt += "orcarcFile "+self.orcarcFile+'\n'
+    txt += "Nevents "+`self.Nevents`+'\n'
+    return txt
 
   def dump(self):
-    print "SE ",self.SE
-    print "CE ",self.CE
-    print "initFile ",self.initFile
-    print "orcarcFile ",self.orcarcFile
-    print "Nevents ",self.Nevents
+    print self
 
   def content(self):
     """ return contents as a list """
@@ -96,29 +102,35 @@ class catalogEntry:
     # self.Nevents=reGen.match(list[7]).group(1)
     # self.RunRange=reGen.match(list[8]).group(1)
   
+  def __str__(self):
+    txt = ''
+    txt += "FileType "+self.FileType+'\n'
+    txt += "ValidationStatus "+self.ValidationStatus+'\n'
+    txt += "ContactString "+self.ContactString+'\n'
+    txt += "ContactProtocol "+self.ContactProtocol+'\n'
+    txt += "CatalogueType "+self.CatalogueType+'\n'
+    txt += "SE "+self.SE+'\n'
+    txt += "CE "+self.CE+'\n'
+    txt += "Nevents "+self.Nevents+'\n'
+    txt += "RunRange "+self.RunRange+'\n'
+    return txt
+
   def dump(self):
-    print "FileType ",self.FileType
-    print "ValidationStatus ",self.ValidationStatus
-    print "ContactString ",self.ContactString
-    print "ContactProtocol ",self.ContactProtocol
-    print "CatalogueType ",self.CatalogueType
-    print "SE ",self.SE
-    print "CE ",self.CE
-    print "Nevents ",self.Nevents
-    print "RunRange ",self.RunRange
+    print self
+    return
 
 ###########################################################################
 ###########################################################################
 class orcarcBuilder:
   def __init__(self):
-    self.protocolPrio_ = self.defineProtocolPrio()
+    self.protocolPrio_ = self.defineProtocolPrio_()
     self.fileList = []
     self.CE = []
     self.SE = []
     pass
     
 ###########################################################################
-  def parseResult(self, pubDBResult):
+  def parseResult_(self, pubDBResult):
     """
     parse the output from PubDB and create a list of CatalogEntry objects for further usage
     """
@@ -178,12 +190,14 @@ class orcarcBuilder:
     os.remove('tmp')
 
     for cc in Catalog_list:
-       result.append(catalogEntry(cc))
+      e = catalogEntry(cc)
+      result.append(e)
+      pass
 
     return result
 
   ###########################################################################
-  def defineProtocolPrio(self):
+  def defineProtocolPrio_(self):
     """
     Just define the priority for the catalog acces protocol
     """
@@ -215,7 +229,7 @@ class orcarcBuilder:
            
     # if one or more "Complete" found, return them
       if (len(metaCat)>0):
-        result.append(self.selectBestCatalog(metaCat))
+        result.append(self.selectBestCatalog_(metaCat))
         return result
 
     # priority 2: assume attacchedMeta + Events
@@ -232,8 +246,8 @@ class orcarcBuilder:
           # print "-==-==-==-==-==-"
 
       if (len(metaCat) & len(evdCat)):
-        result.append(self.selectBestCatalog(metaCat))
-        result.append(self.selectBestCatalog(evdCat))
+        result.append(self.selectBestCatalog_(metaCat))
+        result.append(self.selectBestCatalog_(evdCat))
         return result
 
     elif Meta==0:
@@ -244,7 +258,7 @@ class orcarcBuilder:
           # cat.dump()
           # print "-==-==-==-==-==-"
       if (len(evdCat)):
-        result.append(self.selectBestCatalog(evdCat))
+        result.append(self.selectBestCatalog_(evdCat))
         return result
 
       for cat in CatalogList:
@@ -258,29 +272,33 @@ class orcarcBuilder:
            # print "-==-==-==-==-==-"
 
       if (len(evdCat)):
-        result.append(self.selectBestCatalog(evdCat))
+        result.append(self.selectBestCatalog_(evdCat))
         return result
 
     return []
 
   ###########################################################################
-  def selectBestCatalog(self, CatalogList):
+  def selectBestCatalog_(self, CatalogList):
     """
-    From a set of catalogs with different access protocol, select the "best" one
-    according to access protocols
+    From a set of catalogs with different access protocol,
+    select the 'best' one according to access protocols
     """
 
-  # if just one catalog, just return it!
+    # if just one catalog, just return it!
     if (len(CatalogList)==1): return CatalogList[0]
 
     sortedProtocols = self.protocolPrio_
-  # priority 1: first look for Complete
+    # priority 1: first look for Complete
     for cat in CatalogList:
       for prot in sortedProtocols:
-       if cat.ContactProtocol==prot:
-         # cat.dump()
-         # print "-==-==-==-==-==-"
-         return cat
+        if cat.ContactProtocol==prot:
+          # cat.dump()
+          # print "-==-==-==-==-==-"
+          return cat
+        pass
+      pass
+
+    return ''
          
   ###########################################################################
   def createStageInScript(self, CatalogList):
@@ -437,11 +455,14 @@ class orcarcBuilder:
     # print 'pubDBResults=',pubDBResultsSet
     # print 'pubDBResults[0]=',pubDBResults[0]
     # print 'pubDBResults[1]=',pubDBResults[1]
+
+    fun = __name__+"::createOrcarcAndInit"
+
     result = []
 
     for pubDBResults in pubDBResultsSet:
       #pubDBResults[0].dump()
-      CatalogList = self.parseResult(pubDBResults[0])
+      CatalogList = self.parseResult_(pubDBResults[0])
       
       ce = self.getCE(CatalogList)
       se = self.getSE(CatalogList)
@@ -465,7 +486,7 @@ class orcarcBuilder:
       # print 'FINE primaryCollId'
 
       for res in pubDBResults[1:]:
-        CatalogList = self.parseResult(res)
+        CatalogList = self.parseResult_(res)
         
         tmpce = self.getCE(CatalogList)
         tmpse = self.getSE(CatalogList)
