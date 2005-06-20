@@ -57,6 +57,16 @@ class SchedulerEdg(Scheduler):
 
         return
     
+    def wsSetupEnvironment(self):
+        """
+        Returns part of a job script which does scheduler-specific work.
+        """
+        txt = '\n'
+        txt += 'CloseCEs=`edg-brokerinfo getCE`\n'
+        txt += 'echo "CloseCEs = $CloseCEs"\n'
+        txt += 'CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
+        txt += 'echo "CE = $CE"\n'
+        return txt
 
     def submit(self, nj):
         """Submit one EDG job."""

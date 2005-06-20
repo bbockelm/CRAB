@@ -19,7 +19,6 @@ ls -Al
 # SETUP ENVIRONMENT
 #
 
-#CRAB setup_monitoring
 #CRAB setup_scheduler_environment
 #CRAB setup_jobtype_environment
 
@@ -28,29 +27,12 @@ ls -Al
 #
 
 #
-# COPY INPUT DATA
-#
-
-#CRAB copy_input_data
-
-#
-# END OF COPY INPUT DATA
-#
-
-#
-# ADDITIONAL IN-SCRIPT FILES ???
-#
-
-#
-# END OF ADDITIONAL IN-SCRIPT FILES
-#
-
-#
 # PREPARE AND RUN EXECUTABLE
 #
 
 #CRAB build_executable
 
+echo "Executable $executable"
 which $executable
 res=$?
 if [ $res -ne 0 ];then 
@@ -62,32 +44,25 @@ echo "$executable started at `date`"
 #CRAB run_executable
 executable_exit_status=$?
 echo "$executable ended at `date`"
+if [ $executable_exit_status -ne 0 ]; then
+  echo "Processing of job failed with exit code $executable_exit_status"
+fi
 exit_status=$executable_exit_status
-
-#CRAB stop_monitoring
 
 #
 # END OF PREPARE AND RUN EXECUTABLE
 #
 
 #
-# MOVE OUTPUT
+# PROCESS THE PRODUCED RESULTS
 #
 
-#CRAB move_output
-
-#
-# END OF MOVE OUTPUT
-#
-
-#
-# REGISTER RESULTS
-#
+#CRAB rename_output
 
 #CRAB register_results
 
 #
-# END OF REGISTER RESULTS
+# END OF PROCESS THE PRODUCED RESULTS
 #
 
 #
@@ -96,9 +71,5 @@ exit_status=$executable_exit_status
 pwd
 echo "ls -Al"
 ls -Al
-
-#CRAB make_summary
-
-#CRAB notify
 
 exit $exit_status

@@ -11,18 +11,13 @@ class ScriptWriter:
     def __init__(self, template):
         # pattern -> action
         self.actions = {
-            'title' : self.title_,
-            'setup_monitoring' : None,
-            'setup_scheduler_environment' : None,
-            'setup_jobtype_environment' : None,
-            'copy_input_data' : None,
-            'build_executable' : self.buildExe_,
-            'run_executable' : self.runExe_,
-            'stop_monitoring' : None,
-            'move_output' : None,
-            'register_results' : None,
-            'make_summary' : None,
-            'notify' : None
+            'title'                       : self.title_,
+            'setup_scheduler_environment' : self.setupSchedulerEnvironment_,
+            'setup_jobtype_environment'   : self.setupJobTypeEnvironment_,
+            'build_executable'            : self.buildExe_,
+            'run_executable'              : self.runExe_,
+            'rename_output'               : self.renameOutput_,
+            'register_results'            : None
             }
         
         self.template = template
@@ -71,40 +66,28 @@ class ScriptWriter:
         txt += ' (version '+common.prog_version_str+').\n'
         return txt
     
-    def setupEnvironment(self, script, nj):
-        """ Write SetupEnvironment part of a job script."""
-
-        script.write('#\n')
-        script.write('# SETUP ENVIRONMENT\n')
-        script.write('#\n')
-        #TODO
-        #common.scheduler.writeScript_SetupEnvironment(script, nj)
-        #common.job_list[nj].type().writeScript_SetupEnvironment(script, nj)
-        script.write('#\n')
-        script.write('# END OF SETUP ENVIRONMENT\n')
-        script.write('#\n')
-        return
-
-    def copyInputData(self, script, nj):
-        #TODO
-        #common.scheduler.writeScript_CopyInputData(script, nj)
-        return
-
-    def addFiles(self, script, nj):
+    def setupSchedulerEnvironment_(self):
         """
-        Add into the script the content of some job-specific files.
+        Returns part of a job script which does scheduler-specific work.
         """
-        #TODO: ???
-        #common.job_list.type().writeScript_AddFiles(script, nj)
-        return
+        txt = common.scheduler.wsSetupEnvironment()
+        return txt
 
+    def setupJobTypeEnvironment_(self):
+        """
+        Returns part of a job script which does scheduler-specific work.
+        """
+        jbt = common.job_list.type()
+        txt = jbt.wsSetupEnvironment(self.nj)
+        return txt
+        
     def buildExe_(self):
         """
         Returns part of a job script which builds the binary executable.
         """
         jbt = common.job_list.type()
 
-        txt = jbt.writeScript_BuildExe(self.nj)
+        txt = jbt.wsBuildExe(self.nj)
 
         job = common.job_list[self.nj]
         exe = job.type().executableName()
@@ -116,67 +99,13 @@ class ScriptWriter:
         """
         Returns part of a job script which executes the application.
         """
-        #jbt = common.job_list.type()
-
-        #jbt.writeScript_RunExe(script, self.nj)
         return '$executable\n'
 
-    def move_output(self, script,nj):
-        return
-
-    def registerResults(self, script,nj):
-        return
-
-    def tail(self, script, nj):
-        """ Write a tailer part of a job script."""
-
-        script.write('#\n')
-        script.write('# TAIL\n')
-        script.write('#\n')
-        script.write('pwd\n')
-        script.write('echo "ls -Al"\n')
-        script.write('ls -Al\n')
-        
-        #if common.use_jam:
-        #    script.write('list=`ls -Al` \n')
-        #    script.write('perl $RUNTIME_AREA/'+ common.run_jam +' --name='+common.output_jam+' --event=List_end --det="$list" \n')
-        #    pass
-   
-        script.write('#\n')
-
-        #TODO
-        #if common.flag_mksmry:
-        #    script.write('chmod u+x postprocess\n')
-        #    script.write('cat `ls -1 *.stdout` | ./postprocess | sort | uniq > sumry\n')
-        #    pass
-
-        #TODO
-        # summary file may need jobtype specific info, e.g.
-        # for CMS Oscar it needs Pool catalogues,
-        # so we delegate operations to the related jobtype object.
-        #common.job_list.type().writeScript_Tail(script, nj)
-    
-        #if common.flag_notify:
-        #    script.write('if [[ $executable_exit_status -eq 0 && $replica_exit_status -eq 0 ]]; then\n')
-        #    if common.flag_mksmry:
-        #        script.write('    cat sumry | mail -s "job_finished" '+
-        #                     common.email +'\n')
-        #    else:
-        #        script.write('    mail -s "job_finished" '+
-        #                     common.email +' <<EOF\n')
-        #        n1 = nj + 1
-        #        script.write('Job # '+`n1`+' finished\n')
-        #        script.write('EOF\n')
-        #        pass
-        #    script.write('fi\n')
-        #    pass
-
-        script.write('echo ">>>>>>>> End of job at date `date`" \n')
-        
-        #if common.use_jam:
-        #    script.write('perl $RUNTIME_AREA/'+ common.run_jam +' --name='+common.output_jam+' --event=exit --det="$exit_status" \n')
-        #    pass
-        
-        script.write('exit $exit_status\n')
-        return
-
+    def renameOutput_(self):
+        """
+        Returns part of a job script which renames output files.
+        """
+        jbt = common.job_list.type()
+        txt = '\n'
+        txt += jbt.wsRenameOutput(self.nj)
+        return txt

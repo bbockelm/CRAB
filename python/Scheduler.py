@@ -1,5 +1,11 @@
 from crab_exceptions import *
 
+#
+#  Naming convention:
+#  methods starting with 'ws' are responsible to provide
+#  corresponding part of the job script ('ws' stands for 'write script').
+#
+
 class Scheduler :
 
     _instance = None
@@ -25,10 +31,11 @@ class Scheduler :
     def configure(self, cfg_params):
         return
 
-    def isInputReady(self, nj):
-        msg = 'Internal ERROR. Pure virtual function called:\n'
-        msg += self.__class__.__name__+'::isInputReady() from '+__file__
-        raise CrabException(msg)
+    def wsSetupEnvironment(self):
+        """
+        Returns part of a job script which does scheduler-specific work.
+        """
+        return ''
 
     def createJDL(self, nj):
         return

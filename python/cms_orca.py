@@ -128,6 +128,88 @@ class Orca(JobType):
         common.analisys_common_info = self.analisys_common_info # TODO: ???
         return
 
+    def wsSetupEnvironment(self, nj):
+        """
+        Returns part of a job script which prepares
+        the execution environment for the job 'nj'.
+        """
+
+        # Prepare JobType-independent part
+        txt = self.wsSetupCMSEnvironment_()
+
+        # Prepare JobType-specific part
+        txt += '\n'
+        txt += 'scram project ORCA '+self.version+'\n'
+        txt += 'status=$?\n'
+        txt += 'if [ $status != 0 ] ; then\n'
+        txt += '   echo "Warning: ORCA '+self.version+' not found on `hostname`" \n'
+        txt += '   exit 1 \n'
+        txt += 'fi \n'
+        txt += 'cd '+self.version+'\n'
+        txt += 'eval `scram runtime -sh`\n'
+
+        # Prepare job-specific part
+        job = common.job_list[nj]
+        orcarc = os.path.basename(job.configFilename())
+        txt += '\n'
+        txt += 'cp $RUNTIME_AREA/'+orcarc+' .orcarc\n'
+        txt += 'if [ -e $RUNTIME_AREA/orcarc_$CE ] ; then\n'
+        txt += '  cat $RUNTIME_AREA/orcarc_$CE .orcarc >> .orcarc_tmp\n'
+        txt += '  mv .orcarc_tmp .orcarc\n'
+        txt += '  cp $RUNTIME_AREA/init_$CE.sh init.sh\n'
+        txt += 'fi\n'
+        txt += 'echo "***** cat .orcarc *********"\n'
+        txt += 'cat .orcarc\n'
+        txt += 'echo "****** end .orcarc ********"\n'
+        txt += '\n'
+        txt += 'chmod +x ./init.sh\n'
+        txt += './init.sh\n'
+        txt += 'exitStatus=$?\n'
+        txt += 'if [ $exitStatus != 0 ] ; then\n'
+        txt += '  echo "StageIn init script failed!"\n'
+        txt += '  exit $exitStatus\n'
+        txt += 'fi\n'
+        return txt
+    
+    def wsBuildExe(self, nj):
+        """
+        Put in the script the commands to build an executable
+        or a library.
+        """
+        if self.build != 'tgz':
+            msg = 'USER. Unknown build_mode '+self.build
+            raise CrabException(msg)
+
+        txt = ""
+
+        if os.path.isfile(self.tgz):
+            txt += 'echo "tar xzvf ../'+os.path.basename(self.tgz)+'"\n'
+            txt += 'tar xzvf ../'+os.path.basename(self.tgz)+'\n'
+            txt += 'untar_status=$? \n'
+            txt += 'if [ $untar_status -ne 0 ]; then \n'
+            txt += '   echo "Untarring .tgz file failed ... exiting" \n'
+            txt += '   exit 1 \n'
+            txt += 'else \n'
+            txt += '   echo "Successful untar" \n'
+            txt += 'fi \n'
+            # TODO: what does this code do here ?
+            # SL check that lib/Linux__... is present
+            txt += 'mkdir -p lib/Linux__2.4 \n'
+            txt += 'eval `scram runtime -sh`'+'\n'
+            pass
+
+        return txt
+
+    def wsRenameOutput(self, nj):
+        """
+        Returns part of a job script which renames the produced files.
+        """
+        txt = '\n'
+        for i in range(len(self.output_file)):
+            txt += 'cp '+self.output_file[i]+' '+self.output_file_num[i]+'\n'
+            pass
+        return txt
+
     def executableName(self):
         return self.executable
 
@@ -449,32 +531,3 @@ class Orca(JobType):
           for out in self.output_file_num:
             out_box.append(self.version+'/'+out)
         return out_box
-    
-    def writeScript_BuildExe(self, nj):
-        """
-        Put in the script the commands to build an executable
-        or a library.
-        """
-        if self.build != 'tgz':
-            msg = 'USER. Unknown build_mode '+self.build
-            raise CrabException(msg)
-
-        txt = ""
-
-        if os.path.isfile(self.tgz):
-            txt += 'echo "tar xzvf ../'+os.path.basename(self.tgz)+'"\n'
-            txt += 'tar xzvf ../'+os.path.basename(self.tgz)+'\n'
-            txt += 'untar_status=$? \n'
-            txt += 'if [ $untar_status -ne 0 ]; then \n'
-            txt += '   echo "Untarring .tgz file failed ... exiting" \n'
-            txt += '   exit 1 \n'
-            txt += 'else \n'
-            txt += '   echo "Successful untar" \n'
-            txt += 'fi \n'
-            # TODO: what does this code do here ?
-            # SL check that lib/Linux__... is present
-            txt += 'mkdir -p lib/Linux__2.4 \n'
-            txt += 'eval `scram runtime -sh`'+'\n'
-            pass
-
-        return txt
