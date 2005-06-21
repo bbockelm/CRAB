@@ -30,7 +30,7 @@ prog_authors = [
 logger     = None
 work_space = None
 scheduler  = None
-job_list   = None
+job_list   = []
 jobDB      = None
 
 # TODO: very bad place for this variable

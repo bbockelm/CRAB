@@ -7,7 +7,7 @@
 import string, sys, os
 import ConfigParser, re, popen2
 
-from crab_logger import Logger
+import common
 
 ###########################################################################
 def parseOptions(argv):
@@ -105,14 +105,13 @@ def importName(module_name, name):
     return vars(module)[name]
 
 ###########################################################################
-def runCommand(cmd, printout=1):
+def runCommand(cmd):
     """
     Run command 'cmd'.
     Returns command stdoutput+stderror string on success,
     or None if an error occurred.
     """
-    log = Logger.getInstance()
-    log.message(cmd)
+    common.logger.debug(2, cmd)
     #child = os.popen(cmd)
     #(child,stdin) = popen2.popen4(cmd) # requires python2
 
@@ -126,11 +125,11 @@ def runCommand(cmd, printout=1):
                +`(err>>8)`+'(status)'+'\n')
         msg += cmd_out
         msg += cmd_err
-        log.message(msg)
+        common.logger.message(msg)
         return None
 
     cmd_out = cmd_out + cmd_err
-    if printout: log.message(cmd_out)
+    common.logger.debug(2, cmd_out)
     #err = child_stdout.close()
     #if err:
     #    common.log.message('OUT`'+cmd+'`\n   failed with exit code '

@@ -138,6 +138,9 @@ class Creator(Actor):
     
 
     def run(self):
+        """
+        The main method of the class.
+        """
 
         common.logger.debug(5, "Creator::run() called")
 
@@ -148,27 +151,29 @@ class Creator(Actor):
         # Loop over jobs
 
         njc = 0
-        for i in range(self.total_njobs):
+        for nj in range(self.total_njobs):
             if njc == self.ncjobs : break
-            st = common.jobDB.status(i)
+            st = common.jobDB.status(nj)
             if st != 'X': continue
 
-            common.logger.debug(6, "Creator::run(): job # "+`i`)
+            common.logger.debug(6, "Creator::run(): job # "+`nj`)
 
             # Prepare configuration file
 
-            self.job_type.modifySteeringCards(i)
+            self.job_type.modifySteeringCards(nj)
 
             # Create JDL
+            # Maybe, it worths to move this call into Submitter,
+            # i.e. to create scheduler-specific file at submission time ?
 
-            common.scheduler.createJDL(i)
+            common.scheduler.createJDL(nj)
 
             # Create script
 
-            script_writer.modifyTemplateScript(i)
-            os.chmod(common.job_list[i].scriptFilename(), 0744)
+            script_writer.modifyTemplateScript(nj)
+            os.chmod(common.job_list[nj].scriptFilename(), 0744)
 
-            common.jobDB.setStatus(i, 'C')
+            common.jobDB.setStatus(nj, 'C')
             njc = njc + 1
             pass
 

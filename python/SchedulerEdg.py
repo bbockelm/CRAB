@@ -20,7 +20,7 @@ class SchedulerEdg(Scheduler):
         except KeyError: self.edg_config = ''
 
         try: self.edg_config_vo = cfg_params["EDG.config_vo"]
-        except KeyError: self.edg_config_vo = 'cms'
+        except KeyError: self.edg_config_vo = ''
 
         try: self.LCG_version = cfg_params["EDG.lcg_version"]
         except KeyError: self.LCG_version = '2'
@@ -69,7 +69,9 @@ class SchedulerEdg(Scheduler):
         return txt
 
     def submit(self, nj):
-        """Submit one EDG job."""
+        """
+        Submit one EDG job.
+        """
 
         jid = None
         jdl = common.job_list[nj].jdlFilename()
@@ -78,17 +80,18 @@ class SchedulerEdg(Scheduler):
         if self.edg_config:
           edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
         if self.edg_config_vo: 
-          edg_ui_cfg_opt = edg_ui_cfg_opt + ' --config-vo ' + self.edg_config_vo + ' '
+          edg_ui_cfg_opt += ' --config-vo ' + self.edg_config_vo + ' '
         cmd = 'edg-job-submit -o ' + id_tmp + edg_ui_cfg_opt + jdl 
         cmd_out = runCommand(cmd)
         if cmd_out != None:
-          idfile = open(id_tmp)
-          jid_line = idfile.readline()
-          while jid_line[0] == '#':
+            idfile = open(id_tmp)
             jid_line = idfile.readline()
-          jid = string.strip(jid_line)
-          os.unlink(id_tmp)
-          pass
+            while jid_line[0] == '#':
+                jid_line = idfile.readline()
+                pass
+            jid = string.strip(jid_line)
+            os.unlink(id_tmp)
+            pass
         return jid
 
     def queryStatus(self, id):

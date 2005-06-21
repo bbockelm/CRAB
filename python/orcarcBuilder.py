@@ -314,7 +314,7 @@ class orcarcBuilder:
        return
 
     # print CatalogList
-    site = CatalogList[0].SE
+    site = CatalogList[0].CE
     initScriptFileName = 'init_'+site+'.sh'
     initScript = open(initScriptFileName,'w')
     initScript.write('#!/bin/sh\n')
@@ -374,7 +374,7 @@ class orcarcBuilder:
        print 'Error ***: empty catalog list'
        return
 
-    site = CatalogList[0].SE
+    site = CatalogList[0].CE
     orcarcFileName = 'orcarc_'+site
     orcarc = open(orcarcFileName,'w')
     orcarc.write('# Start of automatic generated .orcarc fragment\n')
