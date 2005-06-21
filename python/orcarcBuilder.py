@@ -18,7 +18,7 @@ class orcarc:
     self.Nevents=Nevents
     return
 
-  def __repr__(self):
+  def __str__(self):
     txt = ''
     txt += "SE "+self.SE+'\n'
     txt += "CE "+self.CE+'\n'
