@@ -38,23 +38,6 @@ class Creator(Actor):
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
 
-        # Create and initialize JobList
-
-        common.job_list = JobList(self.total_njobs, self.job_type)
-
-        common.job_list.setScriptNames(self.job_type_name+'.sh')
-        common.job_list.setJDLNames(self.job_type_name+'.jdl')
-
-        #TODO: Should be moved into JobType.
-        # Probable use-case -- more than one cfg-file.
-        # job_list.setCfgNames() -> job_list.addCfgNames()
-        try:
-            dataset = self.cfg_params['USER.dataset']
-        except KeyError:
-            msg = 'dataset must be defined in the section [USER]'
-            raise CrabException(msg)
-        common.job_list.setCfgNames(dataset+'.orcarc')
-
         #TODO: deprecated code, not needed,
         # will be eliminated when WorkSpace.saveConfiguration()
         # will be improved.
@@ -135,7 +118,9 @@ class Creator(Actor):
 
         self.job_type = klass(self.cfg_params)
         return
-    
+
+    def jobType(self):
+        return self.job_type
 
     def run(self):
         """

@@ -15,7 +15,9 @@ class JobList:
         self._job_type = jtype
         self._job_list = []
 
-        base = self._job_type.name()
+        if jtype : base = self._job_type.name()
+        else     : base = ''
+
         for nj in range(njobs):
             job = Job(jtype, nj+1)
             self._job_list.append(job)
@@ -33,7 +35,7 @@ class JobList:
     def __len__(self):
         return len(self._job_list)
 
-    def __repr__(self):
+    def __str__(self):
         txt = ''
         for nj in range(len(self)):
             txt = txt + 'Job ' + `nj` + ':\n'

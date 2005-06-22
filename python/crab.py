@@ -5,6 +5,7 @@ from crab_exceptions import *
 from crab_logger import Logger
 from WorkSpace import WorkSpace
 from JobDB import JobDB
+from JobList import JobList
 from Creator import Creator
 from Submitter import Submitter
 import common
@@ -13,7 +14,7 @@ import sys, os, time, string
 
 ###########################################################################
 class Crab:
-    def __init__(self):
+    def __init__(self, opts):
 
         # The order of main_actions is important !
         self.main_actions = [ '-create', '-submit', '-resubmit',
@@ -34,7 +35,7 @@ class Crab:
         self.current_time = time.strftime('%y%m%d_%H%M%S',
                                           time.localtime(time.time()))
 
-        # Session name
+        # Session name (?) Do we need this ?
         self.name = '0'
 
         # Job type
@@ -48,58 +49,66 @@ class Crab:
         # produce more output
         self.debug_level = 0
 
-        # Scheduler, e.g. 'edg', 'lsf'
+        # Scheduler name, e.g. 'edg', 'lsf'
         self.scheduler_name = 'edg'
 
-        #TODO: for future
-        # Flag: if true then run postprocess script to make summary
-        self.flag_mksmry = 0
-        # postprocess script path given with '-make_summary'
-        self.postprocess ='postprocess'
-
-        # Flag: notify users or not when the job finishes
-        self.flag_notify = 0    
-        # Comma separated e-mail addresses for notification
-        self.email = ''
-        #end of TODO
+        self.initialize_(opts)
 
         return
 
     def version(self):
         return common.prog_version_str
 
-    def initialize(self, opts):
+    def initialize_(self, opts):
 
         # Process the '-continue' option first because
         # in the case of continuation the CRAB configuration
         # parameters are loaded from already existing Working Space.
-        self.processContinueOption(opts)
+        self.processContinueOption_(opts)
 
         # Process ini-file first, then command line options
         # because they override ini-file settings.
 
-        self.processIniFile(opts)
+        self.processIniFile_(opts)
 
-        if self.flag_continue: opts = self.loadConfiguration(opts)
+        if self.flag_continue: opts = self.loadConfiguration_(opts)
         
-        self.processOptions(opts)
+        self.processOptions_(opts)
 
         if not self.flag_continue:
-            self.createWorkingSpace()
+            self.createWorkingSpace_()
             common.work_space.saveConfiguration(opts, self.cfg_fname)
             pass
 
         # At this point all configuration options have been read.
         
         args = string.join(sys.argv,' ')
-        self.updateHistory(args)
-        self.createLogger(args)
+        self.updateHistory_(args)
+        self.createLogger_(args)
         common.jobDB = JobDB()
-        self.createScheduler()
-        self.initializeActions(opts)
+        if self.flag_continue:
+            common.jobDB.load()
+            common.logger.debug(6, str(common.jobDB))
+            pass
+        self.createScheduler_()
+        if common.logger.debugLevel() >= 6:
+            common.logger.debug(6, 'Used properties:')
+            keys = self.cfg_params.keys()
+            keys.sort()
+            for k in keys:
+                if self.cfg_params[k]:
+                    common.logger.debug(6, '   '+k+' : '+self.cfg_params[k])
+                    pass
+                else:
+                    common.logger.debug(6, '   '+k+' : ')
+                    pass
+                pass
+            common.logger.debug(6, 'End of used properties.\n')
+            pass
+        self.initializeActions_(opts)
         return
 
-    def processContinueOption(self,opts):
+    def processContinueOption_(self,opts):
 
         continue_dir = None
         
@@ -136,7 +145,7 @@ class Crab:
 
         return
 
-    def processIniFile(self, opts):
+    def processIniFile_(self, opts):
         """
         Processes a configuration INI-file.
         """
@@ -194,7 +203,7 @@ class Crab:
 
         return
 
-    def processOptions(self, opts):
+    def processOptions_(self, opts):
         """
         Processes the command-line options.
         """
@@ -202,8 +211,13 @@ class Crab:
         for opt in opts.keys():
             val = opts[opt]
 
-            if opt in self.main_actions: continue
-            if opt in self.aux_actions: continue
+            # Skip actions, they are processed later in initializeActions_()
+            if opt in self.main_actions:
+                self.cfg_params['CRAB.'+opt[1:]] = val
+                continue
+            if opt in self.aux_actions:
+                self.cfg_params['CRAB.'+opt[1:]] = val
+                continue
             
 
             elif ( opt == '-cfg' ):
@@ -215,31 +229,6 @@ class Crab:
             elif ( opt == '-jobtype' ):
                 if val : self.job_type_name = string.upper(val)
                 else : usage()
-                pass
-
-            elif ( opt == '-make_summary' ):
-                if val :
-                    if val == 'none' or val == '0':
-                        self.flag_mksmry = 0
-                        pass
-                    else:
-                        self.flag_mksmry = 1
-                        self.postprocess = val
-                        pass
-                    pass
-                else:
-                    self.flag_mksmry = 1
-                    pass
-                pass
-
-            elif ( opt == '-notify' ):
-                if val:
-                    self.flag_notify = 1
-                    self.email = val
-                    pass
-                else:
-                    usage()
-                    pass
                 pass
 
             elif ( opt == '-Q' ):
@@ -258,52 +247,23 @@ class Crab:
                     pass
                 pass
 
-            # Obsolete old code which is kept for reference only.
-            # TODO: Must be redone
-            elif ( opt in ('-use_monitor=boss', '-useboss') ):
-                if val:
-                    if ( val == '0' or val == '1' ):
-                        common.use_boss = int(val)
-                    else:
-                        print common.prog_name+'. Bad flag for -use_boss option:',\
-                              val,'Possible values are 0 or 1'
-                        usage()
-                        pass
-                    pass
-                else: usage()
-
-            elif ( opt in ('-use_jam', '-usejam') ):
-                if val:
-                    if ( val == '0' or val == '1' ):
-                        common.use_jam = int(val)
-                    else:
-                        print common.prog_name+'. Bad flag for -use_jam option:',\
-                              val,'Possible values are 0(=No)  or 1=(Yes)'
-                        usage()
-                        pass
-                    pass
-                if ( common.use_jam == 1 ):
-                    common.run_jam = common.INI_params['USER.run_jam'] 
-                    print "using JAM monitoring"
-                    common.output_jam = common.INI_params['USER.output_jam']
-                else: usage()
-                pass
-            # End of the obsolete code
-
-            elif string.find(opt,'.') != -1 and val:
-                # Command line parameters in the form -SECTION.ENTRY=VALUE
-                self.cfg_params[opt[1:]] = val
-                pass
-      
-            else:
+            elif string.find(opt,'.') == -1:
                 print common.prog_name+'. Unrecognized option '+opt
                 usage()
                 pass
-      
+
+            # Override config parameters from INI-file with cmd-line params
+            if string.find(opt,'.') == -1 :
+                self.cfg_params['CRAB.'+opt[1:]] = val
+                pass
+            else:
+                # Command line parameters in the form -SECTION.ENTRY=VALUE
+                self.cfg_params[opt[1:]] = val
+                pass
             pass
         return
 
-    def initializeActions(self, opts):
+    def initializeActions_(self, opts):
         """
         For each user action instantiate a corresponding
         object and put it in the action dictionary.
@@ -326,14 +286,27 @@ class Crab:
                 else: ncjobs = 'all'
 
                 if ncjobs != 0:
+                    # Instantiate Creator object
                     creator = Creator(self.job_type_name,
                                       self.cfg_params,
                                       ncjobs)
                     self.actions[opt] = creator
+
+                    # Initialize the JobDB object if needed
                     if not self.flag_continue:
                         common.jobDB.create(creator.nJobs())
                         pass
+
+                    # Create and initialize JobList
+
+                    common.job_list = JobList(common.jobDB.nJobs(),
+                                              creator.jobType())
+
+                    common.job_list.setScriptNames(self.job_type_name+'.sh')
+                    common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                    creator.jobType().setSteeringCardsNames()
                     pass
+                pass
 
             elif ( opt == '-submit' ):
                 if val:
@@ -349,8 +322,18 @@ class Crab:
                 else: nsjobs = 'all'
 
                 if nsjobs != 0:
+                    # Instantiate Submitter object
                     self.actions[opt] = Submitter(self.cfg_params, nsjobs)
+
+                    # Create and initialize JobList
+
+                    if len(common.job_list) == 0 :
+                        common.job_list = JobList(common.jobDB.nJobs(),
+                                                  None)
+                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                        pass
                     pass
+                pass
 
             elif ( opt == '-resubmit' ):
                 # TODO
@@ -399,14 +382,14 @@ class Crab:
             pass
         return
 
-    def createWorkingSpace(self):
+    def createWorkingSpace_(self):
         new_dir = common.prog_name + '_' + self.name + '_' + self.current_time
         new_dir = self.cwd + new_dir
         common.work_space = WorkSpace(new_dir)
         common.work_space.create()
         return
 
-    def loadConfiguration(self, opts):
+    def loadConfiguration_(self, opts):
 
         save_opts = common.work_space.loadSavedOptions()
 
@@ -419,25 +402,25 @@ class Crab:
         # Return updated options
         return save_opts
 
-    def createLogger(self, args):
+    def createLogger_(self, args):
 
         log = Logger()
         log.quiet(self.flag_quiet)
         log.setDebugLevel(self.debug_level)
         log.write(args+'\n')
-        log.message(self.headerString())
+        log.message(self.headerString_())
         log.flush()
         common.logger = log
         return
 
-    def updateHistory(self, args):
+    def updateHistory_(self, args):
         history_fname = common.prog_name+'.history'
         history_file = open(history_fname, 'a')
         history_file.write(self.current_time+': '+args+'\n')
         history_file.close()
         return
 
-    def headerString(self):
+    def headerString_(self):
         """
         Creates a string describing program options either given in
         the command line or their default values.
@@ -453,7 +436,7 @@ class Crab:
                  + '\n'
         return header
     
-    def createScheduler(self):
+    def createScheduler_(self):
         """
         Creates a scheduler object instantiated by its name.
         """
@@ -517,8 +500,7 @@ if __name__ == '__main__':
     # Create, initialize, and run a Crab object
 
     try:
-        crab = Crab()
-        crab.initialize(options)
+        crab = Crab(options)
         crab.run()
     except CrabException, e:
         print '\n' + common.prog_name + ': ' + str(e) + '\n'

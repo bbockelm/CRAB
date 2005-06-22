@@ -55,6 +55,7 @@ class SchedulerEdg(Scheduler):
         libPath=os.path.join(path, "lib", "python")
         sys.path.append(libPath)
 
+        self.checkProxy_()
         return
     
     def wsSetupEnvironment(self):
@@ -145,12 +146,12 @@ class SchedulerEdg(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-    def checkProxy(self):
+    def checkProxy_(self):
         """
         Function to check the Globus proxy.
         """
         cmd = 'grid-proxy-info -timeleft'
-        cmd_out = runCommand(cmd,0)
+        cmd_out = runCommand(cmd)
         ok = 1
         timeleft = -999
         try: timeleft = int(cmd_out)
@@ -160,7 +161,7 @@ class SchedulerEdg(Scheduler):
 
         if ok==0:
             msg = 'No valid proxy found !\n'
-            msg += "Please do 'grid-proxy-init'"
+            msg += "Please do 'grid-proxy-init'."
             raise CrabException(msg)
         return
     

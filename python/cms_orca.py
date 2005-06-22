@@ -431,6 +431,45 @@ class Orca(JobType):
         # One possibility is to use len(common.job_list).
         """ return the number of job to be created """
         return int((self.total_number_of_events-1)/self.job_number_of_events)+1
+
+    def prepareSteeringCards(self):
+        """
+        modify the orcarc card provided by the user, 
+        writing a new card into share dir
+        """
+        infile = ''
+        try:
+          infile = open(self.orcarc_file,'r')
+        except:
+          self.orcarc_file = 'empty.orcarc'
+          cmd='touch '+self.orcarc_file
+          runCommand(cmd,0)
+          infile = open(self.orcarc_file,'r')
+            
+        outfile = open(common.work_space.shareDir()+self.cardsBaseName(), 'w')
+           
+        inline=infile.readlines()
+        ### remove from user card these lines ###
+        for i in range (len(inline)):
+           if string.find(inline[i], 'InputFileCatalogURL') == -1:  
+              if string.find(inline[i], 'InputCollections') == -1:
+                 if string.find(inline[i], 'FirstEvent') == -1: 
+                    if string.find(inline[i], 'MaxEvents') == -1: 
+                       outfile.write(inline[i])
+           else:
+              continue
+        infile.close()
+        outfile.close()
+        return
+
+    def setSteeringCardsNames(self):
+        """
+        Generates names for application steering card names,
+        e.g. 'mumu_000002.orcarc' for dataset 'mumu', job 2.
+        """
+
+        common.job_list.setCfgNames(self.dataset+'.orcarc')
+        return
     
     def modifySteeringCards(self, nj):
         # add jobs information to the orcarc card, 
@@ -472,36 +511,6 @@ class Orca(JobType):
         Returns name of user orcarc card-file
         """
         return os.path.split (self.orcarc_file)[1]
-
-    def prepareSteeringCards(self):
-        """
-        modify the orcarc card provided by the user, 
-        writing a new card into share dir
-        """
-        infile = ''
-        try:
-          infile = open(self.orcarc_file,'r')
-        except:
-          self.orcarc_file = 'empty.orcarc'
-          cmd='touch '+self.orcarc_file
-          runCommand(cmd,0)
-          infile = open(self.orcarc_file,'r')
-            
-        outfile = open(common.work_space.shareDir()+self.cardsBaseName(), 'w')
-           
-        inline=infile.readlines()
-        ### remove from user card these lines ###
-        for i in range (len(inline)):
-           if string.find(inline[i], 'InputFileCatalogURL') == -1:  
-              if string.find(inline[i], 'InputCollections') == -1:
-                 if string.find(inline[i], 'FirstEvent') == -1: 
-                    if string.find(inline[i], 'MaxEvents') == -1: 
-                       outfile.write(inline[i])
-           else:
-              continue
-        infile.close()
-        outfile.close()
-        return
 
 ### content of input_sanbdox ...
     def inputSandbox(self, nj):

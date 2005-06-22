@@ -91,6 +91,9 @@ class Logger :
         self.lock.release()
         return
 
+    def debugLevel(self):
+        return self.debug_level
+
     def setDebugLevel(self, level):
         self.debug_level = level
         return

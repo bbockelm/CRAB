@@ -15,7 +15,7 @@ class Job:
         self._script_fname   = ''           # script filename
         return
 
-    def __repr__(self):
+    def __str__(self):
         txt = ''
         for k in self.__dict__.keys():
             if self.__dict__[k] == None:

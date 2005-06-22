@@ -2,7 +2,7 @@ from WorkSpace import WorkSpace
 from crab_exceptions import *
 import common
 
-import os
+import os, string
 
 class dbEntry:
     def __init__(self):
@@ -10,9 +10,9 @@ class dbEntry:
         self.jid = ''         # scheduler job id
         return
 
-    def __repr__(self):
-        txt  = 'Status ' + self.status + '\n'
-        txt += 'Job Id ' + self.jid + '\n'
+    def __str__(self):
+        txt  = 'Status <' + self.status + '>; '
+        txt += 'Job Id <' + self.jid + '>\n'
         return txt
 
 class JobDB:
@@ -22,13 +22,13 @@ class JobDB:
         self._jobs = []        # list of dbEntry's
         return
 
-    def __repr__(self):
+    def __str__(self):
         njobs = self.nJobs()
         if njobs == 1: plural = ''
         else:          plural = 's'
         txt = 'Total of %d job%s:\n' % (njobs, plural)
         for i in range(njobs):
-            txt += ('Job %03d' % i) + ':\n'
+            txt += ('Job %03d' % i) + ': '
             txt += str(self._jobs[i])
             pass
         return txt
@@ -65,9 +65,9 @@ class JobDB:
     def load(self):
         self._jobs = []
         db_file = open(self._dir+self._db_fname, 'r')
-        db_entry = dbEntry()
         for line in db_file:
-            (n, db_entry.status, db_entry_jid, rest) = string.split(line, ';')
+            db_entry = dbEntry()
+            (n, db_entry.status, db_entry.jid, rest) = string.split(line, ';')
             self._jobs.append(db_entry)
             pass
         db_file.close()

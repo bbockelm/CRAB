@@ -14,12 +14,15 @@ class Submitter(Actor):
 
         common.logger.debug(5, "Submitter::run() called")
 
-        total_njobs = len(common.job_list)
+        total_njobs = common.jobDB.nJobs()
         if total_njobs == 0 :
             msg = '\nTotal of 0 jobs submitted -- no created jobs found.\n'
             msg += "Maybe you forgot '-create' or '-continue' ?\n"
             common.logger.message(msg)
             return
+
+        if self.nsjobs == 'all': self.nsjobs = total_njobs
+        if self.nsjobs > total_njobs : self.nsjobs = total_njobs
 
         # Loop over jobs
 
