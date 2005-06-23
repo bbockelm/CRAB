@@ -44,6 +44,7 @@ B<CRAB>:  B<C>ms B<R>emote B<A>nalysis B<B>uilder
 This tool _must_ be used from an User Interface and the user is supposed to
 have a valid GRID certificate and an active proxy.
 
+B<WARNING: THIS HELP IS OBSOLETE !!!>
 
 =head1 SYNOPSIS
 
