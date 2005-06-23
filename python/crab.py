@@ -18,8 +18,8 @@ class Crab:
 
         # The order of main_actions is important !
         self.main_actions = [ '-create', '-submit', '-resubmit',
-                              '-monitor', '-retrieve' ]
-        self.aux_actions = [ '-kill', '-status' ]
+                              '-monitor' ]
+        self.aux_actions = [ '-list', '-kill', '-status', '-retrieve' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -111,7 +111,9 @@ class Crab:
     def processContinueOption_(self,opts):
 
         continue_dir = None
-        
+
+        # Look for the '-continue' option.
+
         for opt in opts.keys():
             if ( opt in ('-continue','-c') ):
                 self.flag_continue = 1
@@ -120,6 +122,16 @@ class Crab:
                     if val[0] == '/': continue_dir = val     # abs path
                     else: continue_dir = self.cwd + val      # rel path
                     pass
+                break
+            pass
+
+        # Look for actions which has sense only with '-continue'
+
+        if not self.flag_continue:
+            for opt in opts.keys():
+                if ( opt in self.aux_actions ):
+                    self.flag_continue = 1
+                    break
                 pass
             pass
 
@@ -224,6 +236,7 @@ class Crab:
                 pass
 
             elif ( opt in ('-continue', '-c') ):
+                # Already processed in processContinueOption_()
                 pass
 
             elif ( opt == '-jobtype' ):
@@ -262,6 +275,30 @@ class Crab:
                 pass
             pass
         return
+
+    def parseRange_(self, val):
+        """
+        Parses 'val':
+        ----------+------------
+        val       |  returns
+        ----------+------------
+        'n1-n2'      (n1, n2)
+        'n'          (n, n)
+        'all'        (1, njobs)
+        None         (1, njobs)
+        ----------+------------
+        """
+        if val == 'all': val = None
+        if val:
+            (n1, n2) = parseRange(val)
+            if n1 < 1 : n1 = 1
+            if n2 > common.jobDB.nJobs() : n2 = common.jobDB.nJobs()
+            pass
+        else:
+            n1 = 1
+            n2 = common.jobDB.nJobs()
+            pass
+        return (n1,n2)
 
     def initializeActions_(self, opts):
         """
@@ -335,20 +372,77 @@ class Crab:
                     pass
                 pass
 
-            elif ( opt == '-resubmit' ):
-                # TODO
-                common.flag_resubmit = 1
-                if val:
-                    (common.resubmit_from,common.resubmit_to) =parseJobidRange(val)
-                    if ( common.resubmit_to == None or
-                         common.resubmit_from > common.resubmit_to ):
-                        print common.prog_name+'. Bad BOSS JobId range ['+val+']'
-                        usage()
-                        pass
-                    pass
-                else: usage()
+            elif ( opt == '-list' ):
+                print common.jobDB
+                pass
 
             elif ( opt == '-status' ):
+                (n1, n2) = self.parseRange_(val)
+
+                nj = n1 - 1
+                while ( nj < n2 ):
+                    st = common.jobDB.status(nj)
+                    if st == 'S':
+                        jid = common.jobDB.jobId(nj)
+                        st = common.scheduler.queryStatus(jid)
+                        print 'Job %03d:'%(nj+1),st
+                        pass
+                    else:
+                        print 'Job %03d:'%(nj+1),crabJobStatusToString(st)
+                        pass
+                    nj += 1
+                    pass
+                pass
+            
+            elif ( opt == '-kill' ):
+                (n1, n2) = self.parseRange_(val)
+
+                nj = n1 - 1
+                while ( nj < n2 ):
+                    st = common.jobDB.status(nj)
+                    if st == 'S':
+                        jid = common.jobDB.jobId(nj)
+                        common.scheduler.cancel(jid)
+                        common.jobDB.setStatus(nj, 'K')
+                        pass
+                    nj += 1
+                    pass
+
+                common.jobDB.save()
+                pass
+
+            elif ( opt == '-retrieve' ):
+                (n1, n2) = self.parseRange_(val)
+
+                nj = n1 - 1
+                while ( nj < n2 ):
+                    st = common.jobDB.status(nj)
+                    if st == 'S':
+                        jid = common.jobDB.jobId(nj)
+                        dir = common.scheduler.getOutput(jid)
+                        common.jobDB.setStatus(nj, 'Y')
+
+                        # Rename the directory with results to smth readable
+                        new_dir = common.work_space.resDir()+'%06d'%(nj+1)
+                        try:
+                            os.rename(dir, new_dir)
+                        except OSError, e:
+                            msg = 'rename('+dir+', '+new_dir+') error: '
+                            msg += str(e)
+                            common.logger.message(msg)
+                            # ignore error
+                            pass
+
+                        msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
+                        common.logger.message(msg)
+                        pass
+                    nj += 1
+                    pass
+
+                common.jobDB.save()
+                pass
+
+            elif ( opt == '-resubmit' ):
                 # TODO
                 pass
             
@@ -361,24 +455,7 @@ class Crab:
                     pass
                 common.autoretrieve = 1
                 pass
-
-            elif ( opt == '-retrieve' ):
-                # TODO
-                if val and ( isInt(val) ):
-                    common.delay = val
-                else:
-                    common.delay = 60
-                    pass
-                common.autoretrieve = 1
-                pass
             
-            
-            elif ( opt == '-kill' ):
-                # TODO
-                jobMon = retrieve.Monitor()
-                jobMon.killJobs()
-                sys.exit()
-
             pass
         return
 

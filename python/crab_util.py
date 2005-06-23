@@ -75,6 +75,44 @@ def isBool(str):
     return 0
 
 ###########################################################################
+def parseRange(range):
+    """
+    Takes as the input a string with two integers separated by
+    the minus sign and returns the tuple with these numbers:
+    'n1-n2' -> (n1, n2)
+    'n1'    -> (n1, n1)
+    """
+    start = None
+    end   = None
+    minus = string.find(range, '-')
+    if ( minus < 0 ):
+        if isInt(range):
+            start = int(range)
+            end   = start
+            pass
+        pass
+    else:
+        if isInt(range[:minus]) and isInt(range[minus+1:]):
+            start = int(range[:minus])
+            end   = int(range[minus+1:])
+            pass
+        pass
+    return (start, end)
+
+###########################################################################
+def crabJobStatusToString(crab_status):
+    """
+    Convert one-letter crab job status into more readable string.
+    """
+    if   crab_status == 'C': status = 'Created'
+    elif crab_status == 'S': status = 'Submitted'
+    elif crab_status == 'K': status = 'Killed'
+    elif crab_status == 'X': status = 'None'
+    elif crab_status == 'Y': status = 'Output retrieved'
+    else: status = '???'
+    return status
+
+###########################################################################
 def findLastWorkDir(dir_prefix, where = None):
 
     if not where: where = os.getcwd() + '/'

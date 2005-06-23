@@ -97,36 +97,22 @@ class SchedulerEdg(Scheduler):
 
     def queryStatus(self, id):
         """ Query a status of the job with id """
-        log = Logger.getInstance()
         cmd0 = 'edg-job-status '
         cmd = cmd0 + id
         cmd_out = runCommand(cmd)
         if cmd_out == None:
-            log.message('Error. No output from `'+cmd+'`')
+            common.logger.message('Error. No output from `'+cmd+'`')
             return None
         # parse output
-        status_prefix = 'Status                  =    '
+        status_prefix = 'Current Status:'
         status_index = string.find(cmd_out, status_prefix)
         if status_index == -1:
-            log.message('Error. Bad output of `'+cmd0+'`:\n'+cmd_out)
+            common.logger.message('Error. Bad output of `'+cmd0+'`:\n'+cmd_out)
             return None
         status = cmd_out[(status_index+len(status_prefix)):]
         nl = string.find(status,'\n')
-        return self.EDG2CMSprodStatus(status[0:nl])
-
-    def EDG2CMSprodStatus(self, edg_status):
-        edg_st = string.lower(string.strip(edg_status))
-        if edg_st == 'submitted' or edg_st == 'waiting' or \
-           edg_st == 'ready' or edg_st == 'scheduled':
-            return 'Pending'
-        if edg_st == 'running' or edg_st == 'done' or edg_st == 'chkpt':
-            return 'Running'
-        if edg_st == 'done (cancelled)':
-            return 'Canceled'
-        if edg_st == 'aborted': return 'Aborted'
-        if edg_st == 'outputready': return 'OutputReady'
-        if edg_st == 'cleared': return 'Finished'
-        return edg_st
+        status = string.strip(status[0:nl])
+        return status
 
     def queryDetailedStatus(self, id):
         """ Query a detailed status of the job with id """
@@ -135,10 +121,18 @@ class SchedulerEdg(Scheduler):
         return cmd_out
 
     def getOutput(self, id):
-        """ Get output for a finished job with id."""
-        cmd = 'edg-job-get-output --dir ' + common.res_dir + ' '+id
+        """
+        Get output for a finished job with id.
+        Returns the name of directory with results.
+        """
+        cmd = 'edg-job-get-output --dir ' + common.work_space.resDir() +' '+id
         cmd_out = runCommand(cmd)
-        return cmd_out
+
+        # Determine the output directory name
+        dir = common.work_space.resDir()
+        dir += os.getlogin()
+        dir += '_' + os.path.basename(id)
+        return dir
 
     def cancel(self, id):
         """ Cancel the EDG job with id """
@@ -164,9 +158,6 @@ class SchedulerEdg(Scheduler):
             msg += "Please do 'grid-proxy-init'."
             raise CrabException(msg)
         return
-    
-    def isInputReady(self, nj):
-        return 1
     
     def createJDL(self, nj):
         """

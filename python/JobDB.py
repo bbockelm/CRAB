@@ -28,7 +28,7 @@ class JobDB:
         else:          plural = 's'
         txt = 'Total of %d job%s:\n' % (njobs, plural)
         for i in range(njobs):
-            txt += ('Job %03d' % i) + ': '
+            txt += ('Job %03d' % (i+1)) + ': '
             txt += str(self._jobs[i])
             pass
         return txt
@@ -86,4 +86,3 @@ class JobDB:
     
     def jobId(self, nj):
         return self._jobs[nj].jid
-    

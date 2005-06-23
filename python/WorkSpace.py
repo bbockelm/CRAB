@@ -71,7 +71,8 @@ class WorkSpace:
         save_file = open(self.saveFileName(), 'w')
 
         for k in opts.keys():
-            save_file.write(k+'='+opts[k]+'\n')
+            if opts[k] : save_file.write(k+'='+opts[k]+'\n')
+            else       : save_file.write(k+'\n')
             pass
         
         save_file.close()
