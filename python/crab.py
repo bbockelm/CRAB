@@ -17,9 +17,9 @@ class Crab:
     def __init__(self, opts):
 
         # The order of main_actions is important !
-        self.main_actions = [ '-create', '-submit', '-resubmit',
-                              '-monitor' ]
-        self.aux_actions = [ '-list', '-kill', '-status', '-retrieve' ]
+        self.main_actions = [ '-create', '-submit', '-monitor' ]
+        self.aux_actions = [ '-list', '-kill', '-status', '-retrieve',
+                             '-resubmit' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -316,9 +316,9 @@ class Crab:
                     elif ( val == 'all'):
                         ncjobs = val
                     else:
-                        print common.prog_name+'. Bad creation bunch size',val
-                        print '         Must be an integer or "all"'
-                        pass
+                        msg = 'Bad creation bunch size <'+str(val)+'>\n'
+                        msg += '      Must be an integer or "all"'
+                        raise CrabException(msg)
                     pass
                 else: ncjobs = 'all'
 
@@ -352,15 +352,33 @@ class Crab:
                     elif ( val == 'all'):
                         nsjobs = val
                     else:
-                        print common.prog_name+'. Bad submission bunch size',val
-                        print '         Must be an integer or "all"'
-                        pass
+                        msg = 'Bad submission bunch size <'+str(val)+'>\n'
+                        msg += '      Must be an integer or "all"'
+                        raise CrabException(msg)
                     pass
                 else: nsjobs = 'all'
 
-                if nsjobs != 0:
+                # Create a list with numbers of jobs to be submitted
+
+                total_njobs = common.jobDB.nJobs()
+                if total_njobs == 0 :
+                    msg = '\nNo created jobs found.\n'
+                    msg += "Maybe you forgot '-create' or '-continue' ?\n"
+                    raise CrabException(msg)
+
+                if nsjobs == 'all': nsjobs = total_njobs
+                if nsjobs > total_njobs : nsjobs = total_njobs
+
+                nj_list = []
+                for nj in range(total_njobs):
+                    if len(nj_list) >= nsjobs : break
+                    st = common.jobDB.status(nj)
+                    if st == 'C': nj_list.append(nj)
+                    pass
+
+                if len(nj_list) != 0:
                     # Instantiate Submitter object
-                    self.actions[opt] = Submitter(self.cfg_params, nsjobs)
+                    self.actions[opt] = Submitter(self.cfg_params, nj_list)
 
                     # Create and initialize JobList
 
@@ -443,7 +461,38 @@ class Crab:
                 pass
 
             elif ( opt == '-resubmit' ):
-                # TODO
+                (n1, n2) = self.parseRange_(val)
+
+                # Cancel submitted jobs from the range (n1, n2)
+                # and create a list of jobs to be resubmitted.
+
+                nj_list = []
+                nj = n1 - 1
+                while ( nj < n2 ):
+                    st = common.jobDB.status(nj)
+                    if st == 'S':
+                        jid = common.jobDB.jobId(nj)
+                        common.scheduler.cancel(jid)
+                        st = 'K'
+                        common.jobDB.setStatus(nj, st)
+                        pass
+
+                    if st != 'X': nj_list.append(nj)
+                    nj += 1
+                    pass
+
+                if len(nj_list) != 0:
+                    # Instantiate Submitter object
+                    self.actions[opt] = Submitter(self.cfg_params, nj_list)
+
+                    # Create and initialize JobList
+
+                    if len(common.job_list) == 0 :
+                        common.job_list = JobList(common.jobDB.nJobs(),
+                                                  None)
+                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                        pass
+                    pass
                 pass
             
             elif ( opt == '-monitor' ):
