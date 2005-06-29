@@ -129,10 +129,19 @@ class Crab:
 
         if not self.flag_continue:
             for opt in opts.keys():
-                if ( opt in self.aux_actions ):
+                if ( opt in (self.aux_actions) ):
                     self.flag_continue = 1
                     break
                 pass
+            pass
+            submit_flag=0
+            create_flag=0
+            for opt in opts.keys():
+                if opt == "-submit": submit_flag=1
+                if opt == "-create": create_flag=1
+                pass
+            if (submit_flag and not create_flag):
+                raise CrabException('Submit but no continue nor Create.')
             pass
 
         if not self.flag_continue: return
@@ -249,7 +258,8 @@ class Crab:
                 pass
 
             elif ( opt == '-debug' ):
-                self.debug_level = int(val)
+                if val: self.debug_level = int(val)
+                else: self.debug_level = 1
                 pass
 
             elif ( opt == '-scheduler' ):
