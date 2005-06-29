@@ -20,6 +20,7 @@ class Submitter(Actor):
             st = common.jobDB.status(nj)
 
             common.logger.debug(6, "Submitter::run(): job # "+`nj`)
+            common.logger.message("Submitting job # "+`nj`)
 
             jid = common.scheduler.submit(nj)
 

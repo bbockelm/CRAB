@@ -166,7 +166,7 @@ class orcarcBuilder:
           valid=1
         #### TMP SL 08-Feb-2005 ok even if not valid!
         elif (valString == "NOT_VALIDATED"): 
-          common.log.write('Dataset '+valString+'\n')
+          common.logger.write('Dataset '+valString+'\n')
           valid=1
  
 

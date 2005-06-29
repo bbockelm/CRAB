@@ -99,7 +99,12 @@ class WorkSpace:
         save_opts = {}
         for line in save_file:
             line = line[:-1]  # drop '\n'
-            (k, v) = string.split(line, '=')
+            try:
+                (k, v) = string.split(line, '=')
+            except:
+                k=line
+                v=''
+                pass
             save_opts[k] = v
             pass
         
