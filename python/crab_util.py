@@ -100,6 +100,35 @@ def parseRange(range):
     return (start, end)
 
 ###########################################################################
+def parseRange2(range):
+    """
+    Takes as the input a string in the form of a comma-separated
+    numbers and ranges
+    and returns a list with all specified numbers:
+    'n1'          -> [n1]
+    'n1-n2'       -> [n1, n1+1, ..., n2]
+    'n1,n2-n3,n4' -> [n1, n2, n2+1, ..., n3, n4]
+    """
+    list = []
+    if not range: return list
+
+    comma = string.find(range, ',')
+    if comma == -1: left = range
+    else:           left = range[:comma]
+
+    (n1, n2) = parseRange(left)
+    while ( n1 <= n2 ):
+        list.append(n1)
+        n1 += 1
+        pass
+
+    if comma != -1:
+        list.extend(parseRange2(range[comma+1:]))
+        pass
+
+    return list
+
+###########################################################################
 def crabJobStatusToString(crab_status):
     """
     Convert one-letter crab job status into more readable string.
@@ -176,3 +205,10 @@ def runCommand(cmd):
     #    return None
     if cmd_out == '' : cmd_out = ' '
     return cmd_out
+
+if __name__ == '__main__':
+    import sys
+    print 'sys.argv[1] =',sys.argv[1]
+    list = parseRange2(sys.argv[1])
+    print list
+    

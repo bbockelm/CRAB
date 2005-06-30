@@ -1,4 +1,5 @@
 from Actor import *
+from crab_util import *
 import common
 
 class Submitter(Actor):
@@ -16,23 +17,35 @@ class Submitter(Actor):
 
         # Loop over jobs
 
+        njs = 0
         for nj in self.nj_list:
             st = common.jobDB.status(nj)
+            if st != 'C' and st != 'K':
+                long_st = crabJobStatusToString(st)
+                msg = "Job # %d is not submitted: status %s"%(nj+1, long_st)
+                common.logger.message(msg)
+                continue
 
-            common.logger.debug(6, "Submitter::run(): job # "+`nj`)
-            common.logger.message("Submitting job # "+`nj`)
+            common.logger.message("Submitting job # "+`(nj+1)`)
 
             jid = common.scheduler.submit(nj)
 
             common.jobDB.setStatus(nj, 'S')
             common.jobDB.setJobId(nj, jid)
+            njs += 1
             pass
 
         ####
         
         common.jobDB.save()
 
-        msg = '\nTotal of %d jobs submitted'%len(self.nj_list)+'.'
+        msg = '\nTotal of %d jobs submitted'%njs
+        if njs != len(self.nj_list) :
+            msg += ' (from %d requested).'%(len(self.nj_list))
+            pass
+        else:
+            msg += '.'
+            pass
         common.logger.message(msg)
         return
     

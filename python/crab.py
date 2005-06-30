@@ -56,8 +56,10 @@ class Crab:
 
         return
 
-    def version(self):
+    def version():
         return common.prog_version_str
+
+    version = staticmethod(version)
 
     def initialize_(self, opts):
 
@@ -141,7 +143,8 @@ class Crab:
                 if opt == "-create": create_flag=1
                 pass
             if (submit_flag and not create_flag):
-                raise CrabException('Submit but no continue nor Create.')
+                msg = "'-submit' must be used with either '-create' or '-continue'."
+                raise CrabException(msg)
             pass
 
         if not self.flag_continue: return
@@ -288,27 +291,29 @@ class Crab:
 
     def parseRange_(self, val):
         """
+        Wrapper around crab_util.parseRange2().
         Parses 'val':
         ----------+------------
         val       |  returns
         ----------+------------
-        'n1-n2'      (n1, n2)
-        'n'          (n, n)
-        'all'        (1, njobs)
-        None         (1, njobs)
+        'n'          [n-1]
+        'n1-n2'      [n1-1, n1, n1+1, ... n2-1]
+        'n1,n2-n3'   [n1-1, n2-1, n2, n2+1, ..., n3-1]
+        'all'        [0, 1, ..., njobs-1]
+        None         [0, 1, ..., njobs-1]
         ----------+------------
         """
         if val == 'all': val = None
         if val:
-            (n1, n2) = parseRange(val)
-            if n1 < 1 : n1 = 1
-            if n2 > common.jobDB.nJobs() : n2 = common.jobDB.nJobs()
+            nj_list = parseRange2(val)
+            for i in range(len(nj_list)):
+                nj_list[i] -= 1   # internal job numbering is from 0
+                pass
             pass
         else:
-            n1 = 1
-            n2 = common.jobDB.nJobs()
+            nj_list = range(common.jobDB.nJobs())
             pass
-        return (n1,n2)
+        return nj_list
 
     def initializeActions_(self, opts):
         """
@@ -356,35 +361,36 @@ class Crab:
                 pass
 
             elif ( opt == '-submit' ):
-                if val:
-                    if ( isInt(val) ):
-                        nsjobs = int(val)
-                    elif ( val == 'all'):
-                        nsjobs = val
-                    else:
-                        msg = 'Bad submission bunch size <'+str(val)+'>\n'
-                        msg += '      Must be an integer or "all"'
-                        raise CrabException(msg)
-                    pass
-                else: nsjobs = 'all'
+                nj_list = self.parseRange_(val)
+                #if val:
+                #    if ( isInt(val) ):
+                #        nsjobs = int(val)
+                #    elif ( val == 'all'):
+                #        nsjobs = val
+                #    else:
+                #        msg = 'Bad submission bunch size <'+str(val)+'>\n'
+                #        msg += '      Must be an integer or "all"'
+                #        raise CrabException(msg)
+                #    pass
+                #else: nsjobs = 'all'
 
-                # Create a list with numbers of jobs to be submitted
+                ## Create a list with numbers of jobs to be submitted
 
-                total_njobs = common.jobDB.nJobs()
-                if total_njobs == 0 :
-                    msg = '\nNo created jobs found.\n'
-                    msg += "Maybe you forgot '-create' or '-continue' ?\n"
-                    raise CrabException(msg)
+                #total_njobs = common.jobDB.nJobs()
+                #if total_njobs == 0 :
+                #    msg = '\nNo created jobs found.\n'
+                #    msg += "Maybe you forgot '-create' or '-continue' ?\n"
+                #    raise CrabException(msg)
 
-                if nsjobs == 'all': nsjobs = total_njobs
-                if nsjobs > total_njobs : nsjobs = total_njobs
+                #if nsjobs == 'all': nsjobs = total_njobs
+                #if nsjobs > total_njobs : nsjobs = total_njobs
 
-                nj_list = []
-                for nj in range(total_njobs):
-                    if len(nj_list) >= nsjobs : break
-                    st = common.jobDB.status(nj)
-                    if st == 'C': nj_list.append(nj)
-                    pass
+                #nj_list = []
+                #for nj in range(total_njobs):
+                #    if len(nj_list) >= nsjobs : break
+                #    st = common.jobDB.status(nj)
+                #    if st == 'C': nj_list.append(nj)
+                #    pass
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
@@ -405,10 +411,8 @@ class Crab:
                 pass
 
             elif ( opt == '-status' ):
-                (n1, n2) = self.parseRange_(val)
-
-                nj = n1 - 1
-                while ( nj < n2 ):
+                nj_list = self.parseRange_(val)
+                for nj in nj_list:
                     st = common.jobDB.status(nj)
                     if st == 'S':
                         jid = common.jobDB.jobId(nj)
@@ -418,32 +422,27 @@ class Crab:
                     else:
                         print 'Job %03d:'%(nj+1),crabJobStatusToString(st)
                         pass
-                    nj += 1
                     pass
                 pass
             
             elif ( opt == '-kill' ):
-                (n1, n2) = self.parseRange_(val)
-
-                nj = n1 - 1
-                while ( nj < n2 ):
+                nj_list = self.parseRange_(val)
+                for nj in nj_list:
                     st = common.jobDB.status(nj)
                     if st == 'S':
                         jid = common.jobDB.jobId(nj)
+                        common.logger.message("Killing job # "+`(nj+1)`)
                         common.scheduler.cancel(jid)
                         common.jobDB.setStatus(nj, 'K')
                         pass
-                    nj += 1
                     pass
 
                 common.jobDB.save()
                 pass
 
             elif ( opt == '-retrieve' ):
-                (n1, n2) = self.parseRange_(val)
-
-                nj = n1 - 1
-                while ( nj < n2 ):
+                nj_list = self.parseRange_(val)
+                for nj in nj_list:
                     st = common.jobDB.status(nj)
                     if st == 'S':
                         jid = common.jobDB.jobId(nj)
@@ -464,21 +463,17 @@ class Crab:
                         msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
                         common.logger.message(msg)
                         pass
-                    nj += 1
                     pass
 
                 common.jobDB.save()
                 pass
 
             elif ( opt == '-resubmit' ):
-                (n1, n2) = self.parseRange_(val)
+                nj_list = self.parseRange_(val)
 
-                # Cancel submitted jobs from the range (n1, n2)
-                # and create a list of jobs to be resubmitted.
+                # Cancel submitted jobs.
 
-                nj_list = []
-                nj = n1 - 1
-                while ( nj < n2 ):
+                for nj in nj_list:
                     st = common.jobDB.status(nj)
                     if st == 'S':
                         jid = common.jobDB.jobId(nj)
@@ -486,10 +481,9 @@ class Crab:
                         st = 'K'
                         common.jobDB.setStatus(nj, st)
                         pass
-
-                    if st != 'X': nj_list.append(nj)
-                    nj += 1
                     pass
+
+                # Submit again
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
@@ -612,7 +606,7 @@ def processHelpOptions(opts):
 
     for opt in opts.keys():
         if opt == '-v':
-            print Crab().version()
+            print Crab.version()
             return 1
         if opt in ('-h','-help','--help') :
             if opts[opt] : help(opts[opt])

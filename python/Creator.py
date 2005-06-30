@@ -141,7 +141,7 @@ class Creator(Actor):
             st = common.jobDB.status(nj)
             if st != 'X': continue
 
-            common.logger.debug(6, "Creator::run(): job # "+`nj`)
+            common.logger.message("Creating job # "+`(nj+1)`)
 
             # Prepare configuration file
 
