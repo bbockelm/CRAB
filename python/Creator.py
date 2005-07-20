@@ -20,6 +20,7 @@ class Creator(Actor):
         self.ncjobs = 0                  # nb of jobs to be created
         self.total_number_of_events = 0
         self.job_number_of_events = 0
+        self.first_event = 0
         
         #
 
@@ -77,25 +78,102 @@ class Creator(Actor):
         """
 
         try:
+            self.first_event = self.cfg_params['USER.first_event']
+        except KeyError:
+            self.first_event = 0
+
+        maxEvents = int(self.job_type.maxEvents)
+
+        if self.first_event>=maxEvents:
+            raise CrabException('First event is bigger than maximum number of available events!')
+
+        try:
             n = self.cfg_params['USER.total_number_of_events']
             if n == 'all': n = '-1'
-            self.total_number_of_events = int(n)
+            self.total_number_of_events = (maxEvents - self.first_event)
         except KeyError:
-            self.total_number_of_events = -1
-            pass
-        
-        try:
-            n = self.cfg_params['USER.job_number_of_events']
-            self.job_number_of_events = int(n)
-        except KeyError:
-            msg = 'Warning. '
-            msg += 'Number of events per job is not defined by user.\n'
-            msg += 'Set to the total number of events.'
-            common.logger.message(msg)
-            self.job_number_of_events = self.total_number_of_events
+            common.logger.message("total_number_of_events not defined, set it to maximum available")
+            self.total_number_of_events = (maxEvents - self.first_event)
             pass
 
-        self.total_njobs = int((self.total_number_of_events-1)/self.job_number_of_events)+1
+        eventPerJob=0
+        try:
+            eventPerJob = self.cfg_params['USER.job_number_of_events']
+        except KeyError:
+            pass
+        
+        jobsPerTask=0
+        try:
+            jobsPerTask = int(self.cfg_params['USER.total_number_of_jobs'])
+        except KeyError:
+            pass
+
+        # If both the above set, complain and use event per jobs
+        if eventPerJob>0 and jobsPerTask>0:
+            msg = 'Warning. '
+            msg += 'job_number_of_events and total_number_of_jobs are both defined '
+            msg += 'Using job_number_of_events.'
+            common.logger.message(msg)
+            jobsPerTask = 0 
+        if eventPerJob==0 and jobsPerTask==0:
+            msg = 'Warning. '
+            msg += 'job_number_of_events and total_number_of_jobs are not defined '
+            msg += 'Creating just one job for all events.'
+            common.logger.message(msg)
+            jobsPerTask = 1 
+
+        # first case: events per job defined
+        
+        if eventPerJob>0:
+            n=eventPerJob
+            if n == 'all' or n == '-1' or (int(n)>self.total_number_of_events and self.total_number_of_events>0):
+                common.logger.message("Asking more events than available: set it to maximum available")
+                self.job_number_of_events = self.total_number_of_events
+            else:
+                self.job_number_of_events = int(n)
+        # second case: jobs per task defined
+        elif jobsPerTask>0:
+            common.logger.debug(5,"total number of events: "+str(self.total_number_of_events)+" JobPerTask "+str(jobsPerTask))
+            self.job_number_of_events = int((self.total_number_of_events-1)/jobsPerTask)+1
+        # should not happen...
+        else:
+            raise CrabException('Somthing wrong with splitting')
+
+        common.logger.debug(5,"total number of events: "+str(self.total_number_of_events)+
+            " events per job: "+str(self.job_number_of_events))
+        if self.job_number_of_events==-1:
+            self.total_njobs = 1
+        if self.total_number_of_events!=-1:
+            self.total_njobs = int((self.total_number_of_events-1)/self.job_number_of_events)+1
+        else:
+            self.total_njobs = (maxEvents-1)/int(self.job_number_of_events)+1
+        return
+
+    def writeJobsSpecsToDB(self):
+        """
+        Write firstEvent and maxEvents in the DB for future use
+        """
+
+        common.jobDB.load()
+        # case one: write first and max events
+        nJobs=self.nJobs()
+
+        firstEvent=self.first_event
+        print firstEvent
+        # last jobs is different...
+        for job in range(nJobs-1):
+            common.jobDB.setFirstEvent(job, firstEvent)
+            common.jobDB.setMaxEvents(job, self.job_number_of_events)
+            firstEvent=firstEvent+self.job_number_of_events
+
+        # this is the last job
+        common.jobDB.setFirstEvent(nJobs-1, firstEvent)
+        common.jobDB.setMaxEvents(nJobs-1, self.total_number_of_events-self.first_event-firstEvent)
+    
+        common.jobDB.save()
+
+        # case two (to be implemented) write eventCollections for each jobs
+
         return
 
     def nJobs(self):

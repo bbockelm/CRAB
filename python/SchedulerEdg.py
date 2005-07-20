@@ -69,6 +69,83 @@ class SchedulerEdg(Scheduler):
         txt += 'echo "CE = $CE"\n'
         return txt
 
+    def listMatch(self, nj):
+        """
+        Check the compatibility of available resources
+        """
+        jdl = common.job_list[nj].jdlFilename()
+        edg_ui_cfg_opt = ''
+        if self.edg_config:
+          edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
+        if self.edg_config_vo: 
+          edg_ui_cfg_opt += ' --config-vo ' + self.edg_config_vo + ' '
+        cmd = 'edg-job-list-match ' + edg_ui_cfg_opt + jdl 
+        myCmd = os.popen(cmd)
+        cmd_out = myCmd.readlines()
+        myCmd.close()
+        return self.parseListMatch_(cmd_out, jdl)
+
+    def parseListMatch_(self, out, jdl):
+        reComment = re.compile( r'^\**$' )
+        reEmptyLine = re.compile( r'^$' )
+        reVO = re.compile( r'Selected Virtual Organisation name.*' )
+        reCE = re.compile( r'CEId' )
+        reNO = re.compile( r'No Computing Element matching' )
+        reRB = re.compile( r'Connecting to host' )
+        next = 0
+        CEs=[]
+        Match=0
+        for line in out:
+            line = line.strip()
+            #print line
+            if reComment.match( line ): 
+                next = 0
+                continue
+            if reEmptyLine.match(line):
+                continue
+            if reVO.match( line ):
+                VO =line.split()[6]
+                common.logger.debug(5, 'VO           :'+VO)
+                pass
+            if reRB.match( line ):
+                RB =line.split()[3]
+                common.logger.debug(5, 'Using RB     :'+RB)
+                pass
+            if reCE.search( line ):
+                next = 1
+                continue
+            if next:
+                CE=line.split(':')[0]
+                CEs.append(CE)
+                common.logger.debug(5, 'Matched CE   :'+CE)
+                Match=Match+1
+                pass 
+            if reNO.match( line ):
+                common.logger.debug(5,line)
+                self.noMatchFound_(jdl)
+                Match=0
+                pass
+        return Match
+
+    def noMatchFound_(self, jdl):
+        reReq = re.compile( r'Requirements' )
+        reString = re.compile( r'"\S*"' )
+        f = file(jdl,'r')
+        for line in f.readlines():
+            line= line.strip()
+            if reReq.match(line):
+                for req in reString.findall(line):
+                    if re.search("VO",req):
+                        common.logger.message( "SW required: "+req)
+                        continue
+                    if re.search('"\d+',req):
+                        common.logger.message("Other req  : "+req)
+                        continue
+                    common.logger.message( "CE required: "+req)
+                break
+            pass
+        raise CrabException("No compatible resources found!")
+
     def submit(self, nj):
         """
         Submit one EDG job.
@@ -125,7 +202,8 @@ class SchedulerEdg(Scheduler):
         Get output for a finished job with id.
         Returns the name of directory with results.
         """
-        cmd = 'edg-job-get-output --dir ' + common.work_space.resDir() +' '+id
+
+        cmd = 'edg-job-get-output --dir ' + common.work_space.resDir() + ' ' + id
         cmd_out = runCommand(cmd)
 
         # Determine the output directory name

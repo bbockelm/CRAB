@@ -8,6 +8,7 @@ from JobDB import JobDB
 from JobList import JobList
 from Creator import Creator
 from Submitter import Submitter
+from Checker import Checker
 import common
 
 import sys, os, time, string
@@ -18,8 +19,8 @@ class Crab:
 
         # The order of main_actions is important !
         self.main_actions = [ '-create', '-submit', '-monitor' ]
-        self.aux_actions = [ '-list', '-kill', '-status', '-retrieve',
-                             '-resubmit' ]
+        self.aux_actions = [ '-list', '-kill', '-status', '-getoutput',
+                             '-resubmit' , '-cancelAndResubmit', '-check']
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -289,31 +290,72 @@ class Crab:
             pass
         return
 
-    def parseRange_(self, val):
+    def parseRange_(self, aRange):
         """
-        Wrapper around crab_util.parseRange2().
-        Parses 'val':
-        ----------+------------
-        val       |  returns
-        ----------+------------
-        'n'          [n-1]
-        'n1-n2'      [n1-1, n1, n1+1, ... n2-1]
-        'n1,n2-n3'   [n1-1, n2-1, n2, n2+1, ..., n3-1]
-        'all'        [0, 1, ..., njobs-1]
-        None         [0, 1, ..., njobs-1]
-        ----------+------------
+        Takes as the input a string with a range defined in any of the following
+        way, including combination, and return a tuple with the ints defined
+        according to following table. A consistency check is done.
+        NB: the first job is "1", not "0".
+        'all'       -> [1,2,..., NJobs]
+        ''          -> [1,2,..., NJobs]
+        'n1'        -> [n1]
+        'n1-n2'     -> [n1, n1+1, n1+2, ..., n2-1, n2]
+        'n1,n2'     -> [n1, n2]
+        'n1,n2-n3'  -> [n1, n2, n2+1, n2+2, ..., n3-1, n3]
         """
-        if val == 'all': val = None
-        if val:
-            nj_list = parseRange2(val)
-            for i in range(len(nj_list)):
-                nj_list[i] -= 1   # internal job numbering is from 0
-                pass
+        result = []
+ 
+        if aRange=='all' or aRange==None:
+            result=range(0,common.jobDB.nJobs())
+            return result
+
+        subRanges = string.split(aRange, ',')
+        for subRange in subRanges:
+            result = result+self.parseSimpleRange_(subRange)
+
+        if self.checkUniqueness_(result):
+            return result
+        else:
+            print "Error ", result
+            return []
+
+    def checkUniqueness_(self, list):
+        """
+        check if a list cntains only unique elements
+        """
+
+        uniqueList = []
+        # use a list comprehension statement (takes a while to understand) 
+
+        [uniqueList.append(it) for it in list if not uniqueList.count(it)]
+
+        return (len(list)==len(uniqueList))
+
+    def parseSimpleRange_(self, aRange):
+        """
+        Takes as the input a string with two integers separated by
+        the minus sign and returns the tuple with these numbers:
+        'n1-n2' -> [n1, n1+1, n1+2, ..., n2-1, n2]
+        'n1'    -> [n1]
+        """
+        (start, end) = (None, None)
+        
+        result = []
+        minus = string.find(aRange, '-')
+        if ( minus < 0 ):
+            if isInt(aRange) and int(aRange)>0:
+                result.append(int(aRange)-1)
+            else:
+                print "ERROR ",aRange
             pass
         else:
-            nj_list = range(common.jobDB.nJobs())
-            pass
-        return nj_list
+            (start, end) = string.split(aRange, '-')
+            if isInt(start) and isInt(end) and int(start)>0 and int(start)<int(end):
+                result=range(int(start)-1, int(end))
+            else:
+                print "ERROR ", start, end
+
+        return result
 
     def initializeActions_(self, opts):
         """
@@ -333,6 +375,7 @@ class Crab:
                     else:
                         msg = 'Bad creation bunch size <'+str(val)+'>\n'
                         msg += '      Must be an integer or "all"'
+                        msg += '      Generic range is not allowed"'
                         raise CrabException(msg)
                     pass
                 else: ncjobs = 'all'
@@ -350,6 +393,7 @@ class Crab:
                         pass
 
                     # Create and initialize JobList
+                    creator.writeJobsSpecsToDB()
 
                     common.job_list = JobList(common.jobDB.nJobs(),
                                               creator.jobType())
@@ -407,12 +451,15 @@ class Crab:
                 pass
 
             elif ( opt == '-list' ):
-                print common.jobDB
+                jobs = self.parseRange_(val)
+
+                common.jobDB.dump(jobs)
                 pass
 
             elif ( opt == '-status' ):
-                nj_list = self.parseRange_(val)
-                for nj in nj_list:
+                jobs = self.parseRange_(val)
+
+                for nj in jobs:
                     st = common.jobDB.status(nj)
                     if st == 'S':
                         jid = common.jobDB.jobId(nj)
@@ -426,8 +473,9 @@ class Crab:
                 pass
             
             elif ( opt == '-kill' ):
-                nj_list = self.parseRange_(val)
-                for nj in nj_list:
+                jobs = self.parseRange_(val)
+
+                for nj in jobs:
                     st = common.jobDB.status(nj)
                     if st == 'S':
                         jid = common.jobDB.jobId(nj)
@@ -440,9 +488,10 @@ class Crab:
                 common.jobDB.save()
                 pass
 
-            elif ( opt == '-retrieve' ):
-                nj_list = self.parseRange_(val)
-                for nj in nj_list:
+            elif ( opt == '-getoutput' ):
+                jobs = self.parseRange_(val)
+
+                for nj in jobs:
                     st = common.jobDB.status(nj)
                     if st == 'S':
                         jid = common.jobDB.jobId(nj)
@@ -450,40 +499,41 @@ class Crab:
                         common.jobDB.setStatus(nj, 'Y')
 
                         # Rename the directory with results to smth readable
-                        new_dir = common.work_space.resDir()+'%06d'%(nj+1)
+                        new_dir = common.work_space.resDir()
                         try:
-                            os.rename(dir, new_dir)
+                            files = os.listdir(dir)
+                            for file in files:
+                                os.rename(dir+'/'+file, new_dir+'/'+file)
+                            os.rmdir(dir)
                         except OSError, e:
-                            msg = 'rename('+dir+', '+new_dir+') error: '
+                            msg = 'rename files from '+dir+' to '+new_dir+' error: '
                             msg += str(e)
                             common.logger.message(msg)
                             # ignore error
                             pass
+                        
 
                         msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
                         common.logger.message(msg)
                         pass
+                    else:
+                        common.logger.message('Jobs #'+`(nj+1)`+' has status '+st)
                     pass
 
                 common.jobDB.save()
                 pass
 
             elif ( opt == '-resubmit' ):
-                nj_list = self.parseRange_(val)
+                jobs = self.parseRange_(val)
 
-                # Cancel submitted jobs.
+                # create a list of jobs to be resubmitted.
 
-                for nj in nj_list:
+                nj_list = []
+                for nj in jobs:
                     st = common.jobDB.status(nj)
-                    if st == 'S':
-                        jid = common.jobDB.jobId(nj)
-                        common.scheduler.cancel(jid)
-                        st = 'K'
-                        common.jobDB.setStatus(nj, st)
-                        pass
-                    pass
 
-                # Submit again
+                    if st != 'X': nj_list.append(nj)
+                    pass
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
@@ -499,6 +549,59 @@ class Crab:
                     pass
                 pass
             
+            elif ( opt == '-cancelAndResubmit' ):
+                jobs = self.parseRange_(val)
+
+                # Cancel submitted jobs.
+
+                nj_list = []
+                for nj in jobs:
+                    st = common.jobDB.status(nj)
+                    if st == 'S':
+                        jid = common.jobDB.jobId(nj)
+                        common.scheduler.cancel(jid)
+                        st = 'K'
+                        common.jobDB.setStatus(nj, st)
+                        pass
+                    pass
+
+                    if st != 'X': nj_list.append(nj)
+                    pass
+
+                if len(nj_list) != 0:
+                    # Instantiate Submitter object
+                    self.actions[opt] = Submitter(self.cfg_params, nj_list)
+
+                    # Create and initialize JobList
+
+                    if len(common.job_list) == 0 :
+                        common.job_list = JobList(common.jobDB.nJobs(),
+                                                  None)
+                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                        pass
+                    pass
+                pass
+            
+            elif ( opt == '-check' ):
+                jobs = self.parseRange_(val)
+                nj_list = []
+                for nj in jobs:
+                    st = common.jobDB.status(nj)
+                    if st != 'C': nj_list.append(nj)
+                    pass
+
+                if len(nj_list) != 0:
+                    # Instantiate Submitter object
+                    self.actions[opt] = Checker(self.cfg_params, nj_list)
+
+                    # Create and initialize JobList
+
+                    if len(common.job_list) == 0 :
+                        common.job_list = JobList(common.jobDB.nJobs(), None)
+                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                        pass
+                    pass
+
             elif ( opt == '-monitor' ):
                 # TODO
                 if val and ( isInt(val) ):

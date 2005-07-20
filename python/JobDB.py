@@ -8,11 +8,20 @@ class dbEntry:
     def __init__(self):
         self.status = 'X'     # job status
         self.jid = ''         # scheduler job id
+        self.firstEvent = 0   # first event for this job
+        self.maxEvents = 0    # last event for this job
+        self.collections = [] # EvCollection to be analyzed in this job
         return
 
     def __str__(self):
         txt  = 'Status <' + self.status + '>; '
         txt += 'Job Id <' + self.jid + '>\n'
+        if self.maxEvents!=0:
+            txt += 'FirstEvent <' + str(self.firstEvent) + '>\n'
+            txt += 'MaxEvents <' + str(self.maxEvents) + '>\n'
+        if len(self.collections)>0:
+            txt += 'Collections <' + self.collections + '>\n'
+
         return txt
 
 class JobDB:
@@ -33,6 +42,15 @@ class JobDB:
             pass
         return txt
 
+    def dump(self, jobs):
+        njobs = len(jobs)
+        if njobs == 1: plural = ''
+        else:          plural = 's'
+        print 'Listing %d job%s:\n' % (njobs, plural)
+        for job in jobs:
+            print string.strip(('Job %03d' % (job+1)) + ': ' + str(self._jobs[job]))
+            pass
+
     def nJobs(self):
         return len(self._jobs)
 
@@ -48,6 +66,8 @@ class JobDB:
             self._jobs.append(dbEntry())
             pass
 
+        common.logger.debug(5,'Created DB for '+str(njobs)+' jobs')
+
         self.save()
         return
 
@@ -57,6 +77,9 @@ class JobDB:
             db_file.write(`(i+1)`+';')
             db_file.write(self._jobs[i].status+';')
             db_file.write(self._jobs[i].jid+';')
+            db_file.write(str(self._jobs[i].firstEvent)+';')
+            db_file.write(str(self._jobs[i].maxEvents)+';')
+            db_file.write(str(self._jobs[i].collections)+';')
             db_file.write('\n')
             pass
         db_file.close()
@@ -67,7 +90,7 @@ class JobDB:
         db_file = open(self._dir+self._db_fname, 'r')
         for line in db_file:
             db_entry = dbEntry()
-            (n, db_entry.status, db_entry.jid, rest) = string.split(line, ';')
+            (n, db_entry.status, db_entry.jid, db_entry.firstEvent, db_entry.maxEvents, db_entry.collections, rest) = string.split(line, ';')
             self._jobs.append(db_entry)
             pass
         db_file.close()
@@ -86,3 +109,24 @@ class JobDB:
     
     def jobId(self, nj):
         return self._jobs[nj].jid
+
+    def setFirstEvent(self, nj, firstEvent):
+        self._jobs[nj].firstEvent = firstEvent
+        return
+    
+    def firstEvent(self, nj):
+        return self._jobs[nj].firstEvent
+
+    def setMaxEvents(self, nj, MaxEvents):
+        self._jobs[nj].maxEvents = MaxEvents
+        return
+    
+    def maxEvents(self, nj):
+        return self._jobs[nj].maxEvents
+
+    def setCollections(self, nj, Collections):
+        self._jobs[nj].Collections = Collections
+        return
+    
+    def collections(self, nj):
+        return self._jobs[nj].collections

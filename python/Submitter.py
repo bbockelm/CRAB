@@ -14,6 +14,12 @@ class Submitter(Actor):
         """
 
         common.logger.debug(5, "Submitter::run() called")
+        
+        # run a list-match on first job
+        firstJob=self.nj_list[0]
+        match = common.scheduler.listMatch(firstJob)
+
+        common.logger.message("Found compatible resources")
 
         # Loop over jobs
 

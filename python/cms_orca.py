@@ -5,27 +5,23 @@ from crab_util import *
 import common
 import PubDB
 import orcarcBuilder
+import codePreparator
 
 import os, string, re
 
 class Orca(JobType):
     def __init__(self, cfg_params):
         JobType.__init__(self, 'ORCA')
+        common.logger.debug(3,'ORCA::__init__')
 
         self.analisys_common_info = {}
 
-        try:
-            self.build = cfg_params['USER.build_mode']
-        except KeyError:
-            self.build = 'tgz'
-            pass
-        
-        self.tgz_name = 'default.tgz'
-        self.tgzNameWithPath = None
 
         log = common.logger
+        code = codePreparator.codePreparator(cfg_params)
         
         scramArea = ''
+
         try:
             scramArea = os.environ["LOCALRT"]
         except KeyError:
@@ -36,7 +32,7 @@ class Orca(JobType):
         log.debug(6, "Orca::Orca(): SCRAM area is "+scramArea)
 
         try:
-            self.version = self.findSwVersion_(scramArea)
+            self.version = code.findSwVersion_(scramArea)
             log.debug(6, "Orca::Orca(): version = "+self.version)
             self.owner = cfg_params['USER.owner']
             log.debug(6, "Orca::Orca(): owner = "+self.owner)
@@ -104,7 +100,7 @@ class Orca(JobType):
 
         try:
             self.total_number_of_events = int(cfg_params['USER.total_number_of_events'])
-            self.job_number_of_events = int(cfg_params['USER.job_number_of_events'])
+        #    self.job_number_of_events = int(cfg_params['USER.job_number_of_events'])
         except KeyError:
             msg = 'Must define total_number_of_events and job_number_of_events'
             raise CrabException(msg)
@@ -115,7 +111,7 @@ class Orca(JobType):
             self.first = 0
             pass
         log.debug(6, "Orca::Orca(): total number of events = "+`self.total_number_of_events`)
-        log.debug(6, "Orca::Orca(): events per job = "+`self.job_number_of_events`)
+        #log.debug(6, "Orca::Orca(): events per job = "+`self.job_number_of_events`)
         log.debug(6, "Orca::Orca(): first event = "+`self.first`)
         
         self.maxEvents=0 # max events available in any PubDB
@@ -123,9 +119,8 @@ class Orca(JobType):
           
         self.checkNevJobs()
 
-        self.prepareTgz_()
+        self.tgzNameWithPath = code.prepareTgz_(self.executable)
 
-        common.analisys_common_info = self.analisys_common_info # TODO: ???
         return
 
     def wsSetupEnvironment(self, nj):
@@ -176,9 +171,6 @@ class Orca(JobType):
         Put in the script the commands to build an executable
         or a library.
         """
-        if self.build != 'tgz':
-            msg = 'USER. Unknown build_mode '+self.build
-            raise CrabException(msg)
 
         txt = ""
 
@@ -224,13 +216,13 @@ class Orca(JobType):
             raise CrabException(msg)
 
 
-        # Check if job_number_of_events>total_number_of_events, in case warning and set =
-        if self.job_number_of_events>self.total_number_of_events:
-            msg='Asking '+str(self.job_number_of_events)+' per job but only '+str(self.total_number_of_events)+' in total: '
-            msg=msg+'setting job_number_of_events to '+str(self.total_number_of_events)
-            common.logger.message(msg)
-            self.job_number_of_events=self.total_number_of_events
-            pass
+        # # Check if job_number_of_events>total_number_of_events, in case warning and set =
+        # if self.job_number_of_events>self.total_number_of_events:
+        #     msg='Asking '+str(self.job_number_of_events)+' per job but only '+str(self.total_number_of_events)+' in total: '
+        #     msg=msg+'setting job_number_of_events to '+str(self.total_number_of_events)
+        #     common.logger.message(msg)
+        #     self.job_number_of_events=self.total_number_of_events
+        #     pass
 
         return
 
@@ -328,109 +320,17 @@ class Orca(JobType):
             raise CrabException(msg)
 
         common.logger.debug(6, "List of CEs: "+str(ces))
-        self.analisys_common_info['sites']=ces
+        common.analisys_common_info['sites']=ces
 
         return
-
-    def findSwVersion_(self, path):
-        """ Find Sw version using proper scram env """
-        scramEnvFile = path+"/.SCRAM/Environment"
-        reVer = re.compile(r'SCRAM_PROJECTVERSION')
-
-        try:
-            for line in open(scramEnvFile, "r").readlines():
-                if reVer.match(line):
-                    ver = string.strip(string.split(line, '=')[1])
-                    return ver
-                pass
-            pass
-        except IOError, e:
-            msg = 'Cannot find SCRAM project version:\n'
-            msg += str(e)
-            raise CrabException(msg)
-        return
-        
-    def prepareTgz_(self):
- 
-        self.tgzNameWithPath = common.work_space.shareDir()+self.tgz_name
-
-        if os.path.exists(self.tgzNameWithPath):
-            scramArea = os.environ["LOCALRT"]
-            n = len(string.split(scramArea, '/'))
-            swVersion = self.findSwVersion_(scramArea)
-            self.analisys_common_info['sw_version'] = swVersion
-            return
-
-        # Prepare a tar gzipped file with user binaries.
-
-        # First of all declare the user Scram area
-        try:
-          scramArea = os.environ["LOCALRT"]
-          #print scramArea,'\n'
-          n = len(string.split(scramArea, '/'))
-          swVersion = self.findSwVersion_(scramArea)
-          #print swVersion,'\n'
-          self.analisys_common_info['sw_version'] = swVersion
-          swArea = os.environ["CMS_PATH"]
-          #print swArea,'\n'
-  #        swArea = "/opt/exp_software/cms"
-          if scramArea.find(swArea) == -1:
-              # Calculate length of scram dir to extract software version
-              crabArea = os.getcwd()
-              os.chdir(scramArea)
-
-## SL use SCRAM_ARCH instead of Linux__2.4
-              if os.environ.has_key('SCRAM_ARCH'):
-                scramArch = os.environ["SCRAM_ARCH"]
-              else:
-                scramArch = 'Linux__2.4'
-              #print scramArch,'\n'
-        #      libDir = 'lib/'+scramArch+'/'
-              libDir = ''
-              binDir = 'bin/'+scramArch+'/'
-
-
-              exe = binDir + self.executable
-### here assume that executable is in user directory
-              #print '##'+exe+'##\n'
-              if os.path.isfile(exe):
-                  cmd = 'ldd ' + exe + ' | grep ' + scramArea
-                  myCmd = os.popen(cmd)
-                  tarcmd = 'tar zcvf ' + self.tgzNameWithPath + ' ' 
-                  for line in (myCmd):
-                      line = string.split(line, '=>')
-                      lib = 'lib/' + scramArch + '/' + string.strip(line[0]) + ' '
-                      tarcmd = tarcmd + lib
-                  status = myCmd.close()
-                  tarcmd = tarcmd + ' ' + exe
-                  cout = runCommand(tarcmd)
-              else:
-### If not, check if it's standard
-
-                cmd = 'which ' + self.executable
-                myCmd = os.popen(cmd)
-                exe = string.strip(myCmd.readline()[0:-1])
-                #print '##'+exe+'##\n'
-                status = myCmd.close()
-                if not os.path.isfile(exe):
-                  raise common.InternalError(__name__,'prepareTgz','User executable not found')
-                #os.system('touch '+common.tgzNameWithPath)
-              os.chdir(crabArea)
-          else:
-              cmd = 'which ' + self.executable
-              cout = runCommand(cmd)
-              if not cout:
-                  raise common.InternalError(__name__,'prepareTgz','Executable not found')
-        except KeyError:
-          raise common.InternalError(__name__,'prepareTgz','Undefined SCRAM area')
-        pass
 
     def nJobs(self):
         # TODO: should not be here !
         # JobType should have no internal knowledge about submitted jobs
         # One possibility is to use len(common.job_list).
         """ return the number of job to be created """
-        return int((self.total_number_of_events-1)/self.job_number_of_events)+1
+        return len(common.job_list)
+        #return int((self.total_number_of_events-1)/self.job_number_of_events)+1
 
     def prepareSteeringCards(self):
         """
@@ -481,14 +381,17 @@ class Orca(JobType):
         infile =  open(common.work_space.shareDir()+self.cardsBaseName(), 'r')
         outfile = open(common.job_list[nj].configFilename(),'w')  
         ### job splitting      
-        Nev_job = self.job_number_of_events
+        firstEvent = common.jobDB.firstEvent(nj)
+        maxEvents = common.jobDB.maxEvents(nj)
+        #Nev_job = self.job_number_of_events
         outfile.write('InputCollections=/System/'+self.owner+'/'+self.dataset+'/'+self.dataset+'\n')
-        outfile.write('FirstEvent = '+ str(self.first + (nj*Nev_job)) +'\n')
+        outfile.write('FirstEvent = '+ str(firstEvent) +'\n')
         
-        if nj==(self.nJobs()-1):
-          Nev_job=self.total_number_of_events - (self.first + (nj*Nev_job))
+        # # how to check that this is the last job, so the number of events to be analyzed is different?
+        # if nj==(self.nJobs()-1):
+        #   Nev_job=self.total_number_of_events - (self.first + (nj*Nev_job))
 
-        outfile.write('MaxEvents = '+str(Nev_job)+'\n')
+        outfile.write('MaxEvents = '+str(maxEvents)+'\n')
 
         if len(self.output_file)>0 :
           for i in range(len(self.output_file)): 
