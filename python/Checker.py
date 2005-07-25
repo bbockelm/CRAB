@@ -19,7 +19,10 @@ class Checker(Actor):
 
         # run a list-match on first job
         for nj in self.nj_list:
-            common.scheduler.listMatch(nj)
+            match = common.scheduler.listMatch(nj)
+            flag = ''
+            if not match: flag=' NOT '
+            common.logger.message("Job #"+str(nj+1)+" does "+flag+" matches resources")
             pass
 
         return

@@ -181,10 +181,11 @@ class Creator(Actor):
         common.jobDB.setMaxEvents(nJobs-1, lastJobsNumberOfEvents)
     
         common.logger.message('Created '+str(self.total_njobs-1)+' jobs for '+str(self.job_number_of_events)+' each plus 1 for '+str(lastJobsNumberOfEvents)+' for a total of '+str(self.job_number_of_events*(self.total_njobs-1)+lastJobsNumberOfEvents)+' events')
-        common.jobDB.save()
 
         # case two (to be implemented) write eventCollections for each jobs
 
+        # save the DB
+        common.jobDB.save()
         return
 
     def nJobs(self):
@@ -248,6 +249,18 @@ class Creator(Actor):
             os.chmod(common.job_list[nj].scriptFilename(), 0744)
 
             common.jobDB.setStatus(nj, 'C')
+            # common: write input and output sandbox
+            common.jobDB.setInputSandbox(nj, self.job_type.inputSandbox(nj))
+
+            outputSandbox=self.job_type.outputSandbox(nj)
+            stdout=common.job_list[nj].stdout()
+            stderr=common.job_list[nj].stderr()
+            outputSandbox.append(common.job_list[nj].stdout())
+            # check if out!=err
+            if stdout != stderr:
+                outputSandbox.append(common.job_list[nj].stderr())
+            common.jobDB.setOutputSandbox(nj, outputSandbox)
+
             njc = njc + 1
             pass
 

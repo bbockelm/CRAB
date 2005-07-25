@@ -39,6 +39,15 @@ class WorkSpace:
             pass
         return
 
+    def delete(self):
+        """
+        delete the whole workspace without doing any test!!!
+        """
+        if os.path.exists(self._top_dir):
+            shutil.rmtree(self._top_dir)
+            pass
+        return
+
     def topDir(self):
         return self._top_dir + '/'
 

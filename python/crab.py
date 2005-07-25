@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.2
 from crab_help import *
 from crab_util import *
 from crab_exceptions import *
@@ -9,6 +9,8 @@ from JobList import JobList
 from Creator import Creator
 from Submitter import Submitter
 from Checker import Checker
+from PostMortem import PostMortem
+from Status import Status
 import common
 
 import sys, os, time, string
@@ -18,9 +20,9 @@ class Crab:
     def __init__(self, opts):
 
         # The order of main_actions is important !
-        self.main_actions = [ '-create', '-submit', '-monitor' ]
+        self.main_actions = [ '-create', '-submit', '-monitor' ] 
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput',
-                             '-resubmit' , '-cancelAndResubmit', '-check']
+                             '-resubmit' , '-cancelAndResubmit', '-check', '-postMortem', '-clean']
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -80,7 +82,13 @@ class Crab:
 
         if not self.flag_continue:
             self.createWorkingSpace_()
-            common.work_space.saveConfiguration(opts, self.cfg_fname)
+            optsToBeSaved={}
+            for it in opts.keys():
+                if (it in self.main_actions) or (it in self.aux_actions) or (it == '-debug'):
+                    pass
+                else:
+                    optsToBeSaved[it]=opts[it]
+            common.work_space.saveConfiguration(optsToBeSaved, self.cfg_fname)
             pass
 
         # At this point all configuration options have been read.
@@ -305,8 +313,11 @@ class Crab:
         """
         result = []
  
-        if aRange=='all' or aRange==None:
+        common.logger.debug(5,"parseRange_ "+str(aRange))
+        if aRange=='all' or aRange==None or aRange=='':
             result=range(0,common.jobDB.nJobs())
+            return result
+        elif aRange=='0':
             return result
 
         subRanges = string.split(aRange, ',')
@@ -321,7 +332,7 @@ class Crab:
 
     def checkUniqueness_(self, list):
         """
-        check if a list cntains only unique elements
+        check if a list contains only unique elements
         """
 
         uniqueList = []
@@ -346,7 +357,7 @@ class Crab:
             if isInt(aRange) and int(aRange)>0:
                 result.append(int(aRange)-1)
             else:
-                print "ERROR ",aRange
+                common.logger.message("parseSimpleRange_ ERROR "+aRange)
             pass
         else:
             (start, end) = string.split(aRange, '-')
@@ -393,7 +404,6 @@ class Crab:
                         pass
 
                     # Create and initialize JobList
-                    creator.writeJobsSpecsToDB()
 
                     common.job_list = JobList(common.jobDB.nJobs(),
                                               creator.jobType())
@@ -401,40 +411,13 @@ class Crab:
                     common.job_list.setScriptNames(self.job_type_name+'.sh')
                     common.job_list.setJDLNames(self.job_type_name+'.jdl')
                     creator.jobType().setSteeringCardsNames()
+
+                    creator.writeJobsSpecsToDB()
                     pass
                 pass
 
             elif ( opt == '-submit' ):
                 nj_list = self.parseRange_(val)
-                #if val:
-                #    if ( isInt(val) ):
-                #        nsjobs = int(val)
-                #    elif ( val == 'all'):
-                #        nsjobs = val
-                #    else:
-                #        msg = 'Bad submission bunch size <'+str(val)+'>\n'
-                #        msg += '      Must be an integer or "all"'
-                #        raise CrabException(msg)
-                #    pass
-                #else: nsjobs = 'all'
-
-                ## Create a list with numbers of jobs to be submitted
-
-                #total_njobs = common.jobDB.nJobs()
-                #if total_njobs == 0 :
-                #    msg = '\nNo created jobs found.\n'
-                #    msg += "Maybe you forgot '-create' or '-continue' ?\n"
-                #    raise CrabException(msg)
-
-                #if nsjobs == 'all': nsjobs = total_njobs
-                #if nsjobs > total_njobs : nsjobs = total_njobs
-
-                #nj_list = []
-                #for nj in range(total_njobs):
-                #    if len(nj_list) >= nsjobs : break
-                #    st = common.jobDB.status(nj)
-                #    if st == 'C': nj_list.append(nj)
-                #    pass
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
@@ -459,34 +442,30 @@ class Crab:
             elif ( opt == '-status' ):
                 jobs = self.parseRange_(val)
 
-                for nj in jobs:
-                    st = common.jobDB.status(nj)
-                    if st == 'S':
-                        jid = common.jobDB.jobId(nj)
-                        st = common.scheduler.queryStatus(jid)
-                        print 'Job %03d:'%(nj+1),st
-                        pass
-                    else:
-                        print 'Job %03d:'%(nj+1),crabJobStatusToString(st)
-                        pass
+                if len(jobs) != 0:
+                    # Instantiate Submitter object
+                    self.actions[opt] = Status(self.cfg_params, jobs)
                     pass
                 pass
             
             elif ( opt == '-kill' ):
-                jobs = self.parseRange_(val)
+                if val:
+                    jobs = self.parseRange_(val)
 
-                for nj in jobs:
-                    st = common.jobDB.status(nj)
-                    if st == 'S':
-                        jid = common.jobDB.jobId(nj)
-                        common.logger.message("Killing job # "+`(nj+1)`)
-                        common.scheduler.cancel(jid)
-                        common.jobDB.setStatus(nj, 'K')
+                    for nj in jobs:
+                        st = common.jobDB.status(nj)
+                        if st == 'S':
+                            jid = common.jobDB.jobId(nj)
+                            common.logger.message("Killing job # "+`(nj+1)`)
+                            common.scheduler.cancel(jid)
+                            common.jobDB.setStatus(nj, 'K')
+                            pass
                         pass
-                    pass
 
-                common.jobDB.save()
-                pass
+                    common.jobDB.save()
+                    pass
+                else:
+                    common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
 
             elif ( opt == '-getoutput' ):
                 jobs = self.parseRange_(val)
@@ -495,29 +474,34 @@ class Crab:
                     st = common.jobDB.status(nj)
                     if st == 'S':
                         jid = common.jobDB.jobId(nj)
-                        dir = common.scheduler.getOutput(jid)
-                        common.jobDB.setStatus(nj, 'Y')
+                        currStatus = common.scheduler.queryStatus(jid)
+                        if currStatus=="Done":
+                            dir = common.scheduler.getOutput(jid)
+                            common.jobDB.setStatus(nj, 'Y')
 
-                        # Rename the directory with results to smth readable
-                        new_dir = common.work_space.resDir()
-                        try:
-                            files = os.listdir(dir)
-                            for file in files:
-                                os.rename(dir+'/'+file, new_dir+'/'+file)
-                            os.rmdir(dir)
-                        except OSError, e:
-                            msg = 'rename files from '+dir+' to '+new_dir+' error: '
-                            msg += str(e)
-                            common.logger.message(msg)
-                            # ignore error
-                            pass
+                            # Rename the directory with results to smth readable
+                            new_dir = common.work_space.resDir()
+                            try:
+                                files = os.listdir(dir)
+                                for file in files:
+                                    os.rename(dir+'/'+file, new_dir+'/'+file)
+                                os.rmdir(dir)
+                            except OSError, e:
+                                msg = 'rename files from '+dir+' to '+new_dir+' error: '
+                                msg += str(e)
+                                common.logger.message(msg)
+                                # ignore error
+                                pass
                         
 
-                        msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
-                        common.logger.message(msg)
+                            msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
+                            common.logger.message(msg)
+                        else:
+                            msg = 'Job # '+`(nj+1)`+' submitted but still status '+currStatus+' not possible to get output'
+                            common.logger.message(msg)
                         pass
                     else:
-                        common.logger.message('Jobs #'+`(nj+1)`+' has status '+st)
+                        common.logger.message('Jobs #'+`(nj+1)`+' has status '+st+' not possible to get output')
                     pass
 
                 common.jobDB.save()
@@ -532,8 +516,29 @@ class Crab:
                 for nj in jobs:
                     st = common.jobDB.status(nj)
 
-                    if st != 'X': nj_list.append(nj)
+                    if st in ['C','K','A']:
+                        nj_list.append(nj)
+                    elif st == 'Y':
+                        # here I would like to move the old output to a new place
+                        # I would need the name of the output files.
+                        # these infos are in the jobType class, which is not accessible from here!
+                        outSandbox = common.jobDB.outputSandbox(nj)
+                        
+                        resDir = common.work_space.resDir()
+                        resDirSave = resDir + self.current_time
+                        os.mkdir(resDirSave)
+                        
+                        for file in outSandbox:
+                            if os.path.exists(resDir+'/'+file):
+                                os.rename(resDir+'/'+file, resDirSave+'/'+file)
+                                common.logger.message('Output file '+file+' moved to '+resDirSave)
+                        pass
+                        
+                        
+                    else:
+                        common.logger.message('Job #'+str(nj+1)+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                     pass
+                    raise CrabException('resubmit')
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
@@ -602,22 +607,60 @@ class Crab:
                         pass
                     pass
 
-            elif ( opt == '-monitor' ):
-                # TODO
-                if val and ( isInt(val) ):
-                    common.delay = val
-                else:
-                    common.delay = 60
+            elif ( opt == '-postMortem' ):
+                jobs = self.parseRange_(val)
+                nj_list = []
+                for nj in jobs:
+                    st = common.jobDB.status(nj)
+                    if st in ['Y','A']: nj_list.append(nj)
                     pass
-                common.autoretrieve = 1
+
+                if len(nj_list) != 0:
+                    # Instantiate Submitter object
+                    self.actions[opt] = PostMortem(self.cfg_params, nj_list)
+
+                    # Create and initialize JobList
+
+                    if len(common.job_list) == 0 :
+                        common.job_list = JobList(common.jobDB.nJobs(), None)
+                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                        pass
+                    pass
+
+            elif ( opt == '-clean' ):
+                if val != None:
+                    raise CrabException("No range allowed for '-clean'")
+                
+                submittedJobs=0
+                for nj in range(0,common.jobDB.nJobs()):
+                    st = common.jobDB.status(nj)
+                    if st == 'S':
+                        submittedJobs = submittedJobs+1
+                    pass
+
+                if submittedJobs:
+                    raise CrabException("There are still "+str(submittedJobs)+" jobs submitted. Kill them before '-clean'")
+
+                msg = 'directory '+common.work_space.topDir()+' removed'
+                common.work_space.delete()
+                common.logger.message(msg)
+
                 pass
-            
+
             pass
         return
 
     def createWorkingSpace_(self):
-        new_dir = common.prog_name + '_' + self.name + '_' + self.current_time
-        new_dir = self.cwd + new_dir
+        new_dir = ''
+
+        try:
+            new_dir = self.cfg_params['USER.ui_working_dir']
+        except KeyError:
+            new_dir = common.prog_name + '_' + self.name + '_' + self.current_time
+            new_dir = self.cwd + new_dir
+            pass
+        print new_dir
+
         common.work_space = WorkSpace(new_dir)
         common.work_space.create()
         return

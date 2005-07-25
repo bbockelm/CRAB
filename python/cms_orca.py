@@ -88,11 +88,12 @@ class Orca(JobType):
             pass
         log.debug(6, "Orca::Orca(): data tiers = "+str(self.dataTiers))
 
+        self.additional_inbox_files = []
         try:
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
             for tmp in tmpAddFiles:
                 tmp=string.strip(tmp)
-                common.additional_inbox_files.append(tmp)
+                self.additional_inbox_files.append(tmp)
                 pass
             pass
         except KeyError:
@@ -115,7 +116,7 @@ class Orca(JobType):
         log.debug(6, "Orca::Orca(): first event = "+`self.first`)
         
         self.maxEvents=0 # max events available in any PubDB
-        self.connectPubDB()
+        self.connectPubDB(cfg_params)
           
         self.checkNevJobs()
 
@@ -226,7 +227,7 @@ class Orca(JobType):
 
         return
 
-    def connectPubDB(self):
+    def connectPubDB(self, cfg_params):
 
         fun = "Orca::connectPubDB()"
         
@@ -253,18 +254,23 @@ class Orca(JobType):
             try:
                 self.pubdb = PubDB.PubDB(self.owner,
                                          self.dataset,
-                                         self.dataTiers)
+                                         self.dataTiers,
+                                         cfg_params)
             except PubDB.RefDBError:
                 msg = 'ERROR ***: accessing PubDB'
                 raise CrabException(msg)
 
-            self.pubDBResults = self.pubdb.getAllPubDBsInfo()
+            self.CollIDs = self.pubdb.findAllCollections()
+            self.SelectPubDBURLs=self.pubdb.findPubDBs(self.CollIDs)
+            self.pubDBResults = self.pubdb.getAllPubDBData(self.CollIDs,self.SelectPubDBURLs)
+            #self.pubDBResults = self.pubdb.getAllPubDBsInfo()
+
             if len(self.pubDBResults)==0:
                 msg = 'Owner Dataset not published with asked dataTiers! '+\
                       self.owner+' '+ self.dataset+' '+self.dataTiers
                 raise CrabException(msg)
 
-            common.logger.debug(6, fun+": PubDB info ("+`len(self.pubDBResults)`+"):\n")
+            common.logger.debug(6, fun+": PubDB info ("+`len(self.pubDBResults)`+"):\/")
             for aa in self.pubDBResults:
                 for bb in aa:
                     common.logger.debug(6, str(bb))
@@ -305,7 +311,7 @@ class Orca(JobType):
             PubDBSummaryFile.close()
 
             # for o in self.allOrcarcs:
-            #   o.dump()
+            #     o.dump()
             pass
 
         # build a list of sites
@@ -421,15 +427,18 @@ class Orca(JobType):
         Returns a list of filenames to be put in JDL input sandbox.
         """
         inp_box = []
+        ## code
         self.tgz = self.tgzNameWithPath
         if os.path.isfile(self.tgz):
             inp_box.append(self.tgz)
-        #else:
-           #print 'tgz not found!!!'
+        ## orcarc
         for o in self.allOrcarcs:
           for f in o.fileList():
             inp_box.append(common.work_space.jobDir()+f)
+        ## config
         inp_box.append(common.job_list[nj].configFilename())
+        ## additional input files
+        inp_box = inp_box + self.additional_inbox_files
         return inp_box
 
 ### and of output_sandbox
@@ -439,7 +448,14 @@ class Orca(JobType):
         """
         out_box = []
 
+        ## User Declared output files
         if len(self.output_file_num)>0 :
           for out in self.output_file_num:
             out_box.append(self.version+'/'+out)
         return out_box
+
+    def stdOut(self):
+        return self.stdOut_
+
+    def stdErr(self):
+        return self.stdErr_

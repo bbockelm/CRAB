@@ -6,11 +6,13 @@ import os, string
 
 class dbEntry:
     def __init__(self):
-        self.status = 'X'     # job status
-        self.jid = ''         # scheduler job id
-        self.firstEvent = 0   # first event for this job
-        self.maxEvents = 0    # last event for this job
-        self.collections = [] # EvCollection to be analyzed in this job
+        self.status = 'X'       # job status
+        self.jid = ''           # scheduler job id
+        self.firstEvent = 0     # first event for this job
+        self.maxEvents = 0      # last event for this job
+        self.collections = []   # EvCollection to be analyzed in this job
+        self.inputSandbox = []  # InputSandbox
+        self.outputSandbox = [] # OutputSandbox
         return
 
     def __str__(self):
@@ -20,7 +22,7 @@ class dbEntry:
             txt += 'FirstEvent <' + str(self.firstEvent) + '>\n'
             txt += 'MaxEvents <' + str(self.maxEvents) + '>\n'
         if len(self.collections)>0:
-            txt += 'Collections <' + self.collections + '>\n'
+            txt += 'Collections <' + str(self.collections) + '>\n'
 
         return txt
 
@@ -80,6 +82,8 @@ class JobDB:
             db_file.write(str(self._jobs[i].firstEvent)+';')
             db_file.write(str(self._jobs[i].maxEvents)+';')
             db_file.write(str(self._jobs[i].collections)+';')
+            db_file.write(str(self._jobs[i].inputSandbox)+';')
+            db_file.write(str(self._jobs[i].outputSandbox)+';')
             db_file.write('\n')
             pass
         db_file.close()
@@ -90,11 +94,17 @@ class JobDB:
         db_file = open(self._dir+self._db_fname, 'r')
         for line in db_file:
             db_entry = dbEntry()
-            (n, db_entry.status, db_entry.jid, db_entry.firstEvent, db_entry.maxEvents, db_entry.collections, rest) = string.split(line, ';')
+            (n, db_entry.status, db_entry.jid, db_entry.firstEvent, db_entry.maxEvents, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , rest) = string.split(line, ';')
+            db_entry.collections = self.strToList_(collectionsTMP)
+            db_entry.inputSandbox = self.strToList_(inputSandboxTMP)
+            db_entry.outputSandbox = self.strToList_(outputSandboxTMP)
             self._jobs.append(db_entry)
             pass
         db_file.close()
         return
+    
+    def strToList_(self, list):
+        return string.split(string.replace(list[1:-1],"'",""),',')  
     
     def setStatus(self, nj, status):
         self._jobs[nj].status = status
@@ -130,3 +140,17 @@ class JobDB:
     
     def collections(self, nj):
         return self._jobs[nj].collections
+
+    def setInputSandbox(self, nj, InputSandbox):
+        self._jobs[nj].inputSandbox = InputSandbox
+        return
+    
+    def inputSandbox(self, nj):
+        return self._jobs[nj].inputSandbox
+
+    def setOutputSandbox(self, nj, OutputSandbox):
+        self._jobs[nj].outputSandbox = OutputSandbox
+        return
+    
+    def outputSandbox(self, nj):
+        return self._jobs[nj].outputSandbox

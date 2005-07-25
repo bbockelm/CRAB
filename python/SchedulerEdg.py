@@ -69,6 +69,21 @@ class SchedulerEdg(Scheduler):
         txt += 'echo "CE = $CE"\n'
         return txt
 
+    def loggingInfo(self, nj):
+        """
+        retrieve the logging info from logging and bookkeeping and return it
+        """
+        id = common.jobDB.jobId(nj)
+        edg_ui_cfg_opt = ''
+        if self.edg_config:
+          edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
+        cmd = 'edg-job-get-logging-info -v 2 ' + edg_ui_cfg_opt + id
+        print cmd
+        myCmd = os.popen(cmd)
+        cmd_out = myCmd.readlines()
+        myCmd.close()
+        return cmd_out
+
     def listMatch(self, nj):
         """
         Check the compatibility of available resources
@@ -104,7 +119,7 @@ class SchedulerEdg(Scheduler):
             if reEmptyLine.match(line):
                 continue
             if reVO.match( line ):
-                VO =line.split()[6]
+                VO =line.split()[-1]
                 common.logger.debug(5, 'VO           :'+VO)
                 pass
             if reRB.match( line ):
@@ -276,12 +291,10 @@ class SchedulerEdg(Scheduler):
         #if common.use_jam:
         #   inp_box = inp_box+' "'+common.bin_dir+'/'+common.run_jam+'",'
 
-        # ??? Should be local, i.e. self.additional_inbox_files
-        #     and filled in ctor from cfg_params
-        #for addFile in common.additional_inbox_files:
-        #    addFile = os.path.abspath(addFile)
-        #    inp_box = inp_box+' "'+addFile+'",'
-        #    pass
+        for addFile in jbt.additional_inbox_files:
+            addFile = os.path.abspath(addFile)
+            inp_box = inp_box+' "'+addFile+'",'
+            pass
 
         if inp_box[-1] == ',' : inp_box = inp_box[:-1]
         inp_box = inp_box + ' };\n'
@@ -290,23 +303,13 @@ class SchedulerEdg(Scheduler):
         jdl.write('StdOutput     = "' + job.stdout() + '";\n')
         jdl.write('StdError      = "' + job.stderr() + '";\n')
 
-
-### SL check if stdout==stderr: in case put just one in the out_box
-        if job.stdout() == job.stderr():
-          out_box = 'OutputSandbox = { "' + \
-                    job.stdout() + '", ".BrokerInfo",'
-        else:
-          out_box = 'OutputSandbox = { "' + \
-                    job.stdout() + '", "' + \
-                    job.stderr() + '", ".BrokerInfo",'
-          pass
-
         #if common.flag_return_data :
         #    for fl in job.outputDataFiles():
         #        out_box = out_box + ' "' + fl + '",'
         #        pass
         #    pass
 
+        out_box = 'OutputSandbox = { '
         if out_sandbox != None:
             for fl in out_sandbox:
                 out_box = out_box + ' "' + fl + '",'
