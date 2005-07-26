@@ -18,15 +18,16 @@ class Submitter(Actor):
         # run a list-match on first job
         firstJob=self.nj_list[0]
         match = common.scheduler.listMatch(firstJob)
-
-        common.logger.message("Found compatible resources")
-
+        if match:
+            common.logger.message("Found compatible resources "+str(match))
+        else:
+            raise CrabException("No compatible resources found!")
         # Loop over jobs
 
         njs = 0
         for nj in self.nj_list:
             st = common.jobDB.status(nj)
-            if st != 'C' and st != 'K':
+            if st != 'C' and st != 'K' and st != 'A':
                 long_st = crabJobStatusToString(st)
                 msg = "Job # %d is not submitted: status %s"%(nj+1, long_st)
                 common.logger.message(msg)

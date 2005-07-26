@@ -44,10 +44,6 @@ class Status(Actor):
             self.countToTjob = self.countToTjob + 1
             jid = common.jobDB.jobId(nj)
             if st == 'S':
-                # st = common.scheduler.queryStatus(jid)
-                # if st == 'Aborted':
-                #      common.jobDB.setStatus(nj, 'A')
-                # #print 'Job %03d:'%(nj+1),st,jid
                 result = self.getJobStatus_(jid, 'status')
                 self.processResult_(nj, result)
                 print 'Job %03d:'%(nj+1),jid,result
@@ -56,6 +52,8 @@ class Status(Actor):
                 print 'Job %03d:'%(nj+1),jid,crabJobStatusToString(st)
                 pass
             pass
+
+        common.jobDB.save()
 
         self.Report_()
         pass
@@ -88,7 +86,7 @@ class Status(Actor):
                 self.countRun = self.countRun + 1
                 #statistic.notify('checkstatus',resFlag,'-----',dataset,owner,destination,broker,ID3,ID1,NJC)
             elif result == 'Aborted':
-                #job.setStatus('A')
+                common.jobDB.setStatus(nj, 'A')
                 #job.saveJobStatus()
                 #statistic.notify('checkstatus',resFlag,'abort',dataset,owner,destination,broker,ID3,ID1,NJC)
                 pass
@@ -105,8 +103,6 @@ class Status(Actor):
                 self.countCleared = self.countCleared + 1
         except UnboundLocalError:
             common.logger.message('ERROR: UnboundLocalError with ')
-
-        common.jobDB.save()
 
     def Report_(self) :
 

@@ -538,7 +538,6 @@ class Crab:
                     else:
                         common.logger.message('Job #'+str(nj+1)+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                     pass
-                    raise CrabException('resubmit')
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
