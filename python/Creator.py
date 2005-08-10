@@ -83,6 +83,7 @@ class Creator(Actor):
             self.first_event = 0
         common.logger.debug(1,"First event ot be analyzed: "+str(self.first_event))
 
+        # TODO Could we find a better way to get this number?
         maxAvailableEvents = int(self.job_type.maxEvents)
         common.logger.debug(1,"Available events: "+str(maxAvailableEvents))
 

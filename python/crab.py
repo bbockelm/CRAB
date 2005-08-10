@@ -94,14 +94,21 @@ class Crab:
         # At this point all configuration options have been read.
         
         args = string.join(sys.argv,' ')
+
         self.updateHistory_(args)
+
         self.createLogger_(args)
+
         common.jobDB = JobDB()
+            
+
         if self.flag_continue:
             common.jobDB.load()
             common.logger.debug(6, str(common.jobDB))
             pass
+
         self.createScheduler_()
+
         if common.logger.debugLevel() >= 6:
             common.logger.debug(6, 'Used properties:')
             keys = self.cfg_params.keys()
@@ -508,48 +515,58 @@ class Crab:
                 pass
 
             elif ( opt == '-resubmit' ):
-                jobs = self.parseRange_(val)
+                if val:
+                    jobs = self.parseRange_(val)
 
-                # create a list of jobs to be resubmitted.
+                    # create a list of jobs to be resubmitted.
 
-                nj_list = []
-                for nj in jobs:
-                    st = common.jobDB.status(nj)
+                    nj_list = []
+                    for nj in jobs:
+                        st = common.jobDB.status(nj)
 
-                    if st in ['C','K','A']:
-                        nj_list.append(nj)
-                    elif st == 'Y':
-                        # here I would like to move the old output to a new place
-                        # I would need the name of the output files.
-                        # these infos are in the jobType class, which is not accessible from here!
-                        outSandbox = common.jobDB.outputSandbox(nj)
-                        
-                        resDir = common.work_space.resDir()
-                        resDirSave = resDir + self.current_time
-                        os.mkdir(resDirSave)
-                        
-                        for file in outSandbox:
-                            if os.path.exists(resDir+'/'+file):
-                                os.rename(resDir+'/'+file, resDirSave+'/'+file)
-                                common.logger.message('Output file '+file+' moved to '+resDirSave)
+                        if st in ['K','A']:
+                            nj_list.append(nj)
+                        elif st == 'Y':
+                            # here I would like to move the old output to a new place
+                            # I would need the name of the output files.
+                            # these infos are in the jobType class, which is not accessible from here!
+                            outSandbox = common.jobDB.outputSandbox(nj)
+                            
+                            resDir = common.work_space.resDir()
+                            resDirSave = resDir + self.current_time
+                            os.mkdir(resDirSave)
+                            
+                            for file in outSandbox:
+                                if os.path.exists(resDir+'/'+file):
+                                    os.rename(resDir+'/'+file, resDirSave+'/'+file)
+                                    common.logger.message('Output file '+file+' moved to '+resDirSave)
+                            pass
+                            nj_list.append(nj)
+                        elif st == 'D':
+                            ## Done but not yet retrieved
+                            ## retrieve job, then go to previous ('Y') case
+                            ## TODO
+                            pass
+                        else:
+                            common.logger.message('Job #'+str(nj+1)+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                         pass
-                        
-                        
-                    else:
-                        common.logger.message('Job #'+str(nj+1)+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
+
+                    if len(nj_list) != 0:
+                        # Instantiate Submitter object
+                        self.actions[opt] = Submitter(self.cfg_params, nj_list)
+
+                        # Create and initialize JobList
+
+                        if len(common.job_list) == 0 :
+                            common.job_list = JobList(common.jobDB.nJobs(),
+                                                      None)
+                            common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                            pass
+                        pass
                     pass
-
-                if len(nj_list) != 0:
-                    # Instantiate Submitter object
-                    self.actions[opt] = Submitter(self.cfg_params, nj_list)
-
-                    # Create and initialize JobList
-
-                    if len(common.job_list) == 0 :
-                        common.job_list = JobList(common.jobDB.nJobs(),
-                                                  None)
-                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                        pass
+                else:
+                    common.logger.message("Warning: with '-resubmit' you _MUST_ specify a job range or 'all'")
+                    common.logger.message("WARNING: _all_ job specified in the rage will be resubmitted!!!")
                     pass
                 pass
             
@@ -611,7 +628,7 @@ class Crab:
                 nj_list = []
                 for nj in jobs:
                     st = common.jobDB.status(nj)
-                    if st in ['Y','A']: nj_list.append(nj)
+                    if st in ['Y','A','D']: nj_list.append(nj)
                     pass
 
                 if len(nj_list) != 0:
@@ -631,14 +648,25 @@ class Crab:
                     raise CrabException("No range allowed for '-clean'")
                 
                 submittedJobs=0
+                doneJobs=0
                 for nj in range(0,common.jobDB.nJobs()):
                     st = common.jobDB.status(nj)
                     if st == 'S':
                         submittedJobs = submittedJobs+1
+                    if st == 'D':
+                        doneJobs = doneJobs+1
                     pass
+                pass
 
-                if submittedJobs:
-                    raise CrabException("There are still "+str(submittedJobs)+" jobs submitted. Kill them before '-clean'")
+                if submittedJobs or doneJobs:
+                    msg = "There are still "
+                    if submittedJobs:
+                        msg= msg+str(submittedJobs)+" jobs submitted. Kill them '-kill' before '-clean'"
+                    if (submittedJobs and doneJobs):
+                        msg = msg + "and \nalso"
+                    if doneJobs:
+                        msg= msg+str(doneJobs)+" jobs Done. Get their outputs '-getoutput' before '-clean'"
+                    raise CrabException(msg)
 
                 msg = 'directory '+common.work_space.topDir()+' removed'
                 common.work_space.delete()
@@ -658,7 +686,6 @@ class Crab:
             new_dir = common.prog_name + '_' + self.name + '_' + self.current_time
             new_dir = self.cwd + new_dir
             pass
-        print new_dir
 
         common.work_space = WorkSpace(new_dir)
         common.work_space.create()
@@ -749,14 +776,17 @@ class Crab:
 ###########################################################################
 def processHelpOptions(opts):
 
-    for opt in opts.keys():
-        if opt == '-v':
-            print Crab.version()
-            return 1
-        if opt in ('-h','-help','--help') :
-            if opts[opt] : help(opts[opt])
-            else:          help()
-            return 1
+    if len(opts):
+        for opt in opts.keys():
+            if opt in ('-v', '-version', '--version') :
+                print Crab.version()
+                return 1
+            if opt in ('-h','-help','--help') :
+                if opts[opt] : help(opts[opt])
+                else:          help()
+                return 1
+    else:
+        usage()
 
     return 0
 
@@ -770,7 +800,7 @@ if __name__ == '__main__':
 
     # Process "help" options, such as '-help', '-version'
 
-    if processHelpOptions(options): sys.exit(0)
+    if processHelpOptions(options) : sys.exit(0)
 
     # Create, initialize, and run a Crab object
 

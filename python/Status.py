@@ -49,7 +49,7 @@ class Status(Actor):
                 print 'Job %03d:'%(nj+1),jid,result
                 pass
             else:
-                print 'Job %03d:'%(nj+1),jid,crabJobStatusToString(st)
+                print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st)
                 pass
             pass
 
@@ -71,10 +71,14 @@ class Status(Actor):
         destination =  self.hstates['destination'].split(":")[0]
         resFlag = 0
         #######################################################################################
+        
+        ### TODO: set relevant status also to DB
+
         try: 
             if result == 'Done': 
                 self.countDone = self.countDone + 1
                 exCode = self.hstates['exit_code']
+                common.jobDB.setStatus(nj, 'D')
                 #statistic.notify('checkstatus',resFlag,exCode,dataset,owner,destination,broker,ID3,ID1,NJC)
             elif result == 'Ready':
                 self.countReady = self.countReady + 1
@@ -91,6 +95,7 @@ class Status(Actor):
                 #statistic.notify('checkstatus',resFlag,'abort',dataset,owner,destination,broker,ID3,ID1,NJC)
                 pass
             elif result == 'Cancelled':
+                common.jobDB.setStatus(nj, 'K')
                 #job.setStatus('K')
                 #job.saveJobStatus()
                 #statistic.notify('checkstatus',resFlag,'cancel',dataset,owner,destination,broker,ID3,ID1,NJC)

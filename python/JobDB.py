@@ -91,7 +91,11 @@ class JobDB:
 
     def load(self):
         self._jobs = []
-        db_file = open(self._dir+self._db_fname, 'r')
+        try:
+            db_file = open(self._dir+self._db_fname, 'r')
+        except IOError:
+            raise CrabException("Something really serious! no JobDB is present!!!")
+
         for line in db_file:
             db_entry = dbEntry()
             (n, db_entry.status, db_entry.jid, db_entry.firstEvent, db_entry.maxEvents, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , rest) = string.split(line, ';')

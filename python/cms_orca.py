@@ -266,8 +266,7 @@ class Orca(JobType):
             #self.pubDBResults = self.pubdb.getAllPubDBsInfo()
 
             if len(self.pubDBResults)==0:
-                msg = 'Owner Dataset not published with asked dataTiers! '+\
-                      self.owner+' '+ self.dataset+' '+self.dataTiers
+                msg = 'Owner Dataset not published with asked dataTiers! '+self.owner+' '+ self.dataset+' '+str(self.dataTiers)
                 raise CrabException(msg)
 
             common.logger.debug(6, fun+": PubDB info ("+`len(self.pubDBResults)`+"):\/")
@@ -364,6 +363,10 @@ class Orca(JobType):
                        outfile.write(inline[i])
            else:
               continue
+
+        ## TODO put now all cards which are common to all jobs 
+        ##   (like TFileAdaptor or Monalisa-related stuff)
+
         infile.close()
         outfile.close()
         return

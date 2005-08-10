@@ -134,6 +134,7 @@ def crabJobStatusToString(crab_status):
     Convert one-letter crab job status into more readable string.
     """
     if   crab_status == 'C': status = 'Created'
+    elif crab_status == 'D': status = 'Done'
     elif crab_status == 'S': status = 'Submitted'
     elif crab_status == 'K': status = 'Killed'
     elif crab_status == 'X': status = 'None'

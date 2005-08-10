@@ -70,7 +70,7 @@ class PubDB:
                 CEBlackList.append(tmp)
         except KeyError:
             pass
-        #print 'CEBlackList: ',CEBlackList
+        print 'CEBlackList: ',CEBlackList
         self.reCEBlackList=[]
         for bad in CEBlackList:
             self.reCEBlackList.append(re.compile( bad ))
@@ -197,22 +197,20 @@ class PubDB:
 #######################################################################
     def checkBlackList(self, pubDBUrls):
         """
-         select PubDB URLs that are at site not exluded by the user (via CE black list) 
+        select PubDB URLs that are at site not excluded by the user (via CE black list) 
         """
         goodurls = []
         for url in pubDBUrls:
-            #print 'connecting to the URL ',url
+            print 'connecting to the URL ',url
             good=1
             for re in self.reCEBlackList:
                 if re.search(url):
-                    print 'CE in black list, skipping PubDB URL ',url
-                good=0
-            if not good: continue
-            goodurls.append(url)
+                    common.logger.message('CE in black list, skipping PubDB URL '+url)
+                    good=0
+                pass
+            if good: goodurls.append(url)
         if len(goodurls) == 0:
-            print "No selected PubDB URLs \n" 
-        else: 
-            print "\n Selected PubDB URLs are ",goodurls,"\n"
+            common.logger.debug(3,"No selected PubDB URLs")
         return goodurls
   
 ########################################################################
