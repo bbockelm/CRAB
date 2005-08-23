@@ -4,6 +4,7 @@ import urllib, urllister
 import urllib2
 import common
 from RefDBInfo import RefDBInfo
+from PubDBInfo import *
 
 # ####################################
 class PubDBError:
