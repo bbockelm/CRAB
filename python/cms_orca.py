@@ -117,6 +117,11 @@ class Orca(JobType):
 
         self.tgzNameWithPath = self.scram.getTarBall(self.executable)
 
+        try:
+            self.ML = int(cfg_params['USER.activate_monalisa'])
+        except KeyError:
+            self.ML = 0
+            pass
         return
 
     def wsSetupEnvironment(self, nj):
@@ -140,9 +145,9 @@ class Orca(JobType):
         txt += "    echo 'Error: Too few arguments' +$narg+ \n"
         txt += "    exit 1\n"
         txt += "fi\n"
-        txt += "NJob = $1\n"
-        txt += "FirstEvent = $2\n"
-        txt += "MaxEvent = $3\n"
+        txt += "NJob=$1\n"
+        txt += "FirstEvent=$2\n"
+        txt += "MaxEvent=$3\n"
         txt += "\n"
 
         # Prepare JobType-specific part
@@ -167,9 +172,6 @@ class Orca(JobType):
         txt += '  mv .orcarc_tmp .orcarc\n'
         txt += '  cp $RUNTIME_AREA/init_$CE.sh init.sh\n'
         txt += 'fi\n'
-        txt += 'echo "***** cat .orcarc *********"\n'
-        txt += 'cat .orcarc\n'
-        txt += 'echo "****** end .orcarc ********"\n'
         txt += '\n'
         txt += 'chmod +x ./init.sh\n'
         txt += './init.sh\n'
@@ -179,8 +181,15 @@ class Orca(JobType):
         txt += '  exit $exitStatus\n'
         txt += 'fi\n'
 
-        txt += 'echo FirstEvent = ${FirstEvent} >> .orcarc\n'
-        txt += 'echo MaxEvent = ${MaxEvent} >> .orcarc\n'
+        txt += 'echo "FirstEvent=$FirstEvent" >> .orcarc\n'
+        txt += 'echo "MaxEvent=$MaxEvent" >> .orcarc\n'
+        if self.ML:
+            txt += 'echo "MonalisaJobId=$NJob" >> .orcarc\n'
+
+        txt += '\n'
+        txt += 'echo "***** cat .orcarc *********"\n'
+        txt += 'cat .orcarc\n'
+        txt += 'echo "****** end .orcarc ********"\n'
         return txt
     
     def wsBuildExe(self, nj):
@@ -490,37 +499,29 @@ class Orca(JobType):
             pass
 
         outfile.write('\n\n##### The following cards have been created by CRAB: DO NOT TOUCH #####\n')
-        ## TODO put now all cards which are common to all jobs 
-        ##   (like TFileAdaptor or Monalisa-related stuff)
         outfile.write('TFileAdaptor = true\n')
 
+        if (self.ML) :
+            outfile.write('MonalisaAddPid = false\n')
+            outfile.write('ExtraPackages=RecApplPlugins\n')
+            outfile.write('MonRecAlisaBuilder=true\n')
+            ## TaskId is username+crab_0_date_time : that should be unique
+            TaskID = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2]
+            outfile.write('MonalisaApplName='+TaskID+'\n')
+            outfile.write('MonalisaNode=192.91.245.5\n')
+            outfile.write('MonalisaPort=58884\n')
+            pass
+
         outfile.write('InputCollections=/System/'+self.owner+'/'+self.dataset+'/'+self.dataset+'\n')
-        # outfile.write('FirstEvent = $FirstEvent\n')
-        # outfile.write('MaxEvents = $MaxEvents\n')
 
         infile.close()
         outfile.close()
         return
     
     def modifySteeringCards(self, nj):
-        # add jobs information to the orcarc card, 
-        # starting from card into share dir 
         """
         Creates steering cards file modifying a template file
         """
-        # infile =  open(common.work_space.shareDir()+self.cardsBaseName(), 'r')
-        # outfile = open(common.job_list[nj].configFilename(),'w')  
-        # ### job splitting      
-        # firstEvent = common.jobDB.firstEvent(nj)
-        # maxEvents = common.jobDB.maxEvents(nj)
-        # #Nev_job = self.job_number_of_events
-        # outfile.write('InputCollections=/System/'+self.owner+'/'+self.dataset+'/'+self.dataset+'\n')
-        # outfile.write('FirstEvent = '+ str(firstEvent) +'\n')
-        # 
-        # outfile.write('MaxEvents = '+str(maxEvents)+'\n')
-
-        # outfile.write(infile.read())
-        # outfile.close()
         return
 
     def cardsBaseName(self):
