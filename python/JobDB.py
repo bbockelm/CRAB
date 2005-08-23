@@ -94,7 +94,7 @@ class JobDB:
         try:
             db_file = open(self._dir+self._db_fname, 'r')
         except IOError:
-            raise CrabException("Something really serious! no JobDB is present!!!")
+            raise DBException("Something really serious! no JobDB is present!!!")
 
         for line in db_file:
             db_entry = dbEntry()

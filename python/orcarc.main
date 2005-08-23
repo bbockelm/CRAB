@@ -9,25 +9,23 @@ CMSRandom:Seeds = 40 3
 # MuonHits*:Request = Auto
 # MuonDigi*:Request = Auto
 
-
-*:Request = DontTouch
+*:Request = ReadOnly
 
 # - switch off access to Hits, Digis, Assocs
-TrackerHits*:Request=Nop 
+TrackerHits*:Request=Nop
 CH:Request=Nop   # Ecal
 HH:Request=Nop   # Hcal
-MuonHits*:Request=Nop 
-TrackerDigi*:Request=Nop   
-TrackerAssoc*:Request=Nop  
+MuonHits*:Request=Nop
+TrackerDigi*:Request=Nop
+TrackerAssoc*:Request=Nop
 CD:Request=Nop   # Ecal dataframes
 HD:Request=Nop   # Hcal dataframes
-#CR:Request=Nop   # Ecal RecHits
-#HR:Request=Nop   # Hcal RecHits
+CR:Request=Nop   # Ecal RecHits
+HR:Request=Nop   # Hcal RecHits
 CS:Request=Nop   # Ecal selective readout
 CT:Request=Nop   # Ecal Trigger towers
 HT:Request=Nop   # Hcal Trigger towers
-MuonDigis*:Request=Nop 
-MuonAssoc*:Request=Nop 
+MuonDigis*:Request=Nop
+MuonAssoc*:Request=Nop
 
-CARFVerbosity = debug
-PersistencyVerbosity = debug
+

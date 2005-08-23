@@ -46,10 +46,18 @@ class Status(Actor):
             if st == 'S':
                 result = self.getJobStatus_(jid, 'status')
                 self.processResult_(nj, result)
-                print 'Job %03d:'%(nj+1),jid,result
+                exit = ''
+                if result == 'Done':
+                    exit = self.getJobStatus_(jid, 'exit_code')
+                    pass
+                print 'Job %03d:'%(nj+1),jid,result,exit
                 pass
             else:
-                print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st)
+                exit = ''
+                if st == 'D':
+                    exit = self.getJobStatus_(jid, 'exit_code')
+                    pass
+                print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
                 pass
             pass
 

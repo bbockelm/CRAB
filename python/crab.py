@@ -100,11 +100,13 @@ class Crab:
         self.createLogger_(args)
 
         common.jobDB = JobDB()
-            
 
         if self.flag_continue:
-            common.jobDB.load()
-            common.logger.debug(6, str(common.jobDB))
+            try:
+                common.jobDB.load()
+                common.logger.debug(6, str(common.jobDB))
+            except DBException,e:
+                pass
             pass
 
         self.createScheduler_()
@@ -165,7 +167,6 @@ class Crab:
 
         if not self.flag_continue: return
 
-        
         if not continue_dir:
             prefix = common.prog_name + '_' + self.name + '_'
             continue_dir = findLastWorkDir(prefix)
@@ -417,7 +418,7 @@ class Crab:
 
                     common.job_list.setScriptNames(self.job_type_name+'.sh')
                     common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                    creator.jobType().setSteeringCardsNames()
+                    common.job_list.setCfgNames(self.job_type_name+'.orcarc')
 
                     creator.writeJobsSpecsToDB()
                     pass
@@ -477,38 +478,48 @@ class Crab:
             elif ( opt == '-getoutput' ):
                 jobs = self.parseRange_(val)
 
+                jobs_done = []
                 for nj in jobs:
                     st = common.jobDB.status(nj)
-                    if st == 'S':
+                    if st == 'D':
+                        jobs_done.append(nj)
+                        pass
+                    elif st == 'S':
                         jid = common.jobDB.jobId(nj)
                         currStatus = common.scheduler.queryStatus(jid)
                         if currStatus=="Done":
-                            dir = common.scheduler.getOutput(jid)
-                            common.jobDB.setStatus(nj, 'Y')
-
-                            # Rename the directory with results to smth readable
-                            new_dir = common.work_space.resDir()
-                            try:
-                                files = os.listdir(dir)
-                                for file in files:
-                                    os.rename(dir+'/'+file, new_dir+'/'+file)
-                                os.rmdir(dir)
-                            except OSError, e:
-                                msg = 'rename files from '+dir+' to '+new_dir+' error: '
-                                msg += str(e)
-                                common.logger.message(msg)
-                                # ignore error
-                                pass
-                        
-
-                            msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
-                            common.logger.message(msg)
+                            jobs_done.append(nj)
                         else:
                             msg = 'Job # '+`(nj+1)`+' submitted but still status '+currStatus+' not possible to get output'
                             common.logger.message(msg)
                         pass
                     else:
                         common.logger.message('Jobs #'+`(nj+1)`+' has status '+st+' not possible to get output')
+                        pass
+                    pass
+
+                for nj in jobs_done:
+                    jid = common.jobDB.jobId(nj)
+                    dir = common.scheduler.getOutput(jid)
+                    common.jobDB.setStatus(nj, 'Y')
+
+                    # Rename the directory with results to smth readable
+                    new_dir = common.work_space.resDir()
+                    try:
+                        files = os.listdir(dir)
+                        for file in files:
+                            os.rename(dir+'/'+file, new_dir+'/'+file)
+                        os.rmdir(dir)
+                    except OSError, e:
+                        msg = 'rename files from '+dir+' to '+new_dir+' error: '
+                        msg += str(e)
+                        common.logger.message(msg)
+                        # ignore error
+                        pass
+                    
+
+                    msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
+                    common.logger.message(msg)
                     pass
 
                 common.jobDB.save()
@@ -542,6 +553,7 @@ class Crab:
                                     common.logger.message('Output file '+file+' moved to '+resDirSave)
                             pass
                             nj_list.append(nj)
+                            st = common.jobDB.setStatus(nj,'C')
                         elif st == 'D':
                             ## Done but not yet retrieved
                             ## retrieve job, then go to previous ('Y') case
@@ -608,7 +620,7 @@ class Crab:
                 nj_list = []
                 for nj in jobs:
                     st = common.jobDB.status(nj)
-                    if st != 'C': nj_list.append(nj)
+                    if st == 'C': nj_list.append(nj)
                     pass
 
                 if len(nj_list) != 0:
@@ -649,14 +661,18 @@ class Crab:
                 
                 submittedJobs=0
                 doneJobs=0
-                for nj in range(0,common.jobDB.nJobs()):
-                    st = common.jobDB.status(nj)
-                    if st == 'S':
-                        submittedJobs = submittedJobs+1
-                    if st == 'D':
-                        doneJobs = doneJobs+1
+                try:
+                    for nj in range(0,common.jobDB.nJobs()):
+                        st = common.jobDB.status(nj)
+                        if st == 'S':
+                            submittedJobs = submittedJobs+1
+                        if st == 'D':
+                            doneJobs = doneJobs+1
+                        pass
                     pass
-                pass
+                except DBException:
+                    common.logger.debug(5,'DB not found, so delete all')
+                    pass
 
                 if submittedJobs or doneJobs:
                     msg = "There are still "

@@ -5,7 +5,8 @@ from crab_util import *
 import common
 import PubDB
 import orcarcBuilder
-import codePreparator
+import orcarcBuilderOld
+import Scram
 
 import os, string, re
 
@@ -16,64 +17,22 @@ class Orca(JobType):
 
         self.analisys_common_info = {}
 
-
         log = common.logger
-        code = codePreparator.codePreparator(cfg_params)
         
+        self.scram = Scram.Scram(cfg_params)
         scramArea = ''
 
-        try:
-            scramArea = os.environ["LOCALRT"]
-        except KeyError:
-            msg = self.name()+' job type cannot be created:\n'
-            msg += '  LOCALRT env variable not set\n'
-            msg += '  Did you do eval `scram runtime ...` from your ORCA area ?\n'
-            raise CrabException(msg)
-        log.debug(6, "Orca::Orca(): SCRAM area is "+scramArea)
+        self.version = self.scram.getSWVersion()
+        common.analisys_common_info['sw_version'] = self.version
 
+        ### collect Data cards
         try:
-            self.version = code.findSwVersion_(scramArea)
-            log.debug(6, "Orca::Orca(): version = "+self.version)
             self.owner = cfg_params['USER.owner']
             log.debug(6, "Orca::Orca(): owner = "+self.owner)
             self.dataset = cfg_params['USER.dataset']
             log.debug(6, "Orca::Orca(): dataset = "+self.dataset)
-            self.executable = cfg_params['USER.executable']
-            log.debug(6, "Orca::Orca(): executable = "+self.executable)
-            self.orcarc_file = cfg_params['USER.orcarc_file']
-            log.debug(6, "Orca::Orca(): orcarc file = "+self.orcarc_file)
-
-            # allow multiple output files
-
-            self.output_file = []
-
-            tmp = cfg_params['USER.output_file']
-            if tmp != '':
-                tmpOutFiles = string.split(cfg_params['USER.output_file'],',')
-                log.debug(7, 'Orca::Orca(): output files '+str(tmpOutFiles))
-                for tmp in tmpOutFiles:
-                    tmp=string.strip(tmp)
-                    self.output_file.append(tmp)
-                    pass
-
-                # output files with num added
-                self.output_file_num = []
-                for tmp in self.output_file:
-                    self.output_file_num.append(tmp)
-                    pass
-                pass
-            pass
-
         except KeyError:
-            msg = self.name()+' job type cannot be created:\n'
-            msg = msg + '   not all mandatory fields present in the'\
-                  ' [USER] section.\n   List of mandatory fields:\n'
-            msg = msg + \
-                  'USER.owner\n'+\
-                  'USER.dataset\n'+\
-                  'USER.executable\n'+\
-                  'USER.orcarc_file\n'+\
-                  'USER.output_file\n'
+            msg = "Error: owner and/or dataset not defined "
             raise CrabException(msg)
 
         self.dataTiers = []
@@ -86,8 +45,45 @@ class Orca(JobType):
             pass
         except KeyError:
             pass
-        log.debug(6, "Orca::Orca(): data tiers = "+str(self.dataTiers))
+        log.debug(6, "Orca::Orca(): dataTiers = "+str(self.dataTiers))
 
+        ## now the application
+        try:
+            self.executable = cfg_params['USER.executable']
+            log.debug(6, "Orca::Orca(): executable = "+self.executable)
+        except:
+            msg = "Error: executable not defined "
+            raise CrabException(msg)
+
+        try:
+            self.orcarc_file = cfg_params['USER.orcarc_file']
+            log.debug(6, "Orca::Orca(): orcarc file = "+self.orcarc_file)
+        except:
+            log.message("Using empty orcarc file")
+            self.orcarc_file = ''
+
+        # output files
+        try:
+            self.output_file = []
+
+            tmp = cfg_params['USER.output_file']
+            if tmp != '':
+                tmpOutFiles = string.split(cfg_params['USER.output_file'],',')
+                log.debug(7, 'Orca::Orca(): output files '+str(tmpOutFiles))
+                for tmp in tmpOutFiles:
+                    tmp=string.strip(tmp)
+                    self.output_file.append(tmp)
+                    pass
+
+            else:
+                log.message("No output file defined: only stdout/err will be available")
+                pass
+            pass
+        except KeyError:
+            log.message("No output file defined: only stdout/err will be available")
+            pass
+
+        ## additional input files
         self.additional_inbox_files = []
         try:
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
@@ -101,7 +97,6 @@ class Orca(JobType):
 
         try:
             self.total_number_of_events = int(cfg_params['USER.total_number_of_events'])
-        #    self.job_number_of_events = int(cfg_params['USER.job_number_of_events'])
         except KeyError:
             msg = 'Must define total_number_of_events and job_number_of_events'
             raise CrabException(msg)
@@ -118,9 +113,9 @@ class Orca(JobType):
         self.maxEvents=0 # max events available in any PubDB
         self.connectPubDB(cfg_params)
           
-        self.checkNevJobs()
+        # [-- self.checkNevJobs() --]
 
-        self.tgzNameWithPath = code.prepareTgz_(self.executable)
+        self.tgzNameWithPath = self.scram.getTarBall(self.executable)
 
         return
 
@@ -133,16 +128,34 @@ class Orca(JobType):
         # Prepare JobType-independent part
         txt = self.wsSetupCMSEnvironment_()
 
+        # Handle the arguments:
+        txt += "\n"
+        txt += "## ARGUMNETS: $1 Job Number\n"
+        txt += "## ARGUMNETS: $2 First Event for this job\n"
+        txt += "## ARGUMNETS: $3 Max Event for this job\n"
+        txt += "\n"
+        txt += "narg=$#\n"
+        txt += "if [ $narg -lt 3 ]\n"
+        txt += "then\n"
+        txt += "    echo 'Error: Too few arguments' +$narg+ \n"
+        txt += "    exit 1\n"
+        txt += "fi\n"
+        txt += "NJob = $1\n"
+        txt += "FirstEvent = $2\n"
+        txt += "MaxEvent = $3\n"
+        txt += "\n"
+
         # Prepare JobType-specific part
+        scram = self.scram.commandName()
         txt += '\n'
-        txt += 'scram project ORCA '+self.version+'\n'
+        txt += scram+' project ORCA '+self.version+'\n'
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
         txt += '   echo "Warning: ORCA '+self.version+' not found on `hostname`" \n'
         txt += '   exit 1 \n'
         txt += 'fi \n'
         txt += 'cd '+self.version+'\n'
-        txt += 'eval `scram runtime -sh`\n'
+        txt += 'eval `'+scram+' runtime -sh`\n'
 
         # Prepare job-specific part
         job = common.job_list[nj]
@@ -165,6 +178,9 @@ class Orca(JobType):
         txt += '  echo "StageIn init script failed!"\n'
         txt += '  exit $exitStatus\n'
         txt += 'fi\n'
+
+        txt += 'echo FirstEvent = ${FirstEvent} >> .orcarc\n'
+        txt += 'echo MaxEvent = ${MaxEvent} >> .orcarc\n'
         return txt
     
     def wsBuildExe(self, nj):
@@ -187,8 +203,8 @@ class Orca(JobType):
             txt += 'fi \n'
             # TODO: what does this code do here ?
             # SL check that lib/Linux__... is present
-            txt += 'mkdir -p lib/Linux__2.4 \n'
-            txt += 'eval `scram runtime -sh`'+'\n'
+            txt += 'mkdir -p lib/${SCRAM_ARCH} \n'
+            txt += 'eval `'+self.scram.commandName()+' runtime -sh`'+'\n'
             pass
 
         return txt
@@ -197,35 +213,16 @@ class Orca(JobType):
         """
         Returns part of a job script which renames the produced files.
         """
+
         txt = '\n'
-        for i in range(len(self.output_file)):
-            txt += 'cp '+self.output_file[i]+' '+self.output_file_num[i]+'\n'
+        for fileWithSuffix in self.output_file:
+            output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
+            txt += 'cp '+fileWithSuffix+' '+output_file_num+'\n'
             pass
         return txt
 
     def executableName(self):
         return self.executable
-
-    def checkNevJobs(self):
-        """Check the number of jobs and num events per job"""
-        
-        # check if total_number_of_events==-1
-        if self.total_number_of_events==-1:
-            self.total_number_of_events=int(self.maxEvents)
-        if self.total_number_of_events==0:
-            msg = 'Max events available is '+str(self.total_number_of_events)
-            raise CrabException(msg)
-
-
-        # # Check if job_number_of_events>total_number_of_events, in case warning and set =
-        # if self.job_number_of_events>self.total_number_of_events:
-        #     msg='Asking '+str(self.job_number_of_events)+' per job but only '+str(self.total_number_of_events)+' in total: '
-        #     msg=msg+'setting job_number_of_events to '+str(self.total_number_of_events)
-        #     common.logger.message(msg)
-        #     self.job_number_of_events=self.total_number_of_events
-        #     pass
-
-        return
 
     def connectPubDB(self, cfg_params):
 
@@ -238,7 +235,7 @@ class Orca(JobType):
             f = open( common.work_space.shareDir()+'PubDBSummaryFile', 'r' )
             for i in f.readlines():
                 a=string.split(i,' ')
-                self.allOrcarcs.append(orcarcBuilder.constructFromFile(a[0:-1]))
+                self.allOrcarcs.append(orcarcBuilderOld.constructFromFile(a[0:-1]))
                 pass
             for o in self.allOrcarcs:
                 # o.dump()
@@ -256,44 +253,69 @@ class Orca(JobType):
                                          self.dataset,
                                          self.dataTiers,
                                          cfg_params)
-            except PubDB.RefDBError:
+            except PubDB.RefDBmapError:
                 msg = 'ERROR ***: accessing PubDB'
                 raise CrabException(msg)
 
-            self.CollIDs = self.pubdb.findAllCollections()
-            self.SelectPubDBURLs=self.pubdb.findPubDBs(self.CollIDs)
-            self.pubDBResults = self.pubdb.getAllPubDBData(self.CollIDs,self.SelectPubDBURLs)
-            #self.pubDBResults = self.pubdb.getAllPubDBsInfo()
+            ## extract info from pubDB (grouped by PubDB version :
+            ##   pubDBData contains a list of info for the new-style PubDBs,
+            ##   and a list of info for the old-style PubDBs )
+            self.pubDBData = self.pubdb.getAllPubDBData()
 
-            if len(self.pubDBResults)==0:
-                msg = 'Owner Dataset not published with asked dataTiers! '+self.owner+' '+ self.dataset+' '+str(self.dataTiers)
+            ## check and exit if no data are published in any PubDB
+            nodata=1
+            for PubDBversion in self.pubDBData.keys():
+                if len(self.pubDBData[PubDBversion])>0:
+                    nodata=0
+            if (nodata):
+                msg = 'Owner '+self.owner+' Dataset '+ self.dataset+ ' not published in any PubDB with asked dataTiers '+string.join(self.dataTiers,'-')+' ! '
                 raise CrabException(msg)
 
-            common.logger.debug(6, fun+": PubDB info ("+`len(self.pubDBResults)`+"):\/")
-            for aa in self.pubDBResults:
-                for bb in aa:
-                    common.logger.debug(6, str(bb))
-                    pass
-                pass
-            common.logger.debug(6, fun+": End of PubDB info\n")
+           ## logging PubDB content for debugging 
+            for PubDBversion in self.pubDBData.keys():
+                common.logger.debug(6, fun+": PubDB "+PubDBversion+" info ("+`len(self.pubDBData[PubDBversion])`+"):\/")
+                for aa in self.pubDBData[PubDBversion]:
+                    common.logger.debug(6, "---------- start of a PubDB")
+                    for bb in aa:
+                        if common.logger.debugLevel() >= 6 :
+                            common.logger.debug(6, str(bb.dump()))
+                            pass
+                        pass
+                common.logger.debug(6, "----------- end of a PubDB")
+            common.logger.debug(6, fun+": End of PubDB "+PubDBversion+" info\n")
 
-            self.builder = orcarcBuilder.orcarcBuilder()
 
+            ## building orcarc : switch between info from old and new-style PubDB
             currDir = os.getcwd()
             os.chdir(common.work_space.jobDir())
-            tmpAllOrcarcs = self.builder.createOrcarcAndInit(self.pubDBResults)
+
+            tmpOrcarcList=[]
+            for PubDBversion in self.pubDBData.keys():
+                if len(self.pubDBData[PubDBversion])>0 :
+                    #print (" PubDB-style : %s"%(PubDBversion))
+                    if PubDBversion=='newPubDB' :
+                        self.builder = orcarcBuilder.orcarcBuilder()
+                    else :
+                        self.builder = orcarcBuilderOld.orcarcBuilderOld()
+                    tmpAllOrcarcs = self.builder.createOrcarcAndInit(self.pubDBData[PubDBversion])
+                    #print "tmpAllOrcarcs", tmpAllOrcarcs  
+                    tmpOrcarcList.append(tmpAllOrcarcs)
+                    #print 'version ',PubDBversion,' tmpAllOrcarcs ', tmpAllOrcarcs
+
+            #print tmpOrcarcList
             os.chdir(currDir)
 
             self.maxEvents=0
-            for o in tmpAllOrcarcs:
-                numEvReq=self.total_number_of_events
-                if ((numEvReq == '-1') | (numEvReq <= o.Nevents)):
-                    self.allOrcarcs.append(o)
-                    if o.Nevents >= self.maxEvents:
-                        self.maxEvents= o.Nevents
+            for tmpAllOrcarcs in tmpOrcarcList:
+                for o in tmpAllOrcarcs:
+                    numEvReq=self.total_number_of_events
+                    if ((numEvReq == '-1') | (numEvReq <= o.Nevents)):
+                        self.allOrcarcs.append(o)
+                        if o.Nevents >= self.maxEvents:
+                            self.maxEvents= o.Nevents
+                            pass
                         pass
                     pass
-                pass
           
             # set maximum number of event available
 
@@ -320,7 +342,7 @@ class Orca(JobType):
             pass
 
         if len(ces)==0:
-            msg = 'No PubDBs publish enough events! '
+            msg = 'No PubDBs publish correct catalogs or enough events! '
             msg += `self.total_number_of_events`
             raise CrabException(msg)
 
@@ -328,6 +350,108 @@ class Orca(JobType):
         common.analisys_common_info['sites']=ces
 
         return
+
+    # def connectPubDB(self, cfg_params):
+
+    #     fun = "Orca::connectPubDB()"
+    #     
+    #     self.allOrcarcs = []
+    #     # first check if the info from PubDB have been already processed
+    #     if os.path.exists(common.work_space.shareDir()+'PubDBSummaryFile') :
+    #         common.logger.debug(6, fun+": info from PubDB has been already processed -- use it")
+    #         f = open( common.work_space.shareDir()+'PubDBSummaryFile', 'r' )
+    #         for i in f.readlines():
+    #             a=string.split(i,' ')
+    #             self.allOrcarcs.append(orcarcBuilder.constructFromFile(a[0:-1]))
+    #             pass
+    #         for o in self.allOrcarcs:
+    #             # o.dump()
+    #             if o.Nevents >= self.maxEvents:
+    #                 self.maxEvents= o.Nevents
+    #                 pass
+    #             pass
+    #         pass
+
+    #     else:  # PubDB never queried
+    #         common.logger.debug(6, fun+": PubDB was never queried -- do it")
+    #         # New PubDB class by SL
+    #         try:
+    #             self.pubdb = PubDB.PubDB(self.owner,
+    #                                      self.dataset,
+    #                                      self.dataTiers,
+    #                                      cfg_params)
+    #         except PubDB.RefDBError:
+    #             msg = 'ERROR ***: accessing PubDB'
+    #             raise CrabException(msg)
+
+    #         self.CollIDs = self.pubdb.findAllCollections()
+    #         self.SelectPubDBURLs=self.pubdb.findPubDBs(self.CollIDs)
+    #         self.pubDBResults = self.pubdb.getAllPubDBData(self.CollIDs,self.SelectPubDBURLs)
+    #         #self.pubDBResults = self.pubdb.getAllPubDBsInfo()
+
+    #         if len(self.pubDBResults)==0:
+    #             msg = 'Owner Dataset not published with asked dataTiers! '+self.owner+' '+ self.dataset+' '+str(self.dataTiers)
+    #             raise CrabException(msg)
+
+    #         common.logger.debug(6, fun+": PubDB info ("+`len(self.pubDBResults)`+"):\/")
+    #         for aa in self.pubDBResults:
+    #             for bb in aa:
+    #                 common.logger.debug(6, str(bb))
+    #                 pass
+    #             pass
+    #         common.logger.debug(6, fun+": End of PubDB info\n")
+
+    #         self.builder = orcarcBuilder.orcarcBuilder()
+
+    #         currDir = os.getcwd()
+    #         os.chdir(common.work_space.jobDir())
+    #         tmpAllOrcarcs = self.builder.createOrcarcAndInit(self.pubDBResults)
+    #         os.chdir(currDir)
+
+    #         self.maxEvents=0
+    #         for o in tmpAllOrcarcs:
+    #             numEvReq=self.total_number_of_events
+    #             if ((numEvReq == '-1') | (numEvReq <= o.Nevents)):
+    #                 self.allOrcarcs.append(o)
+    #                 if o.Nevents >= self.maxEvents:
+    #                     self.maxEvents= o.Nevents
+    #                     pass
+    #                 pass
+    #             pass
+    #       
+    #         # set maximum number of event available
+
+    #         # I save to a file self.allOrcarcs
+    #       
+    #         PubDBSummaryFile = open(common.work_space.shareDir()+'PubDBSummaryFile','w')
+    #         for o in self.allOrcarcs:
+    #             for d in o.content():
+    #                 PubDBSummaryFile.write(d)
+    #                 PubDBSummaryFile.write(' ')
+    #                 pass
+    #             PubDBSummaryFile.write('\n')
+    #             pass
+    #         PubDBSummaryFile.close()
+
+    #         # for o in self.allOrcarcs:
+    #         #     o.dump()
+    #         pass
+
+    #     # build a list of sites
+    #     ces= []
+    #     for o in self.allOrcarcs:
+    #         ces.append(o.CE)
+    #         pass
+
+    #     if len(ces)==0:
+    #         msg = 'No PubDBs publish enough events! '
+    #         msg += `self.total_number_of_events`
+    #         raise CrabException(msg)
+
+    #     common.logger.debug(6, "List of CEs: "+str(ces))
+    #     common.analisys_common_info['sites']=ces
+
+    #     return
 
     def nJobs(self):
         # TODO: should not be here !
@@ -348,36 +472,34 @@ class Orca(JobType):
         except:
           self.orcarc_file = 'empty.orcarc'
           cmd='touch '+self.orcarc_file
-          runCommand(cmd,0)
+          runCommand(cmd)
           infile = open(self.orcarc_file,'r')
             
-        outfile = open(common.work_space.shareDir()+self.cardsBaseName(), 'w')
+        outfile = open(common.work_space.jobDir()+self.name()+'.orcarc', 'w')
            
         inline=infile.readlines()
         ### remove from user card these lines ###
-        for i in range (len(inline)):
-           if string.find(inline[i], 'InputFileCatalogURL') == -1:  
-              if string.find(inline[i], 'InputCollections') == -1:
-                 if string.find(inline[i], 'FirstEvent') == -1: 
-                    if string.find(inline[i], 'MaxEvents') == -1: 
-                       outfile.write(inline[i])
-           else:
-              continue
+        wordRemove=['InputFileCatalogURL', 'InputCollections', 'FirstEvent', 'MaxEvents', 'TFileAdaptor']
+        for line in inline:
+            word = string.strip(string.split(line,'=')[0])
 
+            if word not in wordRemove:
+                outfile.write(line)
+            else:
+                continue
+            pass
+
+        outfile.write('\n\n##### The following cards have been created by CRAB: DO NOT TOUCH #####\n')
         ## TODO put now all cards which are common to all jobs 
         ##   (like TFileAdaptor or Monalisa-related stuff)
+        outfile.write('TFileAdaptor = true\n')
+
+        outfile.write('InputCollections=/System/'+self.owner+'/'+self.dataset+'/'+self.dataset+'\n')
+        # outfile.write('FirstEvent = $FirstEvent\n')
+        # outfile.write('MaxEvents = $MaxEvents\n')
 
         infile.close()
         outfile.close()
-        return
-
-    def setSteeringCardsNames(self):
-        """
-        Generates names for application steering card names,
-        e.g. 'mumu_000002.orcarc' for dataset 'mumu', job 2.
-        """
-
-        common.job_list.setCfgNames(self.dataset+'.orcarc')
         return
     
     def modifySteeringCards(self, nj):
@@ -385,37 +507,20 @@ class Orca(JobType):
         # starting from card into share dir 
         """
         Creates steering cards file modifying a template file
-        taken from RefDB or given by user.
         """
-        infile =  open(common.work_space.shareDir()+self.cardsBaseName(), 'r')
-        outfile = open(common.job_list[nj].configFilename(),'w')  
-        ### job splitting      
-        firstEvent = common.jobDB.firstEvent(nj)
-        maxEvents = common.jobDB.maxEvents(nj)
-        #Nev_job = self.job_number_of_events
-        outfile.write('InputCollections=/System/'+self.owner+'/'+self.dataset+'/'+self.dataset+'\n')
-        outfile.write('FirstEvent = '+ str(firstEvent) +'\n')
-        
-        # # how to check that this is the last job, so the number of events to be analyzed is different?
-        # if nj==(self.nJobs()-1):
-        #   Nev_job=self.total_number_of_events - (self.first + (nj*Nev_job))
+        # infile =  open(common.work_space.shareDir()+self.cardsBaseName(), 'r')
+        # outfile = open(common.job_list[nj].configFilename(),'w')  
+        # ### job splitting      
+        # firstEvent = common.jobDB.firstEvent(nj)
+        # maxEvents = common.jobDB.maxEvents(nj)
+        # #Nev_job = self.job_number_of_events
+        # outfile.write('InputCollections=/System/'+self.owner+'/'+self.dataset+'/'+self.dataset+'\n')
+        # outfile.write('FirstEvent = '+ str(firstEvent) +'\n')
+        # 
+        # outfile.write('MaxEvents = '+str(maxEvents)+'\n')
 
-        outfile.write('MaxEvents = '+str(maxEvents)+'\n')
-
-        if len(self.output_file)>0 :
-          for i in range(len(self.output_file)): 
-            p = string.split(self.output_file[i],".")
-            file = p[0]
-            for x in p[1:-1]:
-               file=file+"."+x
-            if len(p)>1:
-              ext = p[len(p)-1]
-              self.output_file_num[i] = file + "_" +str(nj + 1) + "." + ext
-            else:
-              self.output_file_num[i] = file + "_" +str(nj + 1)
-
-        outfile.write(infile.read())
-        outfile.close()
+        # outfile.write(infile.read())
+        # outfile.close()
         return
 
     def cardsBaseName(self):
@@ -438,6 +543,7 @@ class Orca(JobType):
         for o in self.allOrcarcs:
           for f in o.fileList():
             inp_box.append(common.work_space.jobDir()+f)
+
         ## config
         inp_box.append(common.job_list[nj].configFilename())
         ## additional input files
@@ -451,11 +557,34 @@ class Orca(JobType):
         """
         out_box = []
 
+        stdout=common.job_list[nj].stdout()
+        stderr=common.job_list[nj].stderr()
+        out_box.append(stdout)
+        out_box.append(stderr)
+
         ## User Declared output files
-        if len(self.output_file_num)>0 :
-          for out in self.output_file_num:
-            out_box.append(self.version+'/'+out)
+        for out in self.output_file:
+            out_box.append(self.version+'/'+self.numberFile_(out,str(nj)))
         return out_box
+
+    def numberFile_(self, file, txt):
+        """
+        append _'txt' before last extension of a file
+        """
+        p = string.split(file,".")
+        # take away last extension
+        name = p[0]
+        for x in p[1:-1]:
+           name=name+"."+x
+        # add "_txt"
+        if len(p)>1:
+          ext = p[len(p)-1]
+          result = name + '_' + str(txt) + "." + ext
+        else:
+          result = name + '_' + str(txt)
+        
+        return result
+
 
     def stdOut(self):
         return self.stdOut_

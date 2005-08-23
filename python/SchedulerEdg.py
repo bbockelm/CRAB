@@ -9,6 +9,14 @@ import os, sys, tempfile
 class SchedulerEdg(Scheduler):
     def __init__(self):
         Scheduler.__init__(self,"EDG")
+        self.states = [ "Acl", "cancelReason", "cancelling","ce_node","children", \
+                      "children_hist","children_num","children_states","condorId","condor_jdl", \
+                      "cpuTime","destination", "done_code","exit_code","expectFrom", \
+                      "expectUpdate","globusId","jdl","jobId","jobtype", \
+                      "lastUpdateTime","localId","location", "matched_jdl","network_server", \
+                      "owner","parent_job", "reason","resubmitted","rsl","seed",\
+                      "stateEnterTime","stateEnterTimes","subjob_failed", \
+                      "user tags" , "status" , "status_code","hierarchy"]
         return
 
     def configure(self, cfg_params):
@@ -16,10 +24,16 @@ class SchedulerEdg(Scheduler):
         try: self.edg_ui_cfg = cfg_params["EDG.rb_config"]
         except KeyError: self.edg_ui_cfg = ''
 
-        try: self.edg_config = cfg_params["EDG.config"]
+        try: 
+            self.edg_config = cfg_params["EDG.config"]
+            if not os.path.isfile(self.edg_config):
+                raise CrabException("File EDG.config "+self.edg_config+" does not exist")
         except KeyError: self.edg_config = ''
 
-        try: self.edg_config_vo = cfg_params["EDG.config_vo"]
+        try:
+            self.edg_config_vo = cfg_params["EDG.config_vo"]
+            if not os.path.isfile(self.edg_config_vo):
+                raise CrabException("File EDG.config_vo "+self.edg_config_vo+" does not exist")
         except KeyError: self.edg_config_vo = ''
 
         try: self.LCG_version = cfg_params["EDG.lcg_version"]
@@ -34,13 +48,7 @@ class SchedulerEdg(Scheduler):
         try:
             self.VO = cfg_params['EDG.virtual_organization']
         except KeyError:
-            msg = 'EDG.virtual_organization is mandatory.'
-            raise CrabException(msg)
-
-        
-        #self.scripts_dir = common.bin_dir + '/scripts'
-        #self.cmd_prefix = 'edg'
-        #if common.LCG_version == '0' : self.cmd_prefix = 'dg'
+            self.VO = 'cms'
 
         # Add EDG_WL_LOCATION to the python path
 
@@ -89,6 +97,7 @@ class SchedulerEdg(Scheduler):
         Check the compatibility of available resources
         """
         jdl = common.job_list[nj].jdlFilename()
+        #print ' jdl ',nj, jdl
         edg_ui_cfg_opt = ''
         if self.edg_config:
           edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
@@ -187,24 +196,35 @@ class SchedulerEdg(Scheduler):
             pass
         return jid
 
+    def getExitStatus(self, id):
+        return self.getStatusAttribute_(id, 'exit_code')
     def queryStatus(self, id):
+        return self.getStatusAttribute_(id, 'status')
+
+    def getStatusAttribute_(self, id, attr):
         """ Query a status of the job with id """
-        cmd0 = 'edg-job-status '
-        cmd = cmd0 + id
-        cmd_out = runCommand(cmd)
-        if cmd_out == None:
-            common.logger.message('Error. No output from `'+cmd+'`')
+
+        hstates = {}
+        Status = importName('edg_wl_userinterface_common_LbWrapper', 'Status')
+        # Bypass edg-job-status interfacing directly to C++ API
+        # Job attribute vector to retrieve status without edg-job-status
+        level = 0
+        # Instance of the Status class provided by LB API
+        jobStat = Status()
+        st = 0
+        jobStat.getStatus(id, level)
+        err, apiMsg = jobStat.get_error()
+        if err:
+            print 'Error caught', apiMsg 
+            common.log.message(apiMsg)
             return None
-        # parse output
-        status_prefix = 'Current Status:'
-        status_index = string.find(cmd_out, status_prefix)
-        if status_index == -1:
-            common.logger.message('Error. Bad output of `'+cmd0+'`:\n'+cmd_out)
-            return None
-        status = cmd_out[(status_index+len(status_prefix)):]
-        nl = string.find(status,'\n')
-        status = string.strip(status[0:nl])
-        return status
+        else:
+            for i in range(len(self.states)):
+                #print "states = ", states
+                # Fill an hash table with all information retrieved from LB API
+                hstates[ self.states[i] ] = jobStat.loadStatus(st)[i]
+            result = jobStat.loadStatus(st)[ self.states.index(attr) ]
+            return result
 
     def queryDetailedStatus(self, id):
         """ Query a detailed status of the job with id """
@@ -278,6 +298,10 @@ class SchedulerEdg(Scheduler):
         script = job.scriptFilename()
         jdl.write('Executable = "' + os.path.basename(script) +'";\n')
         jdl.write(jt_string)
+
+        firstEvent = common.jobDB.firstEvent(nj)
+        maxEvents = common.jobDB.maxEvents(nj)
+        jdl.write('Arguments = "' + str(nj+1)+' '+str(firstEvent)+' '+str(maxEvents)+'";\n')
 
         inp_box = 'InputSandbox = { '
         inp_box = inp_box + '"' + script + '",'

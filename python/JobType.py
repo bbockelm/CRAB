@@ -24,15 +24,6 @@ class JobType:
         # i.e. user's steering card file used as is.
         return
 
-    def setSteeringCardsNames(self):
-        """
-        Generates names for application steering card names,
-        e.g. 'mumu_000002.orcarc' for dataset 'mumu', job 2, jobtype Orca.
-        """
-        msg = 'Internal ERROR. Pure virtual function called:\n'
-        msg += self.__class__.__name__+'::setSteeringCardsNames() from '+__file__
-        raise CrabException(msg)
-
     def modifySteeringCards(self, nj):
         """
         Make individual modifications of the user's steering card file

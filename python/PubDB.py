@@ -10,7 +10,13 @@ class PubDBError:
     def __init__(self, url):
         print '\nERROR accessing PubDB at '+url+'\n'
         pass
- 
+
+# ####################################
+class PubDBGetAnalysisError:
+  def __init__(self, url,Collections):
+    print '\nERROR extracting info for collections '+Collections+' from PubDB '+url+'.\n'
+    pass
+  
 # ####################################
 class RefDBmapError:
     def __init__(self, url):
@@ -44,6 +50,7 @@ class PubDB:
         self.owner = owner
         self.dataset = dataset
         self.dataTiers = dataTiers
+        self.NeededdataTiers=[]
         self.cfg_params = cfg_params
     
         self.RefDBurl_ = 'http://cmsdoc.cern.ch/cms/production/www/'
@@ -63,14 +70,15 @@ class PubDB:
 
         CEBlackList = []
         try:
-            tmpBad = string.split(self.cfg_params['USER.ce_black_list'],',')
+            tmpBad = string.split(self.cfg_params['EDG.ce_black_list'],',')
             #tmpBad = ['fnal']
             for tmp in tmpBad:
                 tmp=string.strip(tmp)
+                if (tmp == 'cnaf'): tmp = 'webserver' ########## warning: temp. patch              
                 CEBlackList.append(tmp)
         except KeyError:
             pass
-        print 'CEBlackList: ',CEBlackList
+        common.logger.debug(5,'CEBlackList: '+str(CEBlackList))
         self.reCEBlackList=[]
         for bad in CEBlackList:
             self.reCEBlackList.append(re.compile( bad ))
@@ -98,6 +106,7 @@ class PubDB:
             ## select the primary collection
             if first:
                 NeededCollID.append(coll[0])
+                self.NeededdataTiers.append(coll[2])
                 refdbdataTiers.append(coll[2])
                 common.logger.message("\n --> primary collection for owner "+self.owner+" is: ID="+coll[0]+" DataTier="+coll[2])
                 first=0
@@ -105,17 +114,18 @@ class PubDB:
                 ## select only the parents collections corresponding to data-tiers requested by the user 
                 if  self.dataTiers.count(coll[2]):
                     NeededCollID.append(coll[0])
+                    self.NeededdataTiers.append(coll[2])
                     common.logger.message(" --> further collection required: ID="+coll[0]+" DataTier="+coll[2])
                 refdbdataTiers.append(coll[2])
            
         ## check that the user asks for Data Tier really existing in RefDB, otherwise give a warning message
         for dt in self.dataTiers:
             if refdbdataTiers.count(dt)<=0:
-                msg = "ERROR: Data Tier ( =>",dt,"<= ) not existing for dataset/owner "+ self.dataset+"/"+self.owner+"!"
-                msg = msg + "Check the data_tier variable in crab.cfg"
-                msg = msg + 'Owner Dataset not published with asked dataTiers! '+\
+                msg = "ERROR: Data Tier ( =>",dt,"<= ) not existing for dataset/owner "+self.dataset+"/"+self.owner+"! "
+                msg = str(msg) + 'Owner Dataset not published with asked dataTiers! '+\
                        self.owner+' '+ self.dataset+' '+self.dataTiers
-                common.logger.message(msg)
+                msg = str(msg) + ' Check the data_tier variable in crab.cfg !\n'
+                common.logger.message(msg) 
                 return []
         
         #print 'Needed Collections are ', NeededCollID
@@ -179,7 +189,6 @@ class PubDB:
                 SelectedPubDBURLs.append(url)
        
         #print 'Required Collections',CollIDs,'are all present in PubDBURLs : ',SelectedPubDBURLs,'\n'
-        #return SelectedPubDBURLs
   ####  check based on CE black list: select only PubDB not in the CE black list   
         GoodPubDBURLs=self.checkBlackList(SelectedPubDBURLs)
         return GoodPubDBURLs
@@ -197,11 +206,11 @@ class PubDB:
 #######################################################################
     def checkBlackList(self, pubDBUrls):
         """
-        select PubDB URLs that are at site not excluded by the user (via CE black list) 
+        select PubDB URLs that are at site not exluded by the user (via CE black list) 
         """
         goodurls = []
         for url in pubDBUrls:
-            print 'connecting to the URL ',url
+            common.logger.debug(10,'connecting to the URL '+url)
             good=1
             for re in self.reCEBlackList:
                 if re.search(url):
@@ -212,19 +221,71 @@ class PubDB:
         if len(goodurls) == 0:
             common.logger.debug(3,"No selected PubDB URLs")
         return goodurls
-  
+
 ########################################################################
-    def getPubDBData(self, CollIDs, url):
+    def checkPubDBNewVersion(self, baseurl):
+        """
+        Check PubDB version to find out if it's new-style or old-style
+        """
+### check based on the existance of pubdb-get-version.php
+        urlversion=baseurl+'pubdb-get-version.php'
+        newversion=1;
+        try:
+         v = urllib2.urlopen(urlversion)
+        except urllib2.URLError, msg:
+          #print "WARNING: no URL to get PubDB version "
+          newversion=0;
+      
+        if (newversion) :
+         schemaversion = v.read()
+         #print schemaversion;
+   
+        return newversion 
+
+########################################################################
+    def getPubDBData(self, CollIDs, url , newversion):
         """
          Contact a PubDB to collect all the relevant information
         """
         result = []
-        for CollID in CollIDs:
-            end=string.rfind(url,'/')
-            lastEq=string.rfind(url,'=')
+        
+### get the base PubDb url 
+        end=string.rfind(url,'/')
+        lastEq=string.rfind(url,'=')
+
+        if (newversion) :
+### from PubDB V4 : get info for all the collections in one shot and unserialize the content
+           Collections=string.join(CollIDs,'-')
+           ## add the PU among the required Collections if the Digi are requested
+           # ( for the time being asking it directly to the PubDB so the RefDB
+           # level data discovery is bypassed..... in future when every site
+           # will have the new style it will be possible to ask for PU , at RefDB level, in method findAllCollections ) 
+           if ( self.NeededdataTiers.count('Digi') ):
+             PUCollID=self.getDatatierCollID(url[:end+1],Collections,"PU")
+             if (PUCollID) : CollIDs.append(PUCollID)
+           ##
+           Collections=string.join(CollIDs,'-')
+           ### download from PubDB all the info about the given collections
+           pubdb_analysis=PubDBInfo(url[:end+1],Collections)
+           #print pubdb_analysis.GetPubDBInfo()
+           ok=0
+           try:
+             catInfos=pubdb_analysis.GetPubDBInfo()
+             ok=1
+           except :
+             #print "WARNING: can't get PubDB content out of "+url[:end+1]+"\n"
+             print '\nERROR extracting info for collections '+Collections+' from PubDB '+url[:end+1]+'. The PU might not be published at that site.\n'
+             #raise PubDBGetAnalysisError(url[:end+1],Collections)   
+           if (ok): result=catInfos;
+
+        else:
+
+### before PubDB V4 : get info for each collection and read the key-value pair text
+              
+          for CollID in CollIDs:
             urlphp=url[:end+1]+self.PubDBAnalysisPhp_+'?CollID='+CollID
             # print 'PHP URL: '+urlphp+' \n'
-           
+
             reOld=re.compile( r'V24' )
             #print urlphp,'Old PubDB ',reOld.search(urlphp)
             if reOld.search(urlphp):
@@ -249,22 +310,66 @@ class PubDB:
         #     r.dump()
         #print '.....'
         return result
-  
+
 ########################################################################
-    def getAllPubDBData(self, CollIDs, urllist):
+    def getDatatierCollID(self,urlbase,CollIDString,datatier):
+        """
+        Contact a script of PubDB to retrieve the collid a DataTier
+        """
+        try:
+          f = urllib.urlopen(urlbase+'pubdb-get-collidbydatatier.php?collid='+CollIDString+"&datatier="+datatier)
+        except IOError:
+          raise PubDBGetAnalysisError(url[:end+1]+'pubdb-get-collidbydatatier.php',CollIDString)
+        data = f.read()
+        colldata=re.compile(r'collid=(\S*)').search(data);
+        if colldata:
+           datatier_CollID=colldata.group(1)
+#           print " --> asking to PubDB "+urlbase+" for an additional collection : ID= "+datatier_CollID+" DataTier= "+datatier
+           common.logger.message(" --> asking to PubDB "+urlbase+" for an additional collection : ID= "+datatier_CollID+" DataTier= "+datatier)
+
+           return datatier_CollID       
+ 
+########################################################################
+    def getAllPubDBData(self):
         """
          Contact a list of PubDB to collect all the relevant information
         """
-        completeResult=[]
+        newPubDBResult=[]
+        oldPubDBResult=[]
+        Result={}
+
+### find the user-required collection IDs 
+        CollIDs = self.findAllCollections()
+### find the PubDB URLs publishing the needed data 
+        urllist = self.findPubDBs(CollIDs)
+### collect information sparatelly from new-style PubDBs and old-style PubDBs
         for pubdburl in urllist: 
-            completeResult.append(self.getPubDBData(CollIDs,pubdburl))
-        
+            end=string.rfind(pubdburl,'/')
+            newversion=self.checkPubDBNewVersion(pubdburl[:end+1])
+            if (newversion):
+              res=self.getPubDBData(CollIDs,pubdburl,newversion)
+              if len(res)>0:
+               newPubDBResult.append(res)
+            else:
+              resold=self.getPubDBData(CollIDs,pubdburl,newversion)
+              if len(resold)>0:
+               oldPubDBResult.append(resold)
+### fill a dictionary with all the PubBDs results both old-style and new-style
+        Result['newPubDB']=newPubDBResult
+        Result['oldPubDB']=oldPubDBResult
+
         ## print for debugging purpose
-        #for result in completeResult:
-        #   print '..... PubDB Site URL :',pubdburl
-        #   for r in result:
-        #      r.dump()
-        #   print '.....................................'
-         
-        return completeResult
+        #
+        #for PubDBversion in Result.keys():
+            #print ("key %s, val %s" %(PubDBversion,Result[PubDBversion]))
+        #    if len(Result[PubDBversion])>0 :
+               #print (" key %s"%(PubDBversion)) 
+        #       for result in Result[PubDBversion]:
+        #          for r in result:
+                      #r.dump()
+        #              common.log.write('----------------- \n')
+              #print '.....................................'
+
+        return Result
+
 ####################################################################

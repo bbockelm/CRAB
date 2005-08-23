@@ -16,19 +16,13 @@ class orcarc:
     self.initFile= initFile
     self.orcarcFile=orcarcFile
     self.Nevents=Nevents
-    return
-
-  def __str__(self):
-    txt = ''
-    txt += "SE "+self.SE+'\n'
-    txt += "CE "+self.CE+'\n'
-    txt += "initFile "+self.initFile+'\n'
-    txt += "orcarcFile "+self.orcarcFile+'\n'
-    txt += "Nevents "+`self.Nevents`+'\n'
-    return txt
 
   def dump(self):
-    print self
+    print "SE ",self.SE
+    print "CE ",self.CE
+    print "initFile ",self.initFile
+    print "orcarcFile ",self.orcarcFile
+    print "Nevents ",self.Nevents
 
   def content(self):
     """ return contents as a list """
@@ -56,7 +50,7 @@ def constructFromFile(content):
                 content[4])
 
 ###########################################################################
-class catalogEntry:
+class catalogEntryNew:
   def __init__(self,
                FileType,
                ValidationStatus,
@@ -64,158 +58,54 @@ class catalogEntry:
                ContactProtocol,
                CatalogueType,
                SE,
-               CE,
+               CElist,
                Nevents,
-               RunRange):
+               RunRange,
+               RedirectionVariables):
     self.FileType=FileType
     self.ValidationStatus=ValidationStatus
     self.ContactString=ContactString
-    self.ContactProtocol=ContactProtocol
-    self.CatalogueType=CatalogueType
+    self.ContactProtocol=string.lower(ContactProtocol)
+    self.CatalogueType=string.lower(CatalogueType)
     self.SE=SE
-    self.CE=CE
+    self.CElist=CElist
     self.Nevents=Nevents
     self.RunRange=RunRange
+    self.RedirectionVariables=RedirectionVariables
   
-  def __init__(self, list):
-    reGen = re.compile(r'\w*=(.*)')
-
-    self.FileType=string.split(list[0], '=')[1]
-    self.ValidationStatus=reGen.match(list[1]).group(1)
-    self.ContactString=reGen.match(list[2]).group(1)
-    self.ContactProtocol=string.lower(reGen.match(list[3]).group(1))
-    self.CatalogueType=string.lower(reGen.match(list[4]).group(1))
-    self.SE=reGen.match(list[5]).group(1)
-    #print "SE=", self.SE
-    self.CE=reGen.match(list[6]).group(1)
-    #print "CE=", self.CE
-    self.Nevents=reGen.match(list[7]).group(1)
-    self.RunRange=reGen.match(list[8]).group(1)
-   
-    # self.FileType=reGen.match(list[0]).group(1)
-    # self.ValidationStatus=reGen.match(list[1]).group(1)
-    # self.ContactString=reGen.match(list[2]).group(1)
-    # self.ContactProtocol=string.lower(reGen.match(list[3]).group(1))
-    # self.CatalogueType=string.lower(reGen.match(list[4]).group(1))
-    # self.SE=reGen.match(list[5]).group(1)
-    # self.CE=reGen.match(list[6]).group(1)
-    # self.Nevents=reGen.match(list[7]).group(1)
-    # self.RunRange=reGen.match(list[8]).group(1)
-  
-  def __str__(self):
-    txt = ''
-    txt += "FileType "+self.FileType+'\n'
-    txt += "ValidationStatus "+self.ValidationStatus+'\n'
-    txt += "ContactString "+self.ContactString+'\n'
-    txt += "ContactProtocol "+self.ContactProtocol+'\n'
-    txt += "CatalogueType "+self.CatalogueType+'\n'
-    txt += "SE "+self.SE+'\n'
-    txt += "CE "+self.CE+'\n'
-    txt += "Nevents "+self.Nevents+'\n'
-    txt += "RunRange "+self.RunRange+'\n'
-    return txt
-
   def dump(self):
-    print self
-    return
+    print "FileType ",self.FileType
+    print "ValidationStatus ",self.ValidationStatus
+    print "ContactString ",self.ContactString
+    print "ContactProtocol ",self.ContactProtocol
+    print "CatalogueType ",self.CatalogueType
+    print "SE ",self.SE
+    for aCE in self.CElist:
+     print "CE ",aCE
+    print "Nevents ",self.Nevents
+    print "RunRange ",self.RunRange
+    print "RedirectionVariables ",self.RedirectionVariables
 
 ###########################################################################
 ###########################################################################
 class orcarcBuilder:
   def __init__(self):
-    self.protocolPrio_ = self.defineProtocolPrio_()
     self.fileList = []
     self.CE = []
     self.SE = []
     pass
-    
-###########################################################################
-  def parseResult_(self, pubDBResult):
-    """
-    parse the output from PubDB and create a list of CatalogEntry objects for further usage
-    """
 
-    result = []
-    filename = pubDBResult.contents
-    f = file( 'tmp', 'w' )
-    f.write(pubDBResult.contents)
-    f.close()
-
-    reComment = re.compile( r'^#.*$' )
-    reEmptyLine = re.compile( r'^$' )
-    reLineStart = re.compile( r'FileType=(\w*)$' )
-    reValid= re.compile( r'ValidationStatus=(\w*)$' )
-    reLineEnd = re.compile( r'RunRange=.*$' )
-    f = file( 'tmp', 'r' )
-    Catalog_list = [] 
-    out = []
-    valid=0
-    for line in f:
-      line = line.strip()
-      # print line
-      if reComment.match( line ):
-        pass
-      elif reLineStart.match(line):
-        out.append(line)
-      elif reValid.match(line):
-        valString = reValid.match(line).group(1)
-        # print " valid ", line, " " , pippo
-        # print (pippo == "VALIDATED") 
-        if valString == "VALIDATED": 
-          # print " VALID ", line, " " , pippo
-          valid=1
-        #### TMP SL 08-Feb-2005 ok even if not valid!
-        elif (valString == "NOT_VALIDATED"): 
-          common.logger.write('Dataset '+valString+'\n')
-          valid=1
- 
-
-
-
-
-        out.append(line)
-      elif reLineEnd.match( line ):
-        out.append(line)
-        if valid: Catalog_list.append(out)
-        valid=0
-        # print out 
-        # print "\n"
-        # print Catalog_list
-        # print "\n"
-        out = []
-      elif reEmptyLine.match( line ):
-        pass
-      else:
-        out.append(line)
-    os.remove('tmp')
-
-    for cc in Catalog_list:
-      e = catalogEntry(cc)
-      result.append(e)
-      pass
-
-    return result
-
-  ###########################################################################
-  def defineProtocolPrio_(self):
-    """
-    Just define the priority for the catalog acces protocol
-    """
-    return ['http', 'rfio', 'gridftp']
-
-  ###########################################################################
-  def selectCompleteSetOfCatalogs(self, CatalogList, Meta=1):
+###########################################################################    
+  def selectCompleteSetOfCatalogs(self, CatalogList):
     """
     Select from the many catalogs returned from the PubDB a complete and unique
     set of them, which contains all needed, according to the pre-defined priority
     """
     result = []
-
-    metaCat = []
+    metaCat= []
     reComplete = re.compile( r'Complete' )
-    if Meta==1:
     # priority 1: first look for Complete
-      for cat in CatalogList:
+    for cat in CatalogList:
          if cat.FileType=='Complete':
            metaCat.append(cat)
            # cat.dump()
@@ -228,78 +118,44 @@ class orcarcBuilder:
            # print "-==-==-==-==-==-"
            
     # if one or more "Complete" found, return them
-      if (len(metaCat)>0):
-        result.append(self.selectBestCatalog_(metaCat))
+    if (len(metaCat)>0):
+        for m in metaCat:
+         result.append(m)
         return result
 
     # priority 2: assume attacchedMeta + Events
-      metaCat = []
-      evdCat = []
-      for cat in CatalogList:
+    metaCat = []
+    evdCat = []
+    for cat in CatalogList:
         if cat.FileType=='AttachedMETA':
           metaCat.append(cat)
-          # cat.dump()
-          # print "-==-==-==-==-==-"
+          #cat.dump()
+          #print "-==-==-==-==-==-"
         elif cat.FileType=='Events':
           evdCat.append(cat)
-          # cat.dump()
-          # print "-==-==-==-==-==-"
+          #cat.dump()
+          #print "-==-==-==-==-==-"
 
-      if (len(metaCat) & len(evdCat)):
-        result.append(self.selectBestCatalog_(metaCat))
-        result.append(self.selectBestCatalog_(evdCat))
-        return result
+    # remove duplicated META catalogues
+    contactstrings=[]
+    uniq_metaCat=[]
+    for mc in metaCat:
+       if mc.ContactString not in contactstrings:
+        contactstrings.append(mc.ContactString)
+        uniq_metaCat.append(mc)
+    metaCat=uniq_metaCat 
+    #for mcat in uniq_metaCat:
+    #  print mcat.ContactString
 
-    elif Meta==0:
-      evdCat = []
-      for cat in CatalogList:
-        if cat.FileType=='Events':
-          evdCat.append(cat)
-          # cat.dump()
-          # print "-==-==-==-==-==-"
-      if (len(evdCat)):
-        result.append(self.selectBestCatalog_(evdCat))
-        return result
-
-      for cat in CatalogList:
-         if cat.FileType=='Complete':
-           evdCat.append(cat)
-           # cat.dump()
-           # print "-==-==-==-==-==-"
-         elif reComplete.match(cat.FileType):
-           metaCat.append(cat)
-           # cat.dump()
-           # print "-==-==-==-==-==-"
-
-      if (len(evdCat)):
-        result.append(self.selectBestCatalog_(evdCat))
+    if (len(metaCat)>0) & (len(evdCat)>0):
+        for m in metaCat:
+            result.append(m)
+        for e in evdCat:
+            result.append(e)
         return result
 
     return []
 
-  ###########################################################################
-  def selectBestCatalog_(self, CatalogList):
-    """
-    From a set of catalogs with different access protocol,
-    select the 'best' one according to access protocols
-    """
-
-    # if just one catalog, just return it!
-    if (len(CatalogList)==1): return CatalogList[0]
-
-    sortedProtocols = self.protocolPrio_
-    # priority 1: first look for Complete
-    for cat in CatalogList:
-      for prot in sortedProtocols:
-        if cat.ContactProtocol==prot:
-          # cat.dump()
-          # print "-==-==-==-==-==-"
-          return cat
-        pass
-      pass
-
-    return ''
-         
   ###########################################################################
   def createStageInScript(self, CatalogList):
     """
@@ -312,9 +168,9 @@ class orcarcBuilder:
     if len(CatalogList) == 0: 
        print 'Error ***: empty catalog list'
        return
+    
+    site = self.getCE(CatalogList)
 
-    # print CatalogList
-    site = CatalogList[0].CE
     initScriptFileName = 'init_'+site+'.sh'
     initScript = open(initScriptFileName,'w')
     initScript.write('#!/bin/sh\n')
@@ -357,7 +213,9 @@ class orcarcBuilder:
          # just file name
          cat.ContactString=catalogName
          cat.ContactProtocol='file'
-  # don't kwow what to do
+       elif cat.ContactProtocol == "mysql":
+         # do nothing since the MySQl catalogue contact string is already enough
+         continue
        else:
          print 'ERROR ***: Unkwown protocol: ',cat.ContactProtocol
 
@@ -374,17 +232,32 @@ class orcarcBuilder:
        print 'Error ***: empty catalog list'
        return
 
-    site = CatalogList[0].CE
+    site = self.getCE(CatalogList)
+
     orcarcFileName = 'orcarc_'+site
     orcarc = open(orcarcFileName,'w')
     orcarc.write('# Start of automatic generated .orcarc fragment\n')
     
-    
+
+    COBRAredirectionList=[]    
     orcarc.write('InputFileCatalogURL = @{\n')
     for cat in CatalogList:
+      ## write input POOL catalogues
+      #print " contact string is "+cat.ContactString
       orcarc.write('  '+cat.CatalogueType+'catalog_'+cat.ContactProtocol+':'+cat.ContactString+'\n')
+      ## look for COBRA redirection variables 
+      if (cat.RedirectionVariables!='') & (cat.RedirectionVariables not in COBRAredirectionList): 
+        COBRAredirectionList.append(cat.RedirectionVariables)
 
     orcarc.write('}@\n')
+
+    if len(COBRAredirectionList)>0 :
+     orcarc.write('TFileAdaptor = true \n')
+     for COBRAvariable in COBRAredirectionList:
+       variableName=COBRAvariable.split("=")[0]
+       variableValue=COBRAvariable.split("=")[1]
+       #print ' add to orcarc the COBRA redirection variable '+variableName+' = @{'+variableValue+'}@\n'
+       orcarc.write(variableName+' = @{'+variableValue+'}@\n')
       
     orcarc.write('# End of automatic generated .orcarc fragment\n')
 
@@ -392,24 +265,44 @@ class orcarcBuilder:
 
     return orcarcFileName
 
+  #############################################################################
   def getCE(self, CatalogList):
     """
-    Get the CE from a CatalogList, checking that the CE are the same!
+    Get the CE from a CatalogList, picking up the CE from where all the needed data are!
     """
+    ### List all the possible CEs
+    CEs=[]
+    for cat in CatalogList:    
+      for ce in cat.CElist:           
+       #print " for catalogue "+cat.ContactString+" CE is "+ce
+       if ce not in CEs :
+          CEs.append(ce)   
 
-    ce = ''
-    ce_sve = ''
-    for cat in CatalogList:
-      #cat.dump()
-      ce = cat.CE
-      if (ce_sve!='') & (ce!=ce_sve):
-        assert(ce != ce_sve)
-      ce_sve=ce
-      #print "-==-==-==-==-==-"
-      # print Catalog_list
+    ### List good CEs: only the CEs that are associated to _all_ the needed catalogues
+    goodCElist=[]
+    for aCE in CEs:
+      for cat in CatalogList:
+        skip=1
+        if aCE not in cat.CElist:
+          #print "the CE "+aCE+" is not among the CEs in this catalogue => skip it"
+          skip=0
+          break
+      if (skip) : goodCElist.append(aCE)      
+         
+    ### Return the first CE since otherwise is too complex afterword
+    ### to deal with the rest of CRAB ( JDL creation and so on in cms_orca.py)
+    goodce=''
+    if len(goodCElist) <= 0 :
+      ## if the CE are different implement a similar behaviour 
+      ## as in orcarcBuilder.py : assert statement and not raising exceptions
+      assert( len(goodCElist) <= 0 )
+      goodce=CEs[0]
+    else:
+      goodce=goodCElist[0]
 
-    return ce
+    return goodce
 
+  #############################################################################
   def getSE(self, CatalogList):
     """
     Get the SE from a CatalogList, checking that the SE are the same!
@@ -428,23 +321,29 @@ class orcarcBuilder:
 
     return se
 
+  #############################################################################
   def getMaxEvents(self, CatalogList):
     """
     Get the Max events from a CatalogList, checking that the Max events are the same!
     """
-
+    ### pick up the first Nevents since it sould be the number of events of the primary collid                                                                                      
     num = ''
     num_sve = ''
+    first=1
     for cat in CatalogList:
       #cat.dump()
       num = cat.Nevents
+      if (first) : num_primary=num
+      first=0
       if (num_sve!='') & (num!=num_sve):
         assert(num != num_sve)
       num_sve=num
       #print "-==-==-==-==-==-"
       # print Catalog_list
+                                                                                     
+    #return num
+    return num_primary
 
-    return num
 # ###################################################
   def createOrcarcAndInit(self, pubDBResultsSet, maxEvents=-1):
     """
@@ -452,65 +351,35 @@ class orcarcBuilder:
     return a list of all file created
     """
     
-    # print 'pubDBResults=',pubDBResultsSet
-    # print 'pubDBResults[0]=',pubDBResults[0]
-    # print 'pubDBResults[1]=',pubDBResults[1]
-
-    fun = __name__+"::createOrcarcAndInit"
-
     result = []
 
-    for pubDBResults in pubDBResultsSet:
-      #pubDBResults[0].dump()
-      CatalogList = self.parseResult_(pubDBResults[0])
+    for CatalogList in pubDBResultsSet:
       
       ce = self.getCE(CatalogList)
       se = self.getSE(CatalogList)
       Nev = self.getMaxEvents(CatalogList)
-      # print 'ALL CATALOGS'
-      # for cat in CatalogList:
+      #print 'ALL CATALOGS'
+      #for cat in CatalogList:
       #   cat.dump()
       #   print "-==-==-==-==-==-"
-      # print 'FINE ALL CATALOGS'
+      #   print 'FINE ALL CATALOGS'
       # print CatalogList
 
-      completeCatalogsSet = self.selectCompleteSetOfCatalogs(CatalogList,1)
+      completeCatalogsSet = self.selectCompleteSetOfCatalogs(CatalogList)
       if len(completeCatalogsSet)==0:
-        # print 'Sorry, no complete list of catalogs available!'
+        #print 'Sorry, no complete list of catalogs available!'
         continue
       #   return result
       # print 'primaryCollId'
-      # for cat in completeCatalogsSet:
+      #for cat in completeCatalogsSet:
       #   cat.dump()
       #   print "-==-==-==-==-==-"
-      # print 'FINE primaryCollId'
-
-      for res in pubDBResults[1:]:
-        CatalogList = self.parseResult_(res)
-        
-        tmpce = self.getCE(CatalogList)
-        tmpse = self.getSE(CatalogList)
-        if (tmpce!=ce) | (tmpse !=se):
-          break
-        # print 'SECONDARIES'
-        # for cat in CatalogList:
-        #   cat.dump()
-        #   print "-==-==-==-==-==-"
-        # print 'FINE   SECONDARIES'
-
-        tmpcompleteCatalogsSet = self.selectCompleteSetOfCatalogs(CatalogList, 0)
-        if len(tmpcompleteCatalogsSet)==0:
-          # print 'Sorry, no complete list of catalogs available!'
-          continue
-        # for cat in tmpcompleteCatalogsSet:
-        #   cat.dump()
-        #   print "-==-==-==-==-==-"
-       
-        for cat in tmpcompleteCatalogsSet:
-          completeCatalogsSet.append(cat)
+      #print 'FINE primaryCollId'
+     
+      #print "skip search for secondaries.... in new-style PubDB the info are in one shot"
 
       initFile = self.createStageInScript(completeCatalogsSet)
-      # for cat in completeCatalogsSet:
+      #for cat in completeCatalogsSet:
       #   cat.dump()
       #   print "-==-==-==-==-==-"
 
