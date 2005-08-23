@@ -25,7 +25,8 @@ class Status(Actor):
           "cpuTime","destination", "done_code","exit_code","expectFrom", \
           "expectUpdate","globusId","jdl","jobId","jobtype", \
           "lastUpdateTime","localId","location", "matched_jdl","network_server", \
-          "owner","parent_job", "reason","resubmitted","rsl","seed","stateEnterTime","stateEnterTimes","subjob_failed", \
+          "owner","parent_job", "reason","resubmitted","rsl","seed",\
+          "stateEnterTime","stateEnterTimes","subjob_failed", \
           "user tags" , "status" , "status_code","hierarchy"]
         self.hstates = {}
 
@@ -44,18 +45,18 @@ class Status(Actor):
             self.countToTjob = self.countToTjob + 1
             jid = common.jobDB.jobId(nj)
             if st == 'S':
-                result = self.getJobStatus_(jid, 'status')
+                result = common.scheduler.queryStatus(jid)
                 self.processResult_(nj, result)
                 exit = ''
                 if result == 'Done':
-                    exit = self.getJobStatus_(jid, 'exit_code')
+                    exit = common.scheduler.getExitStatus(jid)
                     pass
                 print 'Job %03d:'%(nj+1),jid,result,exit
                 pass
             else:
                 exit = ''
                 if st == 'D':
-                    exit = self.getJobStatus_(jid, 'exit_code')
+                    exit = common.scheduler.getExitStatus(jid)
                     pass
                 print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
                 pass
@@ -69,15 +70,15 @@ class Status(Actor):
 
     def processResult_(self, nj, result):
         #######################################################################################
-        self.hstates['destination'] = self.hstates['destination'].strip()
-        destination = self.hstates['destination'].split(":")[0]
-        self.hstates['jobId'] =  self.hstates['jobId'].strip()
-        ID3 =  self.hstates['jobId'].split("/")[3]
-        brokTmp = self.hstates['jobId'].split("/")[2]
-        broker = brokTmp.split(":")[0]
-        self.hstates['destination'] =  self.hstates['destination'].strip()
-        destination =  self.hstates['destination'].split(":")[0]
-        resFlag = 0
+        # self.hstates['destination'] = self.hstates['destination'].strip()
+        # destination = self.hstates['destination'].split(":")[0]
+        # self.hstates['jobId'] =  self.hstates['jobId'].strip()
+        # ID3 =  self.hstates['jobId'].split("/")[3]
+        # brokTmp = self.hstates['jobId'].split("/")[2]
+        # broker = brokTmp.split(":")[0]
+        # self.hstates['destination'] =  self.hstates['destination'].strip()
+        # destination =  self.hstates['destination'].split(":")[0]
+        # resFlag = 0
         #######################################################################################
         
         ### TODO: set relevant status also to DB
@@ -154,18 +155,18 @@ class Status(Actor):
         pass
 
 
-    def getJobStatus_(self, sid, attr):
-        result = ''
-        st = 0
-        self.jobStat.getStatus(sid, self.level)
-        (err, apiMsg) = self.jobStat.get_error()
-        if err:
-            common.logger.message(apiMsg)
-            return None
-        else:
-            for i in range(len(self.states)):
-                #print "states = ", self.states
-                # Fill an hash table with all information retrieved from LB API
-                self.hstates[ self.states[i] ] = self.jobStat.loadStatus(st)[i]
-            result = self.jobStat.loadStatus(st)[ self.states.index(attr) ]
-        return result
+    # def getJobStatus_(self, sid, attr):
+    #     result = ''
+    #     st = 0
+    #     self.jobStat.getStatus(sid, self.level)
+    #     (err, apiMsg) = self.jobStat.get_error()
+    #     if err:
+    #         common.logger.message(apiMsg)
+    #         return None
+    #     else:
+    #         for i in range(len(self.states)):
+    #             #print "states = ", self.states
+    #             # Fill an hash table with all information retrieved from LB API
+    #             self.hstates[ self.states[i] ] = self.jobStat.loadStatus(st)[i]
+    #         result = self.jobStat.loadStatus(st)[ self.states.index(attr) ]
+    #     return result
