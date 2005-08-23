@@ -3,7 +3,7 @@ import sys, os, string, re
 import urllib, urllister
 import urllib2
 from UnserializePHP import *
-from orcarcBuilderNew import *
+from orcarcBuilder import *
 
 class PubDBInfoError:
   def __init__(self, Collections):
