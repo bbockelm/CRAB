@@ -29,7 +29,8 @@ class Status(Actor):
           "stateEnterTime","stateEnterTimes","subjob_failed", \
           "user tags" , "status" , "status_code","hierarchy"]
         self.hstates = {}
-
+        for key in self.states:
+            self.hstates[key]=''
 
         return
 
