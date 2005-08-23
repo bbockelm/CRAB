@@ -71,15 +71,15 @@ class Status(Actor):
 
     def processResult_(self, nj, result):
         #######################################################################################
-        # self.hstates['destination'] = self.hstates['destination'].strip()
-        # destination = self.hstates['destination'].split(":")[0]
-        # self.hstates['jobId'] =  self.hstates['jobId'].strip()
-        # ID3 =  self.hstates['jobId'].split("/")[3]
-        # brokTmp = self.hstates['jobId'].split("/")[2]
-        # broker = brokTmp.split(":")[0]
-        # self.hstates['destination'] =  self.hstates['destination'].strip()
-        # destination =  self.hstates['destination'].split(":")[0]
-        # resFlag = 0
+        self.hstates['destination'] = self.hstates['destination'].strip()
+        destination = self.hstates['destination'].split(":")[0]
+        self.hstates['jobId'] =  self.hstates['jobId'].strip()
+        ID3 =  self.hstates['jobId'].split("/")[3]
+        brokTmp = self.hstates['jobId'].split("/")[2]
+        broker = brokTmp.split(":")[0]
+        self.hstates['destination'] =  self.hstates['destination'].strip()
+        destination =  self.hstates['destination'].split(":")[0]
+        resFlag = 0
         #######################################################################################
         
         ### TODO: set relevant status also to DB
