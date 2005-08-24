@@ -144,6 +144,7 @@ class Scram:
 
         ## Create the tar-ball
         if len(filesToBeTarred)>0:
+            cwd = os.getcwd()
             os.chdir(swArea)
             tarcmd = 'tar zcvf ' + self.tgzNameWithPath + ' ' 
             for line in filesToBeTarred:
@@ -151,7 +152,7 @@ class Scram:
             cout = runCommand(tarcmd)
             if not cout:
                 raise CrabException('Could not create tar-ball')
-            os.chdir(common.work_space.topDir())
+            os.chdir(cwd)
         else:
             common.logger.debug(5,"No files to be to be tarred")
         
