@@ -12,6 +12,7 @@ from Checker import Checker
 from PostMortem import PostMortem
 from Status import Status
 import common
+import Statistic
 
 import sys, os, time, string
 
@@ -478,6 +479,15 @@ class Crab:
             elif ( opt == '-getoutput' ):
                 jobs = self.parseRange_(val)
 
+                fileCODE1 = open(common.work_space.logDir()+"/.code","r")
+                array = fileCODE1.read().split('::')
+                self.ID1 = array[0]
+                self.NJC = array[1]
+                self.dataset = array[2]
+                self.owner = array[3]
+                fileCODE1.close()
+
+
                 jobs_done = []
                 for nj in jobs:
                     st = common.jobDB.status(nj)
@@ -517,6 +527,12 @@ class Crab:
                         # ignore error
                         pass
                     
+                    destination = common.scheduler.queryDest(jid).split(":")[0]
+                    ID3 =  jid.split("/")[3]
+                    broker = jid.split("/")[2].split(":")[0]
+                    resFlag = 0
+                    exCode = common.scheduler.getExitStatus(jid)
+                    Statistic.notify('retrieved',resFlag,exCode,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
 
                     msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
                     common.logger.message(msg)
@@ -553,7 +569,7 @@ class Crab:
                                     common.logger.message('Output file '+file+' moved to '+resDirSave)
                             pass
                             nj_list.append(nj)
-                            st = common.jobDB.setStatus(nj,'C')
+                            st = common.jobDB.setStatus(nj,'RC')
                         elif st == 'D':
                             ## Done but not yet retrieved
                             ## retrieve job, then go to previous ('Y') case

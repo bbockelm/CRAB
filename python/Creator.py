@@ -21,8 +21,8 @@ class Creator(Actor):
         self.total_number_of_events = 0
         self.job_number_of_events = 0
         self.first_event = 0
-        
-        #
+        self.owner = cfg_params['USER.owner']
+        self.dataset = cfg_params['USER.dataset'] 
 
         self.createJobTypeObject()
         common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
@@ -38,6 +38,11 @@ class Creator(Actor):
         self.ncjobs = ncjobs
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
+        
+        fileCODE1 = open(common.work_space.logDir()+"/.code","a")
+        fileCODE1.write('::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
+        fileCODE1.close()
+
 
         #TODO: deprecated code, not needed,
         # will be eliminated when WorkSpace.saveConfiguration()
@@ -266,7 +271,6 @@ class Creator(Actor):
             pass
 
         ####
-        
         common.jobDB.save()
 
         msg = '\nTotal of %d jobs created'%njc
@@ -274,3 +278,14 @@ class Creator(Actor):
         msg = msg + '.\n'
         common.logger.message(msg)
         return
+
+
+
+
+
+
+
+
+
+
+

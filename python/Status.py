@@ -1,6 +1,7 @@
 from Actor import *
 import common, crab_util
 import string, os
+import Statistic
 
 class Status(Actor):
     def __init__(self, cfg_params, nj_list):
@@ -13,6 +14,18 @@ class Status(Actor):
         self.countCleared = 0
         self.countToTjob = 0
         
+        ############################################# daniele
+        fileCODE1 = open(common.work_space.logDir()+"/.code","r")
+        array = fileCODE1.read().split('::')
+        self.ID1 = array[0]
+        self.NJC = array[1]
+        self.dataset = array[2]
+        self.owner = array[3]
+        fileCODE1.close()
+        #######################################################################################
+
+
+
         Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
         # Bypass edg-job-status interfacing directly to C++ API
         # Job attribute vector to retrieve status without edg-job-status
@@ -47,7 +60,7 @@ class Status(Actor):
             jid = common.jobDB.jobId(nj)
             if st == 'S':
                 result = common.scheduler.queryStatus(jid)
-                self.processResult_(nj, result)
+                self.processResult_(nj, result,jid)
                 exit = ''
                 if result == 'Done':
                     exit = common.scheduler.getExitStatus(jid)
@@ -69,52 +82,41 @@ class Status(Actor):
         pass
 
 
-    def processResult_(self, nj, result):
-        #######################################################################################
-        # self.hstates['destination'] = self.hstates['destination'].strip()
-        # destination = self.hstates['destination'].split(":")[0]
-        # self.hstates['jobId'] =  self.hstates['jobId'].strip()
-        # ID3 =  self.hstates['jobId'].split("/")[3]
-        # brokTmp = self.hstates['jobId'].split("/")[2]
-        # broker = brokTmp.split(":")[0]
-        # self.hstates['destination'] =  self.hstates['destination'].strip()
-        # destination =  self.hstates['destination'].split(":")[0]
-        # resFlag = 0
-        #######################################################################################
-        
+    def processResult_(self, nj, result,jid):
+
+        destination = common.scheduler.queryDest(jid).split(":")[0]
+        ID3 =  jid.split("/")[3]
+        broker = jid.split("/")[2].split(":")[0]
+        resFlag = 0
         ### TODO: set relevant status also to DB
 
         try: 
             if result == 'Done': 
                 self.countDone = self.countDone + 1
-                exCode = self.hstates['exit_code']
+                exCode = common.scheduler.getExitStatus(jid)
                 common.jobDB.setStatus(nj, 'D')
-                #statistic.notify('checkstatus',resFlag,exCode,dataset,owner,destination,broker,ID3,ID1,NJC)
+                Statistic.notify('checkstatus',resFlag,exCode,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
             elif result == 'Ready':
                 self.countReady = self.countReady + 1
-                #statistic.notify('checkstatus',resFlag,'-----',dataset,owner,destination,broker,ID3,ID1,NJC)
+                Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
             elif result == 'Scheduled':
                 self.countSched = self.countSched + 1
-                #statistic.notify('checkstatus',resFlag,'-----',dataset,owner,destination,broker,ID3,ID1,NJC)
+                Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                print 'CAZZOOOOO '+str(destination) 
             elif result == 'Running':
                 self.countRun = self.countRun + 1
-                #statistic.notify('checkstatus',resFlag,'-----',dataset,owner,destination,broker,ID3,ID1,NJC)
+                Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
             elif result == 'Aborted':
                 common.jobDB.setStatus(nj, 'A')
-                #job.saveJobStatus()
-                #statistic.notify('checkstatus',resFlag,'abort',dataset,owner,destination,broker,ID3,ID1,NJC)
+                Statistic.notify('checkstatus',resFlag,'abort',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
                 pass
             elif result == 'Cancelled':
                 common.jobDB.setStatus(nj, 'K')
-                #job.setStatus('K')
-                #job.saveJobStatus()
-                #statistic.notify('checkstatus',resFlag,'cancel',dataset,owner,destination,broker,ID3,ID1,NJC)
+                Statistic.notify('checkstatus',resFlag,'cancel',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
                 pass
             elif result == 'Cleared':
-                #job.setStatus('P')
-                exCode = self.hstates['exit_code']
-                #statistic.notify('checkstatus',resFlag,exCode,dataset,owner,destination,broker,ID3,ID1,NJC)
-                #job.saveJobStatus()
+                exCode = common.scheduler.getExitStatus(jid) 
+                Statistic.notify('checkstatus',resFlag,exCode,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
                 self.countCleared = self.countCleared + 1
         except UnboundLocalError:
             common.logger.message('ERROR: UnboundLocalError with ')

@@ -2,11 +2,21 @@ from Actor import *
 from crab_util import *
 import common
 from ApmonIf import ApmonIf
+import Statistic
 
 class Submitter(Actor):
     def __init__(self, cfg_params, nj_list):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
+        ############################################# 
+        fileCODE1 = open(common.work_space.logDir()+"/.code","r")
+        array = fileCODE1.read().split('::')
+        self.ID1 = array[0]
+        self.NJC = array[1]   
+        self.dataset = array[2]
+        self.owner = array[3]  
+        fileCODE1.close()
+        
         return
     
     def run(self):
@@ -30,7 +40,7 @@ class Submitter(Actor):
         njs = 0
         for nj in self.nj_list:
             st = common.jobDB.status(nj)
-            if st != 'C' and st != 'K' and st != 'A':
+            if st != 'C' and st != 'K' and st != 'A' and st != 'RC':
                 long_st = crabJobStatusToString(st)
                 msg = "Job # %d is not submitted: status %s"%(nj+1, long_st)
                 common.logger.message(msg)
@@ -43,6 +53,21 @@ class Submitter(Actor):
             common.jobDB.setStatus(nj, 'S')
             common.jobDB.setJobId(nj, jid)
             njs += 1
+
+            ############################################   
+
+            destination = common.scheduler.queryDest(jid).split(":")[0]
+            ID3 =  jid.split("/")[3]
+            broker = jid.split("/")[2].split(":")[0]
+            if st == 'C':
+                resFlag = 0
+            elif st == 'RC':
+                resFlag = 2
+            else:            
+                resFlag = 0
+                pass
+
+            Statistic.notify('submit',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC
             pass
 
         ####

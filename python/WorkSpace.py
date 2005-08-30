@@ -2,7 +2,7 @@ from crab_exceptions import *
 from threading import RLock
 import common
 
-import os, shutil, string
+import os, shutil, string, time
 
 class WorkSpace:
 
@@ -36,6 +36,10 @@ class WorkSpace:
             os.mkdir(self._job_dir)
             os.mkdir(self._res_dir)
             os.mkdir(self._share_dir)
+
+            fileCODE1 = open(self._log_dir+"/.code","w")
+            fileCODE1.write(str(time.time()))
+            fileCODE1.close()
             pass
         return
 

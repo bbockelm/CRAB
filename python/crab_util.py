@@ -140,6 +140,7 @@ def crabJobStatusToString(crab_status):
     elif crab_status == 'X': status = 'None'
     elif crab_status == 'Y': status = 'Output retrieved'
     elif crab_status == 'A': status = 'Aborted'
+    elif crab_status == 'RC': status = 'ReCreated'
     else: status = '???'
     return status
 
