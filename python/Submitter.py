@@ -67,7 +67,7 @@ class Submitter(Actor):
                 resFlag = 0
                 pass
 
-            Statistic.notify('submit',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC
+            Statistic.notify('submit',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
             pass
 
         ####
@@ -98,7 +98,7 @@ class Submitter(Actor):
         rb = rb.replace('//', '')
         params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
                   'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
-                  'user': user, 'taskType': taskType, 'vo': vo, 'dataset': dataset, 'owner': owner, 'broker', rb`}
+                  'user': user, 'taskType': taskType, 'vo': vo, 'dataset': dataset, 'owner': owner, 'broker': rb}
         for i in params.keys():
             print "key, value: %s %s" % (i, params[i])
         mon.fillDict(params)
