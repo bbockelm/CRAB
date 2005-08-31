@@ -186,7 +186,7 @@ class Creator(Actor):
         lastJobsNumberOfEvents= (self.total_number_of_events+self.first_event)-firstEvent
         common.jobDB.setMaxEvents(nJobs-1, lastJobsNumberOfEvents)
     
-        common.logger.message('Created '+str(self.total_njobs-1)+' jobs for '+str(self.job_number_of_events)+' each plus 1 for '+str(lastJobsNumberOfEvents)+' for a total of '+str(self.job_number_of_events*(self.total_njobs-1)+lastJobsNumberOfEvents)+' events')
+        common.logger.message('Will be created '+str(self.total_njobs-1)+' jobs for '+str(self.job_number_of_events)+' each plus 1 for '+str(lastJobsNumberOfEvents)+' for a total of '+str(self.job_number_of_events*(self.total_njobs-1)+lastJobsNumberOfEvents)+' events')
 
         # case two (to be implemented) write eventCollections for each jobs
 
@@ -242,17 +242,13 @@ class Creator(Actor):
             # Prepare configuration file
 
             self.job_type.modifySteeringCards(nj)
-
-            # Create JDL
-            # Maybe, it worths to move this call into Submitter,
-            # i.e. to create scheduler-specific file at submission time ?
-
-            common.scheduler.createJDL(nj)
-
-            # Create script
+            # Create script (sh)
 
             script_writer.modifyTemplateScript(nj)
             os.chmod(common.job_list[nj].scriptFilename(), 0744)
+
+            # Create scheduler scripts (jdl)
+            common.scheduler.createSchScript(nj)
 
             common.jobDB.setStatus(nj, 'C')
             # common: write input and output sandbox
@@ -271,6 +267,7 @@ class Creator(Actor):
             pass
 
         ####
+
         common.jobDB.save()
 
         msg = '\nTotal of %d jobs created'%njc
@@ -278,14 +275,3 @@ class Creator(Actor):
         msg = msg + '.\n'
         common.logger.message(msg)
         return
-
-
-
-
-
-
-
-
-
-
-
