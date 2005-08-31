@@ -200,6 +200,9 @@ class SchedulerEdg(Scheduler):
         return self.getStatusAttribute_(id, 'exit_code')
     def queryStatus(self, id):
         return self.getStatusAttribute_(id, 'status')
+    def queryDest(self, id):  
+        return self.getStatusAttribute_(id, 'destination')
+
 
     def getStatusAttribute_(self, id, attr):
         """ Query a status of the job with id """
