@@ -60,18 +60,12 @@ class Status(Actor):
             jid = common.jobDB.jobId(nj)
             if st == 'S':
                 result = common.scheduler.queryStatus(jid)
-                self.processResult_(nj, result,jid)
-                exit = ''
-                if result == 'Done':
-                    exit = common.scheduler.getExitStatus(jid)
-                    pass
+                self.processResult_(nj, result)
+                exit = common.jobDB.exitStatus(nj)
                 print 'Job %03d:'%(nj+1),jid,result,exit
                 pass
             else:
-                exit = ''
-                if st == 'D':
-                    exit = common.scheduler.getExitStatus(jid)
-                    pass
+                exit = common.jobDB.exitStatus(nj)
                 print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
                 pass
             pass
@@ -95,6 +89,9 @@ class Status(Actor):
                 self.countDone = self.countDone + 1
                 exCode = common.scheduler.getExitStatus(jid)
                 common.jobDB.setStatus(nj, 'D')
+                jid = common.jobDB.jobId(nj)
+                exit = common.scheduler.getExitStatus(jid)
+                common.jobDB.setExitStatus(nj, exit)
                 Statistic.notify('checkstatus',resFlag,exCode,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
             elif result == 'Ready':
                 self.countReady = self.countReady + 1
@@ -158,18 +155,3 @@ class Status(Actor):
         pass
 
 
-    # def getJobStatus_(self, sid, attr):
-    #     result = ''
-    #     st = 0
-    #     self.jobStat.getStatus(sid, self.level)
-    #     (err, apiMsg) = self.jobStat.get_error()
-    #     if err:
-    #         common.logger.message(apiMsg)
-    #         return None
-    #     else:
-    #         for i in range(len(self.states)):
-    #             #print "states = ", self.states
-    #             # Fill an hash table with all information retrieved from LB API
-    #             self.hstates[ self.states[i] ] = self.jobStat.loadStatus(st)[i]
-    #         result = self.jobStat.loadStatus(st)[ self.states.index(attr) ]
-    #     return result

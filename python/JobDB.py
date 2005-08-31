@@ -7,6 +7,7 @@ import os, string
 class dbEntry:
     def __init__(self):
         self.status = 'X'       # job status
+        self.exitStatus = ''    # job exit status
         self.jid = ''           # scheduler job id
         self.firstEvent = 0     # first event for this job
         self.maxEvents = 0      # last event for this job
@@ -17,11 +18,13 @@ class dbEntry:
 
     def __str__(self):
         txt  = 'Status <' + self.status + '>; '
+        if self.exitStatus!='':
+            txt += 'exitStatus <' + str(self.exitStatus) + '>\n'
         txt += 'Job Id <' + self.jid + '>\n'
         if self.maxEvents!=0:
             txt += 'FirstEvent <' + str(self.firstEvent) + '>\n'
             txt += 'MaxEvents <' + str(self.maxEvents) + '>\n'
-        if len(self.collections)>0:
+        if self.collections:
             txt += 'Collections <' + str(self.collections) + '>\n'
 
         return txt
@@ -78,6 +81,7 @@ class JobDB:
         for i in range(len(self._jobs)):
             db_file.write(`(i+1)`+';')
             db_file.write(self._jobs[i].status+';')
+            db_file.write(self._jobs[i].exitStatus+';')
             db_file.write(self._jobs[i].jid+';')
             db_file.write(str(self._jobs[i].firstEvent)+';')
             db_file.write(str(self._jobs[i].maxEvents)+';')
@@ -98,7 +102,7 @@ class JobDB:
 
         for line in db_file:
             db_entry = dbEntry()
-            (n, db_entry.status, db_entry.jid, db_entry.firstEvent, db_entry.maxEvents, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , rest) = string.split(line, ';')
+            (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.firstEvent, db_entry.maxEvents, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , rest) = string.split(line, ';')
             db_entry.collections = self.strToList_(collectionsTMP)
             db_entry.inputSandbox = self.strToList_(inputSandboxTMP)
             db_entry.outputSandbox = self.strToList_(outputSandboxTMP)
@@ -116,6 +120,13 @@ class JobDB:
     
     def status(self, nj):
         return self._jobs[nj].status
+    
+    def setExitStatus(self, nj, exitStatus):
+        self._jobs[nj].exitStatus = exitStatus
+        return
+    
+    def exitStatus(self, nj):
+        return self._jobs[nj].exitStatus
     
     def setJobId(self, nj, jid):
         self._jobs[nj].jid = jid
