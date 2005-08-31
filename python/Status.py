@@ -60,7 +60,7 @@ class Status(Actor):
             jid = common.jobDB.jobId(nj)
             if st == 'S':
                 result = common.scheduler.queryStatus(jid)
-                self.processResult_(nj, result)
+                self.processResult_(nj, result, jid)
                 exit = common.jobDB.exitStatus(nj)
                 print 'Job %03d:'%(nj+1),jid,result,exit
                 pass

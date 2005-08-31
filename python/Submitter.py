@@ -83,6 +83,8 @@ class Submitter(Actor):
             application = os.path.basename(os.environ['SCRAMRT_LOCALRT'])
         except KeyError:
             application = os.path.basename(os.environ['LOCALRT'])
+
+        nevtJob = 0
         try: 
             nevtJob = self.cfg_params['USER.job_number_of_events']
         except KeyError:
