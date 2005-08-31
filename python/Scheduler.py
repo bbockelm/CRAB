@@ -18,8 +18,8 @@ class Scheduler :
     getInstance = staticmethod(getInstance)
 
     def __init__(self, name):
-        if Scheduler._instance:
-            raise CrabException('Scheduler already exists.')
+        #if Scheduler._instance:
+        #    raise CrabException('Scheduler already exists.')
         Scheduler._instance = self
 
         self._name = name
@@ -31,6 +31,12 @@ class Scheduler :
     def configure(self, cfg_params):
         return
 
+
+    def sched_parameter(self):
+        """
+        Returns parameter scheduler-specific, to use with BOSS .
+        """
+        return 
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
