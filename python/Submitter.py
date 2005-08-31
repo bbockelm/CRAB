@@ -29,6 +29,7 @@ class Submitter(Actor):
         # Add an instance of ApmonIf to send relevant parameters to ML
         mon = ApmonIf()
         # run a list-match on first job
+        #print "lunghezza lista: ", len(self.nj_list)
         firstJob=self.nj_list[0]
         match = common.scheduler.listMatch(firstJob)
         if match:
@@ -40,6 +41,8 @@ class Submitter(Actor):
         njs = 0
         for nj in self.nj_list:
             st = common.jobDB.status(nj)
+            #print "nj = ", nj 
+            #print "st = ", st
             if st != 'C' and st != 'K' and st != 'A' and st != 'RC':
                 long_st = crabJobStatusToString(st)
                 msg = "Job # %d is not submitted: status %s"%(nj+1, long_st)
@@ -47,7 +50,7 @@ class Submitter(Actor):
                 continue
 
             common.logger.message("Submitting job # "+`(nj+1)`)
-
+            print "submitting job!"
             jid = common.scheduler.submit(nj)
 
             common.jobDB.setStatus(nj, 'S')
@@ -88,6 +91,7 @@ class Submitter(Actor):
         try: 
             nevtJob = self.cfg_params['USER.job_number_of_events']
         except KeyError:
+            nevtJob = 0
             pass
         exe = self.cfg_params['USER.executable']
         tool = common.prog_name
@@ -101,8 +105,8 @@ class Submitter(Actor):
         params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
                   'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
                   'user': user, 'taskType': taskType, 'vo': vo, 'dataset': dataset, 'owner': owner, 'broker': rb}
-        for i in params.keys():
-            print "key, value: %s %s" % (i, params[i])
+        #for i in params.keys():
+            #print "key, value: %s %s" % (i, params[i])
         mon.fillDict(params)
         mon.sendToML()
 
