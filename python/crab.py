@@ -54,7 +54,7 @@ class Crab:
         self.debug_level = 0
 
         # Scheduler name, e.g. 'edg', 'lsf'
-        self.scheduler_name = 'edg'
+        self.scheduler_name = ''
 
         self.initialize_(opts)
 
@@ -291,6 +291,10 @@ class Crab:
                     pass
                 pass
 
+            elif ( opt == '-use_boss' ):
+                self.scheduler_name = 'boss'
+                pass
+
             elif string.find(opt,'.') == -1:
                 print common.prog_name+'. Unrecognized option '+opt
                 usage()
@@ -496,6 +500,7 @@ class Crab:
                         pass
                     elif st == 'S':
                         jid = common.jobDB.jobId(nj)
+                        print "jid", jid
                         currStatus = common.scheduler.queryStatus(jid)
                         if currStatus=="Done":
                             jobs_done.append(nj)
