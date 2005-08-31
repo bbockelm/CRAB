@@ -200,9 +200,9 @@ class Orca(JobType):
 
         txt = ""
 
-        if os.path.isfile(self.tgz):
-            txt += 'echo "tar xzvf ../'+os.path.basename(self.tgz)+'"\n'
-            txt += 'tar xzvf ../'+os.path.basename(self.tgz)+'\n'
+        if os.path.isfile(self.tgzNameWithPath):
+            txt += 'echo "tar xzvf ../'+os.path.basename(self.tgzNameWithPath)+'"\n'
+            txt += 'tar xzvf ../'+os.path.basename(self.tgzNameWithPath)+'\n'
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '   echo "Untarring .tgz file failed ... exiting" \n'
@@ -435,9 +435,8 @@ class Orca(JobType):
         """
         inp_box = []
         ## code
-        self.tgz = self.tgzNameWithPath
-        if os.path.isfile(self.tgz):
-            inp_box.append(self.tgz)
+        if os.path.isfile(self.tgzNameWithPath):
+            inp_box.append(self.tgzNameWithPath)
         ## orcarc
         for o in self.allOrcarcs:
           for f in o.fileList():
