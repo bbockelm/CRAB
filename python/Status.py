@@ -14,7 +14,6 @@ class Status(Actor):
         self.countCleared = 0
         self.countToTjob = 0
         
-        ############################################# daniele
         fileCODE1 = open(common.work_space.logDir()+"/.code","r")
         array = fileCODE1.read().split('::')
         self.ID1 = array[0]
@@ -99,7 +98,6 @@ class Status(Actor):
             elif result == 'Scheduled':
                 self.countSched = self.countSched + 1
                 Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-                print 'CAZZOOOOO '+str(destination) 
             elif result == 'Running':
                 self.countRun = self.countRun + 1
                 Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
