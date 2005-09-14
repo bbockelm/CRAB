@@ -63,6 +63,7 @@ class SchedulerBoss(Scheduler):
         # check scheduler and jobtype registration in BOSS
         self.checkSchedRegistration_(self.boss_scheduler_name)
         self.checkJobtypeRegistration_(self.boss_jobtype) 
+     #   self.checkJobtypeRegistration_('test') 
         
         return
 
@@ -126,12 +127,23 @@ class SchedulerBoss(Scheduler):
 
         # BOSS job declaration
         dir = string.split(common.work_space.topDir(), '/')
-        # da decidere se questo valore va bene come group ...
-        cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script
+ 
+        dirlog = common.work_space.logDir()
+  
+        #sch = open(sch_script, 'a')
+        #sch.write('jobtype=test;\n')
+        #sch.write('BossAttr=[')
+        #sch.write('test.counter=' + str(nj+1) + ';')
+        #sch.write('];')
+        #sch.close()
+ 
+        cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + 'ORCA.sh_'+str(nj+1)+'.log'       
+  
         msg = 'BOSS declaration:' + cmd
         common.logger.message(msg)
         cmd_out = runCommand(cmd)
         # speriamo che l'output di BOSS non cambi ....
+        print '  ',cmd_out
         prefix = 'Job ID '
         index = string.find(cmd_out, prefix)
         if index < 0 :
@@ -141,7 +153,7 @@ class SchedulerBoss(Scheduler):
             index = index + len(prefix)
             boss_id = string.strip(cmd_out[index:])
             common.jobDB.setBossId(nj, boss_id)
-            print "BOSS ID = ", boss_id
+            print "BOSS ID =  ", boss_id
         return 
 
 
@@ -190,6 +202,7 @@ class SchedulerBoss(Scheduler):
             print "BOSS Scheduler ID = ", boss_scheduler_id
         return boss_scheduler_id
 
+
     def queryStatus(self, id):
         """ Query a status of the job with id """
 
@@ -205,7 +218,16 @@ class SchedulerBoss(Scheduler):
         Get output for a finished job with id.
         Returns the name of directory with results.
         """
-        return self.boss_scheduler.getOutput(id) 
+        dir = common.work_space.resDir()
+
+        cmd = 'boss getOutput -jobid '+ id +' -outdir ' +dir 
+        cmd_out = runCommand(cmd)
+
+        dir += os.getlogin()
+        dir += '_' + os.path.basename(id)
+        
+        return dir   
+        #return self.boss_scheduler.getOutput(id) 
 
     def cancel(self, id):
         """ Cancel the EDG job with id """

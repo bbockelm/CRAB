@@ -11,6 +11,7 @@ from Submitter import Submitter
 from Checker import Checker
 from PostMortem import PostMortem
 from Status import Status
+from StatusBoss import StatusBoss #daniele boss
 import common
 import Statistic
 
@@ -386,11 +387,19 @@ class Crab:
         For each user action instantiate a corresponding
         object and put it in the action dictionary.
         """
-        
         for opt in opts.keys():
-            val = opts[opt]
+            if ( opt == '-use_boss'):  #daniele boss
+                self.flag_useboss = 1
+            else:
+                self.flag_useboss = 0
+                pass
 
-            if ( opt == '-create' ):
+        for opt in opts.keys():
+          
+            val = opts[opt]
+                                                                                                               
+ 
+            if (  opt == '-create' ):
                 if val:
                     if ( isInt(val) ):
                         ncjobs = int(val)
@@ -456,11 +465,14 @@ class Crab:
                 jobs = self.parseRange_(val)
 
                 if len(jobs) != 0:
-                    # Instantiate Submitter object
-                    self.actions[opt] = Status(self.cfg_params, jobs)
+                    if ( self.flag_useboss == 1 ):  #daniele boss   
+                        self.actions[opt] = StatusBoss(self.cfg_params, jobs) #daniele boss
+                    else:                         
+                        # Instantiate Submitter object
+                        self.actions[opt] = Status(self.cfg_params, jobs)
+                        pass
                     pass
                 pass
-            
             elif ( opt == '-kill' ):
                 if val:
                     jobs = self.parseRange_(val)
@@ -495,7 +507,7 @@ class Crab:
                 jobs_done = []
                 for nj in jobs:
                     st = common.jobDB.status(nj)
-                    if st == 'D':
+                    if st == 'D':# and st == 'Y':
                         jobs_done.append(nj)
                         pass
                     elif st == 'S':
@@ -514,24 +526,31 @@ class Crab:
                     pass
 
                 for nj in jobs_done:
-                    jid = common.jobDB.jobId(nj)
-                    dir = common.scheduler.getOutput(jid)
-                    common.jobDB.setStatus(nj, 'Y')
+                    if ( self.flag_useboss == 1 ):  #daniele boss
+                        id = common.jobDB.bossId(nj)
+                        dir = common.scheduler.getOutput(id)
+                        common.jobDB.setStatus(nj, 'Y')
+                        jid = common.jobDB.jobId(nj)     
+                    else:
+                        jid = common.jobDB.jobId(nj)
+                        dir = common.scheduler.getOutput(jid)
+                        common.jobDB.setStatus(nj, 'Y')
 
                     # Rename the directory with results to smth readable
                     new_dir = common.work_space.resDir()
-                    try:
-                        files = os.listdir(dir)
-                        for file in files:
-                            os.rename(dir+'/'+file, new_dir+'/'+file)
-                        os.rmdir(dir)
-                    except OSError, e:
-                        msg = 'rename files from '+dir+' to '+new_dir+' error: '
-                        msg += str(e)
-                        common.logger.message(msg)
-                        # ignore error
+                    if ( self.flag_useboss == 0 ): #daniele Temp
+                        try:
+                            files = os.listdir(dir)
+                            for file in files:
+                                os.rename(dir+'/'+file, new_dir+'/'+file)
+                            os.rmdir(dir)
+                        except OSError, e:
+                            msg = 'rename files from '+dir+' to '+new_dir+' error: '
+                            msg += str(e)
+                            common.logger.message(msg)
+                            # ignore error
+                            pass
                         pass
-                    
                     destination = common.scheduler.queryDest(jid).split(":")[0]
                     ID3 =  jid.split("/")[3]
                     broker = jid.split("/")[2].split(":")[0]
