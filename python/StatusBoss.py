@@ -70,11 +70,11 @@ class StatusBoss(Actor):
                 result = common.scheduler.queryStatus(jid)
                 self.processResult_(nj, result, jid)
                 exit = common.jobDB.exitStatus(nj)
-                print 'Job %03d:'%(nj+1),jid,result,exit
+              #  print 'Job %03d:'%(nj+1),jid,result,exit
                 pass
             else:
                 exit = common.jobDB.exitStatus(nj)
-                print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
+               # print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
                 pass
             pass
         common.jobDB.save()
