@@ -307,7 +307,6 @@ class Orca(JobType):
                     else :
                         self.builder = orcarcBuilderOld.orcarcBuilderOld()
                     tmpAllOrcarcs = self.builder.createOrcarcAndInit(self.pubDBData[PubDBversion])
-                    #print "tmpAllOrcarcs", tmpAllOrcarcs  
                     tmpOrcarcList.append(tmpAllOrcarcs)
                     #print 'version ',PubDBversion,' tmpAllOrcarcs ', tmpAllOrcarcs
 
@@ -434,13 +433,17 @@ class Orca(JobType):
         Returns a list of filenames to be put in JDL input sandbox.
         """
         inp_box = []
+        # dict added to delete duplicate from input sandbox file list
+        seen = {}
         ## code
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
         ## orcarc
         for o in self.allOrcarcs:
           for f in o.fileList():
-            inp_box.append(common.work_space.jobDir()+f)
+            if (f not in seen.keys()):
+              inp_box.append(common.work_space.jobDir()+f)
+              seen[f] = 1
 
         ## config
         inp_box.append(common.job_list[nj].configFilename())
