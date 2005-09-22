@@ -57,13 +57,14 @@ class SchedulerBoss(Scheduler):
         self.boss_scheduler.configure(cfg_params)
 
         # create additional classad file
+        self.schclassad = ''
         if (self.boss_scheduler.sched_parameter()):
            self.schclassad = common.work_space.shareDir()+'/'+self.boss_scheduler.param
  
         # check scheduler and jobtype registration in BOSS
         self.checkSchedRegistration_(self.boss_scheduler_name)
         self.checkJobtypeRegistration_(self.boss_jobtype) 
-     #   self.checkJobtypeRegistration_('test') 
+        self.checkJobtypeRegistration_('crabjob') 
         
         return
 
@@ -123,20 +124,29 @@ class SchedulerBoss(Scheduler):
         """
 
         self.boss_scheduler.createSchScript(nj)
-        sch_script = common.job_list[nj].jdlFilename() 
-
+        sch_script_orig = common.job_list[nj].jdlFilename()
+        sch_script = sch_script_orig+"_boss"
+        cmd = 'cp '+sch_script_orig+' '+sch_script
+        runCommand(cmd)
+        
         # BOSS job declaration
         dir = string.split(common.work_space.topDir(), '/')
+        sch = open(sch_script, 'a')
+        types = 'jobtype=crabjob,orca'
+        boss_scheduler_name = string.lower(self.boss_scheduler.name())
+        # da decidere se lasciare come if ...
+        if boss_scheduler_name == 'edg' :
+            types += ',edg'
+        sch.write(types+';\n')            
+        # da decidere se questo valore va bene come group ...
+        sch.write('group='+ dir[len(dir)-2]+';\n')
+        sch.write('BossAttr=[')
+        sch.write('crabjob.INTERNAL_ID=' + str(nj+1) + ';')
+        sch.write('];\n')
+        sch.close()
  
         dirlog = common.work_space.logDir()
   
-        #sch = open(sch_script, 'a')
-        #sch.write('jobtype=test;\n')
-        #sch.write('BossAttr=[')
-        #sch.write('test.counter=' + str(nj+1) + ';')
-        #sch.write('];')
-        #sch.close()
- 
         cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + 'ORCA.sh_'+str(nj+1)+'.log'       
   
         msg = 'BOSS declaration:' + cmd
@@ -154,6 +164,8 @@ class SchedulerBoss(Scheduler):
             boss_id = string.strip(cmd_out[index:])
             common.jobDB.setBossId(nj, boss_id)
             print "BOSS ID =  ", boss_id
+        cmd = 'rm -f '+sch_script
+        runCommand(cmd)
         return 
 
 
@@ -178,7 +190,10 @@ class SchedulerBoss(Scheduler):
         boss_scheduler_name = string.lower(self.boss_scheduler.name())
         boss_scheduler_id = None
 
-        cmd = 'boss submit -scheduler '+boss_scheduler_name+' -schclassad '+self.schclassad+' -jobid '+common.jobDB.bossId(nj)
+        schcladstring = ''
+        if self.schclassad != '':
+            schcladstring=' -schclassad '+self.schclassad
+        cmd = 'boss submit -scheduler '+boss_scheduler_name+schcladstring+' -jobid '+common.jobDB.bossId(nj)
         msg = 'BOSS submission: ' + cmd
         common.logger.message(msg)
         cmd_out = runCommand(cmd)
@@ -206,7 +221,31 @@ class SchedulerBoss(Scheduler):
     def queryStatus(self, id):
         """ Query a status of the job with id """
 
-        return self.boss_scheduler.queryStatus(id)
+        EDGstatus={
+            'W':'Created(BOSS)',
+            'R':'Running',
+            'SC':'Checkpointed',
+            'SS':'Scheduled',
+            'RE':'Ready',
+            'SW':'Waiting',
+            'SU':'Submitted',
+            'UN':'Undefined',
+            'SK':'Cancelled',
+            'SD':'Done (Success)',
+            'SA':'Aborted',
+            'DA':'Done (Aborted)',
+            'SE':'Cleared',
+            'OR':'Done (Success)',
+            'A':'Aborted(BOSS)',
+            'K':'Killed(BOSS)',
+            'E':'Cleared(BOSS)',
+            'NA':'Unknown(BOSS)'
+            }
+        cmd = 'boss q -statusOnly -jobid '+id
+        cmd_out = runCommand(cmd)
+        js = line.split(None,2)
+        return EDGstatus[js[1]]
+    #        return self.boss_scheduler.queryStatus(id)
 
     def queryDetailedStatus(self, id):
         """ Query a detailed status of the job with id """
@@ -227,7 +266,6 @@ class SchedulerBoss(Scheduler):
         dir += '_' + os.path.basename(id)
         
         return dir   
-        #return self.boss_scheduler.getOutput(id) 
 
     def cancel(self, id):
         """ Cancel the EDG job with id """
