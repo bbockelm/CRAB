@@ -50,40 +50,90 @@ class StatusBoss(Actor):
 
         return
 
+    def splitbyoffset(self,line,fields):
+        ret_val=[]
+        nn=fields.split(',')
+        nfields=int(nn[0])
+        nn[0]=0
+        offs=0
+        for i in range(1,nfields):
+            offs = offs+int(nn[i-1])
+            ret_val.append(line[offs:offs+int(nn[i])-1])
+        return ret_val
+
     def run(self):
+
+        EDGstatus={
+            'W':'Created(BOSS)',
+            'R':'Running',
+            'SC':'Checkpointed',
+            'SS':'Scheduled',
+            'RE':'Ready',
+            'SW':'Waiting',
+            'SU':'Submitted',
+            'UN':'Undefined',
+            'SK':'Cancelled',
+            'SD':'Done (Success)',
+            'SA':'Aborted',
+            'DA':'Done (Aborted)',
+            'SE':'Cleared',
+            'OR':'Done (Success)',
+            'A':'Aborted(BOSS)',
+            'K':'Killed(BOSS)',
+            'E':'Cleared(BOSS)',
+            'NA':'Unknown(BOSS)'
+            }
         """
         The main method of the class.
         """
         common.logger.debug(5, "Status::run() called")
-
-        common.jobDB.load()
-        for nj in self.nj_list:
-            st = common.jobDB.status(nj)
-            self.countToTjob = self.countToTjob + 1
-            jid = common.jobDB.jobId(nj)
-            id =  common.jobDB.bossId(nj)
-            #print 'status = '+str(st)+' id boss =  '+str(id)
-            if (id != ''): 
-                lastID = id
-                pass
-            if st == 'S':
-                result = common.scheduler.queryStatus(jid)
-                self.processResult_(nj, result, jid)
-                exit = common.jobDB.exitStatus(nj)
-              #  print 'Job %03d:'%(nj+1),jid,result,exit
-                pass
+#        common.jobDB.load()
+        dir = string.split(common.work_space.topDir(), '/')
+        group = dir[len(dir)-2]
+        cmd = 'boss RTupdate -jobid all '
+        runCommand(cmd)
+        add2tablelist=''
+        addjoincondition = ''
+        nodeattr='JOB.E_HOST'
+#        boss_scheduler_name = string.lower(self.boss_scheduler.name())
+#        if boss_scheduler_name == 'edg' :
+#            add2tablelist+=',edg'
+#            addjoincondition=' and edg.JOBID=JOB.ID'
+#            nodeattr='edg.CE'
+        cmd = 'boss SQL -query "select JOB.ID,JOB.GROUP_N,crabjob.INTERNAL_ID,'+nodeattr+',crabjob.EXE_EXIT_CODE from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.INTERNAL_ID"'
+        cmd_out = runCommand(cmd)
+        jobAttributes={}
+        nline=0
+        header=''
+        fielddesc=()
+        for line in cmd_out.splitlines():
+            if nline==0:
+                fielddesc=line
             else:
-                exit = common.jobDB.exitStatus(nj)
-               # print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
-                pass
-            pass
-        common.jobDB.save()
-        firstID = common.jobDB.bossId(0)
-        statusBOSS = "boss q -all -jobid "+str(firstID)+":"+str(lastID)
-        cmd_out = runCommand(statusBOSS)
-        print cmd_out
-
-        self.Report_()
+                if nline==1:
+                    header = self.splitbyoffset(line,fielddesc)
+                else:
+                    js = line.split(None,2)
+                    jobAttributes[int(js[0])]=self.splitbyoffset(line,fielddesc)
+            nline = nline+1
+        cmd = 'boss q -all -statusOnly -group '+group
+        cmd_out = runCommand(cmd)
+        jobStatus={}
+        for line in cmd_out.splitlines():
+            js = line.split(None,2)
+            jobStatus[int(js[0])]=EDGstatus[js[1]]
+        printline = ''
+        for h in header:
+            printline+=h
+        printline+=' STATUS'
+        print printline
+        for bossid in jobAttributes.keys():
+            printline=''
+            for a in jobAttributes[bossid]:
+                printline+=a
+            printline+=' '+jobStatus[bossid]
+            print printline
+        #self.Report_()
         pass
 
 
