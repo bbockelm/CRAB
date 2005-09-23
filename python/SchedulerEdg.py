@@ -44,9 +44,11 @@ class SchedulerEdg(Scheduler):
         # Add EDG_WL_LOCATION to the python path
 
         try:
-            path = os.environ['EDG_WL_LOCATION']
+            path = os.environ['GLITE_WMS_LOCATION']
+#            path = os.environ['EDG_WL_LOCATION']
         except:
-            msg = "Error: the EDG_WL_LOCATION variable is not set."
+            msg = "Error: the GLITE_WMS_LOCATION variable is not set."
+#            msg = "Error: the EDG_WL_LOCATION variable is not set."
             raise CrabException(msg)
 
         libPath=os.path.join(path, "lib")
@@ -77,7 +79,9 @@ class SchedulerEdg(Scheduler):
         Returns part of a job script which does scheduler-specific work.
         """
         txt = '\n'
-        txt += 'CloseCEs=`edg-brokerinfo getCE`\n'
+        # MARCO
+        txt += 'CloseCEs=`glite-brokerinfo getCE`\n'
+        # MARCO
         txt += 'echo "CloseCEs = $CloseCEs"\n'
         txt += 'CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
         txt += 'echo "CE = $CE"\n'
@@ -214,7 +218,8 @@ class SchedulerEdg(Scheduler):
         """ Query a status of the job with id """
 
         hstates = {}
-        Status = importName('edg_wl_userinterface_common_LbWrapper', 'Status')
+#        Status = importName('edg_wl_userinterface_common_LbWrapper', 'Status')
+        Status = importName('glite_wmsui_LbWrapper', 'Status')
         # Bypass edg-job-status interfacing directly to C++ API
         # Job attribute vector to retrieve status without edg-job-status
         level = 0
@@ -276,9 +281,11 @@ class SchedulerEdg(Scheduler):
         if timeleft < 1:  ok=0
 
         if ok==0:
-            msg = 'No valid proxy found !\n'
-            msg += "Please do 'grid-proxy-init'."
-            raise CrabException(msg)
+            print "No valid proxy found !\n"
+            print "Creating a user proxy with default length of 100h\n"
+            msg = "Unable to create a valid proxy!\n"
+            if os.system("grid-proxy-init -valid 100:00"):
+                raise CrabException(msg)
         return
     
     def createSchScript(self, nj):
@@ -375,7 +382,7 @@ class SchedulerEdg(Scheduler):
                req = req + ' && ('
              for i in range(len(common.analisys_common_info['sites'])):
                 req = req + 'other.GlueCEInfoHostName == "' \
-                      + common.analisys_common_info['sites'][i] + '"'
+                     + common.analisys_common_info['sites'][i] + '"'
                 if ( i < (int(len(common.analisys_common_info['sites']) - 1)) ):
                     req = req + ' || '
              req = req + ')'
