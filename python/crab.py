@@ -11,7 +11,7 @@ from Submitter import Submitter
 from Checker import Checker
 from PostMortem import PostMortem
 from Status import Status
-from StatusBoss import StatusBoss #daniele boss
+from StatusBoss import StatusBoss 
 import common
 import Statistic
 
@@ -388,7 +388,7 @@ class Crab:
         object and put it in the action dictionary.
         """
         for opt in opts.keys():
-            if ( opt == '-use_boss'):  #daniele boss
+            if ( opt == '-use_boss'):  
                 self.flag_useboss = 1
             else:
                 self.flag_useboss = 0
@@ -465,8 +465,8 @@ class Crab:
                 jobs = self.parseRange_(val)
 
                 if len(jobs) != 0:
-                    if ( self.flag_useboss == 1 ):  #daniele boss   
-                        self.actions[opt] = StatusBoss(self.cfg_params, jobs) #daniele boss
+                    if ( self.flag_useboss == 1 ):     
+                        self.actions[opt] = StatusBoss(self.cfg_params, jobs) 
                     else:                         
                         # Instantiate Submitter object
                         self.actions[opt] = Status(self.cfg_params, jobs)
@@ -507,7 +507,7 @@ class Crab:
                 jobs_done = []
                 for nj in jobs:
                     st = common.jobDB.status(nj)
-                    if st == 'D':# and st == 'Y':
+                    if st == 'D':
                         jobs_done.append(nj)
                         pass
                     elif st == 'S':
@@ -521,12 +521,12 @@ class Crab:
                             common.logger.message(msg)
                         pass
                     else:
-                        common.logger.message('Jobs #'+`(nj+1)`+' has status '+st+' not possible to get output')
+                      #  common.logger.message('Jobs #'+`(nj+1)`+' has status '+st+' not possible to get output')
                         pass
                     pass
 
                 for nj in jobs_done:
-                    if ( self.flag_useboss == 1 ):  #daniele boss
+                    if ( self.flag_useboss == 1 ):  
                         id = common.jobDB.bossId(nj)
                         dir = common.scheduler.getOutput(id)
                         common.jobDB.setStatus(nj, 'Y')
@@ -538,7 +538,7 @@ class Crab:
 
                     # Rename the directory with results to smth readable
                     new_dir = common.work_space.resDir()
-                    if ( self.flag_useboss == 0 ): #daniele Temp
+                    if ( self.flag_useboss == 0 ):
                         try:
                             files = os.listdir(dir)
                             for file in files:

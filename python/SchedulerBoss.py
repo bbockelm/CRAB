@@ -9,6 +9,7 @@ class SchedulerBoss(Scheduler):
     def __init__(self):
         Scheduler.__init__(self,"BOSS")
         self.checkBoss_()
+        self.cwd = common.work_space.cwdDir()
         return
 
 
@@ -63,8 +64,10 @@ class SchedulerBoss(Scheduler):
  
         # check scheduler and jobtype registration in BOSS
         self.checkSchedRegistration_(self.boss_scheduler_name)
+
         self.checkJobtypeRegistration_(self.boss_jobtype) 
-        self.checkJobtypeRegistration_('crabjob') 
+        self.checkJobtypeRegistration_(self.boss_scheduler_name) 
+        self.checkJobtypeRegistration_('crab') 
         
         return
 
@@ -76,12 +79,12 @@ class SchedulerBoss(Scheduler):
         boss_scheduler_check = "boss showSchedulers"
         boss_out = runCommand(boss_scheduler_check)
         if string.find(boss_out, sched_name) == -1 :
-            msg = sched_name + ' scheduler not registered in BOSS\n'
+            msg = sched_name + ' scheduler not registered in BOSs\n'
             msg = msg + 'Starting registration\n'
             common.logger.message(msg)
             # qui bisogna decidere un path che non deve cambiare con le versioni diverse di boss 
             # e se conviene fare noi la registrazione!!!!
-            register_boss_scheduler = self.boss_dir + '/BossSched/bin/register'+ string.upper(sched_name) + 'Scheduler'
+            register_boss_scheduler = self.cwd + 'BossScript/register'+ string.upper(sched_name) + 'Scheduler'
             if os.path.exists(register_boss_scheduler):
                 runCommand(register_boss_scheduler)
             else:
@@ -99,15 +102,15 @@ class SchedulerBoss(Scheduler):
         boss_out = runCommand(boss_jobtype_check)
         if string.find(boss_out, jobtype) == -1 :
             msg =  'Warning:' + jobtype + ' jobtype not registered in BOSS\n'
-            msg = msg + 'Starting registration (in the future...)\n'
+            msg = msg + 'Starting registration \n'
             common.logger.message(msg)
-            #register_boss_jobtype= self.boss_dir + '/jobtest/register'+string.upper(jobtype)+'Job'
-            #if os.path.exists(register_boss_jobtype):
-            #    runCommand(register_boss_jobtype)
-            #else:
-            #    msg = 'Warning: file '+ register_boss_jobtype + ' does not exist!\n'
-            #    msg = msg + 'Will be used only JOB as default jobtype\n'
-            #    common.logger.message(msg)
+            register_boss_jobtype= self.cwd + 'BossScript/register' + string.upper(jobtype) + 'job'
+            if os.path.exists(register_boss_jobtype):
+                runCommand(register_boss_jobtype)
+            else:
+                msg = 'Warning: file '+ register_boss_jobtype + ' does not exist!\n'
+                msg = msg + 'Will be used only JOB as default jobtype\n'
+                common.logger.message(msg)
         return
 
 

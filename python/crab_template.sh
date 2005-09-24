@@ -36,13 +36,21 @@ echo "Executable $executable"
 which $executable
 res=$?
 if [ $res -ne 0 ];then 
-  echo "The executable not found on WN `hostname`" 
+  echo "SET_WN 1 ==> ERROR executable not found on WN `hostname`" 
   exit 1 
 fi
 
+echo "SET_WN 0 ==> OK"
+
 echo "$executable started at `date`"
+start_exe_time=`date +%s`
 #CRAB run_executable
 executable_exit_status=$?
+stop_exe_time=`date +%s`
+#TIME_EXE=$stop_exe_time - $start_exe_time
+let "TIME_EXE = stop_exe_time - start_exe_time"
+echo "TIME_EXE = $TIME_EXE sec"
+echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"
 echo "$executable ended at `date`"
 if [ $executable_exit_status -ne 0 ]; then
   echo "Processing of job failed with exit code $executable_exit_status"
@@ -72,4 +80,5 @@ pwd
 echo "ls -Al"
 ls -Al
 
+echo "JOB_EXIT_STATUS = $exit_status"
 exit $exit_status

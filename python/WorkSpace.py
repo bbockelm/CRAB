@@ -20,6 +20,7 @@ class WorkSpace:
         #    raise CrabException('WorkSpace already exists.')
 
         self.lock = RLock()
+        self._cwd_dir = os.getcwd()+'/'
         self._top_dir = top_dir                    # top working directory
         self._log_dir = self._top_dir + '/log'     # log-directory
         self._job_dir = self._top_dir + '/job'     # job pars, scripts, jdl's
@@ -51,6 +52,9 @@ class WorkSpace:
             shutil.rmtree(self._top_dir)
             pass
         return
+
+    def cwdDir(self):
+        return self._cwd_dir + '/'
 
     def topDir(self):
         return self._top_dir + '/'

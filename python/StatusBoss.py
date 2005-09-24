@@ -56,7 +56,7 @@ class StatusBoss(Actor):
         nfields=int(nn[0])
         nn[0]=0
         offs=0
-        for i in range(1,nfields):
+        for i in range(1,nfields+1):
             offs = offs+int(nn[i-1])
             ret_val.append(line[offs:offs+int(nn[i])-1])
         return ret_val
@@ -100,8 +100,9 @@ class StatusBoss(Actor):
 #            add2tablelist+=',edg'
 #            addjoincondition=' and edg.JOBID=JOB.ID'
 #            nodeattr='edg.CE'
-        cmd = 'boss SQL -query "select JOB.ID,JOB.GROUP_N,crabjob.INTERNAL_ID,'+nodeattr+',crabjob.EXE_EXIT_CODE from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.INTERNAL_ID"'
+        cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.INTERNAL_ID" '
         cmd_out = runCommand(cmd)
+#        print "cmd_out = ", cmd_out
         jobAttributes={}
         nline=0
         header=''
@@ -120,17 +121,24 @@ class StatusBoss(Actor):
         cmd_out = runCommand(cmd)
         jobStatus={}
         for line in cmd_out.splitlines():
-            js = line.split(None,2)
+            js = line.split(None,2)               
             jobStatus[int(js[0])]=EDGstatus[js[1]]
+      #  printfields = [1,2,3,4]
+        if jobStatus[int(js[0])] == 'Done (Success)' or jobStatus[int(js[0])] == 'Cleared(BOSS)':
+            printfields = [1,2,4,3]
+        else:
+            printfields = [1,2,4]
         printline = ''
-        for h in header:
-            printline+=h
+        for i in printfields:
+            printline+=header[i]
+        
         printline+=' STATUS'
         print printline
         for bossid in jobAttributes.keys():
             printline=''
-            for a in jobAttributes[bossid]:
-                printline+=a
+            for i in printfields:
+                printline+=jobAttributes[bossid][i]
+  
             printline+=' '+jobStatus[bossid]
             print printline
         #self.Report_()
