@@ -33,6 +33,7 @@ class ScriptWriter:
         Create a script from scratch.
         """
         self.nj = nj
+        print "in modifyTemplateScript self.nj vale ", self.nj
         
         tpl = open(self.template, 'r')
         script = open(common.job_list[nj].scriptFilename(), 'w')

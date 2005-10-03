@@ -243,7 +243,7 @@ class Creator(Actor):
 
             self.job_type.modifySteeringCards(nj)
             # Create script (sh)
-
+            #print "nel for prima del modifyTemplateScript, nj vale", nj
             script_writer.modifyTemplateScript(nj)
             os.chmod(common.job_list[nj].scriptFilename(), 0744)
 

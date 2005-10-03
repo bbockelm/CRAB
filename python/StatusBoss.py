@@ -68,7 +68,7 @@ class StatusBoss(Actor):
             'R':'Running',
             'SC':'Checkpointed',
             'SS':'Scheduled',
-            'RE':'Ready',
+            'SR':'Ready',
             'SW':'Waiting',
             'SU':'Submitted',
             'UN':'Undefined',
@@ -102,7 +102,7 @@ class StatusBoss(Actor):
 #            nodeattr='edg.CE'
         cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.INTERNAL_ID" '
         cmd_out = runCommand(cmd)
-#        print "cmd_out = ", cmd_out
+        #print "cmd_out = ", cmd_out
         jobAttributes={}
         nline=0
         header=''

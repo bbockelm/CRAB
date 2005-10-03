@@ -44,10 +44,8 @@ class SchedulerEdg(Scheduler):
         # Add EDG_WL_LOCATION to the python path
 
         try:
-#            path = os.environ['GLITE_WMS_LOCATION']
             path = os.environ['EDG_WL_LOCATION']
         except:
-#            msg = "Error: the GLITE_WMS_LOCATION variable is not set."
             msg = "Error: the EDG_WL_LOCATION variable is not set."
             raise CrabException(msg)
 
@@ -74,15 +72,13 @@ class SchedulerEdg(Scheduler):
             return 1
         else:
             return 0 
+
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
         """
         txt = '\n'
         txt += 'CloseCEs=`edg-brokerinfo getCE`\n'
-        # MARCO
-        #txt += 'CloseCEs=`glite-brokerinfo getCE`\n'
-        # MARCO
         txt += 'echo "CloseCEs = $CloseCEs"\n'
         txt += 'CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
         txt += 'echo "CE = $CE"\n'
@@ -220,7 +216,6 @@ class SchedulerEdg(Scheduler):
 
         hstates = {}
         Status = importName('edg_wl_userinterface_common_LbWrapper', 'Status')
-#        Status = importName('glite_wmsui_LbWrapper', 'Status')
         # Bypass edg-job-status interfacing directly to C++ API
         # Job attribute vector to retrieve status without edg-job-status
         level = 0
@@ -235,7 +230,6 @@ class SchedulerEdg(Scheduler):
             return None
         else:
             for i in range(len(self.states)):
-                #print "states = ", states
                 # Fill an hash table with all information retrieved from LB API
                 hstates[ self.states[i] ] = jobStat.loadStatus(st)[i]
             result = jobStat.loadStatus(st)[ self.states.index(attr) ]
@@ -359,16 +353,6 @@ class SchedulerEdg(Scheduler):
         if out_box[-1] == ',' : out_box = out_box[:-1]
         out_box = out_box + ' };'
         jdl.write(out_box+'\n')
-
-        # If CloseCE is used ...
-        #if common.flag_usecloseCE and job.inputDataFiles():
-        #    indata = 'InputData = { '
-        #    for fl in job.inputDataFiles():
-        #       indata = indata + ' "lfn:' + SPL + fl + '",'
-        #    if indata[-1] == ',' : indata = indata[:-1]
-        #    indata = indata + ' };'
-        #    jdl.write(indata+'\n')
-        #    jdl.write('DataAccessProtocol = { "gsiftp" };\n')
 
         if common.analisys_common_info['sites']:
            if common.analisys_common_info['sw_version']:

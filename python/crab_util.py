@@ -182,30 +182,22 @@ def runCommand(cmd):
     or None if an error occurred.
     """
     common.logger.debug(2, cmd)
-    #child = os.popen(cmd)
-    #(child,stdin) = popen2.popen4(cmd) # requires python2
-
     child = popen2.Popen3(cmd,1)
     err = child.wait()
     cmd_out = child.fromchild.read()
     cmd_err = child.childerr.read()
-    if err:
+    if err :
         msg = ('`'+cmd+'`\n   failed with exit code '
                +`err`+'='+`(err&0xff)`+'(signal)+'
                +`(err>>8)`+'(status)'+'\n')
-        msg += cmd_out
-        msg += cmd_err
+        msg += 'cmd_out = ' + cmd_out
+        msg += 'cmd_err = ' + cmd_err
         common.logger.message(msg)
         return None
 
     cmd_out = cmd_out + cmd_err
     common.logger.debug(2, cmd_out)
-    #err = child_stdout.close()
-    #if err:
-    #    common.log.message('OUT`'+cmd+'`\n   failed with exit code '
-    #                       +`err`+'='+`(err&0xff)`+'(signal)+'
-    #                       +`(err>>8)`+'(status)')
-    #    return None
+
     if cmd_out == '' : cmd_out = ' '
     return cmd_out
 

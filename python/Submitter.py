@@ -23,27 +23,21 @@ class Submitter(Actor):
         """
         The main method of the class.
         """
-
         common.logger.debug(5, "Submitter::run() called")
-        
         # Add an instance of ApmonIf to send relevant parameters to ML
         mon = ApmonIf()
-        # run a list-match on first job
-        #print "lunghezza lista: ", len(self.nj_list)
         firstJob=self.nj_list[0]
         match = common.scheduler.listMatch(firstJob)
         if match:
             common.logger.message("Found compatible resources "+str(match))
         else:
             raise CrabException("No compatible resources found!")
+        #########
         # Loop over jobs
-
         njs = 0
         try:
           for nj in self.nj_list:
             st = common.jobDB.status(nj)
-            #print "nj = ", nj 
-            #print "st = ", st
             if st != 'C' and st != 'K' and st != 'A' and st != 'RC':
                 long_st = crabJobStatusToString(st)
                 #msg = "Job # %d is not submitted: status %s"%(nj+1, long_st)
@@ -51,14 +45,11 @@ class Submitter(Actor):
                 continue
 
             common.logger.message("Submitting job # "+`(nj+1)`)
-            print "submitting job!"
             jid = common.scheduler.submit(nj)
 
             common.jobDB.setStatus(nj, 'S')
             common.jobDB.setJobId(nj, jid)
             njs += 1
-
-            ############################################   
 
             destination = common.scheduler.queryDest(jid).split(":")[0]
             print "Destinazione: ", destination
@@ -101,10 +92,7 @@ class Submitter(Actor):
             mon.sendToML()
             pass
         except:
-        ####
-        
           common.jobDB.save()
-        
 
         msg = '\nTotal of %d jobs submitted'%njs
         if njs != len(self.nj_list) :

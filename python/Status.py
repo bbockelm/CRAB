@@ -65,7 +65,7 @@ class Status(Actor):
                 pass
             else:
                 exit = common.jobDB.exitStatus(nj)
-                print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
+                #print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
                 pass
             pass
 

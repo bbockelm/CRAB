@@ -226,6 +226,7 @@ class Orca(JobType):
         txt = '\n'
         for fileWithSuffix in self.output_file:
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
+            print "output_file_num = ", output_file_num 
             txt += 'cp '+fileWithSuffix+' '+output_file_num+'\n'
             pass
         return txt
@@ -465,7 +466,8 @@ class Orca(JobType):
 
         ## User Declared output files
         for out in self.output_file:
-            out_box.append(self.version+'/'+self.numberFile_(out,str(nj)))
+            n_out = nj + 1 
+            out_box.append(self.version+'/'+self.numberFile_(out,str(n_out)))
         return out_box
 
     def numberFile_(self, file, txt):
@@ -480,9 +482,11 @@ class Orca(JobType):
         # add "_txt"
         if len(p)>1:
           ext = p[len(p)-1]
-          result = name + '_' + str(txt) + "." + ext
+          #result = name + '_' + str(txt) + "." + ext
+          result = name + '_' + txt + "." + ext
         else:
-          result = name + '_' + str(txt)
+          #result = name + '_' + str(txt)
+          result = name + '_' + txt
         
         return result
 

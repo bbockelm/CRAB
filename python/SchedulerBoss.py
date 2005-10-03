@@ -86,7 +86,10 @@ class SchedulerBoss(Scheduler):
             # e se conviene fare noi la registrazione!!!!
             register_boss_scheduler = self.cwd + 'BossScript/register'+ string.upper(sched_name) + 'Scheduler'
             if os.path.exists(register_boss_scheduler):
-                runCommand(register_boss_scheduler)
+                boss_out = runCommand(register_boss_scheduler)
+                if string.find(boss_out, 'Usage') != -1 :
+                    msg = 'Error: Problem with scheduler '+sched_name+' registration\n'
+                    raise CrabException(msg)
             else:
                 msg = 'Warning: file '+ register_boss_scheduler + 'does not exist!\n'
                 msg = msg + 'Please create your scheduler plugins\n'
@@ -106,7 +109,10 @@ class SchedulerBoss(Scheduler):
             common.logger.message(msg)
             register_boss_jobtype= self.cwd + 'BossScript/register' + string.upper(jobtype) + 'job'
             if os.path.exists(register_boss_jobtype):
-                runCommand(register_boss_jobtype)
+                boss_out = runCommand(register_boss_jobtype)
+                if string.find(boss_out, 'Usage') != -1 :
+                    msg = 'Error: Problem with job '+jobtype+' registration\n'
+                    raise CrabException(msg)
             else:
                 msg = 'Warning: file '+ register_boss_jobtype + ' does not exist!\n'
                 msg = msg + 'Will be used only JOB as default jobtype\n'
@@ -155,7 +161,6 @@ class SchedulerBoss(Scheduler):
         msg = 'BOSS declaration:' + cmd
         common.logger.message(msg)
         cmd_out = runCommand(cmd)
-        # speriamo che l'output di BOSS non cambi ....
         print '  ',cmd_out
         prefix = 'Job ID '
         index = string.find(cmd_out, prefix)
@@ -194,6 +199,7 @@ class SchedulerBoss(Scheduler):
         boss_scheduler_id = None
 
         schcladstring = ''
+        
         if self.schclassad != '':
             schcladstring=' -schclassad '+self.schclassad
         cmd = 'boss submit -scheduler '+boss_scheduler_name+schcladstring+' -jobid '+common.jobDB.bossId(nj)
@@ -206,17 +212,18 @@ class SchedulerBoss(Scheduler):
            common.logger.message(msg)
            return  boss_scheduler_id
 
-        # speriamo che l'output di BOSS non cambi ....
         prefix = 'Scheduler ID is '
         index = string.find(cmd_out, prefix)
         if index < 0 :
-            common.log.message('ERROR: BOSS submission failed: no BOSS Scheduler ID')
+            common.logger.message('ERROR: BOSS submission failed: no BOSS Scheduler ID')
             return boss_scheduler_id
         else :
             index = index + len(prefix)
             boss_scheduler_id = string.strip(cmd_out[index:])
-            index = string.find(boss_scheduler_id,'\n')
-            boss_scheduler_id = string.strip(boss_scheduler_id[:index])
+            #print "boss_scheduler_id", boss_scheduler_id
+            #index = string.find(boss_scheduler_id,'\n')
+            #print "index di a capo", index
+            #boss_scheduler_id = string.strip(boss_scheduler_id[:index])
             print "BOSS Scheduler ID = ", boss_scheduler_id
         return boss_scheduler_id
 
