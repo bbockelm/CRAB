@@ -39,7 +39,8 @@ class Submitter(Actor):
         # Loop over jobs
 
         njs = 0
-        for nj in self.nj_list:
+        try:
+          for nj in self.nj_list:
             st = common.jobDB.status(nj)
             #print "nj = ", nj 
             #print "st = ", st
@@ -60,6 +61,7 @@ class Submitter(Actor):
             ############################################   
 
             destination = common.scheduler.queryDest(jid).split(":")[0]
+            print "Destinazione: ", destination
             ID3 =  jid.split("/")[3]
             broker = jid.split("/")[2].split(":")[0]
             if st == 'C':
@@ -71,44 +73,38 @@ class Submitter(Actor):
                 pass
 
             Statistic.notify('submit',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-            pass
+            
+            # List of parameters to be sent to ML monitor system
+            user = os.getlogin()
+            taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
+            jobId = str(nj)
+            sid = jid
+            try:
+                application = os.path.basename(os.environ['SCRAMRT_LOCALRT'])
+            except KeyError:
+                application = os.path.basename(os.environ['LOCALRT'])
 
+            nevtJob = common.jobDB.maxEvents(nj)
+            exe = self.cfg_params['USER.executable']
+            tool = common.prog_name
+            scheduler = self.cfg_params['CRAB.scheduler']
+            taskType = 'analysis'
+            vo = 'cms'
+            dataset = self.cfg_params['USER.dataset']
+            owner = self.cfg_params['USER.owner']
+            rb = sid.split(':')[1]
+            rb = rb.replace('//', '')
+            params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
+                      'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
+                      'user': user, 'taskType': taskType, 'vo': vo, 'dataset': dataset, 'owner': owner, 'broker': rb}
+            mon.fillDict(params)
+            mon.sendToML()
+            pass
+        except:
         ####
         
-        common.jobDB.save()
+          common.jobDB.save()
         
-        # List of parameters to be sent to monitor system
-        user = os.getlogin()
-        taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
-        jobId = str(nj)
-        sid = jid
-        try:
-            application = os.path.basename(os.environ['SCRAMRT_LOCALRT'])
-        except KeyError:
-            application = os.path.basename(os.environ['LOCALRT'])
-
-        nevtJob = 0
-        try: 
-            nevtJob = self.cfg_params['USER.job_number_of_events']
-        except KeyError:
-            nevtJob = 0
-            pass
-        exe = self.cfg_params['USER.executable']
-        tool = common.prog_name
-        scheduler = self.cfg_params['CRAB.scheduler']
-        taskType = 'analysis'
-        vo = 'cms'
-        dataset = self.cfg_params['USER.dataset']
-        owner = self.cfg_params['USER.owner']
-        rb = sid.split(':')[1]
-        rb = rb.replace('//', '')
-        params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
-                  'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
-                  'user': user, 'taskType': taskType, 'vo': vo, 'dataset': dataset, 'owner': owner, 'broker': rb}
-        #for i in params.keys():
-            #print "key, value: %s %s" % (i, params[i])
-        mon.fillDict(params)
-        mon.sendToML()
 
         msg = '\nTotal of %d jobs submitted'%njs
         if njs != len(self.nj_list) :
