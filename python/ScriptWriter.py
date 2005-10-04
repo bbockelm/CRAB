@@ -10,6 +10,7 @@ import string
 class ScriptWriter:
     def __init__(self, template):
         # pattern -> action
+        ### FEDE aggiunte ultime due azioni
         self.actions = {
             'title'                       : self.title_,
             'setup_scheduler_environment' : self.setupSchedulerEnvironment_,
@@ -17,7 +18,8 @@ class ScriptWriter:
             'build_executable'            : self.buildExe_,
             'run_executable'              : self.runExe_,
             'rename_output'               : self.renameOutput_,
-            'register_results'            : None
+            'copy_output'                 : self.copyOutput_,
+            'register_output'             : self.registerOutput_
             }
         
         self.template = template
@@ -33,7 +35,6 @@ class ScriptWriter:
         Create a script from scratch.
         """
         self.nj = nj
-        print "in modifyTemplateScript self.nj vale ", self.nj
         
         tpl = open(self.template, 'r')
         script = open(common.job_list[nj].scriptFilename(), 'w')
@@ -110,3 +111,19 @@ class ScriptWriter:
         txt = '\n'
         txt += jbt.wsRenameOutput(self.nj)
         return txt
+
+    #### FEDE
+    def copyOutput_(self):
+        """
+        Returns part of a job script which copies output files to SE.
+        """
+        txt = common.scheduler.wsCopyOutput()
+        return txt
+
+    def registerOutput_(self):
+        """
+        Returns part of a job script which registers output files to RLS catalog.
+        """
+        txt = common.scheduler.wsRegisterOutput()
+        return txt
+

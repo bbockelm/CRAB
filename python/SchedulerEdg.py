@@ -36,23 +36,59 @@ class SchedulerEdg(Scheduler):
         try: self.EDG_retry_count = cfg_params['EDG.retry_count']
         except KeyError: self.EDG_retry_count = ''
 
-        try:
-            self.VO = cfg_params['EDG.virtual_organization']
-        except KeyError:
-            self.VO = 'cms'
+        try: self.VO = cfg_params['EDG.virtual_organization']
+        except KeyError: self.VO = 'cms'
 
-        # Add EDG_WL_LOCATION to the python path
+        try: self.return_data = cfg_params['USER.return_data']
+        except KeyError: self.return_data = ''
 
-        try:
-            path = os.environ['EDG_WL_LOCATION']
-        except:
-            msg = "Error: the EDG_WL_LOCATION variable is not set."
-            raise CrabException(msg)
+        try: 
+            self.copy_data = cfg_params["USER.copy_data"]
+            try:
+                self.SE = cfg_params['USER.storage_element']
+                self.SE_PATH = cfg_params['USER.storage_path']
+            except KeyError:
+                msg = "Error. The [USER] section does not have 'storage_element'"
+                msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
+                common.logger.message(msg)
+                raise CrabException(msg)
+        except KeyError: self.copy_data = ''
 
-        libPath=os.path.join(path, "lib")
-        sys.path.append(libPath)
-        libPath=os.path.join(path, "lib", "python")
-        sys.path.append(libPath)
+        try: 
+            self.register_data = cfg_params["USER.register_data"]
+            try:
+                 self.LFN = cfg_params['USER.lfn_dir']
+            except KeyError:
+                msg = "Error. The [USER] section does not have 'lfn_dir' value"
+                msg = msg + " it's necessary for RLS registration"
+                common.logger.message(msg)
+                raise CrabException(msg)
+        except KeyError: self.register_data= ''
+
+        try: self.EDG_requirements = cfg_params['EDG.requirements']
+        except KeyError: self.EDG_requirements = ''
+                                                                                                                                                             
+        try: self.EDG_retry_count = cfg_params['EDG.retry_count']
+        except KeyError: self.EDG_retry_count = ''
+                                                                                                                                                             
+        try: self.EDG_clock_time = cfg_params['EDG.max_wall_clock_time']
+        except KeyError: self.EDG_clock_time= ''
+                                                                                                                                                             
+        try: self.EDG_cpu_time = cfg_params['EDG.max_cpu_time']
+        except KeyError: self.EDG_cpu_time = ''
+
+#        # Add EDG_WL_LOCATION to the python path
+#
+#        try:
+#           path = os.environ['EDG_WL_LOCATION']
+#       except:
+#           msg = "Error: the EDG_WL_LOCATION variable is not set."
+#           raise CrabException(msg)
+#
+#       libPath=os.path.join(path, "lib")
+#       sys.path.append(libPath)
+#       libPath=os.path.join(path, "lib", "python")
+#       sys.path.append(libPath)
 
         self.checkProxy_()
         return
@@ -77,12 +113,113 @@ class SchedulerEdg(Scheduler):
         """
         Returns part of a job script which does scheduler-specific work.
         """
-        txt = '\n'
+
+        txt = ''
+        ### FEDE ####
+        if self.copy_data:
+           if self.SE:
+              txt += 'export SE='+self.SE+'\n'
+           if self.SE_PATH:
+              if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
+              txt += 'export SE_PATH='+self.SE_PATH+'\n'
+                                                                                                                                                             
+        if self.register_data:
+           if self.VO:
+              txt += 'export VO='+self.VO+'\n'
+           if self.LFN:
+              txt += 'export LFN='+self.LFN+'\n'
+              txt += '\n'
+        ########
         txt += 'CloseCEs=`edg-brokerinfo getCE`\n'
         txt += 'echo "CloseCEs = $CloseCEs"\n'
         txt += 'CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
         txt += 'echo "CE = $CE"\n'
         return txt
+    #### FEDE   
+    def wsCopyOutput(self):
+        """
+        Write a CopyResults part of a job script, e.g.
+        to copy produced output into a storage element.
+        """
+        txt = ''
+        if self.copy_data:
+           copy = 'globus-url-copy file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file'
+           txt += '#\n'
+           txt += '#   Copy output into user SE = $SE\n'
+           txt += '#\n'
+           txt += 'copy_exit_status=1\n'
+           txt += 'if [ $executable_exit_status -eq 0 ]; then\n'
+           txt += '  for out_file in $file_list ; do\n'
+           txt += '    echo "Trying to copy output file to $SE "\n'
+           txt += '    echo "'+copy+'"\n'
+           txt += '    '+copy+' 2>&1\n'
+           txt += '    copy_exit_status=$?\n'
+           txt += '    echo "copy_exit_status= $copy_exit_status"\n'
+           txt += '    if [ $copy_exit_status -ne 0 ]; then \n'
+           txt += '       echo "Problems with SE= $SE" \n'
+           txt += '       echo "output lost!"\n'
+           txt += '    else \n'
+           txt += '       echo "output copied into $SE/$SE_PATH directory"\n'
+           txt += '    fi \n'
+           txt += '  done\n'
+           txt += 'fi \n'
+           txt += 'echo "COPY_EXIT_STATUS=$copy_exit_status"\n'
+        return txt
+
+    def wsRegisterOutput(self):
+        """
+        Returns part of a job script which does scheduler-specific work.
+        """
+
+        txt = ''
+        if self.register_data:
+           txt += '#\n'
+           txt += '#   Register output into RLS\n'
+           txt += '#\n'
+           txt += 'register_exit_status=1\n'
+           txt += 'if [[ $executable_exit_status -eq 0 && $copy_exit_status -eq 0 ]]; then\n'
+           txt += '   for out_file in $file_list ; do\n'
+           txt += '      echo "Trying to register the output file into RLS"\n'
+           txt += '      echo "lcg-rf -l $LFN/$out_file --vo $VO sfn://$SE$SE_PATH/$out_file"\n'
+           txt += '      lcg-rf -l $LFN/$out_file --vo $VO sfn://$SE$SE_PATH/$out_file 2>&1 \n'
+           txt += '      register_exit_status=$?\n'
+           txt += '      echo "register_exit_status= $register_exit_status"\n'
+           txt += '      if [ $register_exit_status -ne 0 ]; then \n'
+           txt += '         echo "Problems with the registration into RLS" \n'
+           txt += '         echo "Try with srm protocol" \n'
+           txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO srm://$SE$SE_PATH/$out_file"\n'
+           txt += '         lcg-rf -l $LFN/$out_file --vo $VO srm://$SE$SE_PATH/$out_file 2>&1 \n'
+           txt += '         register_exit_status=$?\n'
+           txt += '         echo "register_exit_status= $register_exit_status"\n'
+           txt += '         if [ $register_exit_status -ne 0 ]; then \n'
+           txt += '            echo "Problems with the registration into RLS" \n'
+           txt += '         fi \n'
+           txt += '      else \n'
+           txt += '         echo "output registered into RLS"\n'
+           txt += '      fi \n'
+           txt += '   done\n'
+           txt += 'elif [[ $executable_exit_status -eq 0 && $copy_exit_status -ne 0 ]]; then \n'
+           txt += '   echo "Trying to copy output file to CloseSE"\n'
+           txt += '   CLOSE_SE=`edg-brokerinfo getCloseSEs | head -1`\n'
+           txt += '   for out_file in $file_list ; do\n'
+           txt += '      echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $SE -P $LFN/$out_file --vo $VO file://`pwd`/$out_file" \n'
+           txt += '      lcg-cr -v -l lfn:${LFN}/$out_file -d $SE -P $LFN/$out_file --vo $VO file://`pwd`/$out_file 2>&1 \n'
+           txt += '      register_exit_status=$?\n'
+           txt += '      echo "register_exit_status= $register_exit_status"\n'
+           txt += '      if [ $register_exit_status -ne 0 ]; then \n'
+           txt += '         echo "Problems with CloseSE" \n'
+           txt += '      else \n'
+           txt += '         echo "The program was successfully executed"\n'
+           txt += '         echo "Output storage element used: $CLOSE_SE"\n'
+           txt += '         echo "the LFN for the file is LFN=${LFN}/$out_file"\n'
+           txt += '      fi \n'
+           txt += '   done\n'
+           txt += 'else\n'
+           txt += '  echo "Problem with the executable"\n'
+           txt += 'fi \n'
+           txt += 'echo "REGISTER_EXIT_STATUS=$register_exit_status"\n'
+        return txt
+        #####################
 
     def loggingInfo(self, nj):
         """
@@ -297,6 +434,8 @@ class SchedulerEdg(Scheduler):
         title = '# This JDL was generated by '+\
                 common.prog_name+' (version '+common.prog_version_str+')\n'
         jt_string = ''
+
+
         
         SPL = inp_storage_subdir
         if ( SPL and SPL[-1] != '/' ) : SPL = SPL + '/'
@@ -309,6 +448,7 @@ class SchedulerEdg(Scheduler):
         jdl.write('Executable = "' + os.path.basename(script) +'";\n')
         jdl.write(jt_string)
 
+        ### only one .sh  JDL has arguments:
         firstEvent = common.jobDB.firstEvent(nj)
         maxEvents = common.jobDB.maxEvents(nj)
         jdl.write('Arguments = "' + str(nj+1)+' '+str(firstEvent)+' '+str(maxEvents)+'";\n')
@@ -336,47 +476,54 @@ class SchedulerEdg(Scheduler):
 
         jdl.write('StdOutput     = "' + job.stdout() + '";\n')
         jdl.write('StdError      = "' + job.stderr() + '";\n')
+        
+        
+        if job.stdout() == job.stderr():
+          out_box = 'OutputSandbox = { "' + \
+                    job.stdout() + '", ".BrokerInfo",'
+        else:
+          out_box = 'OutputSandbox = { "' + \
+                    job.stdout() + '", "' + \
+                    job.stderr() + '", ".BrokerInfo",'
 
-        #if common.flag_return_data :
-        #    for fl in job.outputDataFiles():
-        #        out_box = out_box + ' "' + fl + '",'
-        #        pass
-        #    pass
-
-        out_box = 'OutputSandbox = { '
-        if out_sandbox != None:
-            for fl in out_sandbox:
-                out_box = out_box + ' "' + fl + '",'
+        if self.return_data :
+            if out_sandbox != None:
+                for fl in out_sandbox:
+                    out_box = out_box + ' "' + fl + '",'
+                    pass
                 pass
             pass
-
+                                                                                                                                                             
         if out_box[-1] == ',' : out_box = out_box[:-1]
         out_box = out_box + ' };'
         jdl.write(out_box+'\n')
 
+        ### if at least a CE exists ...
         if common.analisys_common_info['sites']:
-           if common.analisys_common_info['sw_version']:
+            if common.analisys_common_info['sw_version']:
+                req='Requirements = '
+                req=req + 'Member("VO-cms-' + \
+                     common.analisys_common_info['sw_version'] + \
+                     '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
+            if len(common.analisys_common_info['sites'])>0:
+                req = req + ' && ('
+                for i in range(len(common.analisys_common_info['sites'])):
+                    req = req + 'other.GlueCEInfoHostName == "' \
+                         + common.analisys_common_info['sites'][i] + '"'
+                    if ( i < (int(len(common.analisys_common_info['sites']) - 1)) ):
+                        req = req + ' || '
+            req = req + ')'
 
-             req='Requirements = '
-         ### First ORCA version
-             req=req + 'Member("VO-cms-' + \
-                 common.analisys_common_info['sw_version'] + \
-                 '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-         ## then sites
-             if len(common.analisys_common_info['sites'])>0:
-               req = req + ' && ('
-             for i in range(len(common.analisys_common_info['sites'])):
-                req = req + 'other.GlueCEInfoHostName == "' \
-                     + common.analisys_common_info['sites'][i] + '"'
-                if ( i < (int(len(common.analisys_common_info['sites']) - 1)) ):
-                    req = req + ' || '
-             req = req + ')'
-         ## then user requirement
-             if self.EDG_requirements:
-               req = req +  ' && ' + self.EDG_requirements
-             req = req + ';\n' 
-        jdl.write(req)
-
+            #### and USER REQUIREMENT
+            if self.EDG_requirements:
+                req = req +  ' && ' + self.EDG_requirements
+            if self.EDG_clock_time:
+                req = req + ' && other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
+            if self.EDG_cpu_time:
+                req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+            req = req + ';\n'
+            jdl.write(req)
+                                                                                                                                                             
         jdl.write('VirtualOrganisation = "' + self.VO + '";\n')
 
         if ( self.EDG_retry_count ):               

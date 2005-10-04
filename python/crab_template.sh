@@ -67,7 +67,9 @@ exit_status=$executable_exit_status
 
 #CRAB rename_output
 
-#CRAB register_results
+#CRAB copy_output 
+
+#CRAB register_output
 
 #
 # END OF PROCESS THE PRODUCED RESULTS

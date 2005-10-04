@@ -290,3 +290,10 @@ class SchedulerBoss(Scheduler):
 
     def queryDest(self, id):  
         return self.boss_scheduler.getStatusAttribute_(id, 'destination')
+
+    #### FEDE 
+    def wsCopyOutput(self):
+        return self.boss_scheduler.wsCopyOutput()
+
+    def wsRegisterOutput(self):  
+        return self.boss_scheduler.wsRegisterOutput()

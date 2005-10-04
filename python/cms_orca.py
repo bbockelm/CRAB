@@ -224,11 +224,14 @@ class Orca(JobType):
         """
 
         txt = '\n'
+        file_list = ''
         for fileWithSuffix in self.output_file:
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
-            print "output_file_num = ", output_file_num 
+            file_list=file_list+output_file_num+','
             txt += 'cp '+fileWithSuffix+' '+output_file_num+'\n'
             pass
+        file_list=file_list[:-1]
+        txt += 'file_list='+file_list+'\n'
         return txt
 
     def executableName(self):
@@ -452,7 +455,7 @@ class Orca(JobType):
         inp_box = inp_box + self.additional_inbox_files
         return inp_box
 
-### and of output_sandbox
+    ### and of output_sandbox
     def outputSandbox(self, nj):
         """
         Returns a list of filenames to be put in JDL output sandbox.
@@ -461,8 +464,8 @@ class Orca(JobType):
 
         stdout=common.job_list[nj].stdout()
         stderr=common.job_list[nj].stderr()
-        out_box.append(stdout)
-        out_box.append(stderr)
+        #out_box.append(stdout)
+        #out_box.append(stderr)
 
         ## User Declared output files
         for out in self.output_file:

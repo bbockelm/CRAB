@@ -291,10 +291,51 @@ class Crab:
                     usage()
                     pass
                 pass
+### FEDE     
+#            elif ( opt == '-use_boss' ):
+#                self.scheduler_name = 'boss'
+#                pass
 
-            elif ( opt == '-use_boss' ):
-                self.scheduler_name = 'boss'
+#            elif ( opt == '-copy_data' or opt == '-copy' ):
+#                if ( val == '0' or val == '1' ):
+#                  common.flag_copy_data = int(val)
+#                else:
+#                  print common.prog_name+'. Bad flag for -copy_data option:',\
+#                        val,'Possible values are 0(=No) or 1(=Yes)'
+#                  usage()
+#                pass
+                                                                                                                                                                   
+#            elif ( opt == '-register_data' or opt == '-register' ):
+#                if ( val == '0' or val == '1' ):
+#                  common.flag_register_data = int(val)
+#                else:
+#                  print common.prog_name+'. Bad flag for -register_data option:',\
+#                        val,'Possible values are 0(=No) or 1(=Yes#)'
+#                  usage()
+#                pass
+                                                                                                                                                                   
+#            elif ( opt == '-return_data' or opt == '-return' ):
+#                if ( val == '0' or val == '1' ):
+#                  common.flag_return_data = int(val)
+#                else:
+#                  print common.prog_name+'. Bad flag for -return_data option:',\
+#                        val,'Possible values are 0(=No) or 1(=Yes)'
+#                  usage()
+#                pass
+                                                                                                                                                             
+            elif ( opt in ('-use_boss', '-useboss') ):
+                if ( val == '1' ):
+                    self.scheduler_name = 'boss'
+                    pass
+                elif ( val == '0' ): 
+                    pass
+                else:
+                    print common.prog_name+'. Bad flag for -use_boss option:',\
+                          val,'Possible values are 0(=No) or 1(=Yes)'
+                    usage()
+                    pass
                 pass
+######
 
             elif string.find(opt,'.') == -1:
                 print common.prog_name+'. Unrecognized option '+opt
@@ -848,6 +889,20 @@ def processHelpOptions(opts):
 
 ###########################################################################
 if __name__ == '__main__':
+
+
+    # Initial settings for Python modules. Avoid appending manually lib paths.
+    try:
+        path=os.environ['EDG_WL_LOCATION']
+    except:
+        print "Error: Please set the EDG_WL_LOCATION environment variable pointing to the userinterface installation path"
+        sys.exit(1)
+                                                                                                                                                             
+    libPath=os.path.join(path, "lib")
+    sys.path.append(libPath)
+    libPath=os.path.join(path, "lib", "python")
+    sys.path.append(libPath)
+
 
     # Parse command-line options and create a dictionary with
     # key-value pairs.
