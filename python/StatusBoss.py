@@ -123,27 +123,28 @@ class StatusBoss(Actor):
         for line in cmd_out.splitlines():
             js = line.split(None,2)               
             jobStatus[int(js[0])]=EDGstatus[js[1]]
-      #  printfields = [1,2,3,4]
-        if jobStatus[int(js[0])] == 'Done (Success)' or jobStatus[int(js[0])] == 'Cleared(BOSS)':
-            printfields = [1,2,4,3]
-        else:
-            printfields = [1,2,4]
+        #printfields = [1,2,3,4]
+        printfields = [1,2,4]
+        printfields1 = [3]
         printline = ''
         for i in printfields:
             printline+=header[i]
-        
-        printline+=' STATUS'
+        printline+=' STATUS         EXIT_CODE'
         print printline
         for bossid in jobAttributes.keys():
             printline=''
+            for i in printfields1:
+                exe_code =jobAttributes[bossid][i]
             for i in printfields:
                 printline+=jobAttributes[bossid][i]
-  
-            printline+=' '+jobStatus[bossid]
+            if jobStatus[bossid] == 'Done (Success)' or jobStatus[bossid] == 'Cleared(BOSS)':
+                printline+=' '+jobStatus[bossid]+' '+exe_code
+            else:
+                printline+=' '+jobStatus[bossid]
             print printline
         #self.Report_()
         pass
-
+        print ''
 
 
     def processResult_(self, nj, result,jid):
