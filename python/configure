@@ -1,0 +1,151 @@
+#! /bin/sh
+#
+# Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
+#
+# Installation script for Crab and Boss
+#
+# 14-Sep-2005
+
+echo tar xzvf Crab_1_0_0.tgz
+echo cd Crab_1_0_0
+
+# Struttura subdir:
+# top/bin
+#    /lib
+#    /python
+
+TopDir=`\pwd`
+
+cat > crab.sh <<EOF
+#! /bin/sh
+# CRAB related Stuff
+export CRABDIR=$TopDir
+
+CRABPATH=\${CRABDIR}/bin
+CRABLIBS=\${CRABDIR}/lib
+CRABPYTHON=\${CRABDIR}/python
+
+# BOSS related Stuff
+export BOSSDIR=$TopDir
+export BOSSVERSION=$BOSSVERSION
+#BOSSPATH=\${BOSSDIR}/bin
+#BOSSLIBS=\${BOSSDIR}/SirDB/lib:\${BOSSDIR}/OSUtils/lib:\${BOSSDIR}/ClassAdLite/lib:\${BOSSDIR}/mysql/lib:\${BOSSDIR}/sqlite/lib
+BOSSLIBS=\${BOSSDIR}/lib
+
+if [ -z "\$PATH" ]; then
+   export PATH=\${CRABPATH}
+else
+   export PATH=\${CRABPATH}:\${PATH}
+fi
+if [ -z "\$LD_LIBRARY_PATH" ]; then
+   export LD_LIBRARY_PATH=\${BOSSLIBS}
+else
+   export LD_LIBRARY_PATH=\${BOSSLIBS}:\${LD_LIBRARY_PATH}
+fi
+if [ -z "\$PYTHONPATH" ]; then
+   export PYTHONPATH=\${CRABPYTHON}
+else
+   export PYTHONPATH=\${CRABPYTHON}:\${PYTHONPATH}
+fi
+EOF
+
+# csh style
+cat > crab.csh <<EOF
+#! /bin/csh
+# CRAB related Stuff
+setenv CRABDIR $TopDir
+
+set CRABPATH=\${CRABDIR}/bin
+set CRABLIBS=\${CRABDIR}/lib
+set CRABPYTHON=\${CRABDIR}/python
+
+# BOSS related Stuff
+setenv BOSSDIR $TopDir
+setenv BOSSVERSION $BOSSVERSION
+#set BOSSLIBS=\${BOSSDIR}/SirDB/lib:\${BOSSDIR}/OSUtils/lib:\${BOSSDIR}/ClassAdLite/lib:\${BOSSDIR}/mysql/lib:\${BOSSDIR}/sqlite/lib
+set BOSSLIBS=\${BOSSDIR}/lib
+
+if ( ! \$?path ) then
+   set path=\${CRABPATH}
+else
+   set path=( \${CRABPATH} \${path} )
+endif
+if ( ! \$?LD_LIBRARY_PATH ) then
+   setenv LD_LIBRARY_PATH \${BOSSLIBS}
+else
+   setenv LD_LIBRARY_PATH \${BOSSLIBS}:\${LD_LIBRARY_PATH}
+endif
+if ( ! \$?PYTHONPATH ) then
+   setenv PYTHONPATH \${CRABPYTHON}
+else
+   setenv PYTHONPATH \${CRABPYTHON}:\${PYTHONPATH}
+endif
+EOF
+
+. ./crab.sh
+
+BACKEND=SQLite
+CONFSCRIPT=${BOSSDIR}/BossConfig.clad
+cat >> $CONFSCRIPT  <<EOF
+# This is the BOSS configuration file
+
+[
+# BOSS temporary directory (where files are extracted from DB)
+BOSS_TMP_DIR = "/tmp";
+
+# BOSS update interval
+BOSS_MIN_UPD_INT = 5;   # at most one update every BOSS_MIN_UPD_INT sec.
+BOSS_MAX_UPD_INT = 30;  # at least one update every BOSS_MAX_UPD_INT sec.
+
+# Maximum retries after post-process finishes before killing RTUpdator
+# (waits BOSS_UPD_INTERVAL*BOSS_MAX_RETRY seconds)
+BOSS_MAX_RETRY = 3;
+
+# Boss Database Backend
+DB_BACKEND = "${BACKEND}";
+]
+
+EOF
+# # Now I have to configure BOSS
+
+# # I should have boss in my path
+
+# boss configureDB
+
+# ./registerCRABjob
+#    148	19:33	boss showJobTypes
+#    149	19:33	pwd
+#    150	19:33	b
+#    151	19:33	cd BossSched/
+#    152	19:33	ls
+#    153	19:33	cd bin/
+#    154	19:33	ls
+#    155	19:33	./registerEDGScheduler
+#    156	19:33	./registerForkScheduler
+#    157	19:33	./registerEDGScheduler
+#    158	19:33	boss showJobTypes
+#    160	19:33	boss showSchedulers
+#    161	19:33	pwd
+#    162	19:33	cd ../../
+#    163	19:33	cd ../
+#    164	19:33	ls
+#    165	19:34	./crab.py -create 1
+#    166	19:34	pwd
+#    167	19:34	ls
+#    168	19:34	cd crabjob-test/
+#    169	19:34	ls
+#    170	19:34	cd ../
+#    171	19:34	ls
+#    172	19:34	./zero
+#    173	19:34	ls
+#    174	19:34	cd crabboss/
+#    175	19:34	ls
+#    176	19:34	cp crab.post orca.post
+#    177	19:34	cp crab.runtime orca.runtime
+#    178	19:34	cp crab.schema orca.schema
+#    179	19:35	cp registerCRABjob registerORCAjob
+#    180	19:35	gvim registerORCAjob
+#    181	19:35	gvim orca.schema
+#    182	19:35	cd ../
+#    183	19:35	history
+#    184	19:35	history > crab_boss_setup

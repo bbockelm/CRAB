@@ -1,0 +1,33 @@
+#!/bin/bash
+
+bossDir=/home/lacaprar/Crab/dev/CRAB_1_0_0/boss-v3_6_1_pre1/
+crabDir=/home/lacaprar/Crab/dev/CRAB_1_0_0/Crab/
+dest=/home/lacaprar/Crab/dev/prova/
+
+echo $dest
+mkdir $dest
+mkdir $dest/bin
+mkdir $dest/lib
+mkdir $dest/python
+mkdir $dest/script
+
+# copy bin
+cp $bossDir/bin/* $dest/bin/.
+cp $crabDir/python/crab.py $dest/bin/.
+
+# copy lib
+cp $bossDir/lib/*.so* $dest/lib/.
+#cp $bossDir/log4cplus/lib/*.so* $dest/lib/.
+cp $bossDir/mysql/lib/*.so* $dest/lib/.
+cp $bossDir/sqlite/lib/*.so* $dest/lib/.
+
+# copy python
+cp $crabDir/python/* $dest/python/.
+
+# copy script
+cp $crabDir/python/BossScript/* $dest/python/.
+
+# create configure
+cp $crabDir/python/configure $dest/.
+
+
