@@ -129,7 +129,7 @@ class StatusBoss(Actor):
         printline = ''
         for i in printfields:
             printline+=header[i]
-        printline+=' STATUS         EXIT_CODE'
+        printline+=' STATUS       EXIT_CODE'
         print printline
         for bossid in jobAttributes.keys():
             printline=''
@@ -137,12 +137,19 @@ class StatusBoss(Actor):
                 exe_code =jobAttributes[bossid][i]
             for i in printfields:
                 printline+=jobAttributes[bossid][i]
+                if jobStatus[bossid] != 'Created(BOSS)'  and jobStatus[bossid] != 'Unknown(BOSS)':
+                    destination = jobAttributes[bossid][4]
+                    broker = jobAttributes[bossid][2].split("/")[2].split(":")[0]
+                    ID3 = jobAttributes[bossid][2].split("/")[3]
             if jobStatus[bossid] == 'Done (Success)' or jobStatus[bossid] == 'Cleared(BOSS)':
                 printline+=' '+jobStatus[bossid]+' '+exe_code
             else:
                 printline+=' '+jobStatus[bossid]
+            resFlag = 0
+            if jobStatus[bossid] != 'Created(BOSS)'  and jobStatus[bossid] != 'Unknown(BOSS)':
+                Statistic.notify('checkstatus',resFlag,exe_code,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
             print printline
-        #self.Report_()
+    #    self.Report_()
         pass
         print ''
 
