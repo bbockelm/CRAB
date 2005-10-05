@@ -133,6 +133,20 @@ class Orca(JobType):
         # Prepare JobType-independent part
         txt = self.wsSetupCMSEnvironment_()
 
+        # Prepare JobType-specific part
+        scram = self.scram.commandName()
+        txt += '\n\n'
+        txt += 'echo "### SPECIFIC JOB SETUP ENVIRONMENT ###"\n'
+        txt += scram+' project ORCA '+self.version+'\n'
+        txt += 'status=$?\n'
+        txt += 'if [ $status != 0 ] ; then\n'
+        txt += '   echo "SET_EXE_ENV 1 ==>ERROR ORCA '+self.version+' not found on `hostname`" \n'
+        txt += '   exit 1 \n'
+        txt += 'fi \n'
+        txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
+        txt += 'cd '+self.version+'\n'
+        txt += 'eval `'+scram+' runtime -sh`\n'
+
         # Handle the arguments:
         txt += "\n"
         txt += "## ARGUMNETS: $1 Job Number\n"
@@ -142,25 +156,13 @@ class Orca(JobType):
         txt += "narg=$#\n"
         txt += "if [ $narg -lt 3 ]\n"
         txt += "then\n"
-        txt += "    echo 'Error: Too few arguments' +$narg+ \n"
+        txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$narg+ \n"
         txt += "    exit 1\n"
         txt += "fi\n"
+        txt += "\n"
         txt += "NJob=$1\n"
         txt += "FirstEvent=$2\n"
         txt += "MaxEvent=$3\n"
-        txt += "\n"
-
-        # Prepare JobType-specific part
-        scram = self.scram.commandName()
-        txt += '\n'
-        txt += scram+' project ORCA '+self.version+'\n'
-        txt += 'status=$?\n'
-        txt += 'if [ $status != 0 ] ; then\n'
-        txt += '   echo "Warning: ORCA '+self.version+' not found on `hostname`" \n'
-        txt += '   exit 1 \n'
-        txt += 'fi \n'
-        txt += 'cd '+self.version+'\n'
-        txt += 'eval `'+scram+' runtime -sh`\n'
 
         # Prepare job-specific part
         job = common.job_list[nj]
@@ -177,9 +179,11 @@ class Orca(JobType):
         txt += './init.sh\n'
         txt += 'exitStatus=$?\n'
         txt += 'if [ $exitStatus != 0 ] ; then\n'
-        txt += '  echo "StageIn init script failed!"\n'
+        txt += '  echo "SET_EXE_ENV 1 ==> ERROR StageIn init script failed"\n'
         txt += '  exit $exitStatus\n'
         txt += 'fi\n'
+        txt += "echo 'SET_EXE_ENV 0 ==> job setup ok'\n"
+        txt += 'echo "### END JOB SETUP ENVIRONMENT ###"\n\n'
 
         txt += 'echo "FirstEvent=$FirstEvent" >> .orcarc\n'
         txt += 'echo "MaxEvent=$MaxEvent" >> .orcarc\n'

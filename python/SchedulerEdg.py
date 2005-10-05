@@ -115,13 +115,14 @@ class SchedulerEdg(Scheduler):
         """
 
         txt = ''
-        ### FEDE ####
         if self.copy_data:
            if self.SE:
               txt += 'export SE='+self.SE+'\n'
+              txt += 'echo "SE = $SE"\n'
            if self.SE_PATH:
               if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
               txt += 'export SE_PATH='+self.SE_PATH+'\n'
+              txt += 'echo "SE_PATH = $SE_PATH"\n'
                                                                                                                                                              
         if self.register_data:
            if self.VO:
@@ -129,13 +130,12 @@ class SchedulerEdg(Scheduler):
            if self.LFN:
               txt += 'export LFN='+self.LFN+'\n'
               txt += '\n'
-        ########
         txt += 'CloseCEs=`edg-brokerinfo getCE`\n'
         txt += 'echo "CloseCEs = $CloseCEs"\n'
         txt += 'CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
         txt += 'echo "CE = $CE"\n'
         return txt
-    #### FEDE   
+
     def wsCopyOutput(self):
         """
         Write a CopyResults part of a job script, e.g.
@@ -145,25 +145,23 @@ class SchedulerEdg(Scheduler):
         if self.copy_data:
            copy = 'globus-url-copy file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file'
            txt += '#\n'
-           txt += '#   Copy output into user SE = $SE\n'
+           txt += '#   Copy output to SE = $SE\n'
            txt += '#\n'
-           txt += 'copy_exit_status=1\n'
            txt += 'if [ $executable_exit_status -eq 0 ]; then\n'
            txt += '  for out_file in $file_list ; do\n'
            txt += '    echo "Trying to copy output file to $SE "\n'
            txt += '    echo "'+copy+'"\n'
            txt += '    '+copy+' 2>&1\n'
            txt += '    copy_exit_status=$?\n'
-           txt += '    echo "copy_exit_status= $copy_exit_status"\n'
+           txt += '    echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
+           txt += '    echo "STAGE_OUT = $copy_exit_status"\n'
            txt += '    if [ $copy_exit_status -ne 0 ]; then \n'
            txt += '       echo "Problems with SE= $SE" \n'
-           txt += '       echo "output lost!"\n'
            txt += '    else \n'
            txt += '       echo "output copied into $SE/$SE_PATH directory"\n'
            txt += '    fi \n'
            txt += '  done\n'
            txt += 'fi \n'
-           txt += 'echo "COPY_EXIT_STATUS=$copy_exit_status"\n'
         return txt
 
     def wsRegisterOutput(self):
@@ -174,28 +172,29 @@ class SchedulerEdg(Scheduler):
         txt = ''
         if self.register_data:
            txt += '#\n'
-           txt += '#   Register output into RLS\n'
+           txt += '#  Register output to RLS\n'
            txt += '#\n'
-           txt += 'register_exit_status=1\n'
            txt += 'if [[ $executable_exit_status -eq 0 && $copy_exit_status -eq 0 ]]; then\n'
            txt += '   for out_file in $file_list ; do\n'
            txt += '      echo "Trying to register the output file into RLS"\n'
            txt += '      echo "lcg-rf -l $LFN/$out_file --vo $VO sfn://$SE$SE_PATH/$out_file"\n'
            txt += '      lcg-rf -l $LFN/$out_file --vo $VO sfn://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '      register_exit_status=$?\n'
-           txt += '      echo "register_exit_status= $register_exit_status"\n'
+           txt += '      echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
+           txt += '      echo "STAGE_OUT = $register_exit_status"\n'
            txt += '      if [ $register_exit_status -ne 0 ]; then \n'
-           txt += '         echo "Problems with the registration into RLS" \n'
+           txt += '         echo "Problems with the registration to RLS" \n'
            txt += '         echo "Try with srm protocol" \n'
            txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO srm://$SE$SE_PATH/$out_file"\n'
            txt += '         lcg-rf -l $LFN/$out_file --vo $VO srm://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
-           txt += '         echo "register_exit_status= $register_exit_status"\n'
+           txt += '         echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
+           txt += '         echo "STAGE_OUT = $register_exit_status"\n'
            txt += '         if [ $register_exit_status -ne 0 ]; then \n'
            txt += '            echo "Problems with the registration into RLS" \n'
            txt += '         fi \n'
            txt += '      else \n'
-           txt += '         echo "output registered into RLS"\n'
+           txt += '         echo "output registered to RLS"\n'
            txt += '      fi \n'
            txt += '   done\n'
            txt += 'elif [[ $executable_exit_status -eq 0 && $copy_exit_status -ne 0 ]]; then \n'
@@ -205,19 +204,19 @@ class SchedulerEdg(Scheduler):
            txt += '      echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $SE -P $LFN/$out_file --vo $VO file://`pwd`/$out_file" \n'
            txt += '      lcg-cr -v -l lfn:${LFN}/$out_file -d $SE -P $LFN/$out_file --vo $VO file://`pwd`/$out_file 2>&1 \n'
            txt += '      register_exit_status=$?\n'
-           txt += '      echo "register_exit_status= $register_exit_status"\n'
+           txt += '      echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
+           txt += '      echo "STAGE_OUT = $register_exit_status"\n'
            txt += '      if [ $register_exit_status -ne 0 ]; then \n'
            txt += '         echo "Problems with CloseSE" \n'
            txt += '      else \n'
            txt += '         echo "The program was successfully executed"\n'
-           txt += '         echo "Output storage element used: $CLOSE_SE"\n'
-           txt += '         echo "the LFN for the file is LFN=${LFN}/$out_file"\n'
+           txt += '         echo "SE = $CLOSE_SE"\n'
+           txt += '         echo "LFN for the file is LFN=${LFN}/$out_file"\n'
            txt += '      fi \n'
            txt += '   done\n'
            txt += 'else\n'
-           txt += '  echo "Problem with the executable"\n'
+           txt += '   echo "Problem with the executable"\n'
            txt += 'fi \n'
-           txt += 'echo "REGISTER_EXIT_STATUS=$register_exit_status"\n'
         return txt
         #####################
 

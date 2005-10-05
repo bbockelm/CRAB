@@ -20,6 +20,7 @@ ls -Al
 #
 
 #CRAB setup_scheduler_environment
+
 #CRAB setup_jobtype_environment
 
 #
@@ -36,11 +37,11 @@ echo "Executable $executable"
 which $executable
 res=$?
 if [ $res -ne 0 ];then 
-  echo "SET_WN 1 ==> ERROR executable not found on WN `hostname`" 
+  echo "SET_EXE 1 ==> ERROR executable not found on WN `hostname`" 
   exit 1 
 fi
 
-echo "SET_WN 0 ==> OK"
+echo "SET_EXE 0 ==> ok executable found"
 
 echo "$executable started at `date`"
 start_exe_time=`date +%s`
@@ -53,7 +54,7 @@ echo "TIME_EXE = $TIME_EXE sec"
 echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"
 echo "$executable ended at `date`"
 if [ $executable_exit_status -ne 0 ]; then
-  echo "Processing of job failed with exit code $executable_exit_status"
+  echo "Warning: Processing of job failed with exit code $executable_exit_status"
 fi
 exit_status=$executable_exit_status
 

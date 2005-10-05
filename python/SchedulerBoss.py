@@ -161,7 +161,7 @@ class SchedulerBoss(Scheduler):
         msg = 'BOSS declaration:' + cmd
         common.logger.message(msg)
         cmd_out = runCommand(cmd)
-        print '  ',cmd_out
+        print 'cmd_out', cmd_out
         prefix = 'Job ID '
         index = string.find(cmd_out, prefix)
         if index < 0 :
