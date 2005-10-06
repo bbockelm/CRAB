@@ -77,18 +77,18 @@ class SchedulerEdg(Scheduler):
         try: self.EDG_cpu_time = cfg_params['EDG.max_cpu_time']
         except KeyError: self.EDG_cpu_time = ''
 
-#        # Add EDG_WL_LOCATION to the python path
-#
-#        try:
-#           path = os.environ['EDG_WL_LOCATION']
-#       except:
-#           msg = "Error: the EDG_WL_LOCATION variable is not set."
-#           raise CrabException(msg)
-#
-#       libPath=os.path.join(path, "lib")
-#       sys.path.append(libPath)
-#       libPath=os.path.join(path, "lib", "python")
-#       sys.path.append(libPath)
+        # Add EDG_WL_LOCATION to the python path
+
+        try:
+            path = os.environ['EDG_WL_LOCATION']
+        except:
+            msg = "Error: the EDG_WL_LOCATION variable is not set."
+            raise CrabException(msg)
+
+        libPath=os.path.join(path, "lib")
+        sys.path.append(libPath)
+        libPath=os.path.join(path, "lib", "python")
+        sys.path.append(libPath)
 
         self.checkProxy_()
         return
