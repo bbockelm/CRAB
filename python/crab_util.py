@@ -174,6 +174,26 @@ def importName(module_name, name):
     module = __import__(module_name, globals(), locals(), [name])
     return vars(module)[name]
 
+
+def listBoss():
+    """
+      Return a list of all boss_Id of a task 
+    
+    """
+    dirGroup = string.split(common.work_space.topDir(), '/')
+    group = dirGroup[len(dirGroup)-2]
+    ListBoss_ID = []
+    cmd = 'boss SQL -query "select crabjob.INTERNAL_ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\'"'
+    cmd_out = runCommand(cmd)
+    print cmd_out
+    nline = 0
+    for line in cmd_out.splitlines():
+        if nline != 0 and nline != 1:
+            ListBoss_ID.append(int(line)-1)
+        nline = nline + 1
+                                                                                                                             
+    return ListBoss_ID
+
 ###########################################################################
 def runCommand(cmd):
     """

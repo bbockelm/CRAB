@@ -228,9 +228,72 @@ class SchedulerBoss(Scheduler):
         return boss_scheduler_id
 
 
-    def queryStatus(self, id):
-        """ Query a status of the job with id """
+    def queryDetailedStatus(self, id):
+        """ Query a detailed status of the job with id """
 
+        return self.boss_scheduler.queryDetailedStatus(id)
+
+    def getOutput(self, int_id):
+        """
+        Get output for a finished job with id.
+        Returns the name of directory with results.
+        """
+        dirGroup = string.split(common.work_space.topDir(), '/')
+        group = dirGroup[len(dirGroup)-2]
+       
+        for i_id in int_id :
+            dir = common.work_space.resDir()
+            boss_id =  common.scheduler.boss_ID((i_id+1),group)
+            if common.scheduler.queryStatus(boss_id) != 'Created(BOSS)':   
+                cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
+                cmd_out = runCommand(cmd)
+                print cmd_out
+            #    msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir
+                common.logger.message(msg)
+            else:
+                print 'job ',(i_id+1),' is not submitted '
+            dir += os.getlogin()
+            dir += '_' + os.path.basename(boss_id)
+        
+        return dir   
+
+
+    def cancel(self, id):
+        """ Cancel the EDG job with id """
+
+        return self.boss_scheduler.cancel(id)
+
+    def getExitStatus(self, id):
+
+        return self.boss_scheduler.getStatusAttribute_(id, 'exit_code')
+
+    def queryDest(self, id):  
+        return self.boss_scheduler.getStatusAttribute_(id, 'destination')
+
+    #### FEDE 
+    def wsCopyOutput(self):
+        return self.boss_scheduler.wsCopyOutput()
+
+    def wsRegisterOutput(self):  
+        return self.boss_scheduler.wsRegisterOutput()
+
+    def boss_ID(self,int_ID,group):
+        """convert internal ID into Boss ID """ 
+        
+        cmd = 'boss SQL -query "select JOB.ID  from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
+        cmd_out = runCommand(cmd)
+        nline = 0
+        for line in cmd_out.splitlines():
+            if nline == 2:
+               boss_ID = line
+            nline = nline + 1
+        
+        return boss_ID 
+
+
+    def queryStatus(self,id):
+        """ Query a status of the job with id """
+                                                                                                                             
         EDGstatus={
             'W':'Created(BOSS)',
             'R':'Running',
@@ -253,47 +316,6 @@ class SchedulerBoss(Scheduler):
             }
         cmd = 'boss q -statusOnly -jobid '+id
         cmd_out = runCommand(cmd)
-        js = line.split(None,2)
+        js = cmd_out.split(None,2)
         return EDGstatus[js[1]]
-    #        return self.boss_scheduler.queryStatus(id)
 
-    def queryDetailedStatus(self, id):
-        """ Query a detailed status of the job with id """
-
-        return self.boss_scheduler.queryDetailedStatus(id)
-
-    def getOutput(self, id):
-        """
-        Get output for a finished job with id.
-        Returns the name of directory with results.
-        """
-        dir = common.work_space.resDir()
-
-        cmd = 'boss getOutput -jobid '+ id +' -outdir ' +dir 
-        cmd_out = runCommand(cmd)
-
-        dir += os.getlogin()
-        dir += '_' + os.path.basename(id)
-        
-        return dir   
-
-    def cancel(self, id):
-        """ Cancel the EDG job with id """
-
-        return self.boss_scheduler.cancel(id)
-
-    def getExitStatus(self, id):
-        return self.boss_scheduler.getStatusAttribute_(id, 'exit_code')
-
-    def queryStatus(self, id):
-        return self.boss_scheduler.getStatusAttribute_(id, 'status')
-
-    def queryDest(self, id):  
-        return self.boss_scheduler.getStatusAttribute_(id, 'destination')
-
-    #### FEDE 
-    def wsCopyOutput(self):
-        return self.boss_scheduler.wsCopyOutput()
-
-    def wsRegisterOutput(self):  
-        return self.boss_scheduler.wsRegisterOutput()

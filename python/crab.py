@@ -534,64 +534,65 @@ class Crab:
                     common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
 
             elif ( opt == '-getoutput' ):
-                jobs = self.parseRange_(val)
 
-                fileCODE1 = open(common.work_space.logDir()+"/.code","r")
-                array = fileCODE1.read().split('::')
-                self.ID1 = array[0]
-                self.NJC = array[1]
-                self.dataset = array[2]
-                self.owner = array[3]
-                fileCODE1.close()
+                if ( self.flag_useboss == 1 ):
+                    if val=='all' or val==None or val=='':
+                        jobs = listBoss()
+                    else:
+                        jobs = self.parseRange_(val)
+
+                    common.scheduler.getOutput(jobs) 
+                else:
+                    jobs = self.parseRange_(val) 
+                    fileCODE1 = open(common.work_space.logDir()+"/.code","r")
+                    array = fileCODE1.read().split('::')
+                    self.ID1 = array[0]
+                    self.NJC = array[1]
+                    self.dataset = array[2]
+                    self.owner = array[3]
+                    fileCODE1.close()
 
 
-                jobs_done = []
-                for nj in jobs:
-                    st = common.jobDB.status(nj)
-                    if st == 'D':
-                        jobs_done.append(nj)
-                        pass
-                    elif st == 'S':
-                        jid = common.jobDB.jobId(nj)
-                        print "jid", jid
-                        currStatus = common.scheduler.queryStatus(jid)
-                        if currStatus=="Done":
+                    jobs_done = []
+                    for nj in jobs:
+                        st = common.jobDB.status(nj)
+                        if st == 'D':
                             jobs_done.append(nj)
+                            pass
+                        elif st == 'S':
+                            jid = common.jobDB.jobId(nj)
+                            print "jid", jid
+                            currStatus = common.scheduler.queryStatus(jid)
+                            if currStatus=="Done":
+                                jobs_done.append(nj)
+                            else:
+                                msg = 'Job # '+`(nj+1)`+' submitted but still status '+currStatus+' not possible to get output'
+                                common.logger.message(msg)
+                            pass
                         else:
-                            msg = 'Job # '+`(nj+1)`+' submitted but still status '+currStatus+' not possible to get output'
-                            common.logger.message(msg)
+                          #  common.logger.message('Jobs #'+`(nj+1)`+' has status '+st+' not possible to get output')
+                            pass
                         pass
-                    else:
-                      #  common.logger.message('Jobs #'+`(nj+1)`+' has status '+st+' not possible to get output')
-                        pass
-                    pass
 
-                for nj in jobs_done:
-                    if ( self.flag_useboss == 1 ):  
-                        id = common.jobDB.bossId(nj)
-                        dir = common.scheduler.getOutput(id)
-                        common.jobDB.setStatus(nj, 'Y')
-                        jid = common.jobDB.jobId(nj)     
-                    else:
+                    for nj in jobs_done:
                         jid = common.jobDB.jobId(nj)
                         dir = common.scheduler.getOutput(jid)
                         common.jobDB.setStatus(nj, 'Y')
 
                     # Rename the directory with results to smth readable
                     new_dir = common.work_space.resDir()
-                    if ( self.flag_useboss == 0 ):
-                        try:
-                            files = os.listdir(dir)
-                            for file in files:
-                                os.rename(dir+'/'+file, new_dir+'/'+file)
-                            os.rmdir(dir)
-                        except OSError, e:
-                            msg = 'rename files from '+dir+' to '+new_dir+' error: '
-                            msg += str(e)
-                            common.logger.message(msg)
-                            # ignore error
-                            pass
+                    try:
+                        files = os.listdir(dir)
+                        for file in files:
+                            os.rename(dir+'/'+file, new_dir+'/'+file)
+                        os.rmdir(dir)
+                    except OSError, e:
+                        msg = 'rename files from '+dir+' to '+new_dir+' error: '
+                        msg += str(e)
+                        common.logger.message(msg)
+                        # ignore error
                         pass
+                    pass
                     destination = common.scheduler.queryDest(jid).split(":")[0]
                     ID3 =  jid.split("/")[3]
                     broker = jid.split("/")[2].split(":")[0]
