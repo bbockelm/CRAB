@@ -141,6 +141,7 @@ class Orca(JobType):
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
         txt += '   echo "SET_EXE_ENV 1 ==>ERROR ORCA '+self.version+' not found on `hostname`" \n'
+        txt += '   echo "JOB_EXIT_STATUS = 1"\n'
         txt += '   exit 1 \n'
         txt += 'fi \n'
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
@@ -157,6 +158,7 @@ class Orca(JobType):
         txt += "if [ $narg -lt 3 ]\n"
         txt += "then\n"
         txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$narg+ \n"
+        txt += '    echo "JOB_EXIT_STATUS = 1"\n'
         txt += "    exit 1\n"
         txt += "fi\n"
         txt += "\n"
@@ -180,6 +182,7 @@ class Orca(JobType):
         txt += 'exitStatus=$?\n'
         txt += 'if [ $exitStatus != 0 ] ; then\n'
         txt += '  echo "SET_EXE_ENV 1 ==> ERROR StageIn init script failed"\n'
+        txt += '  echo "JOB_EXIT_STATUS = 1"\n'
         txt += '  exit $exitStatus\n'
         txt += 'fi\n'
         txt += "echo 'SET_EXE_ENV 0 ==> job setup ok'\n"
@@ -210,6 +213,7 @@ class Orca(JobType):
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '   echo "Untarring .tgz file failed ... exiting" \n'
+            txt += '   echo "JOB_EXIT_STATUS = 1"\n'
             txt += '   exit 1 \n'
             txt += 'else \n'
             txt += '   echo "Successful untar" \n'
@@ -232,8 +236,17 @@ class Orca(JobType):
         for fileWithSuffix in self.output_file:
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
             file_list=file_list+output_file_num+','
-            txt += 'cp '+fileWithSuffix+' '+output_file_num+'\n'
+            txt += 'ls '+fileWithSuffix+'\n'
+            txt += 'result=$?\n'
+            txt += 'if [ $result -ne 0 ] ; then\n'
+            txt += '   echo "No output file to manage"\n'
+            txt += '   echo "JOB_EXIT_STATUS = 1"\n'
+            txt += '   exit 1 \n'
+            txt += 'else\n'
+            txt += '   cp '+fileWithSuffix+' '+output_file_num+'\n'
+            txt += 'fi\n'           
             pass
+       
         file_list=file_list[:-1]
         txt += 'file_list='+file_list+'\n'
         return txt

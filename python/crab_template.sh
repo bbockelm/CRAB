@@ -38,6 +38,7 @@ which $executable
 res=$?
 if [ $res -ne 0 ];then 
   echo "SET_EXE 1 ==> ERROR executable not found on WN `hostname`" 
+  echo "JOB_EXIT_STATUS = 1"
   exit 1 
 fi
 
