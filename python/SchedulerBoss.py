@@ -248,7 +248,7 @@ class SchedulerBoss(Scheduler):
                 cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
                 cmd_out = runCommand(cmd)
                 print cmd_out
-            #    msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir
+                msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir
                 common.logger.message(msg)
             else:
                 print 'job ',(i_id+1),' is not submitted '
@@ -270,7 +270,6 @@ class SchedulerBoss(Scheduler):
     def queryDest(self, id):  
         return self.boss_scheduler.getStatusAttribute_(id, 'destination')
 
-    #### FEDE 
     def wsCopyOutput(self):
         return self.boss_scheduler.wsCopyOutput()
 
