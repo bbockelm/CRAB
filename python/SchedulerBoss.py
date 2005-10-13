@@ -26,6 +26,16 @@ class SchedulerBoss(Scheduler):
 
 
     def configure(self, cfg_params):
+         
+        try:    
+            self.outDir = cfg_params["USER.outputdir"] 
+        except:
+            self.outDir = common.work_space.resDir() 
+        try:
+            self.logDir = cfg_params["USER.logdir"]
+        except:
+            self.logDir = common.work_space.resDir()
+
         try: 
             self.boss_scheduler_name = cfg_params["CRAB.scheduler"]
         except KeyError: 
@@ -233,6 +243,7 @@ class SchedulerBoss(Scheduler):
 
         return self.boss_scheduler.queryDetailedStatus(id)
 
+
     def getOutput(self, int_id):
         """
         Get output for a finished job with id.
@@ -240,20 +251,28 @@ class SchedulerBoss(Scheduler):
         """
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
-       
+        dir = common.work_space.resDir()
         for i_id in int_id :
-            dir = common.work_space.resDir()
-            boss_id =  common.scheduler.boss_ID((i_id+1),group)
-            if common.scheduler.queryStatus(boss_id) != 'Created(BOSS)':   
-                cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
-                cmd_out = runCommand(cmd)
-                print cmd_out
-                msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir
-                common.logger.message(msg)
-            else:
-                print 'job ',(i_id+1),' is not submitted '
-            dir += os.getlogin()
-            dir += '_' + os.path.basename(boss_id)
+            if (i_id+1) not in common.scheduler.listBoss(): 
+                msg = 'Job # '+`(i_id+1)`+' out of range for task '+group
+                common.logger.message(msg) 
+            else: 
+                dir,logDir = setOutLogDir(self.outDir,self.logDir)
+                boss_id =  common.scheduler.boss_ID((i_id +1),group)
+                if common.scheduler.queryStatus(boss_id) == 'Done (Success)' or common.scheduler.queryStatus(boss_id) == 'Done (Abort)':   
+                    cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
+                    cmd_out = runCommand(cmd)
+                    if logDir != dir:
+                        cmd = 'mv '+str(dir)+'/*'+str(i_id+1)+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*'+str(i_id+1)+'.log '+str(logDir)
+                        cmd_out = runCommand(cmd) 
+                        pass
+                    msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir
+                    common.logger.message(msg)
+                else:
+                    msg = 'Job # '+`(i_id+1)`+' has status '+common.scheduler.queryStatus(boss_id)+' not possible to get output'
+                    common.logger.message(msg)
+                dir += os.getlogin()
+                dir += '_' + os.path.basename(boss_id)
         
         return dir   
 
@@ -270,6 +289,7 @@ class SchedulerBoss(Scheduler):
     def queryDest(self, id):  
         return self.boss_scheduler.getStatusAttribute_(id, 'destination')
 
+    #### FEDE 
     def wsCopyOutput(self):
         return self.boss_scheduler.wsCopyOutput()
 
@@ -286,7 +306,7 @@ class SchedulerBoss(Scheduler):
             if nline == 2:
                boss_ID = line
             nline = nline + 1
-        
+              
         return boss_ID 
 
 
@@ -317,4 +337,23 @@ class SchedulerBoss(Scheduler):
         cmd_out = runCommand(cmd)
         js = cmd_out.split(None,2)
         return EDGstatus[js[1]]
+
+    def listBoss(self):
+        """
+         Return a list of all boss_Id of a task
+                                                                                                                             
+        """
+        dirGroup = string.split(common.work_space.topDir(), '/')
+        group = dirGroup[len(dirGroup)-2]
+        ListBoss_ID = []
+        cmd = 'boss SQL -query "select crabjob.INTERNAL_ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\'"'
+        cmd_out = runCommand(cmd)
+        nline = 0
+        for line in cmd_out.splitlines():
+            if nline != 0 and nline != 1:
+                ListBoss_ID.append(int(line)-1)
+            nline = nline + 1
+                                                                                                                             
+        return ListBoss_ID
+
 

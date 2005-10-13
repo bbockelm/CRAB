@@ -537,7 +537,7 @@ class Crab:
 
                 if ( self.flag_useboss == 1 ):
                     if val=='all' or val==None or val=='':
-                        jobs = listBoss()
+                        jobs = common.scheduler.listBoss()
                     else:
                         jobs = self.parseRange_(val)
 
