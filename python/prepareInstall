@@ -13,7 +13,7 @@ mkdir $dest/script
 
 # copy bin
 cp $bossDir/bin/* $dest/bin/.
-cp $crabDir/python/crab.py $dest/bin/.
+ln -s $crabDir/python/crab.py $dest/bin/.
 
 # copy lib
 cp $bossDir/lib/*.so* $dest/lib/.
