@@ -3,15 +3,14 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
-import os, sys, tempfile
+import os, sys, tempfile, shutil
 
 class SchedulerBoss(Scheduler):
     def __init__(self):
         Scheduler.__init__(self,"BOSS")
         self.checkBoss_()
-        self.cwd = common.work_space.cwdDir()
+        #self.cwd = common.work_space.cwdDir()
         return
-
 
     def checkBoss_(self): 
         """
@@ -24,6 +23,38 @@ class SchedulerBoss(Scheduler):
             msg = msg + " Did you source bossenv.sh/csh from your BOSS area?\n"
             raise CrabException(msg)
 
+    def configBossDB_(self): 
+        """
+        Configure Boss DB
+        """
+        # first I have to chack if the db already esist
+        self.boss_db_dir = common.work_space.shareDir() + 'boss/'
+        self.boss_db_name = 'bossDB'
+        if os.path.isfile(self.boss_db_dir+self.boss_db_name) :
+            common.logger.debug(5,'BossDB already exist')
+        else:
+            common.logger.debug(5,'Creating BossDB in '+self.boss_db_dir+self.boss_db_name)
+
+            # First I have to create a SQLiteConfig.clad file in the proper directory
+            cwd = os.getcwd()
+            if not os.path.exists(self.boss_db_dir):
+                os.mkdir(self.boss_db_dir)
+            os.chdir(common.work_space.shareDir())
+            confSQLFileName = 'SQLiteConfig.clad'
+            confFile = open(confSQLFileName, 'w')
+            confFile.write('[\n')
+            confFile.write('SQLITE_DB_PATH = "'+self.boss_db_dir+'"\n')
+            confFile.write('DB_NAME = "'+self.boss_db_name+'"\n')
+            confFile.write(']\n')
+            confFile.close()
+
+            # then I have to run "boss configureDB"
+            out = runBossCommand('boss configureDB',0)
+        
+            os.chdir(cwd)
+
+        # that's it!
+        return
 
     def configure(self, cfg_params):
          
@@ -35,6 +66,12 @@ class SchedulerBoss(Scheduler):
             self.logDir = cfg_params["USER.logdir"]
         except:
             self.logDir = common.work_space.resDir()
+
+        try:
+            if (int(cfg_params["USER.use_central_bossdb"])==1): pass
+            else: self.configBossDB_()
+        except KeyError:
+            self.configBossDB_()
 
         try: 
             self.boss_scheduler_name = cfg_params["CRAB.scheduler"]
@@ -81,22 +118,24 @@ class SchedulerBoss(Scheduler):
         
         return
 
-
     def checkSchedRegistration_(self, sched_name): 
         """
         Verify scheduler registration.
         """
+        ## SL TODO : we don't need to test this at every call:
+        ## we should cache the result of the first test
         boss_scheduler_check = "boss showSchedulers"
-        boss_out = runCommand(boss_scheduler_check)
+        boss_out = runBossCommand(boss_scheduler_check,0)
         if string.find(boss_out, sched_name) == -1 :
-            msg = sched_name + ' scheduler not registered in BOSs\n'
+            msg = sched_name + ' scheduler not registered in BOSS\n'
             msg = msg + 'Starting registration\n'
-            common.logger.message(msg)
-            # qui bisogna decidere un path che non deve cambiare con le versioni diverse di boss 
-            # e se conviene fare noi la registrazione!!!!
-            register_boss_scheduler = self.cwd + 'BossScript/register'+ string.upper(sched_name) + 'Scheduler'
-            if os.path.exists(register_boss_scheduler):
-                boss_out = runCommand(register_boss_scheduler)
+            common.logger.debug(5,msg)
+            # On demand registration of job type
+            register_path = self.boss_dir + '/script/'
+            register_boss_scheduler = './register'+ string.upper(sched_name) + 'Scheduler'
+            if os.path.exists(register_path+register_boss_scheduler):
+                boss_out = runBossCommand(register_path+register_boss_scheduler,0)
+                if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
                     msg = 'Error: Problem with scheduler '+sched_name+' registration\n'
                     raise CrabException(msg)
@@ -111,15 +150,20 @@ class SchedulerBoss(Scheduler):
         """
         Verify jobtype registration.
         """
+        ## SL TODO : we don't need to test this at every call:
+        ## we should cache the result of the first test
         boss_jobtype_check = "boss showJobTypes"
-        boss_out = runCommand(boss_jobtype_check)
+        boss_out = runBossCommand(boss_jobtype_check,0)
         if string.find(boss_out, jobtype) == -1 :
             msg =  'Warning:' + jobtype + ' jobtype not registered in BOSS\n'
             msg = msg + 'Starting registration \n'
-            common.logger.message(msg)
-            register_boss_jobtype= self.cwd + 'BossScript/register' + string.upper(jobtype) + 'job'
-            if os.path.exists(register_boss_jobtype):
-                boss_out = runCommand(register_boss_jobtype)
+            common.logger.debug(5,msg)
+            register_path = self.boss_dir + '/script/'
+            register_boss_jobtype= './register' + string.upper(jobtype) + 'job'
+            if os.path.exists(register_path+register_boss_jobtype):
+                register_boss_jobtype= './register' + string.upper(jobtype) + 'job'
+                boss_out = runBossCommand(register_path+register_boss_jobtype,0)
+                if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
                     msg = 'Error: Problem with job '+jobtype+' registration\n'
                     raise CrabException(msg)
@@ -145,8 +189,7 @@ class SchedulerBoss(Scheduler):
         self.boss_scheduler.createSchScript(nj)
         sch_script_orig = common.job_list[nj].jdlFilename()
         sch_script = sch_script_orig+"_boss"
-        cmd = 'cp '+sch_script_orig+' '+sch_script
-        runCommand(cmd)
+        shutil.copyfile(sch_script_orig, sch_script)
         
         # BOSS job declaration
         dir = string.split(common.work_space.topDir(), '/')
@@ -158,6 +201,7 @@ class SchedulerBoss(Scheduler):
             types += ',edg'
         sch.write(types+';\n')            
         # da decidere se questo valore va bene come group ...
+        # NO CAXX0!!! E' almeno la 10^a volta che viene definito un grup name!!!!
         sch.write('group='+ dir[len(dir)-2]+';\n')
         sch.write('BossAttr=[')
         sch.write('crabjob.INTERNAL_ID=' + str(nj+1) + ';')
@@ -165,25 +209,25 @@ class SchedulerBoss(Scheduler):
         sch.close()
  
         dirlog = common.work_space.logDir()
+        scriptName=common.job_list[nj].scriptFilename()
   
-        cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + 'ORCA.sh_'+str(nj+1)+'.log'       
+        cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
   
         msg = 'BOSS declaration:' + cmd
-        common.logger.message(msg)
-        cmd_out = runCommand(cmd)
-        print 'cmd_out', cmd_out
+        common.logger.debug(5,msg)
+        cmd_out = runBossCommand(cmd)
         prefix = 'Job ID '
         index = string.find(cmd_out, prefix)
         if index < 0 :
+            print cmd_out
             common.logger.message('ERROR: BOSS declare failed: no BOSS ID for job')
             raise CrabException(msg)
         else :
             index = index + len(prefix)
             boss_id = string.strip(cmd_out[index:])
             common.jobDB.setBossId(nj, boss_id)
-            print "BOSS ID =  ", boss_id
-        cmd = 'rm -f '+sch_script
-        runCommand(cmd)
+            common.logger.debug(5,"BOSS ID =  "+boss_id)
+        os.remove(sch_script)
         return 
 
 
@@ -205,6 +249,7 @@ class SchedulerBoss(Scheduler):
         Submit one job. nj -- job number.
         """
 
+        self.boss_scheduler.checkProxy()
         boss_scheduler_name = string.lower(self.boss_scheduler.name())
         boss_scheduler_id = None
 
@@ -215,28 +260,16 @@ class SchedulerBoss(Scheduler):
         cmd = 'boss submit -scheduler '+boss_scheduler_name+schcladstring+' -jobid '+common.jobDB.bossId(nj)
         msg = 'BOSS submission: ' + cmd
         common.logger.message(msg)
-        cmd_out = runCommand(cmd)
+        cmd_out = runBossCommand(cmd)
 
-        if not cmd_out : 
-           msg = 'ERROR: BOSS submission failed: ' + cmd
-           common.logger.message(msg)
-           return  boss_scheduler_id
-
-        prefix = 'Scheduler ID is '
-        index = string.find(cmd_out, prefix)
-        if index < 0 :
-            common.logger.message('ERROR: BOSS submission failed: no BOSS Scheduler ID')
-            return boss_scheduler_id
-        else :
-            index = index + len(prefix)
-            boss_scheduler_id = string.strip(cmd_out[index:])
-            #print "boss_scheduler_id", boss_scheduler_id
-            #index = string.find(boss_scheduler_id,'\n')
-            #print "index di a capo", index
-            #boss_scheduler_id = string.strip(boss_scheduler_id[:index])
-            print "BOSS Scheduler ID = ", boss_scheduler_id
-        return boss_scheduler_id
-
+        if cmd_out == None:
+            msg = 'ERROR: BOSS submission failed: ' + cmd
+            common.logger.message(msg)
+            return None
+        else:
+            reSid = re.compile( r'https.+' )
+            jid = reSid.search(cmd_out).group()
+            return jid
 
     def queryDetailedStatus(self, id):
         """ Query a detailed status of the job with id """
@@ -249,6 +282,7 @@ class SchedulerBoss(Scheduler):
         Get output for a finished job with id.
         Returns the name of directory with results.
         """
+        self.boss_scheduler.checkProxy()
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
         dir = common.work_space.resDir()
@@ -261,7 +295,7 @@ class SchedulerBoss(Scheduler):
                 boss_id =  common.scheduler.boss_ID((i_id +1),group)
                 if common.scheduler.queryStatus(boss_id) == 'Done (Success)' or common.scheduler.queryStatus(boss_id) == 'Done (Abort)':   
                     cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
-                    cmd_out = runCommand(cmd)
+                    cmd_out = runBossCommand(cmd)
                     if logDir != dir:
                         cmd = 'mv '+str(dir)+'/*'+str(i_id+1)+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*'+str(i_id+1)+'.log '+str(logDir)
                         cmd_out = runCommand(cmd) 
@@ -273,7 +307,8 @@ class SchedulerBoss(Scheduler):
                     common.logger.message(msg)
                 dir += os.getlogin()
                 dir += '_' + os.path.basename(boss_id)
-        
+            pass
+
         return dir   
 
 
@@ -300,7 +335,7 @@ class SchedulerBoss(Scheduler):
         """convert internal ID into Boss ID """ 
         
         cmd = 'boss SQL -query "select JOB.ID  from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
-        cmd_out = runCommand(cmd)
+        cmd_out = runBossCommand(cmd)
         nline = 0
         for line in cmd_out.splitlines():
             if nline == 2:
@@ -313,6 +348,7 @@ class SchedulerBoss(Scheduler):
     def queryStatus(self,id):
         """ Query a status of the job with id """
                                                                                                                              
+        self.boss_scheduler.checkProxy()
         EDGstatus={
             'W':'Created(BOSS)',
             'R':'Running',
@@ -334,7 +370,7 @@ class SchedulerBoss(Scheduler):
             'NA':'Unknown(BOSS)'
             }
         cmd = 'boss q -statusOnly -jobid '+id
-        cmd_out = runCommand(cmd)
+        cmd_out = runBossCommand(cmd)
         js = cmd_out.split(None,2)
         return EDGstatus[js[1]]
 

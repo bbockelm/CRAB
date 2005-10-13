@@ -5,7 +5,7 @@ from crab_logger import Logger
 from crab_exceptions import *
 import common
 
-import string
+import string,os
 
 class ScriptWriter:
     def __init__(self, template):
@@ -22,7 +22,12 @@ class ScriptWriter:
             'register_output'             : self.registerOutput_
             }
         
-        self.template = template
+        if os.path.isfile("./"+template):
+            self.template = "./"+template
+        elif os.getenv('CRABDIR') and os.path.isfile(os.getenv('CRABDIR')+'/python/'+template):
+            self.template = os.getenv('CRABDIR')+'/python/'+template
+        else:
+            raise CrabException("No crab_template.sh found!")
         self.nj = -1     # current job number
         return
 

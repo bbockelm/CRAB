@@ -17,10 +17,11 @@ class Creator(Actor):
         self.job_type = None
         self.cfg_params = cfg_params
         self.total_njobs = 0
-        self.ncjobs = 0                  # nb of jobs to be created
         self.total_number_of_events = 0
         self.job_number_of_events = 0
         self.first_event = 0
+
+        ## SL No. These must not be here!            
         self.owner = cfg_params['USER.owner']
         self.dataset = cfg_params['USER.dataset'] 
 

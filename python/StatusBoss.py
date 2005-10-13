@@ -91,7 +91,7 @@ class StatusBoss(Actor):
         dir = string.split(common.work_space.topDir(), '/')
         group = dir[len(dir)-2]
         cmd = 'boss RTupdate -jobid all '
-        runCommand(cmd)
+        runBossCommand(cmd)
         add2tablelist=''
         addjoincondition = ''
         nodeattr='JOB.E_HOST'
@@ -101,7 +101,7 @@ class StatusBoss(Actor):
 #            addjoincondition=' and edg.JOBID=JOB.ID'
 #            nodeattr='edg.CE'
         cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.INTERNAL_ID" '
-        cmd_out = runCommand(cmd)
+        cmd_out = runBossCommand(cmd)
         #print "cmd_out = ", cmd_out
         jobAttributes={}
         nline=0
@@ -118,7 +118,7 @@ class StatusBoss(Actor):
                     jobAttributes[int(js[0])]=self.splitbyoffset(line,fielddesc)
             nline = nline+1
         cmd = 'boss q -all -statusOnly -group '+group
-        cmd_out = runCommand(cmd)
+        cmd_out = runBossCommand(cmd)
         jobStatus={}
         for line in cmd_out.splitlines():
             js = line.split(None,2)               

@@ -9,6 +9,7 @@ class Submitter(Actor):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
         ############################################# 
+        ### this is a common block!
         fileCODE1 = open(common.work_space.logDir()+"/.code","r")
         array = fileCODE1.read().split('::')
         self.ID1 = array[0]
@@ -24,6 +25,7 @@ class Submitter(Actor):
         The main method of the class.
         """
         common.logger.debug(5, "Submitter::run() called")
+        # SL what the hell is Apmon doing here????
         # Add an instance of ApmonIf to send relevant parameters to ML
         mon = ApmonIf()
         firstJob=self.nj_list[0]
@@ -42,12 +44,11 @@ class Submitter(Actor):
                 #print "st = ", st
                 if st != 'C' and st != 'K' and st != 'A' and st != 'RC':
                     long_st = crabJobStatusToString(st)
-                    #msg = "Job # %d is not submitted: status %s"%(nj+1, long_st)
-                    #common.logger.message(msg)
+                    msg = "Job # %d is not submitted: status %s"%(nj+1, long_st)
+                    common.logger.message(msg)
                     continue
 
                 common.logger.message("Submitting job # "+`(nj+1)`)
-                print "submitting job!"
                 jid = common.scheduler.submit(nj)
 
                 common.jobDB.setStatus(nj, 'S')
@@ -69,6 +70,7 @@ class Submitter(Actor):
 
                 Statistic.notify('submit',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
                 
+                # SL this is crap! Should not be here!!!!
                 # List of parameters to be sent to ML monitor system
                 user = os.getlogin()
                 taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
@@ -96,6 +98,7 @@ class Submitter(Actor):
                 mon.sendToML()
         except:
             common.jobDB.save()
+
         common.jobDB.save()
             
         msg = '\nTotal of %d jobs submitted'%njs

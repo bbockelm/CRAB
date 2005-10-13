@@ -4,7 +4,7 @@ from crab_exceptions import *
 from crab_util import *
 import common
 
-import os, sys, tempfile
+import os, sys, time
 
 class SchedulerEdg(Scheduler):
     def __init__(self):
@@ -90,7 +90,7 @@ class SchedulerEdg(Scheduler):
         libPath=os.path.join(path, "lib", "python")
         sys.path.append(libPath)
 
-        self.checkProxy_()
+        self.proxyValid=0
         return
     
 
@@ -228,12 +228,9 @@ class SchedulerEdg(Scheduler):
         """
         retrieve the logging info from logging and bookkeeping and return it
         """
+        self.checkProxy()
         id = common.jobDB.jobId(nj)
-        edg_ui_cfg_opt = ''
-        if self.edg_config:
-          edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
-        cmd = 'edg-job-get-logging-info -v 2 ' + edg_ui_cfg_opt + id
-        print cmd
+        cmd = 'edg-job-get-logging-info -v 2 ' + self.configOpt_() + id
         myCmd = os.popen(cmd)
         cmd_out = myCmd.readlines()
         myCmd.close()
@@ -243,13 +240,9 @@ class SchedulerEdg(Scheduler):
         """
         Check the compatibility of available resources
         """
+        self.checkProxy()
         jdl = common.job_list[nj].jdlFilename()
-        edg_ui_cfg_opt = ''
-        if self.edg_config:
-          edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
-        if self.edg_config_vo: 
-          edg_ui_cfg_opt += ' --config-vo ' + self.edg_config_vo + ' '
-        cmd = 'edg-job-list-match ' + edg_ui_cfg_opt + jdl 
+        cmd = 'edg-job-list-match ' + self.configOpt_() + jdl 
         myCmd = os.popen(cmd)
         cmd_out = myCmd.readlines()
         myCmd.close()
@@ -320,24 +313,15 @@ class SchedulerEdg(Scheduler):
         Submit one EDG job.
         """
 
+        self.checkProxy()
         jid = None
         jdl = common.job_list[nj].jdlFilename()
-        id_tmp = tempfile.mktemp()
-        edg_ui_cfg_opt = ' '
-        if self.edg_config:
-          edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
-        if self.edg_config_vo: 
-          edg_ui_cfg_opt += ' --config-vo ' + self.edg_config_vo + ' '
-        cmd = 'edg-job-submit -o ' + id_tmp + edg_ui_cfg_opt + jdl 
+
+        cmd = 'edg-job-submit ' + self.configOpt_() + jdl 
         cmd_out = runCommand(cmd)
         if cmd_out != None:
-            idfile = open(id_tmp)
-            jid_line = idfile.readline()
-            while jid_line[0] == '#':
-                jid_line = idfile.readline()
-                pass
-            jid = string.strip(jid_line)
-            os.unlink(id_tmp)
+            reSid = re.compile( r'https.+' )
+            jid = reSid.search(cmd).group()
             pass
         return jid
 
@@ -354,6 +338,7 @@ class SchedulerEdg(Scheduler):
     def getStatusAttribute_(self, id, attr):
         """ Query a status of the job with id """
 
+        self.checkProxy()
         hstates = {}
         Status = importName('edg_wl_userinterface_common_LbWrapper', 'Status')
         # Bypass edg-job-status interfacing directly to C++ API
@@ -387,6 +372,7 @@ class SchedulerEdg(Scheduler):
         Returns the name of directory with results.
         """
 
+        self.checkProxy()
         cmd = 'edg-job-get-output --dir ' + common.work_space.resDir() + ' ' + id
         cmd_out = runCommand(cmd)
 
@@ -398,31 +384,11 @@ class SchedulerEdg(Scheduler):
 
     def cancel(self, id):
         """ Cancel the EDG job with id """
+        self.checkProxy()
         cmd = 'edg-job-cancel --noint ' + id
         cmd_out = runCommand(cmd)
         return cmd_out
 
-    def checkProxy_(self):
-        """
-        Function to check the Globus proxy.
-        """
-        cmd = 'grid-proxy-info -timeleft'
-        cmd_out = runCommand(cmd)
-        ok = 1
-        timeleft = -999
-        try: timeleft = int(cmd_out)
-        except ValueError: ok=0
-        except TypeError: ok=0
-        if timeleft < 1:  ok=0
-
-        if ok==0:
-            print "No valid proxy found !\n"
-            print "Creating a user proxy with default length of 100h\n"
-            msg = "Unable to create a valid proxy!\n"
-            if os.system("grid-proxy-init -valid 100:00"):
-                raise CrabException(msg)
-        return
-    
     def createSchScript(self, nj):
         """
         Create a JDL-file for EDG.
@@ -535,3 +501,36 @@ class SchedulerEdg(Scheduler):
 
         jdl.close()
         return
+
+    def checkProxy(self):
+        """
+        Function to check the Globus proxy.
+        """
+        if (self.proxyValid): return
+        timeleft = -999
+        minTimeLeft=10 # in hours
+        cmd = 'grid-proxy-info -e -v '+str(minTimeLeft)+':00'
+        cmd_out = runCommand(cmd,0)
+        if (cmd_out=='1'):
+            common.logger.message( "No valid proxy found or timeleft too short!\n Creating a user proxy with default length of 100h\n")
+            cmd = 'grid-proxy-init -valid 100:00'
+            try:
+                os.system(cmd)
+            except:
+                msg = "Unable to create a valid proxy!\n"
+                raise CrabException(msg)
+            cmd = 'grid-proxy-info -timeleft'
+            cmd_out = runCommand(cmd,0)
+            print time.time()
+            #time.time(cms_out)
+            pass
+        self.proxyValid=1
+        return
+    
+    def configOpt_(self):
+        edg_ui_cfg_opt = ' '
+        if self.edg_config:
+          edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
+        if self.edg_config_vo: 
+          edg_ui_cfg_opt += ' --config-vo ' + self.edg_config_vo + ' '
+        return edg_ui_cfg_opt

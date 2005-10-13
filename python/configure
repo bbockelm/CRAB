@@ -13,6 +13,7 @@ echo cd Crab_1_0_0
 # top/bin
 #    /lib
 #    /python
+#    /script
 
 TopDir=`\pwd`
 
@@ -24,6 +25,7 @@ export CRABDIR=$TopDir
 CRABPATH=\${CRABDIR}/bin
 CRABLIBS=\${CRABDIR}/lib
 CRABPYTHON=\${CRABDIR}/python
+CRABSCRIPT=\${CRABDIR}/script
 
 # BOSS related Stuff
 export BOSSDIR=$TopDir
@@ -84,33 +86,17 @@ EOF
 
 . ./crab.sh
 
-BACKEND=SQLite
-CONFSCRIPT=${BOSSDIR}/BossConfig.clad
-cat >> $CONFSCRIPT  <<EOF
-# This is the BOSS configuration file
+# Now I have to configure BOSS
+## I must create ${BACKEND}Config.clad
+# MySQL
+# SQLlite
 
-[
-# BOSS temporary directory (where files are extracted from DB)
-BOSS_TMP_DIR = "/tmp";
+# I should have boss in my path
+boss configureDB
 
-# BOSS update interval
-BOSS_MIN_UPD_INT = 5;   # at most one update every BOSS_MIN_UPD_INT sec.
-BOSS_MAX_UPD_INT = 30;  # at least one update every BOSS_MAX_UPD_INT sec.
+# now I register scheduler
 
-# Maximum retries after post-process finishes before killing RTUpdator
-# (waits BOSS_UPD_INTERVAL*BOSS_MAX_RETRY seconds)
-BOSS_MAX_RETRY = 3;
-
-# Boss Database Backend
-DB_BACKEND = "${BACKEND}";
-]
-
-EOF
-# # Now I have to configure BOSS
-
-# # I should have boss in my path
-
-# boss configureDB
+# now I register all Job Type
 
 # ./registerCRABjob
 #    148	19:33	boss showJobTypes

@@ -1,5 +1,5 @@
 from crab_exceptions import *
-from threading import RLock
+#from threading import RLock
 import common
 
 import os, shutil, string, time
@@ -19,7 +19,7 @@ class WorkSpace:
         #if WorkSpace._instance:
         #    raise CrabException('WorkSpace already exists.')
 
-        self.lock = RLock()
+#        self.lock = RLock()
         self._cwd_dir = os.getcwd()+'/'
         self._top_dir = top_dir                    # top working directory
         self._log_dir = self._top_dir + '/log'     # log-directory
