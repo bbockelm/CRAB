@@ -44,7 +44,7 @@ class Submitter(Actor):
                 #print "st = ", st
                 if st != 'C' and st != 'K' and st != 'A' and st != 'RC':
                     long_st = crabJobStatusToString(st)
-                    msg = "Job # %d is not submitted: status %s"%(nj+1, long_st)
+                    msg = "Job # %d not submitted: status %s"%(nj+1, long_st)
                     common.logger.message(msg)
                     continue
 
