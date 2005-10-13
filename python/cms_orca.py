@@ -324,7 +324,7 @@ class Orca(JobType):
                 if len(self.pubDBData[PubDBversion])>0 :
                     #print (" PubDB-style : %s"%(PubDBversion))
                     if PubDBversion=='newPubDB' :
-                        self.builder = orcarcBuilder.orcarcBuilder()
+                        self.builder = orcarcBuilder.orcarcBuilder(cfg_params)
                     else :
                         self.builder = orcarcBuilderOld.orcarcBuilderOld()
                     tmpAllOrcarcs = self.builder.createOrcarcAndInit(self.pubDBData[PubDBversion])

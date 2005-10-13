@@ -29,11 +29,10 @@ class PubDBInfoResult:
 class PubDBInfo:
   def __init__(self, pubdburl, Collections):
          self.Collections= Collections
+         self.PrimaryCollID=string.split(Collections,'-')[0]
          self.PubDBurl_ = pubdburl
-         #self.PubDBInfophp_ = 'pubdb-get-analisys-info.php'
          self.PubDBInfophp_ = 'pubdb-get-analysisinfo.php'
          self.protocolPrio_ = ['http', 'rfio', 'mysql' , 'gridftp']
-         #self.protocolPrio_ = ['http', 'mysql' , 'rfio' , 'gridftp']
 
   ##########################################################################   
   def GetPubDBInfo(self):
@@ -71,6 +70,11 @@ class PubDBInfo:
         collmap={}
         for k in catalogues.keys():
            CollId=catalogues[k]['CollectionId']
+           ## get also the collection type
+           CollType=catalogues[k]['CollectionType']
+           ## set primary collection flag
+           PrimaryCollFlag=0
+           if ( CollId == self.PrimaryCollID ) : PrimaryCollFlag=1
            colllist=[]
            #print ">>> Catalogues for Collection: "+CollId+"\n"
           
@@ -122,7 +126,10 @@ class PubDBInfo:
                      #print "----------------------------------"
 
                      ## fill a catlogue entry
-                     acatalogue=catalogEntryNew(FileType,ValidationStatus,ContactString,ContactProtocol,CatalogueType,SE,CElist,TotalEvents,FirstRun+'-'+LastRun,Variables)          
+#                     acatalogue=catalogEntryNew(FileType,ValidationStatus,ContactString,ContactProtocol,CatalogueType,SE,CElist,TotalEvents,FirstRun+'-'+LastRun,Variables)          
+                     ## store collection type and primarycollection flag
+                     acatalogue=catalogEntryNew(CollType,PrimaryCollFlag,FileType,ValidationStatus,ContactString,ContactProtocol,CatalogueType,SE,CElist,TotalEvents,FirstRun+'-'+LastRun,Variables) 
+
                      ## list the catalogues belonging to a given collection
                      colllist.append(acatalogue) 
                      

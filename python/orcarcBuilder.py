@@ -52,6 +52,8 @@ def constructFromFile(content):
 ###########################################################################
 class catalogEntryNew:
   def __init__(self,
+               CollType,
+               PrimaryCollFlag,
                FileType,
                ValidationStatus,
                ContactString,
@@ -62,6 +64,8 @@ class catalogEntryNew:
                Nevents,
                RunRange,
                RedirectionVariables):
+    self.CollType=CollType
+    self.PrimaryCollFlag=PrimaryCollFlag
     self.FileType=FileType
     self.ValidationStatus=ValidationStatus
     self.ContactString=ContactString
@@ -74,6 +78,8 @@ class catalogEntryNew:
     self.RedirectionVariables=RedirectionVariables
   
   def dump(self):
+    print "CollType ",self.CollType
+    print "PrimaryCollFlag ",self.PrimaryCollFlag
     print "FileType ",self.FileType
     print "ValidationStatus ",self.ValidationStatus
     print "ContactString ",self.ContactString
@@ -89,7 +95,8 @@ class catalogEntryNew:
 ###########################################################################
 ###########################################################################
 class orcarcBuilder:
-  def __init__(self):
+  def __init__(self,cfg_params):
+    self.cfg_params=cfg_params
     self.fileList = []
     self.CE = []
     self.SE = []
@@ -147,6 +154,9 @@ class orcarcBuilder:
     #for mcat in uniq_metaCat:
     #  print mcat.ContactString
 
+    ## order Events catalogues by datatier
+    sort_evdCat=self.sortbyDataTier(evdCat)
+    evdCat=sort_evdCat
     if (len(metaCat)>0) & (len(evdCat)>0):
         for m in metaCat:
             result.append(m)
@@ -155,6 +165,51 @@ class orcarcBuilder:
         return result
 
     return []
+
+  ###########################################################################
+  def sortbyDataTier(self, CatalogList):
+    """
+     sort by datatier
+    """
+    ## use the user defined ordering if present , otherwise use the default 
+    try:
+        sortedDataTier= string.split(self.cfg_params['USER.order_catalogs'],',')
+    except KeyError: 
+        sortedDataTier=['Hit','PU','Digi','DST']
+    #print sortedDataTier
+
+
+    sortCatalogList=[]
+    # sanity check
+    if len(CatalogList) == 0:
+      print 'Error ***: empty catalog list'
+      return
+   
+    ## sorting algorithm
+    for datatier in sortedDataTier:
+      for cat in CatalogList:
+       if ( cat.CollType == datatier ) :
+        sortCatalogList.append(cat)   
+
+    ## additional check: to append at the end catalogues with data tier 
+    ## for which ordering has not been defined
+    try:
+        user_DataTier= string.split(self.cfg_params['USER.data_tier'],',')
+    except KeyError:
+        user_DataTier=[]
+
+    for dt in user_DataTier:
+     if ( dt == "Digi") : user_DataTier.append('PU')
+
+    #print user_DataTier
+    for dt in user_DataTier:
+     if sortedDataTier.count(dt)<=0:
+       for cat in CatalogList:
+         if ( cat.CollType == dt ):
+           sortCatalogList.append(cat)
+
+
+    return sortCatalogList
 
   ###########################################################################
   def createStageInScript(self, CatalogList):
@@ -326,22 +381,17 @@ class orcarcBuilder:
     """
     Get the Max events from a CatalogList, checking that the Max events are the same!
     """
-    ### pick up the first Nevents since it sould be the number of events of the primary collid                                                                                      
-    num = ''
-    num_sve = ''
-    first=1
+    ### pick up the Nevents of the primary collection catalogue, with a preference
+    ### for Events catalogues 
+    stop=1
     for cat in CatalogList:
-      #cat.dump()
-      num = cat.Nevents
-      if (first) : num_primary=num
-      first=0
-      if (num_sve!='') & (num!=num_sve):
-        assert(num != num_sve)
-      num_sve=num
-      #print "-==-==-==-==-==-"
-      # print Catalog_list
-                                                                                     
-    #return num
+      if ( cat.PrimaryCollFlag ):
+       if(stop):
+         if ( cat.FileType == 'Events' ):
+           num_primary=cat.Nevents
+           stop=0
+         else :
+           num_primary=cat.Nevents
     return num_primary
 
 # ###################################################
