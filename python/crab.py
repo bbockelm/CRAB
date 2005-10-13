@@ -291,38 +291,7 @@ class Crab:
                     usage()
                     pass
                 pass
-### FEDE     
-#            elif ( opt == '-use_boss' ):
-#                self.scheduler_name = 'boss'
-#                pass
 
-#            elif ( opt == '-copy_data' or opt == '-copy' ):
-#                if ( val == '0' or val == '1' ):
-#                  common.flag_copy_data = int(val)
-#                else:
-#                  print common.prog_name+'. Bad flag for -copy_data option:',\
-#                        val,'Possible values are 0(=No) or 1(=Yes)'
-#                  usage()
-#                pass
-                                                                                                                                                                   
-#            elif ( opt == '-register_data' or opt == '-register' ):
-#                if ( val == '0' or val == '1' ):
-#                  common.flag_register_data = int(val)
-#                else:
-#                  print common.prog_name+'. Bad flag for -register_data option:',\
-#                        val,'Possible values are 0(=No) or 1(=Yes#)'
-#                  usage()
-#                pass
-                                                                                                                                                                   
-#            elif ( opt == '-return_data' or opt == '-return' ):
-#                if ( val == '0' or val == '1' ):
-#                  common.flag_return_data = int(val)
-#                else:
-#                  print common.prog_name+'. Bad flag for -return_data option:',\
-#                        val,'Possible values are 0(=No) or 1(=Yes)'
-#                  usage()
-#                pass
-                                                                                                                                                             
             elif ( opt in ('-use_boss', '-useboss') ):
                 if ( val == '1' ):
                     self.scheduler_name = 'boss'
@@ -335,7 +304,6 @@ class Crab:
                     usage()
                     pass
                 pass
-######
 
             elif string.find(opt,'.') == -1:
                 print common.prog_name+'. Unrecognized option '+opt
@@ -441,6 +409,7 @@ class Crab:
                                                                                                                
  
             if (  opt == '-create' ):
+                ncjobs = 0
                 if val:
                     if ( isInt(val) ):
                         ncjobs = int(val)
@@ -480,14 +449,27 @@ class Crab:
                 pass
 
             elif ( opt == '-submit' ):
-                nj_list = self.parseRange_(val)
+                nsjobs = 0
+                if val:
+                    if ( isInt(val) ):
+                        nsjobs = int(val)
+                    elif ( val == 'all'):
+                        nsjobs = val
+                    else:
+                        msg = 'Bad submission option <'+str(val)+'>\n'
+                        msg += '      Must be an integer or "all"'
+                        msg += '      Generic range is not allowed"'
+                        raise CrabException(msg)
+                    pass
+                else: nsjobs = 'all'
+
+                nj_list = range(nsjobs)
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
                     self.actions[opt] = Submitter(self.cfg_params, nj_list)
 
                     # Create and initialize JobList
-
                     if len(common.job_list) == 0 :
                         common.job_list = JobList(common.jobDB.nJobs(),
                                                   None)
@@ -514,6 +496,7 @@ class Crab:
                         pass
                     pass
                 pass
+
             elif ( opt == '-kill' ):
                 if val:
                     jobs = self.parseRange_(val)
@@ -543,6 +526,7 @@ class Crab:
 
                     common.scheduler.getOutput(jobs) 
                 else:
+                    ## This should not be here.
                     jobs = self.parseRange_(val) 
                     fileCODE1 = open(common.work_space.logDir()+"/.code","r")
                     array = fileCODE1.read().split('::')
@@ -551,8 +535,9 @@ class Crab:
                     self.dataset = array[2]
                     self.owner = array[3]
                     fileCODE1.close()
+                    ###
 
-
+                    ## also this: create a ActorClass (GetOutput)
                     jobs_done = []
                     for nj in jobs:
                         st = common.jobDB.status(nj)
@@ -593,12 +578,16 @@ class Crab:
                         # ignore error
                         pass
                     pass
+                    ###
+
+                    ## again, this should not be here but in getoutput class
                     destination = common.scheduler.queryDest(jid).split(":")[0]
                     ID3 =  jid.split("/")[3]
                     broker = jid.split("/")[2].split(":")[0]
                     resFlag = 0
                     exCode = common.scheduler.getExitStatus(jid)
                     Statistic.notify('retrieved',resFlag,exCode,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                    ###
 
                     msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
                     common.logger.message(msg)
@@ -613,6 +602,7 @@ class Crab:
 
                     # create a list of jobs to be resubmitted.
 
+                    ### as before, create a Resubmittter Class
                     nj_list = []
                     for nj in jobs:
                         st = common.jobDB.status(nj)

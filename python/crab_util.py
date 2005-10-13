@@ -118,13 +118,21 @@ def parseRange2(range):
 
     (n1, n2) = parseRange(left)
     while ( n1 <= n2 ):
-        list.append(n1)
-        n1 += 1
-        pass
+        try:
+            list.append(n1)
+            n1 += 1
+            pass
+        except:
+            msg = 'Syntax error in range <'+range+'>'
+            raise CrabException(msg)
 
     if comma != -1:
-        list.extend(parseRange2(range[comma+1:]))
-        pass
+        try:
+            list.extend(parseRange2(range[comma+1:]))
+            pass
+        except:
+            msg = 'Syntax error in range <'+range+'>'
+            raise CrabException(msg)
 
     return list
 
@@ -193,36 +201,64 @@ def setOutLogDir(outDir,logDir):
                                                                                                                             
     return outDir, logDir
 
-
-
+###########################################################################
+def runBossCommand(cmd, printout=0, timeout=-1):
+    """
+    Cd to correct directory before running a boss command
+    """
+    cwd = os.getcwd()
+    os.chdir(common.work_space.shareDir())
+    out = runCommand(cmd, printout, timeout)
+    os.chdir(cwd)
+    return out
 
 ###########################################################################
-def runCommand(cmd):
+def runCommand(cmd, printout=0, timeout=-1):
     """
     Run command 'cmd'.
     Returns command stdoutput+stderror string on success,
     or None if an error occurred.
     """
-    common.logger.debug(2, cmd)
+    if printout:
+        common.logger.message(cmd)
+    else:
+        common.logger.write(cmd)
+
     child = popen2.Popen3(cmd,1)
-    err = child.wait()
+    if timeout == -1:
+        err = child.wait()
+    else:
+        pass
+	maxwaittime = time.time() + timeout
+	err = -1
+	while time.time() < maxwaittime:
+	    err = child.poll()
+	    if err != -1: break
+	    time.sleep (0.1)
+	if err == -1:
+	    os.kill (child.pid, 9)
+	    err = child.wait()
+
     cmd_out = child.fromchild.read()
     cmd_err = child.childerr.read()
-    if err :
-        msg = ('`'+cmd+'`\n   failed with exit code '
-               +`err`+'='+`(err&0xff)`+'(signal)+'
-               +`(err>>8)`+'(status)'+'\n')
-        msg += 'cmd_out = ' + cmd_out
-        msg += 'cmd_err = ' + cmd_err
-        common.logger.message(msg)
+    if err:
+        common.logger.message('`'+cmd+'`\n   failed with exit code '
+                           +`err`+'='+`(err&0xff)`+'(signal)+'
+                           +`(err>>8)`+'(status)')
+        common.logger.message(cmd_out)
+        common.logger.message(cmd_err)
         return None
 
     cmd_out = cmd_out + cmd_err
-    common.logger.debug(2, cmd_out)
-
+    if printout:
+        common.logger.message(cmd_out)
+    else:
+        common.logger.write(cmd_out)
     if cmd_out == '' : cmd_out = ' '
     return cmd_out
 
+
+####################################
 if __name__ == '__main__':
     import sys
     print 'sys.argv[1] =',sys.argv[1]

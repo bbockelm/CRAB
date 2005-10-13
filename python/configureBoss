@@ -1,0 +1,143 @@
+#! /bin/sh
+#
+# Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
+#
+# Initialization script for Crab and Boss
+#
+# 14-Sep-2005
+
+if [ -z "$CRABDIR" ]; then
+  echo "You must source crab.(c)sh before running this script"
+  exit 1
+fi
+
+BACKEND=SQLite
+BOSSDBPATH=${HOME}/boss
+BOSSDBNAME=bossCrab
+
+# I have to configure BOSS
+
+CONFSCRIPT=${HOME}/BossConfig.clad
+cat > $CONFSCRIPT  <<EOF
+# This is the BOSS configuration file
+
+[
+# BOSS temporary directory (where files are extracted from DB)
+BOSS_TMP_DIR = "/tmp";
+# BOSS update interval
+BOSS_MIN_UPD_INT = 5;   # at most one update every BOSS_MIN_UPD_INT sec.
+BOSS_MAX_UPD_INT = 30;  # at least one update every BOSS_MAX_UPD_INT sec.
+# Maximum retries after post-process finishes before killing RTUpdator
+# (waits BOSS_UPD_INTERVAL*BOSS_MAX_RETRY seconds)
+BOSS_MAX_RETRY = 3;
+# Boss Database Backend
+DB_BACKEND = "${BACKEND}";
+]
+EOF
+
+## I must create ${BACKEND}Config.clad
+
+# SQLlite
+if [ "${BACKEND}" == "SQLite" ]; then
+
+  if [ ! -d ${BOSSDBPATH} ];  then
+    echo "creating ${BOSSDBPATH} directory"
+    mkdir ${BOSSDBPATH}
+  else
+    echo "Directory ${BOSSDBPATH} Already exist. Stoppping"
+    exit 1
+  fi
+  CONFSCRIPT=${HOME}/SQLiteConfig.clad
+  cat > $CONFSCRIPT  <<EOF
+# This is the BOSS SQLite database configuration file
+[
+SQLITE_DB_PATH = "${BOSSDBPATH}/";
+DB_NAME = "${BOSSDBNAME}";
+]
+EOF
+
+fi # Backend SQLite
+
+# MySQL
+if [ "${BACKEND}" == "MySQL" ]; then
+  HOST=`/bin/hostname`
+  DOMAIN=`/bin/hostname -d`
+  CONFSCRIPT=${HOME}/MySQLConfig.clad
+  /bin/rm -f $CONFSCRIPT
+  cat > $CONFSCRIPT  <<EOF
+
+# This is the BOSS MySQL Database configuration file
+
+[
+# BOSS MySQL database file
+DB_NAME = "${BOSSDBNAME}";
+# Host where the MySQL server is running
+DB_HOST = "${HOST}";
+DB_DOMAIN = "${DOMAIN}";
+# Default BOSS MySQL user and password
+DB_USER = "BOSSmanager";
+DB_USER_PW = "BossMySQL";
+# Guest BOSS MySQL user and password
+DB_GUEST = "BOSSmonitor";
+DB_GUEST_PW = "BossMySQL";
+# MySQL table type
+TABLE_TYPE = "";
+# MySQL port
+DB_PORT = 0;
+# MySQL socket
+DB_SOCKET = "";
+# MySQL client flag
+DB_CLIENT_FLAG = 0;
+]
+EOF
+
+  if [ "${BACKEND}" == "MySQL" ]; then
+      echo ""
+  # Check MySQL server
+      if [ `ps -d | grep mysqld | wc -l` != "0" ]; then
+        echo "Found a MySQL server on this host"
+      else
+        echo "MySQL server is not running on this host"
+      fi
+  fi
+
+fi # backend MySQL
+
+# I should have boss in my path
+boss configureDB
+
+# now register the schedulers
+cd $CRABDIR/script/
+#EDG
+./registerEDGScheduler
+#fork
+./registerForkScheduler
+# Glite
+./registerGLITEScheduler
+# LSF
+# ./registerLSFScheduler
+# PBS
+# ./registerPBSScheduler
+# Condor
+# ./registerCONDORScheduler
+# BBS
+# ./registerBBSScheduler
+
+# now register all Job Types
+./registerEDGjob
+./registerCRABjob
+
+### How to register the RealTime monitor???
+
+
+cd -
+
+# End
+echo "BOSS configured to be used with crab\n"
+echo ""
+echo "Schedulers registered"
+boss showSchedulers
+
+echo ""
+echo "Job types registered"
+boss showJobTypes
