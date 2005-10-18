@@ -321,7 +321,7 @@ class SchedulerEdg(Scheduler):
         cmd_out = runCommand(cmd)
         if cmd_out != None:
             reSid = re.compile( r'https.+' )
-            jid = reSid.search(cmd).group()
+            jid = reSid.search(cmd_out).group()
             pass
         return jid
 
