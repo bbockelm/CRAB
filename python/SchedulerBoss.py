@@ -176,10 +176,6 @@ class SchedulerBoss(Scheduler):
             msg += ' (file: '+file_name+', class '+klass_name+'):\n'
             msg += str(e)
             raise CrabException(msg)
-<<<<<<< SchedulerBoss.py
-=======
-
->>>>>>> 1.13
         self.boss_scheduler = klass()
         self.boss_scheduler.configure(cfg_params)
 
