@@ -36,11 +36,11 @@ if [ -z "\$PATH" ]; then
 else
    export PATH=\${CRABPATH}:\${PATH}
 fi
-if [ -z "\$LD_LIBRARY_PATH" ]; then
-   export LD_LIBRARY_PATH=\${BOSSLIBS}
-else
-   export LD_LIBRARY_PATH=\${BOSSLIBS}:\${LD_LIBRARY_PATH}
-fi
+# if [ -z "\$LD_LIBRARY_PATH" ]; then
+#    export LD_LIBRARY_PATH=\${BOSSLIBS}
+# else
+#    export LD_LIBRARY_PATH=\${BOSSLIBS}:\${LD_LIBRARY_PATH}
+# fi
 if [ -z "\$PYTHONPATH" ]; then
    export PYTHONPATH=\${CRABPYTHON}
 else
@@ -67,18 +67,14 @@ if ( ! \$?path ) then
 else
    set path=( \${CRABPATH} \${path} )
 endif
-if ( ! \$?LD_LIBRARY_PATH ) then
-   setenv LD_LIBRARY_PATH \${BOSSLIBS}
-else
-   setenv LD_LIBRARY_PATH \${BOSSLIBS}:\${LD_LIBRARY_PATH}
-endif
+# if ( ! \$?LD_LIBRARY_PATH ) then
+#    setenv LD_LIBRARY_PATH \${BOSSLIBS}
+# else
+#    setenv LD_LIBRARY_PATH \${BOSSLIBS}:\${LD_LIBRARY_PATH}
+# endif
 if ( ! \$?PYTHONPATH ) then
    setenv PYTHONPATH \${CRABPYTHON}
 else
    setenv PYTHONPATH \${CRABPYTHON}:\${PYTHONPATH}
 endif
 EOF
-
-. ./crab.sh
-
-# Eventually source configureBoss
