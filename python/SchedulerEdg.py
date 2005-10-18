@@ -510,18 +510,20 @@ class SchedulerEdg(Scheduler):
         timeleft = -999
         minTimeLeft=10 # in hours
         cmd = 'grid-proxy-info -e -v '+str(minTimeLeft)+':00'
-        cmd_out = runCommand(cmd,0)
-        if (cmd_out=='1'):
+        try: cmd_out = runCommand(cmd,0)
+        except: print cmd_out
+        if (cmd_out == None or cmd_out=='1'):
             common.logger.message( "No valid proxy found or timeleft too short!\n Creating a user proxy with default length of 100h\n")
             cmd = 'grid-proxy-init -valid 100:00'
             try:
-                os.system(cmd)
+                out = os.system(cmd)
+                if (out>0): raise CrabException("Unable to create a valid proxy!\n")
             except:
                 msg = "Unable to create a valid proxy!\n"
                 raise CrabException(msg)
             cmd = 'grid-proxy-info -timeleft'
             cmd_out = runCommand(cmd,0)
-            print time.time()
+            print cmd_out, time.time()
             #time.time(cms_out)
             pass
         self.proxyValid=1
