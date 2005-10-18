@@ -449,21 +449,32 @@ class Crab:
                 pass
 
             elif ( opt == '-submit' ):
-                nsjobs = 0
+
+                # total jobs
+                nsjobs = common.jobDB.nJobs()
+                # get the first not already submitted
+                for nj in range(nsjobs):
+                    if (common.jobDB.status(nj)=='S'): pass 
+                    else: break
+
+                # get user request
                 if val:
                     if ( isInt(val) ):
                         nsjobs = int(val)
-                    elif ( val == 'all'):
-                        nsjobs = val
+                    elif (val=='all'):
+                        pass
                     else:
                         msg = 'Bad submission option <'+str(val)+'>\n'
                         msg += '      Must be an integer or "all"'
                         msg += '      Generic range is not allowed"'
                         raise CrabException(msg)
                     pass
-                else: nsjobs = 'all'
-
-                nj_list = range(nsjobs)
+    
+                # submit N from last submitted job
+                nj_list = range(nj,nj+nsjobs)
+                # check if all job already submitted
+                if (nj+nsjobs >= common.jobDB.nJobs()): 
+                    nj_list = range(0)
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
@@ -546,7 +557,6 @@ class Crab:
                             pass
                         elif st == 'S':
                             jid = common.jobDB.jobId(nj)
-                            print "jid", jid
                             currStatus = common.scheduler.queryStatus(jid)
                             if currStatus=="Done":
                                 jobs_done.append(nj)
