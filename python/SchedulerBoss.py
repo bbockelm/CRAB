@@ -25,6 +25,57 @@ class SchedulerBoss(Scheduler):
             raise CrabException(msg)
 
 
+    def configRT_(self): 
+        """
+        Configure Boss RealTime monitor
+        """
+
+        # First I have to create a SQLiteConfig.clad file in the proper directory
+        cwd = os.getcwd()
+        os.chdir(common.work_space.shareDir())
+        confSQLFileName = 'MySQLRTConfig.clad'
+        confFile = open(confSQLFileName, 'w')
+
+        confFile.write('[\n')
+        # BOSS MySQL database file
+        confFile.write('DB_NAME = "boss_rt_v3_6";')
+        # Host where the MySQL server is running
+        confFile.write('DB_HOST = "boss.bo.infn.it";')
+        confFile.write('DB_DOMAIN = "bo.infn.it";')
+        # Default BOSS MySQL user and password
+        confFile.write('DB_USER = "BOSSv3_6manager";')
+        confFile.write('DB_USER_PW = "BossMySQL";')
+        # Guest BOSS MySQL user and password
+        confFile.write('DB_GUEST = "BOSSv3_6monitor";')
+        confFile.write('DB_GUEST_PW = "BossMySQL";')
+        # MySQL table type
+        confFile.write('TABLE_TYPE = "";')
+        # MySQL port
+        confFile.write('DB_PORT = 0;')
+        # MySQL socket
+        confFile.write('DB_SOCKET = "";')
+        # MySQL client flag
+        confFile.write('DB_CLIENT_FLAG = 0;')
+        confFile.write(']\n')
+        confFile.close()
+
+        # Registration of RealTime monitor
+        register_script = 'registerMySQLRTmon'
+        register_path = self.boss_dir + '/script/'
+        if os.path.exists(register_path+register_script):
+            boss_out = runBossCommand(register_path+register_script,0)
+            if (boss_out==None): raise CrabException('Cannot execute '+register_script+'\nExiting')
+            if string.find(boss_out, 'Usage') != -1 :
+                msg = 'Error: Problem with RealTime monitor registration\n'
+                raise CrabException(msg)
+        else:
+            msg = 'Warning: file '+ register_script + 'does not exist!\n'
+            raise CrabException(msg)
+        
+        os.chdir(cwd)
+
+        return
+
     def configure(self, cfg_params):
          
         try:    
@@ -35,6 +86,17 @@ class SchedulerBoss(Scheduler):
             self.logDir = cfg_params["USER.logdir"]
         except:
             self.logDir = common.work_space.resDir()
+
+        try:
+            if (int(cfg_params["USER.use_central_bossdb"])==1): pass
+            else: self.configBossDB_()
+        except KeyError:
+            self.configBossDB_()
+
+        try:
+            if (int(cfg_params["USER.use_boss_rt"])==1): self.configRT_()
+        except KeyError:
+            pass
 
         try: 
             self.boss_scheduler_name = cfg_params["CRAB.scheduler"]
@@ -63,7 +125,7 @@ class SchedulerBoss(Scheduler):
             msg += ' (file: '+file_name+', class '+klass_name+'):\n'
             msg += str(e)
             raise CrabException(msg)
-                                                                                                                                                             
+
         self.boss_scheduler = klass()
         self.boss_scheduler.configure(cfg_params)
 
@@ -347,13 +409,11 @@ class SchedulerBoss(Scheduler):
         group = dirGroup[len(dirGroup)-2]
         ListBoss_ID = []
         cmd = 'boss SQL -query "select crabjob.INTERNAL_ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\'"'
-        cmd_out = runCommand(cmd)
+        cmd_out = runBossCommand(cmd,0)
         nline = 0
         for line in cmd_out.splitlines():
             if nline != 0 and nline != 1:
                 ListBoss_ID.append(int(line)-1) 
             nline = nline + 1
-                                                                                                                             
+
         return ListBoss_ID
-
-
