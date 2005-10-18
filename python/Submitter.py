@@ -28,6 +28,8 @@ class Submitter(Actor):
         # SL what the hell is Apmon doing here????
         # Add an instance of ApmonIf to send relevant parameters to ML
         mon = ApmonIf()
+        ###
+
         firstJob=self.nj_list[0]
         match = common.scheduler.listMatch(firstJob)
         if match:
@@ -81,21 +83,24 @@ class Submitter(Actor):
                 except KeyError:
                     application = os.path.basename(os.environ['LOCALRT'])
 
-                nevtJob = common.jobDB.maxEvents(nj)
-                exe = self.cfg_params['USER.executable']
-                tool = common.prog_name
-                scheduler = self.cfg_params['CRAB.scheduler']
-                taskType = 'analysis'
-                vo = 'cms'
-                dataset = self.cfg_params['USER.dataset']
-                owner = self.cfg_params['USER.owner']
-                rb = sid.split(':')[1]
-                rb = rb.replace('//', '')
-                params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
-                          'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
-                          'user': user, 'taskType': taskType, 'vo': vo, 'dataset': dataset, 'owner': owner, 'broker': rb}
-                mon.fillDict(params)
-                mon.sendToML()
+                try:
+                    nevtJob = common.jobDB.maxEvents(nj)
+                    exe = self.cfg_params['USER.executable']
+                    tool = common.prog_name
+                    scheduler = self.cfg_params['CRAB.scheduler']
+                    taskType = 'analysis'
+                    vo = 'cms'
+                    dataset = self.cfg_params['USER.dataset']
+                    owner = self.cfg_params['USER.owner']
+                    rb = sid.split(':')[1]
+                    rb = rb.replace('//', '')
+                    params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
+                              'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
+                              'user': user, 'taskType': taskType, 'vo': vo, 'dataset': dataset, 'owner': owner, 'broker': rb}
+                    mon.fillDict(params)
+                    mon.sendToML()
+                except:
+                    pass
         except:
             common.jobDB.save()
 
