@@ -234,6 +234,7 @@ class PubDB:
         """
         select PubDB URLs that are at site defined by the user (via CE white list)
         """
+        if len(self.reCEWhiteList)==0: return pubDBUrls
         goodurls = []
         for url in pubDBUrls:
             #print 'connecting to the URL ',url
@@ -255,6 +256,7 @@ class PubDB:
         """
         select PubDB URLs that are at site not exluded by the user (via CE black list) 
         """
+        if len(self.reCEBlackList)==0: return pubDBUrls
         goodurls = []
         for url in pubDBUrls:
             common.logger.debug(10,'connecting to the URL '+url)
