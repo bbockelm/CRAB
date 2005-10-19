@@ -222,6 +222,7 @@ def runCommand(cmd, printout=0, timeout=-1):
     if printout:
         common.logger.message(cmd)
     else:
+        common.logger.debug(10,cmd)
         common.logger.write(cmd)
 
     child = popen2.Popen3(cmd,1)
@@ -253,6 +254,7 @@ def runCommand(cmd, printout=0, timeout=-1):
     if printout:
         common.logger.message(cmd_out)
     else:
+        common.logger.debug(10,cmd_out)
         common.logger.write(cmd_out)
     if cmd_out == '' : cmd_out = ' '
     return cmd_out
