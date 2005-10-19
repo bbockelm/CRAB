@@ -10,6 +10,8 @@ class SchedulerBoss(Scheduler):
         Scheduler.__init__(self,"BOSS")
         self.checkBoss_()
         #self.cwd = common.work_space.cwdDir()
+        self.schedRegistered = {}
+        self.jobtypeRegistered = {}
         return
 
     def checkBoss_(self): 
@@ -185,7 +187,9 @@ class SchedulerBoss(Scheduler):
         """
         Verify scheduler registration.
         """
-        ## SL TODO : we don't need to test this at every call:
+        ## we don't need to test this at every call:
+        if (self.schedRegistered.has_key(sched_name)): return
+
         ## we should cache the result of the first test
         boss_scheduler_check = "boss showSchedulers"
         boss_out = runBossCommand(boss_scheduler_check,0)
@@ -203,9 +207,10 @@ class SchedulerBoss(Scheduler):
                     msg = 'Error: Problem with scheduler '+sched_name+' registration\n'
                     raise CrabException(msg)
             else:
-                msg = 'Warning: file '+ register_boss_scheduler + 'does not exist!\n'
+                msg = 'Warning: file '+ register_boss_scheduler + ' does not exist!\n'
                 msg = msg + 'Please create your scheduler plugins\n'
                 raise CrabException(msg)
+        self.schedRegistered[sched_name] = 1
         return
 
 
@@ -213,7 +218,9 @@ class SchedulerBoss(Scheduler):
         """
         Verify jobtype registration.
         """
-        ## SL TODO : we don't need to test this at every call:
+        ## we don't need to test this at every call:
+        if (self.jobtypeRegistered.has_key(jobtype)): return
+
         ## we should cache the result of the first test
         boss_jobtype_check = "boss showJobTypes"
         boss_out = runBossCommand(boss_jobtype_check,0)
@@ -234,6 +241,7 @@ class SchedulerBoss(Scheduler):
                 msg = 'Warning: file '+ register_boss_jobtype + ' does not exist!\n'
                 msg = msg + 'Will be used only JOB as default jobtype\n'
                 common.logger.message(msg)
+        self.jobtypeRegistered[jobtype] = 1
         return
 
 
