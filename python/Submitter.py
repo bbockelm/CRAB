@@ -67,7 +67,10 @@ class Submitter(Actor):
                     resFlag = 0
                     pass
 
-                Statistic.notify('submit',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                try:
+                    Statistic.notify('submit',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                except:
+                    pass
                 
                 try:
                     # SL this is crap! Should not be here!!!!
