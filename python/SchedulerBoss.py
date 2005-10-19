@@ -3,15 +3,14 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
-import os, sys, tempfile
+import os, sys, tempfile, shutil
 
 class SchedulerBoss(Scheduler):
     def __init__(self):
         Scheduler.__init__(self,"BOSS")
         self.checkBoss_()
-        self.cwd = common.work_space.cwdDir()
+        #self.cwd = common.work_space.cwdDir()
         return
-
 
     def checkBoss_(self): 
         """
@@ -24,56 +23,37 @@ class SchedulerBoss(Scheduler):
             msg = msg + " Did you source bossenv.sh/csh from your BOSS area?\n"
             raise CrabException(msg)
 
-
-    def configRT_(self): 
+    def configBossDB_(self):
         """
-        Configure Boss RealTime monitor
+        Configure Boss DB
         """
-
-        # First I have to create a SQLiteConfig.clad file in the proper directory
-        cwd = os.getcwd()
-        os.chdir(common.work_space.shareDir())
-        confSQLFileName = 'MySQLRTConfig.clad'
-        confFile = open(confSQLFileName, 'w')
-
-        confFile.write('[\n')
-        # BOSS MySQL database file
-        confFile.write('DB_NAME = "boss_rt_v3_6";')
-        # Host where the MySQL server is running
-        confFile.write('DB_HOST = "boss.bo.infn.it";')
-        confFile.write('DB_DOMAIN = "bo.infn.it";')
-        # Default BOSS MySQL user and password
-        confFile.write('DB_USER = "BOSSv3_6manager";')
-        confFile.write('DB_USER_PW = "BossMySQL";')
-        # Guest BOSS MySQL user and password
-        confFile.write('DB_GUEST = "BOSSv3_6monitor";')
-        confFile.write('DB_GUEST_PW = "BossMySQL";')
-        # MySQL table type
-        confFile.write('TABLE_TYPE = "";')
-        # MySQL port
-        confFile.write('DB_PORT = 0;')
-        # MySQL socket
-        confFile.write('DB_SOCKET = "";')
-        # MySQL client flag
-        confFile.write('DB_CLIENT_FLAG = 0;')
-        confFile.write(']\n')
-        confFile.close()
-
-        # Registration of RealTime monitor
-        register_script = 'registerMySQLRTmon'
-        register_path = self.boss_dir + '/script/'
-        if os.path.exists(register_path+register_script):
-            boss_out = runBossCommand(register_path+register_script,0)
-            if (boss_out==None): raise CrabException('Cannot execute '+register_script+'\nExiting')
-            if string.find(boss_out, 'Usage') != -1 :
-                msg = 'Error: Problem with RealTime monitor registration\n'
-                raise CrabException(msg)
+        # first I have to chack if the db already esist
+        self.boss_db_dir = common.work_space.shareDir()
+        self.boss_db_name = 'bossDB'
+        if os.path.isfile(self.boss_db_dir+self.boss_db_name) :
+            common.logger.debug(5,'BossDB already exist')
         else:
-            msg = 'Warning: file '+ register_script + 'does not exist!\n'
-            raise CrabException(msg)
-        
-        os.chdir(cwd)
+            common.logger.debug(5,'Creating BossDB in '+self.boss_db_dir+self.boss_db_name)
 
+            # First I have to create a SQLiteConfig.clad file in the proper directory
+            cwd = os.getcwd()
+            if not os.path.exists(self.boss_db_dir):
+                os.mkdir(self.boss_db_dir)
+            os.chdir(common.work_space.shareDir())
+            confSQLFileName = 'SQLiteConfig.clad'
+            confFile = open(confSQLFileName, 'w')
+            confFile.write('[\n')
+            confFile.write('SQLITE_DB_PATH = "'+self.boss_db_dir+'"\n')
+            confFile.write('DB_NAME = "'+self.boss_db_name+'"\n')
+            confFile.write(']\n')
+            confFile.close()
+
+            # then I have to run "boss configureDB"
+            out = runBossCommand('boss configureDB',0)
+     
+            os.chdir(cwd)
+     
+        # that's it!
         return
 
     def configRT_(self): 
@@ -81,49 +61,57 @@ class SchedulerBoss(Scheduler):
         Configure Boss RealTime monitor
         """
 
-        # First I have to create a SQLiteConfig.clad file in the proper directory
-        cwd = os.getcwd()
-        os.chdir(common.work_space.shareDir())
-        confSQLFileName = 'MySQLRTConfig.clad'
-        confFile = open(confSQLFileName, 'w')
+        # check if RT is already configured
+        boss_rt_check = "boss showRTMon"
+        boss_out = runBossCommand(boss_rt_check,0)
+        if string.find(boss_out, 'Default rtmon is: mysql') == -1 :
+            common.logger.debug(5,'registering RT monitor')
+            # First I have to create a SQLiteConfig.clad file in the proper directory
+            cwd = os.getcwd()
+            os.chdir(common.work_space.shareDir())
+            confSQLFileName = 'MySQLRTConfig.clad'
+            confFile = open(confSQLFileName, 'w')
 
-        confFile.write('[\n')
-        # BOSS MySQL database file
-        confFile.write('DB_NAME = "boss_rt_v3_6";')
-        # Host where the MySQL server is running
-        confFile.write('DB_HOST = "boss.bo.infn.it";')
-        confFile.write('DB_DOMAIN = "bo.infn.it";')
-        # Default BOSS MySQL user and password
-        confFile.write('DB_USER = "BOSSv3_6manager";')
-        confFile.write('DB_USER_PW = "BossMySQL";')
-        # Guest BOSS MySQL user and password
-        confFile.write('DB_GUEST = "BOSSv3_6monitor";')
-        confFile.write('DB_GUEST_PW = "BossMySQL";')
-        # MySQL table type
-        confFile.write('TABLE_TYPE = "";')
-        # MySQL port
-        confFile.write('DB_PORT = 0;')
-        # MySQL socket
-        confFile.write('DB_SOCKET = "";')
-        # MySQL client flag
-        confFile.write('DB_CLIENT_FLAG = 0;')
-        confFile.write(']\n')
-        confFile.close()
+            confFile.write('[\n')
+            # BOSS MySQL database file
+            confFile.write('DB_NAME = "boss_rt_v3_6";')
+            # Host where the MySQL server is running
+            confFile.write('DB_HOST = "boss.bo.infn.it";')
+            confFile.write('DB_DOMAIN = "bo.infn.it";')
+            # Default BOSS MySQL user and password
+            confFile.write('DB_USER = "BOSSv3_6manager";')
+            confFile.write('DB_USER_PW = "BossMySQL";')
+            # Guest BOSS MySQL user and password
+            confFile.write('DB_GUEST = "BOSSv3_6monitor";')
+            confFile.write('DB_GUEST_PW = "BossMySQL";')
+            # MySQL table type
+            confFile.write('TABLE_TYPE = "";')
+            # MySQL port
+            confFile.write('DB_PORT = 0;')
+            # MySQL socket
+            confFile.write('DB_SOCKET = "";')
+            # MySQL client flag
+            confFile.write('DB_CLIENT_FLAG = 0;')
+            confFile.write(']\n')
+            confFile.close()
 
-        # Registration of RealTime monitor
-        register_script = 'registerMySQLRTmon'
-        register_path = self.boss_dir + '/script/'
-        if os.path.exists(register_path+register_script):
-            boss_out = runBossCommand(register_path+register_script,0)
-            if (boss_out==None): raise CrabException('Cannot execute '+register_script+'\nExiting')
-            if string.find(boss_out, 'Usage') != -1 :
-                msg = 'Error: Problem with RealTime monitor registration\n'
+            # Registration of RealTime monitor
+            register_script = 'registerMySQLRTmon'
+            register_path = self.boss_dir + '/script/'
+            if os.path.exists(register_path+register_script):
+                boss_out = runBossCommand(register_path+register_script,0)
+                if (boss_out==None): raise CrabException('Cannot execute '+register_script+'\nExiting')
+                if string.find(boss_out, 'Usage') != -1 :
+                    msg = 'Error: Problem with RealTime monitor registration\n'
+                    raise CrabException(msg)
+            else:
+                msg = 'Warning: file '+ register_script + 'does not exist!\n'
                 raise CrabException(msg)
+            
+            os.chdir(cwd)
         else:
-            msg = 'Warning: file '+ register_script + 'does not exist!\n'
-            raise CrabException(msg)
-        
-        os.chdir(cwd)
+            common.logger.debug(5,'RT monitor already registered')
+            pass # RT already registered
 
         return
 
@@ -193,22 +181,24 @@ class SchedulerBoss(Scheduler):
         
         return
 
-
     def checkSchedRegistration_(self, sched_name): 
         """
         Verify scheduler registration.
         """
+        ## SL TODO : we don't need to test this at every call:
+        ## we should cache the result of the first test
         boss_scheduler_check = "boss showSchedulers"
-        boss_out = runCommand(boss_scheduler_check)
+        boss_out = runBossCommand(boss_scheduler_check,0)
         if string.find(boss_out, sched_name) == -1 :
-            msg = sched_name + ' scheduler not registered in BOSs\n'
+            msg = sched_name + ' scheduler not registered in BOSS\n'
             msg = msg + 'Starting registration\n'
-            common.logger.message(msg)
-            # qui bisogna decidere un path che non deve cambiare con le versioni diverse di boss 
-            # e se conviene fare noi la registrazione!!!!
-            register_boss_scheduler = self.cwd + 'BossScript/register'+ string.upper(sched_name) + 'Scheduler'
-            if os.path.exists(register_boss_scheduler):
-                boss_out = runCommand(register_boss_scheduler)
+            common.logger.debug(5,msg)
+            # On demand registration of job type
+            register_path = self.boss_dir + '/script/'
+            register_boss_scheduler = './register'+ string.upper(sched_name) + 'Scheduler'
+            if os.path.exists(register_path+register_boss_scheduler):
+                boss_out = runBossCommand(register_path+register_boss_scheduler,0)
+                if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
                     msg = 'Error: Problem with scheduler '+sched_name+' registration\n'
                     raise CrabException(msg)
@@ -223,15 +213,20 @@ class SchedulerBoss(Scheduler):
         """
         Verify jobtype registration.
         """
+        ## SL TODO : we don't need to test this at every call:
+        ## we should cache the result of the first test
         boss_jobtype_check = "boss showJobTypes"
-        boss_out = runCommand(boss_jobtype_check)
+        boss_out = runBossCommand(boss_jobtype_check,0)
         if string.find(boss_out, jobtype) == -1 :
             msg =  'Warning:' + jobtype + ' jobtype not registered in BOSS\n'
             msg = msg + 'Starting registration \n'
-            common.logger.message(msg)
-            register_boss_jobtype= self.cwd + 'BossScript/register' + string.upper(jobtype) + 'job'
-            if os.path.exists(register_boss_jobtype):
-                boss_out = runCommand(register_boss_jobtype)
+            common.logger.debug(5,msg)
+            register_path = self.boss_dir + '/script/'
+            register_boss_jobtype= './register' + string.upper(jobtype) + 'job'
+            if os.path.exists(register_path+register_boss_jobtype):
+                register_boss_jobtype= './register' + string.upper(jobtype) + 'job'
+                boss_out = runBossCommand(register_path+register_boss_jobtype,0)
+                if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
                     msg = 'Error: Problem with job '+jobtype+' registration\n'
                     raise CrabException(msg)
@@ -257,8 +252,7 @@ class SchedulerBoss(Scheduler):
         self.boss_scheduler.createSchScript(nj)
         sch_script_orig = common.job_list[nj].jdlFilename()
         sch_script = sch_script_orig+"_boss"
-        cmd = 'cp '+sch_script_orig+' '+sch_script
-        runCommand(cmd)
+        shutil.copyfile(sch_script_orig, sch_script)
         
         # BOSS job declaration
         dir = string.split(common.work_space.topDir(), '/')
@@ -270,6 +264,7 @@ class SchedulerBoss(Scheduler):
             types += ',edg'
         sch.write(types+';\n')            
         # da decidere se questo valore va bene come group ...
+        # NO CAXX0!!! E' almeno la 10^a volta che viene definito un grup name!!!!
         sch.write('group='+ dir[len(dir)-2]+';\n')
         sch.write('BossAttr=[')
         sch.write('crabjob.INTERNAL_ID=' + str(nj+1) + ';')
@@ -277,13 +272,13 @@ class SchedulerBoss(Scheduler):
         sch.close()
  
         dirlog = common.work_space.logDir()
+        scriptName=common.job_list[nj].scriptFilename()
   
-        cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + 'ORCA.sh_'+str(nj+1)+'.log'       
+        cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
   
         msg = 'BOSS declaration:' + cmd
-        common.logger.message(msg)
-        cmd_out = runCommand(cmd)
-        print 'cmd_out', cmd_out
+        common.logger.debug(5,msg)
+        cmd_out = runBossCommand(cmd)
         prefix = 'Job ID '
         index = string.find(cmd_out, prefix)
         if index < 0 :
@@ -293,9 +288,8 @@ class SchedulerBoss(Scheduler):
             index = index + len(prefix)
             boss_id = string.strip(cmd_out[index:])
             common.jobDB.setBossId(nj, boss_id)
-            print "BOSS ID =  ", boss_id
-        cmd = 'rm -f '+sch_script
-        runCommand(cmd)
+            common.logger.debug(5,"BOSS ID =  "+boss_id)
+        os.remove(sch_script)
         return 
 
 
@@ -326,29 +320,17 @@ class SchedulerBoss(Scheduler):
             schcladstring=' -schclassad '+self.schclassad
         cmd = 'boss submit -scheduler '+boss_scheduler_name+schcladstring+' -jobid '+common.jobDB.bossId(nj)
         msg = 'BOSS submission: ' + cmd
-        common.logger.message(msg)
-        cmd_out = runCommand(cmd)
+        common.logger.debug(4,msg)
+        cmd_out = runBossCommand(cmd)
 
-        if not cmd_out : 
-           msg = 'ERROR: BOSS submission failed: ' + cmd
-           common.logger.message(msg)
-           return  boss_scheduler_id
-
-        prefix = 'Scheduler ID is '
-        index = string.find(cmd_out, prefix)
-        if index < 0 :
-            common.logger.message('ERROR: BOSS submission failed: no BOSS Scheduler ID')
-            return boss_scheduler_id
-        else :
-            index = index + len(prefix)
-            boss_scheduler_id = string.strip(cmd_out[index:])
-            #print "boss_scheduler_id", boss_scheduler_id
-            #index = string.find(boss_scheduler_id,'\n')
-            #print "index di a capo", index
-            #boss_scheduler_id = string.strip(boss_scheduler_id[:index])
-            print "BOSS Scheduler ID = ", boss_scheduler_id
-        return boss_scheduler_id
-
+        if not cmd_out :
+            msg = 'ERROR: BOSS submission failed: ' + cmd
+            common.logger.message(msg)
+            return None
+        else:
+            reSid = re.compile( r'https.+' )
+            jid = reSid.search(cmd_out).group()
+            return jid
 
     def queryDetailedStatus(self, id):
         """ Query a detailed status of the job with id """
@@ -361,11 +343,12 @@ class SchedulerBoss(Scheduler):
         Get output for a finished job with id.
         Returns the name of directory with results.
         """
+        self.boss_scheduler.checkProxy()
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
         dir = common.work_space.resDir()
         for i_id in int_id :
-            if (i_id) not in common.scheduler.listBoss(): 
+            if (i_id+1) not in common.scheduler.listBoss(): 
                 msg = 'Job # '+`(i_id+1)`+' out of range for task '+group
                 common.logger.message(msg) 
             else: 
@@ -373,7 +356,7 @@ class SchedulerBoss(Scheduler):
                 boss_id =  common.scheduler.boss_ID((i_id +1),group)
                 if common.scheduler.queryStatus(boss_id) == 'Done (Success)' or common.scheduler.queryStatus(boss_id) == 'Done (Abort)':   
                     cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
-                    cmd_out = runCommand(cmd)
+                    cmd_out = runBossCommand(cmd)
                     if logDir != dir:
                         cmd = 'mv '+str(dir)+'/*'+str(i_id+1)+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*'+str(i_id+1)+'.log '+str(logDir)
                         cmd_out = runCommand(cmd) 
@@ -385,7 +368,8 @@ class SchedulerBoss(Scheduler):
                     common.logger.message(msg)
                 dir += os.getlogin()
                 dir += '_' + os.path.basename(boss_id)
-        
+            pass
+
         return dir   
 
 
@@ -412,7 +396,7 @@ class SchedulerBoss(Scheduler):
         """convert internal ID into Boss ID """ 
         
         cmd = 'boss SQL -query "select JOB.ID  from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
-        cmd_out = runCommand(cmd)
+        cmd_out = runBossCommand(cmd)
         nline = 0
         for line in cmd_out.splitlines():
             if nline == 2:
@@ -425,6 +409,7 @@ class SchedulerBoss(Scheduler):
     def queryStatus(self,id):
         """ Query a status of the job with id """
                                                                                                                              
+        self.boss_scheduler.checkProxy()
         EDGstatus={
             'W':'Created(BOSS)',
             'R':'Running',
@@ -446,7 +431,7 @@ class SchedulerBoss(Scheduler):
             'NA':'Unknown(BOSS)'
             }
         cmd = 'boss q -statusOnly -jobid '+id
-        cmd_out = runCommand(cmd)
+        cmd_out = runBossCommand(cmd)
         js = cmd_out.split(None,2)
         return EDGstatus[js[1]]
 
@@ -463,7 +448,6 @@ class SchedulerBoss(Scheduler):
         nline = 0
         for line in cmd_out.splitlines():
             if nline != 0 and nline != 1:
-                ListBoss_ID.append(int(line)-1) 
+                ListBoss_ID.append(int(line)-1)
             nline = nline + 1
-
         return ListBoss_ID

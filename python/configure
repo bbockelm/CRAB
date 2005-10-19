@@ -78,3 +78,37 @@ else
    setenv PYTHONPATH \${CRABPYTHON}:\${PYTHONPATH}
 endif
 EOF
+
+echo "Creating ${HOME}/.MySQLRTConfig.clad"
+cat > ${HOME}/.MySQLRTConfig.clad <<EOF
+# This is the BOSS MySQL Database configuration file
+
+[
+# BOSS MySQL database file
+DB_NAME = "boss_rt_v3_6";
+
+# Host where the MySQL server is running
+DB_HOST = "boss.bo.infn.it";
+DB_DOMAIN = "bo.infn.it";
+
+# Default BOSS MySQL user and password
+DB_USER = "BOSSv3_6manager";
+DB_USER_PW = "BossMySQL";
+
+# Guest BOSS MySQL user and password
+DB_GUEST = "BOSSv3_6monitor";
+DB_GUEST_PW = "BossMySQL";
+
+# MySQL table type
+TABLE_TYPE = "";
+
+# MySQL port
+DB_PORT = 0;
+
+# MySQL socket
+DB_SOCKET = "";
+
+# MySQL client flag
+DB_CLIENT_FLAG = 0;
+]
+EOF
