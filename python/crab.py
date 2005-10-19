@@ -451,16 +451,28 @@ class Crab:
             elif ( opt == '-submit' ):
 
                 # total jobs
-                nsjobs = common.jobDB.nJobs()
                 # get the first not already submitted
-                for nj in range(nsjobs):
-                    if (common.jobDB.status(nj)=='S'): pass 
+                common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
+                lastSubmittedJob=0
+                for nj in range(common.jobDB.nJobs()):
+                    if (common.jobDB.status(nj)=='S'): 
+                        lastSubmittedJob +=1
                     else: break
+                # count job from 1
+                totalJobsSubmittable = common.jobDB.nJobs()-lastSubmittedJob
+                common.logger.debug(5,'lastSubmittedJob '+str(lastSubmittedJob))
+                common.logger.debug(5,'totalJobsSubmittable '+str(totalJobsSubmittable))
 
+                nsjobs = lastSubmittedJob+totalJobsSubmittable
                 # get user request
                 if val:
                     if ( isInt(val) ):
-                        nsjobs = int(val)
+                        tmp = int(val)
+                        if (tmp >= totalJobsSubmittable): 
+                            common.logger.message('asking to submit '+str(tmp)+' jobs, but only '+str(totalJobsSubmittable)+' left: submitting those')
+                            pass
+                        else:
+                            nsjobs=lastSubmittedJob+int(val)
                     elif (val=='all'):
                         pass
                     else:
@@ -469,12 +481,11 @@ class Crab:
                         msg += '      Generic range is not allowed"'
                         raise CrabException(msg)
                     pass
+                common.logger.debug(5,'nsjobs '+str(nsjobs))
     
                 # submit N from last submitted job
-                nj_list = range(nj,nj+nsjobs)
-                # check if all job already submitted
-                if (nj+nsjobs >= common.jobDB.nJobs()): 
-                    nj_list = range(0)
+                nj_list = range(lastSubmittedJob, nsjobs)
+                common.logger.debug(5,'nj_list '+str(nj_list))
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
