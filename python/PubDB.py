@@ -75,11 +75,30 @@ class PubDB:
             #tmpBad = ['fnal']
             for tmp in tmpBad:
                 tmp=string.strip(tmp)
-                if (tmp == 'cnaf'): tmp = 'webserver' ########## warning: temp. patch              
+                #if (tmp == 'cnaf'): tmp = 'webserver' ########## warning: temp. patch              
                 CEBlackList.append(tmp)
         except KeyError:
             pass
+
+        CEWhiteList = []
+        try:
+            tmpGood = string.split(self.cfg_params['EDG.ce_white_list'],',')
+            #tmpGood = ['cern']
+            for tmp in tmpGood:
+                tmp=string.strip(tmp)
+                #if (tmp == 'cnaf'): tmp = 'webserver' ########## warning: temp. patch
+                CEWhiteList.append(tmp)
+        except KeyError:
+            pass
+
+        #print 'CEWhiteList: ',CEWhiteList
+        self.reCEWhiteList=[]
+        for Good in CEWhiteList:
+            self.reCEWhiteList.append(re.compile( Good ))
+        #print 'ReGood: ',self.reCEWhiteList
+
         common.logger.debug(5,'CEBlackList: '+str(CEBlackList))
+        common.logger.debug(5,'CEWhiteList: '+str(CEWhiteList))
         self.reCEBlackList=[]
         for bad in CEBlackList:
             self.reCEBlackList.append(re.compile( bad ))
@@ -188,22 +207,49 @@ class PubDB:
             # check that PubDBurl occurrance is the same as the number of collections 
             if ( allurls.count(url)==countColl ) :
                 SelectedPubDBURLs.append(url)
+        common.logger.debug(5,'PubDBs '+str(SelectedPubDBURLs))
        
         #print 'Required Collections',CollIDs,'are all present in PubDBURLs : ',SelectedPubDBURLs,'\n'
-  ####  check based on CE black list: select only PubDB not in the CE black list   
-        GoodPubDBURLs=self.checkBlackList(SelectedPubDBURLs)
+        ####  check based on CE black list: select only PubDB not in the CE black list   
+        tmp=self.checkBlackList(SelectedPubDBURLs)
+        common.logger.debug(5,'PubDBs after black list '+str(tmp))
+
+        ### check based on CE white list: select only PubDB defined by user
+        GoodPubDBURLs=self.checkWhiteList(tmp)
+        common.logger.debug(5,'PubDBs after white list '+str(GoodPubDBURLs))
         return GoodPubDBURLs
 
 #######################################################################
     def uniquelist(self, old):
         """
-         remove duplicates from a list
+        remove duplicates from a list
         """
         nd={}
         for e in old:
             nd[e]=0
         return nd.keys()
  
+#######################################################################
+    def checkWhiteList(self, pubDBUrls):
+        """
+        select PubDB URLs that are at site defined by the user (via CE white list)
+        """
+        goodurls = []
+        for url in pubDBUrls:
+            #print 'connecting to the URL ',url
+            good=0
+            for re in self.reCEWhiteList:
+                if re.search(url):
+                    common.logger.debug(5,'CE in white list, adding PubDB URL '+url)
+                    good=1
+                if not good: continue
+                goodurls.append(url)
+        if len(goodurls) == 0:
+            common.logger.message("No selected PubDB URLs \n")
+        else:
+            common.logger.debug(5,"Selected PubDB URLs are "+str(goodurls)+"\n")
+        return goodurls
+
 #######################################################################
     def checkBlackList(self, pubDBUrls):
         """
