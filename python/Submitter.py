@@ -69,34 +69,35 @@ class Submitter(Actor):
 
                 Statistic.notify('submit',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
                 
-                # SL this is crap! Should not be here!!!!
-                # List of parameters to be sent to ML monitor system
-                user = os.getlogin()
-                taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
-                jobId = str(nj)
-                sid = jid
                 try:
-                    application = os.path.basename(os.environ['SCRAMRT_LOCALRT'])
-                except KeyError:
-                    application = os.path.basename(os.environ['LOCALRT'])
+                    # SL this is crap! Should not be here!!!!
+                    # List of parameters to be sent to ML monitor system
+                    user = os.getlogin()
+                    taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
+                    jobId = str(nj)
+                    sid = jid
+                    try:
+                        application = os.path.basename(os.environ['SCRAMRT_LOCALRT'])
+                    except KeyError:
+                        application = os.path.basename(os.environ['LOCALRT'])
 
-                nevtJob = common.jobDB.maxEvents(nj)
-                exe = self.cfg_params['USER.executable']
-                tool = common.prog_name
-                scheduler = self.cfg_params['CRAB.scheduler']
-                taskType = 'analysis'
-                vo = 'cms'
-                dataset = self.cfg_params['USER.dataset']
-                owner = self.cfg_params['USER.owner']
-                rb = sid.split(':')[1]
-                rb = rb.replace('//', '')
-                params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
-                          'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
-                          'user': user, 'taskType': taskType, 'vo': vo, 'dataset': dataset, 'owner': owner, 'broker': rb}
-                self.mon.fillDict(params)
-                self.mon.sendToML()
+                    nevtJob = common.jobDB.maxEvents(nj)
+                    exe = self.cfg_params['USER.executable']
+                    tool = common.prog_name
+                    scheduler = self.cfg_params['CRAB.scheduler']
+                    taskType = 'analysis'
+                    vo = 'cms'
+                    rb = sid.split(':')[1]
+                    rb = rb.replace('//', '')
+                    params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
+                              'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
+                              'user': user, 'taskType': taskType, 'vo': vo, 'dataset': self.dataset, 'owner': self.owner, 'broker': rb}
+                    self.mon.fillDict(params)
+                    self.mon.sendToML()
+                except:
+                    pass
         except:
-            print "Submitter::run Exception raised"
+            common.logger.message("Submitter::run Exception raised")
             common.jobDB.save()
 
         common.jobDB.save()
