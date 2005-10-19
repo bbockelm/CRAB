@@ -347,8 +347,9 @@ class SchedulerBoss(Scheduler):
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
         dir = common.work_space.resDir()
+
         for i_id in int_id :
-            if (i_id+1) not in common.scheduler.listBoss(): 
+            if i_id not in common.scheduler.listBoss(): 
                 msg = 'Job # '+`(i_id+1)`+' out of range for task '+group
                 common.logger.message(msg) 
             else: 
