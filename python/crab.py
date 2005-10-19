@@ -398,10 +398,14 @@ class Crab:
         """
         for opt in opts.keys():
             if ( opt == '-use_boss'):  
-                self.flag_useboss = 1
-            else:
-                self.flag_useboss = 0
-                pass
+                val = opts[opt]
+                if ( val == '1' ):
+                    self.flag_useboss = 1
+                    common.logger.message('Using BOSS')
+                    pass
+                else:
+                    self.flag_useboss = 0
+                    pass
 
         for opt in opts.keys():
           
@@ -513,7 +517,6 @@ class Crab:
                     if ( self.flag_useboss == 1 ):     
                         self.actions[opt] = StatusBoss(self.cfg_params, jobs) 
                     else:                         
-                        # Instantiate Submitter object
                         self.actions[opt] = Status(self.cfg_params, jobs)
                         pass
                     pass
