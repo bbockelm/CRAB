@@ -4,7 +4,7 @@
 #
 ###########################################################################
 
-import string, sys, os
+import string, sys, os, time
 import ConfigParser, re, popen2
 
 import common
@@ -202,7 +202,7 @@ def setOutLogDir(outDir,logDir):
     return outDir, logDir
 
 ###########################################################################
-def runBossCommand(cmd, printout=0, timeout=-1):
+def runBossCommand(cmd, printout=0, timeout=240):
     """
     Cd to correct directory before running a boss command
     """
