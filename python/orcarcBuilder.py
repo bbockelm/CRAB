@@ -175,7 +175,7 @@ class orcarcBuilder:
     try:
         sortedDataTier= string.split(self.cfg_params['USER.order_catalogs'],',')
     except KeyError: 
-        sortedDataTier=['Hit','PU','Digi','DST']
+        sortedDataTier=['Hit','InitHit','PU','InitDigi','Digi','DST']
     #print sortedDataTier
 
 
