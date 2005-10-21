@@ -367,11 +367,14 @@ class SchedulerBoss(Scheduler):
                     cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
                     cmd_out = runBossCommand(cmd)
                     if logDir != dir:
-                        cmd = 'mv '+str(dir)+'/*'+str(i_id+1)+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*'+str(i_id+1)+'.log '+str(logDir)
-                        cmd_out = runCommand(cmd) 
-                        pass
-                    msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir
-                    common.logger.message(msg)
+                        
+                        cmd = 'mv '+str(dir)+'/*'+str(i_id+1)+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*.log '+str(logDir)
+                        cmd_out = runCommand(cmd)
+                        msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir+' (log files are in '+logDir+')' 
+                        common.logger.message(msg)  
+                    else:   
+                        msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir
+                        common.logger.message(msg)
                 else:
                     msg = 'Job # '+`(i_id+1)`+' has status '+common.scheduler.queryStatus(boss_id)+' not possible to get output'
                     common.logger.message(msg)
