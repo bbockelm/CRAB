@@ -13,15 +13,15 @@ import tempfile
 ###########################################################################
 def usage():
     usa_string = common.prog_name + """ [options]
-  The most useful general options (use '-h' to get complete help):
+
+The most useful general options (use '-h' to get complete help):
+
   -create n -- Create only n jobs. Default is 'all'. bunch_creation will become obsolete
   -submit n -- Submit only n jobs. Default is 0. bunch_submission will become obsolete   
-  -mon | -monitor | -autoretrieve [value in secs] -- Retrieve the output at the end of the job, plus simple monitoring. No value means default to 60 seconds. autoretrieve will become obsolete
   -continue [dir] | -c [dir]     -- Continue creation and submission of jobs from <dir>.
   -h [format]         -- Detailed help. Formats: man (default), tex, html.
   -cfg fname          -- Configuration file name. Default is 'crab.cfg'.
   -use_boss flag      -- If flag = 1 then BOSS will be used. Default is 0.
-  -use_jam  flag      -- If flag = 1 the JAM monitoring is used. Default is 0
   -v                  -- Print version and exit.
 
 Example:
@@ -39,78 +39,78 @@ def help(option='man'):
 
 B<CRAB>:  B<C>ms B<R>emote B<A>nalysis B<B>uilder
 
-"""+common.prog_name+""" version: """+common.prog_version_str+""" to use with PubDB_V3_1
+"""+common.prog_name+""" version: """+common.prog_version_str+"""
 
 This tool _must_ be used from an User Interface and the user is supposed to
-have a valid GRID certificate and an active proxy.
-
-B<WARNING: THIS HELP IS OBSOLETE !!!>
+have a valid GRID certificate.
 
 =head1 SYNOPSIS
 
 B<"""+common.prog_name+""".py> [I<options>]
 
-
 =head1 DESCRIPTION
 
-CRAB is a Python program intended to simplify the process of creation and submission into GRID environment of CMS analysis jobs.
+CRAB is a Python program intended to simplify the process of creation and submission into grid environment of CMS analysis jobs.
 
-Parameters and card-files for analysis are to by provided by user changing the configuration file crab.cfg.
+Parameters for CRAB usage and configuration are provided by the user changing the configuration file B<crab.cfg>.
 
-CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid.
+CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BOSS to interface to the grid scheduler, as well as for logging and bookkeeping and eventually real time monitoring.
 
+CRAB supports any ORCA based executable, including the user provided one, and deals with the output produced by the executable. CRAB provides an interface with CMS data discovery services (today RefDB and PubDB), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.
 
 =head1 BEFORE STARTING
 
-A) Develop your code in your ORCA working area, build with the usual `scram project ORCA ORCA_X_Y_Z`
-   From user scram area (which can be anywhere eg  /home/fanzago/ORCA_8_2_0/), issue the usual command
-   > eval `scram runtime -sh|csh`
+=over 4
 
-B) Move to your CRAB working area (that is UserTools/src) and modify the configuration file "crab.cfg" (into UserTools/src).
-   The most important section is called [USER] where the user declares:
+=item B<A)>
 
-   Mandatory!
-      *) dataset and owner to analyze
-      *) the ORCA executable name (e.g. EXDigiStatistics).
-         CRAB finds the executable into the user scram area (e.g. /home/fanzago/ORCA_8_2_0/bin/Linux__2.4/here!).
-      *) the name of output produced by ORCA executable. Empty entry means no output produced
-      *) the total number of events to analyze, the number of events for each job and the number of the first event to analyze.
-      *) the orcarc card to use. This card will be modified by crab according with the job splitting.
-         Use the very same cars you used in your interactive test: CRAB will modify what is needed.
+Develop your code in your ORCA working area (both I<scram> and I<scramv1> based ORCA are supported).
+Does anything which is needed to run interactively your executable, including the setup or run time environment (I<eval `scram(v1) runtime -sh|csh`>), a suitable I<.orcarc>, etc.
 
-   Might be useful:
-      *) additional_input_files (from 005)
-         Comma separated list of files to be submitted via input sandbox. 
-         The files will be put in the working directory on WN. It's user responsibility to actually use them!
-      *) data_tiers (new from ver 004)
-         The possible choices are "DST,Digi,Hit" (comma separated list, mind the case!)
-         If set, the job will be able to access not only the data tier corresponding to the dataset/owner asked, but also
-         to its "parents". This requires that the parents are actually published in the same site of the primary dataset/owner.
-         If not set, only the primary data tier will be accessible
-      *) output_dir e log_dir, path of directory where crab will put the std_error and std_output of job.
-         If these parameters are commented, error and output will be put into the directory where sh and jdl script are (crab_0_date_time).
-         These parameter will be use only with the automatic retrieve of output option (-autoretrieve)
 
-   Optional:
-      *) how to pack the ORCA code provided by the user  (up to now is possible only as tgz)
-      *) the name of tgz archive ( called by default "default.tgz")
-      *) run_jam e output_jam are parameter for JAM monitoring (used with option use_jam)
-      *) the name of UI directory where crab will create jobs. By default the name is "crab_data_time"
+=item B<B)> 
 
-C) Before submitting jobs, user needs to create a proxy with the command:
-     grid-proxy-init 
+Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.
+Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list. The most important parameters are the following:
 
-   At CERN, you can use "lxplus" as a UI by sourcing the file
-     source /afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.csh
-                                                                                                                                                             
-   WARNING:
-     Since the LCG working nodes actually installed on different site still use RedHat7.3, you can only submit jobs from a UI based on RH7.3. 
-     At CERN, this is possible using "lxplus7".
+=over 4
+
+=item B<Mandatory!>
+
+=item o dataset, owner and data tiers to be accessed
+
+=item o the ORCA executable name (e.g. ExDigiStatistics): can be a user built executable or one available from the standard release (such as ExDigiStatistics)
+
+=item o the name of output file(s) produced by ORCA executable.
+
+=item o job splitting directives: the total number of events to analyze, the number of events for each job or the number of jobs and eventually the first event
+
+=item o the B<.orcarc> card to be used. This card will be modified by crab for data access and according to the job splitting. Use the very same cars you used in your interactive test: CRAB will modify what is needed.
+
+=item B<Might be useful:>
+
+=item o Comma separated list of files to be submitted via input sandbox. The files will be put in the working directory on WN. It's user responsibility to actually use them!
+
+=item o output_dir e log_dir, path of directory where crab will put the std_error and std_output of job.  If these parameters are commented, error and output will be put into the directory where sh and jdl script are (crab_0_date_time).
+
+=item B<Optional:>
+
+=item o the name of UI directory where crab will create jobs. By default the name is "crab_data_time"
+
+=back
+
+=item B<C)> 
+
+As stated before, you need to have a valid grid certificate (see CRAB web page for instruction) to submit to the grid. You need also a valid proxy (obtained via B<grid-proxy-init>): if you don't have it (or if it is too short), CRAB will issues that command for you.
+
+At CERN, you can use "lxplus" as a UI by sourcing the file B</afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.(c)sh>
+
+=back
 
 =head1 HOW TO RUN CRAB FOR THE IMPATIENT USER
 
 Please, read all anyway!
-                                                                                                                                                             
+
 >  ./crab.py -create 2
   create 2 jobs (no submission!)
                                                                                                                                                              
@@ -178,36 +178,8 @@ You can find a useful file into directory "ui_working_dir"/share/script.list.
 
 
 =head1 KNOWN PROBLEMS:
-                                                                                                                                                             
-1) It is possible to read a warning messagge when crab start to run, depending on ORCA version (e.g. ORCA_8_6_0):
-  .../src/scram.py:13: DeprecationWarning: Non-ASCII character '\xa7' in file /opt/edg/bin/UIutils.py on line 225, but no encoding declared; see http://www.python.org/peps/pep-0263.html for details 
-  import UIutils
-  /opt/edg/lib/python/edg_wl_userinterface_common_NsWrapper.py:4: RuntimeWarning: Python C API version mismatch for module _edg_wl_userinterface_common_NsWrapper: This Python has API version 1012, module _edg_wl_userinterface_common_NsWrapper has version 1011.
-  import _edg_wl_userinterface_common_NsWrapper
-  /opt/edg/lib/python/edg_wl_userinterface_common_LbWrapper.py:4: RuntimeWarning: Python C API version mismatch for module _edg_wl_userinterface_common_LbWrapper:
-  This Python has API version 1012,
-  module _edg_wl_userinterface_common_LbWrapper has version 1011.
-  import _edg_wl_userinterface_common_LbWrapper
-  /opt/edg/lib/python/edg_wl_userinterface_common_AdWrapper.py:4: RuntimeWarning: Python  C API version mismatch for module  _edg_wl_userinterface_common_AdWrapper: This Python has API version 1012,
-                                                                                                                                                             
-It seems to depend on a mismatch between the version of python used by
-ORCA_8_6_0 and the version used to "compile" /opt/edg/etc/bin/UIutils
-                                                                                                                                                             
-Not critical !
-                                                                                                                                                             
-                                                                                                                                                             
-2) If you are using the option -autoretrieve, when the submission step
-finishes, the shell prompt doesn't retun. Just press enter!
-
-3) If you use -monitor and then exit the shell, the autoretrieve thread are killed...
-
 
 =head1 WORK IN PROGRESS:
-
- Implementing BOSS monitoring.
- Changing monitor function.
- Final merging
-
 
 =head1 OPTIONS
 

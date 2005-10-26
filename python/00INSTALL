@@ -1,0 +1,132 @@
+# INSTALL
+# Installation instruction for CRAB version >1
+#
+# PLEASE: read this carefully and report any problem
+#
+# Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
+#
+# 25-Oct-2005
+#
+
+Recipe for impatient user:
+==========================
+Since I spend some time to write down this short installation document, please,
+READ IT!
+If you are really so impatient...
+
+~>cd <MyCRABInstallationDirectory>
+get CRAB from 
+http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/
+~>tar xzvf CRAB_1_X_Y.tgz
+~>cd CRAB_1_X_Y
+~>./configure
+PLEASE read section Installing BOSS! Not mandatory, but worthwhile!
+
+To use CRAB
+~>source <MyCRABInstallationDirectory>/CRAB_1_X_Y/crab.(c)sh
+~>crab.py -help
+
+
+Getting CRAB & BOSS
+===================
+CRAB (Cms Remote Analysis Builder) can be download from CRAB web page
+http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/
+please, try to use always the latest greatest version. New versions are
+announced to <cms-wm-crab-feedback@cern.ch> and on the site.
+
+CRAB (from version 100) comes in a single tar-ball. It includes everything,
+incluging BOSS, as well as configuration scripts.
+
+Installing CRAB
+=============== 
+You can install CRAB in two ways: as an humble user, namely just for yourself,
+or as a system administrator, so that all the user which access you cluster can
+use it. In the latter case, the single users do not need to download and
+install CRAB, but they can just use the one prepared by the sys admin.
+
+As a humble user
+----------------
+Unpach the tar-ball that you have downloaded previosly
+~>tar xzvf CRAB_1_X_Y.tgz
+on a directory of your choice. Since you will need just a single installation
+for all the use of CRAB that you will do, we suggest not to put CRAB on, eg,
+ORCA working area, but rather on a dedicated directory such as $HOME/CRAB/
+(just an example).
+~>cd CRAB_1_X_Y
+~>./configure
+This script will create two additional script (crab.sh and crab.csh) that you
+will need to source in order to run CRAB from any other place. A possiblity, is
+to put this script into your .login or equivalent. Otherwise, you can source it
+each time you want to submit jobs with CRAB.
+The configure script will also create an other file needed by BOSS in order to
+make use of the real time monitor. The file is placed on
+$HOME/.MySQLRTConfig.clad
+Do not remove it. It is possible to switch on/off the RT monitor from crab.cfg,
+later, but if the file is not present, the RT will not work in any case.
+
+As a sys admin
+--------------
+Up to this step the procedure is exactly the same as for the humble user.
+A sys admin might want to change the RT configuration, changing the default
+server to a local one, eg: refer to BOSS documentation for that.
+Also, of course, the sys admin should tell his users where to find the CRAB
+config files (crab.csh or crab.sh). 
+
+Installing BOSS
+===============
+This additional step might be needed, depending on user choice.
+CRAB version >1 makes use of BOSS as logging and bookkeeping service, as well
+as interface with the scheduler as well as for the real time monitoring.
+BOSS uses a DB, which can be (for the time being) MySQL or SQLite. A generic
+user would not work directly with the DB, since the interaction happens via
+CRAB (or eventually via BOSS).
+A MySQL DB has more functionalities that SQLite, but it needs a server, which
+must be installed by root. Instead, SQLite does not need any server, so a
+humble user can make use of it on any machine, without root privileges.
+
+So, it's clear that if you want to use a MySQL backend for BOSS, you must ask a
+sys admin to setup the service for you (and maitain it). Such DB could possibly
+serve all the submission done via CRAB (as well as other use of BOSS) for a
+comunity, such that which uses a cluster.
+
+The use of SQLite, instead, does not need any sys admin action, but cannot be
+shared among different users. So it is each single user which has to setup the
+DB by himself. This is a very simple task, as described below.
+The only choich the user has to do is where to put the DB, and whether he want
+to have a single DB for all CRAB task submission, or he prefers to have one for
+each task.
+In the latter case, NO action is asked to user. The CRAB installation described
+before is enough.
+Otherwise, do the following actions.
+
+As a humble user
+----------------
+From CRAB installation directory source crab.(c)sh
+~>source ./crab.csh
+edit configureBoss
+You might want to change BOSSDBPATH as well as BOSSDBNAME
+You also might want to go through the file and have a look: change things ONLY
+if you know what you are doing. In case of doubt, just don't thouch anything
+:-D
+Run the script
+~>./configureBoss
+
+As a sys admin
+--------------
+As sys admin, you might want to let your users use a MySQL DB instead of a
+SQLite one, so you may change the BACKEND and go to sectio MySQL to set the
+host and domain where the MySQL server is setup, as well as the name, user,
+etc...
+
+Also, you might want to allow your user to use directly the local batch
+scheduler (if any) of your cluster. In this case, you need to uncomment the
+proper "./registerXXXScheduler" , after having eventually modified the BOSS
+script which interface BOSS itself to the local scheduler. The one provided are
+reasonable, but they are NOT guaranteed to work with the particular flavour of
+your LBS. Check BOSS documentation for further information.
+
+Final
+=====
+From any working area (such as your favourite ORCA working area) just source
+crab.(c)sh and run CRAB as described in the user guide.
+That's it.

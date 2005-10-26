@@ -3,8 +3,11 @@
 # Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
 #
 # Initialization script for Crab and Boss
+# Please read carefully the documentation (in INSTALL) before running this
+# script! You might want _not_ to run it at all, or have your sys admin do it
+# for you. Repeat: read the INSTALL file
 #
-# 14-Sep-2005
+# 25-Oct-2005 
 
 if [ -z "$CRABDIR" ]; then
   echo "You must source crab.(c)sh before running this script"
@@ -17,7 +20,7 @@ BOSSDBNAME=bossCrab
 
 # I have to configure BOSS
 
-CONFSCRIPT=${HOME}/BossConfig.clad
+CONFSCRIPT=${BOSSDIR}/BossConfig.clad
 cat > $CONFSCRIPT  <<EOF
 # This is the BOSS configuration file
 
@@ -47,7 +50,7 @@ if [ "${BACKEND}" == "SQLite" ]; then
     echo "Directory ${BOSSDBPATH} Already exist. Stoppping"
     exit 1
   fi
-  CONFSCRIPT=${HOME}/SQLiteConfig.clad
+  CONFSCRIPT=${BOSSDIR}/SQLiteConfig.clad
   cat > $CONFSCRIPT  <<EOF
 # This is the BOSS SQLite database configuration file
 [
@@ -62,7 +65,7 @@ fi # Backend SQLite
 if [ "${BACKEND}" == "MySQL" ]; then
   HOST=`/bin/hostname`
   DOMAIN=`/bin/hostname -d`
-  CONFSCRIPT=${HOME}/MySQLConfig.clad
+  CONFSCRIPT=${BOSSDIR}/MySQLConfig.clad
   /bin/rm -f $CONFSCRIPT
   cat > $CONFSCRIPT  <<EOF
 
@@ -127,8 +130,33 @@ cd $CRABDIR/script/
 ./registerEDGjob
 ./registerCRABjob
 
-### How to register the RealTime monitor???
-
+### register the RealTime monitor
+CONFSCRIPT=${BOSSDIR}/MySQLRTConfig.clad
+cat > $CONFSCRIPT  <<EOF
+# This is the BOSS RealTime configuration file
+[
+# BOSS MySQL database file
+DB_NAME = "boss_rt_v3_6";
+# Host where the MySQL server is running
+DB_HOST = "boss.bo.infn.it";
+DB_DOMAIN = "bo.infn.it";
+# Default BOSS MySQL user and password
+DB_USER = "BOSSv3_6manager";
+DB_USER_PW = "BossMySQL";
+# Guest BOSS MySQL user and password
+DB_GUEST = "BOSSv3_6monitor";
+DB_GUEST_PW = "BossMySQL";
+# MySQL table type
+TABLE_TYPE = "";
+# MySQL port
+DB_PORT = 0;
+# MySQL socket
+DB_SOCKET = "";
+# MySQL client flag
+DB_CLIENT_FLAG = 0;
+]
+EOF
+./registerMySQLRTmon
 
 cd -
 
@@ -141,3 +169,7 @@ boss showSchedulers
 echo ""
 echo "Job types registered"
 boss showJobTypes
+
+echo ""
+echo "Real Time monitoring registered"
+boss showRTMon

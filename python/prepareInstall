@@ -12,22 +12,20 @@ mkdir $dest/python
 mkdir $dest/script
 
 # copy bin
-cp $bossDir/bin/* $dest/bin/.
+cp -d $bossDir/bin/* $dest/bin/.
 ln -s $crabDir/python/crab.py $dest/bin/.
 
 # copy lib
-cp $bossDir/lib/*.so* $dest/lib/.
+cp -d $bossDir/lib/*.so* $dest/lib/.
 #cp $bossDir/log4cplus/lib/*.so* $dest/lib/.
-cp $bossDir/mysql/lib/*.so* $dest/lib/.
-cp $bossDir/sqlite/lib/*.so* $dest/lib/.
+cp -d $bossDir/mysql/lib/*.so* $dest/lib/.
+cp -d $bossDir/sqlite/lib/*.so* $dest/lib/.
 
 # copy python
-cp $crabDir/python/* $dest/python/.
+cp -d $crabDir/python/* $dest/python/.
 
 # copy script
-cp $crabDir/python/BossScript/* $dest/script/.
+cp -d $crabDir/python/BossScript/* $dest/script/.
 
 # create configure
-cp $crabDir/python/configure* $dest/.
-
-
+cp -d $crabDir/python/configure* $dest/.
