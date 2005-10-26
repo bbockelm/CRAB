@@ -16,13 +16,22 @@ def usage():
 
 The most useful general options (use '-h' to get complete help):
 
-  -create n -- Create only n jobs. Default is 'all'. bunch_creation will become obsolete
-  -submit n -- Submit only n jobs. Default is 0. bunch_submission will become obsolete   
-  -continue [dir] | -c [dir]     -- Continue creation and submission of jobs from <dir>.
+  -create n           -- Create only n jobs. Default is 'all'. bunch_creation will become obsolete
+  -submit n           -- Submit only n jobs. Default is 0. bunch_submission will become obsolete   
+  -status [range]     -- check status of all jobs: if range is defined, only of selected jobs
+  -getoutput [range]  -- get back the output of all jobs: if range is defined, only of selected jobs
+  -kill [range]       -- kill submitted jobs
+  -clean              -- gracefully cleanup the idrectory of a task
+  -testJdl [range]    -- check if resources exist which are compatible with jdl
+  -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
+  -continue [dir] | -c [dir]     -- Apply command to task stored in [dir].
   -h [format]         -- Detailed help. Formats: man (default), tex, html.
   -cfg fname          -- Configuration file name. Default is 'crab.cfg'.
   -use_boss flag      -- If flag = 1 then BOSS will be used. Default is 0.
+  -debug N            -- set the verbosity level to N
   -v                  -- Print version and exit.
+
+  "range" has syntax "n,m,l-p" which correspond to [n,m,l,l+1,...,p-1,p] and all possible combination
 
 Example:
   crab.py -create 1 -submit 1
@@ -67,7 +76,6 @@ CRAB supports any ORCA based executable, including the user provided one, and de
 Develop your code in your ORCA working area (both I<scram> and I<scramv1> based ORCA are supported).
 Does anything which is needed to run interactively your executable, including the setup or run time environment (I<eval `scram(v1) runtime -sh|csh`>), a suitable I<.orcarc>, etc.
 
-
 =item B<B)> 
 
 Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.
@@ -111,111 +119,97 @@ At CERN, you can use "lxplus" as a UI by sourcing the file B</afs/cern.ch/cms/LC
 
 Please, read all anyway!
 
->  ./crab.py -create 2
+~>crab.py -create 2
   create 2 jobs (no submission!)
-                                                                                                                                                             
->  ./crab.py -bunch_create 0 -submit 2  -continue [ui_working_dir]
-  create 0, submit 2, the ones already created (-continue)
-                                                                                                                                                             
->  ./crab.py -create 2 -submit 2
+
+~>crab.py -submit 2 -continue [ui_working_dir]
+  submit 2 jobs, the ones already created (-continue)
+
+~>crab.py -create 2 -submit 2
   create _and_ submit 2 jobs
-                                                                                                                                                             
->  ./crab.py -create 2 -submit 2 -autoretrieve
-  create, submit 2 jobs and retrieve the output at the end, plus simple monitoring
 
+~>crab.py -status
+  check the status of all jobs
 
-=head1 HOW TO RUN CRAB
+~>crab.py -getoutput
+  get back the output of all jobs
 
-The executable file is crab.py
-                                                                                                                                                             
-I<If you want only create jobs (NO submission):>
-  >  ./crab.py -create 2
-
-Crab creates a directory called crab_0_"data"_"time" where you can find 4 subdirectories
- job:    contains sh, jdl and card
- share:  contains the "file_to_send", that provides the informations retrieved by local_pubdb
- log:    there are the log of crab and the grid ID of submitted jobs
- res     empty...
-                                                                                                                                                             
-The option "register_data" allows to copy and register the ORCA output (e.g.the .root file) into a 
-Storage element and RLS catalog ( .root file). To do it, put register_data 1 (see information about this option)
-
-I<If you to submit the previously created jobs:>
-  >  ./crab.py -create 0 -submit 2  -continue [ui_working_dir]
- (the submission is done using edg-job-submit command).
-
-To see the status of job, the user needs to run
-  > edg-job-status -i crab_data_time/log/submission_id.log
-
-To retrieve the output
-  > edg-job-get-output -i crab_data_time/log/submission_id.log
-
-If you want to use the automatic retrieve of output, add the option "-autoretrieve"
-  >  ./crab.py -create 0 -submit 2  -autoretrieve -continue [ui_working_dir]
-                                                                                                                                                             
-In this case the monitoring (status) and the get-output will be done I<automatically>.
-You can find some information about the status into the log of crab (directory crab_0_data_time/log).
-
-The job monitoring and output retrieval runs asynchronously, that is you can submit your jobs and only afterwards
-start the retrieval of output.
-  >  ./crab.py -create 0 -submit 2 -continue [ui_working_dir]
-  >  ./crab.py -create 0 -submit 0  -autoretrieve -continue [ui_working_dir]
-                                                                                                                                                             
-If you want to use the JAM monitornig, add the option -use_jam (0 by default)
-  > ./crab.py -create 1  -submit 1 -use_jam 1 -autoretrieve
-
-
-=head1 SOME OTHER INFO:
-                                                                                                                                                           
-You can find a useful file into directory "ui_working_dir"/share/script.list.
- Here are written the name of job (with jobsplitting) that are to be created and submitted.
- Near the name a letter that means:
-                                                                                                                                                             
- X = job to create
- C = job created but not submitted
- S = job submitted
- M = job being monitored
-
-
-=head1 KNOWN PROBLEMS:
-
-=head1 WORK IN PROGRESS:
-
-=head1 OPTIONS
+=head1 COMMAND
 
 =over 4
 
-=item B<-bunch_creation n | -create n>
+=item B<-create n>
 
-Create n jobs maximum. 'n' is either positive integer or 'all'.
-Default is 'all'.
+Create n jobs: 'n' is either a positive integer or 'all' (default).
+The maximum number of jobs depens on dataset and splittig directives: if more are asked for, a warning is issued and job are created up to the maximum possible. This set of identical jobs accessing the same dataset are defined as a task.
+This command create a directory with default name is I<crab_0_date_time> (can be changed via ui_working_dir parameter, see below). Inside this directory it is placed whatever is needed to submit your jobs. Also the output of your jobs (once finished) will be place there (see after). Do not cancel by hand this directory: rather use -clean (see).
 See also I<-continue>.
 
-=item B<-bunch_size n>
+=item B<-submit n>
 
-The same as '-bunch_creation n' and '-bunch_submission n'.
-
-=item B<-bunch_submission n | -submit n>
-
-Submit n jobs maximum. 'n' is either positive integer or 'all'.
-Default is 0.
+Submit n jobs: 'n' is either a positive integer or 'all'. Default is all.
+This option must be used in conjunction with -create (to create and submit immediately) or with -continue, to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.
 See also I<-continue>.
 
-=item B<-mon | -monitor | -autoretrieve>
+=item B<-continue [dir] | -c [dir]>
 
-With this option the monitoring (status) and the get-output of jobs will be done I<automatically>.
-You can find some information about the status into the log of crab (directory crab_0_data_time/log).
+Apply the action on the task stored on directory [dir]. If the task directory is the standard one (crab_0_date_time), the more recent in time is taken. Any other directory must be specified.
+Basically all commands (but -create) need -continue, so it is automatically assumed, with exception of -submit, where it must be explicitly used. Of course, the standard task directory is used in this case.
 
-=item B<-continue [dir]>
+=item B<-status [range]>
 
-Continue submission of batch jobs from 'dir'. 'dir' is a top level directory
-created when scripts were generated.
-By default the name of the dir is I<crab_0_date_time>. 
-If the name of dir is different (selected by the user, changing in crab.cfg file the ui_working_dir parameter),
-it is necessary to specify it in -continue "ui_working_dir"
+Check the status of the jobs, in all states. If BOSS real time monitor is enabled, also some real time information are available, otherwise all the info will be available only after the output retrieval. See I<range> below for syntax.
+
+=item B<-getoutput [range]>
+
+Retrieve the output declared by the user via the output sandbox. By default the output will be put in task working dir under I<res> subdirectory. This can be changed via config parameters. See I<range> below for syntax.
+
+=item B<-resubmit [range]>
+
+Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax. 
+
+=item B<-kill [range]>
+
+Kill (cancel) jobs which have been submitted to the scheduler. A range B<must> be used in all cases, no default value is set.
+
+=item B<-testJdl [range]>
+
+Check if the job can find compatible resources. It's equivalent of doing I<edg-job-list-match> on edg.
+
+=item B<-postMortem [range]>
+
+Produce a file (via I<edg-job-logging-info -v 2>) which might help in undertanding grid related problem for a job.
+
+=item B<-clean [dir]>
+
+Clean up (i.e. erase) the task working directory after a check whether there are still running jobs. In case, you are notified and asked to kill them or retrieve their output. B<Warning> this will eventually delete also the output produced by the task (if any)!
+
+=item B<-help [format] | -h [format]>
+
+This help. It can be produced in three different I<format>: I<man> (default), I<tex> and I<html>.
+
+=item B<-v>
+
+Print the version and exit.
+
+=item B<range>
+
+The range to be used in many of the above command has the following syntax. It is a comma separated list of jobs ranges, each of which may be a job number, or a job range of the form first-last.
+Example: 1,3-5,8 = {1,3,4,5,8}
+
+=head1 OPTION
+
+=item B<-cfg [file]>
+
+Configuration file name. Default is B<crab.cfg>.
+
+=item B<-debug [level]>
+
+Set the debug level.
+
 
 Examples:
-   1) Into the cfg file the line "ui_working_dir" is commented:
+   1) In the cfg file the line "ui_working_dir" is commented:
       the command
       > ./crab.py  -create 1 -submit 1 -register_data 0
       creates and submit 1 job. The name of directory where the job is creates, is ".../UserTools/src/crab_data_time"
@@ -232,27 +226,13 @@ Examples:
       If you want to create and submitt 1 other jobs:
       > ./crab.py -create 1 -submit 1 -register_data 0 -continue 'ui_working_dir'
       In this case you need to specified the name of directory
-                                                                                                                                                             
-                                                                                                                                                             
+
 Another way to modify the value of parameter into the cfg file, without change the cfg file, is to write like option the parameter that you want to change.
 
 Example:
    > ./crab.py -create 1 -submit 1 -register_data 0  -USER.ui_working_dir name_that_you_want
-   and to continue                                                                                                                      
+   and to continue
    > ./crab.py -create 1 -submit 1 -register_data 0 -continue name_that_you_want
-
-=item B<-h [format]>
-
-Detailed help. Formats: man (default), tex, html.
-
-=item B<-ini fname>
-
-Configuration file name. Default is 'crab.cfg'.
-I<'none'> is a special value used to ignore the default file.
-
-=item B<-Q>
-
-Quiet mode, i.e. no output on the screen.
 
 =item B<-register_data flag>
 
@@ -303,15 +283,6 @@ example rls://datatag2.cnaf.infn.it) and DataAccessProtocol that contains
 protocol used to data access (for example gsiftp).
 In this case the Resource Broker selects a CE closest to SE where input_data
 are stored, in order to run jobs.
-
-=item B<-V>
-
-Verbose, i.e. produce more output.
-
-=item B<-v>
-
-Print version.
-
 =item B<->I<any_key value>
 
 Any unrecognized option is treated as a configuration parameter with
@@ -330,7 +301,6 @@ of the option, i.e. after the dot).
 
 =back
 
-
 =head1 FILES
 
 I<crab> uses initialization file I<crab.cfg> which contains
@@ -341,7 +311,6 @@ I<crab> creates by default a working directory
 'crab_0_E<lt>dateE<gt>_E<lt>timeE<gt>'
 
 I<crab> saves all command lines in the file I<crab.history>.
-
 
 =head1 HISTORY
 

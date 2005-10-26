@@ -22,9 +22,9 @@ class Crab:
     def __init__(self, opts):
 
         # The order of main_actions is important !
-        self.main_actions = [ '-create', '-submit', '-monitor' ] 
+        self.main_actions = [ '-create', '-submit' ] 
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput',
-                             '-resubmit' , '-cancelAndResubmit', '-check', '-postMortem', '-clean']
+                             '-resubmit' , '-cancelAndResubmit', '-testJdl', '-postMortem', '-clean']
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -711,7 +711,7 @@ class Crab:
                     pass
                 pass
             
-            elif ( opt == '-check' ):
+            elif ( opt == '-testJdl' ):
                 jobs = self.parseRange_(val)
                 nj_list = []
                 for nj in jobs:
