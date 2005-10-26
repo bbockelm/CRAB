@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.4
+#!/usr/bin/env python2.2
 from crab_help import *
 from crab_util import *
 from crab_exceptions import *
