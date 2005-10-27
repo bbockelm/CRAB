@@ -55,7 +55,7 @@ have a valid GRID certificate.
 
 =head1 SYNOPSIS
 
-B<"""+common.prog_name+""".py> [I<options>]
+B<"""+common.prog_name+""".py> [I<options>] [I<command>]
 
 =head1 DESCRIPTION
 
@@ -66,6 +66,8 @@ Parameters for CRAB usage and configuration are provided by the user changing th
 CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BOSS to interface to the grid scheduler, as well as for logging and bookkeeping and eventually real time monitoring.
 
 CRAB supports any ORCA based executable, including the user provided one, and deals with the output produced by the executable. CRAB provides an interface with CMS data discovery services (today RefDB and PubDB), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.
+
+CRAB web page is available at I<http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/>
 
 =head1 BEFORE STARTING
 
@@ -197,7 +199,11 @@ Print the version and exit.
 The range to be used in many of the above command has the following syntax. It is a comma separated list of jobs ranges, each of which may be a job number, or a job range of the form first-last.
 Example: 1,3-5,8 = {1,3,4,5,8}
 
+=back 
+
 =head1 OPTION
+
+=over 4
 
 =item B<-cfg [file]>
 
@@ -207,91 +213,186 @@ Configuration file name. Default is B<crab.cfg>.
 
 Set the debug level.
 
+=back 
+
 =head1 CONFIGURATION PARAMETERS
 
 All the parameter describe in this section can be defined in the CRAB configuration file. The configuration file has different sections: [CRAB], [USER], etc. Each parameter must be defined in its proper section. An alternative way to pass a config parameter to CRAB is to to it via command line interface; the syntax is: crab.py -section.key value .
 The parameters passed to CRAB at the creation step are stored, so they cannot be changed by changing the original crab.cfg . On the other hand the task is protected from any accidental change. If you want to change any parameters, this require the creation of a new task.
+Mandatory parameters are flagged with a *.
 
 B<[CRAB]>
+
 =over 2
 
-=item B<jobtype>
+=item B<jobtype *>
 
-=item B<scheduler>
+The type of the job to be executed: for the time being only I<orca> jobtype are supported
+
+=item B<scheduler *>
+
+The scheduler to be used: I<edg> is the grid one. In later version also other scheduler (local and grid) will be possible, including eg glite, condor-g, lsf, pbs, etc...
 
 =item B<use_boss>
+
+Flag to enable the use of BOSS for submission, monitoring etc.
 
 =back
 
 B<[USER]>
+
+=over 2
+
+=item B<dataset *>
+
+The dataset the user want to analyze.
+
+=item B<owner *>
+
+The owner name whcih the user want to access. These two parameter can be found using data discovery tool: for the time being, RefDB/PubDB. See production page (linked also from CRAB web page) for access to the list of available dataset/owner
+
+=item B<data_tier>
+
+The data tiers the user want to access: by deafult, only the tier corresponding to the given owner will be provided. If user needs more, he B<must> specify the full list.
+Syntax: comma separated list, known tiers are I<Hits>,I<Digi>, I<DST>
+
+=item B<order_catalogs>
+
+Define the order of the catalogs which will be put in the generated .orcarc fragment: for expert use only.
+
+=item B<executable *>
+
+The ORCA executable the user want to run on remote site. This must be on the I<path> of the user at the time of the creation of the jobs, so it's mandatory to issue the usual I<eval `scramv1 runtim -(c)sh`> from user ORCA working area before creating jobs. A warning will be prompted if the executable is not found in the path.
+
+=item B<script_exe>
+
+Name of a script that the user want to execute on remote site: full path must be provided. The ORCA executable whcih is executed by the script must be declared in any case, since CRAB must ship it to the remote site. The script can do anything, but change directory before the ORCA executable start. On the remote WN, the full scram-based environment will be found.
+
+=item B<output_file *>
+
+Output files as produced by the executable: comma separated list of all the files. These are the file names which are produced by the executable also in the interactive environment. The output files will be modified by CRAB when returned in order to cope with the job splitting, by adding a "_N" to each file.
+
+=item B<additional_input_files>
+
+Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. Please note that the full I<Data> directory of your private ORCA working are will be send to WN (if present). 
+
+=item B<orcarc_file *>
+
+User I<.orcarc> file: if it is not in the current directory, full path is needed. Use the very same file you used for your interactive test: CRAB will modify it according to data requested and splitting directives.
+
+=item B<first_event>
+
+The first event the user want to analyze in the dataset. Default is 0.
+
+=item B<total_number_of_events *>
+
+The total number of events the user want to analyze. I<-1> means all available events. If first even is set, a gran total of (total available events)-(first event) will be analyzed.
+
+=item B<job_number_of_events *>
+
+Numer of event for each job. Either this or I<total_number_of_jobs> must be defined.
+
+=item B<total_number_of_jobs>
+
+Total numer of jobs in which the task will be splitted. It is incompatible with previous I<job_number_of_events>. If both are set, this card will be ignored and a warning message issued.
+
+=item B<ui_working_dir>
+
+Name of the working directory for the current task. By default, a name I<crab_0_(date)_(time)> will be used. If this card is set, any CRAB command which require I<-continue> need to specify also the name of the working directory. A special syntax is also possible, to reuse the name of the dataset provided before: I<ui_working_dir : %(dataset)s> . In this case, if eg the dataset is SingleMuon, the ui_working_dir will be set to SingleMuon as well.
+
+=item B<return_data *>
+
+The output produced by the ORCA executable on WN is returned (via output sandbox) to the UI, by issuing the I<-getoutput> command. B<Warning>: this option should be used only for I<small> output, say less than 10MB, since the sandbox cannot accomodate big files. Depending on Resource Broker used, a size limit on output sandbox can be applied: bigger files will be truncated. To be used in alternative to I<copy_data>.
+
+=item B<outputdir>
+
+To be used together with I<return_data>. Directory on user interface where to store the ORCA output. Full path is mandatory: the defaul location of returned output is ui_working_dir/res .
+
+=item B<logdir>
+
+To be used together with I<return_data>. Directory on user interface where to store the ORCA standard output and error. Full path is mandatory: the defaul location of returned output is ui_working_dir/res .
+
+=item B<copy_data *>
+
+The output (only the ORCA one, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recomended in case of large output.
+
+=item B<storage_element>
+
+To be used together with I<copy_data>. Storage Element name.
+
+=item B<storage_path>
+
+To be used together with I<copy_data>. Path where to put output files on Storage Element. Full path is needed, and the directory must be writeable by all.
+
+=item B<register_data>
+
+To be used together with I<copy_data>. Register output files to RLS catalog: for advanced LCG users.
+
+=item B<lfn_dir>
+
+To be used together with I<register_data>. Path for the Logical File Name.
+
+=item B<activate_MonALisa>
+
+Activate MonaLisa monitoring of running jobs on WN.
+
+=item B<use_central_bossDB>
+
+Use central BOSS DB instead of one for each task: the DB must be already been setup. See installation istruction for more details.
+
+=item B<use_boss_rt>
+
+Use BOSS real time monitoring.
+
+=back
+
 B<[EDG]>
 
-Examples:
-   1) In the cfg file the line "ui_working_dir" is commented:
-      the command
-      > ./crab.py  -create 1 -submit 1 -register_data 0
-      creates and submit 1 job. The name of directory where the job is creates, is ".../UserTools/src/crab_data_time"
-                                                                                                                                                             
-      If you want to create and submitt an other jobs:
-      > ./crab.py -create 1 -submit 1 -register_data 0 -continue
-      the job will be created into the same directory  ".../UserTools/src/crab_data_time"
-   
-   2) Into the cfg file the line "ui_working_dir" is uncommented:
-      the command
-      > ./crab.py -create 1 -submit 1 -register_data 0
-      creates and submit 1 job. The directory where the job is creates, is ".../UserTools/src/'ui_working_dir'"
-                                                                                                                                                             
-      If you want to create and submitt 1 other jobs:
-      > ./crab.py -create 1 -submit 1 -register_data 0 -continue 'ui_working_dir'
-      In this case you need to specified the name of directory
+=over 2
 
-Another way to modify the value of parameter into the cfg file, without change the cfg file, is to write like option the parameter that you want to change.
+=item B<lcg_version>
 
-Example:
-   > ./crab.py -create 1 -submit 1 -register_data 0  -USER.ui_working_dir name_that_you_want
-   and to continue
-   > ./crab.py -create 1 -submit 1 -register_data 0 -continue name_that_you_want
+Version of LCG middleware to be used.
 
-=item B<-register_data flag>
+=item B<config>
 
-register_data 1  allows to copy and register the output of ORCA executable into
-the Storage Element "close" to the Worker node where the job is running, or, if
-the close has problem, into a storage element provided by the user into the
-configuration file.
+Configuration file to change the resource broker to be used (download files from CRAB web page)
 
-Into crab.cfg:
-   [EDG]
-   ...
-   storage_element = gridit002.pd.infn.it   <--- name of "backup storage element" (to use if the CloseSE isn\'t available)
-   storage_path = /flatfiles/SE00/cms/      <--- directory into the SE where a cms user can write
-   ...
+=item B<config_vo>
 
-   [USER]
-   output_storage_subdir = fede/orca/25_11_2004/   <--- subdirectory of cms area where the output will be stored
-   Example: we can found the output stored in
-      1) closeSE/mountpoint_cms/[USER].output_storage_subdir/[USER].output_file
-      or (if close has problem)
-      2) [EDG].storage_element/[EDG].storage_path/[USER].output_storage_subdir/[USER].output_file
-                                                                                                                                                             
-      into RLS the lfn = [USER].output_storage_subdir/[USER].output_file will be registered
+Configuration file to change the resource broker to be used (download files from CRAB web page). Both I<conig> and I<config_vo> must be set.
 
-The value of "register_data" parameter can be written into the cfg file into the section
-   [CRAB]
-   ...                                                                                                                                             
-   register_data = 0    or
-   register_data = 1                                                                                                                                                             
-in order to avoid to write it like command line option.
- Default is 0
+=item B<requirements>
 
-=item B<-return_data flag>
+Any other requirements to be add to JDL. Must be written in compliance with JDL syntax (see LCG user manual for further info). No requirement on Computing element must be set.
 
-If flag = 0 then produced data will not be returned to user.
-Default is 0 for 'edg' and always 1 for local schedulers.
+=item B<max_cpu_time>
 
-=item B<-use_boss flag>
+Maximum CPU time needed to finish one job. It will be used to select a suitable queue on the CE. Time in minutes.
 
-If flag = 1 then the BOSS metascheduler will be used.
-Default is 0, i.e. BOSS is not used.
+=item B<max_wall_clock_time>
+
+Same as previous, but with real time, and not CPU one.
+
+=item B<CE_black_list>
+
+All the CE whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (eg fnal, cern, ifae, fzk, cnaf, lnl,....)
+
+=item B<CE_white_list>
+
+Only the CE whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (eg fnal, cern, ifae, fzk, cnaf, lnl,....)
+
+=item B<virtual_organization>
+
+You don't want to change this: it's cms!
+
+=item B<retry_count>
+
+Number of time the grid will try to resubmit your job in case of grid related problem.
+
+=back
+
+=over 2
 
 =item B<-usecloseCE>
 
@@ -303,38 +404,20 @@ In this case the Resource Broker selects a CE closest to SE where input_data
 are stored, in order to run jobs.
 =item B<->I<any_key value>
 
-Any unrecognized option is treated as a configuration parameter with
-specified value. Can be used for the command-line redefinition
-of configuration parameters from an ini-file. For example, a user wants
-to submit jobs into EDG but he does not like the default User
-Interface configuration file in which a location of a Resource Broker is
-specified. One possibility is to edit the ini-file
-changing the value of the 'rb_config' parameter in the 'EDG' section.
-The second possibility is to provide this value as a command-line
-option: I<-EDG.rb_config my_ui_config>.
-
-Can be used also for specification of private production parameters, e.g.
-I<-Private.executablename myjob> (Note all lowercase letters in the second part
-of the option, i.e. after the dot).
-
 =back
 
 =head1 FILES
 
-I<crab> uses initialization file I<crab.cfg> which contains
-configuration parameters. This file is written in the Windows INI-style.
-The default filename can be changed by the I<-cfg> option.
+I<crab> uses a configuration file I<crab.cfg> which contains configuration parameters. This file is written in the INI-style.  The default filename can be changed by the I<-cfg> option.
 
-I<crab> creates by default a working directory
-'crab_0_E<lt>dateE<gt>_E<lt>timeE<gt>'
+I<crab> creates by default a working directory 'crab_0_E<lt>dateE<gt>_E<lt>timeE<gt>'
 
 I<crab> saves all command lines in the file I<crab.history>.
 
+
 =head1 HISTORY
 
-B<crab> is a tool for the CMS analysis on the grid environment.
-It is based on the ideas from CMSprod, a production tools
-implemented by Nikolai Smirnov.
+B<crab> is a tool for the CMS analysis on the grid environment. It is based on the ideas from CMSprod, a production tools implemented originally by Nikolai Smirnov.
 
 =head1 AUTHORS
 
