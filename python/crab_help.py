@@ -207,6 +207,24 @@ Configuration file name. Default is B<crab.cfg>.
 
 Set the debug level.
 
+=head1 CONFIGURATION PARAMETERS
+
+All the parameter describe in this section can be defined in the CRAB configuration file. The configuration file has different sections: [CRAB], [USER], etc. Each parameter must be defined in its proper section. An alternative way to pass a config parameter to CRAB is to to it via command line interface; the syntax is: crab.py -section.key value .
+The parameters passed to CRAB at the creation step are stored, so they cannot be changed by changing the original crab.cfg . On the other hand the task is protected from any accidental change. If you want to change any parameters, this require the creation of a new task.
+
+B<[CRAB]>
+=over 2
+
+=item B<jobtype>
+
+=item B<scheduler>
+
+=item B<use_boss>
+
+=back
+
+B<[USER]>
+B<[EDG]>
 
 Examples:
    1) In the cfg file the line "ui_working_dir" is commented:
