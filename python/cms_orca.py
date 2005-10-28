@@ -21,6 +21,8 @@ class Orca(JobType):
         
         self.scram = Scram.Scram(cfg_params)
         scramArea = ''
+        self.additional_inbox_files = []
+        self.scriptExe = ''
 
         self.version = self.scram.getSWVersion()
         common.analisys_common_info['sw_version'] = self.version
@@ -83,8 +85,20 @@ class Orca(JobType):
             log.message("No output file defined: only stdout/err will be available")
             pass
 
+        # script_exe file as additional file in inputSandbox
+        try:
+           self.scriptExe = cfg_params['USER.script_exe']
+           self.additional_inbox_files.append(self.scriptExe)
+        except KeyError:
+           pass
+        if self.scriptExe != '':
+           if os.path.isfile(self.scriptExe):
+              pass
+           else:
+              log.message("WARNING. file "+self.scriptExe+" not found")
+              sys.exit()
+                  
         ## additional input files
-        self.additional_inbox_files = []
         try:
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
             for tmp in tmpAddFiles:
@@ -171,10 +185,12 @@ class Orca(JobType):
         orcarc = os.path.basename(job.configFilename())
         txt += '\n'
         txt += 'cp $RUNTIME_AREA/'+orcarc+' .orcarc\n'
-        txt += 'if [ -e $RUNTIME_AREA/orcarc_$CE ] ; then\n'
-        txt += '  cat $RUNTIME_AREA/orcarc_$CE .orcarc >> .orcarc_tmp\n'
+        txt += 'if [ -e $RUNTIME_AREA/orcarc_* ] ; then\n'
+#        txt += '  cat $RUNTIME_AREA/orcarc_$CE .orcarc >> .orcarc_tmp\n'
+        txt += '  cat $RUNTIME_AREA/orcarc_* .orcarc >> .orcarc_tmp\n'
         txt += '  mv .orcarc_tmp .orcarc\n'
-        txt += '  cp $RUNTIME_AREA/init_$CE.sh init.sh\n'
+#        txt += '  cp $RUNTIME_AREA/init_$CE.sh init.sh\n'
+        txt += '  cp $RUNTIME_AREA/init_*.sh init.sh\n'
         txt += 'fi\n'
         txt += '\n'
         txt += 'chmod +x ./init.sh\n'
@@ -252,7 +268,10 @@ class Orca(JobType):
         return txt
 
     def executableName(self):
-        return self.executable
+        if self.scriptExe != '':
+            return "./" + os.path.basename(self.scriptExe)
+        else:
+            return self.executable
 
     def connectPubDB(self, cfg_params):
 
