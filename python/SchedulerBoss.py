@@ -19,11 +19,19 @@ class SchedulerBoss(Scheduler):
         Verify BOSS installation.
         """
         try:
-            self.boss_dir = os.environ["BOSSDIR"]
+            
+            self.bossenv = os.environ["BOSSDIR"]
         except:
             msg = "Error: the BOSSDIR is not set."
-            msg = msg + " Did you source bossenv.sh/csh from your BOSS area?\n"
+            msg = msg + " Did you source crab.sh/csh or your bossenv.sh/csh from your BOSS area?\n"
             raise CrabException(msg)
+        try:
+            self.boss_dir = os.environ["CRABSCRIPT"]
+        except:
+            msg = "Error: the CRABSCRIPT is not set."
+            msg = msg + " Did you source crab.sh/csh?\n"
+            raise CrabException(msg)
+
 
     def configBossDB_(self):
         """
@@ -280,8 +288,10 @@ class SchedulerBoss(Scheduler):
         sch.close()
  
         dirlog = common.work_space.logDir()
-        scriptName=common.job_list[nj].scriptFilename()
-  
+        ##AF start : basename
+        scriptName=os.path.basename(common.job_list[nj].scriptFilename())
+        ##AF end
+        
         cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
   
         msg = 'BOSS declaration:' + cmd
