@@ -115,7 +115,7 @@ class SchedulerBoss(Scheduler):
                     msg = 'Error: Problem with RealTime monitor registration\n'
                     raise CrabException(msg)
             else:
-                msg = 'Warning: file '+ register_script + 'does not exist!\n'
+                msg = 'Warning: file '+ register_script + ' does not exist!\n'
                 raise CrabException(msg)
             
             os.chdir(cwd)
@@ -459,8 +459,7 @@ class SchedulerBoss(Scheduler):
 
     def listBoss(self):
         """
-         Return a list of all boss_Id of a task
-                                                                                                                             
+        Return a list of all boss_Id of a task
         """
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
