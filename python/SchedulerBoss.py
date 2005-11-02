@@ -79,7 +79,7 @@ class SchedulerBoss(Scheduler):
             # First I have to create a SQLiteConfig.clad file in the proper directory
             cwd = os.getcwd()
             os.chdir(common.work_space.shareDir())
-            confSQLFileName = 'MySQLRTConfig.clad'
+            confSQLFileName = os.environ["HOME"]+'/MySQLRTConfig.clad'
             confFile = open(confSQLFileName, 'w')
 
             confFile.write('[\n')
