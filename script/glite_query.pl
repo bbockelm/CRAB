@@ -12,8 +12,8 @@ while ( <QUERY> ) {
     if ( $_ =~ /Status info for the Job :\s+(.*)\s*/ ) {
 	$sid = $1;
 	$_ = <QUERY>;
-	if ( $_ =~ /Current Status:\s+(\w+)\s*/ ) {
-	    $stat{$sid} = $1;
+	if ( $_ =~ /Current Status:\s+(\w+)\s*(\S*)\s*/ ) {
+	    $stat{$sid} = $1.$2;
 	}
     }
 }

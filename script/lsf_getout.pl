@@ -10,7 +10,7 @@ $logFile = "bossSubmit.log";
 # --------------------------- Get arguments ----------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
 # check number of arguments
-$correctlen = 3;
+$correctlen = 4;
 $len=@ARGV;
 if($len!=$correctlen) {
     if (LOG) {
@@ -22,10 +22,12 @@ if($len!=$correctlen) {
 }
 # Boss job ID
 $jid = $ARGV[0];
+# Log file name
+$log = $ARGV[1];
+# Scheduler ID
+$sid = $ARGV[2];
 # Job output directory
-$sid = $ARGV[1];
-# Job output directory
-$outdir = $ARGV[2];
+$outdir = $ARGV[3];
 if (LOG) {
     print LOG "$jid: retrieving output for job $jid into $outdir\n";
 }
@@ -42,6 +44,7 @@ $currdir = `pwd`;
 #print STDERR "now in $currdir\n";
 if ( $currdir ne $outdir ) {
     $err = system("mv $outtar $outdir");
+    $err += system("mv $log $outdir");
     if ( ! $err ) {
 	$status = "retrieved";
     }
