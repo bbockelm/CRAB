@@ -87,7 +87,7 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 
 =item B<Mandatory!>
 
-=item o dataset, owner and data tiers to be accessed
+=item o dataset, owner to be accessed: also data_tiers if you want more than the one pointed by owner
 
 =item o the ORCA executable name (e.g. ExDigiStatistics): can be a user built executable or one available from the standard release (such as ExDigiStatistics)
 
