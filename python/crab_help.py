@@ -392,20 +392,6 @@ Number of time the grid will try to resubmit your job in case of grid related pr
 
 =back
 
-=over 2
-
-=item B<-usecloseCE>
-
-If flag = 1 then in jdl and classad files are written InputData that
-contains LFN of input_data, ReplicaCatalog that contains RLS URL (for
-example rls://datatag2.cnaf.infn.it) and DataAccessProtocol that contains
-protocol used to data access (for example gsiftp).
-In this case the Resource Broker selects a CE closest to SE where input_data
-are stored, in order to run jobs.
-=item B<->I<any_key value>
-
-=back
-
 =head1 FILES
 
 I<crab> uses a configuration file I<crab.cfg> which contains configuration parameters. This file is written in the INI-style.  The default filename can be changed by the I<-cfg> option.
