@@ -437,6 +437,7 @@ class SchedulerBoss(Scheduler):
             'R':'Running',
             'SC':'Checkpointed',
             'SS':'Scheduled',
+            'SR':'Ready',
             'RE':'Ready',
             'SW':'Waiting',
             'SU':'Submitted',
@@ -447,10 +448,13 @@ class SchedulerBoss(Scheduler):
             'DA':'Done (Aborted)',
             'SE':'Cleared',
             'OR':'Done (Success)',
-            'A':'Aborted(BOSS)',
+            'A?':'Aborted(BOSS)',
             'K':'Killed(BOSS)',
             'E':'Cleared(BOSS)',
-            'NA':'Unknown(BOSS)'
+            'NA':'Unknown(BOSS)',
+            'I?':'Idle(BOSS)',
+            'O?':'Done(BOSS)',
+            'R?':'Running(BOSS)'             
             }
         cmd = 'boss q -statusOnly -jobid '+id
         cmd_out = runBossCommand(cmd)
