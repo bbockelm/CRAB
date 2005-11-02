@@ -26,7 +26,15 @@ class Submitter(Actor):
         The main method of the class.
         """
         common.logger.debug(5, "Submitter::run() called")
-        # SL what the hell is Apmon doing here????
+
+        totalCreatedJobs= 0
+        for nj in range(common.jobDB.nJobs()):
+            if (common.jobDB.status(nj)=='C'): totalCreatedJobs +=1
+            pass
+
+        if (totalCreatedJobs==0):
+            common.logger.message("No jobs to be submitted: first create them")
+        
         firstJob=self.nj_list[0]
         match = common.scheduler.listMatch(firstJob)
         if match:
