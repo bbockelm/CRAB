@@ -1,0 +1,3 @@
+#!/bin/sh
+
+boss registerScheduler -name pbs -submit $CRABSCRIPT/script/pbs_submit.pl -query $CRABSCRIPT/script/pbs_query.pl -kill $CRABSCRIPT/script/pbs_kill.pl -getout $CRABSCRIPT/script/pbs_getout.pl -topwdir . 

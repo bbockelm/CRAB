@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+$|=1;
+while ( <STDIN> ) {
+  
+  if($_ =~ /.*StageIn init script\s+(\w+).*/)  {
+      $val = $1;
+      print "STAGE_IN = $val\n";
+  }
+  if($_ =~ /.*Executable\s+(\w+).*/)  {
+      $val = $1;
+      print "EXE_NAME = $val\n";
+  }
+  if($_ =~ /.*EXECUTABLE_EXIT_STATUS =\s+(\d+).*/)  {
+      $val = $1;
+      print "EXE_EXIT_CODE = $val\n";
+  }
+  if($_ =~ /.*SET_CMS_ENV\s+(\d+)\s+.*/)  {
+      $val = $1;
+      print "SET_CMS_ENV = $val\n";
+  }
+  if($_ =~ /.*SET_EXE_ENV\s+(\d+)\s+.*/)  {
+      $val = $1;
+      print "SET_EXE_ENV = $val\n";
+  }
+  if($_ =~ /.*SET_EXE\s+(\d+)\s+.*/)  {
+      $val = $1;
+      print "SET_EXE = $val\n";
+  }
+  if($_ =~ /.*TIME_EXE =\s+(\d+)\s+.*/)  {
+      $val = $1;
+      print "TIME_EXE = $val\n";
+  }
+  if($_ =~ /.*STAGE_OUT =\s+(\d+).*/)  {
+      $val = $1;
+      print "STAGE_OUT = $val\n";
+  }
+}
+

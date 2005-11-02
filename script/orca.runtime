@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+$|=1;
+while ( <STDIN> ) {
+  
+  if($_ =~ /.*InputCollections\s*=\s*(.+)$/)  {
+      $val = $1;
+      print "INP_COLL = $val\n";
+  }
+  if($_ =~ /.*InputFileCatalogURL\s*=\s*.*/)  {
+      $_ = <STDIN>;
+      if($_ =~ /\s+(.*)/)  {
+        $val = $1;
+        print "INP_CATALOG = $val\n";
+      }
+  }
+  if($_ =~ /.*FirstEvent\s*=\s*(\d+).*/)  {
+      $val = $1;
+      print "FIRST_EV = $val\n";
+  }
+  if($_ =~ /.*MaxEvent\s*=\s*(\d+).*/)  {
+      $val = $1;
+      print "MAX_EV = $val\n";
+  }
+  if($_ =~ /.*ORCA_VERSION\s*=\s*(.+)$/)  {
+      $val = $1;
+      print "ORCA_VERSION = $val\n";
+  }
+
+}
+
