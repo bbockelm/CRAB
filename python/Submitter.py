@@ -17,7 +17,13 @@ class Submitter(Actor):
         self.dataset = array[2]
         self.owner = array[3]  
         fileCODE1.close()
-        self.mon = ApmonIf()
+        try:
+            self.ML = int(cfg_params['USER.activate_monalisa'])
+        except KeyError:
+            self.ML = 0
+            pass
+            
+        if (self.ML==1): self.mon = ApmonIf()
         
         return
     
@@ -80,33 +86,35 @@ class Submitter(Actor):
                 except:
                     pass
                 
-                try:
-                    # SL this is crap! Should not be here!!!!
-                    # List of parameters to be sent to ML monitor system
-                    user = os.getlogin()
-                    taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
-                    jobId = str(nj)
-                    sid = jid
+                if (self.ML==1):
                     try:
-                        application = os.path.basename(os.environ['SCRAMRT_LOCALRT'])
-                    except KeyError:
-                        application = os.path.basename(os.environ['LOCALRT'])
+                        # SL this is crap! Should not be here!!!!
+                        # List of parameters to be sent to ML monitor system
+                        user = os.getlogin()
+                        taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
+                        jobId = str(nj)
+                        sid = jid
+                        try:
+                            application = os.path.basename(os.environ['SCRAMRT_LOCALRT'])
+                        except KeyError:
+                            application = os.path.basename(os.environ['LOCALRT'])
 
-                    nevtJob = common.jobDB.maxEvents(nj)
-                    exe = self.cfg_params['USER.executable']
-                    tool = common.prog_name
-                    scheduler = self.cfg_params['CRAB.scheduler']
-                    taskType = 'analysis'
-                    vo = 'cms'
-                    rb = sid.split(':')[1]
-                    rb = rb.replace('//', '')
-                    params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
-                              'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
-                              'user': user, 'taskType': taskType, 'vo': vo, 'dataset': self.dataset, 'owner': self.owner, 'broker': rb}
-                    self.mon.fillDict(params)
-                    self.mon.sendToML()
-                except:
-                    pass
+                        nevtJob = common.jobDB.maxEvents(nj)
+                        exe = self.cfg_params['USER.executable']
+                        tool = common.prog_name
+                        scheduler = self.cfg_params['CRAB.scheduler']
+                        taskType = 'analysis'
+                        vo = 'cms'
+                        rb = sid.split(':')[1]
+                        rb = rb.replace('//', '')
+                        params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
+                                  'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
+                                  'user': user, 'taskType': taskType, 'vo': vo, 'dataset': self.dataset, 'owner': self.owner, 'broker': rb}
+                        self.mon.fillDict(params)
+                        self.mon.sendToML()
+                    except:
+                        pass
+                pass # use ML
         except:
             common.logger.message("Submitter::run Exception raised")
             common.jobDB.save()
