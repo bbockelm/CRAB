@@ -458,15 +458,12 @@ class Crab:
                 # get the first not already submitted
                 common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
                 lastSubmittedJob=0
-                totalCreatedJobs=0
                 for nj in range(common.jobDB.nJobs()):
                     if (common.jobDB.status(nj)=='S'): 
                         lastSubmittedJob +=1
-                    elif (common.jobDB.status(nj)=='C'): 
-                        totalCreatedJobs +=1
-                    else: pass
+                    else: break
                 # count job from 1
-                totalJobsSubmittable = totalCreatedJobs - lastSubmittedJob
+                totalJobsSubmittable = common.jobDB.nJobs()-lastSubmittedJob
                 common.logger.debug(5,'lastSubmittedJob '+str(lastSubmittedJob))
                 common.logger.debug(5,'totalJobsSubmittable '+str(totalJobsSubmittable))
 
@@ -505,9 +502,7 @@ class Crab:
                         common.job_list.setJDLNames(self.job_type_name+'.jdl')
                         pass
                     pass
-                else:
-                    common.logger.message("No jobs to be submitted: first create them")
-                    pass
+                pass
 
             elif ( opt == '-list' ):
                 jobs = self.parseRange_(val)
