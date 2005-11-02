@@ -3,7 +3,7 @@ import common, crab_util
 import string, os, sys
 import Statistic
 from crab_util import *
-
+from SchedulerBoss import *
 
 
 
@@ -149,73 +149,62 @@ class StatusBoss(Actor):
             if jobStatus[bossid] != 'Created(BOSS)'  and jobStatus[bossid] != 'Unknown(BOSS)':
                 Statistic.notify('checkstatus',resFlag,exe_code,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
             print printline
-    #    self.Report_()
+        self.Report_()
         pass
         print ''
 
 
-    def processResult_(self, nj, result,jid):
-
-        destination = common.scheduler.queryDest(jid).split(":")[0]
-        ID3 =  jid.split("/")[3]
-        broker = jid.split("/")[2].split(":")[0]
-        resFlag = 0
-        ### TODO: set relevant status also to DB
-
-        try: 
-            if result == 'Done': 
-                self.countDone = self.countDone + 1
-                exCode = common.scheduler.getExitStatus(jid)
-                common.jobDB.setStatus(nj, 'D')
-                jid = common.jobDB.jobId(nj)
-                exit = common.scheduler.getExitStatus(jid)
-                common.jobDB.setExitStatus(nj, exit)
-                Statistic.notify('checkstatus',resFlag,exCode,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-            elif result == 'Ready':
-                self.countReady = self.countReady + 1
-                Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-            elif result == 'Scheduled':
-                self.countSched = self.countSched + 1
-                Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-            elif result == 'Running':
-                self.countRun = self.countRun + 1
-                Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-            elif result == 'Aborted':
-                common.jobDB.setStatus(nj, 'A')
-                Statistic.notify('checkstatus',resFlag,'abort',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-                pass
-            elif result == 'Cancelled':
-                common.jobDB.setStatus(nj, 'K')
-                Statistic.notify('checkstatus',resFlag,'cancel',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-                pass
-            elif result == 'Cleared':
-                exCode = common.scheduler.getExitStatus(jid) 
-                Statistic.notify('checkstatus',resFlag,exCode,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-                self.countCleared = self.countCleared + 1
-        except UnboundLocalError:
-            common.logger.message('ERROR: UnboundLocalError with ')
-
     def Report_(self) :
 
         """ Report #jobs for each status  """  
+        countSche = 0
+        countDone = 0
+        countRun = 0
+        countSche = 0
+        countReady = 0
+        countCancel = 0
+        countAbort = 0
+        countCleared = 0  
+        countToTjob = len(common.scheduler.listBoss())
+        dirGroup = string.split(common.work_space.topDir(), '/') 
+        group = dirGroup[len(dirGroup)-2]
+        for id in common.scheduler.listBoss(): 
+            boss_id =  common.scheduler.boss_ID((id +1),group)
+            if common.scheduler.queryStatus(boss_id) == 'Done (Success)' or common.scheduler.queryStatus(boss_id) == 'Done (Aborted)': 
+                countDone = countDone + 1
+            elif common.scheduler.queryStatus(boss_id) == 'Running' :
+                countRun = countRun + 1
+            elif common.scheduler.queryStatus(boss_id) == 'Scheduled' :
+                countSche = countSche + 1
+            elif common.scheduler.queryStatus(boss_id) == 'Ready' :
+                countReady =  countReady + 1    
+            elif common.scheduler.queryStatus(boss_id) == 'Cancelled':
+                countCancel =  countCancel + 1     
+            elif common.scheduler.queryStatus(boss_id) == 'Aborted':
+                countAbort =  countAbort + 1
+            elif common.scheduler.queryStatus(boss_id) == 'Cleared':            
+                countCleared = countCleared + 1
+
+
+
 
         #job_stat = common.job_list.loadStatus()
 
         print ''
-        print ">>>>>>>>> %i Total Jobs " % (self.countToTjob)
+        print ">>>>>>>>> %i Total Jobs " % (countToTjob)
 
-        if (self.countReady != 0):
+        if (countReady != 0):
             print ''
-            print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
-        if (self.countSched != 0):
+            print ">>>>>>>>> %i Jobs Ready" % (countReady)
+        if (countSche != 0):
             print ''
-            print ">>>>>>>>> %i Jobs Scheduled" % (self.countSched)
-        if (self.countRun != 0):
+            print ">>>>>>>>> %i Jobs Scheduled" % (countSche)
+        if (countRun != 0):
             print ''
-            print ">>>>>>>>> %i Jobs Running" % (self.countRun)
-        if (self.countCleared != 0):
+            print ">>>>>>>>> %i Jobs Running" % (countRun)
+        if (countCleared != 0):
             print ''
-            print ">>>>>>>>> %i Jobs Retrieved (=Cleared)" % (self.countCleared)
+            print ">>>>>>>>> %i Jobs Retrieved (=Cleared)" % (countCleared)
             print "          You can resubmit them specifying JOB numbers: crab.py -resubmit JOB_number (or range of JOB) -continue" 
             print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
         # if job_stat[6] or job_stat[7]:
@@ -224,8 +213,8 @@ class StatusBoss(Actor):
         #     print "          Resubmit them with: crab.py -resubmit -continue to resubmit all" 
         #     print "          or specifying JOB numbers (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
         #     print "           "       
-        if (self.countDone != 0):
-            print ">>>>>>>>> %i Jobs Done" % (self.countDone)
+        if (countDone != 0):
+            print ">>>>>>>>> %i Jobs Done" % (countDone)
             print "          Retrieve them with: crab.py -getoutput -continue to retrieve all" 
             print "          or specifying JOB numbers (i.e -getoutput 1-3 => 1 and 2 and 3 or -getoutput 1,3 => 1 and 3)"
             print('\n')  
