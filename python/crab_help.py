@@ -306,11 +306,11 @@ The output produced by the ORCA executable on WN is returned (via output sandbox
 
 =item B<outputdir>
 
-To be used together with I<return_data>. Directory on user interface where to store the ORCA output. Full path is mandatory: the defaul location of returned output is ui_working_dir/res .
+To be used together with I<return_data>. Directory on user interface where to store the ORCA output. Full path is mandatory, "~/" is not allowed: the defaul location of returned output is ui_working_dir/res .
 
 =item B<logdir>
 
-To be used together with I<return_data>. Directory on user interface where to store the ORCA standard output and error. Full path is mandatory: the defaul location of returned output is ui_working_dir/res .
+To be used together with I<return_data>. Directory on user interface where to store the ORCA standard output and error. Full path is mandatory, "~/" is not allowed: the defaul location of returned output is ui_working_dir/res .
 
 =item B<copy_data *>
 
