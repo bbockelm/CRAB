@@ -397,6 +397,7 @@ class Crab:
         object and put it in the action dictionary.
         """
         for opt in opts.keys():
+            self.flag_useboss = 0
             if ( opt == '-use_boss'):  
                 val = opts[opt]
                 if ( val == '1' ):

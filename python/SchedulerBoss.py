@@ -404,12 +404,12 @@ class SchedulerBoss(Scheduler):
                 msg = 'Job # '+`(i_id+1)`+' out of range for task '+group
                 common.logger.message(msg)
             else:
+                boss_id =  common.scheduler.boss_ID((i_id +1),group)
                 status =  common.scheduler.queryStatus(boss_id) 
-                if status == 'Done (Success)' or status == 'Aborted(BOSS)' or status == 'Killed(BOSS)' or stats =='Cleared(BOSS)' or status ==  'Done (Aborted)':
+                if status == 'Done (Success)' or status == 'Aborted(BOSS)' or status == 'Killed(BOSS)' or status =='Cleared(BOSS)' or status ==  'Done (Aborted)':
                     msg = 'Job # '+`(i_id+1)`+' has status '+status+' not possible to Kill it'
                     common.logger.message(msg) 
                 else:
-                    boss_id =  common.scheduler.boss_ID((i_id +1),group)
                     cmd = 'boss kill -jobid '+str(boss_id) 
                     cmd_out = runBossCommand(cmd)
                     common.logger.message("Killing job # "+`(i_id+1)`)
