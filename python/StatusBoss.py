@@ -138,7 +138,7 @@ class StatusBoss(Actor):
             for i in printfields:
                 printline+=jobAttributes[bossid][i]
                 if jobStatus[bossid] != 'Created(BOSS)'  and jobStatus[bossid] != 'Unknown(BOSS)':
-                    destination = jobAttributes[bossid][4]
+                    destination = "---" #jobAttributes[bossid][4]
                     broker = jobAttributes[bossid][2].split("/")[2].split(":")[0]
                     ID3 = jobAttributes[bossid][2].split("/")[3]
             if jobStatus[bossid] == 'Done (Success)' or jobStatus[bossid] == 'Cleared(BOSS)':
@@ -181,8 +181,8 @@ class StatusBoss(Actor):
                 countSche = countSche + 1
             elif status == 'Ready' :
                 countReady =  countReady + 1    
-            elif status == 'Cancelled':
-                countCancel =  countCancel + 1     
+            elif status == 'Cancelled' or status == 'Killed(BOSS)':
+                countCancel =  countCancel + 1 
             elif status == 'Aborted':
                 countAbort =  countAbort + 1
             elif status == 'Cleared':            
@@ -209,8 +209,11 @@ class StatusBoss(Actor):
         if (countCleared != 0):
             print ''
             print ">>>>>>>>> %i Jobs Retrieved (=Cleared)" % (countCleared)
-            print "          You can resubmit them specifying JOB numbers: crab.py -resubmit JOB_number (or range of JOB) -continue" 
-            print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
+        if (countCancel != 0) :
+            print ''
+            print ">>>>>>>>> %i Jobs killed " % (countCancel)
+         #   print "          You can resubmit them specifying JOB numbers: crab.py -resubmit JOB_number (or range of JOB) -continue" 
+         #   print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
         # if job_stat[6] or job_stat[7]:
         #     print ''
         #     print ">>>>>>>>> %i Jobs aborted or killed(=cancelled by user)" % (job_stat[6] + job_stat[7])
@@ -219,7 +222,7 @@ class StatusBoss(Actor):
         #     print "           "       
         if (countDone != 0):
             print ">>>>>>>>> %i Jobs Done" % (countDone)
-            print "          Retrieve them with: crab.py -getoutput -continue to retrieve all" 
+            print "          Retrieve them with: crab.py -getoutput to retrieve all" 
             print "          or specifying JOB numbers (i.e -getoutput 1-3 => 1 and 2 and 3 or -getoutput 1,3 => 1 and 3)"
             print('\n')  
         pass

@@ -523,23 +523,34 @@ class Crab:
                 pass
 
             elif ( opt == '-kill' ):
-                if val:
-                    jobs = self.parseRange_(val)
 
-                    for nj in jobs:
-                        st = common.jobDB.status(nj)
-                        if st == 'S':
-                            jid = common.jobDB.jobId(nj)
-                            common.logger.message("Killing job # "+`(nj+1)`)
-                            common.scheduler.cancel(jid)
-                            common.jobDB.setStatus(nj, 'K')
-                            pass
-                        pass
-
-                    common.jobDB.save()
-                    pass
+                if ( self.flag_useboss == 1 ):
+                    if val: 
+                        if val =='all':
+                            jobs = common.scheduler.listBoss()
+                        else:
+                            jobs = self.parseRange_(val)
+                        common.scheduler.cancel(jobs)
+                    else:
+                        common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
                 else:
-                    common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
+                    if val:
+                        jobs = self.parseRange_(val)
+
+                        for nj in jobs:
+                            st = common.jobDB.status(nj)
+                            if st == 'S':
+                                jid = common.jobDB.jobId(nj)
+                                common.logger.message("Killing job # "+`(nj+1)`)
+                                common.scheduler.cancel(jid)
+                                common.jobDB.setStatus(nj, 'K')
+                                pass
+                            pass
+
+                        common.jobDB.save()
+                        pass
+                    else:
+                         common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
 
             elif ( opt == '-getoutput' ):
 

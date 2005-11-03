@@ -395,10 +395,28 @@ class SchedulerBoss(Scheduler):
         return dir   
 
 
-    def cancel(self, id):
+    def cancel(self,int_id):
         """ Cancel the EDG job with id """
-
-        return self.boss_scheduler.cancel(id)
+        dirGroup = string.split(common.work_space.topDir(), '/')
+        group = dirGroup[len(dirGroup)-2] 
+        for i_id in int_id :
+            if i_id not in common.scheduler.listBoss():
+                msg = 'Job # '+`(i_id+1)`+' out of range for task '+group
+                common.logger.message(msg)
+            else:
+                status =  common.scheduler.queryStatus(boss_id) 
+                if status == 'Done (Success)' or status == 'Aborted(BOSS)' or status == 'Killed(BOSS)' or stats =='Cleared(BOSS)' or status ==  'Done (Aborted)':
+                    msg = 'Job # '+`(i_id+1)`+' has status '+status+' not possible to Kill it'
+                    common.logger.message(msg) 
+                else:
+                    boss_id =  common.scheduler.boss_ID((i_id +1),group)
+                    cmd = 'boss kill -jobid '+str(boss_id) 
+                    cmd_out = runBossCommand(cmd)
+                    common.logger.message("Killing job # "+`(i_id+1)`)
+                    pass
+                pass
+        return #cmd_out    
+       # return self.boss_scheduler.cancel(id)
 
     def getExitStatus(self, id):
 
