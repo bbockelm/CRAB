@@ -166,10 +166,11 @@ class StatusBoss(Actor):
         countCancel = 0
         countAbort = 0
         countCleared = 0  
-        countToTjob = len(common.scheduler.listBoss())
+        listBoss=common.scheduler.listBoss()
+        countToTjob = len(listBoss)
         dirGroup = string.split(common.work_space.topDir(), '/') 
         group = dirGroup[len(dirGroup)-2]
-        for id in common.scheduler.listBoss(): 
+        for id in listBoss: 
             boss_id =  common.scheduler.boss_ID((id +1),group)
             status = common.scheduler.queryStatus(boss_id)
             if status == 'Done (Success)' or status == 'Done (Aborted)': 
