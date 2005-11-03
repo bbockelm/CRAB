@@ -143,7 +143,7 @@ class PubDB:
             if refdbdataTiers.count(dt)<=0:
                 msg = "ERROR: Data Tier ( =>",dt,"<= ) not existing for dataset/owner "+self.dataset+"/"+self.owner+"! "
                 msg = str(msg) + 'Owner Dataset not published with asked dataTiers! '+\
-                       self.owner+' '+ self.dataset+' '+self.dataTiers
+                       self.owner+' '+ self.dataset+' '+str(self.dataTiers)}+'\n'
                 msg = str(msg) + ' Check the data_tier variable in crab.cfg !\n'
                 common.logger.message(msg) 
                 return []
