@@ -183,24 +183,6 @@ def importName(module_name, name):
     return vars(module)[name]
 
 
-def setOutLogDir(outDir,logDir):
-    if not os.path.isdir(outDir):
-        #The directory has to be created
-        cmd = 'mkdir ' + outDir
-        cout = runCommand(cmd)
-        if not cout:
-            print 'Cannot mkdir ' + outDir + ' Switching to default ' + common.work_space.resDir()
-            outDir = common.work_space.resDir()
-        if not os.path.isdir(logDir):
-           #The directory has to be created
-           cmd = 'mkdir ' + common.logDir
-           cout = runCommand(cmd)
-           if not cout:
-              print 'Cannot mkdir ' + logDir + ' Switching to default ' + common.work_space.resDir()
-              common.logDir = common.work_space.resDir()
-                                                                                                                            
-    return outDir, logDir
-
 ###########################################################################
 def runBossCommand(cmd, printout=0, timeout=240):
     """
