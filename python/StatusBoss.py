@@ -157,6 +157,7 @@ class StatusBoss(Actor):
     def Report_(self) :
 
         """ Report #jobs for each status  """  
+        common.logger.debug(5,'starting StatusBoss::report')
         countSche = 0
         countDone = 0
         countRun = 0
@@ -170,24 +171,26 @@ class StatusBoss(Actor):
         group = dirGroup[len(dirGroup)-2]
         for id in common.scheduler.listBoss(): 
             boss_id =  common.scheduler.boss_ID((id +1),group)
-            if common.scheduler.queryStatus(boss_id) == 'Done (Success)' or common.scheduler.queryStatus(boss_id) == 'Done (Aborted)': 
+            status = common.scheduler.queryStatus(boss_id)
+            if status == 'Done (Success)' or status == 'Done (Aborted)': 
                 countDone = countDone + 1
-            elif common.scheduler.queryStatus(boss_id) == 'Running' :
+            elif status == 'Running' :
                 countRun = countRun + 1
-            elif common.scheduler.queryStatus(boss_id) == 'Scheduled' :
+            elif status == 'Scheduled' :
                 countSche = countSche + 1
-            elif common.scheduler.queryStatus(boss_id) == 'Ready' :
+            elif status == 'Ready' :
                 countReady =  countReady + 1    
-            elif common.scheduler.queryStatus(boss_id) == 'Cancelled':
+            elif status == 'Cancelled':
                 countCancel =  countCancel + 1     
-            elif common.scheduler.queryStatus(boss_id) == 'Aborted':
+            elif status == 'Aborted':
                 countAbort =  countAbort + 1
-            elif common.scheduler.queryStatus(boss_id) == 'Cleared':            
+            elif status == 'Cleared':            
                 countCleared = countCleared + 1
 
 
 
 
+        common.logger.debug(5,'done loop StatusBoss::report')
         #job_stat = common.job_list.loadStatus()
 
         print ''
