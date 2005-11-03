@@ -371,7 +371,7 @@ class SchedulerBoss(Scheduler):
                 msg = 'Job # '+`(i_id+1)`+' out of range for task '+group
                 common.logger.message(msg) 
             else: 
-                dir,logDir = setOutLogDir(self.outDir,self.logDir)
+                dir,logDir = self.setOutLogDir(self.outDir,self.logDir)
                 boss_id =  common.scheduler.boss_ID((i_id +1),group)
                 if common.scheduler.queryStatus(boss_id) == 'Done (Success)' or common.scheduler.queryStatus(boss_id) == 'Done (Abort)':   
                     cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
@@ -476,3 +476,19 @@ class SchedulerBoss(Scheduler):
                 ListBoss_ID.append(int(line)-1)
             nline = nline + 1
         return ListBoss_ID
+
+    def setOutLogDir(self,outDir,logDir):
+        if not os.path.isdir(outDir):
+            #Create the directory
+            os.mkdir(outDir)
+            if not os.path.isdir(outDir):
+                common.logger('Cannot mkdir ' + outDir + ' Switching to default ' + common.work_space.resDir())
+                outDir = common.work_space.resDir()
+        if not os.path.isdir(logDir):
+            #Create the directory
+            os.mkdir(logDir)
+            if not os.path.isdir(logDir):
+                common.logger('Cannot mkdir ' + logDir + ' Switching to default ' + common.work_space.resDir())
+                logDir = common.work_space.resDir()
+        return outDir, logDir
+
