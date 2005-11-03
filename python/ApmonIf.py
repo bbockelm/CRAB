@@ -7,6 +7,8 @@ class ApmonIf:
     def __init__(self, address='http://monalisa.cern.ch/ARDA/apmon.cms'):
         self._params = {}
         self._MLaddress = address
+        self.apm = None
+        self.apm = self.getApmonInstance()
 
     def fillDict(self, parr):
         """
@@ -15,5 +17,11 @@ class ApmonIf:
         self._params = parr
     
     def sendToML(self):
-        apm = apmon.ApMon(self._MLaddress)
         apm.sendParameters(self._params['taskId'], self._params['jobId'], self._params)
+        
+    def getApmonInstance(self):
+        if self.apm is None :
+            apmonUrl = 'http://www-asap.cern.ch/ml-conf/apmon.cms'
+            print "Creating ApMon with " + apmonUrl
+            apmonInstance = apmon.ApMon(apmonUrl)
+        return apmonInstance 
