@@ -69,6 +69,7 @@ class StatusBoss(Actor):
             'SC':'Checkpointed',
             'SS':'Scheduled',
             'SR':'Ready',
+            'RE':'Ready',
             'SW':'Waiting',
             'SU':'Submitted',
             'UN':'Undefined',
@@ -78,10 +79,13 @@ class StatusBoss(Actor):
             'DA':'Done (Aborted)',
             'SE':'Cleared',
             'OR':'Done (Success)',
-            'A':'Aborted(BOSS)',
+            'A?':'Aborted(BOSS)',
             'K':'Killed(BOSS)',
             'E':'Cleared(BOSS)',
-            'NA':'Unknown(BOSS)'
+            'NA':'Unknown(BOSS)',
+            'I?':'Idle(BOSS)',
+            'O?':'Done(BOSS)',
+            'R?':'Running(BOSS)'             
             }
         """
         The main method of the class.
