@@ -185,10 +185,12 @@ class Orca(JobType):
         orcarc = os.path.basename(job.configFilename())
         txt += '\n'
         txt += 'cp $RUNTIME_AREA/'+orcarc+' .orcarc\n'
-        txt += 'if [ -e $RUNTIME_AREA/orcarc_* ] ; then\n'
+        txt += 'if [ -e $RUNTIME_AREA/orcarc_$CE ] ; then\n'
         txt += '  cat $RUNTIME_AREA/orcarc_$CE .orcarc >> .orcarc_tmp\n'
 #        txt += '  cat $RUNTIME_AREA/orcarc_* .orcarc >> .orcarc_tmp\n'
         txt += '  mv .orcarc_tmp .orcarc\n'
+        txt += 'fi\n'
+        txt += 'if [ -e $RUNTIME_AREA/init_$CE.sh ] ; then\n'
         txt += '  cp $RUNTIME_AREA/init_$CE.sh init.sh\n'
 #        txt += '  cp $RUNTIME_AREA/init_*.sh init.sh\n'
         txt += 'fi\n'
