@@ -53,14 +53,16 @@ class Orca(JobType):
         try:
             self.executable = cfg_params['USER.executable']
             log.debug(6, "Orca::Orca(): executable = "+self.executable)
-        except:
+        except KeyError:
             msg = "Error: executable not defined "
             raise CrabException(msg)
 
         try:
             self.orcarc_file = cfg_params['USER.orcarc_file']
             log.debug(6, "Orca::Orca(): orcarc file = "+self.orcarc_file)
-        except:
+            if (not os.path.exists(self.orcarc_file)):
+                raise CrabException("User defined .orcarc file "+self.orcarc_file+" does not exist")
+        except KeyError:
             log.message("Using empty orcarc file")
             self.orcarc_file = ''
 
