@@ -12,14 +12,14 @@
 ###########################################################################
 
 prog_name = 'crab'
-prog_version = (1, 0, 0)
+prog_version = (1, 0, 1)
 prog_version_str=`prog_version[0]`+'.'+`prog_version[1]`+'.'+`prog_version[2]`
 prog_authors = [
-    ['Federica Fanzago' , 'Federica.Fanzago@pd.infn.it' , 'INFN/Padova'],
-    ['Marco Corvo'      , 'Marco.Corvo@pd.infn.it'      , 'INFN/Padova'],
     ['Stefano Lacaprara', 'Stefano.Lacaprara@pd.infn.it', 'INFN/Padova'],
+    ['Federica Fanzago' , 'Federica.Fanzago@pd.infn.it' , 'INFN/Padova'],
     ['Daniele Spiga'  , 'Daniele.Spiga@pg.infn.it'  , 'INFN/Perugia'],
     ['Alessandra Fanfani'  , 'Alessandra.Fanfani@bo.infn.it'  , 'INFN/Bologna'],
+    ['Marco Corvo'      , 'Marco.Corvo@pd.infn.it'      , 'INFN/Padova'],
     ['Nikolai Smirnov'  , 'Nikolai.Smirnov@pd.infn.it'  , 'INFN/Padova'],
     ]
 
