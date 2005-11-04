@@ -523,7 +523,7 @@ class SchedulerEdg(Scheduler):
                 raise CrabException(msg)
             cmd = 'grid-proxy-info -timeleft'
             cmd_out = runCommand(cmd,0)
-            print cmd_out, time.time()
+            #print cmd_out, time.time()
             #time.time(cms_out)
             pass
         self.proxyValid=1
