@@ -350,7 +350,7 @@ class Crab:
         if self.checkUniqueness_(result):
             return result
         else:
-            print "Error ", result
+            common.logger.message("Error "+result)
             return []
 
     def checkUniqueness_(self, list):
@@ -387,7 +387,7 @@ class Crab:
             if isInt(start) and isInt(end) and int(start)>0 and int(start)<int(end):
                 result=range(int(start)-1, int(end))
             else:
-                print "ERROR ", start, end
+                common.logger.message("parseSimpleRange_ ERROR "+start+end)
 
         return result
 
@@ -762,6 +762,8 @@ class Crab:
                         common.job_list.setJDLNames(self.job_type_name+'.jdl')
                         pass
                     pass
+                else:
+                    common.logger.message("No jobs to analyze")
 
             elif ( opt == '-clean' ):
                 if val != None:
