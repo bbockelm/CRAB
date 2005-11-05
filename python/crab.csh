@@ -17,3 +17,7 @@ else
 setenv PYTHONPATH ${CRABPYTHON}:${PYTHONPATH}
 endif
 
+which boss >& /dev/null
+if ( $? ) then
+  echo "boss env not set"
+endif

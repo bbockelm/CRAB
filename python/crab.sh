@@ -16,3 +16,8 @@ export PYTHONPATH=${CRABPYTHON}
 else
 export PYTHONPATH=${CRABPYTHON}:${PYTHONPATH}
 fi
+
+which boss 2>&1 /dev/null
+if [ $? ]; then
+  echo "boss env not set"
+fi
