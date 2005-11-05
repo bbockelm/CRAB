@@ -187,7 +187,10 @@ class Creator(Actor):
         lastJobsNumberOfEvents= (self.total_number_of_events+self.first_event)-firstEvent
         common.jobDB.setMaxEvents(nJobs-1, lastJobsNumberOfEvents)
     
-        common.logger.message('Will be created '+str(self.total_njobs-1)+' jobs for '+str(self.job_number_of_events)+' each plus 1 for '+str(lastJobsNumberOfEvents)+' for a total of '+str(self.job_number_of_events*(self.total_njobs-1)+lastJobsNumberOfEvents)+' events')
+        if (lastJobsNumberOfEvents!=self.job_number_of_events):
+            common.logger.message(str(self.total_njobs-1)+' jobs will be created for '+str(self.job_number_of_events)+' events each plus 1 for '+str(lastJobsNumberOfEvents)+' events for a total of '+str(self.job_number_of_events*(self.total_njobs-1)+lastJobsNumberOfEvents)+' events')
+        else:
+            common.logger.message(str(self.total_njobs)+' jobs will be created for '+str(self.job_number_of_events)+' events each for a total of '+str(self.job_number_of_events*(self.total_njobs-1)+lastJobsNumberOfEvents)+' events')
 
         # case two (to be implemented) write eventCollections for each jobs
 
