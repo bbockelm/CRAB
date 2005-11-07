@@ -120,7 +120,9 @@ class Scram:
         if exeWithPath.find(swReleaseTop) == -1:
             # the exe is private, so we must ship
             common.logger.debug(5,"Exe "+exeWithPath+" to be tarred")
-            filesToBeTarred.append(exeWithPath)
+            path = swArea+'/'
+            exe = string.replace(exeWithPath, path,'')
+            filesToBeTarred.append(exe)
             pass
         else:
             # the exe is from release, we'll find it on WN
