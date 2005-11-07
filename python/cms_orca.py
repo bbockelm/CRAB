@@ -180,7 +180,7 @@ class Orca(JobType):
         txt += "\n"
         txt += "NJob=$1\n"
         txt += "FirstEvent=$2\n"
-        txt += "MaxEvent=$3\n"
+        txt += "MaxEvents=$3\n"
 
         # Prepare job-specific part
         job = common.job_list[nj]
@@ -209,7 +209,7 @@ class Orca(JobType):
         txt += 'echo "### END JOB SETUP ENVIRONMENT ###"\n\n'
 
         txt += 'echo "FirstEvent=$FirstEvent" >> .orcarc\n'
-        txt += 'echo "MaxEvent=$MaxEvent" >> .orcarc\n'
+        txt += 'echo "MaxEvents=$MaxEvents" >> .orcarc\n'
         if self.ML:
             txt += 'echo "MonalisaJobId=$NJob" >> .orcarc\n'
 
