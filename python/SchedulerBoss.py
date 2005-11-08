@@ -469,7 +469,6 @@ class SchedulerBoss(Scheduler):
                SID = string.strip(line)
             nline = nline + 1
     
-        print 'exxxolo '+SID                                                                                                                      
         return SID
 
 
