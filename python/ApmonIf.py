@@ -17,7 +17,7 @@ class ApmonIf:
         self._params = parr
     
     def sendToML(self):
-        apm.sendParameters(self._params['taskId'], self._params['jobId'], self._params)
+        self.apm.sendParameters(self._params['taskId'], self._params['jobId'], self._params)
         
     def getApmonInstance(self):
         if self.apm is None :
