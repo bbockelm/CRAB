@@ -58,7 +58,6 @@ class StatusBoss(Actor):
         common.logger.debug(5, "Status::run() called")
         dir = string.split(common.work_space.topDir(), '/')
         group = dir[len(dir)-2]
-        print "group = ", group
         cmd = 'boss RTupdate -jobid all '
         runBossCommand(cmd)
         add2tablelist=''
@@ -66,7 +65,6 @@ class StatusBoss(Actor):
         nodeattr='JOB.E_HOST'
         cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.INTERNAL_ID" '
         cmd_out = runBossCommand(cmd)
-        print "cmd_out = ", cmd_out
         jobAttributes={}
         nline=0
         header=''
