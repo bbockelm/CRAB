@@ -388,10 +388,11 @@ class SchedulerBoss(Scheduler):
                     else:   
                         msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir
                         common.logger.message(msg)
-                    cmd = 'bossSid '+str(boss_id)
-                    cmd_out = runBossCommand(cmd)
+                  #  cmd = 'bossSid '+str(boss_id)
+                  #  cmd_out = runBossCommand(cmd)
                     resFlag = 0
-                    jid = string.strip(cmd_out)   
+                    jid = common.scheduler.boss_SID(i_id +1) 
+                  #  jid = string.strip(cmd_out)   
                     exCode = common.scheduler.getExitStatus(jid)
                     Statistic.Monitor('retrieved',resFlag,jid,exCode)
                 else:
@@ -453,6 +454,24 @@ class SchedulerBoss(Scheduler):
             nline = nline + 1
               
         return boss_ID 
+     
+    def boss_SID(self,int_ID):
+        """ Return Sid of job """
+                                                                                                                             
+        dirGroup = string.split(common.work_space.topDir(), '/')
+        group = dirGroup[len(dirGroup)-2]
+
+        cmd = 'boss SQL -query "select JOB.SID  from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
+        cmd_out = runBossCommand(cmd)
+        nline = 0
+        for line in cmd_out.splitlines():
+            if nline == 2:
+               SID = string.strip(line)
+            nline = nline + 1
+    
+        print 'exxxolo '+SID                                                                                                                      
+        return SID
+
 
 
     def queryStatus(self,id):
