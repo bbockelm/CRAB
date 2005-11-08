@@ -34,5 +34,9 @@ while ( <STDIN> ) {
       $val = $1;
       print "STAGE_OUT = $val\n";
   }
+  if($_ =~ /.*JOB_EXIT_STATUS =\s+(\d+).*/)  {
+      $val = $1;
+      print "JOB_EXIT_STATUS = $val\n";
+  }
 }
 

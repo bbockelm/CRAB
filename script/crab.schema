@@ -1,1 +1,2 @@
-INTERNAL_ID:int,N_RESUB:int,SET_CMS_ENV:string,SET_EXE_ENV:string,STAGE_IN:string,SET_EXE:string,EXE_NAME:string,TIME_EXE:string,EXE_EXIT_CODE:string,STAGE_OUT:string
+INTERNAL_ID:int,N_RESUB:int,SET_CMS_ENV:string,SET_EXE_ENV:string,STAGE_IN:string,SET_EXE:string,EXE_NAME:string,TIME_EXE:string,EXE_EXIT_CODE:string,STAGE_OUT:string,JOB_EXIT_STATUS:string
+
