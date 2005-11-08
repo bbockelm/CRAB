@@ -56,16 +56,16 @@ class DataDiscovery:
 
         ## for each parent get the corresponding fileblocks
         for aparent in parents:
-           ## fill the map dataset-owner for the parents
-           #pdataset=string.split(aparent,'/')[1]
-           #powner=string.split(aparent,'/')[3]
-           #self.dataset_owner[powner]=pdataset
-           ## instead of the map dataset-owner use the dbspaths  
+           ## fill a list of dbspaths
            parentdbsdataset=aparent.getDatasetPath()
            self.dbspaths.append(parentdbsdataset)
-           #self.dbspaths.append(aparent)
-           ## get the fileblocks of the parents : FIXME remove the first / in the path
-           pdbs=DBSInfo(parentdbsdataset[1:-1],[])
+           #tmppath=str(parentdbsdataset[1:-1])
+           pdataset=string.split(parentdbsdataset,'/')[1]
+           pdt=string.split(parentdbsdataset,'/')[2]
+           powner=string.split(parentdbsdataset,'/')[3]
+           tmppath=pdataset+'/'+pdt+'/'+powner
+           ## get the fileblocks of the parents : FIXME for the time being the first / in the path has to be removed
+           pdbs=DBSInfo(tmppath,[])
            try:
              parentsblocksinfo=pdbs.getDatasetContents()
            except:
@@ -89,12 +89,6 @@ class DataDiscovery:
 
         return nevts
 
-# #################################################
-    def getDatasetOwnerPairs(self):
-        """
-         list all required dataset-owner pairs
-        """
-        return self.dataset_owner
 # #################################################
     def getDBSPaths(self):
         """
