@@ -2,7 +2,6 @@ from Actor import *
 import common, crab_util
 import string, os, sys
 import Statistic
-from crab_util import *
 from SchedulerBoss import *
 
 
@@ -18,16 +17,6 @@ class StatusBoss(Actor):
         self.countCleared = 0
         self.countToTjob = 0
         
-        fileCODE1 = open(common.work_space.logDir()+"/.code","r")
-        array = fileCODE1.read().split('::')
-        self.ID1 = array[0]
-        self.NJC = array[1]
-        self.dataset = array[2]
-        self.owner = array[3]
-        fileCODE1.close()
-        #######################################################################################
-
-
 
         Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
         # Bypass edg-job-status interfacing directly to C++ API
@@ -63,30 +52,6 @@ class StatusBoss(Actor):
 
     def run(self):
 
-        EDGstatus={
-            'W':'Created(BOSS)',
-            'R':'Running',
-            'SC':'Checkpointed',
-            'SS':'Scheduled',
-            'SR':'Ready',
-            'RE':'Ready',
-            'SW':'Waiting',
-            'SU':'Submitted',
-            'UN':'Undefined',
-            'SK':'Cancelled',
-            'SD':'Done (Success)',
-            'SA':'Aborted',
-            'DA':'Done (Aborted)',
-            'SE':'Cleared',
-            'OR':'Done (Success)',
-            'A?':'Aborted(BOSS)',
-            'K':'Killed(BOSS)',
-            'E':'Cleared(BOSS)',
-            'NA':'Unknown(BOSS)',
-            'I?':'Idle(BOSS)',
-            'O?':'Done(BOSS)',
-            'R?':'Running(BOSS)'             
-            }
         """
         The main method of the class.
         """
@@ -106,7 +71,6 @@ class StatusBoss(Actor):
 #            nodeattr='edg.CE'
         cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.INTERNAL_ID" '
         cmd_out = runBossCommand(cmd)
-        #print "cmd_out = ", cmd_out
         jobAttributes={}
         nline=0
         header=''
@@ -115,43 +79,40 @@ class StatusBoss(Actor):
             if nline==0:
                 fielddesc=line
             else:
+
                 if nline==1:
                     header = self.splitbyoffset(line,fielddesc)
                 else:
                     js = line.split(None,2)
                     jobAttributes[int(js[0])]=self.splitbyoffset(line,fielddesc)
             nline = nline+1
-        cmd = 'boss q -all -statusOnly -group '+group
-        cmd_out = runBossCommand(cmd)
-        jobStatus={}
-        for line in cmd_out.splitlines():
-            js = line.split(None,2)               
-            jobStatus[int(js[0])]=EDGstatus[js[1]]
         #printfields = [1,2,3,4]
-        printfields = [1,2,4]
+        printfields = [1]
         printfields1 = [3]
         printline = ''
         for i in printfields:
             printline+=header[i]
-        printline+=' STATUS       EXIT_CODE'
+        printline+='   STATUS          E_HOST            EXIT_CODE'
         print printline
         for bossid in jobAttributes.keys():
             printline=''
+            jobStatus = common.scheduler.queryStatus(bossid)
             for i in printfields1:
                 exe_code =jobAttributes[bossid][i]
+                dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2])).split(":")[0]
             for i in printfields:
                 printline+=jobAttributes[bossid][i]
-                if jobStatus[bossid] != 'Created(BOSS)'  and jobStatus[bossid] != 'Unknown(BOSS)':
-                    destination = "---" #jobAttributes[bossid][4]
-                    broker = jobAttributes[bossid][2].split("/")[2].split(":")[0]
-                    ID3 = jobAttributes[bossid][2].split("/")[3]
-            if jobStatus[bossid] == 'Done (Success)' or jobStatus[bossid] == 'Cleared(BOSS)':
-                printline+=' '+jobStatus[bossid]+' '+exe_code
+            if jobStatus == 'Done (Success)' or jobStatus == 'Cleared(BOSS)':
+                printline+=' '+jobStatus+'   '+dest+'   '+exe_code
             else:
-                printline+=' '+jobStatus[bossid]
+                printline+=' '+jobStatus+'   '+dest
             resFlag = 0
-            if jobStatus[bossid] != 'Created(BOSS)'  and jobStatus[bossid] != 'Unknown(BOSS)':
-                Statistic.notify('checkstatus',resFlag,exe_code,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+            if jobStatus != 'Created(BOSS)'  and jobStatus != 'Unknown(BOSS)':
+                jid1 = string.strip(jobAttributes[bossid][2])
+                if jobStatus == 'Aborted':
+                    Statistic.Monitor('checkstatus',resFlag,jid1,'abort')
+                else:
+                    Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
             print printline
         self.Report_()
         pass

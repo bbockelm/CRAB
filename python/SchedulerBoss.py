@@ -4,6 +4,7 @@ from crab_exceptions import *
 from crab_util import *
 import common
 import os, sys, tempfile, shutil
+from Submitter import *
 
 class SchedulerBoss(Scheduler):
     def __init__(self):
@@ -365,7 +366,7 @@ class SchedulerBoss(Scheduler):
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
         dir = common.work_space.resDir()
-
+ 
         for i_id in int_id :
             if i_id not in common.scheduler.listBoss(): 
                 msg = 'Job # '+`(i_id+1)`+' out of range for task '+group
@@ -373,6 +374,8 @@ class SchedulerBoss(Scheduler):
             else: 
                 dir,logDir = self.setOutLogDir(self.outDir,self.logDir)
                 boss_id =  common.scheduler.boss_ID((i_id +1),group)
+                cmd = 'bossSid '+str(boss_id) 
+                cmd_out = runCommand(cmd) 
                 if common.scheduler.queryStatus(boss_id) == 'Done (Success)' or common.scheduler.queryStatus(boss_id) == 'Done (Abort)':   
                     cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
                     cmd_out = runBossCommand(cmd)
@@ -385,6 +388,12 @@ class SchedulerBoss(Scheduler):
                     else:   
                         msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir
                         common.logger.message(msg)
+                    cmd = 'bossSid '+str(boss_id)
+                    cmd_out = runBossCommand(cmd)
+                    resFlag = 0
+                    jid = string.strip(cmd_out)   
+                    exCode = common.scheduler.getExitStatus(jid)
+                    Statistic.Monitor('retrieved',resFlag,jid,exCode)
                 else:
                     msg = 'Job # '+`(i_id+1)`+' has status '+common.scheduler.queryStatus(boss_id)+' not possible to get output'
                     common.logger.message(msg)
@@ -474,7 +483,7 @@ class SchedulerBoss(Scheduler):
             'O?':'Done(BOSS)',
             'R?':'Running(BOSS)'             
             }
-        cmd = 'boss q -statusOnly -jobid '+id
+        cmd = 'boss q -statusOnly -jobid '+str(id)
         cmd_out = runBossCommand(cmd)
         js = cmd_out.split(None,2)
         return EDGstatus[js[1]]
