@@ -563,16 +563,7 @@ class Crab:
 
                     common.scheduler.getOutput(jobs) 
                 else:
-                    ## This should not be here.
                     jobs = self.parseRange_(val) 
-                    fileCODE1 = open(common.work_space.logDir()+"/.code","r")
-                    array = fileCODE1.read().split('::')
-                    self.ID1 = array[0]
-                    self.NJC = array[1]
-                    self.dataset = array[2]
-                    self.owner = array[3]
-                    fileCODE1.close()
-                    ###
 
                     ## also this: create a ActorClass (GetOutput)
                     jobs_done = []
@@ -616,14 +607,9 @@ class Crab:
                     pass
                     ###
 
-                    ## again, this should not be here but in getoutput class
-                    destination = common.scheduler.queryDest(jid).split(":")[0]
-                    ID3 =  jid.split("/")[3]
-                    broker = jid.split("/")[2].split(":")[0]
                     resFlag = 0
                     exCode = common.scheduler.getExitStatus(jid)
-                    Statistic.notify('retrieved',resFlag,exCode,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-                    ###
+                    Statistic.Monitor('retrieved',resFlag,jid,exCode)
 
                     msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
                     common.logger.message(msg)

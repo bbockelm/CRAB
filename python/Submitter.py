@@ -8,15 +8,6 @@ class Submitter(Actor):
     def __init__(self, cfg_params, nj_list):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
-        ############################################# 
-        ### this is a common block!
-        fileCODE1 = open(common.work_space.logDir()+"/.code","r")
-        array = fileCODE1.read().split('::')
-        self.ID1 = array[0]
-        self.NJC = array[1]   
-        self.dataset = array[2]
-        self.owner = array[3]  
-        fileCODE1.close()
         try:
             self.ML = int(cfg_params['USER.activate_monalisa'])
         except KeyError:
@@ -70,9 +61,6 @@ class Submitter(Actor):
 
                 ############################################   
 
-                destination = common.scheduler.queryDest(jid).split(":")[0]
-                ID3 =  jid.split("/")[3]
-                broker = jid.split("/")[2].split(":")[0]
                 if st == 'C':
                     resFlag = 0
                 elif st == 'RC':
@@ -80,16 +68,21 @@ class Submitter(Actor):
                 else:            
                     resFlag = 0
                     pass
+                  
+                #try:
+                #    print 'submitter prima	'
 
-                try:
-                    Statistic.notify('submit',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
-                except:
-                    pass
+                Statistic.Monitor('submit',resFlag,jid,'-----')  
+                #    print 'submitter Dopo     '
+ 
+
+                #except:
+                #    pass
                 
                 if (self.ML==1):
                     try:
                         # SL this is crap! Should not be here!!!!
-                        # List of parameters to be sent to ML monitor system
+                        #List of parameters to be sent to ML monitor system
                         user = os.getlogin()
                         taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
                         jobId = str(nj)
@@ -131,3 +124,11 @@ class Submitter(Actor):
         common.logger.message(msg)
         return
     
+
+
+
+
+
+
+
+

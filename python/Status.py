@@ -14,16 +14,6 @@ class Status(Actor):
         self.countCleared = 0
         self.countToTjob = 0
         
-        fileCODE1 = open(common.work_space.logDir()+"/.code","r")
-        array = fileCODE1.read().split('::')
-        self.ID1 = array[0]
-        self.NJC = array[1]
-        self.dataset = array[2]
-        self.owner = array[3]
-        fileCODE1.close()
-        #######################################################################################
-
-
 
         Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
         # Bypass edg-job-status interfacing directly to C++ API
@@ -91,27 +81,27 @@ class Status(Actor):
                 jid = common.jobDB.jobId(nj)
                 exit = common.scheduler.getExitStatus(jid)
                 common.jobDB.setExitStatus(nj, exit)
-                Statistic.notify('checkstatus',resFlag,exCode,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                Statistic.Monitor('checkstatus',resFlag,jid,exCode)
             elif result == 'Ready':
                 self.countReady = self.countReady + 1
-                Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                Statistic.Monitor('checkstatus',resFlag,jid,'-----')
             elif result == 'Scheduled':
                 self.countSched = self.countSched + 1
-                Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                Statistic.Monitor('checkstatus',resFlag,jid,'-----')
             elif result == 'Running':
                 self.countRun = self.countRun + 1
-                Statistic.notify('checkstatus',resFlag,'-----',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                Statistic.Monitor('checkstatus',resFlag,jid,'-----')
             elif result == 'Aborted':
                 common.jobDB.setStatus(nj, 'A')
-                Statistic.notify('checkstatus',resFlag,'abort',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                Statistic.Monitor('checkstatus',resFlag,jid,'abort')
                 pass
             elif result == 'Cancelled':
                 common.jobDB.setStatus(nj, 'K')
-                Statistic.notify('checkstatus',resFlag,'cancel',self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                Statistic.Monitor('checkstatus',resFlag,jid,'cancel')
                 pass
             elif result == 'Cleared':
                 exCode = common.scheduler.getExitStatus(jid) 
-                Statistic.notify('checkstatus',resFlag,exCode,self.dataset,self.owner,destination,broker,ID3,self.ID1,self.NJC)
+                Statistic.Monitor('checkstatus',resFlag,jid,exCode) 
                 self.countCleared = self.countCleared + 1
         except UnboundLocalError:
             common.logger.message('ERROR: UnboundLocalError with ')
