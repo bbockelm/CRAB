@@ -53,6 +53,7 @@ import threading
 import time
 import Logger
 import ProcInfo
+import random
 
 #__all__ = ["ApMon"]
 
@@ -82,12 +83,6 @@ class ApMon:
 	- configRecheck - boolean - whether to recheck periodically for changes 
 	  in the configAddresses list
 	"""
-	destinations = {}              # empty, by default; key = tuple (host, port, pass) ; val = hash {"param_mame" : True/False, ...}
-	configAddresses = []           # empty, by default; list of files/urls from where we read config
-	configRecheckInterval = 120    # 2 minutes
-	configRecheck = True           # enabled by default
-	performBgMonitoring = True          # by default, perform background monitoring
-	monitoredJobs = {}	       # Monitored jobs; key = pid; value = hash with 
 
 	__defaultOptions = {
 		'job_monitoring': True,       # perform (or not) job monitoring
@@ -105,6 +100,7 @@ class ApMon:
 		'job_disk_used' : True,       # size in MB of the used disk partition containing the working directory
 		'job_disk_free' : True,       # size in MB of the free disk partition containing the working directory
 		'job_disk_usage': True,       # percent of the used disk partition containing the working directory
+		'job_open_files': True,       # number of open file descriptors
 
 		'sys_monitoring': True,       # perform (or not) system monitoring
 		'sys_interval'  : 10,         # at this interval (in seconds)
@@ -142,7 +138,12 @@ class ApMon:
 		'cpu_MHz'       : True,
 		'no_CPUs'       : True,       # number of CPUs
 		'total_mem'     : True,
-		'total_swap'    : True};
+		'total_swap'    : True,
+		'cpu_vendor_id'	: True,
+		'cpu_family'	: True,
+		'cpu_model'	: True,
+		'cpu_model_name': True,
+		'bogomips'	: True};
 
 	def __init__ (self, initValue):
 		"""
@@ -164,6 +165,33 @@ class ApMon:
 		  val = hash{'param_name': True/False, ...}) the given options for each destination 
 		  will overwrite the default parameters (see __defaultOptions)
 		"""
+		self.destinations = {}              # empty, by default; key = tuple (host, port, pass) ; val = hash {"param_mame" : True/False, ...}
+		self.configAddresses = []           # empty, by default; list of files/urls from where we read config
+		self.configRecheckInterval = 120    # 2 minutes
+		self.configRecheck = True           # enabled by default
+		self.performBgMonitoring = True     # by default, perform background monitoring
+		self.monitoredJobs = {}	            # Monitored jobs; key = pid; value = hash with
+		self.maxMsgRate = 50;		    # Maximum number of messages allowed to be sent per second
+		self.__defaultUserCluster = "ApMon_UserSend";
+		self.__defaultUserNode = socket.getfqdn();
+		self.__defaultSysMonCluster = "ApMon_SysMon";
+		self.__defaultSysMonNode = socket.getfqdn();
+		# don't touch these:
+		self.__initializedOK = True
+		self.__udpSocket = None
+		self.__configUpdateLock = threading.Lock()
+		self.__configUpdateEvent = threading.Event()
+		self.__bgMonitorLock = threading.Lock()
+		self.__bgMonitorEvent = threading.Event()
+		# don't allow a user to send more than MAX_MSG messages per second, in average
+		self.__crtTime = 0;
+		self.__prvTime = 0;
+		self.__prvSent = 0;
+		self.__prvDrop = 0;
+		self.__crtSent = 0;
+		self.__crtDrop = 0;
+		self.__hWeight = 0.92;
+	
 		self.logger = Logger.Logger(self.__defaultLogLevel)
 		if type(initValue) == type("string"):
 			self.configAddresses.append(initValue)
@@ -356,6 +384,26 @@ class ApMon:
 		"""
 		self.logger.setLogLevel(strLevel);
 	
+	def setMaxMsgRate(self, rate):
+		"""
+		Set the maximum number of messages that can be sent, per second.
+		"""
+		self.maxMsgRate = rate;
+		self.logger.log(Logger.DEBUG, "Setting maxMsgRate to: " + str(rate));
+	
+	def free(self):
+		"""
+		Stop background threands, close opened sockets. You have to use this function if you want to
+		free all the resources that ApMon takes, and allow it to be garbage-collected.
+		"""
+		self.__configUpdateEvent.set();
+		self.__bgMonitorEvent.set();
+		time.sleep(0.01);
+		if self.__udpSocket != None:
+			self.logger.log(Logger.DEBUG, "Closing UDP socket on ApMon object destroy.");
+			self.__udpSocket.close();
+
+
 	#########################################################################################
 	# Internal functions - Config reloader thread
 	#########################################################################################
@@ -364,8 +412,10 @@ class ApMon:
 		"""
 		Main loop of the thread that checks for changes and reloads the configuration
 		"""
-		while True:
-			time.sleep(self.configRecheckInterval)
+		while not self.__configUpdateEvent.isSet():
+			self.__configUpdateEvent.wait(self.configRecheckInterval);
+			if self.__configUpdateEvent.isSet():
+				return;
 			if self.configRecheck:
 				self.__reloadAddresses()
 				self.logger.log(Logger.DEBUG, "Config reloaded. Seleeping for "+`self.configRecheckInterval`+" sec.");
@@ -430,7 +480,7 @@ class ApMon:
 					self.logger.log(Logger.NOTICE, "Overwritting option: "+key+" = "+`value`);
 					tempDestinations[(host, port, passwd)][key] = value;
 		else:
-			self.logger.log(Logger.NOTICE, "Destination "+host+":"+port+" "+passwd+" already added. Skipping it");
+			self.logger.log(Logger.NOTICE, "Destination "+host+":"+str(port)+" "+passwd+" already added. Skipping it");
 
 	def __initializeFromFile (self, confFileName, tempDestinations):
 		"""
@@ -489,6 +539,8 @@ class ApMon:
 							value = int(value);
 						if param == "loglevel":
 							self.logger.setLogLevel(value);
+						elif param == "maxMsgRate":
+							self.setMaxMsgRate(int(value));
 						elif param == "conf_recheck":
 							self.configRecheck = value;
 						elif param == "recheck_interval":
@@ -508,8 +560,10 @@ class ApMon:
 	###############################################################################################
 
 	def __bgMonitor (self):
-		while True:
-			time.sleep(10);
+		while not self.__bgMonitorEvent.isSet():
+			self.__bgMonitorEvent.wait(10);
+			if self.__bgMonitorEvent.isSet():
+				return;
 			if self.performBgMonitoring:
 				self.sendBgMonitoring();
 
@@ -518,6 +572,10 @@ class ApMon:
 	###############################################################################################
 	
 	def __directSendParams (self, destination, clusterName, nodeName, timeStamp, params):
+		
+		if self.__shouldSend() == False:
+			return;
+		
 		xdrPacker = xdrlib.Packer ()
 		host, port, passwd = destination
 		self.logger.log(Logger.DEBUG, "Building XDR packet for ["+str(clusterName)+"] <"+str(nodeName)+"> len:"+str(len(params)));
@@ -557,7 +615,43 @@ class ApMon:
 	
 	# Destructor
 	def __del__(self):
-		self.__udpSocket.close();
+		self.free();
+
+	# Decide if the current datagram should be sent.
+	# This decision is based on the number of messages previously sent.
+	def __shouldSend(self):
+		now = long(time.time());
+		if now != self.__crtTime :
+			# new time
+			# update previous counters;
+			self.__prvSent = self.__hWeight * self.__prvSent + (1.0 - self.__hWeight) * self.__crtSent / (now - self.__crtTime); 
+			self.__prvTime = self.__crtTime;
+			self.logger.log(Logger.DEBUG, "previously sent: " + str(self.__crtSent) + "; dropped: " + str(self.__crtDrop));
+			# reset current counter
+			self.__crtTime = now;
+			self.__crtSent = 0;
+			self.__crtDrop = 0;
+		
+		# compute the history
+		valSent = self.__prvSent * self.__hWeight + self.__crtSent * (1 - self.__hWeight);
+		
+		doSend = True;
+			
+		# when we should start dropping messages
+		level = self.maxMsgRate - self.maxMsgRate / 10; 
+	
+		if valSent > (self.maxMsgRate - level) :
+			if random.randint(0,self.maxMsgRate / 10) >= (self.maxMsgRate - valSent):
+				doSend = False;
+	
+		# counting sent and dropped messages
+		if doSend:
+			self.__crtSent+=1;
+		else:
+			self.__crtDrop+=1;
+
+		return doSend;
+
 	
 	################################################################################################
 	# Private variables. Don't touch
@@ -573,16 +667,7 @@ class ApMon:
 		2: xdrlib.Packer.pack_int,
 		5: xdrlib.Packer.pack_double }
 	
-	__defaultUserCluster = "ApMon_UserSend";
-	__defaultUserNode = socket.getfqdn();
-	__defaultSysMonCluster = "ApMon_SysMon";
-	__defaultSysMonNode = socket.getfqdn();
-	
-	__initializedOK = True
-	__configUpdateLock = threading.Lock()
-	__bgMonitorLock = threading.Lock()
-	
 	__defaultPort = 8884
 	__defaultLogLevel = Logger.INFO
-	__version = "2.0.2-py"			# apMon version number
+	__version = "2.0.6-py"			# apMon version number
 

@@ -74,7 +74,7 @@ class ProcInfo:
 		this.JOBS[pid] = {};
 		this.JOBS[pid]['WORKDIR'] = workDir;
 		this.JOBS[pid]['DATA'] = {};
-		print this.JOBS;
+		#print this.JOBS;
 	
 	# Call this to stop monitoring a PID
 	def removeJobToMonitor (this, pid):
@@ -130,7 +130,8 @@ class ProcInfo:
 			#this.logger.log(Logger.DEBUG, "key = " + key);
 			if key.startswith('cpu_') or key.startswith('pages_') or key.startswith('swap_'):
 				#this.logger.log(Logger.DEBUG, "old = "+`this.OLD_RAW[key]`+" new = "+`this.NEW_RAW[key]`);
-				diff[key] = this.NEW_RAW[key] - this.OLD_RAW[key];
+				#diff[key] = this.NEW_RAW[key] - this.OLD_RAW[key];
+				diff[key] = this.diffWithOverflowCheck(this.NEW_RAW[key],this.OLD_RAW[key]);
 			if key.startswith('cpu_'):
 				#this.logger.log(Logger.DEBUG, "diff=" + `diff[key]`);
 				cpu_sum += diff[key];
@@ -224,6 +225,22 @@ class ProcInfo:
 				if line.startswith("cpu MHz"):
 					this.DATA['cpu_MHz'] = float(re.match("cpu MHz\s+:\s+(\d+\.?\d*)", line).group(1));
 					no_cpus += 1;
+				
+				if line.startswith("vendor_id"):
+					this.DATA['cpu_vendor_id'] = re.match("vendor_id\s+:\s+(.+)", line).group(1);
+					
+				if line.startswith("cpu family"):
+					this.DATA['cpu_family'] = re.match("cpu family\s+:\s+(.+)", line).group(1);
+					
+				if line.startswith("model") and not line.startswith("model name") :
+					this.DATA['cpu_model'] = re.match("model\s+:\s+(.+)", line).group(1);
+					
+				if line.startswith("model name"):
+					this.DATA['cpu_model_name'] = re.match("model name\s+:\s+(.+)", line).group(1);
+					
+				if line.startswith("bogomips"):
+					this.DATA['bogomips'] = float(re.match("bogomips\s+:\s+(\d+\.?\d*)", line).group(1));
+				
 				line = FCPU.readline();
 			FCPU.close();
 			this.DATA['no_CPUs'] = no_cpus;
@@ -240,6 +257,17 @@ class ProcInfo:
 			this.logger.log(Logger.ERROR, "ProcInfo: cannot open /proc/uptime");
 			return;
 	
+	# do a difference with overflow check and repair
+	# the counter is unsigned 32 or 64   bit
+	def diffWithOverflowCheck(this, new, old):
+		if new >= old:
+			return new - old;
+		else:
+			max = (1L << 31) * 2;  # 32 bits
+			if old >= max:
+				max = (1L << 63) * 2;  # 64 bits
+			return new - old + max;
+	
 	# read network information like transfered kBps and nr. of errors on each interface
 	def readNetworkInfo (this):
 		this.OLD_RAW = this.NEW_RAW;
@@ -255,9 +283,9 @@ class ProcInfo:
 					this.DATA['eth'+m.group(1)+'_errs'] = int(m.group(3)) + int(m.group(5));
 					if(this.OLD_RAW.has_key('eth'+m.group(1)+"_in")):
 						#this.logger.log(Logger.DEBUG, "Net I/O eth"+m.group(1)+" interval = "+ `interval`);
-						Bps = (this.NEW_RAW['eth'+m.group(1)+'_in'] - this.OLD_RAW['eth'+m.group(1)+'_in']) / interval;
+						Bps = this.diffWithOverflowCheck(this.NEW_RAW['eth'+m.group(1)+'_in'], this.OLD_RAW['eth'+m.group(1)+'_in']) / interval;
 						this.DATA['eth'+m.group(1)+'_in'] = Bps / 1024.0;
-						Bps = (this.NEW_RAW['eth'+m.group(1)+'_out'] - this.OLD_RAW['eth'+m.group(1)+'_out']) / interval;
+						Bps = this.diffWithOverflowCheck(this.NEW_RAW['eth'+m.group(1)+'_out'], this.OLD_RAW['eth'+m.group(1)+'_out']) / interval;
 						this.DATA['eth'+m.group(1)+'_out'] = Bps / 1024.0;
 				line = FNET.readline();
 			FNET.close();
@@ -284,7 +312,7 @@ class ProcInfo:
 		except IOError, ex:
 			this.logger.log(Logger.ERROR, "ProcInfo: cannot execute ps --no-headers -eo \"pid ppid\"");
 
-		if not pidmap.has_key(parent):
+		if pidmap.has_key(parent):
 			this.logger.log(Logger.INFO, 'ProcInfo: No job with pid='+str(parent));
 			this.removeJobToMonitor(parent);
 			return [];
@@ -296,15 +324,15 @@ class ProcInfo:
 			for (pid, ppid) in pidmap.items():
 				if ppid == prnt:
 					children.append(pid);
-        	i += 1;
+        		i += 1;
 		return children;
 
 	# internal function that parses a time formatted like "days-hours:min:sec" and returns the corresponding
 	# number of seconds.
 	def parsePSTime (this, my_time):
 		my_time = my_time.strip();
+		m = re.match("(\d+)-(\d+):(\d+):(\d+)", my_time);
 		if m != None:
-			m = re.match("(\d+)-(\d+):(\d+):(\d+)", my_time);
 			return int(m.group(1)) * 24 * 3600 + int(m.group(2)) * 3600 + int(m.group(3)) * 60 + int(m.group(4));
 		else:
 			m = re.match("(\d+):(\d+):(\d+)", my_time);
@@ -320,23 +348,24 @@ class ProcInfo:
 	# read information about this the JOB_PID process
 	# memory sizes are given in KB
 	def readJobInfo (this, pid):
-		if (pid == '') or this.JOBS.has_key(pid):
+		if (pid == '') or not this.JOBS.has_key(pid):
 			return;
 		children = this.getChildren(pid);
 		if(len(children) == 0):
 			this.logger.log(Logger.INFO, "ProcInfo: Job with pid="+str(pid)+" terminated; removing it from monitored jobs.");
+			#print ":("
 			this.removeJobToMonitor(pid);
 			return;
 		try:
-			JSTATUS = os.popen("ps --no-headers --pid " + ",".join([`child` for child in  children]) + " -o etime,time,%cpu,%mem,rsz,vsz,comm");
+			JSTATUS = os.popen("ps --no-headers --pid " + ",".join([`child` for child in  children]) + " -o pid,etime,time,%cpu,%mem,rsz,vsz,comm");
 			mem_cmd_map = {};
-			etime, cputime, pcpu, pmem, rsz, vsz, comm = 0, 0, 0, 0, 0, 0, 0;
+			etime, cputime, pcpu, pmem, rsz, vsz, comm, fd = 0, 0, 0, 0, 0, 0, 0, 0;
 			line = JSTATUS.readline();
 			while(line != ''):
 				line = line.strip();
-				m = re.match("(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.+)", line);
+				m = re.match("(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.+)", line);
 				if m != None:
-					etime1, cputime1, pcpu1, pmem1, rsz1, vsz1, comm1 = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6), m.group(7);
+					apid, etime1, cputime1, pcpu1, pmem1, rsz1, vsz1, comm1 = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6), m.group(7), m.group(8);
 					sec = this.parsePSTime(etime1);
 					if sec > etime: 	# the elapsed time is the maximum of all elapsed
 						etime = sec;
@@ -347,6 +376,7 @@ class ProcInfo:
 						# it's the first thread/process with this memory footprint; add it.
 						mem_cmd_map[`pmem1`+" "+`rsz1`+" "+`vsz1`+" "+`comm1`] = 1;
 						pmem += float(pmem1); rsz += int(rsz1); vsz += int(vsz1);
+						fd += this.countOpenFD(apid);
 					# else not adding memory usage
 				line = JSTATUS.readline();
 			JSTATUS.close();
@@ -356,20 +386,38 @@ class ProcInfo:
 			this.JOBS[pid]['DATA']['mem_usage'] = pmem;
 			this.JOBS[pid]['DATA']['rss'] = rsz;
 			this.JOBS[pid]['DATA']['virtualmem'] = vsz;
+			this.JOBS[pid]['DATA']['open_files'] = fd;
 		except IOError, ex:
 			this.logger.log(Logger.ERROR, "ProcInfo: cannot execute ps --no-headers -eo \"pid ppid\"");
-
+	
+	# count the number of open files for the given pid
+	def countOpenFD (this, pid):
+		dir = '/proc/'+str(pid)+'/fd';
+		if os.access(dir, os.F_OK):
+			if os.access(dir, os.X_OK):
+				list = os.listdir(dir);
+				open_files = len(list);
+				if pid == os.getpid():
+					open_files -= 2;
+				this.logger.log(Logger.DEBUG, "Counting open_files for "+ `pid` +": "+ str(len(list)) +" => " + `open_files` + " open_files");
+				return open_files;
+			else:
+				this.logger.log(Logger.ERROR, "ProcInfo: cannot count the number of opened files for job "+`pid`);
+		else:
+			this.logger.log(Logger.ERROR, "ProcInfo: job "+`pid`+" dosen't exist");
+	
+	
 	# if there is an work directory defined, then compute the used space in that directory
 	# and the free disk space on the partition to which that directory belongs
 	# sizes are given in MB
 	def readJobDiskUsage (this, pid):
-		if (pid == '') or this.JOBS.has_key(pid):
+		if (pid == '') or not this.JOBS.has_key(pid):
 			return;
 		workDir = this.JOBS[pid]['WORKDIR'];
 		if workDir == '':
 			return;
 		try:
-			DU = os.popen("du -Lscm "+workDir+" | tail -1 | cut -f 1");
+			DU = os.popen("du -Lscm " + workDir + " | tail -1 | cut -f 1");
 			line = DU.readline();
 			this.JOBS[pid]['DATA']['workdir_size'] = int(line);
 		except IOError, ex:
@@ -410,21 +458,22 @@ class ProcInfo:
 # self test
 
 if __name__ == '__main__':
-	logger = this.logger(Logger.DEBUG);
+	logger = Logger.Logger(Logger.DEBUG);
 	pi = ProcInfo(logger);
+	
 	print "first update";
 	pi.update();
 	print "Sleeping to accumulate";
 	time.sleep(1);
 	pi.update();
-	print "System Monitoring:";
 	
+	print "System Monitoring:";
 	sys_cpu_params = ['cpu_usr', 'cpu_sys', 'cpu_idle', 'cpu_nice', 'cpu_usage'];
 	sys_2_4_params = ['pages_in', 'pages_out', 'swap_in', 'swap_out'];
 	sys_mem_params = ['mem_used', 'mem_free', 'total_mem', 'mem_usage'];
 	sys_swap_params = ['swap_used', 'swap_free', 'total_swap', 'swap_usage'];
 	sys_load_params = ['load1', 'load5', 'load15', 'processes', 'uptime'];
-	sys_gen_params = ['hostname', 'cpu_MHz', 'no_CPUs'];
+	sys_gen_params = ['hostname', 'cpu_MHz', 'no_CPUs', 'cpu_vendor_id', 'cpu_family', 'cpu_model', 'cpu_model_name', 'bogomips'];
 	sys_net_params = ['net_in', 'net_out', 'net_errs', 'ip'];
 	
 	print "sys_cpu_params", pi.getSystemData(sys_cpu_params);
@@ -435,19 +484,20 @@ if __name__ == '__main__':
 	print "sys_gen_params", pi.getSystemData(sys_gen_params);
 	print "sys_net_params", pi.getSystemData(sys_net_params);
 	
+	job_pid = os.getpid();
+	
 	print "Job (mysefl) monitoring:";
-	pi.addJobToMonitor(os.getpid(), os.getcwd());
+	pi.addJobToMonitor(job_pid, os.getcwd());
 	print "Sleep another second";
 	time.sleep(1);
 	pi.update();
 	
 	job_cpu_params = ['run_time', 'cpu_time', 'cpu_usage'];
-	job_mem_params = ['mem_usage', 'rss', 'virtualmem'];
+	job_mem_params = ['mem_usage', 'rss', 'virtualmem', 'open_files'];
 	job_disk_params = ['workdir_size', 'disk_used', 'disk_free', 'disk_total', 'disk_usage'];
+	time.sleep(10);
+	print "job_cpu_params", pi.getJobData(job_pid, job_cpu_params);
+	print "job_mem_params", pi.getJobData(job_pid, job_mem_params);
+	print "job_disk_params", pi.getJobData(job_pid, job_disk_params);
 	
-	print "job_cpu_params", pi.getJobData(os.getpid(), job_cpu_params);
-	print "job_mem_params", pi.getJobData(os.getpid(), job_mem_params);
-	print "job_disk_params", pi.getJobData(os.getpid(), job_disk_params);
-
 	pi.removeJobToMonitor(os.getpid());
-
