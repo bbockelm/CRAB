@@ -739,7 +739,7 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
-                    self.actions[opt] = PostMortem(self.cfg_params, nj_list)
+                    self.actions[opt] = PostMortem(self.cfg_params, nj_list,self.flag_useboss)
 
                     # Create and initialize JobList
 

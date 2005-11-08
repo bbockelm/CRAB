@@ -224,12 +224,12 @@ class SchedulerEdg(Scheduler):
         return txt
         #####################
 
-    def loggingInfo(self, nj):
+    def loggingInfo(self, id):
         """
         retrieve the logging info from logging and bookkeeping and return it
         """
         self.checkProxy()
-        id = common.jobDB.jobId(nj)
+      #  id = common.jobDB.jobId(nj)
         cmd = 'edg-job-get-logging-info -v 2 ' + self.configOpt_() + id
         cmd_out = runCommand(cmd)
         return cmd_out

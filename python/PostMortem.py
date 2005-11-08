@@ -3,9 +3,10 @@ import common
 import string, os
 
 class PostMortem(Actor):
-    def __init__(self, cfg_params, nj_list):
+    def __init__(self, cfg_params, nj_list, use_boss):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
+        self.flag_useboss = use_boss
         return
     
     def run(self):
@@ -20,7 +21,11 @@ class PostMortem(Actor):
 
         # run a list-match on first job
         for nj in self.nj_list:
-            out = common.scheduler.loggingInfo(nj)
+            if self.flag_useboss == 1 :
+                id = common.scheduler.boss_SID(nj+1)
+            else: 
+                id = common.jobDB.jobId(nj) 
+            out = common.scheduler.loggingInfo(id)
             job = common.job_list[nj]
             jdl_fname = string.replace(job.jdlFilename(),'jdl','loggingInfo')
             if os.path.exists(jdl_fname):
