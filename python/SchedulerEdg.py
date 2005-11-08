@@ -231,8 +231,8 @@ class SchedulerEdg(Scheduler):
         self.checkProxy()
       #  id = common.jobDB.jobId(nj)
         cmd = 'edg-job-get-logging-info -v 2 ' + id
-        cmd_out = runCommand(cmd)
-        print cmd_out
+        cmd_out = os.popen(cmd) 
+      #  cmd_out = runCommand(cmd)
         return cmd_out
 
     def listMatch(self, nj):
