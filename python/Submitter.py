@@ -3,6 +3,10 @@ from crab_util import *
 import common
 from ApmonIf import ApmonIf
 import Statistic
+#
+# Marco
+#
+from random import random
 
 class Submitter(Actor):
     def __init__(self, cfg_params, nj_list):
@@ -84,7 +88,13 @@ class Submitter(Actor):
                         # SL this is crap! Should not be here!!!!
                         #List of parameters to be sent to ML monitor system
                         user = os.getlogin()
-                        taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
+                        #
+                        # Marco
+                        #
+                        #taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
+                        taskId = os.getlogin()+'_'+self.cfg_params['USER.dataset']+'_'+self.cfg_params['USER.owner']+'_'+str(random()*100)
+                        dataset = self.cfg_params['USER.dataset']
+                        owner = self.cfg_params['USER.owner']
                         jobId = str(nj)
                         sid = jid
                         try:
@@ -102,14 +112,18 @@ class Submitter(Actor):
                         rb = rb.replace('//', '')
                         params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
                                   'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
-                                  'user': user, 'taskType': taskType, 'vo': vo, 'dataset': self.dataset, 'owner': self.owner, 'broker': rb}
+                                  'user': user, 'taskType': taskType, 'vo': vo, 'dataset': dataset, 'owner': owner, 'broker': rb}
                         self.mon.fillDict(params)
                         self.mon.sendToML()
                     except:
+                        exctype, value = sys.exc_info()[:2]
+                        common.logger.message("Submitter::run Exception raised: %s %s"%(exctype, value))
                         pass
                 pass # use ML
         except:
-            common.logger.message("Submitter::run Exception raised")
+            exctype, value = sys.exc_info()[:2]
+            print "Type:%s Value:%s"%(exctype, value)
+            common.logger.message("Submitter::run Exception raised: %s %s"%(exctype, value))
             common.jobDB.save()
 
         common.jobDB.save()
