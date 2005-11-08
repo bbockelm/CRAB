@@ -94,9 +94,11 @@ class StatusBoss(Actor):
             printline+=header[i]
         printline+='   STATUS          E_HOST            EXIT_CODE'
         print printline
+        for_summary = []
         for bossid in jobAttributes.keys():
             printline=''
             jobStatus = common.scheduler.queryStatus(bossid)
+            for_summary.append(jobStatus)
             for i in printfields1:
                 exe_code =jobAttributes[bossid][i]
                 dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2])).split(":")[0]
@@ -114,15 +116,17 @@ class StatusBoss(Actor):
                 else:
                     Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
             print printline
-        self.Report_()
+        self.Report_(for_summary)
         pass
         print ''
 
 
-    def Report_(self) :
+    def Report_(self,statusList) :
+        
+        """ Report #jobs for each status """
 
-        """ Report #jobs for each status  """  
         common.logger.debug(5,'starting StatusBoss::report')
+         
         countSche = 0
         countDone = 0
         countRun = 0
@@ -130,37 +134,32 @@ class StatusBoss(Actor):
         countReady = 0
         countCancel = 0
         countAbort = 0
-        countCleared = 0  
-        listBoss=common.scheduler.listBoss()
-        countToTjob = len(listBoss)
-        dirGroup = string.split(common.work_space.topDir(), '/') 
-        group = dirGroup[len(dirGroup)-2]
-        for id in listBoss: 
-            boss_id =  common.scheduler.boss_ID((id +1),group)
-            status = common.scheduler.queryStatus(boss_id)
-            if status == 'Done (Success)' or status == 'Done (Aborted)': 
+        countCleared = 0
+
+       
+        for status in statusList:
+            if status == 'Done (Success)' or status == 'Done (Aborted)':
                 countDone = countDone + 1
             elif status == 'Running' :
                 countRun = countRun + 1
             elif status == 'Scheduled' :
                 countSche = countSche + 1
             elif status == 'Ready' :
-                countReady =  countReady + 1    
+                countReady =  countReady + 1
             elif status == 'Cancelled' or status == 'Killed(BOSS)':
-                countCancel =  countCancel + 1 
+                countCancel =  countCancel + 1
             elif status == 'Aborted':
                 countAbort =  countAbort + 1
-            elif status == 'Cleared':            
+            elif status == 'Cleared(BOSS)':
                 countCleared = countCleared + 1
-
-
 
 
         common.logger.debug(5,'done loop StatusBoss::report')
         #job_stat = common.job_list.loadStatus()
-
+ 
+        ToTjob = (len(statusList)) 
         print ''
-        print ">>>>>>>>> %i Total Jobs " % (countToTjob)
+        print ">>>>>>>>> %i Total Jobs " % (ToTjob)
 
         if (countReady != 0):
             print ''
@@ -191,5 +190,5 @@ class StatusBoss(Actor):
             print "          or specifying JOB numbers (i.e -getoutput 1-3 => 1 and 2 and 3 or -getoutput 1,3 => 1 and 3)"
             print('\n')  
         pass
-
+         
 
