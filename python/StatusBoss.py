@@ -56,21 +56,17 @@ class StatusBoss(Actor):
         The main method of the class.
         """
         common.logger.debug(5, "Status::run() called")
-#        common.jobDB.load()
         dir = string.split(common.work_space.topDir(), '/')
         group = dir[len(dir)-2]
+        print "group = ", group
         cmd = 'boss RTupdate -jobid all '
         runBossCommand(cmd)
         add2tablelist=''
         addjoincondition = ''
         nodeattr='JOB.E_HOST'
-#        boss_scheduler_name = string.lower(self.boss_scheduler.name())
-#        if boss_scheduler_name == 'edg' :
-#            add2tablelist+=',edg'
-#            addjoincondition=' and edg.JOBID=JOB.ID'
-#            nodeattr='edg.CE'
-        cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.INTERNAL_ID" '
+        cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.INTERNAL_ID" '
         cmd_out = runBossCommand(cmd)
+        print "cmd_out = ", cmd_out
         jobAttributes={}
         nline=0
         header=''
@@ -79,33 +75,37 @@ class StatusBoss(Actor):
             if nline==0:
                 fielddesc=line
             else:
-
                 if nline==1:
                     header = self.splitbyoffset(line,fielddesc)
                 else:
                     js = line.split(None,2)
+                    #print "js = ", js
                     jobAttributes[int(js[0])]=self.splitbyoffset(line,fielddesc)
+                    #print "jobAttributes = ",jobAttributes
             nline = nline+1
-        #printfields = [1,2,3,4]
-        printfields = [1]
-        printfields1 = [3]
+        #printfields = [1,3,5]
+        #printfields = [1]
+        #printfields1 = [3]
+        #printfields2 = [5]
         printline = ''
-        for i in printfields:
-            printline+=header[i]
-        printline+='   STATUS          E_HOST            EXIT_CODE'
+        printline+=header[1]
+        printline+='   STATUS          E_HOST            EXE_EXIT_CODE        JOB_EXIT_STATUS'
         print printline
         for_summary = []
         for bossid in jobAttributes.keys():
             printline=''
             jobStatus = common.scheduler.queryStatus(bossid)
             for_summary.append(jobStatus)
-            for i in printfields1:
-                exe_code =jobAttributes[bossid][i]
-                dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2])).split(":")[0]
-            for i in printfields:
-                printline+=jobAttributes[bossid][i]
+            #for i in printfields1:
+            exe_code =jobAttributes[bossid][3]
+            dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2])).split(":")[0]
+            #for i in printfields2:
+            job_exit_status = jobAttributes[bossid][5]
+            #for i in printfields:
+            printline+=jobAttributes[bossid][1]
+            
             if jobStatus == 'Done (Success)' or jobStatus == 'Cleared(BOSS)':
-                printline+=' '+jobStatus+'   '+dest+'   '+exe_code
+                printline+=' '+jobStatus+'   '+dest+'      '+exe_code+'       '+job_exit_status
             else:
                 printline+=' '+jobStatus+'   '+dest
             resFlag = 0
