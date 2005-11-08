@@ -263,8 +263,10 @@ class Orca(JobType):
             txt += '   echo "JOB_EXIT_STATUS = 1"\n'
             txt += '   exit 1 \n'
             txt += 'else\n'
-            txt += '   cp '+fileWithSuffix+' '+output_file_num+'\n'
-            txt += 'fi\n'           
+            txt += '   cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            txt += 'fi\n'
+            txt += 'cd $RUNTIME_AREA\n'
+                      
             pass
        
         file_list=file_list[:-1]
@@ -510,7 +512,9 @@ class Orca(JobType):
         ## User Declared output files
         for out in self.output_file:
             n_out = nj + 1 
-            out_box.append(self.version+'/'+self.numberFile_(out,str(n_out)))
+            #FEDE 
+            #out_box.append(self.version+'/'+self.numberFile_(out,str(n_out)))
+            out_box.append(self.numberFile_(out,str(n_out)))
         return out_box
 
     def numberFile_(self, file, txt):
