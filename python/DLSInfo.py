@@ -27,5 +27,5 @@ class DLSInfo:
          cmd = self.DLSclient_+" --host "+self.DLSServer_+" --datablock "+self.fileblocks 
          #print cmd
          sites = runCommand(cmd)
-         ListSites=string.split(sites,'\n')
+         ListSites=string.split(string.strip(sites),'\n')
          return ListSites         
