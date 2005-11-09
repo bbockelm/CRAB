@@ -81,10 +81,6 @@ class StatusBoss(Actor):
                     jobAttributes[int(js[0])]=self.splitbyoffset(line,fielddesc)
                     #print "jobAttributes = ",jobAttributes
             nline = nline+1
-        #printfields = [1,3,5]
-        #printfields = [1]
-        #printfields1 = [3]
-        #printfields2 = [5]
         printline = ''
         printline+=header[1]
         printline+='   STATUS          E_HOST            EXE_EXIT_CODE        JOB_EXIT_STATUS'
@@ -94,12 +90,13 @@ class StatusBoss(Actor):
             printline=''
             jobStatus = common.scheduler.queryStatus(bossid)
             for_summary.append(jobStatus)
-            #for i in printfields1:
             exe_code =jobAttributes[bossid][3]
-            dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2])).split(":")[0]
-            #for i in printfields2:
+            try:
+                dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2])).split(":")[0]
+            except: 
+                dest = ''  
+                pass 
             job_exit_status = jobAttributes[bossid][5]
-            #for i in printfields:
             printline+=jobAttributes[bossid][1]
             
             if jobStatus == 'Done (Success)' or jobStatus == 'Cleared(BOSS)':
