@@ -343,8 +343,9 @@ class SchedulerEdg(Scheduler):
         jobStat.getStatus(id, level)
         err, apiMsg = jobStat.get_error()
         if err:
-            print 'Error caught', apiMsg 
-            common.log.message(apiMsg)
+            #print 'Error caught', apiMsg 
+            #common.log.message(apiMsg)
+            common.logger.debug(5,'Error caught' + apiMsg) 
             return None
         else:
             for i in range(len(self.states)):
