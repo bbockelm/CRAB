@@ -111,8 +111,9 @@ class Scram:
 
         ## First find the executable
         cmd = 'which ' + executable
-        exeWithPath = string.strip(runCommand(cmd))
-        if int(exeWithPath.find("no "+executable+" in"))!=-1:
+        try:
+           exeWithPath = string.strip(runCommand(cmd))
+        except AttributeError: 
             raise CrabException('User executable '+executable+' not found')
 
         filesToBeTarred = []
