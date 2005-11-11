@@ -2,44 +2,46 @@
 #
 # Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
 #
-# Initialization script for Crab and Boss
-# Please read carefully the documentation (in INSTALL) before running this
-# script! You might want _not_ to run it at all, or have your sys admin do it
-# for you. Repeat: read the INSTALL file
+# Installation script for Crab
 #
-# 25-Oct-2005 
+# 02-Nov-2005
 
-if [ -z "$CRABDIR" ]; then
-  echo "You must source crab.(c)sh before running this script"
-  exit 1
-fi
-
+### BOSS configuration parameters
+BOSSVER=3_6_1
 BACKEND=SQLite
-BOSSDBPATH=${HOME}/boss
+BOSSDBPATH=${HOME}/boss/
 BOSSDBNAME=bossCrab
 
-# I have to configure BOSS
+#############################################
+######## BOSS CONFIGURATION #################
+#############################################
 
-CONFSCRIPT=${BOSSDIR}/BossConfig.clad
-cat > $CONFSCRIPT  <<EOF
+
+echo "Creating ${HOME}/BossConfig.clad"
+cat > ${HOME}/BossConfig.clad <<EOF
 # This is the BOSS configuration file
 
 [
 # BOSS temporary directory (where files are extracted from DB)
 BOSS_TMP_DIR = "/tmp";
+
 # BOSS update interval
-BOSS_MIN_UPD_INT = 5;   # at most one update every BOSS_MIN_UPD_INT sec.
-BOSS_MAX_UPD_INT = 30;  # at least one update every BOSS_MAX_UPD_INT sec.
+BOSS_MIN_UPD_INT = 30;  # at most one upd. every BOSS_MIN_UPD_INT sec.
+BOSS_MAX_UPD_INT = 180; # at least one upd. every BOSS_MAX_UPD_INT sec.
+
 # Maximum retries after post-process finishes before killing RTUpdator
 # (waits BOSS_UPD_INTERVAL*BOSS_MAX_RETRY seconds)
 BOSS_MAX_RETRY = 3;
+
 # Boss Database Backend
 DB_BACKEND = "${BACKEND}";
+
+# Info sent also to Monalisa (if empty not enabled)
+ML_URL = "";
 ]
 EOF
 
-## I must create ${BACKEND}Config.clad
-
+######## Configuring backend ###########
 # SQLlite
 if [ "${BACKEND}" == "SQLite" ]; then
 
@@ -47,27 +49,31 @@ if [ "${BACKEND}" == "SQLite" ]; then
     echo "creating ${BOSSDBPATH} directory"
     mkdir ${BOSSDBPATH}
   else
-    echo "Directory ${BOSSDBPATH} Already exist. Stoppping"
+    echo "Directory ${BOSSDBPATH} Already exist. Stopping"
     exit 1
   fi
-  CONFSCRIPT=${BOSSDIR}/SQLiteConfig.clad
-  cat > $CONFSCRIPT  <<EOF
+echo "Creating ${HOME}/SQLiteConfig.clad"
+cat > ${HOME}/SQLiteConfig.clad <<EOF
 # This is the BOSS SQLite database configuration file
 [
-SQLITE_DB_PATH = "${BOSSDBPATH}/";
+# BOSS SQLite database PATH
+SQLITE_DB_PATH = "${BOSSDBPATH}";
+
+# BOSS SQLite database
 DB_NAME = "${BOSSDBNAME}";
 ]
 EOF
 
 fi # Backend SQLite
 
-# MySQL
+### Backend MySQL
 if [ "${BACKEND}" == "MySQL" ]; then
-  HOST=`/bin/hostname`
-  DOMAIN=`/bin/hostname -d`
-  CONFSCRIPT=${BOSSDIR}/MySQLConfig.clad
-  /bin/rm -f $CONFSCRIPT
-  cat > $CONFSCRIPT  <<EOF
+HOST=`/bin/hostname`
+DOMAIN=`/bin/hostname -d`
+
+CONFSCRIPT=${HOME}/MySQLConfig.clad
+/bin/rm -f $CONFSCRIPT
+cat > $CONFSCRIPT  <<EOF
 
 # This is the BOSS MySQL Database configuration file
 
@@ -94,82 +100,87 @@ DB_CLIENT_FLAG = 0;
 ]
 EOF
 
-  if [ "${BACKEND}" == "MySQL" ]; then
-      echo ""
+  echo ""
   # Check MySQL server
-      if [ `ps -d | grep mysqld | wc -l` != "0" ]; then
-        echo "Found a MySQL server on this host"
-      else
-        echo "MySQL server is not running on this host"
-      fi
+  if [ `ps -d | grep mysqld | wc -l` != "0" ]; then
+    echo "Found a MySQL server on this host"
+  else
+    echo "MySQL server is not running on this host"
   fi
-
 fi # backend MySQL
 
-# I should have boss in my path
+###################################
+###### Configuring Boss DB ########
+###################################
+echo "Configuring DB"
 boss configureDB
 
-# now register the schedulers
-cd $CRABDIR/script/
-#EDG
-./registerEDGScheduler
-#fork
-./registerForkScheduler
-# Glite
-./registerGLITEScheduler
-# LSF
-# ./registerLSFScheduler
-# PBS
-# ./registerPBSScheduler
-# Condor
-# ./registerCONDORScheduler
-# BBS
-# ./registerBBSScheduler
+#######################################
+###### Configuring RealTime monitor ###
+#######################################
+echo "Creating ${HOME}/MySQLRTConfig.clad"
+cat > ${HOME}/MySQLRTConfig.clad <<EOF
+# This is the BOSS MySQL Database configuration file
 
-# now register all Job Types
-./registerEDGjob
-./registerCRABjob
-
-### register the RealTime monitor
-CONFSCRIPT=${BOSSDIR}/MySQLRTConfig.clad
-cat > $CONFSCRIPT  <<EOF
-# This is the BOSS RealTime configuration file
 [
 # BOSS MySQL database file
 DB_NAME = "boss_rt_v3_6";
+
 # Host where the MySQL server is running
 DB_HOST = "boss.bo.infn.it";
 DB_DOMAIN = "bo.infn.it";
+
 # Default BOSS MySQL user and password
 DB_USER = "BOSSv3_6manager";
 DB_USER_PW = "BossMySQL";
+
 # Guest BOSS MySQL user and password
 DB_GUEST = "BOSSv3_6monitor";
 DB_GUEST_PW = "BossMySQL";
+
 # MySQL table type
 TABLE_TYPE = "";
+
 # MySQL port
 DB_PORT = 0;
+
 # MySQL socket
 DB_SOCKET = "";
+
 # MySQL client flag
 DB_CLIENT_FLAG = 0;
 ]
 EOF
+
+### Registering RT monitor
+cd $BOSSDIR/BossRTMon/bin
+echo "Registering MySQL RTMon Service"
 ./registerMySQLRTmon
 
-cd -
+######################################
+#### Real Scheduler configuration ####
+######################################
 
-# End
-echo "BOSS configured to be used with crab\n"
-echo ""
-echo "Schedulers registered"
-boss showSchedulers
+### Registering Schedulers
+cd $BOSSDIR/BossSched/bin/
+echo "Registering fork scheduler (default)"
+./registerForkScheduler
+echo "Registering edg scheduler"
+./registerEDGScheduler
+# Glite
+#    ./registerGLITEScheduler
+# LSF
+#    ./registerLSFScheduler
+# PBS
+#    ./registerPBSScheduler
+# Condor
+#    ./registerCONDORScheduler
+# BBS
+#    ./registerBBSScheduler
 
-echo ""
-echo "Job types registered"
-boss showJobTypes
+cd $BOSSDIR/..
 
-echo ""
-echo "Real Time monitoring registered"
-boss showRTMon
+echo "Done!"
+
+# echo "Remember to source $BOSSDIR/bossenv.(c)sh"
+# echo "at the beginning of every session"

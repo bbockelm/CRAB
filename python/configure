@@ -2,49 +2,106 @@
 #
 # Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
 #
-# Installation script for Crab and Boss
+# Installation script for Crab
 #
-# 14-Sep-2005
+# 02-Nov-2005
 
-#echo tar xzvf Crab_1_0_0.tgz
-#echo cd Crab_1_0_0
-
-# Struttura subdir:
-# top/bin
-#    /lib
-#    /python
-#    /script
+# Subdir structure:
+# top/
+#     Boss/...
+#     Crab/python
+#     Crab/script
 
 TopDir=`\pwd`
 
+#############################################
+######## BOSS CONFIGURATION #################
+#############################################
+BOSSVER=3_6_1
+BACKEND=SQLite
+
+function configureBoss {
+## unpack and configure Boss
+cd Boss
+echo "unpacking BOSS distribution ${BOSSVER}"
+tar xzf boss-v${BOSSVER}-bin.tar.gz
+cd boss-v${BOSSVER}
+
+echo "Creating Env. files"
+./CONFIGURE
+echo "Creating ./BossConfig.clad"
+cat > ./BossConfig.clad <<EOF
+# This is the BOSS configuration file
+
+[
+# BOSS temporary directory (where files are extracted from DB)
+BOSS_TMP_DIR = "/tmp";
+
+# BOSS update interval
+BOSS_MIN_UPD_INT = 30;  # at most one upd. every BOSS_MIN_UPD_INT sec.
+BOSS_MAX_UPD_INT = 180; # at least one upd. every BOSS_MAX_UPD_INT sec.
+
+# Maximum retries after post-process finishes before killing RTUpdator
+# (waits BOSS_UPD_INTERVAL*BOSS_MAX_RETRY seconds)
+BOSS_MAX_RETRY = 3;
+
+# Boss Database Backend
+DB_BACKEND = "${BACKEND}";
+
+# Info sent also to Monalisa (if empty not enabled)
+ML_URL = "";
+]
+EOF
+
+echo "Setting environment"
+. bossenv.sh
+}
+
+function configureCrab {
+## prapare the crab env
+cd $TopDir
+
+# sh style
 cat > crab.sh <<EOF
 #! /bin/sh
 # CRAB related Stuff
-export CRABDIR=$TopDir
+export CRABDIR=$TopDir/Crab
+export CRABSCRIPT=\${CRABDIR}
 
-CRABPATH=\${CRABDIR}/bin
-CRABLIBS=\${CRABDIR}/lib
+CRABPATH=\${CRABDIR}/python
 CRABPYTHON=\${CRABDIR}/python
-CRABSCRIPT=\${CRABDIR}/script
-
-# BOSS related Stuff
-export BOSSDIR=$TopDir
-BOSSLIBS=\${BOSSDIR}/lib
 
 if [ -z "\$PATH" ]; then
-   export PATH=\${CRABPATH}
+export PATH=\${CRABPATH}
 else
-   export PATH=\${CRABPATH}:\${PATH}
+export PATH=\${CRABPATH}:\${PATH}
 fi
-# if [ -z "\$LD_LIBRARY_PATH" ]; then
-#    export LD_LIBRARY_PATH=\${BOSSLIBS}
-# else
-#    export LD_LIBRARY_PATH=\${BOSSLIBS}:\${LD_LIBRARY_PATH}
-# fi
 if [ -z "\$PYTHONPATH" ]; then
-   export PYTHONPATH=\${CRABPYTHON}
+export PYTHONPATH=\${CRABPYTHON}
 else
-   export PYTHONPATH=\${CRABPYTHON}:\${PYTHONPATH}
+export PYTHONPATH=\${CRABPYTHON}:\${PYTHONPATH}
+fi
+
+# BOSS related Stuff
+source $BOSSDIR/bossenv.sh
+
+# check whether central boss db is configured
+
+# check if *clad files exist
+if [ ! -e ~/BossConfig.clad ]; then
+  echo "User-boss DB not installed: run configureBoss"
+fi
+if [ ! -e ~/SQLiteConfig.clad ]; then
+  echo "User-boss DB not installed: run configureBoss"
+fi
+if [ ! -e ~/MySQLRTConfig.clad ]; then
+  echo "User-boss DB not installed: run configureBoss"
+fi
+# now check a boss command to see if boss DB is up and running
+
+boss clientID 1>&2 | grep -c "not correctly configured"
+if [ \$? -ne 0 ]; then
+  echo "User-boss DB not installed: run configureBoss"
 fi
 EOF
 
@@ -52,63 +109,49 @@ EOF
 cat > crab.csh <<EOF
 #! /bin/csh
 # CRAB related Stuff
-setenv CRABDIR $TopDir
+setenv CRABDIR $TopDir/Crab
+setenv CRABSCRIPT \${CRABDIR}
 
-set CRABPATH=\${CRABDIR}/bin
-set CRABLIBS=\${CRABDIR}/lib
+set CRABPATH=\${CRABDIR}/python
 set CRABPYTHON=\${CRABDIR}/python
 
-# BOSS related Stuff
-setenv BOSSDIR $TopDir
-set BOSSLIBS=\${BOSSDIR}/lib
-
 if ( ! \$?path ) then
-   set path=\${CRABPATH}
+set path=\${CRABPATH}
 else
-   set path=( \${CRABPATH} \${path} )
+set path=( \${CRABPATH} \${path} )
 endif
-# if ( ! \$?LD_LIBRARY_PATH ) then
-#    setenv LD_LIBRARY_PATH \${BOSSLIBS}
-# else
-#    setenv LD_LIBRARY_PATH \${BOSSLIBS}:\${LD_LIBRARY_PATH}
-# endif
 if ( ! \$?PYTHONPATH ) then
-   setenv PYTHONPATH \${CRABPYTHON}
+setenv PYTHONPATH \${CRABPYTHON}
 else
-   setenv PYTHONPATH \${CRABPYTHON}:\${PYTHONPATH}
+setenv PYTHONPATH \${CRABPYTHON}:\${PYTHONPATH}
+endif
+
+# BOSS related Stuff
+source $BOSSDIR/bossenv.csh
+
+# check whether central boss db is configured
+
+# check if *clad files exist
+if ( ! -e ~/BossConfig.clad ) then
+  echo "User-boss DB not installed: run configureBoss"
+  exit 1
+endif
+if ( ! -e ~/SQLiteConfig.clad ) then
+  echo "User-boss DB not installed: run configureBoss"
+  exit 1
+endif
+if ( ! -e ~/MySQLRTConfig.clad ) then
+  echo "User-boss DB not installed: run configureBoss"
+  exit 1
+endif
+# now check a boss command to see if boss DB is up and running
+if ( \`boss clientID |& grep -c "not correctly configured"\` ) then
+  echo "User-boss DB not installed: run configureBoss"
+  exit 1
 endif
 EOF
+return
+}
 
-echo "Creating ${HOME}/.MySQLRTConfig.clad"
-cat > ${HOME}/.MySQLRTConfig.clad <<EOF
-# This is the BOSS MySQL Database configuration file
-
-[
-# BOSS MySQL database file
-DB_NAME = "boss_rt_v3_6";
-
-# Host where the MySQL server is running
-DB_HOST = "boss.bo.infn.it";
-DB_DOMAIN = "bo.infn.it";
-
-# Default BOSS MySQL user and password
-DB_USER = "BOSSv3_6manager";
-DB_USER_PW = "BossMySQL";
-
-# Guest BOSS MySQL user and password
-DB_GUEST = "BOSSv3_6monitor";
-DB_GUEST_PW = "BossMySQL";
-
-# MySQL table type
-TABLE_TYPE = "";
-
-# MySQL port
-DB_PORT = 0;
-
-# MySQL socket
-DB_SOCKET = "";
-
-# MySQL client flag
-DB_CLIENT_FLAG = 0;
-]
-EOF
+configureBoss
+configureCrab
