@@ -105,16 +105,16 @@ class Scram:
         swVersion = self.getSWVersion()
         swReleaseTop = self.getReleaseTop_()
 
-        ## check if working area is release top
-        if swReleaseTop == '' or swArea == swReleaseTop:
-            return
-
         ## First find the executable
         cmd = 'which ' + executable
         try:
            exeWithPath = string.strip(runCommand(cmd))
         except AttributeError: 
             raise CrabException('User executable '+executable+' not found')
+
+        ## check if working area is release top
+        if swReleaseTop == '' or swArea == swReleaseTop:
+            return
 
         filesToBeTarred = []
         ## then check if it's private or not
