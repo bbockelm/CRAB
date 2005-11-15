@@ -168,9 +168,10 @@ class StatusBoss(Actor):
         if (countCleared != 0):
             print ''
             print ">>>>>>>>> %i Jobs Retrieved (=Cleared)" % (countCleared)
-        if (countCancel != 0) :
+        if (countCancel != 0) or (countAbort != 0):
             print ''
-            print ">>>>>>>>> %i Jobs killed " % (countCancel)
+            tot = int(countAbort) + int(countCancel)
+            print ">>>>>>>>> %i Jobs killed or Aborted" % (tot)
          #   print "          You can resubmit them specifying JOB numbers: crab.py -resubmit JOB_number (or range of JOB) -continue" 
          #   print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
         # if job_stat[6] or job_stat[7]:
