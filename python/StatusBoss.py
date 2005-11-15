@@ -86,7 +86,9 @@ class StatusBoss(Actor):
         printline+='   STATUS          E_HOST            EXE_EXIT_CODE        JOB_EXIT_STATUS'
         print printline
         for_summary = []
-        for bossid in jobAttributes.keys():
+        orderdBossID = jobAttributes.keys()
+        orderdBossID.sort()
+        for bossid in orderdBossID:
             printline=''
             jobStatus = common.scheduler.queryStatus(bossid)
             for_summary.append(jobStatus)
