@@ -10,8 +10,8 @@ class PubDBInfoError:
     print '\nERROR accessing PubDB for Collections: '+Collections+'\n'
     pass
 class PubDBInfoNoCollectionError:
-  def __init__(self, Collections):
-    print '\nERROR No Collections found in PubDB : '+Collections+'\n'
+  def __init__(self, Collections, url):
+    print '\nERROR No Collections '+Collections+' found in PubDB '+url
     pass
 class NoPHPError:
   def __init__(self, url):
@@ -60,7 +60,7 @@ class PubDBInfo:
     #print data
     if len(data)>0:
        if data[0]=='<':
-              raise PubDBInfoNoCollectionError(self.Collections)
+              raise PubDBInfoNoCollectionError(self.Collections,self.PubDBurl_+self.PubDBInfophp_)
     try:
         catalogues = PHPUnserialize().unserialize(data)
     except IOError:
