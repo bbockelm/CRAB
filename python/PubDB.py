@@ -75,7 +75,7 @@ class PubDB:
             #tmpBad = ['fnal']
             for tmp in tmpBad:
                 tmp=string.strip(tmp)
-                #if (tmp == 'cnaf'): tmp = 'webserver' ########## warning: temp. patch              
+                if (tmp == 'cnaf'): tmp = 'webserver' ########## warning: temp. patch              
                 CEBlackList.append(tmp)
         except KeyError:
             pass
@@ -216,7 +216,9 @@ class PubDB:
 
         ### check based on CE white list: select only PubDB defined by user
         GoodPubDBURLs=self.checkWhiteList(tmp)
-        common.logger.debug(5,'PubDBs after white list '+str(GoodPubDBURLs))
+        if len(GoodPubDBURLs)>0 :
+         common.logger.debug(5,'PubDBs after white list '+str(GoodPubDBURLs))
+         common.logger.debug(3,'Selected sites via PubDB URLs are '+str(GoodPubDBURLs))
         return GoodPubDBURLs
 
 #######################################################################
@@ -246,9 +248,9 @@ class PubDB:
                 if not good: continue
                 goodurls.append(url)
         if len(goodurls) == 0:
-            common.logger.message("No selected PubDB URLs \n")
+            common.logger.message("No sites found via PubDB \n")
         else:
-            common.logger.debug(5,"Selected PubDB URLs are "+str(goodurls)+"\n")
+            common.logger.debug(5,"Selected sites via PubDB URLs are "+str(goodurls)+"\n")
         return goodurls
 
 #######################################################################
@@ -268,7 +270,7 @@ class PubDB:
                 pass
             if good: goodurls.append(url)
         if len(goodurls) == 0:
-            common.logger.debug(3,"No selected PubDB URLs")
+            common.logger.debug(3,"No sites found via PubDB")
         return goodurls
 
 ########################################################################
@@ -311,7 +313,9 @@ class PubDB:
            # will have the new style it will be possible to ask for PU , at RefDB level, in method findAllCollections ) 
            if ( self.NeededdataTiers.count('Digi') ):
              PUCollID=self.getDatatierCollID(url[:end+1],Collections,"PU")
-             if (PUCollID) : CollIDs.append(PUCollID)
+             if (PUCollID) :
+               if CollIDs.count(PUCollID)<=0:
+                CollIDs.append(PUCollID)
            ##
            Collections=string.join(CollIDs,'-')
            ### download from PubDB all the info about the given collections
@@ -323,7 +327,8 @@ class PubDB:
              ok=1
            except :
              #print "WARNING: can't get PubDB content out of "+url[:end+1]+"\n"
-             print '\nERROR extracting info for collections '+Collections+' from PubDB '+url[:end+1]+'. The PU might not be published at that site.\n'
+             print '\nERROR extracting info for collections '+Collections+' from PubDB '+url[:end+1]+'.'
+             print '>>>> Ask for help reporting that the failing PubDB script is: \n>>>> '+url[:end+1]+'pubdb-get-analysisinfo.php?collid='+Collections
              #raise PubDBGetAnalysisError(url[:end+1],Collections)   
            if (ok): result=catInfos;
 
