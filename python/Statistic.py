@@ -12,8 +12,13 @@ def Monitor(operation,Resubmit,jid,exitCode):
        dataset = array[2]
        owner = array[3]
        fileCODE1.close()
-                                                                                                                             
-       dest = common.scheduler.queryDest(jid).split(":")[0]
+          
+       try:
+           dest = common.scheduler.queryDest(jid).split(":")[0]
+       except:
+           dest =  " "
+    
+
        SID =  jid.split("/")[3]
        brok = jid.split("/")[2].split(":")[0]
 
