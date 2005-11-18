@@ -255,7 +255,6 @@ class SchedulerEdg(Scheduler):
         Match=0
 
         for line in out:
-            print "line = ", line 
             line = line.strip()
             if reComment.match( line ): 
                 next = 0
