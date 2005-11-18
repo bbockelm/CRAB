@@ -40,30 +40,43 @@ class SchedulerEdg(Scheduler):
         except KeyError: self.VO = 'cms'
 
         try: self.return_data = cfg_params['USER.return_data']
-        except KeyError: self.return_data = ''
+        except KeyError: self.return_data = 1
 
         try: 
             self.copy_data = cfg_params["USER.copy_data"]
-            try:
-                self.SE = cfg_params['USER.storage_element']
-                self.SE_PATH = cfg_params['USER.storage_path']
-            except KeyError:
-                msg = "Error. The [USER] section does not have 'storage_element'"
-                msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
-                common.logger.message(msg)
-                raise CrabException(msg)
-        except KeyError: self.copy_data = ''
+            if int(self.copy_data) == 1:
+                try:
+                    self.SE = cfg_params['USER.storage_element']
+                    self.SE_PATH = cfg_params['USER.storage_path']
+                except KeyError:
+                    msg = "Error. The [USER] section does not have 'storage_element'"
+                    msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
+                    common.logger.message(msg)
+                    raise CrabException(msg)
+        except KeyError: self.copy_data = 0 
 
+        if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
+           msg = 'Warning: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n' 
+           msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n' 
+           raise CrabException(msg)
+      
         try: 
             self.register_data = cfg_params["USER.register_data"]
-            try:
-                 self.LFN = cfg_params['USER.lfn_dir']
-            except KeyError:
-                msg = "Error. The [USER] section does not have 'lfn_dir' value"
-                msg = msg + " it's necessary for RLS registration"
-                common.logger.message(msg)
-                raise CrabException(msg)
-        except KeyError: self.register_data= ''
+            if int(self.register_data) == 1:
+                try:
+                    self.LFN = cfg_params['USER.lfn_dir']
+                except KeyError:
+                    msg = "Error. The [USER] section does not have 'lfn_dir' value"
+                    msg = msg + " it's necessary for RLS registration"
+                    common.logger.message(msg)
+                    raise CrabException(msg)
+        except KeyError: self.register_data = 0
+
+        if ( int(self.copy_data) == 0 and int(self.register_data) == 1 ):
+           msg = 'Warning: register_data = 1 must be used with copy_data = 1\n' 
+           msg = msg + 'Please modify copy_data value in your crab.cfg file\n' 
+           common.logger.message(msg)
+           raise CrabException(msg)
 
         try: self.EDG_requirements = cfg_params['EDG.requirements']
         except KeyError: self.EDG_requirements = ''
@@ -115,7 +128,7 @@ class SchedulerEdg(Scheduler):
         """
 
         txt = ''
-        if self.copy_data:
+        if int(self.copy_data) == 1:
            if self.SE:
               txt += 'export SE='+self.SE+'\n'
               txt += 'echo "SE = $SE"\n'
@@ -124,7 +137,7 @@ class SchedulerEdg(Scheduler):
               txt += 'export SE_PATH='+self.SE_PATH+'\n'
               txt += 'echo "SE_PATH = $SE_PATH"\n'
                                                                                                                                                              
-        if self.register_data:
+        if int(self.register_data) == 1:
            if self.VO:
               txt += 'export VO='+self.VO+'\n'
            if self.LFN:
@@ -142,7 +155,7 @@ class SchedulerEdg(Scheduler):
         to copy produced output into a storage element.
         """
         txt = ''
-        if self.copy_data:
+        if int(self.copy_data) == 1:
            copy = 'globus-url-copy file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file'
            txt += '#\n'
            txt += '#   Copy output to SE = $SE\n'
@@ -170,7 +183,7 @@ class SchedulerEdg(Scheduler):
         """
 
         txt = ''
-        if self.register_data:
+        if int(self.register_data) == 1:
            txt += '#\n'
            txt += '#  Register output to RLS\n'
            txt += '#\n'
@@ -349,8 +362,6 @@ class SchedulerEdg(Scheduler):
         jobStat.getStatus(id, level)
         err, apiMsg = jobStat.get_error()
         if err:
-            #print 'Error caught', apiMsg 
-            #common.log.message(apiMsg)
             common.logger.debug(5,'Error caught' + apiMsg) 
             return None
         else:
@@ -455,7 +466,7 @@ class SchedulerEdg(Scheduler):
                     job.stdout() + '", "' + \
                     job.stderr() + '", ".BrokerInfo",'
 
-        if self.return_data :
+        if int(self.return_data) == 1:
             if out_sandbox != None:
                 for fl in out_sandbox:
                     out_box = out_box + ' "' + fl + '",'
@@ -523,8 +534,6 @@ class SchedulerEdg(Scheduler):
                 raise CrabException(msg)
             cmd = 'grid-proxy-info -timeleft'
             cmd_out = runCommand(cmd,0)
-            #print cmd_out, time.time()
-            #time.time(cms_out)
             pass
         self.proxyValid=1
         return
