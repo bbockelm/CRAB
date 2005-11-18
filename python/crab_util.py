@@ -201,13 +201,14 @@ def runCommand(cmd, printout=0, timeout=-1):
     Returns command stdoutput+stderror string on success,
     or None if an error occurred.
     """
+
     if printout:
         common.logger.message(cmd)
     else:
         common.logger.debug(10,cmd)
         common.logger.write(cmd)
 
-    child = popen2.Popen3(cmd,1)
+    child = popen2.Popen3(cmd,1,100)
     if timeout == -1:
         err = child.wait()
     else:
@@ -221,9 +222,9 @@ def runCommand(cmd, printout=0, timeout=-1):
 	if err == -1:
 	    os.kill (child.pid, 9)
 	    err = child.wait()
-
     cmd_out = child.fromchild.read()
     cmd_err = child.childerr.read()
+     
     if err:
         common.logger.message('`'+cmd+'`\n   failed with exit code '
                            +`err`+'='+`(err&0xff)`+'(signal)+'

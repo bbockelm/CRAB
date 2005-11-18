@@ -147,8 +147,6 @@ class SchedulerEdg(Scheduler):
            txt += '#\n'
            txt += '#   Copy output to SE = $SE\n'
            txt += '#\n'
-           #### per orca l'exit_status non e' affidabile.....
-           #txt += 'if [ $executable_exit_status -eq 0 ]; then\n'
            txt += 'if [ $exe_result -eq 0 ]; then\n'
            txt += '  for out_file in $file_list ; do\n'
            txt += '    echo "Trying to copy output file to $SE "\n'
@@ -176,8 +174,6 @@ class SchedulerEdg(Scheduler):
            txt += '#\n'
            txt += '#  Register output to RLS\n'
            txt += '#\n'
-           ### analogo
-           #txt += 'if [[ $executable_exit_status -eq 0 && $copy_exit_status -eq 0 ]]; then\n'
            txt += 'if [[ $exe_result -eq 0 && $copy_exit_status -eq 0 ]]; then\n'
            txt += '   for out_file in $file_list ; do\n'
            txt += '      echo "Trying to register the output file into RLS"\n'
@@ -222,7 +218,6 @@ class SchedulerEdg(Scheduler):
            txt += '   echo "Problem with the executable"\n'
            txt += 'fi \n'
         return txt
-        #####################
 
     def loggingInfo(self, id):
         """
@@ -242,44 +237,56 @@ class SchedulerEdg(Scheduler):
         self.checkProxy()
         jdl = common.job_list[nj].jdlFilename()
         cmd = 'edg-job-list-match ' + self.configOpt_() + jdl 
-        cmd_out = runCommand(cmd)
+        myCmd = os.popen(cmd)
+        cmd_out = myCmd.readlines()
+        myCmd.close()
         return self.parseListMatch_(cmd_out, jdl)
 
     def parseListMatch_(self, out, jdl):
+
         reComment = re.compile( r'^\**$' )
         reEmptyLine = re.compile( r'^$' )
         reVO = re.compile( r'Selected Virtual Organisation name.*' )
-        reCE = re.compile( r'CEId.*\n((.*:.*)\n)*' )
+        reCE = re.compile( r'CEId' )
         reNO = re.compile( r'No Computing Element matching' )
         reRB = re.compile( r'Connecting to host' )
         next = 0
         CEs=[]
         Match=0
 
-        if reNO.match( out ):
-            common.logger.debug(5,out)
-            self.noMatchFound_(jdl)
-            Match=0
-            pass
-        if reVO.match( out ):
-            VO =reVO.match( out ).group()
-            common.logger.debug(5, 'VO           :'+VO)
-            pass
-
-        if reRB.match( out ):
-            RB =reRB.match(out).group()
-            common.logger.debug(5, 'Using RB     :'+RB)
-            pass
-
-        if reCE.search( out ):
-            groups=reCE.search(out).groups()
-            for CE in groups:
-                tmp = string.strip(CE)
-                CEs.append(tmp)
-                common.logger.debug(5, 'Matched CE   :'+tmp)
-                Match=Match+1
-            pass 
-
+        for line in out:
+            print "line = ", line 
+            line = line.strip()
+            if reComment.match( line ): 
+                next = 0
+                continue
+            if reEmptyLine.match(line):
+                continue
+            if reVO.match( line ):
+                VO =line.split()[-1]
+                common.logger.debug(5, 'VO           :'+VO)
+                pass
+            if reRB.match( line ):
+                RB =line.split()[3]
+                common.logger.debug(5, 'Using RB     :'+RB)
+                pass
+            if reCE.search( line ):
+                next = 1
+                continue
+            if next:
+                CE=line.split(':')[0]
+                if (CEs.count(CE) > 0):
+                   pass
+                else:
+                   CEs.append(CE)  
+                   Match=Match+1 
+                common.logger.debug(5, 'Matched CE   :'+CE)
+                pass 
+            if reNO.match( line ):
+                common.logger.debug(5,line)
+                self.noMatchFound_(jdl)
+                Match=0
+                pass
         return Match
 
     def noMatchFound_(self, jdl):
