@@ -43,17 +43,16 @@ class Scram:
         Get the version of the sw
         """
 
-        sw  = ''
         ver = ''
-        if self.scramVersion == 1 :
-            try:
-                ver = string.split(os.environ["SCRAMRT_SET"],":")[-1]
-            except IOError, e:
-                msg = 'Cannot find sw project and version:\n'
-                msg += str(e)
-                raise CrabException(msg)
-        else:
+        try:
+            ver = os.environ["SCRAMRT_SCRAM_PROJECTVERSION"]
+        except KeyError, e:
+            msg = 'SCRAMRT_SCRAM_PROJECTVERSION value not found\n'
+            common.logger.debug(5,msg)
             ver = string.split(self.scramArea,'/')[-1]
+            if ver == '': 
+                 msg = 'Cannot find sw version:\n'
+                 raise CrabException(msg)
         return string.strip(ver)
         
     def getTarBall(self, exe):
@@ -71,39 +70,39 @@ class Scram:
 
         return string.strip(self.tgzNameWithPath)
 
+
     def getReleaseTop_(self):
-        """ get release top """
-        result = ''
-        if self.scramVersion == 1 :
-            try:
-                result = os.environ["SCRAMRT_RELEASETOP"]
-            except KeyError:
-                result = self.scramArea
-        else:
-            envFileName = self.scramArea+"/.SCRAM/Environment"
-            try:
-                envFile = open(envFileName, 'r')
-                for line in envFile:
-                    line = string.strip(line)
-                    (k, v) = string.split(line, '=')
-                    if k == 'RELEASETOP':
-                        result=v
-                        break
-                    pass
-                pass
-            except IOError:
-                msg = 'Cannot open scram environment file '+envFileName
-                raise CrabException(msg)
-                pass
-            pass
-        return string.strip(result)
-            
+       """ get release top """
+
+       result = ''
+       envFileName = self.scramArea+"/.SCRAM/Environment"
+       try:
+           envFile = open(envFileName, 'r')
+           for line in envFile:
+               line = string.strip(line)
+               (k, v) = string.split(line, '=')
+               if k == 'RELEASETOP':
+                   result=v
+                   break
+               pass
+           pass
+       except IOError:
+           msg = 'Cannot open scram environment file '+envFileName
+           raise CrabException(msg)
+           pass
+       pass
+       return string.strip(result)
+
+
     def prepareTgz_(self, executable):
 
         # First of all declare the user Scram area
         swArea = self.getSWArea_()
+        #print "swArea = ", swArea
         swVersion = self.getSWVersion()
+        #print "swVersion = ", swVersion
         swReleaseTop = self.getReleaseTop_()
+        #print "swReleaseTop = ", swReleaseTop
 
         ## First find the executable
         cmd = 'which ' + executable
