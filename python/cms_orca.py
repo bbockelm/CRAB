@@ -105,6 +105,7 @@ class Orca(JobType):
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
             for tmp in tmpAddFiles:
                 tmp=string.strip(tmp)
+                print "sono in init di cms_orca, tmp = ", tmp 
                 self.additional_inbox_files.append(tmp)
                 pass
             pass
@@ -196,6 +197,14 @@ class Orca(JobType):
         txt += '  cp $RUNTIME_AREA/init_$CE.sh init.sh\n'
 #        txt += '  cp $RUNTIME_AREA/init_*.sh init.sh\n'
         txt += 'fi\n'
+
+        if len(self.additional_inbox_files) > 0:
+            for file in self.additional_inbox_files:
+                txt += 'if [ -e $RUNTIME_AREA/'+file+' ] ; then\n'
+                txt += '   cp $RUNTIME_AREA/'+file+' .\n'
+                txt += 'fi\n'
+            pass 
+
         txt += '\n'
         txt += 'chmod +x ./init.sh\n'
         txt += './init.sh\n'
@@ -256,6 +265,9 @@ class Orca(JobType):
         for fileWithSuffix in self.output_file:
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
             file_list=file_list+output_file_num+','
+            txt += '\n'
+            txt += 'ls \n'
+            txt += '\n'
             txt += 'ls '+fileWithSuffix+'\n'
             txt += 'exe_result=$?\n'
             txt += 'if [ $exe_result -ne 0 ] ; then\n'
@@ -494,7 +506,8 @@ class Orca(JobType):
         ## config
         inp_box.append(common.job_list[nj].configFilename())
         ## additional input files
-        inp_box = inp_box + self.additional_inbox_files
+        #inp_box = inp_box + self.additional_inbox_files
+        #print "sono inputSandbox, inp_box = ", inp_box
         return inp_box
 
     ### and of output_sandbox
