@@ -105,7 +105,6 @@ class Orca(JobType):
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
             for tmp in tmpAddFiles:
                 tmp=string.strip(tmp)
-                print "sono in init di cms_orca, tmp = ", tmp 
                 self.additional_inbox_files.append(tmp)
                 pass
             pass
@@ -190,18 +189,17 @@ class Orca(JobType):
         txt += 'cp $RUNTIME_AREA/'+orcarc+' .orcarc\n'
         txt += 'if [ -e $RUNTIME_AREA/orcarc_$CE ] ; then\n'
         txt += '  cat $RUNTIME_AREA/orcarc_$CE .orcarc >> .orcarc_tmp\n'
-#        txt += '  cat $RUNTIME_AREA/orcarc_* .orcarc >> .orcarc_tmp\n'
         txt += '  mv .orcarc_tmp .orcarc\n'
         txt += 'fi\n'
         txt += 'if [ -e $RUNTIME_AREA/init_$CE.sh ] ; then\n'
         txt += '  cp $RUNTIME_AREA/init_$CE.sh init.sh\n'
-#        txt += '  cp $RUNTIME_AREA/init_*.sh init.sh\n'
         txt += 'fi\n'
 
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
                 txt += 'if [ -e $RUNTIME_AREA/'+file+' ] ; then\n'
                 txt += '   cp $RUNTIME_AREA/'+file+' .\n'
+                txt += '   chmod +x '+file+'\n'
                 txt += 'fi\n'
             pass 
 
@@ -423,7 +421,6 @@ class Orca(JobType):
         # One possibility is to use len(common.job_list).
         """ return the number of job to be created """
         return len(common.job_list)
-        #return int((self.total_number_of_events-1)/self.job_number_of_events)+1
 
     def prepareSteeringCards(self):
         """
@@ -485,7 +482,7 @@ class Orca(JobType):
         """
         return os.path.split (self.orcarc_file)[1]
 
-### content of input_sanbdox ...
+    ### content of input_sanbdox ...
     def inputSandbox(self, nj):
         """
         Returns a list of filenames to be put in JDL input sandbox.
