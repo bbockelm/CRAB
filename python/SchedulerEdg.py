@@ -250,56 +250,68 @@ class SchedulerEdg(Scheduler):
         self.checkProxy()
         jdl = common.job_list[nj].jdlFilename()
         cmd = 'edg-job-list-match ' + self.configOpt_() + jdl 
-        myCmd = os.popen(cmd)
-        cmd_out = myCmd.readlines()
-        myCmd.close()
+        # myCmd = os.popen(cmd)
+        # cmd_out = myCmd.readlines()
+        # myCmd.close()
+        cmd_out = runCommand(cmd,0,240)
         return self.parseListMatch_(cmd_out, jdl)
 
     def parseListMatch_(self, out, jdl):
-
+        """
+        Parse the f* output of edg-list-match and produce something sensible
+        """
         reComment = re.compile( r'^\**$' )
         reEmptyLine = re.compile( r'^$' )
         reVO = re.compile( r'Selected Virtual Organisation name.*' )
-        reCE = re.compile( r'CEId' )
+        reLine = re.compile( r'.*')
+        reCE = re.compile( r'(.*:.*)')
+        reCEId = re.compile( r'CEId.*')
         reNO = re.compile( r'No Computing Element matching' )
         reRB = re.compile( r'Connecting to host' )
         next = 0
         CEs=[]
         Match=0
 
-        for line in out:
-            line = line.strip()
-            if reComment.match( line ): 
-                next = 0
-                continue
-            if reEmptyLine.match(line):
-                continue
-            if reVO.match( line ):
-                VO =line.split()[-1]
-                common.logger.debug(5, 'VO           :'+VO)
-                pass
-            if reRB.match( line ):
-                RB =line.split()[3]
-                common.logger.debug(5, 'Using RB     :'+RB)
-                pass
-            if reCE.search( line ):
-                next = 1
-                continue
-            if next:
-                CE=line.split(':')[0]
-                if (CEs.count(CE) > 0):
-                   pass
-                else:
-                   CEs.append(CE)  
-                   Match=Match+1 
-                common.logger.debug(5, 'Matched CE   :'+CE)
-                pass 
+        #print out
+        lines = reLine.findall(out)
+
+        i=0
+        CEs=[]
+        for line in lines:
+            string.strip(line)
+            #print line
             if reNO.match( line ):
                 common.logger.debug(5,line)
-                self.noMatchFound_(jdl)
-                Match=0
+                return 0
                 pass
-        return Match
+            if reVO.match( line ):
+                VO =reVO.match( line ).group()
+                common.logger.debug(5,"VO "+VO)
+                pass
+
+            if reRB.match( line ):
+                RB = reRB.match(line).group()
+                common.logger.debug(5,"RB "+RB)
+                pass
+
+            if reCEId.search( line ):
+                for lineCE in lines[i:-1]:
+                    if reCE.match( lineCE ):
+                        CE = string.strip(reCE.search(lineCE).group(1))
+                        CEs.append(CE.split(':')[0])
+                        pass 
+                    pass
+                pass
+            i=i+1
+            pass
+
+        common.logger.debug(5,"All CE :"+str(CEs))
+
+        sites = []
+        [sites.append(it) for it in CEs if not sites.count(it)]
+
+        common.logger.debug(5,"All Sites :"+str(sites))
+        return len(sites)
 
     def noMatchFound_(self, jdl):
         reReq = re.compile( r'Requirements' )
