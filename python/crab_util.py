@@ -5,7 +5,7 @@
 ###########################################################################
 
 import string, sys, os, time
-import ConfigParser, re, popen2
+import ConfigParser, re, popen2, select, fcntl
 
 import common
 
@@ -195,11 +195,24 @@ def runBossCommand(cmd, printout=0, timeout=240):
     return out
 
 ###########################################################################
+def readable(fd):
+    return bool(select.select([fd], [], [], 0)) 
+
+###########################################################################
+def makeNonBlocking(fd):
+    fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+    try:
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NDELAY)
+    except AttributeError:
+	    fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.FNDELAY)
+
+###########################################################################
 def runCommand(cmd, printout=0, timeout=-1):
     """
     Run command 'cmd'.
     Returns command stdoutput+stderror string on success,
     or None if an error occurred.
+    Following recipe on http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52296
     """
 
     if printout:
@@ -208,23 +221,42 @@ def runCommand(cmd, printout=0, timeout=-1):
         common.logger.debug(10,cmd)
         common.logger.write(cmd)
 
-    child = popen2.Popen3(cmd,1,100)
-    if timeout == -1:
+    child = popen2.Popen3(cmd, 1) # capture stdout and stderr from command
+    child.tochild.close()             # don't need to talk to child
+    outfile = child.fromchild 
+    outfd = outfile.fileno()
+    errfile = child.childerr
+    errfd = errfile.fileno()
+    makeNonBlocking(outfd)            # don't deadlock!
+    makeNonBlocking(errfd)
+    outdata = []
+    errdata = []
+    outeof = erreof = 0
+
+    if timeout > 0 :
+        maxwaittime = time.time() + timeout
+
+    err = -1
+    while (timeout == -1 or time.time() < maxwaittime):
+        ready = select.select([outfd,errfd],[],[]) # wait for input
+        if outfd in ready[0]:
+            outchunk = outfile.read()
+            if outchunk == '': outeof = 1
+            outdata.append(outchunk)
+        if errfd in ready[0]:
+            errchunk = errfile.read()
+            if errchunk == '': erreof = 1
+            errdata.append(errchunk)
+        if outeof and erreof:
+            err = child.wait()
+            break
+        select.select([],[],[],.1) # give a little time for buffers to fill
+    if err == -1:
+        # kill the pid
+        common.logger.message('killing process '+(cmd)+' with timeout '+timeout)
+        os.kill (child.pid, 9)
         err = child.wait()
-    else:
-        pass
-	maxwaittime = time.time() + timeout
-	err = -1
-	while time.time() < maxwaittime:
-	    err = child.poll()
-	    if err != -1: break
-	    time.sleep (0.1)
-	if err == -1:
-	    os.kill (child.pid, 9)
-	    err = child.wait()
-    cmd_out = child.fromchild.read()
-    cmd_err = child.childerr.read()
-     
+
     if err:
         common.logger.message('`'+cmd+'`\n   failed with exit code '
                            +`err`+'='+`(err&0xff)`+'(signal)+'
@@ -233,15 +265,16 @@ def runCommand(cmd, printout=0, timeout=-1):
         common.logger.message(cmd_err)
         return None
 
+    cmd_out = string.join(outdata,"")
+    cmd_err = string.join(errdata,"")
     cmd_out = cmd_out + cmd_err
     if printout:
         common.logger.message(cmd_out)
     else:
         common.logger.debug(10,cmd_out)
         common.logger.write(cmd_out)
-    if cmd_out == '' : cmd_out = ' '
+    #print "<"+cmd_out+">"
     return cmd_out
-
 
 ####################################
 if __name__ == '__main__':

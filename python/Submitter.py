@@ -35,13 +35,14 @@ class Submitter(Actor):
 
         if (totalCreatedJobs==0):
             common.logger.message("No jobs to be submitted: first create them")
+            return
         
         firstJob=self.nj_list[0]
         match = common.scheduler.listMatch(firstJob)
         if match:
-            common.logger.message("Found compatible resources "+str(match))
+            common.logger.message("Found "+str(match)+"compatible sites")
         else:
-            raise CrabException("No compatible resources found!")
+            raise CrabException("No compatible site found!")
         #########
         # Loop over jobs
         njs = 0
@@ -74,7 +75,7 @@ class Submitter(Actor):
                     pass
                   
                 #try:
-                #    print 'submitter prima	'
+                #    print 'submitter prima '
 
                 Statistic.Monitor('submit',resFlag,jid,'-----')  
                 #    print 'submitter Dopo     '
@@ -137,12 +138,3 @@ class Submitter(Actor):
             pass
         common.logger.message(msg)
         return
-    
-
-
-
-
-
-
-
-

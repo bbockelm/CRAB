@@ -22,8 +22,8 @@ class Checker(Actor):
             match = common.scheduler.listMatch(nj)
             flag = ''
             if not match: 
-              flag=' NOT '
-              number=' '
+                flag=' NOT '
+                number=' '
             if match : number= str(match)
             common.logger.message("Job #"+str(nj+1)+" does "+flag+" matches " + number + " sites")
             pass

@@ -237,10 +237,9 @@ class SchedulerEdg(Scheduler):
         retrieve the logging info from logging and bookkeeping and return it
         """
         self.checkProxy()
-      #  id = common.jobDB.jobId(nj)
         cmd = 'edg-job-get-logging-info -v 2 ' + id
-        cmd_out = os.popen(cmd) 
-      #  cmd_out = runCommand(cmd)
+        #cmd_out = os.popen(cmd) 
+        cmd_out = runCommand(cmd)
         return cmd_out
 
     def listMatch(self, nj):
@@ -250,10 +249,7 @@ class SchedulerEdg(Scheduler):
         self.checkProxy()
         jdl = common.job_list[nj].jdlFilename()
         cmd = 'edg-job-list-match ' + self.configOpt_() + jdl 
-        # myCmd = os.popen(cmd)
-        # cmd_out = myCmd.readlines()
-        # myCmd.close()
-        cmd_out = runCommand(cmd,0,240)
+        cmd_out = runCommand(cmd,0,10)
         return self.parseListMatch_(cmd_out, jdl)
 
     def parseListMatch_(self, out, jdl):
@@ -533,19 +529,20 @@ class SchedulerEdg(Scheduler):
         timeleft = -999
         minTimeLeft=10 # in hours
         cmd = 'grid-proxy-info -e -v '+str(minTimeLeft)+':00'
-        try: cmd_out = runCommand(cmd,0)
-        except: print cmd_out
-        if (cmd_out == None or cmd_out=='1'):
+        # SL Here I have to use os.system since the stupid command exit with >0 if no valid proxy is found
+        cmd_out = os.system(cmd)
+        if (cmd_out>0):
             common.logger.message( "No valid proxy found or timeleft too short!\n Creating a user proxy with default length of 100h\n")
             cmd = 'grid-proxy-init -valid 100:00'
             try:
+                # SL as above: damn it!
                 out = os.system(cmd)
                 if (out>0): raise CrabException("Unable to create a valid proxy!\n")
             except:
                 msg = "Unable to create a valid proxy!\n"
                 raise CrabException(msg)
-            cmd = 'grid-proxy-info -timeleft'
-            cmd_out = runCommand(cmd,0)
+            # cmd = 'grid-proxy-info -timeleft'
+            # cmd_out = runCommand(cmd,0,20)
             pass
         self.proxyValid=1
         return
