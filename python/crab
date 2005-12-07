@@ -1,0 +1,9 @@
+#!/bin/env sh
+#
+# 07-Dec-2005
+# Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
+#
+# Wrapper script for crab.py
+#
+
+crab.py $*
