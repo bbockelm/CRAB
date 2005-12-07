@@ -106,7 +106,7 @@ class Creator(Actor):
                 common.logger.debug(1,"Analysing all available events "+str(self.total_number_of_events))
             else:
                 if maxAvailableEvents<(int(n)+self.first_event):
-                    raise CrabException('(First event + total events)='+str(int(n)+self.first_event)+' is bigger than maximum number of available events '+str(maxAvailableEvents)+' !!')
+                    raise CrabException('(First event + total events)='+str(int(n)+self.first_event)+' is bigger than maximum number of available events '+str(maxAvailableEvents)+' !! Use "total_number_of_events=-1" to analyze to whole dataset')
                 self.total_number_of_events = int(n)
         except KeyError:
             common.logger.message("total_number_of_events not defined, set it to maximum available")
