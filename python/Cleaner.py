@@ -44,7 +44,9 @@ class Cleaner:
         """
         remove all
         """
-        self.check()
+        if common.jobDB.nJobs()>0:
+            self.check()
+
         # here I should first purge boss DB if central
         print 'directory '+common.work_space.topDir()+' removed'
         common.logger.close()
