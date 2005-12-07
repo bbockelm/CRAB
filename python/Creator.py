@@ -40,7 +40,7 @@ class Creator(Actor):
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
         
-        fileCODE1 = open(common.work_space.logDir()+"/.code","a")
+        fileCODE1 = open(common.work_space.shareDir()+"/code","a")
         fileCODE1.write('::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
         fileCODE1.close()
 

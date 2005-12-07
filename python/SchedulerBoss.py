@@ -471,8 +471,6 @@ class SchedulerBoss(Scheduler):
     
         return SID
 
-
-
     def queryStatus(self,id):
         """ Query a status of the job with id """
                                                                                                                              

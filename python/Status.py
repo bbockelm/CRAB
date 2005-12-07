@@ -4,13 +4,17 @@ import string, os
 import Statistic
 
 class Status(Actor):
-    def __init__(self, cfg_params, nj_list):
-        self.cfg_params = cfg_params
-        self.nj_list = nj_list
+    def __init__(self, nj_list=[]):
+        if nj_list==[]:
+            self.nj_list = range(len(common.job_list))
+        else:
+            self.nj_list = nj_list
         self.countDone = 0
         self.countReady = 0
         self.countSched = 0
         self.countRun = 0
+        self.countAbort = 0
+        self.countCancel = 0
         self.countCleared = 0
         self.countToTjob = 0
         
@@ -42,6 +46,19 @@ class Status(Actor):
         """
         common.logger.debug(5, "Status::run() called")
 
+        self.compute()
+        self.PrintReport_()
+        pass
+
+    def status(self) :
+        """ Return #jobs for each status as a tuple"""
+        return (self.countToTjob,self.countReady,self.countSched,self.countRun,self.countCleared,self.countAbort,self.countCancel,self.countDone)
+
+    def compute(self):
+        """
+        Update the status to DB
+        """
+
         common.jobDB.load()
         for nj in self.nj_list:
             st = common.jobDB.status(nj)
@@ -60,10 +77,7 @@ class Status(Actor):
             pass
 
         common.jobDB.save()
-
-        self.Report_()
         pass
-
 
     def processResult_(self, nj, result,jid):
 
@@ -93,10 +107,12 @@ class Status(Actor):
                 Statistic.Monitor('checkstatus',resFlag,jid,'-----')
             elif result == 'Aborted':
                 common.jobDB.setStatus(nj, 'A')
+                self.countAbort = self.countAbort + 1
                 Statistic.Monitor('checkstatus',resFlag,jid,'abort')
                 pass
             elif result == 'Cancelled':
                 common.jobDB.setStatus(nj, 'K')
+                self.countCancel = self.countCancel + 1
                 Statistic.Monitor('checkstatus',resFlag,jid,'cancel')
                 pass
             elif result == 'Cleared':
@@ -106,7 +122,7 @@ class Status(Actor):
         except UnboundLocalError:
             common.logger.message('ERROR: UnboundLocalError with ')
 
-    def Report_(self) :
+    def PrintReport_(self) :
 
         """ Report #jobs for each status  """  
 
@@ -141,5 +157,4 @@ class Status(Actor):
             print "          or specifying JOB numbers (i.e -getoutput 1-3 => 1 and 2 and 3 or -getoutput 1,3 => 1 and 3)"
             print('\n')  
         pass
-
 

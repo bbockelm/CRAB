@@ -42,6 +42,10 @@ class Logger :
         self.log_file.close()
         return
     
+    def close(self):
+        self.log_file.close()
+        return
+
     def get(self):
         """
         Returns list of lines in the log-file.

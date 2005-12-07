@@ -4,19 +4,16 @@ import string, os, sys
 import Statistic
 from SchedulerBoss import *
 
-
-
 class StatusBoss(Actor):
-    def __init__(self, cfg_params, nj_list):
-        self.cfg_params = cfg_params
-        self.nj_list = nj_list
-        self.countDone = 0
-        self.countReady = 0
-        self.countSched = 0
-        self.countRun = 0
-        self.countCleared = 0
+    def __init__(self):
         self.countToTjob = 0
-        
+        self.countDone = 0
+        self.countRun = 0
+        self.countSched = 0
+        self.countReady = 0
+        self.countCancel = 0
+        self.countAbort = 0
+        self.countCleared = 0
 
         Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
         # Bypass edg-job-status interfacing directly to C++ API
@@ -39,7 +36,18 @@ class StatusBoss(Actor):
 
         return
 
-    def splitbyoffset(self,line,fields):
+    def run(self):
+        """
+        The main method of the class: compute the status and print a report
+        """
+        common.logger.debug(5, "Status::run() called")
+
+        self.compute()
+        self.PrintReport_()
+        pass
+        print ''
+
+    def splitbyoffset_(self,line,fields):
         ret_val=[]
         nn=fields.split(',')
         nfields=int(nn[0])
@@ -50,12 +58,10 @@ class StatusBoss(Actor):
             ret_val.append(line[offs:offs+int(nn[i])-1])
         return ret_val
 
-    def run(self):
-
+    def compute(self):
         """
-        The main method of the class.
+        compute the status
         """
-        common.logger.debug(5, "Status::run() called")
         dir = string.split(common.work_space.topDir(), '/')
         group = dir[len(dir)-2]
         cmd = 'boss RTupdate -jobid all '
@@ -74,11 +80,11 @@ class StatusBoss(Actor):
                 fielddesc=line
             else:
                 if nline==1:
-                    header = self.splitbyoffset(line,fielddesc)
+                    header = self.splitbyoffset_(line,fielddesc)
                 else:
                     js = line.split(None,2)
                     #print "js = ", js
-                    jobAttributes[int(js[0])]=self.splitbyoffset(line,fielddesc)
+                    jobAttributes[int(js[0])]=self.splitbyoffset_(line,fielddesc)
                     #print "jobAttributes = ",jobAttributes
             nline = nline+1
         printline = ''
@@ -113,66 +119,59 @@ class StatusBoss(Actor):
                 else:
                     Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
             print printline
-        self.Report_(for_summary)
-        pass
-        print ''
 
+        self.update_(for_summary)
+        return
 
-    def Report_(self,statusList) :
-        
-        """ Report #jobs for each status """
+    def status(self) :
+        """ Return #jobs for each status as a tuple """
+        return (self.countToTjob,self.countReady,self.countSched,self.countRun,self.countCleared,self.countAbort,self.countCancel,self.countDone)
 
-        common.logger.debug(5,'starting StatusBoss::report')
-         
-        countSche = 0
-        countDone = 0
-        countRun = 0
-        countSche = 0
-        countReady = 0
-        countCancel = 0
-        countAbort = 0
-        countCleared = 0
-
+    def update_(self,statusList) :
+        """ update the status of the jobs """
        
         for status in statusList:
             if status == 'Done (Success)' or status == 'Done (Aborted)':
-                countDone = countDone + 1
+                self.countDone = self.countDone + 1
             elif status == 'Running' :
-                countRun = countRun + 1
+                self.countRun = self.countRun + 1
             elif status == 'Scheduled' :
-                countSche = countSche + 1
+                self.countSched = self.countSched + 1
             elif status == 'Ready' :
-                countReady =  countReady + 1
+                self.countReady =  self.countReady + 1
             elif status == 'Cancelled' or status == 'Killed(BOSS)':
-                countCancel =  countCancel + 1
+                self.countCancel =  self.countCancel + 1
             elif status == 'Aborted':
-                countAbort =  countAbort + 1
+                self.countAbort =  self.countAbort + 1
             elif status == 'Cleared(BOSS)':
-                countCleared = countCleared + 1
+                self.countCleared = self.countCleared + 1
 
 
         common.logger.debug(5,'done loop StatusBoss::report')
         #job_stat = common.job_list.loadStatus()
  
-        ToTjob = (len(statusList)) 
-        print ''
-        print ">>>>>>>>> %i Total Jobs " % (ToTjob)
+        self.countToTjob = (len(statusList)) 
+        return
 
-        if (countReady != 0):
+    def PrintReport_(self):
+        print ''
+        print ">>>>>>>>> %i Total Jobs " % (self.countToTjob)
+
+        if (self.countReady != 0):
             print ''
-            print ">>>>>>>>> %i Jobs Ready" % (countReady)
-        if (countSche != 0):
+            print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
+        if (self.countSched != 0):
             print ''
-            print ">>>>>>>>> %i Jobs Scheduled" % (countSche)
-        if (countRun != 0):
+            print ">>>>>>>>> %i Jobs Scheduled" % (self.countSched)
+        if (self.countRun != 0):
             print ''
-            print ">>>>>>>>> %i Jobs Running" % (countRun)
-        if (countCleared != 0):
+            print ">>>>>>>>> %i Jobs Running" % (self.countRun)
+        if (self.countCleared != 0):
             print ''
-            print ">>>>>>>>> %i Jobs Retrieved (=Cleared)" % (countCleared)
-        if (countCancel != 0) or (countAbort != 0):
+            print ">>>>>>>>> %i Jobs Retrieved (=Cleared)" % (self.countCleared)
+        if (self.countCancel != 0) or (self.countAbort != 0):
             print ''
-            tot = int(countAbort) + int(countCancel)
+            tot = int(self.countAbort) + int(self.countCancel)
             print ">>>>>>>>> %i Jobs killed or Aborted" % (tot)
          #   print "          You can resubmit them specifying JOB numbers: crab.py -resubmit JOB_number (or range of JOB) -continue" 
          #   print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
@@ -182,8 +181,8 @@ class StatusBoss(Actor):
         #     print "          Resubmit them with: crab.py -resubmit -continue to resubmit all" 
         #     print "          or specifying JOB numbers (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
         #     print "           "       
-        if (countDone != 0):
-            print ">>>>>>>>> %i Jobs Done" % (countDone)
+        if (self.countDone != 0):
+            print ">>>>>>>>> %i Jobs Done" % (self.countDone)
             print "          Retrieve them with: crab.py -getoutput to retrieve all" 
             print "          or specifying JOB numbers (i.e -getoutput 1-3 => 1 and 2 and 3 or -getoutput 1,3 => 1 and 3)"
             print('\n')  

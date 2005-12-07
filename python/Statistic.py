@@ -5,7 +5,7 @@ import os
 import common
 
 def Monitor(operation,Resubmit,jid,exitCode):
-       fileCODE1 = open(common.work_space.logDir()+"/.code","r")
+       fileCODE1 = open(common.work_space.shareDir()+"/code","r")
        array = fileCODE1.read().split('::')
        time = array[0]
        NjobCre = array[1]

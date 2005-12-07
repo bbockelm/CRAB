@@ -38,7 +38,7 @@ class WorkSpace:
             os.mkdir(self._res_dir)
             os.mkdir(self._share_dir)
 
-            fileCODE1 = open(self._log_dir+"/.code","w")
+            fileCODE1 = open(self._share_dir+"/code","w")
             fileCODE1.write(str(time.time()))
             fileCODE1.close()
             pass

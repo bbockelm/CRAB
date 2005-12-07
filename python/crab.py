@@ -12,6 +12,7 @@ from Checker import Checker
 from PostMortem import PostMortem
 from Status import Status
 from StatusBoss import StatusBoss 
+from Cleaner import Cleaner
 import common
 import Statistic
 
@@ -516,9 +517,9 @@ class Crab:
 
                 if len(jobs) != 0:
                     if ( self.flag_useboss == 1 ):     
-                        self.actions[opt] = StatusBoss(self.cfg_params, jobs) 
+                        self.actions[opt] = StatusBoss()
                     else:                         
-                        self.actions[opt] = Status(self.cfg_params, jobs)
+                        self.actions[opt] = Status(jobs)
                         pass
                     pass
                 pass
@@ -755,36 +756,8 @@ class Crab:
                 if val != None:
                     raise CrabException("No range allowed for '-clean'")
                 
-                submittedJobs=0
-                doneJobs=0
-                try:
-                    for nj in range(0,common.jobDB.nJobs()):
-                        st = common.jobDB.status(nj)
-                        if st == 'S':
-                            submittedJobs = submittedJobs+1
-                        if st == 'D':
-                            doneJobs = doneJobs+1
-                        pass
-                    pass
-                except DBException:
-                    common.logger.debug(5,'DB not found, so delete all')
-                    pass
-
-                if submittedJobs or doneJobs:
-                    msg = "There are still "
-                    if submittedJobs:
-                        msg= msg+str(submittedJobs)+" jobs submitted. Kill them '-kill' before '-clean'"
-                    if (submittedJobs and doneJobs):
-                        msg = msg + "and \nalso"
-                    if doneJobs:
-                        msg= msg+str(doneJobs)+" jobs Done. Get their outputs '-getoutput' before '-clean'"
-                    raise CrabException(msg)
-
-                msg = 'directory '+common.work_space.topDir()+' removed'
-                common.work_space.delete()
-                common.logger.message(msg)
-
-                pass
+                theCleaner = Cleaner(self.scheduler_name == 'boss')
+                theCleaner.clean()
 
             pass
         return
