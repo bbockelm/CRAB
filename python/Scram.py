@@ -44,15 +44,21 @@ class Scram:
         """
 
         ver = ''
-        try:
-            ver = os.environ["SCRAMRT_SCRAM_PROJECTVERSION"]
-        except KeyError, e:
-            msg = 'SCRAMRT_SCRAM_PROJECTVERSION value not found\n'
-            common.logger.debug(5,msg)
-            ver = string.split(self.scramArea,'/')[-1]
-            if ver == '': 
-                 msg = 'Cannot find sw version:\n'
-                 raise CrabException(msg)
+        ##SL take  sw version from scramArea/.SCRAM/Environment
+        envFileName=self.scramArea+"/.SCRAM/Environment"
+        if os.path.exists(envFileName):
+            reVer=re.compile( r'SCRAM_PROJECTVERSION=(\S*)' )
+            envFile = open(envFileName,'r')
+            lines = envFile.readlines()
+            for line in lines:
+                if reVer.search(line):
+                    ver=reVer.search(line).groups()[0]
+                    break
+                pass
+            envFile.close()
+        else:
+            msg = 'Cannot find sw version:\n'
+            raise CrabException(msg)
         return string.strip(ver)
         
     def getTarBall(self, exe):
