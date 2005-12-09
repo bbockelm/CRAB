@@ -257,6 +257,9 @@ def runCommand(cmd, printout=0, timeout=-1):
         os.kill (child.pid, 9)
         err = child.wait()
 
+    cmd_out = string.join(outdata,"")
+    cmd_err = string.join(errdata,"")
+
     if err:
         common.logger.message('`'+cmd+'`\n   failed with exit code '
                            +`err`+'='+`(err&0xff)`+'(signal)+'
@@ -265,8 +268,8 @@ def runCommand(cmd, printout=0, timeout=-1):
         common.logger.message(cmd_err)
         return None
 
-    cmd_out = string.join(outdata,"")
-    cmd_err = string.join(errdata,"")
+#    cmd_out = string.join(outdata,"")
+#    cmd_err = string.join(errdata,"")
     cmd_out = cmd_out + cmd_err
     if printout:
         common.logger.message(cmd_out)
