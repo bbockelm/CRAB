@@ -126,14 +126,14 @@ class Orca_dbsdls(JobType):
         #log.debug(6, "Orca::Orca(): events per job = "+`self.job_number_of_events`)
         log.debug(6, "Orca::Orca(): first event = "+`self.first`)
         
-#AF-start 
-        self.maxEvents=0 # max events available
-        self.DatasetOwnerPairs={} # all dataset-owners needed
-        self.DBSPaths={}   # all dbs path needed
+
+#DBSDLS-start
+## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code 
+        self.maxEvents=0  # max events available   ( --> check the requested nb. of evts in Creator.py)
+        self.DBSPaths={}  # all dbs paths requested ( --> input to the site local discovery script)
+## Perform the data location and discovery (based on DBS/DLS)
         self.DataDiscoveryAndLocation(cfg_params)
-        #self.connectPubDB(cfg_params)
- #AF-end          
-        # [-- self.checkNevJobs() --]
+#DBSDLS-end          
 
         self.tgzNameWithPath = self.scram.getTarBall(self.executable)
 
@@ -186,19 +186,29 @@ class Orca_dbsdls(JobType):
         txt += "FirstEvent=$2\n"
         txt += "MaxEvents=$3\n"
 
+        # handle additional user defined files (copy them in the exec area)
+        if len(self.additional_inbox_files) > 0:
+            for file in self.additional_inbox_files:
+                txt += 'if [ -e $RUNTIME_AREA/'+file+' ] ; then\n'
+                txt += '   cp $RUNTIME_AREA/'+file+' .\n'
+                txt += '   chmod +x '+file+'\n'
+                txt += 'fi\n'
+            pass
+
         # Prepare job-specific part
         job = common.job_list[nj]
         orcarc = os.path.basename(job.configFilename())
         txt += '\n'
-        #AF-start
-        ## site-local catalogue discovery 
+        #DBSDLS-start
+        #### site-local catalogue discovery mechanism
+        ## check that the site configuration file exists 
         txt += 'echo "### Site Local Catalogue Discovery ### "\n'
         txt += 'if [ ! -f $VO_CMS_SW_DIR/cms_site_config ];  then \n'
         txt += '   echo "Site Local Catalogue Discovery Failed: No site configuration file $VO_CMS_SW_DIR/cms_site_config !" \n'
         txt += '   echo "JOB_EXIT_STATUS = 1"\n'
         txt += '   exit 1 \n'
         txt += 'fi \n'
-        ## look for a site local script sent as inputsandbox otherwise use the one under $VO_CMS_SW_DIR
+        ## look for a site local script sent as inputsandbox otherwise use the default one under $VO_CMS_SW_DIR
         txt += 'if [ -f $RUNTIME_AREA/cms_site_catalogue.sh ];  then \n' 
         txt += ' sitelocalscript=$RUNTIME_AREA/cms_site_catalogue.sh \n'
         txt += 'elif [ -f $VO_CMS_SW_DIR/cms_site_catalogue.sh ]; then \n'
@@ -208,6 +218,7 @@ class Orca_dbsdls(JobType):
         txt += '   echo "JOB_EXIT_STATUS = 1"\n'
         txt += '   exit 1 \n' 
         txt += 'fi \n'
+        ## execute the site local configuration script with the user requied data as input
         inputdata=string.join(self.DBSPaths,' ')
         sitecatalog_cmd='$sitelocalscript -c $VO_CMS_SW_DIR/cms_site_config '+inputdata
         txt += sitecatalog_cmd+'\n'
@@ -218,12 +229,10 @@ class Orca_dbsdls(JobType):
         txt += '   echo "JOB_EXIT_STATUS = 1"\n'
         txt += '   exit 1 \n'
         txt += 'fi \n'
-        
+        ## append the orcarc fragment about the Input catalogues to the .orcarc
         txt += 'cp $RUNTIME_AREA/'+orcarc+' .orcarc\n'
         txt +=' cat inputurl_orcarc >> .orcarc\n'
-        #txt += 'cat inputurl_orcarc .orcarc >> .orcarc_tmp\n'
-        #txt += 'mv .orcarc_tmp .orcarc\n'
-        #AF-end
+        #DBSDLS-end
         txt += 'echo "FirstEvent=$FirstEvent" >> .orcarc\n'
         txt += 'echo "MaxEvents=$MaxEvents" >> .orcarc\n'
         if self.ML:
@@ -272,6 +281,9 @@ class Orca_dbsdls(JobType):
         for fileWithSuffix in self.output_file:
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
             file_list=file_list+output_file_num+','
+            txt += '\n'
+            txt += 'ls \n'
+            txt += '\n'
             txt += 'ls '+fileWithSuffix+'\n'
             txt += 'exe_result=$?\n'
             txt += 'if [ $exe_result -ne 0 ] ; then\n'
@@ -279,8 +291,10 @@ class Orca_dbsdls(JobType):
             txt += '   echo "JOB_EXIT_STATUS = 1"\n'
             txt += '   exit 1 \n'
             txt += 'else\n'
-            txt += '   cp '+fileWithSuffix+' '+output_file_num+'\n'
+            txt += '   cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'           
+            txt += 'cd $RUNTIME_AREA\n'
+
             pass
        
         file_list=file_list[:-1]
@@ -293,10 +307,12 @@ class Orca_dbsdls(JobType):
         else:
             return self.executable
 
-#AF-start
+#DBSDLS-start
     def DataDiscoveryAndLocation(self, cfg_params):
 
         fun = "Orca::DataDiscoveryAndLocation()"
+
+        ## Contact the DBS
         try:
            self.pubdata=DataDiscovery.DataDiscovery(self.owner,
                                                     self.dataset,
@@ -305,17 +321,10 @@ class Orca_dbsdls(JobType):
            self.pubdata.fetchDBSInfo()
 
         except DataDiscovery.DataDiscoveryError:
-                msg = 'ERROR ***: accessing DataDiscovery'
+                msg = 'ERROR ***: accessing DBS for DataDiscovery'
                 raise CrabException(msg)
 
-
-        ## get list of all dataset-owner pairs        
-        #self.DatasetOwnerPairs=self.pubdata.getDatasetOwnerPairs()
-        #common.logger.message("Required data are : ")
-        #for ow in self.DatasetOwnerPairs.keys():
-        #  common.logger.message(" -->  dataset: "+self.DatasetOwnerPairs[ow]+" owner: "+ow )
-
-        ## get list of all dbs paths
+        ## get list of all required data in the form of dbs paths  (dbs path = /dataset/datatier/owner)
         self.DBSPaths=self.pubdata.getDBSPaths()
         common.logger.message("Required data are : ")
         for path in self.DBSPaths:
@@ -326,16 +335,16 @@ class Orca_dbsdls(JobType):
         self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py 
 
 
-        ## build a list of sites
-
-        ## get fileblocks
+        ## get fileblocks corresponding to the required data
         fb=self.pubdata.getFileBlocks()
 
+
+        ## Contact the DLS and build a list of sites hosting the fileblocks
         try:
           dataloc=DataLocation.DataLocation(self.pubdata.getFileBlocks(),cfg_params)
           dataloc.fetchDLSInfo()
         except DataLocation.DataLocationError:
-                msg = 'ERROR ***: accessing DataLocation'
+                msg = 'ERROR ***: accessing DLS for DataLocation '
                 raise CrabException(msg)
 
         
@@ -350,7 +359,7 @@ class Orca_dbsdls(JobType):
 
         return
 
-#AF-stop
+#DBDDLS-stop
 
     def nJobs(self):
         # TODO: should not be here !
@@ -358,7 +367,6 @@ class Orca_dbsdls(JobType):
         # One possibility is to use len(common.job_list).
         """ return the number of job to be created """
         return len(common.job_list)
-        #return int((self.total_number_of_events-1)/self.job_number_of_events)+1
 
     def prepareSteeringCards(self):
         """
@@ -432,7 +440,7 @@ class Orca_dbsdls(JobType):
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
 
-##AF: no CE.orcarc produced on UI , thus not inserting them in inputSandbox  
+##DBSDLS: no orcarc_CE and init_CE.sh produced on UI , thus not inserting them in inputSandbox  
         ## orcarc
 #        for o in self.allOrcarcs:
 #          for f in o.fileList():
@@ -443,7 +451,7 @@ class Orca_dbsdls(JobType):
         ## config
         inp_box.append(common.job_list[nj].configFilename())
         ## additional input files
-        inp_box = inp_box + self.additional_inbox_files
+        #inp_box = inp_box + self.additional_inbox_files
         return inp_box
 
     ### and of output_sandbox
@@ -460,8 +468,10 @@ class Orca_dbsdls(JobType):
 
         ## User Declared output files
         for out in self.output_file:
-            n_out = nj + 1 
-            out_box.append(self.version+'/'+self.numberFile_(out,str(n_out)))
+            n_out = nj + 1
+            #FEDE 
+            #out_box.append(self.version+'/'+self.numberFile_(out,str(n_out)))
+            out_box.append(self.numberFile_(out,str(n_out)))
         return out_box
 
     def numberFile_(self, file, txt):

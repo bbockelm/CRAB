@@ -8,7 +8,7 @@ from DLSInfo import *
 # ####################################
 class DataLocationError:
     def __init__(self):
-        print '\nERROR accessing DataLocation \n'
+        print '\nERROR accessing DLS \n'
         pass
 
 # ####################################
