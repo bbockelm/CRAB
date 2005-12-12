@@ -253,7 +253,7 @@ def runCommand(cmd, printout=0, timeout=-1):
         select.select([],[],[],.1) # give a little time for buffers to fill
     if err == -1:
         # kill the pid
-        common.logger.message('killing process '+(cmd)+' with timeout '+timeout)
+        common.logger.message('killing process '+(cmd)+' with timeout '+str(timeout))
         os.kill (child.pid, 9)
         err = child.wait()
 
