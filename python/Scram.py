@@ -1,4 +1,5 @@
 import common
+import os, os.path
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
@@ -99,6 +100,21 @@ class Scram:
        pass
        return string.strip(result)
 
+    def findFile_(self, filename):
+        """
+        Find the file in $PATH
+        """
+        search_path=os.environ["PATH"]
+        file_found = 0
+        paths = string.split(search_path, os.pathsep)
+        for path in paths:
+            if os.path.exists(os.path.join(path, filename)):
+                file_found = 1
+                break
+        if file_found:
+            return os.path.abspath(os.path.join(path, filename))
+        else:
+            return None
 
     def prepareTgz_(self, executable):
 
@@ -111,11 +127,8 @@ class Scram:
         #print "swReleaseTop = ", swReleaseTop
 
         ## First find the executable
-        cmd = 'which ' + executable
-        try:
-           exeWithPath = string.strip(runCommand(cmd))
-        except AttributeError: 
-            raise CrabException('User executable '+executable+' not found')
+        exeWithPath = self.findFile_(executable)
+        if ( not exeWithPath ): raise CrabException('User executable '+executable+' not found')
 
         ## check if working area is release top
         if swReleaseTop == '' or swArea == swReleaseTop:
