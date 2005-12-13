@@ -362,6 +362,7 @@ class SchedulerBoss(Scheduler):
         Get output for a finished job with id.
         Returns the name of directory with results.
         """
+        common.jobDB.load()
         self.boss_scheduler.checkProxy()
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
@@ -395,18 +396,21 @@ class SchedulerBoss(Scheduler):
                   #  jid = string.strip(cmd_out)   
                     exCode = common.scheduler.getExitStatus(jid)
                     Statistic.Monitor('retrieved',resFlag,jid,exCode)
+                    common.jobDB.setStatus(i_id, 'Y')
                 else:
                     msg = 'Job # '+`(i_id+1)`+' has status '+common.scheduler.queryStatus(boss_id)+' not possible to get output'
                     common.logger.message(msg)
                 dir += os.getlogin()
                 dir += '_' + os.path.basename(boss_id)
             pass
-
+        common.jobDB.save() 
         return dir   
 
 
     def cancel(self,int_id):
         """ Cancel the EDG job with id """
+      
+        common.jobDB.load()       
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2] 
         for i_id in int_id :
@@ -422,10 +426,12 @@ class SchedulerBoss(Scheduler):
                 else:
                     cmd = 'boss kill -jobid '+str(boss_id) 
                     cmd_out = runBossCommand(cmd)
+                    common.jobDB.setStatus(i_id, 'K')
                     common.logger.message("Killing job # "+`(i_id+1)`)
                     pass
                 pass
-        return #cmd_out    
+        common.jobDB.save()
+        return    
        # return self.boss_scheduler.cancel(id)
 
     def getExitStatus(self, id):

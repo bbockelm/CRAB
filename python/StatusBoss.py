@@ -129,10 +129,13 @@ class StatusBoss(Actor):
 
     def update_(self,statusList) :
         """ update the status of the jobs """
-       
+
+        common.jobDB.load()
+        nj = 0
         for status in statusList:
             if status == 'Done (Success)' or status == 'Done (Aborted)':
                 self.countDone = self.countDone + 1
+	        common.jobDB.setStatus(nj, 'D')
             elif status == 'Running' :
                 self.countRun = self.countRun + 1
             elif status == 'Scheduled' :
@@ -141,12 +144,16 @@ class StatusBoss(Actor):
                 self.countReady =  self.countReady + 1
             elif status == 'Cancelled' or status == 'Killed(BOSS)':
                 self.countCancel =  self.countCancel + 1
+                common.jobDB.setStatus(nj, 'K')
             elif status == 'Aborted':
                 self.countAbort =  self.countAbort + 1
+                common.jobDB.setStatus(nj, 'A')
             elif status == 'Cleared(BOSS)':
                 self.countCleared = self.countCleared + 1
+                pass 
+            nj = nj + 1   
 
-
+        common.jobDB.save()
         common.logger.debug(5,'done loop StatusBoss::report')
         #job_stat = common.job_list.loadStatus()
  
