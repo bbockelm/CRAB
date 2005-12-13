@@ -99,8 +99,8 @@ if [ ! -e ~/MySQLRTConfig.clad ]; then
 fi
 # now check a boss command to see if boss DB is up and running
 
-boss clientID 1>&2 | grep -c "not correctly configured"
-if [ \$? -ne 0 ]; then
+ok=\`boss clientID 2>&1 | grep -c "not correctly configured"\`
+if [ \$ok -ne 0 ]; then
   echo "User-boss DB not installed: run configureBoss"
 fi
 EOF
@@ -153,5 +153,5 @@ EOF
 return
 }
 
-configureBoss
+#configureBoss
 configureCrab
