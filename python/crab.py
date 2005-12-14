@@ -389,7 +389,8 @@ class Crab:
         else:
             (start, end) = string.split(aRange, '-')
             if isInt(start) and isInt(end) and int(start)>0 and int(start)<int(end):
-                result=range(int(start)-1, int(end))
+                #result=range(int(start)-1, int(end))
+                result=range(int(start), int(end)+1) #Daniele  
             else:
                 common.logger.message("parseSimpleRange_ ERROR "+start+end)
 
