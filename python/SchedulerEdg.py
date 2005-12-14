@@ -345,6 +345,12 @@ class SchedulerEdg(Scheduler):
             pass
         return jid
 
+    def resubmit(self, nj_list):
+        """
+        Prepare jobs to be submit
+        """
+        return
+
     def getExitStatus(self, id):
         return self.getStatusAttribute_(id, 'exit_code')
 

@@ -263,10 +263,20 @@ class SchedulerBoss(Scheduler):
 
     def createSchScript(self, nj):
         """
-        Return script_scheduler file (JDL for EDG)
+        Create script_scheduler file (JDL for EDG)
         """
 
         self.boss_scheduler.createSchScript(nj)
+        self.declareJob_(nj)
+        return
+
+
+    def declareJob_(self, nj):
+        """
+        BOSS declaration of jobs
+        """
+        
+        # copy of original file
         sch_script_orig = common.job_list[nj].jdlFilename()
         sch_script = sch_script_orig+"_boss"
         shutil.copyfile(sch_script_orig, sch_script)
@@ -282,6 +292,7 @@ class SchedulerBoss(Scheduler):
         sch.write(types+';\n')            
         # da decidere se questo valore va bene come group ...
         # NO CAXX0!!! E' almeno la 10^a volta che viene definito un grup name!!!!
+        # e dove sono le altre definizioni di group nel codice di CRAB ??????? 
         sch.write('group='+ dir[len(dir)-2]+';\n')
         sch.write('BossAttr=[')
         sch.write('crabjob.INTERNAL_ID=' + str(nj+1) + ';')
@@ -289,9 +300,7 @@ class SchedulerBoss(Scheduler):
         sch.close()
  
         dirlog = common.work_space.logDir()
-        ##AF start : basename
         scriptName=os.path.basename(common.job_list[nj].scriptFilename())
-        ##AF end
         
         cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
   
@@ -351,6 +360,18 @@ class SchedulerBoss(Scheduler):
             jid = reSid.search(cmd_out).group()
             return jid
 
+
+    # fede nuova funzione
+    def resubmit(self, nj_list):
+        """
+        Prepare jobs to be submit
+        """
+        for nj in nj_list:
+            print "in resubmit di boss nj vale ", nj
+            self.declareJob_(int(nj)) 
+        return
+
+
     def queryDetailedStatus(self, id):
         """ Query a detailed status of the job with id """
 
@@ -362,46 +383,45 @@ class SchedulerBoss(Scheduler):
         Get output for a finished job with id.
         Returns the name of directory with results.
         """
+        print "somo in getOutput di boss"
         common.jobDB.load()
         self.boss_scheduler.checkProxy()
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
         dir = common.work_space.resDir()
- 
+        allBoss_id = common.scheduler.listBoss()
         for i_id in int_id :
-            if i_id not in common.scheduler.listBoss(): 
-                msg = 'Job # '+`(i_id+1)`+' out of range for task '+group
+            if int(i_id) not in allBoss_id.keys(): 
+                msg = 'Job # '+`int(i_id)`+' out of range for task '+group
                 common.logger.message(msg) 
             else: 
                 dir,logDir = self.setOutLogDir(self.outDir,self.logDir)
-                boss_id =  common.scheduler.boss_ID((i_id +1),group)
-                cmd = 'bossSid '+str(boss_id) 
+                boss_id = allBoss_id[int(i_id)] 
+                cmd = 'bossSid '+str(boss_id)
+                #print "cmd = " , cmd 
                 cmd_out = runCommand(cmd) 
                 if common.scheduler.queryStatus(boss_id) == 'Done (Success)' or common.scheduler.queryStatus(boss_id) == 'Done (Abort)':   
                     cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
                     cmd_out = runBossCommand(cmd)
                     if logDir != dir:
                         
-                        cmd = 'mv '+str(dir)+'/*'+str(i_id+1)+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*.log '+str(logDir)
+                        cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*.log '+str(logDir)
                         cmd_out = runCommand(cmd)
-                        msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir+' (log files are in '+logDir+')' 
+                        msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
                         common.logger.message(msg)  
                     else:   
-                        msg = 'Results of Job # '+`(i_id+1)`+' are in '+dir
+                        msg = 'Results of Job # '+`int(i_id)`+' are in '+dir
                         common.logger.message(msg)
-                  #  cmd = 'bossSid '+str(boss_id)
-                  #  cmd_out = runBossCommand(cmd)
                     resFlag = 0
-                    jid = common.scheduler.boss_SID(i_id +1) 
-                  #  jid = string.strip(cmd_out)   
+                    jid = common.scheduler.boss_SID(int(i_id)) 
                     exCode = common.scheduler.getExitStatus(jid)
                     Statistic.Monitor('retrieved',resFlag,jid,exCode)
-                    common.jobDB.setStatus(i_id, 'Y')
+                    common.jobDB.setStatus(int(i_id)-1, 'Y') 
                 else:
-                    msg = 'Job # '+`(i_id+1)`+' has status '+common.scheduler.queryStatus(boss_id)+' not possible to get output'
+                    msg = 'Job # '+`int(i_id)`+' has status '+common.scheduler.queryStatus(boss_id)+' not possible to get output'
                     common.logger.message(msg)
                 dir += os.getlogin()
-                dir += '_' + os.path.basename(boss_id)
+                dir += '_' + os.path.basename(str(boss_id))
             pass
         common.jobDB.save() 
         return dir   
@@ -409,30 +429,29 @@ class SchedulerBoss(Scheduler):
 
     def cancel(self,int_id):
         """ Cancel the EDG job with id """
-      
-        common.jobDB.load()       
+        common.jobDB.load() 
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2] 
+        allBoss_id = common.scheduler.listBoss() 
         for i_id in int_id :
-            if i_id not in common.scheduler.listBoss():
-                msg = 'Job # '+`(i_id+1)`+' out of range for task '+group
+            if int(i_id) not in allBoss_id.keys():
+                msg = 'Job # '+`(i_id)`+' out of range for task '+group
                 common.logger.message(msg)
             else:
-                boss_id =  common.scheduler.boss_ID((i_id +1),group)
+                boss_id = allBoss_id[int(i_id)]
                 status =  common.scheduler.queryStatus(boss_id) 
                 if status == 'Done (Success)' or status == 'Aborted(BOSS)' or status == 'Killed(BOSS)' or status =='Cleared(BOSS)' or status ==  'Done (Aborted)':
-                    msg = 'Job # '+`(i_id+1)`+' has status '+status+' not possible to Kill it'
+                    msg = 'Job # '+`int(i_id)`+' has status '+status+' not possible to Kill it'
                     common.logger.message(msg) 
                 else:
                     cmd = 'boss kill -jobid '+str(boss_id) 
                     cmd_out = runBossCommand(cmd)
-                    common.jobDB.setStatus(i_id, 'K')
-                    common.logger.message("Killing job # "+`(i_id+1)`)
+                    common.jobDB.setStatus(int(i_id)-1, 'K')
+                    common.logger.message("Killing job # "+`int(i_id)`)
                     pass
                 pass
         common.jobDB.save()
-        return    
-       # return self.boss_scheduler.cancel(id)
+        return #cmd_out    
 
     def getExitStatus(self, id):
 
@@ -441,18 +460,35 @@ class SchedulerBoss(Scheduler):
     def queryDest(self, id):  
         return self.boss_scheduler.getStatusAttribute_(id, 'destination')
 
-    #### FEDE 
     def wsCopyOutput(self):
         return self.boss_scheduler.wsCopyOutput()
 
     def wsRegisterOutput(self):  
         return self.boss_scheduler.wsRegisterOutput()
 
-    def boss_ID(self,int_ID,group):
+#    def boss_ID(self,int_ID,group):
+#        """convert internal ID into Boss ID """ 
+#
+#        print "sono in boss_ID" 
+#        cmd = 'boss SQL -query "select JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
+#        cmd_out = runBossCommand(cmd)
+#        print "cmd_out = ", cmd_out 
+#        nline = 0
+#        for line in cmd_out.splitlines():
+#            if nline == 2:
+#               boss_ID = line
+#            nline = nline + 1
+#              
+#        return boss_ID 
+
+    def boss_ID(self,int_ID):
         """convert internal ID into Boss ID """ 
-        
-        cmd = 'boss SQL -query "select JOB.ID  from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
+
+        print "int_ID = ", int_ID
+        print "str(int_ID) = ", str(int_ID) 
+        cmd = 'boss SQL -query "select JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and crabjob.INTERNAL_ID='+str(int_ID)+'"'
         cmd_out = runBossCommand(cmd)
+        print "cmd_out = ", cmd_out 
         nline = 0
         for line in cmd_out.splitlines():
             if nline == 2:
@@ -514,17 +550,39 @@ class SchedulerBoss(Scheduler):
         """
         Return a list of all boss_Id of a task
         """
+        #print "sono in listBoss"
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
-        ListBoss_ID = []
-        cmd = 'boss SQL -query "select crabjob.INTERNAL_ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\'"'
+        ListBoss_ID = {}
+
+        # FEDE .....
+        ListBoss_ID = {}
+        cmd = 'boss SQL -query "select crabjob.INTERNAL_ID, JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\'"'
+
         cmd_out = runBossCommand(cmd,0)
         nline = 0
         for line in cmd_out.splitlines():
             if nline != 0 and nline != 1:
-                ListBoss_ID.append(int(line)-1)
+                (internal_Id, boss_Id) = string.split(line)
+                #print "internalID = ", internal_Id
+                #print "boss_Id = ", boss_Id
+                ListBoss_ID[int(internal_Id)]=int(boss_Id)
             nline = nline + 1
-        return ListBoss_ID
+        #print "ListBoss_ID.values() = ", ListBoss_ID#.values()  
+        #print "fine di listBoss"
+        return ListBoss_ID #.values() 
+
+        #cmd_out = runBossCommand(cmd,0)
+        #print "cmd_out = ", cmd_out
+        #nline = 0
+        #for line in cmd_out.splitlines():
+        #    if nline != 0 and nline != 1:
+        #        print "line = ", line
+        #        ListBoss_ID.append(line.split())
+        #        #ListBoss_ID.append(int(line)-1)
+        #    nline = nline + 1
+        #print "ListBoss_ID = ", ListBoss_ID
+        #return ListBoss_ID
 
     def setOutLogDir(self,outDir,logDir):
         if not os.path.isdir(outDir):

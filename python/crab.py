@@ -379,7 +379,10 @@ class Crab:
         minus = string.find(aRange, '-')
         if ( minus < 0 ):
             if isInt(aRange) and int(aRange)>0:
-                result.append(int(aRange)-1)
+                # FEDE
+                #result.append(int(aRange)-1)
+                ###
+                result.append(aRange)
             else:
                 common.logger.message("parseSimpleRange_ ERROR "+aRange)
             pass
@@ -495,6 +498,7 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
+                    print "prima di chiamare submitter, nj_list = ", nj_list
                     self.actions[opt] = Submitter(self.cfg_params, nj_list)
 
                     # Create and initialize JobList
@@ -529,7 +533,8 @@ class Crab:
                 if ( self.flag_useboss == 1 ):
                     if val: 
                         if val =='all':
-                            jobs = common.scheduler.listBoss()
+                            allBoss_id = common.scheduler.listBoss()
+                            jobs = allBoss_id.keys()
                         else:
                             jobs = self.parseRange_(val)
                         common.scheduler.cancel(jobs)
@@ -558,10 +563,10 @@ class Crab:
 
                 if ( self.flag_useboss == 1 ):
                     if val=='all' or val==None or val=='':
-                        jobs = common.scheduler.listBoss()
+                        allBoss_id = common.scheduler.listBoss()
+                        jobs = allBoss_id.keys()
                     else:
                         jobs = self.parseRange_(val)
-
                     common.scheduler.getOutput(jobs) 
                 else:
                     jobs = self.parseRange_(val) 
@@ -620,61 +625,85 @@ class Crab:
                 pass
 
             elif ( opt == '-resubmit' ):
-                if val:
-                    jobs = self.parseRange_(val)
+                if ( self.flag_useboss == 1 ):
+                    if val=='all' or val==None or val=='':
+                        allBoss_id = common.scheduler.listBoss()
+                        # sono gli internal_id di BOSS
+                        jobs = allBoss_id.keys()
+                    else:
+                        jobs = self.parseRange_(val)
+                else:
+                    if val:
+                        jobs = self.parseRange_(val)
 
+                if val:
                     # create a list of jobs to be resubmitted.
 
                     ### as before, create a Resubmittter Class
                     nj_list = []
                     for nj in jobs:
-                        st = common.jobDB.status(nj)
-
+                        st = common.jobDB.status(int(nj)-1)
+                        #print "stato del job = ", st
                         if st in ['K','A']:
-                            nj_list.append(nj)
+                            nj_list.append(int(nj)-1)
+                            common.jobDB.setStatus(int(nj)-1,'C')
                         elif st == 'Y':
                             # here I would like to move the old output to a new place
                             # I would need the name of the output files.
                             # these infos are in the jobType class, which is not accessible from here!
-                            outSandbox = common.jobDB.outputSandbox(nj)
+
+                            # fede...commento tutto ehehehehehehhhhh 
+                            #outSandbox = common.jobDB.outputSandbox(nj)
                             
-                            resDir = common.work_space.resDir()
-                            resDirSave = resDir + self.current_time
-                            os.mkdir(resDirSave)
+                            #resDir = common.work_space.resDir()
+                            #resDirSave = resDir + self.current_time
+                            #os.mkdir(resDirSave)
                             
-                            for file in outSandbox:
-                                if os.path.exists(resDir+'/'+file):
-                                    os.rename(resDir+'/'+file, resDirSave+'/'+file)
-                                    common.logger.message('Output file '+file+' moved to '+resDirSave)
-                            pass
-                            nj_list.append(nj)
-                            st = common.jobDB.setStatus(nj,'RC')
-                        elif st == 'D':
-                            ## Done but not yet retrieved
-                            ## retrieve job, then go to previous ('Y') case
-                            ## TODO
+                            #for file in outSandbox:
+                            #    if os.path.exists(resDir+'/'+file):
+                            #        os.rename(resDir+'/'+file, resDirSave+'/'+file)
+                            #        common.logger.message('Output file '+file+' moved to '+resDirSave)
+                            #pass
+                            nj_list.append(int(nj)-1)
+                            st = common.jobDB.setStatus(int(nj)-1,'RC')
+                            
+                            # scommentare le righe sopra....
+                        elif st in ['D','C','X']:
+			    # Nel caso DONE bisogna prima ritirare l'output
+                            # Nel caso C va prima sottomesso
+                            # Nel caso X va prima creato
                             pass
                         else:
-                            common.logger.message('Job #'+str(nj+1)+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
+                            #common.logger.message('Job #'+str(nj+1)+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
+                            common.logger.message('Job #'+nj+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                         pass
 
+                    if len(common.job_list) == 0 :
+                         #print "common.job_list = ", common.job_list
+                         common.job_list = JobList(common.jobDB.nJobs(),None)
+                         common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                         pass
+
                     if len(nj_list) != 0:
+                        #print "nj_list = ", nj_list
+                        common.scheduler.resubmit(nj_list)
                         # Instantiate Submitter object
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
 
                         # Create and initialize JobList
 
-                        if len(common.job_list) == 0 :
-                            common.job_list = JobList(common.jobDB.nJobs(),
-                                                      None)
-                            common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                            pass
+                        #if len(common.job_list) == 0 :
+                        #    common.job_list = JobList(common.jobDB.nJobs(),
+                        #                              None)
+                        #    common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                        #    pass
                         pass
                     pass
                 else:
                     common.logger.message("Warning: with '-resubmit' you _MUST_ specify a job range or 'all'")
                     common.logger.message("WARNING: _all_ job specified in the rage will be resubmitted!!!")
                     pass
+                common.jobDB.save()
                 pass
             
             elif ( opt == '-cancelAndResubmit' ):
