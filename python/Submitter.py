@@ -3,10 +3,8 @@ from crab_util import *
 import common
 from ApmonIf import ApmonIf
 import Statistic
-#
-# Marco
-#
 from random import random
+import time
 
 class Submitter(Actor):
     def __init__(self, cfg_params, nj_list):
@@ -17,9 +15,7 @@ class Submitter(Actor):
         except KeyError:
             self.ML = 0
             pass
-            
-        if (self.ML==1): self.mon = ApmonIf()
-        
+
         return
     
     def run(self):
@@ -45,6 +41,7 @@ class Submitter(Actor):
             raise CrabException("No compatible site found!")
         #########
         # Loop over jobs
+        start = time.time()
         njs = 0
         try:
             for nj in self.nj_list:
@@ -86,36 +83,31 @@ class Submitter(Actor):
                 
                 if (self.ML==1):
                     try:
-                        # SL this is crap! Should not be here!!!!
                         #List of parameters to be sent to ML monitor system
+                        # Marco. Should be better to put it in the SchedulerEdg/gLite class
+                        self.cfg_params['GridName'] = runCommand("grid-proxy-info -identity")
+#                        self.cfg_params['taskId'] = self.cfg_params['user']+'_'+self.cfg_params['USER.dataset']+'.'+self.cfg_params['USER.owner']+'_'+str(random()*100)
+                        self.cfg_params['taskId'] = self.cfg_params['user']+'_'+self.cfg_params['USER.dataset']+'.'+self.cfg_params['USER.owner']
+                        self.cfg_params['jobId'] = str(nj)
+                        self.cfg_params['sid'] = jid
                         user = os.getlogin()
-                        #
-                        # Marco
-                        #
-                        #taskId = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2] 
-                        taskId = os.getlogin()+'_'+self.cfg_params['USER.dataset']+'_'+self.cfg_params['USER.owner']+'_'+str(random()*100)
-                        dataset = self.cfg_params['USER.dataset']
-                        owner = self.cfg_params['USER.owner']
-                        jobId = str(nj)
-                        sid = jid
                         try:
                             application = os.path.basename(os.environ['SCRAMRT_LOCALRT'])
                         except KeyError:
                             application = os.path.basename(os.environ['LOCALRT'])
 
                         nevtJob = common.jobDB.maxEvents(nj)
-                        exe = self.cfg_params['USER.executable']
-                        tool = common.prog_name
-                        scheduler = self.cfg_params['CRAB.scheduler']
+                        tool = common.prog_name+'_v1'
                         taskType = 'analysis'
-                        vo = 'cms'
-                        rb = sid.split(':')[1]
-                        rb = rb.replace('//', '')
-                        params = {'taskId': taskId, 'jobId': jobId, 'sid': sid, 'application': application, \
-                                  'exe': exe, 'nevtJob': nevtJob, 'tool': tool, 'scheduler': scheduler, \
-                                  'user': user, 'taskType': taskType, 'vo': vo, 'dataset': dataset, 'owner': owner, 'broker': rb}
-                        self.mon.fillDict(params)
-                        self.mon.sendToML()
+                        rb = jid.split(':')[1]
+                        self.cfg_params['rb'] = rb.replace('//', '')
+                        params = {'taskId': self.cfg_params['taskId'], 'jobId': self.cfg_params['jobId'], 'sid': self.cfg_params['sid'], \
+                                  'application': application, 'exe': self.cfg_params['USER.executable'], 'nevtJob': nevtJob, 'tool': tool, \
+                                  'scheduler': self.cfg_params['CRAB.scheduler'], 'GridName': self.cfg_params['GridName'], 'taskType': taskType, \
+                                  'vo': self.cfg_params['EDG.virtual_organization'], 'dataset': self.cfg_params['USER.dataset'],\
+                                  'owner': self.cfg_params['USER.owner'], 'broker': self.cfg_params['rb'], 'user': self.cfg_params['user']}
+                        self.cfg_params['apmon'].fillDict(params)
+                        self.cfg_params['apmon'].sendToML()
                     except:
                         exctype, value = sys.exc_info()[:2]
                         common.logger.message("Submitter::run Exception raised: %s %s"%(exctype, value))
@@ -123,9 +115,13 @@ class Submitter(Actor):
                 pass # use ML
         except:
             exctype, value = sys.exc_info()[:2]
-            print "Type:%s Value:%s"%(exctype, value)
+            print "Type: %s Value: %s"%(exctype, value)
             common.logger.message("Submitter::run Exception raised: %s %s"%(exctype, value))
             common.jobDB.save()
+        
+        stop = time.time()
+#        print "Submission Time: %d "%(stop - start)
+        self.cfg_params['apmon'].free() # Free the resources grabbed by apmon
 
         common.jobDB.save()
             
