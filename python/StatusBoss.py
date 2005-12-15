@@ -69,9 +69,10 @@ class StatusBoss(Actor):
         add2tablelist=''
         addjoincondition = ''
         nodeattr='JOB.E_HOST'
-        cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.INTERNAL_ID" '
+        cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.JOBID"' #INTERNAL_ID" '
         cmd_out = runBossCommand(cmd)
         jobAttributes={}
+        CoupJobs={}
         nline=0
         header=''
         fielddesc=()
@@ -83,17 +84,16 @@ class StatusBoss(Actor):
                     header = self.splitbyoffset_(line,fielddesc)
                 else:
                     js = line.split(None,2)
-                    #print "js = ", js
                     jobAttributes[int(js[0])]=self.splitbyoffset_(line,fielddesc)
-                    #print "jobAttributes = ",jobAttributes
+                    CoupJobs[int(js[1])]=int(js[0])
             nline = nline+1
         printline = ''
         printline+=header[1]
         printline+='   STATUS          E_HOST            EXE_EXIT_CODE        JOB_EXIT_STATUS'
         print printline
         for_summary = []
-        orderdBossID = jobAttributes.keys()
-        orderdBossID.sort()
+        orderdBossID = CoupJobs.values()
+        #orderdBossID.sort()
         for bossid in orderdBossID:
             printline=''
             jobStatus = common.scheduler.queryStatus(bossid)
@@ -180,14 +180,8 @@ class StatusBoss(Actor):
             print ''
             tot = int(self.countAbort) + int(self.countCancel)
             print ">>>>>>>>> %i Jobs killed or Aborted" % (tot)
-         #   print "          You can resubmit them specifying JOB numbers: crab.py -resubmit JOB_number (or range of JOB) -continue" 
-         #   print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
-        # if job_stat[6] or job_stat[7]:
-        #     print ''
-        #     print ">>>>>>>>> %i Jobs aborted or killed(=cancelled by user)" % (job_stat[6] + job_stat[7])
-        #     print "          Resubmit them with: crab.py -resubmit -continue to resubmit all" 
-        #     print "          or specifying JOB numbers (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
-        #     print "           "       
+            print "          You can resubmit them specifying JOB numbers: crab.py -resubmit JOB_number (or range of JOB)" 
+            print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
         if (self.countDone != 0):
             print ">>>>>>>>> %i Jobs Done" % (self.countDone)
             print "          Retrieve them with: crab.py -getoutput to retrieve all" 
