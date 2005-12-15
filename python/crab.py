@@ -465,7 +465,7 @@ class Crab:
                 common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
                 lastSubmittedJob=0
                 for nj in range(common.jobDB.nJobs()):
-                    if (common.jobDB.status(nj)=='S'): 
+                    if (common.jobDB.status(nj)=='S') or (common.jobDB.status(nj)=='K'): #Da
                         lastSubmittedJob +=1
                     else: break
                 # count job from 1
