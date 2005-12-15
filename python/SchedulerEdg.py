@@ -161,20 +161,25 @@ class SchedulerEdg(Scheduler):
            txt += '#   Copy output to SE = $SE\n'
            txt += '#\n'
            txt += 'if [ $exe_result -eq 0 ]; then\n'
-           txt += '  for out_file in $file_list ; do\n'
-           txt += '    echo "Trying to copy output file to $SE "\n'
-           txt += '    echo "'+copy+'"\n'
-           txt += '    '+copy+' 2>&1\n'
-           txt += '    copy_exit_status=$?\n'
-           txt += '    echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
-           txt += '    echo "STAGE_OUT = $copy_exit_status"\n'
-           txt += '    if [ $copy_exit_status -ne 0 ]; then \n'
-           txt += '       echo "Problems with SE= $SE" \n'
-           txt += '    else \n'
-           txt += '       echo "output copied into $SE/$SE_PATH directory"\n'
-           txt += '    fi \n'
-           txt += '  done\n'
-           txt += 'fi \n'
+           txt += '    for out_file in $file_list ; do\n'
+           txt += '        echo "Trying to copy output file to $SE "\n'
+           txt += '        echo "globus-url-copy file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+           txt += '        exitstring=`globus-url-copy file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+           txt += '        copy_exit_status=$?\n'
+           txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
+           txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
+           txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
+           txt += '            echo "Problems with SE = $SE"\n'
+           txt += '            echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '            echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '        else\n'
+           txt += '            echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '            echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
+           txt += '            echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '         fi\n'
+           txt += '     done\n'
+           txt += 'fi\n'
         return txt
 
     def wsRegisterOutput(self):
@@ -209,6 +214,7 @@ class SchedulerEdg(Scheduler):
            txt += '      else \n'
            txt += '         echo "output registered to RLS"\n'
            txt += '      fi \n'
+           txt += '      echo "StageOutExitStatus = $register_exit_status"" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '   done\n'
            txt += 'elif [[ $exe_result -eq 0 && $copy_exit_status -ne 0 ]]; then \n'
            txt += '   echo "Trying to copy output file to CloseSE"\n'
@@ -226,6 +232,7 @@ class SchedulerEdg(Scheduler):
            txt += '         echo "SE = $CLOSE_SE"\n'
            txt += '         echo "LFN for the file is LFN=${LFN}/$out_file"\n'
            txt += '      fi \n'
+           txt += '      echo "StageOutExitStatus = $register_exit_status"" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '   done\n'
            txt += 'else\n'
            txt += '   echo "Problem with the executable"\n'
@@ -458,6 +465,12 @@ class SchedulerEdg(Scheduler):
 
         #if common.use_jam:
         #   inp_box = inp_box+' "'+common.bin_dir+'/'+common.run_jam+'",'
+        # Marco (VERY TEMPORARY ML STUFF)
+        inp_box = inp_box+' "' + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + '", "' +\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + '", "'+\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + '", "'+\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') + '"'
+        # End Marco
 
         for addFile in jbt.additional_inbox_files:
             addFile = os.path.abspath(addFile)
