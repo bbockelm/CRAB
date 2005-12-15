@@ -30,7 +30,7 @@ class Submitter(Actor):
 
         totalCreatedJobs= 0
         for nj in range(common.jobDB.nJobs()):
-            if (common.jobDB.status(nj)=='C'): totalCreatedJobs +=1
+            if (common.jobDB.status(nj)=='C') or (common.jobDB.status(nj)=='RC'): totalCreatedJobs +=1
             pass
 
         if (totalCreatedJobs==0):

@@ -72,7 +72,7 @@ class StatusBoss(Actor):
         cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.JOBID"' #INTERNAL_ID" '
         cmd_out = runBossCommand(cmd)
         jobAttributes={}
-        CoupJobs={}
+        CoupJobsID={}
         nline=0
         header=''
         fielddesc=()
@@ -85,14 +85,14 @@ class StatusBoss(Actor):
                 else:
                     js = line.split(None,2)
                     jobAttributes[int(js[0])]=self.splitbyoffset_(line,fielddesc)
-                    CoupJobs[int(js[1])]=int(js[0])
+                    CoupJobsID[int(js[1])]=int(js[0])
             nline = nline+1
         printline = ''
         printline+=header[1]
         printline+='   STATUS          E_HOST            EXE_EXIT_CODE        JOB_EXIT_STATUS'
         print printline
         for_summary = []
-        orderdBossID = CoupJobs.values()
+        orderdBossID = CoupJobsID.values()
         #orderdBossID.sort()
         for bossid in orderdBossID:
             printline=''
@@ -173,13 +173,10 @@ class StatusBoss(Actor):
         if (self.countRun != 0):
             print ''
             print ">>>>>>>>> %i Jobs Running" % (self.countRun)
-        if (self.countCleared != 0):
+        if (self.countCancel != 0) or (self.countAbort != 0) or (self.countCleared != 0):
             print ''
-            print ">>>>>>>>> %i Jobs Retrieved (=Cleared)" % (self.countCleared)
-        if (self.countCancel != 0) or (self.countAbort != 0):
-            print ''
-            tot = int(self.countAbort) + int(self.countCancel)
-            print ">>>>>>>>> %i Jobs killed or Aborted" % (tot)
+            tot = int(self.countAbort) + int(self.countCancel) + int(self.countCleared)
+            print ">>>>>>>>> %i Jobs killed or Aborted or Cleared" % (tot)
             print "          You can resubmit them specifying JOB numbers: crab.py -resubmit JOB_number (or range of JOB)" 
             print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
         if (self.countDone != 0):
