@@ -80,6 +80,7 @@ class PubDBInfo:
           
            cat=catalogues[k]['Catalogue']
            for kcat in cat.keys():
+              if cat[kcat]:
                 ##print ("key %s, val %s" %(kcat,cat[kcat]))
                 ContactString=cat[kcat]['ContactString']
                 ContactProtocol=cat[kcat]['ContactProtocol']
