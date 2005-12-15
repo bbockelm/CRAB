@@ -25,3 +25,6 @@ class ApmonIf:
             print "Creating ApMon with " + apmonUrl
             apmonInstance = apmon.ApMon(apmonUrl)
         return apmonInstance 
+        
+    def free(self):
+        self.apm.free()
