@@ -649,26 +649,9 @@ class Crab:
                             nj_list.append(int(nj)-1)
                             common.jobDB.setStatus(int(nj)-1,'C')
                         elif st == 'Y':
-                            # here I would like to move the old output to a new place
-                            # I would need the name of the output files.
-                            # these infos are in the jobType class, which is not accessible from here!
-
-                            # fede...commento tutto ehehehehehehhhhh 
-                            #outSandbox = common.jobDB.outputSandbox(nj)
-                            
-                            #resDir = common.work_space.resDir()
-                            #resDirSave = resDir + self.current_time
-                            #os.mkdir(resDirSave)
-                            
-                            #for file in outSandbox:
-                            #    if os.path.exists(resDir+'/'+file):
-                            #        os.rename(resDir+'/'+file, resDirSave+'/'+file)
-                            #        common.logger.message('Output file '+file+' moved to '+resDirSave)
-                            #pass
+                            common.scheduler.moveOutput(nj)
                             nj_list.append(int(nj)-1)
                             st = common.jobDB.setStatus(int(nj)-1,'RC')
-                            
-                            # scommentare le righe sopra....
                         elif st in ['D','C','X']:
 			    # Nel caso DONE bisogna prima ritirare l'output
                             # Nel caso C va prima sottomesso
@@ -691,13 +674,6 @@ class Crab:
                         # Instantiate Submitter object
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
 
-                        # Create and initialize JobList
-
-                        #if len(common.job_list) == 0 :
-                        #    common.job_list = JobList(common.jobDB.nJobs(),
-                        #                              None)
-                        #    common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                        #    pass
                         pass
                     pass
                 else:

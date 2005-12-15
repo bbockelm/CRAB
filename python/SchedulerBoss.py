@@ -367,8 +367,47 @@ class SchedulerBoss(Scheduler):
         Prepare jobs to be submit
         """
         for nj in nj_list:
-            print "in resubmit di boss nj vale ", nj
+            #print "in resubmit di boss nj vale ", nj
             self.declareJob_(int(nj)) 
+        return
+
+
+    def moveOutput(self, int_id):
+        """
+        Move output of job already retrieved 
+        """
+        self.current_time = time.strftime('%y%m%d_%H%M%S',time.localtime(time.time()))
+        resDir = common.work_space.resDir()
+        resDirSave = resDir + self.current_time
+        os.mkdir(resDirSave)
+
+        boss_id = self.listBoss()[int(int_id)]
+
+        cmd = 'boss SQL -query "select OUT_FILES from JOB where JOB.ID='+str(boss_id)+'"'
+        cmd_out = runBossCommand(cmd)
+
+        nline = 0
+        for line in cmd_out.splitlines():
+            if nline == 2:
+                #print "line = ", line 
+                #print "len(line =", len(line) 
+                files = line.split(',')
+                for i in files:
+                    i=i.strip()
+                    i=i.strip('{}')
+                    i=i.strip()
+                    i=i.strip('"')
+                                    
+                    if os.path.exists(self.outDir+'/'+i):
+                        #print "self.outDir = ", self.outDir
+                        os.rename(self.outDir+'/'+i, resDirSave+'/'+i)
+                        common.logger.message('Output file '+i+' moved to '+resDirSave)
+
+                    if os.path.exists(self.logDir+'/'+i):
+                        os.rename(self.logDir+'/'+i, resDirSave+'/'+i)
+                        #print "self.logDir = ", self.logDir
+                        common.logger.message('Output file '+i+' moved to '+resDirSave)
+            nline = nline + 1
         return
 
 
@@ -564,8 +603,8 @@ class SchedulerBoss(Scheduler):
         for line in cmd_out.splitlines():
             if nline != 0 and nline != 1:
                 (internal_Id, boss_Id) = string.split(line)
-                #print "internalID = ", internal_Id
-                #print "boss_Id = ", boss_Id
+                #print "key = internalID = ", internal_Id
+                #print "value = boss_Id = ", boss_Id
                 ListBoss_ID[int(internal_Id)]=int(boss_Id)
             nline = nline + 1
         #print "ListBoss_ID.values() = ", ListBoss_ID#.values()  
