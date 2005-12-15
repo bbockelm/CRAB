@@ -422,7 +422,6 @@ class SchedulerBoss(Scheduler):
         Get output for a finished job with id.
         Returns the name of directory with results.
         """
-        print "somo in getOutput di boss"
         common.jobDB.load()
         self.boss_scheduler.checkProxy()
         dirGroup = string.split(common.work_space.topDir(), '/')
