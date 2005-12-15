@@ -499,7 +499,6 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
-                    print "prima di chiamare submitter, nj_list = ", nj_list
                     self.actions[opt] = Submitter(self.cfg_params, nj_list)
 
                     # Create and initialize JobList
