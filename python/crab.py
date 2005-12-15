@@ -12,6 +12,7 @@ from Checker import Checker
 from PostMortem import PostMortem
 from Status import Status
 from StatusBoss import StatusBoss 
+from ApmonIf import ApmonIf
 from Cleaner import Cleaner
 import common
 import Statistic
@@ -120,7 +121,7 @@ class Crab:
             keys.sort()
             for k in keys:
                 if self.cfg_params[k]:
-                    common.logger.debug(6, '   '+k+' : '+self.cfg_params[k])
+                    common.logger.debug(6, '   '+k+' : '+str(self.cfg_params[k]))
                     pass
                 else:
                     common.logger.debug(6, '   '+k+' : ')
@@ -225,6 +226,10 @@ class Crab:
         if string.lower(self.cfg_fname) != 'none':
             if os.path.exists(self.cfg_fname):
                 self.cfg_params = loadConfig(self.cfg_fname)
+                # Better idea on where to put user info for ML?
+                self.cfg_params['user'] = os.getlogin()
+                # Better idea on where to put ML???? Looks crap here, but had no better thought!
+                if int(self.cfg_params['USER.activate_monalisa']): self.cfg_params['apmon'] = ApmonIf()
                 pass
             else:
                 msg = 'cfg-file '+self.cfg_fname+' not found.'
@@ -521,7 +526,7 @@ class Crab:
 
                 if len(jobs) != 0:
                     if ( self.flag_useboss == 1 ):     
-                        self.actions[opt] = StatusBoss()
+                        self.actions[opt] = StatusBoss(self.cfg_params)
                     else:                         
                         self.actions[opt] = Status(jobs)
                         pass
