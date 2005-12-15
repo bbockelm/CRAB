@@ -1,11 +1,12 @@
 from Actor import *
 import common, crab_util
-import string, os, sys
+import string, os, sys, time
 import Statistic
 from SchedulerBoss import *
 
 class StatusBoss(Actor):
-    def __init__(self):
+    def __init__(self, cfg_params):
+        self.cfg_params = cfg_params
         self.countToTjob = 0
         self.countDone = 0
         self.countRun = 0
@@ -119,7 +120,16 @@ class StatusBoss(Actor):
                 else:
                     Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
             print printline
+#            self.cfg_params['StatusValueReason'] = common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason')
+#            self.cfg_params['StatusValue'] = jobStatus
+#            self.cfg_params['StatusEnterTime'] = time.time()
+#            self.cfg_params['StatusDestination'] = dest
+#            self.cfg_params['apmon'].fillDict({'taskId': self.cfg_params['taskId'], 'jobId': self.cfg_params['jobId'], \
+#                                               'StatusValueReason': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason'), \
+#                                               'StatusValue': jobStatus, 'StatusEnterTime': time.time(), 'StatusDestination': dest})
+#            self.cfg_params['apmon'].sendToML()
 
+        self.cfg_params['apmon'].free()
         self.update_(for_summary)
         return
 
