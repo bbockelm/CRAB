@@ -478,7 +478,7 @@ class SchedulerBoss(Scheduler):
             else:
                 boss_id = allBoss_id[int(i_id)]
                 status =  common.scheduler.queryStatus(boss_id) 
-                if status == 'Done (Success)' or status == 'Aborted(BOSS)' or status == 'Killed(BOSS)' or status =='Cleared(BOSS)' or status ==  'Done (Aborted)':
+                if status == 'Done (Success)' or status == 'Aborted(BOSS)' or status == 'Killed(BOSS)' or status =='Cleared(BOSS)' or status ==  'Done (Aborted)' or status == 'Created(BOSS)':
                     msg = 'Job # '+`int(i_id)`+' has status '+status+' not possible to Kill it'
                     common.logger.message(msg) 
                 else:
@@ -503,21 +503,6 @@ class SchedulerBoss(Scheduler):
 
     def wsRegisterOutput(self):  
         return self.boss_scheduler.wsRegisterOutput()
-
-#    def boss_ID(self,int_ID,group):
-#        """convert internal ID into Boss ID """ 
-#
-#        print "sono in boss_ID" 
-#        cmd = 'boss SQL -query "select JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
-#        cmd_out = runBossCommand(cmd)
-#        print "cmd_out = ", cmd_out 
-#        nline = 0
-#        for line in cmd_out.splitlines():
-#            if nline == 2:
-#               boss_ID = line
-#            nline = nline + 1
-#              
-#        return boss_ID 
 
     def boss_ID(self,int_ID):
         """convert internal ID into Boss ID """ 
@@ -602,25 +587,9 @@ class SchedulerBoss(Scheduler):
         for line in cmd_out.splitlines():
             if nline != 0 and nline != 1:
                 (internal_Id, boss_Id) = string.split(line)
-                #print "key = internalID = ", internal_Id
-                #print "value = boss_Id = ", boss_Id
                 ListBoss_ID[int(internal_Id)]=int(boss_Id)
             nline = nline + 1
-        #print "ListBoss_ID.values() = ", ListBoss_ID#.values()  
-        #print "fine di listBoss"
-        return ListBoss_ID #.values() 
-
-        #cmd_out = runBossCommand(cmd,0)
-        #print "cmd_out = ", cmd_out
-        #nline = 0
-        #for line in cmd_out.splitlines():
-        #    if nline != 0 and nline != 1:
-        #        print "line = ", line
-        #        ListBoss_ID.append(line.split())
-        #        #ListBoss_ID.append(int(line)-1)
-        #    nline = nline + 1
-        #print "ListBoss_ID = ", ListBoss_ID
-        #return ListBoss_ID
+        return ListBoss_ID 
 
     def setOutLogDir(self,outDir,logDir):
         if not os.path.isdir(outDir):
