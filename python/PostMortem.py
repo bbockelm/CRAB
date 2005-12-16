@@ -21,20 +21,25 @@ class PostMortem(Actor):
 
         # run a list-match on first job
         for nj in self.nj_list:
+            #nj parte da 1 --> nj = internal_id di boss 
             if self.flag_useboss == 1 :
-                id = common.scheduler.boss_SID(nj+1)
-            else: 
-                id = common.jobDB.jobId(nj) 
+                id = common.scheduler.boss_SID(nj)
+                #print "id = ", id 
+            #else: 
+            #    id = common.jobDB.jobId(nj) 
             out = common.scheduler.loggingInfo(id)
-            job = common.job_list[nj]
+            # job_list inizia a contare da zero
+            job = common.job_list[nj-1]
+            #print "job.jdlFilename()", job.jdlFilename()
             jdl_fname = string.replace(job.jdlFilename(),'jdl','loggingInfo')
+            #print "jdl_fname = ", jdl_fname 
             if os.path.exists(jdl_fname):
-                common.logger.message('Logging info for job '+str(nj+1)+' already present in '+jdl_fname+' Remove it for update')
+                common.logger.message('Logging info for job '+str(nj)+' already present in '+jdl_fname+' Remove it for update')
                 continue
             jdl = open(jdl_fname, 'w')
             for line in out: jdl.write(line)
             jdl.close()
-            common.logger.message('Logging info for job '+str(nj+1)+' written to '+jdl_fname)
+            common.logger.message('Logging info for job '+str(nj)+' written to '+jdl_fname)
             
             pass
 

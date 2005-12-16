@@ -471,7 +471,7 @@ class Crab:
                 lastSubmittedJob=0
                 for nj in range(common.jobDB.nJobs()):
                     #if (common.jobDB.status(nj)=='S') or (common.jobDB.status(nj)=='K') or (common.jobDB.status(nj)=='A'): #Da
-                    if (common.jobDB.status(nj) in ['S', 'K','D','Y','A']):
+                    if (common.jobDB.status(nj) in ['S','K','RC','Y','A','D']):
                         lastSubmittedJob +=1
                     else: break
                 # count job from 1
@@ -748,8 +748,10 @@ class Crab:
                 jobs = self.parseRange_(val)
                 nj_list = []
                 for nj in jobs:
-                    st = common.jobDB.status(nj)
-                    if st not in ['X', 'C']: nj_list.append(nj)
+                    # fede: nj scala di uno perche' e' l'internal id di boss
+                    # ed il jobDB parte da zero ...
+                    st = common.jobDB.status(int(nj)-1)
+                    if st not in ['X', 'C']: nj_list.append(int(nj))
                     pass
 
                 if len(nj_list) != 0:
