@@ -471,7 +471,7 @@ class Crab:
                 lastSubmittedJob=0
                 for nj in range(common.jobDB.nJobs()):
                     #if (common.jobDB.status(nj)=='S') or (common.jobDB.status(nj)=='K') or (common.jobDB.status(nj)=='A'): #Da
-                    if (common.jobDB.status(nj) in ['S', 'K', 'RC', 'Y', 'A']):
+                    if (common.jobDB.status(nj) in ['S', 'K','D','Y','A']):
                         lastSubmittedJob +=1
                     else: break
                 # count job from 1
@@ -657,14 +657,17 @@ class Crab:
                             common.scheduler.moveOutput(nj)
                             nj_list.append(int(nj)-1)
                             st = common.jobDB.setStatus(int(nj)-1,'RC')
-                        elif st in ['D','C','X']:
+                        elif st in ['C','X']:
+                            common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!') 
 			    # Nel caso DONE bisogna prima ritirare l'output
                             # Nel caso C va prima sottomesso
                             # Nel caso X va prima creato
                             pass
+                        elif st == 'D':
+                            common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
                         else:
                             #common.logger.message('Job #'+str(nj+1)+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
-                            common.logger.message('Job #'+nj+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
+                            common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                         pass
 
                     if len(common.job_list) == 0 :
