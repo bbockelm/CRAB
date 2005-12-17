@@ -529,7 +529,7 @@ class Crab:
                     if ( self.flag_useboss == 1 ):     
                         self.actions[opt] = StatusBoss(self.cfg_params)
                     else:                         
-                        self.actions[opt] = Status(jobs)
+                        self.actions[opt] = Status(self.cfg_params, jobs)
                         pass
                     pass
                 pass
@@ -772,7 +772,7 @@ class Crab:
                 if val != None:
                     raise CrabException("No range allowed for '-clean'")
                 
-                theCleaner = Cleaner(self.scheduler_name == 'boss')
+                theCleaner = Cleaner(self.scheduler_name == 'boss', self.cfg_params)
                 theCleaner.clean()
 
             pass

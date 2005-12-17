@@ -4,7 +4,7 @@ import string, os
 import Statistic
 
 class Status(Actor):
-    def __init__(self, nj_list=[]):
+    def __init__(self, cfg_params, nj_list=[]):
         if nj_list==[]:
             self.nj_list = range(len(common.job_list))
         else:
@@ -17,6 +17,7 @@ class Status(Actor):
         self.countCancel = 0
         self.countCleared = 0
         self.countToTjob = 0
+        self.cfg_params = cfg_params
         
 
         Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
@@ -69,11 +70,20 @@ class Status(Actor):
                 self.processResult_(nj, result, jid)
                 exit = common.jobDB.exitStatus(nj)
                 print 'Job %03d:'%(nj+1),jid,result,exit
+                dest =  common.scheduler.getStatusAttribute_(jid, 'destination').split(":")[0]
+                if int(self.cfg_params['USER.activate_monalisa']) == 1:
+                    self.cfg_params['apmon'].fillDict({'taskId': 'JobStatus', 'jobId': jid, \
+                                                   'StatusValueReason': common.scheduler.getStatusAttribute_(jid, 'reason'), \
+                                                   'StatusValue': st, 'StatusEnterTime': common.scheduler.getStatusAttribute_(jid, 'stateEnterTime'), 'StatusDestination': dest})
+                    self.cfg_params['apmon'].sendToML()
                 pass
             else:
                 exit = common.jobDB.exitStatus(nj)
                 #print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
                 pass
+
+        if int(self.cfg_params['USER.activate_monalisa']) == 1:
+            self.cfg_params['apmon'].free()
             pass
 
         common.jobDB.save()
