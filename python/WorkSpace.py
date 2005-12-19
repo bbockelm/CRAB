@@ -33,6 +33,9 @@ class WorkSpace:
     def create(self):
         if not os.path.exists(self._top_dir):
             os.mkdir(self._top_dir)
+            pass
+        #fede
+        if not os.listdir(self._top_dir):
             os.mkdir(self._log_dir)
             os.mkdir(self._job_dir)
             os.mkdir(self._res_dir)
