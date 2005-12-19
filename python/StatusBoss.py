@@ -119,19 +119,21 @@ class StatusBoss(Actor):
                     Statistic.Monitor('checkstatus',resFlag,jid1,'abort')
                 else:
                     Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
-            print printline
-#            self.cfg_params['StatusValueReason'] = common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason')
-#            self.cfg_params['StatusValue'] = jobStatus
-#            self.cfg_params['StatusEnterTime'] = time.time()
-#            self.cfg_params['StatusDestination'] = dest
-            if int(self.cfg_params['USER.activate_monalisa']) == 1:
-                self.cfg_params['apmon'].fillDict({'taskId': 'JobStatus', 'jobId': string.strip(jobAttributes[bossid][2]), \
+
+                if int(self.cfg_params['USER.activate_monalisa']) == 1:
+                    self.cfg_params['apmon'].fillDict({'taskId': 'JobStatus', 'jobId': string.strip(jobAttributes[bossid][2]), \
                                                    'StatusValueReason': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason'), \
                                                    'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'stateEnterTime'), 'StatusDestination': dest})
-                self.cfg_params['apmon'].sendToML()
+                    self.cfg_params['apmon'].sendToML()
+            print printline
+            #self.cfg_params['StatusValueReason'] = common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason')
+            #self.cfg_params['StatusValue'] = jobStatus
+            #self.cfg_params['StatusEnterTime'] = time.time()
+            #self.cfg_params['StatusDestination'] = dest
 
         if int(self.cfg_params['USER.activate_monalisa']) == 1:
             self.cfg_params['apmon'].free()
+
         self.update_(for_summary)
         return
 

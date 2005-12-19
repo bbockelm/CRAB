@@ -86,7 +86,7 @@ class Submitter(Actor):
                         #List of parameters to be sent to ML monitor system
                         # Marco. Should be better to put it in the SchedulerEdg/gLite class
                         self.cfg_params['GridName'] = runCommand("grid-proxy-info -identity")
-                        print " GRIDNAME: ", self.cfg_params['GridName']
+                        common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
 #                        self.cfg_params['taskId'] = self.cfg_params['user']+'_'+self.cfg_params['USER.dataset']+'.'+self.cfg_params['USER.owner']+'_'+str(random()*100)
                         self.cfg_params['taskId'] = self.cfg_params['user']+'_'+self.cfg_params['USER.dataset']+'.'+self.cfg_params['USER.owner']
                         self.cfg_params['jobId'] = str(nj)
@@ -123,7 +123,8 @@ class Submitter(Actor):
             common.jobDB.save()
         
         stop = time.time()
-        print "Submission Time: %d "%(stop - start)
+        common.logger.debug(5, "Submission Time: "+str(stop - start))
+        #print "Submission Time: %d "%(stop - start)
         common.jobDB.save()
             
         msg = '\nTotal of %d jobs submitted'%njs
