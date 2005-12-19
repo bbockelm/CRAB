@@ -491,8 +491,10 @@ class SchedulerBoss(Scheduler):
         common.jobDB.save()
         return #cmd_out    
 
-    def getExitStatus(self, id):
+    def getAttribute(self, id, attr):
+        return self.boss_scheduler.getStatusAttribute_(id, attr)
 
+    def getExitStatus(self, id):
         return self.boss_scheduler.getStatusAttribute_(id, 'exit_code')
 
     def queryDest(self, id):  
