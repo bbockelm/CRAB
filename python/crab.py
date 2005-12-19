@@ -389,7 +389,10 @@ class Crab:
                 ###
                 result.append(aRange)
             else:
-                common.logger.message("parseSimpleRange_ ERROR "+aRange)
+                common.logger.message("parseSimpleRange_  ERROR "+aRange)
+                usage()
+                pass
+  
             pass
         else:
             (start, end) = string.split(aRange, '-')
@@ -470,7 +473,6 @@ class Crab:
                 common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
                 lastSubmittedJob=0
                 for nj in range(common.jobDB.nJobs()):
-                    #if (common.jobDB.status(nj)=='S') or (common.jobDB.status(nj)=='K') or (common.jobDB.status(nj)=='A'): #Da
                     if (common.jobDB.status(nj) in ['S','K','RC','Y','A','D']):
                         lastSubmittedJob +=1
                     else: break
@@ -634,7 +636,6 @@ class Crab:
                 if ( self.flag_useboss == 1 ):
                     if val=='all' or val==None or val=='':
                         allBoss_id = common.scheduler.listBoss()
-                        # sono gli internal_id di BOSS
                         jobs = allBoss_id.keys()
                     else:
                         jobs = self.parseRange_(val)
@@ -649,7 +650,6 @@ class Crab:
                     nj_list = []
                     for nj in jobs:
                         st = common.jobDB.status(int(nj)-1)
-                        #print "stato del job = ", st
                         if st in ['K','A']:
                             nj_list.append(int(nj)-1)
                             common.jobDB.setStatus(int(nj)-1,'C')
@@ -659,25 +659,19 @@ class Crab:
                             st = common.jobDB.setStatus(int(nj)-1,'RC')
                         elif st in ['C','X']:
                             common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!') 
-			    # Nel caso DONE bisogna prima ritirare l'output
-                            # Nel caso C va prima sottomesso
-                            # Nel caso X va prima creato
                             pass
                         elif st == 'D':
                             common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
                         else:
-                            #common.logger.message('Job #'+str(nj+1)+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                             common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                         pass
 
                     if len(common.job_list) == 0 :
-                         #print "common.job_list = ", common.job_list
                          common.job_list = JobList(common.jobDB.nJobs(),None)
                          common.job_list.setJDLNames(self.job_type_name+'.jdl')
                          pass
 
                     if len(nj_list) != 0:
-                        #print "nj_list = ", nj_list
                         common.scheduler.resubmit(nj_list)
                         # Instantiate Submitter object
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
@@ -692,38 +686,72 @@ class Crab:
                 pass
             
             elif ( opt == '-cancelAndResubmit' ):
-                jobs = self.parseRange_(val)
 
-                # Cancel submitted jobs.
-
-                nj_list = []
-                for nj in jobs:
-                    st = common.jobDB.status(nj)
-                    if st == 'S':
-                        jid = common.jobDB.jobId(nj)
-                        common.scheduler.cancel(jid)
-                        st = 'K'
-                        common.jobDB.setStatus(nj, st)
+                if ( self.flag_useboss == 1 ):
+                    if val:
+                        if val =='all':
+                            allBoss_id = common.scheduler.listBoss()
+                            jobs = allBoss_id.keys()
+                        else:
+                            jobs = self.parseRange_(val)
+                        # kill submitted jobs
+                        common.scheduler.cancel(jobs)
+                    else:
+                        common.logger.message("Warning: with '-cancelAndResubmit' you _MUST_ specify a job range or 'all'")
+                else:
+                    if val:    
+                        jobs = self.parseRange_(val)
+                    else:
+                        common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
                         pass
-                    pass
 
-                    if st != 'X': nj_list.append(nj)
-                    pass
-
-                if len(nj_list) != 0:
-                    # Instantiate Submitter object
-                    self.actions[opt] = Submitter(self.cfg_params, nj_list)
-
-                    # Create and initialize JobList
-
+                # resubmit cancelled jobs.
+                if val:
+                    nj_list = []
+                    for nj in jobs:
+                        if ( self.flag_useboss != 1 ):
+                            st = common.jobDB.status(nj)
+                            if st == 'S':
+                                jid = common.jobDB.jobId(nj)
+                                common.scheduler.cancel(jid)
+                                st = 'K'
+                                common.jobDB.setStatus(nj, st)
+                                pass
+                            common.jobDB.save()
+                            pass  
+                        st = common.jobDB.status(int(nj)-1)
+                        if st in ['K','A']:
+                            nj_list.append(int(nj)-1)
+                            common.jobDB.setStatus(int(nj)-1,'C')
+                        elif st == 'Y':
+                            common.scheduler.moveOutput(nj)
+                            nj_list.append(int(nj)-1)
+                            st = common.jobDB.setStatus(int(nj)-1,'RC')
+                        elif st in ['C','X']:
+                            common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!')
+                            pass
+                        elif st == 'D':
+                            common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
+                        else:
+                            common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
+                            pass
+                                                                                                                                                            
                     if len(common.job_list) == 0 :
-                        common.job_list = JobList(common.jobDB.nJobs(),
-                                                  None)
+                        common.job_list = JobList(common.jobDB.nJobs(),None)
                         common.job_list.setJDLNames(self.job_type_name+'.jdl')
                         pass
+                                                                                                                                                             
+                    if len(nj_list) != 0:
+                        common.scheduler.resubmit(nj_list)
+                        self.actions[opt] = Submitter(self.cfg_params, nj_list)
+                        pass
+                        pass
+                else:
+                    common.logger.message("WARNING: _all_ job specified in the rage will be cancelled and resubmitted!!!")
                     pass
+                common.jobDB.save()
                 pass
-            
+
             elif ( opt == '-testJdl' ):
                 jobs = self.parseRange_(val)
                 nj_list = []
