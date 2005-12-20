@@ -367,7 +367,6 @@ class SchedulerBoss(Scheduler):
         Prepare jobs to be submit
         """
         for nj in nj_list:
-            #print "in resubmit di boss nj vale ", nj
             self.declareJob_(int(nj)) 
         return
 
@@ -378,10 +377,9 @@ class SchedulerBoss(Scheduler):
         """
         self.current_time = time.strftime('%y%m%d_%H%M%S',time.localtime(time.time()))
         resDir = common.work_space.resDir()
-        #print "in moveOutput resDir = ", resDir
         resDirSave = resDir + self.current_time
-        #print "in moveOutput resDirSave = ", resDirSave
-        os.mkdir(resDirSave)
+        if not os.path.exists(resDirSave):
+            os.mkdir(resDirSave)
 
         boss_id = self.listBoss()[int(int_id)]
 
@@ -391,8 +389,6 @@ class SchedulerBoss(Scheduler):
         nline = 0
         for line in cmd_out.splitlines():
             if nline == 2:
-                #print "line = ", line 
-                #print "len(line =", len(line) 
                 files = line.split(',')
                 for i in files:
                     i=i.strip()
@@ -401,13 +397,11 @@ class SchedulerBoss(Scheduler):
                     i=i.strip('"')
                                     
                     if os.path.exists(self.outDir+'/'+i):
-                        #print "self.outDir = ", self.outDir
                         os.rename(self.outDir+'/'+i, resDirSave+'/'+i)
                         common.logger.message('Output file '+i+' moved to '+resDirSave)
 
                     if os.path.exists(self.logDir+'/'+i):
                         os.rename(self.logDir+'/'+i, resDirSave+'/'+i)
-                        #print "self.logDir = ", self.logDir
                         common.logger.message('Output file '+i+' moved to '+resDirSave)
             nline = nline + 1
         return
@@ -429,35 +423,23 @@ class SchedulerBoss(Scheduler):
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
         #dir = common.work_space.resDir()
-        dir,logDir = self.setOutLogDir(self.outDir,self.logDir)
-        #print "in getoutput dir = ", dir
-        #print "in getoutput logDir = ", logDir
+       # dir,logDir = self.setOutLogDir(self.outDir,self.logDir)
         allBoss_id = common.scheduler.listBoss()
         for i_id in int_id :
             if int(i_id) not in allBoss_id.keys(): 
                 msg = 'Job # '+`int(i_id)`+' out of range for task '+group
                 common.logger.message(msg) 
             else: 
-                #dir,logDir = self.setOutLogDir(self.outDir,self.logDir)
+                dir,logDir = self.setOutLogDir(self.outDir,self.logDir) 
                 boss_id = allBoss_id[int(i_id)] 
                 cmd = 'bossSid '+str(boss_id)
-                #print "cmd = " , cmd 
                 cmd_out = runCommand(cmd) 
                 if common.scheduler.queryStatus(boss_id) == 'Done (Success)' or common.scheduler.queryStatus(boss_id) == 'Done (Abort)':   
                     cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
                     cmd_out = runBossCommand(cmd)
-                    #print "##############################"
-                    #print "cmd_out = ", cmd_out
-                    #print "##############################"
-                    #print "******************************"
-                    #file = os.listdir(dir)
-                    #print "file in dir = ", file 
-                    #print "******************************"
                     if logDir != dir:
                         try:
-                            #cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*.log ' +str(logDir)
                             cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo ' +str(logDir)
-                            print "cmd = ", cmd
                             cmd_out = runCommand(cmd)
                             msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
                             common.logger.message(msg)
@@ -527,11 +509,8 @@ class SchedulerBoss(Scheduler):
     def boss_ID(self,int_ID):
         """convert internal ID into Boss ID """ 
 
-        print "int_ID = ", int_ID
-        print "str(int_ID) = ", str(int_ID) 
         cmd = 'boss SQL -query "select JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and crabjob.INTERNAL_ID='+str(int_ID)+'"'
         cmd_out = runBossCommand(cmd)
-        print "cmd_out = ", cmd_out 
         nline = 0
         for line in cmd_out.splitlines():
             if nline == 2:
