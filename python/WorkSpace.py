@@ -40,13 +40,20 @@ class WorkSpace:
 
         # fede
         if not os.path.exists(self.outDir):
-            os.mkdir(self.outDir)
-            pass
+            try: 
+                os.mkdir(self.outDir)
+            except:
+                msg = 'Cannot mkdir ' + self.outDir + ' Check permission'
+                raise CrabException(msg)
         if os.listdir(self.outDir):
             msg = self.outDir + ' already exists and is not empty. Please remove it before create new task'
             raise CrabException(msg)
         if not os.path.exists(self.log_outDir):
-            os.mkdir(self.log_outDir)
+            try:
+                os.mkdir(self.log_outDir)
+            except:
+                msg = 'Cannot mkdir ' + self.log_outDir + ' Check permission'
+                raise CrabException(msg)
             pass 
         if os.listdir(self.log_outDir):
             msg = self.log_outDir + ' already exists and is not empty. Please remove it before create new task'
