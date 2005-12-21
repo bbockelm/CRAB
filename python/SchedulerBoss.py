@@ -418,23 +418,21 @@ class SchedulerBoss(Scheduler):
         Get output for a finished job with id.
         Returns the name of directory with results.
         """
+        if not os.path.isdir(self.logDir) or not os.path.isdir(self.outDir):
+            msg =  ' Output or Log dir not found!! check '+self.logDir+' and '+self.outDir
+            raise CrabException(msg)
         common.jobDB.load()
         self.boss_scheduler.checkProxy()
         dirGroup = string.split(common.work_space.topDir(), '/')
         group = dirGroup[len(dirGroup)-2]
-        #dir = common.work_space.resDir()
-       # dir,logDir = self.setOutLogDir(self.outDir,self.logDir)
         allBoss_id = common.scheduler.listBoss()
         for i_id in int_id :
             if int(i_id) not in allBoss_id.keys(): 
                 msg = 'Job # '+`int(i_id)`+' out of range for task '+group
                 common.logger.message(msg) 
             else: 
-                #dir,logDir = self.setOutLogDir(self.outDir,self.logDir) 
                 dir = self.outDir 
-                #print "dir = ", dir 
                 logDir = self.logDir
-                #print "log_outDir = ",self.logDir 
                 boss_id = allBoss_id[int(i_id)] 
                 cmd = 'bossSid '+str(boss_id)
                 cmd_out = runCommand(cmd) 
