@@ -430,7 +430,11 @@ class SchedulerBoss(Scheduler):
                 msg = 'Job # '+`int(i_id)`+' out of range for task '+group
                 common.logger.message(msg) 
             else: 
-                dir,logDir = self.setOutLogDir(self.outDir,self.logDir) 
+                #dir,logDir = self.setOutLogDir(self.outDir,self.logDir) 
+                dir = self.outDir 
+                #print "dir = ", dir 
+                logDir = self.logDir
+                #print "log_outDir = ",self.logDir 
                 boss_id = allBoss_id[int(i_id)] 
                 cmd = 'bossSid '+str(boss_id)
                 cmd_out = runCommand(cmd) 

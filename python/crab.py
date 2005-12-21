@@ -186,7 +186,7 @@ class Crab:
             raise CrabException(msg)
 
         # Instantiate WorkSpace
-        common.work_space = WorkSpace(continue_dir)
+        common.work_space = WorkSpace(continue_dir, self.cfg_params)
 
         return
 
@@ -820,8 +820,8 @@ class Crab:
             new_dir = common.prog_name + '_' + self.name + '_' + self.current_time
             new_dir = self.cwd + new_dir
             pass
-
-        common.work_space = WorkSpace(new_dir)
+        # fede
+        common.work_space = WorkSpace(new_dir, self.cfg_params)
         common.work_space.create()
         return
 

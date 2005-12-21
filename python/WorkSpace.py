@@ -5,21 +5,7 @@ import common
 import os, shutil, string, time
 
 class WorkSpace:
-
-    #_instance = None
-
-    #def getInstance():
-    #    if not WorkSpace._instance :
-    #        raise CrabException('There is no instance of WorkSpace.')
-    #    return WorkSpace._instance
-    
-    #getInstance = staticmethod(getInstance)
-
-    def __init__(self, top_dir):
-        #if WorkSpace._instance:
-        #    raise CrabException('WorkSpace already exists.')
-
-#        self.lock = RLock()
+    def __init__(self, top_dir, cfg_params):
         self._cwd_dir = os.getcwd()+'/'
         self._top_dir = top_dir                    # top working directory
         self._log_dir = self._top_dir + '/log'     # log-directory
@@ -27,14 +13,20 @@ class WorkSpace:
         self._res_dir = self._top_dir + '/res'     # dir to store job results
         self._share_dir = self._top_dir + '/share' # directory for common stuff
 
-        #WorkSpace._instance = self
+        try:    
+            self.outDir = cfg_params["USER.outputdir"]
+        except:
+            self.outDir = self._res_dir
+        try:
+            self.log_outDir = cfg_params["USER.logdir"]
+        except:
+            self.log_outDir = self._res_dir 
         return
 
     def create(self):
         if not os.path.exists(self._top_dir):
             os.mkdir(self._top_dir)
             pass
-        #fede
         if not os.listdir(self._top_dir):
             os.mkdir(self._log_dir)
             os.mkdir(self._job_dir)
@@ -45,6 +37,20 @@ class WorkSpace:
             fileCODE1.write(str(time.time()))
             fileCODE1.close()
             pass
+
+        # fede
+        if not os.path.exists(self.outDir):
+            os.mkdir(self.outDir)
+            pass
+        if os.listdir(self.outDir):
+            msg = self.outDir + ' already exists and is not empty. Please remove it before create new task'
+            raise CrabException(msg)
+        if not os.path.exists(self.log_outDir):
+            os.mkdir(self.log_outDir)
+            pass 
+        if os.listdir(self.log_outDir):
+            msg = self.log_outDir + ' already exists and is not empty. Please remove it before create new task'
+            raise CrabException(msg)
         return
 
     def delete(self):
