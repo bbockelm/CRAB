@@ -127,6 +127,8 @@ class SchedulerBoss(Scheduler):
         return
 
     def configure(self, cfg_params):
+        
+        self.groupName = cfg_params['taskId']
          
         try:    
             self.outDir = cfg_params["USER.outputdir"] 
@@ -293,7 +295,8 @@ class SchedulerBoss(Scheduler):
         # da decidere se questo valore va bene come group ...
         # NO CAXX0!!! E' almeno la 10^a volta che viene definito un grup name!!!!
         # e dove sono le altre definizioni di group nel codice di CRAB ??????? 
-        sch.write('group='+ dir[len(dir)-2]+';\n')
+#        sch.write('group='+ dir[len(dir)-2]+';\n')
+        sch.write('group='+ self.groupName +';\n')
         sch.write('BossAttr=[')
         sch.write('crabjob.INTERNAL_ID=' + str(nj+1) + ';')
         sch.write('];\n')
@@ -302,7 +305,8 @@ class SchedulerBoss(Scheduler):
         dirlog = common.work_space.logDir()
         scriptName=os.path.basename(common.job_list[nj].scriptFilename())
         
-        cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
+#        cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
+        cmd = 'boss declare -group '+ self.groupName +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
   
         msg = 'BOSS declaration:' + cmd
         common.logger.debug(5,msg)
@@ -423,12 +427,13 @@ class SchedulerBoss(Scheduler):
             raise CrabException(msg)
         common.jobDB.load()
         self.boss_scheduler.checkProxy()
-        dirGroup = string.split(common.work_space.topDir(), '/')
-        group = dirGroup[len(dirGroup)-2]
+#        dirGroup = string.split(common.work_space.topDir(), '/')
+#        group = dirGroup[len(dirGroup)-2]
+#        group = self.groupName
         allBoss_id = common.scheduler.listBoss()
         for i_id in int_id :
             if int(i_id) not in allBoss_id.keys(): 
-                msg = 'Job # '+`int(i_id)`+' out of range for task '+group
+                msg = 'Job # '+`int(i_id)`+' out of range for task '+ self.groupName
                 common.logger.message(msg) 
             else: 
                 dir = self.outDir 
@@ -470,12 +475,13 @@ class SchedulerBoss(Scheduler):
     def cancel(self,int_id):
         """ Cancel the EDG job with id """
         common.jobDB.load() 
-        dirGroup = string.split(common.work_space.topDir(), '/')
-        group = dirGroup[len(dirGroup)-2] 
+#        dirGroup = string.split(common.work_space.topDir(), '/')
+#        group = dirGroup[len(dirGroup)-2] 
+#        group = self.groupName
         allBoss_id = common.scheduler.listBoss() 
         for i_id in int_id :
             if int(i_id) not in allBoss_id.keys():
-                msg = 'Job # '+`(i_id)`+' out of range for task '+group
+                msg = 'Job # '+`(i_id)`+' out of range for task '+self.groupName
                 common.logger.message(msg)
             else:
                 boss_id = allBoss_id[int(i_id)]
@@ -524,10 +530,10 @@ class SchedulerBoss(Scheduler):
     def boss_SID(self,int_ID):
         """ Return Sid of job """
                                                                                                                              
-        dirGroup = string.split(common.work_space.topDir(), '/')
-        group = dirGroup[len(dirGroup)-2]
+#        dirGroup = string.split(common.work_space.topDir(), '/')
+#        group = self.groupName 
 
-        cmd = 'boss SQL -query "select JOB.SID  from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
+        cmd = 'boss SQL -query "select JOB.SID  from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+self.groupName+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
         cmd_out = runBossCommand(cmd)
         nline = 0
         for line in cmd_out.splitlines():
@@ -575,13 +581,13 @@ class SchedulerBoss(Scheduler):
         Return a list of all boss_Id of a task
         """
         #print "sono in listBoss"
-        dirGroup = string.split(common.work_space.topDir(), '/')
-        group = dirGroup[len(dirGroup)-2]
+#        dirGroup = string.split(common.work_space.topDir(), '/')
+#        group = dirGroup[len(dirGroup)-2]
         ListBoss_ID = {}
 
         # FEDE .....
         ListBoss_ID = {}
-        cmd = 'boss SQL -query "select crabjob.INTERNAL_ID, JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+group+'\'"'
+        cmd = 'boss SQL -query "select crabjob.INTERNAL_ID, JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+self.groupName+'\'"'
 
         cmd_out = runBossCommand(cmd,0)
         nline = 0

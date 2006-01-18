@@ -64,7 +64,8 @@ class StatusBoss(Actor):
         compute the status
         """
         dir = string.split(common.work_space.topDir(), '/')
-        group = dir[len(dir)-2]
+#        group = dir[len(dir)-2]
+        group = self.cfg_params['taskId']
         cmd = 'boss RTupdate -jobid all '
         runBossCommand(cmd)
         add2tablelist=''
@@ -126,10 +127,6 @@ class StatusBoss(Actor):
                                                    'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'stateEnterTime'), 'StatusDestination': dest})
                     self.cfg_params['apmon'].sendToML()
             print printline
-            #self.cfg_params['StatusValueReason'] = common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason')
-            #self.cfg_params['StatusValue'] = jobStatus
-            #self.cfg_params['StatusEnterTime'] = time.time()
-            #self.cfg_params['StatusDestination'] = dest
 
         if int(self.cfg_params['USER.activate_monalisa']) == 1:
             self.cfg_params['apmon'].free()
