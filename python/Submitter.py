@@ -25,6 +25,8 @@ class Submitter(Actor):
         common.logger.debug(5, "Submitter::run() called")
 
         totalCreatedJobs= 0
+        start = time.time()
+#        self.cfg_params['taskId'] = self.cfg_params['user']+'_'+self.cfg_params['USER.dataset']+'.'+self.cfg_params['USER.owner']+'_'+str(start)
         for nj in range(common.jobDB.nJobs()):
             if (common.jobDB.status(nj)=='C') or (common.jobDB.status(nj)=='RC'): totalCreatedJobs +=1
             pass
@@ -41,7 +43,6 @@ class Submitter(Actor):
             raise CrabException("No compatible site found!")
         #########
         # Loop over jobs
-        start = time.time()
         njs = 0
         try:
             for nj in self.nj_list:
@@ -59,6 +60,7 @@ class Submitter(Actor):
 
                 common.jobDB.setStatus(nj, 'S')
                 common.jobDB.setJobId(nj, jid)
+                common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
                 njs += 1
 
                 ############################################   
@@ -87,8 +89,6 @@ class Submitter(Actor):
                         # Marco. Should be better to put it in the SchedulerEdg/gLite class
                         self.cfg_params['GridName'] = runCommand("grid-proxy-info -identity")
                         common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
-#                        self.cfg_params['taskId'] = self.cfg_params['user']+'_'+self.cfg_params['USER.dataset']+'.'+self.cfg_params['USER.owner']+'_'+str(random()*100)
-                        self.cfg_params['taskId'] = self.cfg_params['user']+'_'+self.cfg_params['USER.dataset']+'.'+self.cfg_params['USER.owner']
                         self.cfg_params['jobId'] = str(nj)
                         self.cfg_params['sid'] = jid
                         user = os.getlogin()
