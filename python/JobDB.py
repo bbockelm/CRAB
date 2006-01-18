@@ -9,12 +9,13 @@ class dbEntry:
         self.status = 'X'       # job status
         self.exitStatus = ''    # job exit status
         self.jid = ''           # scheduler job id
-        self.bossid = ''       # BOSS job id
+        self.bossid = ''        # BOSS job id
         self.firstEvent = 0     # first event for this job
         self.maxEvents = 0      # last event for this job
         self.collections = []   # EvCollection to be analyzed in this job
         self.inputSandbox = []  # InputSandbox
         self.outputSandbox = [] # OutputSandbox
+        self.taskId = ''        # Task job belongs to
         return
 
     def __str__(self):
@@ -90,6 +91,7 @@ class JobDB:
             db_file.write(str(self._jobs[i].collections)+';')
             db_file.write(str(self._jobs[i].inputSandbox)+';')
             db_file.write(str(self._jobs[i].outputSandbox)+';')
+            db_file.write(str(self._jobs[i].taskId)+';')
             db_file.write('\n')
             pass
         db_file.close()
@@ -104,7 +106,7 @@ class JobDB:
 
         for line in db_file:
             db_entry = dbEntry()
-            (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, db_entry.firstEvent, db_entry.maxEvents, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , rest) = string.split(line, ';')
+            (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, db_entry.firstEvent, db_entry.maxEvents, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, rest) = string.split(line, ';')
             db_entry.collections = self.strToList_(collectionsTMP)
             db_entry.inputSandbox = self.strToList_(inputSandboxTMP)
             db_entry.outputSandbox = self.strToList_(outputSandboxTMP)
@@ -178,3 +180,6 @@ class JobDB:
     
     def outputSandbox(self, nj):
         return self._jobs[nj].outputSandbox
+        
+    def setTaskId(self, nj, taskId):
+        self._jobs[nj].taskId = taskId
