@@ -266,6 +266,7 @@ class Creator(Actor):
             if stdout != stderr:
                 outputSandbox.append(common.job_list[nj].stderr())
             common.jobDB.setOutputSandbox(nj, outputSandbox)
+            common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
 
             njc = njc + 1
             pass
