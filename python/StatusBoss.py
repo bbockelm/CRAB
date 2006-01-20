@@ -63,7 +63,7 @@ class StatusBoss(Actor):
         """
         compute the status
         """
-        dir = string.split(common.work_space.topDir(), '/')
+#        dir = string.split(common.work_space.topDir(), '/')
 #        group = dir[len(dir)-2]
         group = self.cfg_params['taskId']
         cmd = 'boss RTupdate -jobid all '
@@ -122,9 +122,9 @@ class StatusBoss(Actor):
                     Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
 
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
-                    self.cfg_params['apmon'].fillDict({'taskId': 'JobStatus', 'jobId': string.strip(jobAttributes[bossid][2]), \
-                                                   'StatusValueReason': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason'), \
-                                                   'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'stateEnterTime'), 'StatusDestination': dest})
+                    self.cfg_params['apmon'].fillDict({'taskId': self.cfg_params['taskId'], 'jobId': str(bossid), \
+                                           'sid': string.strip(jobAttributes[bossid][2]), 'StatusValueReason': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason'), \
+                                           'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'stateEnterTime'), 'StatusDestination': dest})
                     self.cfg_params['apmon'].sendToML()
             print printline
 
