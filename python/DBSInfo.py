@@ -1,19 +1,45 @@
 #!/usr/bin/env python
-import sys, os, string, re
+import sys, os, string, re, commands
+import exceptions
 import common
 from crab_exceptions import *
 try:
- sys.path.append('./DBSAPI')
  import dbsCgiApi
+ import dbsApi
 except:
-  msg="ERROR no DBS API available"
-  raise CrabException(msg)
+  try:
+   Crabpydir=commands.getoutput('which crab')
+   Topdir=string.replace(Crabpydir,'/Crab/python/crab','')
+   sys.path.append(Topdir+'/DBSAPI')
+   import dbsCgiApi
+   import dbsApi
+  except:
+   msg="ERROR no DBS API available"
+   raise CrabException(msg)
 
-class DBSError:
-  def __init__(self, dbspath):
-    print '\nERROR accessing DBS for dataset '+dbspath+'\n' 
-    pass
+# #######################################
+class DBSError(exceptions.Exception):
+  def __init__(self, errorName, errorMessage):
+   args='\nERROR DBS %s : %s \n'%(errorName,errorMessage)
+   exceptions.Exception.__init__(self, args)
+   pass
 
+  def getErrorMessage(self):
+   """ Return exception error """
+   return "%s" % (self.args)
+
+# #######################################
+class DBSInvalidDataTierError(exceptions.Exception):
+  def __init__(self, errorName, errorMessage):
+   args='\nERROR DBS %s : %s \n'%(errorName,errorMessage)
+   exceptions.Exception.__init__(self, args)
+   pass
+                                                                                      
+  def getErrorMessage(self):
+   """ Return exception error """
+   return "%s" % (self.args)
+
+# ####################################
 class DBSInfoError:
   def __init__(self, url):
     print '\nERROR accessing DBS url : '+url+'\n'
@@ -27,8 +53,14 @@ class DBSInfo:
      def __init__(self, dbspath, dataTiers):
           self.dbspath=dbspath 
           self.dataTiers = dataTiers
-          
+          # Construct api object
           self.api = dbsCgiApi.DbsCgiApi(cgiUrl="http://cern.ch/cms-dbs/cgi-bin") 
+          # Configure api logging level
+          self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_QUIET_)
+          if common.logger.debugLevel() >= 4:
+           self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_INFO_)
+          if common.logger.debugLevel() >= 10:          
+           self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_ALL_)
 
 # ####################################
      def getDatasetProvenance(self):
@@ -37,8 +69,10 @@ class DBSInfo:
          """
          try:
            datasetParentList = self.api.getDatasetProvenance(self.dbspath,self.dataTiers)
-         except dbsCgiApi.DbsCgiApiException:
-           raise DBSError(self.dbspath) 
+         except dbsApi.InvalidDataTier, ex:
+           raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())  
+         except dbsApi.DbsApiException, ex:
+           raise DBSError(ex.getClassName(),ex.getErrorMessage())
          return datasetParentList                                                                                                            
          #parent = {}
          #for aparent in datasetParentList:
@@ -54,19 +88,17 @@ class DBSInfo:
          """
          try:
            fileBlockList = self.api.getDatasetContents(self.dbspath)
-         except dbsCgiApi.DbsCgiApiException:
-           raise DBSError(self.dbspath)                                                                                                           
+         except dbsApi.DbsApiException, ex:
+           raise DBSError(ex.getClassName(),ex.getErrorMessage())
          ## get the fileblock and event collections
          nevtsbyblock= {}
          for fileBlock in fileBlockList:
             ## get the event collections for each block
             #print fileBlock.getBlockName()
-            common.logger.debug(10,"DBSInfo: --- block: "+fileBlock.getBlockName())
             #print fileBlock.getBlockId()
             eventCollectionList = fileBlock.getEventCollectionList()
             nevts=0
             for eventCollection in eventCollectionList:
-              #print "DBSInfo:  evc: "+eventCollection.getCollectionName()+" nevts: %i"%eventCollection.getNumberOfEvents()
               common.logger.debug(20,"DBSInfo:  evc: "+eventCollection.getCollectionName()+" nevts:%i"%eventCollection.getNumberOfEvents()) 
               nevts=nevts+eventCollection.getNumberOfEvents()
             common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.getBlockName()))

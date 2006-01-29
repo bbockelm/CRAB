@@ -161,8 +161,10 @@ class Orca_dbsdls(JobType):
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
         txt += '   echo "SET_EXE_ENV 1 ==>ERROR ORCA '+self.version+' not found on `hostname`" \n'
-        txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit 1 \n'
+        txt += '   echo "JOB_EXIT_STATUS = 5"\n'
+        txt += '   echo "SanityCheckCode = 5" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '   exit 5 \n'
         txt += 'fi \n'
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
@@ -179,6 +181,8 @@ class Orca_dbsdls(JobType):
         txt += "then\n"
         txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$narg+ \n"
         txt += '    echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '    echo "SanityCheckCode = 1" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += "    exit 1\n"
         txt += "fi\n"
         txt += "\n"
@@ -258,8 +262,9 @@ class Orca_dbsdls(JobType):
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '   echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
-            txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-            txt += '   exit 1 \n'
+            txt += '   echo "JOB_EXIT_STATUS = $untar_status" \n'
+            txt += '   echo "SanityCheckCode = $untar_status" | tee -a $repo\n'
+            txt += '   exit $untar_status \n'
             txt += 'else \n'
             txt += '   echo "Successful untar" \n'
             txt += 'fi \n'
@@ -288,8 +293,10 @@ class Orca_dbsdls(JobType):
             txt += 'exe_result=$?\n'
             txt += 'if [ $exe_result -ne 0 ] ; then\n'
             txt += '   echo "ERROR: No output file to manage"\n'
-            txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-            txt += '   exit 1 \n'
+            txt += '   echo "JOB_EXIT_STATUS = $exe_result"\n'
+            txt += '   echo "SanityCheckCode = $exe_result" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
+            txt += '   exit $exe_result \n'
             txt += 'else\n'
             txt += '   cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'           
@@ -320,8 +327,15 @@ class Orca_dbsdls(JobType):
                                                     cfg_params)
            self.pubdata.fetchDBSInfo()
 
-        except DataDiscovery.DataDiscoveryError:
-                msg = 'ERROR ***: accessing DBS for DataDiscovery'
+        except DataDiscovery.NotExistingDatasetError, ex :
+                msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
+                raise CrabException(msg)
+
+        except DataDiscovery.NoDataTierinProvenanceError, ex :
+                msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
+                raise CrabException(msg)
+        except DataDiscovery.DataDiscoveryError, ex:
+                msg = 'ERROR ***: failed Data Discovery in DBS  %s'%ex.getErrorMessage()
                 raise CrabException(msg)
 
         ## get list of all required data in the form of dbs paths  (dbs path = /dataset/datatier/owner)
@@ -333,7 +347,7 @@ class Orca_dbsdls(JobType):
         ## get max number of events
         #common.logger.debug(10,"number of events for primary fileblocks %i"%self.pubdata.getMaxEvents())
         self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py 
-
+        common.logger.message("\nThe number of available events is %s"%self.maxEvents)
 
         ## get fileblocks corresponding to the required data
         fb=self.pubdata.getFileBlocks()
@@ -343,8 +357,8 @@ class Orca_dbsdls(JobType):
         try:
           dataloc=DataLocation.DataLocation(self.pubdata.getFileBlocks(),cfg_params)
           dataloc.fetchDLSInfo()
-        except DataLocation.DataLocationError:
-                msg = 'ERROR ***: accessing DLS for DataLocation '
+        except DataLocation.DataLocationError , ex:
+                msg = 'ERROR ***: failes Data Location in DLS \n %s '%ex.getErrorMessage()
                 raise CrabException(msg)
 
         

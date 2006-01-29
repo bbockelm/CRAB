@@ -6,10 +6,15 @@ import common
 from DLSInfo import *
 
 # ####################################
-class DataLocationError:
-    def __init__(self):
-        print '\nERROR accessing DLS \n'
-        pass
+class DataLocationError(exceptions.Exception):
+  def __init__(self, errorMessage):
+   args=errorMessage
+   exceptions.Exception.__init__(self, args)
+   pass
+                                                                                      
+  def getErrorMessage(self):
+   """ Return exception error """
+   return "%s" % (self.args)
 
 # ####################################
 # class to extact data location
@@ -49,17 +54,19 @@ class DataLocation:
         for fileblocks in self.Listfileblocks:
           #print fileblocks
           for afileblock in fileblocks:
-             #print afileblock
              countblock=countblock+1
-             ds=string.split(afileblock,'/')[0]
-             ow=string.split(afileblock,'/')[2]
+             dbspath=string.split(afileblock,'#')[0]
+             ds=string.split(dbspath,'/')[1]
+             ow=string.split(dbspath,'/')[3]
              datablock=ow+"/"+ds
              #
              dls=DLSInfo(datablock)
              try:
                replicas=dls.getReplicas()
+             except DLSNoReplicas, ex:
+               raise DataLocationError(ex.getErrorMessage())
              except:
-               raise DataLocationError
+               raise DataLocationError('')
 
              for replica in replicas:
               Sites.append(replica)
