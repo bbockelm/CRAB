@@ -164,7 +164,8 @@ class Orca(JobType):
         txt += 'fi \n'
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
-        txt += 'eval `'+scram+' runtime -sh`\n'
+        ### needed grep for bug in scramv1 ###
+        txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME\n'
 
         # Handle the arguments:
         txt += "\n"
@@ -403,9 +404,9 @@ class Orca(JobType):
                 PubDBSummaryFile.write('\n')
                 pass
             PubDBSummaryFile.close()
-
-            # for o in self.allOrcarcs:
-            #     o.dump()
+            ### fede
+            for o in self.allOrcarcs:
+                 o.dump()
             pass
 
         # build a list of sites
