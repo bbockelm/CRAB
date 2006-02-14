@@ -385,8 +385,8 @@ class Orca(JobType):
                     numEvReq=self.total_number_of_events
                     if ((numEvReq == '-1') | (numEvReq <= o.Nevents)):
                         self.allOrcarcs.append(o)
-                        if o.Nevents >= self.maxEvents:
-                            self.maxEvents= o.Nevents
+                        if (int(o.Nevents) >= self.maxEvents):
+                            self.maxEvents= int(o.Nevents)
                             pass
                         pass
                     pass
