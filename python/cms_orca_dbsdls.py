@@ -169,7 +169,7 @@ class Orca_dbsdls(JobType):
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
         ### needed grep for bug in scramv1 ###
-        txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME\n'
+        txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
 
         # Handle the arguments:
         txt += "\n"
