@@ -64,12 +64,35 @@ class SchedulerEdg(Scheduler):
             self.register_data = cfg_params["USER.register_data"]
             if int(self.register_data) == 1:
                 try:
+                    self.lfc_host = cfg_params['EDG.lfc_host']
+                except KeyError:
+                    msg = "Error. The [EDG] section does not have 'lfc_host' value"
+                    msg = msg + " it's necessary to know the LFC host name"
+                    common.logger.message(msg)
+                    raise CrabException(msg)
+                try:
+                    self.lfc_catalog_type = cfg_params['EDG.lfc_catalog_type']
+                except KeyError:
+                    msg = "Error. The [EDG] section does not have 'lfc_catalog_type' value"
+                    msg = msg + " it's necessary to know the catalog type"
+                    common.logger.message(msg)
+                    raise CrabException(msg)
+                try:
+                    self.lfc_home = cfg_params['EDG.lfc_home']
+                except KeyError:
+                    msg = "Error. The [EDG] section does not have 'lfc_home' value"
+                    msg = msg + " it's necessary to know the home catalog dir"
+                    common.logger.message(msg)
+                    raise CrabException(msg)
+                try:
                     self.LFN = cfg_params['USER.lfn_dir']
                 except KeyError:
                     msg = "Error. The [USER] section does not have 'lfn_dir' value"
-                    msg = msg + " it's necessary for RLS registration"
+                    msg = msg + " it's necessary for LCF registration"
                     common.logger.message(msg)
                     raise CrabException(msg)
+                
+                               
         except KeyError: self.register_data = 0
 
         if ( int(self.copy_data) == 0 and int(self.register_data) == 1 ):
@@ -138,11 +161,29 @@ class SchedulerEdg(Scheduler):
               txt += 'echo "SE_PATH = $SE_PATH"\n'
                                                                                                                                                              
         if int(self.register_data) == 1:
-           if self.VO:
-              txt += 'export VO='+self.VO+'\n'
-           if self.LFN:
-              txt += 'export LFN='+self.LFN+'\n'
-              txt += '\n'
+           txt += 'export VO='+self.VO+'\n'
+           ### FEDE: add some line for LFC catalog setting 
+           txt += 'if [[ $LCG_CATALOG_TYPE != \''+self.lfc_catalog_type+'\' ]]; then\n'
+           txt += '   export LCG_CATALOG_TYPE='+self.lfc_catalog_type+'\n'
+           txt += 'fi\n'
+           txt += 'if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
+           txt += 'export LFC_HOST='+self.lfc_host+'\n'
+           txt += 'fi\n'
+           txt += 'if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
+           txt += 'export LFC_HOME='+self.lfc_home+'\n'
+           txt += 'fi\n'
+           #####
+           txt += 'export LFN='+self.LFN+'\n'
+           txt += 'lfc-ls $LFN\n' 
+           txt += 'result=$?\n' 
+           txt += 'echo $result\n' 
+           ### creation of LFN dir in LFC catalog, under /grid/cms dir  
+           txt += 'if [ $result != 0 ]; then\n'
+           txt += '   lfc-mkdir $LFN\n'
+           txt += '   result=$?\n' 
+           txt += '   echo $result\n' 
+           txt += 'fi\n'
+           txt += '\n'
         txt += 'CloseCEs=`edg-brokerinfo getCE`\n'
         txt += 'echo "CloseCEs = $CloseCEs"\n'
         txt += 'CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
@@ -192,18 +233,18 @@ class SchedulerEdg(Scheduler):
         txt = ''
         if int(self.register_data) == 1:
            txt += '#\n'
-           txt += '#  Register output to RLS\n'
+           txt += '#  Register output to LFC\n'
            txt += '#\n'
            txt += 'if [[ $exe_result -eq 0 && $copy_exit_status -eq 0 ]]; then\n'
            txt += '   for out_file in $file_list ; do\n'
-           txt += '      echo "Trying to register the output file into RLS"\n'
+           txt += '      echo "Trying to register the output file into LFC"\n'
            txt += '      echo "lcg-rf -l $LFN/$out_file --vo $VO sfn://$SE$SE_PATH/$out_file"\n'
            txt += '      lcg-rf -l $LFN/$out_file --vo $VO sfn://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '      register_exit_status=$?\n'
            txt += '      echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
            txt += '      echo "STAGE_OUT = $register_exit_status"\n'
            txt += '      if [ $register_exit_status -ne 0 ]; then \n'
-           txt += '         echo "Problems with the registration to RLS" \n'
+           txt += '         echo "Problems with the registration to LFC" \n'
            txt += '         echo "Try with srm protocol" \n'
            txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO srm://$SE$SE_PATH/$out_file"\n'
            txt += '         lcg-rf -l $LFN/$out_file --vo $VO srm://$SE$SE_PATH/$out_file 2>&1 \n'
@@ -211,12 +252,12 @@ class SchedulerEdg(Scheduler):
            txt += '         echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
            txt += '         echo "STAGE_OUT = $register_exit_status"\n'
            txt += '         if [ $register_exit_status -ne 0 ]; then \n'
-           txt += '            echo "Problems with the registration into RLS" \n'
+           txt += '            echo "Problems with the registration into LFC" \n'
            txt += '         fi \n'
            txt += '      else \n'
-           txt += '         echo "output registered to RLS"\n'
+           txt += '         echo "output registered to LFC"\n'
            txt += '      fi \n'
-           txt += '      echo "StageOutExitStatus = $register_exit_status"" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '      echo "StageOutExitStatus = $register_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '   done\n'
            txt += 'elif [[ $exe_result -eq 0 && $copy_exit_status -ne 0 ]]; then \n'
            txt += '   echo "Trying to copy output file to CloseSE"\n'
@@ -234,7 +275,7 @@ class SchedulerEdg(Scheduler):
            txt += '         echo "SE = $CLOSE_SE"\n'
            txt += '         echo "LFN for the file is LFN=${LFN}/$out_file"\n'
            txt += '      fi \n'
-           txt += '      echo "StageOutExitStatus = $register_exit_status"" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '      echo "StageOutExitStatus = $register_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '   done\n'
            txt += 'else\n'
            txt += '   echo "Problem with the executable"\n'
