@@ -82,7 +82,7 @@ class ScriptWriter:
 
     def setupJobTypeEnvironment_(self):
         """
-        Returns part of a job script which does scheduler-specific work.
+        Returns part of a job script which does jobtype-specific work.
         """
         jbt = common.job_list.type()
         txt = jbt.wsSetupEnvironment(self.nj)
