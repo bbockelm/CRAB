@@ -71,9 +71,9 @@ class SchedulerEdg(Scheduler):
                     common.logger.message(msg)
                     raise CrabException(msg)
                 try:
-                    self.lfc_catalog_type = cfg_params['EDG.lfc_catalog_type']
+                    self.lcg_catalog_type = cfg_params['EDG.lcg_catalog_type']
                 except KeyError:
-                    msg = "Error. The [EDG] section does not have 'lfc_catalog_type' value"
+                    msg = "Error. The [EDG] section does not have 'lcg_catalog_type' value"
                     msg = msg + " it's necessary to know the catalog type"
                     common.logger.message(msg)
                     raise CrabException(msg)
@@ -163,8 +163,8 @@ class SchedulerEdg(Scheduler):
         if int(self.register_data) == 1:
            txt += 'export VO='+self.VO+'\n'
            ### FEDE: add some line for LFC catalog setting 
-           txt += 'if [[ $LCG_CATALOG_TYPE != \''+self.lfc_catalog_type+'\' ]]; then\n'
-           txt += '   export LCG_CATALOG_TYPE='+self.lfc_catalog_type+'\n'
+           txt += 'if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
+           txt += '   export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
            txt += 'fi\n'
            txt += 'if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
            txt += 'export LFC_HOST='+self.lfc_host+'\n'
