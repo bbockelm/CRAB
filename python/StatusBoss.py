@@ -72,7 +72,11 @@ class StatusBoss(Actor):
         addjoincondition = ''
         nodeattr='JOB.E_HOST'
         cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.JOBID"' #INTERNAL_ID" '
+        #print "#####################################################" 
+        #print "cmd = ", cmd 
         cmd_out = runBossCommand(cmd)
+        #print "cmd_out = ", cmd_out
+        #print "#####################################################" 
         jobAttributes={}
         CoupJobsID={}
         nline=0
@@ -102,7 +106,7 @@ class StatusBoss(Actor):
             for_summary.append(jobStatus)
             exe_code =jobAttributes[bossid][3]
             try:
-                dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2])).split(":")[0]
+               dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2])).split(":")[0]
             except: 
                 dest = ''  
                 pass 

@@ -59,31 +59,32 @@ class SchedulerEdg(Scheduler):
            msg = 'Warning: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n' 
            msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n' 
            raise CrabException(msg)
+
+        try:
+            self.lfc_host = cfg_params['EDG.lfc_host']
+        except KeyError:
+            msg = "Error. The [EDG] section does not have 'lfc_host' value"
+            msg = msg + " it's necessary to know the LFC host name"
+            common.logger.message(msg)
+            raise CrabException(msg)
+        try:
+            self.lcg_catalog_type = cfg_params['EDG.lcg_catalog_type']
+        except KeyError:
+            msg = "Error. The [EDG] section does not have 'lcg_catalog_type' value"
+            msg = msg + " it's necessary to know the catalog type"
+            common.logger.message(msg)
+            raise CrabException(msg)
+        try:
+            self.lfc_home = cfg_params['EDG.lfc_home']
+        except KeyError:
+            msg = "Error. The [EDG] section does not have 'lfc_home' value"
+            msg = msg + " it's necessary to know the home catalog dir"
+            common.logger.message(msg)
+            raise CrabException(msg)
       
         try: 
             self.register_data = cfg_params["USER.register_data"]
             if int(self.register_data) == 1:
-                try:
-                    self.lfc_host = cfg_params['EDG.lfc_host']
-                except KeyError:
-                    msg = "Error. The [EDG] section does not have 'lfc_host' value"
-                    msg = msg + " it's necessary to know the LFC host name"
-                    common.logger.message(msg)
-                    raise CrabException(msg)
-                try:
-                    self.lcg_catalog_type = cfg_params['EDG.lcg_catalog_type']
-                except KeyError:
-                    msg = "Error. The [EDG] section does not have 'lcg_catalog_type' value"
-                    msg = msg + " it's necessary to know the catalog type"
-                    common.logger.message(msg)
-                    raise CrabException(msg)
-                try:
-                    self.lfc_home = cfg_params['EDG.lfc_home']
-                except KeyError:
-                    msg = "Error. The [EDG] section does not have 'lfc_home' value"
-                    msg = msg + " it's necessary to know the home catalog dir"
-                    common.logger.message(msg)
-                    raise CrabException(msg)
                 try:
                     self.LFN = cfg_params['USER.lfn_dir']
                 except KeyError:
@@ -91,8 +92,6 @@ class SchedulerEdg(Scheduler):
                     msg = msg + " it's necessary for LCF registration"
                     common.logger.message(msg)
                     raise CrabException(msg)
-                
-                               
         except KeyError: self.register_data = 0
 
         if ( int(self.copy_data) == 0 and int(self.register_data) == 1 ):
@@ -160,19 +159,19 @@ class SchedulerEdg(Scheduler):
               txt += 'export SE_PATH='+self.SE_PATH+'\n'
               txt += 'echo "SE_PATH = $SE_PATH"\n'
                                                                                                                                                              
+        txt += 'export VO='+self.VO+'\n'
+        ### FEDE: add some line for LFC catalog setting 
+        txt += 'if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
+        txt += '   export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
+        txt += 'fi\n'
+        txt += 'if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
+        txt += 'export LFC_HOST='+self.lfc_host+'\n'
+        txt += 'fi\n'
+        txt += 'if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
+        txt += 'export LFC_HOME='+self.lfc_home+'\n'
+        txt += 'fi\n'
+        #####
         if int(self.register_data) == 1:
-           txt += 'export VO='+self.VO+'\n'
-           ### FEDE: add some line for LFC catalog setting 
-           txt += 'if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
-           txt += '   export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
-           txt += 'fi\n'
-           txt += 'if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
-           txt += 'export LFC_HOST='+self.lfc_host+'\n'
-           txt += 'fi\n'
-           txt += 'if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
-           txt += 'export LFC_HOME='+self.lfc_home+'\n'
-           txt += 'fi\n'
-           #####
            txt += 'export LFN='+self.LFN+'\n'
            txt += 'lfc-ls $LFN\n' 
            txt += 'result=$?\n' 
@@ -548,29 +547,42 @@ class SchedulerEdg(Scheduler):
         out_box = out_box + ' };'
         jdl.write(out_box+'\n')
 
-        ### if at least a CE exists ...
-        if common.analisys_common_info['sites']:
-            if common.analisys_common_info['sw_version']:
-                req='Requirements = '
-                req=req + 'Member("VO-cms-' + \
-                     common.analisys_common_info['sw_version'] + \
-                     '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-            if len(common.analisys_common_info['sites'])>0:
-                req = req + ' && ('
-                for i in range(len(common.analisys_common_info['sites'])):
-                    req = req + 'other.GlueCEInfoHostName == "' \
-                         + common.analisys_common_info['sites'][i] + '"'
-                    if ( i < (int(len(common.analisys_common_info['sites']) - 1)) ):
-                        req = req + ' || '
-            req = req + ')'
 
-            #### and USER REQUIREMENT
-            if self.EDG_requirements:
+        req='Requirements = '
+        req = req + jbt.getRequirements()
+#        ### if at least a CE exists ...
+#        if common.analisys_common_info['sites']:
+#           if common.analisys_common_info['sw_version']:
+#                req='Requirements = '
+#                req=req + 'Member("VO-cms-' + \
+#                     common.analisys_common_info['sw_version'] + \
+#                     '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
+#            if len(common.analisys_common_info['sites'])>0:
+#                req = req + ' && ('
+#                for i in range(len(common.analisys_common_info['sites'])):
+#                    req = req + 'other.GlueCEInfoHostName == "' \
+#                         + common.analisys_common_info['sites'][i] + '"'
+#                    if ( i < (int(len(common.analisys_common_info['sites']) - 1)) ):
+#                        req = req + ' || '
+#            req = req + ')'
+        #### and USER REQUIREMENT
+        if self.EDG_requirements:
+            if (req == 'Requirement = '):
+                req = req + self.EDG_requirements
+            else:
                 req = req +  ' && ' + self.EDG_requirements
-            if self.EDG_clock_time:
+        if self.EDG_clock_time:
+            if (req == 'Requirement = '):
+                req = req + 'other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
+            else:
                 req = req + ' && other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
-            if self.EDG_cpu_time:
+                
+        if self.EDG_cpu_time:
+            if (req == 'Requirement = '):
                 req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+            else:
+                req = req + 'other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+        if (req != 'Requirement = '):
             req = req + ';\n'
             jdl.write(req)
                                                                                                                                                              

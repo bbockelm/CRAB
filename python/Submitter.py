@@ -26,7 +26,7 @@ class Submitter(Actor):
 
         totalCreatedJobs= 0
         start = time.time()
-#        self.cfg_params['taskId'] = self.cfg_params['user']+'_'+self.cfg_params['USER.dataset']+'.'+self.cfg_params['USER.owner']+'_'+str(start)
+        # self.cfg_params['taskId'] = self.cfg_params['user']+'_'+self.cfg_params['USER.dataset']+'.'+self.cfg_params['USER.owner']+'_'+str(start)
         for nj in range(common.jobDB.nJobs()):
             if (common.jobDB.status(nj)=='C') or (common.jobDB.status(nj)=='RC'): totalCreatedJobs +=1
             pass
@@ -102,11 +102,15 @@ class Submitter(Actor):
                         taskType = 'analysis'
                         rb = jid.split(':')[1]
                         self.cfg_params['rb'] = rb.replace('//', '')
+                        #params = {'taskId': self.cfg_params['taskId'], 'jobId': self.cfg_params['jobId'], 'sid': self.cfg_params['sid'], \
+                        #          'application': application, 'exe': self.cfg_params['ORCA.executable'], 'nevtJob': nevtJob, 'tool': tool, \
+                        #          'scheduler': self.cfg_params['CRAB.scheduler'], 'GridName': self.cfg_params['GridName'], 'taskType': taskType, \
+                        #          'vo': self.cfg_params['EDG.virtual_organization'], 'dataset': self.cfg_params['ORCA.dataset'],\
+                        #          'owner': self.cfg_params['ORCA.owner'], 'broker': self.cfg_params['rb'], 'user': self.cfg_params['user']}
                         params = {'taskId': self.cfg_params['taskId'], 'jobId': self.cfg_params['jobId'], 'sid': self.cfg_params['sid'], \
-                                  'application': application, 'exe': self.cfg_params['USER.executable'], 'nevtJob': nevtJob, 'tool': tool, \
+                                  'application': application, 'exe': self.cfg_params['ORCA.executable'], 'nevtJob': nevtJob, 'tool': tool, \
                                   'scheduler': self.cfg_params['CRAB.scheduler'], 'GridName': self.cfg_params['GridName'], 'taskType': taskType, \
-                                  'vo': self.cfg_params['EDG.virtual_organization'], 'dataset': self.cfg_params['USER.dataset'],\
-                                  'owner': self.cfg_params['USER.owner'], 'broker': self.cfg_params['rb'], 'user': self.cfg_params['user']}
+                                  'vo': self.cfg_params['EDG.virtual_organization'], 'broker': self.cfg_params['rb'], 'user': self.cfg_params['user']}
                         self.cfg_params['apmon'].fillDict(params)
                         self.cfg_params['apmon'].sendToML()
                     except:

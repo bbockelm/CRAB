@@ -21,9 +21,9 @@ class Creator(Actor):
         self.job_number_of_events = 0
         self.first_event = 0
 
-        ## SL No. These must not be here!            
-        self.owner = cfg_params['USER.owner']
-        self.dataset = cfg_params['USER.dataset'] 
+        ### commented for FAMOS            
+        # self.owner = cfg_params['ORCA.owner']
+        # self.dataset = cfg_params['ORCA.dataset'] 
 
         self.createJobTypeObject()
         common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
@@ -41,7 +41,9 @@ class Creator(Actor):
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
         
         fileCODE1 = open(common.work_space.shareDir()+"/code","a")
-        fileCODE1.write('::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
+        ### commented for FAMOS            
+        # fileCODE1.write('::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
+        fileCODE1.write('::'+str(self.ncjobs))
         fileCODE1.close()
 
 
@@ -185,6 +187,7 @@ class Creator(Actor):
         # this is the last job
         common.jobDB.setFirstEvent(nJobs-1, firstEvent)
         lastJobsNumberOfEvents= (self.total_number_of_events+self.first_event)-firstEvent
+        #print 'lastJobsNumberOfEvents :', lastJobsNumberOfEvents
         common.jobDB.setMaxEvents(nJobs-1, lastJobsNumberOfEvents)
     
         if (lastJobsNumberOfEvents!=self.job_number_of_events):

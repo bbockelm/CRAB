@@ -9,8 +9,9 @@ def Monitor(operation,Resubmit,jid,exitCode):
        array = fileCODE1.read().split('::')
        time = array[0]
        NjobCre = array[1]
-       dataset = array[2]
-       owner = array[3]
+       ### commented for FAMOS
+       # dataset = array[2]
+       # owner = array[3]
        fileCODE1.close()
           
        try:
@@ -33,9 +34,9 @@ def Monitor(operation,Resubmit,jid,exitCode):
                                                                                                                              
        sockobj = socket(AF_INET,SOCK_DGRAM)
        sockobj.connect((address,port))
-       sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
-       #sockobj.send(str(UInam)+';STARTED:1')
-      # print 'vediamo'+str(UIname)+'::'+str(operation)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre)
+       ### commented for FAMOS
+       #sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
+       sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
                                                                                                                              
        sockobj.close()
  

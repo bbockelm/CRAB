@@ -10,7 +10,6 @@ class SchedulerBoss(Scheduler):
     def __init__(self):
         Scheduler.__init__(self,"BOSS")
         self.checkBoss_()
-        #self.cwd = common.work_space.cwdDir()
         self.schedRegistered = {}
         self.jobtypeRegistered = {}
         return
@@ -231,7 +230,7 @@ class SchedulerBoss(Scheduler):
         """
         ## we don't need to test this at every call:
         if (self.jobtypeRegistered.has_key(jobtype)): return
-
+      
         ## we should cache the result of the first test
         boss_jobtype_check = "boss showJobTypes"
         boss_out = runBossCommand(boss_jobtype_check,0)
@@ -249,9 +248,11 @@ class SchedulerBoss(Scheduler):
                     msg = 'Error: Problem with job '+jobtype+' registration\n'
                     raise CrabException(msg)
             else:
+                self.jobtypeRegistered[jobtype] = 2
                 msg = 'Warning: file '+ register_boss_jobtype + ' does not exist!\n'
                 msg = msg + 'Will be used only JOB as default jobtype\n'
                 common.logger.message(msg)
+                return
         self.jobtypeRegistered[jobtype] = 1
         return
 
@@ -286,16 +287,16 @@ class SchedulerBoss(Scheduler):
         # BOSS job declaration
         dir = string.split(common.work_space.topDir(), '/')
         sch = open(sch_script, 'a')
-        types = 'jobtype=crabjob,orca'
+        if (self.jobtypeRegistered[self.boss_jobtype] == 2):
+            types = 'jobtype=crabjob'
+        else:
+            types = 'jobtype=crabjob,'+self.boss_jobtype  
         boss_scheduler_name = string.lower(self.boss_scheduler.name())
         # da decidere se lasciare come if ...
-        if boss_scheduler_name == 'edg' :
-            types += ',edg'
+        if (self.jobtypeRegistered[self.boss_scheduler_name] != 2):
+            types += ','+self.boss_scheduler_name
         sch.write(types+';\n')            
-        # da decidere se questo valore va bene come group ...
-        # NO CAXX0!!! E' almeno la 10^a volta che viene definito un grup name!!!!
-        # e dove sono le altre definizioni di group nel codice di CRAB ??????? 
-#        sch.write('group='+ dir[len(dir)-2]+';\n')
+        #print "types = ", types
         sch.write('group='+ self.groupName +';\n')
         sch.write('BossAttr=[')
         sch.write('crabjob.INTERNAL_ID=' + str(nj+1) + ';')
@@ -305,7 +306,6 @@ class SchedulerBoss(Scheduler):
         dirlog = common.work_space.logDir()
         scriptName=os.path.basename(common.job_list[nj].scriptFilename())
         
-#        cmd = 'boss declare -group '+ dir[len(dir)-2] +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
         cmd = 'boss declare -group '+ self.groupName +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
   
         msg = 'BOSS declaration:' + cmd
@@ -580,12 +580,6 @@ class SchedulerBoss(Scheduler):
         """
         Return a list of all boss_Id of a task
         """
-        #print "sono in listBoss"
-#        dirGroup = string.split(common.work_space.topDir(), '/')
-#        group = dirGroup[len(dirGroup)-2]
-        ListBoss_ID = {}
-
-        # FEDE .....
         ListBoss_ID = {}
         cmd = 'boss SQL -query "select crabjob.INTERNAL_ID, JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+self.groupName+'\'"'
 

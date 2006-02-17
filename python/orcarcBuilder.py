@@ -173,7 +173,7 @@ class orcarcBuilder:
     """
     ## use the user defined ordering if present , otherwise use the default 
     try:
-        sortedDataTier= string.split(self.cfg_params['USER.order_catalogs'],',')
+        sortedDataTier= string.split(self.cfg_params['ORCA.order_catalogs'],',')
     except KeyError: 
         sortedDataTier=['Hit','InitHit','PU','InitDigi','Digi','DST','DSTStreams']
     #print sortedDataTier
@@ -194,7 +194,7 @@ class orcarcBuilder:
     ## additional check: to append at the end catalogues with data tier 
     ## for which ordering has not been defined
     try:
-        user_DataTier= string.split(self.cfg_params['USER.data_tier'],',')
+        user_DataTier= string.split(self.cfg_params['ORCA.data_tier'],',')
     except KeyError:
         user_DataTier=[]
 

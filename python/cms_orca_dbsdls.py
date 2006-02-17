@@ -29,9 +29,9 @@ class Orca_dbsdls(JobType):
 
         ### collect Data cards
         try:
-            self.owner = cfg_params['USER.owner']
+            self.owner = cfg_params['ORCA.owner']
             log.debug(6, "Orca::Orca(): owner = "+self.owner)
-            self.dataset = cfg_params['USER.dataset']
+            self.dataset = cfg_params['ORCA.dataset']
             log.debug(6, "Orca::Orca(): dataset = "+self.dataset)
         except KeyError:
             msg = "Error: owner and/or dataset not defined "
@@ -39,7 +39,7 @@ class Orca_dbsdls(JobType):
 
         self.dataTiers = []
         try:
-            tmpDataTiers = string.split(cfg_params['USER.data_tier'],',')
+            tmpDataTiers = string.split(cfg_params['ORCA.data_tier'],',')
             for tmp in tmpDataTiers:
                 tmp=string.strip(tmp)
                 self.dataTiers.append(tmp)
@@ -51,14 +51,14 @@ class Orca_dbsdls(JobType):
 
         ## now the application
         try:
-            self.executable = cfg_params['USER.executable']
+            self.executable = cfg_params['ORCA.executable']
             log.debug(6, "Orca::Orca(): executable = "+self.executable)
         except KeyError:
             msg = "Error: executable not defined "
             raise CrabException(msg)
 
         try:
-            self.orcarc_file = cfg_params['USER.orcarc_file']
+            self.orcarc_file = cfg_params['ORCA.orcarc_file']
             log.debug(6, "Orca::Orca(): orcarc file = "+self.orcarc_file)
             if (not os.path.exists(self.orcarc_file)):
                 raise CrabException("User defined .orcarc file "+self.orcarc_file+" does not exist")
@@ -70,9 +70,9 @@ class Orca_dbsdls(JobType):
         try:
             self.output_file = []
 
-            tmp = cfg_params['USER.output_file']
+            tmp = cfg_params['ORCA.output_file']
             if tmp != '':
-                tmpOutFiles = string.split(cfg_params['USER.output_file'],',')
+                tmpOutFiles = string.split(cfg_params['ORCA.output_file'],',')
                 log.debug(7, 'Orca::Orca(): output files '+str(tmpOutFiles))
                 for tmp in tmpOutFiles:
                     tmp=string.strip(tmp)
@@ -89,7 +89,7 @@ class Orca_dbsdls(JobType):
 
         # script_exe file as additional file in inputSandbox
         try:
-           self.scriptExe = cfg_params['USER.script_exe']
+           self.scriptExe = cfg_params['ORCA.script_exe']
            self.additional_inbox_files.append(self.scriptExe)
         except KeyError:
            pass
@@ -272,7 +272,8 @@ class Orca_dbsdls(JobType):
             # TODO: what does this code do here ?
             # SL check that lib/Linux__... is present
             txt += 'mkdir -p lib/${SCRAM_ARCH} \n'
-            txt += 'eval `'+self.scram.commandName()+' runtime -sh`'+'\n'
+            #txt += 'eval `'+self.scram.commandName()+' runtime -sh`'+'\n'
+            txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
             pass
 
         return txt
@@ -489,6 +490,26 @@ class Orca_dbsdls(JobType):
             out_box.append(self.numberFile_(out,str(n_out)))
         return out_box
 
+    def getRequirements(self):
+        """
+       return job requirements to add to jdl files 
+        """
+        req = ''
+        if common.analisys_common_info['sites']:
+            if common.analisys_common_info['sw_version']:
+                req='Member("VO-cms-' + \
+                     common.analisys_common_info['sw_version'] + \
+                     '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
+            if len(common.analisys_common_info['sites'])>0:
+                req = req + ' && ('
+                for i in range(len(common.analisys_common_info['sites'])):
+                    req = req + 'other.GlueCEInfoHostName == "' \
+                         + common.analisys_common_info['sites'][i] + '"'
+                    if ( i < (int(len(common.analisys_common_info['sites']) - 1)) ):
+                        req = req + ' || '
+            req = req + ')'
+        #print "req = ", req 
+        return req
     def numberFile_(self, file, txt):
         """
         append _'txt' before last extension of a file
