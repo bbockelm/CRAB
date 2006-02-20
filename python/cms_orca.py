@@ -26,6 +26,7 @@ class Orca(JobType):
 
         self.version = self.scram.getSWVersion()
         common.analisys_common_info['sw_version'] = self.version
+        common.analisys_common_info['copy_input_data'] = 0
 
         ### collect Data cards
         try:

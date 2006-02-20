@@ -15,6 +15,7 @@ class ScriptWriter:
             'title'                       : self.title_,
             'setup_scheduler_environment' : self.setupSchedulerEnvironment_,
             'setup_jobtype_environment'   : self.setupJobTypeEnvironment_,
+            'copy_input'                  : self.copyInput_,
             'build_executable'            : self.buildExe_,
             'run_executable'              : self.runExe_,
             'rename_output'               : self.renameOutput_,
@@ -117,7 +118,13 @@ class ScriptWriter:
         txt += jbt.wsRenameOutput(self.nj)
         return txt
 
-    #### FEDE
+    def copyInput_(self):
+        """
+        Returns part of a job script which copies input files from SE.
+        """
+        txt = common.scheduler.wsCopyInput()
+        return txt
+
     def copyOutput_(self):
         """
         Returns part of a job script which copies output files to SE.

@@ -46,10 +46,11 @@ class Famos(JobType):
             self.orcarc_file = ''
 
         # input files - add for FAMOS (to be registered in LFC file catalog) 
-        try:
-            self.copy_input_data = cfg_params['FAMOS.copy_input_data']
-        except KeyError:
-            log.message("Using copy_input_data")
+        #try:
+        #    self.copy_input_data = cfg_params['USER.copy_input_data']
+        #except KeyError:
+            #log.message("Using copy_input_data")
+        common.analisys_common_info['copy_input_data'] = 1
 
         try:
             self.input_lfn = cfg_params['FAMOS.input_lfn']
@@ -178,34 +179,17 @@ class Famos(JobType):
         txt += "FirstEvent=$2\n"
         txt += "MaxEvents=$3\n"
 
-        if self.copy_input_data:
+#        if int(self.copy_input_data) == 1:
 
-            if self.VO:
-                txt += 'export VO='+self.VO+'\n'                                                                                                                                                      
-            in_file = self.input_lfn
-            p = string.split(in_file,".")
-            ext = p[len(p)-1]
-            # fede  
-            q = string.split(p[0],"/")
-            name= q[len(q)-1]
-            ### 
-            #name = p[0]
-            #ext = p[len(p)-1]
-            txt +='#\n'
-            txt +='# Copy the input files for FAMOS from SE to WN\n'
-            txt +='#\n'
-            txt +='the_ntuple='+name+'_$NJob.'+ext+'\n'
-            txt +='input_lfn='+q[0]+'/'+'$the_ntuple\n'
-            txt +='echo "$input_lfn" \n'
-            txt +='echo "$the_ntuple" \n'
-            txt +='lcg-cp --vo $VO lfn:$input_lfn file:`pwd`/$the_ntuple 2>&1\n'
-            txt +='copy_input_exit_status=$?\n'
-            txt +='echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
-            txt +='if [ $copy_input_exit_status -ne 0 ]; then \n'
-            txt +='   echo "Problems with copying to WN" \n'
-            txt +='else \n'
-            txt +='   echo "input copied into WN" \n'
-            txt +='fi \n'
+        in_file = self.input_lfn
+        p = string.split(in_file,".")
+        ext = p[len(p)-1]
+        q = string.split(p[0],"/")
+        name= q[len(q)-1]
+        txt +='the_ntuple='+name+'_$NJob.'+ext+'\n'
+        txt +='input_lfn='+q[0]+'/'+'$the_ntuple\n'
+        txt +='echo "$input_lfn" \n'
+        txt +='echo "$the_ntuple" \n'
 
         # Prepare job-specific part
         job = common.job_list[nj]

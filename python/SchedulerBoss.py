@@ -305,9 +305,8 @@ class SchedulerBoss(Scheduler):
  
         dirlog = common.work_space.logDir()
         scriptName=os.path.basename(common.job_list[nj].scriptFilename())
-        
+
         cmd = 'boss declare -group '+ self.groupName +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
-  
         msg = 'BOSS declaration:' + cmd
         common.logger.debug(5,msg)
         cmd_out = runBossCommand(cmd)
@@ -507,6 +506,9 @@ class SchedulerBoss(Scheduler):
 
     def queryDest(self, id):  
         return self.boss_scheduler.getStatusAttribute_(id, 'destination')
+
+    def wsCopyInput(self):
+        return self.boss_scheduler.wsCopyInput()
 
     def wsCopyOutput(self):
         return self.boss_scheduler.wsCopyOutput()

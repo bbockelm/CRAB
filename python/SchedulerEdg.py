@@ -39,6 +39,11 @@ class SchedulerEdg(Scheduler):
         try: self.VO = cfg_params['EDG.virtual_organization']
         except KeyError: self.VO = 'cms'
 
+        try:
+             self.copy_input_data = common.analisys_common_info['copy_input_data']
+             print "self.copy_input_data = ", self.copy_input_data
+        except KeyError: self.copy_input_data = 0
+
         try: self.return_data = cfg_params['USER.return_data']
         except KeyError: self.return_data = 1
 
@@ -189,6 +194,29 @@ class SchedulerEdg(Scheduler):
         txt += 'echo "CE = $CE"\n'
         return txt
 
+    def wsCopyInput(self):
+        """
+        Copy input data from SE to WN     
+        """
+        txt = ''
+        try:
+            self.copy_input_data = common.analisys_common_info['copy_input_data']
+            #print "self.copy_input_data = ", self.copy_input_data
+        except KeyError: self.copy_input_data = 0
+        if int(self.copy_input_data) == 1:
+           txt += '#\n'
+           txt += '#   Copy Input Data from SE to this WN\n'
+           txt += '#\n'
+           txt +='lcg-cp --vo $VO lfn:$input_lfn file:`pwd`/$the_ntuple 2>&1\n'
+           txt +='copy_input_exit_status=$?\n'
+           txt +='echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
+           txt +='if [ $copy_input_exit_status -ne 0 ]; then \n'
+           txt +='   echo "Problems with copying to WN" \n'
+           txt +='else \n'
+           txt +='   echo "input copied into WN" \n'
+           txt +='fi \n'
+        return txt
+
     def wsCopyOutput(self):
         """
         Write a CopyResults part of a job script, e.g.
@@ -196,7 +224,6 @@ class SchedulerEdg(Scheduler):
         """
         txt = ''
         if int(self.copy_data) == 1:
-           copy = 'globus-url-copy file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file'
            txt += '#\n'
            txt += '#   Copy output to SE = $SE\n'
            txt += '#\n'

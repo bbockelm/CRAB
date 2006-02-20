@@ -4,16 +4,6 @@
 # HEAD
 #
 #
-
-dumpStatus() {
-# Marco
-echo "First attempt of ML transmission from WN"
-echo ">>>>>>> Cat $1"
-cat $1
-echo ">>>>>>> End Cat jobreport"
-./report.py $(cat $1)
-# End Marco
-}
 RUNTIME_AREA=`pwd`
 
 echo "Today is `date`"
@@ -21,9 +11,8 @@ echo "Job submitted on host `hostname`"
 uname -a
 echo "Working directory `pwd`"
 ls -Al
-repo=jobreport.txt
-echo "SyncGridJobId = `echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo 
-echo "SyncGridName = `grid-proxy-info -identity`" | tee -a $RUNTIME_AREA/$repo
+
+#scramv1 list |grep FAMOS
 #
 # END OF HEAD
 #
@@ -41,10 +30,18 @@ echo "SyncGridName = `grid-proxy-info -identity`" | tee -a $RUNTIME_AREA/$repo
 #
 
 #
+# COPY INPUT
+#
+
+#CRAB copy_input 
+
+#
 # PREPARE AND RUN EXECUTABLE
 #
 
 #CRAB build_executable
+#eval `scramv1 runtime -sh`
+eval `scramv1 runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`
 
 echo "Executable $executable"
 which $executable
@@ -52,8 +49,6 @@ res=$?
 if [ $res -ne 0 ];then 
   echo "SET_EXE 1 ==> ERROR executable not found on WN `hostname`" 
   echo "JOB_EXIT_STATUS = 1"
-  echo "SanityCheckCode = 1" | tee -a $RUNTIME_AREA/$repo
-  dumpStatus $RUNTIME_AREA/$repo
   exit 1 
 fi
 
@@ -61,7 +56,6 @@ echo "SET_EXE 0 ==> ok executable found"
 
 echo "$executable started at `date`"
 start_exe_time=`date +%s`
-echo "ExeStart = $executable" | tee -a $RUNTIME_AREA/$repo
 #CRAB run_executable
 executable_exit_status=$?
 stop_exe_time=`date +%s`
@@ -74,7 +68,6 @@ if [ $executable_exit_status -ne 0 ]; then
   echo "Warning: Processing of job failed with exit code $executable_exit_status"
 fi
 exit_status=$executable_exit_status
-echo "ExeExitStatus = $exit_status" | tee -a $RUNTIME_AREA/$repo
 
 #
 # END OF PREPARE AND RUN EXECUTABLE
@@ -101,6 +94,5 @@ pwd
 echo "ls -Al"
 ls -Al
 
-echo "SummaryFinalStatus = $exit_status" | tee -a $RUNTIME_AREA/$repo
-dumpStatus $RUNTIME_AREA/$repo
+echo "JOB_EXIT_STATUS = $exit_status"
 exit $exit_status
