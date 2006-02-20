@@ -182,16 +182,23 @@ class Famos(JobType):
 
             if self.VO:
                 txt += 'export VO='+self.VO+'\n'                                                                                                                                                      
-            in_file = self.input_lfn 
+            in_file = self.input_lfn
             p = string.split(in_file,".")
-            name = p[0]
             ext = p[len(p)-1]
+            # fede  
+            q = string.split(p[0],"/")
+            name= q[len(q)-1]
+            ### 
+            #name = p[0]
+            #ext = p[len(p)-1]
             txt +='#\n'
             txt +='# Copy the input files for FAMOS from SE to WN\n'
             txt +='#\n'
             txt +='the_ntuple='+name+'_$NJob.'+ext+'\n'
+            txt +='input_lfn='+q[0]+'/'+'$the_ntuple\n'
+            txt +='echo "$input_lfn" \n'
             txt +='echo "$the_ntuple" \n'
-            txt +='lcg-cp --vo $VO lfn:$the_ntuple file:`pwd`/$the_ntuple 2>&1\n'
+            txt +='lcg-cp --vo $VO lfn:$input_lfn file:`pwd`/$the_ntuple 2>&1\n'
             txt +='copy_input_exit_status=$?\n'
             txt +='echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
             txt +='if [ $copy_input_exit_status -ne 0 ]; then \n'
