@@ -204,6 +204,7 @@ class Famos(JobType):
 
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
+                file = os.path.basename(file)
                 txt += 'if [ -e $RUNTIME_AREA/'+file+' ] ; then\n'
                 txt += '   cp $RUNTIME_AREA/'+file+' .\n'
                 txt += '   chmod +x '+file+'\n'
