@@ -1,0 +1,31 @@
+MaxEvents=10
+InputFileCatalogURL = @{xmlcatalog_http://www.pd.infn.it/~lacaprar/PoolCatalog/PoolFileCatalog_mu_DigisNoPU_PD_SingleMuon.xml}@
+
+InputCollections = /System/mu_DigisNoPU_PD/SingleMuon
+
+CMSRandom:Seeds = 40 3
+
+# FrontEnd:DefaultRequest = Nop
+# MuonHits*:Request = Auto
+# MuonDigi*:Request = Auto
+
+*:Request = ReadOnly
+
+# # - switch off access to Hits, Digis, Assocs
+# TrackerHits*:Request=Nop
+# CH:Request=Nop   # Ecal
+# HH:Request=Nop   # Hcal
+# MuonHits*:Request=Nop
+# TrackerDigi*:Request=Nop
+# TrackerAssoc*:Request=Nop
+# CD:Request=Nop   # Ecal dataframes
+# HD:Request=Nop   # Hcal dataframes
+# CR:Request=Nop   # Ecal RecHits
+# HR:Request=Nop   # Hcal RecHits
+# CS:Request=Nop   # Ecal selective readout
+# CT:Request=Nop   # Ecal Trigger towers
+# HT:Request=Nop   # Hcal Trigger towers
+# MuonDigis*:Request=Nop
+# MuonAssoc*:Request=Nop
+
+
