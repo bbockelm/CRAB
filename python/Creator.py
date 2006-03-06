@@ -22,9 +22,7 @@ class Creator(Actor):
         self.first_event = 0
 
         ### commented for FAMOS            
-        # self.owner = cfg_params['ORCA.owner']
-        # self.dataset = cfg_params['ORCA.dataset'] 
-
+        
         self.createJobTypeObject()
         common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
 
@@ -40,10 +38,15 @@ class Creator(Actor):
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
         
-        fileCODE1 = open(common.work_space.shareDir()+"/code","a")
-        ### commented for FAMOS            
-        # fileCODE1.write('::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
-        fileCODE1.write('::'+str(self.ncjobs))
+        fileCODE1 = open(common.work_space.shareDir()+"/.code","a")
+        ### commented for FAMOS  
+        if self.job_type.name() == 'ORCA':
+            self.owner = cfg_params['ORCA.owner']
+            self.dataset = cfg_params['ORCA.dataset']
+            fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
+            pass
+        elif self.job_type.name() == 'FAMOS':
+            pass
         fileCODE1.close()
 
 

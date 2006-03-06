@@ -5,13 +5,16 @@ import os
 import common
 
 def Monitor(operation,Resubmit,jid,exitCode):
-       fileCODE1 = open(common.work_space.shareDir()+"/code","r")
+       fileCODE1 = open(common.work_space.shareDir()+"/.code","r")
        array = fileCODE1.read().split('::')
        time = array[0]
-       NjobCre = array[1]
-       ### commented for FAMOS
-       # dataset = array[2]
-       # owner = array[3]
+       jobtype = array[1]
+       NjobCre = array[2]
+       if jobtype == 'ORCA':
+           dataset = array[3]
+           owner = array[4]
+       elif jobtype == 'FAMOS':
+           pass
        fileCODE1.close()
           
        try:
@@ -34,10 +37,10 @@ def Monitor(operation,Resubmit,jid,exitCode):
                                                                                                                              
        sockobj = socket(AF_INET,SOCK_DGRAM)
        sockobj.connect((address,port))
-       ### commented for FAMOS
-       #sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
-       sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
-                                                                                                                             
+       if jobtype == 'ORCA':
+           sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
+       elif jobtype == 'FAMOS':
+           pass 
        sockobj.close()
  
 
