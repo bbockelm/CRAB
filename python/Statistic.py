@@ -38,7 +38,7 @@ def Monitor(operation,Resubmit,jid,exitCode):
        sockobj = socket(AF_INET,SOCK_DGRAM)
        sockobj.connect((address,port))
        if jobtype == 'ORCA':
-           sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
+           sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
        elif jobtype == 'FAMOS':
            pass 
        sockobj.close()
