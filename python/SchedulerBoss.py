@@ -79,7 +79,7 @@ class SchedulerBoss(Scheduler):
             # First I have to create a SQLiteConfig.clad file in the proper directory
             cwd = os.getcwd()
             os.chdir(common.work_space.shareDir())
-            confSQLFileName = os.environ["HOME"]+'/MySQLRTConfig.clad'
+            confSQLFileName = os.environ["HOME"]+'/.bossrc/MySQLRTConfig.clad'
             confFile = open(confSQLFileName, 'w')
 
             confFile.write('[\n')
@@ -211,7 +211,9 @@ class SchedulerBoss(Scheduler):
             register_path = self.boss_dir + '/script/'
             register_boss_scheduler = './register'+ string.upper(sched_name) + 'Scheduler'
             if os.path.exists(register_path+register_boss_scheduler):
+               
                 boss_out = runBossCommand(register_path+register_boss_scheduler,0)
+                print boss_out
                 if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
                     msg = 'Error: Problem with scheduler '+sched_name+' registration\n'
