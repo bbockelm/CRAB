@@ -1,9 +1,9 @@
 
 """
  * ApMon - Application Monitoring Tool
- * Version: 2.0.4
+ * Version: 2.2.1
  *
- * Copyright (C) 2005 California Institute of Technology
+ * Copyright (C) 2006 California Institute of Technology
  *
  * Permission is hereby granted, free of charge, to use, copy and modify 
  * this software and its documentation (the "Software") for any
@@ -35,6 +35,7 @@
 import os
 import re
 import time
+import string
 import socket
 import Logger
 
@@ -46,11 +47,10 @@ class ProcInfo:
 	# ProcInfo constructor
 	def __init__ (this, logger):
 		this.DATA = {};             # monitored data that is going to be reported
-		this.OLD_RAW = {};          # helper hashes from which is derived the
-		this.NEW_RAW = {};          # information in DATA for some of the measurements.
 		this.LAST_UPDATE_TIME = 0;  # when the last measurement was done
 		this.JOBS = {};             # jobs that will be monitored
 		this.logger = logger	    # use the given logger
+		this.OS_TYPE = os.popen('uname -s').readline().replace('\n','');
 	
 	# This should be called from time to time to update the monitored data,
 	# but not more often than once a second because of the resolution of time()
@@ -60,15 +60,20 @@ class ProcInfo:
 			return;
 		this.readStat();
 		this.readMemInfo();
-		this.readLoadAvg();
+		if this.OS_TYPE == 'Darwin':
+			this.darwin_readLoadAvg();
+		else:
+			this.readLoadAvg();
 		this.countProcesses();
 		this.readGenericInfo();
 		this.readNetworkInfo();
+		this.readNetStat();
 		for pid in this.JOBS.keys():
 			this.readJobInfo(pid);
 			this.readJobDiskUsage(pid);
 		this.LAST_UPDATE_TIME = int(time.time());
-
+		this.DATA['TIME'] = int(time.time());
+		
 	# Call this to add another PID to be monitored
 	def addJobToMonitor (this, pid, workDir):
 		this.JOBS[pid] = {};
@@ -82,8 +87,8 @@ class ProcInfo:
 			del this.JOBS[pid];
 
 	# Return a filtered hash containting the system-related parameters and values
-	def getSystemData (this, params):
-		return this.getFilteredData(this.DATA, params);
+	def getSystemData (this, params, prevDataRef):
+		return this.getFilteredData(this.DATA, params, prevDataRef);
 	
 	# Return a filtered hash containing the job-related parameters and values
 	def getJobData (this, pid, params):
@@ -98,52 +103,30 @@ class ProcInfo:
 	# this has to be run twice (with the $lastUpdateTime updated) to get some useful results
 	# the information about pages_in/out and swap_in/out isn't available for 2.6 kernels (yet)
 	def readStat (this):
-		this.OLD_RAW = this.NEW_RAW.copy();
 		try:
 			FSTAT = open('/proc/stat');
 			line = FSTAT.readline();
         	        while(line != ''):
 				if(line.startswith("cpu ")):
 					elem = re.split("\s+", line);
-					this.NEW_RAW['cpu_usr'] = float(elem[1]);
-					this.NEW_RAW['cpu_nice'] = float(elem[2]);
-					this.NEW_RAW['cpu_sys'] = float(elem[3]);
-					this.NEW_RAW['cpu_idle'] = float(elem[4]);
+					this.DATA['raw_cpu_usr'] = float(elem[1]);
+					this.DATA['raw_cpu_nice'] = float(elem[2]);
+					this.DATA['raw_cpu_sys'] = float(elem[3]);
+					this.DATA['raw_cpu_idle'] = float(elem[4]);
 				if(line.startswith("page")):
 					elem = line.split();
-					this.NEW_RAW['pages_in'] = float(elem[1]);
-					this.NEW_RAW['pages_out'] = float(elem[2]);
+					this.DATA['raw_pages_in'] = float(elem[1]);
+					this.DATA['raw_pages_out'] = float(elem[2]);
 				if(line.startswith('swap')):
 					elem = line.split();
-					this.NEW_RAW['swap_in'] = float(elem[1]);
-					this.NEW_RAW['swap_out'] = float(elem[2]);
+					this.DATA['raw_swap_in'] = float(elem[1]);
+					this.DATA['raw_swap_out'] = float(elem[2]);
 				line = FSTAT.readline();
 			FSTAT.close();
 		except IOError, ex:
 			this.logger.log(Logger.ERROR, "ProcInfo: cannot open /proc/stat");
 			return;
-		if(len(this.OLD_RAW.keys()) == 0):
-			return;
-		diff = {};
-		cpu_sum = 0;
-		for key in (this.NEW_RAW.keys()):
-			#this.logger.log(Logger.DEBUG, "key = " + key);
-			if key.startswith('cpu_') or key.startswith('pages_') or key.startswith('swap_'):
-				#this.logger.log(Logger.DEBUG, "old = "+`this.OLD_RAW[key]`+" new = "+`this.NEW_RAW[key]`);
-				#diff[key] = this.NEW_RAW[key] - this.OLD_RAW[key];
-				diff[key] = this.diffWithOverflowCheck(this.NEW_RAW[key],this.OLD_RAW[key]);
-			if key.startswith('cpu_'):
-				#this.logger.log(Logger.DEBUG, "diff=" + `diff[key]`);
-				cpu_sum += diff[key];
-		for key in ('cpu_usr', 'cpu_nice', 'cpu_sys', 'cpu_idle'):
-			this.DATA[key] = 100.0 * diff[key] / cpu_sum;
-		this.DATA['cpu_usage'] = 100.0 * (diff['cpu_usr'] + diff['cpu_sys'] + diff['cpu_nice']) / cpu_sum;
-		
-		if this.NEW_RAW.has_key('pages_in'):
-			now = int(time.time());
-			for key in ('pages_in', 'pages_out', 'swap_in', 'swap_out'):
-				this.DATA[key] = diff[key] / (now - this.LAST_UPDATE_TIME);
-	
+
 	# sizes are reported in MB (except _usage that is in percent).
 	def readMemInfo (this):
 		try:
@@ -161,10 +144,14 @@ class ProcInfo:
 					this.DATA['total_swap'] = float(elem[1]) / 1024.0;
 				line = FMEM.readline();
 			FMEM.close();
-			this.DATA['mem_used'] = this.DATA['total_mem'] - this.DATA['mem_free'];
-			this.DATA['swap_used'] = this.DATA['total_swap'] - this.DATA['swap_free'];
-			this.DATA['mem_usage'] = 100.0 * this.DATA['mem_used'] / this.DATA['total_mem'];
-			this.DATA['swap_usage'] = 100.0 * this.DATA['swap_used'] / this.DATA['total_swap'];
+			if this.DATA.has_key('total_mem') and this.DATA.has_key('mem_free'):
+				this.DATA['mem_used'] = this.DATA['total_mem'] - this.DATA['mem_free'];
+			if this.DATA.has_key('total_swap') and this.DATA.has_key('swap_free'):
+				this.DATA['swap_used'] = this.DATA['total_swap'] - this.DATA['swap_free'];
+			if this.DATA.has_key('mem_used') and this.DATA.has_key('total_mem') and this.DATA['total_mem'] > 0:
+				this.DATA['mem_usage'] = 100.0 * this.DATA['mem_used'] / this.DATA['total_mem'];
+			if this.DATA.has_key('swap_used') and this.DATA.has_key('total_swap') and this.DATA['total_swap'] > 0:
+				this.DATA['swap_usage'] = 100.0 * this.DATA['swap_used'] / this.DATA['total_swap'];
 		except IOError, ex:
 			this.logger.log(Logger.ERROR, "ProcInfo: cannot open /proc/meminfo");
 			return;
@@ -183,8 +170,26 @@ class ProcInfo:
 			this.logger.log(Logger.ERROR, "ProcInfo: cannot open /proc/meminfo");
 			return;
 
+	
+	# read system load average on Darwin
+	def darwin_readLoadAvg (this):
+		try:
+			LOAD_AVG = os.popen('sysctl vm.loadavg');
+			line = LOAD_AVG.readline();
+			LOAD_AVG.close();
+			elem = re.split("\s+", line);
+			this.DATA['load1'] = float(elem[1]);
+			this.DATA['load5'] = float(elem[2]);
+			this.DATA['load15'] = float(elem[3]);
+		except IOError, ex:
+			this.logger.log(Logger.ERROR, "ProcInfo: cannot run 'sysctl vm.loadavg");
+			return;
+
+
 	# read the number of processes currently running on the system
 	def countProcesses (this):
+		"""
+		# old version
 		nr = 0;
 		try:
 			for file in os.listdir("/proc"):
@@ -194,7 +199,25 @@ class ProcInfo:
 		except IOError, ex:
 			this.logger.log(Logger.ERROR, "ProcInfo: cannot open /proc to count processes");
 			return;
-	
+		"""
+		# new version
+		total = 0;
+		states = {'D':0, 'R':0, 'S':0, 'T':0, 'Z':0};
+		try:
+		    output = os.popen('ps -A -o state');
+		    line = output.readline();
+		    while(line != ''):
+			states[line[0]] = states[line[0]] + 1;
+			total = total + 1;
+			line = output.readline();
+		    output.close();
+		    this.DATA['processes'] = total;
+		    for key in states.keys():
+			this.DATA['processes_'+key] = states[key];
+		except IOError, ex:
+			this.logger.log(Logger.ERROR, "ProcInfo: cannot get output from ps command");
+			return;
+
 	# reads the IP, hostname, cpu_MHz, uptime
 	def readGenericInfo (this):
 		this.DATA['hostname'] = socket.getfqdn();
@@ -270,29 +293,59 @@ class ProcInfo:
 	
 	# read network information like transfered kBps and nr. of errors on each interface
 	def readNetworkInfo (this):
-		this.OLD_RAW = this.NEW_RAW;
-		interval = int(time.time()) - this.LAST_UPDATE_TIME;
 		try:
 			FNET = open('/proc/net/dev');
 			line = FNET.readline();
 			while(line != ''):
 				m = re.match("\s*eth(\d):(\d+)\s+\d+\s+(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)\s+\d+\s+(\d+)", line);
 				if m != None:
-					this.NEW_RAW['eth'+m.group(1)+'_in'] = float(m.group(2));
-					this.NEW_RAW['eth'+m.group(1)+'_out'] = float(m.group(4));
-					this.DATA['eth'+m.group(1)+'_errs'] = int(m.group(3)) + int(m.group(5));
-					if(this.OLD_RAW.has_key('eth'+m.group(1)+"_in")):
-						#this.logger.log(Logger.DEBUG, "Net I/O eth"+m.group(1)+" interval = "+ `interval`);
-						Bps = this.diffWithOverflowCheck(this.NEW_RAW['eth'+m.group(1)+'_in'], this.OLD_RAW['eth'+m.group(1)+'_in']) / interval;
-						this.DATA['eth'+m.group(1)+'_in'] = Bps / 1024.0;
-						Bps = this.diffWithOverflowCheck(this.NEW_RAW['eth'+m.group(1)+'_out'], this.OLD_RAW['eth'+m.group(1)+'_out']) / interval;
-						this.DATA['eth'+m.group(1)+'_out'] = Bps / 1024.0;
+					this.DATA['raw_eth'+m.group(1)+'_in'] = float(m.group(2));
+					this.DATA['raw_eth'+m.group(1)+'_out'] = float(m.group(4));
+					this.DATA['raw_eth'+m.group(1)+'_errs'] = int(m.group(3)) + int(m.group(5));
 				line = FNET.readline();
 			FNET.close();
 		except IOError, ex:
 			this.logger.log(Logger.ERROR, "ProcInfo: cannot open /proc/net/dev");
 			return;
-	
+
+	# run nestat and collect sockets info (tcp, udp, unix) and connection states for tcp sockets from netstat
+	def readNetStat(this):
+	    try:
+		output = os.popen('netstat -an');
+		sockets = { 'sockets_tcp':0, 'sockets_udp':0, 'sockets_unix':0, 'sockets_icm':0 };
+		tcp_details = { 'sockets_tcp_ESTABLISHED':0, 'sockets_tcp_SYN_SENT':0, 
+		    'sockets_tcp_SYN_RECV':0, 'sockets_tcp_FIN_WAIT1':0, 'sockets_tcp_FIN_WAIT2':0,
+		    'sockets_tcp_TIME_WAIT':0, 'sockets_tcp_CLOSED':0, 'sockets_tcp_CLOSE_WAIT':0,
+		    'sockets_tcp_LAST_ACK':0, 'sockets_tcp_LISTEN':0, 'sockets_tcp_CLOSING':0,
+		    'sockets_tcp_UNKNOWN':0 };
+		line = output.readline();
+		while(line != ''):
+		    arg = string.split(line);
+		    proto = arg[0];
+		    if proto.find('tcp') == 0:
+			sockets['sockets_tcp'] += 1;
+			state = arg[len(arg)-1];
+			key = 'sockets_tcp_'+state;
+			if tcp_details.has_key(key):
+		    	    tcp_details[key] += 1;
+		    if proto.find('udp') == 0:
+                	sockets['sockets_udp'] += 1;
+		    if proto.find('unix') == 0:
+                	sockets['sockets_unix'] += 1;
+		    if proto.find('icm') == 0:
+                	sockets['sockets_icm'] += 1;
+
+            	    line = output.readline();
+        	output.close();
+
+        	for key in sockets.keys():
+            	    this.DATA[key] = sockets[key];
+        	for key in tcp_details.keys():
+            	    this.DATA[key] = tcp_details[key];
+	    except IOError, ex:
+                this.logger.log(Logger.ERROR, "ProcInfo: cannot get output from netstat command");
+                return;
+
 	##############################################################################################
 	# job monitoring related functions
 	##############################################################################################
@@ -301,7 +354,8 @@ class ProcInfo:
 	def getChildren (this, parent):
 		pidmap = {};
 		try:
-			output = os.popen('ps --no-headers -eo "pid ppid"');
+			output = os.popen('ps -A -o "pid ppid"');
+			line = output.readline(); # skip headers
 			line = output.readline();
 			while(line != ''):
 				line = line.strip();
@@ -310,7 +364,7 @@ class ProcInfo:
 				line = output.readline();
 			output.close();
 		except IOError, ex:
-			this.logger.log(Logger.ERROR, "ProcInfo: cannot execute ps --no-headers -eo \"pid ppid\"");
+			this.logger.log(Logger.ERROR, "ProcInfo: cannot execute ps -A -o \"pid ppid\"");
 
 		if pidmap.has_key(parent):
 			this.logger.log(Logger.INFO, 'ProcInfo: No job with pid='+str(parent));
@@ -417,28 +471,96 @@ class ProcInfo:
 		if workDir == '':
 			return;
 		try:
-			DU = os.popen("du -Lscm " + workDir + " | tail -1 | cut -f 1");
+			DU = os.popen("du -Lsck " + workDir + " | tail -1 | cut -f 1");
 			line = DU.readline();
-			this.JOBS[pid]['DATA']['workdir_size'] = int(line);
+			this.JOBS[pid]['DATA']['workdir_size'] = int(line) / 1024.0;
 		except IOError, ex:
 			this.logger.log(Logger.ERROR, "ERROR", "ProcInfo: cannot run du to get job's disk usage for job "+`pid`);
 		try:
-			DF = os.popen("df -m "+workDir+" | tail -1");
+			DF = os.popen("df -k "+workDir+" | tail -1");
 			line = DF.readline().strip();
 			m = re.match("\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)%", line);
 			if m != None:
-				this.JOBS[pid]['DATA']['disk_total'] = m.group(1);
-				this.JOBS[pid]['DATA']['disk_used'] = m.group(2);
-				this.JOBS[pid]['DATA']['disk_free'] = m.group(3);
-				this.JOBS[pid]['DATA']['disk_usage'] = m.group(4);
+				this.JOBS[pid]['DATA']['disk_total'] = float(m.group(1)) / 1024.0;
+				this.JOBS[pid]['DATA']['disk_used']  = float(m.group(2)) / 1024.0;
+				this.JOBS[pid]['DATA']['disk_free']  = float(m.group(3)) / 1024.0;
+				this.JOBS[pid]['DATA']['disk_usage'] = float(m.group(4)) / 1024.0;
 			DF.close();
 		except IOError, ex:
 			this.logger.log(Logger.ERROR, "ERROR", "ProcInfo: cannot run df to get job's disk usage for job "+`pid`);
 
+	# create cummulative parameters based on raw params like cpu_, pages_, swap_, or ethX_
+	def computeCummulativeParams(this, dataRef, prevDataRef):
+		if prevDataRef == {}:
+			for key in dataRef.keys():
+				if key.find('raw_') == 0:
+					prevDataRef[key] = dataRef[key];
+			prevDataRef['TIME'] = dataRef['TIME'];
+			return;
+		
+		# cpu -related params
+		if (dataRef.has_key('raw_cpu_usr')) and (prevDataRef.has_key('raw_cpu_usr')):
+			diff={};
+			cpu_sum = 0;
+			for param in ['cpu_usr', 'cpu_nice', 'cpu_sys', 'cpu_idle']:
+				diff[param] = this.diffWithOverflowCheck(dataRef['raw_'+param], prevDataRef['raw_'+param]);
+				cpu_sum += diff[param];
+			for param in ['cpu_usr', 'cpu_nice', 'cpu_sys', 'cpu_idle']:
+				if cpu_sum != 0:
+					dataRef[param] = 100.0 * diff[param] / cpu_sum;
+				else:
+					del dataRef[param];
+			if cpu_sum != 0:
+				dataRef['cpu_usage'] = 100.0 * (cpu_sum - diff['cpu_idle']) / cpu_sum;
+			else:
+				del dataRef['cpu_usage'];
+		
+		# swap & pages -related params
+		if (dataRef.has_key('raw_pages_in')) and (prevDataRef.has_key('raw_pages_in')):
+			interval = dataRef['TIME'] - prevDataRef['TIME'];
+			for param in ['pages_in', 'pages_out', 'swap_in', 'swap_out']:
+				diff = this.diffWithOverflowCheck(dataRef['raw_'+param], prevDataRef['raw_'+param]);
+				if interval != 0:
+					dataRef[param] = 1000.0 * diff / interval;
+				else:
+					del dataRef[param];
+		
+		# eth - related params
+		interval = dataRef['TIME'] - prevDataRef['TIME'];
+		for rawParam in dataRef.keys():
+			if (rawParam.find('raw_eth') == 0) and prevDataRef.has_key(rawParam):
+				param = rawParam.split('raw_')[1];
+				if interval != 0:
+					dataRef[param] = this.diffWithOverflowCheck(dataRef[rawParam], prevDataRef[rawParam]); # absolute difference
+					if param.find('_errs') == -1:
+						dataRef[param] = dataRef[param] / interval / 1024.0; # if it's _in or _out, compute in KB/sec
+				else:
+					del dataRef[param];
+		
+		# copy contents of the current data values to the 
+		for param in dataRef.keys():
+			if param.find('raw_') == 0:
+				prevDataRef[param] = dataRef[param];
+		prevDataRef['TIME'] = dataRef['TIME'];
+	
+
 	# Return a hash containing (param,value) pairs with existing values from the requested ones
-	def getFilteredData (this, dataHash, paramsList):
+	def getFilteredData (this, dataHash, paramsList, prevDataHash = None):
+	
+		if not prevDataHash is None:
+			this.computeCummulativeParams(dataHash, prevDataHash);
+			
 		result = {};
 		for param in paramsList:
+			if param == 'net_sockets':
+			    for key in dataHash.keys():
+			        if key.find('sockets') == 0 and key.find('sockets_tcp_') == -1:
+				    result[key] = dataHash[key];
+			elif param == 'net_tcp_details':
+			    for key in dataHash.keys():
+				if key.find('sockets_tcp_') == 0:
+				    result[key] = dataHash[key];
+			
 			m = re.match("^net_(.*)$", param);
 			if m == None:
 				m = re.match("^(ip)$", param);
@@ -450,9 +572,18 @@ class ProcInfo:
 					if m != None:
 						result[key] = value;
 			else:
-				if dataHash.has_key(param):
+				if param == 'processes':
+					for key in dataHash.keys():
+						if key.find('processes') == 0:
+							result[key] = dataHash[key];
+				elif dataHash.has_key(param):
 					result[param] = dataHash[param];
-		return result;
+		sorted_result = [];
+		keys = result.keys();
+		keys.sort();
+		for key in keys:
+			sorted_result.append((key,result[key]));
+		return sorted_result;
 
 ######################################################################################
 # self test
@@ -475,6 +606,8 @@ if __name__ == '__main__':
 	sys_load_params = ['load1', 'load5', 'load15', 'processes', 'uptime'];
 	sys_gen_params = ['hostname', 'cpu_MHz', 'no_CPUs', 'cpu_vendor_id', 'cpu_family', 'cpu_model', 'cpu_model_name', 'bogomips'];
 	sys_net_params = ['net_in', 'net_out', 'net_errs', 'ip'];
+	sys_net_stat = ['sockets_tcp', 'sockets_udp', 'sockets_unix', 'sockets_icm'];
+	sys_tcp_details = ['sockets_tcp_ESTABLISHED', 'sockets_tcp_SYN_SENT', 'sockets_tcp_SYN_RECV', 'sockets_tcp_FIN_WAIT1', 'sockets_tcp_FIN_WAIT2', 'sockets_tcp_TIME_WAIT', 'sockets_tcp_CLOSED', 'sockets_tcp_CLOSE_WAIT', 'sockets_tcp_LAST_ACK', 'sockets_tcp_LISTEN', 'sockets_tcp_CLOSING', 'sockets_tcp_UNKNOWN'];
 	
 	print "sys_cpu_params", pi.getSystemData(sys_cpu_params);
 	print "sys_2_4_params", pi.getSystemData(sys_2_4_params);
@@ -483,6 +616,8 @@ if __name__ == '__main__':
 	print "sys_load_params", pi.getSystemData(sys_load_params);
 	print "sys_gen_params", pi.getSystemData(sys_gen_params);
 	print "sys_net_params", pi.getSystemData(sys_net_params);
+	print "sys_net_stat", pi.getSystemData(sys_net_stat);
+	print "sys_tcp_details", pi.getSystemData(sys_tcp_details);
 	
 	job_pid = os.getpid();
 	

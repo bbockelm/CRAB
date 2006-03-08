@@ -1,9 +1,9 @@
 
 """
  * ApMon - Application Monitoring Tool
- * Version: 2.0.4
+ * Version: 2.2.1
  *
- * Copyright (C) 2005 California Institute of Technology
+ * Copyright (C) 2006 California Institute of Technology
  *
  * Permission is hereby granted, free of charge, to use, copy and modify 
  * this software and its documentation (the "Software") for any
@@ -54,10 +54,11 @@ import time
 import Logger
 import ProcInfo
 import random
+import copy
 
 #__all__ = ["ApMon"]
 
-#__debug = False   # set this to True to be verbose
+#__debug = False   # self.destPrevData[destination];set this to True to be verbose
 
 class ApMon:
 	"""
@@ -127,6 +128,8 @@ class ApMon:
 		'sys_net_in'    : True,       # network transfer in kBps
 		'sys_net_out'   : True,       # these will produce params called ethX_in, ethX_out, ethX_errs
 		'sys_net_errs'  : False,      # for each eth interface
+		'sys_net_sockets' : True,     # number of opened sockets for each proto => sockets_tcp/udp/unix ...
+		'sys_net_tcp_details' : True, # number of tcp sockets in each state => sockets_tcp_LISTEN, ...
 		'sys_processes' : True,
 		'sys_uptime'    : True,       # uptime of the machine, in days (float number)
 		
@@ -145,7 +148,7 @@ class ApMon:
 		'cpu_model_name': True,
 		'bogomips'	: True};
 
-	def __init__ (self, initValue):
+	def __init__ (self, initValue, defaultLogLevel = Logger.INFO):
 		"""
 		Class constructor:
 		- if initValue is a string, put it in configAddresses and load destinations
@@ -166,17 +169,20 @@ class ApMon:
 		  will overwrite the default parameters (see __defaultOptions)
 		"""
 		self.destinations = {}              # empty, by default; key = tuple (host, port, pass) ; val = hash {"param_mame" : True/False, ...}
+		self.destPrevData = {}              # empty, by defaul; key = tuple (host, port, pass) ; val = hash {"param_mame" : value, ...}
 		self.configAddresses = []           # empty, by default; list of files/urls from where we read config
 		self.configRecheckInterval = 120    # 2 minutes
 		self.configRecheck = True           # enabled by default
 		self.performBgMonitoring = True     # by default, perform background monitoring
 		self.monitoredJobs = {}	            # Monitored jobs; key = pid; value = hash with
-		self.maxMsgRate = 50;		    # Maximum number of messages allowed to be sent per second
+		self.maxMsgRate = 20;		        # Maximum number of messages allowed to be sent per second
+		self.sender = {'INSTANCE_ID': random.randint(0,0x7FFFFFFE), 'SEQ_NR': 0};
 		self.__defaultUserCluster = "ApMon_UserSend";
 		self.__defaultUserNode = socket.getfqdn();
 		self.__defaultSysMonCluster = "ApMon_SysMon";
 		self.__defaultSysMonNode = socket.getfqdn();
 		# don't touch these:
+		self.__freed = False
 		self.__initializedOK = True
 		self.__udpSocket = None
 		self.__configUpdateLock = threading.Lock()
@@ -191,8 +197,7 @@ class ApMon:
 		self.__crtSent = 0;
 		self.__crtDrop = 0;
 		self.__hWeight = 0.92;
-	
-		self.logger = Logger.Logger(self.__defaultLogLevel)
+		self.logger = Logger.Logger(defaultLogLevel)
 		if type(initValue) == type("string"):
 			self.configAddresses.append(initValue)
 			self.__reloadAddresses()
@@ -209,8 +214,8 @@ class ApMon:
 		self.__initializedOK = (len (self.destinations) > 0)
 		if not self.__initializedOK:
 			self.logger.log(Logger.ERROR, "Failed to initialize. No destination defined.");
-		#self.__defaultClusterName = None
-		#self.__defaultNodeName = self.getMyHo
+		# self.__defaultClusterName = None
+		# self.__defaultNodeName = self.getMyHo
 		if self.__initializedOK:
 			self.__udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 			if len(self.configAddresses) > 0:
@@ -221,7 +226,7 @@ class ApMon:
 				th.start()
 			# create the ProcInfo instance
 			self.procInfo = ProcInfo.ProcInfo(self.logger);
-			self.procInfo.update();
+			# self.procInfo.update();
 			# start the background monitoring thread
 			th = threading.Thread(target=self.__bgMonitor);
 			th.setDaemon(True);
@@ -283,7 +288,7 @@ class ApMon:
 		if not self.__initializedOK:
 			self.logger.log(Logger.WARNING, "Not initialized correctly. Message NOT sent!");
 			return
-		if clusterName == None:
+		if (clusterName == None) or (clusterName == ""):
 			clusterName = self.__defaultUserCluster
 		else:
 			self.__defaultUserCluster = clusterName
@@ -291,10 +296,10 @@ class ApMon:
 			nodeName = self.__defaultUserNode
 		else:
 			self.__defaultUserNode = nodeName
-		self.__configUpdateLock.acquire()
+		self.__configUpdateLock.acquire();
 		for dest in self.destinations.keys():
-			self.__directSendParams(dest, clusterName, nodeName, timeStamp, params);
-		self.__configUpdateLock.release()
+			self.__directSendParams(self.sender, dest, clusterName, nodeName, timeStamp, params);
+		self.__configUpdateLock.release();
 	
 	def addJobToMonitor (self, pid, workDir, clusterName, nodeName):
 		"""
@@ -321,8 +326,10 @@ class ApMon:
 		Set the cluster and node names where to send system related information.
 		"""
 		self.__bgMonitorLock.acquire();
-		self.__defaultSysMonCluster = clusterName;
-		self.__defaultSysMonNode = nodeName;
+		if (clusterName != None) and (clusterName != ""):
+		    self.__defaultSysMonCluster = clusterName;
+		if (nodeName != None) and (nodeName != ""):
+		    self.__defaultSysMonNode = nodeName;
 		self.__bgMonitorLock.release();
 	
 	def enableBgMonitoring (self, onOff):
@@ -331,19 +338,22 @@ class ApMon:
 		can still be sent if user calls the sendBgMonitoring method.
 		"""
 		self.performBgMonitoring = onOff;
-	
-	def sendBgMonitoring (self):
+
+	def sendBgMonitoring (self, mustSend = False):
 		"""
-		Send now background monitoring about system and jobs to all interested destinations.
+		Send background monitoring about system and jobs to all interested destinations.
+		If mustSend == True, the information is sent regardles of the elapsed time since last sent
+		If mustSend == False, the data is sent only if the required interval has passed since last sent 
 		"""
 		self.__bgMonitorLock.acquire();
-		self.procInfo.update();
 		now = int(time.time());
-		for destination, options in self.destinations.items():
+		updatedProcInfo = False;
+		for destination, options in self.destinations.iteritems():
 			sysParams = [];
 			jobParams = [];
+			prevRawData = self.destPrevData[destination];
 			# for each destination and its options, check if we have to report any background monitoring data
-			if(options['sys_monitoring'] and options['sys_data_sent'] + options['sys_interval'] < now):
+			if(options['sys_monitoring'] and (mustSend or options['sys_data_sent'] + options['sys_interval'] <= now)):
 				for param, active in options.items():
 					m = re.match("sys_(.+)", param);
 					if(m != None and active):
@@ -351,7 +361,7 @@ class ApMon:
 						if not (param == 'monitoring' or param == 'interval' or param == 'data_sent'):
 							sysParams.append(param)
 				options['sys_data_sent'] = now;
-			if(options['job_monitoring'] and options['job_data_sent'] + options['job_interval'] < now):
+			if(options['job_monitoring'] and (mustSend or options['job_data_sent'] + options['job_interval'] <= now)):
 				for param, active in options.items():
 					m = re.match("job_(.+)", param);
 					if(m != None and active):
@@ -359,23 +369,41 @@ class ApMon:
 						if not (param == 'monitoring' or param == 'interval' or param == 'data_sent'):
 							jobParams.append(param);
 				options['job_data_sent'] = now;
-			if(options['general_info'] and options['general_data_sent'] + 2 * int(options['sys_interval']) < now):
+			if(options['general_info'] and (mustSend or options['general_data_sent'] + 2 * int(options['sys_interval']) <= now)):
 				for param, active in options.items():
 					if not (param.startswith("sys_") or param.startswith("job_")) and active:
 						if not (param == 'general_info' or param == 'general_data_sent'):
 							sysParams.append(param);
+				options['general_data_sent'] = now;
+				
+			if (not updatedProcInfo) and ((len(sysParams) > 0) or (len(jobParams) > 0) ):
+				self.procInfo.update();
+				updatedProcInf = True;
+
 			sysResults = {}
 			if(len(sysParams) > 0):
-				sysResults = self.procInfo.getSystemData(sysParams);
-			if(len(sysResults.keys()) > 0):
-				self.__directSendParams(destination, self.__defaultSysMonCluster, self.__defaultSysMonNode, -1, sysResults);
+				sysResults = self.procInfo.getSystemData(sysParams, prevRawData);
+				self.updateLastSentTime(options, self.destinations[destination]);
+			if( (type(sysResults) == type( {} )) and len(sysResults.keys()) > 0):
+				self.__directSendParams(self.sender, destination, self.__defaultSysMonCluster, self.__defaultSysMonNode, -1, sysResults);
+			if( (type(sysResults) == type( [] )) and len(sysResults) > 0):
+				self.__directSendParams(self.sender, destination, self.__defaultSysMonCluster, self.__defaultSysMonNode, -1, sysResults);
 			for pid, props in self.monitoredJobs.items():
 				jobResults = {};
 				if(len(jobParams) > 0):
 					jobResults = self.procInfo.getJobData(pid, jobParams);
 				if(len(jobResults) > 0):
-					self.__directSendParams(destination, props['CLUSTER_NAME'], props['NODE_NAME'], -1, jobResults);
+					self.__directSendParams(self.sender, destination, props['CLUSTER_NAME'], props['NODE_NAME'], -1, jobResults);
 		self.__bgMonitorLock.release();
+	
+	# copy the time when last data was sent
+	def updateLastSentTime(self, srcOpts, dstOpts):
+		if srcOpts.has_key('general_data_sent'):
+			dstOpts['general_data_sent'] = srcOpts['general_data_sent'];
+		if  srcOpts.has_key('sys_data_sent'):
+			dstOpts['sys_data_sent'] = srcOpts['sys_data_sent'];
+		if srcOpts.has_key('job_data_sent'):
+			dstOpts['job_data_sent'] = srcOpts['job_data_sent'];
 	
 	def setLogLevel (self, strLevel):
 		"""
@@ -396,12 +424,16 @@ class ApMon:
 		Stop background threands, close opened sockets. You have to use this function if you want to
 		free all the resources that ApMon takes, and allow it to be garbage-collected.
 		"""
-		self.__configUpdateEvent.set();
-		self.__bgMonitorEvent.set();
+		if self.__configUpdateEvent != None:
+			self.__configUpdateEvent.set();
+		if self.__bgMonitorEvent != None:
+			self.__bgMonitorEvent.set();
 		time.sleep(0.01);
 		if self.__udpSocket != None:
 			self.logger.log(Logger.DEBUG, "Closing UDP socket on ApMon object destroy.");
 			self.__udpSocket.close();
+			self.__udpSocket = None;
+		self.__freed = True
 
 
 	#########################################################################################
@@ -471,14 +503,16 @@ class ApMon:
 			if (h == host) and (p == port):
 				alreadyAdded = True
 				break
+		destination = (host, port, passwd);
 		if not alreadyAdded:
 			self.logger.log(Logger.INFO, "Adding destination "+host+':'+`port`+' '+passwd);
-			tempDestinations[(host, port, passwd)] = self.__defaultOptions;
+			tempDestinations[destination] = copy.deepcopy(self.__defaultOptions); # have a different set of options for each dest.
+			self.destPrevData[destination] = {};
 			if options != self.__defaultOptions:
 				# we have to overwrite defaults with given options
 				for key, value in options.items():
 					self.logger.log(Logger.NOTICE, "Overwritting option: "+key+" = "+`value`);
-					tempDestinations[(host, port, passwd)][key] = value;
+					tempDestinations[destination][key] = value;
 		else:
 			self.logger.log(Logger.NOTICE, "Destination "+host+":"+str(port)+" "+passwd+" already added. Skipping it");
 
@@ -551,6 +585,7 @@ class ApMon:
 							opts[param] = value;
 			else:
 				dests.append(line);
+				
 		confFile.close ()
 		for line in dests:
 			self.__addDestination(line, tempDestinations, opts)
@@ -565,24 +600,40 @@ class ApMon:
 			if self.__bgMonitorEvent.isSet():
 				return;
 			if self.performBgMonitoring:
-				self.sendBgMonitoring();
+				self.sendBgMonitoring() # send only if the interval has elapsed
 
 	###############################################################################################
 	# Internal helper functions
 	###############################################################################################
 	
-	def __directSendParams (self, destination, clusterName, nodeName, timeStamp, params):
+	def __directSendParams (self, senderRef, destination, clusterName, nodeName, timeStamp, params):
+		
+		if senderRef=={}:
+			self.logger.log(Logger.WARNING, "Not sending undefined parameters!");
+			return;
 		
 		if self.__shouldSend() == False:
 			return;
 		
-		xdrPacker = xdrlib.Packer ()
+		if destination == None:
+			self.logger.log(Logger.WARNING, "Destination is None");
+			return;
+		
 		host, port, passwd = destination
+		senderRef['SEQ_NR'] = (senderRef['SEQ_NR'] + 1) % 2000000000; # wrap around 2 mld
+		
+		xdrPacker = xdrlib.Packer ();
 		self.logger.log(Logger.DEBUG, "Building XDR packet for ["+str(clusterName)+"] <"+str(nodeName)+"> len:"+str(len(params)));
+		
 		xdrPacker.pack_string ("v:"+self.__version+"p:"+passwd)
-		xdrPacker.pack_string (clusterName)
-		xdrPacker.pack_string (nodeName)
-		xdrPacker.pack_int (len(params))
+		
+		xdrPacker.pack_int (senderRef['INSTANCE_ID']);
+		xdrPacker.pack_int (senderRef['SEQ_NR']);
+		
+		xdrPacker.pack_string (clusterName);
+		xdrPacker.pack_string (nodeName);
+		xdrPacker.pack_int (len(params));
+		
 		if type(params) == type( {} ):
 			for name, value in params.iteritems():
 				self.__packParameter(xdrPacker, name, value)
@@ -592,18 +643,25 @@ class ApMon:
 				self.__packParameter(xdrPacker, name, value)
 		else:
 			self.logger.log(Logger.WARNING, "Unsupported params type in sendParameters: " + str(type(params)));
-		if(timeStamp > 0):
+		if (timeStamp != None) and (timeStamp > 0):
 			xdrPacker.pack_int(timeStamp);
+		
 		buffer = xdrPacker.get_buffer();
 		# send this buffer to the destination, using udp datagrams
 		try:
 			self.__udpSocket.sendto(buffer, (host, port))
-			self.logger.log(Logger.DEBUG, "Packet sent");
+			self.logger.log(Logger.DEBUG, "Packet sent to "+host+":"+str(port)+" "+passwd);
 		except socket.error, msg:
 			self.logger.log(Logger.ERROR, "Cannot send packet to "+host+":"+str(port)+" "+passwd+": "+str(msg[1]));
 		xdrPacker.reset()
 	
 	def __packParameter(self, xdrPacker, name, value):
+		if (name is None) or (name is ""):
+			self.logger.log(Logger.WARNING, "Undefine parameter name.");
+			return;
+		if (value is None):
+			self.logger.log(Logger.WARNING, "Ignore " + str(name)+ " parameter because of None value");
+			return;
 		try: 
 			typeValue = self.__valueTypes[type(value)]
 			xdrPacker.pack_string (name)
@@ -612,10 +670,11 @@ class ApMon:
 			self.logger.log(Logger.DEBUG, "Adding parameter "+str(name)+" = "+str(value));
 		except Exception, ex:
 			print "ApMon: error packing %s = %s; got %s" % (name, str(value), ex)
-	
+
 	# Destructor
 	def __del__(self):
-		self.free();
+		if not self.__freed:
+			self.free();
 
 	# Decide if the current datagram should be sent.
 	# This decision is based on the number of messages previously sent.
@@ -652,7 +711,6 @@ class ApMon:
 
 		return doSend;
 
-	
 	################################################################################################
 	# Private variables. Don't touch
 	################################################################################################
@@ -668,6 +726,5 @@ class ApMon:
 		5: xdrlib.Packer.pack_double }
 	
 	__defaultPort = 8884
-	__defaultLogLevel = Logger.INFO
-	__version = "2.0.6-py"			# apMon version number
+	__version = "2.2.1-py"			# apMon version number
 
