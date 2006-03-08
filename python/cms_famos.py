@@ -45,12 +45,9 @@ class Famos(JobType):
             log.message("Using empty orcarc file")
             self.orcarc_file = ''
 
-        # input files - add for FAMOS (to be registered in LFC file catalog) 
-        #try:
-        #    self.copy_input_data = cfg_params['USER.copy_input_data']
-        #except KeyError:
-            #log.message("Using copy_input_data")
+        ### FEDE  
         common.analisys_common_info['copy_input_data'] = 1
+        common.analisys_common_info['events_management'] = 0
 
         try:
             self.input_lfn = cfg_params['FAMOS.input_lfn']
@@ -157,7 +154,7 @@ class Famos(JobType):
         txt += 'echo "FAMOS_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
         ### needed grep for bug in scramv1 ###
-        txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
+        #txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
 
         # Handle the arguments:
         txt += "\n"

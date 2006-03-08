@@ -26,6 +26,9 @@ class Orca_dbsdls(JobType):
 
         self.version = self.scram.getSWVersion()
         common.analisys_common_info['sw_version'] = self.version
+        ### FEDE
+        common.analisys_common_info['copy_input_data'] = 0
+        common.analisys_common_info['events_management'] = 1
 
         ### collect Data cards
         try:
@@ -169,7 +172,7 @@ class Orca_dbsdls(JobType):
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
         ### needed grep for bug in scramv1 ###
-        txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
+        #txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
 
         # Handle the arguments:
         txt += "\n"

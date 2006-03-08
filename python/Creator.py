@@ -21,8 +21,6 @@ class Creator(Actor):
         self.job_number_of_events = 0
         self.first_event = 0
 
-        ### commented for FAMOS            
-        
         self.createJobTypeObject()
         common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
 
@@ -181,15 +179,35 @@ class Creator(Actor):
         nJobs=self.nJobs()
 
         firstEvent=self.first_event
+        ### fede for famos
+        lastJobsNumberOfEvents = self.job_number_of_events
+        print "lastjobsnumberofevents", lastJobsNumberOfEvents
+        ###
         # last jobs is different...
         for job in range(nJobs-1):
             common.jobDB.setFirstEvent(job, firstEvent)
             common.jobDB.setMaxEvents(job, self.job_number_of_events)
-            firstEvent=firstEvent+self.job_number_of_events
+        ### fede checks parameter for famos and orca
+            try:
+                self.events_management = common.analisys_common_info['events_management']
+                #print "self.events_management = ", self.events_management
+            except KeyError: self.events_management = 0
+            if int(self.events_management) == 1:
+                firstEvent=firstEvent+self.job_number_of_events
+                #print "firstEvent", firstEvent
+            ###
+
+###            firstEvent=firstEvent+self.job_number_of_events
 
         # this is the last job
         common.jobDB.setFirstEvent(nJobs-1, firstEvent)
-        lastJobsNumberOfEvents= (self.total_number_of_events+self.first_event)-firstEvent
+        #### FEDE
+        #print "firstEvent", firstEvent
+        if int(self.events_management) == 1:
+            lastJobsNumberOfEvents= (self.total_number_of_events+self.first_event)-firstEvent
+        ####
+
+###        lastJobsNumberOfEvents= (self.total_number_of_events+self.first_event)-firstEvent
         #print 'lastJobsNumberOfEvents :', lastJobsNumberOfEvents
         common.jobDB.setMaxEvents(nJobs-1, lastJobsNumberOfEvents)
     
