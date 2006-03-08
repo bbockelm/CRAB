@@ -12,7 +12,6 @@ uname -a
 echo "Working directory `pwd`"
 ls -Al
 
-#scramv1 list |grep FAMOS
 #
 # END OF HEAD
 #
@@ -40,8 +39,6 @@ ls -Al
 #
 
 #CRAB build_executable
-#eval `scramv1 runtime -sh`
-eval `scramv1 runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`
 
 echo "Executable $executable"
 which $executable
