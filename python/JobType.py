@@ -112,3 +112,22 @@ class JobType:
         msg = 'Internal ERROR. Pure virtual function called:\n'
         msg += self.__class__.__name__+'::executableName() from '+__file__
         raise CrabException(msg)
+
+    # marco
+    def setTaskid_(self):
+        msg = 'Internal ERROR. Pure virtual function called:\n'
+        msg += self.__class__.__name__+'::executableName() from '+__file__
+        raise CrabException(msg)
+                                
+    def setParam_(self, param, value):
+        """
+        Set relevant job type parameters
+        """
+        self._params[param] = value
+
+    def getParams(self):
+        """
+        Get relevant job type parameters dictionary
+        """
+        return self._params
+    # marco
