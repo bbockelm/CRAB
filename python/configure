@@ -4,13 +4,13 @@
 #
 # Installation script for Crab
 #
-# 02-Nov-2005
+# 09-March-2006
 
 # Subdir structure:
 # top/
 #     Boss/...
-#     Crab/python
-#     Crab/script
+#     python/...
+#     script/...
 
 TopDir=`\pwd`
 
@@ -65,7 +65,7 @@ cd $TopDir
 cat > crab.sh <<EOF
 #! /bin/sh
 # CRAB related Stuff
-export CRABDIR=$TopDir/Crab
+export CRABDIR=$TopDir
 export CRABSCRIPT=\${CRABDIR}
 
 CRABPATH=\${CRABDIR}/python
@@ -120,7 +120,7 @@ EOF
 cat > crab.csh <<EOF
 #! /bin/csh
 # CRAB related Stuff
-setenv CRABDIR $TopDir/Crab
+setenv CRABDIR $TopDir
 setenv CRABSCRIPT \${CRABDIR}
 
 set CRABPATH=\${CRABDIR}/python
