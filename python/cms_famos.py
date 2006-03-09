@@ -25,12 +25,14 @@ class Famos(JobType):
         self.scriptExe = ''
 
         self.version = self.scram.getSWVersion()
+        self.setParam_('application', self.version)
         common.analisys_common_info['sw_version'] = self.version
 
         try: self.VO = cfg_params['EDG.virtual_organization']
         except KeyError: self.VO = 'cms'
         try:
             self.executable = cfg_params['FAMOS.executable']
+            self.setParam_('exe', self.executable)
             log.debug(6, "Famos::Famos(): executable = "+self.executable)
         except KeyError:
             msg = "Error: executable not defined "
@@ -127,6 +129,8 @@ class Famos(JobType):
         except KeyError:
             self.ML = 0
             pass
+            
+        self.setTaskid_()
         return
 
     def wsSetupEnvironment(self, nj):
@@ -424,3 +428,16 @@ class Famos(JobType):
 
     def stdErr(self):
         return self.stdErr_
+
+    def setParam_(self, param, value):
+        self._params[param] = value
+
+    def getParams(self):
+        return self._params
+
+    def setTaskid_(self):
+        self._taskId = self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2] 
+        
+    def getTaskid(self):
+        return self._taskId
+    # marco

@@ -16,6 +16,9 @@ class Orca(JobType):
         common.logger.debug(3,'ORCA::__init__')
 
         self.analisys_common_info = {}
+        # Marco.
+        self._params = {}
+        self.cfg_params = cfg_params
 
         log = common.logger
         
@@ -25,6 +28,7 @@ class Orca(JobType):
         self.scriptExe = ''
 
         self.version = self.scram.getSWVersion()
+        self.setParam_('application', self.version)
         common.analisys_common_info['sw_version'] = self.version
         ### FEDE
         common.analisys_common_info['copy_input_data'] = 0
@@ -33,8 +37,10 @@ class Orca(JobType):
         ### collect Data cards
         try:
             self.owner = cfg_params['ORCA.owner']
+            self.setParam_('owner', self.owner)
             log.debug(6, "Orca::Orca(): owner = "+self.owner)
             self.dataset = cfg_params['ORCA.dataset']
+            self.setParam_('dataset', self.dataset)
             log.debug(6, "Orca::Orca(): dataset = "+self.dataset)
         except KeyError:
             msg = "Error: owner and/or dataset not defined "
@@ -56,6 +62,7 @@ class Orca(JobType):
         try:
             self.executable = cfg_params['ORCA.executable']
             log.debug(6, "Orca::Orca(): executable = "+self.executable)
+            self.setParam_('exe', self.executable)
         except KeyError:
             msg = "Error: executable not defined "
             raise CrabException(msg)
@@ -141,6 +148,9 @@ class Orca(JobType):
         except KeyError:
             self.ML = 0
             pass
+
+        self.setTaskid_()
+
         return
 
     def wsSetupEnvironment(self, nj):
@@ -189,6 +199,11 @@ class Orca(JobType):
         txt += "NJob=$1\n"
         txt += "FirstEvent=$2\n"
         txt += "MaxEvents=$3\n"
+        txt += 'echo "MonitorID = `echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "MonitorJobID = `echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "SyncGridJobId = `echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "SyncCE = `edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
 
         # Prepare job-specific part
         job = common.job_list[nj]
@@ -473,8 +488,8 @@ class Orca(JobType):
             outfile.write('ExtraPackages=RecApplPlugins\n')
             outfile.write('MonRecAlisaBuilder=true\n')
             ## TaskId is username+crab_0_date_time : that should be unique
-            TaskID = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2]
-            outfile.write('MonalisaApplName='+TaskID+'\n')
+#            TaskID = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2]
+            outfile.write('MonalisaApplName='+self._taskId+'\n')
             outfile.write('MonalisaNode=192.91.245.5\n')
             outfile.write('MonalisaPort=58884\n')
             pass
@@ -588,3 +603,17 @@ class Orca(JobType):
 
     def stdErr(self):
         return self.stdErr_
+    
+    # marco
+    def setParam_(self, param, value):
+        self._params[param] = value
+
+    def getParams(self):
+        return self._params
+
+    def setTaskid_(self):
+        self._taskId = self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2] 
+        
+    def getTaskid(self):
+        return self._taskId
+    # marco
