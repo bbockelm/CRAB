@@ -7,7 +7,7 @@
 # 02-Nov-2005
 
 ### BOSS configuration parameters
-BOSSVER=3_6_1
+BOSSVER=3_6_3
 BACKEND=SQLite
 BOSSDBPATH=${HOME}/boss/
 BOSSDBNAME=bossCrab
@@ -17,8 +17,8 @@ BOSSDBNAME=bossCrab
 #############################################
 
 
-echo "Creating ${HOME}/BossConfig.clad"
-cat > ${HOME}/BossConfig.clad <<EOF
+echo "Creating ${HOME}/.bossrc/BossConfig.clad"
+cat > ${HOME}/.bossrc/BossConfig.clad <<EOF
 # This is the BOSS configuration file
 
 [
@@ -52,8 +52,8 @@ if [ "${BACKEND}" == "SQLite" ]; then
     echo "Directory ${BOSSDBPATH} Already exist. Stopping"
     exit 1
   fi
-echo "Creating ${HOME}/SQLiteConfig.clad"
-cat > ${HOME}/SQLiteConfig.clad <<EOF
+echo "Creating ${HOME}/.bossrc/SQLiteConfig.clad"
+cat > ${HOME}/.bossrc/SQLiteConfig.clad <<EOF
 # This is the BOSS SQLite database configuration file
 [
 # BOSS SQLite database PATH
@@ -71,7 +71,7 @@ if [ "${BACKEND}" == "MySQL" ]; then
 HOST=`/bin/hostname`
 DOMAIN=`/bin/hostname -d`
 
-CONFSCRIPT=${HOME}/MySQLConfig.clad
+CONFSCRIPT=${HOME}/.bossrc/MySQLConfig.clad
 /bin/rm -f $CONFSCRIPT
 cat > $CONFSCRIPT  <<EOF
 
@@ -118,8 +118,8 @@ boss configureDB
 #######################################
 ###### Configuring RealTime monitor ###
 #######################################
-echo "Creating ${HOME}/MySQLRTConfig.clad"
-cat > ${HOME}/MySQLRTConfig.clad <<EOF
+echo "Creating ${HOME}/.bossrc/MySQLRTConfig.clad"
+cat > ${HOME}/.bossrc/MySQLRTConfig.clad <<EOF
 # This is the BOSS MySQL Database configuration file
 
 [
@@ -155,7 +155,7 @@ EOF
 ### Registering RT monitor
 cd $BOSSDIR/BossRTMon/bin
 echo "Registering MySQL RTMon Service"
-./registerMySQLRTmon
+./registerMySQLRTmon 
 
 ######################################
 #### Real Scheduler configuration ####
