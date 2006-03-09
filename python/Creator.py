@@ -181,7 +181,6 @@ class Creator(Actor):
         firstEvent=self.first_event
         ### fede for famos
         lastJobsNumberOfEvents = self.job_number_of_events
-        print "lastjobsnumberofevents", lastJobsNumberOfEvents
         ###
         # last jobs is different...
         for job in range(nJobs-1):
