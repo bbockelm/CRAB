@@ -25,6 +25,7 @@ class Orca_dbsdls(JobType):
         self.scriptExe = ''
 
         self.version = self.scram.getSWVersion()
+        self.setParam_('application', self.version)
         common.analisys_common_info['sw_version'] = self.version
         ### FEDE
         common.analisys_common_info['copy_input_data'] = 0
@@ -33,8 +34,10 @@ class Orca_dbsdls(JobType):
         ### collect Data cards
         try:
             self.owner = cfg_params['ORCA.owner']
+            self.setParam_('owner', self.owner)
             log.debug(6, "Orca::Orca(): owner = "+self.owner)
             self.dataset = cfg_params['ORCA.dataset']
+            self.setParam_('dataset', self.dataset)
             log.debug(6, "Orca::Orca(): dataset = "+self.dataset)
         except KeyError:
             msg = "Error: owner and/or dataset not defined "
@@ -56,6 +59,7 @@ class Orca_dbsdls(JobType):
         try:
             self.executable = cfg_params['ORCA.executable']
             log.debug(6, "Orca::Orca(): executable = "+self.executable)
+            self.setParam_('exe', self.executable)
         except KeyError:
             msg = "Error: executable not defined "
             raise CrabException(msg)
@@ -145,6 +149,9 @@ class Orca_dbsdls(JobType):
         except KeyError:
             self.ML = 0
             pass
+
+        self.setTaskid_()
+
         return
 
     def wsSetupEnvironment(self, nj):
@@ -193,14 +200,19 @@ class Orca_dbsdls(JobType):
         txt += "NJob=$1\n"
         txt += "FirstEvent=$2\n"
         txt += "MaxEvents=$3\n"
+        txt += 'echo "MonitorID = `echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "MonitorJobID = `echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "SyncGridJobId = `echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "SyncCE = `edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
 
         # handle additional user defined files (copy them in the exec area)
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
                 file = os.path.basename(file)
                 txt += 'if [ -e $RUNTIME_AREA/'+file+' ] ; then\n'
-                txt += '   cp $RUNTIME_AREA/'+file+' .\n'
-                txt += '   chmod +x '+file+'\n'
+                txt += '    cp $RUNTIME_AREA/'+file+' .\n'
+                txt += '    chmod +x '+file+'\n'
                 txt += 'fi\n'
             pass
 
@@ -266,18 +278,18 @@ class Orca_dbsdls(JobType):
             txt += 'tar xzvf ../'+os.path.basename(self.tgzNameWithPath)+'\n'
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
-            txt += '   echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
-            txt += '   echo "JOB_EXIT_STATUS = $untar_status" \n'
-            txt += '   echo "SanityCheckCode = $untar_status" | tee -a $repo\n'
-            txt += '   exit $untar_status \n'
+            txt += '    echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
+            txt += '    echo "JOB_EXIT_STATUS = $untar_status" \n'
+            txt += '    echo "SanityCheckCode = $untar_status" | tee -a $repo\n'
+            txt += '    exit $untar_status \n'
             txt += 'else \n'
-            txt += '   echo "Successful untar" \n'
+            txt += '    echo "Successful untar" \n'
             txt += 'fi \n'
             # TODO: what does this code do here ?
             # SL check that lib/Linux__... is present
             txt += 'mkdir -p lib/${SCRAM_ARCH} \n'
-            #txt += 'eval `'+self.scram.commandName()+' runtime -sh`'+'\n'
-            txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
+            txt += 'eval `'+self.scram.commandName()+' runtime -sh |grep -v SCRAMRT_LSB_JOBNAME`'+'\n'
+            #txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
             pass
 
         return txt
@@ -298,14 +310,14 @@ class Orca_dbsdls(JobType):
             txt += 'ls '+fileWithSuffix+'\n'
             txt += 'exe_result=$?\n'
             txt += 'if [ $exe_result -ne 0 ] ; then\n'
-            txt += '   echo "ERROR: No output file to manage"\n'
-            txt += '   echo "JOB_EXIT_STATUS = $exe_result"\n'
-            txt += '   echo "SanityCheckCode = $exe_result" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-            txt += '   exit $exe_result \n'
+            txt += '    echo "ERROR: No output file to manage"\n'
+            txt += '    echo "JOB_EXIT_STATUS = $exe_result"\n'
+            txt += '    echo "SanityCheckCode = $exe_result" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+            txt += '    exit $exe_result \n'
             txt += 'else\n'
-            txt += '   cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            txt += 'fi\n'           
+            txt += '    cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            txt += 'fi\n'
             txt += 'cd $RUNTIME_AREA\n'
 
             pass
@@ -424,8 +436,9 @@ class Orca_dbsdls(JobType):
             outfile.write('ExtraPackages=RecApplPlugins\n')
             outfile.write('MonRecAlisaBuilder=true\n')
             ## TaskId is username+crab_0_date_time : that should be unique
-            TaskID = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2]
-            outfile.write('MonalisaApplName='+TaskID+'\n')
+            #TaskID = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2]
+            outfile.write('MonalisaApplName='+self._taskId+'\n')
+            #outfile.write('MonalisaApplName='+TaskID+'\n')
             outfile.write('MonalisaNode=192.91.245.5\n')
             outfile.write('MonalisaPort=58884\n')
             pass
@@ -448,7 +461,7 @@ class Orca_dbsdls(JobType):
         """
         return os.path.split (self.orcarc_file)[1]
 
-### content of input_sanbdox ...
+    ### content of input_sanbdox ...
     def inputSandbox(self, nj):
         """
         Returns a list of filenames to be put in JDL input sandbox.
