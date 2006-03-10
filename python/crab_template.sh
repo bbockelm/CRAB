@@ -7,13 +7,11 @@
 
 RUNTIME_AREA=`pwd`
 dumpStatus() {
-# Marco
 echo "First attempt of ML transmission from WN"
 echo ">>>>>>> Cat $1"
 cat $1
 echo ">>>>>>> End Cat jobreport"
 $RUNTIME_AREA/report.py $(cat $1)
-# End Marco
 }
 
 echo "Today is `date`"
@@ -23,7 +21,6 @@ echo "Working directory `pwd`"
 ls -Al
 repo=jobreport.txt
 echo "SyncGridJobId = `echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo 
-#echo "SyncGridName = `grid-proxy-info -identity`" | tee -a $RUNTIME_AREA/$repo
 
 #
 # END OF HEAD
@@ -40,6 +37,12 @@ echo "SyncGridJobId = `echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo
 #
 # END OF SETUP ENVIRONMENT
 #
+
+#
+# COPY INPUT
+#
+
+#CRAB copy_input 
 
 #
 # PREPARE AND RUN EXECUTABLE
@@ -60,19 +63,19 @@ fi
 
 echo "SET_EXE 0 ==> ok executable found"
 
-echo "$executable started at `date`"
-start_exe_time=`date +%s`
 echo "ExeStart = $executable" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
+echo "$executable started at `date`"
+start_exe_time=`date +%s`
 #CRAB run_executable
-echo "ExeEnd = $executable" | tee -a $RUNTIME_AREA/$repo
-dumpStatus $RUNTIME_AREA/$repo
 executable_exit_status=$?
 stop_exe_time=`date +%s`
 #TIME_EXE=$stop_exe_time - $start_exe_time
 let "TIME_EXE = stop_exe_time - start_exe_time"
 echo "TIME_EXE = $TIME_EXE sec"
 echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"
+echo "ExeEnd = $executable" | tee -a $RUNTIME_AREA/$repo
+dumpStatus $RUNTIME_AREA/$repo
 echo "$executable ended at `date`"
 if [ $executable_exit_status -ne 0 ]; then
   echo "Warning: Processing of job failed with exit code $executable_exit_status"
@@ -107,4 +110,6 @@ ls -Al
 
 echo "SummaryFinalStatus = $exit_status" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
+
+echo "JOB_EXIT_STATUS = $exit_status"
 exit $exit_status
