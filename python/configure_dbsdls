@@ -4,22 +4,22 @@
 #
 # Installation script for Crab
 #
-# 02-Nov-2005
+# 09-March-2006
 
 # Subdir structure:
 # top/
 #     Boss/...
-#     Crab/python
-#     Crab/script
-#     DBSAPI/..
-#     DLSAPI/..
-
+#     python/...
+#     script/...
+#     DBSAPI
+#     DLSAPI
+#
 TopDir=`\pwd`
 
 #############################################
 ######## BOSS CONFIGURATION #################
 #############################################
-BOSSVER=3_6_1
+BOSSVER=3_6_3
 BACKEND=SQLite
 
 function configureBoss {
@@ -67,7 +67,7 @@ cd $TopDir
 cat > crab.sh <<EOF
 #! /bin/sh
 # CRAB related Stuff
-export CRABDIR=$TopDir/Crab
+export CRABDIR=$TopDir
 export CRABSCRIPT=\${CRABDIR}
 
 CRABPATH=\${CRABDIR}/python
@@ -92,19 +92,30 @@ source $BOSSDIR/bossenv.sh
 # check whether central boss db is configured
 
 # check if *clad files exist
-if [ ! -e ~/BossConfig.clad ]; then
-  echo "User-boss DB not installed: run configureBoss"
+
+if [ ! -e ~/.bossrc/BossConfig.clad ]; then
+  if [ -e ~/BossConfig.clad ]; then
+    cp  ~/BossConfig.clad ~/.bossrc/BossConfig.clad
+  else
+    echo "User-boss DB not installed: run configureBoss"
+  fi
 fi
-if [ ! -e ~/SQLiteConfig.clad ]; then
-  echo "User-boss DB not installed: run configureBoss"
+if [ ! -e ~/.bossrc/SQLiteConfig.clad ]; then
+  if [ -e ~/SQLiteConfig.clad ]; then
+    cp ~/SQLiteConfig.clad ~/.bossrc/SQLiteConfig.clad
+  else
+    echo "User-boss DB not installed: run configureBoss"
+  fi
 fi
-if [ ! -e ~/MySQLRTConfig.clad ]; then
-  echo "User-boss DB not installed: run configureBoss"
+if [ ! -e ~/.bossrc/MySQLRTConfig.clad ]; then
+  if [ -e ~/MySQLRTConfig.clad ]; then
+    cp  ~/MySQLRTConfig.clad  ~/.bossrc/MySQLRTConfig.clad
+  else
+    echo "User-boss DB not installed: run configureBoss"
+  fi
 fi
 # now check a boss command to see if boss DB is up and running
-
-boss clientID 1>&2 | grep -c "not correctly configured"
-< if [ \$? -ne 0 ]; then
+if [ \`boss clientID 1>/dev/null | grep -c "not correctly configured"\` -ne 0 ]; then
   echo "User-boss DB not installed: run configureBoss"
 fi
 EOF
@@ -113,7 +124,7 @@ EOF
 cat > crab.csh <<EOF
 #! /bin/csh
 # CRAB related Stuff
-setenv CRABDIR $TopDir/Crab
+setenv CRABDIR $TopDir
 setenv CRABSCRIPT \${CRABDIR}
 
 set CRABPATH=\${CRABDIR}/python
@@ -138,17 +149,29 @@ source $BOSSDIR/bossenv.csh
 # check whether central boss db is configured
 
 # check if *clad files exist
-if ( ! -e ~/BossConfig.clad ) then
-  echo "User-boss DB not installed: run configureBoss"
-  exit 1
+if ( ! -e ~/.bossrc/BossConfig.clad ) then
+  if ( -e ~/BossConfig.clad ) then
+    cp ~/BossConfig.clad ~/.bossrc/BossConfig.clad
+  else
+    echo "User-boss DB not installed: run configureBoss"
+    exit 1
+  endif
 endif
-if ( ! -e ~/SQLiteConfig.clad ) then
-  echo "User-boss DB not installed: run configureBoss"
-  exit 1
+if ( ! -e ~/.bossrc/SQLiteConfig.clad ) then
+  if ( -e ~/SQLiteConfig.clad ) then
+    cp ~/SQLiteConfig.clad ~/.bossrc/SQLiteConfig.clad
+  else
+    echo "User-boss DB not installed: run configureBoss"
+    exit 1
+  endif
 endif
-if ( ! -e ~/MySQLRTConfig.clad ) then
-  echo "User-boss DB not installed: run configureBoss"
-  exit 1
+if ( ! -e ~/.bossrc/MySQLRTConfig.clad ) then
+  if ( -e ~/MySQLRTConfig.clad ) then
+    cp ~/MySQLRTConfig.clad  ~/.bossrc/MySQLRTConfig.clad
+  else
+    echo "User-boss DB not installed: run configureBoss"
+    exit 1
+  endif
 endif
 # now check a boss command to see if boss DB is up and running
 if ( \`boss clientID |& grep -c "not correctly configured"\` ) then
