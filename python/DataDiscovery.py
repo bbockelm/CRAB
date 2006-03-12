@@ -42,7 +42,8 @@ class DataDiscovery:
     def __init__(self, owner, dataset, dataTiers, cfg_params):
 
 #       Attributes
-        self.dbsdataset='/'+dataset+'/datatier/'+owner
+        self.owner = owner
+        self.dataset = dataset
         self.dataTiers = dataTiers
         self.cfg_params = cfg_params
 
@@ -56,33 +57,34 @@ class DataDiscovery:
         """
         Contact DBS
         """
-        parents = []
-        parentsblocksinfo = {}
 
         ## add the PU among the required data tiers if the Digi are requested
         if (self.dataTiers.count('Digi')>0) & (self.dataTiers.count('PU')<=0) :
           self.dataTiers.append('PU')
 
         ## get info about the requested dataset 
-        dbs=DBSInfo(self.dbsdataset,self.dataTiers)
+        dbs=DBSInfo()
+        self.datasets = dbs.getMatchingDatasets(self.owner, self.dataset)
+        if len(self.datasets) == 0:
+          raise DataDiscoveryError("Owner=%s, Dataset=%s unknown to DBS" % (self.owner, self.dataset))
+        if len(self.datasets) > 1:
+          raise DataDiscoveryError("Owner=%s, Dataset=%s is ambiguous" % (self.owner, self.dataset))
         try:
-          self.blocksinfo=dbs.getDatasetContents()
+          self.dbsdataset = self.datasets[0].getDatasetPath()
+          self.blocksinfo = dbs.getDatasetContents(self.dbsdataset)
+          self.allblocks.append (self.blocksinfo.keys ()) # add also the current fileblocksinfo
+          self.dbspaths.append(self.dbsdataset)
         except DBSError, ex:
           raise DataDiscoveryError(ex.getErrorMessage())
         
         if len(self.blocksinfo)<=0:
-         msg="\nERROR Data %s do not exist in DBS! \n Check the dataset/owner variables in crab.cfg !"%self.dbsdataset
+         msg="\nERROR Data for %s do not exist in DBS! \n Check the dataset/owner variables in crab.cfg !"%self.dbsdataset
          raise NotExistingDatasetError(msg)
 
-        currentdatatier=string.split(self.blocksinfo.keys()[0],'/')[2]
-        fakedatatier=string.split(self.dbsdataset,'/')[2]
-        currentdbsdataset=string.replace(self.dbsdataset, fakedatatier, currentdatatier)  
-
-        self.dbspaths.append(currentdbsdataset)    # add the requested dbspath
 
         ## get info about the parents
         try:
-          parents=dbs.getDatasetProvenance()
+          parents=dbs.getDatasetProvenance(self.dbsdataset, self.dataTiers)
         except DBSInvalidDataTierError, ex:
           msg=ex.getErrorMessage()+' \n Check the data_tier variable in crab.cfg !\n'
           raise DataDiscoveryError(msg)
@@ -90,43 +92,30 @@ class DataDiscovery:
           raise DataDiscoveryError(ex.getErrorMessage())
 
         ## check that the user asks for parent Data Tier really existing in the DBS provenance
-        self.checkParentDataTier(parents, self.dataTiers, currentdbsdataset) 
+        self.checkParentDataTier(parents, self.dataTiers) 
 
         ## for each parent get the corresponding fileblocks
-        for aparent in parents:
-           ## fill a list of dbspaths
-           parentdbsdataset=aparent.getDatasetPath()
-           self.dbspaths.append(parentdbsdataset)
-           pdbs=DBSInfo(parentdbsdataset,[])
-           try:
-             parentsblocksinfo=pdbs.getDatasetContents()
-           except DBSError, ex:
+        try:
+          for p in parents:
+            ## fill a list of dbspaths
+            parentPath = p.getDatasetPath()
+            self.dbspaths.append (parentPath)
+            parentBlocks = dbs.getDatasetContents (parentPath)
+            self.allblocks.append (parentBlocks.keys ())  # add parent fileblocksinfo
+        except DBSError, ex:
             raise DataDiscoveryError(ex.getErrorMessage())
 
-           self.allblocks.append(parentsblocksinfo.keys()) # add parent fileblocksinfo
-
-        ## all the required blocks
-        self.allblocks.append(self.blocksinfo.keys()) # add also the current fileblocksinfo
-
-
 # #################################################
-    def checkParentDataTier(self, parents, user_datatiers, currentdbsdataset ):
+    def checkParentDataTier(self, parents, dataTiers):
         """
          check that the data tiers requested by the user really exists in the provenance of the given dataset
         """
-
-        current_datatier=string.split(currentdbsdataset,'/')[2]
-
-        parent_datatypes=[]
-        for aparent in parents:
-          parent_datatypes.append(aparent.getDataType())
-
-        for datatier in user_datatiers:
-          if parent_datatypes.count(datatier)<=0:
-             # the current datatier is not supposed to be in the provenance
-             if not (datatier == current_datatier):  
-              msg="\nERROR Data %s not published in DBS with asked data tiers : the data tier not found is %s !\n  Check the data_tier variable in crab.cfg !"%(currentdbsdataset,datatier)
-              raise  NoDataTierinProvenanceError(msg)
+        startType = string.split(self.dbsdataset,'/')[2]
+        parentTypes = map(lambda p: p.getDataType(), parents)
+        for tier in dataTiers:
+          if parentTypes.count(tier) <= 0 and tier != startType:
+            msg="\nERROR Data %s not published in DBS with asked data tiers : the data tier not found is %s !\n  Check the data_tier variable in crab.cfg !"%(self.dbsdataset,tier)
+            raise  NoDataTierinProvenanceError(msg)
 
 
 # #################################################

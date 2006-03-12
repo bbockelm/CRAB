@@ -16,6 +16,9 @@ class Orca_dbsdls(JobType):
         common.logger.debug(3,'ORCA::__init__')
 
         self.analisys_common_info = {}
+        # Marco.
+        self._params = {}
+        self.cfg_params = cfg_params
 
         log = common.logger
         
@@ -553,3 +556,18 @@ class Orca_dbsdls(JobType):
 
     def stdErr(self):
         return self.stdErr_
+
+    # marco
+    def setParam_(self, param, value):
+        self._params[param] = value
+
+    def getParams(self):
+        return self._params
+
+    def setTaskid_(self):
+        self._taskId = self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2]
+
+    def getTaskid(self):
+        return self._taskId
+    # marco
+

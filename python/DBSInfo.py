@@ -9,7 +9,7 @@ try:
 except:
   try:
    Crabpydir=commands.getoutput('which crab')
-   Topdir=string.replace(Crabpydir,'/Crab/python/crab','')
+   Topdir=string.replace(Crabpydir,'/python/crab','')
    sys.path.append(Topdir+'/DBSAPI')
    import dbsCgiApi
    import dbsApi
@@ -50,25 +50,34 @@ class DBSInfoError:
 ###############################################################################
 
 class DBSInfo:
-     def __init__(self, dbspath, dataTiers):
-          self.dbspath=dbspath 
-          self.dataTiers = dataTiers
+     def __init__(self):
           # Construct api object
-          self.api = dbsCgiApi.DbsCgiApi(cgiUrl="http://cern.ch/cms-dbs/cgi-bin") 
+          self.api = dbsCgiApi.DbsCgiApi()
           # Configure api logging level
           self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_QUIET_)
-          if common.logger.debugLevel() >= 4:
-           self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_INFO_)
-          if common.logger.debugLevel() >= 10:          
-           self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_ALL_)
+          #if common.logger.debugLevel() >= 4:
+          # self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_INFO_)
+          #if common.logger.debugLevel() >= 10:          
+          # self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_ALL_)
 
 # ####################################
-     def getDatasetProvenance(self):
+     def getMatchingDatasets (self, owner, dataset):
+         """ Query DBS to get provenance """
+         try:
+           list = self.api.listDatasets("/%s/*/%s" % (dataset, owner))
+         except dbsApi.InvalidDataTier, ex:
+           raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())
+         except dbsApi.DbsApiException, ex:
+           raise DBSError(ex.getClassName(),ex.getErrorMessage())
+         return list
+
+# ####################################
+     def getDatasetProvenance(self, path, dataTiers):
          """
           query DBS to get provenance
          """
          try:
-           datasetParentList = self.api.getDatasetProvenance(self.dbspath,self.dataTiers)
+           datasetParentList = self.api.getDatasetProvenance(path,dataTiers)
          except dbsApi.InvalidDataTier, ex:
            raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())  
          except dbsApi.DbsApiException, ex:
@@ -82,20 +91,18 @@ class DBSInfo:
          #return parent
 
 # ####################################
-     def getDatasetContents(self):
+     def getDatasetContents(self, path):
          """
           query DBS to get event collections
          """
          try:
-           fileBlockList = self.api.getDatasetContents(self.dbspath)
+           fileBlockList = self.api.getDatasetContents(path)
          except dbsApi.DbsApiException, ex:
            raise DBSError(ex.getClassName(),ex.getErrorMessage())
          ## get the fileblock and event collections
          nevtsbyblock= {}
          for fileBlock in fileBlockList:
             ## get the event collections for each block
-            #print fileBlock.getBlockName()
-            #print fileBlock.getBlockId()
             eventCollectionList = fileBlock.getEventCollectionList()
             nevts=0
             for eventCollection in eventCollectionList:
