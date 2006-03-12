@@ -10,7 +10,7 @@ def Monitor(operation,Resubmit,jid,exitCode):
        time = array[0]
        jobtype = array[1]
        NjobCre = array[2]
-       if jobtype == 'ORCA':
+       if ( jobtype == 'ORCA' ) or ( jobtype == 'ORCA_DBSDLS'):
            dataset = array[3]
            owner = array[4]
        elif jobtype == 'FAMOS':
@@ -37,7 +37,7 @@ def Monitor(operation,Resubmit,jid,exitCode):
                                                                                                                              
        sockobj = socket(AF_INET,SOCK_DGRAM)
        sockobj.connect((address,port))
-       if jobtype == 'ORCA':
+       if ( jobtype == 'ORCA' ) or ( jobtype == 'ORCA_DBSDLS'):
            sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
        elif jobtype == 'FAMOS':
            pass 
