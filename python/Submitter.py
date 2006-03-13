@@ -7,9 +7,12 @@ from random import random
 import time
 
 class Submitter(Actor):
-    def __init__(self, cfg_params, nj_list):
+    # marco
+    def __init__(self, cfg_params, nj_list, job_type):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
+        self.job_type = job_type
+        
         try:
             self.ML = int(cfg_params['USER.activate_monalisa'])
         except KeyError:
@@ -25,8 +28,9 @@ class Submitter(Actor):
         common.logger.debug(5, "Submitter::run() called")
 
         totalCreatedJobs= 0
+        # marco. Common job type parameters to be sent to ML and Daniele's Monitor
+        jobtype_p = self.job_type.getParams()
         start = time.time()
-        # self.cfg_params['taskId'] = self.cfg_params['user']+'_'+self.cfg_params['USER.dataset']+'.'+self.cfg_params['USER.owner']+'_'+str(start)
         for nj in range(common.jobDB.nJobs()):
             if (common.jobDB.status(nj)=='C') or (common.jobDB.status(nj)=='RC'): totalCreatedJobs +=1
             pass
@@ -76,7 +80,8 @@ class Submitter(Actor):
                 #try:
                 #    print 'submitter prima '
 
-                Statistic.Monitor('submit',resFlag,jid,'-----')  
+#                Statistic.Monitor('submit',resFlag,jid,'-----', jobtype_p)
+#                Statistic.Monitor('submit',resFlag,jid,'-----')
                 #    print 'submitter Dopo     '
  
 
@@ -86,31 +91,25 @@ class Submitter(Actor):
                 if (self.ML==1):
                     try:
                         #List of parameters to be sent to ML monitor system
-                        # Marco. Should be better to put it in the SchedulerEdg/gLite class
+                        # Marco. Should be better to put it in the SchedulerEdg/gLite class 
+                        listCE = ','.join(common.analisys_common_info['sites'])
                         self.cfg_params['GridName'] = runCommand("grid-proxy-info -identity")
                         common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
-                        self.cfg_params['jobId'] = str(nj)
+                        self.cfg_params['jobId'] = str(nj + 1)
                         self.cfg_params['sid'] = jid
-                        user = os.getlogin()
-                        try:
-                            application = os.path.basename(os.environ['SCRAMRT_LOCALRT'])
-                        except KeyError:
-                            application = os.path.basename(os.environ['LOCALRT'])
-
                         nevtJob = common.jobDB.maxEvents(nj)
-                        tool = common.prog_name+'_v1'
                         taskType = 'analysis'
                         rb = jid.split(':')[1]
                         self.cfg_params['rb'] = rb.replace('//', '')
-                        #params = {'taskId': self.cfg_params['taskId'], 'jobId': self.cfg_params['jobId'], 'sid': self.cfg_params['sid'], \
-                        #          'application': application, 'exe': self.cfg_params['ORCA.executable'], 'nevtJob': nevtJob, 'tool': tool, \
-                        #          'scheduler': self.cfg_params['CRAB.scheduler'], 'GridName': self.cfg_params['GridName'], 'taskType': taskType, \
-                        #          'vo': self.cfg_params['EDG.virtual_organization'], 'dataset': self.cfg_params['ORCA.dataset'],\
-                        #          'owner': self.cfg_params['ORCA.owner'], 'broker': self.cfg_params['rb'], 'user': self.cfg_params['user']}
-                        params = {'taskId': self.cfg_params['taskId'], 'jobId': self.cfg_params['jobId'], 'sid': self.cfg_params['sid'], \
-                                  'application': application, 'exe': self.cfg_params['ORCA.executable'], 'nevtJob': nevtJob, 'tool': tool, \
+
+                        params = {'jobId': str(nj + 1) + '_' + self.cfg_params['sid'] ,'taskId': self.job_type.getTaskid(), 'sid': self.cfg_params['sid'], \
+                                  'nevtJob': nevtJob, 'tool': common.prog_name, 'tool_ui': os.environ['HOSTNAME'], \
                                   'scheduler': self.cfg_params['CRAB.scheduler'], 'GridName': self.cfg_params['GridName'], 'taskType': taskType, \
-                                  'vo': self.cfg_params['EDG.virtual_organization'], 'broker': self.cfg_params['rb'], 'user': self.cfg_params['user']}
+                                  'vo': self.cfg_params['EDG.virtual_organization'], 'broker': self.cfg_params['rb'], 'user': self.cfg_params['user'], 'TargetCE': listCE, 'bossId': common.jobDB.bossId(nj)}
+                        for i in jobtype_p.iterkeys():
+                            params[i] = jobtype_p[i]
+#                        for j, k in params.iteritems():
+#                            print "Values: %s %s"%(j, k)
                         self.cfg_params['apmon'].fillDict(params)
                         self.cfg_params['apmon'].sendToML()
                     except:
