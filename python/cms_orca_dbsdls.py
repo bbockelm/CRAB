@@ -291,9 +291,8 @@ class Orca_dbsdls(JobType):
             # TODO: what does this code do here ?
             # SL check that lib/Linux__... is present
             txt += 'mkdir -p lib/${SCRAM_ARCH} \n'
-            txt += 'eval `'+self.scram.commandName()+' runtime -sh |grep -v SCRAMRT_LSB_JOBNAME`'+'\n'
-            #txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
             pass
+        txt += 'eval `'+self.scram.commandName()+' runtime -sh |grep -v SCRAMRT_LSB_JOBNAME`'+'\n'
 
         return txt
 

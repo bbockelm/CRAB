@@ -275,9 +275,8 @@ class Orca(JobType):
             # TODO: what does this code do here ?
             # SL check that lib/Linux__... is present
             txt += 'mkdir -p lib/${SCRAM_ARCH} \n'
-            txt += 'eval `'+self.scram.commandName()+' runtime -sh |grep -v SCRAMRT_LSB_JOBNAME`'+'\n'
-#            txt += 'eval `'+self.scram.commandName()+' runtime -sh`'+'\n'
             pass
+        txt += 'eval `'+self.scram.commandName()+' runtime -sh |grep -v SCRAMRT_LSB_JOBNAME`'+'\n'
 
         return txt
 
@@ -306,7 +305,7 @@ class Orca(JobType):
             txt += '    cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'
             txt += 'cd $RUNTIME_AREA\n'
-                      
+
             pass
        
         file_list=file_list[:-1]
