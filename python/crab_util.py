@@ -59,6 +59,9 @@ def loadConfig(file):
         for opt in cp.options(sec):
             #print 'config['+sec+'.'+opt+'] = '+string.strip(cp.get(sec,opt))
             config[sec+'.'+opt] = string.strip(cp.get(sec,opt))
+    # marco. Try to prevent user from switching off Monalisa reporting
+    config['USER.activate_monalisa'] = 1
+    # marco
     return config
 
 ###########################################################################
@@ -184,7 +187,7 @@ def importName(module_name, name):
 
 
 ###########################################################################
-def runBossCommand(cmd, printout=0, timeout=240):
+def runBossCommand(cmd, printout=0, timeout=600):
     """
     Cd to correct directory before running a boss command
     """
