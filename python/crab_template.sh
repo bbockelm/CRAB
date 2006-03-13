@@ -55,15 +55,15 @@ which $executable
 res=$?
 if [ $res -ne 0 ];then 
   echo "SET_EXE 1 ==> ERROR executable not found on WN `hostname`" 
-  echo "JOB_EXIT_STATUS = 1"
-  echo "SanityCheckCode = 1" | tee -a $RUNTIME_AREA/$repo
+  echo "JOB_EXIT_STATUS = 50110"
+  echo "JobExitStatus=50110" | tee -a $RUNTIME_AREA/$repo
   dumpStatus $RUNTIME_AREA/$repo
   exit 1 
 fi
 
 echo "SET_EXE 0 ==> ok executable found"
 
-echo "ExeStart = $executable" | tee -a $RUNTIME_AREA/$repo
+echo "ExeStart=$executable" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 echo "$executable started at `date`"
 start_exe_time=`date +%s`
@@ -74,14 +74,15 @@ stop_exe_time=`date +%s`
 let "TIME_EXE = stop_exe_time - start_exe_time"
 echo "TIME_EXE = $TIME_EXE sec"
 echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"
-echo "ExeEnd = $executable" | tee -a $RUNTIME_AREA/$repo
+echo "ExeEnd=$executable" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 echo "$executable ended at `date`"
 if [ $executable_exit_status -ne 0 ]; then
   echo "Warning: Processing of job failed with exit code $executable_exit_status"
 fi
 exit_status=$executable_exit_status
-echo "ExeExitStatus = $exit_status" | tee -a $RUNTIME_AREA/$repo
+echo "ExeExitStatus=$exit_status" | tee -a $RUNTIME_AREA/$repo
+echo "ExeTime=$TIME_EXE" | tee -a $RUNTIME_AREA/$repo
 
 #
 # END OF PREPARE AND RUN EXECUTABLE
@@ -108,7 +109,7 @@ pwd
 echo "ls -Al"
 ls -Al
 
-echo "SummaryFinalStatus = $exit_status" | tee -a $RUNTIME_AREA/$repo
+echo "SummaryFinalStatus=$exit_status" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 
 echo "JOB_EXIT_STATUS = $exit_status"
