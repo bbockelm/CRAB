@@ -7,103 +7,168 @@ This is a simple test program for the 'apmon' Python module.
 
 import apmon
 import time, sys, os
+from types import DictType
 
-apmonInstance = None
-def getApmonInstance() :
-    global apmonInstance
-    if apmonInstance is None :
-        #apmonUrl = 'http://monalisa.cern.ch/ARDA/apmon.cms'
-	apmonUrl = ('192.91.245.5:58884',)
-        logger("ApmReport: Creating ApMon with " + `apmonUrl`)
-        apmonInstance = apmon.ApMon(apmonUrl)
-    return apmonInstance
-
-def getParamValues(lines, retDict=None) :
-    readAll = False
-    if retDict is None :
-        retDict = {}
-        readAll = True
-    elif retDict == {} :
-        readAll = True
-    for line in lines :
-        line = line.strip()
-        if line.find('=') != -1 :
-            split = line.split('=')
-            if len(split) > 2 :
-                split = [split[0], '='.join(split[1:])]
-            split = [x.strip() for x in split]
-            if readAll or split[0] in retDict.keys() :
-                retDict[split[0]] = split[1]
-    return retDict
-
-def readFileContent(fileName) :
-    lines = None
-    if os.path.exists(fileName) :
-        fh = open(fileName, 'r')
-        lines = fh.readlines()
-        fh.close()
-    return lines
-
-def readParamValues(fileNameArr, retDict=None) :
-    for fileName in fileNameArr :
-        lines = readFileContent(fileName)
-        if lines is not None :
-            return getParamValues(lines, retDict)
-    return retDict
-
-def readTaskIdFile(filename='TASK_ID') :
-    taskId = None
-    taskIdFile = readFileContent(filename)
-    if taskIdFile is not None and len(taskIdFile) > 0 :
-        taskId = taskIdFile[0].strip()
-    return taskId
-
+# Method for writing debug information in a file
 def logger(msg) :
     msg = `msg`
     if not msg.endswith('\n') :
         msg = msg + '\n'
-    fh = open('report.log','a')
-    fh.write(msg)
-    fh.close
     #print msg
+    try :
+        fh = open('report.log','a')
+        fh.write(msg)
+        fh.close
+    except Exception, e :
+        pass
 
-def getJobID(id, jobId='UNKNOWN') :
-    if id.find('.') != -1 :
-        split = id.split('.')
-        if split[0].find('_') :
-            jobId = split[0].split('_')[-1]
-        elif len(split[0]) >= 6 : 
-            jobId = split[0][-6:]
-        else :
-            jobId = split[0]
-    return jobId
+##############
+## CONTEXT
 
-def mlSend(task, job, paramDict) :
-    apm = getApmonInstance()
-    #logger("ApmReport: Destinations:", apm.destinations) 
-    logger("ApmReport: Sending:"+`task`+":"+`job`+":"+`paramDict`)
+# Global context for report
+_context = {}
+
+# Format envvar, context var name, context var default value
+contextConf = {'MonitorID' : ('MonitorID', 'unknown'),
+               'MonitorJobID'  : ('MonitorJobID', 'unknown'),
+               'MonitorLookupURL': ('MonitorLookupURL', 'http://lxgate35.cern.ch:40808/ApMonConf') }
+               
+def getContext(overload={}) :
+    if not isinstance(overload, DictType) :
+        overload = {}
+    if len(_context) == 0 : 
+        for paramName in contextConf.keys() :
+            paramValue = None
+            if overload.has_key(paramName) :
+                paramValue = overload[paramName]
+            if paramValue is None :    
+                envVar = contextConf[paramName][0] 
+                paramValue = os.getenv(envVar)
+            if paramValue is None :
+                defaultValue = contextConf[paramName][1]
+                paramValue = defaultValue
+            _context[paramName] = paramValue
+    return _context
+
+## /CONTEXT
+##############
+
+# Methods for handling the apmon instance
+# apmonConf = {'sys_monitoring' : False, 'job_monitoring' : False, 'general_info': False}
+
+def send(context, paramDict) :
+    task = context['MonitorID']
+    job = context['MonitorJobID']
+    apmonUrl = context['MonitorLookupURL']
+    logger("ApmReport: Creating ApMon with " + `apmonUrl`)
+    apm = apmon.ApMon(apmonUrl, apmon.Logger.WARNING)
+    logger("ApmReport: Destinations: " + `apm.destinations`) 
+    #apm.enableBgMonitoring(False) 
+    logger("ApmReport: Sending("+task+","+job+","+`paramDict`+")")
     apm.sendParameters(task, job, paramDict)
+    time.sleep(1)
+    apm.free()
 
+# Reading the input arguments
+
+_jobid = None
+jobidEnvList = ['EDG_WL_JOBID', 'GLITE_WMS_JOBID']
+def setGridJobID(argValues=None,default='unknown') :
+    global _jobid
+    if argValues is not None and argValues.has_key('GridJobID') :
+        _jobid = argValues['GridJobID']
+        argValues.__delitem__('GridJobID')
+    if _jobid is None :
+        for jobidEnvCandidate in jobidEnvList :
+            jobidCandidate = os.getenv(jobidEnvCandidate)
+            if jobidCandidate is not None :
+                _jobid = jobidCandidate
+                break
+    if _jobid is None :
+        _jobid = default
+    
+def getGridJobID() :
+    if _jobid is None :
+        setGridJobID()
+    return _jobid
+    
+def getGridIdentity() :
+    userid = os.popen("grid-proxy-info -identity").read().strip()
+    return userid
+
+# Simple filters (1-to-1 correspondance)
+reportFilters = { 'getGridIdentity' : ('SyncGridName', getGridIdentity),
+                  'SYNC' : ('SyncGridJobID', getGridJobID) }
+
+# Complex filters (1-to-many relation)
+reportCommands = {}
+
+def readArgs(lines) :
+    argValues = {}
+    for line in lines :
+        paramName = 'unknown'
+        paramValue = 'unknown'
+        line = line.strip()
+        if line.find('=') != -1 :
+            split = line.split('=')
+            paramName = split[0]
+            paramValue = '='.join(split[1:])
+        else :
+            paramName = line
+        argValues[paramName] = paramValue
+    return argValues    
+
+def filterArgs(argValues) :
+
+    contextValues = {}
+    paramValues = {}
+    command = None
+
+    for paramName in argValues.keys() :
+
+        if paramName in reportFilters.keys() :
+            newParamName = reportFilters[paramName][0]
+            newParamFilter = reportFilters[paramName][1]
+            newParamValue = newParamFilter()
+            argValues[newParamName] = newParamValue
+            argValues.__delitem__(paramName)
+
+        elif paramName in reportCommands.keys() :
+            commandFilter = reportCommands[command]
+            commandFilter(argValues)
+            argValues.__delitem__(paramName)
+
+    for paramName in argValues.keys() :
+        paramValue = argValues[paramName]
+        if paramValue is not None :
+            if paramName in contextConf.keys() :
+                contextValues[paramName] = paramValue
+            else :
+                paramValues[paramName] = paramValue 
+        else :
+            logger('Bad value for parameter :' + paramName) 
+            
+    return contextValues, paramValues
+
+def report(args) :
+    argValues = readArgs(args)
+    setGridJobID(argValues)
+    contextArgs, paramArgs = filterArgs(argValues)
+    logger('context : ' + `contextArgs`) 
+    logger('params : ' + `paramArgs`)
+    context = getContext(contextArgs)
+    send(context, paramArgs)
+    print "Parameters sent to Dashboard."
+    
 ##
 ## MAIN PROGRAM
 ##
 if __name__ == '__main__' :
-    # Default file names and initial values
-    mlConfigFileArr = ['MonalisaParameters', '.orcarc']
-#    mlDefaultDict = { 'SyncGridName' : os.popen("grid-proxy-info -identity") ,
-#                      'SyncGridJobId' : os.environ['EDG_WL_JOBID'] }
-    mlDefaultDict = { 'SyncGridName' : 'gigio', 
-                      'SyncGridJobId' : 'pippo' }
-
     args = sys.argv[1:]
-
-    # Read values from file(s) and cmdline
-    mlDict = readParamValues(mlConfigFileArr, mlDefaultDict)
-    paramDict = getParamValues(args)
-    if len(paramDict) == 0 :
+    if len(args) > 0 and args[0] == 'TEST' :
+        apm = apmon.ApMon('http://lxgate35.cern.ch:40808/ApMonConf', apmon.Logger.WARNING)
+        apm.sendParameters('Test', 'testjob_0_' + getGridJobID(), {'test':'0'})
+        apm.free()
         sys.exit(0)
-    # Report
-    mlSend(mlDict['SyncGridName'], mlDict['SyncGridJobId'], paramDict)
-
-    # Exit
+    report(args)
     sys.exit(0)
