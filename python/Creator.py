@@ -10,17 +10,25 @@ from crab_util import *
 import common
 
 import os, string, math
-
+# marco
 class Creator(Actor):
-    def __init__(self, job_type_name, cfg_params, ncjobs):
+    def __init__(self, job_type_name, cfg_params, ncjobs, job_type):
         self.job_type_name = job_type_name
-        self.job_type = None
+#        self.job_type = None
+# marco
+        self.job_type = job_type
         self.cfg_params = cfg_params
         self.total_njobs = 0
         self.total_number_of_events = 0
         self.job_number_of_events = 0
         self.first_event = 0
 
+        ### commented for FAMOS            
+        # self.owner = cfg_params['ORCA.owner']
+        # self.dataset = cfg_params['ORCA.dataset'] 
+
+# marco
+#        self.createJobTypeObject()
         self.createJobTypeObject()
         common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
 
@@ -38,7 +46,7 @@ class Creator(Actor):
         
         fileCODE1 = open(common.work_space.shareDir()+"/.code","a")
         ### commented for FAMOS  
-        if ( self.job_type.name() == 'ORCA' ) or (  self.job_type.name() == 'ORCA_DBSDLS' ):
+        if self.job_type.name() == 'ORCA':
             self.owner = cfg_params['ORCA.owner']
             self.dataset = cfg_params['ORCA.dataset']
             fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
