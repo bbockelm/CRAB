@@ -81,7 +81,7 @@ class Submitter(Actor):
                 #    print 'submitter prima '
 
 #                Statistic.Monitor('submit',resFlag,jid,'-----', jobtype_p)
-#                Statistic.Monitor('submit',resFlag,jid,'-----')
+                Statistic.Monitor('submit',resFlag,jid,'-----')
                 #    print 'submitter Dopo     '
  
 
