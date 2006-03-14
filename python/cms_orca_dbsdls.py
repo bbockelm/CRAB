@@ -320,10 +320,9 @@ class Orca_dbsdls(JobType):
             txt += 'else\n'
             txt += '    cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'
-            txt += 'cd $RUNTIME_AREA\n'
-
             pass
        
+        txt += 'cd $RUNTIME_AREA\n'
         file_list=file_list[:-1]
         txt += 'file_list='+file_list+'\n'
         return txt

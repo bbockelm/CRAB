@@ -304,10 +304,9 @@ class Orca(JobType):
             txt += 'else\n'
             txt += '    cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'
-            txt += 'cd $RUNTIME_AREA\n'
-
             pass
-       
+
+        txt += 'cd $RUNTIME_AREA\n'
         file_list=file_list[:-1]
         txt += 'file_list='+file_list+'\n'
         return txt
@@ -424,8 +423,8 @@ class Orca(JobType):
                 pass
             PubDBSummaryFile.close()
             ### fede
-            for o in self.allOrcarcs:
-                 o.dump()
+            #for o in self.allOrcarcs:
+            #     o.dump()
             pass
 
         # build a list of sites
