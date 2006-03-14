@@ -41,7 +41,7 @@ class SchedulerEdg(Scheduler):
 
         try:
              self.copy_input_data = common.analisys_common_info['copy_input_data']
-             print "self.copy_input_data = ", self.copy_input_data
+             #print "self.copy_input_data = ", self.copy_input_data
         except KeyError: self.copy_input_data = 0
 
         try: self.return_data = cfg_params['USER.return_data']
