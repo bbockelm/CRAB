@@ -59,7 +59,7 @@ class Crab:
         self.debug_level = 0
 
         # Scheduler name, e.g. 'edg', 'lsf'
-        self.scheduler_name = ''
+        # self.scheduler_name = ''
 
         self.initialize_(opts)
 
@@ -300,25 +300,27 @@ class Crab:
                 pass
 
             elif ( opt == '-scheduler' ):
-                if val: self.scheduler_name = val
+                if val:
+                    self.scheduler_name = 'boss'
+                    self.flag_useboss = 1
                 else:
                     print common.prog_name+". No value for '-scheduler'."
                     usage()
                     pass
                 pass
 
-            elif ( opt in ('-use_boss', '-useboss') ):
-                if ( val == '1' ):
-                    self.scheduler_name = 'boss'
-                    pass
-                elif ( val == '0' ): 
-                    pass
-                else:
-                    print common.prog_name+'. Bad flag for -use_boss option:',\
-                          val,'Possible values are 0(=No) or 1(=Yes)'
-                    usage()
-                    pass
-                pass
+#            elif ( opt in ('-use_boss', '-useboss') ):
+#                if ( val == '1' ):
+#                    self.scheduler_name = 'boss'
+#                    pass
+#                elif ( val == '0' ): 
+#                    pass
+#                else:
+#                    print common.prog_name+'. Bad flag for -use_boss option:',\
+#                          val,'Possible values are 0(=No) or 1(=Yes)'
+#                    usage()
+#                    pass
+#                pass
 
             elif string.find(opt,'.') == -1:
                 print common.prog_name+'. Unrecognized option '+opt
@@ -418,17 +420,17 @@ class Crab:
         For each user action instantiate a corresponding
         object and put it in the action dictionary.
         """
-        for opt in opts.keys():
-            self.flag_useboss = 0
-            if ( opt == '-use_boss'):  
-                val = opts[opt]
-                if ( val == '1' ):
-                    self.flag_useboss = 1
-                    common.logger.message('Using BOSS')
-                    pass
-                else:
-                    self.flag_useboss = 0
-                    pass
+#        for opt in opts.keys():
+#            self.flag_useboss = 0
+#            if ( opt == '-use_boss'):  
+#                val = opts[opt]
+#                if ( val == '1' ):
+#                    self.flag_useboss = 1
+#                    common.logger.message('Using BOSS')
+#                    pass
+#                else:
+#                    self.flag_useboss = 0
+#                    pass
 
         for opt in opts.keys():
           
