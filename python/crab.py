@@ -236,8 +236,7 @@ class Crab:
             if os.path.exists(self.cfg_fname):
                 self.cfg_params = loadConfig(self.cfg_fname)
                 # Better idea on where to put user info for ML?
-#                self.cfg_params['user'] = os.getlogin()
-                self.cfg_params['user'] = "corvo"
+                self.cfg_params['user'] = os.getlogin()
                 # Better idea on where to put ML???? Looks crap here, but had no better thought!
                 if int(self.cfg_params['USER.activate_monalisa']): self.cfg_params['apmon'] = ApmonIf()
                 pass
