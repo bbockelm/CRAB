@@ -225,7 +225,7 @@ class Orca(JobType):
                 txt += '    cp $RUNTIME_AREA/'+file+' .\n'
                 txt += '    chmod +x '+file+'\n'
                 txt += 'fi\n'
-            pass 
+            pass
 
         txt += '\n'
         txt += 'chmod +x ./init.sh\n'

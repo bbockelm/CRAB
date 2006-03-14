@@ -150,10 +150,10 @@ class Famos(JobType):
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
         txt += '   echo "SET_EXE_ENV 1 ==>ERROR FAMOS '+self.version+' not found on `hostname`" \n'
-        txt += '   echo "JOB_EXIT_STATUS = 5"\n'
-        txt += '   echo "SanityCheckCode = 5" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '   echo "JOB_EXIT_STATUS = 10034"\n'
+        txt += '   echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '   exit 5 \n'
+        txt += '   exit 10034 \n'
         txt += 'fi \n'
         txt += 'echo "FAMOS_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
@@ -170,8 +170,8 @@ class Famos(JobType):
         txt += "if [ $narg -lt 3 ]\n"
         txt += "then\n"
         txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$narg+ \n"
-        txt += '    echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '    echo "SanityCheckCode = 1" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
+        txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += "    exit 1\n"
         txt += "fi\n"
@@ -270,7 +270,7 @@ class Famos(JobType):
             txt += 'if [ $exe_result -ne 0 ] ; then\n'
             txt += '   echo "ERROR: No output file to manage"\n'
             txt += '   echo "JOB_EXIT_STATUS = $exe_result"\n'
-            txt += '   echo "SanityCheckCode = $exe_result" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '   echo "JobExitCode=60302" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
             txt += '   exit $exe_result \n'
             txt += 'else\n'
@@ -333,9 +333,9 @@ class Famos(JobType):
             outfile.write('ExtraPackages=RecApplPlugins\n')
             outfile.write('MonRecAlisaBuilder=true\n')
             ## TaskId is username+crab_0_date_time : that should be unique
-            TaskID = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2]
-            outfile.write('MonalisaApplName='+TaskID+'\n')
-            outfile.write('MonalisaNode=192.91.245.5\n')
+#            TaskID = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2]
+            outfile.write('MonalisaApplName='+self._taskId+'\n')
+            outfile.write('MonalisaNode=137.138.4.152\n')
             outfile.write('MonalisaPort=58884\n')
             pass
 
