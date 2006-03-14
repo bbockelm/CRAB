@@ -47,6 +47,8 @@ class Crab:
 
         # Job type
         self.job_type_name = None
+        # marco
+        self.job_type = None
 
         # Continuation flag
         self.flag_continue = 0
@@ -104,6 +106,12 @@ class Crab:
         self.createLogger_(args)
 
         common.jobDB = JobDB()
+        
+        # marco
+
+        self.job_type = self.createJobtype_()
+
+        # marco
 
         if self.flag_continue:
             try:
@@ -228,7 +236,8 @@ class Crab:
             if os.path.exists(self.cfg_fname):
                 self.cfg_params = loadConfig(self.cfg_fname)
                 # Better idea on where to put user info for ML?
-                self.cfg_params['user'] = os.getlogin()
+#                self.cfg_params['user'] = os.getlogin()
+                self.cfg_params['user'] = "corvo"
                 # Better idea on where to put ML???? Looks crap here, but had no better thought!
                 if int(self.cfg_params['USER.activate_monalisa']): self.cfg_params['apmon'] = ApmonIf()
                 pass
@@ -446,7 +455,7 @@ class Crab:
                     # Instantiate Creator object
                     creator = Creator(self.job_type_name,
                                       self.cfg_params,
-                                      ncjobs)
+                                      ncjobs, self.job_type)
                     self.actions[opt] = creator
 
                     # Initialize the JobDB object if needed
@@ -457,7 +466,9 @@ class Crab:
                     # Create and initialize JobList
 
                     common.job_list = JobList(common.jobDB.nJobs(),
-                                              creator.jobType())
+                                              self.job_type)
+                    # marco
+                    #                          creator.jobType())
 
                     common.job_list.setScriptNames(self.job_type_name+'.sh')
                     common.job_list.setJDLNames(self.job_type_name+'.jdl')
@@ -508,7 +519,7 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
-                    self.actions[opt] = Submitter(self.cfg_params, nj_list)
+                    self.actions[opt] = Submitter(self.cfg_params, nj_list, self.job_type)
 
                     # Create and initialize JobList
                     if len(common.job_list) == 0 :
@@ -866,6 +877,7 @@ class Crab:
              ') running on ' + \
              time.ctime(time.time())+'\n\n' + \
              common.prog_name+'. Working options:\n'
+        print self.job_type_name 
         header = header +\
                  '  scheduler           ' + self.scheduler_name + '\n'+\
                  '  job type            ' + self.job_type_name + '\n'+\
@@ -893,6 +905,26 @@ class Crab:
         common.scheduler = klass()
         common.scheduler.configure(self.cfg_params)
         return
+
+    def createJobtype_(self):
+        """
+        Create the jobtype specified in the crab.cfg file
+        """
+        file_name = 'cms_'+ string.lower(self.job_type_name)
+        klass_name = string.capitalize(self.job_type_name)
+
+        try:
+            klass = importName(file_name, klass_name)
+        except KeyError:
+            msg = 'No `class '+klass_name+'` found in file `'+file_name+'.py`'
+            raise CrabException(msg)
+        except ImportError, e:
+            msg = 'Cannot create job type '+self.job_type_name
+            msg += ' (file: '+file_name+', class '+klass_name+'):\n'
+            msg += str(e)
+            raise CrabException(msg)
+        job_type = klass(self.cfg_params)
+        return job_type
 
     def run(self):
         """
