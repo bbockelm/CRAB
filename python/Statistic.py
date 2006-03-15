@@ -14,6 +14,8 @@ def Monitor(operation,Resubmit,jid,exitCode):
            dataset = array[3]
            owner = array[4]
        elif jobtype == 'FAMOS':
+           inputData = array[3]  
+           executable = array[4]
            pass
        fileCODE1.close()
           
@@ -40,6 +42,7 @@ def Monitor(operation,Resubmit,jid,exitCode):
        if ( jobtype == 'ORCA' ) or ( jobtype == 'ORCA_DBSDLS'):
            sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
        elif jobtype == 'FAMOS':
+           #sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(inputData)+'::'+str(executable)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
            pass 
        sockobj.close()
  
