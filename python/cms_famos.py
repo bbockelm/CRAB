@@ -17,6 +17,9 @@ class Famos(JobType):
 
         self.analisys_common_info = {}
 
+        self._params = {}
+        self.cfg_params = cfg_params
+
         log = common.logger
         
         self.scram = Scram.Scram(cfg_params)
@@ -56,6 +59,12 @@ class Famos(JobType):
         except KeyError:
             log.message("LFN of input ntuple for FAMOS")
 
+### georgia 15.03
+        try:
+            self.events_per_ntuple = cfg_params['FAMOS.events_per_ntuple']
+        except KeyError:
+            log.message("number of events per input file for FAMOS")
+              
 
         # output files
         try:
@@ -102,6 +111,14 @@ class Famos(JobType):
         except KeyError:
             pass
 
+        ### Added from georgia (but appears also in Creator.py)
+        try:
+            self.job_number_of_events = int(cfg_params['USER.job_number_of_events'])
+            log.debug(6, "Famos::Famos(): job number of events = "+`self.job_number_of_events`)
+        except KeyError:
+            msg = 'Must define total_number_of_events and job_number_of_events'
+            raise CrabException(msg)
+        
         try:
             self.total_number_of_events = int(cfg_params['USER.total_number_of_events'])
             self.maxEvents=self.total_number_of_events
@@ -181,16 +198,49 @@ class Famos(JobType):
         txt += "MaxEvents=$3\n"
 
 #        if int(self.copy_input_data) == 1:
+### Georgia for FAMOS
 
+        in_file_list = []
+        cmkin_file_list = []
+
+        nnt = int(self.total_number_of_events)/int(self.events_per_ntuple) 
+        ntj = int(self.job_number_of_events)/int(self.events_per_ntuple)
+        
         in_file = self.input_lfn
         p = string.split(in_file,".")
         ext = p[len(p)-1]
         q = string.split(p[0],"/")
         name= q[len(q)-1]
-        txt +='the_ntuple='+name+'_$NJob.'+ext+'\n'
-        txt +='input_lfn='+q[0]+'/'+'$the_ntuple\n'
-        txt +='echo "$input_lfn" \n'
-        txt +='echo "$the_ntuple" \n'
+
+## changed from georgia [fills a List of input files - input_file_list]
+        index = 1
+        while index < nnt+1:
+            input_file_num = name+'_'+str(index)+"."+ext
+            cmkin_file_num = ' `pwd`/'+input_file_num
+            in_file_list.append(input_file_num)
+            cmkin_file_list.append(cmkin_file_num)
+            index = index + 1
+
+        input_file_list = ''    
+        input_file_list = string.join(in_file_list)
+        s = ''
+        s = string.join(cmkin_file_list)
+        
+###        print input_file_list    
+###        print cmkin_file_list
+
+        txt += 'input_file_list="'+input_file_list+' "\n'
+        txt += 's="'+s+' "\n'
+
+        txt += 'ntj="'+str(ntj)+' " \n'
+        txt += 'let "imin=$NJob*$ntj - $ntj + 1" \n'
+        txt += 'let "imax=$imin + $ntj - 1" \n'
+        txt += 'cur_file_list=`echo $input_file_list |cut -d" " -f $imin-$imax` \n'
+        txt += 'cur_cmkin_file_list=`echo $s |cut -d" " -f $imin-$imax` \n'
+
+###        txt +='the_ntuple='+name+'_$NJob.'+ext+'\n'
+        txt +='input_lfn='+q[0]
+### georgia
 
         # Prepare job-specific part
         job = common.job_list[nj]
@@ -214,9 +264,10 @@ class Famos(JobType):
                 txt += 'ls -al \n'
             pass 
 
-        txt += 'echo "FirstEvent=$FirstEvent" >> .orcarc\n'
+## changed by georgia
+        txt += 'echo "FirstEvent=0" >> .orcarc\n'
         txt += 'echo "MaxEvents=$MaxEvents" >> .orcarc\n'
-        txt += 'echo "CMKIN:File=`pwd`/$the_ntuple" >> .orcarc\n'
+        txt += 'echo "CMKIN:File=$cur_cmkin_file_list" >> .orcarc\n'
         txt += 'echo "InputCollections=/Fake/fake/fake/fake" >> .orcarc\n'
         if self.ML:
             txt += 'echo "MonalisaJobId=$NJob" >> .orcarc\n'

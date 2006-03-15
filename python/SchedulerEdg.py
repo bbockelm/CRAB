@@ -207,14 +207,18 @@ class SchedulerEdg(Scheduler):
            txt += '#\n'
            txt += '#   Copy Input Data from SE to this WN\n'
            txt += '#\n'
-           txt +='lcg-cp --vo $VO lfn:$input_lfn file:`pwd`/$the_ntuple 2>&1\n'
-           txt +='copy_input_exit_status=$?\n'
-           txt +='echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
-           txt +='if [ $copy_input_exit_status -ne 0 ]; then \n'
-           txt +='   echo "Problems with copying to WN" \n'
-           txt +='else \n'
-           txt +='   echo "input copied into WN" \n'
-           txt +='fi \n'
+### changed by georgia (put a loop copying more than one input files per jobs)           
+           txt +='for input_file in $cur_file_list \n'
+           txt +='do \n'
+           txt +=' lcg-cp --vo $VO lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
+           txt +=' copy_input_exit_status=$?\n'
+           txt +=' echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
+           txt +=' if [ $copy_input_exit_status -ne 0 ]; then \n'
+           txt +='    echo "Problems with copying to WN" \n'
+           txt +=' else \n'
+           txt +='    echo "input copied into WN" \n'
+           txt +=' fi \n'
+           txt +='done \n'
         return txt
 
     def wsCopyOutput(self):

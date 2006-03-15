@@ -23,10 +23,6 @@ class Creator(Actor):
         self.job_number_of_events = 0
         self.first_event = 0
 
-        ### commented for FAMOS            
-        # self.owner = cfg_params['ORCA.owner']
-        # self.dataset = cfg_params['ORCA.dataset'] 
-
 # marco
 #        self.createJobTypeObject()
         self.createJobTypeObject()
@@ -52,6 +48,9 @@ class Creator(Actor):
             fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
             pass
         elif self.job_type.name() == 'FAMOS':
+            self.inputFile = cfg_params['FAMOS.input_lfn']
+            self.executable = cfg_params['FAMOS.executable']
+            fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.inputFile)+'::'+str(self.executable))
             pass
         fileCODE1.close()
 
@@ -199,8 +198,8 @@ class Creator(Actor):
                 self.events_management = common.analisys_common_info['events_management']
                 #print "self.events_management = ", self.events_management
             except KeyError: self.events_management = 0
-            if int(self.events_management) == 1:
-                firstEvent=firstEvent+self.job_number_of_events
+###            if int(self.events_management) == 1:
+            firstEvent=firstEvent+self.job_number_of_events
                 #print "firstEvent", firstEvent
             ###
 
