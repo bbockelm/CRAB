@@ -23,7 +23,7 @@ class ApmonIf:
         if self.apm is None :
             apmonUrl = 'http://www-asap.cern.ch/ml-conf/apmon.cms'
             print "Creating ApMon with " + apmonUrl
-            apmonInstance = apmon.ApMon(apmonUrl)
+            apmonInstance = apmon.ApMon(apmonUrl, apmon.Logger.WARNING)
         return apmonInstance 
         
     def free(self):
