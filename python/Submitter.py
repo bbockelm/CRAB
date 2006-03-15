@@ -27,9 +27,10 @@ class Submitter(Actor):
         """
         common.logger.debug(5, "Submitter::run() called")
 
-        totalCreatedJobs= 0
+        totalCreatedJobs = 0
         # marco. Common job type parameters to be sent to ML and Daniele's Monitor
         jobtype_p = self.job_type.getParams()
+        listCE = ""
         start = time.time()
         for nj in range(common.jobDB.nJobs()):
             if (common.jobDB.status(nj)=='C') or (common.jobDB.status(nj)=='RC'): totalCreatedJobs +=1
@@ -92,7 +93,8 @@ class Submitter(Actor):
                     try:
                         #List of parameters to be sent to ML monitor system
                         # Marco. Should be better to put it in the SchedulerEdg/gLite class 
-                        listCE = ','.join(common.analisys_common_info['sites'])
+                        if self.job_type.name() == "ORCA":
+                            listCE = ','.join(common.analisys_common_info['sites'])
                         self.cfg_params['GridName'] = runCommand("grid-proxy-info -identity")
                         common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
                         self.cfg_params['jobId'] = str(nj + 1)
