@@ -91,6 +91,12 @@ source $BOSSDIR/bossenv.sh
 
 # check whether central boss db is configured
 
+# check if .bossrc dir exists
+
+if [ ! -d ~/.bossrc ]; then
+  mkdir ~/.bossrc
+fi
+
 # check if *clad files exist
 
 if [ ! -e ~/.bossrc/BossConfig.clad ]; then
@@ -147,6 +153,12 @@ endif
 source $BOSSDIR/bossenv.csh
 
 # check whether central boss db is configured
+
+# check if .bossrc dir exists
+
+if ( ! -d ~/.bossrc ) then
+  mkdir ~/.bossrc
+endif
 
 # check if *clad files exist
 if ( ! -e ~/.bossrc/BossConfig.clad ) then
