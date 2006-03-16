@@ -186,35 +186,28 @@ class Creator(Actor):
         nJobs=self.nJobs()
 
         firstEvent=self.first_event
-        ### fede for famos
         lastJobsNumberOfEvents = self.job_number_of_events
-        ###
+
+        try:
+            self.events_management = common.analisys_common_info['events_management']
+            print "self.events_management = ", self.events_management
+        except KeyError: self.events_management = 0
+
         # last jobs is different...
         for job in range(nJobs-1):
             common.jobDB.setFirstEvent(job, firstEvent)
             common.jobDB.setMaxEvents(job, self.job_number_of_events)
-        ### fede checks parameter for famos and orca
-            try:
-                self.events_management = common.analisys_common_info['events_management']
-                #print "self.events_management = ", self.events_management
-            except KeyError: self.events_management = 0
-###            if int(self.events_management) == 1:
+            ### fede checks parameter for famos and orca
+            #try:
+            #    self.events_management = common.analisys_common_info['events_management']
+            #    print "self.events_management = ", self.events_management
+            #except KeyError: self.events_management = 0
             firstEvent=firstEvent+self.job_number_of_events
-                #print "firstEvent", firstEvent
-            ###
-
-###            firstEvent=firstEvent+self.job_number_of_events
 
         # this is the last job
         common.jobDB.setFirstEvent(nJobs-1, firstEvent)
-        #### FEDE
-        #print "firstEvent", firstEvent
         if int(self.events_management) == 1:
             lastJobsNumberOfEvents= (self.total_number_of_events+self.first_event)-firstEvent
-        ####
-
-###        lastJobsNumberOfEvents= (self.total_number_of_events+self.first_event)-firstEvent
-        #print 'lastJobsNumberOfEvents :', lastJobsNumberOfEvents
         common.jobDB.setMaxEvents(nJobs-1, lastJobsNumberOfEvents)
     
         if (lastJobsNumberOfEvents!=self.job_number_of_events):
