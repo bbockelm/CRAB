@@ -4,7 +4,7 @@ class ApmonIf:
     """
     Provides an interface to the Monalisa Apmon python module
     """
-    def __init__(self, address='http://monalisa.cern.ch/ARDA/apmon.cms'):
+    def __init__(self, address='http://lxgate35.cern.ch:40808/ApMonConf'):
         self._params = {}
         self._MLaddress = address
         self.apm = None
@@ -21,9 +21,9 @@ class ApmonIf:
         
     def getApmonInstance(self):
         if self.apm is None :
-            apmonUrl = 'http://www-asap.cern.ch/ml-conf/apmon.cms'
+            apmonUrl = 'http://lxgate35.cern.ch:40808/ApMonConf' 
             print "Creating ApMon with " + apmonUrl
-            apmonInstance = apmon.ApMon(apmonUrl, apmon.Logger.WARNING)
+            apmonInstance = apmon.ApMon(apmonUrl)
         return apmonInstance 
         
     def free(self):
