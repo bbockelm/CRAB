@@ -27,6 +27,12 @@ class Famos(JobType):
         self.additional_inbox_files = []
         self.scriptExe = ''
 
+### georgia
+        self.input_pu_files = []
+        self.orcarc_pu_files = []
+        self.in_file_list = []
+        self.cmkin_file_list = []
+
         self.version = self.scram.getSWVersion()
         self.setParam_('application', self.version)
         common.analisys_common_info['sw_version'] = self.version
@@ -65,6 +71,35 @@ class Famos(JobType):
         except KeyError:
             log.message("number of events per input file for FAMOS")
               
+        try:
+            self.input_pu_lfn = cfg_params['FAMOS.input_pu_lfn']
+        except KeyError:
+            log.message("lfn of input pile-up ntuples")
+
+        try:
+            self.number_pu_ntuples = cfg_params['FAMOS.number_pu_ntuples']
+        except KeyError:
+            log.message("number of pu ntuples per job")
+
+## fill the list of pile-up files
+
+        pu_file = self.input_pu_lfn
+        r = string.split(pu_file,".")
+        exte = r[len(r)-1]
+        t = string.split(r[0],"/")
+        pname= t[len(t)-1]
+        self.usernamepu = t[0]
+         
+        n_pu = int(self.number_pu_ntuples)
+
+        ind = 1
+        while ind < n_pu+1:
+#            pu_file = t[0]+'/'+pname+str(ind)+"."+exte
+            pu_file = pname+str(ind)+"."+exte
+            orcarc_file_num = ' `pwd`/'+pu_file
+            self.input_pu_files.append(pu_file)
+            self.orcarc_pu_files.append(orcarc_file_num)
+            ind = ind + 1
 
         # output files
         try:
@@ -133,6 +168,31 @@ class Famos(JobType):
         except KeyError:
             self.first = 0
             pass
+
+        
+### georgia for FAMOS
+
+        nnt = int(self.total_number_of_events)/int(self.events_per_ntuple) 
+        self.ntj = int(self.job_number_of_events)/int(self.events_per_ntuple)
+        
+        in_file = self.input_lfn
+        p = string.split(in_file,".")
+        ext = p[len(p)-1]
+        q = string.split(p[0],"/")
+        name= q[len(q)-1]
+
+        self.username = q[0]
+
+        index = 1
+        while index < nnt+1:
+            input_file_num = name+'_'+str(index)+"."+ext
+            cmkin_file_num = ' `pwd`/'+input_file_num
+            self.in_file_list.append(input_file_num)
+            self.cmkin_file_list.append(cmkin_file_num)
+            index = index + 1
+
+### georgia
+
         # [-- self.checkNevJobs() --]
 
         try:
@@ -179,9 +239,9 @@ class Famos(JobType):
 
         # Handle the arguments:
         txt += "\n"
-        txt += "## ARGUMNETS: $1 Job Number\n"
-        txt += "## ARGUMNETS: $2 First Event for this job\n"
-        txt += "## ARGUMNETS: $3 Max Event for this job\n"
+        txt += "## ARGUMENTS: $1 Job Number\n"
+        txt += "## ARGUMENTS: $2 First Event for this job\n"
+        txt += "## ARGUMENTS: $3 Max Event for this job\n"
         txt += "\n"
         txt += "narg=$#\n"
         txt += "if [ $narg -lt 3 ]\n"
@@ -194,52 +254,31 @@ class Famos(JobType):
         txt += "fi\n"
         txt += "\n"
         txt += "NJob=$1\n"
-        txt += "FirstEvent=$2\n"
+##        txt += "FirstEvent=$2\n"
+        txt += "FirstEvent=0\n"
         txt += "MaxEvents=$3\n"
 
 #        if int(self.copy_input_data) == 1:
-### Georgia for FAMOS
 
-        in_file_list = []
-        cmkin_file_list = []
+#print "input_pu_files : ", self.input_pu_files
+#print "orcarc_pu_files : ", self.orcarc_pu_files
 
-        nnt = int(self.total_number_of_events)/int(self.events_per_ntuple) 
-        ntj = int(self.job_number_of_events)/int(self.events_per_ntuple)
-        
-        in_file = self.input_lfn
-        p = string.split(in_file,".")
-        ext = p[len(p)-1]
-        q = string.split(p[0],"/")
-        name= q[len(q)-1]
-
-## changed from georgia [fills a List of input files - input_file_list]
-        index = 1
-        while index < nnt+1:
-            input_file_num = name+'_'+str(index)+"."+ext
-            cmkin_file_num = ' `pwd`/'+input_file_num
-            in_file_list.append(input_file_num)
-            cmkin_file_list.append(cmkin_file_num)
-            index = index + 1
-
-        input_file_list = ''    
-        input_file_list = string.join(in_file_list)
-        s = ''
-        s = string.join(cmkin_file_list)
-        
-###        print input_file_list    
-###        print cmkin_file_list
-
-        txt += 'input_file_list="'+input_file_list+' "\n'
-        txt += 's="'+s+' "\n'
-
-        txt += 'ntj="'+str(ntj)+' " \n'
+        txt += '\n'
+        txt += 'input_file_list="'+string.join(self.in_file_list)+' "\n'
+        txt += 's="'+string.join(self.cmkin_file_list)+' "\n'
+        txt += '\n'
+        txt += 'cur_pu_list="'+string.join(self.input_pu_files)+' "\n'
+        txt += 'orcarc_pu_list="'+string.join(self.orcarc_pu_files)+' "\n'
+        txt += '\n'
+        txt += 'ntj="'+str(self.ntj)+' " \n'
         txt += 'let "imin=$NJob*$ntj - $ntj + 1" \n'
         txt += 'let "imax=$imin + $ntj - 1" \n'
         txt += 'cur_file_list=`echo $input_file_list |cut -d" " -f $imin-$imax` \n'
         txt += 'cur_cmkin_file_list=`echo $s |cut -d" " -f $imin-$imax` \n'
 
-###        txt +='the_ntuple='+name+'_$NJob.'+ext+'\n'
-        txt +='input_lfn='+q[0]
+#        txt +='input_lfn='+q[0]+'\n'
+        txt += 'input_lfn='+self.username+'\n'
+        txt += 'pu_lfn='+self.usernamepu+'\n'
 ### georgia
 
         # Prepare job-specific part
@@ -265,10 +304,16 @@ class Famos(JobType):
             pass 
 
 ## changed by georgia
-        txt += 'echo "FirstEvent=0" >> .orcarc\n'
+        txt += 'echo "FirstEvent=$FirstEvent" >> .orcarc\n'
         txt += 'echo "MaxEvents=$MaxEvents" >> .orcarc\n'
         txt += 'echo "CMKIN:File=$cur_cmkin_file_list" >> .orcarc\n'
         txt += 'echo "InputCollections=/Fake/fake/fake/fake" >> .orcarc\n'
+## added for pile-up ntuples (georgia)
+        txt += 'for file in $orcarc_pu_list \n'
+        txt += 'do \n'
+        txt += '  echo "PUGenerator:PUCollection=$file" >> .orcarc\n'
+        txt += 'done \n'
+        
         if self.ML:
             txt += 'echo "MonalisaJobId=$NJob" >> .orcarc\n'
 
@@ -366,7 +411,7 @@ class Famos(JobType):
            
         inline=infile.readlines()
         ### remove from user card these lines ###
-        wordRemove=['CMKIN:File', 'InputCollections', 'FirstEvent', 'MaxEvents']
+        wordRemove=['CMKIN:File', 'InputCollections', 'FirstEvent', 'MaxEvents', 'PUGenerator:PUCollection']
         for line in inline:
             word = string.strip(string.split(line,'=')[0])
 
