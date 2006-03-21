@@ -113,8 +113,6 @@ class Submitter(Actor):
                         common.logger.message("Submitter::run Exception  raised: %s %s"%(exctype, value))
                         pass
                 pass # use ML
-            if (self.ML==1):
-                self.cfg_params['apmon'].free()
         except:
             exctype, value = sys.exc_info()[:2]
             print "Type: %s Value: %s"%(exctype, value)

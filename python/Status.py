@@ -82,10 +82,6 @@ class Status(Actor):
                 #print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
                 pass
 
-        if int(self.cfg_params['USER.activate_monalisa']) == 1:
-            self.cfg_params['apmon'].free()
-            pass
-
         common.jobDB.save()
         pass
 
