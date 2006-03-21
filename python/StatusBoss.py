@@ -132,9 +132,6 @@ class StatusBoss(Actor):
                     self.cfg_params['apmon'].sendToML()
             print printline
 
-        if int(self.cfg_params['USER.activate_monalisa']) == 1:
-            self.cfg_params['apmon'].free()
-
         self.update_(for_summary)
         return
 
