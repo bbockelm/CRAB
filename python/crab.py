@@ -989,6 +989,7 @@ if __name__ == '__main__':
     try:
         crab = Crab(options)
         crab.run()
+        crab.cfg_params['apmon'].free()
     except CrabException, e:
         print '\n' + common.prog_name + ': ' + str(e) + '\n'
         if common.logger:
