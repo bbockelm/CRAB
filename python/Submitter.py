@@ -78,22 +78,16 @@ class Submitter(Actor):
                     resFlag = 0
                     pass
                   
-                #try:
-                #    print 'submitter prima '
-
-#                Statistic.Monitor('submit',resFlag,jid,'-----', jobtype_p)
-                Statistic.Monitor('submit',resFlag,jid,'-----')
-                #    print 'submitter Dopo     '
- 
-
-                #except:
-                #    pass
+                try:
+                    Statistic.Monitor('submit',resFlag,jid,'-----')
+                except:
+                    pass
                 
                 if (self.ML==1):
                     try:
                         #List of parameters to be sent to ML monitor system
                         # Marco. Should be better to put it in the SchedulerEdg/gLite class 
-                        if self.job_type.name() == "ORCA":
+                        if self.job_type.name() == "ORCA" or self.job_type.name() == 'ORCA_DBSDLS':
                             listCE = ','.join(common.analisys_common_info['sites'])
                         self.cfg_params['GridName'] = runCommand("grid-proxy-info -identity")
                         common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
@@ -116,7 +110,7 @@ class Submitter(Actor):
                         self.cfg_params['apmon'].sendToML()
                     except:
                         exctype, value = sys.exc_info()[:2]
-                        common.logger.message("Submitter::run Exception raised: %s %s"%(exctype, value))
+                        common.logger.message("Submitter::run Exception  raised: %s %s"%(exctype, value))
                         pass
                 pass # use ML
             if (self.ML==1):
