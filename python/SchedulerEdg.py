@@ -219,6 +219,21 @@ class SchedulerEdg(Scheduler):
            txt +='    echo "input copied into WN" \n'
            txt +=' fi \n'
            txt +='done \n'
+### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
+           txt +='for file in $cur_pu_list \n'
+           txt +='do \n'
+           txt +=' lcg-cp --vo $VO lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
+           txt +=' copy_input_exit_status=$?\n'
+           txt +=' echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
+           txt +=' if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
+           txt +='    echo "Problems with copying pu to WN" \n'
+           txt +=' else \n'
+           txt +='    echo "input pu files copied into WN" \n'
+           txt +=' fi \n'
+           txt +='done \n'
+           txt +='\n'
+           txt +='### Check SCRATCH space available on WN : \n'
+           txt +='df -h \n'
         return txt
 
     def wsCopyOutput(self):
@@ -613,9 +628,9 @@ class SchedulerEdg(Scheduler):
                 
         if self.EDG_cpu_time:
             if (req == 'Requirement = '):
-                req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+                req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
             else:
-                req = req + 'other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+                req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
         if (req != 'Requirement = '):
             req = req + ';\n'
             jdl.write(req)
