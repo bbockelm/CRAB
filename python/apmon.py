@@ -1,7 +1,7 @@
 
 """
  * ApMon - Application Monitoring Tool
- * Version: 2.2.1
+ * Version: 2.2.2
  *
  * Copyright (C) 2006 California Institute of Technology
  *
@@ -187,8 +187,10 @@ class ApMon:
 		self.__udpSocket = None
 		self.__configUpdateLock = threading.Lock()
 		self.__configUpdateEvent = threading.Event()
+		self.__configUpdateFinished = threading.Event()
 		self.__bgMonitorLock = threading.Lock()
 		self.__bgMonitorEvent = threading.Event()
+		self.__bgMonitorFinished = threading.Event()
 		# don't allow a user to send more than MAX_MSG messages per second, in average
 		self.__crtTime = 0;
 		self.__prvTime = 0;
@@ -424,11 +426,12 @@ class ApMon:
 		Stop background threands, close opened sockets. You have to use this function if you want to
 		free all the resources that ApMon takes, and allow it to be garbage-collected.
 		"""
-		if self.__configUpdateEvent != None:
-			self.__configUpdateEvent.set();
-		if self.__bgMonitorEvent != None:
-			self.__bgMonitorEvent.set();
-		time.sleep(0.01);
+		if len(self.configAddresses) > 0:
+			self.__configUpdateEvent.set()
+			self.__configUpdateFinished.wait()
+		self.__bgMonitorEvent.set()
+		self.__bgMonitorFinished.wait()
+		
 		if self.__udpSocket != None:
 			self.logger.log(Logger.DEBUG, "Closing UDP socket on ApMon object destroy.");
 			self.__udpSocket.close();
@@ -447,10 +450,11 @@ class ApMon:
 		while not self.__configUpdateEvent.isSet():
 			self.__configUpdateEvent.wait(self.configRecheckInterval);
 			if self.__configUpdateEvent.isSet():
-				return;
+				break
 			if self.configRecheck:
 				self.__reloadAddresses()
 				self.logger.log(Logger.DEBUG, "Config reloaded. Seleeping for "+`self.configRecheckInterval`+" sec.");
+		self.__configUpdateFinished.set();
 
 	def __reloadAddresses(self):
 		"""
@@ -596,11 +600,12 @@ class ApMon:
 
 	def __bgMonitor (self):
 		while not self.__bgMonitorEvent.isSet():
-			self.__bgMonitorEvent.wait(10);
+			self.__bgMonitorEvent.wait(10)
 			if self.__bgMonitorEvent.isSet():
-				return;
+				break
 			if self.performBgMonitoring:
 				self.sendBgMonitoring() # send only if the interval has elapsed
+		self.__bgMonitorFinished.set()
 
 	###############################################################################################
 	# Internal helper functions
@@ -608,11 +613,8 @@ class ApMon:
 	
 	def __directSendParams (self, senderRef, destination, clusterName, nodeName, timeStamp, params):
 		
-		if senderRef=={}:
-			self.logger.log(Logger.WARNING, "Not sending undefined parameters!");
-			return;
-		
 		if self.__shouldSend() == False:
+			self.logger.log(Logger.DEBUG, "Dropping packet since rate is too fast!");
 			return;
 		
 		if destination == None:
@@ -623,7 +625,7 @@ class ApMon:
 		senderRef['SEQ_NR'] = (senderRef['SEQ_NR'] + 1) % 2000000000; # wrap around 2 mld
 		
 		xdrPacker = xdrlib.Packer ();
-		self.logger.log(Logger.DEBUG, "Building XDR packet for ["+str(clusterName)+"] <"+str(nodeName)+"> len:"+str(len(params)));
+		self.logger.log(Logger.DEBUG, "Building XDR packet for ["+str(clusterName)+"/"+str(nodeName)+"] <"+str(senderRef['SEQ_NR'])+"/"+str(senderRef['INSTANCE_ID'])+"> len:"+str(len(params)));
 		
 		xdrPacker.pack_string ("v:"+self.__version+"p:"+passwd)
 		
@@ -669,7 +671,7 @@ class ApMon:
 			self.__packFunctions[typeValue] (xdrPacker, value)
 			self.logger.log(Logger.DEBUG, "Adding parameter "+str(name)+" = "+str(value));
 		except Exception, ex:
-			print "ApMon: error packing %s = %s; got %s" % (name, str(value), ex)
+			self.logger.log(Logger.WARNING, "Error packing %s = %s; got %s" % (name, str(value), ex))
 
 	# Destructor
 	def __del__(self):
@@ -726,5 +728,5 @@ class ApMon:
 		5: xdrlib.Packer.pack_double }
 	
 	__defaultPort = 8884
-	__version = "2.2.1-py"			# apMon version number
+	__version = "2.2.2-py"			# apMon version number
 
