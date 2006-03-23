@@ -446,26 +446,26 @@ class Crab:
 
                 if ncjobs != 0:
                     # Instantiate Creator object
-                    creator = Creator(self.job_type_name,
+                    self.creator = Creator(self.job_type_name,
                                       self.cfg_params,
                                       ncjobs)
-                    self.actions[opt] = creator
+                    self.actions[opt] = self.creator
 
                     # Initialize the JobDB object if needed
                     if not self.flag_continue:
-                        common.jobDB.create(creator.nJobs())
+                        common.jobDB.create(self.creator.nJobs())
                         pass
 
                     # Create and initialize JobList
 
                     common.job_list = JobList(common.jobDB.nJobs(),
-                                              creator.jobType())
+                                              self.creator.jobType())
 
                     common.job_list.setScriptNames(self.job_type_name+'.sh')
                     common.job_list.setJDLNames(self.job_type_name+'.jdl')
                     common.job_list.setCfgNames(self.job_type_name+'.orcarc')
 
-                    creator.writeJobsSpecsToDB()
+                    self.creator.writeJobsSpecsToDB()
                     pass
                 pass
 
@@ -510,7 +510,7 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
-                    self.actions[opt] = Submitter(self.cfg_params, nj_list, creator.jobType())
+                    self.actions[opt] = Submitter(self.cfg_params, nj_list, self.creator.jobType())
 
                     # Create and initialize JobList
                     if len(common.job_list) == 0 :
@@ -677,7 +677,7 @@ class Crab:
                     if len(nj_list) != 0:
                         common.scheduler.resubmit(nj_list)
                         # Instantiate Submitter object
-                        self.actions[opt] = Submitter(self.cfg_params, nj_list)
+                        self.actions[opt] = Submitter(self.cfg_params, nj_list, self.creator.jobType())
 
                         pass
                     pass
@@ -746,7 +746,7 @@ class Crab:
                                                                                                                                                              
                     if len(nj_list) != 0:
                         common.scheduler.resubmit(nj_list)
-                        self.actions[opt] = Submitter(self.cfg_params, nj_list)
+                        self.actions[opt] = Submitter(self.cfg_params, nj_list, self.creator.jobtype())
                         pass
                         pass
                 else:
