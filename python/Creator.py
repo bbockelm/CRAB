@@ -12,20 +12,16 @@ import common
 import os, string, math
 # marco
 class Creator(Actor):
-    def __init__(self, job_type_name, cfg_params, ncjobs, job_type):
+    def __init__(self, job_type_name, cfg_params, ncjobs):
         self.job_type_name = job_type_name
-#        self.job_type = None
-# marco
-        self.job_type = job_type
+        self.job_type = None
         self.cfg_params = cfg_params
         self.total_njobs = 0
         self.total_number_of_events = 0
         self.job_number_of_events = 0
         self.first_event = 0
 
-# marco
-#        self.createJobTypeObject()
-#        self.createJobTypeObject()   ### Daniele bug fix
+        self.createJobTypeObject()
         common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
 
         self.job_type.prepareSteeringCards()

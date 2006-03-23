@@ -47,8 +47,6 @@ class Crab:
 
         # Job type
         self.job_type_name = None
-        # marco
-        self.job_type = None
 
         # Continuation flag
         self.flag_continue = 0
@@ -107,12 +105,6 @@ class Crab:
 
         common.jobDB = JobDB()
         
-        # marco
-
-        self.job_type = self.createJobtype_()
-
-        # marco
-
         if self.flag_continue:
             try:
                 common.jobDB.load()
@@ -456,7 +448,7 @@ class Crab:
                     # Instantiate Creator object
                     creator = Creator(self.job_type_name,
                                       self.cfg_params,
-                                      ncjobs, self.job_type)
+                                      ncjobs)
                     self.actions[opt] = creator
 
                     # Initialize the JobDB object if needed
@@ -467,9 +459,7 @@ class Crab:
                     # Create and initialize JobList
 
                     common.job_list = JobList(common.jobDB.nJobs(),
-                                              self.job_type)
-                    # marco
-                    #                          creator.jobType())
+                                              creator.jobType())
 
                     common.job_list.setScriptNames(self.job_type_name+'.sh')
                     common.job_list.setJDLNames(self.job_type_name+'.jdl')
@@ -520,7 +510,7 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
-                    self.actions[opt] = Submitter(self.cfg_params, nj_list, self.job_type)
+                    self.actions[opt] = Submitter(self.cfg_params, nj_list, creator.jobType())
 
                     # Create and initialize JobList
                     if len(common.job_list) == 0 :
@@ -907,25 +897,25 @@ class Crab:
         common.scheduler.configure(self.cfg_params)
         return
 
-    def createJobtype_(self):
-        """
-        Create the jobtype specified in the crab.cfg file
-        """
-        file_name = 'cms_'+ string.lower(self.job_type_name)
-        klass_name = string.capitalize(self.job_type_name)
-
-        try:
-            klass = importName(file_name, klass_name)
-        except KeyError:
-            msg = 'No `class '+klass_name+'` found in file `'+file_name+'.py`'
-            raise CrabException(msg)
-        except ImportError, e:
-            msg = 'Cannot create job type '+self.job_type_name
-            msg += ' (file: '+file_name+', class '+klass_name+'):\n'
-            msg += str(e)
-            raise CrabException(msg)
-        job_type = klass(self.cfg_params)
-        return job_type
+#    def createJobtype_(self):
+#        """
+#        Create the jobtype specified in the crab.cfg file
+#        """
+#        file_name = 'cms_'+ string.lower(self.job_type_name)
+#        klass_name = string.capitalize(self.job_type_name)
+# 
+#        try:
+#            klass = importName(file_name, klass_name)
+#        except KeyError:
+#            msg = 'No `class '+klass_name+'` found in file `'+file_name+'.py`'
+#            raise CrabException(msg)
+#        except ImportError, e:
+#            msg = 'Cannot create job type '+self.job_type_name
+#            msg += ' (file: '+file_name+', class '+klass_name+'):\n'
+#            msg += str(e)
+#            raise CrabException(msg)
+#        job_type = klass(self.cfg_params)
+#        return job_type
 
     def run(self):
         """
