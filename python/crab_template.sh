@@ -7,7 +7,6 @@
 
 RUNTIME_AREA=`pwd`
 dumpStatus() {
-echo "First attempt of ML transmission from WN"
 echo ">>>>>>> Cat $1"
 cat $1
 echo ">>>>>>> End Cat jobreport"
@@ -20,7 +19,7 @@ uname -a
 echo "Working directory `pwd`"
 ls -Al
 repo=jobreport.txt
-echo "SyncGridJobId = `echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo 
+echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo 
 
 #
 # END OF HEAD
@@ -81,7 +80,7 @@ if [ $executable_exit_status -ne 0 ]; then
   echo "Warning: Processing of job failed with exit code $executable_exit_status"
 fi
 exit_status=$executable_exit_status
-echo "ExeExitStatus=$exit_status" | tee -a $RUNTIME_AREA/$repo
+echo "ExeExitCode=$exit_status" | tee -a $RUNTIME_AREA/$repo
 echo "ExeTime=$TIME_EXE" | tee -a $RUNTIME_AREA/$repo
 
 #
@@ -109,7 +108,7 @@ pwd
 echo "ls -Al"
 ls -Al
 
-echo "SummaryFinalStatus=$exit_status" | tee -a $RUNTIME_AREA/$repo
+echo "JobExitCode=$exit_status" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 
 echo "JOB_EXIT_STATUS = $exit_status"
