@@ -345,6 +345,9 @@ class SchedulerEdg(Scheduler):
         jdl = common.job_list[nj].jdlFilename()
         cmd = 'edg-job-list-match ' + self.configOpt_() + jdl 
         cmd_out = runCommand(cmd,0,10)
+        if not cmd_out:
+            raise CrabException("ERROR: "+cmd+" failed!")
+
         return self.parseListMatch_(cmd_out, jdl)
 
     def parseListMatch_(self, out, jdl):
