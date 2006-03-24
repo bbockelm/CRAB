@@ -870,7 +870,7 @@ class Crab:
              ') running on ' + \
              time.ctime(time.time())+'\n\n' + \
              common.prog_name+'. Working options:\n'
-        print self.job_type_name 
+        #print self.job_type_name 
         header = header +\
                  '  scheduler           ' + self.scheduler_name + '\n'+\
                  '  job type            ' + self.job_type_name + '\n'+\
