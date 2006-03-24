@@ -186,7 +186,7 @@ class Creator(Actor):
 
         try:
             self.events_management = common.analisys_common_info['events_management']
-            print "self.events_management = ", self.events_management
+            #print "self.events_management = ", self.events_management
         except KeyError: self.events_management = 0
 
         # last jobs is different...
