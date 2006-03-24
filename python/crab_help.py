@@ -21,6 +21,7 @@ The most useful general options (use '-h' to get complete help):
   -status [range]     -- check status of all jobs: if range is defined, only of selected jobs
   -getoutput [range]  -- get back the output of all jobs: if range is defined, only of selected jobs
   -kill [range]       -- kill submitted jobs
+  -cancelAndResubmit [range]  -- kill and resubmit submitted jobs
   -clean              -- gracefully cleanup the idrectory of a task
   -testJdl [range]    -- check if resources exist which are compatible with jdl
   -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
