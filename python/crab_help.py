@@ -27,7 +27,6 @@ The most useful general options (use '-h' to get complete help):
   -continue [dir] | -c [dir]     -- Apply command to task stored in [dir].
   -h [format]         -- Detailed help. Formats: man (default), tex, html.
   -cfg fname          -- Configuration file name. Default is 'crab.cfg'.
-  -use_boss flag      -- If flag = 1 then BOSS will be used. Default is 0.
   -debug N            -- set the verbosity level to N
   -v                  -- Print version and exit.
 
