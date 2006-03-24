@@ -445,6 +445,7 @@ class Crab:
                 else: ncjobs = 'all'
 
                 if ncjobs != 0:
+
                     # Instantiate Creator object
                     self.creator = Creator(self.job_type_name,
                                       self.cfg_params,
@@ -510,7 +511,8 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
-                    self.actions[opt] = Submitter(self.cfg_params, nj_list, self.creator.jobType())
+#                    self.actions[opt] = Submitter(self.cfg_params, nj_list, self.creator.jobType())
+                    self.actions[opt] = Submitter(self.cfg_params, nj_list)
 
                     # Create and initialize JobList
                     if len(common.job_list) == 0 :
