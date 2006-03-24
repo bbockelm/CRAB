@@ -652,25 +652,28 @@ class Crab:
                     # create a list of jobs to be resubmitted.
 
                     ### as before, create a Resubmittter Class
+                    allBoss_id = common.scheduler.listBoss()
+                    maxIndex = allBoss_id.keys()
                     nj_list = []
                     for nj in jobs:
-                        st = common.jobDB.status(int(nj)-1)
-                        if st in ['K','A']:
-                            nj_list.append(int(nj)-1)
-                            common.jobDB.setStatus(int(nj)-1,'C')
-                        elif st == 'Y':
-                            common.scheduler.moveOutput(nj)
-                            nj_list.append(int(nj)-1)
-                            st = common.jobDB.setStatus(int(nj)-1,'RC')
-                        elif st in ['C','X']:
-                            common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!') 
-                            pass
-                        elif st == 'D':
-                            common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
+                        if int(nj) <= int(len(maxIndex)) :
+                            st = common.jobDB.status(int(nj)-1)
+                            if st in ['K','A']:
+                                nj_list.append(int(nj)-1)
+                                common.jobDB.setStatus(int(nj)-1,'C')
+                            elif st == 'Y':
+                                common.scheduler.moveOutput(nj)
+                                nj_list.append(int(nj)-1)
+                                st = common.jobDB.setStatus(int(nj)-1,'RC')
+                            elif st in ['C','X']:
+                                common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!') 
+                                pass
+                            elif st == 'D':
+                                common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
+                            else:
+                                common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                         else:
-                            common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
-                        pass
-
+                            common.logger.message('Job #'+`int(nj)`+' no possible to resubmit!! out of range')   
                     if len(common.job_list) == 0 :
                          common.job_list = JobList(common.jobDB.nJobs(),None)
                          common.job_list.setJDLNames(self.job_type_name+'.jdl')
@@ -685,7 +688,7 @@ class Crab:
                     pass
                 else:
                     common.logger.message("Warning: with '-resubmit' you _MUST_ specify a job range or 'all'")
-                    common.logger.message("WARNING: _all_ job specified in the rage will be resubmitted!!!")
+                    common.logger.message("WARNING: _all_ job specified in the range will be resubmitted!!!")
                     pass
                 common.jobDB.save()
                 pass
