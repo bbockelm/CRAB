@@ -445,11 +445,10 @@ class Crab:
                 else: ncjobs = 'all'
 
                 if ncjobs != 0:
-
                     # Instantiate Creator object
                     self.creator = Creator(self.job_type_name,
-                                      self.cfg_params,
-                                      ncjobs)
+                                           self.cfg_params,
+                                           ncjobs)
                     self.actions[opt] = self.creator
 
                     # Initialize the JobDB object if needed
@@ -511,9 +510,8 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
-#                    self.actions[opt] = Submitter(self.cfg_params, nj_list, self.creator.jobType())
+#                    self.actions[opt] = Submitter(self.cfg_params, nj_list, self.job_type)
                     self.actions[opt] = Submitter(self.cfg_params, nj_list)
-
                     # Create and initialize JobList
                     if len(common.job_list) == 0 :
                         common.job_list = JobList(common.jobDB.nJobs(),
@@ -559,7 +557,7 @@ class Crab:
 
                         for nj in jobs:
                             st = common.jobDB.status(nj)
-                            if st == 'S':
+                            if st == 'S' or st == 'A':
                                 jid = common.jobDB.jobId(nj)
                                 common.logger.message("Killing job # "+`(nj+1)`)
                                 common.scheduler.cancel(jid)
@@ -612,18 +610,19 @@ class Crab:
 
                     # Rename the directory with results to smth readable
                     new_dir = common.work_space.resDir()
-                    try:
-                        files = os.listdir(dir)
-                        for file in files:
-                            os.rename(dir+'/'+file, new_dir+'/'+file)
-                        os.rmdir(dir)
-                    except OSError, e:
-                        msg = 'rename files from '+dir+' to '+new_dir+' error: '
-                        msg += str(e)
-                        common.logger.message(msg)
-                        # ignore error
+                    if ( dir != '' ) :
+                        try:
+                            files = os.listdir(dir)
+                            for file in files:
+                                os.rename(dir+'/'+file, new_dir+'/'+file)
+                            os.rmdir(dir)
+                        except OSError, e:
+                            msg = 'rename files from '+dir+' to '+new_dir+' error: '
+                            msg += str(e)
+                            common.logger.message(msg)
+                            # ignore error
+                            pass
                         pass
-                    pass
                     ###
 
                     resFlag = 0
@@ -666,14 +665,14 @@ class Crab:
                                 nj_list.append(int(nj)-1)
                                 st = common.jobDB.setStatus(int(nj)-1,'RC')
                             elif st in ['C','X']:
-                                common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!') 
+                                common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!')
                                 pass
                             elif st == 'D':
                                 common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
                             else:
                                 common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                         else:
-                            common.logger.message('Job #'+`int(nj)`+' no possible to resubmit!! out of range')   
+                            common.logger.message('Job #'+`int(nj)`+' no possible to resubmit!! out of range')
                     if len(common.job_list) == 0 :
                          common.job_list = JobList(common.jobDB.nJobs(),None)
                          common.job_list.setJDLNames(self.job_type_name+'.jdl')
@@ -692,7 +691,7 @@ class Crab:
                     pass
                 common.jobDB.save()
                 pass
-            
+
             elif ( opt == '-cancelAndResubmit' ):
 
                 if ( self.flag_useboss == 1 ):
@@ -908,7 +907,7 @@ class Crab:
 #        """
 #        file_name = 'cms_'+ string.lower(self.job_type_name)
 #        klass_name = string.capitalize(self.job_type_name)
-# 
+#
 #        try:
 #            klass = importName(file_name, klass_name)
 #        except KeyError:
