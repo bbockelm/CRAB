@@ -16,12 +16,12 @@ class StatusBoss(Actor):
         self.countAbort = 0
         self.countCleared = 0
 
-        Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
+        # Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
         # Bypass edg-job-status interfacing directly to C++ API
         # Job attribute vector to retrieve status without edg-job-status
         self.level = 0
         # Instance of the Status class provided by LB API
-        self.jobStat = Status()
+        # self.jobStat = Status()
 
         self.states = [ "Acl", "cancelReason", "cancelling","ce_node","children", \
           "children_hist","children_num","children_states","condorId","condor_jdl", \
@@ -106,7 +106,9 @@ class StatusBoss(Actor):
             for_summary.append(jobStatus)
             exe_code =jobAttributes[bossid][3]
             try:
-               dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2])).split(":")[0]
+                dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2]))
+                if ( dest.find(":") != -1 ) :
+                    dest = dest.split(":")[0]
             except: 
                 dest = ''  
                 pass 

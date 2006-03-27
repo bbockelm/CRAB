@@ -20,12 +20,12 @@ class Status(Actor):
         self.cfg_params = cfg_params
         
 
-        Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
+        #Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
         # Bypass edg-job-status interfacing directly to C++ API
         # Job attribute vector to retrieve status without edg-job-status
         self.level = 0
         # Instance of the Status class provided by LB API
-        self.jobStat = Status()
+        #self.jobStat = Status()
 
         self.states = [ "Acl", "cancelReason", "cancelling","ce_node","children", \
           "children_hist","children_num","children_states","condorId","condor_jdl", \
@@ -65,12 +65,14 @@ class Status(Actor):
             st = common.jobDB.status(nj)
             self.countToTjob = self.countToTjob + 1
             jid = common.jobDB.jobId(nj)
-            if st == 'S':
+            if st == 'S' or st == 'A' or st == 'D' or st == 'K':
                 result = common.scheduler.queryStatus(jid)
                 self.processResult_(nj, result, jid)
                 exit = common.jobDB.exitStatus(nj)
                 print 'Job %03d:'%(nj+1),jid,result,exit
-                dest =  common.scheduler.getStatusAttribute_(jid, 'destination').split(":")[0]
+                dest = common.scheduler.queryDest(jid)
+                if ( dest.find(":") != -1 ) :
+                    dest = destination.split(":")[0]
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
                     self.cfg_params['apmon'].fillDict({'taskId': 'JobStatus', 'jobId': jid, \
                                                    'StatusValueReason': common.scheduler.getStatusAttribute_(jid, 'reason'), \
@@ -87,9 +89,17 @@ class Status(Actor):
 
     def processResult_(self, nj, result,jid):
 
-        destination = common.scheduler.queryDest(jid).split(":")[0]
-        ID3 =  jid.split("/")[3]
-        broker = jid.split("/")[2].split(":")[0]
+        destination = common.scheduler.queryDest(jid)
+        if ( destination.find(":") != -1 ) :
+            destination = destination.split(":")[0]
+            
+        if ( jid.find(":") != -1 ) :
+            ID3 =  jid.split("/")[3]
+            broker = jid.split("/")[2].split(":")[0]
+        else :
+            ID3 = jid
+            broker = 'OSG'
+            
         resFlag = 0
         ### TODO: set relevant status also to DB
 
