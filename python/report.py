@@ -93,7 +93,7 @@ def getGridJobID() :
     return _jobid
     
 def getGridIdentity() :
-    userid = os.popen("grid-proxy-info -identity").read().strip()
+    userid = os.popen("voms-proxy-info -identity").read().strip()
     return userid
 
 # Simple filters (1-to-1 correspondance)
