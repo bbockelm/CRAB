@@ -38,7 +38,7 @@ class Creator(Actor):
         
         fileCODE1 = open(common.work_space.shareDir()+"/.code","a")
         ### commented for FAMOS  
-        if self.job_type.name() == 'ORCA' or self.job_type.name() == 'ORCA_DBSDLS':
+        if self.job_type.name() == 'ORCA' or self.job_type.name() == 'ORCA_DBSDLS' or self.job_type.name() == 'ORCA_COMMON' :
             self.owner = cfg_params['ORCA.owner']
             self.dataset = cfg_params['ORCA.dataset']
             fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
@@ -278,7 +278,7 @@ class Creator(Actor):
             common.jobDB.setInputSandbox(nj, self.job_type.inputSandbox(nj))
 
             outputSandbox=self.job_type.outputSandbox(nj)
-            stdout=common.job_list[nj].stdout() 
+            stdout=common.job_list[nj].stdout()
             stderr=common.job_list[nj].stderr()
             outputSandbox.append(common.job_list[nj].stdout())
             # check if out!=err
