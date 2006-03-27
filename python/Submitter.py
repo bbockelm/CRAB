@@ -28,7 +28,7 @@ class Submitter(Actor):
         """
         common.logger.debug(5, "Submitter::run() called")
 
-        totalCreatedJobs = 0
+        totalCreatedJobs= 0
         # marco. Common job type parameters to be sent to ML and Daniele's Monitor
 #        jobtype_p = self.job_type.getParams()
         listCE = ""
@@ -88,17 +88,20 @@ class Submitter(Actor):
                     try:
                         #List of parameters to be sent to ML monitor system
                         # Marco. Should be better to put it in the SchedulerEdg/gLite class 
-#                        if self.job_type.name() == "ORCA" or self.job_type.name() == 'ORCA_DBSDLS':
+#                        if self.job_type.name() == "ORCA" or self.job_type.name() == 'ORCA_DBSDLS' or self.job_type.name() == 'ORCA_COMMON':
 #                            listCE = ','.join(common.analisys_common_info['sites'])
-                        self.cfg_params['GridName'] = runCommand("grid-proxy-info -identity")
+                        self.cfg_params['GridName'] = runCommand("voms-proxy-info -identity")
                         common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
                         self.cfg_params['jobId'] = str(nj + 1)
                         self.cfg_params['sid'] = jid
                         nevtJob = common.jobDB.maxEvents(nj)
                         taskType = 'analysis'
-                        taskId = self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2] 
-                        rb = jid.split(':')[1]
-                        self.cfg_params['rb'] = rb.replace('//', '')
+                        taskId = self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2]
+                        if ( jid.find(":") != -1 ) :
+                            rb = jid.split(':')[1]
+                            self.cfg_params['rb'] = rb.replace('//', '')
+                        else :
+                            self.cfg_params['rb'] = 'OSG'
 
                         params = {'jobId': str(nj + 1) + '_' + self.cfg_params['sid'] ,'taskId': taskId, 'sid': self.cfg_params['sid'], \
                                   'nevtJob': nevtJob, 'tool': common.prog_name, 'tool_ui': os.environ['HOSTNAME'], \
