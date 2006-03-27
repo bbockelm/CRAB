@@ -1,0 +1,3 @@
+#!/bin/sh
+
+boss registerScheduler -name grid -submit $CRABSCRIPT/script/grid_submit.pl -query $CRABSCRIPT/script/grid_query.py -kill $CRABSCRIPT/script/grid_kill.pl -getout $CRABSCRIPT/script/grid_getout.pl 
