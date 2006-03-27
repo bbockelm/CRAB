@@ -119,67 +119,67 @@ class JobDB:
         return string.split(string.replace(list[1:-1],"'",""),',')  
     
     def setStatus(self, nj, status):
-        self._jobs[nj].status = status
+        self._jobs[int(nj)].status = status
         return
     
     def status(self, nj):
-        return self._jobs[nj].status
+        return self._jobs[int(nj)].status
     
     def setExitStatus(self, nj, exitStatus):
-        self._jobs[nj].exitStatus = exitStatus
+        self._jobs[int(nj)].exitStatus = exitStatus
         return
     
     def exitStatus(self, nj):
-        return self._jobs[nj].exitStatus
+        return self._jobs[int(nj)].exitStatus
     
     def setJobId(self, nj, jid):
-        self._jobs[nj].jid = jid
+        self._jobs[int(nj)].jid = jid
         return
     
     def jobId(self, nj):
-        return self._jobs[nj].jid
+        return self._jobs[int(nj)].jid
 
     def setBossId(self, nj, bossid):
-        self._jobs[nj].bossid = bossid
+        self._jobs[int(nj)].bossid = bossid
         return
     
     def bossId(self, nj):
-        return self._jobs[nj].bossid
+        return self._jobs[int(nj)].bossid
 
     def setFirstEvent(self, nj, firstEvent):
-        self._jobs[nj].firstEvent = firstEvent
+        self._jobs[int(nj)].firstEvent = firstEvent
         return
     
     def firstEvent(self, nj):
-        return self._jobs[nj].firstEvent
+        return self._jobs[int(nj)].firstEvent
 
     def setMaxEvents(self, nj, MaxEvents):
-        self._jobs[nj].maxEvents = MaxEvents
+        self._jobs[int(nj)].maxEvents = MaxEvents
         return
     
     def maxEvents(self, nj):
-        return self._jobs[nj].maxEvents
+        return self._jobs[int(nj)].maxEvents
 
     def setCollections(self, nj, Collections):
-        self._jobs[nj].Collections = Collections
+        self._jobs[int(nj)].Collections = Collections
         return
     
     def collections(self, nj):
-        return self._jobs[nj].collections
+        return self._jobs[int(nj)].collections
 
     def setInputSandbox(self, nj, InputSandbox):
-        self._jobs[nj].inputSandbox = InputSandbox
+        self._jobs[int(nj)].inputSandbox = InputSandbox
         return
     
     def inputSandbox(self, nj):
-        return self._jobs[nj].inputSandbox
+        return self._jobs[int(nj)].inputSandbox
 
     def setOutputSandbox(self, nj, OutputSandbox):
-        self._jobs[nj].outputSandbox = OutputSandbox
+        self._jobs[int(nj)].outputSandbox = OutputSandbox
         return
     
     def outputSandbox(self, nj):
-        return self._jobs[nj].outputSandbox
+        return self._jobs[int(nj)].outputSandbox
         
     def setTaskId(self, nj, taskId):
-        self._jobs[nj].taskId = taskId
+        self._jobs[int(nj)].taskId = taskId
