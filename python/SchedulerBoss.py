@@ -361,8 +361,11 @@ class SchedulerBoss(Scheduler):
             common.logger.message(msg)
             return None
         else:
-            reSid = re.compile( r'https.+' )
-            jid = reSid.search(cmd_out).group()
+            if cmd_out.find('https') != -1:
+                reSid = re.compile( r'https.+' )
+                jid = reSid.search(cmd_out).group()
+            else :
+                jid = cmd_out.split()[2]
             return jid
 
 
@@ -552,6 +555,10 @@ class SchedulerBoss(Scheduler):
                                                                                                                              
         self.boss_scheduler.checkProxy()
         EDGstatus={
+            'H':'Hold(Condor)',
+            'U':'Ready(Condor)',
+            'I':'Scheduled(Condor)',
+            'X':'Cancelled(Condor)',
             'W':'Created(BOSS)',
             'R':'Running',
             'SC':'Checkpointed',
