@@ -390,7 +390,7 @@ class Crab:
                 # FEDE
                 #result.append(int(aRange)-1)
                 ###
-                result.append(aRange)
+                result.append(int(aRange))
             else:
                 common.logger.message("parseSimpleRange_  ERROR "+aRange)
                 usage()
@@ -763,8 +763,8 @@ class Crab:
                 jobs = self.parseRange_(val)
                 nj_list = []
                 for nj in jobs:
-                    st = common.jobDB.status(nj)
-                    if st == 'C': nj_list.append(nj)
+                    st = common.jobDB.status(nj-1)
+                    if st == 'C': nj_list.append(nj-1)
                     pass
 
                 if len(nj_list) != 0:
