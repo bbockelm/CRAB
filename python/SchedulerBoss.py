@@ -213,7 +213,6 @@ class SchedulerBoss(Scheduler):
             if os.path.exists(register_path+register_boss_scheduler):
                
                 boss_out = runBossCommand(register_path+register_boss_scheduler,0)
-                print boss_out
                 if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
                     msg = 'Error: Problem with scheduler '+sched_name+' registration\n'
@@ -232,7 +231,7 @@ class SchedulerBoss(Scheduler):
         """
         ## we don't need to test this at every call:
         if (self.jobtypeRegistered.has_key(jobtype)): return
-      
+
         ## we should cache the result of the first test
         boss_jobtype_check = "boss showJobTypes"
         boss_out = runBossCommand(boss_jobtype_check,0)
