@@ -2,6 +2,7 @@ from Scheduler import Scheduler
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
+from EdgConfig import *
 import common
 
 import os, sys, time
@@ -21,11 +22,14 @@ class SchedulerEdg(Scheduler):
 
     def configure(self, cfg_params):
 
-        try: self.edg_config = cfg_params["EDG.config"]
-        except KeyError: self.edg_config = ''
-
-        try: self.edg_config_vo = cfg_params["EDG.config_vo"]
-        except KeyError: self.edg_config_vo = ''
+        try:
+            RB = cfg_params["EDG.rb"]
+            edgConfig = EdgConfig(RB)
+            self.edg_config = edgConfig.config()
+            self.edg_config_vo = edgConfig.configVO()
+        except KeyError:
+            self.edg_config = ''
+            self.edg_config_vo = ''
 
         try: self.LCG_version = cfg_params["EDG.lcg_version"]
         except KeyError: self.LCG_version = '2'
