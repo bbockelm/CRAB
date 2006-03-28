@@ -44,7 +44,7 @@ class Submitter(Actor):
         firstJob=self.nj_list[0]
         match = common.scheduler.listMatch(firstJob)
         if match:
-            common.logger.message("Found "+str(match)+" compatible sites")
+            common.logger.message("Found "+str(match)+" compatible site(s)")
         else:
             raise CrabException("No compatible site found!")
         #########
