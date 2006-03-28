@@ -10,7 +10,7 @@ class Scram:
         self.tgz_name = 'default.tgz'
         self.tgzNameWithPath = None
 
-        self.scramVersion = 0
+        self.scramVersion = ''
         scramArea = ''
 
         if os.environ.has_key("SCRAMRT_LOCALRT"):
@@ -20,9 +20,33 @@ class Scram:
         elif os.environ.has_key("LOCALRT"):
             # try scram v0
             self.scramArea = os.environ["LOCALRT"]
-            self.scramVersion = 0
+            reVer=re.compile( r'V(\d*)_' )
+            if (os.path.exists(self.scramArea+'/config/scram_version')):
+                verFile=open(self.scramArea+'/config/scram_version','r')
+                lines = verFile.readlines()
+                for line in lines:
+                    if reVer.search(line):
+                        self.scramVersion=int(reVer.search(line).groups()[0])
+                        break
+                    pass
+                verFile.close()
+            pass
+        elif os.environ.has_key("BASE_PATH"):
+            # try scram v0
+            self.scramArea = os.environ["BASE_PATH"]
+            reVer=re.compile( r'V(\d*)_' )
+            if (os.path.exists(self.scramArea+'/config/scram_version')):
+                verFile=open(self.scramArea+'/config/scram_version','r')
+                lines = verFile.readlines()
+                for line in lines:
+                    if reVer.search(line):
+                        self.scramVersion=int(reVer.search(line).groups()[0])
+                        break
+                    pass
+                verFile.close()
+            pass
         else:
-            msg = 'Did you do eval `scram(v1) runtime ...` from your ORCA area ?\n'
+            msg = 'Did you do eval `scram(v1) runtime ...` from your working area ?\n'
             raise CrabException(msg)
         common.logger.debug(5, "Scram::Scram() version is "+str(self.scramVersion))
         common.logger.debug(6, "Scram::Scram() area is "+self.scramArea)
@@ -62,22 +86,6 @@ class Scram:
             raise CrabException(msg)
         return string.strip(ver)
         
-    def getTarBall(self, exe):
-        """
-        Return the TarBall with lib and exe
-        """
-        
-        # if it exist, just return it
-        self.tgzNameWithPath = common.work_space.shareDir()+self.tgz_name
-        if os.path.exists(self.tgzNameWithPath):
-            return self.tgzNameWithPath
-
-        # Prepare a tar gzipped file with user binaries.
-        self.prepareTgz_(exe)
-
-        return string.strip(self.tgzNameWithPath)
-
-
     def getReleaseTop_(self):
        """ get release top """
 
@@ -116,65 +124,3 @@ class Scram:
         else:
             return None
 
-    def prepareTgz_(self, executable):
-
-        # First of all declare the user Scram area
-        swArea = self.getSWArea_()
-        #print "swArea = ", swArea
-        swVersion = self.getSWVersion()
-        #print "swVersion = ", swVersion
-        swReleaseTop = self.getReleaseTop_()
-        #print "swReleaseTop = ", swReleaseTop
-
-        ## First find the executable
-        exeWithPath = self.findFile_(executable)
-        if ( not exeWithPath ): raise CrabException('User executable '+executable+' not found')
-
-        ## check if working area is release top
-        if swReleaseTop == '' or swArea == swReleaseTop:
-            return
-
-        filesToBeTarred = []
-        ## then check if it's private or not
-        if exeWithPath.find(swReleaseTop) == -1:
-            # the exe is private, so we must ship
-            common.logger.debug(5,"Exe "+exeWithPath+" to be tarred")
-            path = swArea+'/'
-            exe = string.replace(exeWithPath, path,'')
-            filesToBeTarred.append(exe)
-            pass
-        else:
-            # the exe is from release, we'll find it on WN
-            pass
-
-        ## Now get the libraries: only those in local working area
-        cmd = 'ldd ' + exeWithPath + ' | grep ' + swArea
-        myCmd = os.popen(cmd)
-        for line in (myCmd):
-            libWithFullPath = string.split(string.strip(line))[2]
-            path = swArea+'/'
-            lib = string.replace(libWithFullPath, path,'')
-            common.logger.debug(5,"lib "+lib+" to be tarred")
-            filesToBeTarred.append(lib)
-        status = myCmd.close()
-
-        ## Now check if the Data dir is present
-        dataDir = 'src/Data/'
-        if os.path.isdir(swArea+'/'+dataDir):
-            filesToBeTarred.append(dataDir)
-
-        ## Create the tar-ball
-        if len(filesToBeTarred)>0:
-            cwd = os.getcwd()
-            os.chdir(swArea)
-            tarcmd = 'tar zcvf ' + self.tgzNameWithPath + ' ' 
-            for line in filesToBeTarred:
-                tarcmd = tarcmd + line + ' '
-            cout = runCommand(tarcmd)
-            if not cout:
-                raise CrabException('Could not create tar-ball')
-            os.chdir(cwd)
-        else:
-            common.logger.debug(5,"No files to be to be tarred")
-        
-        return

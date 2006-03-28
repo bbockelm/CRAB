@@ -7,6 +7,7 @@ import PubDB
 import orcarcBuilder
 import orcarcBuilderOld
 import Scram
+import TarBall
 
 import os, string, re
 
@@ -141,7 +142,8 @@ class Orca(JobType):
           
         # [-- self.checkNevJobs() --]
 
-        self.tgzNameWithPath = self.scram.getTarBall(self.executable)
+        self.TarBaller = TarBall.TarBall(self.executable, self.scram)
+        self.tgzNameWithPath = self.TarBaller.prepareTarBall()
 
         try:
             self.ML = int(cfg_params['USER.activate_monalisa'])
@@ -182,9 +184,9 @@ class Orca(JobType):
 
         # Handle the arguments:
         txt += "\n"
-        txt += "## ARGUMNETS: $1 Job Number\n"
-        txt += "## ARGUMNETS: $2 First Event for this job\n"
-        txt += "## ARGUMNETS: $3 Max Event for this job\n"
+        txt += "## ARGUMENTS: $1 Job Number\n"
+        txt += "## ARGUMENTS: $2 First Event for this job\n"
+        txt += "## ARGUMENTS: $3 Max Event for this job\n"
         txt += "\n"
         txt += "narg=$#\n"
         txt += "if [ $narg -lt 3 ]\n"
