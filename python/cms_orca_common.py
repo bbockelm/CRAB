@@ -7,6 +7,7 @@ import PubDB
 import orcarcBuilder
 import orcarcBuilderOld
 import Scram
+import TarBall
 
 import os, string, re
 
@@ -141,7 +142,8 @@ class Orca_common(JobType):
           
         # [-- self.checkNevJobs() --]
 
-        self.tgzNameWithPath = self.scram.getTarBall(self.executable)
+        self.TarBaller = TarBall.TarBall(self.executable, self.scram)
+        self.tgzNameWithPath = self.TarBaller.prepareTarBall()
 
         try:
             self.ML = int(cfg_params['USER.activate_monalisa'])
