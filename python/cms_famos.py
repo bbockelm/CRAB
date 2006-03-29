@@ -331,8 +331,8 @@ class Famos(JobType):
         txt = ""
 
         if os.path.isfile(self.tgzNameWithPath):
-            txt += 'echo "tar xzvf ../'+os.path.basename(self.tgzNameWithPath)+'"\n'
-            txt += 'tar xzvf ../'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'echo "tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'"\n'
+            txt += 'tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '   echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
