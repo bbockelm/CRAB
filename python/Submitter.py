@@ -7,12 +7,9 @@ from random import random
 import time
 
 class Submitter(Actor):
-    # marco
-#    def __init__(self, cfg_params, nj_list, job_type):
     def __init__(self, cfg_params, nj_list):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
-#        self.job_type = job_type
         
         try:
             self.ML = int(cfg_params['USER.activate_monalisa'])
@@ -29,8 +26,6 @@ class Submitter(Actor):
         common.logger.debug(5, "Submitter::run() called")
 
         totalCreatedJobs= 0
-        # marco. Common job type parameters to be sent to ML and Daniele's Monitor
-#        jobtype_p = self.job_type.getParams()
         listCE = ""
         start = time.time()
         for nj in range(common.jobDB.nJobs()):
@@ -84,40 +79,23 @@ class Submitter(Actor):
                 except:
                     pass
                 
-                if (self.ML==1):
-                    try:
-                        #List of parameters to be sent to ML monitor system
-                        # Marco. Should be better to put it in the SchedulerEdg/gLite class 
-#                        if self.job_type.name() == "ORCA" or self.job_type.name() == 'ORCA_DBSDLS' or self.job_type.name() == 'ORCA_COMMON':
-#                            listCE = ','.join(common.analisys_common_info['sites'])
-                        self.cfg_params['GridName'] = runCommand("voms-proxy-info -identity")
-                        common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
-                        self.cfg_params['jobId'] = str(nj + 1)
-                        self.cfg_params['sid'] = jid
-                        nevtJob = common.jobDB.maxEvents(nj)
-                        taskType = 'analysis'
-                        taskId = self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2]
-                        if ( jid.find(":") != -1 ) :
-                            rb = jid.split(':')[1]
-                            self.cfg_params['rb'] = rb.replace('//', '')
-                        else :
-                            self.cfg_params['rb'] = 'OSG'
-
-                        params = {'jobId': str(nj + 1) + '_' + self.cfg_params['sid'] ,'taskId': taskId, 'sid': self.cfg_params['sid'], \
-                                  'nevtJob': nevtJob, 'tool': common.prog_name, 'tool_ui': os.environ['HOSTNAME'], \
-                                  'scheduler': self.cfg_params['CRAB.scheduler'], 'GridName': self.cfg_params['GridName'], 'taskType': taskType, \
-                                  'vo': self.cfg_params['EDG.virtual_organization'], 'broker': self.cfg_params['rb'], 'user': self.cfg_params['user'], 'TargetCE': listCE, 'bossId': common.jobDB.bossId(nj)}
-#                        for i in jobtype_p.iterkeys():
-#                            params[i] = jobtype_p[i]
-#                        for j, k in params.iteritems():
-#                            print "Values: %s %s"%(j, k)
-                        self.cfg_params['apmon'].fillDict(params)
-                        self.cfg_params['apmon'].sendToML()
-                    except:
-                        exctype, value = sys.exc_info()[:2]
-                        common.logger.message("Submitter::run Exception  raised: %s %s"%(exctype, value))
-                        pass
-                pass # use ML
+                fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
+                self.cfg_params['sid'] = jid
+                nevtJob = common.jobDB.maxEvents(nj)
+                if ( jid.find(":") != -1 ) :
+                    rb = jid.split(':')[1]
+                    self.cfg_params['rb'] = rb.replace('//', '')
+                else :
+                    self.cfg_params['rb'] = 'OSG'
+                params = {'nevtJob': nevtJob, 'jobId': str(nj + 1) + '_' + self.cfg_params['sid'], 'sid': self.cfg_params['sid'], \
+                          'broker': self.cfg_params['rb'], 'bossId': common.jobDB.bossId(nj)}
+                for i in fl.readlines():
+                    val = i.split(':')
+                    params[val[0]] = string.strip(val[1])
+#                for j, k in params.iteritems():
+#                    print "Values: %s %s"%(j, k)
+                self.cfg_params['apmon'].fillDict(params)
+                self.cfg_params['apmon'].sendToML()
         except:
             exctype, value = sys.exc_info()[:2]
             print "Type: %s Value: %s"%(exctype, value)
