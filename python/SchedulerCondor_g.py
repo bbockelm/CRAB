@@ -202,7 +202,7 @@ class SchedulerCondor_g(Scheduler):
         """
         ## OLI_Daniele discovery middleware
         txt = ''
-        txt += 'echo "middleware disovery " \n'
+        txt += 'echo "middleware discovery " \n'
         txt += 'if [ $VO_CMS_SW_DIR ]; then\n'
         txt += '   middleware=LCG \n'
         txt += '   echo "middleware =$middleware" \n'
