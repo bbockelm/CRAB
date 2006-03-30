@@ -57,7 +57,7 @@ if [ $res -ne 0 ];then
   echo "JOB_EXIT_STATUS = 50110"
   echo "JobExitStatus=50110" | tee -a $RUNTIME_AREA/$repo
   dumpStatus $RUNTIME_AREA/$repo
-  exit 1 
+  exit 
 fi
 
 echo "SET_EXE 0 ==> ok executable found"
