@@ -50,6 +50,26 @@ class Creator(Actor):
             pass
         fileCODE1.close()
 
+        try:
+            fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'w')
+            self.cfg_params['GridName'] = runCommand("voms-proxy-info -identity")
+            common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
+            taskType = 'analysis'
+
+            params = {'tool': common.prog_name, 'tool_ui': os.environ['HOSTNAME'], \
+                      'scheduler': self.cfg_params['CRAB.scheduler'], 'GridName': self.cfg_params['GridName'].strip(), \
+                      'taskType': taskType, 'vo': self.cfg_params['EDG.virtual_organization'], 'user': self.cfg_params['user']}
+            jtParam = self.job_type.getParams()
+            for i in jtParam.iterkeys():
+                params[i] = string.strip(jtParam[i])
+            for j, k in params.iteritems():
+#                print "Values: %s %s"%(j, k)
+                fl.write(j + ':' + k + '\n')
+            fl.close()
+        except:
+            exctype, value = sys.exc_info()[:2]
+            common.logger.message("Creator::run Exception  raised: %s %s"%(exctype, value))
+            pass
 
         #TODO: deprecated code, not needed,
         # will be eliminated when WorkSpace.saveConfiguration()
