@@ -207,6 +207,7 @@ class Famos(JobType):
             pass
             
         self.setTaskid_()
+        self.setParam_('taskId', self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2])
         return
 
     def wsSetupEnvironment(self, nj):
