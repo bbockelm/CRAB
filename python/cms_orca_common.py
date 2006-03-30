@@ -152,6 +152,7 @@ class Orca_common(JobType):
             pass
 
         self.setTaskid_()
+        self.setParam_('taskId', self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2])
 
         return
 
@@ -532,6 +533,7 @@ class Orca_common(JobType):
 
         common.logger.debug(6, "List of CEs: "+str(ces))
         common.analisys_common_info['sites']=ces
+        self.setParam_('TargetCE', ','.join(ces))
 
         return
 

@@ -154,6 +154,7 @@ class Orca_dbsdls(JobType):
             pass
 
         self.setTaskid_()
+        self.setParam_('taskId', self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2])
 
         return
 
@@ -389,6 +390,7 @@ class Orca_dbsdls(JobType):
         common.logger.message("List of Sites hosting the data : "+str(sites)) 
         common.logger.debug(6, "List of Sites: "+str(sites))
         common.analisys_common_info['sites']=sites    ## used in SchedulerEdg.py in createSchScript
+        self.setParam_('TargetCE', ','.join(sites))
 
         return
 

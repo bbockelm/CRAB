@@ -152,6 +152,7 @@ class Orca(JobType):
             pass
 
         self.setTaskid_()
+        self.setParam_('taskId', self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2])
 
         return
 
@@ -175,7 +176,7 @@ class Orca(JobType):
         txt += '   echo "JOB_EXIT_STATUS = 10034"\n'
         txt += '   echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '   exit 10034 \n'
+        txt += '   exit\n'
         txt += 'fi \n'
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
@@ -195,7 +196,7 @@ class Orca(JobType):
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
         txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += "    exit 1\n"
+        txt += "    exit\n"
         txt += "fi\n"
         txt += "\n"
         txt += "NJob=$1\n"
@@ -441,7 +442,8 @@ class Orca(JobType):
             raise CrabException(msg)
 
         common.logger.debug(6, "List of CEs: "+str(ces))
-        common.analisys_common_info['sites']=ces
+        common.analisys_common_info['sites'] = ces
+        self.setParam_('TargetCE', ','.join(ces))
 
         return
 
