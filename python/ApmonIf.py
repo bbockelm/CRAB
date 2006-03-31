@@ -6,6 +6,7 @@ class ApmonIf:
     """
     def __init__(self, address='http://lxgate35.cern.ch:40808/ApMonConf'):
         self._params = {}
+        self.fName = 'mlCommonInfo'
         self._MLaddress = address
         self.apm = None
         self.apm = self.getApmonInstance()
@@ -21,9 +22,12 @@ class ApmonIf:
         
     def getApmonInstance(self):
         if self.apm is None :
-            apmonUrl = 'http://lxgate35.cern.ch:40808/ApMonConf' 
-            print "Creating ApMon with " + apmonUrl
-            apmonInstance = apmon.ApMon(apmonUrl)
+            try:
+                apmonUrl = 'http://lxgate35.cern.ch:40808/ApMonConf'
+                print "Creating ApMon with " + apmonUrl
+                apmonInstance = apmon.ApMon(apmonUrl, apmon.Logger.WARNING)
+            except:
+                print "PIPPO"
         return apmonInstance 
         
     def free(self):
