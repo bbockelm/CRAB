@@ -19,7 +19,7 @@ uname -a
 echo "Working directory `pwd`"
 ls -Al
 repo=jobreport.txt
-echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo 
+#echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo 
 
 #
 # END OF HEAD
