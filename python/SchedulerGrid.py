@@ -21,11 +21,15 @@ class SchedulerGrid(Scheduler):
 
     def configure(self, cfg_params):
 
-        try: self.edg_config = cfg_params["EDG.config"]
-        except KeyError: self.edg_config = ''
+        try:
+            RB = cfg_params["EDG.rb"]
+            edgConfig = EdgConfig(RB)
+            self.edg_config = edgConfig.config()
+            self.edg_config_vo = edgConfig.configVO()
+        except KeyError:
+            self.edg_config = ''
+            self.edg_config_vo = ''
 
-        try: self.edg_config_vo = cfg_params["EDG.config_vo"]
-        except KeyError: self.edg_config_vo = ''
 
         try: self.LCG_version = cfg_params["EDG.lcg_version"]
         except KeyError: self.LCG_version = '2'
@@ -157,22 +161,25 @@ class SchedulerGrid(Scheduler):
         txt = ''
         txt += 'echo "middleware discovery " \n'
         txt += 'if [ $VO_CMS_SW_DIR ]; then\n'
-        txt += '   middleware=LCG \n'
-        txt += '   echo "middleware =$middleware" \n'
+        txt += '    middleware=LCG \n'
+        txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $GRID3_APP_DIR ]; then\n'
-        txt += '   middleware=OSG \n'
-        txt += '   echo "middleware =$middleware" \n'
+        txt += '    middleware=OSG \n'
+        txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $OSG_APP ]; then \n'
-        txt += '   middleware=OSG \n'
-        txt += '   echo "middleware =$middleware" \n'
+        txt += '    middleware=OSG \n'
+        txt += '    echo "middleware =$middleware" \n'
         txt += 'else \n'
-        txt += '   echo "SET_CMS_ENV 1 ==> middleware not identified" \n'
-        txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit 1\n'
+        txt += '    echo "SET_CMS_ENV 1 ==> middleware not identified" \n'
+        txt += '    echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '    exit 1\n'
         txt += 'fi\n'
 
         txt += '\n\n'
 
+        txt += 'if [ $middleware == LCG ]; then \n'
+        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'fi\n'
 
         if int(self.copy_data) == 1:
            if self.SE:
@@ -185,49 +192,58 @@ class SchedulerGrid(Scheduler):
 
         txt += 'export VO='+self.VO+'\n'
         ### FEDE: add some line for LFC catalog setting 
-        txt += 'if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
-        txt += '   export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
-        txt += 'fi\n'
-        txt += 'if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
-        txt += 'export LFC_HOST='+self.lfc_host+'\n'
-        txt += 'fi\n'
-        txt += 'if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
-        txt += 'export LFC_HOME='+self.lfc_home+'\n'
+        txt += 'if [ $middleware == LCG ]; then \n'
+        txt += '    if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
+        txt += '        export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
+        txt += '    fi\n'
+        txt += '    if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
+        txt += '        export LFC_HOST='+self.lfc_host+'\n'
+        txt += '    fi\n'
+        txt += '    if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
+        txt += '        export LFC_HOME='+self.lfc_home+'\n'
+        txt += '    fi\n'
+        txt += 'elif [ $middleware == OSG ]; then\n'
+        txt += '    echo "LFC catalog setting to be implemented for OSG"\n'
         txt += 'fi\n'
         #####
         if int(self.register_data) == 1:
-           txt += 'export LFN='+self.LFN+'\n'
-           txt += 'lfc-ls $LFN\n' 
-           txt += 'result=$?\n' 
-           txt += 'echo $result\n' 
+           txt += 'if [ $middleware == LCG ]; then \n'
+           txt += '    export LFN='+self.LFN+'\n'
+           txt += '    lfc-ls $LFN\n' 
+           txt += '    result=$?\n' 
+           txt += '    echo $result\n' 
            ### creation of LFN dir in LFC catalog, under /grid/cms dir  
-           txt += 'if [ $result != 0 ]; then\n'
-           txt += '   lfc-mkdir $LFN\n'
-           txt += '   result=$?\n' 
-           txt += '   echo $result\n' 
+           txt += '    if [ $result != 0 ]; then\n'
+           txt += '       lfc-mkdir $LFN\n'
+           txt += '       result=$?\n' 
+           txt += '       echo $result\n' 
+           txt += '    fi\n'
+           txt += 'elif [ $middleware == OSG ]; then\n'
+           txt += '    echo " Files registration to be implemented for OSG"\n'
            txt += 'fi\n'
            txt += '\n'
 
-        if int(self.register_data) == 1:
            if self.VO:
               txt += 'export VO='+self.VO+'\n'
            if self.LFN:
-              txt += 'export LFN='+self.LFN+'\n'
+              txt += 'if [ $middleware == LCG ]; then \n'
+              txt += '    export LFN='+self.LFN+'\n'
+              txt += 'fi\n'
               txt += '\n'
 
         ## OLI_Daniele
         txt += 'if [ $middleware == LCG ]; then\n' 
-        txt += '   CloseCEs=`edg-brokerinfo getCE`\n'
-        txt += '   echo "CloseCEs = $CloseCEs"\n'
-        txt += '   CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
-        txt += '   echo "CE = $CE"\n'
+        txt += '    CloseCEs=`edg-brokerinfo getCE`\n'
+        txt += '    echo "CloseCEs = $CloseCEs"\n'
+        txt += '    CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
+        txt += '    echo "CE = $CE"\n'
         txt += 'elif [ $middleware == OSG ]; then \n'
-        txt += '   if [ $OSG_JOB_CONTACT ]; then \n'
-        txt += '      CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
-        txt += '   else \n'
-        txt += '      echo "SET_ENV 1 ==> ERROR in setting CE name - OSG mode -" \n'
-        txt += '      exit 1 \n'
-        txt += '   fi \n'
+        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
+        txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
+        txt += '    else \n'
+        txt += '        echo "SET_ENV 1 ==> ERROR in setting CE name - OSG mode -" \n'
+        txt += '        exit 1 \n'
+        txt += '    fi \n'
         txt += 'fi \n' 
 
         return txt
@@ -301,8 +317,8 @@ class SchedulerGrid(Scheduler):
            txt += '           copy_exit_status=`globus-url-copy file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
            #txt += '           exitstring=`globus-url-copy file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
            txt += '        elif [ $middleware == LCG ]; then \n'
-           txt += '           echo "lcg-cp --vo cms -t 30 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-           txt += '           copy_exit_status=`lcg-cp --vo cms -t 30 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+           txt += '           echo "lcg-cp --vo cms -t 1200 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+           txt += '           copy_exit_status=`lcg-cp --vo cms -t 1200 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
            #txt += '           exitstring=`lcg-cp --vo cms -t 30 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
            txt += '        fi \n' 
            #txt += '        copy_exit_status=$?\n'
@@ -719,7 +735,7 @@ class SchedulerGrid(Scheduler):
         cmd_out = os.system(cmd)
         if (cmd_out>0):
             common.logger.message( "No valid proxy found or timeleft too short!\n Creating a user proxy with default length of 24h\n")
-            cmd = 'voms-proxy-init -voms cms -confile /tmp -valid 24:00'
+            cmd = 'voms-proxy-init -voms cms -valid 100:00'
             try:
                 # SL as above: damn it!
                 out = os.system(cmd)
