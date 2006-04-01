@@ -218,6 +218,7 @@ sub submit {
   close(SUB);
   # delete temporary file
   unlink "$tmpfile";
+  unlink "BossArchive_${jid}.tgz";
   #
   return $id;
 }
