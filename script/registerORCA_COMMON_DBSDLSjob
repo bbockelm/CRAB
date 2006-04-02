@@ -1,0 +1,8 @@
+#!/bin/sh
+
+boss showJobTypes | grep "ORCA_COMMON_DBSDLS job" > /dev/null
+if [ $? -eq 0 ];then
+ boss registerJob -name orca_common_dbsdls  -post $CRABSCRIPT/script/orca_common.runtime -runtime $CRABSCRIPT/script/orca_common.runtime -comment "ORCA COMMON DBSDLS job"
+else
+ boss registerJob -name orca_common_dbsdls -schema $CRABSCRIPT/script/orca_common.schema -post $CRABSCRIPT/script/orca_common.runtime -runtime $CRABSCRIPT/script/orca_common.runtime -comment "ORCA COMMON DBSDLS job"
+fi
