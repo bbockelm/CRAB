@@ -7,6 +7,7 @@ import common
 import DataDiscovery
 import DataLocation
 import Scram
+import TarBall
 
 import os, string, re
 
@@ -145,7 +146,8 @@ class Orca_dbsdls(JobType):
         self.DataDiscoveryAndLocation(cfg_params)
 #DBSDLS-end          
 
-        self.tgzNameWithPath = self.scram.getTarBall(self.executable)
+        self.TarBaller = TarBall.TarBall(self.executable, self.scram)
+        self.tgzNameWithPath = self.TarBaller.prepareTarBall()
 
         try:
             self.ML = int(cfg_params['USER.activate_monalisa'])
@@ -178,7 +180,7 @@ class Orca_dbsdls(JobType):
         txt += '   echo "JOB_EXIT_STATUS = 10034"\n'
         txt += '   echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '   exit 10034 \n'
+        txt += '   exit\n'
         txt += 'fi \n'
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
