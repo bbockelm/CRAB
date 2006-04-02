@@ -12,7 +12,7 @@ def Monitor(operation,Resubmit,jid,exitCode):
        jobtype = array[1]
        NjobCre = array[2]
 
-       if ( jobtype == 'ORCA' ) or ( jobtype == 'ORCA_DBSDLS') or ( jobtype == 'ORCA_COMMON'):
+       if ( jobtype == 'ORCA' ) or ( jobtype == 'ORCA_DBSDLS') or ( jobtype == 'ORCA_COMMON') or (jobtype == 'ORCA_COMMON_DBSDLS'):
            dataset = array[3]
            owner = array[4]
        elif jobtype == 'FAMOS':
