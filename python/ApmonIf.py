@@ -1,4 +1,4 @@
-import apmon
+import apmon, sys, common
 
 class ApmonIf:
     """
@@ -23,12 +23,17 @@ class ApmonIf:
     def getApmonInstance(self):
         if self.apm is None :
             try:
-                apmonUrl = 'http://lxgate35.cern.ch:40808/ApMonConf'
-                print "Creating ApMon with " + apmonUrl
-                apmonInstance = apmon.ApMon(apmonUrl, apmon.Logger.WARNING)
+                apmonUrls = ["http://lxgate35.cern.ch:40808/ApMonConf", "http://monalisa.cacr.caltech.edu:40808/ApMonConf"]
+                apmInstance = apmon.ApMon(apmonUrls, apmon.Logger.FATAL);
+                if not apmInstance.initializedOK():
+                    print "It seems that ApMon cannot read its configuration. Setting the default destination"
+                apmInstance.setDestinations({'lxgate35.cern.ch:58884': {'sys_monitoring':0, 'general_info':0, 'job_monitoring':1, 'job_interval':300}});
             except:
-                print "PIPPO"
-        return apmonInstance 
+                exctype, value = sys.exc_info()[:2]
+                print "ApmonIf::getApmonInstance Exception raised %s Value: %s"%(exctype, value)
+                common.logger.message("ApmonIf::getApmonInstance Exception raised: %s %s"%(exctype, value))
+                return
+        return apmInstance 
         
     def free(self):
         self.apm.free()
