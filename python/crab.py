@@ -105,6 +105,8 @@ class Crab:
 
         common.jobDB = JobDB()
         
+        if int(self.cfg_params['USER.activate_monalisa']): self.cfg_params['apmon'] = ApmonIf()
+        
         if self.flag_continue:
             try:
                 common.jobDB.load()
@@ -227,10 +229,7 @@ class Crab:
         if string.lower(self.cfg_fname) != 'none':
             if os.path.exists(self.cfg_fname):
                 self.cfg_params = loadConfig(self.cfg_fname)
-                # Better idea on where to put user info for ML?
                 self.cfg_params['user'] = os.getlogin()
-                # Better idea on where to put ML???? Looks crap here, but had no better thought!
-                if int(self.cfg_params['USER.activate_monalisa']): self.cfg_params['apmon'] = ApmonIf()
                 pass
             else:
                 msg = 'cfg-file '+self.cfg_fname+' not found.'
