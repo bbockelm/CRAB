@@ -92,10 +92,7 @@ class Submitter(Actor):
                 for i in fl.readlines():
                     val = i.split(':')
                     params[val[0]] = string.strip(val[1])
-#                for j, k in params.iteritems():
-#                    print "Values: %s %s"%(j, k)
-                self.cfg_params['apmon'].fillDict(params)
-                self.cfg_params['apmon'].sendToML()
+                self.cfg_params['apmon'].sendToML(params)
         except:
             exctype, value = sys.exc_info()[:2]
             print "Type: %s Value: %s"%(exctype, value)

@@ -74,10 +74,12 @@ class Status(Actor):
                 if ( dest.find(":") != -1 ) :
                     dest = destination.split(":")[0]
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
-                    self.cfg_params['apmon'].fillDict({'taskId': 'JobStatus', 'jobId': jid, \
-                                                   'StatusValueReason': common.scheduler.getStatusAttribute_(jid, 'reason'), \
-                                                   'StatusValue': st, 'StatusEnterTime': common.scheduler.getStatusAttribute_(jid, 'stateEnterTime'), 'StatusDestination': dest})
-                    self.cfg_params['apmon'].sendToML()
+                    params = {'taskId': 'JobStatus', 'jobId': jid, 'StatusValueReason': common.scheduler.getStatusAttribute_(jid, 'reason'), \
+                    'StatusValue': st, 'StatusEnterTime': common.scheduler.getStatusAttribute_(jid, 'stateEnterTime'), 'StatusDestination': dest}
+#                    self.cfg_params['apmon'].fillDict({'taskId': 'JobStatus', 'jobId': jid, \
+#                                                   'StatusValueReason': common.scheduler.getStatusAttribute_(jid, 'reason'), \
+#                                                   'StatusValue': st, 'StatusEnterTime': common.scheduler.getStatusAttribute_(jid, 'stateEnterTime'), 'StatusDestination': dest})
+                    self.cfg_params['apmon'].sendToML(params)
                 pass
             else:
                 exit = common.jobDB.exitStatus(nj)

@@ -207,7 +207,7 @@ class Famos(JobType):
             pass
             
         self.setTaskid_()
-        self.setParam_('taskId', self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2])
+        self.setParam_('taskId', self.cfg_params['taskId'])
         return
 
     def wsSetupEnvironment(self, nj):
@@ -230,7 +230,7 @@ class Famos(JobType):
         txt += '   echo "JOB_EXIT_STATUS = 10034"\n'
         txt += '   echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '   exit 10034 \n'
+        txt += '   exit\n'
         txt += 'fi \n'
         txt += 'echo "FAMOS_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
@@ -250,7 +250,7 @@ class Famos(JobType):
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
         txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += "    exit 1\n"
+        txt += "    exit\n"
         txt += "fi\n"
         txt += "\n"
         txt += "NJob=$1\n"

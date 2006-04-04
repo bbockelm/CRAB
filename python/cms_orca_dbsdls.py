@@ -156,7 +156,7 @@ class Orca_dbsdls(JobType):
             pass
 
         self.setTaskid_()
-        self.setParam_('taskId', self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2])
+        self.setParam_('taskId', self.cfg_params['taskId']) 
 
         return
 
@@ -200,7 +200,7 @@ class Orca_dbsdls(JobType):
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
         txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += "    exit 1\n"
+        txt += "    exit\n"
         txt += "fi\n"
         txt += "\n"
         txt += "NJob=$1\n"
@@ -233,7 +233,7 @@ class Orca_dbsdls(JobType):
         txt += 'if [ ! -f $VO_CMS_SW_DIR/cms_site_config ];  then \n'
         txt += '   echo "Site Local Catalogue Discovery Failed: No site configuration file $VO_CMS_SW_DIR/cms_site_config !" \n'
         txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit 1 \n'
+        txt += '   exit\n'
         txt += 'fi \n'
         ## look for a site local script sent as inputsandbox otherwise use the default one under $VO_CMS_SW_DIR
         txt += 'if [ -f $RUNTIME_AREA/cms_site_catalogue.sh ];  then \n' 
@@ -243,7 +243,7 @@ class Orca_dbsdls(JobType):
         txt += 'else  \n'
         txt += '   echo "Site Local Catalogue Discovery Failed: No site local script cms_site_catalogue.sh !"\n'
         txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit 1 \n' 
+        txt += '   exit\n' 
         txt += 'fi \n'
         ## execute the site local configuration script with the user requied data as input
         inputdata=string.join(self.DBSPaths,' ')
@@ -254,7 +254,7 @@ class Orca_dbsdls(JobType):
         txt += '   echo "Site Local Catalogue Discovery Failed: exiting with $sitestatus"\n'
         txt += '   echo "'+sitecatalog_cmd+'"\n'
         txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit 1 \n'
+        txt += '   exit\n'
         txt += 'fi \n'
         ## append the orcarc fragment about the Input catalogues to the .orcarc
         txt += 'cp $RUNTIME_AREA/'+orcarc+' .orcarc\n'
@@ -566,7 +566,7 @@ class Orca_dbsdls(JobType):
         return self._params
 
     def setTaskid_(self):
-        self._taskId = self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2]
+        self._taskId = self.cfg_params['taskId']
 
     def getTaskid(self):
         return self._taskId

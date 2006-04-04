@@ -106,9 +106,9 @@ class StatusBoss(Actor):
             for_summary.append(jobStatus)
             exe_code =jobAttributes[bossid][3]
             try:
-                dest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2]))
-                if ( dest.find(":") != -1 ) :
-                    dest = dest.split(":")[0]
+                ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2]))
+                if ( ldest.find(":") != -1 ) :
+                    dest = ldest.split(":")[0]
             except: 
                 dest = ''  
                 pass 
@@ -128,10 +128,10 @@ class StatusBoss(Actor):
                     Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
 
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
-                    self.cfg_params['apmon'].fillDict({'taskId': self.cfg_params['taskId'], 'jobId': str(bossid) + '_' + string.strip(jobAttributes[bossid][2]), \
-                                           'sid': string.strip(jobAttributes[bossid][2]), 'StatusValueReason': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason'), \
-                                           'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'stateEnterTime'), 'StatusDestination': dest})
-                    self.cfg_params['apmon'].sendToML()
+                    params = {'taskId': self.cfg_params['taskId'], 'jobId': str(bossid) + '_' + string.strip(jobAttributes[bossid][2]), \
+                    'sid': string.strip(jobAttributes[bossid][2]), 'StatusValueReason': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason'), \
+                    'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'stateEnterTime'), 'StatusDestination': ldest}
+                    self.cfg_params['apmon'].sendToML(params)
             print printline
 
         self.update_(for_summary)

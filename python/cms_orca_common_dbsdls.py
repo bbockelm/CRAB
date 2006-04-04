@@ -154,7 +154,7 @@ class Orca_common_dbsdls(JobType):
             pass
 
         self.setTaskid_()
-        self.setParam_('taskId', self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2])
+        self.setParam_('taskId', self.cfg_params['taskId'])
 
         return
 
@@ -180,7 +180,7 @@ class Orca_common_dbsdls(JobType):
         txt += '        echo "OSG WORKING DIR ==> $WORKING_DIR could not be created on on WN `hostname`"\n'
     
         txt += '        echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '        exit 1\n'
+        txt += '        exit\n'
         txt += '    fi\n'
         txt += '\n'
         txt += '    echo "Change to working directory: $WORKING_DIR"\n'
@@ -269,7 +269,7 @@ class Orca_common_dbsdls(JobType):
         txt += 'if [ ! -f $VO_CMS_SW_DIR/cms_site_config ];  then \n'
         txt += '   echo "Site Local Catalogue Discovery Failed: No site configuration file $VO_CMS_SW_DIR/cms_site_config !" \n'
         txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit 1 \n'
+        txt += '   exit\n'
         txt += 'fi \n'
         ## look for a site local script sent as inputsandbox otherwise use the default one under $VO_CMS_SW_DIR
         txt += 'if [ -f $RUNTIME_AREA/cms_site_catalogue.sh ];  then \n'
@@ -279,7 +279,7 @@ class Orca_common_dbsdls(JobType):
         txt += 'else  \n'
         txt += '   echo "Site Local Catalogue Discovery Failed: No site local script cms_site_catalogue.sh !"\n'
         txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit 1 \n'
+        txt += '   exit\n'
         txt += 'fi \n'
         ## execute the site local configuration script with the user requied data as input
         inputdata=string.join(self.DBSPaths,' ')
@@ -290,7 +290,7 @@ class Orca_common_dbsdls(JobType):
         txt += '   echo "Site Local Catalogue Discovery Failed: exiting with $sitestatus"\n'
         txt += '   echo "'+sitecatalog_cmd+'"\n'
         txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit 1 \n'
+        txt += '   exit\n'
         txt += 'fi \n'
         ## append the orcarc fragment about the Input catalogues to the .orcarc
         txt += 'cp $RUNTIME_AREA/'+orcarc+' .orcarc\n'
@@ -538,8 +538,6 @@ class Orca_common_dbsdls(JobType):
             outfile.write('MonalisaAddPid = false\n')
             outfile.write('ExtraPackages=RecApplPlugins\n')
             outfile.write('MonRecAlisaBuilder=true\n')
-            ## TaskId is username+crab_0_date_time : that should be unique
-#            TaskID = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2]
             outfile.write('MonalisaApplName='+self._taskId+'\n')
             outfile.write('MonalisaNode=137.138.4.152\n')
             outfile.write('MonalisaPort=58884\n')
@@ -665,7 +663,7 @@ class Orca_common_dbsdls(JobType):
         return self._params
 
     def setTaskid_(self):
-        self._taskId = self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2] 
+        self._taskId = self.cfg_params['taskId']
         
     def getTaskid(self):
         return self._taskId
@@ -690,7 +688,7 @@ class Orca_common_dbsdls(JobType):
         txt += '       echo "JOB_EXIT_STATUS = 10020"\n'
         txt += '       echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       exit 10020 \n'
+        txt += '       exit\n'
         txt += '\n'
         txt += '       echo "Remove working directory: $WORKING_DIR"\n'
         txt += '       cd $RUNTIME_AREA\n'
@@ -699,7 +697,7 @@ class Orca_common_dbsdls(JobType):
         txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
         txt += '       fi\n'
         txt += '\n'
-        txt += '       exit 1\n'
+        txt += '       exit\n'
         txt += '   fi\n'
         txt += '\n'
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
@@ -721,7 +719,7 @@ class Orca_common_dbsdls(JobType):
         txt += '       echo "JOB_EXIT_STATUS = 10031" \n'
         txt += '       echo "JobExitCode=10031" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       exit 10031 \n'
+        txt += '       exit\n'
         txt += '   else\n'
         txt += '       echo "Sourcing environment... "\n'
         txt += '       if [ ! -s $VO_CMS_SW_DIR/cmsset_default.sh ] ;then\n'
@@ -729,7 +727,7 @@ class Orca_common_dbsdls(JobType):
         txt += '           echo "JOB_EXIT_STATUS = 10020"\n'
         txt += '           echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '           exit 10020 \n'
+        txt += '           exit\n'
         txt += '       fi\n'
         txt += '       echo "sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
         txt += '       source $VO_CMS_SW_DIR/cmsset_default.sh\n'
@@ -739,7 +737,7 @@ class Orca_common_dbsdls(JobType):
         txt += '           echo "JOB_EXIT_STATUS = 10032"\n'
         txt += '           echo "JobExitCode=10032" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '           exit 10032 \n'
+        txt += '           exit\n'
         txt += '       fi\n'
         txt += '   fi\n'
         txt += '   \n'
@@ -755,7 +753,7 @@ class Orca_common_dbsdls(JobType):
         txt += '       echo "JOB_EXIT_STATUS = 10033"\n'
         txt += '       echo "JobExitCode=10033" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       exit 5 \n'
+        txt += '       exit\n'
         txt += '   fi\n'
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
         txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'

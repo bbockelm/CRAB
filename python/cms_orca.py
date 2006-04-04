@@ -152,7 +152,7 @@ class Orca(JobType):
             pass
 
         self.setTaskid_()
-        self.setParam_('taskId', self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2])
+        self.setParam_('taskId', self.cfg_params['taskId'])
 
         return
 
@@ -614,7 +614,7 @@ class Orca(JobType):
         return self._params
 
     def setTaskid_(self):
-        self._taskId = self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2] 
+        self._taskId = self.cfg_params['taskId']
         
     def getTaskid(self):
         return self._taskId
