@@ -203,19 +203,19 @@ class ApMon:
 		self.logger = Logger.Logger(defaultLogLevel)
 		self.setDestinations(initValue)
 		self.__udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		if len(self.configAddresses) > 0:
+#		if len(self.configAddresses) > 0:
 			# if there are addresses that need to be monitored,
 			# start config checking and reloading thread
-			th = threading.Thread(target=self.__configLoader)
-			th.setDaemon(True)  # this is a daemon thread
-			th.start()
+#			th = threading.Thread(target=self.__configLoader)
+#			th.setDaemon(True)  # this is a daemon thread
+#			th.start()
 		# create the ProcInfo instance
 		self.procInfo = ProcInfo.ProcInfo(self.logger);
 		# self.procInfo.update();
 		# start the background monitoring thread
-		th = threading.Thread(target=self.__bgMonitor);
-		th.setDaemon(True);
-		th.start();
+#		th = threading.Thread(target=self.__bgMonitor);
+#		th.setDaemon(True);
+#		th.start();
 
 	def sendParams (self, params):
 		"""
@@ -430,11 +430,11 @@ class ApMon:
 		Stop background threands, close opened sockets. You have to use this function if you want to
 		free all the resources that ApMon takes, and allow it to be garbage-collected.
 		"""
-		if len(self.configAddresses) > 0:
-			self.__configUpdateEvent.set()
-			self.__configUpdateFinished.wait()
-		self.__bgMonitorEvent.set()
-		self.__bgMonitorFinished.wait()
+#		if len(self.configAddresses) > 0:
+#			self.__configUpdateEvent.set()
+#			self.__configUpdateFinished.wait()
+#		self.__bgMonitorEvent.set()
+#		self.__bgMonitorFinished.wait()
 		
 		if self.__udpSocket != None:
 			self.logger.log(Logger.DEBUG, "Closing UDP socket on ApMon object destroy.");
@@ -464,7 +464,6 @@ class ApMon:
 		"""
 		Refresh now the destinations hash, by loading data from all sources in configAddresses
 		"""
-		print "reloading addresses";
 		newDestinations = {}
 		urls = copy.deepcopy(self.configAddresses)
 		while(len(urls) > 0 and len(newDestinations) == 0):
@@ -475,7 +474,6 @@ class ApMon:
 		self.__configUpdateLock.acquire()
 		self.destinations = newDestinations
 		self.__configUpdateLock.release()
-		print "finished reloading addresses";
 
 	def __addDestination (self, aDestination, tempDestinations, options = __defaultOptions):
 		"""
