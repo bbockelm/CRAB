@@ -513,6 +513,7 @@ class SchedulerCondor_g(Scheduler):
                 pass
 
             inp_box = inp_box+' "' + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + '", "' +\
+                      os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + '", "'+\
                       os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + '", "'+\
                       os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + '", "'+\
                       os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') + '"'
