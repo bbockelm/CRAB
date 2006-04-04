@@ -41,6 +41,20 @@ class DataLocation:
         for bad in CEBlackList:
             self.reCEBlackList.append(re.compile( bad ))
 
+        CEWhiteList = []
+        try:
+            tmpGood = string.split(self.cfg_params['EDG.ce_white_list'],',')
+            for tmp in tmpGood:
+                tmp=string.strip(tmp)
+                CEWhiteList.append(tmp)
+        except KeyError:
+            pass
+        common.logger.debug(5,'CEWhiteList: '+str(CEWhiteList))
+        self.reCEWhiteList=[]
+        for good in CEWhiteList:
+            self.reCEWhiteList.append(re.compile( good ))
+
+
 # #######################################################################
     def fetchDLSInfo(self):
         """
@@ -75,8 +89,10 @@ class DataLocation:
         allblockSites=self.SelectSites(countblock,Sites)
         #for as in allblockSites:
         #   print " site is "+as
-        ## select sited that are not in a BlackList
-        self.SelectedSites=self.checkBlackList(allblockSites)
+        ## select sites that are not in a BlackList , if any
+        self.SelectedNotBlackSites=self.checkBlackList(allblockSites)
+        ## select sites there are in the white list , if any
+        self.SelectedSites=self.checkWhiteList(self.SelectedNotBlackSites)
 
 # #######################################################################
     def getSites(self):
@@ -100,7 +116,7 @@ class DataLocation:
 # #######################################################################
     def checkBlackList(self, Sites):
         """
-        select sites that are not exluded by the user (via CE black list)
+        select sites that are not excluded by the user (via CE black list)
         """
         goodSites = []
         for aSite in Sites:
@@ -114,6 +130,25 @@ class DataLocation:
         if len(goodSites) == 0:
             common.logger.debug(3,"No selected Sites")
         return goodSites
+
+# #######################################################################
+    def checkWhiteList(self, Sites):
+        """
+        select sites that are defined by the user (via CE white list)
+        """
+        if len(self.reCEWhiteList)==0: return Sites
+        goodSites = []
+        for aSite in Sites:
+            good=0
+            for re in self.reCEWhiteList:
+                if re.search(aSite):
+                    common.logger.message('CE in white list, adding site '+aSite)
+                    good=1
+                pass
+            if good: goodSites.append(aSite)
+        if len(goodSites) == 0:
+            common.logger.debug(3,"No selected Sites")
+        return goodSites 
 
 #######################################################################
     def uniquelist(self, old):
