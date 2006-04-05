@@ -109,6 +109,8 @@ class StatusBoss(Actor):
                 ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2]))
                 if ( ldest.find(":") != -1 ) :
                     dest = ldest.split(":")[0]
+                else :
+                    dest = ''
             except: 
                 dest = ''  
                 pass 
