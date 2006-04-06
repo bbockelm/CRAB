@@ -436,16 +436,7 @@ class Orca_dbsdls(JobType):
         outfile.write('\n\n##### The following cards have been created by CRAB: DO NOT TOUCH #####\n')
         outfile.write('TFileAdaptor = true\n')
 
-        if (self.ML) :
-            outfile.write('MonalisaAddPid = false\n')
-            outfile.write('ExtraPackages=RecApplPlugins\n')
-            outfile.write('MonRecAlisaBuilder=true\n')
-            ## TaskId is username+crab_0_date_time : that should be unique
-            #TaskID = os.getlogin()+'_'+string.split(common.work_space.topDir(),'/')[-2]
-            outfile.write('MonalisaApplName='+self._taskId+'\n')
-            outfile.write('MonalisaNode=137.138.4.152\n')
-            outfile.write('MonalisaPort=58884\n')
-            pass
+        outfile.write('MonRecAlisaBuilder=false\n')
 
         outfile.write('InputCollections=/System/'+self.owner+'/'+self.dataset+'/'+self.dataset+'\n')
 
