@@ -21,7 +21,7 @@ class SchedulerEdg(Scheduler):
         return
 
     def configure(self, cfg_params):
-
+       
         try:
             RB = cfg_params["EDG.rb"]
             edgConfig = EdgConfig(RB)
@@ -37,8 +37,21 @@ class SchedulerEdg(Scheduler):
         try: self.EDG_requirements = cfg_params['EDG.requirements']
         except KeyError: self.EDG_requirements = ''
 
-        try: self.EDG_retry_count = cfg_params['EDG.retry_count']
+        try: 
+            self.EDG_retry_count = cfg_params['EDG.retry_count']
+            #print "self.EDG_retry_count = ", self.EDG_retry_count
         except KeyError: self.EDG_retry_count = ''
+
+        try: 
+            self.EDG_ce_black_list = cfg_params['EDG.ce_black_list']
+            #print "self.EDG_ce_black_list = ", self.EDG_ce_black_list
+        except KeyError: 
+            self.EDG_ce_black_list  = ''
+
+        try: 
+            self.EDG_ce_white_list = cfg_params['EDG.ce_white_list']
+            #print "self.EDG_ce_white_list = ", self.EDG_ce_white_list
+        except KeyError: self.EDG_ce_white_list = ''
 
         try: self.VO = cfg_params['EDG.virtual_organization']
         except KeyError: self.VO = 'cms'
@@ -607,38 +620,48 @@ class SchedulerEdg(Scheduler):
 
         req='Requirements = '
         req = req + jbt.getRequirements()
-#        ### if at least a CE exists ...
-#        if common.analisys_common_info['sites']:
-#           if common.analisys_common_info['sw_version']:
-#                req='Requirements = '
-#                req=req + 'Member("VO-cms-' + \
-#                     common.analisys_common_info['sw_version'] + \
-#                     '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-#            if len(common.analisys_common_info['sites'])>0:
-#                req = req + ' && ('
-#                for i in range(len(common.analisys_common_info['sites'])):
-#                    req = req + 'other.GlueCEInfoHostName == "' \
-#                         + common.analisys_common_info['sites'][i] + '"'
-#                    if ( i < (int(len(common.analisys_common_info['sites']) - 1)) ):
-#                        req = req + ' || '
-#            req = req + ')'
-        #### and USER REQUIREMENT
+
         if self.EDG_requirements:
             if (req == 'Requirement = '):
                 req = req + self.EDG_requirements
             else:
                 req = req +  ' && ' + self.EDG_requirements
+        #### FEDE ##### 
+        if self.EDG_ce_white_list:
+            ce_white_list = string.split(self.EDG_ce_white_list,',')
+            #print "req = ", req
+            for i in range(len(ce_white_list)):
+                if i == 0:
+                    if (req == 'Requirement = '):
+                        req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    else:
+                        req = req +  ' && ((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    pass
+                else:
+                    req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+            req = req + ')'
+        
+        if self.EDG_ce_black_list:
+            ce_black_list = string.split(self.EDG_ce_black_list,',')
+            for ce in ce_black_list:
+                if (req == 'Requirement = '):
+                    req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                else:
+                    req = req +  ' && (!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                pass
+        ###############
         if self.EDG_clock_time:
             if (req == 'Requirement = '):
                 req = req + 'other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
             else:
                 req = req + ' && other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
-                
+
         if self.EDG_cpu_time:
             if (req == 'Requirement = '):
                 req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
             else:
                 req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+
         if (req != 'Requirement = '):
             req = req + ';\n'
             jdl.write(req)

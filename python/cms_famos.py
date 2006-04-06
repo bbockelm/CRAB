@@ -28,7 +28,7 @@ class Famos(JobType):
         self.additional_inbox_files = []
         self.scriptExe = ''
 
-### georgia
+        ### georgia
         self.input_pu_files = []
         self.orcarc_pu_files = []
         self.in_file_list = []
@@ -38,8 +38,6 @@ class Famos(JobType):
         self.setParam_('application', self.version)
         common.analisys_common_info['sw_version'] = self.version
 
-        try: self.VO = cfg_params['EDG.virtual_organization']
-        except KeyError: self.VO = 'cms'
         try:
             self.executable = cfg_params['FAMOS.executable']
             self.setParam_('exe', self.executable)
@@ -66,7 +64,7 @@ class Famos(JobType):
         except KeyError:
             log.message("LFN of input ntuple for FAMOS")
 
-### georgia 15.03
+        ### georgia 15.03
         try:
             self.events_per_ntuple = cfg_params['FAMOS.events_per_ntuple']
         except KeyError:
@@ -82,7 +80,7 @@ class Famos(JobType):
         except KeyError:
             log.message("number of pu ntuples per job")
 
-## fill the list of pile-up files
+        ## fill the list of pile-up files
 
         pu_file = self.input_pu_lfn
         r = string.split(pu_file,".")
@@ -95,7 +93,7 @@ class Famos(JobType):
 
         ind = 1
         while ind < n_pu+1:
-#            pu_file = t[0]+'/'+pname+str(ind)+"."+exte
+            # pu_file = t[0]+'/'+pname+str(ind)+"."+exte
             pu_file = pname+str(ind)+"."+exte
             orcarc_file_num = ' `pwd`/'+pu_file
             self.input_pu_files.append(pu_file)
@@ -171,7 +169,7 @@ class Famos(JobType):
             pass
 
         
-### georgia for FAMOS
+        ### georgia for FAMOS
 
         nnt = int(self.total_number_of_events)/int(self.events_per_ntuple) 
         self.ntj = int(self.job_number_of_events)/int(self.events_per_ntuple)
@@ -192,11 +190,11 @@ class Famos(JobType):
             self.cmkin_file_list.append(cmkin_file_num)
             index = index + 1
 
-### georgia
+        ### georgia
 
         # [-- self.checkNevJobs() --]
 
-## SL
+        ## SL
         self.TarBaller = TarBall.TarBall(self.executable, self.scram)
         self.tgzNameWithPath = self.TarBaller.prepareTarBall()
 
@@ -254,7 +252,6 @@ class Famos(JobType):
         txt += "fi\n"
         txt += "\n"
         txt += "NJob=$1\n"
-##        txt += "FirstEvent=$2\n"
         txt += "FirstEvent=0\n"
         txt += "MaxEvents=$3\n"
 
@@ -505,7 +502,8 @@ class Famos(JobType):
             req='Member("VO-cms-' + \
                  common.analisys_common_info['sw_version'] + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-        #print "req = ", req 
+        if cfg_params['ce_black_list']
+        print "req = ", req 
         return req
 
     def stdOut(self):
