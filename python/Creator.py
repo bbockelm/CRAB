@@ -36,6 +36,7 @@ class Creator(Actor):
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
         
+        # This is code for proto-monitoring
         fileCODE1 = open(common.work_space.shareDir()+"/.code","a")
         ### commented for FAMOS  
         if self.job_type.name() == 'ORCA' or self.job_type.name() == 'ORCA_DBSDLS' or self.job_type.name() == 'ORCA_COMMON' or self.job_type.name() == 'ORCA_COMMON_DBSDLS':
@@ -50,6 +51,7 @@ class Creator(Actor):
             pass
         fileCODE1.close()
 
+        # This is code for dashboard
         try:
             fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'w')
             self.cfg_params['GridName'] = runCommand("voms-proxy-info -identity")
@@ -68,7 +70,7 @@ class Creator(Actor):
             fl.close()
         except:
             exctype, value = sys.exc_info()[:2]
-            common.logger.message("Creator::run Exception  raised: %s %s"%(exctype, value))
+            common.logger.message("Creator::run Exception raised in collection params for dashboard: %s %s"%(exctype, value))
             pass
 
         #TODO: deprecated code, not needed,
