@@ -127,4 +127,10 @@ class JobType:
         Get relevant job type parameters dictionary
         """
         return self._params
+
     # marco
+
+    def getRequirements(self):
+        msg = 'Internal ERROR. Pure virtual function called:\n'
+        msg += self.__class__.__name__+'::executableName() from '+__file__
+        raise CrabException(msg)
