@@ -7,14 +7,14 @@ from DLSInfo import *
 
 # ####################################
 class DataLocationError(exceptions.Exception):
-  def __init__(self, errorMessage):
-   args=errorMessage
-   exceptions.Exception.__init__(self, args)
-   pass
+    def __init__(self, errorMessage):
+        args=errorMessage
+        exceptions.Exception.__init__(self, args)
+        pass
                                                                                       
-  def getErrorMessage(self):
-   """ Return exception error """
-   return "%s" % (self.args)
+    def getErrorMessage(self):
+        """ Return exception error """
+        return "%s" % (self.args)
 
 # ####################################
 # class to extact data location
@@ -23,6 +23,7 @@ class DataLocation:
 
 #       Attributes
         self.Listfileblocks = Listfileblocks  # DLS input: list of fileblocks lists
+
         self.cfg_params = cfg_params
 
         self.SelectedSites = []        # DLS output: list of sites hosting all the needed fileblocks
@@ -66,24 +67,23 @@ class DataLocation:
 
         ## find the replicas for each block 
         for fileblocks in self.Listfileblocks:
-          #print fileblocks
-          for afileblock in fileblocks:
-             countblock=countblock+1
-             dbspath=string.split(afileblock,'#')[0]
-             ds=string.split(dbspath,'/')[1]
-             ow=string.split(dbspath,'/')[3]
-             datablock=ow+"/"+ds
-             #
-             dls=DLSInfo(datablock)
-             try:
-               replicas=dls.getReplicas()
-             except DLSNoReplicas, ex:
-               raise DataLocationError(ex.getErrorMessage())
-             except:
-               raise DataLocationError('')
+            #print fileblocks
+            for afileblock in fileblocks:
+                countblock=countblock+1
+                dbspath=string.split(afileblock,'#')[0]
+                (null,ds,tier,ow)=string.split(dbspath,'/')
+                datablock=ow+"/"+ds
+                #
+                dls=DLSInfo(datablock)
+                try:
+                    replicas=dls.getReplicas()
+                except DLSNoReplicas, ex:
+                    raise DataLocationError(ex.getErrorMessage())
+                except:
+                    raise DataLocationError('')
 
-             for replica in replicas:
-              Sites.append(replica)
+                for replica in replicas:
+                    Sites.append(replica)
 
         ## select only sites that contains _all_ the fileblocks
         allblockSites=self.SelectSites(countblock,Sites)
@@ -97,19 +97,19 @@ class DataLocation:
 # #######################################################################
     def getSites(self):
         """
-          get the sites hosting all the needed data 
+        get the sites hosting all the needed data 
         """
         return self.SelectedSites
 
 # #######################################################################
     def SelectSites(self, countblock, Sites ):
         """
-          select only sites that contains _all_ the fileblocks
+        select only sites that contains _all_ the fileblocks
         """ 
         goodSites=[]
         for aSite in Sites :
-         if ( Sites.count(aSite)==countblock ) :
-           goodSites.append(aSite)
+            if ( Sites.count(aSite)==countblock ) :
+                goodSites.append(aSite)
 
         return self.uniquelist(goodSites)
 
@@ -153,10 +153,10 @@ class DataLocation:
 #######################################################################
     def uniquelist(self, old):
         """
-         remove duplicates from a list
+        remove duplicates from a list
         """
         nd={}
         for e in old:
             nd[e]=0
         return nd.keys()
- 
+
