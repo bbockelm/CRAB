@@ -1,5 +1,6 @@
 import common
 from crab_util import *
+from crab_exceptions import *
 import Scram
 import os, string, re
 
