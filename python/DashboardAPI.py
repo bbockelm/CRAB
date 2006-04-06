@@ -20,7 +20,7 @@ apmonInit = False
 # Monalisa configuration
 apmonUrlList = ["http://lxgate35.cern.ch:40808/ApMonConf?app=dashboard", \
                 "http://monalisa.cacr.caltech.edu:40808/ApMonConf?app=dashboard"]
-apmonConf = {'137.138.4.152:58884': {'sys_monitoring' : 0, \
+apmonConf = {'137.138.4.152:8884': {'sys_monitoring' : 0, \
                                         'general_info'   : 0, \
                                         'job_monitoring' : 0} }
 apmonLoggingLevel = apmon.Logger.FATAL
