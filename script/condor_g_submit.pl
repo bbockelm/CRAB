@@ -15,7 +15,7 @@ $subdir = `pwd`; chomp $subdir;
 # ------------------- Optional logging of submission -------------------------
 #   (change file name and comment/uncomment the open statement as you wish)
 $logFile = "$subdir/log";
-#open (LOG, ">$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
+open (LOG, ">$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
 #
 # --------------------------- Get arguments ----------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -218,7 +218,7 @@ sub submit {
   close(SUB);
   # delete temporary file
   unlink "$tmpfile";
-  unlink "BossArchive_${jid}.tgz";
+  # unlink "BossArchive_${jid}.tgz";
   #
   return $id;
 }
