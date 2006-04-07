@@ -1,3 +1,0 @@
-#!/bin/sh
-
-boss registerJob -name orca_common -schema $CRABSCRIPT/script/orca_common.schema -post $CRABSCRIPT/script/orca_common.runtime -runtime $CRABSCRIPT/script/orca_common.runtime -comment "ORCA COMMON job"

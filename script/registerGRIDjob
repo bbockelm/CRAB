@@ -1,3 +1,0 @@
-#!/bin/sh
-
-boss registerJob -name grid -schema $CRABSCRIPT/script/grid.schema -post $CRABSCRIPT/script/grid.runtime -runtime $CRABSCRIPT/script/grid.runtime -comment "Job submitted to LCG/OSG"
