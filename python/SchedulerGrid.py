@@ -40,6 +40,17 @@ class SchedulerGrid(Scheduler):
         try: self.EDG_retry_count = cfg_params['EDG.retry_count']
         except KeyError: self.EDG_retry_count = ''
 
+        try: 
+            self.EDG_ce_black_list = cfg_params['EDG.ce_black_list']
+            #print "self.EDG_ce_black_list = ", self.EDG_ce_black_list
+        except KeyError: 
+            self.EDG_ce_black_list  = ''
+
+        try: 
+            self.EDG_ce_white_list = cfg_params['EDG.ce_white_list']
+            #print "self.EDG_ce_white_list = ", self.EDG_ce_white_list
+        except KeyError: self.EDG_ce_white_list = ''
+
         try: self.VO = cfg_params['EDG.virtual_organization']
         except KeyError: self.VO = 'cms'
 
@@ -68,7 +79,7 @@ class SchedulerGrid(Scheduler):
            msg = 'Warning: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n' 
            msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n' 
            raise CrabException(msg)
-      
+
         try:
             self.lfc_host = cfg_params['EDG.lfc_host']
         except KeyError:
@@ -157,7 +168,6 @@ class SchedulerGrid(Scheduler):
         """
         Returns part of a job script which does scheduler-specific work.
         """
-        ## OLI_Daniele discovery middleware
         txt = ''
         txt += 'echo "middleware discovery " \n'
         txt += 'if [ $VO_CMS_SW_DIR ]; then\n'
@@ -231,7 +241,6 @@ class SchedulerGrid(Scheduler):
               txt += 'fi\n'
               txt += '\n'
 
-        ## OLI_Daniele
         txt += 'if [ $middleware == LCG ]; then\n' 
         txt += '    CloseCEs=`edg-brokerinfo getCE`\n'
         txt += '    echo "CloseCEs = $CloseCEs"\n'
@@ -701,12 +710,36 @@ class SchedulerGrid(Scheduler):
                 req = req + self.EDG_requirements
             else:
                 req = req +  ' && ' + self.EDG_requirements
+        #### FEDE ##### 
+        if self.EDG_ce_white_list:
+            ce_white_list = string.split(self.EDG_ce_white_list,',')
+            #print "req = ", req
+            for i in range(len(ce_white_list)):
+                if i == 0:
+                    if (req == 'Requirement = '):
+                        req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    else:
+                        req = req +  ' && ((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    pass
+                else:
+                    req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+            req = req + ')'
+        
+        if self.EDG_ce_black_list:
+            ce_black_list = string.split(self.EDG_ce_black_list,',')
+            for ce in ce_black_list:
+                if (req == 'Requirement = '):
+                    req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                else:
+                    req = req +  ' && (!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                pass
+        ###############
         if self.EDG_clock_time:
             if (req == 'Requirement = '):
                 req = req + 'other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
             else:
                 req = req + ' && other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
-                
+
         if self.EDG_cpu_time:
             if (req == 'Requirement = '):
                 req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
