@@ -502,8 +502,6 @@ class Famos(JobType):
             req='Member("VO-cms-' + \
                  common.analisys_common_info['sw_version'] + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-        if cfg_params['ce_black_list']
-        print "req = ", req 
         return req
 
     def stdOut(self):
