@@ -325,6 +325,13 @@ class SchedulerBoss(Scheduler):
         return 
 
 
+    def checkProxy(self):
+        """
+        Check the Globus proxy. 
+        """
+        return self.boss_scheduler.checkProxy()
+
+
     def loggingInfo(self, nj):
         """
         retrieve the logging info from logging and bookkeeping and return it
