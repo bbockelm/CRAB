@@ -38,8 +38,7 @@ class Creator(Actor):
         
         # This is code for proto-monitoring
         fileCODE1 = open(common.work_space.shareDir()+"/.code","a")
-        ### commented for FAMOS  
-        if self.job_type.name() == 'ORCA' or self.job_type.name() == 'ORCA_DBSDLS' or self.job_type.name() == 'ORCA_COMMON' or self.job_type.name() == 'ORCA_COMMON_DBSDLS':
+        if self.job_type.name() == 'ORCA' or self.job_type.name() == 'ORCA_DBSDLS' or self.job_type.name():
             self.owner = cfg_params['ORCA.owner']
             self.dataset = cfg_params['ORCA.dataset']
             fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
@@ -52,6 +51,9 @@ class Creator(Actor):
         fileCODE1.close()
 
         # This is code for dashboard
+          
+        #First checkProxy
+        common.scheduler.checkProxy()
         try:
             fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'w')
             self.cfg_params['GridName'] = runCommand("voms-proxy-info -identity")
