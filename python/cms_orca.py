@@ -163,7 +163,27 @@ class Orca(JobType):
         """
 
         # Prepare JobType-independent part
-        txt = self.wsSetupCMSEnvironment_()
+        txt = '' 
+   
+        ## OLI_Daniele at this level  middleware already known
+
+        txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += self.wsSetupCMSLCGEnvironment_()
+        txt += 'elif [ $middleware == OSG ]; then\n'
+        txt += '   time=`date -u +"%s"`\n'
+        txt += '   WORKING_DIR=$OSG_WN_TMP/cms_$time\n'
+        txt += '   echo "Creating working directory: $WORKING_DIR"\n'
+        txt += '   /bin/mkdir -p $WORKING_DIR\n'
+        txt += '   if [ ! -d $WORKING_DIR ] ;then\n'
+        txt += '      echo "OSG WORKING DIR ==> $WORKING_DIR could not be created on on WN `hostname`"\n'
+        txt += '      echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '      exit\n'
+        txt += '   fi\n'
+        txt += '\n'
+        txt += '    echo "Change to working directory: $WORKING_DIR"\n'
+        txt += '    cd $WORKING_DIR\n'
+        txt += self.wsSetupCMSOSGEnvironment_() 
+        txt += 'fi\n'
 
         # Prepare JobType-specific part
         scram = self.scram.commandName()
@@ -172,22 +192,35 @@ class Orca(JobType):
         txt += scram+' project ORCA '+self.version+'\n'
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
-        txt += '   echo "SET_EXE_ENV 1 ==>ERROR ORCA '+self.version+' not found on `hostname`" \n'
-        txt += '   echo "JOB_EXIT_STATUS = 10034"\n'
-        txt += '   echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SET_EXE_ENV 1 ==>ERROR ORCA '+self.version+' not found on `hostname`" \n'
+        txt += '    echo "JOB_EXIT_STATUS = 10034"\n'
+        txt += '    echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+
+        ## OLI_Daniele
+        txt += '   if [ $middleware == OSG ]; then \n'
+        txt += '   \n'
+        txt += '      echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '      cd $RUNTIME_AREA\n'
+        txt += '      /bin/rm -rf $WORKING_DIR\n'
+        txt += '      if [ -d $WORKING_DIR ] ;then\n'
+        txt += '         echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '      fi\n'
+        txt += '   fi \n'
+        txt += '   \n'
         txt += '   exit\n'
         txt += 'fi \n'
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
         ### needed grep for bug in scramv1 ###
+
         #txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
 
         # Handle the arguments:
         txt += "\n"
-        txt += "## ARGUMENTS: $1 Job Number\n"
-        txt += "## ARGUMENTS: $2 First Event for this job\n"
-        txt += "## ARGUMENTS: $3 Max Event for this job\n"
+        txt += "## ARGUMNETS: $1 Job Number\n"
+        txt += "## ARGUMNETS: $2 First Event for this job\n"
+        txt += "## ARGUMNETS: $3 Max Event for this job\n"
         txt += "\n"
         txt += "narg=$#\n"
         txt += "if [ $narg -lt 3 ]\n"
@@ -196,6 +229,17 @@ class Orca(JobType):
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
         txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+
+        ## OLI_Daniele
+        txt += '   if [ $middleware == OSG ]; then \n'
+        txt += '      echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '      cd $RUNTIME_AREA\n'
+        txt += '      /bin/rm -rf $WORKING_DIR\n'
+        txt += '      if [ -d $WORKING_DIR ] ;then\n'
+        txt += '         echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '      fi\n'
+        txt += '   fi \n'
+        txt += '   \n'
         txt += "    exit\n"
         txt += "fi\n"
         txt += "\n"
@@ -203,10 +247,16 @@ class Orca(JobType):
         txt += "FirstEvent=$2\n"
         txt += "MaxEvents=$3\n"
         txt += 'echo "MonitorID=`echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
+        ### OLI_DANIELE
+        txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'elif [ $middleware == OSG ]; then\n'
+        txt += '    echo "Additional info from OSG WN to be implemented"\n'
+        txt += 'fi\n'
         txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
+
 
         # Prepare job-specific part
         job = common.job_list[nj]
@@ -228,7 +278,7 @@ class Orca(JobType):
                 txt += '    cp $RUNTIME_AREA/'+file+' .\n'
                 txt += '    chmod +x '+file+'\n'
                 txt += 'fi\n'
-            pass
+            pass 
 
         txt += '\n'
         txt += 'chmod +x ./init.sh\n'
@@ -239,6 +289,16 @@ class Orca(JobType):
         txt += '    echo "JOB_EXIT_STATUS = $exitStatus" \n'
         txt += '    echo "JobExitCode=20001" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+
+        ### OLI_DANIELE
+        txt += '    if [ $middleware == OSG ]; then \n'
+        txt += '        echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '        cd $RUNTIME_AREA\n'
+        txt += '        /bin/rm -rf $WORKING_DIR\n'
+        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '        fi\n'
+        txt += '    fi \n'
         txt += '    exit $exitStatus\n'
         txt += 'fi\n'
         txt += "echo 'SET_EXE_ENV 0 ==> job setup ok'\n"
@@ -271,7 +331,18 @@ class Orca(JobType):
             txt += '    echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
             txt += '    echo "JOB_EXIT_STATUS = $untar_status" \n'
             txt += '    echo "SanityCheckCode=$untar_status" | tee -a $repo\n'
-            txt += '    exit $untar_status \n'
+
+            ### OLI_DANIELE
+            txt += '   if [ $middleware == OSG ]; then \n'
+            txt += '       echo "Remove working directory: $WORKING_DIR"\n'
+            txt += '       cd $RUNTIME_AREA\n'
+            txt += '       /bin/rm -rf $WORKING_DIR\n'
+            txt += '       if [ -d $WORKING_DIR ] ;then\n'
+            txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+            txt += '       fi\n'
+            txt += '   fi \n'
+            txt += '   \n'
+            txt += '   exit $untar_status \n'
             txt += 'else \n'
             txt += '    echo "Successful untar" \n'
             txt += 'fi \n'
@@ -303,15 +374,41 @@ class Orca(JobType):
             txt += '    echo "JOB_EXIT_STATUS = $exe_result"\n'
             txt += '    echo "JobExitCode=60302" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+  
+            ### OLI_DANIELE
+            txt += '    if [ $middleware == OSG ]; then \n'
+            txt += '        cd $RUNTIME_AREA\n'
+            txt += '        echo "prepare dummy output file"\n'
+            txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
+            txt += '        echo "Remove working directory: $WORKING_DIR"\n'
+            txt += '        /bin/rm -rf $WORKING_DIR\n'
+            txt += '        if [ -d $WORKING_DIR ] ;then\n'
+            txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+            txt += '        fi\n'
+            txt += '    fi \n'
+            txt += '    \n'
             txt += '    exit $exe_result \n'
             txt += 'else\n'
             txt += '    cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'
+                      
             pass
-
+       
+     
         txt += 'cd $RUNTIME_AREA\n'
         file_list=file_list[:-1]
         txt += 'file_list='+file_list+'\n'
+        ### OLI_DANIELE
+        txt += 'if [ $middleware == OSG ]; then\n'  
+        txt += '    cd $RUNTIME_AREA\n'
+        txt += '    echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '    /bin/rm -rf $WORKING_DIR\n'
+        txt += '    if [ -d $WORKING_DIR ] ;then\n'
+        txt += '        echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '    fi\n'
+        txt += 'fi\n'
+        txt += '\n'
+
         return txt
 
     def executableName(self):
@@ -427,7 +524,7 @@ class Orca(JobType):
             PubDBSummaryFile.close()
             ### fede
             #for o in self.allOrcarcs:
-            #     o.dump()
+            #    o.dump()
             pass
 
         # build a list of sites
@@ -596,7 +693,7 @@ class Orca(JobType):
 
     def stdErr(self):
         return self.stdErr_
-    
+
     # marco
     def setParam_(self, param, value):
         self._params[param] = value
@@ -610,3 +707,94 @@ class Orca(JobType):
     def getTaskid(self):
         return self._taskId
     # marco
+
+    ### OLI_DANIELE
+    def wsSetupCMSOSGEnvironment_(self):
+        """
+        Returns part of a job script which is prepares
+        the execution environment and which is common for all CMS jobs.
+        """
+        txt = '\n'
+        txt += '   echo "### SETUP CMS OSG  ENVIRONMENT ###"\n'
+        txt += '   if [ -f $GRID3_APP_DIR/cmssoft/cmsset_default.sh ] ;then\n'
+        txt += '      # Use $GRID3_APP_DIR/cmssoft/cmsset_default.sh to setup cms software\n'
+        txt += '       source $GRID3_APP_DIR/cmssoft/cmsset_default.sh '+self.version+'\n'
+        txt += '   elif [ -f $OSG_APP/cmssoft/cmsset_default.sh ] ;then\n'
+        txt += '      # Use $OSG_APP/cmssoft/cmsset_default.sh to setup cms software\n'
+        txt += '       source $OSG_APP/cmssoft/cmsset_default.sh '+self.version+'\n'
+        txt += '   else\n'
+        txt += '      echo "SET_CMS_ENV 10020 ==> ERROR $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cmsset_default.sh file not found"\n'
+        txt += '      echo "JOB_EXIT_STATUS = 10020"\n'
+        txt += '      echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '      exit\n'
+        txt += '\n'
+        txt += '       echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '       cd $RUNTIME_AREA\n'
+        txt += '       /bin/rm -rf $WORKING_DIR\n'
+        txt += '       if [ -d $WORKING_DIR ] ;then\n'
+        txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '       fi\n'
+        txt += '\n'
+        txt += '      exit\n'
+        txt += '   fi\n'
+        txt += '\n'
+        txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
+        txt += '   echo " END SETUP CMS OSG  ENVIRONMENT "\n'
+
+        return txt
+ 
+    ### OLI_DANIELE
+    def wsSetupCMSLCGEnvironment_(self):
+        """
+        Returns part of a job script which is prepares
+        the execution environment and which is common for all CMS jobs.
+        """
+        txt  = '   \n'
+        txt += '   echo " ### SETUP CMS LCG  ENVIRONMENT ### "\n'
+        txt += '      echo "JOB_EXIT_STATUS = 0"\n'
+        txt += '   if [ ! $VO_CMS_SW_DIR ] ;then\n'
+        txt += '      echo "SET_CMS_ENV 10031 ==> ERROR CMS software dir not found on WN `hostname`"\n'
+        txt += '      echo "JOB_EXIT_STATUS = 10031" \n'
+        txt += '      echo "JobExitCode=10031" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '      exit\n'
+        txt += '   else\n'
+        txt += '      echo "Sourcing environment... "\n'
+        txt += '      if [ ! -s $VO_CMS_SW_DIR/cmsset_default.sh ] ;then\n'
+        txt += '          echo "SET_CMS_ENV 10020 ==> ERROR cmsset_default.sh file not found into dir $VO_CMS_SW_DIR"\n'
+        txt += '          echo "JOB_EXIT_STATUS = 10020"\n'
+        txt += '          echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '          dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '          exit\n'
+        txt += '      fi\n'
+        txt += '      echo "sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
+        txt += '      source $VO_CMS_SW_DIR/cmsset_default.sh\n'
+        txt += '      result=$?\n'
+        txt += '      if [ $result -ne 0 ]; then\n'
+        txt += '          echo "SET_CMS_ENV 10032 ==> ERROR problem sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
+        txt += '          echo "JOB_EXIT_STATUS = 10032"\n'
+        txt += '          echo "JobExitCode=10032" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '          dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '          exit\n'
+        txt += '      fi\n'
+        txt += '   fi\n'
+        txt += '   \n'
+        txt += '   string=`cat /etc/redhat-release`\n'
+        txt += '   echo $string\n'
+        txt += '   if [[ $string = *alhalla* ]]; then\n'
+        txt += '       echo "SCRAM_ARCH= $SCRAM_ARCH"\n'
+        txt += '   elif [[ $string = *Enterprise* ]] || [[ $string = *cientific* ]]; then\n'
+        txt += '       export SCRAM_ARCH=slc3_ia32_gcc323\n'
+        txt += '       echo "SCRAM_ARCH= $SCRAM_ARCH"\n'
+        txt += '   else\n'
+        txt += '      echo "SET_CMS_ENV 1 ==> ERROR OS unknown, LCG environment not initialized"\n'
+        txt += '      echo "JOB_EXIT_STATUS = 10033"\n'
+        txt += '      echo "JobExitCode=10033" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '      exit\n'
+        txt += '   fi\n'
+        txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
+        txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'
+        return txt
+

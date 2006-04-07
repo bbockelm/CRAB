@@ -3,7 +3,6 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
-
 import DataDiscovery
 import DataLocation
 import Scram
@@ -136,7 +135,6 @@ class Orca_dbsdls(JobType):
         log.debug(6, "Orca::Orca(): total number of events = "+`self.total_number_of_events`)
         #log.debug(6, "Orca::Orca(): events per job = "+`self.job_number_of_events`)
         log.debug(6, "Orca::Orca(): first event = "+`self.first`)
-        
 
 #DBSDLS-start
 ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code 
@@ -156,7 +154,7 @@ class Orca_dbsdls(JobType):
             pass
 
         self.setTaskid_()
-        self.setParam_('taskId', self.cfg_params['taskId']) 
+        self.setParam_('taskId', self.cfg_params['taskId'])
 
         return
 
@@ -167,7 +165,28 @@ class Orca_dbsdls(JobType):
         """
 
         # Prepare JobType-independent part
-        txt = self.wsSetupCMSEnvironment_()
+        txt = '' 
+   
+        ## OLI_Daniele at this level  middleware already known
+
+        txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += self.wsSetupCMSLCGEnvironment_()
+        txt += 'elif [ $middleware == OSG ]; then\n'
+        txt += '    time=`date -u +"%s"`\n'
+        txt += '    WORKING_DIR=$OSG_WN_TMP/cms_$time\n'
+        txt += '    echo "Creating working directory: $WORKING_DIR"\n'
+        txt += '    /bin/mkdir -p $WORKING_DIR\n'
+        txt += '    if [ ! -d $WORKING_DIR ] ;then\n'
+        txt += '        echo "OSG WORKING DIR ==> $WORKING_DIR could not be created on on WN `hostname`"\n'
+    
+        txt += '        echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '        exit\n'
+        txt += '    fi\n'
+        txt += '\n'
+        txt += '    echo "Change to working directory: $WORKING_DIR"\n'
+        txt += '    cd $WORKING_DIR\n'
+        txt += self.wsSetupCMSOSGEnvironment_() 
+        txt += 'fi\n'
 
         # Prepare JobType-specific part
         scram = self.scram.commandName()
@@ -176,15 +195,26 @@ class Orca_dbsdls(JobType):
         txt += scram+' project ORCA '+self.version+'\n'
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
-        txt += '   echo "SET_EXE_ENV 1 ==>ERROR ORCA '+self.version+' not found on `hostname`" \n'
-        txt += '   echo "JOB_EXIT_STATUS = 10034"\n'
-        txt += '   echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '   exit\n'
+        txt += '    echo "SET_EXE_ENV 1 ==>ERROR ORCA '+self.version+' not found on `hostname`" \n'
+        txt += '    echo "JOB_EXIT_STATUS = 10034"\n'
+        txt += '    echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+
+        ## OLI_Daniele
+        txt += '    if [ $middleware == OSG ]; then \n'
+        txt += '        echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '        cd $RUNTIME_AREA\n'
+        txt += '        /bin/rm -rf $WORKING_DIR\n'
+        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '        fi\n'
+        txt += '    fi \n'
+        txt += '    exit \n'
         txt += 'fi \n'
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
         ### needed grep for bug in scramv1 ###
+
         #txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
 
         # Handle the arguments:
@@ -200,19 +230,145 @@ class Orca_dbsdls(JobType):
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
         txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+
+        ## OLI_Daniele
+        txt += '    if [ $middleware == OSG ]; then \n'
+        txt += '        echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '        cd $RUNTIME_AREA\n'
+        txt += '        /bin/rm -rf $WORKING_DIR\n'
+        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '        fi\n'
+        txt += '    fi \n'
         txt += "    exit\n"
         txt += "fi\n"
         txt += "\n"
         txt += "NJob=$1\n"
         txt += "FirstEvent=$2\n"
         txt += "MaxEvents=$3\n"
-        txt += 'echo "MonitorID = `echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'echo "MonitorJobID = `echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'echo "SyncGridJobId = `echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'echo "SyncCE = `edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "MonitorID=`echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
+        ### OLI_DANIELE
+        txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'elif [ $middleware == OSG ]; then\n'
+        txt += '    echo "Additional info from OSG WN to be implemented"\n'
+        txt += 'fi\n'
         txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
 
-        # handle additional user defined files (copy them in the exec area)
+
+        # Prepare job-specific part
+        job = common.job_list[nj]
+        orcarc = os.path.basename(job.configFilename())
+        txt += '\n'
+        #DBSDLS-start
+        #### site-local catalogue discovery mechanism:
+        ## check that the site configuration file exists  
+        txt += 'echo "### Site Local Catalogue Discovery ### "\n'
+        txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += '   if [ -f $VO_CMS_SW_DIR/cms_site_config ];  then \n'
+        txt += '      dbsdls_cms_site_config=$VO_CMS_SW_DIR/cms_site_config\n'
+        txt += '   else\n'
+        txt += '      echo "Site Local Catalogue Discovery Failed: No site configuration file $VO_CMS_SW_DIR/cms_site_config !" \n'
+        txt += '      echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '      if [ $middleware == OSG ]; then \n'
+        txt += '         echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '         cd $RUNTIME_AREA\n'
+        txt += '         /bin/rm -rf $WORKING_DIR\n'
+        txt += '         if [ -d $WORKING_DIR ] ;then\n'
+        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '         fi\n'
+        txt += '      fi \n'
+        txt += '      echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '      exit\n'
+        txt += '   fi \n'
+        txt += 'elif [ $middleware == OSG ]; then\n'
+        txt += '   if [ -f $GRID3_APP_DIR/cmssoft/cms_site_config ];  then \n'
+        txt += '      dbsdls_cms_site_config=$GRID3_APP_DIR/cmssoft/cms_site_config\n'
+        txt += '   elif [ -f $OSG_APP/cmssoft/cms_site_config ];  then \n'
+        txt += '      dbsdls_cms_site_config=$OSG_APP/cmssoft/cms_site_config\n'
+        txt += '   else\n'
+        txt += '      echo "Site Local Catalogue Discovery Failed: No site configuration file $GRID3_APP_DIR/cmssoft/cms_site_config or $OSG_APP/cmssoft/cms_site_config !" \n'
+        txt += '      echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '      if [ $middleware == OSG ]; then \n'
+        txt += '         echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '         cd $RUNTIME_AREA\n'
+        txt += '         /bin/rm -rf $WORKING_DIR\n'
+        txt += '         if [ -d $WORKING_DIR ] ;then\n'
+        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '         fi\n'
+        txt += '      fi \n'
+        txt += '      echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '      exit\n'
+        txt += '   fi \n'
+        txt += 'fi\n'
+        txt += 'echo "Site Local Catalog Discovery, selected site configuration: $dbsdls_cms_site_config"\n'
+        ## look for a site local script sent as inputsandbox otherwise use the default one under $VO_CMS_SW_DIR for LCG or $GRID3_APP_DIR/cmssoft or $OSG_APP/cmssoft for OSG
+        txt += 'if [ -f $RUNTIME_AREA/cms_site_catalogue.sh ];  then \n'
+        txt += ' sitelocalscript=$RUNTIME_AREA/cms_site_catalogue.sh \n'
+        txt += 'elif [ $middleware == LCG ]; then \n' 
+        txt += '   if [ -f $VO_CMS_SW_DIR/cms_site_catalogue.sh ]; then \n'
+        txt += '   sitelocalscript=$VO_CMS_SW_DIR/cms_site_catalogue.sh \n'
+        txt += '   else  \n'
+        txt += '      echo "Site Local Catalogue Discovery Failed: No site local script cms_site_catalogue.sh !"\n'
+        txt += '      echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '      if [ $middleware == OSG ]; then \n'
+        txt += '         echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '         cd $RUNTIME_AREA\n'
+        txt += '         /bin/rm -rf $WORKING_DIR\n'
+        txt += '         if [ -d $WORKING_DIR ] ;then\n'
+        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '         fi\n'
+        txt += '      fi \n'
+        txt += '      echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '      exit\n'
+        txt += '   fi \n'
+        txt += 'elif [ $middleware == OSG ]; then\n'
+        txt += '   if [ -f $GRID3_APP_DIR/cmssoft/cms_site_catalogue.sh ];  then \n'
+        txt += '      sitelocalscript=$GRID3_APP_DIR/cmssoft/cms_site_catalogue.sh\n'
+        txt += '   elif [ -f $OSG_APP/cmssoft/cms_site_catalogue.sh ];  then \n'
+        txt += '      sitelocalscript=$OSG_APP/cmssoft/cms_site_catalogue.sh\n'
+        txt += '   else\n'
+        txt += '      echo "Site Local Catalogue Discovery Failed: No site local script cms_site_catalogue.sh !"\n'
+        txt += '      echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '      if [ $middleware == OSG ]; then \n'
+        txt += '         echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '         cd $RUNTIME_AREA\n'
+        txt += '         /bin/rm -rf $WORKING_DIR\n'
+        txt += '         if [ -d $WORKING_DIR ] ;then\n'
+        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '         fi\n'
+        txt += '      fi \n'
+        txt += '      echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '      exit\n'
+        txt += '   fi \n'
+        txt += 'fi\n'
+        txt += 'echo "Site Local Catalog Discovery, selected local script: $sitelocalscript"\n'
+        ## execute the site local configuration script with the user requied data as input
+        inputdata=string.join(self.DBSPaths,' ')
+        sitecatalog_cmd='$sitelocalscript -c $dbsdls_cms_site_config '+inputdata
+        txt += sitecatalog_cmd+'\n'
+        txt += 'sitestatus=$?\n'
+        txt += 'if [ ! -f inputurl_orcarc ] || [ $sitestatus -ne 0 ]; then\n'
+        txt += '   echo "Site Local Catalogue Discovery Failed: exiting with $sitestatus"\n'
+        txt += '   echo "'+sitecatalog_cmd+'"\n'
+        txt += '   echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '   if [ $middleware == OSG ]; then \n'
+        txt += '      echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '      cd $RUNTIME_AREA\n'
+        txt += '      /bin/rm -rf $WORKING_DIR\n'
+        txt += '      if [ -d $WORKING_DIR ] ;then\n'
+        txt += '         echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '      fi\n'
+        txt += '   fi \n'
+        txt += '   exit\n'
+        txt += 'fi \n'
+        ## append the orcarc fragment about the Input catalogues to the .orcarc
+        txt += 'cp $RUNTIME_AREA/'+orcarc+' .orcarc\n'
+        txt +=' cat inputurl_orcarc >> .orcarc\n'
+        #DBSDLS-end
+
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
                 file = os.path.basename(file)
@@ -220,46 +376,12 @@ class Orca_dbsdls(JobType):
                 txt += '    cp $RUNTIME_AREA/'+file+' .\n'
                 txt += '    chmod +x '+file+'\n'
                 txt += 'fi\n'
-            pass
+            pass 
 
-        # Prepare job-specific part
-        job = common.job_list[nj]
-        orcarc = os.path.basename(job.configFilename())
-        txt += '\n'
-        #DBSDLS-start
-        #### site-local catalogue discovery mechanism
-        ## check that the site configuration file exists 
-        txt += 'echo "### Site Local Catalogue Discovery ### "\n'
-        txt += 'if [ ! -f $VO_CMS_SW_DIR/cms_site_config ];  then \n'
-        txt += '   echo "Site Local Catalogue Discovery Failed: No site configuration file $VO_CMS_SW_DIR/cms_site_config !" \n'
-        txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit\n'
-        txt += 'fi \n'
-        ## look for a site local script sent as inputsandbox otherwise use the default one under $VO_CMS_SW_DIR
-        txt += 'if [ -f $RUNTIME_AREA/cms_site_catalogue.sh ];  then \n' 
-        txt += ' sitelocalscript=$RUNTIME_AREA/cms_site_catalogue.sh \n'
-        txt += 'elif [ -f $VO_CMS_SW_DIR/cms_site_catalogue.sh ]; then \n'
-        txt += ' sitelocalscript=$VO_CMS_SW_DIR/cms_site_catalogue.sh \n'
-        txt += 'else  \n'
-        txt += '   echo "Site Local Catalogue Discovery Failed: No site local script cms_site_catalogue.sh !"\n'
-        txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit\n' 
-        txt += 'fi \n'
-        ## execute the site local configuration script with the user requied data as input
-        inputdata=string.join(self.DBSPaths,' ')
-        sitecatalog_cmd='$sitelocalscript -c $VO_CMS_SW_DIR/cms_site_config '+inputdata
-        txt += sitecatalog_cmd+'\n'
-        txt += 'sitestatus=$?\n'
-        txt += 'if [ ! -f inputurl_orcarc ] || [ $sitestatus -ne 0 ]; then\n'
-        txt += '   echo "Site Local Catalogue Discovery Failed: exiting with $sitestatus"\n'
-        txt += '   echo "'+sitecatalog_cmd+'"\n'
-        txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit\n'
-        txt += 'fi \n'
-        ## append the orcarc fragment about the Input catalogues to the .orcarc
-        txt += 'cp $RUNTIME_AREA/'+orcarc+' .orcarc\n'
-        txt +=' cat inputurl_orcarc >> .orcarc\n'
-        #DBSDLS-end
+        ### OLI_DANIELE
+        txt += "echo 'SET_EXE_ENV 0 ==> job setup ok'\n"
+        txt += 'echo "### END JOB SETUP ENVIRONMENT ###"\n\n'
+
         txt += 'echo "FirstEvent=$FirstEvent" >> .orcarc\n'
         txt += 'echo "MaxEvents=$MaxEvents" >> .orcarc\n'
         if self.ML:
@@ -286,8 +408,19 @@ class Orca_dbsdls(JobType):
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '    echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
             txt += '    echo "JOB_EXIT_STATUS = $untar_status" \n'
-            txt += '    echo "SanityCheckCode = $untar_status" | tee -a $repo\n'
-            txt += '    exit $untar_status \n'
+            txt += '    echo "SanityCheckCode=$untar_status" | tee -a $repo\n'
+
+            ### OLI_DANIELE
+            txt += '   if [ $middleware == OSG ]; then \n'
+            txt += '       echo "Remove working directory: $WORKING_DIR"\n'
+            txt += '       cd $RUNTIME_AREA\n'
+            txt += '       /bin/rm -rf $WORKING_DIR\n'
+            txt += '       if [ -d $WORKING_DIR ] ;then\n'
+            txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+            txt += '       fi\n'
+            txt += '   fi \n'
+            txt += '   \n'
+            txt += '   exit $untar_status \n'
             txt += 'else \n'
             txt += '    echo "Successful untar" \n'
             txt += 'fi \n'
@@ -319,15 +452,41 @@ class Orca_dbsdls(JobType):
             txt += '    echo "JOB_EXIT_STATUS = $exe_result"\n'
             txt += '    echo "JobExitCode=60302" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+  
+            ### OLI_DANIELE
+            txt += '    if [ $middleware == OSG ]; then \n'
+            txt += '        cd $RUNTIME_AREA\n'
+            txt += '        echo "prepare dummy output file"\n'
+            txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
+            txt += '        echo "Remove working directory: $WORKING_DIR"\n'
+            txt += '        /bin/rm -rf $WORKING_DIR\n'
+            txt += '        if [ -d $WORKING_DIR ] ;then\n'
+            txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+            txt += '        fi\n'
+            txt += '    fi \n'
+            txt += '    \n'
             txt += '    exit $exe_result \n'
             txt += 'else\n'
             txt += '    cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'
+                      
             pass
        
+     
         txt += 'cd $RUNTIME_AREA\n'
         file_list=file_list[:-1]
         txt += 'file_list='+file_list+'\n'
+        ### OLI_DANIELE
+        txt += 'if [ $middleware == OSG ]; then\n'  
+        txt += '    cd $RUNTIME_AREA\n'
+        txt += '    echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '    /bin/rm -rf $WORKING_DIR\n'
+        txt += '    if [ -d $WORKING_DIR ] ;then\n'
+        txt += '        echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '    fi\n'
+        txt += 'fi\n'
+        txt += '\n'
+
         return txt
 
     def executableName(self):
@@ -345,7 +504,7 @@ class Orca_dbsdls(JobType):
         try:
            self.pubdata=DataDiscovery.DataDiscovery(self.owner,
                                                     self.dataset,
-                                                    self.dataTiers, 
+                                                    self.dataTiers,
                                                     cfg_params)
            self.pubdata.fetchDBSInfo()
 
@@ -383,13 +542,13 @@ class Orca_dbsdls(JobType):
                 msg = 'ERROR ***: failes Data Location in DLS \n %s '%ex.getErrorMessage()
                 raise CrabException(msg)
 
-        
+
         sites=dataloc.getSites()
 
         if len(sites)==0:
             msg = 'No sites hosting all the needed data! Exiting... '
             raise CrabException(msg)
-        common.logger.message("List of Sites hosting the data : "+str(sites)) 
+        common.logger.message("List of Sites hosting the data : "+str(sites))
         common.logger.debug(6, "List of Sites: "+str(sites))
         common.analisys_common_info['sites']=sites    ## used in SchedulerEdg.py in createSchScript
         self.setParam_('TargetCE', ','.join(sites))
@@ -397,6 +556,7 @@ class Orca_dbsdls(JobType):
         return
 
 #DBDDLS-stop
+
 
     def nJobs(self):
         # TODO: should not be here !
@@ -468,8 +628,8 @@ class Orca_dbsdls(JobType):
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
 
-##DBSDLS: no orcarc_CE and init_CE.sh produced on UI , thus not inserting them in inputSandbox  
-        ## orcarc
+##DBSDLS: no orcarc_CE and init_CE.sh produced on UI , thus not inserting them in inputSandbox
+#        ## orcarc
 #        for o in self.allOrcarcs:
 #          for f in o.fileList():
 #            if (f not in seen.keys()):
@@ -496,7 +656,7 @@ class Orca_dbsdls(JobType):
 
         ## User Declared output files
         for out in self.output_file:
-            n_out = nj + 1
+            n_out = nj + 1 
             #FEDE 
             #out_box.append(self.version+'/'+self.numberFile_(out,str(n_out)))
             out_box.append(self.numberFile_(out,str(n_out)))
@@ -522,6 +682,7 @@ class Orca_dbsdls(JobType):
             req = req + ')'
         #print "req = ", req 
         return req
+         
     def numberFile_(self, file, txt):
         """
         append _'txt' before last extension of a file
@@ -558,8 +719,98 @@ class Orca_dbsdls(JobType):
 
     def setTaskid_(self):
         self._taskId = self.cfg_params['taskId']
-
+        
     def getTaskid(self):
         return self._taskId
     # marco
+
+    ### OLI_DANIELE
+    def wsSetupCMSOSGEnvironment_(self):
+        """
+        Returns part of a job script which is prepares
+        the execution environment and which is common for all CMS jobs.
+        """
+        txt = '\n'
+        txt += '   echo "### SETUP CMS OSG  ENVIRONMENT ###"\n'
+        txt += '   if [ -f $GRID3_APP_DIR/cmssoft/cmsset_default.sh ] ;then\n'
+        txt += '      # Use $GRID3_APP_DIR/cmssoft/cmsset_default.sh to setup cms software\n'
+        txt += '       source $GRID3_APP_DIR/cmssoft/cmsset_default.sh '+self.version+'\n'
+        txt += '   elif [ -f $OSG_APP/cmssoft/cmsset_default.sh ] ;then\n'
+        txt += '      # Use $OSG_APP/cmssoft/cmsset_default.sh to setup cms software\n'
+        txt += '       source $OSG_APP/cmssoft/cmsset_default.sh '+self.version+'\n'
+        txt += '   else\n'
+        txt += '       echo "SET_CMS_ENV 10020 ==> ERROR $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cmsset_default.sh file not found"\n'
+        txt += '       echo "JOB_EXIT_STATUS = 10020"\n'
+        txt += '       echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '       exit\n'
+        txt += '\n'
+        txt += '       echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '       cd $RUNTIME_AREA\n'
+        txt += '       /bin/rm -rf $WORKING_DIR\n'
+        txt += '       if [ -d $WORKING_DIR ] ;then\n'
+        txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '       fi\n'
+        txt += '\n'
+        txt += '       exit\n'
+        txt += '   fi\n'
+        txt += '\n'
+        txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
+        txt += '   echo " END SETUP CMS OSG  ENVIRONMENT "\n'
+
+        return txt
+ 
+    ### OLI_DANIELE
+    def wsSetupCMSLCGEnvironment_(self):
+        """
+        Returns part of a job script which is prepares
+        the execution environment and which is common for all CMS jobs.
+        """
+        txt  = '   \n'
+        txt += '   echo " ### SETUP CMS LCG  ENVIRONMENT ### "\n'
+        txt += '      echo "JOB_EXIT_STATUS = 0"\n'
+        txt += '   if [ ! $VO_CMS_SW_DIR ] ;then\n'
+        txt += '       echo "SET_CMS_ENV 10031 ==> ERROR CMS software dir not found on WN `hostname`"\n'
+        txt += '       echo "JOB_EXIT_STATUS = 10031" \n'
+        txt += '       echo "JobExitCode=10031" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '       exit\n'
+        txt += '   else\n'
+        txt += '       echo "Sourcing environment... "\n'
+        txt += '       if [ ! -s $VO_CMS_SW_DIR/cmsset_default.sh ] ;then\n'
+        txt += '           echo "SET_CMS_ENV 10020 ==> ERROR cmsset_default.sh file not found into dir $VO_CMS_SW_DIR"\n'
+        txt += '           echo "JOB_EXIT_STATUS = 10020"\n'
+        txt += '           echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '           exit\n'
+        txt += '       fi\n'
+        txt += '       echo "sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
+        txt += '       source $VO_CMS_SW_DIR/cmsset_default.sh\n'
+        txt += '       result=$?\n'
+        txt += '       if [ $result -ne 0 ]; then\n'
+        txt += '           echo "SET_CMS_ENV 10032 ==> ERROR problem sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
+        txt += '           echo "JOB_EXIT_STATUS = 10032"\n'
+        txt += '           echo "JobExitCode=10032" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '           exit\n'
+        txt += '       fi\n'
+        txt += '   fi\n'
+        txt += '   \n'
+        txt += '   string=`cat /etc/redhat-release`\n'
+        txt += '   echo $string\n'
+        txt += '   if [[ $string = *alhalla* ]]; then\n'
+        txt += '       echo "SCRAM_ARCH= $SCRAM_ARCH"\n'
+        txt += '   elif [[ $string = *Enterprise* ]] || [[ $string = *cientific* ]]; then\n'
+        txt += '       export SCRAM_ARCH=slc3_ia32_gcc323\n'
+        txt += '       echo "SCRAM_ARCH= $SCRAM_ARCH"\n'
+        txt += '   else\n'
+        txt += '       echo "SET_CMS_ENV 1 ==> ERROR OS unknown, LCG environment not initialized"\n'
+        txt += '       echo "JOB_EXIT_STATUS = 10033"\n'
+        txt += '       echo "JobExitCode=10033" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '       exit\n'
+        txt += '   fi\n'
+        txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
+        txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'
+        return txt
 
