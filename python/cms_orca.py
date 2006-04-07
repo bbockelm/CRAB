@@ -569,7 +569,7 @@ class Orca(JobType):
            
         inline=infile.readlines()
         ### remove from user card these lines ###
-        wordRemove=['InputFileCatalogURL', 'InputCollections', 'FirstEvent', 'MaxEvents', 'TFileAdaptor']
+        wordRemove=['InputFileCatalogURL', 'InputCollections', 'FirstEvent', 'MaxEvents', 'TFileAdaptor', 'MonRecAlisaBuilder']
         for line in inline:
             word = string.strip(string.split(line,'=')[0])
 
@@ -648,7 +648,7 @@ class Orca(JobType):
 
     def getRequirements(self):
         """
-       return job requirements to add to jdl files 
+        return job requirements to add to jdl files 
         """
         req = ''
         if common.analisys_common_info['sites']:
