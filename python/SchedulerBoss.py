@@ -127,7 +127,10 @@ class SchedulerBoss(Scheduler):
 
     def configure(self, cfg_params):
         
-        self.groupName = cfg_params['taskId']
+        try:    
+            self.groupName = cfg_params['taskId']
+        except:
+            self.groupName = ''
          
         try:    
             self.outDir = cfg_params["USER.outputdir"] 
