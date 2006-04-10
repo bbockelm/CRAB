@@ -53,8 +53,8 @@ class SchedulerBoss(Scheduler):
             confSQLFileName = 'SQLiteConfig.clad'
             confFile = open(confSQLFileName, 'w')
             confFile.write('[\n')
-            confFile.write('SQLITE_DB_PATH = "'+self.boss_db_dir+'"\n')
-            confFile.write('DB_NAME = "'+self.boss_db_name+'"\n')
+            confFile.write('SQLITE_DB_PATH = "'+self.boss_db_dir+'";\n')
+            confFile.write('DB_NAME = "'+self.boss_db_name+'";\n')
             confFile.write(']\n')
             confFile.close()
 
