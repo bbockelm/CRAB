@@ -17,7 +17,7 @@ TopDir=`\pwd`
 #############################################
 ######## BOSS CONFIGURATION #################
 #############################################
-BOSSVER=3_6_3
+BOSSVER=3_6_4
 BACKEND=SQLite
 
 function configureBoss {
@@ -100,6 +100,7 @@ if [ ! -e ~/.bossrc/BossConfig.clad ]; then
     cp  ~/BossConfig.clad ~/.bossrc/BossConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
+    return 1
   fi
 fi
 if [ ! -e ~/.bossrc/SQLiteConfig.clad ]; then
@@ -107,6 +108,7 @@ if [ ! -e ~/.bossrc/SQLiteConfig.clad ]; then
     cp ~/SQLiteConfig.clad ~/.bossrc/SQLiteConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
+    return 1
   fi
 fi
 if [ ! -e ~/.bossrc/MySQLRTConfig.clad ]; then
@@ -114,11 +116,13 @@ if [ ! -e ~/.bossrc/MySQLRTConfig.clad ]; then
     cp  ~/MySQLRTConfig.clad  ~/.bossrc/MySQLRTConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
+    return 1
   fi
 fi
 # now check a boss command to see if boss DB is up and running
 if [ \`boss clientID 1>/dev/null | grep -c "not correctly configured"\` -ne 0 ]; then
   echo "User-boss DB not installed: run configureBoss"
+  return 1
 fi
 EOF
 
