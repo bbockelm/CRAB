@@ -31,6 +31,11 @@ class SchedulerEdg(Scheduler):
             self.edg_config = ''
             self.edg_config_vo = ''
 
+        try:
+            self.proxyServer = cfg_params["EDG.proxy_server"]
+        except KeyError:
+            self.proxyServer = 'myproxy.cern.ch'
+        common.logger.debug(5,'Setting myproxy server to '+self.proxyServer)
 
         try: self.LCG_version = cfg_params["EDG.lcg_version"]
         except KeyError: self.LCG_version = '2'
@@ -756,6 +761,8 @@ class SchedulerEdg(Scheduler):
             jdl.write('RetryCount = '+self.EDG_retry_count+';\n')
             pass
 
+        jdl.write('MyProxyServer = "' + self.proxyServer + '";\n')
+
         jdl.close()
         return
 
@@ -766,6 +773,9 @@ class SchedulerEdg(Scheduler):
         if (self.proxyValid): return
         timeleft = -999
         minTimeLeft=10*3600 # in seconds
+
+        minTimeLeftServer = 100 # in hours
+
         #cmd = 'voms-proxy-info -exists -valid '+str(minTimeLeft)+':00'
         #cmd = 'voms-proxy-info -timeleft'
         mustRenew = 0
@@ -782,9 +792,9 @@ class SchedulerEdg(Scheduler):
             pass
         pass
 
-        if (mustRenew):
+        if mustRenew:
             common.logger.message( "No valid proxy found or timeleft too short!\n Creating a user proxy with default length of 24h\n")
-            cmd = 'voms-proxy-init -voms cms -valid 100:00'
+            cmd = 'voms-proxy-init -voms cms -valid 24:00'
             try:
                 # SL as above: damn it!
                 out = os.system(cmd)
@@ -792,14 +802,45 @@ class SchedulerEdg(Scheduler):
             except:
                 msg = "Unable to create a valid proxy!\n"
                 raise CrabException(msg)
+            # cmd = 'grid-proxy-info -timeleft'
+            # cmd_out = runCommand(cmd,0,20)
             pass
+
+        ## now I do have a voms proxy valid, and I check the myproxy server
+        renewProxy = 0
+        cmd = 'myproxy-info -d -s '+self.proxyServer
+        cmd_out = runCommand(cmd,0,20)
+        if not cmd_out:
+            common.logger.message('No credential delegated to myproxy server '+self.proxyServer+' will do now')
+            renewProxy = 1
+        else:
+            # if myproxy exist but not long enough, renew
+            reTime = re.compile( r'timeleft: (\d+)' )
+            #print "<"+str(reTime.search( cmd_out ).group(1))+">"
+            if reTime.match( cmd_out ):
+                time = reTime.search( line ).group(1)
+                if time < minTimeLeftServer:
+                    renewProxy = 1
+                    common.logger.message('No credential delegation will expire in '+time+' hours: renew it')
+                pass
+            pass
+        
+        # if not, create one.
+        if renewProxy:
+            cmd = 'myproxy-init -d -n -s '+self.proxyServer
+            out = os.system(cmd)
+            if (out>0):
+                raise CrabException("Unable to dellegate the proxy to myproxyserver "+self.proxyServer+" !\n")
+            pass
+
+        # cache proxy validity
         self.proxyValid=1
         return
 
     def configOpt_(self):
         edg_ui_cfg_opt = ' '
         if self.edg_config:
-          edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
+            edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
         if self.edg_config_vo: 
-          edg_ui_cfg_opt += ' --config-vo ' + self.edg_config_vo + ' '
+            edg_ui_cfg_opt += ' --config-vo ' + self.edg_config_vo + ' '
         return edg_ui_cfg_opt
