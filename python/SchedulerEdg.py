@@ -2,6 +2,7 @@ from Scheduler import Scheduler
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
+from EdgConfig import *
 import common
 
 import os, sys, time
@@ -764,11 +765,24 @@ class SchedulerEdg(Scheduler):
         """
         if (self.proxyValid): return
         timeleft = -999
-        minTimeLeft=10 # in hours
-        cmd = 'voms-proxy-info -exists -valid '+str(minTimeLeft)+':00'
-        # SL Here I have to use os.system since the stupid command exit with >0 if no valid proxy is found
-        cmd_out = os.system(cmd)
-        if (cmd_out>0):
+        minTimeLeft=10*3600 # in seconds
+        #cmd = 'voms-proxy-info -exists -valid '+str(minTimeLeft)+':00'
+        #cmd = 'voms-proxy-info -timeleft'
+        mustRenew = 0
+        timeLeftLocal = runCommand('voms-proxy-info -timeleft')
+        timeLeftServer = -999
+        if not timeLeftLocal or not isInt(timeLeftLocal):
+            mustRenew = 1
+        else:
+            timeLeftServer = runCommand('voms-proxy-info -actimeleft')
+            if not timeLeftServer or not isInt(timeLeftServer):
+                mustRenew = 1
+            elif timeLeftServer<minTimeLeft or timeLeftServer<minTimeLeft:
+                mustRenew = 1
+            pass
+        pass
+
+        if (mustRenew):
             common.logger.message( "No valid proxy found or timeleft too short!\n Creating a user proxy with default length of 24h\n")
             cmd = 'voms-proxy-init -voms cms -valid 100:00'
             try:
@@ -778,8 +792,6 @@ class SchedulerEdg(Scheduler):
             except:
                 msg = "Unable to create a valid proxy!\n"
                 raise CrabException(msg)
-            # cmd = 'grid-proxy-info -timeleft'
-            # cmd_out = runCommand(cmd,0,20)
             pass
         self.proxyValid=1
         return
