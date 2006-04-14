@@ -34,7 +34,7 @@ class EdgConfig:
             except IOError:
                 # print 'Cannot access URL: '+url
                 raise CrabException('Cannot download config file '+self.configFileName+' from '+self.url)
-        return './'+self.configFileName
+        return os.getcwd()+'/'+self.configFileName
 
     def getConfigVO_(self):
         if not os.path.exists(self.configVOFileName):
@@ -47,4 +47,4 @@ class EdgConfig:
                 ff.close()
             except IOError:
                 raise CrabException('Cannot download configVO file '+self.configVOFileName+' from '+self.url)
-        return './'+self.configVOFileName
+        return os.getcwd()+'/'+self.configVOFileName
