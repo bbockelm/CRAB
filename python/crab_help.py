@@ -55,7 +55,7 @@ have a valid GRID certificate.
 
 =head1 SYNOPSIS
 
-B<"""+common.prog_name+""".py> [I<options>] [I<command>]
+B<"""+common.prog_name+"""> [I<options>] [I<command>]
 
 =head1 DESCRIPTION
 
@@ -65,9 +65,11 @@ Parameters for CRAB usage and configuration are provided by the user changing th
 
 CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BOSS to interface to the grid scheduler, as well as for logging and bookkeeping and eventually real time monitoring.
 
-CRAB supports any ORCA based executable, including the user provided one, and deals with the output produced by the executable. CRAB provides an interface with CMS data discovery services (today RefDB and PubDB), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.
+CRAB supports any ORCA based executable, including the user provided one, and deals with the output produced by the executable. CRAB provides an interface with CMS data discovery services (today RefDB and PubDB), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.  CRAB support also FAMOS based jobs.
 
-CRAB web page is available at I<http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/>
+CRAB web page is available at
+
+I<http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/>
 
 =head1 BEFORE STARTING
 
@@ -76,7 +78,7 @@ CRAB web page is available at I<http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/>
 =item B<A)>
 
 Develop your code in your ORCA working area (both I<scram> and I<scramv1> based ORCA are supported).
-Does anything which is needed to run interactively your executable, including the setup or run time environment (I<eval `scram(v1) runtime -sh|csh`>), a suitable I<.orcarc>, etc.
+Do anything which is needed to run interactively your executable, including the setup or run time environment (I<eval `scram(v1) runtime -sh|csh`>), a suitable I<.orcarc>, etc.
 
 =item B<B)> 
 
@@ -111,7 +113,7 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 
 =item B<C)> 
 
-As stated before, you need to have a valid grid certificate (see CRAB web page for instruction) to submit to the grid. You need also a valid proxy (obtained via B<grid-proxy-init>): if you don't have it (or if it is too short), CRAB will issues that command for you.
+As stated before, you need to have a valid grid certificate (see CRAB web page for instruction) to submit to the grid. You need also a valid proxy: if you don't have it (or if it is too short), CRAB will issues that command for you. From version 1_1_0 CRAB uses I<voms> and I<myproxy> server to renew the proxy length, so if your proxy expires while your job is on the grid, the proxy will be extended by the myproxy server, to which you have delegated, and your job will continue. The voms proxy lenght is I<24> hours, while the myproxy delegation extends for I<7> days.
 
 At CERN, you can use "lxplus" as a UI by sourcing the file B</afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.(c)sh>
 
@@ -182,6 +184,10 @@ Check if the job can find compatible resources. It's equivalent of doing I<edg-j
 
 Produce a file (via I<edg-job-logging-info -v 2>) which might help in undertanding grid related problem for a job.
 
+=item B<-list [range]>
+
+Dump technical informations about jobs: for developers only.
+
 =item B<-clean [dir]>
 
 Clean up (i.e. erase) the task working directory after a check whether there are still running jobs. In case, you are notified and asked to kill them or retrieve their output. B<Warning> this will eventually delete also the output produced by the task (if any)!
@@ -196,7 +202,7 @@ Print the version and exit.
 
 =item B<range>
 
-The range to be used in many of the above command has the following syntax. It is a comma separated list of jobs ranges, each of which may be a job number, or a job range of the form first-last.
+The range to be used in many of the above commands has the following syntax. It is a comma separated list of jobs ranges, each of which may be a job number, or a job range of the form first-last.
 Example: 1,3-5,8 = {1,3,4,5,8}
 
 =back 
@@ -211,7 +217,7 @@ Configuration file name. Default is B<crab.cfg>.
 
 =item B<-debug [level]>
 
-Set the debug level.
+Set the debug level: high number for high verbosity.
 
 =back 
 
@@ -223,25 +229,21 @@ Mandatory parameters are flagged with a *.
 
 B<[CRAB]>
 
-=over 2
+=over 4
 
 =item B<jobtype *>
 
-The type of the job to be executed: for the time being only I<orca> jobtype are supported
+The type of the job to be executed: I<orca> I<famos> jobtypes are supported
 
 =item B<scheduler *>
 
 The scheduler to be used: I<edg> is the grid one. In later version also other scheduler (local and grid) will be possible, including eg glite, condor-g, lsf, pbs, etc...
 
-=item B<use_boss>
-
-Flag to enable the use of BOSS for submission, monitoring etc.
-
 =back
 
-B<[USER]>
+B<[ORCA]>
 
-=over 2
+=over 4
 
 =item B<dataset *>
 
@@ -249,7 +251,7 @@ The dataset the user want to analyze.
 
 =item B<owner *>
 
-The owner name whcih the user want to access. These two parameter can be found using data discovery tool: for the time being, RefDB/PubDB. See production page (linked also from CRAB web page) for access to the list of available dataset/owner
+The owner name which the user want to access. These two parameter can be found using data discovery tool: for the time being, RefDB/PubDB. See production page (linked also from CRAB web page) for access to the list of available dataset/owner
 
 =item B<data_tier>
 
@@ -272,13 +274,57 @@ Name of a script that the user want to execute on remote site: full path must be
 
 Output files as produced by the executable: comma separated list of all the files. These are the file names which are produced by the executable also in the interactive environment. The output files will be modified by CRAB when returned in order to cope with the job splitting, by adding a "_N" to each file.
 
-=item B<additional_input_files>
-
-Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. Please note that the full I<Data> directory of your private ORCA working are will be send to WN (if present). 
-
 =item B<orcarc_file *>
 
 User I<.orcarc> file: if it is not in the current directory, full path is needed. Use the very same file you used for your interactive test: CRAB will modify it according to data requested and splitting directives.
+
+=back
+
+B<[FAMOS]>
+
+=over 4
+
+=item B<input_lfn>
+
+LFN of the input file registered into the LFC catalog
+
+=item B<events_per_ntuple>
+
+number of events per ntuple
+
+=item B<input_pu_lfn>
+
+LFN for the input pile-up ntuples (already registered to LFC)
+
+=item B<number_pu_ntuples>
+
+number of pile-up ntuples accessed per job
+
+=item B<executable>
+
+FAMOS executable: user must provide the executable into his personal scram area.
+
+=item B<script_exe>
+
+or the script that calls the executable...
+
+=item B<output_file>
+
+Output files produced by executable: comma separated list, can be empty but mut be present!
+
+=item B<orcarc_file>
+
+orcarc card provided by user (if not in current directory, the full path must to be provided) NB the file must exist (could be empty)
+
+=back
+
+B<[USER]>
+
+=over 4
+
+=item B<additional_input_files>
+
+Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. Please note that the full I<Data> directory of your private ORCA working are will be send to WN (if present). 
 
 =item B<first_event>
 
@@ -332,10 +378,6 @@ To be used together with I<copy_data>. Register output files to RLS catalog: for
 
 To be used together with I<register_data>. Path for the Logical File Name.
 
-=item B<activate_MonALisa>
-
-Activate MonaLisa monitoring of running jobs on WN.
-
 =item B<use_central_bossDB>
 
 Use central BOSS DB instead of one for each task: the DB must be already been setup. See installation istruction for more details.
@@ -348,19 +390,15 @@ Use BOSS real time monitoring.
 
 B<[EDG]>
 
-=over 2
+=over 4
 
 =item B<lcg_version>
 
 Version of LCG middleware to be used.
 
-=item B<config>
+=item B<RB>
 
-Configuration file to change the resource broker to be used (download files from CRAB web page)
-
-=item B<config_vo>
-
-Configuration file to change the resource broker to be used (download files from CRAB web page). Both I<conig> and I<config_vo> must be set.
+Which RB you want to use instead of the default one. The ones available for CMS are I<CERN> and I<CNAF>: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used. If the files are already present on the working directory they will be used.
 
 =item B<requirements>
 
