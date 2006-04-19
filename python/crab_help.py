@@ -400,6 +400,10 @@ Version of LCG middleware to be used.
 
 Which RB you want to use instead of the default one. The ones available for CMS are I<CERN> and I<CNAF>: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used. If the files are already present on the working directory they will be used.
 
+=item B<proxy_server>
+
+The proxy server to which you delegate the responsibility to renew your proxy once expired. The default is I<myproxy.cern.ch> : change only if you B<really> know what you are doing.
+
 =item B<requirements>
 
 Any other requirements to be add to JDL. Must be written in compliance with JDL syntax (see LCG user manual for further info). No requirement on Computing element must be set.
