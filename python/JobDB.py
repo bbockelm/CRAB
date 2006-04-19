@@ -55,7 +55,7 @@ class JobDB:
         else:          plural = 's'
         print 'Listing %d job%s:\n' % (njobs, plural)
         for job in jobs:
-            print string.strip(('Job %03d' % (job+1)) + ': ' + str(self._jobs[job]))
+            print string.strip(('Job %03d' % (job)) + ': ' + str(self._jobs[job - 1]))
             pass
 
     def nJobs(self):
