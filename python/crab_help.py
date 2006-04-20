@@ -24,6 +24,7 @@ The most useful general options (use '-h' to get complete help):
   -cancelAndResubmit [range]  -- kill and resubmit submitted jobs
   -clean              -- gracefully cleanup the idrectory of a task
   -testJdl [range]    -- check if resources exist which are compatible with jdl
+  -list n or range    -- show technical job details
   -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
   -continue [dir] | -c [dir]     -- Apply command to task stored in [dir].
   -h [format]         -- Detailed help. Formats: man (default), tex, html.
