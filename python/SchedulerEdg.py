@@ -781,7 +781,7 @@ class SchedulerEdg(Scheduler):
         mustRenew = 0
         timeLeftLocal = runCommand('voms-proxy-info -timeleft')
         timeLeftServer = -999
-        if not timeLeftLocal or not isInt(timeLeftLocal):
+        if not timeLeftLocal or int(timeLeftLocal) <= 0 or not isInt(timeLeftLocal):
             mustRenew = 1
         else:
             timeLeftServer = runCommand('voms-proxy-info -actimeleft | head -1')
@@ -830,7 +830,7 @@ class SchedulerEdg(Scheduler):
             cmd = 'myproxy-init -d -n -s '+self.proxyServer
             out = os.system(cmd)
             if (out>0):
-                raise CrabException("Unable to dellegate the proxy to myproxyserver "+self.proxyServer+" !\n")
+                raise CrabException("Unable to delegate the proxy to myproxyserver "+self.proxyServer+" !\n")
             pass
 
         # cache proxy validity
