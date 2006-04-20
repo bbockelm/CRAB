@@ -442,10 +442,48 @@ I<crab> creates by default a working directory 'crab_0_E<lt>dateE<gt>_E<lt>timeE
 
 I<crab> saves all command lines in the file I<crab.history>.
 
+=head1 HOW TO RUN FAMOS WITH CRAB
+
+=item B<Registering files to LFC:>
+input ntuples to FAMOS should be first registered as Grid files.
+Use the LFC File Catalog (LFC) rather than RLS.
+Set the following environmental variables:
+
+LCG_CATALOG_TYPE=lfc and LFC_HOST=lfc-cms-test.cern.ch
+
+The big difference between the two catalogs is that LFC uses a directory structure. 
+Create a directory under /grid/cms/ (sth like lfc-mkdir /grid/cms/user). You will 
+have read/write permissions under this dir.
+Then you use the common lcg- commands:
+
+lcg-rf --vo cms -l /grid/cms/georgia/inputfile \ sfn://$SE/$SE_PATH/inputfile
+
+where SE = Storage element name (e.g. castorgrid.cern.ch)
+
+SE_PATH = storage element path  (e.g. /castor/cern.ch/user/u/user/)
+
+=item B<crab.cfg:>
+first you define jobtype = famos. A [FAMOS] session is included in addition to the [ORCA] one. In there you will find some 
+additional parameters introduced:
+  "input_lfn"   stands for the general logical file name (LFN) used to register the ntuples 
+(e.g. if ntuples named as su05_pyt_lm6_i.ntpl , you must put input_lfn = user/su05_pyt_lm6.ntpl);
+  "events_per_ntuple" the number of entries in each input ntuple;  
+  "input_pu_lfn" stands for the general LFN used to register the pile-up ntuples (e.g. if pile-up 
+ntuples are named mu05b_MBforPU_20200000i.ntpl, you must put input_pu_lfn = user/mu05b_MBforPU_20200000.ntpl);
+  "number_pu_ntuples" the number of your pile-up ntuples you wish to access per job.
+   
+
+Warning: 
+ B<input ntuples>: the number of events per job should correspond to an integer multiple of the
+number of events in ntuple!     
+ B<Pile-up ntuples>: you should leave all parameters, concerning pile-up reading in .orcarc, ON 
+exactly as you do when you run locally.
+
+---> Run CRAB exactly as you run with ORCA jobtype.
 
 =head1 HISTORY
 
-B<crab> is a tool for the CMS analysis on the grid environment. It is based on the ideas from CMSprod, a production tools implemented originally by Nikolai Smirnov.
+B<CRAB> is a tool for the CMS analysis on the grid environment. It is based on the ideas from CMSprod, a production tools implemented originally by Nikolai Smirnov.
 
 =head1 AUTHORS
 
