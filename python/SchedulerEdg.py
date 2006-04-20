@@ -787,7 +787,7 @@ class SchedulerEdg(Scheduler):
             timeLeftServer = runCommand('voms-proxy-info -actimeleft | head -1')
             if not timeLeftServer or not isInt(timeLeftServer):
                 mustRenew = 1
-            elif timeLeftServer<minTimeLeft or timeLeftServer<minTimeLeft:
+            elif timeLeftLocal<minTimeLeft or timeLeftServer<minTimeLeft:
                 mustRenew = 1
             pass
         pass
