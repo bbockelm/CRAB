@@ -224,7 +224,7 @@ Set the debug level: high number for high verbosity.
 
 =head1 CONFIGURATION PARAMETERS
 
-All the parameter describe in this section can be defined in the CRAB configuration file. The configuration file has different sections: [CRAB], [USER], etc. Each parameter must be defined in its proper section. An alternative way to pass a config parameter to CRAB is to to it via command line interface; the syntax is: crab.py -SECTION.key value . For example I<crab.py -USER.outputdir MyDirWithFullPath> .
+All the parameter describe in this section can be defined in the CRAB configuration file. The configuration file has different sections: [CRAB], [USER], etc. Each parameter must be defined in its proper section. An alternative way to pass a config parameter to CRAB is via command line interface; the syntax is: crab.py -SECTION.key value . For example I<crab.py -USER.outputdir MyDirWithFullPath> .
 The parameters passed to CRAB at the creation step are stored, so they cannot be changed by changing the original crab.cfg . On the other hand the task is protected from any accidental change. If you want to change any parameters, this require the creation of a new task.
 Mandatory parameters are flagged with a *.
 
@@ -265,7 +265,7 @@ Define the order of the catalogs which will be put in the generated .orcarc frag
 
 =item B<executable *>
 
-The ORCA executable the user want to run on remote site. This must be on the I<path> of the user at the time of the creation of the jobs, so it's mandatory to issue the usual I<eval `scramv1 runtim -(c)sh`> from user ORCA working area before creating jobs. A warning will be prompted if the executable is not found in the path.
+The ORCA executable the user want to run on remote site. This must be on the I<path> of the user at the time of the creation of the jobs, so it is mandatory to issue the usual I<eval `scramv1 runtim -(c)sh`> from user ORCA working area before creating jobs. A warning will be prompted if the executable is not found in the path.
 
 =item B<script_exe>
 
@@ -283,11 +283,16 @@ User I<.orcarc> file: if it is not in the current directory, full path is needed
 
 B<[FAMOS]>
 
+User needs to define jobtype = famos.
+A [FAMOS] session is included in addition to the [ORCA] one. Inside you can find some additional parameters introduced:
+
+All parameters (in .orcarc) concerning pile-up ntuples should be left exactly as they are in interactive usage.
+
 =over 4
 
 =item B<input_lfn>
 
-LFN of the input file registered into the LFC catalog
+LFN of the input file registered into the LFC catalog. It is stands for the general logical file name (LFN) used to register the ntuples (e.g. if ntuples named as su05_pyt_lm6_i.ntpl , you must put input_lfn = user/su05_pyt_lm6.ntpl)
 
 =item B<events_per_ntuple>
 
@@ -296,10 +301,11 @@ number of events per ntuple
 =item B<input_pu_lfn>
 
 LFN for the input pile-up ntuples (already registered to LFC)
+It is the general LFN used to register the pile-up ntuples (e.g. if pile-up ntuples are named mu05b_MBforPU_20200000i.ntpl, you must put input_pu_lfn = user/mu05b_MBforPU_20200000.ntpl)
 
 =item B<number_pu_ntuples>
 
-number of pile-up ntuples accessed per job
+It is the number of your pile-up ntuples you wish to access per job.   
 
 =item B<executable>
 
