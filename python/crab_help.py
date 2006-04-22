@@ -488,6 +488,68 @@ exactly as you do when you run locally.
 
 ---> Run CRAB exactly as you run with ORCA jobtype.
 
+=head1 B<Condor-G>
+
+The B<Condor-G> mode for B<CRAB> is a special submission mode next to
+the standard Resource Broker submission. It is designed to submit jobs
+directly to a site and not using the Resource Broker. Due to the
+nature of this submission possibility, the B<Condor-G> mode is
+restricted to OSG sites within the CMS grid, currently the 7 US T2:
+Florida(ufl.edu), Nebraska(unl.edu), San Diego(ucsd.edu),
+Purdue(purdue.edu), Wisconsin(wisc.edu), Caltech(ultralight.org),
+MIT(mit.edu). 
+
+=head2 B<Requirements:>
+
+=item -   installed and running local Condor scheduler
+
+(either installed
+by the local Sysadmin or self-installed using the VDT user interface: 
+http://www.uscms.org/SoftwareComputing/UserComputing/Tutorials/vdt.html)
+
+=item -   locally available LCG or OSG UI installation
+
+for authentication via grid certificate proxies ("voms-proxy-init -voms
+cms" should result in valid proxy) 
+=item - set of the environment variable EDG_WL_LOCATION to the edg
+directory of the local LCG or OSG UI installation 
+
+=head2 B<What the Condor-G mode can do:>
+
+=item -   submission directly to a single OSG site,
+
+the requested
+dataset has to be published correctly by the site in the local and
+global services 
+
+=head2 B<What the Condor-G mode cannot do:>
+
+=item -   submit jobs if no condor scheduler is running
+
+on the
+submission machine
+
+=item -   submit jobs if the local condor installation
+
+does not provide
+Condor-G capabilities
+
+=item -   submit jobs to more than one site in parallel
+
+=item -   submit jobs to a LCG site
+
+=item -   support grid certificate proxy renewal via the myproxy service
+
+=head2 B<CRAB configuration for Condor-G mode:>
+
+The CRAB configuration for the Condor-G mode only requires changes in crab.cfg:
+
+=item -   select condor_g Scheduler: scheduler = condor_g
+
+=item -   select the domain for a single OSG site:
+
+CE_white_list = "one of unl.edu,ufl.edu,ucsd.edu,wisc.edu,purdue.edu,ultralight.org,mit.edu"
+
 =head1 HISTORY
 
 B<CRAB> is a tool for the CMS analysis on the grid environment. It is based on the ideas from CMSprod, a production tools implemented originally by Nikolai Smirnov.
