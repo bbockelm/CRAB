@@ -363,7 +363,7 @@ class Orca(JobType):
         file_list = ''
         for fileWithSuffix in self.output_file:
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
-            file_list=file_list+output_file_num+','
+            file_list=file_list+output_file_num+' '
             txt += '\n'
             txt += 'ls \n'
             txt += '\n'
@@ -397,7 +397,7 @@ class Orca(JobType):
      
         txt += 'cd $RUNTIME_AREA\n'
         file_list=file_list[:-1]
-        txt += 'file_list='+file_list+'\n'
+        txt += 'file_list="'+file_list+'"\n'
         ### OLI_DANIELE
         txt += 'if [ $middleware == OSG ]; then\n'  
         txt += '    cd $RUNTIME_AREA\n'
