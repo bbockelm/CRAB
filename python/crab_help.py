@@ -51,7 +51,7 @@ B<CRAB>:  B<C>ms B<R>emote B<A>nalysis B<B>uilder
 
 """+common.prog_name+""" version: """+common.prog_version_str+"""
 
-This tool _must_ be used from an User Interface and the user is supposed to
+This tool B<must> be used from an User Interface and the user is supposed to
 have a valid GRID certificate.
 
 =head1 SYNOPSIS
@@ -72,7 +72,30 @@ CRAB web page is available at
 
 I<http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/>
 
-=head1 BEFORE STARTING
+=head1 HOW TO RUN CRAB FOR THE IMPATIENT USER
+
+Please, read all anyway!
+
+Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.
+
+Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list: in particular set your jobtype (orca or famos) and fill the corresponding section. A template and commented B<crab.cfg> can be found on B<$CRABDIR/python/crab.cfg>
+
+~>crab.py -create 
+  create all jobs (no submission!)
+
+~>crab.py -submit 2 -continue [ui_working_dir]
+  submit 2 jobs, the ones already created (-continue)
+
+~>crab.py -create 2 -submit 2
+  create _and_ submit 2 jobs
+
+~>crab.py -status
+  check the status of all jobs
+
+~>crab.py -getoutput
+  get back the output of all jobs
+
+=head1 RUNNING ORCA WITH CRAB
 
 =over 4
 
@@ -86,9 +109,9 @@ Do anything which is needed to run interactively your executable, including the 
 Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.
 Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list. The most important parameters are the following:
 
-=over 4
-
 =item B<Mandatory!>
+
+=over 6
 
 =item o dataset, owner to be accessed: also data_tiers if you want more than the one pointed by owner
 
@@ -100,13 +123,21 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 
 =item o the B<.orcarc> card to be used. This card will be modified by crab for data access and according to the job splitting. Use the very same cars you used in your interactive test: CRAB will modify what is needed.
 
+=back
+
 =item B<Might be useful:>
+
+=over 6
 
 =item o Comma separated list of files to be submitted via input sandbox. The files will be put in the working directory on WN. It's user responsibility to actually use them!
 
 =item o output_dir e log_dir, path of directory where crab will put the std_error and std_output of job.  If these parameters are commented, error and output will be put into the directory where sh and jdl script are (crab_0_date_time).
 
+=back
+
 =item B<Optional:>
+
+=over 6
 
 =item o the name of UI directory where crab will create jobs. By default the name is "crab_data_time"
 
@@ -120,24 +151,121 @@ At CERN, you can use "lxplus" as a UI by sourcing the file B</afs/cern.ch/cms/LC
 
 =back
 
-=head1 HOW TO RUN CRAB FOR THE IMPATIENT USER
+=head1 HOW TO RUN FAMOS WITH CRAB
 
-Please, read all anyway!
+=over 2
 
-~>crab.py -create 2
-  create 2 jobs (no submission!)
+=item B<Registering files to LFC:>
 
-~>crab.py -submit 2 -continue [ui_working_dir]
-  submit 2 jobs, the ones already created (-continue)
+input ntuples to FAMOS should be first registered as Grid files on the LFC File Catalog (LFC) (RLS is not supported anymore): to select the proper LFC, set the following environmental variables:
 
-~>crab.py -create 2 -submit 2
-  create _and_ submit 2 jobs
+I<LCG_CATALOG_TYPE=lfc> and I<LFC_HOST=lfc-cms-test.cern.ch>
 
-~>crab.py -status
-  check the status of all jobs
+LFC uses a directory structure (was not the case for RLS), so user has to create a directory under /grid/cms/ (strongly suggested something like I<lfc-mkdir /grid/cms/user>). User will have read/write permissions under this dir.  Then user can use the common lcg- commands:
 
-~>crab.py -getoutput
-  get back the output of all jobs
+lcg-rf --vo cms -l /grid/cms/georgia/inputfile \ sfn://$SE/$SE_PATH/inputfile
+
+where SE = Storage element name (e.g. castorgrid.cern.ch)
+
+SE_PATH = storage element path  (e.g. /castor/cern.ch/user/u/user/)
+
+=item B<crab.cfg:>
+
+jobtype must be set to I<famos>. A [FAMOS] session is included in addition to the [ORCA] one. In there you will find some additional parameters introduced:
+
+=over 2
+
+=item "input_lfn" 
+
+stands for the general logical file name (LFN) used to register the ntuples (e.g. if ntuples named as su05_pyt_lm6_i.ntpl , you must put input_lfn = user/su05_pyt_lm6.ntpl);
+
+=item "events_per_ntuple" 
+
+the number of entries in each input ntuple;  
+
+=item "input_pu_lfn"
+
+stands for the general LFN used to register the pile-up ntuples (e.g. if pile-up ntuples are named mu05b_MBforPU_20200000i.ntpl, you must put input_pu_lfn = user/mu05b_MBforPU_20200000.ntpl);
+
+=item "number_pu_ntuples"
+
+the number of your pile-up ntuples you wish to access per job.
+
+=back
+
+=item B<Warning>:
+
+=item B<input ntuples>: the number of events per job should correspond to an integer multiple of the number of events in ntuple!     
+
+=item B<Pile-up ntuples>: you should leave all parameters, concerning pile-up reading in .orcarc, ON exactly as you do when you run locally.
+
+=back
+
+Run CRAB exactly as you run with ORCA jobtype.
+
+=head1 HOW TO RUN ON CONDOR-G
+
+The B<Condor-G> mode for B<CRAB> is a special submission mode next to the standard Resource Broker submission. It is designed to submit jobs directly to a site and not using the Resource Broker.
+
+Due to the nature of this submission possibility, the B<Condor-G> mode is restricted to OSG sites within the CMS grid, currently the 7 US T2: Florida(ufl.edu), Nebraska(unl.edu), San Diego(ucsd.edu), Purdue(purdue.edu), Wisconsin(wisc.edu), Caltech(ultralight.org), MIT(mit.edu). 
+
+=head2 B<Requirements:>
+
+=over 2
+
+=item installed and running local Condor scheduler
+
+(either installed by the local Sysadmin or self-installed using the VDT user interface: http://www.uscms.org/SoftwareComputing/UserComputing/Tutorials/vdt.html)
+
+=item locally available LCG or OSG UI installation
+
+for authentication via grid certificate proxies ("voms-proxy-init -voms cms" should result in valid proxy) 
+
+=item set of the environment variable EDG_WL_LOCATION to the edg directory of the local LCG or OSG UI installation 
+
+=back
+
+=head2 B<What the Condor-G mode can do:>
+
+=over 2
+
+=item submission directly to a single OSG site,
+
+the requested dataset has to be published correctly by the site in the local and global services 
+
+=back
+
+=head2 B<What the Condor-G mode cannot do:>
+
+=over 2
+
+=item submit jobs if no condor scheduler is running on the submission machine
+
+=item submit jobs if the local condor installation does not provide Condor-G capabilities
+
+=item submit jobs to more than one site in parallel
+
+=item submit jobs to a LCG site
+
+=item support grid certificate proxy renewal via the myproxy service
+
+=back
+
+=head2 B<CRAB configuration for Condor-G mode:>
+
+The CRAB configuration for the Condor-G mode only requires changes in crab.cfg:
+
+=over 2
+
+=item select condor_g Scheduler:
+
+scheduler = condor_g
+
+=item select the domain for a single OSG site: 
+
+CE_white_list = "one of unl.edu,ufl.edu,ucsd.edu,wisc.edu,purdue.edu,ultralight.org,mit.edu"
+
+=back
 
 =head1 COMMAND
 
@@ -183,7 +311,7 @@ Check if the job can find compatible resources. It's equivalent of doing I<edg-j
 
 =item B<-postMortem [range]>
 
-Produce a file (via I<edg-job-logging-info -v 2>) which might help in undertanding grid related problem for a job.
+Produce a file (via I<edg-job-logging-info -v 2>) which might help in understanding grid related problem for a job.
 
 =item B<-list [range]>
 
@@ -449,107 +577,6 @@ I<crab> creates by default a working directory 'crab_0_E<lt>dateE<gt>_E<lt>timeE
 
 I<crab> saves all command lines in the file I<crab.history>.
 
-=head1 HOW TO RUN FAMOS WITH CRAB
-
-=item B<Registering files to LFC:>
-input ntuples to FAMOS should be first registered as Grid files.
-Use the LFC File Catalog (LFC) rather than RLS.
-Set the following environmental variables:
-
-LCG_CATALOG_TYPE=lfc and LFC_HOST=lfc-cms-test.cern.ch
-
-The big difference between the two catalogs is that LFC uses a directory structure. 
-Create a directory under /grid/cms/ (sth like lfc-mkdir /grid/cms/user). You will 
-have read/write permissions under this dir.
-Then you use the common lcg- commands:
-
-lcg-rf --vo cms -l /grid/cms/georgia/inputfile \ sfn://$SE/$SE_PATH/inputfile
-
-where SE = Storage element name (e.g. castorgrid.cern.ch)
-
-SE_PATH = storage element path  (e.g. /castor/cern.ch/user/u/user/)
-
-=item B<crab.cfg:>
-first you define jobtype = famos. A [FAMOS] session is included in addition to the [ORCA] one. In there you will find some 
-additional parameters introduced:
-  "input_lfn"   stands for the general logical file name (LFN) used to register the ntuples 
-(e.g. if ntuples named as su05_pyt_lm6_i.ntpl , you must put input_lfn = user/su05_pyt_lm6.ntpl);
-  "events_per_ntuple" the number of entries in each input ntuple;  
-  "input_pu_lfn" stands for the general LFN used to register the pile-up ntuples (e.g. if pile-up 
-ntuples are named mu05b_MBforPU_20200000i.ntpl, you must put input_pu_lfn = user/mu05b_MBforPU_20200000.ntpl);
-  "number_pu_ntuples" the number of your pile-up ntuples you wish to access per job.
-   
-
-Warning: 
- B<input ntuples>: the number of events per job should correspond to an integer multiple of the
-number of events in ntuple!     
- B<Pile-up ntuples>: you should leave all parameters, concerning pile-up reading in .orcarc, ON 
-exactly as you do when you run locally.
-
----> Run CRAB exactly as you run with ORCA jobtype.
-
-=head1 B<Condor-G>
-
-The B<Condor-G> mode for B<CRAB> is a special submission mode next to
-the standard Resource Broker submission. It is designed to submit jobs
-directly to a site and not using the Resource Broker. Due to the
-nature of this submission possibility, the B<Condor-G> mode is
-restricted to OSG sites within the CMS grid, currently the 7 US T2:
-Florida(ufl.edu), Nebraska(unl.edu), San Diego(ucsd.edu),
-Purdue(purdue.edu), Wisconsin(wisc.edu), Caltech(ultralight.org),
-MIT(mit.edu). 
-
-=head2 B<Requirements:>
-
-=item -   installed and running local Condor scheduler
-
-(either installed
-by the local Sysadmin or self-installed using the VDT user interface: 
-http://www.uscms.org/SoftwareComputing/UserComputing/Tutorials/vdt.html)
-
-=item -   locally available LCG or OSG UI installation
-
-for authentication via grid certificate proxies ("voms-proxy-init -voms
-cms" should result in valid proxy) 
-=item - set of the environment variable EDG_WL_LOCATION to the edg
-directory of the local LCG or OSG UI installation 
-
-=head2 B<What the Condor-G mode can do:>
-
-=item -   submission directly to a single OSG site,
-
-the requested
-dataset has to be published correctly by the site in the local and
-global services 
-
-=head2 B<What the Condor-G mode cannot do:>
-
-=item -   submit jobs if no condor scheduler is running
-
-on the
-submission machine
-
-=item -   submit jobs if the local condor installation
-
-does not provide
-Condor-G capabilities
-
-=item -   submit jobs to more than one site in parallel
-
-=item -   submit jobs to a LCG site
-
-=item -   support grid certificate proxy renewal via the myproxy service
-
-=head2 B<CRAB configuration for Condor-G mode:>
-
-The CRAB configuration for the Condor-G mode only requires changes in crab.cfg:
-
-=item -   select condor_g Scheduler: scheduler = condor_g
-
-=item -   select the domain for a single OSG site:
-
-CE_white_list = "one of unl.edu,ufl.edu,ucsd.edu,wisc.edu,purdue.edu,ultralight.org,mit.edu"
-
 =head1 HISTORY
 
 B<CRAB> is a tool for the CMS analysis on the grid environment. It is based on the ideas from CMSprod, a production tools implemented originally by Nikolai Smirnov.
@@ -567,7 +594,7 @@ B<CRAB> is a tool for the CMS analysis on the grid environment. It is based on t
 """
 
 =cut
-    """
+"""
 
     pod = tempfile.mktemp()+'.pod'
     pod_file = open(pod, 'w')
