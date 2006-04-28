@@ -2,7 +2,7 @@
 
 ### $1 is the tag value CRAB_X_X_X ###
 if [ $# -lt 1 ]; then
-  echo "Usage: `basename $0` <CRAB_X_Y_Z>"
+  echo "Usage: `basename $0` <CRAB_X_Y_Z> <BOSS_X_Y_Z>"
   exit 1
 fi
 tag=$1
@@ -31,6 +31,7 @@ rm -r CVS
 rm -r python/CVS
 rm python/crab.*sh
 rm python/tar*
+rm python/zero
 mv python/configure .
 mv python/configureBoss .
 
@@ -44,7 +45,15 @@ mv python/configureBoss .
 echo ">> downloading BOSS from http://boss.bo.infn.it/boss-v$2-bin.tar.gz "
 mkdir Boss
 cd Boss
-wget http://boss.bo.infn.it/boss-v$2-bin.tar.gz
+wget http://boss.bo.infn.it/boss-v${boss_version}-bin.tar.gz
+## remove doc from Boss
+gunzip boss-v${boss_version}-bin.tar.gz
+tar --delete boss-v${boss_version}/doc/note03_005.rtf -vf boss-v${boss_version}-bin.tar
+tar --delete boss-v${boss_version}/doc/note03_005.pdf -vf boss-v${boss_version}-bin.tar
+tar --delete boss-v${boss_version}/doc/BOSS-UserGuide-3.6.2.rtf -vf boss-v${boss_version}-bin.tar
+tar --delete boss-v${boss_version}/doc/BOSS-UserGuide-3.6.2.pdf -vf boss-v${boss_version}-bin.tar
+gzip boss-v${boss_version}-bin.tar
+
 ## download DBS API
 echo ">> downloading DBS API tag $DBSAPItag from CVS DBS/Clients/PythonAPI"
 cd ..

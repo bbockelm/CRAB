@@ -20,7 +20,7 @@ prog_authors = [
     ['Daniele Spiga'  , 'Daniele.Spiga@pg.infn.it'  , 'INFN/Perugia'],
     ['Alessandra Fanfani'  , 'Alessandra.Fanfani@bo.infn.it'  , 'INFN/Bologna'],
     ['Marco Corvo'      , 'Marco.Corvo@pd.infn.it'      , 'INFN/Padova'],
-    ['Oliver Gutsche'  , 'Oliver.Gutsche@'  , 'FNAL'],
+    ['Oliver Gutsche'  , 'Oliver.Gutsche@fnal.gov'  , 'FNAL'],
     ['Nikolai Smirnov'  , 'Nikolai.Smirnov@pd.infn.it'  , 'INFN/Padova'],
     ]
 
