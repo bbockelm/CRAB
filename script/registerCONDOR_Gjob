@@ -1,3 +1,0 @@
-#!/bin/sh
-
-boss registerJob -name condor_g -schema $CRABSCRIPT/script/condor_g.schema -post $CRABSCRIPT/script/condor_g.runtime -runtime $CRABSCRIPT/script/condor_g.runtime -comment "Job submitted to OSG"

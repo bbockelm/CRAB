@@ -1,3 +1,0 @@
-#!/bin/sh
-
-boss registerJob -name crabjob -schema $CRABSCRIPT/script/crab.schema -post $CRABSCRIPT/script/crab.runtime -runtime $CRABSCRIPT/script/crab.runtime -comment "CRAB job"

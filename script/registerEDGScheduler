@@ -1,3 +1,0 @@
-#!/bin/sh
-
-boss registerScheduler -name edg -submit $CRABSCRIPT/script/dg_submit.pl -query $CRABSCRIPT/script/dg_query.py -kill $CRABSCRIPT/script/dg_kill.pl -getout $CRABSCRIPT/script/dg_getout.pl -default

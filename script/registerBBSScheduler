@@ -1,5 +1,0 @@
-#!/bin/sh
-
-boss registerScheduler -name bbs -submit $CRABSCRIPT/script/bbs_submit.pl -query $CRABSCRIPT/script/bbs_query.pl -kill $CRABSCRIPT/script/bbs_kill.pl -getout $CRABSCRIPT/script/bbs_getout.pl -topwdir NONE
-
-
