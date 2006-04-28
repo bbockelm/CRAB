@@ -11,7 +11,9 @@
 #     Boss/...
 #     python/...
 #     script/...
-
+#     DBSAPI
+#     DLSAPI
+#
 TopDir=`\pwd`
 
 #############################################
@@ -29,7 +31,7 @@ cd boss-v${BOSSVER}
 
 echo "Creating Env. files"
 ./CONFIGURE
-echo "Creating ./BossConfig.clad"
+echo "Creating `\pwd`/BossConfig.clad"
 cat > ./BossConfig.clad <<EOF
 # This is the BOSS configuration file
 
@@ -69,17 +71,19 @@ export CRABDIR=$TopDir
 export CRABSCRIPT=\${CRABDIR}
 
 CRABPATH=\${CRABDIR}/python
+DLSAPIPATH=\${CRABDIR}/DLSAPI
 CRABPYTHON=\${CRABDIR}/python
+DBSAPIPYTHON=\${CRABDIR}/DBSAPI
 
 if [ -z "\$PATH" ]; then
-export PATH=\${CRABPATH}
+export PATH=\${CRABPATH}:\${DLSAPIPATH}
 else
-export PATH=\${CRABPATH}:\${PATH}
+export PATH=\${CRABPATH}:\${DLSAPIPATH}:\${PATH}
 fi
 if [ -z "\$PYTHONPATH" ]; then
-export PYTHONPATH=\${CRABPYTHON}
+export PYTHONPATH=\${CRABPYTHON}:\${DBSAPIPYTHON}
 else
-export PYTHONPATH=\${CRABPYTHON}:\${PYTHONPATH}
+export PYTHONPATH=\${CRABPYTHON}:\${DBSAPIPYTHON}:\${PYTHONPATH}
 fi
 
 # BOSS related Stuff
@@ -91,13 +95,13 @@ source $BOSSDIR/bossenv.sh
 
 if [ ! -d ~/.bossrc ]; then
   mkdir ~/.bossrc
-fi 
+fi
 
 # check if *clad files exist
 
 if [ ! -e ~/.bossrc/BossConfig.clad ]; then
   if [ -e ~/BossConfig.clad ]; then
-    cp  ~/BossConfig.clad ~/.bossrc/BossConfig.clad
+    mv  ~/BossConfig.clad ~/.bossrc/BossConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
     return 1
@@ -134,17 +138,19 @@ setenv CRABDIR $TopDir
 setenv CRABSCRIPT \${CRABDIR}
 
 set CRABPATH=\${CRABDIR}/python
+set DLSAPIPATH=\${CRABDIR}/DLSAPI
 set CRABPYTHON=\${CRABDIR}/python
+set DBSAPIPYTHON=\${CRABDIR}/DBSAPI
 
 if ( ! \$?path ) then
-set path=\${CRABPATH}
+set path=(\${CRABPATH} \${DLSAPIPATH})
 else
-set path=( \${CRABPATH} \${path} )
+set path=( \${CRABPATH} \${DLSAPIPATH} \${path})
 endif
 if ( ! \$?PYTHONPATH ) then
-setenv PYTHONPATH \${CRABPYTHON}
+setenv PYTHONPATH \${CRABPYTHON}:\${DBSAPIPYTHON}
 else
-setenv PYTHONPATH \${CRABPYTHON}:\${PYTHONPATH}
+setenv PYTHONPATH \${CRABPYTHON}:\${DBSAPIPYTHON}:\${PYTHONPATH}
 endif
 
 # BOSS related Stuff
@@ -156,13 +162,13 @@ source $BOSSDIR/bossenv.csh
 
 if ( ! -d ~/.bossrc ) then
   mkdir ~/.bossrc
-endif 
+endif
 
 # check if *clad files exist
 
 if ( ! -e ~/.bossrc/BossConfig.clad ) then
   if ( -e ~/BossConfig.clad ) then
-    cp ~/BossConfig.clad ~/.bossrc/BossConfig.clad
+    mv ~/BossConfig.clad ~/.bossrc/BossConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
     exit 1
