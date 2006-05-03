@@ -478,7 +478,7 @@ class SchedulerBoss(Scheduler):
                 else:
                     msg = 'Job # '+`int(i_id)`+' has status '+common.scheduler.queryStatus(boss_id)+' not possible to get output'
                     common.logger.message(msg)
-                dir += os.getlogin()
+                dir += os.environ['USER']
                 dir += '_' + os.path.basename(str(boss_id))
             pass
         common.jobDB.save() 

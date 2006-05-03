@@ -593,7 +593,7 @@ class SchedulerEdg(Scheduler):
 
         # Determine the output directory name
         dir = common.work_space.resDir()
-        dir += os.getlogin()
+        dir += os.environ['USER']
         dir += '_' + os.path.basename(id)
         return dir
 
