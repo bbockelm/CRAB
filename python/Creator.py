@@ -38,7 +38,7 @@ class Creator(Actor):
         
         # This is code for proto-monitoring
         fileCODE1 = open(common.work_space.shareDir()+"/.code","a")
-        if self.job_type.name() == 'ORCA' or self.job_type.name() == 'ORCA_DBSDLS' or self.job_type.name():
+        if self.job_type.name() == 'ORCA' or self.job_type.name() == 'ORCA_DBSDLS' :
             self.owner = cfg_params['ORCA.owner']
             self.dataset = cfg_params['ORCA.dataset']
             fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
@@ -48,6 +48,12 @@ class Creator(Actor):
             self.executable = cfg_params['FAMOS.executable']
             fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.inputFile)+'::'+str(self.executable))
             pass
+        elif self.job_type.name() == 'CMSSW':
+            self.inputFile = cfg_params['CMSSW.datasetpath']
+            self.executable = cfg_params['CMSSW.pset']
+            fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.inputFile)+'::'+str(self.executable))
+            pass
+
         fileCODE1.close()
 
         # This is code for dashboard
