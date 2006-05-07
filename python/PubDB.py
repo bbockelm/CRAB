@@ -85,6 +85,7 @@ class PubDB:
             tmpGood = string.split(self.cfg_params['EDG.ce_white_list'],',')
             for tmp in tmpGood:
                 tmp=string.strip(tmp)
+                if (tmp == 'cnaf'): tmp = 'webserver' ########## warning: temp. patch
                 CEWhiteList.append(tmp)
         except KeyError:
             pass
