@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.2
+#!/usr/bin/env python
 import sys
 import os
 # Add EDG_WL_LOCATION to the python path
