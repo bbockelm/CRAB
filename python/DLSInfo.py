@@ -5,6 +5,11 @@ from crab_exceptions import *
 from crab_util import *
 import common
 
+import dlsApi
+import dlsClient
+from dlsDataObjects import DlsLocation, DlsFileBlock, DlsEntry
+
+
 class DLSError:
     def __init__(self, fileblocks):
         print '\nERROR accessing DLS for fileblock '+fileblocks+'\n'
@@ -25,35 +30,56 @@ class DLSNoReplicas(exceptions.Exception):
         """ Return exception error. """
         return "%s" % (self.args)
 
+
 ##############################################################################
 # Class to extract info from DLS 
 ##############################################################################
 
 class DLSInfo:
-    def __init__(self, fileblocks):
-        self.fileblocks = fileblocks
-        self.DLSclient_ = 'dls-get-se '
-        self.DLSServer_ = 'lxgate10.cern.ch'
-        self.DLSServerPort_ = '18081'
-        #self.DLSServerPort_ = '18080
+    def __init__(self, type):
+        if type=="DLS_TYPE_DLI":
+           endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFCProto"
+           try:
+             import xml.dom.ext.reader
+           except:
+             crabdir=os.getenv('CRABDIR')
+## Let the user set up PyXML by hand
+             msg="Need to setup the PyXML python module. Do the following:\n"
+             msg+="  cd %s/DLSAPI\n"%crabdir
+             msg+="  ./InstallPyXML.sh"
+             raise CrabException(msg)
 
-        out=commands.getstatusoutput('which '+self.DLSclient_)
-        if out[0]>0:
-            msg="ERROR no DLS CLI available in $PATH : %s"%self.DLSclient_
-            raise CrabException(msg)
+        elif type=="DLS_TYPE_MYSQL":
+           endpoint="lxgate10.cern.ch:18081"
+        else:
+           msg = "DLS type %s not among the supported DLS ( DLS_TYPE_DLI and DLS_TYPE_MYSQL ) "%type
+           raise CrabException(msg)
+
+        try:
+          self.api = dlsClient.getDlsApi(dls_type=type,dls_endpoint=endpoint)
+        except dlsApi.DlsApiError, inst:
+          msg = "Error when binding the DLS interface: %s  Server %s"%(str(inst),self.DLSServer_)
+          #print msg
+          raise CrabException(msg)
 
 # ####################################
-    def getReplicas(self):
+    def getReplicas(self,fileblocks):
         """
         query DLS to get replicas
         """
         ##
-        cmd = self.DLSclient_+" --port "+self.DLSServerPort_+" --host "+self.DLSServer_+" --datablock "+self.fileblocks 
-        #print cmd
-        sites = runCommand(cmd)
-        sites=string.strip(sites)
-        if len(sites)<=0:
-            raise DLSNoReplicas(self.fileblocks)
+        try:
+          entryList=self.api.getLocations([fileblocks])
+        except dlsApi.DlsApiError, inst:
+          msg = "Error in the DLS query: %s." % str(inst)
+          #print msg
+          raise DLSNoReplicas(fileblocks)
 
-        ListSites=string.split(string.strip(sites),'\n')
+        ListSites=[] 
+        for entry in entryList:
+         for loc in entry.locations:
+           ListSites.append(str(loc.host))
+        if len(ListSites)<=0:
+          raise DLSNoReplicas(fileblocks)
+
         return ListSites         

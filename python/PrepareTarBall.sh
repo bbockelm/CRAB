@@ -14,7 +14,7 @@ CRABdir="$tag"
 echo "CRABDIR = $CRABDIR"
 CRABtag=$tag
 DBSAPItag="HEAD"
-DLSAPItag="DLS_V0_0_1"
+DLSAPItag="DLS_0_0_7"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
@@ -59,11 +59,18 @@ echo ">> downloading DBS API tag $DBSAPItag from CVS DBS/Clients/PythonAPI"
 cd ..
 cvs co -r ${DBSAPItag} -d DBSAPI COMP/DBS/Clients/PythonAPI
 rm -r DBSAPI/CVS
+rm -r DBSAPI/lib  #remove SOAPy etc...
 # add this dir to the PYTHONPATH
-## download DLS CLI
-echo ">> downloading DLS CLI tag ${DLSAPItag} from CVS DLS/Client/SimpleClient"
-cvs co -r ${DLSAPItag} -d DLSAPI COMP/DLS/Client/SimpleClient
-rm -r DLSAPI/CVS
+## download DLS API
+echo ">> downloading DLS CLI tag ${DLSAPItag} from CVS DLS/Client"
+cvs co -r ${DLSAPItag} DLS/Client
+cd DLS/Client
+## creating library
+make
+cd ../..
+## move to the CRAB standard location for DLSAPI
+mv DLS/Client/lib DLSAPI
+rm -r DLS
 # add this dir to PATH
 
 cd ..

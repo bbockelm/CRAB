@@ -54,7 +54,7 @@ class DBSInfo:
         # Construct api object
         self.api = dbsCgiApi.DbsCgiApi()
         # Configure api logging level
-        self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_QUIET_)
+        # self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_QUIET_)
         #if common.logger.debugLevel() >= 4:
         # self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_INFO_)
         #if common.logger.debugLevel() >= 10:          
@@ -64,11 +64,14 @@ class DBSInfo:
     def getMatchingDatasets (self, owner, dataset):
         """ Query DBS to get provenance """
         try:
-            list = self.api.listDatasets("/%s/*/%s" % (dataset, owner))
+            list = self.api.listProcessedDatasets("/%s/*/%s" % (dataset, owner))
         except dbsApi.InvalidDataTier, ex:
             raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())
         except dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        except dbsCgiApi.DbsCgiToolError , ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
+
         return list
 
 # ####################################
@@ -103,13 +106,13 @@ class DBSInfo:
         nevtsbyblock= {}
         for fileBlock in fileBlockList:
             ## get the event collections for each block
-            eventCollectionList = fileBlock.getEventCollectionList()
+            eventCollectionList = fileBlock.get('eventCollectionList')
             nevts=0
             for eventCollection in eventCollectionList:
-                common.logger.debug(20,"DBSInfo:  evc: "+eventCollection.getCollectionName()+" nevts:%i"%eventCollection.getNumberOfEvents()) 
-                nevts=nevts+eventCollection.getNumberOfEvents()
-            common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.getBlockName()))
-            nevtsbyblock[fileBlock.getBlockName()]=nevts
+                common.logger.debug(20,"DBSInfo:  evc: "+eventCollection.get('collectionName')+" nevts:%i"%eventCollection.get('numberOfEvents')) 
+                nevts=nevts+eventCollection.get('numberOfEvents')
+            common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.get('blockName')))
+            nevtsbyblock[fileBlock.get('blockName')]=nevts
 
         # returning a map of fileblock-nevts  will be enough for now
         # TODO: in future the EvC collections grouped by fileblock should be returned

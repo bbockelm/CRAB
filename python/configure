@@ -13,6 +13,7 @@
 #     script/...
 #     DBSAPI
 #     DLSAPI
+#     PsetCode
 #
 TopDir=`\pwd`
 
@@ -31,7 +32,7 @@ cd boss-v${BOSSVER}
 
 echo "Creating Env. files"
 ./CONFIGURE
-echo "Creating `\pwd`/BossConfig.clad"
+echo "Creating ./BossConfig.clad"
 cat > ./BossConfig.clad <<EOF
 # This is the BOSS configuration file
 
@@ -71,19 +72,21 @@ export CRABDIR=$TopDir
 export CRABSCRIPT=\${CRABDIR}
 
 CRABPATH=\${CRABDIR}/python
-DLSAPIPATH=\${CRABDIR}/DLSAPI
+DLSAPIPATH=$TopDir/DLSAPI
 CRABPYTHON=\${CRABDIR}/python
-DBSAPIPYTHON=\${CRABDIR}/DBSAPI
+DBSAPIPYTHON=$TopDir/DBSAPI
+DLSAPIPYTHON=$TopDir/DLSAPI
+PSETPYTHON=$TopDir/PsetCode
 
 if [ -z "\$PATH" ]; then
 export PATH=\${CRABPATH}:\${DLSAPIPATH}
 else
-export PATH=\${CRABPATH}:\${DLSAPIPATH}:\${PATH}
+export PATH=\${CRABPATH}:\${PATH}:\${DLSAPIPATH}
 fi
 if [ -z "\$PYTHONPATH" ]; then
-export PYTHONPATH=\${CRABPYTHON}:\${DBSAPIPYTHON}
+export PYTHONPATH=\${CRABPYTHON}:\${DBSAPIPYTHON}:\${DLSAPIPYTHON}:\{PSETPYTHON}
 else
-export PYTHONPATH=\${CRABPYTHON}:\${DBSAPIPYTHON}:\${PYTHONPATH}
+export PYTHONPATH=\${CRABPYTHON}:\${PYTHONPATH}:\${DBSAPIPYTHON}:\${DLSAPIPYTHON}:\${PSETPYTHON}
 fi
 
 # BOSS related Stuff
@@ -101,10 +104,9 @@ fi
 
 if [ ! -e ~/.bossrc/BossConfig.clad ]; then
   if [ -e ~/BossConfig.clad ]; then
-    mv  ~/BossConfig.clad ~/.bossrc/BossConfig.clad
+    cp  ~/BossConfig.clad ~/.bossrc/BossConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
-    return 1
   fi
 fi
 if [ ! -e ~/.bossrc/SQLiteConfig.clad ]; then
@@ -112,7 +114,6 @@ if [ ! -e ~/.bossrc/SQLiteConfig.clad ]; then
     cp ~/SQLiteConfig.clad ~/.bossrc/SQLiteConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
-    return 1
   fi
 fi
 if [ ! -e ~/.bossrc/MySQLRTConfig.clad ]; then
@@ -120,13 +121,11 @@ if [ ! -e ~/.bossrc/MySQLRTConfig.clad ]; then
     cp  ~/MySQLRTConfig.clad  ~/.bossrc/MySQLRTConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
-    return 1
   fi
 fi
 # now check a boss command to see if boss DB is up and running
 if [ \`boss clientID 1>/dev/null | grep -c "not correctly configured"\` -ne 0 ]; then
   echo "User-boss DB not installed: run configureBoss"
-  return 1
 fi
 EOF
 
@@ -138,19 +137,21 @@ setenv CRABDIR $TopDir
 setenv CRABSCRIPT \${CRABDIR}
 
 set CRABPATH=\${CRABDIR}/python
-set DLSAPIPATH=\${CRABDIR}/DLSAPI
+set DLSAPIPATH=$TopDir/DLSAPI
 set CRABPYTHON=\${CRABDIR}/python
-set DBSAPIPYTHON=\${CRABDIR}/DBSAPI
+set DBSAPIPYTHON=$TopDir/DBSAPI
+set DLSAPIPYTHON=$TopDir/DLSAPI
+set PSETPYTHON=$TopDir/PsetCode
 
 if ( ! \$?path ) then
 set path=(\${CRABPATH} \${DLSAPIPATH})
 else
-set path=( \${CRABPATH} \${DLSAPIPATH} \${path})
+set path=( \${CRABPATH} \${path} \${DLSAPIPATH})
 endif
 if ( ! \$?PYTHONPATH ) then
-setenv PYTHONPATH \${CRABPYTHON}:\${DBSAPIPYTHON}
+setenv PYTHONPATH \${CRABPYTHON}:\${DBSAPIPYTHON}:\${DLSAPIPYTHON}:\${PSETPYTHON}
 else
-setenv PYTHONPATH \${CRABPYTHON}:\${DBSAPIPYTHON}:\${PYTHONPATH}
+setenv PYTHONPATH \${CRABPYTHON}:\${PYTHONPATH}:\${DBSAPIPYTHON}:\${DLSAPIPYTHON}:\${PSETPYTHON}
 endif
 
 # BOSS related Stuff
@@ -165,10 +166,9 @@ if ( ! -d ~/.bossrc ) then
 endif
 
 # check if *clad files exist
-
 if ( ! -e ~/.bossrc/BossConfig.clad ) then
   if ( -e ~/BossConfig.clad ) then
-    mv ~/BossConfig.clad ~/.bossrc/BossConfig.clad
+    cp ~/BossConfig.clad ~/.bossrc/BossConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
     exit 1
@@ -199,5 +199,14 @@ EOF
 return
 }
 
+function configureDLSAPI {
+# Fabio: part for PyXML check and install
+echo "DLSAPI Installation"
+python $TopDir/python/checkPyXML.py
+return
+}
+
 configureBoss
 configureCrab
+#configureDLSAPI
+

@@ -65,6 +65,9 @@ class DataLocation:
         Sites = []
         allblockSites = []
 
+        DLS_type="DLS_TYPE_MYSQL"
+        #DLS_type="DLS_TYPE_DLI"
+
         ## find the replicas for each block 
         for fileblocks in self.Listfileblocks:
             #print fileblocks
@@ -74,9 +77,9 @@ class DataLocation:
                 (null,ds,tier,ow)=string.split(dbspath,'/')
                 datablock=ow+"/"+ds
                 #
-                dls=DLSInfo(datablock)
+                dls=DLSInfo(DLS_type)
                 try:
-                    replicas=dls.getReplicas()
+                    replicas=dls.getReplicas(datablock)
                 except DLSNoReplicas, ex:
                     raise DataLocationError(ex.getErrorMessage())
                 except:

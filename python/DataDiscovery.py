@@ -64,13 +64,16 @@ class DataDiscovery:
 
         ## get info about the requested dataset 
         dbs=DBSInfo()
-        self.datasets = dbs.getMatchingDatasets(self.owner, self.dataset)
+        try:
+         self.datasets = dbs.getMatchingDatasets(self.owner, self.dataset)
+        except DBSError, ex:
+          raise DataDiscoveryError(ex.getErrorMessage())
         if len(self.datasets) == 0:
           raise DataDiscoveryError("Owner=%s, Dataset=%s unknown to DBS" % (self.owner, self.dataset))
         if len(self.datasets) > 1:
           raise DataDiscoveryError("Owner=%s, Dataset=%s is ambiguous" % (self.owner, self.dataset))
         try:
-          self.dbsdataset = self.datasets[0].getDatasetPath()
+          self.dbsdataset = self.datasets[0].get('datasetPathName')
           self.blocksinfo = dbs.getDatasetContents(self.dbsdataset)
           self.allblocks.append (self.blocksinfo.keys ()) # add also the current fileblocksinfo
           self.dbspaths.append(self.dbsdataset)
@@ -98,7 +101,7 @@ class DataDiscovery:
         try:
           for p in parents:
             ## fill a list of dbspaths
-            parentPath = p.getDatasetPath()
+            parentPath = p.get('parent').get('datasetPathName')
             self.dbspaths.append (parentPath)
             parentBlocks = dbs.getDatasetContents (parentPath)
             self.allblocks.append (parentBlocks.keys ())  # add parent fileblocksinfo
@@ -111,7 +114,8 @@ class DataDiscovery:
          check that the data tiers requested by the user really exists in the provenance of the given dataset
         """
         startType = string.split(self.dbsdataset,'/')[2]
-        parentTypes = map(lambda p: p.getDataType(), parents)
+        # for example 'type' is PU and 'dataTier' is Hit
+        parentTypes = map(lambda p: p.get('type'), parents)
         for tier in dataTiers:
           if parentTypes.count(tier) <= 0 and tier != startType:
             msg="\nERROR Data %s not published in DBS with asked data tiers : the data tier not found is %s !\n  Check the data_tier variable in crab.cfg !"%(self.dbsdataset,tier)
