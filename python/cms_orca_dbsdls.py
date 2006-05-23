@@ -768,7 +768,6 @@ class Orca_dbsdls(JobType):
         """
         txt  = '   \n'
         txt += '   echo " ### SETUP CMS LCG  ENVIRONMENT ### "\n'
-        txt += '      echo "JOB_EXIT_STATUS = 0"\n'
         txt += '   if [ ! $VO_CMS_SW_DIR ] ;then\n'
         txt += '       echo "SET_CMS_ENV 10031 ==> ERROR CMS software dir not found on WN `hostname`"\n'
         txt += '       echo "JOB_EXIT_STATUS = 10031" \n'
