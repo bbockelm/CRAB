@@ -1,1 +1,1 @@
-boss registerRTMon -name mysql -updatorPath $CRABSCRIPT/script/bossrtupdatorMySQL -clientPath $CRABSCRIPT/script/bossrtclientMySQL -configPath $HOME/MySQLRTConfig.clad -default
+boss registerRTMon -name mysql -updatorPath $CRABSCRIPT/script/bossrtupdatorMySQL -clientPath $CRABSCRIPT/script/bossrtclientMySQL -configPath $HOME/.bossrc/MySQLRTConfig.clad -default
