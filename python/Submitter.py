@@ -82,12 +82,25 @@ class Submitter(Actor):
                 fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
                 self.cfg_params['sid'] = jid
                 nevtJob = common.jobDB.maxEvents(nj)
+
+                # OLI: JobID treatment, special for Condor-G scheduler
+                jobId = ''
+                if common.scheduler.boss_scheduler_name == 'condor_g':
+                    # create hash of cfg file
+                    hash = makeCksum(common.work_space.cfgFileName())
+                    jobId = str(nj + 1) + '_' + hash + '_' + self.cfg_params['sid']
+                    common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+                else:
+                    jobId = str(nj + 1) + '_' + self.cfg_params['sid']
+                    common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
+
                 if ( jid.find(":") != -1 ) :
                     rb = jid.split(':')[1]
                     self.cfg_params['rb'] = rb.replace('//', '')
                 else :
                     self.cfg_params['rb'] = 'OSG'
-                params = {'nevtJob': nevtJob, 'jobId': str(nj + 1) + '_' + self.cfg_params['sid'], 'sid': self.cfg_params['sid'], \
+
+                params = {'nevtJob': nevtJob, 'jobId': jobId, 'sid': self.cfg_params['sid'], \
                           'broker': self.cfg_params['rb'], 'bossId': common.jobDB.bossId(nj)}
                 for i in fl.readlines():
                     val = i.split(':')

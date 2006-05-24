@@ -253,7 +253,19 @@ class Orca_dbsdls(JobType):
         txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += 'elif [ $middleware == OSG ]; then\n'
-        txt += '    echo "Additional info from OSG WN to be implemented"\n'
+
+        # OLI: added monitoring for dashbord, use hash of crab.cfg
+        if common.scheduler.boss_scheduler_name == 'condor_g':
+            # create hash of cfg file
+            hash = makeCksum(common.work_space.cfgFileName())
+            txt += '    echo "MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo\n'
+        else :
+            txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncCE=`$EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo\n'
+
         txt += 'fi\n'
         txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
 
