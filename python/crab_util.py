@@ -283,6 +283,38 @@ def runCommand(cmd, printout=0, timeout=-1):
     return cmd_out
 
 ####################################
+def makeCksum(filename) :
+    """
+    make chksum using filename and content of file
+    """
+
+    tmp_filename = '/tmp/crab_hash_tmp'
+    runCommand('rm -f '+tmp_filename)
+    output = open(tmp_filename,'w')
+
+    # add filename as first line
+    output.write(filename+'\n')
+
+    # fill input file in tmp file
+    input = open(filename)
+    input_line = input.readline()
+    while input_line :
+        output.write(input_line+'\n')
+        input_line = input.readline()
+    output.close()
+
+
+    cmd = 'cksum '+tmp_filename
+    cmd_out = runCommand(cmd)
+
+    cksum = cmd_out.split()[0]
+
+    # delete file
+    runCommand('rm -f '+tmp_filename)
+
+    return cksum
+
+####################################
 if __name__ == '__main__':
     import sys
     print 'sys.argv[1] =',sys.argv[1]
