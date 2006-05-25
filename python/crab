@@ -6,4 +6,15 @@
 # Wrapper script for crab.py
 #
 
-crab.py $*
+if [ -z "$CRABDIR" ]; then
+  echo 'CRABDIR not set.    Please source crab.(c)sh'
+  exit 1
+fi
+if [ -z "$PYTHONPATH" ]; then
+  export PYTHONPATH=${CRABDIR}/DLSAPI/:${CRABDIR}/DBSAPI:${CRABDIR}/PsetCode
+else
+  export PYTHONPATH=${CRABDIR}/DLSAPI/:${CRABDIR}/DBSAPI:${CRABDIR}/PsetCode:$PYTHONPATH
+fi
+
+#echo $PYTHONPATH
+/bin/env python crab.py $*
