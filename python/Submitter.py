@@ -81,7 +81,8 @@ class Submitter(Actor):
                 
                 fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
                 self.cfg_params['sid'] = jid
-                nevtJob = common.jobDB.maxEvents(nj)
+                #### FF: per il momento commentiamo nevtJob che non c'e' piu' nel jobdb
+                #nevtJob = common.jobDB.maxEvents(nj)
 
                 # OLI: JobID treatment, special for Condor-G scheduler
                 jobId = ''
@@ -100,7 +101,10 @@ class Submitter(Actor):
                 else :
                     self.cfg_params['rb'] = 'OSG'
 
-                params = {'nevtJob': nevtJob, 'jobId': jobId, 'sid': self.cfg_params['sid'], \
+                #### FF: per il momento commentiamo nevtJob che non c'e' piu' nel jobdb
+                #params = {'nevtJob': nevtJob, 'jobId': jobId, 'sid': self.cfg_params['sid'], \
+                #          'broker': self.cfg_params['rb'], 'bossId': common.jobDB.bossId(nj)}
+                params = {'jobId': jobId, 'sid': self.cfg_params['sid'], \
                           'broker': self.cfg_params['rb'], 'bossId': common.jobDB.bossId(nj)}
                 for i in fl.readlines():
                     val = i.split(':')
@@ -113,7 +117,7 @@ class Submitter(Actor):
             common.jobDB.save()
         
         stop = time.time()
-        common.logger.debug(5, "Submission Time: "+str(stop - start))
+        common.logger.debug(1, "Submission Time: "+str(stop - start))
         #print "Submission Time: %d "%(stop - start)
         common.jobDB.save()
             
