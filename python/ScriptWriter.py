@@ -107,7 +107,9 @@ class ScriptWriter:
         """
         Returns part of a job script which executes the application.
         """
-        return '$executable\n'
+        job = common.job_list[self.nj]
+        args = job.type().executableArgs()
+        return '$executable '+args+'\n'
 
     def renameOutput_(self):
         """

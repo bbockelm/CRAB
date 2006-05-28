@@ -538,9 +538,9 @@ class SchedulerCondor_g(Scheduler):
             out_box = out_box + ' };\n'
             jdl.write(out_box)
 
-            firstEvent = common.jobDB.firstEvent(nj)
-            maxEvents = common.jobDB.maxEvents(nj)
-            jdl.write('Arguments = "' + str(nj+1)+' '+str(firstEvent)+' '+str(maxEvents)+' '+common.analisys_common_info['sites'][0]+'";\n')
+            #firstEvent = common.jobDB.firstEvent(nj)
+            #maxEvents = common.jobDB.maxEvents(nj)
+            jdl.write('Arguments = "' + str(nj+1)+' '+jbt.getJobTypeArguments(nj, "CONDOR") + '";\n')
 
             jdl.write('StdOutput = "' + job.stdout() + '";\n')
             jdl.write('stream_output = "false";\n')

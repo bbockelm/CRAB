@@ -497,6 +497,7 @@ class SchedulerEdg(Scheduler):
         [sites.append(it) for it in CEs if not sites.count(it)]
 
         common.logger.debug(5,"All Sites :"+str(sites))
+        common.logger.message("Matched Sites :"+str(sites))
         return len(sites)
 
     def noMatchFound_(self, jdl):
@@ -633,10 +634,9 @@ class SchedulerEdg(Scheduler):
         jdl.write(jt_string)
 
         ### only one .sh  JDL has arguments:
-        firstEvent = common.jobDB.firstEvent(nj)
-        maxEvents = common.jobDB.maxEvents(nj)
-        jdl.write('Arguments = "' + str(nj+1)+' '+str(firstEvent)+' '+str(maxEvents)+'";\n')
 
+        ### Fabio
+        jdl.write('Arguments = "' + str(nj+1)+' '+ jbt.getJobTypeArguments(nj, "EDG") +'";\n')
         inp_box = 'InputSandbox = { '
         inp_box = inp_box + '"' + script + '",'
 
