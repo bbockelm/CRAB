@@ -462,7 +462,7 @@ class Crab:
 
                     common.job_list.setScriptNames(self.job_type_name+'.sh')
                     common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                    common.job_list.setCfgNames(self.job_type_name+'.orcarc')
+                    common.job_list.setCfgNames(self.creator.jobType().configFilename())
 
                     self.creator.writeJobsSpecsToDB()
                     pass
