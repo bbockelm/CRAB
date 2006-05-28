@@ -72,21 +72,21 @@ export CRABDIR=$TopDir
 export CRABSCRIPT=\${CRABDIR}
 
 CRABPATH=\${CRABDIR}/python
-DLSAPIPATH=$TopDir/DLSAPI
-CRABPYTHON=\${CRABDIR}/python
-DBSAPIPYTHON=$TopDir/DBSAPI
-DLSAPIPYTHON=$TopDir/DLSAPI
-PSETPYTHON=$TopDir/PsetCode
+CRABDLSAPIPATH=$TopDir/DLSAPI
+export CRABPYTHON=\${CRABDIR}/python
+export CRABDBSAPIPYTHON=$TopDir/DBSAPI
+export CRABDLSAPIPYTHON=$TopDir/DLSAPI
+export CRABPSETPYTHON=$TopDir/PsetCode
 
 if [ -z "\$PATH" ]; then
-export PATH=\${CRABPATH}:\${DLSAPIPATH}
+export PATH=\${CRABPATH}:\${CRABDLSAPIPATH}
 else
-export PATH=\${CRABPATH}:\${PATH}:\${DLSAPIPATH}
+export PATH=\${CRABPATH}:\${PATH}:\${CRABDLSAPIPATH}
 fi
 if [ -z "\$PYTHONPATH" ]; then
-export PYTHONPATH=\${CRABPYTHON}:\${DBSAPIPYTHON}:\${DLSAPIPYTHON}:\{PSETPYTHON}
+export PYTHONPATH=\${CRABPYTHON}:\${CRABDBSAPIPYTHON}:\${CRABDLSAPIPYTHON}:\${CRABPSETPYTHON}
 else
-export PYTHONPATH=\${CRABPYTHON}:\${PYTHONPATH}:\${DBSAPIPYTHON}:\${DLSAPIPYTHON}:\${PSETPYTHON}
+export PYTHONPATH=\${CRABPYTHON}:\${PYTHONPATH}:\${CRABDBSAPIPYTHON}:\${CRABDLSAPIPYTHON}:\${CRABPSETPYTHON}
 fi
 
 # BOSS related Stuff
@@ -107,6 +107,7 @@ if [ ! -e ~/.bossrc/BossConfig.clad ]; then
     cp  ~/BossConfig.clad ~/.bossrc/BossConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
+    return 1
   fi
 fi
 if [ ! -e ~/.bossrc/SQLiteConfig.clad ]; then
@@ -114,6 +115,7 @@ if [ ! -e ~/.bossrc/SQLiteConfig.clad ]; then
     cp ~/SQLiteConfig.clad ~/.bossrc/SQLiteConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
+    return 1
   fi
 fi
 if [ ! -e ~/.bossrc/MySQLRTConfig.clad ]; then
@@ -121,11 +123,13 @@ if [ ! -e ~/.bossrc/MySQLRTConfig.clad ]; then
     cp  ~/MySQLRTConfig.clad  ~/.bossrc/MySQLRTConfig.clad
   else
     echo "User-boss DB not installed: run configureBoss"
+    return 1
   fi
 fi
 # now check a boss command to see if boss DB is up and running
 if [ \`boss clientID 1>/dev/null | grep -c "not correctly configured"\` -ne 0 ]; then
   echo "User-boss DB not installed: run configureBoss"
+    return 1
 fi
 EOF
 
@@ -137,21 +141,21 @@ setenv CRABDIR $TopDir
 setenv CRABSCRIPT \${CRABDIR}
 
 set CRABPATH=\${CRABDIR}/python
-set DLSAPIPATH=$TopDir/DLSAPI
-set CRABPYTHON=\${CRABDIR}/python
-set DBSAPIPYTHON=$TopDir/DBSAPI
-set DLSAPIPYTHON=$TopDir/DLSAPI
-set PSETPYTHON=$TopDir/PsetCode
+set CRABDLSAPIPATH=$TopDir/DLSAPI
+setenv CRABPYTHON \${CRABDIR}/python
+setenv CRABDBSAPIPYTHON $TopDir/DBSAPI
+setenv CRABDLSAPIPYTHON $TopDir/DLSAPI
+setenv CRABPSETPYTHON $TopDir/PsetCode
 
 if ( ! \$?path ) then
-set path=(\${CRABPATH} \${DLSAPIPATH})
+set path=(\${CRABPATH} \${CRABDLSAPIPATH})
 else
-set path=( \${CRABPATH} \${path} \${DLSAPIPATH})
+set path=( \${CRABPATH} \${path} \${CRABDLSAPIPATH})
 endif
 if ( ! \$?PYTHONPATH ) then
-setenv PYTHONPATH \${CRABPYTHON}:\${DBSAPIPYTHON}:\${DLSAPIPYTHON}:\${PSETPYTHON}
+setenv PYTHONPATH \${CRABPYTHON}:\${CRABDBSAPIPYTHON}:\${CRABDLSAPIPYTHON}:\${CRABPSETPYTHON}
 else
-setenv PYTHONPATH \${CRABPYTHON}:\${PYTHONPATH}:\${DBSAPIPYTHON}:\${DLSAPIPYTHON}:\${PSETPYTHON}
+setenv PYTHONPATH \${CRABPYTHON}:\${PYTHONPATH}:\${CRABDBSAPIPYTHON}:\${CRABDLSAPIPYTHON}:\${CRABPSETPYTHON}
 endif
 
 # BOSS related Stuff
