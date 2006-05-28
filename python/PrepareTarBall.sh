@@ -13,8 +13,8 @@ echo "tag = $tag"
 CRABdir="$tag"
 echo "CRABDIR = $CRABDIR"
 CRABtag=$tag
-DBSAPItag="HEAD"
-DLSAPItag="DLS_0_0_7"
+DBSAPItag="DBS_0_0_1"
+DLSAPItag="DLS_0_0_8"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
