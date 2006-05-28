@@ -1,20 +1,13 @@
-#!/bin/env sh
+#!/usr/bin/env sh
 #
 # 07-Dec-2005
 # Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
 #
 # Wrapper script for crab.py
 #
-
-if [ -z "$CRABDIR" ]; then
-  echo 'CRABDIR not set.    Please source crab.(c)sh'
-  exit 1
-fi
 if [ -z "$PYTHONPATH" ]; then
-  export PYTHONPATH=${CRABDIR}/DLSAPI/:${CRABDIR}/DBSAPI:${CRABDIR}/PsetCode
+  export PYTHONPATH=${CRABPYTHON}:${CRABDBSAPIPYTHON}:${CRABDLSAPIPYTHON}:${CRABPSETPYTHON}
 else
-  export PYTHONPATH=${CRABDIR}/DLSAPI/:${CRABDIR}/DBSAPI:${CRABDIR}/PsetCode:$PYTHONPATH
+  export PYTHONPATH=${CRABPYTHON}:${CRABDBSAPIPYTHON}:${CRABDLSAPIPYTHON}:${CRABPSETPYTHON}:${PYTHONPATH}
 fi
-
-#echo $PYTHONPATH
-/bin/env python crab.py $*
+/usr/bin/env python crab.py $*
