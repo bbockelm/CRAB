@@ -12,6 +12,26 @@ class JobType:
         self._name = name
         return
 
+    # ### Fabio
+    def split(self, jobList):
+        """
+        Returns the list of jobtype specific attriute for each job
+        """
+        return     
+        
+    def numberOfJobs(self):
+        """
+        Returns the numberof job to be created
+        """
+        return 0
+    
+    def jobsToDB(self, nJobs):
+        """
+        Write the JobType specific Entres into JobDB
+        """
+        return
+    # ###
+    
     def name(self):
         return self._name
 
@@ -110,6 +130,9 @@ class JobType:
         msg += self.__class__.__name__+'::executableName() from '+__file__
         raise CrabException(msg)
 
+    def executableArgs(self):
+        return ''
+
     # marco
     def setTaskid_(self):
         msg = 'Internal ERROR. Pure virtual function called:\n'
@@ -133,4 +156,9 @@ class JobType:
     def getRequirements(self):
         msg = 'Internal ERROR. Pure virtual function called:\n'
         msg += self.__class__.__name__+'::executableName() from '+__file__
+        raise CrabException(msg)
+
+    def configFilename(self):
+        msg = 'Internal ERROR. Pure virtual function called:\n'
+        msg += self.__class__.__name__+'::configFilename() from '+__file__
         raise CrabException(msg)
