@@ -3,9 +3,13 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
+import PsetManipulator  
 
-import DataDiscovery
-import DataLocation
+import DBSInfo_EDM
+#from DataDiscovery_EDM import DataDiscovery_EDM
+import DataDiscovery_EDM
+#from DataLocation_EDM import DataLocation_EDM
+import DataLocation_EDM
 import Scram
 
 import os, string, re
@@ -16,6 +20,9 @@ class Cmssw(JobType):
         common.logger.debug(3,'CMSSW::__init__')
 
         self.analisys_common_info = {}
+        # Marco.
+        self._params = {}
+        self.cfg_params = cfg_params
 
         log = common.logger
         
@@ -26,30 +33,35 @@ class Cmssw(JobType):
         self.executable = ''
         self.tgz_name = 'default.tgz'
 
+
         self.version = self.scram.getSWVersion()
         common.analisys_common_info['sw_version'] = self.version
+        ### FEDE
+        common.analisys_common_info['copy_input_data'] = 0
+        common.analisys_common_info['events_management'] = 1
 
         ### collect Data cards
         try:
-            self.owner = cfg_params['CMSSW.owner']
-            log.debug(6, "CMSSW::CMSSW(): owner = "+self.owner)
-            self.dataset = cfg_params['CMSSW.dataset']
-            log.debug(6, "CMSSW::CMSSW(): dataset = "+self.dataset)
+         #   self.owner = cfg_params['CMSSW.owner']
+         #   log.debug(6, "CMSSW::CMSSW(): owner = "+self.owner)
+         #   self.dataset = cfg_params['CMSSW.dataset']
+            self.datasetPath = cfg_params['CMSSW.datasetpath']
+            log.debug(6, "CMSSW::CMSSW(): datasetPath = "+self.datasetPath)
         except KeyError:
-            msg = "Error: owner and/or dataset not defined "
+        #    msg = "Error: owner and/or dataset not defined "
+            msg = "Error: datasetpath not defined "  
             raise CrabException(msg)
-
         self.dataTiers = []
-        try:
-            tmpDataTiers = string.split(cfg_params['CMSSW.data_tier'],',')
-            for tmp in tmpDataTiers:
-                tmp=string.strip(tmp)
-                self.dataTiers.append(tmp)
-                pass
-            pass
-        except KeyError:
-            pass
-        log.debug(6, "Cmssw::Cmssw(): dataTiers = "+str(self.dataTiers))
+ #       try:
+ #           tmpDataTiers = string.split(cfg_params['CMSSW.data_tier'],',')
+ #           for tmp in tmpDataTiers:
+ #               tmp=string.strip(tmp)
+ #               self.dataTiers.append(tmp)
+ #               pass
+ #           pass
+ #       except KeyError:
+ #           pass
+ #       log.debug(6, "Cmssw::Cmssw(): dataTiers = "+str(self.dataTiers))
 
         ## now the application
         try:
@@ -83,7 +95,6 @@ class Cmssw(JobType):
                     tmp=string.strip(tmp)
                     self.output_file.append(tmp)
                     pass
-
             else:
                 log.message("No output file defined: only stdout/err will be available")
                 pass
@@ -94,7 +105,7 @@ class Cmssw(JobType):
 
         # script_exe file as additional file in inputSandbox
         try:
-           self.scriptExe = cfg_params['CMSSW.script_exe']
+           self.scriptExe = cfg_params['USER.script_exe']
            self.additional_inbox_files.append(self.scriptExe)
         except KeyError:
            pass
@@ -109,6 +120,8 @@ class Cmssw(JobType):
         try:
             tmpAddFiles = string.split(cfg_params['CMSSW.additional_input_files'],',')
             for tmp in tmpAddFiles:
+                if not os.path.exists(tmp):
+                    raise CrabException("Additional input file not found: "+tmp)
                 tmp=string.strip(tmp)
                 self.additional_inbox_files.append(tmp)
                 pass
@@ -117,20 +130,21 @@ class Cmssw(JobType):
             pass
 
         try:
+            self.filesPerJob = int(cfg_params['CMSSW.files_per_jobs']) #Daniele
+        except KeyError:
+            self.filesPerJob = 1
+
+        ## Max event   will be total_number_of_events ???  Daniele
+        try:
+            self.maxEv = cfg_params['CMSSW.event_per_job']
+        except KeyError:
+            self.maxEv = "-1"
+        ##   
+        try:
             self.total_number_of_events = int(cfg_params['CMSSW.total_number_of_events'])
         except KeyError:
-            msg = 'Must define total_number_of_events and job_number_of_events'
+            msg = 'Must define total_number_of_events'
             raise CrabException(msg)
-            
-#Marco: FirstEvent is nolonger used inside PSet
-#        try:
-#            self.first = int(cfg_params['CMSSW.first_event'])
-#        except KeyError:
-#            self.first = 0
-#            pass
-#        log.debug(6, "Orca::Orca(): total number of events = "+`self.total_number_of_events`)
-        #log.debug(6, "Orca::Orca(): events per job = "+`self.job_number_of_events`)
-#        log.debug(6, "Orca::Orca(): first event = "+`self.first`)
         
         CEBlackList = []
         try:
@@ -150,10 +164,8 @@ class Cmssw(JobType):
         CEWhiteList = []
         try:
             tmpGood = string.split(cfg_params['EDG.ce_white_list'],',')
-            #tmpGood = ['cern']
             for tmp in tmpGood:
                 tmp=string.strip(tmp)
-                #if (tmp == 'cnaf'): tmp = 'webserver' ########## warning: temp. patch
                 CEWhiteList.append(tmp)
         except KeyError:
             pass
@@ -165,6 +177,8 @@ class Cmssw(JobType):
 
         common.logger.debug(5,'CEWhiteList: '+str(CEWhiteList))
 
+        self.PsetEdit = PsetManipulator.PsetManipulator(self.pset) #Daniele Pset
+
         #DBSDLS-start
         ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code 
         self.maxEvents=0  # max events available   ( --> check the requested nb. of evts in Creator.py)
@@ -175,49 +189,68 @@ class Cmssw(JobType):
 
         self.tgzNameWithPath = self.getTarBall(self.executable)
 
+        self.jobSplitting()  #Daniele job Splitting
+        self.PsetEdit.maxEvent(self.maxEv) #Daniele  
+        self.PsetEdit.inputModule("INPUT") #Daniele   
+        self.PsetEdit.psetWriter(self.configFilename())
+
     def DataDiscoveryAndLocation(self, cfg_params):
 
-        fun = "CMSSW::DataDiscoveryAndLocation()"
+        common.logger.debug(10,"CMSSW::DataDiscoveryAndLocation()")
+
+        #datasetPath = "/"+self.owner+"/"+self.dataTiers[0]+"/"+self.dataset
+         
+        datasetPath=self.datasetPath
+
+        ## TODO
+        dataTiersList = ""
+        dataTiers = dataTiersList.split(',')
 
         ## Contact the DBS
         try:
-            self.pubdata=DataDiscovery.DataDiscovery(self.owner,
-                                                     self.dataset,
-                                                     self.dataTiers, 
-                                                     cfg_params)
+            self.pubdata=DataDiscovery_EDM.DataDiscovery_EDM(datasetPath, dataTiers, dataTiers)
             self.pubdata.fetchDBSInfo()
 
-        except DataDiscovery.NotExistingDatasetError, ex :
+        except DataDiscovery_EDM.NotExistingDatasetError, ex :
             msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
             raise CrabException(msg)
 
-        except DataDiscovery.NoDataTierinProvenanceError, ex :
+        except DataDiscovery_EDM.NoDataTierinProvenanceError, ex :
             msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
             raise CrabException(msg)
-        except DataDiscovery.DataDiscoveryError, ex:
+        except DataDiscovery_EDM.DataDiscoveryError, ex:
             msg = 'ERROR ***: failed Data Discovery in DBS  %s'%ex.getErrorMessage()
             raise CrabException(msg)
 
         ## get list of all required data in the form of dbs paths  (dbs path = /dataset/datatier/owner)
-        self.DBSPaths=self.pubdata.getDBSPaths()
-        common.logger.message("Required data are : ")
-        for path in self.DBSPaths:
-            common.logger.message(" --> "+path )
+        ## self.DBSPaths=self.pubdata.getDBSPaths()
+        common.logger.message("Required data are :"+self.datasetPath)
+
+        filesbyblock=self.pubdata.getFiles()
+        self.AllInputFiles=filesbyblock.values()
+        self.files = self.AllInputFiles        
+
+        ## TEMP
+    #    self.filesTmp = filesbyblock.values()
+    #    self.files = []
+    #    locPath='rfio:cmsbose2.bo.infn.it:/flatfiles/SE00/cms/fanfani/ProdTest/'
+    #    locPath=''
+    #    tmp = []
+    #    for file in self.filesTmp[0]:
+    #        tmp.append(locPath+file)
+    #    self.files.append(tmp)
+        ## END TEMP
 
         ## get max number of events
-        common.logger.debug(10,"number of events for primary fileblocks %i"%self.pubdata.getMaxEvents())
+        #common.logger.debug(10,"number of events for primary fileblocks %i"%self.pubdata.getMaxEvents())
         self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py 
         common.logger.message("\nThe number of available events is %s"%self.maxEvents)
 
-        ## get fileblocks corresponding to the required data
-        fb=self.pubdata.getFileBlocks()
-        common.logger.debug(5,"fileblocks are %s"%fb)
-
         ## Contact the DLS and build a list of sites hosting the fileblocks
         try:
-            dataloc=DataLocation.DataLocation(self.pubdata.getFileBlocks(),cfg_params)
+            dataloc=DataLocation_EDM.DataLocation_EDM(filesbyblock.keys(),cfg_params)
             dataloc.fetchDLSInfo()
-        except DataLocation.DataLocationError , ex:
+        except DataLocation_EDM.DataLocationError , ex:
             msg = 'ERROR ***: failed Data Location in DLS \n %s '%ex.getErrorMessage()
             raise CrabException(msg)
         
@@ -231,11 +264,106 @@ class Cmssw(JobType):
         if len(sites)==0:
             msg = 'No sites hosting all the needed data! Exiting... '
             raise CrabException(msg)
+
         common.logger.message("List of Sites hosting the data : "+str(sites)) 
         common.logger.debug(6, "List of Sites: "+str(sites))
         common.analisys_common_info['sites']=sites    ## used in SchedulerEdg.py in createSchScript
         return
+    
+    def jobSplitting(self):
+        """
+        first implemntation for job splitting  
+        """    
+      #  print 'eventi totali '+str(self.maxEvents)
+      #  print 'eventi totali richiesti dallo user '+str(self.total_number_of_events)
+        #print 'files per job '+str(self.filesPerJob)
+        common.logger.message('Required '+str(self.filesPerJob)+' files per job ')
+        common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
+
+        ## TODO: SL need to have (from DBS) a detailed list of how many events per each file
+        n_tot_files = (len(self.files[0]))
+        ## SL: this is wrong if the files have different number of events
+        evPerFile = int(self.maxEvents)/n_tot_files
         
+        common.logger.debug(5,'Events per File '+str(evPerFile))
+
+        ## if asked to process all events, do it
+        if self.total_number_of_events == -1:
+            self.total_number_of_events=self.maxEvents
+            self.total_number_of_jobs = int(n_tot_files)*1/int(self.filesPerJob)
+            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for all available events '+str(self.total_number_of_events)+' events')
+        
+        else:
+            self.total_number_of_files = int(self.total_number_of_events/evPerFile)
+            ## SL: if ask for less event than what is computed to be available on a
+            ##     file, process the first file anyhow.
+            if self.total_number_of_files == 0:
+                self.total_number_of_files = self.total_number_of_files + 1
+
+            common.logger.debug(5,'N files  '+str(self.total_number_of_files))
+
+            check = 0
+            
+            ## Compute the number of jobs
+            #self.total_number_of_jobs = int(n_tot_files)*1/int(self.filesPerJob)
+            self.total_number_of_jobs = int(self.total_number_of_files/self.filesPerJob)
+            common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
+
+            ## is there any remainder?
+            check = int(self.total_number_of_files) - (int(self.total_number_of_jobs)*self.filesPerJob)
+
+            common.logger.debug(5,'Check  '+str(check))
+
+            if check > 0:
+                self.total_number_of_jobs =  self.total_number_of_jobs + 1
+                common.logger.message('Warning: last job will be created with '+str(check)+' files')
+
+            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str((self.total_number_of_jobs-1)*self.filesPerJob*evPerFile + check*evPerFile)+' events')
+            pass
+
+        list_of_lists = []
+        for i in xrange(0, int(n_tot_files), self.filesPerJob):
+            list_of_lists.append(self.files[0][i: i+self.filesPerJob])
+
+        self.list_of_files = list_of_lists
+      
+        return
+
+    def split(self, jobParams):
+ 
+        common.jobDB.load()
+        #### Fabio
+        njobs = self.total_number_of_jobs
+        filelist = self.list_of_files
+        # create the empty structure
+        for i in range(njobs):
+            jobParams.append("")
+        
+        for job in range(njobs):
+            jobParams[job] = filelist[job]
+            common.jobDB.setArguments(job, jobParams[job])
+
+        common.jobDB.save()
+        return
+    
+    def getJobTypeArguments(self, nj, sched):
+        params = common.jobDB.arguments(nj)
+        #print params
+        parString = "\\{" 
+        
+        for i in range(len(params) - 1):
+            parString += '\\\"' + params[i] + '\\\"\,'
+        
+        parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
+        return parString
+  
+    def numberOfJobs(self):
+        # Fabio
+
+        return self.total_number_of_jobs
+ 
+
+
     def checkBlackList(self, allSites):
         if len(self.reCEBlackList)==0: return allSites
         sites = []
@@ -252,12 +380,11 @@ class Cmssw(JobType):
             common.logger.debug(3,"No sites found after BlackList")
         return sites
 
-    def checkWhiteList(self, allsites):
+    def checkWhiteList(self, allSites):
 
-        if len(self.reCEWhiteList)==0: return pubDBUrls
+        if len(self.reCEWhiteList)==0: return allSites
         sites = []
-        for site in allsites:
-            #print 'connecting to the URL ',url
+        for site in allSites:
             good=0
             for re in self.reCEWhiteList:
                 if re.search(site):
@@ -327,6 +454,11 @@ class Cmssw(JobType):
         if os.path.exists(lib):
             filesToBeTarred.append(libDir)
  
+        ## Now check if module dir is present
+        moduleDir = 'module'
+        if os.path.isdir(swArea+'/'+moduleDir):
+            filesToBeTarred.append(moduleDir)
+
         ## Now check if the Data dir is present
         dataDir = 'src/Data/'
         if os.path.isdir(swArea+'/'+dataDir):
@@ -354,7 +486,28 @@ class Cmssw(JobType):
         the execution environment for the job 'nj'.
         """
         # Prepare JobType-independent part
-        txt = self.wsSetupCMSEnvironment_()
+        txt = '' 
+   
+        ## OLI_Daniele at this level  middleware already known
+
+        txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += self.wsSetupCMSLCGEnvironment_()
+        txt += 'elif [ $middleware == OSG ]; then\n'
+        txt += '    time=`date -u +"%s"`\n'
+        txt += '    WORKING_DIR=$OSG_WN_TMP/cms_$time\n'
+        txt += '    echo "Creating working directory: $WORKING_DIR"\n'
+        txt += '    /bin/mkdir -p $WORKING_DIR\n'
+        txt += '    if [ ! -d $WORKING_DIR ] ;then\n'
+        txt += '        echo "OSG WORKING DIR ==> $WORKING_DIR could not be created on on WN `hostname`"\n'
+    
+        txt += '        echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '        exit 1\n'
+        txt += '    fi\n'
+        txt += '\n'
+        txt += '    echo "Change to working directory: $WORKING_DIR"\n'
+        txt += '    cd $WORKING_DIR\n'
+        txt += self.wsSetupCMSOSGEnvironment_() 
+        txt += 'fi\n'
 
         # Prepare JobType-specific part
         scram = self.scram.commandName()
@@ -364,10 +517,19 @@ class Cmssw(JobType):
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
         txt += '   echo "SET_EXE_ENV 1 ==>ERROR CMSSW '+self.version+' not found on `hostname`" \n'
-        txt += '   echo "JOB_EXIT_STATUS = 5"\n'
-        txt += '   echo "SanityCheckCode = 5" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '   echo "JOB_EXIT_STATUS = 10034"\n'
+        txt += '   echo "SanityCheckCode = 10034" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '   exit 5 \n'
+        ## OLI_Daniele
+        txt += '    if [ $middleware == OSG ]; then \n'
+        txt += '        echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '        cd $RUNTIME_AREA\n'
+        txt += '        /bin/rm -rf $WORKING_DIR\n'
+        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '        fi\n'
+        txt += '    fi \n'
+        txt += '   exit 1 \n'
         txt += 'fi \n'
         txt += 'echo "CMSSW_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
@@ -381,31 +543,58 @@ class Cmssw(JobType):
         # txt += "## ARGUMNETS: $3 Max Event for this job\n"
         txt += "\n"
         txt += "narg=$#\n"
-        txt += "if [ $narg -lt 1 ]\n"
+        txt += "if [ $narg -lt 2 ]\n"
         txt += "then\n"
         txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$narg+ \n"
-        txt += '    echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '    echo "SanityCheckCode = 1" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
+        txt += '    echo "SanityCheckCode = 50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+        ## OLI_Daniele
+        txt += '    if [ $middleware == OSG ]; then \n'
+        txt += '        echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '        cd $RUNTIME_AREA\n'
+        txt += '        /bin/rm -rf $WORKING_DIR\n'
+        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '        fi\n'
+        txt += '    fi \n'
         txt += "    exit 1\n"
         txt += "fi\n"
         txt += "\n"
         txt += "NJob=$1\n"
-        # txt += "FirstEvent=$2\n"
-        # txt += "MaxEvents=$3\n"
+        txt += "InputFiles=$2\n"
+        txt += "echo \"<$InputFiles>\"\n"
+        # txt += "Args = ` cat $2 |  sed -e \'s/\\\\//g\' -e \'s/\"/\\x27/g\' `"
+
+        ### OLI_DANIELE
+        txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'elif [ $middleware == OSG ]; then\n'
+
+        # OLI: added monitoring for dashbord, use hash of crab.cfg
+        if common.scheduler.boss_scheduler_name == 'condor_g':
+            # create hash of cfg file
+            hash = makeCksum(common.work_space.cfgFileName())
+            txt += '    echo "MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo\n'
+        else :
+            txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncCE=`$EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo\n'
+
+        txt += 'fi\n'
+        txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
 
         # Prepare job-specific part
         job = common.job_list[nj]
         pset = os.path.basename(job.configFilename())
         txt += '\n'
-        txt += 'cp $RUNTIME_AREA/'+pset+' pset.cfg\n'
-        # txt += 'if [ -e $RUNTIME_AREA/orcarc_$CE ] ; then\n'
-        # txt += '  cat $RUNTIME_AREA/orcarc_$CE .orcarc >> .orcarc_tmp\n'
-        # txt += '  mv .orcarc_tmp .orcarc\n'
-        # txt += 'fi\n'
-        # txt += 'if [ -e $RUNTIME_AREA/init_$CE.sh ] ; then\n'
-        # txt += '  cp $RUNTIME_AREA/init_$CE.sh init.sh\n'
-        # txt += 'fi\n'
+        #txt += 'echo sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' \n'
+        txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
+        #txt += 'sed "s#{\'INPUT\'}#${InputFiles}#" $RUNTIME_AREA/'+pset+' > pset1.cfg\n'
 
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
@@ -415,29 +604,49 @@ class Cmssw(JobType):
                 txt += 'fi\n'
             pass 
 
-        # txt += '\n'
-        # txt += 'chmod +x ./init.sh\n'
-        # txt += './init.sh\n'
-        # txt += 'exitStatus=$?\n'
-        # txt += 'if [ $exitStatus != 0 ] ; then\n'
-        # txt += '  echo "SET_EXE_ENV 1 ==> ERROR StageIn init script failed"\n'
-        # txt += '  echo "JOB_EXIT_STATUS = $exitStatus" \n'
-        # txt += '  echo "SanityCheckCode = $exitStatus" | tee -a $RUNTIME_AREA/$repo\n'
-        # txt += '  dumpStatus $RUNTIME_AREA/$repo\n'
-        # txt += '  exit $exitStatus\n'
-        # txt += 'fi\n'
-        # txt += "echo 'SET_EXE_ENV 0 ==> job setup ok'\n"
         txt += 'echo "### END JOB SETUP ENVIRONMENT ###"\n\n'
-
-        # txt += 'echo "FirstEvent=$FirstEvent" >> .orcarc\n'
-        # txt += 'echo "MaxEvents=$MaxEvents" >> .orcarc\n'
-        # if self.ML:
-        #     txt += 'echo "MonalisaJobId=$NJob" >> .orcarc\n'
 
         txt += '\n'
         txt += 'echo "***** cat pset.cfg *********"\n'
         txt += 'cat pset.cfg\n'
         txt += 'echo "****** end pset.cfg ********"\n'
+        txt += '\n'
+        # txt += 'echo "***** cat pset1.cfg *********"\n'
+        # txt += 'cat pset1.cfg\n'
+        # txt += 'echo "****** end pset1.cfg ********"\n'
+        return txt
+
+    def wsBuildExe(self, nj):
+        """
+        Put in the script the commands to build an executable
+        or a library.
+        """
+
+        txt = ""
+
+        if os.path.isfile(self.tgzNameWithPath):
+            txt += 'echo "tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'"\n'
+            txt += 'tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'untar_status=$? \n'
+            txt += 'if [ $untar_status -ne 0 ]; then \n'
+            txt += '   echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
+            txt += '   echo "JOB_EXIT_STATUS = $untar_status" \n'
+            txt += '   echo "SanityCheckCode = $untar_status" | tee -a $repo\n'
+            txt += '   if [ $middleware == OSG ]; then \n'
+            txt += '       echo "Remove working directory: $WORKING_DIR"\n'
+            txt += '       cd $RUNTIME_AREA\n'
+            txt += '       /bin/rm -rf $WORKING_DIR\n'
+            txt += '       if [ -d $WORKING_DIR ] ;then\n'
+            txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+            txt += '       fi\n'
+            txt += '   fi \n'
+            txt += '   \n'
+            txt += '   exit $untar_status \n'
+            txt += 'else \n'
+            txt += '   echo "Successful untar" \n'
+            txt += 'fi \n'
+            pass
+        
         return txt
 
     def modifySteeringCards(self, nj):
@@ -450,7 +659,7 @@ class Cmssw(JobType):
         return self.executable
 
     def executableArgs(self):
-        return "-p pset.cfg"
+        return " -p pset.cfg"
 
     def inputSandbox(self, nj):
         """
@@ -465,9 +674,8 @@ class Cmssw(JobType):
         ## config
         inp_box.append(common.job_list[nj].configFilename())
         ## additional input files
-        for file in self.additional_inbox_files:
-            inp_box.append(common.work_space.cwdDir()+file)
-        #print "sono inputSandbox, inp_box = ", inp_box
+        #for file in self.additional_inbox_files:
+        #    inp_box.append(common.work_space.cwdDir()+file)
         return inp_box
 
     def outputSandbox(self, nj):
@@ -490,16 +698,6 @@ class Cmssw(JobType):
         """
         Make initial modifications of the user's steering card file.
         """
-        infile = open(self.pset,'r')
-            
-        outfile = open(common.work_space.jobDir()+self.name()+'.cfg', 'w')
-           
-        outfile.write('\n\n##### The following cards have been created by CRAB: DO NOT TOUCH #####\n')
-
-        outfile.write('InputCollections=/System/'+self.owner+'/'+self.dataset+'/'+self.dataset+'\n')
-
-        infile.close()
-        outfile.close()
         return
 
     def wsRenameOutput(self, nj):
@@ -509,9 +707,12 @@ class Cmssw(JobType):
 
         txt = '\n'
         file_list = ''
+        check = len(self.output_file)
+        i = 0
         for fileWithSuffix in self.output_file:
+            i= i + 1
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
-            file_list=file_list+output_file_num+' '
+            file_list=file_list+output_file_num+''
             txt += '\n'
             txt += 'ls \n'
             txt += '\n'
@@ -519,19 +720,31 @@ class Cmssw(JobType):
             txt += 'exe_result=$?\n'
             txt += 'if [ $exe_result -ne 0 ] ; then\n'
             txt += '   echo "ERROR: No output file to manage"\n'
-            txt += '   echo "JOB_EXIT_STATUS = $exe_result"\n'
-            txt += '   echo "SanityCheckCode = $exe_result" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-            txt += '   exit $exe_result \n'
+            ### OLI_DANIELE
+            txt += '    if [ $middleware == OSG ]; then \n'
+            txt += '        echo "prepare dummy output file"\n'
+            txt += '        cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            txt += '    fi \n'
             txt += 'else\n'
             txt += '   cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'
-            txt += 'cd $RUNTIME_AREA\n'
-                      
+            if i == check:
+                txt += 'cd $RUNTIME_AREA\n'
+                pass      
             pass
        
         file_list=file_list[:-1]
         txt += 'file_list="'+file_list+'"\n'
+        ### OLI_DANIELE
+        txt += 'if [ $middleware == OSG ]; then\n'  
+        txt += '    cd $RUNTIME_AREA\n'
+        txt += '    echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '    /bin/rm -rf $WORKING_DIR\n'
+        txt += '    if [ -d $WORKING_DIR ] ;then\n'
+        txt += '        echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '    fi\n'
+        txt += 'fi\n'
+        txt += '\n'
         return txt
 
     def numberFile_(self, file, txt):
@@ -574,3 +787,97 @@ class Cmssw(JobType):
             req = req + ')'
         #print "req = ", req 
         return req
+
+    def configFilename(self):
+        """ return the config filename """
+        return self.name()+'.cfg'
+
+    ### OLI_DANIELE
+    def wsSetupCMSOSGEnvironment_(self):
+        """
+        Returns part of a job script which is prepares
+        the execution environment and which is common for all CMS jobs.
+        """
+        txt = '\n'
+        txt += '   echo "### SETUP CMS OSG  ENVIRONMENT ###"\n'
+        txt += '   if [ -f $GRID3_APP_DIR/cmssoft/cmsset_default.sh ] ;then\n'
+        txt += '      # Use $GRID3_APP_DIR/cmssoft/cmsset_default.sh to setup cms software\n'
+        txt += '       source $GRID3_APP_DIR/cmssoft/cmsset_default.sh '+self.version+'\n'
+        txt += '   elif [ -f $OSG_APP/cmssoft/cmsset_default.sh ] ;then\n'
+        txt += '      # Use $OSG_APP/cmssoft/cmsset_default.sh to setup cms software\n'
+        txt += '       source $OSG_APP/cmssoft/cmsset_default.sh '+self.version+'\n'
+        txt += '   else\n'
+        txt += '       echo "SET_CMS_ENV 10020 ==> ERROR $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cmsset_default.sh file not found"\n'
+        txt += '       echo "JOB_EXIT_STATUS = 10020"\n'
+        txt += '       echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '       exit\n'
+        txt += '\n'
+        txt += '       echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '       cd $RUNTIME_AREA\n'
+        txt += '       /bin/rm -rf $WORKING_DIR\n'
+        txt += '       if [ -d $WORKING_DIR ] ;then\n'
+        txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '       fi\n'
+        txt += '\n'
+        txt += '       exit\n'
+        txt += '   fi\n'
+        txt += '\n'
+        txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
+        txt += '   echo " END SETUP CMS OSG  ENVIRONMENT "\n'
+
+        return txt
+ 
+    ### OLI_DANIELE
+    def wsSetupCMSLCGEnvironment_(self):
+        """
+        Returns part of a job script which is prepares
+        the execution environment and which is common for all CMS jobs.
+        """
+        txt  = '   \n'
+        txt += '   echo " ### SETUP CMS LCG  ENVIRONMENT ### "\n'
+        txt += '      echo "JOB_EXIT_STATUS = 0"\n'
+        txt += '   if [ ! $VO_CMS_SW_DIR ] ;then\n'
+        txt += '       echo "SET_CMS_ENV 10031 ==> ERROR CMS software dir not found on WN `hostname`"\n'
+        txt += '       echo "JOB_EXIT_STATUS = 10031" \n'
+        txt += '       echo "JobExitCode=10031" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '       exit\n'
+        txt += '   else\n'
+        txt += '       echo "Sourcing environment... "\n'
+        txt += '       if [ ! -s $VO_CMS_SW_DIR/cmsset_default.sh ] ;then\n'
+        txt += '           echo "SET_CMS_ENV 10020 ==> ERROR cmsset_default.sh file not found into dir $VO_CMS_SW_DIR"\n'
+        txt += '           echo "JOB_EXIT_STATUS = 10020"\n'
+        txt += '           echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '           exit\n'
+        txt += '       fi\n'
+        txt += '       echo "sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
+        txt += '       source $VO_CMS_SW_DIR/cmsset_default.sh\n'
+        txt += '       result=$?\n'
+        txt += '       if [ $result -ne 0 ]; then\n'
+        txt += '           echo "SET_CMS_ENV 10032 ==> ERROR problem sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
+        txt += '           echo "JOB_EXIT_STATUS = 10032"\n'
+        txt += '           echo "JobExitCode=10032" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '           exit\n'
+        txt += '       fi\n'
+        txt += '   fi\n'
+        txt += '   \n'
+        txt += '   string=`cat /etc/redhat-release`\n'
+        txt += '   echo $string\n'
+        txt += '   if [[ $string = *alhalla* ]]; then\n'
+        txt += '       echo "SCRAM_ARCH= $SCRAM_ARCH"\n'
+        txt += '   elif [[ $string = *Enterprise* ]] || [[ $string = *cientific* ]]; then\n'
+        txt += '       export SCRAM_ARCH=slc3_ia32_gcc323\n'
+        txt += '       echo "SCRAM_ARCH= $SCRAM_ARCH"\n'
+        txt += '   else\n'
+        txt += '       echo "SET_CMS_ENV 1 ==> ERROR OS unknown, LCG environment not initialized"\n'
+        txt += '       echo "JOB_EXIT_STATUS = 10033"\n'
+        txt += '       echo "JobExitCode=10033" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '       exit\n'
+        txt += '   fi\n'
+        txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
+        txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'
+        return txt
