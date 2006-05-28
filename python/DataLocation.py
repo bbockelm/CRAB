@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 import sys, os, string, re
 import urllib, urllister
 import urllib2
