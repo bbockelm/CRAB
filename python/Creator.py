@@ -20,6 +20,7 @@ class Creator(Actor):
         self.total_number_of_events = 0
         self.job_number_of_events = 0
         self.first_event = 0
+        self.jobParamsList=[]
 
         self.createJobTypeObject()
         common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
@@ -27,7 +28,7 @@ class Creator(Actor):
         self.job_type.prepareSteeringCards()
         common.logger.debug(5, __name__+": Steering cards prepared")
 
-        self.defineTotalNumberOfJobs_()
+        self.total_njobs = self.job_type.numberOfJobs();
         common.logger.debug(5, __name__+": total # of jobs = "+`self.total_njobs`)
 
         # Set number of jobs to be created
@@ -114,137 +115,12 @@ class Creator(Actor):
         common.logger.debug(5, "Creator constructor finished")
         return
 
-    def defineTotalNumberOfJobs_(self):
-        """
-        Calculates the total number of jobs to be created.
-        """
-
-        try:
-            self.first_event = int(self.cfg_params['USER.first_event'])
-        except KeyError:
-            self.first_event = 0
-        common.logger.debug(1,"First event ot be analyzed: "+str(self.first_event))
-
-        # TODO Could we find a better way to get this number?
-        maxAvailableEvents = int(self.job_type.maxEvents)
-        common.logger.debug(1,"Available events: "+str(maxAvailableEvents))
-
-        # some sanity check
-        if self.first_event>=maxAvailableEvents:
-            raise CrabException('First event is bigger than maximum number of available events!')
-
-        # the total number of events to be analyzed
-        try:
-            n = self.cfg_params['USER.total_number_of_events']
-            if n == 'all': n = '-1'
-            if n == '-1':
-                self.total_number_of_events = (maxAvailableEvents - self.first_event)
-                common.logger.debug(1,"Analysing all available events "+str(self.total_number_of_events))
-            else:
-                if maxAvailableEvents<(int(n)+self.first_event):
-                    raise CrabException('(First event + total events)='+str(int(n)+self.first_event)+' is bigger than maximum number of available events '+str(maxAvailableEvents)+' !! Use "total_number_of_events=-1" to analyze to whole dataset')
-                self.total_number_of_events = int(n)
-        except KeyError:
-            common.logger.message("total_number_of_events not defined, set it to maximum available")
-            self.total_number_of_events = (maxAvailableEvents - self.first_event)
-            pass
-        common.logger.message("Total number of events to be analyzed: "+str(self.total_number_of_events))
-
-
-        # read user directives
-        eventPerJob=0
-        try:
-            eventPerJob = self.cfg_params['USER.job_number_of_events']
-        except KeyError:
-            pass
-        
-        jobsPerTask=0
-        try:
-            jobsPerTask = int(self.cfg_params['USER.total_number_of_jobs'])
-        except KeyError:
-            pass
-
-        # If both the above set, complain and use event per jobs
-        if eventPerJob>0 and jobsPerTask>0:
-            msg = 'Warning. '
-            msg += 'job_number_of_events and total_number_of_jobs are both defined '
-            msg += 'Using job_number_of_events.'
-            common.logger.message(msg)
-            jobsPerTask = 0 
-        if eventPerJob==0 and jobsPerTask==0:
-            msg = 'Warning. '
-            msg += 'job_number_of_events and total_number_of_jobs are not defined '
-            msg += 'Creating just one job for all events.'
-            common.logger.message(msg)
-            jobsPerTask = 1 
-
-        # first case: events per job defined
-        if eventPerJob>0:
-            n=eventPerJob
-            if n == 'all' or n == '-1' or (int(n)>self.total_number_of_events and self.total_number_of_events>0):
-                common.logger.message("Asking more events than available: set it to maximum available")
-                self.job_number_of_events = self.total_number_of_events
-                self.total_njobs = 1
-            else:
-                self.job_number_of_events = int(n)
-                self.total_njobs = int((self.total_number_of_events-1)/self.job_number_of_events)+1
-        # second case: jobs per task defined
-        elif jobsPerTask>0:
-            common.logger.debug(2,"total number of events: "+str(self.total_number_of_events)+" JobPerTask "+str(jobsPerTask))
-            self.job_number_of_events = int(math.floor((self.total_number_of_events)/jobsPerTask))
-            self.total_njobs = jobsPerTask
-        # should not happen...
-        else:
-            raise CrabException('Somthing wrong with splitting')
-
-        common.logger.debug(2,"total number of events: "+str(self.total_number_of_events)+
-            " events per job: "+str(self.job_number_of_events))
-
-        return
-
     def writeJobsSpecsToDB(self):
         """
         Write firstEvent and maxEvents in the DB for future use
         """
 
-        common.jobDB.load()
-        # case one: write first and max events
-        nJobs=self.nJobs()
-
-        firstEvent=self.first_event
-        lastJobsNumberOfEvents = self.job_number_of_events
-
-        try:
-            self.events_management = common.analisys_common_info['events_management']
-            #print "self.events_management = ", self.events_management
-        except KeyError: self.events_management = 0
-
-        # last jobs is different...
-        for job in range(nJobs-1):
-            common.jobDB.setFirstEvent(job, firstEvent)
-            common.jobDB.setMaxEvents(job, self.job_number_of_events)
-            ### fede checks parameter for famos and orca
-            #try:
-            #    self.events_management = common.analisys_common_info['events_management']
-            #    print "self.events_management = ", self.events_management
-            #except KeyError: self.events_management = 0
-            firstEvent=firstEvent+self.job_number_of_events
-
-        # this is the last job
-        common.jobDB.setFirstEvent(nJobs-1, firstEvent)
-        if int(self.events_management) == 1:
-            lastJobsNumberOfEvents= (self.total_number_of_events+self.first_event)-firstEvent
-        common.jobDB.setMaxEvents(nJobs-1, lastJobsNumberOfEvents)
-    
-        if (lastJobsNumberOfEvents!=self.job_number_of_events):
-            common.logger.message(str(self.total_njobs-1)+' jobs will be created for '+str(self.job_number_of_events)+' events each plus 1 for '+str(lastJobsNumberOfEvents)+' events for a total of '+str(self.job_number_of_events*(self.total_njobs-1)+lastJobsNumberOfEvents)+' events')
-        else:
-            common.logger.message(str(self.total_njobs)+' jobs will be created for '+str(self.job_number_of_events)+' events each for a total of '+str(self.job_number_of_events*(self.total_njobs-1)+lastJobsNumberOfEvents)+' events')
-
-        # case two (to be implemented) write eventCollections for each jobs
-
-        # save the DB
-        common.jobDB.save()
+        self.job_type.split(self.jobParamsList)
         return
 
     def nJobs(self):
