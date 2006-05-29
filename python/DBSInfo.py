@@ -71,6 +71,8 @@ class DBSInfo:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         except dbsCgiApi.DbsCgiToolError , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        except dbsCgiApi.DbsCgiApiException , ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
 
         return list
 
@@ -84,6 +86,8 @@ class DBSInfo:
         except dbsApi.InvalidDataTier, ex:
             raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())  
         except dbsApi.DbsApiException, ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        except dbsCgiApi.DbsCgiApiException , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         return datasetParentList                                                                                                            
         #parent = {}
@@ -101,6 +105,8 @@ class DBSInfo:
         try:
             fileBlockList = self.api.getDatasetContents(path)
         except dbsApi.DbsApiException, ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        except dbsCgiApi.DbsCgiApiException , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         ## get the fileblock and event collections
         nevtsbyblock= {}
