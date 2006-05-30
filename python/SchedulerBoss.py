@@ -545,13 +545,14 @@ class SchedulerBoss(Scheduler):
      
     def boss_SID(self,int_ID):
         """ Return Sid of job """
-                                                                                                                             
+
 #        dirGroup = string.split(common.work_space.topDir(), '/')
 #        group = self.groupName 
 
         cmd = 'boss SQL -query "select JOB.SID  from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+self.groupName+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
         cmd_out = runBossCommand(cmd)
         nline = 0
+        SID=''
         for line in cmd_out.splitlines():
             if nline == 2:
                SID = string.strip(line)
@@ -561,7 +562,7 @@ class SchedulerBoss(Scheduler):
 
     def queryStatus(self,id):
         """ Query a status of the job with id """
-                                                                                                                             
+
         self.boss_scheduler.checkProxy()
         EDGstatus={
             'H':'Hold(Condor)',
@@ -626,4 +627,3 @@ class SchedulerBoss(Scheduler):
                 common.logger('Cannot mkdir ' + logDir + ' Switching to default ' + common.work_space.resDir())
                 logDir = common.work_space.resDir()
         return outDir, logDir
-
