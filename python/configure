@@ -204,9 +204,12 @@ return
 }
 
 function configureDLSAPI {
-# Fabio: part for PyXML check and install
-echo "DLSAPI Installation"
-python $TopDir/python/checkPyXML.py
+# part for PyXML install
+echo "DLSAPI Installation: begin at `date`"
+cd $TopDir/DLSAPI
+./InstallPyXML.sh
+cd ..
+echo "DLSAPI Installation: end at `date`"
 return
 }
 

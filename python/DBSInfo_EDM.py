@@ -1,19 +1,30 @@
 #!/usr/bin/env python
-import sys, os, string, re
+import sys, os, string, re, commands
 import exceptions
-try:
- sys.path.append('../PythonAPI')
- import dbsCgiApi
- import dbsApi
 
-# import dbsApi
-# from dbsCgiApi import DbsCgiApi
- from dbsException import DbsException
+try:
+    import dbsCgiApi
+    import dbsApi
 except:
-  msg="ERROR no DBS API available"
-  #raise CrabException(msg)
-  print msg
-  sys.exit(1)
+    try:
+        Crabpydir=commands.getoutput('which crab')
+        Topdir=string.replace(Crabpydir,'/python/crab','')
+        sys.path.append(Topdir+'/DBSAPI')
+        import dbsCgiApi
+        import dbsApi
+    except:
+        msg="ERROR no DBS API available"
+        raise CrabException(msg)
+                                                                                              
+## for python 2.2 add the pyexpat.so to PYTHONPATH
+pythonV=sys.version.split(' ')[0]
+if pythonV.find('2.2') >= 0 :
+ Crabpydir=commands.getoutput('which crab')
+ Topdir=string.replace(Crabpydir,'/python/crab','')
+ extradir=Topdir+'/DLSAPI/extra'
+ if sys.path.count(extradir) <= 0:
+   if os.path.exists(extradir):
+    sys.path.insert(0, extradir)
 
 # #######################################
 class DBSError(exceptions.Exception):

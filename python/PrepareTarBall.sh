@@ -2,7 +2,7 @@
 
 ### $1 is the tag value CRAB_X_X_X ###
 if [ $# -lt 1 ]; then
-  echo "Usage: `basename $0` <CRAB_X_Y_Z> <BOSS_X_Y_Z>"
+  echo "Usage: `basename $0` <CRAB_X_Y_Z> <BOSS version: X_Y_Z>"
   exit 1
 fi
 tag=$1
@@ -14,7 +14,7 @@ CRABdir="$tag"
 echo "CRABDIR = $CRABDIR"
 CRABtag=$tag
 DBSAPItag="DBS_0_0_1"
-DLSAPItag="DLS_0_0_8"
+DLSAPItag="DLS_0_1_0"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"

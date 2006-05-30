@@ -17,6 +17,16 @@ except:
         msg="ERROR no DBS API available"
         raise CrabException(msg)
 
+## for python 2.2 add the pyexpat.so to PYTHONPATH
+pythonV=sys.version.split(' ')[0]
+if pythonV.find('2.2') >= 0 :
+ Crabpydir=commands.getoutput('which crab')
+ Topdir=string.replace(Crabpydir,'/python/crab','')
+ extradir=Topdir+'/DLSAPI/extra'
+ if sys.path.count(extradir) <= 0:
+   if os.path.exists(extradir):
+    sys.path.insert(0, extradir)
+
 # #######################################
 class DBSError(exceptions.Exception):
     def __init__(self, errorName, errorMessage):
