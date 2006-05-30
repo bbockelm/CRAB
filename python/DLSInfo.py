@@ -66,9 +66,12 @@ class DLSInfo:
            except:
              crabdir=os.getenv('CRABDIR')
 ## Let the user set up PyXML by hand
-             msg="Need to setup the PyXML python module. Do the following:\n"
-             msg+="  cd %s/DLSAPI\n"%crabdir
-             msg+="  ./InstallPyXML.sh"
+             msg="There is no setup of PyXML python module required by DLS (DLI). Do the following:\n"
+             msg+=" - check that in  %s/configure  the function configureDLSAPI is not commented \n"%crabdir
+             msg+=" - uncomment it and re-run the configuration :"
+             msg+="\n    cd %s\n"%crabdir
+             msg+="     ./configure\n"
+             msg+="     source crab.(c)sh\n"
              raise CrabException(msg)
 
         elif type=="DLS_TYPE_MYSQL":
