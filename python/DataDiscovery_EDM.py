@@ -56,8 +56,13 @@ class DataDiscovery_EDM:
         Contact DBS
         """
 
-        ## get info about the requested dataset 
-        dbs = DBSInfo_EDM()
+        ## get info about the requested dataset
+        try:
+            dbs_instance=self.cfg_params['CMSSW.dbs_instance']
+        except KeyError:
+            dbs_instance="MCLocal/Writer"
+ 
+        dbs = DBSInfo_EDM(dbs_instance)
 	self.datasets = dbs.getMatchingDatasets(self.datasetPath)
 	if len(self.datasets) == 0:
 	  raise DataDiscoveryError("DatasetPath=%s unknown to DBS" %self.datasetPath)

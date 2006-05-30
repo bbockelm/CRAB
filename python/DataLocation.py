@@ -65,12 +65,15 @@ class DataLocation:
         Sites = []
         allblockSites = []
 
-        DLS_type="DLS_TYPE_MYSQL"
-        #DLS_type="DLS_TYPE_DLI"
+        try:
+            dlstype=self.cfg_params['ORCA.dls_type']
+        except KeyError:
+            dlstype='mysql'
+        #DLS_type="DLS_TYPE_MYSQL"
+        DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
         ## find the replicas for each block 
         for fileblocks in self.Listfileblocks:
-            #print fileblocks
             for afileblock in fileblocks:
                 countblock=countblock+1
                 dbspath=string.split(afileblock,'#')[0]

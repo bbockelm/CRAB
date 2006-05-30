@@ -208,7 +208,7 @@ class Cmssw(JobType):
 
         ## Contact the DBS
         try:
-            self.pubdata=DataDiscovery_EDM.DataDiscovery_EDM(datasetPath, dataTiers, dataTiers)
+            self.pubdata=DataDiscovery_EDM.DataDiscovery_EDM(datasetPath, dataTiers, cfg_params)
             self.pubdata.fetchDBSInfo()
 
         except DataDiscovery_EDM.NotExistingDatasetError, ex :
@@ -248,8 +248,9 @@ class Cmssw(JobType):
 
         ## Contact the DLS and build a list of sites hosting the fileblocks
         try:
-            dataloc=DataLocation_EDM.DataLocation_EDM(filesbyblock.keys(),cfg_params)
-            dataloc.fetchDLSInfo()
+          dataloc=DataLocation_EDM.DataLocation_EDM(filesbyblock.keys(),cfg_params)
+          dataloc.fetchDLSInfo()
+
         except DataLocation_EDM.DataLocationError , ex:
             msg = 'ERROR ***: failed Data Location in DLS \n %s '%ex.getErrorMessage()
             raise CrabException(msg)

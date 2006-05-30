@@ -48,14 +48,14 @@ class DBSInfoError:
 ###############################################################################
 
 class DBSInfo_EDM:
-     def __init__(self):
+     def __init__(self, dbs_instance):
          """
          Construct api object.
          """
          ## cgi service API
          DEFAULT_URL = "http://cmsdoc.cern.ch/cms/aprom/DBS/CGIServer/prodquery"
          args = {}
-         args['instance']="MCLocal/Writer"
+         args['instance']=dbs_instance
 
          self.api = dbsCgiApi.DbsCgiApi(DEFAULT_URL, args)
          ## set log level

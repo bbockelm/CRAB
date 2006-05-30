@@ -65,8 +65,12 @@ class DataLocation_EDM:
         Sites = []
         allblockSites = []
 
-        DLS_type="DLS_TYPE_MYSQL"
-        #DLS_type="DLS_TYPE_DLI"
+        try:
+            dlstype=self.cfg_params['CMSSW.dls_type']
+        except KeyError:
+            dlstype='mysql'
+        #DLS_type="DLS_TYPE_MYSQL"
+        DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
         ## find the replicas for each block 
         for fileblocks in self.Listfileblocks:
