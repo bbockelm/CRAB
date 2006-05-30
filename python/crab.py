@@ -26,7 +26,8 @@ class Crab:
         # The order of main_actions is important !
         self.main_actions = [ '-create', '-submit' ] 
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput',
-                             '-resubmit' , '-cancelAndResubmit', '-testJdl', '-postMortem', '-clean']
+                             '-resubmit' , '-cancelAndResubmit', '-testJdl', '-postMortem', '-clean',
+                             '-printId' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -524,6 +525,19 @@ class Crab:
                 jobs = self.parseRange_(val)
 
                 common.jobDB.dump(jobs)
+                pass
+
+            elif ( opt == '-printId' ):
+                jobs = self.parseRange_(val)
+
+                for nj in jobs:
+                    #nj parte da 1 --> nj = internal_id di boss 
+                    st = common.jobDB.status(nj-1)
+                    if st == 'S' or st == 'A':
+                        id = common.scheduler.boss_SID(nj)
+                        print "Job: ",nj-1," Id = ", id 
+                    else:
+                        print "Job: ",nj-1," No ID yet"
                 pass
 
             elif ( opt == '-status' ):
