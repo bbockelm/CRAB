@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import sys, os, string, re, commands
 import exceptions
-
+import common
+from crab_exceptions import *
 try:
     import dbsCgiApi
     import dbsApi
@@ -107,7 +108,7 @@ class DBSInfo_EDM:
 	      nevts = 0
 	      for evc in fileBlock.get('eventCollectionList'):
 		nevts = nevts + evc.get('numberOfEvents')
-              print "DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.get('blockName'))
+              common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.get('blockName')))
               nevtsbyblock[fileBlock.get('blockName')]=nevts
          except dbsApi.DbsApiException, ex:
            raise DBSError(ex.getClassName(),ex.getErrorMessage())
