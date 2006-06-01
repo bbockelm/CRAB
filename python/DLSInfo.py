@@ -58,9 +58,12 @@ class DLSNoReplicas(exceptions.Exception):
 ##############################################################################
 
 class DLSInfo:
-    def __init__(self, type):
+    def __init__(self, type, jobtype):
         if type=="DLS_TYPE_DLI":
-           endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFCProto"
+           if jobtype.count('orca')>0:
+             endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFCProto"
+           else:  
+             endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFC"
            try:
              import xml.dom.ext.reader
            except:
@@ -80,6 +83,7 @@ class DLSInfo:
            msg = "DLS type %s not among the supported DLS ( DLS_TYPE_DLI and DLS_TYPE_MYSQL ) "%type
            raise CrabException(msg)
 
+        common.logger.debug(5,"DLS interface: %s Server %s"%(type,endpoint))       
         try:
           self.api = dlsClient.getDlsApi(dls_type=type,dls_endpoint=endpoint)
         except dlsApi.DlsApiError, inst:
