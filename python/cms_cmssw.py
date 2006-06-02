@@ -6,9 +6,7 @@ import common
 import PsetManipulator  
 
 import DBSInfo_EDM
-#from DataDiscovery_EDM import DataDiscovery_EDM
 import DataDiscovery_EDM
-#from DataLocation_EDM import DataLocation_EDM
 import DataLocation_EDM
 import Scram
 
@@ -35,6 +33,7 @@ class Cmssw(JobType):
 
 
         self.version = self.scram.getSWVersion()
+        self.setParam_('application', self.version)
         common.analisys_common_info['sw_version'] = self.version
         ### FEDE
         common.analisys_common_info['copy_input_data'] = 0
@@ -51,6 +50,16 @@ class Cmssw(JobType):
         #    msg = "Error: owner and/or dataset not defined "
             msg = "Error: datasetpath not defined "  
             raise CrabException(msg)
+
+        # ML monitoring
+        # split dataset path style: /PreProdR3Minbias/SIM/GEN-SIM
+        datasetpath_split = self.datasetPath.split("/")
+        self.setParam_('dataset', datasetpath_split[1])
+        self.setParam_('owner', datasetpath_split[-1])
+
+
+
+
         self.dataTiers = []
  #       try:
  #           tmpDataTiers = string.split(cfg_params['CMSSW.data_tier'],',')
@@ -66,11 +75,13 @@ class Cmssw(JobType):
         ## now the application
         try:
             self.executable = cfg_params['CMSSW.executable']
+            self.setParam_('exe', self.executable)
             log.debug(6, "CMSSW::CMSSW(): executable = "+self.executable)
             msg = "Default executable cmsRun overridden. Switch to " + self.executable
             log.debug(3,msg)
         except KeyError:
             self.executable = 'cmsRun'
+            self.setParam_('exe', self.executable)
             msg = "User executable not defined. Use cmsRun"
             log.debug(3,msg)
             pass
@@ -193,6 +204,8 @@ class Cmssw(JobType):
         self.PsetEdit.maxEvent(self.maxEv) #Daniele  
         self.PsetEdit.inputModule("INPUT") #Daniele   
         self.PsetEdit.psetWriter(self.configFilename())
+        
+
 
     def DataDiscoveryAndLocation(self, cfg_params):
 
@@ -269,6 +282,7 @@ class Cmssw(JobType):
         common.logger.message("List of Sites hosting the data : "+str(sites)) 
         common.logger.debug(6, "List of Sites: "+str(sites))
         common.analisys_common_info['sites']=sites    ## used in SchedulerEdg.py in createSchScript
+        self.setParam_('TargetCE', ','.join(sites))
         return
     
     def jobSplitting(self):
@@ -882,3 +896,9 @@ class Cmssw(JobType):
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
         txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'
         return txt
+
+    def setParam_(self, param, value):
+        self._params[param] = value
+
+    def getParams(self):
+        return self._params

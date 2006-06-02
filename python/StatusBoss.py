@@ -130,7 +130,16 @@ class StatusBoss(Actor):
                     Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
 
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
-                    params = {'taskId': self.cfg_params['taskId'], 'jobId': str(bossid) + '_' + string.strip(jobAttributes[bossid][2]), \
+                    jobId = ''
+                    if common.scheduler.boss_scheduler_name == 'condor_g':
+                        # create hash of cfg file
+                        hash = makeCksum(common.work_space.cfgFileName())
+                        jobId = str(bossid) + '_' + hash + '_' + string.strip(jobAttributes[bossid][2])
+                        common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+                    else:
+                        jobId = str(bossid) + '_' + string.strip(jobAttributes[bossid][2])
+                        common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
+                    params = {'taskId': self.cfg_params['taskId'], 'jobId':  jobId, \
                     'sid': string.strip(jobAttributes[bossid][2]), 'StatusValueReason': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason'), \
                     'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'stateEnterTime'), 'StatusDestination': ldest}
                     self.cfg_params['apmon'].sendToML(params)
