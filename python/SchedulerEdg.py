@@ -794,8 +794,8 @@ class SchedulerEdg(Scheduler):
         pass
 
         if mustRenew:
-            common.logger.message( "No valid proxy found or timeleft too short!\n Creating a user proxy with default length of 24h\n")
-            cmd = 'voms-proxy-init -voms cms -valid 24:00'
+            common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 96h\n")
+            cmd = 'voms-proxy-init -voms cms -valid 96:00'
             try:
                 # SL as above: damn it!
                 out = os.system(cmd)

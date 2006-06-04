@@ -671,8 +671,8 @@ class SchedulerCondor_g(Scheduler):
         # SL Here I have to use os.system since the stupid command exit with >0 if no valid proxy is found
         cmd_out = os.system(cmd)
         if (cmd_out>0):
-            common.logger.message( "No valid proxy found or timeleft too short!\n Creating a user proxy with default length of 24h\n")
-            cmd = 'voms-proxy-init -voms cms -confile /tmp -valid 24:00'
+            common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 96h\n")
+            cmd = 'voms-proxy-init -voms cms -valid 96:00'
             try:
                 # SL as above: damn it!
                 out = os.system(cmd)
