@@ -193,9 +193,10 @@ class SchedulerEdg(Scheduler):
 
         txt += '\n\n'
 
-        txt += 'if [ $middleware == LCG ]; then \n'
-        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'fi\n'
+        ### OLI: removed to move DashBoard reporting header to front of wrapper script
+        # txt += 'if [ $middleware == LCG ]; then \n'
+        # txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        # txt += 'fi\n'
 
         if int(self.copy_data) == 1:
            if self.SE:

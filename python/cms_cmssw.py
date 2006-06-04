@@ -261,9 +261,8 @@ class Cmssw(JobType):
 
         ## Contact the DLS and build a list of sites hosting the fileblocks
         try:
-          dataloc=DataLocation_EDM.DataLocation_EDM(filesbyblock.keys(),cfg_params)
-          dataloc.fetchDLSInfo()
-
+            dataloc=DataLocation_EDM.DataLocation_EDM(filesbyblock.keys(),cfg_params)
+            dataloc.fetchDLSInfo()
         except DataLocation_EDM.DataLocationError , ex:
             msg = 'ERROR ***: failed Data Location in DLS \n %s '%ex.getErrorMessage()
             raise CrabException(msg)
@@ -503,6 +502,35 @@ class Cmssw(JobType):
         # Prepare JobType-independent part
         txt = '' 
    
+        ### OLI: moved to front to enable header reported before any error code is submitted
+        txt += "NJob=$1\n"
+        txt += "InputFiles=$2\n"
+        txt += "echo \"<$InputFiles>\"\n"
+        # txt += "Args = ` cat $2 |  sed -e \'s/\\\\//g\' -e \'s/\"/\\x27/g\' `"
+
+        ### OLI_DANIELE
+        txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'elif [ $middleware == OSG ]; then\n'
+
+        # OLI: added monitoring for dashbord, use hash of crab.cfg
+        if common.scheduler.boss_scheduler_name == 'condor_g':
+            # create hash of cfg file
+            hash = makeCksum(common.work_space.cfgFileName())
+            txt += '    echo "MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo\n'
+        else :
+            txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncCE=`$EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo\n'
+
+        txt += 'fi\n'
+        txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '\n'
+
         ## OLI_Daniele at this level  middleware already known
 
         txt += 'if [ $middleware == LCG ]; then \n' 
@@ -576,32 +604,6 @@ class Cmssw(JobType):
         txt += "    exit 1\n"
         txt += "fi\n"
         txt += "\n"
-        txt += "NJob=$1\n"
-        txt += "InputFiles=$2\n"
-        txt += "echo \"<$InputFiles>\"\n"
-        # txt += "Args = ` cat $2 |  sed -e \'s/\\\\//g\' -e \'s/\"/\\x27/g\' `"
-
-        ### OLI_DANIELE
-        txt += 'if [ $middleware == LCG ]; then \n' 
-        txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'elif [ $middleware == OSG ]; then\n'
-
-        # OLI: added monitoring for dashbord, use hash of crab.cfg
-        if common.scheduler.boss_scheduler_name == 'condor_g':
-            # create hash of cfg file
-            hash = makeCksum(common.work_space.cfgFileName())
-            txt += '    echo "MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo\n'
-        else :
-            txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncCE=`$EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo\n'
-
-        txt += 'fi\n'
-        txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
 
         # Prepare job-specific part
         job = common.job_list[nj]

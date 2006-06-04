@@ -322,6 +322,33 @@ class Orca(JobType):
         # Prepare JobType-independent part
         txt = '' 
    
+        txt += "NJob=$1\n"
+        txt += "FirstEvent=$2\n"
+        txt += "MaxEvents=$3\n"
+        txt += 'echo "MonitorID=`echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
+        ### OLI_DANIELE
+        txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'elif [ $middleware == OSG ]; then\n'
+
+        # OLI: added monitoring for dashbord, use hash of crab.cfg
+        if common.scheduler.boss_scheduler_name == 'condor_g':
+            # create hash of cfg file
+            hash = makeCksum(common.work_space.cfgFileName())
+            txt += '    echo "MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo\n'
+        else :
+            txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "SyncCE=`$EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo\n'
+
+        txt += 'fi\n'
+        txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '\n'
+
         ## OLI_Daniele at this level  middleware already known
 
         txt += 'if [ $middleware == LCG ]; then \n' 
@@ -400,32 +427,6 @@ class Orca(JobType):
         txt += "    exit\n"
         txt += "fi\n"
         txt += "\n"
-        txt += "NJob=$1\n"
-        txt += "FirstEvent=$2\n"
-        txt += "MaxEvents=$3\n"
-        txt += 'echo "MonitorID=`echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
-        ### OLI_DANIELE
-        txt += 'if [ $middleware == LCG ]; then \n' 
-        txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'elif [ $middleware == OSG ]; then\n'
-
-        # OLI: added monitoring for dashbord, use hash of crab.cfg
-        if common.scheduler.boss_scheduler_name == 'condor_g':
-            # create hash of cfg file
-            hash = makeCksum(common.work_space.cfgFileName())
-            txt += '    echo "MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo\n'
-        else :
-            txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncCE=`$EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo\n'
-
-        txt += 'fi\n'
-        txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
-
 
         # Prepare job-specific part
         job = common.job_list[nj]
