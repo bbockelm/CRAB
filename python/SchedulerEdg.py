@@ -743,9 +743,14 @@ class SchedulerEdg(Scheduler):
         ###############
         if self.EDG_clock_time:
             if (req == 'Requirement = '):
-                req = req + 'other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
+                req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time+'))'
             else:
-                req = req + ' && other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
+                req = req + ' && ((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time+'))'
+        else:
+            if (req == 'Requirement = '):
+                req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>=480))'
+            else:
+                req = req + ' && ((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>=480))'
 
         if self.EDG_cpu_time:
             if (req == 'Requirement = '):
