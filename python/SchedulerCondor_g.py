@@ -187,6 +187,9 @@ class SchedulerCondor_g(Scheduler):
         self.proxyValid=0
         # added here because checklistmatch is not used
         self.checkProxy()
+
+        self._taskId = cfg_params['taskId']
+                
         return
     
 
@@ -200,23 +203,44 @@ class SchedulerCondor_g(Scheduler):
         """
         Returns part of a job script which does scheduler-specific work.
         """
-        ## OLI_Daniele discovery middleware
         txt = ''
+
+        txt = ''
+        txt += "# job number (first parameter for job wrapper)\n"
+        txt += "NJob=$1\n"
+
+        # create hash of cfg file
+        hash = makeCksum(common.work_space.cfgFileName())
+        txt += 'echo "MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "MonitorID=`echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
+
         txt += 'echo "middleware discovery " \n'
         txt += 'if [ $VO_CMS_SW_DIR ]; then\n'
-        txt += '   middleware=LCG \n'
-        txt += '   echo "middleware =$middleware" \n'
+        txt += '    middleware=LCG \n'
+        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $GRID3_APP_DIR ]; then\n'
-        txt += '   middleware=OSG \n'
-        txt += '   echo "middleware =$middleware" \n'
+        txt += '    middleware=OSG \n'
+        txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $OSG_APP ]; then \n'
-        txt += '   middleware=OSG \n'
-        txt += '   echo "middleware =$middleware" \n'
+        txt += '    middleware=OSG \n'
+        txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "middleware =$middleware" \n'
         txt += 'else \n'
-        txt += '   echo "SET_CMS_ENV 1 ==> middleware not identified" \n'
-        txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   exit 1\n'
+        txt += '    echo "SET_CMS_ENV 10030 ==> middleware not identified" \n'
+        txt += '    echo "JOB_EXIT_STATUS = 10030" \n'
+        txt += '    echo "JobExitCode=10030" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
+        txt += '    exit 1 \n'
         txt += 'fi\n'
+
+        txt += '# report first time to DashBoard \n'
+        txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
 
         txt += '\n\n'
 

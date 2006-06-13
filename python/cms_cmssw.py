@@ -502,35 +502,6 @@ class Cmssw(JobType):
         # Prepare JobType-independent part
         txt = '' 
    
-        ### OLI: moved to front to enable header reported before any error code is submitted
-        txt += "NJob=$1\n"
-        txt += "InputFiles=$2\n"
-        txt += "echo \"<$InputFiles>\"\n"
-        # txt += "Args = ` cat $2 |  sed -e \'s/\\\\//g\' -e \'s/\"/\\x27/g\' `"
-
-        ### OLI_DANIELE
-        txt += 'if [ $middleware == LCG ]; then \n' 
-        txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'elif [ $middleware == OSG ]; then\n'
-
-        # OLI: added monitoring for dashbord, use hash of crab.cfg
-        if common.scheduler.boss_scheduler_name == 'condor_g':
-            # create hash of cfg file
-            hash = makeCksum(common.work_space.cfgFileName())
-            txt += '    echo "MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo\n'
-        else :
-            txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncCE=`$EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo\n'
-
-        txt += 'fi\n'
-        txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '\n'
-
         ## OLI_Daniele at this level  middleware already known
 
         txt += 'if [ $middleware == LCG ]; then \n' 
@@ -541,9 +512,10 @@ class Cmssw(JobType):
         txt += '    echo "Creating working directory: $WORKING_DIR"\n'
         txt += '    /bin/mkdir -p $WORKING_DIR\n'
         txt += '    if [ ! -d $WORKING_DIR ] ;then\n'
-        txt += '        echo "OSG WORKING DIR ==> $WORKING_DIR could not be created on on WN `hostname`"\n'
-    
-        txt += '        echo "JOB_EXIT_STATUS = 1"\n'
+        txt += '        echo "SET_CMS_ENV 10016 ==> OSG $WORKING_DIR could not be created on WN `hostname`"\n'
+        txt += '	echo "JOB_EXIT_STATUS = 10016"\n'
+        txt += '	echo "JobExitCode=10016" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '        exit 1\n'
         txt += '    fi\n'
         txt += '\n'
@@ -559,9 +531,9 @@ class Cmssw(JobType):
         txt += scram+' project CMSSW '+self.version+'\n'
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
-        txt += '   echo "SET_EXE_ENV 1 ==>ERROR CMSSW '+self.version+' not found on `hostname`" \n'
+        txt += '   echo "SET_EXE_ENV 10034 ==>ERROR CMSSW '+self.version+' not found on `hostname`" \n'
         txt += '   echo "JOB_EXIT_STATUS = 10034"\n'
-        txt += '   echo "SanityCheckCode = 10034" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '   echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
         ## OLI_Daniele
         txt += '    if [ $middleware == OSG ]; then \n'
@@ -569,7 +541,10 @@ class Cmssw(JobType):
         txt += '        cd $RUNTIME_AREA\n'
         txt += '        /bin/rm -rf $WORKING_DIR\n'
         txt += '        if [ -d $WORKING_DIR ] ;then\n'
-        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '	    echo "SET_CMS_ENV 10018 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
+        txt += '	    echo "JOB_EXIT_STATUS = 10018"\n'
+        txt += '	    echo "JobExitCode=10018" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '        fi\n'
         txt += '    fi \n'
         txt += '   exit 1 \n'
@@ -581,16 +556,14 @@ class Cmssw(JobType):
 
         # Handle the arguments:
         txt += "\n"
-        txt += "## ARGUMNETS: $1 Job Number\n"
-        # txt += "## ARGUMNETS: $2 First Event for this job\n"
-        # txt += "## ARGUMNETS: $3 Max Event for this job\n"
+        txt += "## number of arguments (first argument always jobnumber)\n"
         txt += "\n"
         txt += "narg=$#\n"
         txt += "if [ $narg -lt 2 ]\n"
         txt += "then\n"
         txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$narg+ \n"
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
-        txt += '    echo "SanityCheckCode = 50113" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
         ## OLI_Daniele
         txt += '    if [ $middleware == OSG ]; then \n'
@@ -598,7 +571,10 @@ class Cmssw(JobType):
         txt += '        cd $RUNTIME_AREA\n'
         txt += '        /bin/rm -rf $WORKING_DIR\n'
         txt += '        if [ -d $WORKING_DIR ] ;then\n'
-        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '	    echo "SET_EXE_ENV 50114 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Too few arguments for CRAB job wrapper"\n'
+        txt += '	    echo "JOB_EXIT_STATUS = 50114"\n'
+        txt += '	    echo "JobExitCode=50114" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '        fi\n'
         txt += '    fi \n'
         txt += "    exit 1\n"
@@ -609,6 +585,8 @@ class Cmssw(JobType):
         job = common.job_list[nj]
         pset = os.path.basename(job.configFilename())
         txt += '\n'
+        txt += 'InputFiles=$2\n'
+        txt += 'echo "<$InputFiles>"\n'
         #txt += 'echo sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' \n'
         txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
         #txt += 'sed "s#{\'INPUT\'}#${InputFiles}#" $RUNTIME_AREA/'+pset+' > pset1.cfg\n'
@@ -648,17 +626,20 @@ class Cmssw(JobType):
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '   echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
             txt += '   echo "JOB_EXIT_STATUS = $untar_status" \n'
-            txt += '   echo "SanityCheckCode = $untar_status" | tee -a $repo\n'
+            txt += '   echo "JobExitCode=$untar_status" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '   if [ $middleware == OSG ]; then \n'
             txt += '       echo "Remove working directory: $WORKING_DIR"\n'
             txt += '       cd $RUNTIME_AREA\n'
             txt += '       /bin/rm -rf $WORKING_DIR\n'
             txt += '       if [ -d $WORKING_DIR ] ;then\n'
-            txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+            txt += '	    echo "SET_EXE 50999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Untarring .tgz file failed"\n'
+            txt += '	    echo "JOB_EXIT_STATUS = 50999"\n'
+            txt += '	    echo "JobExitCode=50999" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
             txt += '       fi\n'
             txt += '   fi \n'
             txt += '   \n'
-            txt += '   exit $untar_status \n'
+            txt += '   exit 1 \n'
             txt += 'else \n'
             txt += '   echo "Successful untar" \n'
             txt += 'fi \n'
@@ -723,33 +704,32 @@ class Cmssw(JobType):
         """
 
         txt = '\n'
+        txt += '# directory content\n'
+        txt += 'ls \n'
         file_list = ''
-        check = len(self.output_file)
-        i = 0
         for fileWithSuffix in self.output_file:
-            i= i + 1
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
-            file_list=file_list+output_file_num+''
+            file_list=file_list+output_file_num+' '
             txt += '\n'
-            txt += 'ls \n'
-            txt += '\n'
+            txt += '# check output file\n'
             txt += 'ls '+fileWithSuffix+'\n'
             txt += 'exe_result=$?\n'
             txt += 'if [ $exe_result -ne 0 ] ; then\n'
             txt += '   echo "ERROR: No output file to manage"\n'
+            txt += '   echo "JOB_EXIT_STATUS = $exe_result"\n'
+            txt += '   echo "JobExitCode=60302" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
             ### OLI_DANIELE
-            txt += '    if [ $middleware == OSG ]; then \n'
-            txt += '        echo "prepare dummy output file"\n'
-            txt += '        cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            txt += '    fi \n'
+            if common.scheduler.boss_scheduler_name == 'condor_g':
+                txt += '    if [ $middleware == OSG ]; then \n'
+                txt += '        echo "prepare dummy output file"\n'
+                txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
+                txt += '    fi \n'
             txt += 'else\n'
             txt += '   cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'
-            if i == check:
-                txt += 'cd $RUNTIME_AREA\n'
-                pass      
-            pass
        
+        txt += 'cd $RUNTIME_AREA\n'
         file_list=file_list[:-1]
         txt += 'file_list="'+file_list+'"\n'
         ### OLI_DANIELE
@@ -758,7 +738,10 @@ class Cmssw(JobType):
         txt += '    echo "Remove working directory: $WORKING_DIR"\n'
         txt += '    /bin/rm -rf $WORKING_DIR\n'
         txt += '    if [ -d $WORKING_DIR ] ;then\n'
-        txt += '        echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '	echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
+        txt += '	echo "JOB_EXIT_STATUS = 60999"\n'
+        txt += '	echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '    fi\n'
         txt += 'fi\n'
         txt += '\n'
@@ -828,16 +811,19 @@ class Cmssw(JobType):
         txt += '       echo "JOB_EXIT_STATUS = 10020"\n'
         txt += '       echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       exit\n'
+        txt += '       exit 1\n'
         txt += '\n'
         txt += '       echo "Remove working directory: $WORKING_DIR"\n'
         txt += '       cd $RUNTIME_AREA\n'
         txt += '       /bin/rm -rf $WORKING_DIR\n'
         txt += '       if [ -d $WORKING_DIR ] ;then\n'
-        txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '	    echo "SET_CMS_ENV 10017 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cmsset_default.sh file not found"\n' 
+        txt += '	    echo "JOB_EXIT_STATUS = 10017"\n' 
+        txt += '	    echo "JobExitCode=10017" | tee -a $RUNTIME_AREA/$repo\n' 
+        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '       fi\n'
         txt += '\n'
-        txt += '       exit\n'
+        txt += '       exit 1\n'
         txt += '   fi\n'
         txt += '\n'
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
@@ -853,13 +839,12 @@ class Cmssw(JobType):
         """
         txt  = '   \n'
         txt += '   echo " ### SETUP CMS LCG  ENVIRONMENT ### "\n'
-        txt += '      echo "JOB_EXIT_STATUS = 0"\n'
         txt += '   if [ ! $VO_CMS_SW_DIR ] ;then\n'
         txt += '       echo "SET_CMS_ENV 10031 ==> ERROR CMS software dir not found on WN `hostname`"\n'
         txt += '       echo "JOB_EXIT_STATUS = 10031" \n'
         txt += '       echo "JobExitCode=10031" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       exit\n'
+        txt += '       exit 1\n'
         txt += '   else\n'
         txt += '       echo "Sourcing environment... "\n'
         txt += '       if [ ! -s $VO_CMS_SW_DIR/cmsset_default.sh ] ;then\n'
@@ -867,7 +852,7 @@ class Cmssw(JobType):
         txt += '           echo "JOB_EXIT_STATUS = 10020"\n'
         txt += '           echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '           exit\n'
+        txt += '           exit 1\n'
         txt += '       fi\n'
         txt += '       echo "sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
         txt += '       source $VO_CMS_SW_DIR/cmsset_default.sh\n'
@@ -877,7 +862,7 @@ class Cmssw(JobType):
         txt += '           echo "JOB_EXIT_STATUS = 10032"\n'
         txt += '           echo "JobExitCode=10032" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '           exit\n'
+        txt += '           exit 1\n'
         txt += '       fi\n'
         txt += '   fi\n'
         txt += '   \n'
@@ -889,11 +874,11 @@ class Cmssw(JobType):
         txt += '       export SCRAM_ARCH=slc3_ia32_gcc323\n'
         txt += '       echo "SCRAM_ARCH= $SCRAM_ARCH"\n'
         txt += '   else\n'
-        txt += '       echo "SET_CMS_ENV 1 ==> ERROR OS unknown, LCG environment not initialized"\n'
+        txt += '       echo "SET_CMS_ENV 10033 ==> ERROR OS unknown, LCG environment not initialized"\n'
         txt += '       echo "JOB_EXIT_STATUS = 10033"\n'
         txt += '       echo "JobExitCode=10033" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       exit\n'
+        txt += '       exit 1\n'
         txt += '   fi\n'
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
         txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'

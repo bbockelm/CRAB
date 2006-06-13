@@ -322,33 +322,6 @@ class Orca(JobType):
         # Prepare JobType-independent part
         txt = '' 
    
-        txt += "NJob=$1\n"
-        txt += "FirstEvent=$2\n"
-        txt += "MaxEvents=$3\n"
-        txt += 'echo "MonitorID=`echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
-        ### OLI_DANIELE
-        txt += 'if [ $middleware == LCG ]; then \n' 
-        txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'elif [ $middleware == OSG ]; then\n'
-
-        # OLI: added monitoring for dashbord, use hash of crab.cfg
-        if common.scheduler.boss_scheduler_name == 'condor_g':
-            # create hash of cfg file
-            hash = makeCksum(common.work_space.cfgFileName())
-            txt += '    echo "MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo\n'
-        else :
-            txt += '    echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    echo "SyncCE=`$EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo\n'
-
-        txt += 'fi\n'
-        txt += 'dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '\n'
-
         ## OLI_Daniele at this level  middleware already known
 
         txt += 'if [ $middleware == LCG ]; then \n' 
@@ -359,9 +332,11 @@ class Orca(JobType):
         txt += '   echo "Creating working directory: $WORKING_DIR"\n'
         txt += '   /bin/mkdir -p $WORKING_DIR\n'
         txt += '   if [ ! -d $WORKING_DIR ] ;then\n'
-        txt += '      echo "OSG WORKING DIR ==> $WORKING_DIR could not be created on on WN `hostname`"\n'
-        txt += '      echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '      exit\n'
+        txt += '        echo "SET_CMS_ENV 10016 ==> OSG $WORKING_DIR could not be created on WN `hostname`"\n'
+        txt += '	echo "JOB_EXIT_STATUS = 10016"\n'
+        txt += '	echo "JobExitCode=10016" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '      exit 1\n'
         txt += '   fi\n'
         txt += '\n'
         txt += '    echo "Change to working directory: $WORKING_DIR"\n'
@@ -376,7 +351,7 @@ class Orca(JobType):
         txt += scram+' project ORCA '+self.version+'\n'
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
-        txt += '    echo "SET_EXE_ENV 1 ==>ERROR ORCA '+self.version+' not found on `hostname`" \n'
+        txt += '    echo "SET_EXE_ENV 10034 ==>ERROR ORCA '+self.version+' not found on `hostname`" \n'
         txt += '    echo "JOB_EXIT_STATUS = 10034"\n'
         txt += '    echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
@@ -388,11 +363,14 @@ class Orca(JobType):
         txt += '      cd $RUNTIME_AREA\n'
         txt += '      /bin/rm -rf $WORKING_DIR\n'
         txt += '      if [ -d $WORKING_DIR ] ;then\n'
-        txt += '         echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '	    echo "SET_CMS_ENV 10018 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
+        txt += '	    echo "JOB_EXIT_STATUS = 10018"\n'
+        txt += '	    echo "JobExitCode=10018" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '      fi\n'
         txt += '   fi \n'
         txt += '   \n'
-        txt += '   exit\n'
+        txt += '   exit 1\n'
         txt += 'fi \n'
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
@@ -407,9 +385,12 @@ class Orca(JobType):
         txt += "## ARGUMNETS: $3 Max Event for this job\n"
         txt += "\n"
         txt += "narg=$#\n"
+        txt += "NJob=$1\n"
+        txt += "FirstEvent=$2\n"
+        txt += "MaxEvents=$3\n"
         txt += "if [ $narg -lt 3 ]\n"
         txt += "then\n"
-        txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$narg+ \n"
+        txt += "    echo 'SET_EXE_ENV 50113 ==> ERROR Too few arguments' +$narg+ \n"
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
         txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
@@ -420,11 +401,14 @@ class Orca(JobType):
         txt += '      cd $RUNTIME_AREA\n'
         txt += '      /bin/rm -rf $WORKING_DIR\n'
         txt += '      if [ -d $WORKING_DIR ] ;then\n'
-        txt += '         echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '	    echo "SET_EXE_ENV 50114 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Too few arguments for CRAB job wrapper"\n'
+        txt += '	    echo "JOB_EXIT_STATUS = 50114"\n'
+        txt += '	    echo "JobExitCode=50114" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '      fi\n'
         txt += '   fi \n'
         txt += '   \n'
-        txt += "    exit\n"
+        txt += "    exit 1\n"
         txt += "fi\n"
         txt += "\n"
 
@@ -455,7 +439,7 @@ class Orca(JobType):
         txt += './init.sh\n'
         txt += 'exitStatus=$?\n'
         txt += 'if [ $exitStatus != 0 ] ; then\n'
-        txt += '    echo "SET_EXE_ENV 1 ==> ERROR StageIn init script failed"\n'
+        txt += '    echo "SET_EXE_ENV 20001 ==> ERROR StageIn init script failed"\n'
         txt += '    echo "JOB_EXIT_STATUS = $exitStatus" \n'
         txt += '    echo "JobExitCode=20001" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
@@ -466,10 +450,13 @@ class Orca(JobType):
         txt += '        cd $RUNTIME_AREA\n'
         txt += '        /bin/rm -rf $WORKING_DIR\n'
         txt += '        if [ -d $WORKING_DIR ] ;then\n'
-        txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '	    echo "SET_EXE 10012 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after StageIn init script failed"\n'
+        txt += '	    echo "JOB_EXIT_STATUS = 10012"\n'
+        txt += '	    echo "JobExitCode=10012" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '        fi\n'
         txt += '    fi \n'
-        txt += '    exit $exitStatus\n'
+        txt += '    exit 1\n'
         txt += 'fi\n'
         txt += "echo 'SET_EXE_ENV 0 ==> job setup ok'\n"
         txt += 'echo "### END JOB SETUP ENVIRONMENT ###"\n\n'
@@ -500,7 +487,7 @@ class Orca(JobType):
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '    echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
             txt += '    echo "JOB_EXIT_STATUS = $untar_status" \n'
-            txt += '    echo "SanityCheckCode=$untar_status" | tee -a $repo\n'
+            txt += '    echo "JobExitCode=$untar_status" | tee -a $repo\n'
 
             ### OLI_DANIELE
             txt += '   if [ $middleware == OSG ]; then \n'
@@ -508,11 +495,14 @@ class Orca(JobType):
             txt += '       cd $RUNTIME_AREA\n'
             txt += '       /bin/rm -rf $WORKING_DIR\n'
             txt += '       if [ -d $WORKING_DIR ] ;then\n'
-            txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+            txt += '	    echo "SET_EXE 50999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Untarring .tgz file failed"\n'
+            txt += '	    echo "JOB_EXIT_STATUS = 50999"\n'
+            txt += '	    echo "JobExitCode=50999" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
             txt += '       fi\n'
             txt += '   fi \n'
             txt += '   \n'
-            txt += '   exit $untar_status \n'
+            txt += '   exit 1 \n'
             txt += 'else \n'
             txt += '    echo "Successful untar" \n'
             txt += 'fi \n'
@@ -530,12 +520,12 @@ class Orca(JobType):
         """
 
         txt = '\n'
+        txt += '# directory content\n'
+        txt += 'ls \n'
         file_list = ''
         for fileWithSuffix in self.output_file:
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
             file_list=file_list+output_file_num+' '
-            txt += '\n'
-            txt += 'ls \n'
             txt += '\n'
             txt += 'ls '+fileWithSuffix+'\n'
             txt += 'exe_result=$?\n'
@@ -546,18 +536,11 @@ class Orca(JobType):
             txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
   
             ### OLI_DANIELE
-            txt += '    if [ $middleware == OSG ]; then \n'
-            txt += '        cd $RUNTIME_AREA\n'
-            txt += '        echo "prepare dummy output file"\n'
-            txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
-            txt += '        echo "Remove working directory: $WORKING_DIR"\n'
-            txt += '        /bin/rm -rf $WORKING_DIR\n'
-            txt += '        if [ -d $WORKING_DIR ] ;then\n'
-            txt += '            echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
-            txt += '        fi\n'
-            txt += '    fi \n'
-            txt += '    \n'
-            txt += '    exit $exe_result \n'
+            if common.scheduler.boss_scheduler_name == 'condor_g':
+                txt += '    if [ $middleware == OSG ]; then \n'
+                txt += '        echo "prepare dummy output file"\n'
+                txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
+                txt += '    fi \n'
             txt += 'else\n'
             txt += '    cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'
@@ -574,7 +557,10 @@ class Orca(JobType):
         txt += '    echo "Remove working directory: $WORKING_DIR"\n'
         txt += '    /bin/rm -rf $WORKING_DIR\n'
         txt += '    if [ -d $WORKING_DIR ] ;then\n'
-        txt += '        echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '	echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
+        txt += '	echo "JOB_EXIT_STATUS = 60999"\n'
+        txt += '	echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '    fi\n'
         txt += 'fi\n'
         txt += '\n'
@@ -901,16 +887,19 @@ class Orca(JobType):
         txt += '      echo "JOB_EXIT_STATUS = 10020"\n'
         txt += '      echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '      exit\n'
+        txt += '      exit 1\n'
         txt += '\n'
         txt += '       echo "Remove working directory: $WORKING_DIR"\n'
         txt += '       cd $RUNTIME_AREA\n'
         txt += '       /bin/rm -rf $WORKING_DIR\n'
         txt += '       if [ -d $WORKING_DIR ] ;then\n'
-        txt += '           echo "OSG WORKING DIR ==> $WORKING_DIR could not be deleted on on WN `hostname`"\n'
+        txt += '	    echo "SET_CMS_ENV 10017 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cmsset_default.sh file not found"\n' 
+        txt += '	    echo "JOB_EXIT_STATUS = 10017"\n' 
+        txt += '	    echo "JobExitCode=10017" | tee -a $RUNTIME_AREA/$repo\n' 
+        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '       fi\n'
         txt += '\n'
-        txt += '      exit\n'
+        txt += '      exit 1\n'
         txt += '   fi\n'
         txt += '\n'
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
@@ -932,7 +921,7 @@ class Orca(JobType):
         txt += '      echo "JOB_EXIT_STATUS = 10031" \n'
         txt += '      echo "JobExitCode=10031" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '      exit\n'
+        txt += '      exit 1\n'
         txt += '   else\n'
         txt += '      echo "Sourcing environment... "\n'
         txt += '      if [ ! -s $VO_CMS_SW_DIR/cmsset_default.sh ] ;then\n'
@@ -940,7 +929,7 @@ class Orca(JobType):
         txt += '          echo "JOB_EXIT_STATUS = 10020"\n'
         txt += '          echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '          dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '          exit\n'
+        txt += '          exit 1\n'
         txt += '      fi\n'
         txt += '      echo "sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
         txt += '      source $VO_CMS_SW_DIR/cmsset_default.sh\n'
@@ -950,7 +939,7 @@ class Orca(JobType):
         txt += '          echo "JOB_EXIT_STATUS = 10032"\n'
         txt += '          echo "JobExitCode=10032" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '          dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '          exit\n'
+        txt += '          exit 1\n'
         txt += '      fi\n'
         txt += '   fi\n'
         txt += '   \n'
@@ -966,7 +955,7 @@ class Orca(JobType):
         txt += '      echo "JOB_EXIT_STATUS = 10033"\n'
         txt += '      echo "JobExitCode=10033" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '      exit\n'
+        txt += '      exit 1\n'
         txt += '   fi\n'
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
         txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'
