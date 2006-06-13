@@ -14,4 +14,4 @@ fi
 
 export LD_LIBRARY_PATH=${EDG_WL_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 
-/usr/bin/env python crab.py $*
+/usr/bin/env python $CRABSCRIPT/python/crab.py $*
