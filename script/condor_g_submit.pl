@@ -163,7 +163,7 @@ sub submit {
   $errbn = "stderr_$jid.log";
   $condorlog = "condor_$jid.log";
   $inbn = mybasename($stdin);
-  $outSandBox = "$subdir/BossOutArchive_$jid.tgz";
+  $outSandBox = "BossOutArchive_$jid.tgz";
   # open a temporary file
   $tmpfile = `mktemp condor_XXXXXX` || die "error";
   chomp($tmpfile);
