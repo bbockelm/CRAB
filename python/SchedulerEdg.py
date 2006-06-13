@@ -152,6 +152,9 @@ class SchedulerEdg(Scheduler):
         sys.path.append(libPath)
 
         self.proxyValid=0
+
+        self._taskId = cfg_params['taskId']
+
         return
     
 
@@ -175,28 +178,42 @@ class SchedulerEdg(Scheduler):
         Returns part of a job script which does scheduler-specific work.
         """
         txt = ''
+        txt += "# job number (first parameter for job wrapper)\n"
+        txt += "NJob=$1\n"
+
+        txt += '# job identification to DashBoard \n'
+        txt += 'echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "MonitorID=`echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
+
         txt += 'echo "middleware discovery " \n'
-        txt += 'if [ $VO_CMS_SW_DIR ]; then\n'
+        txt += 'if [ $VO_CMS_SW_DIR ]; then \n'
         txt += '    middleware=LCG \n'
+        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $GRID3_APP_DIR ]; then\n'
         txt += '    middleware=OSG \n'
+        txt += '    echo "SyncCE=`echo $EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $OSG_APP ]; then \n'
         txt += '    middleware=OSG \n'
+        txt += '    echo "SyncCE=`echo $EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'else \n'
-        txt += '    echo "SET_CMS_ENV 1 ==> middleware not identified" \n'
-        txt += '    echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '    exit 1\n'
-        txt += 'fi\n'
+        txt += '    echo "SET_CMS_ENV 10030 ==> middleware not identified" \n'
+        txt += '    echo "JOB_EXIT_STATUS = 10030" \n'
+        txt += '    echo "JobExitCode=10030" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
+        txt += '    exit 1 \n'
+        txt += 'fi \n'
+
+        txt += '# report first time to DashBoard \n'
+        txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
 
         txt += '\n\n'
-
-        ### OLI: removed to move DashBoard reporting header to front of wrapper script
-        # txt += 'if [ $middleware == LCG ]; then \n'
-        # txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        # txt += 'fi\n'
 
         if int(self.copy_data) == 1:
            if self.SE:
@@ -257,7 +274,10 @@ class SchedulerEdg(Scheduler):
         txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
         txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
         txt += '    else \n'
-        txt += '        echo "SET_ENV 1 ==> ERROR in setting CE name - OSG mode -" \n'
+        txt += '        echo "SET_CMS_ENV 10099 ==> OSG mode: ERROR in setting CE name from OSG_JOB_CONTACT" \n'
+        txt += '        echo "JOB_EXIT_STATUS = 10099" \n'
+        txt += '        echo "JobExitCode=10099" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '        dumpStatus $RUNTIME_AREA/$repo \n'
         txt += '        exit 1 \n'
         txt += '    fi \n'
         txt += 'fi \n' 
@@ -754,9 +774,15 @@ class SchedulerEdg(Scheduler):
 
         if self.EDG_cpu_time:
             if (req == 'Requirement = '):
-                req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+                req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+self.EDG_clock_time+'))'
             else:
-                req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+                req = req + ' && ((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+self.EDG_clock_time+'))'
+        else:
+            if (req == 'Requirement = '):
+                req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>=1000))'
+            else:
+                req = req + ' && ((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>=1000))'
+
         if (req != 'Requirement = '):
             req = req + ';\n'
             jdl.write(req)
