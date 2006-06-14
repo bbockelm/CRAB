@@ -69,8 +69,9 @@ class DataLocation:
         try:
             dlstype=self.cfg_params['ORCA.dls_type']
         except KeyError:
-            dlstype='mysql'
-        #DLS_type="DLS_TYPE_MYSQL"
+            ## default to DLS-DLI:
+            dlstype='dli' 
+
         DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
         ## find the replicas for each block 
