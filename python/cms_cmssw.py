@@ -21,7 +21,6 @@ class Cmssw(JobType):
         # Marco.
         self._params = {}
         self.cfg_params = cfg_params
-
         log = common.logger
         
         self.scram = Scram.Scram(cfg_params)
@@ -56,6 +55,8 @@ class Cmssw(JobType):
         datasetpath_split = self.datasetPath.split("/")
         self.setParam_('dataset', datasetpath_split[1])
         self.setParam_('owner', datasetpath_split[-1])
+        self.setTaskid_()
+        self.setParam_('taskId', self.cfg_params['taskId'])
 
 
 
@@ -889,3 +890,9 @@ class Cmssw(JobType):
 
     def getParams(self):
         return self._params
+
+    def setTaskid_(self):
+        self._taskId = self.cfg_params['taskId']
+        
+    def getTaskid(self):
+        return self._taskId
