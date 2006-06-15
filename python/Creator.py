@@ -39,7 +39,7 @@ class Creator(Actor):
         
         # This is code for proto-monitoring
         fileCODE1 = open(common.work_space.shareDir()+"/.code","a")
-        if self.job_type.name() == 'ORCA' or self.job_type.name() == 'ORCA_DBSDLS' :
+        if self.job_type.name() == 'ORCA' or self.job_type.name() == 'ORCA_PUBDB' :
             self.owner = cfg_params['ORCA.owner']
             self.dataset = cfg_params['ORCA.dataset']
             fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))

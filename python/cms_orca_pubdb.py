@@ -3,20 +3,19 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
-import DataDiscovery
-import DataLocation
+import PubDB
+import orcarcBuilder
+import orcarcBuilderOld
 import Scram
 import TarBall
 
 import os, string, re
-
-###Fabio
 import math
 
-class Orca(JobType):
+class Orca_pubdb(JobType):
     def __init__(self, cfg_params):
-        JobType.__init__(self, 'ORCA')
-        common.logger.debug(3,'ORCA::__init__')
+        JobType.__init__(self, 'ORCA_pubdb')
+        common.logger.debug(3,'ORCA_pubdb::__init__')
 
         self.analisys_common_info = {}
         # Marco.
@@ -60,12 +59,12 @@ class Orca(JobType):
             pass
         except KeyError:
             pass
-        log.debug(6, "Orca::Orca(): dataTiers = "+str(self.dataTiers))
+        log.debug(6, "Orca_pubdb::Orca_pubdb(): dataTiers = "+str(self.dataTiers))
 
         ## now the application
         try:
             self.executable = cfg_params['ORCA.executable']
-            log.debug(6, "Orca::Orca(): executable = "+self.executable)
+            log.debug(6, "Orca_pubdb::Orca_pubdb(): executable = "+self.executable)
             self.setParam_('exe', self.executable)
         except KeyError:
             msg = "Error: executable not defined "
@@ -73,7 +72,7 @@ class Orca(JobType):
 
         try:
             self.orcarc_file = cfg_params['ORCA.orcarc_file']
-            log.debug(6, "Orca::Orca(): orcarc file = "+self.orcarc_file)
+            log.debug(6, "Orca_pubdb::Orca_pubdb(): orcarc file = "+self.orcarc_file)
             if (not os.path.exists(self.orcarc_file)):
                 raise CrabException("User defined .orcarc file "+self.orcarc_file+" does not exist")
         except KeyError:
@@ -87,7 +86,7 @@ class Orca(JobType):
             tmp = cfg_params['ORCA.output_file']
             if tmp != '':
                 tmpOutFiles = string.split(cfg_params['ORCA.output_file'],',')
-                log.debug(7, 'Orca::Orca(): output files '+str(tmpOutFiles))
+                log.debug(7, 'Orca_pubdb::Orca_pubdb(): output files '+str(tmpOutFiles))
                 for tmp in tmpOutFiles:
                     tmp=string.strip(tmp)
                     self.output_file.append(tmp)
@@ -136,17 +135,14 @@ class Orca(JobType):
         except KeyError:
             self.first_event = 0
             pass
-        log.debug(6, "Orca::Orca(): total number of events = "+`self.total_number_of_events`)
-        #log.debug(6, "Orca::Orca(): events per job = "+`self.job_number_of_events`)
-        log.debug(6, "Orca::Orca(): first event = "+`self.first_event`)
-
-#DBSDLS-start
-## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code 
-        self.maxEvents=0  # max events available   ( --> check the requested nb. of evts in Creator.py)
-        self.DBSPaths={}  # all dbs paths requested ( --> input to the site local discovery script)
-## Perform the data location and discovery (based on DBS/DLS)
-        self.DataDiscoveryAndLocation(cfg_params)
-#DBSDLS-end          
+        log.debug(6, "Orca_pubdb::Orca_pubdb(): total number of events = "+`self.total_number_of_events`)
+        #log.debug(6, "Orca_pubdb::Orca_pubdb(): events per job = "+`self.job_number_of_events`)
+        log.debug(6, "Orca_pubdb::Orca_pubdb(): first event = "+`self.first_event`)
+        
+        self.maxEvents=0 # max events available in any PubDB
+        self.connectPubDB(cfg_params)
+          
+        # [-- self.checkNevJobs() --]
 
         self.TarBaller = TarBall.TarBall(self.executable, self.scram)
         self.tgzNameWithPath = self.TarBaller.prepareTarBall()
@@ -164,7 +160,7 @@ class Orca(JobType):
 
     def split(self, jobParams):
         """
-        This method returns the list of orca specific job type items 
+        This method returns the list of specific job type items 
         needed to run the jobs
         """
         common.jobDB.load()
@@ -199,10 +195,12 @@ class Orca(JobType):
     def getJobTypeArguments(self, nj, sched):
         params = common.jobDB.arguments(nj)
         
-        if sched=="EDG" or sched=="CONDOR" or sched=="GRID":
+        if sched=="EDG" or sched=="GRID":
             parString = "" + str(params[0])+' '+str(params[1])
         elif sched=="BOSS":
             parString = "" + str(params[0])+' '+str(params[1])
+        elif sched=="CONDOR":
+            parString = "" + str(params[0])+' '+str(params[1])+' '+common.analisys_common_info['sites'][0]
         else:
             return ""        
         return parString
@@ -211,6 +209,7 @@ class Orca(JobType):
         first_event = self.first_event
         maxAvailableEvents = int(self.maxEvents)
         common.logger.debug(1,"Available events: "+str(maxAvailableEvents))
+        
         if first_event>=maxAvailableEvents:
             raise CrabException('First event is bigger than maximum number of available events!')
 
@@ -289,7 +288,7 @@ class Orca(JobType):
  
     def jobsToDB(self, nJobs):
         """
-         Fill the DB with proper entries for ORCA
+         Fill the DB with proper entries for ORCA-DBS-DLS     
         """
 
         firstEvent = self.first_event
@@ -328,17 +327,17 @@ class Orca(JobType):
         txt += 'if [ $middleware == LCG ]; then \n' 
         txt += self.wsSetupCMSLCGEnvironment_()
         txt += 'elif [ $middleware == OSG ]; then\n'
-        txt += '    time=`date -u +"%s"`\n'
-        txt += '    WORKING_DIR=$OSG_WN_TMP/cms_$time\n'
-        txt += '    echo "Creating working directory: $WORKING_DIR"\n'
-        txt += '    /bin/mkdir -p $WORKING_DIR\n'
-        txt += '    if [ ! -d $WORKING_DIR ] ;then\n'
+        txt += '   time=`date -u +"%s"`\n'
+        txt += '   WORKING_DIR=$OSG_WN_TMP/cms_$time\n'
+        txt += '   echo "Creating working directory: $WORKING_DIR"\n'
+        txt += '   /bin/mkdir -p $WORKING_DIR\n'
+        txt += '   if [ ! -d $WORKING_DIR ] ;then\n'
         txt += '        echo "SET_CMS_ENV 10016 ==> OSG $WORKING_DIR could not be created on WN `hostname`"\n'
         txt += '	echo "JOB_EXIT_STATUS = 10016"\n'
         txt += '	echo "JobExitCode=10016" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '	dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '        exit 1\n'
-        txt += '    fi\n'
+        txt += '      exit 1\n'
+        txt += '   fi\n'
         txt += '\n'
         txt += '    echo "Change to working directory: $WORKING_DIR"\n'
         txt += '    cd $WORKING_DIR\n'
@@ -356,19 +355,22 @@ class Orca(JobType):
         txt += '    echo "JOB_EXIT_STATUS = 10034"\n'
         txt += '    echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+
         ## OLI_Daniele
-        txt += '    if [ $middleware == OSG ]; then \n'
-        txt += '        echo "Remove working directory: $WORKING_DIR"\n'
-        txt += '        cd $RUNTIME_AREA\n'
-        txt += '        /bin/rm -rf $WORKING_DIR\n'
-        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        txt += '   if [ $middleware == OSG ]; then \n'
+        txt += '   \n'
+        txt += '      echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '      cd $RUNTIME_AREA\n'
+        txt += '      /bin/rm -rf $WORKING_DIR\n'
+        txt += '      if [ -d $WORKING_DIR ] ;then\n'
         txt += '	    echo "SET_CMS_ENV 10018 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
         txt += '	    echo "JOB_EXIT_STATUS = 10018"\n'
         txt += '	    echo "JobExitCode=10018" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '        fi\n'
-        txt += '    fi \n'
-        txt += '    exit 1\n'
+        txt += '      fi\n'
+        txt += '   fi \n'
+        txt += '   \n'
+        txt += '   exit 1\n'
         txt += 'fi \n'
         txt += 'echo "ORCA_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
@@ -394,17 +396,18 @@ class Orca(JobType):
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
 
         ## OLI_Daniele
-        txt += '    if [ $middleware == OSG ]; then \n'
-        txt += '        echo "Remove working directory: $WORKING_DIR"\n'
-        txt += '        cd $RUNTIME_AREA\n'
-        txt += '        /bin/rm -rf $WORKING_DIR\n'
-        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        txt += '   if [ $middleware == OSG ]; then \n'
+        txt += '      echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '      cd $RUNTIME_AREA\n'
+        txt += '      /bin/rm -rf $WORKING_DIR\n'
+        txt += '      if [ -d $WORKING_DIR ] ;then\n'
         txt += '	    echo "SET_EXE_ENV 50114 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Too few arguments for CRAB job wrapper"\n'
         txt += '	    echo "JOB_EXIT_STATUS = 50114"\n'
         txt += '	    echo "JobExitCode=50114" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '        fi\n'
-        txt += '    fi \n'
+        txt += '      fi\n'
+        txt += '   fi \n'
+        txt += '   \n'
         txt += "    exit 1\n"
         txt += "fi\n"
         txt += "\n"
@@ -413,109 +416,14 @@ class Orca(JobType):
         job = common.job_list[nj]
         orcarc = os.path.basename(job.configFilename())
         txt += '\n'
-        #DBSDLS-start
-        #### site-local catalogue discovery mechanism:
-        ## check that the site configuration file exists  
-        txt += 'echo "### Site Local Catalogue Discovery ### "\n'
-        txt += 'if [ $middleware == LCG ]; then \n' 
-        txt += '   if [ -f $VO_CMS_SW_DIR/cms_site_config ];  then \n'
-        txt += '      dbsdls_cms_site_config=$VO_CMS_SW_DIR/cms_site_config\n'
-        txt += '   else\n'
-        txt += '      echo "Site Local Catalogue Discovery Failed: No site configuration file $VO_CMS_SW_DIR/cms_site_config !" \n'
-        txt += '      echo "JOB_EXIT_STATUS = 10037"\n'
-        txt += '      echo "JobExitCode=10037" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '      exit 1\n'
-        txt += '   fi \n'
-        txt += 'elif [ $middleware == OSG ]; then\n'
-        txt += '   if [ -f $GRID3_APP_DIR/cmssoft/cms_site_config ];  then \n'
-        txt += '      dbsdls_cms_site_config=$GRID3_APP_DIR/cmssoft/cms_site_config\n'
-        txt += '   elif [ -f $OSG_APP/cmssoft/cms_site_config ];  then \n'
-        txt += '      dbsdls_cms_site_config=$OSG_APP/cmssoft/cms_site_config\n'
-        txt += '   else\n'
-        txt += '      echo "Site Local Catalogue Discovery Failed: No site configuration file $GRID3_APP_DIR/cmssoft/cms_site_config or $OSG_APP/cmssoft/cms_site_config !" \n'
-        txt += '      echo "JOB_EXIT_STATUS = 10037"\n'
-        txt += '      echo "JobExitCode=10037" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '      if [ $middleware == OSG ]; then \n'
-        txt += '         echo "Remove working directory: $WORKING_DIR"\n'
-        txt += '         cd $RUNTIME_AREA\n'
-        txt += '         /bin/rm -rf $WORKING_DIR\n'
-        txt += '         if [ -d $WORKING_DIR ] ;then\n'
-        txt += '	    echo "SET_EXE_ENV 10019 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after No site configuration file $GRID3_APP_DIR/cmssoft/cms_site_config or $OSG_APP/cmssoft/cms_site_config"\n'
-        txt += '	    echo "JOB_EXIT_STATUS = 10019"\n'
-        txt += '	    echo "JobExitCode=10019" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '         fi\n'
-        txt += '      fi \n'
-        txt += '      exit 1\n'
-        txt += '   fi \n'
-        txt += 'fi\n'
-        txt += 'echo "Site Local Catalog Discovery, selected site configuration: $dbsdls_cms_site_config"\n'
-        ## look for a site local script sent as inputsandbox otherwise use the default one under $VO_CMS_SW_DIR for LCG or $GRID3_APP_DIR/cmssoft or $OSG_APP/cmssoft for OSG
-        txt += 'if [ -f $RUNTIME_AREA/cms_site_catalogue.sh ];  then \n'
-        txt += ' sitelocalscript=$RUNTIME_AREA/cms_site_catalogue.sh \n'
-        txt += 'elif [ $middleware == LCG ]; then \n' 
-        txt += '   if [ -f $VO_CMS_SW_DIR/cms_site_catalogue.sh ]; then \n'
-        txt += '   sitelocalscript=$VO_CMS_SW_DIR/cms_site_catalogue.sh \n'
-        txt += '   else  \n'
-        txt += '      echo "Site Local Catalogue Discovery Failed: No site local script cms_site_catalogue.sh !"\n'
-        txt += '      echo "JOB_EXIT_STATUS = 10038"\n'
-        txt += '      echo "JobExitCode=10038" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '      exit 1\n'
-        txt += '   fi \n'
-        txt += 'elif [ $middleware == OSG ]; then\n'
-        txt += '   if [ -f $GRID3_APP_DIR/cmssoft/cms_site_catalogue.sh ];  then \n'
-        txt += '      sitelocalscript=$GRID3_APP_DIR/cmssoft/cms_site_catalogue.sh\n'
-        txt += '   elif [ -f $OSG_APP/cmssoft/cms_site_catalogue.sh ];  then \n'
-        txt += '      sitelocalscript=$OSG_APP/cmssoft/cms_site_catalogue.sh\n'
-        txt += '   else\n'
-        txt += '      echo "Site Local Catalogue Discovery Failed: No site local script cms_site_catalogue.sh !"\n'
-        txt += '      echo "JOB_EXIT_STATUS = 10038"\n'
-        txt += '      echo "JobExitCode=10038" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '      if [ $middleware == OSG ]; then \n'
-        txt += '         echo "Remove working directory: $WORKING_DIR"\n'
-        txt += '         cd $RUNTIME_AREA\n'
-        txt += '         /bin/rm -rf $WORKING_DIR\n'
-        txt += '         if [ -d $WORKING_DIR ] ;then\n'
-        txt += '	    echo "SET_EXE_ENV 10014 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after No site local script cms_site_catalogue.sh"\n'
-        txt += '	    echo "JOB_EXIT_STATUS = 10014"\n'
-        txt += '	    echo "JobExitCode=10014" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '         fi\n'
-        txt += '      fi \n'
-        txt += '      exit 1\n'
-        txt += '   fi \n'
-        txt += 'fi\n'
-        txt += 'echo "Site Local Catalog Discovery, selected local script: $sitelocalscript"\n'
-        ## execute the site local configuration script with the user requied data as input
-        inputdata=string.join(self.DBSPaths,' ')
-        sitecatalog_cmd='$sitelocalscript -c $dbsdls_cms_site_config '+inputdata
-        txt += sitecatalog_cmd+'\n'
-        txt += 'sitestatus=$?\n'
-        txt += 'if [ ! -f inputurl_orcarc ] || [ $sitestatus -ne 0 ]; then\n'
-        txt += '   echo "Site Local Catalogue Discovery Failed: exiting with $sitestatus"\n'
-        txt += '   echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '   echo "JobExitCode=10039" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '   if [ $middleware == OSG ]; then \n'
-        txt += '      echo "Remove working directory: $WORKING_DIR"\n'
-        txt += '      cd $RUNTIME_AREA\n'
-        txt += '      /bin/rm -rf $WORKING_DIR\n'
-        txt += '      if [ -d $WORKING_DIR ] ;then\n'
-        txt += '	    echo "SET_EXE_ENV 10013 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Site Local Catalogue Discovery Failed: exiting with $sitestatus"\n'
-        txt += '	    echo "JOB_EXIT_STATUS = 10013"\n'
-        txt += '	    echo "JobExitCode=10013" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '      fi\n'
-        txt += '   fi \n'
-        txt += '   exit 1\n'
-        txt += 'fi \n'
-        ## append the orcarc fragment about the Input catalogues to the .orcarc
         txt += 'cp $RUNTIME_AREA/'+orcarc+' .orcarc\n'
-        txt +=' cat inputurl_orcarc >> .orcarc\n'
-        #DBSDLS-end
+        txt += 'if [ -e $RUNTIME_AREA/orcarc_$CE ] ; then\n'
+        txt += '    cat $RUNTIME_AREA/orcarc_$CE .orcarc >> .orcarc_tmp\n'
+        txt += '    mv .orcarc_tmp .orcarc\n'
+        txt += 'fi\n'
+        txt += 'if [ -e $RUNTIME_AREA/init_$CE.sh ] ; then\n'
+        txt += '    cp $RUNTIME_AREA/init_$CE.sh init.sh\n'
+        txt += 'fi\n'
 
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
@@ -526,7 +434,30 @@ class Orca(JobType):
                 txt += 'fi\n'
             pass 
 
+        txt += '\n'
+        txt += 'chmod +x ./init.sh\n'
+        txt += './init.sh\n'
+        txt += 'exitStatus=$?\n'
+        txt += 'if [ $exitStatus != 0 ] ; then\n'
+        txt += '    echo "SET_EXE_ENV 20001 ==> ERROR StageIn init script failed"\n'
+        txt += '    echo "JOB_EXIT_STATUS = $exitStatus" \n'
+        txt += '    echo "JobExitCode=20001" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+
         ### OLI_DANIELE
+        txt += '    if [ $middleware == OSG ]; then \n'
+        txt += '        echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '        cd $RUNTIME_AREA\n'
+        txt += '        /bin/rm -rf $WORKING_DIR\n'
+        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        txt += '	    echo "SET_EXE 10012 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after StageIn init script failed"\n'
+        txt += '	    echo "JOB_EXIT_STATUS = 10012"\n'
+        txt += '	    echo "JobExitCode=10012" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '        fi\n'
+        txt += '    fi \n'
+        txt += '    exit 1\n'
+        txt += 'fi\n'
         txt += "echo 'SET_EXE_ENV 0 ==> job setup ok'\n"
         txt += 'echo "### END JOB SETUP ENVIRONMENT ###"\n\n'
 
@@ -613,6 +544,8 @@ class Orca(JobType):
             txt += 'else\n'
             txt += '    cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'
+                      
+            pass
        
      
         txt += 'cd $RUNTIME_AREA\n'
@@ -640,68 +573,132 @@ class Orca(JobType):
         else:
             return self.executable
 
-#DBSDLS-start
-    def DataDiscoveryAndLocation(self, cfg_params):
+    def connectPubDB(self, cfg_params):
 
-        fun = "Orca::DataDiscoveryAndLocation()"
+        fun = "Orca_pubdb::connectPubDB()"
+        
+        self.allOrcarcs = []
+        # first check if the info from PubDB have been already processed
+        if os.path.exists(common.work_space.shareDir()+'PubDBSummaryFile') :
+            common.logger.debug(6, fun+": info from PubDB has been already processed -- use it")
+            f = open( common.work_space.shareDir()+'PubDBSummaryFile', 'r' )
+            for i in f.readlines():
+                a=string.split(i,' ')
+                self.allOrcarcs.append(orcarcBuilderOld.constructFromFile(a[0:-1]))
+                pass
+            for o in self.allOrcarcs:
+                # o.dump()
+                if o.Nevents >= self.maxEvents:
+                    self.maxEvents= o.Nevents
+                    pass
+                pass
+            pass
 
-        ## Contact the DBS
-        try:
-           self.pubdata=DataDiscovery.DataDiscovery(self.owner,
-                                                    self.dataset,
-                                                    self.dataTiers,
-                                                    cfg_params)
-           self.pubdata.fetchDBSInfo()
-
-        except DataDiscovery.NotExistingDatasetError, ex :
-                msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
+        else:  # PubDB never queried
+            common.logger.debug(6, fun+": PubDB was never queried -- do it")
+            # New PubDB class by SL
+            try:
+                self.pubdb = PubDB.PubDB(self.owner,
+                                         self.dataset,
+                                         self.dataTiers,
+                                         cfg_params)
+            except PubDB.RefDBmapError:
+                msg = 'ERROR ***: accessing PubDB'
                 raise CrabException(msg)
 
-        except DataDiscovery.NoDataTierinProvenanceError, ex :
-                msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
-                raise CrabException(msg)
-        except DataDiscovery.DataDiscoveryError, ex:
-                msg = 'ERROR ***: failed Data Discovery in DBS  %s'%ex.getErrorMessage()
-                raise CrabException(msg)
+            ## extract info from pubDB (grouped by PubDB version :
+            ##   pubDBData contains a list of info for the new-style PubDBs,
+            ##   and a list of info for the old-style PubDBs )
+            self.pubDBData = self.pubdb.getAllPubDBData()
 
-        ## get list of all required data in the form of dbs paths  (dbs path = /dataset/datatier/owner)
-        self.DBSPaths=self.pubdata.getDBSPaths()
-        common.logger.message("Required data are : ")
-        for path in self.DBSPaths:
-          common.logger.message(" --> "+path )
-
-        ## get max number of events
-        #common.logger.debug(10,"number of events for primary fileblocks %i"%self.pubdata.getMaxEvents())
-        self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py 
-        common.logger.message("\nThe number of available events is %s"%self.maxEvents)
-
-        ## get fileblocks corresponding to the required data
-        fb=self.pubdata.getFileBlocks()
-
-
-        ## Contact the DLS and build a list of sites hosting the fileblocks
-        try:
-          dataloc=DataLocation.DataLocation(self.pubdata.getFileBlocks(),cfg_params)
-          dataloc.fetchDLSInfo()
-        except DataLocation.DataLocationError , ex:
-                msg = 'ERROR ***: failes Data Location in DLS \n %s '%ex.getErrorMessage()
+            ## check and exit if no data are published in any PubDB
+            nodata=1
+            for PubDBversion in self.pubDBData.keys():
+                if len(self.pubDBData[PubDBversion])>0:
+                    nodata=0
+            if (nodata):
+                msg = 'Owner '+self.owner+' Dataset '+ self.dataset+ ' not published in any PubDB with asked dataTiers '+string.join(self.dataTiers,'-')+' ! '
                 raise CrabException(msg)
 
+           ## logging PubDB content for debugging 
+            for PubDBversion in self.pubDBData.keys():
+                common.logger.debug(6, fun+": PubDB "+PubDBversion+" info ("+`len(self.pubDBData[PubDBversion])`+"):\/")
+                for aa in self.pubDBData[PubDBversion]:
+                    common.logger.debug(6, "---------- start of a PubDB")
+                    for bb in aa:
+                        if common.logger.debugLevel() >= 6 :
+                            common.logger.debug(6, str(bb.dump()))
+                            pass
+                        pass
+                common.logger.debug(6, "----------- end of a PubDB")
+            common.logger.debug(6, fun+": End of PubDB "+PubDBversion+" info\n")
 
-        sites=dataloc.getSites()
 
-        if len(sites)==0:
-            msg = 'No sites hosting all the needed data! Exiting... '
+            ## building orcarc : switch between info from old and new-style PubDB
+            currDir = os.getcwd()
+            os.chdir(common.work_space.jobDir())
+
+            tmpOrcarcList=[]
+            for PubDBversion in self.pubDBData.keys():
+                if len(self.pubDBData[PubDBversion])>0 :
+                    #print (" PubDB-style : %s"%(PubDBversion))
+                    if PubDBversion=='newPubDB' :
+                        self.builder = orcarcBuilder.orcarcBuilder(cfg_params)
+                    else :
+                        self.builder = orcarcBuilderOld.orcarcBuilderOld()
+                    tmpAllOrcarcs = self.builder.createOrcarcAndInit(self.pubDBData[PubDBversion])
+                    tmpOrcarcList.append(tmpAllOrcarcs)
+                    #print 'version ',PubDBversion,' tmpAllOrcarcs ', tmpAllOrcarcs
+
+            #print tmpOrcarcList
+            os.chdir(currDir)
+
+            self.maxEvents=0
+            for tmpAllOrcarcs in tmpOrcarcList:
+                for o in tmpAllOrcarcs:
+                    numEvReq=self.total_number_of_events
+                    if ((numEvReq == '-1') | (numEvReq <= o.Nevents)):
+                        self.allOrcarcs.append(o)
+                        if (int(o.Nevents) >= self.maxEvents):
+                            self.maxEvents= int(o.Nevents)
+                            pass
+                        pass
+                    pass
+          
+            # set maximum number of event available
+
+            # I save to a file self.allOrcarcs
+          
+            PubDBSummaryFile = open(common.work_space.shareDir()+'PubDBSummaryFile','w')
+            for o in self.allOrcarcs:
+                for d in o.content():
+                    PubDBSummaryFile.write(d)
+                    PubDBSummaryFile.write(' ')
+                    pass
+                PubDBSummaryFile.write('\n')
+                pass
+            PubDBSummaryFile.close()
+            ### fede
+            #for o in self.allOrcarcs:
+            #    o.dump()
+            pass
+
+        # build a list of sites
+        ces= []
+        for o in self.allOrcarcs:
+            ces.append(o.CE)
+            pass
+
+        if len(ces)==0:
+            msg = 'No PubDBs publish correct catalogs or enough events! '
+            msg += `self.total_number_of_events`
             raise CrabException(msg)
-        common.logger.message("List of Sites hosting the data : "+str(sites))
-        common.logger.debug(6, "List of Sites: "+str(sites))
-        common.analisys_common_info['sites']=sites    ## used in SchedulerEdg.py in createSchScript
-        self.setParam_('TargetCE', ','.join(sites))
+
+        common.logger.debug(6, "List of CEs: "+str(ces))
+        common.analisys_common_info['sites'] = ces
+        self.setParam_('TargetCE', ','.join(ces))
 
         return
-
-#DBDDLS-stop
-
 
     def nJobs(self):
         # TODO: should not be here !
@@ -728,7 +725,7 @@ class Orca(JobType):
            
         inline=infile.readlines()
         ### remove from user card these lines ###
-        wordRemove=['InputFileCatalogURL', 'InputCollections', 'FirstEvent', 'MaxEvents', 'TFileAdaptor']
+        wordRemove=['InputFileCatalogURL', 'InputCollections', 'FirstEvent', 'MaxEvents', 'TFileAdaptor', 'MonRecAlisaBuilder']
         for line in inline:
             word = string.strip(string.split(line,'=')[0])
 
@@ -772,14 +769,12 @@ class Orca(JobType):
         ## code
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
-
-##DBSDLS: no orcarc_CE and init_CE.sh produced on UI , thus not inserting them in inputSandbox
-#        ## orcarc
-#        for o in self.allOrcarcs:
-#          for f in o.fileList():
-#            if (f not in seen.keys()):
-#              inp_box.append(common.work_space.jobDir()+f)
-#              seen[f] = 1
+        ## orcarc
+        for o in self.allOrcarcs:
+          for f in o.fileList():
+            if (f not in seen.keys()):
+              inp_box.append(common.work_space.jobDir()+f)
+              seen[f] = 1
 
         ## config
         inp_box.append(common.job_list[nj].configFilename())
@@ -809,7 +804,7 @@ class Orca(JobType):
 
     def getRequirements(self):
         """
-       return job requirements to add to jdl files 
+        return job requirements to add to jdl files 
         """
         req = ''
         if common.analisys_common_info['sites']:
@@ -888,11 +883,11 @@ class Orca(JobType):
         txt += '      # Use $OSG_APP/cmssoft/cmsset_default.sh to setup cms software\n'
         txt += '       source $OSG_APP/cmssoft/cmsset_default.sh '+self.version+'\n'
         txt += '   else\n'
-        txt += '       echo "SET_CMS_ENV 10020 ==> ERROR $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cmsset_default.sh file not found"\n'
-        txt += '       echo "JOB_EXIT_STATUS = 10020"\n'
-        txt += '       echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       exit 1\n'
+        txt += '      echo "SET_CMS_ENV 10020 ==> ERROR $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cmsset_default.sh file not found"\n'
+        txt += '      echo "JOB_EXIT_STATUS = 10020"\n'
+        txt += '      echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '      exit 1\n'
         txt += '\n'
         txt += '       echo "Remove working directory: $WORKING_DIR"\n'
         txt += '       cd $RUNTIME_AREA\n'
@@ -904,7 +899,7 @@ class Orca(JobType):
         txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '       fi\n'
         txt += '\n'
-        txt += '       exit 1\n'
+        txt += '      exit 1\n'
         txt += '   fi\n'
         txt += '\n'
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
@@ -920,31 +915,32 @@ class Orca(JobType):
         """
         txt  = '   \n'
         txt += '   echo " ### SETUP CMS LCG  ENVIRONMENT ### "\n'
+        txt += '      echo "JOB_EXIT_STATUS = 0"\n'
         txt += '   if [ ! $VO_CMS_SW_DIR ] ;then\n'
-        txt += '       echo "SET_CMS_ENV 10031 ==> ERROR CMS software dir not found on WN `hostname`"\n'
-        txt += '       echo "JOB_EXIT_STATUS = 10031" \n'
-        txt += '       echo "JobExitCode=10031" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       exit 1\n'
+        txt += '      echo "SET_CMS_ENV 10031 ==> ERROR CMS software dir not found on WN `hostname`"\n'
+        txt += '      echo "JOB_EXIT_STATUS = 10031" \n'
+        txt += '      echo "JobExitCode=10031" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '      exit 1\n'
         txt += '   else\n'
-        txt += '       echo "Sourcing environment... "\n'
-        txt += '       if [ ! -s $VO_CMS_SW_DIR/cmsset_default.sh ] ;then\n'
-        txt += '           echo "SET_CMS_ENV 10020 ==> ERROR cmsset_default.sh file not found into dir $VO_CMS_SW_DIR"\n'
-        txt += '           echo "JOB_EXIT_STATUS = 10020"\n'
-        txt += '           echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '           exit 1\n'
-        txt += '       fi\n'
-        txt += '       echo "sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
-        txt += '       source $VO_CMS_SW_DIR/cmsset_default.sh\n'
-        txt += '       result=$?\n'
-        txt += '       if [ $result -ne 0 ]; then\n'
-        txt += '           echo "SET_CMS_ENV 10032 ==> ERROR problem sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
-        txt += '           echo "JOB_EXIT_STATUS = 10032"\n'
-        txt += '           echo "JobExitCode=10032" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '           exit 1\n'
-        txt += '       fi\n'
+        txt += '      echo "Sourcing environment... "\n'
+        txt += '      if [ ! -s $VO_CMS_SW_DIR/cmsset_default.sh ] ;then\n'
+        txt += '          echo "SET_CMS_ENV 10020 ==> ERROR cmsset_default.sh file not found into dir $VO_CMS_SW_DIR"\n'
+        txt += '          echo "JOB_EXIT_STATUS = 10020"\n'
+        txt += '          echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '          dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '          exit 1\n'
+        txt += '      fi\n'
+        txt += '      echo "sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
+        txt += '      source $VO_CMS_SW_DIR/cmsset_default.sh\n'
+        txt += '      result=$?\n'
+        txt += '      if [ $result -ne 0 ]; then\n'
+        txt += '          echo "SET_CMS_ENV 10032 ==> ERROR problem sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
+        txt += '          echo "JOB_EXIT_STATUS = 10032"\n'
+        txt += '          echo "JobExitCode=10032" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '          dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '          exit 1\n'
+        txt += '      fi\n'
         txt += '   fi\n'
         txt += '   \n'
         txt += '   string=`cat /etc/redhat-release`\n'
@@ -955,11 +951,11 @@ class Orca(JobType):
         txt += '       export SCRAM_ARCH=slc3_ia32_gcc323\n'
         txt += '       echo "SCRAM_ARCH= $SCRAM_ARCH"\n'
         txt += '   else\n'
-        txt += '       echo "SET_CMS_ENV 10033 ==> ERROR OS unknown, LCG environment not initialized"\n'
-        txt += '       echo "JOB_EXIT_STATUS = 10033"\n'
-        txt += '       echo "JobExitCode=10033" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       exit 1\n'
+        txt += '      echo "SET_CMS_ENV 1 ==> ERROR OS unknown, LCG environment not initialized"\n'
+        txt += '      echo "JOB_EXIT_STATUS = 10033"\n'
+        txt += '      echo "JobExitCode=10033" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '      dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '      exit 1\n'
         txt += '   fi\n'
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
         txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'

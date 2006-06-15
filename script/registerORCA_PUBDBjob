@@ -1,10 +1,10 @@
 #!/bin/sh
 
-boss showJobTypes | grep "ORCA_DBSDLS job" > /dev/null
+boss showJobTypes | grep "ORCA_PUBDB job" > /dev/null
 if [ $? -eq 0 ];then
- boss registerJob -name orca_dbsdls  -post $CRABSCRIPT/script/orca.runtime -runtime $CRABSCRIPT/script/orca.runtime -comment "ORCA_DBSDLS job"
+ boss registerJob -name orca_PUBDB  -post $CRABSCRIPT/script/orca.runtime -runtime $CRABSCRIPT/script/orca.runtime -comment "ORCA_PUBDB job"
 else
- boss registerJob -name orca_dbsdls -schema $CRABSCRIPT/script/orca.schema -post $CRABSCRIPT/script/orca.runtime -runtime $CRABSCRIPT/script/orca.runtime -comment "ORCA_DBSDLS job"
+ boss registerJob -name orca_pubdb -schema $CRABSCRIPT/script/orca.schema -post $CRABSCRIPT/script/orca.runtime -runtime $CRABSCRIPT/script/orca.runtime -comment "ORCA_PUBDB job"
 fi
 
 boss showJobTypes | grep "ORCA job" > /dev/null
@@ -15,7 +15,3 @@ else
  ## first time: register with schema
  boss registerJob -name orca -schema $CRABSCRIPT/script/orca.schema -post $CRABSCRIPT/script/orca.runtime -runtime $CRABSCRIPT/script/orca.runtime -comment "ORCA job"
 fi
-
-
-
-
