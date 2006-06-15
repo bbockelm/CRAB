@@ -153,7 +153,10 @@ class SchedulerEdg(Scheduler):
 
         self.proxyValid=0
 
-        self._taskId = cfg_params['taskId']
+        try:
+            self._taskId = cfg_params['taskId']
+        except:
+            self._taskId = ''
 
         return
     
