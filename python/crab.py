@@ -535,9 +535,9 @@ class Crab:
                     st = common.jobDB.status(nj-1)
                     if st == 'S' or st == 'A':
                         id = common.scheduler.boss_SID(nj)
-                        print "Job: ",nj-1," Id = ", id 
+                        print "Job: ",nj," Id = ", id 
                     else:
-                        print "Job: ",nj-1," No ID yet"
+                        print "Job: ",nj," No ID yet"
                 pass
 
             elif ( opt == '-status' ):
