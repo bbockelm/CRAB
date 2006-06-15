@@ -14,7 +14,7 @@ import math
 
 class Orca_pubdb(JobType):
     def __init__(self, cfg_params):
-        JobType.__init__(self, 'ORCA_pubdb')
+        JobType.__init__(self, 'ORCA_PUBDB')
         common.logger.debug(3,'ORCA_pubdb::__init__')
 
         self.analisys_common_info = {}
