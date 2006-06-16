@@ -1,4 +1,5 @@
 from Actor import *
+import EdgLoggingInfo
 import common
 import string, os
 
@@ -39,8 +40,27 @@ class PostMortem(Actor):
             jdl = open(jdl_fname, 'w')
             for line in out: jdl.write(line)
             jdl.close()
-            common.logger.message('Logging info for job '+str(nj)+' written to '+jdl_fname)
+
+            loggingInfo = EdgLoggingInfo.EdgLoggingInfo()
+
+            reason = loggingInfo.decodeReason(out)
+
+            common.logger.message('Logging info for job '+str(nj)+': '+reason+'\n      written to '+jdl_fname)
             
+            # ML reporting
+            jobId = ''
+            if common.scheduler.boss_scheduler_name == 'condor_g':
+                # create hash of cfg file
+                hash = makeCksum(common.work_space.cfgFileName())
+                jobId = str(nj) + '_' + hash + '_' + id
+            else:
+                jobId = str(nj) + '_' + id
+
+            params = {'taskId': self.cfg_params['taskId'], 'jobId':  jobId, \
+                      'sid': id,
+                      'PostMortemCategory': loggingInfo.getCategory(), \
+                      'PostMortemReason': loggingInfo.getReason()}
+            self.cfg_params['apmon'].sendToML(params)
             pass
 
         return
