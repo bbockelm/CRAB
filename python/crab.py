@@ -532,12 +532,12 @@ class Crab:
 
                 for nj in jobs:
                     #nj parte da 1 --> nj = internal_id di boss 
-                    st = common.jobDB.status(nj-1)
+                    st = common.jobDB.status(nj)
                     if st == 'S' or st == 'A':
-                        id = common.scheduler.boss_SID(nj)
-                        print "Job: ",nj," Id = ", id 
+                        id = common.scheduler.boss_SID(nj+1)
+                        print "Job: ",nj+1," Id = ", id 
                     else:
-                        print "Job: ",nj," No ID yet"
+                        print "Job: ",nj+1," No ID yet"
                 pass
 
             elif ( opt == '-status' ):
