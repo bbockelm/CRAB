@@ -718,38 +718,22 @@ class SchedulerEdg(Scheduler):
 
 
         req='Requirements = '
+        noreq=req
         req = req + jbt.getRequirements()
-#        ### if at least a CE exists ...
-#        if common.analisys_common_info['sites']:
-#           if common.analisys_common_info['sw_version']:
-#                req='Requirements = '
-#                req=req + 'Member("VO-cms-' + \
-#                     common.analisys_common_info['sw_version'] + \
-#                     '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-#            if len(common.analisys_common_info['sites'])>0:
-#                req = req + ' && ('
-#                for i in range(len(common.analisys_common_info['sites'])):
-#                    req = req + 'other.GlueCEInfoHostName == "' \
-#                         + common.analisys_common_info['sites'][i] + '"'
-#                    if ( i < (int(len(common.analisys_common_info['sites']) - 1)) ):
-#                        req = req + ' || '
-#            req = req + ')'
         #### and USER REQUIREMENT
         if self.EDG_requirements:
-            if (req == 'Requirement = '):
-                req = req + self.EDG_requirements
-            else:
-                req = req +  ' && ' + self.EDG_requirements
+            if (req != noreq):
+                req = req +  ' && '
+            req = req + self.EDG_requirements
         #### FEDE ##### 
         if self.EDG_ce_white_list:
             ce_white_list = string.split(self.EDG_ce_white_list,',')
             #print "req = ", req
             for i in range(len(ce_white_list)):
                 if i == 0:
-                    if (req == 'Requirement = '):
-                        req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
-                    else:
-                        req = req +  ' && ((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    if (req != noreq):
+                        req = req +  ' && '
+                    req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
                     pass
                 else:
                     req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
@@ -758,35 +742,27 @@ class SchedulerEdg(Scheduler):
         if self.EDG_ce_black_list:
             ce_black_list = string.split(self.EDG_ce_black_list,',')
             for ce in ce_black_list:
-                if (req == 'Requirement = '):
-                    req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
-                else:
-                    req = req +  ' && (!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                if (req != noreq):
+                    req = req +  ' && '
+                req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
                 pass
+
         ###############
+        clockTime=480
         if self.EDG_clock_time:
-            if (req == 'Requirement = '):
-                req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time+'))'
-            else:
-                req = req + ' && ((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time+'))'
-        else:
-            if (req == 'Requirement = '):
-                req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>=480))'
-            else:
-                req = req + ' && ((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>=480))'
+            clockTime= self.EDG_clock_time
+        if (req != noreq):
+            req = req + ' && '
+        req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+str(clockTime)+'))'
 
+        cpuTime=1000
         if self.EDG_cpu_time:
-            if (req == 'Requirement = '):
-                req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+self.EDG_clock_time+'))'
-            else:
-                req = req + ' && ((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+self.EDG_clock_time+'))'
-        else:
-            if (req == 'Requirement = '):
-                req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>=1000))'
-            else:
-                req = req + ' && ((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>=1000))'
+            cpuTime=self.EDG_cpu_time
+        if (req != noreq):
+            req = req + ' && '
+        req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+str(cpuTime)+'))'
 
-        if (req != 'Requirement = '):
+        if (req != noreq):
             req = req + ';\n'
             jdl.write(req)
                                                                                                                                                              
