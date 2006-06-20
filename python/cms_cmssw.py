@@ -40,38 +40,30 @@ class Cmssw(JobType):
 
         ### collect Data cards
         try:
-         #   self.owner = cfg_params['CMSSW.owner']
-         #   log.debug(6, "CMSSW::CMSSW(): owner = "+self.owner)
-         #   self.dataset = cfg_params['CMSSW.dataset']
-            self.datasetPath = cfg_params['CMSSW.datasetpath']
-            log.debug(6, "CMSSW::CMSSW(): datasetPath = "+self.datasetPath)
+            tmp =  cfg_params['CMSSW.datasetpath']
+            log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
+            if string.lower(tmp)=='none':
+                self.datasetPath = None
+            else:
+                self.datasetPath = tmp
         except KeyError:
-        #    msg = "Error: owner and/or dataset not defined "
             msg = "Error: datasetpath not defined "  
             raise CrabException(msg)
 
         # ML monitoring
         # split dataset path style: /PreProdR3Minbias/SIM/GEN-SIM
-        datasetpath_split = self.datasetPath.split("/")
-        self.setParam_('dataset', datasetpath_split[1])
-        self.setParam_('owner', datasetpath_split[-1])
+        if not self.datasetPath:
+            self.setParam_('dataset', 'None')
+            self.setParam_('owner', 'None')
+        else:
+            datasetpath_split = self.datasetPath.split("/")
+            self.setParam_('dataset', datasetpath_split[1])
+            self.setParam_('owner', datasetpath_split[-1])
+
         self.setTaskid_()
         self.setParam_('taskId', self.cfg_params['taskId'])
 
-
-
-
         self.dataTiers = []
- #       try:
- #           tmpDataTiers = string.split(cfg_params['CMSSW.data_tier'],',')
- #           for tmp in tmpDataTiers:
- #               tmp=string.strip(tmp)
- #               self.dataTiers.append(tmp)
- #               pass
- #           pass
- #       except KeyError:
- #           pass
- #       log.debug(6, "Cmssw::Cmssw(): dataTiers = "+str(self.dataTiers))
 
         ## now the application
         try:
@@ -141,17 +133,26 @@ class Cmssw(JobType):
         except KeyError:
             pass
 
+        # files per job
         try:
             self.filesPerJob = int(cfg_params['CMSSW.files_per_jobs']) #Daniele
+            self.selectFilesPerJob = 1
         except KeyError:
-            self.filesPerJob = 1
+            self.filesPerJob = 0
+            self.selectFilesPerJob = 0
 
-        ## Max event   will be total_number_of_events ???  Daniele
+        ## Events per job
         try:
-            self.maxEv = cfg_params['CMSSW.event_per_job']
+            self.eventsPerJob =int( cfg_params['CMSSW.event_per_job'])
+            self.selectEventsPerJob = 1
         except KeyError:
-            self.maxEv = "-1"
-        ##   
+            self.eventsPerJob = -1
+            self.selectEventsPerJob = 0
+    
+        if (self.selectFilesPerJob == self.selectEventsPerJob):
+            msg = 'Must define either files_per_jobs or event_per_job'
+            raise CrabException(msg)
+
         try:
             self.total_number_of_events = int(cfg_params['CMSSW.total_number_of_events'])
         except KeyError:
@@ -196,24 +197,30 @@ class Cmssw(JobType):
         self.maxEvents=0  # max events available   ( --> check the requested nb. of evts in Creator.py)
         self.DBSPaths={}  # all dbs paths requested ( --> input to the site local discovery script)
         ## Perform the data location and discovery (based on DBS/DLS)
-        self.DataDiscoveryAndLocation(cfg_params)
+        ## SL: Don't if NONE is specified as input (pythia use case)
+        common.analisys_common_info['sites']=None
+        if self.datasetPath:
+            self.DataDiscoveryAndLocation(cfg_params)
         #DBSDLS-end          
 
         self.tgzNameWithPath = self.getTarBall(self.executable)
 
-        self.jobSplitting()  #Daniele job Splitting
-        self.PsetEdit.maxEvent(self.maxEv) #Daniele  
+        ## Select Splitting
+        if self.selectFilesPerJob: self.jobSplittingPerFiles()
+        elif self.selectEventsPerJob: self.jobSplittingPerEvents()
+        else:
+            msg = 'Don\'t know how to split...'
+            raise CrabException(msg)
+        
+        self.PsetEdit.maxEvent(self.eventsPerJob) #Daniele  
         self.PsetEdit.inputModule("INPUT") #Daniele   
         self.PsetEdit.psetWriter(self.configFilename())
-        
 
 
     def DataDiscoveryAndLocation(self, cfg_params):
 
         common.logger.debug(10,"CMSSW::DataDiscoveryAndLocation()")
 
-        #datasetPath = "/"+self.owner+"/"+self.dataTiers[0]+"/"+self.dataset
-         
         datasetPath=self.datasetPath
 
         ## TODO
@@ -285,13 +292,11 @@ class Cmssw(JobType):
         self.setParam_('TargetCE', ','.join(sites))
         return
     
-    def jobSplitting(self):
+    def jobSplittingPerFiles(self):
         """
-        first implemntation for job splitting  
-        """    
-      #  print 'eventi totali '+str(self.maxEvents)
-      #  print 'eventi totali richiesti dallo user '+str(self.total_number_of_events)
-        #print 'files per job '+str(self.filesPerJob)
+        Perform job splitting based on number of files to be accessed per job
+        """
+        common.logger.debug(5,'Splitting per input files')
         common.logger.message('Required '+str(self.filesPerJob)+' files per job ')
         common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
 
@@ -338,10 +343,47 @@ class Cmssw(JobType):
 
         list_of_lists = []
         for i in xrange(0, int(n_tot_files), self.filesPerJob):
-            list_of_lists.append(self.files[0][i: i+self.filesPerJob])
+            parString = "\\{" 
+            
+            params = self.files[0][i: i+self.filesPerJob]
+            for i in range(len(params) - 1):
+                parString += '\\\"' + params[i] + '\\\"\,'
+            
+            parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
+            list_of_lists.append(parString)
+            pass
 
-        self.list_of_files = list_of_lists
-      
+        self.list_of_args = list_of_lists
+        print self.list_of_args
+        return
+
+    def jobSplittingPerEvents(self):
+        """
+        Perform job splitting based on number of event per job
+        """
+        common.logger.debug(5,'Splitting per events')
+        common.logger.message('Required '+str(self.eventsPerJob)+' events per job ')
+        common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
+
+        self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
+        
+        common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
+
+        # is there any remainder?
+        check = int(self.total_number_of_events) - (int(self.total_number_of_jobs)*self.eventsPerJob)
+
+        common.logger.debug(5,'Check  '+str(check))
+
+        if check > 0:
+            common.logger.message('Warning: asked '+self.total_number_of_events+' but will do only '+(int(self.total_number_of_jobs)*self.eventsPerJob))
+
+        common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str(self.total_number_of_jobs*self.eventsPerJob)+' events')
+
+        self.list_of_args = []
+        for i in range(self.total_number_of_jobs):
+            self.list_of_args.append(i)
+        print self.list_of_args
+
         return
 
     def split(self, jobParams):
@@ -349,35 +391,24 @@ class Cmssw(JobType):
         common.jobDB.load()
         #### Fabio
         njobs = self.total_number_of_jobs
-        filelist = self.list_of_files
+        arglist = self.list_of_args
         # create the empty structure
         for i in range(njobs):
             jobParams.append("")
         
         for job in range(njobs):
-            jobParams[job] = filelist[job]
+            jobParams[job] = str(arglist[job])
             common.jobDB.setArguments(job, jobParams[job])
 
         common.jobDB.save()
         return
     
     def getJobTypeArguments(self, nj, sched):
-        params = common.jobDB.arguments(nj)
-        #print params
-        parString = "\\{" 
-        
-        for i in range(len(params) - 1):
-            parString += '\\\"' + params[i] + '\\\"\,'
-        
-        parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
-        return parString
+        return common.jobDB.arguments(nj)
   
     def numberOfJobs(self):
         # Fabio
-
         return self.total_number_of_jobs
- 
-
 
     def checkBlackList(self, allSites):
         if len(self.reCEBlackList)==0: return allSites
