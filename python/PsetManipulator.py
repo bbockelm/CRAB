@@ -31,12 +31,11 @@ class PsetManipulator:
             raise CrabException(msg+msg1)
             pass
         
-        par = file(common.work_space.shareDir()+self.pyPset+'py').read()
+        self.par = file(common.work_space.shareDir()+self.pyPset+'py').read()
        # par = file(common.work_space.shareDir()+self.pset+'py').read()
 
         # get PSet
-        self.cfg = CfgInterface(par,True)
-
+        self.cfg = CfgInterface(self.par,True)
 
     def inputModule(self, source):
         """ Clean  String FileName if there
@@ -47,6 +46,15 @@ class PsetManipulator:
         inModule.cleanStringFileNames() ## Add Daniele
         inModule.setFileNames(source)
         return
+  
+    def pythiaSeed(self,seed):
+        """ 
+            Set pythia seed key
+        """
+        # set seed
+        inModule = self.cfg.inputSource
+        inModule.setPythiaSeed(self.cfg,seed)
+        return 
 
     def maxEvent(self, maxEv):
         """ """ 
@@ -55,8 +63,6 @@ class PsetManipulator:
         inModule.cleanMaxEvent()   
         inModule.setMaxEvents(maxEv)   ## Add Daniele 
         return
-
-    
 
     def outputModule(self, output):
 

@@ -109,16 +109,14 @@ class Cmssw(JobType):
 
         # script_exe file as additional file in inputSandbox
         try:
-           self.scriptExe = cfg_params['USER.script_exe']
-           self.additional_inbox_files.append(self.scriptExe)
+            self.scriptExe = cfg_params['USER.script_exe']
+            self.additional_inbox_files.append(self.scriptExe)
+            if self.scriptExe != '':
+               if not os.path.isfile(self.scriptExe):
+                  msg ="WARNING. file "+self.scriptExe+" not found"
+                  raise CrabException(msg)
         except KeyError:
            pass
-        if self.scriptExe != '':
-           if os.path.isfile(self.scriptExe):
-              pass
-           else:
-              log.message("WARNING. file "+self.scriptExe+" not found")
-              sys.exit()
                   
         ## additional input files
         try:
@@ -143,16 +141,28 @@ class Cmssw(JobType):
 
         ## Events per job
         try:
-            self.eventsPerJob =int( cfg_params['CMSSW.event_per_job'])
+            self.eventsPerJob =int( cfg_params['CMSSW.events_per_job'])
             self.selectEventsPerJob = 1
         except KeyError:
             self.eventsPerJob = -1
             self.selectEventsPerJob = 0
     
+        # To be implemented
+        # ## number of jobs
+        # try:
+        #     self.numberOfJobs =int( cfg_params['CMSSW.number_of_job'])
+        #     self.selectNumberOfJobs = 1
+        # except KeyError:
+        #     self.selectNumberOfJobs = 0
+
         if (self.selectFilesPerJob == self.selectEventsPerJob):
-            msg = 'Must define either files_per_jobs or event_per_job'
+            msg = 'Must define either files_per_jobs or events_per_job'
             raise CrabException(msg)
 
+        if (self.selectEventsPerJob  and not self.datasetPath == None):
+            msg = 'Splitting according to events_per_job available only with None as datasetpath'
+            raise CrabException(msg)
+    
         try:
             self.total_number_of_events = int(cfg_params['CMSSW.total_number_of_events'])
         except KeyError:
@@ -205,16 +215,28 @@ class Cmssw(JobType):
 
         self.tgzNameWithPath = self.getTarBall(self.executable)
 
+        # modify Pset
+        if (self.datasetPath): # standard job
+            self.PsetEdit.maxEvent(self.eventsPerJob) #Daniele  
+            self.PsetEdit.inputModule("INPUT") #Daniele
+
+        else:  # pythia like job
+            self.PsetEdit.maxEvent(self.eventsPerJob) #Daniele  
+            self.PsetEdit.pythiaSeed("INPUT") #Daniele
+            try:
+                self.sourceSeed = int(cfg_params['CMSSW.pythia_seed'])
+            except KeyError:
+                self.sourceSeed = 123456
+                common.logger.message("No seed given, will use "+str(self.sourceSeed))
+        
+        self.PsetEdit.psetWriter(self.configFilename())
+    
         ## Select Splitting
         if self.selectFilesPerJob: self.jobSplittingPerFiles()
         elif self.selectEventsPerJob: self.jobSplittingPerEvents()
         else:
             msg = 'Don\'t know how to split...'
             raise CrabException(msg)
-        
-        self.PsetEdit.maxEvent(self.eventsPerJob) #Daniele  
-        self.PsetEdit.inputModule("INPUT") #Daniele   
-        self.PsetEdit.psetWriter(self.configFilename())
 
 
     def DataDiscoveryAndLocation(self, cfg_params):
@@ -365,6 +387,10 @@ class Cmssw(JobType):
         common.logger.message('Required '+str(self.eventsPerJob)+' events per job ')
         common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
 
+        if (self.total_number_of_events < 0):
+            msg='Cannot split jobs per Events with "-1" as total number of events'
+            raise CrabException(msg)
+
         self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
         
         common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
@@ -379,9 +405,10 @@ class Cmssw(JobType):
 
         common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str(self.total_number_of_jobs*self.eventsPerJob)+' events')
 
+        # argument is seed number.$i
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
-            self.list_of_args.append(i)
+            self.list_of_args.append(int(str(self.sourceSeed)+str(i)))
         print self.list_of_args
 
         return
@@ -617,11 +644,14 @@ class Cmssw(JobType):
         job = common.job_list[nj]
         pset = os.path.basename(job.configFilename())
         txt += '\n'
-        txt += 'InputFiles=$2\n'
-        txt += 'echo "<$InputFiles>"\n'
-        #txt += 'echo sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' \n'
-        txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
-        #txt += 'sed "s#{\'INPUT\'}#${InputFiles}#" $RUNTIME_AREA/'+pset+' > pset1.cfg\n'
+        if (self.datasetPath): # standard job
+            txt += 'InputFiles=$2\n'
+            txt += 'echo "Inputfiles:<$InputFiles>"\n'
+            txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
+        else:  # pythia like job
+            txt += 'Seed=$2\n'
+            txt += 'echo "Seed: <$Seed>"\n'
+            txt += 'sed "s#INPUT#$Seed#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
 
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
@@ -804,11 +834,11 @@ class Cmssw(JobType):
         return job requirements to add to jdl files 
         """
         req = ''
+        if common.analisys_common_info['sw_version']:
+            req='Member("VO-cms-' + \
+                 common.analisys_common_info['sw_version'] + \
+                 '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
         if common.analisys_common_info['sites']:
-            if common.analisys_common_info['sw_version']:
-                req='Member("VO-cms-' + \
-                     common.analisys_common_info['sw_version'] + \
-                     '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
             if len(common.analisys_common_info['sites'])>0:
                 req = req + ' && ('
                 for i in range(len(common.analisys_common_info['sites'])):
