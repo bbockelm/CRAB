@@ -25,7 +25,7 @@ class Crab:
 
         # The order of main_actions is important !
         self.main_actions = [ '-create', '-submit' ] 
-        self.aux_actions = [ '-list', '-kill', '-status', '-getoutput',
+        self.aux_actions = [ '-list', '-kill', '-status', '-getoutput','-get',
                              '-resubmit' , '-cancelAndResubmit', '-testJdl', '-postMortem', '-clean',
                              '-printId' ]
 
@@ -583,7 +583,7 @@ class Crab:
                     else:
                          common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
 
-            elif ( opt == '-getoutput' ):
+            elif ( opt == '-getoutput' or opt == '-get'):
 
                 if ( self.flag_useboss == 1 ):
                     if val=='all' or val==None or val=='':
