@@ -19,14 +19,15 @@ The most useful general options (use '-h' to get complete help):
   -create n           -- Create only n jobs. Default is 'all'. bunch_creation will become obsolete
   -submit n           -- Submit only n jobs. Default is 0. bunch_submission will become obsolete   
   -status [range]     -- check status of all jobs: if range is defined, only of selected jobs
-  -getoutput [range]  -- get back the output of all jobs: if range is defined, only of selected jobs
+  -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs
   -kill [range]       -- kill submitted jobs
   -cancelAndResubmit [range]  -- kill and resubmit submitted jobs
   -clean              -- gracefully cleanup the idrectory of a task
   -testJdl [range]    -- check if resources exist which are compatible with jdl
   -list n or range    -- show technical job details
   -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
-  -continue [dir] | -c [dir]     -- Apply command to task stored in [dir].
+  -printId [range]    -- print the job SID
+  -continue|-c [dir]  -- Apply command to task stored in [dir].
   -h [format]         -- Detailed help. Formats: man (default), tex, html.
   -cfg fname          -- Configuration file name. Default is 'crab.cfg'.
   -debug N            -- set the verbosity level to N
@@ -37,7 +38,7 @@ The most useful general options (use '-h' to get complete help):
 Example:
   crab.py -create 1 -submit 1
 """
-    print usa_string
+    print 
     sys.exit(2)
 
 ###########################################################################
@@ -95,19 +96,43 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 ~>crab.py -getoutput
   get back the output of all jobs
 
+=head1 RUNNING CMSSW WITH CRAB
+
+=over 4
+
+=item B<A)>
+
+Develop your code in your CMSSW working area.  Do anything which is needed to run interactively your executable, including the setup or run time environment (I<eval `scramv1 runtime -sh|csh`>), a suitable I<ParameterSet>, etc.It seems silly, but B<be extra sure that you actaully did compile your code> 
+
+=item B<B)> 
+
+Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.  Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list.
+
+The most important parameters are the following (see below for complete description of each parameter):
+
+=item B<Mandatory!>
+
+=over 6
+
+=item B<[CMSSW]> section: datasetpath, pset, splitting parameters, output_file
+
+=item B<[USER]> section: output handling parameters, such as return_data, copy_data etc...
+
+=back
+
+=item B<Run it!>
+
+You must have a valid voms-enabled grid proxy. See CRAB web page for details.
+
+=back
+
 =head1 RUNNING ORCA WITH CRAB
 
 =over 4
 
 =item B<A)>
 
-Develop your code in your ORCA working area (both I<scram> and I<scramv1> based ORCA are supported).
-Do anything which is needed to run interactively your executable, including the setup or run time environment (I<eval `scram(v1) runtime -sh|csh`>), a suitable I<.orcarc>, etc.
-
-=item B<B)> 
-
-Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.
-Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list. The most important parameters are the following:
+The preliminary steps are the same as CMSSW (both I<scram> and I<scramv1> are supported). The most important parameters in I<crab.cfg> are the following:
 
 =item B<Mandatory!>
 
@@ -119,7 +144,7 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 
 =item o the name of output file(s) produced by ORCA executable.
 
-=item o job splitting directives: the total number of events to analyze, the number of events for each job or the number of jobs and eventually the first event
+=item o job splitting directives: the total number of events to analyze, the number of events for each job or the number of jobs and maybe the first event. B<Note that from CRAB 1_2_0 the job-splitting parameters have been moved into [ORCA] section>
 
 =item o the B<.orcarc> card to be used. This card will be modified by crab for data access and according to the job splitting. Use the very same cars you used in your interactive test: CRAB will modify what is needed.
 
@@ -151,7 +176,7 @@ At CERN, you can use "lxplus" as a UI by sourcing the file B</afs/cern.ch/cms/LC
 
 =back
 
-=head1 HOW TO RUN FAMOS WITH CRAB
+=head1 RUNNING FAMOS WITH CRAB
 
 =over 2
 
@@ -293,9 +318,9 @@ Basically all commands (but -create) need -continue, so it is automatically assu
 
 Check the status of the jobs, in all states. If BOSS real time monitor is enabled, also some real time information are available, otherwise all the info will be available only after the output retrieval. See I<range> below for syntax.
 
-=item B<-getoutput [range]>
+=item B<-getoutput|-get [range]>
 
-Retrieve the output declared by the user via the output sandbox. By default the output will be put in task working dir under I<res> subdirectory. This can be changed via config parameters. See I<range> below for syntax.
+Retrieve the output declared by the user via the output sandbox. By default the output will be put in task working dir under I<res> subdirectory. This can be changed via config parameters. B<Be extra sure that you have enough free space>. See I<range> below for syntax.
 
 =item B<-resubmit [range]>
 
@@ -308,6 +333,10 @@ Kill (cancel) jobs which have been submitted to the scheduler. A range B<must> b
 =item B<-testJdl [range]>
 
 Check if the job can find compatible resources. It's equivalent of doing I<edg-job-list-match> on edg.
+
+=item B<-printId [range]>
+
+Just print the SID of the job(s).
 
 =item B<-postMortem [range]>
 
@@ -362,11 +391,29 @@ B<[CRAB]>
 
 =item B<jobtype *>
 
-The type of the job to be executed: I<orca> I<famos> jobtypes are supported
+The type of the job to be executed: I<cmssw> I<orca> I<famos> jobtypes are supported
 
 =item B<scheduler *>
 
 The scheduler to be used: I<edg> is the grid one. In later version also other scheduler (local and grid) will be possible, including eg glite, condor-g, lsf, pbs, etc...
+
+=back
+
+B<[CMSSW]>
+
+=over 4
+
+=item B<datasetpath *>: the path of processed dataset as defined on the DBS. It comes with the format I</PrimaryDataset/DataTier/Process> . In case no input is needed I<None> must be specified.
+
+=item B<pset *>: the ParameterSet to be used
+
+=item B<total_number_of_events *>: the number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in caso of no input. In this case, the total number of events will be used to split the task in jobs, together with I<event_per_job>.
+
+=item B<files_per_jobs *>: number of files (EventCollection) to be accessed by each job. The DBS provide a list of EvC available for a given datasetpath. Cannot be used with no input.
+
+=item B<events_per_job>: to be used I<only> with no input. Define the number of events to be run for eachjob of the task.
+
+=item B<output_file *>: the output files produced by your application (comma separated list).
 
 =back
 
@@ -398,6 +445,22 @@ The ORCA executable the user want to run on remote site. This must be on the I<p
 =item B<script_exe>
 
 Name of a script that the user want to execute on remote site: full path must be provided. The ORCA executable whcih is executed by the script must be declared in any case, since CRAB must ship it to the remote site. The script can do anything, but change directory before the ORCA executable start. On the remote WN, the full scram-based environment will be found.
+
+=item B<first_event>
+
+The first event the user want to analyze in the dataset. Default is 0.
+
+=item B<total_number_of_events *>
+
+The total number of events the user want to analyze. I<-1> means all available events. If first even is set, a gran total of (total available events)-(first event) will be analyzed.
+
+=item B<job_number_of_events *>
+
+Numer of event for each job. Either this or I<total_number_of_jobs> must be defined.
+
+=item B<total_number_of_jobs>
+
+Total numer of jobs in which the task will be splitted. It is incompatible with previous I<job_number_of_events>. If both are set, this card will be ignored and a warning message issued.
 
 =item B<output_file *>
 
@@ -443,6 +506,22 @@ FAMOS executable: user must provide the executable into his personal scram area.
 
 or the script that calls the executable...
 
+=item B<first_event>
+
+The first event the user want to analyze in the dataset. Default is 0.
+
+=item B<total_number_of_events *>
+
+The total number of events the user want to analyze. I<-1> means all available events. If first even is set, a gran total of (total available events)-(first event) will be analyzed.
+
+=item B<job_number_of_events *>
+
+Numer of event for each job. Either this or I<total_number_of_jobs> must be defined.
+
+=item B<total_number_of_jobs>
+
+Total numer of jobs in which the task will be splitted. It is incompatible with previous I<job_number_of_events>. If both are set, this card will be ignored and a warning message issued.
+
 =item B<output_file>
 
 Output files produced by executable: comma separated list, can be empty but mut be present!
@@ -460,22 +539,6 @@ B<[USER]>
 =item B<additional_input_files>
 
 Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. Please note that the full I<Data> directory of your private ORCA working are will be send to WN (if present). 
-
-=item B<first_event>
-
-The first event the user want to analyze in the dataset. Default is 0.
-
-=item B<total_number_of_events *>
-
-The total number of events the user want to analyze. I<-1> means all available events. If first even is set, a gran total of (total available events)-(first event) will be analyzed.
-
-=item B<job_number_of_events *>
-
-Numer of event for each job. Either this or I<total_number_of_jobs> must be defined.
-
-=item B<total_number_of_jobs>
-
-Total numer of jobs in which the task will be splitted. It is incompatible with previous I<job_number_of_events>. If both are set, this card will be ignored and a warning message issued.
 
 =item B<ui_working_dir>
 
