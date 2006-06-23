@@ -12,6 +12,9 @@ else
 fi
 #echo $PYTHONPATH
 
-export LD_LIBRARY_PATH=${EDG_WL_LIBRARY_PATH}:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=${GLITE_LOCATION}/lib:${LD_LIBRARY_PATH}
+
+# echo $LD_LIBRARY_PATH
+# ldd `which voms-proxy-info`
 
 /usr/bin/env python $CRABSCRIPT/python/crab.py $*
