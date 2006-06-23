@@ -126,13 +126,13 @@ class Orca(JobType):
             pass
 
         try:
-            self.total_number_of_events = int(cfg_params['USER.total_number_of_events'])
+            self.total_number_of_events = int(cfg_params['ORCA.total_number_of_events'])
         except KeyError:
             msg = 'Must define total_number_of_events and job_number_of_events'
             raise CrabException(msg)
 
         try:
-            self.first_event = int(cfg_params['USER.first_event'])
+            self.first_event = int(cfg_params['ORCA.first_event'])
         except KeyError:
             self.first_event = 0
             pass
@@ -234,13 +234,13 @@ class Orca(JobType):
         # read user directives
         eventPerJob=0
         try:
-            eventPerJob = self.cfg_params['USER.job_number_of_events']
+            eventPerJob = self.cfg_params['ORCA.job_number_of_events']
         except KeyError:
             pass
         
         jobsPerTask=0
         try:
-            jobsPerTask = int(self.cfg_params['USER.total_number_of_jobs'])
+            jobsPerTask = int(self.cfg_params['ORCA.total_number_of_jobs'])
         except KeyError:
             pass
 

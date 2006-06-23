@@ -147,14 +147,14 @@ class Famos(JobType):
 
         ### Added from georgia (but appears also in Creator.py)
         try:
-            self.job_number_of_events = int(cfg_params['USER.job_number_of_events'])
+            self.job_number_of_events = int(cfg_params['FAMOS.job_number_of_events'])
             log.debug(6, "Famos::Famos(): job number of events = "+`self.job_number_of_events`)
         except KeyError:
             msg = 'Must define total_number_of_events and job_number_of_events'
             raise CrabException(msg)
         
         try:
-            self.total_number_of_events = int(cfg_params['USER.total_number_of_events'])
+            self.total_number_of_events = int(cfg_params['FAMOS.total_number_of_events'])
             self.maxEvents=self.total_number_of_events
             log.debug(6, "Famos::Famos(): total number of events = "+`self.total_number_of_events`)
         except KeyError:
@@ -162,7 +162,7 @@ class Famos(JobType):
             raise CrabException(msg)
 
         try:
-            self.first = int(cfg_params['USER.first_event'])
+            self.first = int(cfg_params['FAMOS.first_event'])
             log.debug(6, "Famos::Famos(): first event = "+`self.first`)
         except KeyError:
             self.first = 0
