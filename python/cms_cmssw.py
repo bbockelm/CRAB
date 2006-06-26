@@ -376,7 +376,7 @@ class Cmssw(JobType):
             pass
 
         self.list_of_args = list_of_lists
-        print self.list_of_args
+        #print self.list_of_args
         return
 
     def jobSplittingPerEvents(self):
