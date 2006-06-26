@@ -324,9 +324,12 @@ class Cmssw(JobType):
 
         ## TODO: SL need to have (from DBS) a detailed list of how many events per each file
         n_tot_files = (len(self.files[0]))
+        #print "n_tot_files = ", n_tot_files
         ## SL: this is wrong if the files have different number of events
+        #print "self.maxEvents = ", self.maxEvents
         evPerFile = int(self.maxEvents)/n_tot_files
-        
+        #print "evPerFile = int(self.maxEvents)/n_tot_files =  ", evPerFile
+
         common.logger.debug(5,'Events per File '+str(evPerFile))
 
         ## if asked to process all events, do it
@@ -336,11 +339,15 @@ class Cmssw(JobType):
             common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for all available events '+str(self.total_number_of_events)+' events')
         
         else:
+            #print "self.total_number_of_events = ", self.total_number_of_events
+            #print "evPerFile = ", evPerFile
             self.total_number_of_files = int(self.total_number_of_events/evPerFile)
+            #print "self.total_number_of_files = int(self.total_number_of_events/evPerFile) = " , self.total_number_of_files
             ## SL: if ask for less event than what is computed to be available on a
             ##     file, process the first file anyhow.
             if self.total_number_of_files == 0:
                 self.total_number_of_files = self.total_number_of_files + 1
+                 
 
             common.logger.debug(5,'N files  '+str(self.total_number_of_files))
 
@@ -348,7 +355,10 @@ class Cmssw(JobType):
             
             ## Compute the number of jobs
             #self.total_number_of_jobs = int(n_tot_files)*1/int(self.filesPerJob)
+            #print "self.total_number_of_files = ", self.total_number_of_files
+            #print "self.filesPerJob = ", self.filesPerJob
             self.total_number_of_jobs = int(self.total_number_of_files/self.filesPerJob)
+            #print "self.total_number_of_jobs = ", self.total_number_of_jobs 
             common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
 
             ## is there any remainder?
@@ -360,7 +370,8 @@ class Cmssw(JobType):
                 self.total_number_of_jobs =  self.total_number_of_jobs + 1
                 common.logger.message('Warning: last job will be created with '+str(check)+' files')
 
-            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str((self.total_number_of_jobs-1)*self.filesPerJob*evPerFile + check*evPerFile)+' events')
+            #common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str((self.total_number_of_jobs-1)*self.filesPerJob*evPerFile + check*evPerFile)+' events')
+            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str((self.total_number_of_jobs)*self.filesPerJob*evPerFile + check*evPerFile)+' events')
             pass
 
         list_of_lists = []
@@ -392,6 +403,12 @@ class Cmssw(JobType):
             raise CrabException(msg)
 
         self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
+
+        print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+        print "self.total_number_of_events = ", self.total_number_of_events
+        print "self.eventsPerJob = ", self.eventsPerJob
+        print "self.total_number_of_jobs = ", self.total_number_of_jobs
+        print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
         
         common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
 
