@@ -343,6 +343,12 @@ class Cmssw(JobType):
             #print "evPerFile = ", evPerFile
             self.total_number_of_files = int(self.total_number_of_events/evPerFile)
             #print "self.total_number_of_files = int(self.total_number_of_events/evPerFile) = " , self.total_number_of_files
+
+            ## SL: round the number of files to be processed to the ceiling
+            rem = self.total_number_of_events - self.total_number_of_files*evPerFile
+            if rem>0:
+                self.total_number_of_files = self.total_number_of_files + 1
+
             ## SL: if ask for less event than what is computed to be available on a
             ##     file, process the first file anyhow.
             if self.total_number_of_files == 0:
@@ -371,7 +377,7 @@ class Cmssw(JobType):
                 common.logger.message('Warning: last job will be created with '+str(check)+' files')
 
             #common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str((self.total_number_of_jobs-1)*self.filesPerJob*evPerFile + check*evPerFile)+' events')
-            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str((self.total_number_of_jobs)*self.filesPerJob*evPerFile + check*evPerFile)+' events')
+            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str((self.total_number_of_jobs-check)*self.filesPerJob*evPerFile + check*evPerFile)+' events')
             pass
 
         list_of_lists = []

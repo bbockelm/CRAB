@@ -489,7 +489,7 @@ class Crab:
                 if val:
                     if ( isInt(val) ):
                         tmp = int(val)
-                        if (tmp >= totalJobsSubmittable): 
+                        if (tmp > totalJobsSubmittable): 
                             common.logger.message('asking to submit '+str(tmp)+' jobs, but only '+str(totalJobsSubmittable)+' left: submitting those')
                             pass
                         else:
