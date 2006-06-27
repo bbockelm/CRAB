@@ -241,7 +241,6 @@ class SchedulerCondor_g(Scheduler):
         txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
         txt += '    rm -f $RUNTIME_AREA/$repo \n'
         txt += '    echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '    echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    exit 1 \n'
         txt += 'fi\n'
@@ -250,7 +249,6 @@ class SchedulerCondor_g(Scheduler):
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
         txt += 'rm -f $RUNTIME_AREA/$repo \n'
         txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
         txt += '\n\n'

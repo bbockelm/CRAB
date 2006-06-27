@@ -58,7 +58,6 @@ if [ $res -ne 0 ];then
   dumpStatus $RUNTIME_AREA/$repo
   rm -f $RUNTIME_AREA/$repo
   echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo
-  echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo
   echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo
   exit 
 fi
@@ -69,7 +68,6 @@ echo "ExeStart=$executable" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 rm -f $RUNTIME_AREA/$repo
 echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo
-echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo
 echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo
 echo "$executable started at `date`"
 start_exe_time=`date +%s`
@@ -84,7 +82,6 @@ echo "ExeEnd=$executable" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 rm -f $RUNTIME_AREA/$repo
 echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo
-echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo
 echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo
 echo "$executable ended at `date`"
 if [ $executable_exit_status -ne 0 ]; then
@@ -123,7 +120,6 @@ echo "JobExitCode=$exit_status" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 rm -f $RUNTIME_AREA/$repo
 echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo
-echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo
 echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo
 
 echo "JOB_EXIT_STATUS = $exit_status"
