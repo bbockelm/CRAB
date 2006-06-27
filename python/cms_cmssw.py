@@ -336,6 +336,10 @@ class Cmssw(JobType):
         if self.total_number_of_events == -1:
             self.total_number_of_events=self.maxEvents
             self.total_number_of_jobs = int(n_tot_files)*1/int(self.filesPerJob)
+            check = int(n_tot_files) - (int(self.total_number_of_jobs)*self.filesPerJob)
+            if check > 0:
+                self.total_number_of_jobs =  self.total_number_of_jobs + 1
+                common.logger.message('Warning: last job will be created with '+str(check)+' files')
             common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for all available events '+str(self.total_number_of_events)+' events')
         
         else:
