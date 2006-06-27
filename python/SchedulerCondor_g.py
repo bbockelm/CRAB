@@ -211,9 +211,12 @@ class SchedulerCondor_g(Scheduler):
 
         # create hash of cfg file
         hash = makeCksum(common.work_space.cfgFileName())
-        txt += 'echo "MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'echo "SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += 'echo "MonitorID=`echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'MonitorJobID=`echo ${NJob}_'+hash+'_$GLOBUS_GRAM_JOB_CONTACT`\n'
+        txt += 'SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`\n'
+        txt += 'MonitorID=`echo ' + self._taskId + '`\n'
+        txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
         txt += 'echo "middleware discovery " \n'
         txt += 'if [ $VO_CMS_SW_DIR ]; then\n'
@@ -236,11 +239,19 @@ class SchedulerCondor_g(Scheduler):
         txt += '    echo "JOB_EXIT_STATUS = 10030" \n'
         txt += '    echo "JobExitCode=10030" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
+        txt += '    rm -f $RUNTIME_AREA/$repo \n'
+        txt += '    echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    exit 1 \n'
         txt += 'fi\n'
 
         txt += '# report first time to DashBoard \n'
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
+        txt += 'rm -f $RUNTIME_AREA/$repo \n'
+        txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
         txt += '\n\n'
 

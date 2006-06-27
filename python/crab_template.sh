@@ -56,6 +56,10 @@ if [ $res -ne 0 ];then
   echo "JOB_EXIT_STATUS = 50110"
   echo "JobExitStatus=50110" | tee -a $RUNTIME_AREA/$repo
   dumpStatus $RUNTIME_AREA/$repo
+  rm -f $RUNTIME_AREA/$repo
+  echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo
+  echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo
+  echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo
   exit 
 fi
 
@@ -63,6 +67,10 @@ echo "SET_EXE 0 ==> ok executable found"
 
 echo "ExeStart=$executable" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
+rm -f $RUNTIME_AREA/$repo
+echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo
+echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo
+echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo
 echo "$executable started at `date`"
 start_exe_time=`date +%s`
 #CRAB run_executable
@@ -74,6 +82,10 @@ echo "TIME_EXE = $TIME_EXE sec"
 echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"
 echo "ExeEnd=$executable" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
+rm -f $RUNTIME_AREA/$repo
+echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo
+echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo
+echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo
 echo "$executable ended at `date`"
 if [ $executable_exit_status -ne 0 ]; then
   echo "Warning: Processing of job failed with exit code $executable_exit_status"
@@ -109,6 +121,10 @@ ls -Al
 
 echo "JobExitCode=$exit_status" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
+rm -f $RUNTIME_AREA/$repo
+echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo
+echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo
+echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo
 
 echo "JOB_EXIT_STATUS = $exit_status"
 exit $exit_status

@@ -185,9 +185,12 @@ class SchedulerEdg(Scheduler):
         txt += "NJob=$1\n"
 
         txt += '# job identification to DashBoard \n'
-        txt += 'echo "MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += 'echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += 'echo "MonitorID=`echo ' + self._taskId + '`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`\n'
+        txt += 'SyncGridJobId=`echo $EDG_WL_JOBID`\n'
+        txt += 'MonitorID=`echo ' + self._taskId + '`\n'
+        txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
         txt += 'echo "middleware discovery " \n'
         txt += 'if [ $VO_CMS_SW_DIR ]; then \n'
@@ -210,12 +213,20 @@ class SchedulerEdg(Scheduler):
         txt += '    echo "JOB_EXIT_STATUS = 10030" \n'
         txt += '    echo "JobExitCode=10030" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
+        txt += '    rm -f $RUNTIME_AREA/$repo \n'
+        txt += '    echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    exit 1 \n'
         txt += 'fi \n'
 
         txt += '# report first time to DashBoard \n'
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
-
+        txt += 'rm -f $RUNTIME_AREA/$repo \n'
+        txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        
         txt += '\n\n'
 
         if int(self.copy_data) == 1:
@@ -281,6 +292,10 @@ class SchedulerEdg(Scheduler):
         txt += '        echo "JOB_EXIT_STATUS = 10099" \n'
         txt += '        echo "JobExitCode=10099" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '        dumpStatus $RUNTIME_AREA/$repo \n'
+        txt += '        rm -f $RUNTIME_AREA/$repo \n'
+        txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '        echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '        exit 1 \n'
         txt += '    fi \n'
         txt += 'fi \n' 

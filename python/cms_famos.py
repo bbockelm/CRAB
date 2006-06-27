@@ -228,7 +228,11 @@ class Famos(JobType):
         txt += '   echo "JOB_EXIT_STATUS = 10034"\n'
         txt += '   echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '   exit\n'
+        txt += '   rm -f $RUNTIME_AREA/$repo \n'
+        txt += '   echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '   echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '   echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '   exit 1\n'
         txt += 'fi \n'
         txt += 'echo "FAMOS_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
@@ -248,7 +252,11 @@ class Famos(JobType):
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
         txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += "    exit\n"
+        txt += '    rm -f $RUNTIME_AREA/$repo \n'
+        txt += '    echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += "    exit 1\n"
         txt += "fi\n"
         txt += "\n"
         txt += "NJob=$1\n"
@@ -336,7 +344,7 @@ class Famos(JobType):
             txt += '   echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
             txt += '   echo "JOB_EXIT_STATUS = $untar_status" \n'
             txt += '   echo "SanityCheckCode = $untar_status" | tee -a $repo\n'
-            txt += '   exit $untar_status \n'
+            txt += '   exit 1 \n'
             txt += 'else \n'
             txt += '   echo "Successful untar" \n'
             txt += 'fi \n'
@@ -365,7 +373,11 @@ class Famos(JobType):
             txt += '   echo "JOB_EXIT_STATUS = $exe_result"\n'
             txt += '   echo "JobExitCode=60302" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-            txt += '   exit $exe_result \n'
+            txt += '   rm -f $RUNTIME_AREA/$repo \n'
+            txt += '   echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+            txt += '   echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+            txt += '   echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '   exit 1 \n'
             txt += 'else\n'
             txt += '   cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'fi\n'
