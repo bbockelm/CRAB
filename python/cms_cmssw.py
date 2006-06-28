@@ -380,7 +380,6 @@ class Cmssw(JobType):
                 self.total_number_of_jobs =  self.total_number_of_jobs + 1
                 common.logger.message('Warning: last job will be created with '+str(check)+' files')
 
-            #common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str((self.total_number_of_jobs-1)*self.filesPerJob*evPerFile + check*evPerFile)+' events')
             common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str((self.total_number_of_jobs-check)*self.filesPerJob*evPerFile + check*evPerFile)+' events')
             pass
 
@@ -393,11 +392,13 @@ class Cmssw(JobType):
                 parString += '\\\"' + params[i] + '\\\"\,'
             
             parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
-            list_of_lists.append(parString)
+            #print parString
+            list_of_lists.append([parString])
+            #print list_of_lists
             pass
 
         self.list_of_args = list_of_lists
-        #print self.list_of_args
+#        print self.list_of_args
         return
 
     def jobSplittingPerEvents(self):
@@ -414,11 +415,11 @@ class Cmssw(JobType):
 
         self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
 
-        print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-        print "self.total_number_of_events = ", self.total_number_of_events
-        print "self.eventsPerJob = ", self.eventsPerJob
-        print "self.total_number_of_jobs = ", self.total_number_of_jobs
-        print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+        # print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+        # print "self.total_number_of_events = ", self.total_number_of_events
+        # print "self.eventsPerJob = ", self.eventsPerJob
+        # print "self.total_number_of_jobs = ", self.total_number_of_jobs
+        # print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
         
         common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
 
@@ -435,8 +436,8 @@ class Cmssw(JobType):
         # argument is seed number.$i
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
-            self.list_of_args.append(int(str(self.sourceSeed)+str(i)))
-        print self.list_of_args
+            self.list_of_args.append([int(str(self.sourceSeed)+str(i))])
+        #print self.list_of_args
 
         return
 
@@ -451,14 +452,19 @@ class Cmssw(JobType):
             jobParams.append("")
         
         for job in range(njobs):
-            jobParams[job] = str(arglist[job])
+            jobParams[job] = arglist[job]
+            # print str(arglist[job])
+            # print jobParams[job]
             common.jobDB.setArguments(job, jobParams[job])
 
         common.jobDB.save()
         return
     
     def getJobTypeArguments(self, nj, sched):
-        return common.jobDB.arguments(nj)
+        result = ''
+        for i in common.jobDB.arguments(nj):
+            result=result+str(i)+" "
+        return result
   
     def numberOfJobs(self):
         # Fabio
