@@ -357,8 +357,10 @@ class Cmssw(JobType):
             ##     file, process the first file anyhow.
             if self.total_number_of_files == 0:
                 self.total_number_of_files = self.total_number_of_files + 1
-                 
-
+            #### FEDE         
+            if self.total_number_of_files > n_tot_files:
+                self.total_number_of_files = n_tot_files 
+            #####   
             common.logger.debug(5,'N files  '+str(self.total_number_of_files))
 
             check = 0
@@ -415,12 +417,6 @@ class Cmssw(JobType):
 
         self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
 
-        # print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-        # print "self.total_number_of_events = ", self.total_number_of_events
-        # print "self.eventsPerJob = ", self.eventsPerJob
-        # print "self.total_number_of_jobs = ", self.total_number_of_jobs
-        # print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-        
         common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
 
         # is there any remainder?
@@ -826,15 +822,13 @@ class Cmssw(JobType):
             txt += '\n'
             txt += '# check output file\n'
             txt += 'ls '+fileWithSuffix+'\n'
-            txt += 'exe_result=$?\n'
-            txt += 'if [ $exe_result -ne 0 ] ; then\n'
-            txt += '   echo "ERROR: No output file to manage"\n'
-            txt += '   echo "JOB_EXIT_STATUS = $exe_result"\n'
-            txt += '   echo "JobExitCode=60302" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-            txt += '   rm -f $RUNTIME_AREA/$repo \n'
-            txt += '   echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-            txt += '   echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += 'ls_result=$?\n'
+            #txt += 'exe_result=$?\n'
+            txt += 'if [ $ls_result -ne 0 ] ; then\n'
+            txt += '   echo "ERROR: Problem with output file"\n'
+            #txt += '   echo "JOB_EXIT_STATUS = $exe_result"\n'
+            #txt += '   echo "JobExitCode=60302" | tee -a $RUNTIME_AREA/$repo\n'
+            #txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
             ### OLI_DANIELE
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
@@ -848,6 +842,7 @@ class Cmssw(JobType):
         txt += 'cd $RUNTIME_AREA\n'
         file_list=file_list[:-1]
         txt += 'file_list="'+file_list+'"\n'
+        txt += 'cd $RUNTIME_AREA\n'
         ### OLI_DANIELE
         txt += 'if [ $middleware == OSG ]; then\n'  
         txt += '    cd $RUNTIME_AREA\n'
