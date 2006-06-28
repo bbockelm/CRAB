@@ -104,7 +104,6 @@ class JobDB:
         for line in db_file:
             db_entry = dbEntry()
             (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, argumentsTMP, rest) = string.split(line, ';')
-            
             db_entry.collections = self.strToList_(collectionsTMP)
             db_entry.inputSandbox = self.strToList_(inputSandboxTMP)
             db_entry.outputSandbox = self.strToList_(outputSandboxTMP)
@@ -115,7 +114,11 @@ class JobDB:
         return
     
     def strToList_(self, list):
-        return string.split(string.replace(list[1:-1],"'",""),',')  
+        if list[0] == '[' and list[-1] == ']' :
+            return string.split(string.replace(list[1:-1],"'",""),',')
+        else :
+            return list
+        
     
     def setStatus(self, nj, status):
         self._jobs[int(nj)].status = status
