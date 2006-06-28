@@ -108,6 +108,8 @@ class JobDB:
             db_entry.inputSandbox = self.strToList_(inputSandboxTMP)
             db_entry.outputSandbox = self.strToList_(outputSandboxTMP)
             db_entry.arguments = self.strToList_(argumentsTMP)
+            # print string.split(string.replace(argumentsTMP,"'",""))
+            # print db_entry.arguments
             self._jobs.append(db_entry)
             pass
         db_file.close()
@@ -117,7 +119,7 @@ class JobDB:
         if list[0] == '[' and list[-1] == ']' :
             return string.split(string.replace(list[1:-1],"'",""),',')
         else :
-            return list
+            return string.split(string.replace(list,"'",""),',')
         
     
     def setStatus(self, nj, status):
