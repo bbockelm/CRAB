@@ -321,6 +321,7 @@ class Cmssw(JobType):
         common.logger.debug(5,'Splitting per input files')
         common.logger.message('Required '+str(self.filesPerJob)+' files per job ')
         common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
+        common.logger.message('Available '+str(self.maxEvents)+' events in total ')
 
         ## TODO: SL need to have (from DBS) a detailed list of how many events per each file
         n_tot_files = (len(self.files[0]))
@@ -343,6 +344,10 @@ class Cmssw(JobType):
             common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for all available events '+str(self.total_number_of_events)+' events')
         
         else:
+            if self.total_number_of_events>self.maxEvents:
+                common.logger.message("Asked "+str(self.total_number_of_events)+" but only "+str(self.maxEvents)+" available.")
+                self.total_number_of_events=self.maxEvents
+
             #print "self.total_number_of_events = ", self.total_number_of_events
             #print "evPerFile = ", evPerFile
             self.total_number_of_files = int(self.total_number_of_events/evPerFile)
@@ -357,10 +362,6 @@ class Cmssw(JobType):
             ##     file, process the first file anyhow.
             if self.total_number_of_files == 0:
                 self.total_number_of_files = self.total_number_of_files + 1
-            #### FEDE         
-            if self.total_number_of_files > n_tot_files:
-                self.total_number_of_files = n_tot_files 
-            #####   
             common.logger.debug(5,'N files  '+str(self.total_number_of_files))
 
             check = 0
