@@ -84,8 +84,15 @@ rm -f $RUNTIME_AREA/$repo
 echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo
 echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo
 echo "$executable ended at `date`"
+
 if [ $executable_exit_status -ne 0 ]; then
-  echo "Warning: Processing of job failed with exit code $executable_exit_status"
+   echo "Warning: Processing of job failed with exit code $executable_exit_status"
+   echo "ExeExitCode=$executable_exit_status" | tee -a $RUNTIME_AREA/$repo
+   echo "ExeTime=$TIME_EXE" | tee -a $RUNTIME_AREA/$repo
+   echo "JOB_EXIT_STATUS = $executable_exit_status"
+   echo "JobExitCode=60302" | tee -a $RUNTIME_AREA/$repo
+   dumpStatus $RUNTIME_AREA/$repo
+   exit $executable_exit_status
 fi
 exit_status=$executable_exit_status
 echo "ExeExitCode=$exit_status" | tee -a $RUNTIME_AREA/$repo
