@@ -400,8 +400,10 @@ class Cmssw(JobType):
             #print list_of_lists
             pass
 
+        
+
         self.list_of_args = list_of_lists
-#        print self.list_of_args
+        # print self.list_of_args[0]
         return
 
     def jobSplittingPerEvents(self):
@@ -433,7 +435,7 @@ class Cmssw(JobType):
         # argument is seed number.$i
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
-            self.list_of_args.append([int(str(self.sourceSeed)+str(i))])
+            self.list_of_args.append([(str(self.sourceSeed)+str(i))])
         #print self.list_of_args
 
         return

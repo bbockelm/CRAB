@@ -84,11 +84,11 @@ class JobDB:
             db_file.write(self._jobs[i].exitStatus+';')
             db_file.write(self._jobs[i].jid+';')
             db_file.write(self._jobs[i].bossid+';')
-            db_file.write(str(self._jobs[i].collections)+';')
-            db_file.write(str(self._jobs[i].inputSandbox)+';')
-            db_file.write(str(self._jobs[i].outputSandbox)+';')
+            db_file.write(string.join(self._jobs[i].collections)+';')
+            db_file.write(string.join(self._jobs[i].inputSandbox)+';')
+            db_file.write(string.join(self._jobs[i].outputSandbox)+';')
             db_file.write(str(self._jobs[i].taskId)+';')
-            db_file.write(str(self._jobs[i].arguments)+';')
+            db_file.write(string.join(self._jobs[i].arguments)+';')
             db_file.write('\n')
             pass
         db_file.close()
@@ -104,23 +104,28 @@ class JobDB:
         for line in db_file:
             db_entry = dbEntry()
             (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, argumentsTMP, rest) = string.split(line, ';')
-            db_entry.collections = self.strToList_(collectionsTMP)
-            db_entry.inputSandbox = self.strToList_(inputSandboxTMP)
-            db_entry.outputSandbox = self.strToList_(outputSandboxTMP)
-            db_entry.arguments = self.strToList_(argumentsTMP)
-            # print string.split(string.replace(argumentsTMP,"'",""))
-            # print db_entry.arguments
+            # db_entry.collections = self.strToList_(collectionsTMP)
+            # db_entry.inputSandbox = self.strToList_(inputSandboxTMP)
+            # db_entry.outputSandbox = self.strToList_(outputSandboxTMP)
+            # db_entry.arguments = self.strToList_(argumentsTMP)
+            db_entry.collections = string.split(collectionsTMP)
+            db_entry.inputSandbox = string.split(inputSandboxTMP)
+            db_entry.outputSandbox = string.split(outputSandboxTMP)
+            db_entry.arguments = string.split(argumentsTMP)
             self._jobs.append(db_entry)
             pass
         db_file.close()
         return
     
-    def strToList_(self, list):
-        if list[0] == '[' and list[-1] == ']' :
-            return string.split(string.replace(list[1:-1],"'",""),',')
-        else :
-            return string.split(string.replace(list,"'",""),',')
-        
+    # def strToList_(self, list):
+    #     if list[0] == '[' and list[-1] == ']' :
+    #         print 'qui'
+    #         return string.split(string.replace(list[1:-1],"'",""),',')
+    #         #return string.replace(list[1:-1],"'",""),','
+    #     else :
+    #         print 'else'
+    #         return string.split(string.replace(list,"'",""),',')
+    #     
     
     def setStatus(self, nj, status):
         self._jobs[int(nj)].status = status
