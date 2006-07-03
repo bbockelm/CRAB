@@ -383,7 +383,7 @@ class SchedulerEdg(Scheduler):
            txt += '        fi \n' 
            txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
            txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
-           txt += '        exit_status=$copy_exit_status"\n'
+           txt += '        exit_status=$copy_exit_status\n'
            txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
            txt += '            echo "Problems with SE = $SE"\n'
            txt += '            echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
