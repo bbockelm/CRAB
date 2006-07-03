@@ -174,14 +174,14 @@ class Orca_pubdb(JobType):
         lastJobsNumberOfEvents = self.job_number_of_events
         # last jobs is different...
         for job in range(njobs-1):
-            jobParams[job] = [firstEvent, lastJobsNumberOfEvents]
+            jobParams[job] = [str(firstEvent), str(lastJobsNumberOfEvents)]
             common.jobDB.setArguments(job, jobParams[job])
             firstEvent += self.job_number_of_events
 
         # this is the last job
         lastJobsNumberOfEvents = (self.total_number_of_events + self.first_event) - firstEvent
         status = common.jobDB.status(njobs - 1)
-        jobParams[njobs - 1] = [firstEvent, lastJobsNumberOfEvents]
+        jobParams[njobs - 1] = [str(firstEvent), str(lastJobsNumberOfEvents)]
         common.jobDB.setArguments(njobs - 1, jobParams[njobs - 1])
         
         if (lastJobsNumberOfEvents!=self.job_number_of_events):
