@@ -322,26 +322,34 @@ class SchedulerEdg(Scheduler):
 ### changed by georgia (put a loop copying more than one input files per jobs)           
            txt += '   for input_file in $cur_file_list \n'
            txt += '   do \n'
-           txt += '    lcg-cp --vo $VO --verbose lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
-           txt += '    copy_input_exit_status=$?\n'
-           txt += '    echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
-           txt += '    if [ $copy_input_exit_status -ne 0 ]; then \n'
-           txt += '       echo "Problems with copying to WN" \n'
-           txt += '    else \n'
-           txt += '       echo "input copied into WN" \n'
-           txt += '    fi \n'
+           #### FEDE
+           #txt += '      echo "which lcg-cp" \n'
+           #txt += '      which lcg-cp \n'
+           ######### 
+           txt += '      lcg-cp --vo $VO --verbose lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
+           txt += '      copy_input_exit_status=$?\n'
+           txt += '      echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
+           txt += '      if [ $copy_input_exit_status -ne 0 ]; then \n'
+           txt += '         echo "Problems with copying to WN" \n'
+           txt += '      else \n'
+           txt += '         echo "input copied into WN" \n'
+           txt += '      fi \n'
            txt += '   done \n'
 ### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
            txt += '   for file in $cur_pu_list \n'
            txt += '   do \n'
-           txt += '    lcg-cp --vo $VO --verbose lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
-           txt += '    copy_input_exit_status=$?\n'
-           txt += '    echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
-           txt += '    if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
-           txt += '       echo "Problems with copying pu to WN" \n'
-           txt += '    else \n'
-           txt += '       echo "input pu files copied into WN" \n'
-           txt += '    fi \n'
+           #### FEDE
+           #txt += '      echo "which lcg-cp" \n'
+           #txt += '      which lcg-cp \n'
+           #########
+           txt += '      lcg-cp --vo $VO --verbose lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
+           txt += '      copy_input_exit_status=$?\n'
+           txt += '      echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
+           txt += '      if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
+           txt += '         echo "Problems with copying pu to WN" \n'
+           txt += '      else \n'
+           txt += '         echo "input pu files copied into WN" \n'
+           txt += '      fi \n'
            txt += '   done \n'
            txt += '   \n'
            txt += '   ### Check SCRATCH space available on WN : \n'
@@ -377,6 +385,10 @@ class SchedulerEdg(Scheduler):
            txt += '           ls \n'
            txt += '           echo "#######################################" \n'
            txt += '           echo "#######################################" \n'
+           #### FEDE
+           #txt += '           echo "which lcg-cp" \n'
+           #txt += '           which lcg-cp \n'
+           #########
            txt += '           echo "lcg-cp --vo cms -t 1200 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
            txt += '           lcg-cp --vo cms --verbose -t 1200 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1\n'
            txt += '           copy_exit_status=$? \n' 
@@ -419,6 +431,10 @@ class SchedulerEdg(Scheduler):
            txt += '   if [ $copy_exit_status -eq 0 ]; then\n'
            txt += '      for out_file in $file_list ; do\n'
            txt += '         echo "Trying to register the output file into LFC"\n'
+           #### FEDE
+           #txt += '         echo "which lcg-rf" \n'
+           #txt += '         which lcg-rf \n'
+           #########
            txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO sfn://$SE$SE_PATH/$out_file"\n'
            txt += '         lcg-rf -l $LFN/$out_file --vo $VO sfn://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
@@ -427,6 +443,10 @@ class SchedulerEdg(Scheduler):
            txt += '         if [ $register_exit_status -ne 0 ]; then \n'
            txt += '            echo "Problems with the registration to LFC" \n'
            txt += '            echo "Try with srm protocol" \n'
+           #### FEDE
+           #txt += '            echo "which lcg-rf" \n'
+           #txt += '            which lcg-rf \n'
+           #########
            txt += '            echo "lcg-rf -l $LFN/$out_file --vo $VO srm://$SE$SE_PATH/$out_file"\n'
            txt += '            lcg-rf -l $LFN/$out_file --vo $VO srm://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '            register_exit_status=$?\n'
@@ -445,6 +465,10 @@ class SchedulerEdg(Scheduler):
            txt += '      echo "Trying to copy output file to CloseSE"\n'
            txt += '      CLOSE_SE=`edg-brokerinfo getCloseSEs | head -1`\n'
            txt += '      for out_file in $file_list ; do\n'
+           #### FEDE
+           #txt += '         echo "which lcg-cr" \n'
+           #txt += '         which lcg-cr \n'
+           #########
            txt += '         echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://`pwd`/$out_file" \n'
            txt += '         lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://`pwd`/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
@@ -462,7 +486,7 @@ class SchedulerEdg(Scheduler):
            #txt += '   else\n'
            #txt += '      echo "Problem with the executable"\n'
            txt += '   fi \n'
-           txt += '   exit_status=$register_exit_status"\n'
+           txt += '   exit_status=$register_exit_status\n'
            txt += 'fi \n'
         return txt
 
