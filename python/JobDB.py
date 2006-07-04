@@ -53,7 +53,7 @@ class JobDB:
         else:          plural = 's'
         print 'Listing %d job%s:\n' % (njobs, plural)
         for job in jobs:
-            print string.strip(('Job %03d' % (job)) + ': ' + str(self._jobs[job - 1]))
+            print ('Job %03d' % (job)) + ': ' + str(self._jobs[job-1])
             pass
 
     def nJobs(self):
@@ -104,10 +104,6 @@ class JobDB:
         for line in db_file:
             db_entry = dbEntry()
             (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, argumentsTMP, rest) = string.split(line, ';')
-            # db_entry.collections = self.strToList_(collectionsTMP)
-            # db_entry.inputSandbox = self.strToList_(inputSandboxTMP)
-            # db_entry.outputSandbox = self.strToList_(outputSandboxTMP)
-            # db_entry.arguments = self.strToList_(argumentsTMP)
             db_entry.collections = string.split(collectionsTMP)
             db_entry.inputSandbox = string.split(inputSandboxTMP)
             db_entry.outputSandbox = string.split(outputSandboxTMP)
@@ -117,15 +113,6 @@ class JobDB:
         db_file.close()
         return
     
-    # def strToList_(self, list):
-    #     if list[0] == '[' and list[-1] == ']' :
-    #         print 'qui'
-    #         return string.split(string.replace(list[1:-1],"'",""),',')
-    #         #return string.replace(list[1:-1],"'",""),','
-    #     else :
-    #         print 'else'
-    #         return string.split(string.replace(list,"'",""),',')
-    #     
     
     def setStatus(self, nj, status):
         self._jobs[int(nj)].status = status
@@ -161,7 +148,6 @@ class JobDB:
     
     def arguments(self, nj):
         return self._jobs[int(nj)].arguments
-    
 
     def setCollections(self, nj, Collections):
         self._jobs[int(nj)].Collections = Collections
