@@ -403,17 +403,35 @@ B<[CMSSW]>
 
 =over 4
 
-=item B<datasetpath *>: the path of processed dataset as defined on the DBS. It comes with the format I</PrimaryDataset/DataTier/Process> . In case no input is needed I<None> must be specified.
+=item B<datasetpath *>
 
-=item B<pset *>: the ParameterSet to be used
+the path of processed dataset as defined on the DBS. It comes with the format I</PrimaryDataset/DataTier/Process> . In case no input is needed I<None> must be specified.
 
-=item B<total_number_of_events *>: the number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in caso of no input. In this case, the total number of events will be used to split the task in jobs, together with I<event_per_job>.
+=item B<pset *>
 
-=item B<files_per_jobs *>: number of files (EventCollection) to be accessed by each job. The DBS provide a list of EvC available for a given datasetpath. Cannot be used with no input.
+the ParameterSet to be used
 
-=item B<events_per_job *>: Define the number of events to be run for each job of the task. The actual number of events will be rounded matching the number of events per file, since each job accesses a integer number of files (or EventCollections). It must be used as alternative to I<files_per_jobs>.
+=item I<the following three parameter are mutually exclusive.>
 
-=item B<output_file *>: the output files produced by your application (comma separated list).
+=item B<total_number_of_events *>
+
+the number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in caso of no input. In this case, the total number of events will be used to split the task in jobs, together with I<event_per_job>.
+
+=item B<files_per_jobs *>
+
+number of files (EventCollection) to be accessed by each job. The DBS provide a list of EvC available for a given datasetpath. Cannot be used with no input.
+
+=item B<events_per_job *>
+
+Define the number of events to be run for each job of the task. The actual number of events will be rounded matching the number of events per file, since each job accesses a integer number of files (or EventCollections). It can be used also with No input.
+
+=item B<number_of_jobs *>
+
+Define the number of job to be run for the task. The number of event for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input.
+
+=item B<output_file *>
+
+the output files produced by your application (comma separated list).
 
 =back
 
