@@ -411,7 +411,7 @@ B<[CMSSW]>
 
 =item B<files_per_jobs *>: number of files (EventCollection) to be accessed by each job. The DBS provide a list of EvC available for a given datasetpath. Cannot be used with no input.
 
-=item B<events_per_job>: to be used I<only> with no input. Define the number of events to be run for eachjob of the task.
+=item B<events_per_job *>: Define the number of events to be run for each job of the task. The actual number of events will be rounded matching the number of events per file, since each job accesses a integer number of files (or EventCollections). It must be used as alternative to I<files_per_jobs>.
 
 =item B<output_file *>: the output files produced by your application (comma separated list).
 

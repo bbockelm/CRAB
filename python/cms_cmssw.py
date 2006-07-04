@@ -44,8 +44,10 @@ class Cmssw(JobType):
             log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
             if string.lower(tmp)=='none':
                 self.datasetPath = None
+                self.selectNoInput = 1
             else:
                 self.datasetPath = tmp
+                self.selectNoInput = 0
         except KeyError:
             msg = "Error: datasetpath not defined "  
             raise CrabException(msg)
@@ -159,9 +161,9 @@ class Cmssw(JobType):
             msg = 'Must define either files_per_jobs or events_per_job'
             raise CrabException(msg)
 
-        if (self.selectEventsPerJob  and not self.datasetPath == None):
-            msg = 'Splitting according to events_per_job available only with None as datasetpath'
-            raise CrabException(msg)
+        # if (self.selectNoInput and not self.datasetPath == None):
+        #     msg = 'Splitting according to events_per_job available only with None as datasetpath'
+        #     raise CrabException(msg)
     
         try:
             self.total_number_of_events = int(cfg_params['CMSSW.total_number_of_events'])
@@ -232,8 +234,8 @@ class Cmssw(JobType):
         self.PsetEdit.psetWriter(self.configFilename())
     
         ## Select Splitting
-        if self.selectFilesPerJob: self.jobSplittingPerFiles()
-        elif self.selectEventsPerJob: self.jobSplittingPerEvents()
+        if self.selectFilesPerJob or self.selectEventsPerJob: self.jobSplittingPerFiles()
+        elif self.selectNoInput: self.jobSplittingNoInput()
         else:
             msg = 'Don\'t know how to split...'
             raise CrabException(msg)
@@ -270,19 +272,9 @@ class Cmssw(JobType):
         common.logger.message("Required data are :"+self.datasetPath)
 
         filesbyblock=self.pubdata.getFiles()
+#        print filesbyblock
         self.AllInputFiles=filesbyblock.values()
         self.files = self.AllInputFiles        
-
-        ## TEMP
-    #    self.filesTmp = filesbyblock.values()
-    #    self.files = []
-    #    locPath='rfio:cmsbose2.bo.infn.it:/flatfiles/SE00/cms/fanfani/ProdTest/'
-    #    locPath=''
-    #    tmp = []
-    #    for file in self.filesTmp[0]:
-    #        tmp.append(locPath+file)
-    #    self.files.append(tmp)
-        ## END TEMP
 
         ## get max number of events
         #common.logger.debug(10,"number of events for primary fileblocks %i"%self.pubdata.getMaxEvents())
@@ -333,15 +325,25 @@ class Cmssw(JobType):
 
         common.logger.debug(5,'Events per File '+str(evPerFile))
 
+        if self.selectFilesPerJob:
+            filesPerJob = self.filesPerJob
+        elif self.selectEventsPerJob:
+            # SL case if asked events per job
+            ## estimate the number of files per job to match the user requirement
+            #print self.eventsPerJob,evPerFile,float(self.eventsPerJob/evPerFile),self.eventsPerJob/evPerFile+0.5,int(self.eventsPerJob/evPerFile+0.5)
+            filesPerJob = int(float(self.eventsPerJob)/float(evPerFile)+0.5)
+            if (filesPerJob==0): filesPerJob=1
+            eventsPerJob=filesPerJob*evPerFile
+        
         ## if asked to process all events, do it
         if self.total_number_of_events == -1:
             self.total_number_of_events=self.maxEvents
-            self.total_number_of_jobs = int(n_tot_files)*1/int(self.filesPerJob)
-            check = int(n_tot_files) - (int(self.total_number_of_jobs)*self.filesPerJob)
+            self.total_number_of_jobs = int(n_tot_files)*1/int(filesPerJob)
+            check = int(n_tot_files) - (int(self.total_number_of_jobs)*filesPerJob)
             if check > 0:
                 self.total_number_of_jobs =  self.total_number_of_jobs + 1
                 common.logger.message('Warning: last job will be created with '+str(check)+' files')
-            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for all available events '+str(self.total_number_of_events)+' events')
+            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created, each for '+str(filesPerJob*evPerFile)+'events, for all available events: '+str(self.total_number_of_events))
         
         else:
             if self.total_number_of_events>self.maxEvents:
@@ -370,27 +372,27 @@ class Cmssw(JobType):
             #self.total_number_of_jobs = int(n_tot_files)*1/int(self.filesPerJob)
             #print "self.total_number_of_files = ", self.total_number_of_files
             #print "self.filesPerJob = ", self.filesPerJob
-            self.total_number_of_jobs = int(self.total_number_of_files/self.filesPerJob)
+            self.total_number_of_jobs = int(self.total_number_of_files/filesPerJob)
             #print "self.total_number_of_jobs = ", self.total_number_of_jobs 
             common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
 
             ## is there any remainder?
-            check = int(self.total_number_of_files) - (int(self.total_number_of_jobs)*self.filesPerJob)
+            check = int(self.total_number_of_files) - (int(self.total_number_of_jobs)*filesPerJob)
 
             common.logger.debug(5,'Check  '+str(check))
 
+            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created, each for '+str(filesPerJob*evPerFile)+' events, for a total of '+str((self.total_number_of_jobs-check)*filesPerJob*evPerFile + check*evPerFile)+' events')
             if check > 0:
                 self.total_number_of_jobs =  self.total_number_of_jobs + 1
                 common.logger.message('Warning: last job will be created with '+str(check)+' files')
 
-            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str((self.total_number_of_jobs-check)*self.filesPerJob*evPerFile + check*evPerFile)+' events')
             pass
 
         list_of_lists = []
-        for i in xrange(0, int(n_tot_files), self.filesPerJob):
+        for i in xrange(0, int(n_tot_files), filesPerJob):
             parString = "\\{" 
             
-            params = self.files[0][i: i+self.filesPerJob]
+            params = self.files[0][i: i+filesPerJob]
             for i in range(len(params) - 1):
                 parString += '\\\"' + params[i] + '\\\"\,'
             
@@ -406,7 +408,7 @@ class Cmssw(JobType):
         # print self.list_of_args[0]
         return
 
-    def jobSplittingPerEvents(self):
+    def jobSplittingNoInput(self):
         """
         Perform job splitting based on number of event per job
         """
@@ -427,10 +429,10 @@ class Cmssw(JobType):
 
         common.logger.debug(5,'Check  '+str(check))
 
+        common.logger.message(str(self.total_number_of_jobs)+' jobs will be created, each for '+str(self.eventsPerJob)+' for a total of '+str(self.total_number_of_jobs*self.eventsPerJob)+' events')
         if check > 0:
             common.logger.message('Warning: asked '+self.total_number_of_events+' but will do only '+(int(self.total_number_of_jobs)*self.eventsPerJob))
 
-        common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for a total of '+str(self.total_number_of_jobs*self.eventsPerJob)+' events')
 
         # argument is seed number.$i
         self.list_of_args = []
