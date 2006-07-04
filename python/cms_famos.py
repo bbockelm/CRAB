@@ -38,6 +38,10 @@ class Famos(JobType):
         self.setParam_('application', self.version)
         common.analisys_common_info['sw_version'] = self.version
 
+# added today
+        self.total_number_of_jobs = 0
+        self.job_number_of_events = 0
+
         try:
             self.executable = cfg_params['FAMOS.executable']
             self.setParam_('exe', self.executable)
@@ -162,10 +166,10 @@ class Famos(JobType):
             raise CrabException(msg)
 
         try:
-            self.first = int(cfg_params['FAMOS.first_event'])
-            log.debug(6, "Famos::Famos(): first event = "+`self.first`)
+            self.first_event = int(cfg_params['FAMOS.first_event'])
+            log.debug(6, "Famos::Famos(): first event = "+`self.first_event`)
         except KeyError:
-            self.first = 0
+            self.first_event = 0
             pass
 
         
@@ -208,11 +212,162 @@ class Famos(JobType):
         self.setParam_('taskId', self.cfg_params['taskId'])
         return
 
+    def split(self, jobParams):
+        """
+        This method returns the list of orca specific job type items
+        needed to run the jobs
+        """
+        common.jobDB.load()
+        njobs = self.total_number_of_jobs
+        # create the empty structure
+        for i in range(njobs):
+            jobParams.append("")
+        
+        # fill the both the list and the DB (part of the code taken from jobsToDB)
+        firstEvent = self.first_event
+        lastJobsNumberOfEvents = self.job_number_of_events
+        # last jobs is different...
+        for job in range(njobs-1):
+            jobParams[job] = [str(firstEvent), str(lastJobsNumberOfEvents)]
+            common.jobDB.setArguments(job, jobParams[job])
+            firstEvent += self.job_number_of_events
+            
+            # this is the last job
+            #                lastJobsNumberOfEvents = (self.total_number_of_events + self.first_event) - firstEvent
+            status = common.jobDB.status(njobs - 1)
+            jobParams[njobs - 1] = [str(firstEvent), str(lastJobsNumberOfEvents)]
+            common.jobDB.setArguments(njobs - 1, jobParams[njobs - 1])
+            
+        if (lastJobsNumberOfEvents!=self.job_number_of_events):
+            common.logger.message(str(self.total_number_of_jobs-1)+' jobs will be created for '+str(self.job_number_of_events)+' events each plus 1 for '+str(lastJobsNumberOfEvents)+' events for a total of '+str(self.job_number_of_events*(self.total_number_of_jobs-1)+lastJobsNumberOfEvents)+' events')
+        else:
+            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for '+str(self.job_number_of_events)+' events each for a total of '+str(self.job_number_of_events*(self.total_number_of_jobs-1)+lastJobsNumberOfEvents)+' events')
+            
+        common.jobDB.save()
+        return
+    
+    def getJobTypeArguments(self, nj, sched):
+        params = common.jobDB.arguments(nj)
+        
+        if sched=="EDG" or sched=="CONDOR" or sched=="GRID":
+            parString = "" + str(params[0])+' '+str(params[1])
+        elif sched=="BOSS":
+            parString = "" + str(params[0])+' '+str(params[1])
+        else:
+            return ""
+        return parString
+
+    def numberOfJobs(self):
+        first_event = self.first_event
+        maxAvailableEvents = int(self.maxEvents)
+        common.logger.debug(1,"Available events: "+str(maxAvailableEvents))
+        if first_event>=maxAvailableEvents:
+            raise CrabException('First event is bigger than maximum number of available events!')
+        
+        try:
+            n = self.total_number_of_events
+            if n == 'all': n = '-1'
+            if n == '-1':
+                tot_num_events = (maxAvailableEvents - first_event)
+                common.logger.debug(1,"Analysing all available events "+str(tot_num_events))
+            else:
+                if maxAvailableEvents<(int(n)+ first_event): # + self.first_event):
+                    raise CrabException('(First event + total events)='+str(int(n)+first_event)+' is bigger than maximum number of available events '+str(maxAvailableEvents)+' !! Use "total_number_of_events=-1" to analyze to whole dataset')
+                tot_num_events = int(n)
+        except KeyError:
+            common.logger.message("total_number_of_events not defined, set it to maximum available")
+            tot_num_events = (maxAvailableEvents - first_event)
+            pass
+        common.logger.message("Total number of events to be analyzed: "+str(self.total_number_of_events))
+            
+        # read user directives
+        eventPerJob=0
+        try:
+            eventPerJob = self.cfg_params['FAMOS.job_number_of_events']
+        except KeyError:
+            pass
+        
+        jobsPerTask=0
+        try:
+            jobsPerTask = int(self.cfg_params['FAMOS.total_number_of_jobs'])
+        except KeyError:
+            pass
+        
+        # If both the above set, complain and use event per jobs
+        if eventPerJob>0 and jobsPerTask>0:
+            msg = 'Warning. '
+            msg += 'job_number_of_events and total_number_of_jobs are both defined '
+            msg += 'Using job_number_of_events.'
+            common.logger.message(msg)
+            jobsPerTask = 0
+        if eventPerJob==0 and jobsPerTask==0:
+            msg = 'Warning. '
+            msg += 'job_number_of_events and total_number_of_jobs are not defined '
+            msg += 'Creating just one job for all events.'
+            common.logger.message(msg)
+            jobsPerTask = 1
+            
+            # first case: events per job defined
+        if eventPerJob>0:
+            n=eventPerJob
+            #if n == 'all' or n == '-1' or (int(n)>self.total_number_of_events and self.total_number_of_events>0):
+            if n == 'all' or n == '-1' or (int(n)>tot_num_events and tot_num_events>0):
+                common.logger.message("Asking more events than available: set it to maximum available")
+                job_num_events = tot_num_events
+                tot_num_jobs = 1
+            else:
+                job_num_events = int(n)
+                tot_num_jobs = int((tot_num_events-1)/job_num_events)+1
+                
+        elif jobsPerTask>0:
+            common.logger.debug(2,"total number of events: "+str(tot_num_events)+" JobPerTask "+str(jobsPerTask))
+            job_num_events = int(math.floor((tot_num_events)/jobsPerTask))
+            tot_num_jobs = jobsPerTask
+            
+            # should not happen...
+        else:
+            raise CrabException('Something wrong with splitting')
+        
+        common.logger.debug(2,"total number of events: "+str(tot_num_events)+" events per job: "+str(job_num_events))
+        
+        #used by jobsToDB for logs
+        self.job_number_of_events = job_num_events
+        self.total_number_of_jobs = tot_num_jobs
+        return tot_num_jobs
+    
+    
+    def jobsToDB(self, nJobs):
+        """
+        Fill the DB with proper entries for FAMOS
+        """
+        
+        firstEvent = self.first_event
+        lastJobsNumberOfEvents = self.job_number_of_events
+        
+        # last jobs is different...
+        for job in range(nJobs-1):
+            common.jobDB.setFirstEvent(job, firstEvent)
+            common.jobDB.setMaxEvents(job, self.job_number_of_events)
+            firstEvent=firstEvent+self.job_number_of_events
+            
+            # this is the last job
+        common.jobDB.setFirstEvent(nJobs-1, firstEvent)
+        lastJobsNumberOfEvents= (self.total_number_of_events+self.first_event)-firstEvent
+        common.jobDB.setMaxEvents(nJobs-1, lastJobsNumberOfEvents)
+        
+        if (lastJobsNumberOfEvents!=self.job_number_of_events):
+            common.logger.message(str(self.total_number_of_jobs-1)+' jobs will be created for '+str(self.job_number_of_events)+' events each plus 1 for '+str(lastJobsNumberOfEvents)+' events for a total of '+str(self.job_number_of_events*(self.total_number_of_jobs-1)+lastJobsNumberOfEvents)+' events')
+        else:
+            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created for '+str(self.job_number_of_events)+' events each for a total of '+str(self.job_number_of_events*(self.total_number_of_jobs-1)+lastJobsNumberOfEvents)+' events')
+            
+        return
+             
+    
     def wsSetupEnvironment(self, nj):
         """
         Returns part of a job script which prepares
         the execution environment for the job 'nj'.
-        """
+            """
 
         # Prepare JobType-independent part
         txt = self.wsSetupCMSEnvironment_()
@@ -512,6 +667,15 @@ class Famos(JobType):
                  common.analisys_common_info['sw_version'] + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
         return req
+
+    # georgia for FAMOS
+     # marco
+
+    def configFilename(self):
+        """ return the config filename """
+        print  self.name()+'.orcarc'
+        return self.name()+'.orcarc'
+               
 
     def stdOut(self):
         return self.stdOut_
