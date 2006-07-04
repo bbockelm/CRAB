@@ -347,7 +347,7 @@ class Crab:
  
         common.logger.debug(5,"parseRange_ "+str(aRange))
         if aRange=='all' or aRange==None or aRange=='':
-            result=range(0,common.jobDB.nJobs())
+            result=range(1,common.jobDB.nJobs()+1)
             return result
         elif aRange=='0':
             return result
@@ -523,6 +523,7 @@ class Crab:
 
             elif ( opt == '-list' ):
                 jobs = self.parseRange_(val)
+                print jobs
 
                 common.jobDB.dump(jobs)
                 pass
@@ -532,12 +533,12 @@ class Crab:
 
                 for nj in jobs:
                     #nj parte da 1 --> nj = internal_id di boss 
-                    st = common.jobDB.status(nj)
+                    st = common.jobDB.status(nj-1)
                     if st == 'S' or st == 'A':
-                        id = common.scheduler.boss_SID(nj+1)
-                        print "Job: ",nj+1," Id = ", id 
+                        id = common.scheduler.boss_SID(nj)
+                        print "Job: ",nj," Id = ", id 
                     else:
-                        print "Job: ",nj+1," No ID yet"
+                        print "Job: ",nj," No ID yet"
                 pass
 
             elif ( opt == '-status' ):
