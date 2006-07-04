@@ -2,6 +2,7 @@ from JobType import JobType
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
+import math
 import common
 import PsetManipulator  
 
@@ -149,22 +150,25 @@ class Cmssw(JobType):
             self.eventsPerJob = -1
             self.selectEventsPerJob = 0
     
-        # To be implemented
-        # ## number of jobs
-        # try:
-        #     self.numberOfJobs =int( cfg_params['CMSSW.number_of_job'])
-        #     self.selectNumberOfJobs = 1
-        # except KeyError:
-        #     self.selectNumberOfJobs = 0
+        ## number of jobs
+        try:
+            self.theNumberOfJobs =int( cfg_params['CMSSW.number_of_jobs'])
+            self.selectNumberOfJobs = 1
+        except KeyError:
+            self.theNumberOfJobs = 0
+            self.selectNumberOfJobs = 0
 
-        if (self.selectFilesPerJob == self.selectEventsPerJob):
-            msg = 'Must define either files_per_jobs or events_per_job'
+        ## source seed for pythia
+        try:
+            self.sourceSeed = int(cfg_params['CMSSW.pythia_seed'])
+        except KeyError:
+            self.sourceSeed = 123456
+            common.logger.debug(5,"No seed given, will use "+str(self.sourceSeed))
+
+        if not (self.selectFilesPerJob + self.selectEventsPerJob + self.selectNumberOfJobs == 1 ):
+            msg = 'Must define either files_per_jobs or events_per_job or number_of_jobs'
             raise CrabException(msg)
 
-        # if (self.selectNoInput and not self.datasetPath == None):
-        #     msg = 'Splitting according to events_per_job available only with None as datasetpath'
-        #     raise CrabException(msg)
-    
         try:
             self.total_number_of_events = int(cfg_params['CMSSW.total_number_of_events'])
         except KeyError:
@@ -216,30 +220,28 @@ class Cmssw(JobType):
         #DBSDLS-end          
 
         self.tgzNameWithPath = self.getTarBall(self.executable)
-
-        # modify Pset
-        if (self.datasetPath): # standard job
-            self.PsetEdit.maxEvent(self.eventsPerJob) #Daniele  
-            self.PsetEdit.inputModule("INPUT") #Daniele
-
-        else:  # pythia like job
-            self.PsetEdit.maxEvent(self.eventsPerJob) #Daniele  
-            self.PsetEdit.pythiaSeed("INPUT") #Daniele
-            try:
-                self.sourceSeed = int(cfg_params['CMSSW.pythia_seed'])
-            except KeyError:
-                self.sourceSeed = 123456
-                common.logger.message("No seed given, will use "+str(self.sourceSeed))
-        
-        self.PsetEdit.psetWriter(self.configFilename())
     
         ## Select Splitting
-        if self.selectFilesPerJob or self.selectEventsPerJob: self.jobSplittingPerFiles()
-        elif self.selectNoInput: self.jobSplittingNoInput()
+        if self.selectNoInput: self.jobSplittingNoInput()
+        elif self.selectFilesPerJob or self.selectEventsPerJob or self.selectNumberOfJobs: self.jobSplittingPerFiles()
         else:
             msg = 'Don\'t know how to split...'
             raise CrabException(msg)
 
+        # modify Pset
+        try:
+            if (self.datasetPath): # standard job
+                self.PsetEdit.maxEvent(self.eventsPerJob) #Daniele  
+                self.PsetEdit.inputModule("INPUT") #Daniele
+
+            else:  # pythia like job
+                self.PsetEdit.maxEvent(self.eventsPerJob) #Daniele  
+                self.PsetEdit.pythiaSeed("INPUT") #Daniele
+        
+            self.PsetEdit.psetWriter(self.configFilename())
+        except:
+            msg='Error while manipuliating ParameterSet: exiting...'
+            raise CrabException(msg)
 
     def DataDiscoveryAndLocation(self, cfg_params):
 
@@ -311,98 +313,127 @@ class Cmssw(JobType):
         Perform job splitting based on number of files to be accessed per job
         """
         common.logger.debug(5,'Splitting per input files')
-        common.logger.message('Required '+str(self.filesPerJob)+' files per job ')
         common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
         common.logger.message('Available '+str(self.maxEvents)+' events in total ')
+        common.logger.message('Required '+str(self.filesPerJob)+' files per job ')
+        common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
+        common.logger.message('Required '+str(self.eventsPerJob)+' events per job')
 
-        ## TODO: SL need to have (from DBS) a detailed list of how many events per each file
-        n_tot_files = (len(self.files[0]))
-        #print "n_tot_files = ", n_tot_files
-        ## SL: this is wrong if the files have different number of events
-        #print "self.maxEvents = ", self.maxEvents
-        evPerFile = int(self.maxEvents)/n_tot_files
-        #print "evPerFile = int(self.maxEvents)/n_tot_files =  ", evPerFile
-
-        common.logger.debug(5,'Events per File '+str(evPerFile))
-
-        if self.selectFilesPerJob:
-            filesPerJob = self.filesPerJob
-        elif self.selectEventsPerJob:
-            # SL case if asked events per job
-            ## estimate the number of files per job to match the user requirement
-            #print self.eventsPerJob,evPerFile,float(self.eventsPerJob/evPerFile),self.eventsPerJob/evPerFile+0.5,int(self.eventsPerJob/evPerFile+0.5)
-            filesPerJob = int(float(self.eventsPerJob)/float(evPerFile)+0.5)
-            if (filesPerJob==0): filesPerJob=1
-            eventsPerJob=filesPerJob*evPerFile
-        
         ## if asked to process all events, do it
         if self.total_number_of_events == -1:
             self.total_number_of_events=self.maxEvents
-            self.total_number_of_jobs = int(n_tot_files)*1/int(filesPerJob)
-            check = int(n_tot_files) - (int(self.total_number_of_jobs)*filesPerJob)
-            if check > 0:
-                self.total_number_of_jobs =  self.total_number_of_jobs + 1
-                common.logger.message('Warning: last job will be created with '+str(check)+' files')
-            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created, each for '+str(filesPerJob*evPerFile)+'events, for all available events: '+str(self.total_number_of_events))
-        
         else:
             if self.total_number_of_events>self.maxEvents:
                 common.logger.message("Asked "+str(self.total_number_of_events)+" but only "+str(self.maxEvents)+" available.")
                 self.total_number_of_events=self.maxEvents
-
-            #print "self.total_number_of_events = ", self.total_number_of_events
-            #print "evPerFile = ", evPerFile
-            self.total_number_of_files = int(self.total_number_of_events/evPerFile)
-            #print "self.total_number_of_files = int(self.total_number_of_events/evPerFile) = " , self.total_number_of_files
-
-            ## SL: round the number of files to be processed to the ceiling
-            rem = self.total_number_of_events - self.total_number_of_files*evPerFile
-            if rem>0:
-                self.total_number_of_files = self.total_number_of_files + 1
-
-            ## SL: if ask for less event than what is computed to be available on a
-            ##     file, process the first file anyhow.
-            if self.total_number_of_files == 0:
-                self.total_number_of_files = self.total_number_of_files + 1
-            common.logger.debug(5,'N files  '+str(self.total_number_of_files))
-
-            check = 0
-            
-            ## Compute the number of jobs
-            #self.total_number_of_jobs = int(n_tot_files)*1/int(self.filesPerJob)
-            #print "self.total_number_of_files = ", self.total_number_of_files
-            #print "self.filesPerJob = ", self.filesPerJob
-            self.total_number_of_jobs = int(self.total_number_of_files/filesPerJob)
-            #print "self.total_number_of_jobs = ", self.total_number_of_jobs 
-            common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
-
-            ## is there any remainder?
-            check = int(self.total_number_of_files) - (int(self.total_number_of_jobs)*filesPerJob)
-
-            common.logger.debug(5,'Check  '+str(check))
-
-            common.logger.message(str(self.total_number_of_jobs)+' jobs will be created, each for '+str(filesPerJob*evPerFile)+' events, for a total of '+str((self.total_number_of_jobs-check)*filesPerJob*evPerFile + check*evPerFile)+' events')
-            if check > 0:
-                self.total_number_of_jobs =  self.total_number_of_jobs + 1
-                common.logger.message('Warning: last job will be created with '+str(check)+' files')
-
             pass
 
+        ## TODO: SL need to have (from DBS) a detailed list of how many events per each file
+        n_tot_files = (len(self.files[0]))
+        ## SL: this is wrong if the files have different number of events
+        evPerFile = int(self.maxEvents)/n_tot_files
+
+        common.logger.debug(5,'Events per File '+str(evPerFile))
+
+        ## compute job splitting parameters: filesPerJob, eventsPerJob and theNumberOfJobs
+        if self.selectFilesPerJob:
+            ## user define files per event.
+            filesPerJob = self.filesPerJob
+            eventsPerJob = filesPerJob*evPerFile
+            theNumberOfJobs = int(self.total_number_of_events*1./eventsPerJob)
+            check = int(self.total_number_of_events) - (theNumberOfJobs*eventsPerJob)
+            if check > 0:
+                theNumberOfJobs +=1
+                filesLastJob = int(check*1./evPerFile+0.5)
+                common.logger.message('Warning: last job will be created with '+str(check)+' files')
+            else:
+                filesLastJob = filesPerJob
+
+        elif self.selectNumberOfJobs:
+            ## User select the number of jobs: last might be bigger to match request of events
+            theNumberOfJobs =  self.theNumberOfJobs
+
+            eventsPerJob = self.total_number_of_events/theNumberOfJobs
+            filesPerJob = int(eventsPerJob/evPerFile)
+            if (filesPerJob==0) : filesPerJob=1
+            check = int(self.total_number_of_events) - (int(theNumberOfJobs)*filesPerJob*evPerFile)
+            if not check == 0:
+                if check<0:
+                    missingFiles = int(check/evPerFile)
+                    additionalJobs = int(missingFiles/filesPerJob)
+                    #print missingFiles, additionalJobs
+                    theNumberOfJobs+=additionalJobs
+                    common.logger.message('Warning: will create only '+str(theNumberOfJobs)+' jobs')
+                    check = int(self.total_number_of_events) - (int(theNumberOfJobs)*filesPerJob*evPerFile)
+                    
+                if check >0 :
+                    filesLastJob = filesPerJob+int(check*1./evPerFile+0.5)
+                    common.logger.message('Warning: last job will be created with '+str(filesLastJob*evPerFile)+' events')
+                else:
+                    filesLastJob = filesPerJob
+            else:
+                filesLastJob = filesPerJob
+        elif self.selectEventsPerJob:
+            # SL case if asked events per job
+            ## estimate the number of files per job to match the user requirement
+            filesPerJob = int(float(self.eventsPerJob)/float(evPerFile))
+            common.logger.debug(5,"filesPerJob "+str(filesPerJob))
+            if (filesPerJob==0): filesPerJob=1
+            eventsPerJob=filesPerJob*evPerFile
+            theNumberOfJobs = int(self.total_number_of_events)/int(self.eventsPerJob)
+            check = int(self.total_number_of_events) - (int(theNumberOfJobs)*eventsPerJob)
+            if not check == 0:
+                missingFiles = int(check/evPerFile)
+                additionalJobs = int(missingFiles/filesPerJob)
+                #print missingFiles, additionalJobs
+                if ( additionalJobs>0) : theNumberOfJobs+=additionalJobs
+                check = int(self.total_number_of_events) - (int(theNumberOfJobs)*eventsPerJob)
+                if not check == 0:
+                    if (check <0 ): 
+                        filesLastJob = filesPerJob+int(check*1./evPerFile-0.5)
+                    else:
+                        filesLastJob = int(check*1./evPerFile+0.5)
+                    common.logger.message('Warning: last job will be created with '+str(filesLastJob*evPerFile)+' events')
+                else:
+                    filesLastJob = filesPerJob
+            else:
+                filesLastJob = filesPerJob
+        
+        self.total_number_of_jobs = theNumberOfJobs
+
+        totalEventsToBeUsed=theNumberOfJobs*filesPerJob*evPerFile
+        if not check == 0:
+            totalEventsToBeUsed=(theNumberOfJobs-1)*filesPerJob*evPerFile+filesLastJob*evPerFile
+
+        common.logger.message(str(self.total_number_of_jobs)+' jobs will be created, each for '+str(filesPerJob*evPerFile)+' events, for a total of '+str(totalEventsToBeUsed)+' events')
+
+        totalFilesToBeUsed=filesPerJob*(theNumberOfJobs-1)+filesLastJob
+
+        ## set job arguments (files)
         list_of_lists = []
-        for i in xrange(0, int(n_tot_files), filesPerJob):
+        lastFile=0
+        for i in range(0, int(totalFilesToBeUsed), filesPerJob)[:-1]:
             parString = "\\{" 
             
-            params = self.files[0][i: i+filesPerJob]
+            lastFile=i+filesPerJob
+            params = self.files[0][i: lastFile]
             for i in range(len(params) - 1):
                 parString += '\\\"' + params[i] + '\\\"\,'
             
             parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
-            #print parString
             list_of_lists.append([parString])
-            #print list_of_lists
             pass
 
+        ## last job
+        parString = "\\{" 
         
+        params = self.files[0][lastFile: lastFile+filesLastJob]
+        for i in range(len(params) - 1):
+            parString += '\\\"' + params[i] + '\\\"\,'
+        
+        parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
+        list_of_lists.append([parString])
+        pass
 
         self.list_of_args = list_of_lists
         # print self.list_of_args[0]
@@ -414,13 +445,18 @@ class Cmssw(JobType):
         """
         common.logger.debug(5,'Splitting per events')
         common.logger.message('Required '+str(self.eventsPerJob)+' events per job ')
+        common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
         common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
 
         if (self.total_number_of_events < 0):
             msg='Cannot split jobs per Events with "-1" as total number of events'
             raise CrabException(msg)
 
-        self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
+        if (self.selectEventsPerJob):
+            self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
+        elif (self.selectNumberOfJobs) :
+            self.total_number_of_jobs = self.theNumberOfJobs
+            self.eventsPerJob = int(self.total_number_of_events/self.total_number_of_jobs)
 
         common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
 
@@ -431,7 +467,7 @@ class Cmssw(JobType):
 
         common.logger.message(str(self.total_number_of_jobs)+' jobs will be created, each for '+str(self.eventsPerJob)+' for a total of '+str(self.total_number_of_jobs*self.eventsPerJob)+' events')
         if check > 0:
-            common.logger.message('Warning: asked '+self.total_number_of_events+' but will do only '+(int(self.total_number_of_jobs)*self.eventsPerJob))
+            common.logger.message('Warning: asked '+str(self.total_number_of_events)+' but will do only '+str(int(self.total_number_of_jobs)*self.eventsPerJob))
 
 
         # argument is seed number.$i
