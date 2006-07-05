@@ -162,8 +162,8 @@ class Cmssw(JobType):
         try:
             self.sourceSeed = int(cfg_params['CMSSW.pythia_seed'])
         except KeyError:
-            self.sourceSeed = 123456
-            common.logger.debug(5,"No seed given, will use "+str(self.sourceSeed))
+            self.sourceSeed = None
+            common.logger.debug(5,"No seed given")
 
         if not (self.selectFilesPerJob + self.selectEventsPerJob + self.selectNumberOfJobs == 1 ):
             msg = 'Must define either files_per_jobs or events_per_job or number_of_jobs'
@@ -231,12 +231,15 @@ class Cmssw(JobType):
         # modify Pset
         try:
             if (self.datasetPath): # standard job
-                self.PsetEdit.maxEvent(self.eventsPerJob) #Daniele  
-                self.PsetEdit.inputModule("INPUT") #Daniele
+                #self.PsetEdit.maxEvent(self.eventsPerJob)
+                # always process all events in a file
+                self.PsetEdit.maxEvent("-1")
+                self.PsetEdit.inputModule("INPUT")
 
             else:  # pythia like job
-                self.PsetEdit.maxEvent(self.eventsPerJob) #Daniele  
-                self.PsetEdit.pythiaSeed("INPUT") #Daniele
+                self.PsetEdit.maxEvent(self.eventsPerJob)
+                if (self.sourceSeed) :
+                    self.PsetEdit.pythiaSeed("INPUT")
         
             self.PsetEdit.psetWriter(self.configFilename())
         except:
@@ -377,22 +380,24 @@ class Cmssw(JobType):
             # SL case if asked events per job
             ## estimate the number of files per job to match the user requirement
             filesPerJob = int(float(self.eventsPerJob)/float(evPerFile))
+            if filesPerJob==0: filesPerJob=1
             common.logger.debug(5,"filesPerJob "+str(filesPerJob))
             if (filesPerJob==0): filesPerJob=1
             eventsPerJob=filesPerJob*evPerFile
-            theNumberOfJobs = int(self.total_number_of_events)/int(self.eventsPerJob)
+            theNumberOfJobs = int(self.total_number_of_events)/int(eventsPerJob)
             check = int(self.total_number_of_events) - (int(theNumberOfJobs)*eventsPerJob)
             if not check == 0:
                 missingFiles = int(check/evPerFile)
                 additionalJobs = int(missingFiles/filesPerJob)
-                #print missingFiles, additionalJobs
                 if ( additionalJobs>0) : theNumberOfJobs+=additionalJobs
                 check = int(self.total_number_of_events) - (int(theNumberOfJobs)*eventsPerJob)
                 if not check == 0:
                     if (check <0 ): 
                         filesLastJob = filesPerJob+int(check*1./evPerFile-0.5)
                     else:
+                        theNumberOfJobs+=1
                         filesLastJob = int(check*1./evPerFile+0.5)
+
                     common.logger.message('Warning: last job will be created with '+str(filesLastJob*evPerFile)+' events')
                 else:
                     filesLastJob = filesPerJob
@@ -403,6 +408,7 @@ class Cmssw(JobType):
 
         totalEventsToBeUsed=theNumberOfJobs*filesPerJob*evPerFile
         if not check == 0:
+        #    print (theNumberOfJobs-1)*filesPerJob*evPerFile,filesLastJob*evPerFile
             totalEventsToBeUsed=(theNumberOfJobs-1)*filesPerJob*evPerFile+filesLastJob*evPerFile
 
         common.logger.message(str(self.total_number_of_jobs)+' jobs will be created, each for '+str(filesPerJob*evPerFile)+' events, for a total of '+str(totalEventsToBeUsed)+' events')
@@ -473,7 +479,10 @@ class Cmssw(JobType):
         # argument is seed number.$i
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
-            self.list_of_args.append([(str(self.sourceSeed)+str(i))])
+            if (self.sourceSeed):
+                self.list_of_args.append([(str(self.sourceSeed)+str(i))])
+            else:
+                self.list_of_args.append([str(i)])
         #print self.list_of_args
 
         return
@@ -734,9 +743,10 @@ class Cmssw(JobType):
             txt += 'echo "Inputfiles:<$InputFiles>"\n'
             txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
         else:  # pythia like job
-            txt += 'Seed=$2\n'
-            txt += 'echo "Seed: <$Seed>"\n'
-            txt += 'sed "s#INPUT#$Seed#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
+            if (self.sourceSeed):
+                txt += 'Seed=$2\n'
+                txt += 'echo "Seed: <$Seed>"\n'
+                txt += 'sed "s#INPUT#$Seed#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
 
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
