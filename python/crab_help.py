@@ -433,6 +433,10 @@ Define the number of job to be run for the task. The number of event for each jo
 
 the output files produced by your application (comma separated list).
 
+=item B<pythia_seed>
+
+If the job is pythia based, and has I<untracked uint32 sourceSeed = x> in the ParameterSet, the seed value can be changed using this parameter. Each job will have a different seed, of the type I<pythia_seed>I<$job_number> .
+
 =back
 
 B<[ORCA]>
