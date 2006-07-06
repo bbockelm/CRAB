@@ -747,6 +747,10 @@ class Cmssw(JobType):
                 txt += 'Seed=$2\n'
                 txt += 'echo "Seed: <$Seed>"\n'
                 txt += 'sed "s#INPUT#$Seed#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
+            else:
+                txt += '# Copy untouched pset\n'
+                txt += 'cp '+pset+' pset.cfg\n'
+
 
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
