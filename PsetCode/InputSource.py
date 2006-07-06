@@ -76,6 +76,14 @@ class InputSource:
         
             
         
+    def setPythiaVtxSeed(self,cfg, vtxSeed):
+        """set pythia  vertex seed"""
+
+        _SvcName = "RandomNumberGeneratorService" 
+        seedSvc = cfg.cmsConfig.service(_SvcName)
+        seedSvc["moduleSeed"][2]["VtxSmeared"] =  ('uint32', 'untracked', vtxSeed )
+          
+
     def setPythiaSeed(self,cfg, seed):
         """set pythia seed"""
 
