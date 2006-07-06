@@ -47,13 +47,14 @@ class PsetManipulator:
         inModule.setFileNames(source)
         return
   
-    def pythiaSeed(self,seed):
+    def pythiaSeed(self,seed,vtxSeed):
         """ 
             Set pythia seed key
         """
         # set seed
         inModule = self.cfg.inputSource
         inModule.setPythiaSeed(self.cfg,seed)
+        inModule.setPythiaVtxSeed(self.cfg,vtxSeed)
         return 
 
     def maxEvent(self, maxEv):

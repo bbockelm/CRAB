@@ -239,8 +239,7 @@ class Cmssw(JobType):
             else:  # pythia like job
                 self.PsetEdit.maxEvent(self.eventsPerJob)
                 if (self.sourceSeed) :
-                    self.PsetEdit.pythiaSeed("INPUT")
-        
+                    self.PsetEdit.pythiaSeed("INPUT","INPUTVTX")
             self.PsetEdit.psetWriter(self.configFilename())
         except:
             msg='Error while manipuliating ParameterSet: exiting...'
