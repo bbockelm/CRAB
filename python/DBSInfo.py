@@ -120,7 +120,6 @@ class DBSInfo:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         ## get the fileblock and event collections
         nevtsbyblock= {}
-        print fileBlockList
         for fileBlock in fileBlockList:
             ## get the event collections for each block
             eventCollectionList = fileBlock.get('eventCollectionList')
