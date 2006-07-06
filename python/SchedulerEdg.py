@@ -373,8 +373,8 @@ class SchedulerEdg(Scheduler):
            txt += '        echo "Trying to copy output file to $SE "\n'
            ## OLI_Daniele globus-* for OSG, lcg-* for LCG
            txt += '        if [ $middleware == OSG ]; then\n'
-           txt += '           echo "globus-url-copy file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-           txt += '           globus-url-copy file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1 \n'
+           txt += '           echo "globus-url-copy file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1"\n'
+           txt += '           globus-url-copy file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1 \n'
            txt += '           copy_exit_status=$? \n' 
            txt += '        elif [ $middleware == LCG ]; then \n'
            #txt += '           echo "#######################################" \n'
@@ -389,8 +389,8 @@ class SchedulerEdg(Scheduler):
            #txt += '           echo "which lcg-cp" \n'
            #txt += '           which lcg-cp \n'
            #########
-           txt += '           echo "lcg-cp --vo cms --verbose -t 1200 file://$RUNTIME_AREA/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-           txt += '           lcg-cp --vo cms --verbose -t 1200 file://$RUNTIME_AREA/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1\n'
+           txt += '           echo "lcg-cp --vo $VO --verbose -t 1200 file://$RUNTIME_AREA/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1"\n'
+           txt += '           lcg-cp --vo $VO --verbose -t 1200 file://$RUNTIME_AREA/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1\n'
            txt += '           copy_exit_status=$? \n' 
            txt += '        fi \n' 
            txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
@@ -435,7 +435,7 @@ class SchedulerEdg(Scheduler):
            #txt += '         echo "which lcg-rf" \n'
            #txt += '         which lcg-rf \n'
            #########
-           txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file"\n'
+           txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file 2>&1"\n'
            txt += '         lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
            txt += '         echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
@@ -447,7 +447,7 @@ class SchedulerEdg(Scheduler):
            #txt += '            echo "which lcg-rf" \n'
            #txt += '            which lcg-rf \n'
            #########
-           txt += '            echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file"\n'
+           txt += '            echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file 2>&1"\n'
            txt += '            lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '            register_exit_status=$?\n'
            txt += '            echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
@@ -469,7 +469,7 @@ class SchedulerEdg(Scheduler):
            #txt += '         echo "which lcg-cr" \n'
            #txt += '         which lcg-cr \n'
            #########
-           txt += '         echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file" \n'
+           txt += '         echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1" \n'
            txt += '         lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
            txt += '         echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
