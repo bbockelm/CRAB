@@ -747,7 +747,7 @@ class Orca(JobType):
         if len(sites)==0:
             msg = 'No sites hosting all the needed data! Exiting... '
             raise CrabException(msg)
-        common.logger.message("List of Sites hosting the data : "+str(sites))
+        common.logger.message("List of Sites ("+str(len(sites))+") hosting the data : "+str(sites)) 
         common.logger.debug(6, "List of Sites: "+str(sites))
         common.analisys_common_info['sites']=sites    ## used in SchedulerEdg.py in createSchScript
         self.setParam_('TargetCE', ','.join(sites))
