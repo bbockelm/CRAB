@@ -165,6 +165,12 @@ class Cmssw(JobType):
             self.sourceSeed = None
             common.logger.debug(5,"No seed given")
 
+        try:
+            self.sourceSeedVtx = int(cfg_params['CMSSW.vtx_seed'])
+        except KeyError:
+            self.sourceSeedVtx = None
+            common.logger.debug(5,"No vertex seed given")
+
         if not (self.selectFilesPerJob + self.selectEventsPerJob + self.selectNumberOfJobs == 1 ):
             msg = 'Must define either files_per_jobs or events_per_job or number_of_jobs'
             raise CrabException(msg)
@@ -239,7 +245,9 @@ class Cmssw(JobType):
             else:  # pythia like job
                 self.PsetEdit.maxEvent(self.eventsPerJob)
                 if (self.sourceSeed) :
-                    self.PsetEdit.pythiaSeed("INPUT","INPUTVTX")
+                    self.PsetEdit.pythiaSeed("INPUT")
+                    if (self.sourceSeedVtx) :
+                        self.PsetEdit.pythiaSeedVtx("INPUTVTX")
             self.PsetEdit.psetWriter(self.configFilename())
         except:
             msg='Error while manipuliating ParameterSet: exiting...'
@@ -479,8 +487,17 @@ class Cmssw(JobType):
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
             if (self.sourceSeed):
-                self.list_of_args.append([(str(self.sourceSeed)+str(i))])
+                if (self.sourceSeedVtx):
+                    ## pythia + vtx random seed
+                    self.list_of_args.append([
+                                              str(self.sourceSeed)+str(i),
+                                              str(self.sourceSeedVtx)+str(i)
+                                              ])
+                else:
+                    ## only pythia random seed
+                    self.list_of_args.append([(str(self.sourceSeed)+str(i))])
             else:
+                ## no random seed
                 self.list_of_args.append([str(i)])
         #print self.list_of_args
 
@@ -745,7 +762,13 @@ class Cmssw(JobType):
             if (self.sourceSeed):
                 txt += 'Seed=$2\n'
                 txt += 'echo "Seed: <$Seed>"\n'
-                txt += 'sed "s#INPUT#$Seed#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
+                txt += 'sed "s#\<INPUT\>#$Seed#" $RUNTIME_AREA/'+pset+' > tmp.cfg\n'
+                if (self.sourceSeedVtx):
+                    txt += 'VtxSeed=$3\n'
+                    txt += 'echo "VtxSeed: <$VtxSeed>"\n'
+                    txt += 'sed "s#INPUTVTX#$VtxSeed#" tmp.cfg > pset.cfg\n'
+                else:
+                    txt += 'mv tmp.cfg pset.cfg\n'
             else:
                 txt += '# Copy untouched pset\n'
                 txt += 'cp $RUNTIME_AREA/'+pset+' pset.cfg\n'
