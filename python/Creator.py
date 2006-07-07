@@ -50,8 +50,14 @@ class Creator(Actor):
             fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.inputFile)+'::'+str(self.executable))
             pass
         elif self.job_type.name() == 'CMSSW':
-            self.primaryDataset = cfg_params['CMSSW.datasetpath'].split("/")[1]
-            self.ProcessedDataset = cfg_params['CMSSW.datasetpath'].split("/")[3]
+            try: 
+                self.primaryDataset = cfg_params['CMSSW.datasetpath'].split("/")[1]
+            except:
+                self.primaryDataset = 'None'
+            try:
+                self.ProcessedDataset = cfg_params['CMSSW.datasetpath'].split("/")[3]
+            except:
+                self.ProcessedDataset = '  '
             fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.primaryDataset)+'::'+str(self.ProcessedDataset))
             pass
 
