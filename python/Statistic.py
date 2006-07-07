@@ -12,7 +12,7 @@ def Monitor(operation,Resubmit,jid,exitCode):
        jobtype = array[1]
        NjobCre = array[2]
 
-       if ( jobtype == 'ORCA' ) or ( jobtype == 'ORCA_PUBDB'):
+       if ( jobtype == 'ORCA' ) or ( jobtype == 'ORCA_PUBDB')  or  ( jobtype == 'CMSSW'):
            dataset = array[3]
            owner = array[4]
        elif jobtype == 'FAMOS':
@@ -25,7 +25,7 @@ def Monitor(operation,Resubmit,jid,exitCode):
           try:
               dest = common.scheduler.queryDest(jid)
               if ( dest.find(':') ) :
-                     dest = destination.split(":")[0]
+                  dest = destination.split(":")[0]
           except:
               dest =  " "
        else:
@@ -48,7 +48,7 @@ def Monitor(operation,Resubmit,jid,exitCode):
                                                                                                                              
        sockobj = socket(AF_INET,SOCK_DGRAM)
        sockobj.connect((address,port))
-       if ( jobtype == 'ORCA' ) or ( jobtype == 'ORCA_PUBDB'):
+       if ( jobtype == 'ORCA' ) or ( jobtype == 'ORCA_PUBDB') or ( jobtype == 'CMSSW'):
            sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
        elif jobtype == 'FAMOS':
           # sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(inputData)+'::'+str(executable)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
