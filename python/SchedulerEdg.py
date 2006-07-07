@@ -343,7 +343,7 @@ class SchedulerEdg(Scheduler):
            #txt += '      which lcg-cp \n'
            #########
            txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
-           txt += '      copy_input_exit_status=$?\n'
+           txt += '      copy_input_pu_exit_status=$?\n'
            txt += '      echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
            txt += '      if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
            txt += '         echo "Problems with copying pu to WN" \n'
