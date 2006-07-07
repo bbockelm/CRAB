@@ -19,7 +19,7 @@ DLSAPItag="DLS_0_1_0"
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
 
-configure_dbsdls=configure_dbsdls
+#configure_dbsdls=configure_dbsdls
 ## download CRAB from CVS and cleanup the code a bit
 #echo ">> downloading CRAB tag $CRABtag from CVS CRAB"
 echo ">> downloading CRAB HEAD from CVS CRAB"
@@ -27,8 +27,8 @@ echo ">> downloading CRAB HEAD from CVS CRAB"
 cvs co -d $CRABdir CRAB
 cvs up -P BossScript 
 cd $CRABdir
-rm -r CVS
-rm -r python/CVS
+#rm -r CVS
+#rm -r python/CVS
 rm python/crab.*sh
 rm python/tar*
 rm python/zero
