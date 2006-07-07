@@ -178,12 +178,12 @@ class Famos(JobType):
         
         ### georgia for FAMOS
         nnt = int(self.total_number_of_events)/int(self.events_per_ntuple) 
-        print "nnt = ", nnt
+        #print "nnt = ", nnt
         self.ntj = int(self.job_number_of_events)/int(self.events_per_ntuple)
-        print "self.ntj = ", self.ntj
+        #print "self.ntj = ", self.ntj
         
         in_file = self.input_lfn
-        print "in_file = ", in_file
+        #print "in_file = ", in_file
         p = string.split(in_file,".")
         ext = p[len(p)-1]
         q = string.split(p[0],"/")
@@ -196,9 +196,9 @@ class Famos(JobType):
             input_file_num = name+'_'+str(index)+"."+ext
             cmkin_file_num = ' `pwd`/'+input_file_num
             self.in_file_list.append(input_file_num)
-            print "self.in_file_list = ", self.in_file_list
+            #print "self.in_file_list = ", self.in_file_list
             self.cmkin_file_list.append(cmkin_file_num)
-            print "self.cmkin_file_list = ", self.cmkin_file_list
+            #print "self.cmkin_file_list = ", self.cmkin_file_list
             index = index + 1
 
         ### georgia
@@ -536,6 +536,9 @@ class Famos(JobType):
             txt += '    echo "JOB_EXIT_STATUS = $exe_result"\n'
             txt += '    echo "JobExitCode=60302" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+            txt += '    rm -f $RUNTIME_AREA/$repo \n'
+            txt += '    echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'      
+            txt += '    echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'       
             txt += '    exit $exe_result \n'
             txt += 'else\n'
             txt += '    cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
