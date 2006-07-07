@@ -123,16 +123,17 @@ class Cmssw(JobType):
                   
         ## additional input files
         try:
-            tmpAddFiles = string.split(cfg_params['CMSSW.additional_input_files'],',')
+            tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
+            print self.additional_inbox_files
             for tmp in tmpAddFiles:
                 if not os.path.exists(tmp):
                     raise CrabException("Additional input file not found: "+tmp)
-                tmp=string.strip(tmp)
-                self.additional_inbox_files.append(tmp)
+                self.additional_inbox_files.append(string.strip(tmp))
                 pass
             pass
         except KeyError:
             pass
+        print self.additional_inbox_files
 
         # files per job
         try:
