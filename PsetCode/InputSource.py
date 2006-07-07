@@ -80,17 +80,18 @@ class InputSource:
     def setPythiaVtxSeed(self,cfg, vtxSeed):
         """set pythia  vertex seed"""
 
+        modName = 'moduleSeeds'
         _SvcName = "RandomNumberGeneratorService" 
         seedSvc = cfg.cmsConfig.service(_SvcName)
         check = 0
-        if  'moduleSeed' in seedSvc.keys():
-            for i in range(len(seedSvc["moduleSeed"])): 
-                if string.find(str(seedSvc["moduleSeed"][i]), 'VtxSmeared') != -1: 
-                    seedSvc["moduleSeed"][i]["VtxSmeared"] =  ('uint32', 'untracked', vtxSeed )
+        if  modName in seedSvc.keys():
+            for i in range(len(seedSvc[modName])): 
+                if string.find(str(seedSvc[modName][i]), 'VtxSmeared') != -1: 
+                    seedSvc[modName][i]["VtxSmeared"] =  ('uint32', 'untracked', vtxSeed )
                     check = 1
-            if not check: print 'no VtxSmeared in  moduleSeed '
+            if not check: print 'no VtxSmeared in ',modName
         else:
-            print 'no  moduleseed in Pset '
+            print 'no ',modName,' in Pset '
             pass        
 
     def setPythiaSeed(self,cfg, seed):
