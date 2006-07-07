@@ -227,23 +227,31 @@ class Famos(JobType):
         common.jobDB.load()
         njobs = self.total_number_of_jobs
         # create the empty structure
+        #print "njobs = ", njobs
         for i in range(njobs):
+            #print "i = ", i
             jobParams.append("")
         
         # fill the both the list and the DB (part of the code taken from jobsToDB)
         firstEvent = self.first_event
         lastJobsNumberOfEvents = self.job_number_of_events
         # last jobs is different...
-        for job in range(njobs-1):
+        
+        #for job in range(njobs-1):
+        for job in range(njobs -1):
+            #print "job = ", job
+            #print "firstEvent = ", firstEvent
+            #print "lastJobsNumberOfEvents = ", lastJobsNumberOfEvents
             jobParams[job] = [str(firstEvent), str(lastJobsNumberOfEvents)]
+            #print "jobParams[job] = ", jobParams[job]
             common.jobDB.setArguments(job, jobParams[job])
             firstEvent += self.job_number_of_events
             
             # this is the last job
             #                lastJobsNumberOfEvents = (self.total_number_of_events + self.first_event) - firstEvent
-            status = common.jobDB.status(njobs - 1)
-            jobParams[njobs - 1] = [str(firstEvent), str(lastJobsNumberOfEvents)]
-            common.jobDB.setArguments(njobs - 1, jobParams[njobs - 1])
+        status = common.jobDB.status(njobs - 1)
+        jobParams[njobs - 1] = [str(firstEvent), str(lastJobsNumberOfEvents)]
+        common.jobDB.setArguments(njobs - 1, jobParams[njobs - 1])
             
         if (lastJobsNumberOfEvents!=self.job_number_of_events):
             common.logger.message(str(self.total_number_of_jobs-1)+' jobs will be created for '+str(self.job_number_of_events)+' events each plus 1 for '+str(lastJobsNumberOfEvents)+' events for a total of '+str(self.job_number_of_events*(self.total_number_of_jobs-1)+lastJobsNumberOfEvents)+' events')
@@ -254,8 +262,10 @@ class Famos(JobType):
         return
     
     def getJobTypeArguments(self, nj, sched):
+        #print "nj  = ", nj
         params = common.jobDB.arguments(nj)
-        
+        #print "SCHED =  ", sched
+        #print "params = ", params
         if sched=="EDG" or sched=="CONDOR" or sched=="GRID":
             parString = "" + str(params[0])+' '+str(params[1])
         elif sched=="BOSS":
