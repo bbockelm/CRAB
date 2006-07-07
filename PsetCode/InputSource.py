@@ -7,6 +7,7 @@ Object to assist with manipulating the input source provided in a PSet
 """
 import CfgInterface
 from Utilities import isQuoted
+import string
 
 class InputSource:
     """
@@ -81,8 +82,16 @@ class InputSource:
 
         _SvcName = "RandomNumberGeneratorService" 
         seedSvc = cfg.cmsConfig.service(_SvcName)
-        seedSvc["moduleSeed"][2]["VtxSmeared"] =  ('uint32', 'untracked', vtxSeed )
-          
+        check = 0
+        if  'moduleSeed' in seedSvc.keys():
+            for i in range(len(seedSvc["moduleSeed"])): 
+                if string.find(str(seedSvc["moduleSeed"][i]), 'VtxSmeared') != -1: 
+                    seedSvc["moduleSeed"][i]["VtxSmeared"] =  ('uint32', 'untracked', vtxSeed )
+                    check = 1
+            if not check: print 'no VtxSmeared in  moduleSeed '
+        else:
+            print 'no  moduleseed in Pset '
+            pass        
 
     def setPythiaSeed(self,cfg, seed):
         """set pythia seed"""
