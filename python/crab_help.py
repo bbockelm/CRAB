@@ -437,6 +437,10 @@ the output files produced by your application (comma separated list).
 
 If the job is pythia based, and has I<untracked uint32 sourceSeed = x> in the ParameterSet, the seed value can be changed using this parameter. Each job will have a different seed, of the type I<pythia_seed>I<$job_number> .
 
+=item B<vtx_seed>
+
+Seed for random number generation used for vertex smearing: to be used only if PSet has I<untracked uint32 VtxSmeared = x>. It is modified if and only if also I<pythia_seed> is set. As for I<pythia_seed> the actual seed will be of the type I<vtx_seed>I<$job_number>.
+
 =back
 
 B<[ORCA]>
