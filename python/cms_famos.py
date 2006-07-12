@@ -185,11 +185,24 @@ class Famos(JobType):
         in_file = self.input_lfn
         #print "in_file = ", in_file
         p = string.split(in_file,".")
+        #print "p = ", p
         ext = p[len(p)-1]
+        #print "ext = ", ext
         q = string.split(p[0],"/")
-        name= q[len(q)-1]
+        #print "q = ", q
+        #print "q[0] = ", q[0]
+        #print "q[1] = ", q[1]
+        #print "q[2] = ", q[2]
 
-        self.username = q[0]
+        self.username = ''
+        for i in range(len(q)-1):
+          self.username = self.username + q[i] + '/'
+        #print "self.username = ", self.username 
+
+        name= q[len(q)-1]
+        #print "name = ", name
+
+        #self.username = q[0]
 
         index = 1
         while index < nnt+1:
