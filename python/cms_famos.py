@@ -189,20 +189,16 @@ class Famos(JobType):
         ext = p[len(p)-1]
         #print "ext = ", ext
         q = string.split(p[0],"/")
-        #print "q = ", q
-        #print "q[0] = ", q[0]
-        #print "q[1] = ", q[1]
-        #print "q[2] = ", q[2]
 
-        self.username = ''
-        for i in range(len(q)-1):
-          self.username = self.username + q[i] + '/'
+        #self.username = ''
+        #for i in range(len(q)-1):
+        #    self.username = self.username + q[i] + '/'
         #print "self.username = ", self.username 
+   
+        self.username = string.join((q[:-1]),"/")
+        #print "self.username = ", self.username
 
         name= q[len(q)-1]
-        #print "name = ", name
-
-        #self.username = q[0]
 
         index = 1
         while index < nnt+1:
