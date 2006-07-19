@@ -22,7 +22,7 @@ import sys, os, time, string
 ###########################################################################
 class Crab:
     def __init__(self, opts):
-
+        ## test_tag
         # The order of main_actions is important !
         self.main_actions = [ '-create', '-submit' ] 
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput','-get',
@@ -31,7 +31,7 @@ class Crab:
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
-
+      
         # Configuration file
         self.cfg_fname = None
         # Dictionary with configuration parameters
