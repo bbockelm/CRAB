@@ -2,6 +2,8 @@
 #
 $|=1;
 #
+# From Oliver Gutsche: Many Thanks!
+#
 # ------------------- Optional logging of submission -------------------------
 #   (change file name and comment/uncomment the open statement as you wish)
 $logFile = "bossSubmit.log";

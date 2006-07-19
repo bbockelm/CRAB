@@ -6,7 +6,7 @@ $kill_log="bossSubmit.log";
 open (LOG, ">>$dir/$kill_log") || die "Unable to write to local log file $dir/$kill_log";
 if($len==1) {
     $sid=$ARGV[0];
-    $killcmd = "glite-job-cancel -noint $sid |";
+    $killcmd = "glite-wms-job-cancel -noint --logfile glite_kill.log $sid |";
     print LOG "\n====>> Kill request for job $sid\n";
     print LOG "Killing with command $killcmd\n";
     print LOG "*** Start dump of kill request:\n";

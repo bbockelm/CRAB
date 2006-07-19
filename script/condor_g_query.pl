@@ -1,5 +1,7 @@
 #! /usr/bin/perl
-
+#
+# From Oliver Gutsche: Many Thanks!
+#
 $user = $ENV{'USER'};
 $command = "condor_q -submitter $user -global -constraint \"BossJob >0\" |";
 open (CONQ , $command );

@@ -29,14 +29,14 @@ if($len!=$correctlen) {
     print "0::0::0\n";
     die "Wrong number of arguments to sub script: $len, expected: $correctlen\n";
 }
-# Boss job ID
-$jid = $ARGV[0];
-# Configuration file (where the job wrapper reads the configuration)
+# Boss task ID
+$taskid = $ARGV[0];
+# stdinput 
 $stdin = $ARGV[1];
+# common sandbox
+$commonSandbox = $ARGV[2];
 # Log file (where the job wrapper writes its messages); argument of -log option
-$stdout = $ARGV[2];
-# Host where to submit job - argument of -host option
-$host = $ARGV[3];
+$log = $ARGV[3];
 #
 if (LOG) {
     print LOG "\n====>> New scheduler call number $jid\n";
@@ -52,22 +52,53 @@ $executable = `which jobExecutor`; chomp $executable;
 # (do not modify this section unless for fixing bugs - please inform authors!)
 &initSched();
 #
+# ------------------- Read jobList file and loop over jobs ------------------- 
+$jid="";
+$cladfile = "";
+$file = "submit\_$taskid";
+open FILE, $file or die $!;
+while ( <FILE> ) {
+#    print $_;
+    if ($_ =~ /(\d+):(\d+):(\d+)\n/) {
+	for ($val=$1; $val<=$2; ++$val) {
+	    $jid="$taskid\_$val\_$3";
+	    $stdout="$log\_$taskid\_$val";
+#
 # ------ Get additional information from classad file (if any)----------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
-$cladfile = "BossClassAdFile_$jid";
-if ( -f $cladfile ) {
-    %classad = &parseClassAd($cladfile);
-    &processClassAd();
-} else {
-    if (LOG) {
- 	print LOG "$jid: No classad file for this job\n";
-    }
-}
+	    $cladfile = "BossClassAdFile\_$taskid";
+	    if ( -f $cladfile ) {
+		%classad = &parseClassAd($cladfile);
+		&processClassAd();
+	    } else {
+		if (LOG) {
+		    print LOG "$jid: No classad file for this task\n";
+		}
+	    }
+	    $cladfile = "BossClassAdFile\_$taskid\_$val";
+	    if ( -f $cladfile ) {
+		%classad = &parseClassAd($cladfile);
+		&processClassAd();
+	    } else {
+		if (LOG) {
+		    print LOG "$jid: No classad file for this job\n";
+		}
+	    }
 #
 # --------------------------- Ready to submit --------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
-$sid = &submit();
-print $sid;
+	    $sid = &submit();
+	    print ("$val\t$3\t$sid");
+	}
+#
+# ----------------------- If something goes wrong ----------------------------
+    } else {
+	print LOG "$_: Incorrect format\n";
+	die;
+    }
+}
+print "EOF\n";
+#
 # ----------------------------- End of main ----------------------------------
 #
 # ---------------------- General pourpose routines --------------------------
@@ -127,7 +158,7 @@ sub submit {
     # Type of Universe (i.e. Standard, Vanilla, PVM, MPI, Globus)
     print CMD ("Universe    = vanilla\n");
     # input,output,error files passed to executable
-    print CMD ("input       = $stdin\n");
+    print CMD ("input       = $subdir/$stdin\n");
     print CMD ("output      = $stdout\n");
     print CMD ("error       = $stdout\n");
     # Condor log file
@@ -135,7 +166,7 @@ sub submit {
     # Transfer files
     print CMD ("should_transfer_files = YES\n");
     print CMD ("when_to_transfer_output = ON_EXIT\n");
-    print CMD ("transfer_input_files = BossArchive_$jid.tgz\n");
+    print CMD ("transfer_input_files = $subdir/BossArchive_$jid.tgz,$subdir/$commonSandbox\n");
     print CMD ("transfer_output_files = BossOutArchive_$jid.tgz\n");
     # A string to help finding boss jobs in condor
     print CMD ("+BossJob = $jid\n");

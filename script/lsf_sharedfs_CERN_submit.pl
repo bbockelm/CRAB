@@ -48,7 +48,7 @@ if (LOG) {
 # The name of the executable to be submitted to the scheduler
 $executable = `which jobExecutor`; chomp $executable;
 #
-# ----- Scheduler specific initialization (before parsing classad -----------
+# ----------------- Scheduler specific initialization ------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
 &initSched();
 #
@@ -96,6 +96,7 @@ while ( <FILE> ) {
 	print LOG "$_: Incorrect format\n";
 	die;
     }
+    print "\n\n";
 }
 print "EOF\n";
 #
@@ -130,50 +131,61 @@ sub parseClassAd {
     return %clad;
 }
 
+sub mybasename {
+    my $rf = $_[0];
+    $rf =~ s/^.\///;
+    if ( !($rf =~ m#/dev/null#) ) {
+           $rf =~ s/.+\/// ;
+    }
+    return $rf;
+}
+
 # --------------------- Scheduler specific routines -------------------------
 #     (Update the routines of this section to match your scheduler needs)
 #
-# Initialize variables used by the scheduler before parsing classad
+# Initialize variables used by the scheduler
 sub initSched {
 }
 #
 # Process a single entry of the classad
 sub processClassAd {
     if(LOG) {
-        print LOG "$jid: ClassAd ignored:\n";
-        print LOG "$jid: This version of PBS submission doesn't support ClassAd\n";
+	print LOG "$jid: ClassAd ignored:\n";
+	print LOG "$jid: This version of LSF submission doesn't support ClassAd\n";
     }
 }
 #
 # Submit the job and return the scheduler id
 sub submit {
-#     if ( $host ne "NULL" ) { 
-#         if(LOG) {
-#             print LOG "$jid: Submission to $host request is ignored:\n";
-#             print LOG "$jid: PBS submission to default destination\n";
-#         }
-#     }
-    #
-#    $inbn = mybasename($stdin);
-    $subcmd = "qsub -i $subdir/$stdin -o $stdout -j oe $executable -W stagein=$commonSandbox\@$subhost:$subdir/$commonSandbox,BossArchive_$jid.tgz\@$subhost:$subdir/BossArchive_$jid.tgz,$stdin\@$subhost:$stdin -W stageout=BossOutArchive_$jid.tgz\@$subhost:$subdir/BossOutArchive_$jid.tgz |";
-    if(LOG) {
-        print LOG "$subcmd\n";
+    $hoststring="";
+    if ( $host ne "NULL" ) {
+	if ( $host =~ /.+\..+/ ) {
+            $hoststring="-m $host";
+	} else {
+	    $domain = `dnsdomainname`; chomp($domain);
+            $hoststring="-m $host.$domain";
+	}
     }
-    # open a pipe to read the stdout of qsub
+    $tmpfile = `mktemp dg_XXXXXX` || die "error";
+    chomp($tmpfile);    
+    open (TMP, ">$tmpfile") || die "error";
+    # Executable submit with edg-job-submit
+    $arguments=$val; 
+    print TMP ("$executable $arguments < $subdir/$stdin \n");
+    close(TMP);
+    
+    $subcmd = "bsub -o $stdout -e  $stdout  sh $tmpfile |";
+    # open a pipe to read the stdout of bsub
     open (SUB, $subcmd);
     # find job id
     $id = "error";
     $_ = <SUB>;
-    if ( $_ =~ /(\d+\.\S+)\S*/ ) {
-         @tmp = split(/\./,$1);
-         # print "$tmp[0].$tmp[1]";
-         $id = "$tmp[0]";
-    }
+    if ( $_ =~ /Job \<(\d+)\>\s+is submitted\s+.*/ ) {
+        $id = $1;
+    }    
     close(SUB);
-    # delete temporary file
-    #unlink "$tmpfile";
     #
-    return $id;
+    return "$id\n";
 }
 #
 # ----------------------------------------------------------------------------

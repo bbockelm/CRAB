@@ -13,7 +13,7 @@ $subdir = `pwd`; chomp $subdir;
 #
 # ------------------- Optional logging of submission -------------------------
 #   (change file name and comment/uncomment the open statement as you wish)
-$logFile = "$subdir/bossSubmit.log";
+#$logFile = "$subdir/bossSubmit.log";
 #open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
 #
 # --------------------------- Get arguments ----------------------------------
@@ -29,14 +29,14 @@ if($len!=$correctlen) {
     print "0::0::0\n";
     die "Wrong number of arguments to sub script: $len, expected: $correctlen\n";
 }
-# Boss job ID
-$jid = $ARGV[0];
-# Configuration file (where the job wrapper reads the configuration)
+# Boss task ID
+$taskid = $ARGV[0];
+# stdinput 
 $stdin = $ARGV[1];
+# common sandbox
+$commonSandbox = $ARGV[2];
 # Log file (where the job wrapper writes its messages); argument of -log option
-$stdout = $ARGV[2];
-# Host where to submit job - argument of -host option
-$host = $ARGV[3];
+$log = $ARGV[3];
 #
 if (LOG) {
     print LOG "\n====>> New scheduler call number $jid\n";
@@ -52,22 +52,53 @@ $executable = `which jobExecutor`; chomp $executable;
 # (do not modify this section unless for fixing bugs - please inform authors!)
 &initSched();
 #
+# ------------------- Read jobList file and loop over jobs ------------------- 
+$jid="";
+$cladfile = "";
+$file = "submit\_$taskid";
+open FILE, $file or die $!;
+while ( <FILE> ) {
+#    print $_;
+    if ($_ =~ /(\d+):(\d+):(\d+)\n/) {
+	for ($val=$1; $val<=$2; ++$val) {
+	    $jid="$taskid\_$val\_$3";
+	    $stdout="$log\_$taskid\_$val.log";
+#
 # ------ Get additional information from classad file (if any)----------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
-$cladfile = "BossClassAdFile_$jid";
-if ( -f $cladfile ) {
-    %classad = &parseClassAd($cladfile);
-    &processClassAd();
-} else {
-    if (LOG) {
- 	print LOG "$jid: No classad file for this job\n";
-    }
-}
+	    $cladfile = "BossClassAdFile\_$taskid";
+	    if ( -f $cladfile ) {
+		%classad = &parseClassAd($cladfile);
+		&processClassAd();
+	    } else {
+		if (LOG) {
+		    print LOG "$jid: No classad file for this task\n";
+		}
+	    }
+	    $cladfile = "BossClassAdFile\_$taskid\_$val";
+	    if ( -f $cladfile ) {
+		%classad = &parseClassAd($cladfile);
+		&processClassAd();
+	    } else {
+		if (LOG) {
+		    print LOG "$jid: No classad file for this job\n";
+		}
+	    }
 #
 # --------------------------- Ready to submit --------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
-$sid = &submit();
-print $sid;
+	    $sid = &submit();
+	    print ("$val\t$3\t$sid");
+	}
+#
+# ----------------------- If something goes wrong ----------------------------
+    } else {
+	print LOG "$_: Incorrect format\n";
+	die;
+    }
+}
+print "EOF\n";
+#
 # ----------------------------- End of main ----------------------------------
 #
 # ---------------------- General pourpose routines --------------------------
@@ -121,25 +152,18 @@ sub initSched {
 # Process a single entry of the classad
 sub processClassAd {
     $rbconfigstring ="";
-    $rbconfigVO="";
     $ppend2JDL = "";
     
     foreach $ClAdKey ( keys %classad ) {
 #	print LOG "in hash2: $ClAdKey = $classad{$ClAdKey}\n";
 	$ClAdVal = $classad{$ClAdKey};
 #	    print LOG "$ClAdKey = $ClAdVal;\n";
-	if ( $ClAdKey eq "RBconfig") {
+	if ( $ClAdKey eq "WMSconfig") {
 	    $ClAdVal =~ s/\s*{\s*\"\s*(.*)\s*\"\s*}\.*/$1/;
-#               print "$ClAdKey : $ClAdVal \n";                
+          print LOG "$ClAdKey : $ClAdVal \n";                
 	    chomp($ClAdVal);
-	    $rbconfigstring="-config $ClAdVal";
+	    $rbconfigstring="-c $ClAdVal";
 #               print "$rbconfigstring \n";
-	} elsif ( $ClAdKey eq "RBconfigVO") {
-	    $ClAdVal =~ s/\s*{\s*\"\s*(.*)\s*\"\s*}\.*/$1/;
-#               print "$ClAdKey : $ClAdVal \n";
-	    chomp($ClAdVal);
-	    $rbconfigVO="--config-vo $ClAdVal";
-#               print "rbconfigVO $rbconfigVO \n";
 	} elsif ( $ClAdKey ne "" ) {
 	    $ppend2JDL.="$ClAdKey = $ClAdVal;\n";
 	}
@@ -148,17 +172,18 @@ sub processClassAd {
 #
 # Submit the job and return the scheduler id
 sub submit {
-    $hoststring="";
-    if ( $host ne "NULL" ) { 
-	$hoststring="-r $host";
-    }
-    $inSandBox  = "\"$executable\",\"$stdin\"";
-    $inSandBox  .= ",\"BossArchive_$jid.tgz\"";
+#     $hoststring="";
+#     if ( $host ne "NULL" ) { 
+# 	$hoststring="-r $host";
+#     }
+    $inSandBox  = "\"$executable\",\"$subdir/$stdin\"";
+    $inSandBox  .= ",\"$subdir/BossArchive_$jid.tgz\"";
+    $inSandBox  .= ",\"$subdir/$commonSandbox\"";
     $outbn = mybasename($stdout);
     $inbn = mybasename($stdin);
-    $outSandBox = "\"$lfbn\",\"BossOutArchive_$jid.tgz\"";
+    $outSandBox = "\"$outbn\",\"BossOutArchive_$jid.tgz\"";
     # open a temporary file
-    $tmpfile = `mktemp dg_XXXXXX` || die "error";
+    $tmpfile = `mktemp glite_XXXXXX` || die "error";
     chomp($tmpfile);    
     open (JDL, ">$tmpfile") || die "error";
     # Executable submit with edg-job-submit
@@ -173,32 +198,47 @@ sub submit {
     print JDL $ppend2JDL;
     close(JDL);
     # submitting command
-    $subcmd = "glite-job-submit -o ~/.bossGLITEjobs $hoststring $rbconfigstring $rbconfigVO $tmpfile|";
-    # print LOG "subcmd = $subcmd\n";
+    $subcmd = "glite-wms-job-delegate-proxy -d bossproxy $rbconfigstring";
+    open (SUB, $subcmd);
+
+#    $subcmd = "glite-wms-job-submit -d bossproxy $tmpfile|";
+    $subcmd = "glite-wms-job-submit -d bossproxy $rbconfigstring $tmpfile|";
+    print LOG "subcmd = $subcmd\n";
+    while ( <SUB> ) {
+	$err_msg .= $_;
+	if ( $_ =~ m/Error.*/) {
+            if (LOG) {
+		print LOG "$jid: $err_msg\n";
+	    }
+	    die "error";
+	}
+    }
     # exit;
     # open a pipe to read the stdout of glite-job-submit
     open (SUB, $subcmd);
     $id = "error";
     while ( <SUB> ) {
-        print STDERR $_;
-#        print LOG;
+#      print $_;
+	print LOG $_;
+	$err_msg .= $_;
 	if ( $_ =~ m/https:(.+)/) {
             if (LOG) {
 		print LOG "$jid: Scheduler ID = https:$1\n";
             }
 	    $id = "https:$1";
-	}
+	} 
     }
     if ( $id eq "error" ) {
-	print LOG "$jid: ERROR: Unable to submit the job\n";  
+	print LOG "$jid: ERROR: Unable to submit the job\n"; 
+	print LOG $err_msg ;  
     }
     
     # close the file handles
     close(SUB);
     # delete temporary files
-    unlink "$tmpfile";
-    unlink "BossArchive_${jid}.tgz";
-    return $id;
+#    unlink "$tmpfile";
+#    unlink "BossArchive_${jid}.tgz";
+    return "$id\n";
 }
 #
 # ----------------------------------------------------------------------------

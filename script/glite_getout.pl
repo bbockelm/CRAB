@@ -38,21 +38,21 @@ $status = "error";
 # --------------------- Scheduler specific section -------------------------
 #     (Update the routines of this section to match your scheduler needs)
 #
-
-$getcmd = "glite-job-output --dir /tmp $sid|";
+$outTmpDir="/tmp/BossJob_$jid";
+$getcmd = "glite-wms-job-output --noint --dir $outTmpDir --logfile $outdir/glite_getoutput.log $sid|";
 open (GET, $getcmd);
 while ( <GET> ) {
 #    print $_;
-    if ( $_ =~ m/ have been successfully retrieved and stored in the directory:/) {
+    if ( $_ =~ m/have been successfully retrieved and stored in the directory:/) {
 	$old = <GET>;
 	chomp($old);
-	print STDERR "LCG output sandbox retrieved in $old\n";
+	print STDERR "glite output sandbox retrieved in $old\n";
 	$err = system("mv $old/* $outdir");
 	if ( ! $err ) {
 	    $status = "retrieved";
 	    $cleancmd = "cat ~/.bossGLITEjobs | grep -v $sid > $old/TMPbossGLITEjobs; mv $old/TMPbossGLITEjobs ~/.bossGLITEjobs";
-	    system $cleancmd;
-	    unlink  "$old";
+	    system $cleancmd;;
+	    system "rmdir $old";
 	}
     }
 }
