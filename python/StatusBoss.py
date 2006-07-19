@@ -15,26 +15,6 @@ class StatusBoss(Actor):
         self.countCancel = 0
         self.countAbort = 0
         self.countCleared = 0
-
-        # Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
-        # Bypass edg-job-status interfacing directly to C++ API
-        # Job attribute vector to retrieve status without edg-job-status
-        self.level = 0
-        # Instance of the Status class provided by LB API
-        # self.jobStat = Status()
-
-        self.states = [ "Acl", "cancelReason", "cancelling","ce_node","children", \
-          "children_hist","children_num","children_states","condorId","condor_jdl", \
-          "cpuTime","destination", "done_code","exit_code","expectFrom", \
-          "expectUpdate","globusId","jdl","jobId","jobtype", \
-          "lastUpdateTime","localId","location", "matched_jdl","network_server", \
-          "owner","parent_job", "reason","resubmitted","rsl","seed",\
-          "stateEnterTime","stateEnterTimes","subjob_failed", \
-          "user tags" , "status" , "status_code","hierarchy"]
-        self.hstates = {}
-        for key in self.states:
-            self.hstates[key]=''
-
         return
 
     def run(self):
@@ -50,72 +30,78 @@ class StatusBoss(Actor):
 
     def splitbyoffset_(self,line,fields):
         ret_val=[]
-        nn=fields.split(',')
-        nfields=int(nn[0])
-        nn[0]=0
+        nn=fields.split()
         offs=0
-        for i in range(1,nfields+1):
-            offs = offs+int(nn[i-1])
-            ret_val.append(line[offs:offs+int(nn[i])-1])
+        for i in range(len(nn)):
+            ret_val.append(line[offs:offs+int(nn[i])])
+            offs = offs+int(nn[i])+2
         return ret_val
 
     def compute(self):
         """
         compute the status
         """
-#        dir = string.split(common.work_space.topDir(), '/')
-#        group = dir[len(dir)-2]
-        group = self.cfg_params['taskId']
-        cmd = 'boss RTupdate -jobid all '
+        cmd = 'boss RTupdate -taskid '+common.jobDB.bossTASKid("0")
         runBossCommand(cmd)
         add2tablelist=''
         addjoincondition = ''
         nodeattr='JOB.E_HOST'
-        cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.JOBID"' #INTERNAL_ID" '
-        #print "#####################################################" 
-        #print "cmd = ", cmd 
+
+        ##BOSS4
+        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+common.jobDB.bossTASKid("0")+'\' ORDER BY crabjob.CHAIN_ID"' 
+
+        #cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.JOBID"' #INTERNAL_ID" '
+
         cmd_out = runBossCommand(cmd)
-        #print "cmd_out = ", cmd_out
-        #print "#####################################################" 
         jobAttributes={}
         CoupJobsID={}
         nline=0
         header=''
         fielddesc=()
         for line in cmd_out.splitlines():
-            if nline==0:
+            if nline==1:
                 fielddesc=line
             else:
-                if nline==1:
+                if nline==2:
                     header = self.splitbyoffset_(line,fielddesc)
-                else:
+                elif nline > 2:
                     js = line.split(None,2)
                     jobAttributes[int(js[0])]=self.splitbyoffset_(line,fielddesc)
-                    CoupJobsID[int(js[1])]=int(js[0])
+                    CoupJobsID[int(js[0])]=int(js[0])
             nline = nline+1
+
         printline = ''
-        printline+=header[1]
+        printline+=header[0]
         printline+='   STATUS          E_HOST            EXE_EXIT_CODE        JOB_EXIT_STATUS'
         print printline
         for_summary = []
         orderdBossID = CoupJobsID.values()
-        #orderdBossID.sort()
         for bossid in orderdBossID:
             printline=''
-            jobStatus = common.scheduler.queryStatus(bossid)
+            jobStatus=''
+            jobStatus = common.scheduler.queryStatus(common.jobDB.bossTASKid("0"),bossid)
             for_summary.append(jobStatus)
-            exe_code =jobAttributes[bossid][3]
+            #exe_code =jobAttributes[bossid][3]
+            exe_code =jobAttributes[bossid][2]   ##BOSS4 EXE_EXIT_CODE
+   
+        ###########------> This info must be come from BOSS4      DS.
+        ###########------> For the moment BOSS know only WN, but then it will know also CE   DS.
             try:
-                ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2]))
+                #ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2]))
+                ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][1]))  ##BOSS4 SCHED_ID 
                 if ( ldest.find(":") != -1 ) :
                     dest = ldest.split(":")[0]
                 else :
                     dest = ''
             except: 
                 dest = ''  
-                pass 
-            job_exit_status = jobAttributes[bossid][5]
-            printline+=jobAttributes[bossid][1]
+                pass
+            ############# -----> For the moment is WN but it will became CE....    DS.
+##            dest =  jobAttributes[bossid][3]
+ 
+            #job_exit_status = jobAttributes[bossid][5]
+            job_exit_status = jobAttributes[bossid][4]   ##BOSS4 JOB_EXIT_STATUS
+            printline+=jobAttributes[bossid][0]   ##BOSS4 CHAIN_ID
             
             if jobStatus == 'Done (Success)' or jobStatus == 'Cleared(BOSS)':
                 printline+=' '+jobStatus+'   '+dest+'      '+exe_code+'       '+job_exit_status
@@ -124,24 +110,16 @@ class StatusBoss(Actor):
             resFlag = 0
             if jobStatus != 'Created(BOSS)'  and jobStatus != 'Unknown(BOSS)':
                 jid1 = string.strip(jobAttributes[bossid][2])
-                if jobStatus == 'Aborted':
-                    Statistic.Monitor('checkstatus',resFlag,jid1,'abort')
-                else:
-                    Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
+        ##########--------> for the moment this is out, when BOSS will know also the ce we reimplement it  DS. 
+   ##             if jobStatus == 'Aborted':
+   ##                 Statistic.Monitor('checkstatus',resFlag,jid1,'abort')
+   ##             else:
+   ##                 Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
 
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
-                    jobId = ''
-                    if common.scheduler.boss_scheduler_name == 'condor_g':
-                        # create hash of cfg file
-                        hash = makeCksum(common.work_space.cfgFileName())
-                        jobId = str(bossid) + '_' + hash + '_' + string.strip(jobAttributes[bossid][2])
-                        common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
-                    else:
-                        jobId = str(bossid) + '_' + string.strip(jobAttributes[bossid][2])
-                        common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
-                    params = {'taskId': self.cfg_params['taskId'], 'jobId':  jobId, \
+                    params = {'taskId': self.cfg_params['taskId'], 'jobId': str(bossid) + '_' + string.strip(jobAttributes[bossid][2]), \
                     'sid': string.strip(jobAttributes[bossid][2]), 'StatusValueReason': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason'), \
-                    'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'stateEnterTime'), 'StatusDestination': ldest}
+                    'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'stateEnterTime'), 'StatusDestination': dest}
                     self.cfg_params['apmon'].sendToML(params)
             print printline
 
@@ -202,11 +180,11 @@ class StatusBoss(Actor):
             print ''
             tot = int(self.countAbort) + int(self.countCancel) + int(self.countCleared)
             print ">>>>>>>>> %i Jobs killed or Aborted or Cleared" % (tot)
-            print "          You can resubmit them specifying JOB numbers: crab.py -resubmit JOB_number (or range of JOB)" 
+            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number (or range of JOB)" 
             print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
         if (self.countDone != 0):
             print ">>>>>>>>> %i Jobs Done" % (self.countDone)
-            print "          Retrieve them with: crab.py -getoutput to retrieve all" 
+            print "          Retrieve them with: crab -getoutput to retrieve all" 
             print "          or specifying JOB numbers (i.e -getoutput 1-3 => 1 and 2 and 3 or -getoutput 1,3 => 1 and 3)"
             print('\n')  
         pass

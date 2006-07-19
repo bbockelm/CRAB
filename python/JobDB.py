@@ -10,6 +10,7 @@ class dbEntry:
         self.exitStatus = ''    # job exit status
         self.jid = ''           # scheduler job id
         self.bossid = ''        # BOSS job id
+        self.bossTASKid = ''    # BOSS Task Id ---------------->BOSS4
         self.collections = []   # EvCollection to be analyzed in this job
         self.inputSandbox = []  # InputSandbox
         self.outputSandbox = [] # OutputSandbox
@@ -79,6 +80,7 @@ class JobDB:
     def save(self):
         db_file = open(self._dir+self._db_fname, 'w')
         for i in range(len(self._jobs)):
+            db_file.write(self._jobs[i].bossTASKid+';') 
             db_file.write(`(i+1)`+';')
             db_file.write(self._jobs[i].status+';')
             db_file.write(self._jobs[i].exitStatus+';')
@@ -103,7 +105,7 @@ class JobDB:
 
         for line in db_file:
             db_entry = dbEntry()
-            (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, argumentsTMP, rest) = string.split(line, ';')
+            (db_entry.bossTASKid, n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, argumentsTMP, rest) = string.split(line, ';')
             db_entry.collections = string.split(collectionsTMP)
             db_entry.inputSandbox = string.split(inputSandboxTMP)
             db_entry.outputSandbox = string.split(outputSandboxTMP)
@@ -145,6 +147,13 @@ class JobDB:
     def setArguments(self, nj, args):
         self._jobs[int(nj)].arguments = args
         return
+
+    def setBossTaskID(self, nj, bossTaskID):       #Boss4
+        self._jobs[int(nj)].bossTASKid = bossTaskID
+        return
+    def bossTASKid(self,nj):       #Boss4
+        return self._jobs[int(nj)].bossTASKid
+
     
     def arguments(self, nj):
         return self._jobs[int(nj)].arguments

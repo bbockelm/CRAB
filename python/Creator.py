@@ -32,7 +32,7 @@ class Creator(Actor):
         common.logger.debug(5, __name__+": total # of jobs = "+`self.total_njobs`)
 
         # Set number of jobs to be created
-
+        # --------------------------------->  Boss4: changed, "all" by default 
         self.ncjobs = ncjobs
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
@@ -183,7 +183,7 @@ class Creator(Actor):
             os.chmod(common.job_list[nj].scriptFilename(), 0744)
 
             # Create scheduler scripts (jdl)
-            common.scheduler.createSchScript(nj)
+            common.scheduler.createXMLSchScript(nj)
 
             common.jobDB.setStatus(nj, 'C')
             # common: write input and output sandbox
@@ -201,7 +201,8 @@ class Creator(Actor):
 
             njc = njc + 1
             pass
-
+        ### 
+        common.scheduler.declareJob_()   #Add for BOSS4
         ####
 
         common.jobDB.save()
