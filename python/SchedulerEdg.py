@@ -21,7 +21,7 @@ class SchedulerEdg(Scheduler):
         return
 
     def configure(self, cfg_params):
-
+        # test branch
         try:
             RB = cfg_params["EDG.rb"]
             edgConfig = EdgConfig(RB)
