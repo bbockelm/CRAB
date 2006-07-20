@@ -775,9 +775,10 @@ class Cmssw(JobType):
 
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
-                txt += 'if [ -e $RUNTIME_AREA/'+file+' ] ; then\n'
-                txt += '   cp $RUNTIME_AREA/'+file+' .\n'
-                txt += '   chmod +x '+file+'\n'
+                relFile = file.split("/")[-1]
+                txt += 'if [ -e $RUNTIME_AREA/'+relFile+' ] ; then\n'
+                txt += '   cp $RUNTIME_AREA/'+relFile+' .\n'
+                txt += '   chmod +x '+relFile+'\n'
                 txt += 'fi\n'
             pass 
 
