@@ -154,6 +154,12 @@ class SchedulerEdg(Scheduler):
         except:
             self._taskId = ''
 
+        try: self.jobtypeName = cfg_params['CRAB.jobtype']
+        except KeyError: self.jobtypeName = ''
+ 
+        try: self.schedulerName = cfg_params['CRAB.scheduler']
+        except KeyError: self.scheduler = ''
+
         return
     
 
@@ -514,8 +520,8 @@ class SchedulerEdg(Scheduler):
         Check the compatibility of available resources
         """
         self.checkProxy()
-        jdl = common.job_list[nj].jdlFilename()
-        cmd = 'edg-job-list-match ' + self.configOpt_() + jdl 
+        jdl = common.work_space.shareDir()+"fake.jdl"
+        cmd = 'edg-job-list-match ' + self.configOpt_() + str(jdl) 
         cmd_out = runCommand(cmd,0,10)
         if not cmd_out:
             raise CrabException("ERROR: "+cmd+" failed!")
@@ -684,7 +690,86 @@ class SchedulerEdg(Scheduler):
         cmd = 'edg-job-cancel --noint ' + id
         cmd_out = runCommand(cmd)
         return cmd_out
+ 
+    def createFakeJdl(self,nj):  # TMP Just waiting listmatch functionalitly  
+                                  # implementation into BOSS4   Daniele
+        """                          
+        Create a fake jdl considering
+        only requirements  
+        """
+        job = common.job_list[nj]
+        jbt = job.type()
+        inp_storage_subdir = ''
+        
+        
+        SPL = inp_storage_subdir
+        if ( SPL and SPL[-1] != '/' ) : SPL = SPL + '/'
 
+        jdl = open(common.work_space.shareDir()+"fake.jdl","w")
+
+        script = job.scriptFilename()
+        jdl.write('Executable = "' + os.path.basename(script) +'";\n')
+
+        req='Requirements = '
+        noreq=req
+        req = req + jbt.getRequirements()
+        #### and USER REQUIREMENT
+        if self.EDG_requirements:
+            if (req != noreq):
+                req = req +  ' && '
+            req = req + self.EDG_requirements
+        #### FEDE ##### 
+        if self.EDG_ce_white_list:
+            ce_white_list = string.split(self.EDG_ce_white_list,',')
+            #print "req = ", req
+            for i in range(len(ce_white_list)):
+                if i == 0:
+                    if (req != noreq):
+                        req = req +  ' && '
+                    req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    pass
+                else:
+                    req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+            req = req + ')'
+        
+        if self.EDG_ce_black_list:
+            ce_black_list = string.split(self.EDG_ce_black_list,',')
+            for ce in ce_black_list:
+                if (req != noreq):
+                    req = req +  ' && '
+                req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                pass
+
+        ###############
+        clockTime=480
+        if self.EDG_clock_time:
+            clockTime= self.EDG_clock_time
+        if (req != noreq):
+            req = req + ' && '
+        req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+str(clockTime)+'))'
+
+        cpuTime=1000
+        if self.EDG_cpu_time:
+            cpuTime=self.EDG_cpu_time
+        if (req != noreq):
+            req = req + ' && '
+        req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+str(cpuTime)+'))'
+
+        if (req != noreq):
+            req = req + ';\n'
+            jdl.write(req)
+                                                                                                                                                             
+        jdl.write('VirtualOrganisation = "' + self.VO + '";\n')
+
+        if ( self.EDG_retry_count ):               
+            jdl.write('RetryCount = '+self.EDG_retry_count+';\n')
+            pass
+
+        jdl.write('MyProxyServer = "' + self.proxyServer + '";\n')
+
+        jdl.close()
+        return
+         
 
     def createXMLSchScript(self, nj):
         """
@@ -692,13 +777,14 @@ class SchedulerEdg(Scheduler):
         """
         job = common.job_list[nj]
         jbt = job.type()
+ 
         inp_sandbox = jbt.inputSandbox(nj)
         out_sandbox = jbt.outputSandbox(nj)
-        
+  
         title = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
         jt_string = ''
         
-        xml_fname = 'orca.xml'
+        xml_fname = str(self.jobtypeName)+'.xml'
         xml = open(common.work_space.shareDir()+'/'+xml_fname, 'a')
 
         #TaskName   
@@ -785,7 +871,7 @@ class SchedulerEdg(Scheduler):
                 pass
             pass
   
-        xml.write('<chain scheduler="edg">\n')
+        xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
         xml.write(jt_string)
 
         #executable
