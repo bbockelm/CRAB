@@ -36,14 +36,12 @@ class Submitter(Actor):
             common.logger.message("No jobs to be submitted: first create them")
             return
     
-    # TO DO reimplementation for BOSS4    
-
-    ##    firstJob=self.nj_list[0]
-    ##    match = common.scheduler.listMatch(firstJob)
-    ##    if match:
-    ##        common.logger.message("Found "+str(match)+" compatible site(s)")
-    ##    else:
-    ##        raise CrabException("No compatible site found!")
+        firstJob=self.nj_list[0]
+        match = common.scheduler.listMatch(firstJob)
+        if match:
+            common.logger.message("Found "+str(match)+" compatible site(s)")
+        else:
+            raise CrabException("No compatible site found!")
         #########
         # Loop over jobs
         njs = 0

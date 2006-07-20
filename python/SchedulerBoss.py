@@ -275,6 +275,7 @@ class SchedulerBoss(Scheduler):
         Create script_scheduler file (JDL for EDG)
         """
         self.boss_scheduler.createXMLSchScript(nj)
+        self.boss_scheduler.createFakeJdl(nj)   ### TMP Added for the list match with Boss4 
         return
 
     #def declareJob_(self, nj):
@@ -336,12 +337,16 @@ class SchedulerBoss(Scheduler):
         """
         return self.boss_scheduler.loggingInfo(nj) 
 
-    ##########################################  To change for Boss4 DS. 
+    ##########################################   ---- OK for Boss4 ds
     def listMatch(self, nj):
         """
         Check the compatibility of available resources
         """
         return self.boss_scheduler.listMatch(nj)
+    
+    ##########################################   ----  add as workaround for list match with Boss4 ds
+    def createFakeJdl(self,nj):
+        return self.boss_scheduler.createFakeJdl(nj)
     
     ###################### ---- OK for Boss4 ds
     def submit(self, nj):
