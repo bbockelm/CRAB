@@ -106,7 +106,7 @@ class DataDiscovery:
                 parentBlocks = dbs.getDatasetContents (parentPath)
                 self.allblocks.append (parentBlocks.keys ())  # add parent fileblocksinfo
         except DBSError, ex:
-                raise DataDiscoveryError(ex.getErrorMessage())
+            raise DataDiscoveryError(ex.getErrorMessage())
 
 # #################################################
     def checkParentDataTier(self, parents, dataTiers):
