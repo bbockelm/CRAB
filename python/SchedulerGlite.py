@@ -136,8 +136,8 @@ class SchedulerGlite(Scheduler):
         except KeyError: self.EDG_cpu_time = ''
 
 
-        try: self.scheduler = cfg_params['CRAB.scheduler']
-        except KeyError: self.scheduler = ''
+        try: self.schedulerName = cfg_params['CRAB.scheduler']
+        except KeyError: self.schedulerName = ''
 
         try: self.jobtypeName = cfg_params['CRAB.jobtype']
         except KeyError: self.jobtypeName = ''
