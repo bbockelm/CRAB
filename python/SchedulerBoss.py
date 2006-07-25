@@ -32,6 +32,7 @@ class SchedulerBoss(Scheduler):
             msg = msg + " Did you source crab.sh/csh?\n"
             raise CrabException(msg)
 
+
     ###################### ---- OK for Boss4 ds
     def configBossDB_(self):
         """
@@ -286,7 +287,7 @@ class SchedulerBoss(Scheduler):
         """
     #    dirlog = common.work_space.logDir()
     #    scriptName=os.path.basename(common.job_list[nj].scriptFilename())
-        cmd = 'boss declare -xmlfile '+common.work_space.shareDir()+'orca.xml '
+        cmd = 'boss declare -xmlfile '+common.work_space.shareDir()+self.boss_jobtype+'.xml'
       #  cmd = 'boss declare -group '+ self.groupName +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
         msg = 'BOSS declaration:' + cmd
         common.logger.debug(5,msg)
