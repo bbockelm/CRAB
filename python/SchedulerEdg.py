@@ -378,8 +378,8 @@ class SchedulerEdg(Scheduler):
            txt += '    fi \n'
            txt += '    for out_file in $file_list ; do\n'
            txt += '        echo "Trying to copy output file to $SE using lcg-cp"\n'
-           txt += '        echo "lcg-cp --vo $VO -t 1200 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-           txt += '        exitstring=`lcg-cp --vo $VO -t 1200 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+           txt += '        echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+           txt += '        exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
            txt += '        copy_exit_status=$?\n'
            txt += '        echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
            txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
@@ -391,8 +391,8 @@ class SchedulerEdg(Scheduler):
            txt += '            echo "mkdir -p $HOME/.srmconfig"\n'
            txt += '            mkdir -p $HOME/.srmconfig\n'
            txt += '            if [ $middleware == LCG ]; then\n'
-           txt += '               echo "srmcp -retry_num 5 -retry_timeout 240000 file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
-           txt += '               exitstring=`srmcp -retry_num 5 -retry_timeout 240000 file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
+           txt += '               echo "srmcp -retry_num 5 -retry_timeout 480000 file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
+           txt += '               exitstring=`srmcp -retry_num 5 -retry_timeout 480000 file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
            txt += '            elif [ $middleware == OSG ]; then\n'
            txt += '               echo "srmcp -retry_num 5 -retry_timeout 240000 -x509_user_trusted_certificates $OSG_APP/glite/etc/grid-security/certificates file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
            txt += '               exitstring=`srmcp -retry_num 5 -retry_timeout 240000 -x509_user_trusted_certificates $OSG_APP/glite/etc/grid-security/certificates file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
@@ -521,7 +521,7 @@ class SchedulerEdg(Scheduler):
         self.checkProxy()
         jdl = common.job_list[nj].jdlFilename()
         cmd = 'edg-job-list-match ' + self.configOpt_() + jdl 
-        cmd_out = runCommand(cmd,0,10)
+        cmd_out = runCommand(cmd,0,45)
         if not cmd_out:
             raise CrabException("ERROR: "+cmd+" failed!")
 
