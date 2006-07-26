@@ -72,7 +72,9 @@ class DataLocation_EDM:
         #DLS_type="DLS_TYPE_MYSQL"
         DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
-        ## find the replicas for each block 
+        ## find the replicas for each block
+        tryCount = 0
+        failCount = 0
         for fileblocks in self.Listfileblocks:
             countblock=countblock+1
             #dbspath=string.split(afileblock,'#')[0]
@@ -82,13 +84,23 @@ class DataLocation_EDM:
             dls=DLSInfo(DLS_type,self.cfg_params['CRAB.jobtype'])
             try:
                 replicas=dls.getReplicas(fileblocks)
+                tryCount = tryCount + 1
             except DLSNoReplicas, ex:
-                raise DataLocationError(ex.getErrorMessage())
+                #raise DataLocationError(ex.getErrorMessage())
+                msg = "%s      -Proceeding without this file block." % str(ex.getErrorMessage())
+                #print msg
+                common.logger.message(msg)
+                tryCount = tryCount + 1
+                failCount = failCount + 1
             except:
                 raise DataLocationError('')
             
             for replica in replicas:
                 Sites.append(replica)
+
+        if tryCount == failCount:
+            msg = "All data blocks encountered a DLS error.  Quitting."
+            raise DataLocationError(msg)
 
         ## select only sites that contains _all_ the fileblocks
         allblockSites=self.SelectSites(countblock,Sites)
