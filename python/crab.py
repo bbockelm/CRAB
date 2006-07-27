@@ -433,7 +433,10 @@ class Crab:
                 ncjobs = 0
                 if val:
                     if ( isInt(val) ):
-                        ncjobs = int(val)
+                       #-----------------------------> Boss4: Changed the parameter mangement ("All" by default) 
+                       # ncjobs = int(val)
+                        ncjobs = 'all'
+                        print " With BOSS4 cration of 'all' jobs became the default"
                     elif ( val == 'all'):
                         ncjobs = val
                     else:
