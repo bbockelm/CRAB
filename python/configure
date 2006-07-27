@@ -106,7 +106,7 @@ if [ ! -e ~/.bossrc/BossConfig.clad ]; then
   if [ -e ~/BossConfig.clad ]; then
     cp  ~/BossConfig.clad ~/.bossrc/BossConfig.clad
   else
-    echo "User-boss DB not installed: run configureBoss"
+    echo "User-boss DB not installed: run \$CRABDIR/configureBoss"
     return 1
   fi
 fi
@@ -114,7 +114,7 @@ if [ ! -e ~/.bossrc/SQLiteConfig.clad ]; then
   if [ -e ~/SQLiteConfig.clad ]; then
     cp ~/SQLiteConfig.clad ~/.bossrc/SQLiteConfig.clad
   else
-    echo "User-boss DB not installed: run configureBoss"
+    echo "User-boss DB not installed: run \$CRABDIR/configureBoss"
     return 1
   fi
 fi
@@ -122,13 +122,13 @@ if [ ! -e ~/.bossrc/MySQLRTConfig.clad ]; then
   if [ -e ~/MySQLRTConfig.clad ]; then
     cp  ~/MySQLRTConfig.clad  ~/.bossrc/MySQLRTConfig.clad
   else
-    echo "User-boss DB not installed: run configureBoss"
+    echo "User-boss DB not installed: run \$CRABDIR/configureBoss"
     return 1
   fi
 fi
 # now check a boss command to see if boss DB is up and running
 if [ \`boss clientID 1>/dev/null | grep -c "not correctly configured"\` -ne 0 ]; then
-  echo "User-boss DB not installed: run configureBoss"
+  echo "User-boss DB not installed: run \$CRABDIR/configureBoss"
     return 1
 fi
 EOF
@@ -174,7 +174,7 @@ if ( ! -e ~/.bossrc/BossConfig.clad ) then
   if ( -e ~/BossConfig.clad ) then
     cp ~/BossConfig.clad ~/.bossrc/BossConfig.clad
   else
-    echo "User-boss DB not installed: run configureBoss"
+    echo "User-boss DB not installed: run \$CRABDIR/configureBoss"
     exit 1
   endif
 endif
@@ -182,7 +182,7 @@ if ( ! -e ~/.bossrc/SQLiteConfig.clad ) then
   if ( -e ~/SQLiteConfig.clad ) then
     cp ~/SQLiteConfig.clad ~/.bossrc/SQLiteConfig.clad
   else
-    echo "User-boss DB not installed: run configureBoss"
+    echo "User-boss DB not installed: run \$CRABDIR/configureBoss"
     exit 1
   endif
 endif
@@ -190,13 +190,13 @@ if ( ! -e ~/.bossrc/MySQLRTConfig.clad ) then
   if ( -e ~/MySQLRTConfig.clad ) then
     cp ~/MySQLRTConfig.clad  ~/.bossrc/MySQLRTConfig.clad
   else
-    echo "User-boss DB not installed: run configureBoss"
+    echo "User-boss DB not installed: run \$CRABDIR/configureBoss"
     exit 1
   endif
 endif
 # now check a boss command to see if boss DB is up and running
 if ( \`boss clientID |& grep -c "not correctly configured"\` ) then
-  echo "User-boss DB not installed: run configureBoss"
+  echo "User-boss DB not installed: run \$CRABDIR/configureBoss"
   exit 1
 endif
 EOF
