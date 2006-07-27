@@ -430,9 +430,12 @@ class Cmssw(JobType):
             lastFile=i+filesPerJob
             params = self.files[0][i: lastFile]
             for i in range(len(params) - 1):
-                parString += '\\\"' + params[i] + '\\\"\,'
-            
-            parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
+        #        parString += '\\\"' + params[i] + '\\\"\,'
+                 parString += '&quot;' + params[i] + '&quot;\,'
+
+        #    parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
+            parString += '&quot;' + params[len(params) - 1] + '&quot;\\}'
+          
             list_of_lists.append([parString])
             pass
 
@@ -441,9 +444,12 @@ class Cmssw(JobType):
         
         params = self.files[0][lastFile: lastFile+filesLastJob]
         for i in range(len(params) - 1):
-            parString += '\\\"' + params[i] + '\\\"\,'
-        
-        parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
+           # parString += '\\\"' + params[i] + '\\\"\,'
+            parString += '&quot;' + params[i] + '&quot;\,'
+ 
+       
+#        parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
+        parString += '&quot;' + params[len(params) - 1] + '&quot;\\}'
         list_of_lists.append([parString])
         pass
 
@@ -522,10 +528,21 @@ class Cmssw(JobType):
         return
     
     def getJobTypeArguments(self, nj, sched):
-        result = ''
-        for i in common.jobDB.arguments(nj):
-            result=result+str(i)+" "
-        return result
+#        result = ''
+#        for i in common.jobDB.arguments(nj):
+#            result=result+str(i)+" "
+#        return result
+        params = common.jobDB.arguments(nj)
+        #print params
+        parString = "\\{" 
+        
+        for i in range(len(params) - 1):
+#            parString += '\\\"' + params[i] + '\\\"\,'
+            parString += '&quot;' + params[i] + '&quot;\,'
+        
+#        parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
+        parString += '&quot;' + params[len(params) - 1] + '&quot;\\}'
+        return parString
   
     def numberOfJobs(self):
         # Fabio
