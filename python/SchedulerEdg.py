@@ -912,8 +912,8 @@ class SchedulerEdg(Scheduler):
         inp_box = inp_box + ' "\n'
         xml.write(inp_box)
 
-        xml.write('stderr="' + job.stdout() + '"\n')
-        xml.write('stdout="' + job.stderr() + '"\n')
+        xml.write('stderr="' + job.stderr() + '"\n')
+        xml.write('stdout="' + job.stdout() + '"\n')
         
         
         if job.stdout() == job.stderr():
