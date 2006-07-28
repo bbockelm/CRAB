@@ -760,11 +760,13 @@ class Cmssw(JobType):
             txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
         else:  # pythia like job
             if (self.sourceSeed):
-                txt += 'Seed=$2\n'
+#                txt += 'Seed=$2\n'
+                txt += 'Seed=${args[1]}\n'
                 txt += 'echo "Seed: <$Seed>"\n'
                 txt += 'sed "s#\<INPUT\>#$Seed#" $RUNTIME_AREA/'+pset+' > tmp.cfg\n'
                 if (self.sourceSeedVtx):
-                    txt += 'VtxSeed=$3\n'
+#                    txt += 'VtxSeed=$3\n'
+                    txt += 'VtxSeed=${args[2]}\n'
                     txt += 'echo "VtxSeed: <$VtxSeed>"\n'
                     txt += 'sed "s#INPUTVTX#$VtxSeed#" tmp.cfg > pset.cfg\n'
                 else:

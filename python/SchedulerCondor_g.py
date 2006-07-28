@@ -269,7 +269,8 @@ class SchedulerCondor_g(Scheduler):
               txt += 'echo "SE_PATH = $SE_PATH"\n'
                                                                                                                                                              
         txt += 'export VO='+self.VO+'\n'
-        txt += 'CE=$4\n'
+#        txt += 'CE=$4\n'
+        txt += 'CE=${args[3]}
         txt += 'echo "CE = $CE"\n'
         return txt
 
