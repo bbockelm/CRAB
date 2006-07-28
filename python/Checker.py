@@ -26,6 +26,7 @@ class Checker(Actor):
                 number=' '
             if match : number= str(match)
             common.logger.message("Job #"+str(nj+1)+" does "+flag+" matches " + number + " sites")
-            pass
+            break
+            #pass
 
         return
