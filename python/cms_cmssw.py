@@ -720,8 +720,9 @@ class Cmssw(JobType):
         txt += "\n"
         txt += "## number of arguments (first argument always jobnumber)\n"
         txt += "\n"
-        txt += "narg=$#\n"
-        txt += "if [ $narg -lt 2 ]\n"
+#        txt += "narg=$#\n"
+# Malina fix
+        txt += "if [ $nargs -lt 2 ]\n"
         txt += "then\n"
         txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$narg+ \n"
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
@@ -754,7 +755,8 @@ class Cmssw(JobType):
         pset = os.path.basename(job.configFilename())
         txt += '\n'
         if (self.datasetPath): # standard job
-            txt += 'InputFiles=$2\n'
+            #txt += 'InputFiles=$2\n'
+            txt += 'InputFiles=${args[1]}\n'
             txt += 'echo "Inputfiles:<$InputFiles>"\n'
             txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
         else:  # pythia like job

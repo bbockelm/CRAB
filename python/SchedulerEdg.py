@@ -181,8 +181,14 @@ class SchedulerEdg(Scheduler):
         Returns part of a job script which does scheduler-specific work.
         """
         txt = ''
+        txt += '# strip arguments\n'
+        txt += 'echo "strip arguments"\n'
+        txt += 'args=("$@")\n'
+        txt += 'nargs=$#\n'
+        txt += 'shift $nargs\n'
         txt += "# job number (first parameter for job wrapper)\n"
-        txt += "NJob=$1\n"
+        #txt += "NJob=$1\n"
+        txt += "NJob=${args[0]}\n"
 
         txt += '# job identification to DashBoard \n'
         txt += 'MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`\n'
