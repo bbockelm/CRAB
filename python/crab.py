@@ -562,7 +562,7 @@ class Crab:
                     if val: 
                         if val =='all':
                             allBoss_id = common.scheduler.listBoss()
-                            jobs = allBoss_id.keys()
+                            jobs = allBoss_id
                         else:
                             jobs = self.parseRange_(val)
                         common.scheduler.cancel(jobs)
@@ -592,7 +592,7 @@ class Crab:
                 if ( self.flag_useboss == 1 ):
                     if val=='all' or val==None or val=='':
                         allBoss_id = common.scheduler.listBoss()
-                        jobs = allBoss_id.keys()
+                        jobs = allBoss_id
                     else:
                         jobs = self.parseRange_(val)
                     common.scheduler.getOutput(jobs) 
@@ -657,7 +657,7 @@ class Crab:
                 if ( self.flag_useboss == 1 ):
                     if val=='all' or val==None or val=='':
                         allBoss_id = common.scheduler.listBoss()
-                        jobs = allBoss_id.keys()
+                        jobs = allBoss_id
                     else:
                         jobs = self.parseRange_(val)
                 else:
@@ -669,7 +669,7 @@ class Crab:
 
                     ### as before, create a Resubmittter Class
                     allBoss_id = common.scheduler.listBoss()
-                    maxIndex = allBoss_id.keys()
+                    maxIndex = allBoss_id
                     nj_list = []
                     for nj in jobs:
                         if int(nj) <= int(len(maxIndex)) :
@@ -696,7 +696,7 @@ class Crab:
                          pass
 
                     if len(nj_list) != 0:
-                        common.scheduler.resubmit(nj_list)
+                    #    common.scheduler.resubmit(nj_list)
                         # Instantiate Submitter object
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
 
@@ -766,7 +766,7 @@ class Crab:
                         pass
                                                                                                                                                              
                     if len(nj_list) != 0:
-                        common.scheduler.resubmit(nj_list)
+                     #   common.scheduler.resubmit(nj_list)
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
                         pass
                         pass
