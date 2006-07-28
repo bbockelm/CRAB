@@ -721,10 +721,9 @@ class Cmssw(JobType):
         txt += "## number of arguments (first argument always jobnumber)\n"
         txt += "\n"
 #        txt += "narg=$#\n"
-# Malina fix
         txt += "if [ $nargs -lt 2 ]\n"
         txt += "then\n"
-        txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$narg+ \n"
+        txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$nargs+ \n"
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
         txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'

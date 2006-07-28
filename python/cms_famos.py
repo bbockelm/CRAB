@@ -421,14 +421,17 @@ class Famos(JobType):
 
         # Handle the arguments:
         txt += "\n"
-        txt += "## ARGUMENTS: $1 Job Number\n"
-        txt += "## ARGUMENTS: $2 First Event for this job\n"
-        txt += "## ARGUMENTS: $3 Max Event for this job\n"
+#        txt += "## ARGUMENTS: $1 Job Number\n"
+#        txt += "## ARGUMENTS: $2 First Event for this job\n"
+#        txt += "## ARGUMENTS: $3 Max Event for this job\n"
+        txt += "## ARGUMENTS: ${args[0]} Job Number\n"
+        txt += "## ARGUMENTS: ${args[1]} First Event for this job\n"
+        txt += "## ARGUMENTS: ${args[2]} Max Event for this job\n"
         txt += "\n"
-        txt += "narg=$#\n"
-        txt += "if [ $narg -lt 3 ]\n"
+#        txt += "narg=$#\n"
+        txt += "if [ $nargs -lt 3 ]\n"
         txt += "then\n"
-        txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$narg+ \n"
+        txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$nargs+ \n"
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
         txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
@@ -438,9 +441,12 @@ class Famos(JobType):
         txt += "    exit 1\n"
         txt += "fi\n"
         txt += "\n"
-        txt += "NJob=$1\n"
-        txt += "FirstEvent=0\n"
-        txt += "MaxEvents=$3\n"
+#        txt += "NJob=$1\n"
+#        txt += "FirstEvent=0\n"
+#        txt += "MaxEvents=$3\n"
+        txt += "NJob=${args[0]}\n"
+        txt += "FirstEvent=${args[1]}\n"
+        txt += "MaxEvents=${args[2]}\n"
 
 #        if int(self.copy_input_data) == 1:
 

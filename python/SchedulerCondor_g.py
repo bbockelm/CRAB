@@ -206,8 +206,14 @@ class SchedulerCondor_g(Scheduler):
         txt = ''
 
         txt = ''
+        txt += '# strip arguments\n'
+        txt += 'echo "strip arguments"\n'
+        txt += 'args=("$@")\n'
+        txt += 'nargs=$#\n'
+        txt += 'shift $nargs\n'
         txt += "# job number (first parameter for job wrapper)\n"
-        txt += "NJob=$1\n"
+        #txt += "NJob=$1\n"
+        txt += "NJob=${args[0]}\n"
 
         # create hash of cfg file
         hash = makeCksum(common.work_space.cfgFileName())
