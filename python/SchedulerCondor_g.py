@@ -299,8 +299,12 @@ class SchedulerCondor_g(Scheduler):
            txt += '    echo "export X509_CERT_DIR=$X509_CERT_DIR"\n'
            txt += '    for out_file in $file_list ; do\n'
            txt += '        echo "Trying to copy output file to $SE using lcg-cp"\n'
-           txt += '        echo "lcg-cp --vo $VO --verbose -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-           txt += '        exitstring=`lcg-cp --vo $VO --verbose -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+           if common.logger.debugLevel() >= 5:
+               txt += '        echo "lcg-cp --vo $VO --verbose -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+               txt += '        exitstring=`lcg-cp --vo $VO --verbose -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+           else:
+               txt += '        echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+               txt += '        exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n' 
            txt += '        copy_exit_status=$?\n'
            txt += '        echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
            txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
@@ -308,6 +312,7 @@ class SchedulerCondor_g(Scheduler):
            txt += '            echo "Possible problem with SE = $SE"\n'
            txt += '            echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '            echo "lcg-cp failed.  For verbose lcg-cp output, use command line option -debug 5."\n'
            txt += '            echo "lcg-cp failed, attempting srmcp"\n'
            txt += '            echo "mkdir -p $HOME/.srmconfig"\n'
            txt += '            mkdir -p $HOME/.srmconfig\n'
