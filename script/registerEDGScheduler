@@ -1,4 +1,4 @@
 #!/bin/sh
 
-bossAdmin registerScheduler -name edg -submit $CRABSCRIPT/script/dg_submit.pl -query $CRABSCRIPT/script/dg_query.py -kill $CRABSCRIPT/script/dg_kill.pl -getout $CRABSCRIPT/script/dg_getout.pl -job_id_env_var EDG_WL_JOBID -schema $CRABSCRIPT/script/lb.schema
+bossAdmin registerScheduler -name edg -submit $CRABSCRIPT/dg_submit.pl -query $CRABSCRIPT/dg_query.py -kill $CRABSCRIPT/dg_kill.pl -getout $CRABSCRIPT/dg_getout.pl -job_id_env_var EDG_WL_JOBID -schema $CRABSCRIPT/lb.schema
 

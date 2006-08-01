@@ -28,7 +28,6 @@ function configureBoss {
 cd Boss
 echo "unpacking BOSS distribution ${BOSSVER}"
 tar xzf boss-v${BOSSVER}-bin.tar.gz
-#cd boss-v${BOSSVER}
 cd BOSS
 
 echo "Creating Env. files"
@@ -70,14 +69,14 @@ cat > crab.sh <<EOF
 #! /bin/sh
 # CRAB related Stuff
 export CRABDIR=$TopDir
-export CRABSCRIPT=\${CRABDIR}
+export CRABSCRIPT=\${CRABDIR}/script
 
 CRABPATH=\${CRABDIR}/python
-CRABDLSAPIPATH=$TopDir/DLSAPI
+CRABDLSAPIPATH=\${CRABDIR}/DLSAPI
 export CRABPYTHON=\${CRABDIR}/python
-export CRABDBSAPIPYTHON=$TopDir/DBSAPI
-export CRABDLSAPIPYTHON=$TopDir/DLSAPI
-export CRABPSETPYTHON=$TopDir/PsetCode
+export CRABDBSAPIPYTHON=\${CRABDIR}/DBSAPI
+export CRABDLSAPIPYTHON=\${CRABDIR}/DLSAPI
+export CRABPSETPYTHON=\${CRABDIR}/PsetCode
 
 if [ -z "\$PATH" ]; then
 export PATH=\${CRABPATH}:\${CRABDLSAPIPATH}
@@ -139,14 +138,14 @@ cat > crab.csh <<EOF
 #! /bin/csh
 # CRAB related Stuff
 setenv CRABDIR $TopDir
-setenv CRABSCRIPT \${CRABDIR}
+setenv CRABSCRIPT \${CRABDIR}/script
 
 set CRABPATH=\${CRABDIR}/python
-set CRABDLSAPIPATH=$TopDir/DLSAPI
+set CRABDLSAPIPATH=\${CRABDIR}/DLSAPI
 setenv CRABPYTHON \${CRABDIR}/python
-setenv CRABDBSAPIPYTHON $TopDir/DBSAPI
-setenv CRABDLSAPIPYTHON $TopDir/DLSAPI
-setenv CRABPSETPYTHON $TopDir/PsetCode
+setenv CRABDBSAPIPYTHON \${CRABDIR}/DBSAPI
+setenv CRABDLSAPIPYTHON \${CRABDIR}/DLSAPI
+setenv CRABPSETPYTHON \${CRABDIR}/PsetCode
 
 if ( ! \$?path ) then
 set path=(\${CRABPATH} \${CRABDLSAPIPATH})
@@ -216,5 +215,5 @@ return
 
 configureBoss
 configureCrab
-configureDLSAPI
+#configureDLSAPI
 

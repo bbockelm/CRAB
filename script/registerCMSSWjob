@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bossAdmin registerProgram -name cmssw -schema $CRABSCRIPT/script/orca.schema -post $CRABSCRIPT/script/orca.runtime -runtime $CRABSCRIPT/script/orca.runtime -comment "CMSSW job"
+bossAdmin registerProgram -name cmssw -schema $CRABSCRIPT/orca.schema -post $CRABSCRIPT/orca.runtime -runtime $CRABSCRIPT/orca.runtime -comment "CMSSW job"

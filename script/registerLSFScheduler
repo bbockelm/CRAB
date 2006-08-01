@@ -1,3 +1,3 @@
 #!/bin/sh
 
-boss registerScheduler -name lsf -submit $CRABSCRIPT/script/lsf_submit.pl -query $CRABSCRIPT/script/lsf_query.pl -kill $CRABSCRIPT/script/lsf_kill.pl -getout $CRABSCRIPT/script/lsf_getout.pl -topwdir .
+boss registerScheduler -name lsf -submit $CRABSCRIPT/lsf_submit.pl -query $CRABSCRIPT/lsf_query.pl -kill $CRABSCRIPT/lsf_kill.pl -getout $CRABSCRIPT/lsf_getout.pl -topwdir .

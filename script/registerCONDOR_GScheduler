@@ -1,3 +1,3 @@
 #!/bin/sh
 
-boss registerScheduler -name condor_g -submit $CRABSCRIPT/script/condor_g_submit.pl -query $CRABSCRIPT/script/condor_g_query.py -kill $CRABSCRIPT/script/condor_g_kill.pl -getout $CRABSCRIPT/script/condor_g_getout.pl -topwdir .
+boss registerScheduler -name condor_g -submit $CRABSCRIPT/condor_g_submit.pl -query $CRABSCRIPT/condor_g_query.py -kill $CRABSCRIPT/condor_g_kill.pl -getout $CRABSCRIPT/condor_g_getout.pl -topwdir .

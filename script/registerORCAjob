@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bossAdmin registerProgram -name orca -schema $CRABSCRIPT/script/orca.schema -post $CRABSCRIPT/script/orca.runtime -runtime $CRABSCRIPT/script/orca.runtime -comment "ORCA job"
+bossAdmin registerProgram -name orca -schema $CRABSCRIPT/orca.schema -post $CRABSCRIPT/orca.runtime -runtime $CRABSCRIPT/orca.runtime -comment "ORCA job"

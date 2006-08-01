@@ -27,6 +27,9 @@ class SchedulerBoss(Scheduler):
             raise CrabException(msg)
         try:
             self.boss_dir = os.environ["CRABSCRIPT"]
+            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+            #print "CRABSCRIPT = ", self.boss_dir
+            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
         except:
             msg = "Error: the CRABSCRIPT is not set."
             msg = msg + " Did you source crab.sh/csh?\n"
@@ -108,11 +111,13 @@ class SchedulerBoss(Scheduler):
 
             # Registration of RealTime monitor
             register_script = 'registerMySQLRTmon'
-            register_path = self.boss_dir + '/script/'
+            #register_path = self.boss_dir + '/script/'
+            register_path = self.boss_dir + '/'
             if os.path.exists(register_path+register_script):
                 boss_out = runBossCommand(register_path+register_script,0)
                 if (boss_out==None): raise CrabException('Cannot execute '+register_script+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
+                    print "boss_out = ", boss_out 
                     msg = 'Error: Problem with RealTime monitor registration\n'
                     raise CrabException(msg)
             else:
@@ -212,11 +217,17 @@ class SchedulerBoss(Scheduler):
             msg = msg + 'Starting registration\n'
             common.logger.debug(5,msg)
             # On demand registration of job type
-            register_path = self.boss_dir + '/script/'
-            register_boss_scheduler = './register'+ string.upper(sched_name) + 'Scheduler'
+            #register_path = self.boss_dir + '/script/'
+            register_path = self.boss_dir + '/'
+            #register_boss_scheduler = './register'+ string.upper(sched_name) + 'Scheduler'
+            register_boss_scheduler = 'register'+ string.upper(sched_name) + 'Scheduler'
             if os.path.exists(register_path+register_boss_scheduler):
                
+                #boss_out = runBossCommand(register_path+register_boss_scheduler,0)
                 boss_out = runBossCommand(register_path+register_boss_scheduler,0)
+                #print "###############################"
+                #print "boss_out = ", boss_out
+                #print "###############################"
                 if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
                     msg = 'Error: Problem with scheduler '+sched_name+' registration\n'
@@ -244,10 +255,13 @@ class SchedulerBoss(Scheduler):
             msg =  'Warning:' + jobtype + ' jobtype not registered in BOSS\n'
             msg = msg + 'Starting registration \n'
             common.logger.debug(5,msg)
-            register_path = self.boss_dir + '/script/'
-            register_boss_jobtype= './register' + string.upper(jobtype) + 'job'
+            #register_path = self.boss_dir + '/script/'
+            register_path = self.boss_dir + '/'
+            #register_boss_jobtype= './register' + string.upper(jobtype) + 'job'
+            register_boss_jobtype= 'register' + string.upper(jobtype) + 'job'
             if os.path.exists(register_path+register_boss_jobtype):
-                register_boss_jobtype= './register' + string.upper(jobtype) + 'job'
+                register_boss_jobtype= 'register' + string.upper(jobtype) + 'job'
+                #boss_out = runBossCommand(register_path+register_boss_jobtype,0)
                 boss_out = runBossCommand(register_path+register_boss_jobtype,0)
                 if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
@@ -450,6 +464,8 @@ class SchedulerBoss(Scheduler):
                     if logDir != dir:
                         try:
                             cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo ' +str(logDir)
+                            #cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*.log '+str(dir)+'/Boss* '+str(dir)+'/crab_0_* ' +str(logDir)
+                            print "cmd = ", cmd 
                             cmd_out = runCommand(cmd)
                             msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
                             common.logger.message(msg)
