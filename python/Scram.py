@@ -48,9 +48,7 @@ class Scram:
         elif os.environ.has_key("ORCA_DATA_PATH"): 
             ## Nasty hack to work with ORCA 8.13.3
             tmp = string.split(os.environ["ORCA_DATA_PATH"],":")[1]
-            print tmp
             self.scramArea = string.join(string.split(tmp,"/")[:-2],"/")
-            print self.scramArea
             reVer=re.compile( r'V(\d*)_' )
             if (os.path.exists(self.scramArea+'/config/scram_version')):
                 verFile=open(self.scramArea+'/config/scram_version','r')
