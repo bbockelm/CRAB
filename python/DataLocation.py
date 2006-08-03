@@ -88,6 +88,9 @@ class DataLocation:
                 try:
                     replicas=dls.getReplicas(datablock)
                     tryCount = tryCount + 1
+                    for replica in replicas:
+                        Sites.append(replica)
+
                 except DLSNoReplicas, ex:
                     #raise DataLocationError(ex.getErrorMessage())
                     msg = "%s      -Proceeding without this file block." % str(ex.getErrorMessage())
@@ -96,9 +99,6 @@ class DataLocation:
                     failCount = failCount + 1
                 except:
                     raise DataLocationError('')
-
-                for replica in replicas:
-                    Sites.append(replica)
 
         if tryCount == failCount:
             msg = "All data blocks encountered a DLS error.  Quitting."
