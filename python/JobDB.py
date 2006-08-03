@@ -15,6 +15,7 @@ class dbEntry:
         self.outputSandbox = [] # OutputSandbox
         self.taskId = ''        # Task job belongs to
         self.arguments = []    ### Fabio: abstract job_type parameters
+        self.dest = []          # Destination for this job according to DLS
         return
 
     def __str__(self):
@@ -89,6 +90,7 @@ class JobDB:
             db_file.write(string.join(self._jobs[i].outputSandbox)+';')
             db_file.write(str(self._jobs[i].taskId)+';')
             db_file.write(string.join(self._jobs[i].arguments)+';')
+            db_file.write(string.join(self._jobs[i].dest)+';')
             db_file.write('\n')
             pass
         db_file.close()
@@ -103,11 +105,12 @@ class JobDB:
 
         for line in db_file:
             db_entry = dbEntry()
-            (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, argumentsTMP, rest) = string.split(line, ';')
+            (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, argumentsTMP, destTMP, rest) = string.split(line, ';')
             db_entry.collections = string.split(collectionsTMP)
             db_entry.inputSandbox = string.split(inputSandboxTMP)
             db_entry.outputSandbox = string.split(outputSandboxTMP)
             db_entry.arguments = string.split(argumentsTMP)
+            db_entry.dest = string.split(destTMP)
             self._jobs.append(db_entry)
             pass
         db_file.close()
@@ -172,3 +175,10 @@ class JobDB:
         
     def setTaskId(self, nj, taskId):
         self._jobs[int(nj)].taskId = taskId
+
+    def setDestination(self, nj, args):
+        self._jobs[int(nj)].dest = args
+        return
+    
+    def destination(self, nj):
+        return self._jobs[int(nj)].dest

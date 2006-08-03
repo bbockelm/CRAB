@@ -176,6 +176,7 @@ class Orca_pubdb(JobType):
         for job in range(njobs-1):
             jobParams[job] = [str(firstEvent), str(lastJobsNumberOfEvents)]
             common.jobDB.setArguments(job, jobParams[job])
+            common.jobDB.setDestination(job, self.sites
             firstEvent += self.job_number_of_events
 
         # this is the last job
@@ -200,7 +201,7 @@ class Orca_pubdb(JobType):
         elif sched=="BOSS":
             parString = "" + str(params[0])+' '+str(params[1])
         elif sched=="CONDOR":
-            parString = "" + str(params[0])+' '+str(params[1])+' '+common.analisys_common_info['sites'][0]
+            parString = "" + str(params[0])+' '+str(params[1])+' '+common.jobDB.destination(nj
         else:
             return ""        
         return parString
@@ -740,7 +741,7 @@ class Orca_pubdb(JobType):
             raise CrabException(msg)
 
         common.logger.debug(6, "List of CEs: "+str(ces))
-        common.analisys_common_info['sites'] = ces
+        self.sites = ces
         self.setParam_('TargetCE', ','.join(ces))
 
         return
@@ -847,25 +848,28 @@ class Orca_pubdb(JobType):
             out_box.append(self.numberFile_(out,str(n_out)))
         return out_box
 
-    def getRequirements(self):
+    def getRequirements(self, nj):
         """
         return job requirements to add to jdl files 
         """
         req = ''
-        if common.analisys_common_info['sites']:
-            if common.analisys_common_info['sw_version']:
-                req='Member("VO-cms-' + \
-                     common.analisys_common_info['sw_version'] + \
-                     '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-            if len(common.analisys_common_info['sites'])>0:
-                req = req + ' && ('
-                for i in range(len(common.analisys_common_info['sites'])):
-                    req = req + 'other.GlueCEInfoHostName == "' \
-                         + common.analisys_common_info['sites'][i] + '"'
-                    if ( i < (int(len(common.analisys_common_info['sites']) - 1)) ):
-                        req = req + ' || '
-            req = req + ')'
-        #print "req = ", req 
+
+        if common.analisys_common_info['sw_version']:
+            req='Member("VO-cms-' + \
+                 common.analisys_common_info['sw_version'] + \
+                 '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
+
+        sites = common.jobDB.destination(nj)
+        
+        if len(sites)>0:
+            req = req + ' && ('
+            for site in sites:
+                req = req + 'other.GlueCEInfoHostName == "' + site + '" || '
+                pass
+            # remove last ||
+            req = req[0:-4]
+        req = req + ')'
+
         return req
          
     def numberFile_(self, file, txt):

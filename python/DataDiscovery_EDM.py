@@ -56,13 +56,24 @@ class DataDiscovery_EDM:
         Contact DBS
         """
 
+        ## get DBS URL
+        try:
+            dbs_url=self.cfg_params['CMSSW.dbs_url']
+        except KeyError:
+            # This URL is deprecated and no longer supported by the DBS team
+            dbs_url="http://cmsdoc.cern.ch/cms/aprom/DBS/CGIServer/prodquery"
+            # This URL is supported by the DBS team and is stable
+            #dbs_url="http://cmsdoc.cern.ch/cms/test/aprom/DBS/CGIServer/prodquery"
+            # This URL is used for testing of the most recent changes by the DBS team
+            #dbs_url = "http://cmsdoc.cern.ch/cms/test/aprom/DBS/CGIServer/prodquerytest"
+
         ## get info about the requested dataset
         try:
             dbs_instance=self.cfg_params['CMSSW.dbs_instance']
         except KeyError:
             dbs_instance="MCLocal/Writer"
  
-        dbs = DBSInfo_EDM(dbs_instance)
+        dbs = DBSInfo_EDM(dbs_url, dbs_instance)
         self.datasets = dbs.getMatchingDatasets(self.datasetPath)
         if len(self.datasets) == 0:
             raise DataDiscoveryError("DatasetPath=%s unknown to DBS" %self.datasetPath)
@@ -101,8 +112,7 @@ class DataDiscovery_EDM:
         """
         list the event collections structure by fileblock 
         """
-        print "To be used by a more complex job splitting... TODO later... "
-        print "it requires changes in what's returned by DBSInfo.getDatasetContents and then fetchDBSInfo"
+        return self.evcinfo
 
 # #################################################
     def getFiles(self):

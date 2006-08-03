@@ -540,22 +540,25 @@ class SchedulerCondor_g(Scheduler):
             jdl.write('universe = "globus";\n')
             
             # use gridcat to query site
+            oneSite = common.jobDB.destination(nj)[0]
+            print "SchedulerCondor_g got the first site for this job:\n"
+            print oneSite
             gridcat_service_url = "http://osg-cat.grid.iu.edu/services.php"
             hostSvc = ''
             try:
-                hostSvc = GridCatHostService(gridcat_service_url,common.analisys_common_info['sites'][0])
+                hostSvc = GridCatHostService(gridcat_service_url,oneSite)
             except StandardError, ex:
                 gridcat_service_url = "http://osg-itb.ivdgl.org/gridcat/services.php"
                 try:
-                    hostSvc = GridCatHostService(gridcat_service_url,common.analisys_common_info['sites'][0])
+                    hostSvc = GridCatHostService(gridcat_service_url,oneSite)
                 except StandardError, ex:
-                    print '[Condor-G Scheduler]: selected site: ',common.analisys_common_info['sites'][0],' is not an OSG site!\n'
+                    print '[Condor-G Scheduler]: selected site: ',oneSite,' is not an OSG site!\n'
                     print '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
                     sys.exit(1)
 
             batchsystem = hostSvc.batchSystem()
             if batchsystem <> '' : batchsystem='-'+batchsystem
-            jdl_globusscheduler = 'globusscheduler = "' + common.analisys_common_info['sites'][0] + '/jobmanager' + batchsystem + '";\n'
+            jdl_globusscheduler = 'globusscheduler = "' + oneSite + '/jobmanager' + batchsystem + '";\n'
             jdl.write(jdl_globusscheduler)
             if ( self.EDG_clock_time != '' ) :
                 jdl.write('globusrsl = "(maxWalltime='+self.EDG_clock_time+')";\n')
@@ -634,16 +637,19 @@ class SchedulerCondor_g(Scheduler):
             
             
             # use gridcat to query site
+            oneSite = common.jobDB.destination(nj)[0]
+            print "SchedulerCondor_g got the first site for this job:\n"
+            print oneSite
             gridcat_service_url = "http://osg-cat.grid.iu.edu/services.php"
             hostSvc = ''
             try:
-                hostSvc = GridCatHostService(gridcat_service_url,common.analisys_common_info['sites'][0])
+                hostSvc = GridCatHostService(gridcat_service_url,oneSite)
             except StandardError, ex:
                 gridcat_service_url = "http://osg-itb.ivdgl.org/gridcat/services.php"
                 try:
-                    hostSvc = GridCatHostService(gridcat_service_url,common.analisys_common_info['sites'][0])
+                    hostSvc = GridCatHostService(gridcat_service_url,oneSite)
                 except StandardError, ex:
-                    print '[Condor-G Scheduler]: selected site: ',common.analisys_common_info['sites'][0],' is not an OSG site!\n'
+                    print '[Condor-G Scheduler]: selected site: ',oneSite,' is not an OSG site!\n'
                     print '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
                     sys.exit(1)
 
@@ -653,7 +659,7 @@ class SchedulerCondor_g(Scheduler):
 
                 jdl.write('universe = grid\n')
                 jdl.write('grid_type = gt4\n')
-                jdl_globusscheduler = 'globusscheduler = ' + common.analisys_common_info['sites'][0] + '\n'
+                jdl_globusscheduler = 'globusscheduler = ' + oneSite + '\n'
                 jdl.write(jdl_globusscheduler)
                 jdl_jobmanager = 'jobmanager_type = ' + batchsystem + '\n'
                 jdl.write(jdl_jobmanager)
@@ -664,7 +670,7 @@ class SchedulerCondor_g(Scheduler):
 
                 if batchsystem <> '' : batchsystem='-'+batchsystem
                 jdl.write('universe = globus\n')
-                jdl_globusscheduler = 'globusscheduler = ' + common.analisys_common_info['sites'][0] + '/jobmanager' + batchsystem + '\n'
+                jdl_globusscheduler = 'globusscheduler = ' + oneSite + '/jobmanager' + batchsystem + '\n'
                 jdl.write(jdl_globusscheduler)
                 if ( self.EDG_clock_time != '' ) :
                     jdl.write('globusrsl = (maxWalltime='+self.EDG_clock_time+')\n')
@@ -716,7 +722,7 @@ class SchedulerCondor_g(Scheduler):
 
             firstEvent = common.jobDB.firstEvent(nj)
             maxEvents = common.jobDB.maxEvents(nj)
-            jdl.write('Arguments = ' + str(nj+1)+' '+str(firstEvent)+' '+str(maxEvents)+' '+common.analisys_common_info['sites'][0]+'\n')
+            jdl.write('Arguments = ' + str(nj+1)+' '+str(firstEvent)+' '+str(maxEvents)+' '+oneSite+'\n')
             # arguments for Boss
             jdl.write('Output = ' + common.work_space.resDir() + '/' + job.stdout() + '\n')
             jdl.write('stream_output = false\n')

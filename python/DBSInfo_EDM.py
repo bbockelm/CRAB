@@ -60,16 +60,17 @@ class DBSInfoError:
 ###############################################################################
 
 class DBSInfo_EDM:
-    def __init__(self, dbs_instance):
+    def __init__(self, dbs_url, dbs_instance):
         """
         Construct api object.
         """
         ## cgi service API
-        DEFAULT_URL = "http://cmsdoc.cern.ch/cms/aprom/DBS/CGIServer/prodquery"
         args = {}
         args['instance']=dbs_instance
 
-        self.api = dbsCgiApi.DbsCgiApi(DEFAULT_URL, args)
+        common.logger.debug(3,"Accessing DBS at: "+dbs_url+" "+dbs_instance)
+
+        self.api = dbsCgiApi.DbsCgiApi(dbs_url, args)
         ## set log level
         # self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_INFO_)
         #self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_QUIET_)
@@ -83,6 +84,8 @@ class DBSInfo_EDM:
         except dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         except dbsCgiApi.DbsCgiToolError , ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        except dbsCgiApi.DbsCgiBadResponse , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
 
         return list
@@ -102,6 +105,7 @@ class DBSInfo_EDM:
         """ Query DBS to get event collections """
         # count events per block
         nevtsbyblock = {}
+        #print "FileBlock :",str(self.api.getDatasetContents (path))
         try:
             for fileBlock in self.api.getDatasetContents (path):
                 ## get the event collections for each block
@@ -109,7 +113,16 @@ class DBSInfo_EDM:
                 for evc in fileBlock.get('eventCollectionList'):
                     nevts = nevts + evc.get('numberOfEvents')
                     common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.get('blockName')))
-                    nevtsbyblock[fileBlock.get('blockName')]=nevts
+                    #print "BlockName ",fileBlock.get('blockName')
+                    ## SL temp hack to get rid of a mismatch between block names as returned by DBS
+                    tmp = string.split(fileBlock.get('blockName'),"/")
+                    if (len(tmp)==4): del tmp[2]
+                    blockName=string.join(tmp,"/")
+                    #print "TMP ",blockName
+                    # end hack
+                    
+                    nevtsbyblock[blockName]=nevts
+                pass
         except dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
 

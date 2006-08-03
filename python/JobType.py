@@ -165,7 +165,7 @@ class JobType:
 
     # marco
 
-    def getRequirements(self):
+    def getRequirements(self, nj):
         msg = 'Internal ERROR. Pure virtual function called:\n'
         msg += self.__class__.__name__+'::executableName() from '+__file__
         raise CrabException(msg)

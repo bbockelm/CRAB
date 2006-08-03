@@ -75,8 +75,6 @@ class DataLocation:
         DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
         ## find the replicas for each block
-        tryCount = 0
-        failCount = 0
         for fileblocks in self.Listfileblocks:
             for afileblock in fileblocks:
                 countblock=countblock+1
@@ -87,22 +85,12 @@ class DataLocation:
                 dls=DLSInfo(DLS_type,self.cfg_params['CRAB.jobtype'])
                 try:
                     replicas=dls.getReplicas(datablock)
-                    tryCount = tryCount + 1
                     for replica in replicas:
                         Sites.append(replica)
-
                 except DLSNoReplicas, ex:
-                    #raise DataLocationError(ex.getErrorMessage())
-                    msg = "%s      -Proceeding without this file block." % str(ex.getErrorMessage())
-                    common.logger.message(msg)
-                    tryCount = tryCount + 1
-                    failCount = failCount + 1
+                    raise DataLocationError(ex.getErrorMessage())
                 except:
                     raise DataLocationError('')
-
-        if tryCount == failCount:
-            msg = "All data blocks encountered a DLS error.  Quitting."
-            raise DataLocationError(msg)
 
         ## select only sites that contains _all_ the fileblocks
         allblockSites=self.SelectSites(countblock,Sites)

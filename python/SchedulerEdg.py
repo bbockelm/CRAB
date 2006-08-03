@@ -792,7 +792,7 @@ class SchedulerEdg(Scheduler):
 
         req='Requirements = '
         noreq=req
-        req = req + jbt.getRequirements()
+        req = req + jbt.getRequirements(nj)
         #### and USER REQUIREMENT
         if self.EDG_requirements:
             if (req != noreq):

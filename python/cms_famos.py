@@ -692,7 +692,7 @@ class Famos(JobType):
         
         return result
 
-    def getRequirements(self):
+    def getRequirements(self, nj):
         """
        return job requirements to add to jdl files 
         """
