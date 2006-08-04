@@ -36,17 +36,25 @@ class Submitter(Actor):
             common.logger.message("No jobs to be submitted: first create them")
             return
         
-        firstJob=self.nj_list[0]
-        match = common.scheduler.listMatch(firstJob)
-        if match:
-            common.logger.message("Found "+str(match)+" compatible site(s)")
-        else:
-            raise CrabException("No compatible site found!")
+#        firstJob=self.nj_list[0]
+#        match = common.scheduler.listMatch(firstJob)
+        goodJob={}
+        for nj in self.nj_list:
+            match = common.scheduler.listMatch(nj)
+            if match:
+                goodJob[nj]=1
+                common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
+            else:
+                goodJob[nj]=0
+                common.logger.message("No compatible site found, will not submit job "+str(nj+1))
+#                raise CrabException("No compatible site found!")
         #########
         # Loop over jobs
         njs = 0
         try:
             for nj in self.nj_list:
+                if (goodJob[nj] == 0):
+                    continue
                 st = common.jobDB.status(nj)
 #                print "nj = ", nj 
 #                print "st = ", st
