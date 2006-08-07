@@ -425,7 +425,8 @@ class Cmssw(JobType):
         list_of_lists = []
         lastFile=0
         for i in range(0, int(totalFilesToBeUsed), filesPerJob)[:-1]:
-            parString = "\\{" 
+#            parString = "\\{" 
+            parString = "" 
             
             lastFile=i+filesPerJob
             params = self.files[0][i: lastFile]
@@ -434,13 +435,15 @@ class Cmssw(JobType):
                  parString += '&quot;' + params[i] + '&quot;\,'
 
         #    parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
-            parString += '&quot;' + params[len(params) - 1] + '&quot;\\}'
+#            parString += '&quot;' + params[len(params) - 1] + '&quot;\\}'
+            parString += '&quot;' + params[len(params) - 1] 
           
             list_of_lists.append([parString])
             pass
 
         ## last job
-        parString = "\\{" 
+#        parString = "\\{" 
+        parString = "" 
         
         params = self.files[0][lastFile: lastFile+filesLastJob]
         for i in range(len(params) - 1):
@@ -449,7 +452,8 @@ class Cmssw(JobType):
  
        
 #        parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
-        parString += '&quot;' + params[len(params) - 1] + '&quot;\\}'
+#        parString += '&quot;' + params[len(params) - 1] + '&quot;\\}'
+        parString += '&quot;' + params[len(params) - 1] 
         list_of_lists.append([parString])
         pass
 
@@ -538,10 +542,11 @@ class Cmssw(JobType):
         
         for i in range(len(params) - 1):
 #            parString += '\\\"' + params[i] + '\\\"\,'
-            parString += '&quot;' + params[i] + '&quot;\,'
+            parString += params[i] + '\,'
         
 #        parString += '\\\"' + params[len(params) - 1] + '\\\"\\}'
-        parString += '&quot;' + params[len(params) - 1] + '&quot;\\}'
+#        parString += '&quot;' + params[len(params) - 1] + '&quot;\\}'
+        parString += params[len(params) - 1] + '&quot;\\}'
         return parString
   
     def numberOfJobs(self):
