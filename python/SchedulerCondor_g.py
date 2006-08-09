@@ -67,6 +67,13 @@ class SchedulerCondor_g(Scheduler):
         print 'Maximal number of jobs submitted to the grid   : GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE  = ',max_submit
         print 'Maximal number of parallel submits to the grid : GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE = ',max_pending
         print 'Ask the administrator of your local condor installation to increase these variables to enable more jobs to be executed on the grid in parallel.\n'
+
+        # Very bad. Needed to get CE from the SE provided by DLS.
+        # GridCat currently doesn't have the capability to provide this.
+        self.mapSEtoCE = {"cmssrm.hep.wisc.edu":"cmsgrid02.hep.wisc.edu", "dcache.rcac.purdue.edu":"lepton.rcac.purdue.edu", \
+                     "ufdcache.phys.ufl.edu":"ufloridapg.phys.ufl.edu", "thpc-1.unl.edu":"red.unl.edu", \
+                     "cithep59.ultralight.org":"cit-gatekeeper.ultralight.org", "t2data2.t2.ucsd.edu":"osg-gw-2.t2.ucsd.edu", \
+                     "cmssrm.fnal.gov":"cmsosgce.fnal.gov", "se01.cmsaf.mit.edu":"ce01.cmsaf.mit.edu" }
         
         return
 
@@ -270,7 +277,7 @@ class SchedulerCondor_g(Scheduler):
                                                                                                                                                              
         txt += 'export VO='+self.VO+'\n'
 #        txt += 'CE=$4\n'
-        txt += 'CE=${args[3]}
+        txt += 'CE=${args[3]}\n'
         txt += 'echo "CE = $CE"\n'
         return txt
 
@@ -540,9 +547,9 @@ class SchedulerCondor_g(Scheduler):
             jdl.write('universe = "globus";\n')
             
             # use gridcat to query site
-            oneSite = common.jobDB.destination(nj)[0]
-            print "SchedulerCondor_g got the first site for this job:\n"
-            print oneSite
+            seSite = common.jobDB.destination(nj)[0]
+            oneSite = self.mapSEtoCE[seSite]
+            common.logger.message("Job "+str(nj+1)+" will run at ['"+str(oneSite)+"']")
             gridcat_service_url = "http://osg-cat.grid.iu.edu/services.php"
             hostSvc = ''
             try:
@@ -556,7 +563,10 @@ class SchedulerCondor_g(Scheduler):
                     print '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
                     sys.exit(1)
 
-            batchsystem = hostSvc.batchSystem()
+            try:
+                batchsystem = hostSvc.batchSystem()
+            except:
+                raise CrabException("Quitting: unable to find jobmanager for site "+str(oneSite))
             if batchsystem <> '' : batchsystem='-'+batchsystem
             jdl_globusscheduler = 'globusscheduler = "' + oneSite + '/jobmanager' + batchsystem + '";\n'
             jdl.write(jdl_globusscheduler)
