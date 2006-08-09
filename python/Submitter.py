@@ -35,17 +35,6 @@ class Submitter(Actor):
             common.logger.message("No jobs to be submitted: first create them")
             return
         
-#         goodJob={}
-#         for nj in self.nj_list:
-
-
-#             if match:
-#                 goodJob[nj]=1
-#                 common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
-#             else:
-#                 goodJob[nj]=0
-#                 common.logger.message("No compatible site found, will not submit job "+str(nj+1))
-# #                raise CrabException("No compatible site found!")
         #########
         # Loop over jobs
         njs = 0
@@ -61,14 +50,15 @@ class Submitter(Actor):
                     continue
                 # SL perform listmatch only if destination has changed
                 currDest=common.jobDB.destination(nj)
-                match=0
                 if (currDest!=lastDest):
                     match = common.scheduler.listMatch(nj)
                     lastDest = currDest
-                if match:
-                    common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1)+" and those with same requirements")
                 else:
-                    common.logger.message("No compatible site found, will not submit job "+str(nj+1)+" and those with same requirements")
+                    common.logger.message("Sites for job "+str(nj+1)+" the same as previous job")
+                if match:
+                    common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
+                else:
+                    common.logger.message("No compatible site found, will not submit job "+str(nj+1))
                     continue
 
                 common.logger.message("Submitting job # "+`(nj+1)`)
