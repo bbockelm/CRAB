@@ -26,7 +26,6 @@ class Submitter(Actor):
         common.logger.debug(5, "Submitter::run() called")
 
         totalCreatedJobs= 0
-        listCE = ""
         start = time.time()
         for nj in range(common.jobDB.nJobs()):
             if (common.jobDB.status(nj)=='C') or (common.jobDB.status(nj)=='RC'): totalCreatedJobs +=1
@@ -36,32 +35,40 @@ class Submitter(Actor):
             common.logger.message("No jobs to be submitted: first create them")
             return
         
-#        firstJob=self.nj_list[0]
-#        match = common.scheduler.listMatch(firstJob)
-        goodJob={}
-        for nj in self.nj_list:
-            match = common.scheduler.listMatch(nj)
-            if match:
-                goodJob[nj]=1
-                common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
-            else:
-                goodJob[nj]=0
-                common.logger.message("No compatible site found, will not submit job "+str(nj+1))
-#                raise CrabException("No compatible site found!")
+#         goodJob={}
+#         for nj in self.nj_list:
+
+
+#             if match:
+#                 goodJob[nj]=1
+#                 common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
+#             else:
+#                 goodJob[nj]=0
+#                 common.logger.message("No compatible site found, will not submit job "+str(nj+1))
+# #                raise CrabException("No compatible site found!")
         #########
         # Loop over jobs
         njs = 0
         try:
+            lastDest=''
             for nj in self.nj_list:
-                if (goodJob[nj] == 0):
-                    continue
+                # first check that status of the job is suitable for submission
                 st = common.jobDB.status(nj)
-#                print "nj = ", nj 
-#                print "st = ", st
                 if st != 'C' and st != 'K' and st != 'A' and st != 'RC':
                     long_st = crabJobStatusToString(st)
                     msg = "Job # %d not submitted: status %s"%(nj+1, long_st)
                     common.logger.message(msg)
+                    continue
+                # SL perform listmatch only if destination has changed
+                currDest=common.jobDB.destination(nj)
+                match=0
+                if (currDest!=lastDest):
+                    match = common.scheduler.listMatch(nj)
+                    lastDest = currDest
+                if match:
+                    common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1)+" and those with same requirements")
+                else:
+                    common.logger.message("No compatible site found, will not submit job "+str(nj+1)+" and those with same requirements")
                     continue
 
                 common.logger.message("Submitting job # "+`(nj+1)`)
