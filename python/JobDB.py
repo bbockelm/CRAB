@@ -25,8 +25,8 @@ class dbEntry:
         txt += 'Job Id <' + self.jid + '>\n'
         if self.arguments:
             txt += 'Job Type Arguments <' + str(self.arguments) + '>\n'
-        if self.collections:
-            txt += 'Collections <' + str(self.collections) + '>\n'
+        if self.dest:
+            txt += 'Destination <' + str(self.dest) + '>\n'
 
         return txt
 
