@@ -742,7 +742,6 @@ class Orca_pubdb(JobType):
 
         common.logger.debug(6, "List of CEs: "+str(ces))
         self.sites = ces
-        self.setParam_('TargetCE', ','.join(ces))
 
         return
 

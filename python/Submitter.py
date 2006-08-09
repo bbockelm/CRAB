@@ -109,8 +109,12 @@ class Submitter(Actor):
                 #### FF: per il momento commentiamo nevtJob che non c'e' piu' nel jobdb
                 #params = {'nevtJob': nevtJob, 'jobId': jobId, 'sid': self.cfg_params['sid'], \
                 #          'broker': self.cfg_params['rb'], 'bossId': common.jobDB.bossId(nj)}
-                params = {'jobId': jobId, 'sid': self.cfg_params['sid'], \
-                          'broker': self.cfg_params['rb'], 'bossId': common.jobDB.bossId(nj)}
+                params = {'jobId': jobId, \
+                          'sid': self.cfg_params['sid'], \
+                          'broker': self.cfg_params['rb'], \
+                          'bossId': common.jobDB.bossId(nj), \
+                          'TargetCE': string.join((common.jobDB.destination(nj)),",")}
+
                 for i in fl.readlines():
                     val = i.split(':')
                     params[val[0]] = string.strip(val[1])

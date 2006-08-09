@@ -715,21 +715,21 @@ class Orca(JobType):
            self.pubdata.fetchDBSInfo()
 
         except DataDiscovery.NotExistingDatasetError, ex :
-                msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
-                raise CrabException(msg)
+           msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
+           raise CrabException(msg)
 
         except DataDiscovery.NoDataTierinProvenanceError, ex :
-                msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
-                raise CrabException(msg)
+           msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
+           raise CrabException(msg)
         except DataDiscovery.DataDiscoveryError, ex:
-                msg = 'ERROR ***: failed Data Discovery in DBS  %s'%ex.getErrorMessage()
-                raise CrabException(msg)
+           msg = 'ERROR ***: failed Data Discovery in DBS  %s'%ex.getErrorMessage()
+           raise CrabException(msg)
 
         ## get list of all required data in the form of dbs paths  (dbs path = /dataset/datatier/owner)
         self.DBSPaths=self.pubdata.getDBSPaths()
         common.logger.message("Required data are : ")
         for path in self.DBSPaths:
-          common.logger.message(" --> "+path )
+            common.logger.message(" --> "+path )
 
         ## get max number of events
         #common.logger.debug(10,"number of events for primary fileblocks %i"%self.pubdata.getMaxEvents())
@@ -742,11 +742,11 @@ class Orca(JobType):
 
         ## Contact the DLS and build a list of sites hosting the fileblocks
         try:
-          dataloc=DataLocation.DataLocation(self.pubdata.getFileBlocks(),cfg_params)
-          dataloc.fetchDLSInfo()
+              dataloc=DataLocation.DataLocation(self.pubdata.getFileBlocks(),cfg_params)
+              dataloc.fetchDLSInfo()
         except DataLocation.DataLocationError , ex:
-                msg = 'ERROR ***: failes Data Location in DLS \n %s '%ex.getErrorMessage()
-                raise CrabException(msg)
+              msg = 'ERROR ***: failes Data Location in DLS \n %s '%ex.getErrorMessage()
+              raise CrabException(msg)
 
 
         self.sites=dataloc.getSites()
@@ -756,8 +756,6 @@ class Orca(JobType):
             raise CrabException(msg)
         common.logger.message("List of Sites ("+str(len(self.sites))+") hosting the data : "+str(self.sites)) 
         common.logger.debug(6, "List of Sites: "+str(self.sites))
-#        common.analisys_common_info['sites']=sites    ## used in SchedulerEdg.py in createSchScript
-        self.setParam_('TargetCE', ','.join(sites))
 
         return
 

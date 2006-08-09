@@ -276,7 +276,6 @@ class Cmssw(JobType):
 
         common.logger.message("Sites ("+str(len(allSites))+") hosting part/all of dataset: "+str(allSites)) 
         common.logger.debug(6, "List of Sites: "+str(allSites))
-        self.setParam_('TargetCE', ','.join(sites))
         return sites
     
     def jobSplittingByBlocks(self, blockSites):
