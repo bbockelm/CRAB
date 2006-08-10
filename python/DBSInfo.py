@@ -108,7 +108,7 @@ class DBSInfo:
         #return parent
 
 # ####################################
-    def getDatasetContents(self, path):
+    def getEventsPerBlock(self, path):
         """
         query DBS to get event collections
         """

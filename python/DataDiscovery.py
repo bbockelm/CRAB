@@ -74,7 +74,7 @@ class DataDiscovery:
             raise DataDiscoveryError("Owner=%s, Dataset=%s is ambiguous" % (self.owner, self.dataset))
         try:
             self.dbsdataset = self.datasets[0].get('datasetPathName')
-            self.blocksinfo = dbs.getDatasetContents(self.dbsdataset)
+            self.blocksinfo = dbs.getEventsPerBlock(self.dbsdataset)
             self.allblocks.append (self.blocksinfo.keys ()) # add also the current fileblocksinfo
             self.dbspaths.append(self.dbsdataset)
         except DBSError, ex:
@@ -103,7 +103,7 @@ class DataDiscovery:
                 ## fill a list of dbspaths
                 parentPath = p.get('parent').get('datasetPathName')
                 self.dbspaths.append (parentPath)
-                parentBlocks = dbs.getDatasetContents (parentPath)
+                parentBlocks = dbs.getEventsPerBlock(parentPath)
                 self.allblocks.append (parentBlocks.keys ())  # add parent fileblocksinfo
         except DBSError, ex:
             raise DataDiscoveryError(ex.getErrorMessage())
@@ -147,7 +147,7 @@ class DataDiscovery:
         list the event collections structure by fileblock 
         """
         print "To be used by a more complex job splitting... TODO later... "
-        print "it requires changes in what's returned by DBSInfo.getDatasetContents and then fetchDBSInfo"
+        print "it requires changes in what's returned by DBSInfo.getFilesPerBlock and then fetchDBSInfo"
 
 # #################################################
     def getFileBlocks(self):

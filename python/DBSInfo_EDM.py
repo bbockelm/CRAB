@@ -101,35 +101,51 @@ class DBSInfo_EDM:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         return datasetParentList                                                                                                            
 
-    def getDatasetContents(self, path):
+    def getEventsPerBlock(self, path):
         """ Query DBS to get event collections """
         # count events per block
         nevtsbyblock = {}
-        #print "FileBlock :",str(self.api.getDatasetContents (path))
         try:
-            for fileBlock in self.api.getDatasetContents (path):
-                ## get the event collections for each block
-                nevts = 0
-                for evc in fileBlock.get('eventCollectionList'):
-                    nevts = nevts + evc.get('numberOfEvents')
-                    common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.get('blockName')))
-                    #print "BlockName ",fileBlock.get('blockName')
-                    ## SL temp hack to get rid of a mismatch between block names as returned by DBS
-                    tmp = string.split(fileBlock.get('blockName'),"/")
-                    if (len(tmp)==4): del tmp[2]
-                    blockName=string.join(tmp,"/")
-                    #print "TMP ",blockName
-                    # end hack
-                    
-                    nevtsbyblock[blockName]=nevts
-                pass
+            contents = self.api.getDatasetContents(path)
         except dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        for fileBlock in contents:
+            ## get the event collections for each block
+            nevts = 0
+            eventCollectionList = fileBlock.get('eventCollectionList')
+            for evc in eventCollectionList:
+                nevts = nevts + evc.get('numberOfEvents')
+
+            common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.get('blockName')))
+            nevtsbyblock[fileBlock.get('blockName')]=nevts
 
         # returning a map of fileblock-nevts  will be enough for now
         # TODO: in future the EvC collections grouped by fileblock should be returned
         return nevtsbyblock
 
+    def getEventsPerFile(self, path):
+        """ Query DBS to get a dictionary of files:(events/file) """
+        numEventsByFile = {}
+        try:
+            contents = self.api.getDatasetContents(path)
+        except dbsApi.DbsApiException, ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        for fileBlock in contents:
+            numEvents = 0
+            eventCollectionList = fileBlock.get('eventCollectionList')
+            for evc in eventCollectionList:
+                numEvents = evc.get('numberOfEvents')
+                fileList = evc.get('fileList')
+                # As of 2006-08-10, event collections contain only one file
+                # => fileList contains only one dictionary
+                if len(fileList)>1:
+                    msg = "Event collection contains more than one file!  Exiting.\n"
+                    msg = msg + "CRAB and DBS must be upgraded to handle event collections with multiple files.\n"
+                    raise CrabException(msg)
+                fileDict = fileList[0]
+                fileName = fileDict.get('logicalFileName')
+                numEventsByFile[fileName] = numEvents
+        return numEventsByFile
 
     def getDatasetFileBlocks(self, path):
         """ Query DBS to get files/fileblocks """

@@ -249,9 +249,8 @@ class Cmssw(JobType):
         common.logger.message("Required data are :"+self.datasetPath)
 
         self.filesbyblock=self.pubdata.getFiles()
-        self.eventsbyblock=self.pubdata.getEVC()
-        ## SL we probably don't need this
-        self.files = self.filesbyblock.values()
+        self.eventsbyblock=self.pubdata.getEventsPerBlock()
+        self.eventsbyfile=self.pubdata.getEventsPerFile()
 
         ## get max number of events
         self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py 
@@ -355,14 +354,8 @@ class Cmssw(JobType):
             while ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) ):
                 file = files[fileCount]
                 fileCount = fileCount + 1
-                #numEventsInFile = numberEventsInFile(file)
-                # !!!!!!!!!!!!!!!!!           Need to get the # of events in each file.         !!!!!!!!!!!!!!!!!!!!!!!!!
-                # For now, I'm assuming that all files in a block
-                # have the same number of events
-                numEventsInFile = numEventsInBlock/numFilesInBlock
-                common.logger.debug(5,"Estimated # of events in the file: "+str(numEventsInFile))
-                numEventsInFile = int(numEventsInFile)
-                common.logger.debug(5,"After rounding down: "+str(numEventsInFile))
+                numEventsInFile = self.eventsbyfile[file]
+                common.logger.debug(6, "File "+str(file)+" has "+str(numEventsInFile)+" events")
                 # Add file to current job
                 parString += '\\\"' + file + '\\\"\,'
                 jobEventCount = jobEventCount + numEventsInFile
@@ -374,7 +367,7 @@ class Cmssw(JobType):
                     fullString = parString[:-2]
                     fullString += '\\}'
                     list_of_lists.append([fullString])
-                    common.logger.message("Job "+str(jobCount+1)+" can run over approximately "+str(jobEventCount)+" events.")
+                    common.logger.message("Job "+str(jobCount+1)+" can run over "+str(jobEventCount)+" events.")
 
                     #self.jobDestination[jobCount] = blockSites[block]
                     self.jobDestination.append(blockSites[block])
@@ -395,7 +388,7 @@ class Cmssw(JobType):
                 fullString = parString[:-2]
                 fullString += '\\}'
                 list_of_lists.append([fullString])
-                common.logger.message("Job "+str(jobCount+1)+" can run over approximately "+str(jobEventCount)+" events.")
+                common.logger.message("Job "+str(jobCount+1)+" can run over "+str(jobEventCount)+" events.")
                 #self.jobDestination[jobCount] = blockSites[block]
                 self.jobDestination.append(blockSites[block])
                 common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
@@ -406,7 +399,7 @@ class Cmssw(JobType):
         self.total_number_of_jobs = jobCount
         if (eventsRemaining > 0):
             common.logger.message("Could not run on all requested events because some blocks not hosted at allowed sites.")
-        common.logger.message("\n"+str(jobCount)+" job(s) can run on approximately "+str(totalEventCount)+" events.\n")
+        common.logger.message("\n"+str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
         
         self.list_of_args = list_of_lists
         return

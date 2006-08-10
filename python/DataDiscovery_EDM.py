@@ -46,7 +46,8 @@ class DataDiscovery_EDM:
         self.dataTiers = dataTiers
         self.cfg_params = cfg_params
 
-        self.evcinfo = {}  # DBS output: map fileblocks-events for collection
+        self.eventsPerBlock = {}  # DBS output: map fileblocks-events for collection
+        self.eventsPerFile = {}   # DBS output: map files-events
         self.blocksinfo = {}  # DBS output: map fileblocks-files 
 #DBS output: max events computed by method getMaxEvents 
 
@@ -61,9 +62,9 @@ class DataDiscovery_EDM:
             dbs_url=self.cfg_params['CMSSW.dbs_url']
         except KeyError:
             # This URL is deprecated and no longer supported by the DBS team
-            dbs_url="http://cmsdoc.cern.ch/cms/aprom/DBS/CGIServer/prodquery"
-            # This URL is supported by the DBS team and is stable
-            #dbs_url="http://cmsdoc.cern.ch/cms/test/aprom/DBS/CGIServer/prodquery"
+            #dbs_url="http://cmsdoc.cern.ch/cms/aprom/DBS/CGIServer/prodquery"
+            # This URL is supported by the DBS team and is 'stable'
+            dbs_url="http://cmsdoc.cern.ch/cms/test/aprom/DBS/CGIServer/prodquery"
             # This URL is used for testing of the most recent changes by the DBS team
             #dbs_url = "http://cmsdoc.cern.ch/cms/test/aprom/DBS/CGIServer/prodquerytest"
 
@@ -83,12 +84,13 @@ class DataDiscovery_EDM:
         try:
             self.dbsdataset = self.datasets[0].get('datasetPathName')
 
-            self.evcinfo = dbs.getDatasetContents(self.dbsdataset)
+            self.eventsPerBlock = dbs.getEventsPerBlock(self.dbsdataset)
             self.blocksinfo = dbs.getDatasetFileBlocks(self.dbsdataset)
+            self.eventsPerFile = dbs.getEventsPerFile(self.dbsdataset)
         except DBSError, ex:
             raise DataDiscoveryError(ex.getErrorMessage())
         
-        if len(self.evcinfo) <= 0:
+        if len(self.eventsPerBlock) <= 0:
             raise NotExistingDatasetError (("\nNo data for %s in DBS\nPlease check"
                                             + " dataset path variables in crab.cfg")
                                             % self.dbsdataset)
@@ -102,17 +104,24 @@ class DataDiscovery_EDM:
         """
         ## loop over the event collections 
         nevts=0       
-        for evc_evts in self.evcinfo.values():
+        for evc_evts in self.eventsPerBlock.values():
             nevts=nevts+evc_evts
 
         return nevts
 
 # #################################################
-    def getEVC(self):
+    def getEventsPerBlock(self):
         """
         list the event collections structure by fileblock 
         """
-        return self.evcinfo
+        return self.eventsPerBlock
+
+# #################################################
+    def getEventsPerFile(self):
+        """
+        list the event collections structure by file 
+        """
+        return self.eventsPerFile
 
 # #################################################
     def getFiles(self):
