@@ -151,7 +151,11 @@ class DBSInfo_EDM:
         """ Query DBS to get files/fileblocks """
         try:
             FilesbyBlock={}
-            for fileBlock in self.api.getDatasetFileBlocks(path):
+            try:
+                allBlocks = self.api.getDatasetFileBlocks(path)
+            except dbsCgiApi.DbsCgiBadResponse, ex:
+                raise DBSError(ex.getClassName(), ex.getErrorMessage())
+            for fileBlock in allBlocks:
                 blockname=fileBlock.get('blockName')
                 filesinblock=[]
                 for files in fileBlock.get('fileList'):
