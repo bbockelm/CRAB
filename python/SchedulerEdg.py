@@ -37,6 +37,16 @@ class SchedulerEdg(Scheduler):
             self.proxyServer = 'myproxy.cern.ch'
         common.logger.debug(5,'Setting myproxy server to '+self.proxyServer)
 
+        try:
+            self.role = cfg_params["EDG.rb"]
+        except KeyError:
+            self.role = None
+            
+        try:
+            self.role = cfg_params["EDG.role"]
+        except KeyError:
+            self.role = None
+            
         try: self.LCG_version = cfg_params["EDG.lcg_version"]
         except KeyError: self.LCG_version = '2'
 
@@ -878,7 +888,9 @@ class SchedulerEdg(Scheduler):
 
         if mustRenew:
             common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 96h\n")
-            cmd = 'voms-proxy-init -voms cms -valid 96:00'
+            cmd = 'voms-proxy-init -voms '+self.VO+' -valid 96:00'
+            if self.role:
+                cmd = 'voms-proxy-init -voms '+self.VO+':/'+self.VO+'/role='+self.role+' -valid 96:00'
             try:
                 # SL as above: damn it!
                 out = os.system(cmd)
@@ -886,8 +898,6 @@ class SchedulerEdg(Scheduler):
             except:
                 msg = "Unable to create a valid proxy!\n"
                 raise CrabException(msg)
-            # cmd = 'grid-proxy-info -timeleft'
-            # cmd_out = runCommand(cmd,0,20)
             pass
 
         ## now I do have a voms proxy valid, and I check the myproxy server
