@@ -109,6 +109,8 @@ class DBSInfo_EDM:
             contents = self.api.getDatasetContents(path)
         except dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        except dbsCgiApi.DbsCgiBadResponse, ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
         for fileBlock in contents:
             ## get the event collections for each block
             nevts = 0
