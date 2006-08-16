@@ -58,7 +58,9 @@ class DLSNoReplicas(exceptions.Exception):
 ##############################################################################
 
 class DLSInfo:
-    def __init__(self, type, jobtype):
+    def __init__(self, type, cfg_params):
+        self.cfg_params = cfg_params
+        jobtype = self.cfg_params['CRAB.jobtype']
         ##SL I don't like all this hardcoded and jobtype dependent info put here
         if type=="DLS_TYPE_DLI":
             if jobtype.count('orca')>0:
@@ -83,7 +85,13 @@ class DLSInfo:
                 raise CrabException(msg)
 
         elif type=="DLS_TYPE_MYSQL":
-            endpoint="lxgate10.cern.ch:18081"
+            if jobtype.count('orca')>0:
+                endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFCProto"
+            else:  
+                try:
+                    endpoint=self.cfg_params['CMSSW.dls_endpoint']
+                except KeyError:
+                    endpoint="lxgate10.cern.ch:18081"
         else:
             msg = "DLS type %s not among the supported DLS ( DLS_TYPE_DLI and DLS_TYPE_MYSQL ) "%type
             raise CrabException(msg)

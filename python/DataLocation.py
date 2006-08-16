@@ -82,7 +82,7 @@ class DataLocation:
                 (null,ds,tier,ow)=string.split(dbspath,'/')
                 datablock=ow+"/"+ds
                 #
-                dls=DLSInfo(DLS_type,self.cfg_params['CRAB.jobtype'])
+                dls=DLSInfo(DLS_type,self.cfg_params)
                 try:
                     replicas=dls.getReplicas(datablock)
                     for replica in replicas:

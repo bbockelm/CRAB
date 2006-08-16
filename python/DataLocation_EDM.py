@@ -89,7 +89,7 @@ class DataLocation_EDM:
             #(null,ds,tier,ow)=string.split(dbspath,'/')
             #datablock=ow+"/"+ds
             #
-            dls=DLSInfo(DLS_type,self.cfg_params['CRAB.jobtype'])
+            dls=DLSInfo(DLS_type,self.cfg_params)
             try:
                 replicas=dls.getReplicas(fileblocks)
                 common.logger.debug(5,"sites are %s"%replicas)
