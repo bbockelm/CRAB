@@ -101,7 +101,7 @@ class Scanner:
         elif ret >= 0: 
             return ret
         else:
-            print "\n\n"
+            print "\n"
         return -1
 
     def scanGetOutput(self, text, n):
@@ -141,6 +141,7 @@ class Scanner:
 
     def getExtension(self, name):
 
+        e = ""
         l = len(name)
         i = 0
         nP = 0
@@ -197,10 +198,12 @@ class Scanner:
                     if str1[0] == "[" + jobtype + "]" and flag == 0:
                         flag = 1
                 except AttributeError:
-                    print "\n"
-                if str2[0] == "output_file" and flag:
+                    print " "
+                if str2[0] == "output_file" and flag and len(str2) == 3:
                     str2 = line.split(" ", 3)
+                    #print str2
                     extens = self.getExtension(str2[2])
+                    #print extens
                     self.nameOutput = str2[2]
                     break
 
@@ -376,7 +379,7 @@ class Scanner:
         for line in stringa:
             #print "line: ", line
             if ord(line[0]) >= 48 and ord(line[0]) <= 57:
-                print line
+                #print line
                 if int(line) > 180:
                     return line
                 else:
