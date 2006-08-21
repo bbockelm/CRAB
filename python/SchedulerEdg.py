@@ -8,6 +8,7 @@ import common
 import os, sys, time
 
 class SchedulerEdg(Scheduler):
+    #"test crab_boss4_v1"
     def __init__(self):
         Scheduler.__init__(self,"EDG")
         self.states = [ "Acl", "cancelReason", "cancelling","ce_node","children", \
