@@ -53,7 +53,7 @@ class SchedulerCondor_g(Scheduler):
 
         if version_master >= 6 and version_major >= 7 and version_minor >= 11 :
             self.checkCondorVariablePointsToFile('GT2_GAHP')
-        else :
+        elif version_master >=6 and version_major < 8 :
             self.checkCondorVariablePointsToFile('GAHP')
 
         self.checkCondorVariablePointsToFile('GRID_MONITOR')
