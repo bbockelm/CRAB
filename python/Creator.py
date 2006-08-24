@@ -165,7 +165,8 @@ class Creator(Actor):
         script_writer = ScriptWriter('crab_template.sh')
 
         # Loop over jobs
-
+        argsList = ""
+        jobList = ""
         njc = 0
         for nj in range(self.total_njobs):
             if njc == self.ncjobs : break
@@ -183,29 +184,61 @@ class Creator(Actor):
             os.chmod(common.job_list[nj].scriptFilename(), 0744)
 
             # Create scheduler scripts (jdl)
-            common.scheduler.createXMLSchScript(nj)
-
+#            common.scheduler.createXMLSchScript(nj)
+            """
+            INDY
+            EDG andrebbe sostituito con un metodo che ritorni lo scheduler name
+            """
+            argsList += str(nj+1)+' '+ self.job_type.getJobTypeArguments(nj, "EDG") +','
+            
+            """
+            INDY
+            concordo che la jobList e' una porcheria, ma putroppo per il
+            momento non e' possibile espandere gli iteratori ad un numero
+            fissato di cifre. Ne riparliamo.
+            """
+            jobList += '%06d,' % (nj+1)
             common.jobDB.setStatus(nj, 'C')
             # common: write input and output sandbox
             common.jobDB.setInputSandbox(nj, self.job_type.inputSandbox(nj))
 
             outputSandbox=self.job_type.outputSandbox(nj)
-            stdout=common.job_list[nj].stdout()
-            stderr=common.job_list[nj].stderr()
-            outputSandbox.append(common.job_list[nj].stdout())
+            """
+            INDY
+            tutta questa parte di sandbox e stderr/out viene gestita
+            (forse pero non ancora completamente!!!) in createXMLSchScript
+            forse qualcos'altro qui si puo' togliere o spostare
+            """
+#            stdout=common.job_list[nj].stdout()
+#            stderr=common.job_list[nj].stderr()
+#            outputSandbox.append(common.job_list[nj].stdout())
             # check if out!=err
-            if stdout != stderr:
-                outputSandbox.append(common.job_list[nj].stderr())
+#            if stdout != stderr:
+#                outputSandbox.append(common.job_list[nj].stderr())
             common.jobDB.setOutputSandbox(nj, outputSandbox)
             common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
 
             njc = njc + 1
             pass
+#        print common.scheduler.schedulerName          
+        if argsList[-1] == ',' : argsList = argsList[:-1].strip()
+        if jobList[-1] == ',' : jobList = jobList[:-1].strip()
+#        print 'args ',argsList
+#        print 'jobs ',jobList  
+#        print 'total ',self.total_njobs   
+        """
+        INDY
+        come vedi qui ho cambiato il prototipo: lo stile puoi sceglierlo
+        diverso, ma il concetto e' che e' sufficente indicare delle liste
+        o dei range per ridurre le dimensioni del file e aumentare le
+        performance (di CRAB che scrive meno, di BOSS che legge meno)
+        """  
+        common.scheduler.createXMLSchScript(self.total_njobs, argsList, jobList)
         ### 
         common.scheduler.declareJob_()   #Add for BOSS4
         ####
 
-        common.jobDB.save()
+#       common.jobDB.save()
 
         msg = '\nTotal of %d jobs created'%njc
         if njc != self.ncjobs: msg = msg + ' from %d requested'%self.ncjobs
