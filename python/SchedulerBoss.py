@@ -27,9 +27,6 @@ class SchedulerBoss(Scheduler):
             raise CrabException(msg)
         try:
             self.boss_dir = os.environ["CRABSCRIPT"]
-            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-            #print "CRABSCRIPT = ", self.boss_dir
-            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
         except:
             msg = "Error: the CRABSCRIPT is not set."
             msg = msg + " Did you source crab.sh/csh?\n"
@@ -285,11 +282,20 @@ class SchedulerBoss(Scheduler):
         return self.boss_scheduler.wsSetupEnvironment() 
 
     ###################### ---- OK for Boss4 ds
-    def createXMLSchScript(self, nj):
+#    def createXMLSchScript(self, nj):
+    """
+    INDY
+    come vedi qui ho cambiato il prototipo
+    createFakeJdl non dovrebbe aver bisogno di un job number:
+    in effetti usa il jobType, non il job.
+    In poche parole la cosa potrebbe essere piu' diretta
+    """
+    def createXMLSchScript(self, nj, argsList, jobList):
         """
         Create script_scheduler file (JDL for EDG)
         """
-        self.boss_scheduler.createXMLSchScript(nj)
+       # self.boss_scheduler.createXMLSchScript(nj)
+        self.boss_scheduler.createXMLSchScript(nj, argsList, jobList)
         self.boss_scheduler.createFakeJdl(nj)   ### TMP Added for the list match with Boss4 
         return
 
@@ -306,6 +312,7 @@ class SchedulerBoss(Scheduler):
         msg = 'BOSS declaration:' + cmd
         common.logger.debug(5,msg)
         cmd_out = runBossCommand(cmd)
+        print "out della dichiarazione = ", cmd_out
 #  -------------------------------------------------> From Here changed for Boss4
         tasKprefix = 'TASK_ID:'
         tasKindex = string.find(cmd_out, tasKprefix)    
@@ -373,7 +380,7 @@ class SchedulerBoss(Scheduler):
         if self.schclassad != '':
             schcladstring=' -schclassad '+self.schclassad          
         cmd = 'boss submit -taskid  '+common.jobDB.bossTASKid(nj)+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
-    #    cmd = 'boss submit -scheduler '+boss_scheduler_name+schcladstring+' -jobid '+common.jobDB.bossId(nj)
+        #    cmd = 'boss submit -scheduler '+boss_scheduler_name+schcladstring+' -jobid '+common.jobDB.bossId(nj)
         msg = 'BOSS submission: ' + cmd
         common.logger.debug(4,msg)
         cmd_out = runBossCommand(cmd)
@@ -464,8 +471,6 @@ class SchedulerBoss(Scheduler):
                     if logDir != dir:
                         try:
                             cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo ' +str(logDir)
-                            #cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*.log '+str(dir)+'/Boss* '+str(dir)+'/crab_0_* ' +str(logDir)
-                            print "cmd = ", cmd 
                             cmd_out = runCommand(cmd)
                             msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
                             common.logger.message(msg)

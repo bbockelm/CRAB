@@ -697,7 +697,8 @@ class SchedulerEdg(Scheduler):
         Create a fake jdl considering
         only requirements  
         """
-        job = common.job_list[nj]
+        #job = common.job_list[nj]
+        job = common.job_list[0]
         jbt = job.type()
         inp_storage_subdir = ''
         
@@ -771,16 +772,29 @@ class SchedulerEdg(Scheduler):
         return
          
 
-    def createXMLSchScript(self, nj):
+    def createXMLSchScript(self, nj, argsList, jobList):
+   # def createXMLSchScript(self, nj):
         """
         Create a XML-file for BOSS4.
         """
-        job = common.job_list[nj]
+  #      job = common.job_list[nj]
+
+        """
+        INDY
+        [begin] da rivedere:
+        in particolare passerei il jobType ed eliminerei le dipendenze da job
+        """
+        index = nj - 1
+        job = common.job_list[index]
         jbt = job.type()
- 
-        inp_sandbox = jbt.inputSandbox(nj)
-        out_sandbox = jbt.outputSandbox(nj)
-  
+        
+        inp_sandbox = jbt.inputSandbox(index)
+        out_sandbox = jbt.outputSandbox(index)
+        """
+        [end] da rivedere
+        """
+
+        
         title = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
         jt_string = ''
         
@@ -841,40 +855,53 @@ class SchedulerEdg(Scheduler):
             to_write = to_write + 'RetryCount = "'+self.EDG_retry_count+'"\n'
             pass
 
-        to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
-        to_write = to_write + 'VirtualOrganisation = "&quot;' + self.VO + '&quot;"\n'
+        #to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
+        to_write = to_write + 'MyProxyServer = "' + self.proxyServer + '"\n'
+        to_write = to_write + 'VirtualOrganisation = "' + self.VO + '"\n'
 
 
         #TaskName   
         dir = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
 
-        if nj == 0: 
-            xml.write(str(title))
-            xml.write('<task name="' +str(taskName)+'">\n')
-            xml.write(jt_string)
-            #Here it must pass the extra Tags.. (into Task & out of chain)  
-            if (to_writeReq != ''):
-                xml.write('<extraTags>\n')
-                xml.write('<Requirements>\n')
-                xml.write('<![CDATA[\n')
-                xml.write(to_writeReq)
-                xml.write(']]>\n')
-                xml.write('</Requirements>\n')
-                xml.write('</extraTags>\n')
-                pass
 
-            if (to_write != ''):
-                xml.write('<extraTags\n')
-                xml.write(to_write)
-                xml.write('/>\n')
-                pass
+        xml.write(str(title))
+        xml.write('<task name="' +str(taskName)+'">\n')
+        xml.write(jt_string)
+        #Here it must pass the extra Tags.. (into Task & out of chain)  
+        if (to_writeReq != ''):
+            xml.write('<extraTags>\n')
+            xml.write('<Requirements>\n')
+            xml.write('<![CDATA[\n')
+            xml.write(to_writeReq)
+            xml.write(']]>\n')
+            xml.write('</Requirements>\n')
+            xml.write('</extraTags>\n')
             pass
-  
+        
+        if (to_write != ''):
+            xml.write('<extraTags\n')
+            xml.write(to_write)
+            xml.write('/>\n')
+            pass
+
+        xml.write('<iterator>\n')
+        print str(nj) 
+        xml.write('\t<iteratorRule name="ITR1" rule="1:'+ str(nj) + '" />\n')
+        print argsList
+        xml.write('\t<iteratorRule name="ITR2" rule="'+ argsList + '" />\n')
+        print jobList
+        xml.write('\t<iteratorRule name="ITR3" rule="'+ jobList + '" />\n')
+ 
         xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
         xml.write(jt_string)
 
         #executable
+
+        """
+        INDY
+        script dipende dal jobType: dovrebbe essere semplice tirarlo fuori in altro modo
+        """        
         script = job.scriptFilename()
         xml.write('<program exec="' + os.path.basename(script) +'"\n')
         xml.write(jt_string)
@@ -882,7 +909,8 @@ class SchedulerEdg(Scheduler):
            
         ### only one .sh  JDL has arguments:
         ### Fabio
-        xml.write('args = "' + str(nj+1)+' '+ jbt.getJobTypeArguments(nj, "EDG") +'"\n')
+#        xml.write('args = "' + str(nj+1)+' '+ jbt.getJobTypeArguments(nj, "EDG") +'"\n')
+        xml.write('args = "_ITR2_"\n')
         xml.write('program_types="crabjob"\n')
         inp_box = 'infiles="'
         inp_box = inp_box + '' + script + ','
@@ -911,19 +939,20 @@ class SchedulerEdg(Scheduler):
         if inp_box[-1] == ',' : inp_box = inp_box[:-1]
         inp_box = inp_box + ' "\n'
         xml.write(inp_box)
-
-        xml.write('stderr="' + job.stderr() + '"\n')
-        xml.write('stdout="' + job.stdout() + '"\n')
         
+        base = jbt.name()
+        stdout = base + '__ITR3_.stdout'
+        stderr = base + '__ITR3_.stderr'
         
-        if job.stdout() == job.stderr():
-          out_box = 'outfiles="' + \
-                    job.stdout() + ',.BrokerInfo,'
-        else:
-          out_box = 'outfiles="' + \
-                    job.stdout() + ',' + \
-                    job.stderr() + ',.BrokerInfo,'
+        xml.write('stderr="' + stdout + '"\n')
+        xml.write('stdout="' + stderr + '"\n')
+        
 
+        out_box = 'outfiles="' + \
+                  stdout + ',' + \
+                  stderr + ',.BrokerInfo,'
+
+        """
         if int(self.return_data) == 1:
             if out_sandbox != None:
                 for fl in out_sandbox:
@@ -931,20 +960,35 @@ class SchedulerEdg(Scheduler):
                     pass
                 pass
             pass
-                                                                                                                                                             
+        """
+
+        """
+        INDY
+        qualcosa del genere andrebbe fatta per gli infiles
+        """        
+        if int(self.return_data) == 1:
+            for fl in jbt.output_file:
+                out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
+                pass
+            pass
+
         if out_box[-1] == ',' : out_box = out_box[:-1]
         out_box = out_box + '"'
         xml.write(out_box+'\n')
  
         xml.write('group="'+taskName+'"\n')
-        xml.write('BossAttr="[crabjob.INTERNAL_ID=' + str(nj+1) +']"\n')
+       # xml.write('BossAttr="[crabjob.INTERNAL_ID=' + str(nj+1) +']"\n')
+        #xml.write('BossAttr="[crabjob.INTERNAL_ID=_ITR1_]"\n')
+        xml.write('BossAttr="crabjob.INTERNAL_ID=_ITR1_"\n')
 
         
        
         xml.write('/>\n')
         xml.write('</chain>\n')
 
-        if int(nj) == int(common.jobDB.nJobs()-1): xml.write('</task>\n')
+       # if int(nj) == int(common.jobDB.nJobs()-1): xml.write('</task>\n')
+        xml.write('</iterator>\n')
+        xml.write('</task>\n')
 
 
         xml.close()
