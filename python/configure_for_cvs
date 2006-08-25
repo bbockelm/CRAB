@@ -18,7 +18,11 @@ TopDir=`\pwd`
 #############################################
 ######## BOSS CONFIGURATION #################
 #############################################
-BOSSVER=3_6_4
+
+## to change the BOSSVER value with the BOSS version you want to use.
+## Check if the version of BOSS you want to use exists on BOSS homepage ... 
+BOSSVER=4_0_0
+
 BACKEND=SQLite
 
 function configureBoss {
@@ -37,7 +41,9 @@ fi
 
 if [ ! -s ../Boss/boss-v${BOSSVER}-bin.tar.gz ] ;then
    cd ../Boss
-   wget http://boss.bo.infn.it/boss-v${BOSSVER}-bin.tar.gz
+#   WARNING:
+#   wget http://boss.bo.infn.it/boss-v${BOSSVER}-bin.tar.gz
+   cp /afs/cern.ch/user/f/fanzago/public/boss-v${BOSSVER}-bin.tar.gz .
    result=$?
    if [ $result != 0 ] ;then
       echo "problem with boss tgz download"
@@ -87,9 +93,17 @@ ML_URL = "";
 EOF
 
    echo "Setting environment"
-   . bossenv.sh
+   source bossenv.sh
+   which boss
 else
    echo "../Boss/BOSS already exists"
+   which boss
+   result=$?
+   if [ $result != 0 ] ;then
+      source ../Boss/BOSS/bossenv.sh  
+   fi
+   echo "boss: "
+   which boss
 fi
 
 }
@@ -248,6 +262,6 @@ return
 }
 
 configureBoss
-#configureCrab
+configureCrab
 #configureDLSAPI
 
