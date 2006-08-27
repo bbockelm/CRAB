@@ -14,7 +14,7 @@ import Scram
 import os, string, re
 
 class Cmssw(JobType):
-    def __init__(self, cfg_params):
+    def __init__(self, cfg_params, ncjobs):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
 
@@ -22,6 +22,10 @@ class Cmssw(JobType):
         # Marco.
         self._params = {}
         self.cfg_params = cfg_params
+
+        # number of jobs requested to be created, limit ojb splitting
+        self.ncjobs = ncjobs
+
         log = common.logger
         
         self.scram = Scram.Scram(cfg_params)
@@ -204,8 +208,9 @@ class Cmssw(JobType):
         try:
             if (self.datasetPath): # standard job
                 # always process all events in a file
-                self.PsetEdit.maxEvent("-1")
                 self.PsetEdit.inputModule("INPUT")
+                self.PsetEdit.maxEvent("INPUTMAXEVENTS")
+                self.PsetEdit.skipEvent("INPUTSKIPEVENTS")
 
             else:  # pythia like job
                 self.PsetEdit.maxEvent(self.eventsPerJob)
@@ -318,6 +323,12 @@ class Cmssw(JobType):
         if (self.selectNumberOfJobs):
             common.logger.message("May not create the exact number_of_jobs requested.")
 
+        if ( self.ncjobs == 'all' ) :
+            totalNumberOfJobs = 999999999
+        else :
+            totalNumberOfJobs = self.ncjobs
+            
+
         blocks = blockSites.keys()
         blockCount = 0
         # Backup variable in case self.maxEvents counted events in a non-included block
@@ -328,7 +339,7 @@ class Cmssw(JobType):
 
         # ---- Iterate over the blocks in the dataset until ---- #
         # ---- we've met the requested total # of events    ---- #
-        while ( (eventsRemaining > 0) and (blockCount < numBlocksInDataset) ):
+        while ( (eventsRemaining > 0) and (blockCount < numBlocksInDataset) and (jobCount < totalNumberOfJobs)):
             block = blocks[blockCount]
 
 
@@ -347,57 +358,96 @@ class Cmssw(JobType):
 
             # ---- New block => New job ---- #
             parString = "\\{"
-            jobEventCount = 0
+            # counter for number of events in files currently worked on
+            filesEventCount = 0
+            # flag if next while loop should touch new file
+            newFile = 1
+            # job event counter
+            jobSkipEventCount = 0
             
             # ---- Iterate over the files in the block until we've met the requested ---- #
             # ---- total # of events or we've gone over all the files in this block  ---- #
-            while ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) ):
+            while ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) and (jobCount < totalNumberOfJobs) ):
                 file = files[fileCount]
-                fileCount = fileCount + 1
-                numEventsInFile = self.eventsbyfile[file]
-                common.logger.debug(6, "File "+str(file)+" has "+str(numEventsInFile)+" events")
-                # Add file to current job
-                parString += '\\\"' + file + '\\\"\,'
-                jobEventCount = jobEventCount + numEventsInFile
-                totalEventCount = totalEventCount + numEventsInFile
-                eventsRemaining = eventsRemaining - numEventsInFile
-                if (jobEventCount >= eventsPerJobRequested):
-                    # ---- This job has at least CMSSW.events_per_job => End of job ---- #
-                    # Don't need the last \,
+                if newFile :
+                    numEventsInFile = self.eventsbyfile[file]
+                    common.logger.debug(6, "File "+str(file)+" has "+str(numEventsInFile)+" events")
+                    # increase filesEventCount
+                    filesEventCount += numEventsInFile
+                    # Add file to current job
+                    parString += '\\\"' + file + '\\\"\,'
+                    newFile = 0
+
+                # if less events in file remain than eventsPerJobRequested
+                if ( filesEventCount - jobSkipEventCount < eventsPerJobRequested ) :
+                    # if last file in block
+                    if ( fileCount == numFilesInBlock ) :
+                        # end job using last file, use remaining events in block
+                        # close job and touch new file
+                        fullString = parString[:-2]
+                        fullString += '\\}'
+                        list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
+                        common.logger.message("Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
+                        self.jobDestination.append(blockSites[block])
+                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
+                        # reset counter
+                        jobCount = jobCount + 1
+                        totalEventCount = totalEventCount + eventsPerJobRequested
+                        eventsRemaining = eventsRemaining - eventsPerJobRequested
+                        jobSkipEventCount = 0
+                        # reset file
+                        parString = "\\{"
+                        filesEventCount = 0
+                        newFile = 1
+                        fileCount += 1
+                    else :
+                        # go to next file
+                        newFile = 1
+                        fileCount += 1
+                # if events in file equal to eventsPerJobRequested
+                elif ( filesEventCount - jobSkipEventCount == eventsPerJobRequested ) :
+                    # close job and touch new file
                     fullString = parString[:-2]
                     fullString += '\\}'
-                    list_of_lists.append([fullString])
-                    common.logger.message("Job "+str(jobCount+1)+" can run over "+str(jobEventCount)+" events.")
-
-                    #self.jobDestination[jobCount] = blockSites[block]
+                    list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
+                    common.logger.message("Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                     self.jobDestination.append(blockSites[block])
                     common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
-                    if ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) ):
-                        # ---- Still need CMSSW.total_number_of_events ---- #
-                        # ---- and not about to jump into a new block  ---- #
-                        # ---- => New job                              ---- #
-                        parString = "\\{"
-                        jobEventCount = 0
-                        jobCount = jobCount + 1
-                    pass # END if
-                pass # END if
+                    # reset counter
+                    jobCount = jobCount + 1
+                    totalEventCount = totalEventCount + eventsPerJobRequested
+                    eventsRemaining = eventsRemaining - eventsPerJobRequested
+                    jobSkipEventCount = 0
+                    # reset file
+                    parString = "\\{"
+                    filesEventCount = 0
+                    newFile = 1
+                    fileCount += 1
+                    
+                # if more events in file remain than eventsPerJobRequested
+                else :
+                    # close job but don't touch new file
+                    fullString = parString[:-2]
+                    fullString += '\\}'
+                    list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
+                    common.logger.message("Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
+                    self.jobDestination.append(blockSites[block])
+                    common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
+                    # increase counter
+                    jobCount = jobCount + 1
+                    totalEventCount = totalEventCount + eventsPerJobRequested
+                    eventsRemaining = eventsRemaining - eventsPerJobRequested
+                    # calculate skip events for last file
+                    # use filesEventCount (contains several files), jobSkipEventCount and eventsPerJobRequest
+                    jobSkipEventCount = eventsPerJobRequested - (filesEventCount - jobSkipEventCount - self.eventsbyfile[file])
+                    # remove all but the last file
+                    filesEventCount = self.eventsbyfile[file]
+                    parString = "\\{"
+                    parString += '\\\"' + file + '\\\"\,'
             pass # END while (iterate over files in the block)
-            if (jobEventCount < eventsPerJobRequested):
-                # ---- Job ending prematurely due to end of block => End of job ---- #
-                # Don't need the last \,
-                fullString = parString[:-2]
-                fullString += '\\}'
-                list_of_lists.append([fullString])
-                common.logger.message("Job "+str(jobCount+1)+" can run over "+str(jobEventCount)+" events.")
-                #self.jobDestination[jobCount] = blockSites[block]
-                self.jobDestination.append(blockSites[block])
-                common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
-            pass # END if
-            blockCount = blockCount + 1
-            jobCount = jobCount + 1
         pass # END while (iterate over blocks in the dataset)
         self.total_number_of_jobs = jobCount
-        if (eventsRemaining > 0):
+        if (eventsRemaining > 0 and jobCount < totalNumberOfJobs ):
             common.logger.message("Could not run on all requested events because some blocks not hosted at allowed sites.")
         common.logger.message("\n"+str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
         
@@ -678,8 +728,14 @@ class Cmssw(JobType):
         if (self.datasetPath): # standard job
             #txt += 'InputFiles=$2\n'
             txt += 'InputFiles=${args[1]}\n'
+            txt += 'MaxEvents=${args[2]}\n'
+            txt += 'SkipEvents=${args[3]}\n'
             txt += 'echo "Inputfiles:<$InputFiles>"\n'
             txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
+            txt += 'echo "MaxEvents:<$MaxEvents>"\n'
+            txt += 'sed "s#{\'INPUTMAXEVENTS\'}#$MaxEvents#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
+            txt += 'echo "SkipEvents:<$SkipEvents>"\n'
+            txt += 'sed "s#{\'INPUTSKIPEVENTS\'}#$SkipEvents#" $RUNTIME_AREA/'+pset+' > pset.cfg\n'
         else:  # pythia like job
             if (self.sourceSeed):
 #                txt += 'Seed=$2\n'
