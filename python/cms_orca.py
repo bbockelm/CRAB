@@ -14,7 +14,7 @@ import os, string, re
 import math
 
 class Orca(JobType):
-    def __init__(self, cfg_params):
+    def __init__(self, cfg_params, ncjobs):
         JobType.__init__(self, 'ORCA')
         common.logger.debug(3,'ORCA::__init__')
 
@@ -22,6 +22,9 @@ class Orca(JobType):
         # Marco.
         self._params = {}
         self.cfg_params = cfg_params
+
+        # number of jobs requested to be created, limit ojb splitting
+        self.ncjobs = ncjobs
 
         log = common.logger
         

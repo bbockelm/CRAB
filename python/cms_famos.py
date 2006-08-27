@@ -12,7 +12,7 @@ import TarBall
 import os, string, re
 
 class Famos(JobType):
-    def __init__(self, cfg_params):
+    def __init__(self, cfg_params, ncjobs):
         JobType.__init__(self, 'FAMOS')
         common.logger.debug(3,'FAMOS::__init__')
 
@@ -20,6 +20,9 @@ class Famos(JobType):
 
         self._params = {}
         self.cfg_params = cfg_params
+
+        # number of jobs requested to be created, limit ojb splitting
+        self.ncjobs = ncjobs
 
         log = common.logger
         
