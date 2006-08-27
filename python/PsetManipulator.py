@@ -73,6 +73,14 @@ class PsetManipulator:
         inModule.setMaxEvents(maxEv)   ## Add Daniele 
         return
 
+    def skipEvent(self, skipEv):
+        """ """ 
+        # set input module
+        inModule = self.cfg.inputSource
+        inModule.cleanSkipEvent()
+        inModule.setSkipEvents(skipEv)   ## Add Daniele 
+        return
+
     def outputModule(self, output):
 
         #set output module
