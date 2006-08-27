@@ -22,7 +22,7 @@ class Creator(Actor):
         self.first_event = 0
         self.jobParamsList=[]
 
-        self.createJobTypeObject()
+        self.createJobTypeObject(ncjobs)
         common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
 
         self.job_type.prepareSteeringCards()
@@ -132,7 +132,7 @@ class Creator(Actor):
     def nJobs(self):
         return self.total_njobs
     
-    def createJobTypeObject(self):
+    def createJobTypeObject(self,ncjobs):
         file_name = 'cms_'+ string.lower(self.job_type_name)
         klass_name = string.capitalize(self.job_type_name)
 
@@ -147,7 +147,7 @@ class Creator(Actor):
             msg += str(e)
             raise CrabException(msg)
 
-        self.job_type = klass(self.cfg_params)
+        self.job_type = klass(self.cfg_params,ncjobs)
         return
 
     def jobType(self):
