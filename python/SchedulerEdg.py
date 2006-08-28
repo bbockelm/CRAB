@@ -855,9 +855,10 @@ class SchedulerEdg(Scheduler):
             to_write = to_write + 'RetryCount = "'+self.EDG_retry_count+'"\n'
             pass
 
-        #to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
-        to_write = to_write + 'MyProxyServer = "' + self.proxyServer + '"\n'
-        to_write = to_write + 'VirtualOrganisation = "' + self.VO + '"\n'
+        to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
+        #to_write = to_write + 'MyProxyServer = "' + self.proxyServer + '"\n'
+        #to_write = to_write + 'VirtualOrganisation = "' + self.VO + '"\n'
+        to_write = to_write + 'VirtualOrganisation = "&quot;' + self.VO + '&quot;"\n'
 
 
         #TaskName   
