@@ -251,17 +251,39 @@ EOF
 return
 }
 
+function configureDBSAPI {
+cd $TopDir
+cd ..
+if [ -d DBSAPI ] ; then
+    echo "DBSAPI already installed"
+    return
+else 
+    echo "copy DBS API from afs area"
+    cp -r /afs/cern.ch/user/f/fanzago/public/DBSAPI .
+    ls
+    return
+fi
+}
+
 function configureDLSAPI {
 # part for PyXML install
-echo "DLSAPI Installation: begin at `date`"
-cd $TopDir/DLSAPI
-./InstallPyXML.sh
+cd $TopDir
 cd ..
-echo "DLSAPI Installation: end at `date`"
-return
+if [ -d DLSAPI ] ; then
+    echo "DLSAPI already installed"
+    return
+else 
+    cp -r /afs/cern.ch/user/f/fanzago/public/DLSAPI .
+    echo "DLSAPI Installation: begin at `date`"
+    cd DLSAPI
+    ./InstallPyXML.sh
+    echo "DLSAPI Installation: end at `date`"
+    return
+fi
 }
 
 configureBoss
 configureCrab
-#configureDLSAPI
+configureDBSAPI
+configureDLSAPI
 
