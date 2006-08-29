@@ -172,7 +172,7 @@ class Creator(Actor):
             if njc == self.ncjobs : break
             st = common.jobDB.status(nj)
             if st != 'X': continue
-
+            
             common.logger.message("Creating job # "+`(nj+1)`)
 
             # Prepare configuration file
@@ -220,6 +220,8 @@ class Creator(Actor):
 
             njc = njc + 1
             pass
+#        common.jobDB.save()
+
 #        print common.scheduler.schedulerName          
         if argsList[-1] == ',' : argsList = argsList[:-1].strip()
         if jobList[-1] == ',' : jobList = jobList[:-1].strip()
@@ -238,7 +240,7 @@ class Creator(Actor):
         common.scheduler.declareJob_()   #Add for BOSS4
         ####
 
-#       common.jobDB.save()
+        common.jobDB.save()
 
         msg = '\nTotal of %d jobs created'%njc
         if njc != self.ncjobs: msg = msg + ' from %d requested'%self.ncjobs
