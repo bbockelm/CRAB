@@ -856,8 +856,6 @@ class SchedulerEdg(Scheduler):
             pass
 
         to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
-        #to_write = to_write + 'MyProxyServer = "' + self.proxyServer + '"\n'
-        #to_write = to_write + 'VirtualOrganisation = "' + self.VO + '"\n'
         to_write = to_write + 'VirtualOrganisation = "&quot;' + self.VO + '&quot;"\n'
 
 
@@ -945,8 +943,8 @@ class SchedulerEdg(Scheduler):
         stdout = base + '__ITR3_.stdout'
         stderr = base + '__ITR3_.stderr'
         
-        xml.write('stderr="' + stdout + '"\n')
-        xml.write('stdout="' + stderr + '"\n')
+        xml.write('stderr="' + stderr + '"\n')
+        xml.write('stdout="' + stdout + '"\n')
         
 
         out_box = 'outfiles="' + \
