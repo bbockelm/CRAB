@@ -10,7 +10,6 @@ from crab_util import *
 import common
 
 import os, string, math
-# marco
 class Creator(Actor):
     def __init__(self, job_type_name, cfg_params, ncjobs):
         self.job_type_name = job_type_name
@@ -64,7 +63,6 @@ class Creator(Actor):
         fileCODE1.close()
 
         # This is code for dashboard
-          
         #First checkProxy
         common.scheduler.checkProxy()
         try:
@@ -80,7 +78,6 @@ class Creator(Actor):
             for i in jtParam.iterkeys():
                 params[i] = string.strip(jtParam[i])
             for j, k in params.iteritems():
-#                print "Values: %s %s"%(j, k)
                 fl.write(j + ':' + k + '\n')
             fl.close()
         except:
@@ -161,7 +158,6 @@ class Creator(Actor):
         common.logger.debug(5, "Creator::run() called")
 
         # Instantiate ScriptWriter
-
         script_writer = ScriptWriter('crab_template.sh')
 
         # Loop over jobs
@@ -176,21 +172,14 @@ class Creator(Actor):
             common.logger.message("Creating job # "+`(nj+1)`)
 
             # Prepare configuration file
-
             self.job_type.modifySteeringCards(nj)
+
             # Create script (sh)
-            #print "nel for prima del modifyTemplateScript, nj vale", nj
             script_writer.modifyTemplateScript(nj)
             os.chmod(common.job_list[nj].scriptFilename(), 0744)
 
-            # Create scheduler scripts (jdl)
-#            common.scheduler.createXMLSchScript(nj)
-            """
-            INDY
-            EDG andrebbe sostituito con un metodo che ritorni lo scheduler name
-            """
-            argsList += str(nj+1)+' '+ self.job_type.getJobTypeArguments(nj, "EDG") +','
-            
+            # Create XML script and declare related jobs 
+            argsList += str(nj+1)+' '+ self.job_type.getJobTypeArguments(nj, self.cfg_params['CRAB.scheduler']) +','
             """
             INDY
             concordo che la jobList e' una porcheria, ma putroppo per il
@@ -220,14 +209,10 @@ class Creator(Actor):
 
             njc = njc + 1
             pass
-#        common.jobDB.save()
 
-#        print common.scheduler.schedulerName          
         if argsList[-1] == ',' : argsList = argsList[:-1].strip()
         if jobList[-1] == ',' : jobList = jobList[:-1].strip()
-#        print 'args ',argsList
-#        print 'jobs ',jobList  
-#        print 'total ',self.total_njobs   
+
         """
         INDY
         come vedi qui ho cambiato il prototipo: lo stile puoi sceglierlo
@@ -236,12 +221,9 @@ class Creator(Actor):
         performance (di CRAB che scrive meno, di BOSS che legge meno)
         """  
         common.scheduler.createXMLSchScript(self.total_njobs, argsList, jobList)
-        ### 
         common.scheduler.declareJob_()   #Add for BOSS4
-        ####
 
         common.jobDB.save()
-
         msg = '\nTotal of %d jobs created'%njc
         if njc != self.ncjobs: msg = msg + ' from %d requested'%self.ncjobs
         msg = msg + '.\n'
