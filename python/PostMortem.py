@@ -23,8 +23,8 @@ class PostMortem(Actor):
         # run a list-match on first job
         for nj in self.nj_list:
             #nj parte da 1 --> nj = internal_id di boss 
-            if self.flag_useboss == 1 :
-                id = common.scheduler.boss_SID(nj)
+      #      if self.flag_useboss == 1 :
+            id = common.scheduler.boss_SID(nj)
                 #print "id = ", id 
             #else: 
             #    id = common.jobDB.jobId(nj) 
