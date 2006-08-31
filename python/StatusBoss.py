@@ -49,10 +49,15 @@ class StatusBoss(Actor):
 
         ##BOSS4
         cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+common.jobDB.bossTASKid("0")+'\' ORDER BY crabjob.CHAIN_ID"' 
-
-        #cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.JOBID"' #INTERNAL_ID" '
-
         cmd_out = runBossCommand(cmd)
+
+        # debug
+        msg = 'BOSS query in StatusBoss' + cmd
+        common.logger.debug(4,msg)
+        msg = 'BOSS query in StatusBoss output:' + cmd_out
+        common.logger.debug(4,msg)
+        ###
+
         jobAttributes={}
         CoupJobsID={}
         nline=0
@@ -80,14 +85,16 @@ class StatusBoss(Actor):
             printline=''
             jobStatus=''
             jobStatus = common.scheduler.queryStatus(common.jobDB.bossTASKid("0"),bossid)
+            # debug
+            msg = 'jobStatus' + jobStatus
+            common.logger.debug(4,msg)
+            ###
             for_summary.append(jobStatus)
-            #exe_code =jobAttributes[bossid][3]
             exe_code =jobAttributes[bossid][2]   ##BOSS4 EXE_EXIT_CODE
    
         ###########------> This info must be come from BOSS4      DS.
         ###########------> For the moment BOSS know only WN, but then it will know also CE   DS.
             try:
-                #ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][2]))
                 ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][1]))  ##BOSS4 SCHED_ID 
                 if ( ldest.find(":") != -1 ) :
                     dest = ldest.split(":")[0]
@@ -99,7 +106,6 @@ class StatusBoss(Actor):
             ############# -----> For the moment is WN but it will became CE....    DS.
 ##            dest =  jobAttributes[bossid][3]
  
-            #job_exit_status = jobAttributes[bossid][5]
             job_exit_status = jobAttributes[bossid][4]   ##BOSS4 JOB_EXIT_STATUS
             printline+=jobAttributes[bossid][0]   ##BOSS4 CHAIN_ID
             
@@ -158,7 +164,6 @@ class StatusBoss(Actor):
 
         common.jobDB.save()
         common.logger.debug(5,'done loop StatusBoss::report')
-        #job_stat = common.job_list.loadStatus()
  
         self.countToTjob = (len(statusList)) 
         return

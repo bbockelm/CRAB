@@ -294,26 +294,26 @@ class SchedulerBoss(Scheduler):
         """
         Create script_scheduler file (JDL for EDG)
         """
-       # self.boss_scheduler.createXMLSchScript(nj)
         self.boss_scheduler.createXMLSchScript(nj, argsList, jobList)
         self.boss_scheduler.createFakeJdl(nj)   ### TMP Added for the list match with Boss4 
         return
 
-    #def declareJob_(self, nj):
     ###################### ---- OK for Boss4 ds
     def declareJob_(self):                       #Changed For BOSS4
         """
         BOSS declaration of jobs
         """
-    #    dirlog = common.work_space.logDir()
-    #    scriptName=os.path.basename(common.job_list[nj].scriptFilename())
         cmd = 'boss declare -xmlfile '+common.work_space.shareDir()+self.boss_jobtype+'.xml'
-      #  cmd = 'boss declare -group '+ self.groupName +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
-        msg = 'BOSS declaration:' + cmd
-        common.logger.debug(5,msg)
         cmd_out = runBossCommand(cmd)
-        print "out della dichiarazione = ", cmd_out
-#  -------------------------------------------------> From Here changed for Boss4
+
+        # debug
+        msg = 'BOSS declaration:' + cmd
+        common.logger.debug(4,msg)
+        msg = 'BOSS declaration output:' + cmd_out
+        common.logger.debug(4,msg)
+        ###
+
+        #  -------------------------------------------------> From Here changed for Boss4
         tasKprefix = 'TASK_ID:'
         tasKindex = string.find(cmd_out, tasKprefix)    
         if tasKindex < 0 :
@@ -333,17 +333,13 @@ class SchedulerBoss(Scheduler):
             if index < 0 :
                 continue
             else:
-#                index = index + len(prefix)
-#                chain_start = string.strip(line[index:])
                 chain_stop = line[-2:]
                 for nj in range(int(chain_stop)):
-#                    nj = nj + 1
-#                    self.chain_id = string.strip(line[index:])
                     self.chain_id = str(nj + 1)
                     common.jobDB.setBossTaskID(nj,self.Task_id)
-                    common.logger.debug(5,"TASK ID =  "+self.Task_id)
+                    common.logger.debug(4,"TASK ID =  "+self.Task_id)
                     common.jobDB.setBossId(nj, self.chain_id)             
-                    common.logger.debug(5,"CHAIN ID =  "+self.chain_id)
+                    common.logger.debug(4,"CHAIN ID =  "+self.chain_id)
         return 
 
     def checkProxy(self):
@@ -380,10 +376,14 @@ class SchedulerBoss(Scheduler):
         if self.schclassad != '':
             schcladstring=' -schclassad '+self.schclassad          
         cmd = 'boss submit -taskid  '+common.jobDB.bossTASKid(nj)+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
-        #    cmd = 'boss submit -scheduler '+boss_scheduler_name+schcladstring+' -jobid '+common.jobDB.bossId(nj)
+        cmd_out = runBossCommand(cmd)
+
+        # debug
         msg = 'BOSS submission: ' + cmd
         common.logger.debug(4,msg)
-        cmd_out = runBossCommand(cmd)
+        msg = 'BOSS submission output: ' + cmd_out
+        common.logger.debug(4,msg)
+        ###  
 
         if not cmd_out :
             msg = 'ERROR: BOSS submission failed: ' + cmd
@@ -405,12 +405,10 @@ class SchedulerBoss(Scheduler):
         """
         self.current_time = time.strftime('%y%m%d_%H%M%S',time.localtime(time.time()))
         resDir = common.work_space.resDir()
-      #  resDirSave = resDir + self.current_time
         resDirSave = resDir+'res_backup'
         if not os.path.exists(resDirSave):
             os.mkdir(resDirSave)
 
-        #boss_id = self.listBoss()[int(int_id)]
         boss_id = int(int_id) 
         cmd = 'bossAdmin SQL -fieldsLen -query "select CHAIN_OUTFILES from CHAIN where ID='+str(boss_id)+'"'
         cmd_out = runBossCommand(cmd)
@@ -461,13 +459,18 @@ class SchedulerBoss(Scheduler):
             else:
                 dir = self.outDir 
                 logDir = self.logDir
-                boss_id = i_id #allBoss_id[int(i_id)] 
-            #    cmd = 'bossSid '+str(boss_id)
-            #    cmd_out = runCommand(cmd) 
+                boss_id = i_id 
                 if common.scheduler.queryStatus(common.jobDB.bossTASKid("0"),boss_id) == 'Done (Success)' or common.scheduler.queryStatus(common.jobDB.bossTASKid("0"),boss_id) == 'Done (Abort)':   
-                   # cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
                     cmd = 'boss getOutput -taskid  '+common.jobDB.bossTASKid("0")+' -jobid ' +str(boss_id) +' -outdir ' +dir
                     cmd_out = runBossCommand(cmd)
+
+                    # debug
+                    msg = 'BOSS getoutput: ' + cmd
+                    common.logger.debug(4,msg)
+                    msg = 'BOSS getoutput output: ' + cmd_out
+                    common.logger.debug(4,msg)
+                    ###  
+
                     if logDir != dir:
                         try:
                             cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo ' +str(logDir)
@@ -589,24 +592,25 @@ class SchedulerBoss(Scheduler):
             'O?':'Done(BOSS)',
             'R?':'Running(BOSS)'             
             }
-        #cmd = 'boss q -statusOnly -jobid '+str(id)
-        #cmd = 'boss q -statusOnly -taskid '+str(taskid)+' -jobid '+str(id)
-        #print "taskid = ", taskid
-        #print "jobid = ", id
         cmd = 'boss q -taskid '+str(taskid)+' -jobid '+str(id)+' -all' 
         cmd_out = runBossCommand(cmd)
+        # debug
+        msg = 'BOSS status ' + cmd
+        common.logger.debug(4,msg)
+        msg = 'BOSS status output: ' + cmd_out
+        common.logger.debug(4,msg)
+        ###  
         nline=0
         for line in cmd_out.splitlines():
             if nline==1:
                 header = line.split()
-                #print "header =  ", header
-                #print "header[5] = ", header[5]
+                # debug
+                msg = 'header[5] = '+ header[5]
+                msg = msg + 'EDGstatus[header[5]] = ' + EDGstatus[header[5]]  
+                common.logger.debug(4,msg)
+                ### 
                 return EDGstatus[header[5]]
-                #js[0]=header[5]
             nline=nline+1
-        #js = cmd_out.split(None,2)
-        #return EDGstatus[js[1]]
-        #return EDGstatus[js[0]]
     
     ###################### ---- OK for Boss4 ds
     def listBoss(self):
@@ -615,9 +619,13 @@ class SchedulerBoss(Scheduler):
         """
         ListBoss_ID = []
         cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID from JOB where JOB.TASK_ID=\''+common.jobDB.bossTASKid("0")+'\'"'   
-        #cmd = 'boss SQL -query "select crabjob.INTERNAL_ID, JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+self.groupName+'\'"'
-
         cmd_out = runBossCommand(cmd,0)
+        # debug
+        msg = 'BOSS query: ' + cmd
+        common.logger.debug(4,msg)
+        msg = 'BOSS query output: ' + cmd_out
+        common.logger.debug(4,msg)
+        ### 
         nline = 0
         for line in cmd_out.splitlines():
             if nline > 2 :
