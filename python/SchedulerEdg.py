@@ -307,7 +307,6 @@ class SchedulerEdg(Scheduler):
         txt = ''
         try:
             self.copy_input_data = common.analisys_common_info['copy_input_data']
-            #print "self.copy_input_data = ", self.copy_input_data
         except KeyError: self.copy_input_data = 0
         if int(self.copy_input_data) == 1:
         ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
@@ -320,13 +319,9 @@ class SchedulerEdg(Scheduler):
            txt += '   #\n'
            txt += '   #   Copy Input Data from SE to this WN\n'
            txt += '   #\n'
-### changed by georgia (put a loop copying more than one input files per jobs)           
+           ### changed by georgia (put a loop copying more than one input files per jobs)           
            txt += '   for input_file in $cur_file_list \n'
            txt += '   do \n'
-           #### FEDE
-           #txt += '      echo "which lcg-cp" \n'
-           #txt += '      which lcg-cp \n'
-           ######### 
            txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
            txt += '      copy_input_exit_status=$?\n'
            txt += '      echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
@@ -336,13 +331,9 @@ class SchedulerEdg(Scheduler):
            txt += '         echo "input copied into WN" \n'
            txt += '      fi \n'
            txt += '   done \n'
-### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
+           ### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
            txt += '   for file in $cur_pu_list \n'
            txt += '   do \n'
-           #### FEDE
-           #txt += '      echo "which lcg-cp" \n'
-           #txt += '      which lcg-cp \n'
-           #########
            txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
            txt += '      copy_input_pu_exit_status=$?\n'
            txt += '      echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
@@ -369,7 +360,6 @@ class SchedulerEdg(Scheduler):
            txt += '#\n'
            txt += '#   Copy output to SE = $SE\n'
            txt += '#\n'
-           #txt += 'if [ $exe_result -eq 0 ]; then\n'
            txt += '    if [ $middleware == OSG ]; then\n'
            txt += '        echo "X509_USER_PROXY = $X509_USER_PROXY"\n'
            txt += '        echo "source $OSG_APP/glite/setup_glite_ui.sh"\n'
@@ -422,7 +412,6 @@ class SchedulerEdg(Scheduler):
            txt += '            echo "lcg-cp succeeded"\n'
            txt += '         fi\n'
            txt += '     done\n'
-           #txt += 'fi\n'
         return txt
 
     def wsRegisterOutput(self):
@@ -432,7 +421,7 @@ class SchedulerEdg(Scheduler):
 
         txt = ''
         if int(self.register_data) == 1:
-        ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
+           ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
            txt += 'if [ $middleware == OSG ]; then\n' 
            txt += '   #\n'
            txt += '   #   Register output to LFC deactivated in OSG mode\n'
@@ -442,14 +431,9 @@ class SchedulerEdg(Scheduler):
            txt += '#\n'
            txt += '#  Register output to LFC\n'
            txt += '#\n'
-           #txt += '   if [[ $exe_result -eq 0 && $copy_exit_status -eq 0 ]]; then\n'
            txt += '   if [ $copy_exit_status -eq 0 ]; then\n'
            txt += '      for out_file in $file_list ; do\n'
            txt += '         echo "Trying to register the output file into LFC"\n'
-           #### FEDE
-           #txt += '         echo "which lcg-rf" \n'
-           #txt += '         which lcg-rf \n'
-           #########
            txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file 2>&1"\n'
            txt += '         lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
@@ -458,10 +442,6 @@ class SchedulerEdg(Scheduler):
            txt += '         if [ $register_exit_status -ne 0 ]; then \n'
            txt += '            echo "Problems with the registration to LFC" \n'
            txt += '            echo "Try with srm protocol" \n'
-           #### FEDE
-           #txt += '            echo "which lcg-rf" \n'
-           #txt += '            which lcg-rf \n'
-           #########
            txt += '            echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file 2>&1"\n'
            txt += '            lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '            register_exit_status=$?\n'
@@ -475,15 +455,10 @@ class SchedulerEdg(Scheduler):
            txt += '         fi \n'
            txt += '         echo "StageOutExitStatus = $register_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '      done\n'
-           #txt += '   elif [[ $exe_result -eq 0 && $copy_exit_status -ne 0 ]]; then \n'
            txt += '   else \n'
            txt += '      echo "Trying to copy output file to CloseSE"\n'
            txt += '      CLOSE_SE=`edg-brokerinfo getCloseSEs | head -1`\n'
            txt += '      for out_file in $file_list ; do\n'
-           #### FEDE
-           #txt += '         echo "which lcg-cr" \n'
-           #txt += '         which lcg-cr \n'
-           #########
            txt += '         echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1" \n'
            txt += '         lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
@@ -498,8 +473,6 @@ class SchedulerEdg(Scheduler):
            txt += '         fi \n'
            txt += '         echo "StageOutExitStatus = $register_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '      done\n'
-           #txt += '   else\n'
-           #txt += '      echo "Problem with the executable"\n'
            txt += '   fi \n'
            txt += '   exit_status=$register_exit_status\n'
            txt += 'fi \n'
@@ -586,48 +559,50 @@ class SchedulerEdg(Scheduler):
         common.logger.message("Matched Sites :"+str(sites))
         return len(sites)
 
-    def noMatchFound_(self, jdl):
-        reReq = re.compile( r'Requirements' )
-        reString = re.compile( r'"\S*"' )
-        f = file(jdl,'r')
-        for line in f.readlines():
-            line= line.strip()
-            if reReq.match(line):
-                for req in reString.findall(line):
-                    if re.search("VO",req):
-                        common.logger.message( "SW required: "+req)
-                        continue
-                    if re.search('"\d+',req):
-                        common.logger.message("Other req  : "+req)
-                        continue
-                    common.logger.message( "CE required: "+req)
-                break
-            pass
-        raise CrabException("No compatible resources found!")
+    #def noMatchFound_(self, jdl):
+    #    reReq = re.compile( r'Requirements' )
+    #    reString = re.compile( r'"\S*"' )
+    #    f = file(jdl,'r')
+    #    for line in f.readlines():
+    #        line= line.strip()
+    #         if reReq.match(line):
+    ##            for req in reString.findall(line):
+    #                if re.search("VO",req):
+    #                    common.logger.message( "SW required: "+req)
+    #                    continue
+    #                if re.search('"\d+',req):
+    #                    common.logger.message("Other req  : "+req)
+    #                    continue
+    #                common.logger.message( "CE required: "+req)
+    #            break
+    #        pass
+    #    raise CrabException("No compatible resources found!")
 
-    def submit(self, nj):
-        """
-        Submit one EDG job.
-        """
+    #def submit(self, nj):
+    #    """
+    #    Submit one EDG job.
+    #    """
+    #
+    #    self.checkProxy()
+    #     jid = None
+    #     jdl = common.job_list[nj].jdlFilename()
+    #
+#        cmd = 'edg-job-submit ' + self.configOpt_() + jdl 
+#        cmd_out = runCommand(cmd)
+#        if cmd_out != None:
+#            reSid = re.compile( r'https.+' )
+#            jid = reSid.search(cmd_out).group()
+#            pass
+#        return jid
 
-        self.checkProxy()
-        jid = None
-        jdl = common.job_list[nj].jdlFilename()
+    #def resubmit(self, nj_list):
+    #    """
+    #    Prepare jobs to be submit
+    #    """
+    #    return
 
-        cmd = 'edg-job-submit ' + self.configOpt_() + jdl 
-        cmd_out = runCommand(cmd)
-        if cmd_out != None:
-            reSid = re.compile( r'https.+' )
-            jid = reSid.search(cmd_out).group()
-            pass
-        return jid
 
-    def resubmit(self, nj_list):
-        """
-        Prepare jobs to be submit
-        """
-        return
-
+    ################################################################ To remove when Boss4 store this info  DS. (start)
     def getExitStatus(self, id):
         return self.getStatusAttribute_(id, 'exit_code')
 
@@ -668,28 +643,28 @@ class SchedulerEdg(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-    def getOutput(self, id):
-        """
-        Get output for a finished job with id.
-        Returns the name of directory with results.
-        """
-
-        self.checkProxy()
-        cmd = 'edg-job-get-output --dir ' + common.work_space.resDir() + ' ' + id
-        cmd_out = runCommand(cmd)
+    #def getOutput(self, id):
+    #    """
+    #    Get output for a finished job with id.
+    #    Returns the name of directory with results.
+    #    """
+#
+    #    self.checkProxy()
+    #    cmd = 'edg-job-get-output --dir ' + common.work_space.resDir() + ' ' + id
+    #    cmd_out = runCommand(cmd)
 
         # Determine the output directory name
-        dir = common.work_space.resDir()
-        dir += os.environ['USER']
-        dir += '_' + os.path.basename(id)
-        return dir
+    #    dir = common.work_space.resDir()
+    #    dir += os.environ['USER']
+    #    dir += '_' + os.path.basename(id)
+    #    return dir
 
-    def cancel(self, id):
-        """ Cancel the EDG job with id """
-        self.checkProxy()
-        cmd = 'edg-job-cancel --noint ' + id
-        cmd_out = runCommand(cmd)
-        return cmd_out
+    #def cancel(self, id):
+    #    """ Cancel the EDG job with id """
+    #    self.checkProxy()
+    #    cmd = 'edg-job-cancel --noint ' + id
+    #    cmd_out = runCommand(cmd)
+    #    return cmd_out
  
     def createFakeJdl(self,nj):  # TMP Just waiting listmatch functionalitly  
                                   # implementation into BOSS4   Daniele
@@ -778,7 +753,6 @@ class SchedulerEdg(Scheduler):
         Create a XML-file for BOSS4.
         """
   #      job = common.job_list[nj]
-
         """
         INDY
         [begin] da rivedere:
@@ -976,12 +950,8 @@ class SchedulerEdg(Scheduler):
         xml.write(out_box+'\n')
  
         xml.write('group="'+taskName+'"\n')
-       # xml.write('BossAttr="[crabjob.INTERNAL_ID=' + str(nj+1) +']"\n')
-        #xml.write('BossAttr="[crabjob.INTERNAL_ID=_ITR1_]"\n')
         xml.write('BossAttr="crabjob.INTERNAL_ID=_ITR1_"\n')
 
-        
-       
         xml.write('/>\n')
         xml.write('</chain>\n')
 
@@ -994,8 +964,6 @@ class SchedulerEdg(Scheduler):
 
         return
 
-
-
     def checkProxy(self):
         """
         Function to check the Globus proxy.
@@ -1006,8 +974,6 @@ class SchedulerEdg(Scheduler):
 
         minTimeLeftServer = 100 # in hours
 
-        #cmd = 'voms-proxy-info -exists -valid '+str(minTimeLeft)+':00'
-        #cmd = 'voms-proxy-info -timeleft'
         mustRenew = 0
         timeLeftLocal = runCommand('voms-proxy-info -timeleft 2>/dev/null')
         timeLeftServer = -999
@@ -1032,8 +998,6 @@ class SchedulerEdg(Scheduler):
             except:
                 msg = "Unable to create a valid proxy!\n"
                 raise CrabException(msg)
-            # cmd = 'grid-proxy-info -timeleft'
-            # cmd_out = runCommand(cmd,0,20)
             pass
 
         ## now I do have a voms proxy valid, and I check the myproxy server
@@ -1046,7 +1010,6 @@ class SchedulerEdg(Scheduler):
         else:
             # if myproxy exist but not long enough, renew
             reTime = re.compile( r'timeleft: (\d+)' )
-            #print "<"+str(reTime.search( cmd_out ).group(1))+">"
             if reTime.match( cmd_out ):
                 time = reTime.search( line ).group(1)
                 if time < minTimeLeftServer:
