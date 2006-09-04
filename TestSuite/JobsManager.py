@@ -1,14 +1,19 @@
 from Job import *
 
 class JobsManager:
+    """
+       class manager and interfacer with the job's class
+    """
 
-    jobList = []
-    jobsN = 0
-
-    def __init__(self):
-        pass
+    def __init__(self):  ## Matt.
+        self.jobsN = 0
+        self.jobList = []
+        #pass
 
     def createList(self, nCreate, nSubmit):
+        """
+           creates and inits the jobs' list
+        """
         i = 1
         while i <= int(nCreate):
             j = Job(i,100)              ##100 => job still needs to be created
@@ -88,6 +93,9 @@ class JobsManager:
             i = i + 1
 
     def printStatusAll(self):
+        """
+           print infos about all the jos in the main list
+        """
         i = 0
         while i < len(self.jobList):
             print "id - stato - cicli - resubmit"
@@ -102,6 +110,9 @@ class JobsManager:
         return self.jobsN
 
     def getFailed(self):
+        """
+           get failed jobs
+        """
         i = 0
         str = ""
         while i < len(self.jobList):
@@ -126,7 +137,9 @@ class JobsManager:
         #   7 -> Idle
 
     def allDone(self):
-
+        """
+           checks if all the jobs are at the status "Done" ore "Cleared(BOSS)"
+        """
         i = 0
         stts = 1
         while i < self.nJobs():
@@ -141,6 +154,9 @@ class JobsManager:
         return stts
 
     def allFinished(self):
+        """
+           checks if all the jobs are at the end
+        """
         i = 0
         stts = 1
         while i < self.nJobs():
@@ -153,6 +169,9 @@ class JobsManager:
         return stts
 
     def allNotDone(self):
+        """
+           returns all the jobs not "Done" or "Cleared(BOSS)"
+        """
         i = 0
         stringa = ""
         while i < len(self.jobList):

@@ -1,7 +1,7 @@
 class Job:
 
     id = 0
-    status = -2  			##100 => job still needs to be created
+    status = -2                          ##100 => job still needs to be created
                                         ##101 => job was created but needs to be submitted
                                         ##102 => job created and submitted - needs to be checked the status
                                         ##103 => job to be killed
@@ -10,9 +10,9 @@ class Job:
     nCycles = 1#28
     nResLocal = []
     # number kill/resubmit 4: "Scheduled", "Waiting", "Ready", "Running", "Idle", "Aborted"
-    tot = 6				## number of state 4 nResLocal 4 each job
+    tot = 6                                ## number of state 4 nResLocal 4 each job
     
-    created = 0				## 5 fields 4 the final table
+    created = 0                                ## 5 fields 4 the final table
     submitted = 0
     done = 0
     completed = 0

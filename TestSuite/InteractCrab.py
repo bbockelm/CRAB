@@ -1,36 +1,45 @@
+# -*- coding: iso-8859-15 -*-
 from Scanner import *
 from Outputter import *
 from SessionManager import *
 from JobsManager import *
 import popen2, os, fcntl, select, time, sys, commands
+from tempfile import mkstemp
+from subprocess import *
+from os import path
+import string
 
 class InteractCrab:
 
-    nCreate = 0
-    nSubmit = 0
-    debug = 0
-    set = -1
-    jobs = JobsManager()
-    longTSleep = 180
-    shorTSleep = 60
-    cfgFileName = ""
-
-    def __init__(self, s, nC, nS, dbg, wait, cfgName):
-        self.set = s
+    def __init__(self, nC, nS, dbg, wait, cfgName, wd):
         self.nCreate = str(nC)
         self.nSubmit = str(nS)
+        self.jobs = JobsManager()
         self.jobs.createList(self.nCreate, self.nSubmit)
         self.debug = dbg
         self.shorTSleep = wait
+        self.longTSleep = 60
         self.cfgFileName = cfgName
+        self.sess = SessionManager()
+        self.cwd = str(wd)
+        logging.debug('Inizializzato InteractCRAB nella cartella '+self.cwd)
+        self.roboLogDir = path.abspath(self.sess.pathRoboName(self.cwd, cfgName))
+        self.workingDir = path.abspath(self.sess.pathName(self.roboLogDir))
+        self.creation = 0
+
+    def getRoboLogDir (self):
+        return self.roboLogDir
+
+    def getWorkingDir (self):
+        return self.workingDir
 
     def checkWorkingDir(self):
         """
-	function that sets the working dir 
-	  ---> Needs to implement the checking
-	"""
+        function that sets the working dir
+          ---> Needs to implement the checking
+        """
         
-#	cwd = os.getcwd() + '/WorkSpace'  # Daniele
+#        cwd = os.getcwd() + '/WorkSpace'  # Daniele
         cwd = os.getcwd()    # Must be more general  D.    
         os.chdir( cwd )
         
@@ -48,10 +57,10 @@ class InteractCrab:
         Run command 'cmd'.
         Returns command stdoutput+stderror string on success,
         or None if an error occurred.
-        Following recipe on http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52296
         """
 
         timeout = -1
+        putOut.debugger( "TestSuite: executing \"" + cmd + "\" in "+self.cwd, self.debug ) # prints the debug level
 
         putOut.debugger( "TestSuite: executing \"" + cmd + "\"", self.debug ) # prints the debug level
 
@@ -87,7 +96,7 @@ class InteractCrab:
             select.select([],[],[],.1) # give a little time for buffers to fill
         if err == -1:
             # kill the pid
-            print('killing process '+(cmd)+' with timeout '+str(timeout))
+            logging.debug('killing process '+(cmd)+' with timeout '+str(timeout))
             os.kill (child.pid, 9)
             err = child.wait()
 
@@ -95,60 +104,134 @@ class InteractCrab:
         cmd_err = string.join(errdata,"")
 
         if err:
-            print('`'+cmd+'`\n   failed with exit code '
-				  +`err`+'='+`(err&0xff)`+'(signal)+'
-	                          +`(err>>8)`+'(status)')
-            print(cmd_out)
-            print(cmd_err)
+            logging.warning('`'+cmd+'`\n   failed with exit code '
+                                  +`err`+'='+`(err&0xff)`+'(signal)+'
+                                  +`(err>>8)`+'(status)')
+            logging.info(outdata)
+            logging.warning(errdata)
             return None
 
         cmd_out = cmd_out + cmd_err
 
         return cmd_out
 
-    def createNotSubmit(self, putOut, workingDir, parser ):
+    def createNotSubmit(self, putOut, workingDir, parser, flag ):   ## Matt.
         """
         Executes the command for create the job[s]
         """
         # Messages must be somethings like CrabRob: ....  D.
         putOut.printStep('TestSuite: CRAB is creating '+self.nCreate+' JOBS')
 
-	# "USER.ui_working_dir" is a CRAB's option that allow to change the CRAB's workingdir
-	cmd = "crab -create " + self.nCreate + " -debug 10 -cfg " + self.cfgFileName + " -USER.ui_working_dir " + workingDir
+        creatioNumber = self.nCreate
+        cmd ="crab -create " + creatioNumber + " -debug 10 -cfg " + self.cfgFileName + " -USER.ui_working_dir " + workingDir
+        if flag > 0:
+            creatioNumber = str(flag)
+            cmd = "crab -create " + creatioNumber + " -c " + workingDir
+        # "USER.ui_working_dir" is a CRAB's option that allow to change the CRAB's workingDir
+
         strOut = self.run( cmd, putOut )
 
-	if ( parser.scanCreate( strOut, self.nCreate, self.jobs ) == 0 ):
+        if ( parser.scanCreate( strOut, self.nCreate, self.jobs ) == 0 ):
             putOut.writeOut( cmd, strOut, 0 )
-#            putOut.printStep(' => JOBS created correctly')
             putOut.printStep('          Creation:  Ok  ')   # D.
+            self.creation = 1
             return 1
         else:
-	    putOut.writeOut( cmd, strOut, 0 )
-    #        putOut.printStep(' => JOBS not created correctly')
+            putOut.writeOut( cmd, strOut, 0 )
             putOut.printStep('          Creation:  Failed  ')
             
-            #print strOut      # Questo lo mostrerei solo in caso di Verbosità  D.
-	#putOut.writeOut( cmd, strOut, 0 )
-
         return 0
 
-    def justSubmit(self, putOut, workingDir, parser, sess, cwd):
+
+    #def run( self, cmd, putOut ):
         """
-	Executes the command for submit the job[s]
-	"""
-	putOut.printStep('TestSuite: CRAB is submitting '+self.nSubmit+' JOBS')
-	cmd = "crab -submit " + self.nSubmit + " -debug 10 -c " + workingDir
-	strOut = self.run( cmd, putOut )
+        Run command 'cmd'.
+        Returns command stdoutput+stderror string on success,
+        or None if an error occurred.
+        Following recipe on http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52296
+        """
+
+        #timeout = -1
+
+        #putOut.debugger( "TestSuite: executing \"" + cmd + "\"", self.debug ) # prints the debug level
+
+        #child = popen2.Popen3(cmd, 1) # capture stdout and stderr from command
+        #child.tochild.close()             # don't need to talk to child
+        #outfile = child.fromchild
+        #outfd = outfile.fileno()
+        #errfile = child.childerr
+        #errfd = errfile.fileno()
+        #self.makeNonBlocking(outfd)            # don't deadlock!
+        #self.makeNonBlocking(errfd)
+        #outdata = []
+        #errdata = []
+        #outeof = erreof = 0
+
+        #if timeout > 0 :
+            #maxwaittime = time.time() + timeout
+
+        #err = -1
+        #while (timeout == -1 or time.time() < maxwaittime):
+            #ready = select.select([outfd,errfd],[],[]) # wait for input
+            #if outfd in ready[0]:
+                #outchunk = outfile.read()
+                #if outchunk == '': outeof = 1
+                #outdata.append(outchunk)
+            #if errfd in ready[0]:
+                #errchunk = errfile.read()
+                #if errchunk == '': erreof = 1
+                #errdata.append(errchunk)
+            #if outeof and erreof:
+                #err = child.wait()
+                #break
+            #select.select([],[],[],.1) # give a little time for buffers to fill
+        #if err == -1:
+            # kill the pid
+            #print('killing process '+(cmd)+' with timeout '+str(timeout))
+            #os.kill (child.pid, 9)
+            #err = child.wait()
+
+        #cmd_out = string.join(outdata,"")
+        #cmd_err = string.join(errdata,"")
+
+        #if err:
+            #print('`'+cmd+'`\n   failed with exit code '
+                  #+`err`+'='+`(err&0xff)`+'(signal)+'
+                              #+`(err>>8)`+'(status)')
+            #print(cmd_out)
+            #print(cmd_err)
+            #return None
+
+        #cmd_out = cmd_out + cmd_err
+
+        #return cmd_out
+
+
+
+    def justSubmit(self, putOut, workingDir, parser, sess, cwd, flag): ## Matt.
+        """
+        Executes the command for submit the job[s]
+        """
+        putOut.printStep('TestSuite: CRAB is submitting '+self.nSubmit+' JOBS')
+
+        submissioNumber = self.nSubmit
+        if flag > 0:
+            submissioNumber = str(flag)
+
+        cmd = "crab -submit " + submissioNumber + " -debug 10 -c " + workingDir
+        strOut = self.run( cmd, putOut )
 
         ##print(strOut)
 
-        result = parser.scanSubmit(strOut, int(self.nSubmit), self.jobs )
+        result = parser.scanSubmit(strOut, int(submissioNumber), self.jobs )
 
-	if result == 0:
+        if result == 0:
             putOut.writeOut( cmd, strOut, 0 )
             putOut.printStep("         Submission: Ok ")    #D.
+            self.creation = 1
             return 1
         elif result > 0:
+            self.creation = 1
             putOut.writeOut( cmd, strOut, 0 )
             putOut.printStep("         Submission: Ok ")
             stringa = str(self.nSubmit)
@@ -167,11 +250,12 @@ class InteractCrab:
         else:
             putOut.writeOut( cmd, strOut, 0 )
             putOut.printStep("         Submission: Failed ")
+            self.creation = 0
             #self.killManager( putOut, workingDir, parser, sess, "all", cwd )
-#            print strOut         # Aggiungere in caso di verbosità
-	#putOut.writeOut( cmd, strOut, 0 )	
+#            print strOut         # Aggiungere in caso di verbosit�
+        #putOut.writeOut( cmd, strOut, 0 )      
 
-	return 0
+        return 0
 
     def checkStatus(self, putOut, workingDir, parser, sess, flag, cwd):
         """
@@ -179,7 +263,7 @@ class InteractCrab:
         """
 
         putOut.printStep('TestSuite: CRAB start Checking JOBS\' status')
-	
+        
         i = 0
         #resultStatus = 0
         toDo = 0
@@ -195,21 +279,23 @@ class InteractCrab:
             elif all == -1:
                 return 0
             elif i == 29:
-                print self.jobs.allDone()
-                print self.jobs.allFinished()
+                logging.debug(self.jobs.allDone())
+                logging.debug(self.jobs.allFinished())
                 i = 0
             
             #else:
             #    resulStatus = -2
-	    # goody RoboCrab sleep
+            # goody RoboCrab sleep
             if flag:
                 if i == 1:
-		    time.sleep(self.longTSleep)
+                    putOut.printStep('Sleeping '+str(self.longTSleep))
+                    time.sleep(self.longTSleep)
 #                   for conta in range(1,80):
 #                       sys.stdout.write('.')
 #                       sys.stdout.flush()
 #                       time.sleep( 2.25 )
                 else:
+                    putOut.printStep('Sleeping '+str(self.shorTSleep))
                     time.sleep(self.shorTSleep)
 #                   for conta in range(1,40):
 #                       sys.stdout.write('.')
@@ -218,12 +304,13 @@ class InteractCrab:
             else:
                 i = 29
 
-	    cmd = "crab -status -c " + workingDir
+            cmd = "crab -status -c " + workingDir
             strOut =  self.run( cmd, putOut )
-	    putOut.writeOut( cmd, strOut, 0 )
+            putOut.writeOut( cmd, strOut, 0 )
            
-	    st = parser.scanStatus(strOut, self.jobs)
-	    ## why doesn't Python have a switch construct ?-)
+            putOut.printStep('Parsing output')
+            st = parser.scanStatus(strOut, self.jobs)
+            ## why doesn't Python have a switch construct ?-)
             j = 0
             z = self.jobs.nJobs()
             while j < z:
@@ -231,10 +318,10 @@ class InteractCrab:
                 x = parser.strCodeStatus(xT)
                 if x == -1:
                     h = str(j+1)
-		    putOut.printStep('TestSuite: JOBS\' status: \'Unknown\'')  ##M.: added idJob and status
+                    putOut.printStep('TestSuite: JOBS\' status: \'Unknown\'')  ##M.: added idJob and status
                     mesg = '          jobId: ' + h
                     putOut.printStep(mesg)
-                    mesg = '          status: ' + xT
+                    mesg = '          status: ' + str(xT)
                     putOut.printStep(mesg)
                 elif x == 8:
                     h = str(j+1)
@@ -264,12 +351,12 @@ class InteractCrab:
                #     putOut.printStep( mesg )
                #     statoNow = self.jobs.getStatus(j)#jobIndex)
                #     statoPre = self.jobs.getStatusPre(j)#jobIndex)
+                    statoNow = self.jobs.getStatus(j)#jobIndex)
+                    statoPre = self.jobs.getStatusPre(j)#jobIndex)
                     if statoNow != statoPre:
                         h = str(j+1)
                         mesg = 'TestSuite: JOB N° ' + h + ' - status: \'Aborted\'' ##M.: added idJob
                         putOut.printStep( mesg )
-                        statoNow = self.jobs.getStatus(j)#jobIndex)
-                        statoPre = self.jobs.getStatusPre(j)#jobIndex)
                         self.getMortemOutput( putOut, workingDir, parser, j)
                     #return x
                 elif x == 5:
@@ -306,6 +393,32 @@ class InteractCrab:
 
         return# resultStatus
 
+
+    def workFlowKRP ( self, putOut, workingDir, parser, sess, cwd ):   ## Matt.
+        """
+        Executes the crab's command:
+           -create -submit
+           -kill -resuBmit -kill -getoutput
+        """
+
+        mesg = "TestSuite: verifying others Crab's functionality: kill, resubmit and postMortem"
+        putOut.printStep(mesg)
+
+        if self.creation:
+            idJobTest = int(self.nCreate) + 1
+        else:
+            idJobTest = 1
+        if ( self.createNotSubmit ( putOut, workingDir, parser, 1 ) ):
+            if ( self.justSubmit ( putOut, workingDir, parser, sess, cwd, 1 ) ):
+                ##tot = int(self.nSubmit)
+                ##for i in range (1, tot):
+                ##    if self.jobs.getToSubmit(i-1):
+                if not self.killManager( putOut, workingDir, parser, sess, idJobTest, cwd ):
+                    self.getMortemOutput( putOut, workingDir, parser, idJobTest-1 )
+        return 0
+
+
+
     def killManager(self, outStream, workingDir, parser, sess, jobId, cwd):
         #jobId = self.jobs.getFailed()
         jobId = str(jobId)
@@ -324,23 +437,23 @@ class InteractCrab:
         Gets the output of the job[s]
         """
 
-	# executing the commmand
+        # executing the commmand
         strJob = str(idJob)
         mesg = 'TestSuite: JOB N° ' + strJob + '- Getting succeded(Done) output' ##M.: added idJob
-	putOut.printStep(mesg)
-	cmd = "crab -getoutput " + strJob + " -debug 10 -c " + workingDir
+        putOut.printStep(mesg)
+        cmd = "crab -getoutput " + strJob + " -debug 10 -c " + workingDir
         strOut = self.run( cmd, putOut )
 
-	# checking if the output files are in the subdir "/res"
-	flagFiles = parser.existsFile(workingDir + '/res', cwd, strJob, 1)
+        # checking if the output files are in the subdir "/res"
+        flagFiles = parser.existsFile(workingDir + '/res', cwd, strJob, 1)
 
-	# printing output to the files and to the console
-	if ( flagFiles > 1 ):
-	    if ( parser.scanGetOutput(strOut, strJob) == 0 ):
+        # printing output to the files and to the console
+        if ( flagFiles > 1 ):
+            if ( parser.scanGetOutput(strOut, strJob) == 0 ):
                  mesg = 'TestSuite: JOB N° ' + strJob + ' - output was got correctly'  ##M.: added idJob
                  putOut.printStep( mesg )
                  self.jobs.done( idJob, 1 )
-	    else:
+            else:
                 mesg = 'TestSuite: JOB N° ' + strJob + ' - output wasn\'t got correctly'  ##M.: added idJob
                 putOut.printStep( mesg )
                 self.jobs.done( idJob, -2 )
@@ -351,8 +464,8 @@ class InteractCrab:
                 putOut.printStep("TestSuite: \"WARNING: missing stdout/stderr file in " + workingDir + "/res/\"")
             elif ( flagFiles == 5 ):
                 putOut.printStep("TestSuite: \"WARNING: emply output file in " + workingDir + "/res/\"")
-	else:
-	    putOut.printStep("TestSuite: ERROR - missing output file[s] in dir " + workingDir + "/res")
+        else:
+            putOut.printStep("TestSuite: ERROR - missing output file[s] in dir " + workingDir + "/res")
             self.jobs.done( idJob, 2 )
             if ( flagFiles == 0 ):
                 putOut.printStep("TestSuite: \"WARNING: missing stdout/stderr file in " + workingDir + "/res/\"")
@@ -364,7 +477,7 @@ class InteractCrab:
     def getMortemOutput( self, putOut, workingDir, parser, flag ):
         """
         Executes the command for verify why a job (may be more then one) is dead
-	"""
+        """
 
         if flag < 0:
             jobsRange = self.jobs.allNotDone()
@@ -372,7 +485,7 @@ class InteractCrab:
             jobsRange = str(flag + 1)
         mesg = 'TestSuite: JOB N° ' + jobsRange + ' - Getting postMortem informations'
         putOut.printStep(mesg)   ##M.: added idJob
-	cmd = "crab -postMortem " + jobsRange + " -debug 10 -c " + workingDir
+        cmd = "crab -postMortem " + jobsRange + " -debug 10 -c " + workingDir
         strOut = self.run( cmd, putOut )
         putOut.writeOut( cmd, strOut, 0 )
 
@@ -423,19 +536,19 @@ class InteractCrab:
         return 0
 
     def outputChooser( self, putOut, workingDir, parser, choise, cwd ):
-	"""
-	Calls Crab's getoutput or postMortem
-	"""
+        """
+        Calls Crab's getoutput or postMortem
+        """
 
-	# modificato /home/cinquilli/CRAB_1_0_7/python/SchedulerBoss.py linea 469
-	if choise == 0:
+        # modificato /home/cinquilli/CRAB_1_0_7/python/SchedulerBoss.py linea 469
+        if choise == 0:
             #jobDA prendere l'output OK
-	    self.getResultOutput( putOut, workingDir, parser, cwd )
-	else:
+            self.getResultOutput( putOut, workingDir, parser, cwd )
+        else:
             #jobDA prendere postmortem
-	    self.getMortemOutput( putOut, workingDir, parser)
+            self.getMortemOutput( putOut, workingDir, parser)
 
-	return 
+        return
 
     def checkProxy(self, outStream, parser, cwd):
         """
@@ -500,59 +613,52 @@ class InteractCrab:
         Main class for the interaction with Crab
         """
 
-	cwd = self.checkWorkingDir()
-##        self.cfgFileName = cwd + "/" + self.cfgFileName
+##        self.cfgFileName = self.cwd + "/" + self.cfgFileName
 
-	sess = SessionManager()
-	parser = Scanner(self.cfgFileName)
+        parser = Scanner(self.cfgFileName)
 #        print parser.nameCfg
-        cfgName = parser.splitExtension(self.cfgFileName)
-        #print parser.getNameFile(cwd)
-        roboLogDir = sess.pathRoboName(cwd, cfgName)
-        workingDir = sess.pathName(roboLogDir)
+        cfgName, ext = os.path.splitext(self.cfgFileName) # Using library function Sk.
+        #print parser.getNameFile(self.cwd)
 
-	outStream = Outputter(roboLogDir)
-        outStream.printStep('TestSuite: CRAB Working_dir: ' + workingDir)
+        outStream = Outputter(self.roboLogDir)
+        outStream.printStep('TestSuite: CRAB Working_dir: ' + self.workingDir)
         if self.nCreate < self.nSubmit:
             outStream.printStep('TestSuite: "WARNING jobs to submit are more then the jobs to create"')
 
-	resultStatus = -1
+        resultStatus = -1
 
-        if self.checkProxy(outStream, parser, cwd):
-            ## A valid proxy certificate exists
-            if ( self.createNotSubmit ( outStream, workingDir, parser ) ):
+        if ( self.createNotSubmit ( outStream, self.workingDir, parser, 0 ) ):     ## Matt.
+            outStream.printTable(self.jobs)
+            if ( self.justSubmit ( outStream, self.workingDir, parser, self.sess, self.cwd, 0 ) ):   ## Matt.
                 outStream.printTable(self.jobs)
-                if ( self.justSubmit ( outStream, workingDir, parser, sess, cwd ) ):
-                    outStream.printTable(self.jobs)
-                    resultStatus = self.checkStatus ( outStream, workingDir, parser, sess, 1, cwd )
-                    outStream.printTable(self.jobs)
+                resultStatus = self.checkStatus ( outStream, self.workingDir, parser, self.sess, 1, self.cwd )
+                outStream.printTable(self.jobs)
                 #while resultStatus == -2:
                 #    print "I will kill..."
                 #    jobId = self.jobs.getFailed() 
                 #    print "...I will kill " + jobId
-                #    if ( self.killJob( outStream, workingDir, parser, jobId) ):
-                #        resultStatus = self.checkStatus ( outStream, workingDir, parser, sess, 0, cwd )
+            #    if ( self.killJob( outStream, self.workingDir, parser, jobId) ):
+            #        resultStatus = self.checkStatus ( outStream, self.workingDir, parser, self.sess, 0, self.cwd )
                 #        if (resultStatus == 5 or resultStatus == 4):
-                #            if ( self.resubmitJob( outStream, workingDir, parser, jobId ) ):
-                #                resultStatus = self.checkStatus ( outStream, workingDir, parser, sess, 1, cwd )
+            #            if ( self.resubmitJob( outStream, self.workingDir, parser, jobId ) ):
+            #                resultStatus = self.checkStatus ( outStream, self.workingDir, parser, self.sess, 1, self.cwd )
 
-	#if (resultStatus == 0) or 
+        #if (resultStatus == 0) or 
         #if (resultStatus == 4) or (resultStatus == 5):
-	    #self.outputChooser( outStream, workingDir, parser, resultStatus, cwd )
+            #self.outputChooser( outStream, self.workingDir, parser, resultStatus, self.cwd )
             #outStream.printTable(self.jobs)
         #elif resultStatus == -3:
-        #    self.killJob(outStream, workingDir, parser, "all")
+        #    self.killJob(outStream, self.workingDir, parser, "all")
         #    outStream.printStep('CrabRob: ERROR\n\tINCOMPLETE RUNNING OF ROBOCRAB\n\tToo much time!!')
         #    #outStream.printStep('CrabRob: ERROR\n\tINCOMPLETE RUNNING OF ROBOCRAB\n\tToo many Resubmits')
         #    self.jobs.setIncompleted()
         #    outStream.printTable(self.jobs)
 
-            self.jobs.setCompleted()
-            outStream.printTable(self.jobs)
-            outStream.printPathTable() ##M.: prints a message that shows the path of the table
+        self.jobs.setCompleted()
+        outStream.printTable(self.jobs)
+        outStream.printBadTable(self.jobs)
+        outStream.printPathTable() ##M.: prints a message that shows the path of the table
 
-        else:
-            ## A valid proxy certificate doesn't exist
-            outStream.printStep('TestSuite: Unable to create a valid proxy')
+        #self.workFlowKRP ( outStream, self.workingDir, parser, self.sess, self.cwd )   ## Matt.
             
         return

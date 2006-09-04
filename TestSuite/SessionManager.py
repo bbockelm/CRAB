@@ -1,5 +1,5 @@
 import time, os, string
-#from Scanner import strCodeStatus
+from os.path import abspath
 
 class SessionManager:
 
@@ -11,12 +11,12 @@ class SessionManager:
 
         os.mkdir(dirName)
 
-	return
+        return
 
     def pathName(self, roboLogDir):
 
         if self.currTime == 'default':
-	    self.currTime = time.strftime( '%y%m%d_%H%M%S', time.localtime() )
+            self.currTime = time.strftime( '%y%m%d_%H%M%S', time.localtime() )
         #currDir = string.join( os.getcwd() + '/' + 'crab_datalog_' + self.currTime, "" )
         currDir = string.join( roboLogDir + '/' + 'crab_0_' + self.currTime, "" )
         self.createDir( currDir )
@@ -27,10 +27,10 @@ class SessionManager:
 
         if self.currTime == 'default':
             self.currTime = time.strftime( '%y%m%d_%H%M%S', time.localtime() )
-	currDir = string.join( cwd + '/' + cfgName + "_" +self.currTime, "" )
-	self.createDir( currDir )
+        currDir = abspath(cfgName + "_" +self.currTime)
+        self.createDir( currDir )
 
-	return currDir
+        return currDir
 
     def incrKill( self, statusId, jobs, jobIndex ):
         """

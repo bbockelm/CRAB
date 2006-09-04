@@ -1,0 +1,8 @@
+This is a request for comment release of the TestSuite-1.0.
+TestSuite need a config file containing a row for each test one 
+wants to run. Each row is in the form of:
+cfg, nC, nS
+where cfg is a string containing the name of a crab.cfg like file to
+open, nC is the number of job we expect to create and nS is the number
+of job to submit
+TestSuite -h gives a brief help about its options.

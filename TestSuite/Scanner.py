@@ -3,97 +3,115 @@ from LockerFile import *
 from JobsManager import *
 
 class Scanner:
-
-    nameCfg = "crab.cfg"
-    locks = LockerFile()
-    nameOutput = ""
-    created = None
-    jobType = "CMSSW"
-
-    def __init__(self, cfgName):
-        self.nameCfg = cfgName
+    def __init__(self, cfgName = 'crab.cfg'): # Rebuilt Sk.
+        self.nameCfg = str(cfgName)
+        self.locks = LockerFile()
+        self.nameOutput = ''
+        self.created = None
+        self.jobType = 'CMSSW'
 
     def checkDim(self, path):
-
-	p = os.path.getsize(path)
-	if p > 0:
-	    return p
-	return 0
+        """
+           return the dim. of the specified path
+        """
+        p = os.path.getsize(path)
+        if p > 0:
+            return p
+        return 0
 
     def findInside(self, text, str):
         return text.find(str) != -1
 
-    def add2JobList(self, nJob, status):
-        self.created 
+    #def add2JobList(self, nJob, status): # Sk.
+        #self.created 
 
     def findNJob(self, text, nJobs, opt, jobs):
-        statusJob = 101
-        count = 0
+        """
+           checks nJobs inside the crab's output (creation and submition only)
+           if opt = 1 check for submitted jobs, otherwise for created ones
+           jobs is ignored
+           It returns -1 if the total number of job in the chosen state is non negative and we find
+           a row in the output asserting this
+           If we checks for submitted jobs and all is right it returns the total number of jobs not submitted
+           Otherwise it returns -2
+        """
+        statusJob = 101 # created black magic code Sk.
+        count = 0 # Count how many jobs are in the state not submitted Sk.
         if opt == 1:
             s1 = "Submitting"
             s2 = "submitted"
-            statusJob = 102
+            statusJob = 102 # submitted black magic code Sk.
             ## if not submitted, crab will return: "crab. Job # 4 not submitted: status None"
             ##                                     "crab. Total of 3 jobs submitted (from 4 requested)."
         elif opt == 0:
             s1 = "Creating"
             s2 = "created"
+        if type(text) != type(''): # Detect if the text is empty, which is a clear signal of troubles! Sk.
+            return -2
         n = text.count("\n")
-        str = text.split("\n", n)
-        i = 0
-        jobC = 0
-        while i < len(str):
+        rows = text.split("\n", n)
+        jobC = 0 # Count how many jobs are in the state chosen by opt Sk.
+        for row in rows:
             if jobC < nJobs:
-                xJob = 1
-                while xJob < nJobs+1:
-                    if str[i] == "crab. " + s1 + " job # %(#)d"%{'#' : xJob} :
+                for xJob in range(1, nJobs+1):
+                    if row == "crab. " + s1 + " job # %(#)d"%{'#' : xJob} :
                         jobs.cngStatus( xJob, statusJob )
                         jobC += 1
                         if opt == 1:
                             jobs.submitted( xJob, 1 )
                         elif opt == 0:
                             jobs.created( xJob, 1 )
-                    elif opt == 1 and str[i] == "crab. Job # %(#)d"%{'#' : xJob} + " not submitted: status None":
+                    elif opt == 1 and row == "crab. Job # %(#)d"%{'#' : xJob} + " not submitted: status None":
                         #print str[i], "crab. Job # %(#)d"%{'#' : xJob} + " not submitted: status None"
                         count = count + 1
-                    xJob += 1
-            if jobC > 0:
-                if str[i] == "crab. Total of %(#)d jobs "%{'#' : jobC} + s2 + ".":
-                    return -1
+            if jobC > 0: # Check if we have counted all the jobs Sk.
+                if row == "crab. Total of %(#)d jobs "%{'#' : jobC} + s2 + ".":
+                    return -1 # Is this a bad thing?? Sk.
                 #elif opt == 1:
                   #  tt = jobC - count
                     ## "crab. Total of 3 jobs submitted"
                   #  print tt, jobC, count
                   #  print "crab. Total of %(#)d"%{'#' : tt} + " jobs submitted"
                   #  if str[i] == "crab. Total of %(#)d"%{'#' : tt} + " jobs submitted":
-			#(from %(#d)"%{'#' : jobC } + " requested).":
+                        #(from %(#d)"%{'#' : jobC } + " requested).":
                   #      return count
-            i += 1
         if opt == 1:
-            tt = nJobs - count
+            tt = nJobs - count # Jobs submitted Sk.
             ## "crab. Total of 3 jobs submitted"
             #print tt, nJobs, count
             #  print "crab. Total of %(#)d"%{'#' : tt} + " jobs submitted"
-            if str[i-3] == "crab. Total of %(#)d"%{'#' : tt} + " jobs submitted (from %(#)d"%{'#' : nJobs } + " requested).":
-                return count
+            if rows[-3] == "crab. Total of %(#)d"%{'#' : tt} + " jobs submitted (from %(#)d"%{'#' : nJobs } + " requested).":
+                return count # Jobs not submitted! Sk.
 
-        return -2
+        return -2 # What does this mean? Is this a bad thing?? Sk.
 
     def scanCreate(self, text, n, jobs):
+        """
+            checks the crab's output for the option "-create"
+            text is a list of string representing the output to be parsed
+            n is the total number of jobs
+            jobs is the number of 
+        """
         if self.findNJob( text, int(n), 0, jobs ):
-	   #self.findInside (text, "crab. Total of %(#)d jobs created"%{'#' : int(n)} ):
+           #self.findInside (text, "crab. Total of %(#)d jobs created"%{'#' : int(n)} ):
             return 0
-        else:
-           n = text.count("\n")
+        #else:
+           #n = text.count("\n")
         return 1
 
     def scanKill(self, text, n):
+        """
+            checks the crab's output for the option "-kill"
+        """
         #if self.findInside (text, "crab. Killing job # %(#)d"%{'#' : n} ):
         if self.findInside (text, "crab. Killing job # " + n):
             return 0
         return 1
 
     def scanSubmit(self, text, n, jobs):
+        """
+            checks the crab's output for the option "-submit"
+        """
         ret = self.findNJob( text, int(n), 1, jobs )
         #print ret
         if ret == -1:
@@ -105,13 +123,19 @@ class Scanner:
         return -1
 
     def scanGetOutput(self, text, n):
-	#if self.findInside(text, "crab. Results of Job # %(#)d are in"%{'#' : n} ):
+        """
+            checks the crab's output for the option "-submit"
+        """
+        #if self.findInside(text, "crab. Results of Job # %(#)d are in"%{'#' : n} ):
         if self.findInside(text, "crab. Results of Job # " + n  + " are in"):
-	    return 0
-	return 1
+            return 0
+        return 1
 
     def exeExitStatus(self, text):
-
+        """
+            scan the crab's output for the option "-status"
+             -> looks for the exit status of the job
+        """
         str1 = text.split(" ", 1)
         flag = 0
         while flag == 0:
@@ -125,22 +149,24 @@ class Scanner:
 
         return str1[2]
 
-    def splitExtension(self, nameExt):
+    #def splitExtension(self, nameExt): # Alredy in Python Sk.
+        #nDot = nameExt.count(".")
+        #name = nameExt.split(".", nDot)
+        #stringa = ""
+        #for i in name:
+            #if i != "cfg":
+                #if len(stringa) > 0:
+                    #stringa = stringa + "." + i
+                #else:
+                    #stringa = i
+###        print stringa     
+        #return stringa
 
-        nDot = nameExt.count(".")
-        name = nameExt.split(".", nDot)
-        stringa = ""
-        for i in name:
-            if i != "cfg":
-                if len(stringa) > 0:
-                    stringa = stringa + "." + i
-                else:
-                    stringa = i
-##        print stringa     
-        return stringa
 
     def getExtension(self, name):
-
+        """
+           get the extension of the file named "name"
+        """
         e = ""
         l = len(name)
         i = 0
@@ -160,7 +186,9 @@ class Scanner:
         return e
 
     def getPreName(self, name, ext):
-
+        """
+           get the name of the file named "name" without the extension
+        """
         ln = len (name)
         le = len (ext)
         st = name[0:(ln-le)]
@@ -169,9 +197,8 @@ class Scanner:
 
     def getNameFile(self, path):
         """
-        
+           returns the extension of the "output_file" option in crab's config file
         """
-
         jb = self.loadField(path, "jobtype")
         jobtype = ""
         for charact in jb:
@@ -180,17 +207,17 @@ class Scanner:
 
         self.jobType = jobtype
         
-        fOut = open( path + '/' + self.nameCfg )
+        fOut = open( self.nameCfg )
         self.locks.lock_F( fOut, 1 )
         extens = 'aida'       # default
 
         flag = 0
 
         while True:
-	    line = fOut.readline()
-	    if len(line) == 0: # lunghezza zero indica l'EOF 
-	                       # (NdT. End Of File, fine del file)
-		break
+            line = fOut.readline()
+            if len(line) == 0: # lunghezza zero indica l'EOF
+                               # (NdT. End Of File, fine del file)
+                break
             else:
                 str1 = line.split("\n")
                 str2 = line.split(" ", 1)
@@ -213,6 +240,9 @@ class Scanner:
         return extens[1]
 
     def checkStd(self, path, strIdJob):
+        """
+           checks the if the standard output and error files are inside the "res" dir
+        """
         i = 0
         nZeri = ""
         while i < ( 6 - len(strIdJob) ):
@@ -226,11 +256,13 @@ class Scanner:
         return exists
 
     def existsFile(self, path, cwd, strIdJob, flagLast):
-
-	exists = 0
+        """
+           checks all the output files
+        """
+        exists = 0
         flagLast = 1
 
-	try:
+        try:
             extension = self.getNameFile(cwd)
             temp = self.nameOutput.split("\n",1)
             self.nameOutput = temp[0]
@@ -238,7 +270,7 @@ class Scanner:
             temp1 = extension.split("\n",1)
             extension = temp1[0]
             #print 'ls -go ' + path + ' | grep -cE ' + preExt + '_' + strIdJob + '\.' + extension
-	    if int( commands.getoutput('ls -go ' + path + ' | grep -cE ' + preExt + '_' + strIdJob + '\.'+extension) ) > 0:
+            if int( commands.getoutput('ls -go ' + path + ' | grep -cE ' + preExt + '_' + strIdJob + '\.'+extension) ) > 0:
                 exists = 4
                 dimOut = self.checkDim(path + '/' + preExt + '_' + strIdJob + '.' + extension)
                 if dimOut > 0:
@@ -249,11 +281,14 @@ class Scanner:
             else:
                 return exists
         except ValueError:
-	    exists = 0
+            exists = 0
 
-	return exists
+        return exists
 
     def compareAscii(self, str1, str2):
+        """
+           compares, char by char, the str1 and str2 strings
+        """
         strT = str2.split(" ", 1)
         #print strT
         str2 = strT[0]
@@ -271,6 +306,10 @@ class Scanner:
         return i
 
     def jobsStatus(self, text, idJob):
+        """
+           get the status string of the job idJob from the output
+           of the crab's option "-status"
+        """
         n = text.count("\n")
         stringa = text.split("\n", n)
         i = 0
@@ -311,35 +350,33 @@ class Scanner:
     def scanStatus(self, text, jobs):
         """
         Method that checks the status of job[s] submitted
-	(This method could result a little bit redundant
-	but it is just for the moment, because the parsing
-	is quite poor - it is just looking to the state)
-	"""
-	codeStatus = -1
-	# Code cases:
-	#  -1 -> Unknown
-	#   0 -> Done
-	#   1 -> Scheduled
-	#   2 -> Waiting
-	#   3 -> Ready
-	#   4 -> Aborted
-	#   5 -> Killed
-	#   6 -> Running
+        """
+        codeStatus = -1
+        # Code cases:
+        #  -1 -> Unknown
+        #   0 -> Done
+        #   1 -> Scheduled
+        #   2 -> Waiting
+        #   3 -> Ready
+        #   4 -> Aborted
+        #   5 -> Killed
+        #   6 -> Running
         #   7 -> Idle
         #   8 -> Cleared(BOSS)
-        i = 0
         z = int( jobs.nJobs() )
-        while i < z:
+        for i in range(z):
             if jobs.getStatus(i) != 100:
                 nJ = jobs.getJobId(i)
                 stratus = self.jobsStatus( text, str(nJ) )
                 jobs.cngStatus( nJ, stratus )
-                i = i + 1
         #jobs.printStatusAll()
         return
 
     def strCodeStatus(self, stratus):
-
+        """
+           converts a status string on the corresponding integer code
+        """
+        stratus = str(stratus)
         if self.findInside(stratus, 'Done'):
             codeStatus = 0
         elif self.findInside(stratus, 'Scheduled'):
@@ -350,15 +387,15 @@ class Scanner:
             codeStatus = 3
         elif self.findInside(stratus, 'Aborted'):
             codeStatus = 4
-        elif self.findInside(stratus, 'Killed') or self.findInside(stratus, 'Killed(BOSS)'):
+        elif self.findInside(stratus, 'Killed'): # or self.findInside(stratus, 'Killed(BOSS)'): Sk.
             codeStatus = 5
         elif self.findInside(stratus, 'Running'):
             codeStatus = 6
         elif self.findInside(stratus, 'Idle'):
             codeStatus = 7
-        elif self.findInside(stratus, 'Created(BOSS)'):
+        elif self.findInside(stratus, 'Created'): # (BOSS)'): Sk.
             codeStatus = 101
-        elif self.findInside(stratus, 'Cleared(BOSS)'):
+        elif self.findInside(stratus, 'Cleared'): # (BOSS)'): Sk.
             codeStatus = 99
         elif self.findInside(stratus, 'Submitted'):
             codeStatus = 8
@@ -369,9 +406,13 @@ class Scanner:
 
     def scanVomsProxy(self, txt):
         """
+           scans the output of the command 'voms-proxy-info -timeleft'
+        _ _ _ _ _ _ _ _
+        error case:
         WARNING: Unable to verify signature! Server certificate possibly not installed.
         Error: VOMS extension not found!
         xxxxx
+        _ _ _ _ _ _ _ _
         """
         n = 0
         n = txt.count("\n")
@@ -388,9 +429,13 @@ class Scanner:
 
     def scanMyProxy(self, txt):
         """
+           scans the output of the command 'myproxy-info -d -s proxy"
+        _ _ _ _ _ _ _ _
+        correct case:
         username: /C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Mattia Cinquilli
         owner: /C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Mattia Cinquilli
           timeleft: 167:50:27  (7.0 days)
+        _ _ _ _ _ _ _ _
         """
         flag = 0
         n = 0
@@ -442,8 +487,12 @@ class Scanner:
                 return 0
 
     def loadField (self, path, field):
+        """
+           load a field value from the crab's config file
+             -> fields: "proxy_server", "jobtype"
+        """
 ## jobtype
-        fOut = open( path + '/' + self.nameCfg )
+        fOut = open( self.nameCfg )
         self.locks.lock_F( fOut, 1 )
 
         while True:

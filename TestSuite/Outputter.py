@@ -1,6 +1,7 @@
-import os, time
-from LockerFile import *
+import os, time, logging
 from JobsManager import *
+from LockerFile import *
+from os import path
 
 class Outputter:
 
@@ -16,24 +17,26 @@ class Outputter:
     nameRoboLog = 'robo.out'
     # file name for the "Juice Table"
     nameTableLog = 'juice.table.out'
+    # file name for the bad table!
+    nameBadTableLog = 'bad.table.out'
     # Locker
     locks = LockerFile()
     
-    def __init__( self, dir ):
+    def __init__( self, wd ):
 
         self.startTime = self.getTime()
         self.tStart = time.time()
 
-	str = dir + '/Robolog'
-	#print( str )
-	os.mkdir( str )
-	self.roboLogDir = str
+        str = wd + '/Robolog'
+        #print( str )
+        os.mkdir( str )
+        self.roboLogDir = str
         
-	self._createFile_( self.nameCrabLog, 1 )
-	self._createFile_( self.nameRoboLog, 1 )
+        self._createFile_( self.nameCrabLog, 1 )
+        self._createFile_( self.nameRoboLog, 1 )
         self._createFile_( self.nameTableLog, 0 )
 
-	return
+        return
 
     def calcTime( self ):
         t = 60
@@ -51,53 +54,54 @@ class Outputter:
         return time.strftime( '---> time: %H:%M:%S- %d/%m/%y <---', time.localtime() )
 
     def _createFile_( self, name, flagWrite ):
-	
-	dir = self.roboLogDir + '/' + name
+        
+        dir = self.roboLogDir + '/' + name
 
-	if not os.path.exists( dir ):
-	    file = open( dir, 'w' )
-	    self.locks.lock_F( file, 0 )
+        if not os.path.exists( dir ):
+            file = open( dir, 'w' )
+            self.locks.lock_F( file, 0 )
             if flagWrite:
                 file.write(self.getTime())
                 file.write(" |-> LOG FILE STARTS... \n\n")
-	    self.locks.unlock_F( file )
-	    file.close()
+            self.locks.unlock_F( file )
+            file.close()
 
-	return
+        return
 
     def printStep( self, str ):
-	"""
-	Prints the output "str"
-	"""
-        print('')
-	print ' ****  ', str, '  ****'
-	self.writeOut( '', str, 1 )
+        """
+        Prints the output "str"
+        """
+#        print('')
+#        print ' ****  ', str, '  ****'
+        logging.debug('TestSuite '+self.roboLogDir.rsplit('/',3)[-2]+': '+str)
+        self.writeOut( '', str, 1 )
 
-	return
+        return
 
 
     def writeOut( self, cmd, text, opt ):
-	"""
-	Writes on the file corresponding to the option "opt"
-	"""
+        """
+        Writes on the file corresponding to the option "opt"
+        """
 
-	if opt == 0:
-	    fName = self.roboLogDir + '/' + self.nameCrabLog
-	elif opt == 1:
-	    fName = self.roboLogDir + '/' + self.nameRoboLog
+        if opt == 0:
+            fName = path.join(self.roboLogDir, self.nameCrabLog)
+        elif opt == 1:
+            fName = path.join(self.roboLogDir, self.nameRoboLog)
 
-	fOut = open( fName, "a" )
-	self.locks.lock_F( fOut, 0 )
-	if opt == 0:
-	    fOut.write('\n|-> COMMAND:  ' + cmd + '\n\n|-> OUTPUT:\n\n')
+        fOut = open( fName, "a" )
+        self.locks.lock_F( fOut, 0 )
+        if opt == 0:
+            fOut.write('\n|-> COMMAND:  ' + cmd + '\n\n|-> OUTPUT:\n\n')
         else:
             fOut.write( self.getTime() )
-	fOut.write( " " + text )
-	fOut.write('\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-\n')
-	self.locks.unlock_F( fOut )
-	fOut.close()
+        fOut.write( " " + str(text) )
+        fOut.write('\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-\n')
+        self.locks.unlock_F( fOut )
+        fOut.close()
 
-	return
+        return
 
     def printTable(self, jobs):  ## M.: added the coloumn
         fOut = open( self.roboLogDir + '/' + self.nameTableLog, "w" )
@@ -203,6 +207,26 @@ class Outputter:
             i = i + 1
         self.locks.unlock_F( fOut )
         fOut.close()
+
+    def printBadTable(self, jobs):  ## M.: added the coloumn
+        fOut = open( self.roboLogDir + '/' + self.nameBadTableLog, "w" )
+        fOut.write ('# JobID\tCreated\tSubmitted\tDone\tStatus\tOutFiles\tCompleted\n')
+        for i in range(jobs.nJobs()):
+            listCSD = jobs.getCSD(i) # Created, submitted, done
+            listCSDConv = [self.getStepConvert(listCSD[0]), self.getStepConvert(listCSD[1]), self.getOutputConvert(listCSD[2])]
+            complTemp = jobs.getCompleted(i)
+            complete = self.getCompletedConvert( complTemp )
+            if complTemp == -1 and listCSDConv[1] == "Ok":
+                checkStatus = "Failed"
+            elif complete == "Incompleted":
+                checkStatus = "Failed"
+            elif listCSDConv[1] == "Ok":
+                checkStatus = "Ok"
+            else:
+                checkStatus = "  "
+            outFiles = self.outFilesConvert(listCSD[2])
+            fOut.write(str(i+1)+'\t'+listCSDConv[0]+'\t'+listCSDConv[1]+'\t'+checkStatus+'\t'+outFiles+'\t'+complete+'\n')
+
 
     def printPathTable(self):  ##M.: prints the and "log message"
         self.printStep("TestSuite: Log file is in:")

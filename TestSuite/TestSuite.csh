@@ -1,17 +1,15 @@
-#! /bin/csh
-
-
-setenv RoboDIR `\pwd`
-set RoboPATH=${RoboDIR}
-set RoboPYTHON=${RoboDIR}
+#!/bin/csh
+setenv TestSuiteDIR `pwd`
+set TestSuitePATH=${TestSuiteDIR}
+set TestSuitePYTHON=${TestSuiteDIR}
 
 if ( ! $?path ) then
-set path=${RoboPATH}
+set path=${TestSuitePATH}
 else
-set path=( ${RoboPATH} ${path} )
+set path=( ${TestSuitePATH} ${path} )
 endif
 if ( ! $?PYTHONPATH ) then
-setenv PYTHONPATH ${RoboPYTHON}
+setenv PYTHONPATH ${TestSuitePYTHON}
 else
-setenv PYTHONPATH ${RoboPYTHON}:${PYTHONPATH}
+setenv PYTHONPATH ${TestSuitePYTHON}:${PYTHONPATH}
 endif

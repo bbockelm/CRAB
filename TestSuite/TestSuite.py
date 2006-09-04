@@ -1,396 +1,160 @@
-#!/usr/bin/env python2.2
-from InteractCrab import InteractCrab
-import sys, os
+#!/usr/bin/env python
+# -*- coding: iso-8859-15 -*-
 
-class RoboCrab:
+import os, sys, logging, subprocess
+from optparse import OptionParser
+from Scanner import *
+from ThreadedTest import *
+from ProcessTest import *
+from os import path
+from subprocess import Popen
+from ProxyInit import *
+from sys import stderr
 
-    nCreate = -1
-    nSubmit = -1
-    set = 1
-    ok = 0
-    debug = 0
-    wait = 60
-    cfgFileName = "crab.cfg"
-
+class TestSuite:
     def __init__(self):
-        typeRunning = sys.argv[1:]
-        self.checkPar(typeRunning)
+        self.t = []
+        self.options = None
+        self.getOptions()
+        self.getConfig()
 
-    def printMan(self):
-        print ""
-        print "Sample to lanch TestSuite:"
-        print "\t $TestSuite [n] [m] [-debug N] [-wait s] [-cfg FILE]\n"
-        print "\t Options:\n"
-        print "\t  n m:         n = number of jobs to create"
-        print "\t               m = number of jobs to submit"
-        print ""
-        print "\t  -debug N:    N = positive number that indicates the level of debug"
-        print "\t                    0 -> no debug"
-        print "\t                    1 -> shows the commands launched from the TestSuite"
-        print ""
-        print "\t  -wait s:     s = positive number that indicates the number of seconds to" 
-        print "\t                   wait between cycles; the default value is 60"
-        print ""
-        print "\t  -cfg FILE:   FILE = name of the file containing the configurations for"
-        print "\t                      running Crab (e.g. crab.cfg)\n"
-        return
+    def printHelp(self):
+        print >> stderr
+        print >> stderr, "**********************************************************"
+        print >> stderr, "* TestSuite needs a simple config file to get happy.     *"
+        print >> stderr, "* Each row represents a particular test to run.          *"
+        print >> stderr, "* A row must contain a comma-separated triple of datas:  *"
+        print >> stderr, "*         crab.cfg name, nC, nS                          *"
+        print >> stderr, "* where crab.cfg name is the name of the crab.cfg to run *"
+        print >> stderr, "* nC is the number of jobs to create                     *"
+        print >> stderr, "* nS is the number of jobs to submit                     *"
+        print >> stderr, "**********************************************************"
+        
 
-    def optTest1(self, par1, par2):
+    def getOptions (self):
+        #logging.debug('Parsing the command line')      ## Matt
+        self.printDebugThrd('Parsing the command line')
+        parser = OptionParser(version='0.1')
+        parser.add_option('-c', '--config', action='store', type='string', dest='config', default='TestSuite.cfg', help='set the config file of the testsuite (default %default)')
+        parser.add_option('-l', '--logname', action='store', type='string', dest='log', default='TestSuite.log', help='set the log file name of the TestSuite (default %default)')
+        parser.add_option('-t', '--usethreads', action='store_true', dest='threads', default=True, help='Use threads (default)' )
+        parser.add_option('-p', '--useprocesses', action='store_false', dest='threads', default=True, help='Use processes (\'only for testing purpose\')')
+        (self.options, args) = parser.parse_args()
 
-       try:
+        self.options.config=path.abspath(self.options.config.strip())
+        self.options.log=path.abspath(self.options.log.strip())
 
-           self.nCreate = int(par1)
-           #print par1
-           self.nSubmit = int(par2)
-           #print par2
-           self.set = 1
-           self.ok = 1
-       except ValueError:
-           msg = 'TestSuite: "Error: arguments related to the number of jobs to create and to submit must be numbers"'
-           print msg
-           self.printMan()
-           sys.exit(1)
+        try:
+            open(self.options.config)
+        except IOError, msg:
+            self.printHelp()
+            parser.error('Error in opening the config file '+self.options.config+': '+str(msg))
 
-    def optDebug(self, nDebug):
-       try:
-           self.debug = int( nDebug )
-       except ValueError:
-           msg = 'TestSuite: Error -debug argument must be positive number'
-           print msg
-           self.printMan()
-           sys.exit(1)
+        try:
+            open(self.options.log, 'a')
+        except IOError, msg:
+            parser.error('Error while creating the log file '+self.options.log+': '+str(msg))
 
-    def optWait(self, lWait):
-       try:
-           self.wait = int( lWait )
-       except ValueError:
-           msg = 'TestSuite: Error -wait argument must be positive number'
-           print msg
-           self.printMan()
-           sys.exit(1)
+    def getConfig (self):
+        ##logging.debug('Parsing the config file')      ## Matt
+        self.printDebugThrd('Parsing the config file')
+        i = 1
+        for line in open(self.options.config):
+            line = line.strip()
+            if line != '' and line[0] != '#':
+                try:
+                    (cfg, nC, nS) = line.split(',', 3)
+                except ValueError:
+                    self.printHelp();
+                    logging.error('Error while reading in '+self.options.config+' rows: '+str(i))
+                    
+                logging.debug('Read: cfg='+cfg+', nC='+str(nC)+', nS='+str(nS))
+                cfg = path.abspath(cfg.strip())
+                
+                nC = int(nC)
+                nS = int(nS)
+                if nC < 1:
+                    self.printHelp()
+                    logging.error('nC must be a value greater than 0 in '+self.options.config+' row: '+str(i))
+                elif nS < 1:
+                    self.printHelp()
+                    logging.error('nS must be a value greater than 0 in '+self.options.config+' row: '+str(i))
+                elif nS > nC:
+                    self.printHelp()
+                    logging.error('nS must not be a value greater than nC in '+self.options.config+' row: '+str(i))
+                else:
+                    try:
+                        open (cfg, 'r')
+                    except IOError, msg:
+                        self.printHelp()
+                        logging.error(cfg+' can\'t be opened for reading: '+str(msg))
+                self.t.append((cfg, nC, nS))
+            i += 1
+        if (len(self.t) == 0):
+            logging.error('Empty config file!? Nothing to do!')
+            self.printHelp();
+            sys.exit(1)
+        
+    def printDebugThrd(self, strr):           ## Matt
+        if 2 == 3:
+            logging.debug( strr )
+ 
+    def mainThreads(self):
+        ##logging.debug('Starting tests...')
+        self.printDebugThrd('Starting tests...')       ## Matt
+        tests = []
+        for (cfg, nC, nS) in self.t:
+            test = ThreadedTest (cfg, nC, nS, os.getcwd())
+            #logging.debug('Thread '+test.getName()+' initialized')
+            self.printDebugThrd('Thread '+test.getName()+' initialized')   ## Matt
+            tests.append(test)
+            test.start()
+            #logging.debug('Thread '+test.getName()+' started')
+            self.printDebugThrd('Thread '+test.getName()+' started')       ## Matt
+            time.sleep (15) # To not fall into the Boss 3.6 "concurrent bug"
+        testerLog = open(self.options.log, 'a')
+        for test in tests:
+            #logging.debug('Waiting for '+test.getName())
+            self.printDebugThrd('Waiting for '+test.getName())             ## Matt
+            test.join()
+            #logging.debug('Joined with '+test.getName())
+            self.printDebugThrd('Joined with '+test.getName())             ## Matt
+            try:
+                for line in open(test.getBadLog()):
+                    if 'Failed' in line or 'missing' in line:
+                        testerLog.write(test.getName()+'\t'+line)
+            except OSError, msg:
+                logging.warning('Unable to write ouputlog concerning the test '+test.getName()+': '+str(msg))
 
-    def optConfig(self, cfgFile):
-       try:
-           self.cfgFileName = cfgFile
-       except:
-           msg = 'TestSuite: Error in -cfg argument options'
-           print msg
-           self.printMan()
-           sys.exit(1)
-
-    def checkPar(self, parameters):
-
-        nPar = len(parameters)
-
-        if nPar == 2:
-           opt = parameters[0]
-           if opt == "-debug":
-               self.optDebug( parameters[1] )
-           elif opt == "-wait":                                # #
-               self.optWait( parameters[1] )
-           elif opt == "-cfg":
-               self.optConfig( parameters[1] )
-           else:
-               self.optTest1(parameters[0], parameters[1])
-           
-
-        elif nPar == 4:
-           opt = parameters[0]
-           #if opt == "-test1":
-           if opt == "-debug":
-               self.optDebug( parameters[1] )
-               #if parameters[2] == "-test1":
-               if parameters[2] == "-wait":
-                   self.optWait( parameters[3] )
-               elif parameters[2] == "-cfg":
-                   self.optConfig( parameters[3] )
-               else:
-                   self.optTest1(parameters[2], parameters[3])
-           elif opt == "-wait":                                # #
-               self.optWait( parameters[1] )                   # WAIT
-               #if parameters[2] == "-test1":                   #
-               if parameters[2] == "-debug":
-                   self.optDebug( parameters[3] )
-               elif parameters[2] == "-cfg":
-                   self.optConfig( parameters[3] )
-               else:
-                   self.optTest1(parameters[2], parameters[3])
-           elif opt == "-cfg":
-               self.optConfig( parameters[1] )
-               #if parameters[2] == "-test1":
-               if parameters[2] == "-debug":
-                   self.optDebug( parameters[3] )
-               elif parameters[2] == "-wait":
-                   self.optWait( parameters[3] )
-               else:
-                   self.optTest1(parameters[2], parameters[3])
-           else:
-               self.optTest1(parameters[0], parameters[1])
-               if parameters[2] == "-debug":
-                   self.optDebug( parameters[3] )
-               elif parameters[2] == "-wait":                  # #
-                   self.optWait( parameters[3] )               # WAIT
-               elif  parameters[2] == "-cfg":                 # #
-                   self.optConfig( parameters[3] )
-
-
-        elif nPar == 6:                                        # #
-           opt = parameters[0]                                 #
-#           if opt == "-test1":                                 #
-           if opt == "-debug":                               #
-               self.optDebug( parameters[1] )                  #
-               ##if parameters[2] == "-test1":                   #
-               if parameters[2] == "-wait":                  
-                   self.optWait( parameters[3] )               
-                   ##if parameters[4] == "-test1":
-                   if parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-                   else:
-                       self.optTest1(parameters[4], parameters[5])
-               elif parameters[2] == "-cfg":
-                   self.optConfig( parameters[3] )
-                   ##if parameters[4] == "-test1":
-                   if parameters[4] == "-wait":
-                       self.optWait( parameters[5] )
-                   else:
-                       self.optTest1(parameters[4], parameters[5])
-               else:
-                   self.optTest1(parameters[2], parameters[3]) #
-                   if parameters[4] == "-wait":                #
-                       self.optWait( parameters[5] )           #
-                   elif parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-           elif opt == "-wait":                                #
-               self.optWait( parameters[1] )                   #
-               #if parameters[2] == "-test1":                   #
-               if parameters[2] == "-debug":
-                   self.optDebug( parameters[3] )
-                   #if parameters[4] == "-test1":               #
-                   if parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-                   else:
-                       self.optTest1(parameters[4], parameters[5])
-               elif parameters[2] == "-cfg":
-                   self.optConfig( parameters[3] )
-                   #if parameters[4] == "-test1":
-                   if parameters[4] == "-debug":
-                       self.optDebug( parameters[5] )
-                   else:
-                       self.optTest1(parameters[4], parameters[5])
-               else:
-                   self.optTest1(parameters[2], parameters[3]) # WAIT
-                   if parameters[4] == "-debug":               #
-                       self.optDebug( parameters[5] )          #
-                   elif parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-           elif opt == "-cfg":                                #
-               self.optWait( parameters[1] )                   #
-               #if parameters[2] == "-test1":                   #
-               if parameters[2] == "-debug":                 #
-                   self.optDebug( parameters[3] )              #
-                   #if parameters[4] == "-test1":               #
-                   if parameters[4] == "-wait":                #
-                       self.optWait( parameters[5] )
-                   else:
-                       self.optTest1(parameters[4], parameters[5])
-               elif parameters[2] == "-wait":
-                   self.optWait( parameters[3] )
-                   #if parameters[4] == "-test1":
-                   if parameters[4] == "-debug":
-                       self.optDebug( parameters[5] )
-                   else:
-                       self.optTest1(parameters[4], parameters[5])
-               else:
-                   self.optTest1(parameters[2], parameters[3]) # WAIT
-                   if parameters[4] == "-debug":               #
-                       self.optDebug( parameters[5] )          #
-                   elif parameters[4] == "-wait":
-                       self.optWait( parameters[5] )
-           else:
-               self.optTest1(parameters[0], parameters[1])
-               if parameters[2] == "-debug":
-                   self.optDebug( parameters[3] )              #
-                   if parameters[4] == "-wait":                #
-                       self.optWait( parameters[5] )           # WAIT
-                   elif parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-               elif parameters[2] == "-wait":                  #
-                   self.optWait( parameters[3] )               #
-                   if parameters[4] == "-debug":               #
-                       self.optDebug( parameters[5] )          #
-                   elif parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-               elif parameters[2] == "-cfg":
-                   self.optConfig( parameters[3] )
-                   if parameters[4] == "-wait":
-                       self.optWait( parameters[5] )
-                   elif parameters[4] == "-debug":
-                       self.optDebug( parameters[5] )
-
-
-        elif nPar == 8:
-           opt = parameters[0]                                 #
-           #if opt == "-test1":                                 #
-           if opt == "-debug":                               
-               self.optDebug( parameters[1] )                  
-               #if parameters[2] == "-test1":                   
-               if parameters[2] == "-wait":
-                   self.optWait( parameters[3] )               
-                   #if parameters[4] == "-test1":               
-                   if parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-                       #if parameters[6] == "-test1":
-                       self.optTest1(parameters[6],parameters[7])
-                   else:
-                       self.optTest1(parameters[4],parameters[5])
-                       if parameters[6] == "-cfg":
-                           self.optConfig( parameters[7] )
-               elif parameters[2] == "-cfg":
-                   self.optConfig( parameters[3] )
-                   #if parameters[4] == "-test1":
-                   if parameters[4] == "-wait":                #
-                       self.optWait( parameters[5] )           #
-                       #if parameters[6] == "-test1":
-                       self.optTest1(parameters[6],parameters[7])
-                   else:
-                       self.optTest1(parameters[4],parameters[5])
-                       if parameters[6] == "-wait":
-                           self.optWait( parameters[7] )
-               else:
-                   self.optTest1(parameters[2], parameters[3]) #
-                   if parameters[4] == "-wait":                #
-                       self.optWait( parameters[5] )           #
-                       if parameters[6] == "-cfg":
-                           self.optConfig( parameters[7] )
-                   elif parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-                       if parameters[6] == "-wait":
-                           self.optWait( parameters[7] )
-
-           elif opt == "-wait":                                #
-               self.optWait( parameters[1] )                   #
-               #if parameters[2] == "-test1":                   #
-               if parameters[2] == "-debug":                 
-                   self.optDebug( parameters[3] )              
-                   #if parameters[4] == "-test1":              
-                   if parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-                       #if parameters[6] == "-test1":
-                       self.optTest1(parameters[6],parameters[7])
-                   else:
-                       self.optTest1(parameters[4],parameters[5])
-                       if parameters[6] == "-cfg":
-                           self.optConfig( parameters[7] )
-               elif parameters[2] == "-cfg":
-                   self.optConfig( parameters[3] )
-                   #if parameters[4] == "-test1":
-                   if parameters[4] == "-debug":               #
-                       self.optDebug( parameters[5] )
-                       #if parameters[6] == "-test1":
-                       self.optTest1(parameters[6],parameters[7])
-                   else:
-                       self.optTest1(parameters[4],parameters[5])
-                       if parameters[6] == "-debug":               #
-                           self.optDebug( parameters[7] )
-               else: 
-                   self.optTest1(parameters[2], parameters[3]) # WAIT
-                   if parameters[4] == "-debug":               #
-                       self.optDebug( parameters[5] )          #
-                       if parameters[6] == "-cfg":
-                           self.optConfig( parameters[7] )
-                   elif parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-                       if parameters[6] == "-wait":
-                           self.optWait( parameters[7] )
-           elif opt == "-cfg":                                #
-               self.optWait( parameters[1] )                   #
-               #if parameters[2] == "-test1":                   #
-               if parameters[2] == "-debug":                 #
-                   self.optDebug( parameters[3] )              #
-                   #if parameters[4] == "-test1":               #
-                   if parameters[4] == "-wait":
-                       self.optWait( parameters[5] )
-                       #if parameters[6] == "-test1":
-                       self.optTest1(parameters[6],parameters[7])
-                   else:
-                       self.optTest1(parameters[4],parameters[5])
-                       if parameters[6] == "-wait":
-                           self.optWait( parameters[7] )
-               elif parameters[2] == "-wait":
-                   self.optWait( parameters[3] )
-                   #if parameters[4] == "-test1":
-                   if parameters[4] == "-debug":               #
-                       self.optDebug( parameters[5] )
-                       #if parameters[6] == "-test1":
-                       self.optTest1(parameters[6],parameters[7])
-                   else:
-                       self.optTest1(parameters[4],parameters[5])
-                       if parameters[6] == "-debug":               #
-                           self.optDebug( parameters[7] )
-               else:         
-                   self.optTest1(parameters[2], parameters[3])
-                   if parameters[4] == "-debug":
-                       self.optDebug( parameters[5] )
-                       if parameters[6] == "-wait":
-                           self.optWait( parameters[7] )
-                   elif parameters[4] == "-wait":
-                       self.optWait( parameters[5] )
-                       if parameters[6] == "-debug":          
-                           self.optDebug( parameters[7] )
-           else:
-               self.optTest1(parameters[0], parameters[1])     #
-               if parameters[2] == "-debug":                   #
-                   self.optDebug( parameters[3] )              #
-                   if parameters[4] == "-wait":                #
-                       self.optWait( parameters[5] )           # WAIT
-                       if parameters[6] == "-cfg":
-                           self.optConfig( parameters[7] )
-                   elif parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-                       if parameters[6] == "-wait":
-                           self.optWait( parameters[7] )
-               elif parameters[2] == "-wait":                  #
-                   self.optWait( parameters[3] )               #
-                   if parameters[4] == "-debug":               #
-                       self.optDebug( parameters[5] )          #
-                       if parameters[6] == "-cfg":
-                           self.optConfig( parameters[7] )
-                   elif parameters[4] == "-cfg":
-                       self.optConfig( parameters[5] )
-                       if parameters[6] == "-debug":               #
-                           self.optDebug( parameters[7] )
-               elif parameters[2] == "-cfg":
-                   self.optConfig( parameters[3] )
-                   if parameters[4] == "-wait":
-                       self.optWait( parameters[5] )
-                       if parameters[6] == "-debug":               #
-                           self.optDebug( parameters[7] )
-                   elif parameters[4] == "-debug":
-                       self.optDebug( parameters[5] )
-                       if parameters[6] == "-wait":
-                           self.optWait( parameters[7] )
-
-        else:
-           print('TestSuite: "Error in the number of parameters"')   ## M.
-           self.printMan()
-           sys.exit(1)
-           
-        return
+    def mainProcesses(self):
+        logging.debug('Starting tests...')
+        tests = []
+        for (cfg, nC, nS) in self.t:
+            test = ProcessTest (cfg, nC, nS, os.getcwd())
+            logging.debug('Process '+test.getName()+' initialized')
+            tests.append((test, test.run()))
+            logging.debug('Process'+test.getName()+' started')
+            #time.sleep (15) # To not fall into the Boss 3.6 "concurrent bug"
+        testerLog = open(self.options.log, 'a')
+        for (test, p) in tests:
+            logging.debug('Waiting for '+test.getName())
+            (outdata, errdata) = p.communicate()
+            logging.debug('Joined with '+test.getName())
+            testerLog.write("Stdout of " + test.getName())
+            for line in outdata:
+                testerLog.write(line)
+            testerLog.write("Stderr of " + test.getName())
+            for line in errdata:
+                testerLog.write(line)
+            
 
 if __name__=='__main__':
-
-    roboStart = RoboCrab()
-    #print roboStart.set, roboStart.nCreate, roboStart.nSubmit
-    if not roboStart.ok:
-        roboStart.nCreate = 1
-        roboStart.nSubmit = 1
-        print '\n ****   TestSuite: "Warning: no number of jobs to create and to submit specified"   ****'
-        #print "debug = ", roboStart.debug
-        #print "wait = ", roboStart.wait
-    crabber = InteractCrab(roboStart.set, roboStart.nCreate, roboStart.nSubmit, roboStart.debug, roboStart.wait, roboStart.cfgFileName)
-    crabber.crabRunner()
-#    else:
-#        print('CrabRob: "Error in the paramaters"') #M.
-#        roboStart.printMan()
-
-    pass
+    #logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+    logging.basicConfig(level=logging.INFO, format='TestSuite. %(levelname)s: %(message)s')
+    t = TestSuite()
+    p = ProxyInit(t.t[0][0])
+    p.checkProxy()
+    if t.options.threads:
+        t.mainThreads()
+    else:
+        t.mainProcesses()

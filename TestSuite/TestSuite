@@ -1,2 +1,2 @@
 #!/bin/sh
-TestSuite.py $*
+python $TestSuiteDIR/TestSuite.py $*
