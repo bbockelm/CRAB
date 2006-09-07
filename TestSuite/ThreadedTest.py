@@ -34,7 +34,7 @@ class ThreadedTest(threading.Thread):
         This launch the TestSuite embedded code, in orderd to grasp useful information about the tests results
         """
         logging.info('Preparing the test '+self.cfg+' in '+self.wd)
-        r = InteractCrab(self.nC, self.nS, True, randint(20, 40), self.cfg, self.wd)
+        r = InteractCrab(self.nC, self.nS, True, 60, self.cfg, self.wd)
         logging.info('Running the test '+self.cfg+' in '+r.getRoboLogDir())
         self.badLog = path.abspath(r.getRoboLogDir()+'/Robolog/bad.table.out')
         self.juiceLog = path.abspath(r.getRoboLogDir()+'/Robolog/juice.table.out')
