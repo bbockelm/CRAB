@@ -33,12 +33,13 @@ class TestSuite:
 
     def getOptions (self):
         #logging.debug('Parsing the command line')      ## Matt
-        self.printDebugThrd('Parsing the command line')
+        logging.debug('Parsing the command line') ## Sk.
         parser = OptionParser(version='0.1')
         parser.add_option('-c', '--config', action='store', type='string', dest='config', default='TestSuite.cfg', help='set the config file of the testsuite (default %default)')
         parser.add_option('-l', '--logname', action='store', type='string', dest='log', default='TestSuite.log', help='set the log file name of the TestSuite (default %default)')
         parser.add_option('-t', '--usethreads', action='store_true', dest='threads', default=True, help='Use threads (default)' )
         parser.add_option('-p', '--useprocesses', action='store_false', dest='threads', default=True, help='Use processes (\'only for testing purpose\')')
+        parser.add_option('-d', '--debug', action='store', type='int', dest='debug', default=0, help='Activate debug output (the greater the value the more verbouse output) (default: %default)')
         (self.options, args) = parser.parse_args()
 
         self.options.config=path.abspath(self.options.config.strip())
@@ -57,7 +58,7 @@ class TestSuite:
 
     def getConfig (self):
         ##logging.debug('Parsing the config file')      ## Matt
-        self.printDebugThrd('Parsing the config file')
+        logging.debug('Parsing the config file') # Sk.
         i = 1
         for line in open(self.options.config):
             line = line.strip()
@@ -70,24 +71,27 @@ class TestSuite:
                     
                 logging.debug('Read: cfg='+cfg+', nC='+str(nC)+', nS='+str(nS))
                 cfg = path.abspath(cfg.strip())
-                
-                nC = int(nC)
-                nS = int(nS)
-                if nC < 1:
-                    self.printHelp()
-                    logging.error('nC must be a value greater than 0 in '+self.options.config+' row: '+str(i))
-                elif nS < 1:
-                    self.printHelp()
-                    logging.error('nS must be a value greater than 0 in '+self.options.config+' row: '+str(i))
-                elif nS > nC:
-                    self.printHelp()
-                    logging.error('nS must not be a value greater than nC in '+self.options.config+' row: '+str(i))
-                else:
-                    try:
-                        open (cfg, 'r')
-                    except IOError, msg:
+                try: # Check of nC
+                    nC = int(nC)
+                    if nC < 1:
                         self.printHelp()
-                        logging.error(cfg+' can\'t be opened for reading: '+str(msg))
+                        logging.error('nC must be a value greater than 0 in '+self.options.config+' row: '+str(i))
+                except ValueError:
+                    self.printHelp()
+                    logging.error('nC must be an integer value greater than 0 in '+self.options.config+' row: '+str(i))
+                try: # Check of nS
+                    nS = int(nS)
+                    if nS < 1:
+                        self.printHelp()
+                        logging.error('nS must be a value greater than 0 in '+self.options.config+' row: '+str(i))
+                except ValueError:
+                    self.printHelp()
+                    logging.error('nS must be an integer value greater than 0 in '+self.options.config+' row: '+str(i))
+                try: # Check of cfg
+                    open (cfg, 'r')
+                except IOError, msg:
+                    self.printHelp()
+                    logging.error(cfg+' can\'t be opened for reading: '+str(msg))
                 self.t.append((cfg, nC, nS))
             i += 1
         if (len(self.t) == 0):
@@ -96,15 +100,18 @@ class TestSuite:
             sys.exit(1)
         
     def printDebugThrd(self, strr):           ## Matt
-        if 2 == 3:
-            logging.debug( strr )
+        if self.options.debug > 1:
+            logging.info( strr )
+        else:
+            logging.debug(strr)
+            
  
     def mainThreads(self):
         ##logging.debug('Starting tests...')
         self.printDebugThrd('Starting tests...')       ## Matt
         tests = []
         for (cfg, nC, nS) in self.t:
-            test = ThreadedTest (cfg, nC, nS, os.getcwd())
+            test = ThreadedTest (cfg, nC, nS, os.getcwd(), self.options.debug)
             #logging.debug('Thread '+test.getName()+' initialized')
             self.printDebugThrd('Thread '+test.getName()+' initialized')   ## Matt
             tests.append(test)
@@ -130,7 +137,7 @@ class TestSuite:
         logging.debug('Starting tests...')
         tests = []
         for (cfg, nC, nS) in self.t:
-            test = ProcessTest (cfg, nC, nS, os.getcwd())
+            test = ProcessTest (cfg, nC, nS, os.getcwd(), self.options.debug)
             logging.debug('Process '+test.getName()+' initialized')
             tests.append((test, test.run()))
             logging.debug('Process'+test.getName()+' started')

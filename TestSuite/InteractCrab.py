@@ -60,10 +60,9 @@ class InteractCrab:
         """
 
         timeout = -1
-        putOut.debugger( "TestSuite: executing \"" + cmd + "\" in "+self.cwd, self.debug ) # prints the debug level
-
-        putOut.debugger( "TestSuite: executing \"" + cmd + "\"", self.debug ) # prints the debug level
-
+        #putOut.debugger( "TestSuite: executing \"" + cmd + "\" in "+self.cwd, self.debug ) # prints the debug level 
+        #putOut.debugger( "TestSuite: executing \"" + cmd + "\"", self.debug ) # prints the debug level
+        putOut.debugger( "Executing \"" + cmd + "\" in "+self.cwd, self.debug ) # prints the debug level # Sk.
         child = popen2.Popen3(cmd, 1) # capture stdout and stderr from command
         child.tochild.close()             # don't need to talk to child
         outfile = child.fromchild 
@@ -120,8 +119,8 @@ class InteractCrab:
         Executes the command for create the job[s]
         """
         # Messages must be somethings like CrabRob: ....  D.
-        putOut.printStep('TestSuite: CRAB is creating '+self.nCreate+' JOBS')
-
+        #putOut.printStep('TestSuite: CRAB is creating '+self.nCreate+' JOBS')
+        putOut.printStep('CRAB is creating '+self.nCreate+' JOBS') # Sk.
         creatioNumber = self.nCreate
         cmd ="crab -create " + creatioNumber + " -debug 10 -cfg " + self.cfgFileName + " -USER.ui_working_dir " + workingDir
         if flag > 0:
@@ -212,8 +211,9 @@ class InteractCrab:
         """
         Executes the command for submit the job[s]
         """
-        putOut.printStep('TestSuite: CRAB is submitting '+self.nSubmit+' JOBS')
-
+        #putOut.printStep('TestSuite: CRAB is submitting '+self.nSubmit+' JOBS')
+        putOut.printStep('CRAB is submitting '+self.nSubmit+' JOBS') # Sk.
+        
         submissioNumber = self.nSubmit
         if flag > 0:
             submissioNumber = str(flag)
@@ -262,7 +262,8 @@ class InteractCrab:
         Executes the commands for get the status of the job[s]
         """
 
-        putOut.printStep('TestSuite: CRAB start Checking JOBS\' status')
+        #putOut.printStep('TestSuite: CRAB start Checking JOBS\' status')
+        putOut.printStep('CRAB start Checking JOBS\' status') # Sk.
         
         i = 0
         #resultStatus = 0
@@ -318,23 +319,27 @@ class InteractCrab:
                 x = parser.strCodeStatus(xT)
                 if x == -1:
                     h = str(j+1)
-                    putOut.printStep('TestSuite: JOBS\' status: \'Unknown\'')  ##M.: added idJob and status
+                    #putOut.printStep('TestSuite: JOBS\' status: \'Unknown\'')  ##M.: added idJob and status
+                    putOut.printStep('JOBS\' status: \'Unknown\'')  ##M.: added idJob and status # Sk.
                     mesg = '          jobId: ' + h
                     putOut.printStep(mesg)
                     mesg = '          status: ' + str(xT)
                     putOut.printStep(mesg)
                 elif x == 8:
                     h = str(j+1)
-                    putOut.printStep('TestSuite: JOBS\' status: \'Submitted\'')  ##M.: added idJob and status
+                    #putOut.printStep('TestSuite: JOBS\' status: \'Submitted\'')  ##M.: added idJob and status
+                    putOut.printStep('JOBS\' status: \'Submitted\'')  ##M.: added idJob and status # Sk.
                     mesg = '          jobId: ' + h
                     putOut.printStep(mesg)
                 elif x == 6:
                     pass
                 elif x == 0:
                     h = str(j+1)
-                    mesg = 'TestSuite: JOB NÂ° ' + h + '- status: \'Done (Success)\'' ##M.: added idJob 
+                    #mesg = 'TestSuite: JOB N° ' + h + '- status: \'Done (Success)\'' ##M.: added idJob
+                    mesg = 'JOB N° ' + h + '- status: \'Done (Success)\'' ##M.: added idJob # Sk.
                     putOut.printStep( mesg )
-                    mesg = 'TestSuite: JOB NÂ° ' + h + '- EXE_EXIT_STATUS: ' + parser.exeExitStatus(strOut) ##M.: added idJob 
+                    #mesg = 'TestSuite: JOB N° ' + h + '- EXE_EXIT_STATUS: ' + parser.exeExitStatus(strOut) ##M.: added idJob
+                    mesg = 'JOB N° ' + h + '- EXE_EXIT_STATUS: ' + parser.exeExitStatus(strOut) ##M.: added idJob # Sk.
                     putOut.printStep( mesg ) 
                     self.getResultOutput( putOut, workingDir, parser, cwd, j + 1 )
                     putOut.printTable(self.jobs)
@@ -355,13 +360,15 @@ class InteractCrab:
                     statoPre = self.jobs.getStatusPre(j)#jobIndex)
                     if statoNow != statoPre:
                         h = str(j+1)
-                        mesg = 'TestSuite: JOB NÂ° ' + h + ' - status: \'Aborted\'' ##M.: added idJob
+                        #mesg = 'TestSuite: JOB N° ' + h + ' - status: \'Aborted\'' ##M.: added idJob
+                        mesg = 'JOB N° ' + h + ' - status: \'Aborted\'' ##M.: added idJob # Sk.
                         putOut.printStep( mesg )
                         self.getMortemOutput( putOut, workingDir, parser, j)
                     #return x
                 elif x == 5:
                     h = str(j+1)
-                    mesg =  'TestSuite: JOB NÂ° ' + h + ' - status: \'Killed\'' ##M.: added idJob
+                    #mesg =  'TestSuite: JOB N° ' + h + ' - status: \'Killed\'' ##M.: added idJob
+                    mesg =  'JOB N° ' + h + ' - status: \'Killed\'' ##M.: added idJob # Sk.
                     #putOut.printStep( mesg )
                     #if ( self.resubmitJob( outStream, workingDir, parser, jobId ) ):
                     #    print "resubmitted job " + jobId
@@ -378,13 +385,15 @@ class InteractCrab:
                     return -3
                 elif toDo == 1:
                     strJob = str( j+1 )
-                    putOut.printStep("TestSuite: too long execution for job " + strJob + " => Killing!")
+                    #putOut.printStep("TestSuite: too long execution for job " + strJob + " => Killing!")
+                    putOut.printStep("too long execution for job " + strJob + " => Killing!") # Sk.
                     if self.killManager( putOut, workingDir, parser, sess, j + 1, cwd ):
                         #print "Ok Killing ---> restart the Robot"
                         putOut.printTable(self.jobs)
                     else:
                         h = str(j+1)
-                        mesg = "TestSuite: ERROR on JOB NÂ° " + h
+                        #mesg = "TestSuite: ERROR on JOB N° " + h
+                        mesg = "ERROR on JOB N° " + h # Sk.
                         putOut.printStep( mesg )
 
                 j = j + 1
@@ -401,7 +410,8 @@ class InteractCrab:
            -kill -resuBmit -kill -getoutput
         """
 
-        mesg = "TestSuite: verifying others Crab's functionality: kill, resubmit and postMortem"
+        #mesg = "TestSuite: verifying others Crab's functionality: kill, resubmit and postMortem"
+        mesg = "Verifying others Crab's functionality: kill, resubmit and postMortem" # Sk.
         putOut.printStep(mesg)
 
         if self.creation:
@@ -439,7 +449,8 @@ class InteractCrab:
 
         # executing the commmand
         strJob = str(idJob)
-        mesg = 'TestSuite: JOB NÂ° ' + strJob + '- Getting succeded(Done) output' ##M.: added idJob
+        #mesg = 'TestSuite: JOB N° ' + strJob + '- Getting succeded(Done) output' ##M.: added idJob
+        mesg = 'JOB N° ' + strJob + '- Getting succeded(Done) output' ##M.: added idJob # Sk.
         putOut.printStep(mesg)
         cmd = "crab -getoutput " + strJob + " -debug 10 -c " + workingDir
         strOut = self.run( cmd, putOut )
@@ -450,25 +461,27 @@ class InteractCrab:
         # printing output to the files and to the console
         if ( flagFiles > 1 ):
             if ( parser.scanGetOutput(strOut, strJob) == 0 ):
-                 mesg = 'TestSuite: JOB NÂ° ' + strJob + ' - output was got correctly'  ##M.: added idJob
-                 putOut.printStep( mesg )
-                 self.jobs.done( idJob, 1 )
+                #mesg = 'TestSuite: JOB NÂ° ' + strJob + ' - output was got correctly'  ##M.: added idJob
+                mesg = 'JOB N° ' + strJob + ' - output was got correctly'  ##M.: added idJob #Sk.
+                putOut.printStep( mesg )
+                self.jobs.done( idJob, 1 )
             else:
-                mesg = 'TestSuite: JOB NÂ° ' + strJob + ' - output wasn\'t got correctly'  ##M.: added idJob
+                #mesg = 'TestSuite: JOB NÂ° ' + strJob + ' - output wasn\'t got correctly'  ##M.: added idJob
+                mesg = 'JOB N° ' + strJob + ' - output wasn\'t got correctly'  ##M.: added idJob # Sk.
                 putOut.printStep( mesg )
                 self.jobs.done( idJob, -2 )
             if ( flagFiles == 4 ):
-                putOut.printStep("TestSuite: \"WARNING: emply output file in " + workingDir + "/res/\"")
-                putOut.printStep("TestSuite: \"WARNING: missing stdout/stderr file in " + workingDir + "/res/\"")
+                putOut.printStep("\"WARNING: emply output file in " + workingDir + "/res/\"") # Sk.
+                putOut.printStep("\"WARNING: missing stdout/stderr file in " + workingDir + "/res/\"") # Sk.
             elif ( flagFiles == 6 ):
-                putOut.printStep("TestSuite: \"WARNING: missing stdout/stderr file in " + workingDir + "/res/\"")
+                putOut.printStep("\"WARNING: missing stdout/stderr file in " + workingDir + "/res/\"") # Sk.
             elif ( flagFiles == 5 ):
-                putOut.printStep("TestSuite: \"WARNING: emply output file in " + workingDir + "/res/\"")
+                putOut.printStep("\"WARNING: emply output file in " + workingDir + "/res/\"") # Sk.
         else:
-            putOut.printStep("TestSuite: ERROR - missing output file[s] in dir " + workingDir + "/res")
+            putOut.printStep("ERROR - missing output file[s] in dir " + workingDir + "/res") # Sk.
             self.jobs.done( idJob, 2 )
             if ( flagFiles == 0 ):
-                putOut.printStep("TestSuite: \"WARNING: missing stdout/stderr file in " + workingDir + "/res/\"")
+                putOut.printStep("\"WARNING: missing stdout/stderr file in " + workingDir + "/res/\"") # Sk.
 
         putOut.writeOut( cmd, strOut, 0 )
 
@@ -483,7 +496,7 @@ class InteractCrab:
             jobsRange = self.jobs.allNotDone()
         else:
             jobsRange = str(flag + 1)
-        mesg = 'TestSuite: JOB NÂ° ' + jobsRange + ' - Getting postMortem informations'
+        mesg = 'JOB N° ' + jobsRange + ' - Getting postMortem informations' # Sk.
         putOut.printStep(mesg)   ##M.: added idJob
         cmd = "crab -postMortem " + jobsRange + " -debug 10 -c " + workingDir
         strOut = self.run( cmd, putOut )
@@ -498,7 +511,7 @@ class InteractCrab:
 
         # executing the commmand
         #putOut.printStep('Killing JOB %(#)d'%{'#' : jobId})
-        putOut.printStep('TestSuite: Killing JOB NÂ° ' + jobId)
+        putOut.printStep('Killing JOB N° ' + jobId) # Sk.
         #cmd = "crab -kill  %(#)d"%{'#' : jobId} + " -c " + workingDir
         cmd = "crab -kill " + jobId + " -c " + workingDir
         strOut = self.run( cmd, putOut )
@@ -520,7 +533,7 @@ class InteractCrab:
 
         # executing the commmand
         #putOut.printStep('Resubmitting JOB %(#)d'%{'#' : jobId})
-        putOut.printStep('TestSuite: Resubmitting JOB NÂ° ' + jobId)
+        putOut.printStep('Resubmitting JOB N° ' + jobId) # Sk.
         #cmd = "crab -resubmit  %(#)d"%{'#' : jobId} + " -c " + workingDir
         cmd = "crab -resubmit " + jobId + " -c " + workingDir
         strOut = self.run( cmd, putOut )
@@ -550,63 +563,63 @@ class InteractCrab:
 
         return
 
-    def checkProxy(self, outStream, parser, cwd):
-        """
-        """
-        ok = 0
-        timeLeft = 0
-      #  try:
-        timeLeftLocal = self.run('voms-proxy-info -timeleft',outStream)
+    #def checkProxy(self, outStream, parser, cwd): # Sk.
+        #"""
+        #"""
+        #ok = 0
+        #timeLeft = 0
+      ##  try:
+        #timeLeftLocal = self.run('voms-proxy-info -timeleft',outStream)
         
-        #timeLeft = parser.scanVomsProxy(timeLeftLocal)
-        #print "timeLeftLocal = ", timeLeftLocal
+        ##timeLeft = parser.scanVomsProxy(timeLeftLocal)
+        ##print "timeLeftLocal = ", timeLeftLocal
 
-        if timeLeftLocal == None:
-            timeLeft = 0
-        else:
-            tL = parser.scanVomsProxy(timeLeftLocal)
-            timeLeft = int(tL)
-        try:
-            #print "timeLeft = ", timeLeft
-            if timeLeft <= 0: #or not timeLeft:
-                cmd = 'voms-proxy-init -valid 24:00 -voms cms'
-##            try:
-                out = os.system(cmd)
-                if out > 0:
-                    msg = "Unable to create a valid proxy!\n"
-                    outStream.printStep('TestSuite: ' + msg)
-                else:
-                    ok = 1
-  ##          except:
-                #msg = "Unable to create a valid proxy!\n"
-                #outStream.printStep('TestSuite: ' + msg)
-                #print msg
-            elif int(timeLeft) > 0:
-                ok = 1
+        #if timeLeftLocal == None:
+            #timeLeft = 0
+        #else:
+            #tL = parser.scanVomsProxy(timeLeftLocal)
+            #timeLeft = int(tL)
+        #try:
+            ##print "timeLeft = ", timeLeft
+            #if timeLeft <= 0: #or not timeLeft:
+                #cmd = 'voms-proxy-init -valid 24:00 -voms cms'
+###            try:
+                #out = os.system(cmd)
+                #if out > 0:
+                    #msg = "Unable to create a valid proxy!\n"
+                    #outStream.printStep('TestSuite: ' + msg)
+                #else:
+                    #ok = 1
+  ###          except:
+                ##msg = "Unable to create a valid proxy!\n"
+                ##outStream.printStep('TestSuite: ' + msg)
+                ##print msg
+            #elif int(timeLeft) > 0:
+                #ok = 1
 
-            proxy = parser.loadField(cwd, "proxy_server")
-##            proxy = "myproxy.cern.ch"
-        ##    print proxy
-            if ok == 1:
-                controlMyProxy = self.run('myproxy-info -d -s '+ proxy, outStream)
-                flagError = 0
-                if controlMyProxy == None:
-                    flagError = 1
-                    controlMyProxy = "timeleft: 0"
-                if not parser.scanMyProxy(controlMyProxy) or flagError:
-                    ok = 0
-                    outStream.printStep('TestSuite: No credential delegated to myproxy server '+proxy+' will do now')
-                    print ("Enter pass phrase:")
-                    setMyProxy = self.run('myproxy-init -d -n -s '+proxy, outStream)
-                    controlMyProxy = self.run('myproxy-info -d -s '+proxy, outStream)
-                    if not parser.scanMyProxy(controlMyProxy):
-                        ok = 0
-                    else:
-                        ok = 1
-        except AttributeError:
-            outStream.printStep("TestSuite: Unable to create a valid proxy!\n")
+            #proxy = parser.loadField(cwd, "proxy_server")
+###            proxy = "myproxy.cern.ch"
+        ###    print proxy
+            #if ok == 1:
+                #controlMyProxy = self.run('myproxy-info -d -s '+ proxy, outStream)
+                #flagError = 0
+                #if controlMyProxy == None:
+                    #flagError = 1
+                    #controlMyProxy = "timeleft: 0"
+                #if not parser.scanMyProxy(controlMyProxy) or flagError:
+                    #ok = 0
+                    #outStream.printStep('TestSuite: No credential delegated to myproxy server '+proxy+' will do now')
+                    #print ("Enter pass phrase:")
+                    #setMyProxy = self.run('myproxy-init -d -n -s '+proxy, outStream)
+                    #controlMyProxy = self.run('myproxy-info -d -s '+proxy, outStream)
+                    #if not parser.scanMyProxy(controlMyProxy):
+                        #ok = 0
+                    #else:
+                        #ok = 1
+        #except AttributeError:
+            #outStream.printStep("TestSuite: Unable to create a valid proxy!\n")
 
-        return ok
+        #return ok
 
     def crabRunner(self):
         """
@@ -621,9 +634,9 @@ class InteractCrab:
         #print parser.getNameFile(self.cwd)
 
         outStream = Outputter(self.roboLogDir)
-        outStream.printStep('TestSuite: CRAB Working_dir: ' + self.workingDir)
+        outStream.printStep('CRAB Working_dir: ' + self.workingDir) # Sk.
         if self.nCreate < self.nSubmit:
-            outStream.printStep('TestSuite: "WARNING jobs to submit are more then the jobs to create"')
+            outStream.printStep('"WARNING jobs to submit are more then the jobs to create"') # Sk.
 
         resultStatus = -1
 
