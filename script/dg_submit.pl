@@ -62,7 +62,7 @@ while ( <FILE> ) {
     if ($_ =~ /(\d+):(\d+):(\d+)\n/) {
 	for ($val=$1; $val<=$2; ++$val) {
 	    $jid="$taskid\_$val\_$3";
-	    $stdout="$log\_$taskid\_$val";
+	    $stdout="$log\_$taskid\_$val.log";
 #
 # ------ Get additional information from classad file (if any)----------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -218,9 +218,14 @@ sub submit {
     open (SUB, $subcmd);
     $id = "error";
     $err_msg ="";
+    $err_code =0;
     while ( <SUB> ) {
-#        print STDERR $_;
+        print LOG $_;
 	$err_msg .= "$_";
+	if ( $_ =~ m/.*Error.*/) {
+	    $err_code=1;
+#	    print $_;
+	}
 	if ( $_ =~ m/https:(.+)/) {
             if (LOG) {
 		print LOG "$jid: Scheduler ID = https:$1\n";
@@ -228,15 +233,16 @@ sub submit {
 	    $id = "https:$1";
 	} 
     }
-    if ( $id eq "error" ) {
+    if ( $id eq "error" || $err_code != 0 ) {
 	print LOG "$jid: ERROR: Unable to submit the job\n";  
 	print $err_msg ;
+	$id = "error";
     }
     
     # close the file handles
     close(SUB);
     # delete temporary files
-    unlink "$tmpfile";
+#    unlink "$tmpfile";
     unlink "BossArchive_${jid}.tgz";
     return "$id\n";
 }

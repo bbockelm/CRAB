@@ -62,7 +62,7 @@ while ( <FILE> ) {
     if ($_ =~ /(\d+):(\d+):(\d+)\n/) {
 	for ($val=$1; $val<=$2; ++$val) {
 	    $jid="$taskid\_$val\_$3";
-	    $stdout="$log\_$taskid\_$val";
+	    $stdout="$log\_$taskid\_$val.log";
 #
 # ------ Get additional information from classad file (if any)----------------
 # (do not modify this section unless for fixing bugs - please inform authors!)

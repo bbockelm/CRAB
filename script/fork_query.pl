@@ -6,8 +6,8 @@ $command = "ps axww | grep \"jobExecutor\" | ";
 open (PS , $command );
 
 while (<PS>) {
-  if($_ =~ /(\d+)\s+.+\s+\w+\s+.+\s+(.*)jobExecutor\s+.*BossWrapperSTDIN_(\d+)\.clad\s+.+\n/) {
-      print "${2}jobExecutor::${3}::${1} R\n";
+if($_ =~ /(\d+)\s+.+\s+(.+)jobExecutor\s+(\d+)\s+.+BossWrapperSTDIN_(\d+)_\w+_(\d+)/) {
+      print "${2}jobExecutor::${4}_${3}_${5}::${1} R\n";
   }
 }
 

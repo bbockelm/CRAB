@@ -62,7 +62,7 @@ while ( <FILE> ) {
     if ($_ =~ /(\d+):(\d+):(\d+)\n/) {
 	for ($val=$1; $val<=$2; ++$val) {
 	    $jid="$taskid\_$val\_$3";
-	    $stdout="$log\_$taskid\_$val";
+	    $stdout="$log\_$taskid\_$val.log";
 #
 # ------ Get additional information from classad file (if any)----------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -88,7 +88,7 @@ while ( <FILE> ) {
 # --------------------------- Ready to submit --------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
 	    $sid = &submit();
-	    print ("$val\t$3\t$sid");
+	    print ("$val\t$3\t$sid\n");
 	}
 #
 # ----------------------- If something goes wrong ----------------------------
@@ -158,6 +158,7 @@ sub submit {
     # Type of Universe (i.e. Standard, Vanilla, PVM, MPI, Globus)
     print CMD ("Universe    = vanilla\n");
     # input,output,error files passed to executable
+    print CMD ("Arguments   = $val\n");
     print CMD ("input       = $subdir/$stdin\n");
     print CMD ("output      = $stdout\n");
     print CMD ("error       = $stdout\n");

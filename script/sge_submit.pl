@@ -9,12 +9,12 @@ $subuser = `whoami`; chomp $subuser;
 # submitting host
 $subhost = `hostname --fqdn`; chomp $subhost;
 # submitting path
-$subdir = `pwd`; chomp $subdir;
+$subdir = `pawd`; chomp $subdir;
 #
 # ------------------- Optional logging of submission -------------------------
 #   (change file name and comment/uncomment the open statement as you wish)
 $logFile = "$subdir/bossSubmit.log";
-#open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
+open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
 #
 # --------------------------- Get arguments ----------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -110,9 +110,9 @@ sub parseClassAd {
     my $cladstring="";
     open (CLAD, $cladfile);
     while ( <CLAD> ) {
-#	if (LOG) {
-#	    print LOG "ClassAd line: $_";
-#	}
+	# if (LOG) {
+	#     print LOG "ClassAd line: $_";
+	# }
 	$line = $_;
 	chomp($line);
 	$cladstring.=$line;
@@ -121,25 +121,13 @@ sub parseClassAd {
     if ( $cladstring =~ /.*\[(.+)\].*/ ) {
 	$cladstring=$1;
     }
-#    print LOG "$cladstring\n";
     my @attribs = split(/;/,$cladstring);
     foreach $attrib (@attribs) {
-#	print LOG "$attrib\n";
 	if ( $attrib =~ /\s*(\w+)\s*=\s*(.+)/ ) {
 	    $clad{$1}=$2;
-#	    print LOG "In hash: $1 = $clad{$1} \n";
 	}
     }
     return %clad;
-}
-
-sub mybasename {
-    my $rf = $_[0];
-    $rf =~ s/^.\///;
-    if ( !($rf =~ m#/dev/null#) ) {
-           $rf =~ s/.+\/// ;
-    }
-    return $rf;
 }
 
 # --------------------- Scheduler specific routines -------------------------
@@ -151,89 +139,71 @@ sub initSched {
 #
 # Process a single entry of the classad
 sub processClassAd {
-    $rbconfigstring ="";
-    $ppend2JDL = "";
-    
+
+    $substring = "";  
+    $host = "";    
+
     foreach $ClAdKey ( keys %classad ) {
 #	print LOG "in hash2: $ClAdKey = $classad{$ClAdKey}\n";
 	$ClAdVal = $classad{$ClAdKey};
 #	    print LOG "$ClAdKey = $ClAdVal;\n";
-	if ( $ClAdKey eq "WMSconfig") {
+	if ( $ClAdKey eq "host") {
 	    $ClAdVal =~ s/\s*{\s*\"\s*(.*)\s*\"\s*}\.*/$1/;
 #               print "$ClAdKey : $ClAdVal \n";                
 	    chomp($ClAdVal);
-	    $rbconfigstring="-c $ClAdVal";
+	    $host= "$ClAdVal";
 #               print "$rbconfigstring \n";
-	} elsif ( $ClAdKey ne "" ) {
-	    $ppend2JDL.="$ClAdKey = $ClAdVal;\n";
+	} elsif ( $ClAdKey eq "dir") {
+	    $ClAdVal =~ s/\s*{\s*\"\s*(.*)\s*\"\s*}\.*/$1/;
+#               print "$ClAdKey : $ClAdVal \n";
+	    chomp($ClAdVal);
+	    $substring .= " -dir $ClAdVal";
+#               print "rbconfigVO $rbconfigVO \n";
 	}
     }
+
+    print LOG $addstring;
 }
 #
 # Submit the job and return the scheduler id
 sub submit {
-#     $hoststring="";
-#     if ( $host ne "NULL" ) { 
-# 	$hoststring="-r $host";
-#     }
-    $inSandBox  = "\"$executable\",\"$subdir/$stdin\"";
-    $inSandBox  .= ",\"$subdir/BossArchive_$jid.tgz\"";
-    $inSandBox  .= ",\"$subdir/$commonSandbox\"";
-    $outbn = mybasename($stdout);
-    $inbn = mybasename($stdin);
-    $outSandBox = "\"$outbn\",\"BossOutArchive_$jid.tgz\"";
-    # open a temporary file
-    $tmpfile = `mktemp glite_XXXXXX` || die "error";
-    chomp($tmpfile);    
-    open (JDL, ">$tmpfile") || die "error";
-    # Executable submit with edg-job-submit
-    print JDL ("Executable    = \"jobExecutor\";\n");
-    # input,output,error files passed to executable
-    # debug only
-    print JDL ("Arguments     = \"$val\";\n");
-    print JDL ("StdInput      = \"$inbn\";\n");
-    print JDL ("StdOutput     = \"$outbn\";\n");
-    print JDL ("StdError      = \"$outbn\";\n");
-    print JDL ("InputSandbox  = {$inSandBox};\n");
-    print JDL ("OutputSandbox = {$outSandBox};\n");
-    print JDL $ppend2JDL;
-    close(JDL);
-    # submitting command
-#    $subcmd = "glite-wms-job-delegate-proxy -d bossproxy $rbconfigstring";
-#    open (SUB, $subcmd);
-#    $subcmd = "glite-wms-job-submit -d bossproxy $rbconfigstring $tmpfile|";
-    $subcmd = "glite-wms-job-submit -a $rbconfigstring $tmpfile |";
-    # exit;
-    # open a pipe to read the stdout of glite-job-submit
+    $substring = "";
+    if ( $addstring ne "" ) {
+	$substring = "$addstring";
+    }
+
+    if ( $host == "" ) {
+	$substring .= " -cwd";
+    } else {
+	$substring .= " -host $host";
+    }
+
+
+    $ENV{"SGE_O_HOST"}="$subhost";
+    $ENV{"SGE_O_WORKDIR"}="$subdir";
+    $ENV{"SGE_STDIN_PATH"}="$subdir";
+    $subcmd = "qsub -v SGE_O_HOST,SGE_STDIN_PATH,SGE_O_WORKDIR -b y -i $subhost:$subdir/$stdin -o $subhost:$subdir/$stdout -j y $substring $executable $val |";
+# -W stagein=$commonSandbox\@$subhost:$subdir/$commonSandbox,BossArchive_$jid.tgz\@$subhost:$subdir/BossArchive_$jid.tgz,$stdin\@$subhost:$stdin -W stageout=BossOutArchive_$jid.tgz\@$subhost:$subdir/BossOutArchive_$jid.tgz 
+    if(LOG) {
+        print LOG "$subcmd\n";
+    }
+    # open a pipe to read the stdout of qsub
     open (SUB, $subcmd);
+    # find job id
     $id = "error";
-    $err_msg ="";
-    $err_code =0;
-    while ( <SUB> ) {
-	$err_msg .= "$_";
-	if ( $_ =~ m/Connecting.*/) {
-	    next;
-	} elsif ( $_ =~ m/Error.*/) {
-	    $err_code=1;
-	}
-	if ( $_ =~ m/https:(.+)/) {
-            if (LOG) {
-		print LOG "$jid: Scheduler ID = https:$1\n";
-            }
-	    $id = "https:$1";
-	} 
+    $_ = <SUB>;
+#    print $_;
+    if ( $_ =~ /.*Your\sjob\s+(\d+)\s+.+\s+has\sbeen\ssubmitted.*/ ) {
+#	print $1;
+#         @tmp = split(/\./,$1);
+         # print "$tmp[0].$tmp[1]";
+#         $id = "$tmp[0]";
+	$id = "$1";
     }
-    if ( $id eq "error" || $err_code != 0 ) {
-	print LOG "$jid: ERROR: Unable to submit the job\n"; 
-	print $err_msg ; 
-	$id = "error"; 
-    }
-    
-    # close the file handles
     close(SUB);
-    # delete temporary files
-    unlink "$tmpfile";
-    unlink "BossArchive_${jid}.tgz";
+    # delete temporary file
+    #unlink "$tmpfile";
+    #
     return "$id\n";
 }
 #

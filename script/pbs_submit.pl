@@ -62,7 +62,7 @@ while ( <FILE> ) {
     if ($_ =~ /(\d+):(\d+):(\d+)\n/) {
 	for ($val=$1; $val<=$2; ++$val) {
 	    $jid="$taskid\_$val\_$3";
-	    $stdout="$log\_$taskid\_$val";
+	    $stdout="$log\_$taskid\_$val.log";
 #
 # ------ Get additional information from classad file (if any)----------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -155,7 +155,7 @@ sub submit {
 #     }
     #
 #    $inbn = mybasename($stdin);
-    $subcmd = "qsub -i $subdir/$stdin -o $stdout -j oe $executable -W stagein=$commonSandbox\@$subhost:$subdir/$commonSandbox,BossArchive_$jid.tgz\@$subhost:$subdir/BossArchive_$jid.tgz,$stdin\@$subhost:$stdin -W stageout=BossOutArchive_$jid.tgz\@$subhost:$subdir/BossOutArchive_$jid.tgz |";
+    $subcmd = "qsub -i $subdir/$stdin -o $stdout -j oe $executable $val -W stagein=$commonSandbox\@$subhost:$subdir/$commonSandbox,BossArchive_$jid.tgz\@$subhost:$subdir/BossArchive_$jid.tgz,$stdin\@$subhost:$stdin -W stageout=BossOutArchive_$jid.tgz\@$subhost:$subdir/BossOutArchive_$jid.tgz |";
     if(LOG) {
         print LOG "$subcmd\n";
     }

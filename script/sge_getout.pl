@@ -2,8 +2,6 @@
 #
 $|=1;
 #
-# From Oliver Gutsche: Many Thanks!
-#
 # ------------------- Optional logging of submission -------------------------
 #   (change file name and comment/uncomment the open statement as you wish)
 $logFile = "bossSubmit.log";
@@ -28,18 +26,6 @@ $jid = $ARGV[0];
 $log = $ARGV[1];
 # Scheduler ID
 $sid = $ARGV[2];
-# retrieving submission number for log
-if ( $jid =~ /\d+_\d+_(\d+)/ ) {
-    $subN = $1;
-} else {
-    die "wrong boss id: $jid";
-}
-if ( $log =~ /(.*).log/ ) {
-    $log = "$1\_$subN";
-} else {
-    die "wrong boss id: $jid";
-}
-#
 # Job output directory
 $outdir = $ARGV[3];
 if (LOG) {
@@ -53,12 +39,13 @@ $status = "error";
 #     (Update the routines of this section to match your scheduler needs)
 #
 
-# With condor the output tar should be in the submitting directory
+# With PBS the output tar is already in the submitting directory if using
+# qsub [...] -W stageout=BossOutArchive_$jid.tgz\@$subhost:$subdir/BossOutArchive_$jid.tgz
 $currdir = `pwd`;
 #print STDERR "now in $currdir\n";
 if ( $currdir ne $outdir ) {
     $err = system("mv $outtar $outdir");
-    $err += system("mv $log.out $log.err condor_$jid.log $outdir");
+    $err += system("mv $log $outdir");
     if ( ! $err ) {
 	$status = "retrieved";
     }

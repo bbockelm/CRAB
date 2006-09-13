@@ -64,7 +64,7 @@ while ( <FILE> ) {
     if ($_ =~ /(\d+):(\d+):(\d+)\n/) {
 	for ($val=$1; $val<=$2; ++$val) {
 	    $jid="$taskid\_$val\_$3";
-	    $stdout="$log\_$taskid\_$val";
+	    $stdout="$log\_$taskid\_$val.log";
 #
 # ------ Get additional information from classad file (if any)----------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -185,11 +185,10 @@ sub mybasename {
 }
 # Submit the job and return the scheduler id
 sub submit {
-  $inSandBox  = "$executable,$subdir/$stdin";
-  $inSandBox  .= ",$subdir/BossArchive_$jid.tgz,$subdir/$commonSandbox";
-  $outSandBox = "$subdir/BossOutArchive_$jid.tgz";
-  $outbn = "$log_$jid.out";
-  $errbn = "$log_$jid.err";
+  $inSandBox  = "$executable,$stdin,BossArchive_$jid.tgz,$commonSandbox";
+  $outSandBox = "BossOutArchive_$jid.tgz";
+  $outbn = "$log\_$jid.out";
+  $errbn = "$log\_$jid.err";
   $condorlog = "condor_$jid.log";
   # open a temporary file
   $tmpfile = `mktemp condor_XXXXXX` || die "error";
@@ -199,20 +198,22 @@ sub submit {
   print CMD ("Executable              = $executable\n");
   # Type of Universe (i.e. Standard, Vanilla, PVM, MPI, Globus)
   print CMD ("Universe                = globus\n");
+  print CMD ("Arguments               = $val\n");
   print CMD ("globusscheduler         = $globusscheduler\n");
   if ( ! ($globusrsl eq "") ) {
     print CMD ("globusrsl               = $globusrsl\n");
   }
   print CMD ("ENABLE_GRID_MONITOR     = TRUE\n");
   # output,error files passed to executable
-  print CMD ("input                   = $subdir/$stdin\n");
-  print CMD ("output                  = $subdir/$outbn\n");
+  print CMD ("initialdir              = $subdir\n");
+  print CMD ("input                   = $stdin\n");
+  print CMD ("output                  = $outbn\n");
   print CMD ("stream_output           = false\n");
-  print CMD ("error                   = $subdir/$errbn\n");
+  print CMD ("error                   = $errbn\n");
   print CMD ("stream_error            = false\n");
   print CMD ("notification            = never\n");
   # Condor log file
-  print CMD ("log                     = $subdir/$condorlog\n");
+  print CMD ("log                     = $condorlog\n");
   # Transfer files
   print CMD ("should_transfer_files   = YES\n");
   print CMD ("when_to_transfer_output = ON_EXIT\n");
@@ -222,27 +223,31 @@ sub submit {
   print CMD ("BossJob                = $jid\n");
   print CMD ("Queue 1\n");  
   close(CMD);
-  if (LOG) {
-    open (olitmp, $tmpfile);
-    while ( <olitmp> ) {
-      print LOG "jdl line: $_";
-    }
-  }
   #
   $subcmd = "condor_submit $tmpfile |";
   # open a pipe to read the stdout of qsub
   open (SUB, $subcmd);
   # find job id
   $id = "error";
-  # skip the first two lines
-  $_ = <SUB>;
-  $_ = <SUB>;
-  # find cluster id
-  $_ = <SUB>;
-  if ( $_ =~ /\d+\s+.+\s+submitted to cluster\s+(\d+)/ ) {
-    $id = $1;
+  $err_msg ="";
+  while ( <SUB> ) {
+      $err_msg .= "$_";
+#      print  $_;
+      if ( $_ =~ /\d+\s+.+\s+submitted to cluster\s+(\d+)/) {
+	  if (LOG) {
+	      print LOG "$jid: Scheduler ID = $1\n";
+	  }
+	  $id = "$1";
+      } 
   }
+  if ( $id eq "error" ) {
+      print LOG "$jid: ERROR: Unable to submit the job\n";  
+      print $err_msg ;
+  }
+  
+  # close the file handles
   close(SUB);
+
   # delete temporary file
 #  unlink "$tmpfile";
 #  unlink "BossArchive_${jid}.tgz";
