@@ -294,25 +294,11 @@ class Crab:
             elif ( opt == '-scheduler' ):
                 if val:
                     self.scheduler_name = 'boss'
-        #            self.flag_useboss = 1   #Da
                 else:
                     print common.prog_name+". No value for '-scheduler'."
                     usage()
                     pass
                 pass
-
-#            elif ( opt in ('-use_boss', '-useboss') ):
-#                if ( val == '1' ):
-#                    self.scheduler_name = 'boss'
-#                    pass
-#                elif ( val == '0' ): 
-#                    pass
-#                else:
-#                    print common.prog_name+'. Bad flag for -use_boss option:',\
-#                          val,'Possible values are 0(=No) or 1(=Yes)'
-#                    usage()
-#                    pass
-#                pass
 
             elif string.find(opt,'.') == -1:
                 print common.prog_name+'. Unrecognized option '+opt
@@ -558,7 +544,6 @@ class Crab:
 
             elif ( opt == '-kill' ):
 
-               # if ( self.flag_useboss == 1 ):  # Da
                 if val: 
                     if val =='all':
                         allBoss_id = common.scheduler.listBoss()
@@ -568,103 +553,20 @@ class Crab:
                     common.scheduler.cancel(jobs)
                 else:
                     common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
-                #else:                                            #Da start
-                #    if val:
-                #        jobs = self.parseRange_(val)
-                #      
-                #        for nj in jobs:
-                #            st = common.jobDB.status(nj)
-                #            if st == 'S' or st == 'A':
-                #                jid = common.jobDB.jobId(nj)
-                #                common.logger.message("Killing job # "+`(nj+1)`)
-                #                common.scheduler.cancel(jid)
-                #                common.jobDB.setStatus(nj, 'K')
-                #                pass
-                #            pass
-                #   
-                #        common.jobDB.save()
-                #        pass
-                #    else:
-                #         common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
-                #                                                #Da end
             elif ( opt == '-getoutput' or opt == '-get'):
 
-                #if ( self.flag_useboss == 1 ):  # Da
                 if val=='all' or val==None or val=='':
                     allBoss_id = common.scheduler.listBoss()
                     jobs = allBoss_id
                 else:
                     jobs = self.parseRange_(val)
                 common.scheduler.getOutput(jobs) 
-                                                          #Da start
-                #else:
-                #    jobs = self.parseRange_(val) 
-                #
-                #    ## also this: create a ActorClass (GetOutput)
-                #    jobs_done = []
-                #    for nj in jobs:
-                #        st = common.jobDB.status(nj)
-                #        if st == 'D':
-                #            jobs_done.append(nj)
-                #            pass
-                #        elif st == 'S':
-                #            jid = common.jobDB.jobId(nj)
-                #            currStatus = common.scheduler.queryStatus(jid)
-                #            if currStatus=="Done":
-                #                jobs_done.append(nj)
-                #            else:
-                #                msg = 'Job # '+`(nj+1)`+' submitted but still status '+currStatus+' not possible to get output'
-                #                common.logger.message(msg)
-                #            pass
-                #        else:
-                #          #  common.logger.message('Jobs #'+`(nj+1)`+' has status '+st+' not possible to get output')
-                #            pass
-                #        pass
-                #
-                #    for nj in jobs_done:
-                #        jid = common.jobDB.jobId(nj)
-                #        dir = common.scheduler.getOutput(jid)
-                #        common.jobDB.setStatus(nj, 'Y')
-                #
-                #    # Rename the directory with results to smth readable
-                #    new_dir = common.work_space.resDir()
-                #    if ( dir != '' ) :
-                #        try:
-                #            files = os.listdir(dir)
-                #            for file in files:
-                #                os.rename(dir+'/'+file, new_dir+'/'+file)
-                #            os.rmdir(dir)
-                #        except OSError, e:
-                #            msg = 'rename files from '+dir+' to '+new_dir+' error: '
-                #            msg += str(e)
-                #            common.logger.message(msg)
-                #            # ignore error
-                #            pass
-                #        pass
-                #    ###
-                #
-                #    resFlag = 0
-                #    exCode = common.scheduler.getExitStatus(jid)
-                #    Statistic.Monitor('retrieved',resFlag,jid,exCode)
-                #
-                #    msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
-                #    common.logger.message(msg)
-                #    pass
-                # 
-                #common.jobDB.save()
-                #pass
-                #                                        #Da end 
             elif ( opt == '-resubmit' ):
-                #if ( self.flag_useboss == 1 ): # Da
                 if val=='all' or val==None or val=='':
                     allBoss_id = common.scheduler.listBoss()
                     jobs = allBoss_id
                 else:
                     jobs = self.parseRange_(val)
-                #else:          #Da start
-                #    if val:
-                #        jobs = self.parseRange_(val)
-                #               #Da stop
                 if val:
                     # create a list of jobs to be resubmitted.
 
@@ -712,7 +614,6 @@ class Crab:
 
             elif ( opt == '-cancelAndResubmit' ):
 
-                #if ( self.flag_useboss == 1 ): #Da
                 if val:
                     if val =='all':
                         allBoss_id = common.scheduler.listBoss()
@@ -723,27 +624,10 @@ class Crab:
                     common.scheduler.cancel(jobs)
                 else:
                     common.logger.message("Warning: with '-cancelAndResubmit' you _MUST_ specify a job range or 'all'")
-                #else:              #Da start
-                #    if val:    
-                #        jobs = self.parseRange_(val)
-                #    else:
-                #        common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
-                #        pass
-                                    #Da stop  
                 # resubmit cancelled jobs.
                 if val:
                     nj_list = []
                     for nj in jobs:
-                        #if ( self.flag_useboss != 1 ):    #Da start  
-                        #    st = common.jobDB.status(nj)
-                        #    if st == 'S':
-                        #        jid = common.jobDB.jobId(nj)
-                        #        common.scheduler.cancel(jid)
-                        #        st = 'K'
-                        #        common.jobDB.setStatus(nj, st)
-                        #        pass
-                        #    common.jobDB.save()
-                        #    pass                          #Da stop
                         st = common.jobDB.status(int(nj)-1)
                         if st in ['K','A']:
                             nj_list.append(int(nj)-1)
@@ -809,7 +693,6 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
-#                    self.actions[opt] = PostMortem(self.cfg_params, nj_list,self.flag_useboss)   #Da
                     self.actions[opt] = PostMortem(self.cfg_params, nj_list)
 
                     # Create and initialize JobList
