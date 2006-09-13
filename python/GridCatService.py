@@ -87,7 +87,7 @@ class GridCatHostService(GridCatService):
         #return contact 
         #print "sitename ",sitename
         
-        batchsystem=self._Server.getsiteresult("site_info", "jobcon", self.sitename).strip()
+        batchsystem=self._Server.getresult("site_info", "jobcon", "WHERE host_name='"+self.hostname+"'").strip()
         return batchsystem
 
 class GridCatSiteService(GridCatService):
