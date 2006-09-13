@@ -196,6 +196,9 @@ class SchedulerBoss(Scheduler):
         self.checkJobtypeRegistration_(self.boss_scheduler_name) 
         self.checkJobtypeRegistration_('crab') 
         
+        try: self.schedulerName = cfg_params['CRAB.scheduler']
+        except KeyError: self.scheduler = ''
+
         return
 
     ###################### ---- OK for Boss4 ds
@@ -295,7 +298,7 @@ class SchedulerBoss(Scheduler):
         Create script_scheduler file (JDL for EDG)
         """
         self.boss_scheduler.createXMLSchScript(nj, argsList, jobList)
-        self.boss_scheduler.createFakeJdl(nj)   ### TMP Added for the list match with Boss4 
+     #   self.boss_scheduler.createFakeJdl(nj)   ### TMP Added for the list match with Boss4 
         return
 
     ###################### ---- OK for Boss4 ds
@@ -307,28 +310,29 @@ class SchedulerBoss(Scheduler):
         cmd_out = runBossCommand(cmd)
 
         # debug
-        msg = 'BOSS declaration:' + cmd
-        common.logger.debug(4,msg)
-        msg = 'BOSS declaration output:' + cmd_out
-        common.logger.debug(4,msg)
+     #   msg = 'BOSS declaration:' + cmd
+     #   common.logger.debug(4,msg)
+     #   msg = 'BOSS declaration output:' + cmd_out
+     #   common.logger.debug(4,msg)
         ###
 
         #  -------------------------------------------------> From Here changed for Boss4
-        tasKprefix = 'TASK_ID:'
+        tasKprefix = 'Task'
         tasKindex = string.find(cmd_out, tasKprefix)    
         if tasKindex < 0 :
             common.logger.message('ERROR: BOSS declare failed: no TASK ID for jobs')
             raise CrabException(msg)
-        else:
-            tasKindex = tasKindex + len(tasKprefix)
-            self.Task_id = string.strip(cmd_out[tasKindex:])
+     #   else:
+     #       tasKindex = tasKindex + len(tasKprefix)
+     #       self.Task_id = string.strip(cmd_out[tasKindex:])
         nj = 0 
         for line in cmd_out.splitlines(): # boss4
-            prefix = 'CHAIN_ID'    #Boss4
+            prefix = 'Chain'    #Boss4
             index = string.find(line, prefix)
             tasKcheck = string.find(line, tasKprefix)
             if tasKcheck >= 0: 
-                self.Task_id = string.strip(line[tasKindex:])
+                taskid = str(line).split(":")[1]
+                self.Task_id = string.strip(taskid)
                 pass
             if index < 0 :
                 continue
@@ -360,8 +364,74 @@ class SchedulerBoss(Scheduler):
         """
         Check the compatibility of available resources
         """
-        return self.boss_scheduler.listMatch(nj)
-    
+        cmd = 'boss listMatch -scheduler '+ str(self.schedulerName) + ' -taskid  '+common.jobDB.bossTASKid(nj)+' -jobid ' +common.jobDB.bossId(nj)# + schcladstring
+        cmd_out = runBossCommand(cmd)
+
+        #return self.boss_scheduler.listMatch(nj)
+        jdl = ''
+        #cmd_out = runCommand(cmd,0,10)
+        if not cmd_out:
+            raise CrabException("ERROR: "+cmd+" failed!")
+
+        return self.parseListMatch_(cmd_out, jdl)
+
+    def parseListMatch_(self, out, jdl):
+        """
+        Parse the f* output of edg-list-match and produce something sensible
+        """
+        reComment = re.compile( r'^\**$' )
+        reEmptyLine = re.compile( r'^$' )
+        reVO = re.compile( r'Selected Virtual Organisation name.*' )
+        reLine = re.compile( r'.*')
+        reCE = re.compile( r'(.*:.*)')
+        reCEId = re.compile( r'CEId.*')
+        reNO = re.compile( r'No Computing Element matching' )
+        reRB = re.compile( r'Connecting to host' )
+        next = 0
+        CEs=[]
+        Match=0
+
+        #print out
+        lines = reLine.findall(out)
+
+        i=0
+        CEs=[]
+        for line in lines:
+            string.strip(line)
+            #print line
+            if reNO.match( line ):
+                common.logger.debug(5,line)
+                return 0
+                pass
+            if reVO.match( line ):
+                VO =reVO.match( line ).group()
+                common.logger.debug(5,"VO "+VO)
+                pass
+
+            if reRB.match( line ):
+                RB = reRB.match(line).group()
+                common.logger.debug(5,"RB "+RB)
+                pass
+
+            if reCEId.search( line ):
+                for lineCE in lines[i:-1]:
+                    if reCE.match( lineCE ):
+                        CE = string.strip(reCE.search(lineCE).group(1))
+                        CEs.append(CE.split(':')[0])
+                        pass 
+                    pass
+                pass
+            i=i+1
+            pass
+
+        common.logger.debug(5,"All CE :"+str(CEs))
+
+        sites = []
+        [sites.append(it) for it in CEs if not sites.count(it)]
+
+        common.logger.debug(5,"All Sites :"+str(sites))
+        common.logger.message("Matched Sites :"+str(sites))
+        return len(sites)
     ##########################################   ----  add as workaround for list match with Boss4 ds
     def createFakeJdl(self,nj):
         return self.boss_scheduler.createFakeJdl(nj)
@@ -486,7 +556,10 @@ class SchedulerBoss(Scheduler):
                         common.logger.message(msg)
                     resFlag = 0
                     jid = common.scheduler.boss_SID(int(i_id)) 
-                    exCode = common.scheduler.getExitStatus(jid)
+                    try:
+                        exCode = common.scheduler.getExitStatus(jid)
+                    except:
+                        exCode = ' '
                     Statistic.Monitor('retrieved',resFlag,jid,exCode)
                     common.jobDB.setStatus(int(i_id)-1, 'Y') 
                 else:
@@ -548,8 +621,7 @@ class SchedulerBoss(Scheduler):
     ############################# ----> we use the SID for the postMortem... probably this functionality come for free with BOSS4? 
     def boss_SID(self,int_ID):
         """ Return Sid of job """
-
-        cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from JOB where CHAIN_ID=\''+str(int_ID)+'\'"'
+        cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from ENDED_JOB where CHAIN_ID=\''+str(int_ID)+'\'"'
         cmd_out = runBossCommand(cmd)
         nline = 0
         for line in cmd_out.splitlines():
