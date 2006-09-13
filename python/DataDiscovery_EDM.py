@@ -72,7 +72,7 @@ class DataDiscovery_EDM:
         try:
             dbs_instance=self.cfg_params['CMSSW.dbs_instance']
         except KeyError:
-            dbs_instance="MCLocal/Writer"
+            dbs_instance="MCGlobal/Writer"
  
         dbs = DBSInfo_EDM(dbs_url, dbs_instance)
         self.datasets = dbs.getMatchingDatasets(self.datasetPath)
