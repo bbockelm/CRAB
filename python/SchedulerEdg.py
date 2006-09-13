@@ -488,118 +488,76 @@ class SchedulerEdg(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-    def listMatch(self, nj):
-        """
-        Check the compatibility of available resources
-        """
-        self.checkProxy()
-        jdl = common.work_space.shareDir()+"fake.jdl"
-        cmd = 'edg-job-list-match ' + self.configOpt_() + str(jdl) 
-        cmd_out = runCommand(cmd,0,10)
-        if not cmd_out:
-            raise CrabException("ERROR: "+cmd+" failed!")
+  #  def listMatch(self, nj):
+  #      """
+  #      Check the compatibility of available resources
+  #      """
+  #      self.checkProxy()
+  #      jdl = common.work_space.shareDir()+"fake.jdl"
+  #      cmd = 'edg-job-list-match ' + self.configOpt_() + str(jdl) 
+  #      cmd_out = runCommand(cmd,0,10)
+  #      if not cmd_out:
+  #          raise CrabException("ERROR: "+cmd+" failed!")
+#
+ #       return self.parseListMatch_(cmd_out, jdl)
 
-        return self.parseListMatch_(cmd_out, jdl)
+  #  def parseListMatch_(self, out, jdl):
+  #      """
+  #      Parse the f* output of edg-list-match and produce something sensible
+  #      """
+  #      reComment = re.compile( r'^\**$' )
+  #      reEmptyLine = re.compile( r'^$' )
+  #      reVO = re.compile( r'Selected Virtual Organisation name.*' )
+  #      reLine = re.compile( r'.*')
+  #      reCE = re.compile( r'(.*:.*)')
+  #      reCEId = re.compile( r'CEId.*')
+  #      reNO = re.compile( r'No Computing Element matching' )
+  #      reRB = re.compile( r'Connecting to host' )
+  #      next = 0
+  #      CEs=[]
+  #      Match=0
+#
+#        #print out
+#        lines = reLine.findall(out)
 
-    def parseListMatch_(self, out, jdl):
-        """
-        Parse the f* output of edg-list-match and produce something sensible
-        """
-        reComment = re.compile( r'^\**$' )
-        reEmptyLine = re.compile( r'^$' )
-        reVO = re.compile( r'Selected Virtual Organisation name.*' )
-        reLine = re.compile( r'.*')
-        reCE = re.compile( r'(.*:.*)')
-        reCEId = re.compile( r'CEId.*')
-        reNO = re.compile( r'No Computing Element matching' )
-        reRB = re.compile( r'Connecting to host' )
-        next = 0
-        CEs=[]
-        Match=0
+ #       i=0
+ #       CEs=[]
+ #       for line in lines:
+ #           string.strip(line)
+ #           #print line
+ #           if reNO.match( line ):
+ #               common.logger.debug(5,line)
+ #               return 0
+ #               pass
+ #           if reVO.match( line ):
+ #               VO =reVO.match( line ).group()
+ #               common.logger.debug(5,"VO "+VO)
+ #               pass
 
-        #print out
-        lines = reLine.findall(out)
+ #           if reRB.match( line ):
+ #               RB = reRB.match(line).group()
+ #               common.logger.debug(5,"RB "+RB)
+ #               pass
 
-        i=0
-        CEs=[]
-        for line in lines:
-            string.strip(line)
-            #print line
-            if reNO.match( line ):
-                common.logger.debug(5,line)
-                return 0
-                pass
-            if reVO.match( line ):
-                VO =reVO.match( line ).group()
-                common.logger.debug(5,"VO "+VO)
-                pass
+ #           if reCEId.search( line ):
+ #               for lineCE in lines[i:-1]:
+ #                   if reCE.match( lineCE ):
+ #                       CE = string.strip(reCE.search(lineCE).group(1))
+ #                       CEs.append(CE.split(':')[0])
+ #                       pass 
+ #                   pass
+ #               pass
+ #           i=i+1
+ #           pass
 
-            if reRB.match( line ):
-                RB = reRB.match(line).group()
-                common.logger.debug(5,"RB "+RB)
-                pass
+ #       common.logger.debug(5,"All CE :"+str(CEs))
 
-            if reCEId.search( line ):
-                for lineCE in lines[i:-1]:
-                    if reCE.match( lineCE ):
-                        CE = string.strip(reCE.search(lineCE).group(1))
-                        CEs.append(CE.split(':')[0])
-                        pass 
-                    pass
-                pass
-            i=i+1
-            pass
+ #       sites = []
+ #       [sites.append(it) for it in CEs if not sites.count(it)]
 
-        common.logger.debug(5,"All CE :"+str(CEs))
-
-        sites = []
-        [sites.append(it) for it in CEs if not sites.count(it)]
-
-        common.logger.debug(5,"All Sites :"+str(sites))
-        common.logger.message("Matched Sites :"+str(sites))
-        return len(sites)
-
-    #def noMatchFound_(self, jdl):
-    #    reReq = re.compile( r'Requirements' )
-    #    reString = re.compile( r'"\S*"' )
-    #    f = file(jdl,'r')
-    #    for line in f.readlines():
-    #        line= line.strip()
-    #         if reReq.match(line):
-    ##            for req in reString.findall(line):
-    #                if re.search("VO",req):
-    #                    common.logger.message( "SW required: "+req)
-    #                    continue
-    #                if re.search('"\d+',req):
-    #                    common.logger.message("Other req  : "+req)
-    #                    continue
-    #                common.logger.message( "CE required: "+req)
-    #            break
-    #        pass
-    #    raise CrabException("No compatible resources found!")
-
-    #def submit(self, nj):
-    #    """
-    #    Submit one EDG job.
-    #    """
-    #
-    #    self.checkProxy()
-    #     jid = None
-    #     jdl = common.job_list[nj].jdlFilename()
-    #
-#        cmd = 'edg-job-submit ' + self.configOpt_() + jdl 
-#        cmd_out = runCommand(cmd)
-#        if cmd_out != None:
-#            reSid = re.compile( r'https.+' )
-#            jid = reSid.search(cmd_out).group()
-#            pass
-#        return jid
-
-    #def resubmit(self, nj_list):
-    #    """
-    #    Prepare jobs to be submit
-    #    """
-    #    return
+ #       common.logger.debug(5,"All Sites :"+str(sites))
+ #       common.logger.message("Matched Sites :"+str(sites))
+ #       return len(sites)
 
 
     ################################################################ To remove when Boss4 store this info  DS. (start)
@@ -631,11 +589,12 @@ class SchedulerEdg(Scheduler):
             common.logger.debug(5,'Error caught' + apiMsg) 
             return None
         else:
-            for i in range(len(self.states)):
+           for i in range(len(self.states)):
                 # Fill an hash table with all information retrieved from LB API
                 hstates[ self.states[i] ] = jobStat.loadStatus(st)[i]
-            result = jobStat.loadStatus(st)[ self.states.index(attr) ]
-            return result
+           result = jobStat.loadStatus(st)[self.states.index(attr)]
+           return result
+
 
     def queryDetailedStatus(self, id):
         """ Query a detailed status of the job with id """
@@ -643,109 +602,109 @@ class SchedulerEdg(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-    #def getOutput(self, id):
-    #    """
-    #    Get output for a finished job with id.
-    #    Returns the name of directory with results.
-    #    """
+
+  #  def createFakeJdl(self,nj):  # TMP Just waiting listmatch functionalitly  
+  #                                # implementation into BOSS4   Daniele
+  #      """                          
+  #      Create a fake jdl considering
+  #      only requirements  
+  #      """
+  #      job = common.job_list[0]
+  #      jbt = job.type()
+  #      inp_storage_subdir = ''
+  #      
+  #      
+  #      SPL = inp_storage_subdir
+  #      if ( SPL and SPL[-1] != '/' ) : SPL = SPL + '/'
 #
-    #    self.checkProxy()
-    #    cmd = 'edg-job-get-output --dir ' + common.work_space.resDir() + ' ' + id
-    #    cmd_out = runCommand(cmd)
-
-        # Determine the output directory name
-    #    dir = common.work_space.resDir()
-    #    dir += os.environ['USER']
-    #    dir += '_' + os.path.basename(id)
-    #    return dir
-
-    #def cancel(self, id):
-    #    """ Cancel the EDG job with id """
-    #    self.checkProxy()
-    #    cmd = 'edg-job-cancel --noint ' + id
-    #    cmd_out = runCommand(cmd)
-    #    return cmd_out
- 
-    def createFakeJdl(self,nj):  # TMP Just waiting listmatch functionalitly  
-                                  # implementation into BOSS4   Daniele
-        """                          
-        Create a fake jdl considering
-        only requirements  
-        """
-        #job = common.job_list[nj]
-        job = common.job_list[0]
-        jbt = job.type()
-        inp_storage_subdir = ''
-        
-        
-        SPL = inp_storage_subdir
-        if ( SPL and SPL[-1] != '/' ) : SPL = SPL + '/'
-
-        jdl = open(common.work_space.shareDir()+"fake.jdl","w")
-
-        script = job.scriptFilename()
-        jdl.write('Executable = "' + os.path.basename(script) +'";\n')
-
-        req='Requirements = '
-        noreq=req
-        req = req + jbt.getRequirements()
-        #### and USER REQUIREMENT
-        if self.EDG_requirements:
-            if (req != noreq):
-                req = req +  ' && '
-            req = req + self.EDG_requirements
-        #### FEDE ##### 
-        if self.EDG_ce_white_list:
-            ce_white_list = string.split(self.EDG_ce_white_list,',')
-            #print "req = ", req
-            for i in range(len(ce_white_list)):
-                if i == 0:
-                    if (req != noreq):
-                        req = req +  ' && '
-                    req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
-                    pass
-                else:
-                    req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
-            req = req + ')'
-        
-        if self.EDG_ce_black_list:
-            ce_black_list = string.split(self.EDG_ce_black_list,',')
-            for ce in ce_black_list:
-                if (req != noreq):
-                    req = req +  ' && '
-                req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
+#        jdl = open(common.work_space.shareDir()+"fake.jdl","w")
+#
+#        script = job.scriptFilename()
+#        jdl.write('Executable = "' + os.path.basename(script) +'";\n')
+#
+#        req='Requirements = '
+#        noreq=req
+#        ##### 8_9_06 FEDE
+#        req = req + jbt.getRequirements(nj)
+#        #req = req + jbt.getRequirements()
+#        ########
+#        #### and USER REQUIREMENT
+ #       if self.EDG_requirements:
+ #           if (req != noreq):
+ #               req = req +  ' && '
+ #           req = req + self.EDG_requirements
+ #       #### FEDE ##### 
+ #       if self.EDG_ce_white_list:
+ #           ce_white_list = string.split(self.EDG_ce_white_list,',')
+ #           #print "req = ", req
+ #           for i in range(len(ce_white_list)):
+ #               if i == 0:
+ #                   if (req != noreq):
+ #                       req = req +  ' && '
+ #                   req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+  #                  pass
+  #              else:
+  #                  req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+  #          req = req + ')'
+  #      
+  #      if self.EDG_ce_black_list:
+  #          ce_black_list = string.split(self.EDG_ce_black_list,',')
+  #          for ce in ce_black_list:
+  #              if (req != noreq):
+  #                  req = req +  ' && '
+  #              req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
+  #              pass
+  #
+  #      ###############
+  #      clockTime=480
+  #      if self.EDG_clock_time:
+  #          clockTime= self.EDG_clock_time
+  #      if (req != noreq):
+  #          req = req + ' && '
+  #      req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+str(clockTime)+'))'
+  #
+  #      cpuTime=1000
+  #      if self.EDG_cpu_time:
+  #          cpuTime=self.EDG_cpu_time
+  #      if (req != noreq):
+  #          req = req + ' && '
+   #     req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+str(cpuTime)+'))'
+   #
+   #     if (req != noreq):
+   #         req = req + ';\n'
+   #         jdl.write(req)
+   #                                                                                                                                                          
+   #     jdl.write('VirtualOrganisation = "' + self.VO + '";\n')
+   #
+   #     if ( self.EDG_retry_count ):               
+   #         jdl.write('RetryCount = '+self.EDG_retry_count+';\n')
+   #         pass
+   #
+   #     jdl.write('MyProxyServer = "' + self.proxyServer + '";\n')
+#
+#        jdl.close()
+#        return
+  
+    ##### FEDE ######         
+    def findSites_(self, n_tot_job):
+        itr4=''
+        #print "n_tot_job = ", n_tot_job
+        for n in range(n_tot_job):
+            sites = common.jobDB.destination(n)
+            #job = common.job_list[n]
+            #jbt = job.type()
+        #    print "common.jobDB.destination(n) = ", common.jobDB.destination(n)
+        #    print "sites = ", sites
+            for site in sites: 
+                itr4 = itr4 + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
                 pass
-
-        ###############
-        clockTime=480
-        if self.EDG_clock_time:
-            clockTime= self.EDG_clock_time
-        if (req != noreq):
-            req = req + ' && '
-        req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+str(clockTime)+'))'
-
-        cpuTime=1000
-        if self.EDG_cpu_time:
-            cpuTime=self.EDG_cpu_time
-        if (req != noreq):
-            req = req + ' && '
-        req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+str(cpuTime)+'))'
-
-        if (req != noreq):
-            req = req + ';\n'
-            jdl.write(req)
-                                                                                                                                                             
-        jdl.write('VirtualOrganisation = "' + self.VO + '";\n')
-
-        if ( self.EDG_retry_count ):               
-            jdl.write('RetryCount = '+self.EDG_retry_count+';\n')
-            pass
-
-        jdl.write('MyProxyServer = "' + self.proxyServer + '";\n')
-
-        jdl.close()
-        return
-         
+            # remove last ||
+            itr4 = itr4[0:-4]
+            itr4 = itr4 + ','
+        # remove last , 
+        itr4 = itr4[0:-1]
+        #print "itr4 = ", itr4
+        return itr4
 
     def createXMLSchScript(self, nj, argsList, jobList):
    # def createXMLSchScript(self, nj):
@@ -781,8 +740,16 @@ class SchedulerEdg(Scheduler):
   
         to_writeReq = ''
         to_write = ''
+
         req=' '
-        req = req + jbt.getRequirements()
+        req = req + jbt.getRequirements(nj)
+
+
+        #sites = common.jobDB.destination(nj)
+        #if len(sites)>0 and sites[0]!="Any":
+        #    req = req + ' && anyMatch(other.storage.CloseSEs, (_ITR4_))'
+        #req = req     
+    
         if self.EDG_requirements:
             if (req == ' '):
                 req = req + self.EDG_requirements
@@ -820,11 +787,11 @@ class SchedulerEdg(Scheduler):
                 req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
             else:
                 req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
-        if (req != ' '):
-            req = req + '\n'
-            to_writeReq = req 
-                                                                                                                                                             
 
+        #if (req != ' '):
+        #    req = req + '\n'
+        #    to_writeReq = req 
+                                                                                                                                                             
         if ( self.EDG_retry_count ):               
             to_write = to_write + 'RetryCount = "'+self.EDG_retry_count+'"\n'
             pass
@@ -837,37 +804,47 @@ class SchedulerEdg(Scheduler):
         dir = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
 
-
         xml.write(str(title))
         xml.write('<task name="' +str(taskName)+'">\n')
         xml.write(jt_string)
-        #Here it must pass the extra Tags.. (into Task & out of chain)  
-        if (to_writeReq != ''):
-            xml.write('<extraTags>\n')
-            xml.write('<Requirements>\n')
-            xml.write('<![CDATA[\n')
-            xml.write(to_writeReq)
-            xml.write(']]>\n')
-            xml.write('</Requirements>\n')
-            xml.write('</extraTags>\n')
-            pass
-        
+
+        xml.write('<iterator>\n')
+
+        #print str(nj) 
+        xml.write('\t<iteratorRule name="ITR1" rule="1:'+ str(nj) + '" />\n')
+        #print argsList
+        xml.write('\t<iteratorRule name="ITR2" rule="'+ argsList + '" />\n')
+        #print jobList
+        xml.write('\t<iteratorRule name="ITR3" rule="'+ jobList + '" />\n')
+
+        #### FEDE #####
+        itr4=self.findSites_(nj)
+        #print "--->>> itr4 = ", itr4
+        if (itr4 != ''):
+           xml.write('\t<iteratorRule name="ITR4" rule="'+itr4+ '" />\n')
+           req = req + ' && anyMatch(other.storage.CloseSEs, (_ITR4_))'
+           pass
+    #    print "--->>> req= ", req         
+   
         if (to_write != ''):
             xml.write('<extraTags\n')
             xml.write(to_write)
             xml.write('/>\n')
             pass
 
-        xml.write('<iterator>\n')
-        print str(nj) 
-        xml.write('\t<iteratorRule name="ITR1" rule="1:'+ str(nj) + '" />\n')
-        print argsList
-        xml.write('\t<iteratorRule name="ITR2" rule="'+ argsList + '" />\n')
-        print jobList
-        xml.write('\t<iteratorRule name="ITR3" rule="'+ jobList + '" />\n')
- 
         xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
         xml.write(jt_string)
+
+        if (req != ' '):
+            req = req + '\n'
+            xml.write('<extraTags>\n')
+            xml.write('<Requirements>\n')
+            xml.write('<![CDATA[\n')
+            xml.write(req)
+            xml.write(']]>\n')
+            xml.write('</Requirements>\n')
+            xml.write('</extraTags>\n')
+            pass
 
         #executable
 
@@ -894,13 +871,11 @@ class SchedulerEdg(Scheduler):
                 pass
             pass
 
-        # Marco (VERY TEMPORARY ML STUFF)
         inp_box = inp_box + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + ',' +\
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + ','+\
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + ','+\
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + ','+\
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') 
-        # End Marco
 
         if (not jbt.additional_inbox_files == []):
             inp_box = inp_box + ', '
@@ -955,13 +930,10 @@ class SchedulerEdg(Scheduler):
         xml.write('/>\n')
         xml.write('</chain>\n')
 
-       # if int(nj) == int(common.jobDB.nJobs()-1): xml.write('</task>\n')
         xml.write('</iterator>\n')
         xml.write('</task>\n')
 
-
         xml.close()
-
         return
 
     def checkProxy(self):

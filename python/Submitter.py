@@ -56,6 +56,16 @@ class Submitter(Actor):
                     common.logger.message(msg)
                     continue
 
+             #il listmatch Dovrebbe essere qui.....per il momento lo lascio sopra
+             #(time consuming se lo facciamo per tutti i job)
+     
+             #   match = common.scheduler.listMatch(nj)
+             #   if match:
+             #       common.logger.message("Found "+str(match)+" compatible site(s)")
+             #   else:
+             #       print CrabException("No compatible site found!")
+             #       continue
+             #       pass 
                 common.logger.message("Submitting job # "+`(nj+1)`)
                 jid = common.scheduler.submit(nj)
                 common.jobDB.setStatus(nj, 'S')
