@@ -60,16 +60,17 @@ class DBSInfoError:
 ###############################################################################
 
 class DBSInfo_EDM:
-    def __init__(self, dbs_instance):
+    def __init__(self, dbs_url, dbs_instance):
         """
         Construct api object.
         """
         ## cgi service API
-        DEFAULT_URL = "http://cmsdoc.cern.ch/cms/aprom/DBS/CGIServer/prodquery"
         args = {}
         args['instance']=dbs_instance
 
-        self.api = dbsCgiApi.DbsCgiApi(DEFAULT_URL, args)
+        common.logger.debug(3,"Accessing DBS at: "+dbs_url+" "+dbs_instance)
+
+        self.api = dbsCgiApi.DbsCgiApi(dbs_url, args)
         ## set log level
         # self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_INFO_)
         #self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_QUIET_)
@@ -83,6 +84,8 @@ class DBSInfo_EDM:
         except dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         except dbsCgiApi.DbsCgiToolError , ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        except dbsCgiApi.DbsCgiBadResponse , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
 
         return list
@@ -98,31 +101,63 @@ class DBSInfo_EDM:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         return datasetParentList                                                                                                            
 
-    def getDatasetContents(self, path):
+    def getEventsPerBlock(self, path):
         """ Query DBS to get event collections """
         # count events per block
         nevtsbyblock = {}
         try:
-            for fileBlock in self.api.getDatasetContents (path):
-                ## get the event collections for each block
-                nevts = 0
-                for evc in fileBlock.get('eventCollectionList'):
-                    nevts = nevts + evc.get('numberOfEvents')
-                    common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.get('blockName')))
-                    nevtsbyblock[fileBlock.get('blockName')]=nevts
+            contents = self.api.getDatasetContents(path)
         except dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        except dbsCgiApi.DbsCgiBadResponse, ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        for fileBlock in contents:
+            ## get the event collections for each block
+            nevts = 0
+            eventCollectionList = fileBlock.get('eventCollectionList')
+            for evc in eventCollectionList:
+                nevts = nevts + evc.get('numberOfEvents')
+
+            common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.get('blockName')))
+            nevtsbyblock[fileBlock.get('blockName')]=nevts
 
         # returning a map of fileblock-nevts  will be enough for now
         # TODO: in future the EvC collections grouped by fileblock should be returned
         return nevtsbyblock
 
+    def getEventsPerFile(self, path):
+        """ Query DBS to get a dictionary of files:(events/file) """
+        numEventsByFile = {}
+        try:
+            contents = self.api.getDatasetContents(path)
+        except dbsApi.DbsApiException, ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        for fileBlock in contents:
+            numEvents = 0
+            eventCollectionList = fileBlock.get('eventCollectionList')
+            for evc in eventCollectionList:
+                numEvents = evc.get('numberOfEvents')
+                fileList = evc.get('fileList')
+                # As of 2006-08-10, event collections contain only one file
+                # => fileList contains only one dictionary
+                if len(fileList)>1:
+                    msg = "Event collection contains more than one file!  Exiting.\n"
+                    msg = msg + "CRAB and DBS must be upgraded to handle event collections with multiple files.\n"
+                    raise CrabException(msg)
+                fileDict = fileList[0]
+                fileName = fileDict.get('logicalFileName')
+                numEventsByFile[fileName] = numEvents
+        return numEventsByFile
 
     def getDatasetFileBlocks(self, path):
         """ Query DBS to get files/fileblocks """
         try:
             FilesbyBlock={}
-            for fileBlock in self.api.getDatasetFileBlocks(path):
+            try:
+                allBlocks = self.api.getDatasetFileBlocks(path)
+            except dbsCgiApi.DbsCgiBadResponse, ex:
+                raise DBSError(ex.getClassName(), ex.getErrorMessage())
+            for fileBlock in allBlocks:
                 blockname=fileBlock.get('blockName')
                 filesinblock=[]
                 for files in fileBlock.get('fileList'):

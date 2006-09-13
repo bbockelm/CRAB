@@ -58,39 +58,52 @@ class DLSNoReplicas(exceptions.Exception):
 ##############################################################################
 
 class DLSInfo:
-    def __init__(self, type, jobtype):
+    def __init__(self, type, cfg_params):
+        self.cfg_params = cfg_params
+        jobtype = self.cfg_params['CRAB.jobtype']
+        ##SL I don't like all this hardcoded and jobtype dependent info put here
         if type=="DLS_TYPE_DLI":
-           if jobtype.count('orca')>0:
-             endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFCProto"
-           else:  
-             endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFC"
-           try:
-             import xml.dom.ext.reader
-           except:
-             crabdir=os.getenv('CRABDIR')
-## Let the user set up PyXML by hand
-             msg="There is no setup of PyXML python module required by DLS (DLI). Do the following:\n"
-             msg+=" - check that in  %s/configure  the function configureDLSAPI is not commented \n"%crabdir
-             msg+=" - uncomment it and re-run the configuration :"
-             msg+="\n    cd %s\n"%crabdir
-             msg+="     ./configure\n"
-             msg+="     source crab.(c)sh\n"
-             raise CrabException(msg)
+            if jobtype.count('orca')>0:
+                endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFCProto"
+            else:  
+                try:
+                    endpoint=self.cfg_params['CMSSW.dls_endpoint']
+                except KeyError:
+                    endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFC"
+
+            try:
+                import xml.dom.ext.reader
+            except:
+                crabdir=os.getenv('CRABDIR')
+## Let the  user set up PyXML by hand
+                msg="There is no setup of PyXML python module required by DLS (DLI). Do the following:\n"
+                msg+=" - check that in  %s/configure  the function configureDLSAPI is not commented \n"%crabdir
+                msg+=" - uncomment it and re-run the configuration :"
+                msg+="\n    cd %s\n"%crabdir
+                msg+="     ./configure\n"
+                msg+="     source crab.(c)sh\n"
+                raise CrabException(msg)
 
         elif type=="DLS_TYPE_MYSQL":
-           endpoint="lxgate10.cern.ch:18081"
+            if jobtype.count('orca')>0:
+                endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFCProto"
+            else:  
+                try:
+                    endpoint=self.cfg_params['CMSSW.dls_endpoint']
+                except KeyError:
+                    endpoint="lxgate10.cern.ch:18081"
         else:
-           msg = "DLS type %s not among the supported DLS ( DLS_TYPE_DLI and DLS_TYPE_MYSQL ) "%type
-           raise CrabException(msg)
+            msg = "DLS type %s not among the supported DLS ( DLS_TYPE_DLI and DLS_TYPE_MYSQL ) "%type
+            raise CrabException(msg)
 
         common.logger.debug(5,"DLS interface: %s Server %s"%(type,endpoint))       
         try:
-          self.api = dlsClient.getDlsApi(dls_type=type,dls_endpoint=endpoint)
+            self.api = dlsClient.getDlsApi(dls_type=type,dls_endpoint=endpoint)
         except dlsApi.DlsApiError, inst:
-          msg = "Error when binding the DLS interface: %s  Server %s"%(str(inst),self.DLSServer_)
-          #print msg
-          raise CrabException(msg)
-
+            msg = "Error when binding the DLS interface: %s  Server %s"%(str(inst),self.DLSServer_)
+            #print msg
+            raise CrabException(msg)
+ 
 # ####################################
     def getReplicas(self,fileblocks):
         """
@@ -98,17 +111,17 @@ class DLSInfo:
         """
         ##
         try:
-          entryList=self.api.getLocations([fileblocks])
+            entryList=self.api.getLocations([fileblocks])
         except dlsApi.DlsApiError, inst:
-          msg = "Error in the DLS query: %s." % str(inst)
-          #print msg
-          raise DLSNoReplicas(fileblocks)
+            msg = "Error in the DLS query: %s." % str(inst)
+            #print msg
+            raise DLSNoReplicas(fileblocks)
 
         ListSites=[] 
         for entry in entryList:
-         for loc in entry.locations:
-           ListSites.append(str(loc.host))
+            for loc in entry.locations:
+                ListSites.append(str(loc.host))
         if len(ListSites)<=0:
-          raise DLSNoReplicas(fileblocks)
+            raise DLSNoReplicas(fileblocks)
 
         return ListSites         
