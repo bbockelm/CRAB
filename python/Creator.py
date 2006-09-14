@@ -161,8 +161,7 @@ class Creator(Actor):
         script_writer = ScriptWriter('crab_template.sh')
 
         # Loop over jobs
-        argsList = ""
-        jobList = ""
+        argsList = []
         njc = 0
         for nj in range(self.total_njobs):
             if njc == self.ncjobs : break
@@ -179,14 +178,8 @@ class Creator(Actor):
             os.chmod(common.job_list[nj].scriptFilename(), 0744)
 
             # Create XML script and declare related jobs 
-            argsList += str(nj+1)+' '+ self.job_type.getJobTypeArguments(nj, self.cfg_params['CRAB.scheduler']) +','
-            """
-            INDY
-            concordo che la jobList e' una porcheria, ma putroppo per il
-            momento non e' possibile espandere gli iteratori ad un numero
-            fissato di cifre. Ne riparliamo.
-            """
-            jobList += '%06d,' % (nj+1)
+            argsList.append( str(nj+1)+' '+ self.job_type.getJobTypeArguments(nj, self.cfg_params['CRAB.scheduler']) )
+
             common.jobDB.setStatus(nj, 'C')
             # common: write input and output sandbox
             common.jobDB.setInputSandbox(nj, self.job_type.inputSandbox(nj))
@@ -210,8 +203,7 @@ class Creator(Actor):
             njc = njc + 1
             pass
 
-        if argsList[-1] == ',' : argsList = argsList[:-1].strip()
-        if jobList[-1] == ',' : jobList = jobList[:-1].strip()
+#        if argsList[-1] == ',' : argsList = argsList[:-1].strip()
 
         """
         INDY
@@ -220,7 +212,7 @@ class Creator(Actor):
         o dei range per ridurre le dimensioni del file e aumentare le
         performance (di CRAB che scrive meno, di BOSS che legge meno)
         """  
-        common.scheduler.createXMLSchScript(self.total_njobs, argsList, jobList)
+        common.scheduler.createXMLSchScript(self.total_njobs, argsList)
         common.scheduler.declareJob_()   #Add for BOSS4
 
         common.jobDB.save()

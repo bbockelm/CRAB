@@ -494,38 +494,38 @@ class SchedulerEdg(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-  #  def listMatch(self, nj):
-  #      """
-  #      Check the compatibility of available resources
-  #      """
-  #      self.checkProxy()
-  #      jdl = common.work_space.shareDir()+"fake.jdl"
-  #      cmd = 'edg-job-list-match ' + self.configOpt_() + str(jdl) 
-  #      cmd_out = runCommand(cmd,0,10)
-  #      if not cmd_out:
-  #          raise CrabException("ERROR: "+cmd+" failed!")
-#
+ #   def listMatch(self, nj):
+ #       """
+ #       Check the compatibility of available resources
+ #       """
+ #       self.checkProxy()
+ #       jdl = common.work_space.shareDir()+"fake.jdl"
+ #       cmd = 'edg-job-list-match ' + self.configOpt_() + str(jdl) 
+ ##        cmd_out = runCommand(cmd,0,10)
+ #       if not cmd_out:
+ #           raise CrabException("ERROR: "+cmd+" failed!")
+ #
  #       return self.parseListMatch_(cmd_out, jdl)
-
-  #  def parseListMatch_(self, out, jdl):
-  #      """
-  #      Parse the f* output of edg-list-match and produce something sensible
-  #      """
-  #      reComment = re.compile( r'^\**$' )
-  #      reEmptyLine = re.compile( r'^$' )
-  #      reVO = re.compile( r'Selected Virtual Organisation name.*' )
-  #      reLine = re.compile( r'.*')
-  #      reCE = re.compile( r'(.*:.*)')
-  #      reCEId = re.compile( r'CEId.*')
-  #      reNO = re.compile( r'No Computing Element matching' )
-  #      reRB = re.compile( r'Connecting to host' )
-  #      next = 0
-  #      CEs=[]
-  #      Match=0
-#
-#        #print out
-#        lines = reLine.findall(out)
-
+ #
+ #   def parseListMatch_(self, out, jdl):
+ #       """
+ #       Parse the f* output of edg-list-match and produce something sensible
+ #       """
+ #       reComment = re.compile( r'^\**$' )
+ #       reEmptyLine = re.compile( r'^$' )
+ #       reVO = re.compile( r'Selected Virtual Organisation name.*' )
+ #       reLine = re.compile( r'.*')
+ #       reCE = re.compile( r'(.*:.*)')
+ #       reCEId = re.compile( r'CEId.*')
+ #       reNO = re.compile( r'No Computing Element matching' )
+ #       reRB = re.compile( r'Connecting to host' )
+ #       next = 0
+ #       CEs=[]
+ #       Match=0
+ #
+ #       #print out
+ #       lines = reLine.findall(out)
+ #
  #       i=0
  #       CEs=[]
  #       for line in lines:
@@ -533,18 +533,18 @@ class SchedulerEdg(Scheduler):
  #           #print line
  #           if reNO.match( line ):
  #               common.logger.debug(5,line)
- #               return 0
- #               pass
- #           if reVO.match( line ):
- #               VO =reVO.match( line ).group()
- #               common.logger.debug(5,"VO "+VO)
- #               pass
-
- #           if reRB.match( line ):
+  #              return 0
+  #              pass
+  #          if reVO.match( line ):
+  #              VO =reVO.match( line ).group()
+  #              common.logger.debug(5,"VO "+VO)
+  #              pass
+  #
+  #          if reRB.match( line ):
  #               RB = reRB.match(line).group()
  #               common.logger.debug(5,"RB "+RB)
  #               pass
-
+ #
  #           if reCEId.search( line ):
  #               for lineCE in lines[i:-1]:
  #                   if reCE.match( lineCE ):
@@ -555,16 +555,16 @@ class SchedulerEdg(Scheduler):
  #               pass
  #           i=i+1
  #           pass
-
+ #
  #       common.logger.debug(5,"All CE :"+str(CEs))
-
- #       sites = []
- #       [sites.append(it) for it in CEs if not sites.count(it)]
-
- #       common.logger.debug(5,"All Sites :"+str(sites))
- #       common.logger.message("Matched Sites :"+str(sites))
- #       return len(sites)
-
+#
+#        sites = []
+#        [sites.append(it) for it in CEs if not sites.count(it)]
+#
+#        common.logger.debug(5,"All Sites :"+str(sites))
+#        common.logger.message("Matched Sites :"+str(sites))
+#        return len(sites)
+#
 
     ################################################################ To remove when Boss4 store this info  DS. (start)
     def getExitStatus(self, id):
@@ -609,19 +609,19 @@ class SchedulerEdg(Scheduler):
         return cmd_out
 
 
-  #  def createFakeJdl(self,nj):  # TMP Just waiting listmatch functionalitly  
-  #                                # implementation into BOSS4   Daniele
-  #      """                          
-  #      Create a fake jdl considering
-  #      only requirements  
-  #      """
-  #      job = common.job_list[0]
-  #      jbt = job.type()
-  #      inp_storage_subdir = ''
-  #      
-  #      
-  #      SPL = inp_storage_subdir
-  #      if ( SPL and SPL[-1] != '/' ) : SPL = SPL + '/'
+   # def createFakeJdl(self,nj):  # TMP Just waiting listmatch functionalitly  
+   #                               # implementation into BOSS4   Daniele
+   #     """                          
+   #     Create a fake jdl considering
+   #     only requirements  
+   #     """
+   #     job = common.job_list[0]
+   #     jbt = job.type()
+   #     inp_storage_subdir = ''
+   #     
+   #     
+   #     SPL = inp_storage_subdir
+   #     if ( SPL and SPL[-1] != '/' ) : SPL = SPL + '/'
 #
 #        jdl = open(common.work_space.shareDir()+"fake.jdl","w")
 #
@@ -661,19 +661,19 @@ class SchedulerEdg(Scheduler):
   #              req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
   #              pass
   #
-  #      ###############
-  #      clockTime=480
-  #      if self.EDG_clock_time:
-  #          clockTime= self.EDG_clock_time
-  #      if (req != noreq):
-  #          req = req + ' && '
-  #      req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+str(clockTime)+'))'
-  #
-  #      cpuTime=1000
-  #      if self.EDG_cpu_time:
-  #          cpuTime=self.EDG_cpu_time
-  #      if (req != noreq):
-  #          req = req + ' && '
+   #     ###############
+   #     clockTime=480
+   #     if self.EDG_clock_time:
+   #         clockTime= self.EDG_clock_time
+   #     if (req != noreq):
+   #         req = req + ' && '
+   #     req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+str(clockTime)+'))'
+   #
+   #     cpuTime=1000
+   #     if self.EDG_cpu_time:
+   #         cpuTime=self.EDG_cpu_time
+   #     if (req != noreq):
+   #         req = req + ' && '
    #     req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+str(cpuTime)+'))'
    #
    #     if (req != noreq):
@@ -693,26 +693,27 @@ class SchedulerEdg(Scheduler):
   
     ##### FEDE ######         
     def findSites_(self, n_tot_job):
-        itr4=''
-        #print "n_tot_job = ", n_tot_job
+        itr4 = []
+       # print "n_tot_job = ", n_tot_job
         for n in range(n_tot_job):
             sites = common.jobDB.destination(n)
             #job = common.job_list[n]
             #jbt = job.type()
-        #    print "common.jobDB.destination(n) = ", common.jobDB.destination(n)
-        #    print "sites = ", sites
+           # print "common.jobDB.destination(n) = ", common.jobDB.destination(n)
+           # print "sites = ", sites
+            itr = ''
             for site in sites: 
-                itr4 = itr4 + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
+                #itr = itr + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
+                itr = itr + 'target.GlueSEUniqueID=="'+site+'" || '
                 pass
             # remove last ||
-            itr4 = itr4[0:-4]
-            itr4 = itr4 + ','
+            itr = itr[0:-4]
+            itr4.append( itr )
         # remove last , 
-        itr4 = itr4[0:-1]
-        #print "itr4 = ", itr4
+       # print "itr4 = ", itr4
         return itr4
 
-    def createXMLSchScript(self, nj, argsList, jobList):
+    def createXMLSchScript(self, nj, argsList):
    # def createXMLSchScript(self, nj):
         """
         Create a XML-file for BOSS4.
@@ -817,21 +818,43 @@ class SchedulerEdg(Scheduler):
         xml.write('<iterator>\n')
 
         #print str(nj) 
-        xml.write('\t<iteratorRule name="ITR1" rule="1:'+ str(nj) + '" />\n')
+#        xml.write('\t<iteratorRule name="ITR1" rule="1:'+ str(nj) + '" />\n')
         #print argsList
-        xml.write('\t<iteratorRule name="ITR2" rule="'+ argsList + '" />\n')
+#        xml.write('\t<iteratorRule name="ITR2" rule="'+ argsList + '" />\n')
         #print jobList
-        xml.write('\t<iteratorRule name="ITR3" rule="'+ jobList + '" />\n')
+#        xml.write('\t<iteratorRule name="ITR3" rule="1:'+ str(nj) + ':6" />\n')        #print str(nj)
+        xml.write('\t<iteratorRule name="ITR1">\n')
+        xml.write('\t\t<ruleElement> 1:'+ str(nj) + ' </ruleElement>\n')
+        xml.write('\t</iteratorRule>\n')
+        xml.write('\t<iteratorRule name="ITR2">\n')
+        #print argsList
+        for arg in argsList:
+            xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
+            pass
+        xml.write('\t</iteratorRule>\n')
+        #print jobList
+        xml.write('\t<iteratorRule name="ITR3">\n')
+        xml.write('\t\t<ruleElement> 1:'+ str(nj) + ':1:6 </ruleElement>\n')
+        xml.write('\t</iteratorRule>\n')
 
         #### FEDE #####
+        '''
+        indy: qui sotto ci sta itr4
+        '''
+        
         itr4=self.findSites_(nj)
         #print "--->>> itr4 = ", itr4
         if (itr4 != ''):
-           xml.write('\t<iteratorRule name="ITR4" rule="'+itr4+ '" />\n')
-           req = req + ' && anyMatch(other.storage.CloseSEs, (_ITR4_))'
-           pass
-    #    print "--->>> req= ", req         
-   
+            xml.write('\t<iteratorRule name="ITR4">\n')
+        #print argsList
+            for arg in itr4:
+                xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
+                pass
+            xml.write('\t</iteratorRule>\n')
+            req = req + ' && anyMatch(other.storage.CloseSEs, (_ITR4_))'
+            pass
+        #    print "--->>> req= ", req         
+        
         if (to_write != ''):
             xml.write('<extraTags\n')
             xml.write(to_write)
@@ -859,17 +882,17 @@ class SchedulerEdg(Scheduler):
         script dipende dal jobType: dovrebbe essere semplice tirarlo fuori in altro modo
         """        
         script = job.scriptFilename()
-        xml.write('<program exec="' + os.path.basename(script) +'"\n')
+        xml.write('<program>\n')
+        xml.write('<exec> ' + os.path.basename(script) +' </exec>\n')
         xml.write(jt_string)
     
            
         ### only one .sh  JDL has arguments:
         ### Fabio
 #        xml.write('args = "' + str(nj+1)+' '+ jbt.getJobTypeArguments(nj, "EDG") +'"\n')
-        xml.write('args = "_ITR2_"\n')
-        xml.write('program_types="crabjob"\n')
-        inp_box = 'infiles="'
-        inp_box = inp_box + '' + script + ','
+        xml.write('<args> <![CDATA[\n _ITR2_ \n]]> </args>\n')
+        xml.write('<program_types> crabjob </program_types>\n')
+        inp_box = script + ','
 
         if inp_sandbox != None:
             for fl in inp_sandbox:
@@ -891,19 +914,18 @@ class SchedulerEdg(Scheduler):
                 pass
 
         if inp_box[-1] == ',' : inp_box = inp_box[:-1]
-        inp_box = inp_box + ' "\n'
+        inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
         xml.write(inp_box)
         
         base = jbt.name()
         stdout = base + '__ITR3_.stdout'
         stderr = base + '__ITR3_.stderr'
         
-        xml.write('stderr="' + stderr + '"\n')
-        xml.write('stdout="' + stdout + '"\n')
+        xml.write('<stderr> ' + stderr + '</stderr>\n')
+        xml.write('<stdout> ' + stdout + '</stdout>\n')
         
 
-        out_box = 'outfiles="' + \
-                  stdout + ',' + \
+        out_box = stdout + ',' + \
                   stderr + ',.BrokerInfo,'
 
         """
@@ -927,13 +949,12 @@ class SchedulerEdg(Scheduler):
             pass
 
         if out_box[-1] == ',' : out_box = out_box[:-1]
-        out_box = out_box + '"'
-        xml.write(out_box+'\n')
+        out_box = '<outfiles> <![CDATA[\n' + out_box + '\n]]></outfiles>\n'
+        xml.write(out_box)
  
-        xml.write('group="'+taskName+'"\n')
-        xml.write('BossAttr="crabjob.INTERNAL_ID=_ITR1_"\n')
+        xml.write('<BossAttr> crabjob.INTERNAL_ID=_ITR1_ </BossAttr>\n')
 
-        xml.write('/>\n')
+        xml.write('</program>\n')
         xml.write('</chain>\n')
 
         xml.write('</iterator>\n')

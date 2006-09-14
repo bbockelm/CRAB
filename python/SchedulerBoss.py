@@ -293,12 +293,12 @@ class SchedulerBoss(Scheduler):
     in effetti usa il jobType, non il job.
     In poche parole la cosa potrebbe essere piu' diretta
     """
-    def createXMLSchScript(self, nj, argsList, jobList):
+    def createXMLSchScript(self, nj, argsList):
         """
         Create script_scheduler file (JDL for EDG)
         """
-        self.boss_scheduler.createXMLSchScript(nj, argsList, jobList)
-     #   self.boss_scheduler.createFakeJdl(nj)   ### TMP Added for the list match with Boss4 
+        self.boss_scheduler.createXMLSchScript(nj, argsList)
+#        self.boss_scheduler.createFakeJdl(nj)   ### TMP Added for the list match with Boss4 
         return
 
     ###################### ---- OK for Boss4 ds
@@ -460,6 +460,15 @@ class SchedulerBoss(Scheduler):
             common.logger.message(msg)
             return None
         else:
+            for line in cmd_out.splitlines(): # boss4
+                prefix = 'error'    #Boss4
+                SubmissionCheck = string.find(cmd_out, prefix)    
+                if  SubmissionCheck >= 0 :
+                    msg = 'ERROR: BOSS submission failed: ' + cmd
+                    common.logger.message(msg)
+                    raise CrabException(msg)
+                   # return None
+
             if cmd_out.find('https') != -1:
                 reSid = re.compile( r'https.+' )
                 jid = reSid.search(cmd_out).group()
