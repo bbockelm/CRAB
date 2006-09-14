@@ -355,8 +355,8 @@ class Cmssw(JobType):
                 numEventsInFile = self.eventsbyfile[file]
                 common.logger.debug(6, "File "+str(file)+" has "+str(numEventsInFile)+" events")
                 # Add file to current job
-                #parString += '\\\"' + file + '\\\"\,'
-                parString += '\\&amp;quot;' + file + '\\&amp;quot;\,'
+                parString += '\\\"' + file + '\\\"\,'
+               # parString += '\\&amp;quot;' + file + '\\&amp;quot;\,'
                 jobEventCount = jobEventCount + numEventsInFile
                 totalEventCount = totalEventCount + numEventsInFile
                 eventsRemaining = eventsRemaining - numEventsInFile
