@@ -155,6 +155,18 @@ class SchedulerGlite(Scheduler):
         sys.path.append(libPath)
 
         self.proxyValid=0
+
+        try:
+            self._taskId = cfg_params['taskId']
+        except:
+            self._taskId = ''
+
+        try: self.jobtypeName = cfg_params['CRAB.jobtype']
+        except KeyError: self.jobtypeName = ''
+ 
+        try: self.schedulerName = cfg_params['CRAB.scheduler']
+        except KeyError: self.scheduler = ''
+
         return
     
 
@@ -177,28 +189,57 @@ class SchedulerGlite(Scheduler):
         Returns part of a job script which does scheduler-specific work.
         """
         txt = ''
+        txt += '# strip arguments\n'
+        txt += 'echo "strip arguments"\n'
+        txt += 'args=("$@")\n'
+        txt += 'nargs=$#\n'
+        txt += 'shift $nargs\n'
+        txt += "# job number (first parameter for job wrapper)\n"
+        #txt += "NJob=$1\n"
+        txt += "NJob=${args[0]}\n"
+
+        txt += '# job identification to DashBoard \n'
+        txt += 'MonitorJobID=`echo ${NJob}_$EDG_WL_JOBID`\n'
+        txt += 'SyncGridJobId=`echo $EDG_WL_JOBID`\n'
+        txt += 'MonitorID=`echo ' + self._taskId + '`\n'
+        txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+
         txt += 'echo "middleware discovery " \n'
         txt += 'if [ $VO_CMS_SW_DIR ]; then\n'
         txt += '    middleware=LCG \n'
+        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $GRID3_APP_DIR ]; then\n'
         txt += '    middleware=OSG \n'
+        txt += '    echo "SyncCE=`echo $EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $OSG_APP ]; then \n'
         txt += '    middleware=OSG \n'
+        txt += '    echo "SyncCE=`echo $EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'else \n'
-        txt += '    echo "SET_CMS_ENV 1 ==> middleware not identified" \n'
-        txt += '    echo "JOB_EXIT_STATUS = 1"\n'
-        txt += '    exit 1\n'
-        txt += 'fi\n'
+        txt += '    echo "SET_CMS_ENV 10030 ==> middleware not identified" \n'
+        txt += '    echo "JOB_EXIT_STATUS = 10030" \n'
+        txt += '    echo "JobExitCode=10030" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
+        txt += '    rm -f $RUNTIME_AREA/$repo \n'
+        txt += '    echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    exit 1 \n'
+        txt += 'fi \n'
 
+        txt += '# report first time to DashBoard \n'
+        txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
+        txt += 'rm -f $RUNTIME_AREA/$repo \n'
+        txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        
         txt += '\n\n'
-
-        ### OLI: removed to move DashBoard reporting header to front of wrapper script
-        # txt += 'if [ $middleware == LCG ]; then \n'
-        # txt += '    echo "SyncGridJobId=`echo $EDG_WL_JOBID`" | tee -a $RUNTIME_AREA/$repo\n'
-        # txt += 'fi\n'
 
         if int(self.copy_data) == 1:
            if self.SE:
@@ -259,7 +300,13 @@ class SchedulerGlite(Scheduler):
         txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
         txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
         txt += '    else \n'
-        txt += '        echo "SET_ENV 1 ==> ERROR in setting CE name - OSG mode -" \n'
+        txt += '        echo "SET_CMS_ENV 10099 ==> OSG mode: ERROR in setting CE name from OSG_JOB_CONTACT" \n'
+        txt += '        echo "JOB_EXIT_STATUS = 10099" \n'
+        txt += '        echo "JobExitCode=10099" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '        dumpStatus $RUNTIME_AREA/$repo \n'
+        txt += '        rm -f $RUNTIME_AREA/$repo \n'
+        txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '        exit 1 \n'
         txt += '    fi \n'
         txt += 'fi \n' 
@@ -273,7 +320,6 @@ class SchedulerGlite(Scheduler):
         txt = ''
         try:
             self.copy_input_data = common.analisys_common_info['copy_input_data']
-            #print "self.copy_input_data = ", self.copy_input_data
         except KeyError: self.copy_input_data = 0
         if int(self.copy_input_data) == 1:
         ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
@@ -286,29 +332,29 @@ class SchedulerGlite(Scheduler):
            txt += '   #\n'
            txt += '   #   Copy Input Data from SE to this WN\n'
            txt += '   #\n'
-### changed by georgia (put a loop copying more than one input files per jobs)           
+           ### changed by georgia (put a loop copying more than one input files per jobs)           
            txt += '   for input_file in $cur_file_list \n'
            txt += '   do \n'
-           txt += '    lcg-cp --vo $VO lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
-           txt += '    copy_input_exit_status=$?\n'
-           txt += '    echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
-           txt += '    if [ $copy_input_exit_status -ne 0 ]; then \n'
-           txt += '       echo "Problems with copying to WN" \n'
-           txt += '    else \n'
-           txt += '       echo "input copied into WN" \n'
-           txt += '    fi \n'
+           txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
+           txt += '      copy_input_exit_status=$?\n'
+           txt += '      echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
+           txt += '      if [ $copy_input_exit_status -ne 0 ]; then \n'
+           txt += '         echo "Problems with copying to WN" \n'
+           txt += '      else \n'
+           txt += '         echo "input copied into WN" \n'
+           txt += '      fi \n'
            txt += '   done \n'
-### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
+           ### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
            txt += '   for file in $cur_pu_list \n'
            txt += '   do \n'
-           txt += '    lcg-cp --vo $VO lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
-           txt += '    copy_input_exit_status=$?\n'
-           txt += '    echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
-           txt += '    if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
-           txt += '       echo "Problems with copying pu to WN" \n'
-           txt += '    else \n'
-           txt += '       echo "input pu files copied into WN" \n'
-           txt += '    fi \n'
+           txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
+           txt += '      copy_input_pu_exit_status=$?\n'
+           txt += '      echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
+           txt += '      if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
+           txt += '         echo "Problems with copying pu to WN" \n'
+           txt += '      else \n'
+           txt += '         echo "input pu files copied into WN" \n'
+           txt += '      fi \n'
            txt += '   done \n'
            txt += '   \n'
            txt += '   ### Check SCRATCH space available on WN : \n'
@@ -327,34 +373,58 @@ class SchedulerGlite(Scheduler):
            txt += '#\n'
            txt += '#   Copy output to SE = $SE\n'
            txt += '#\n'
-           txt += 'if [ $exe_result -eq 0 ]; then\n'
+           txt += '    if [ $middleware == OSG ]; then\n'
+           txt += '        echo "X509_USER_PROXY = $X509_USER_PROXY"\n'
+           txt += '        echo "source $OSG_APP/glite/setup_glite_ui.sh"\n'
+           txt += '        source $OSG_APP/glite/setup_glite_ui.sh\n'
+           txt += '        export X509_CERT_DIR=$OSG_APP/glite/etc/grid-security/certificates\n'
+           txt += '        echo "export X509_CERT_DIR=$X509_CERT_DIR"\n'
+           txt += '    fi \n'
            txt += '    for out_file in $file_list ; do\n'
-           txt += '        echo "Trying to copy output file to $SE "\n'
-           ## OLI_Daniele globus-* for OSG, lcg-* for LCG
-           txt += '        if [ $middleware == OSG ]; then\n'
-           txt += '           echo "globus-url-copy file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-           txt += '           copy_exit_status=`globus-url-copy file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
-           #txt += '           exitstring=`globus-url-copy file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
-           txt += '        elif [ $middleware == LCG ]; then \n'
-           txt += '           echo "lcg-cp --vo cms -t 1200 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-           txt += '           copy_exit_status=`lcg-cp --vo cms -t 1200 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
-           #txt += '           exitstring=`lcg-cp --vo cms -t 30 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
-           txt += '        fi \n' 
-           #txt += '        copy_exit_status=$?\n'
-           txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
+           txt += '        echo "Trying to copy output file to $SE using lcg-cp"\n'
+           txt += '        echo "lcg-cp --vo $VO -t 1200 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+           txt += '        exitstring=`lcg-cp --vo $VO -t 1200 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+           txt += '        copy_exit_status=$?\n'
+           txt += '        echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
            txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
            txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
            txt += '            echo "Problems with SE = $SE"\n'
            txt += '            echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '            echo "lcg-cp failed, attempting srmcp"\n'
+           txt += '            echo "mkdir -p $HOME/.srmconfig"\n'
+           txt += '            mkdir -p $HOME/.srmconfig\n'
+           txt += '            if [ $middleware == LCG ]; then\n'
+           txt += '               echo "srmcp -retry_num 5 -retry_timeout 240000 file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
+           txt += '               exitstring=`srmcp -retry_num 5 -retry_timeout 240000 file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
+           txt += '            elif [ $middleware == OSG ]; then\n'
+           txt += '               echo "srmcp -retry_num 5 -retry_timeout 240000 -x509_user_trusted_certificates $OSG_APP/glite/etc/grid-security/certificates file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
+           txt += '               exitstring=`srmcp -retry_num 5 -retry_timeout 240000 -x509_user_trusted_certificates $OSG_APP/glite/etc/grid-security/certificates file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
+           txt += '            fi \n'
+           txt += '            copy_exit_status=$?\n'
+           txt += '            echo "COPY_EXIT_STATUS for srm = $copy_exit_status"\n'
+           txt += '            echo "STAGE_OUT = $copy_exit_status"\n'
+           txt += '            if [ $copy_exit_status -ne 0 ]; then\n'
+           txt += '               echo "Problems with SE = $SE"\n'
+           txt += '               echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '               echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '               echo "lcg-cp and srm failed"\n'
+           txt += '               echo "If storage_path in your config file contains a ? you may need a \? instead."\n'
+           txt += '            else\n'
+           txt += '               echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '               echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '               echo "output copied into $SE/$SE_PATH directory"\n'
+           txt += '               echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '               echo "srmcp succeeded"\n'
+           txt += '            fi\n'
            txt += '        else\n'
            txt += '            echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
            txt += '            echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
+           txt += '            echo "lcg-cp succeeded"\n'
            txt += '         fi\n'
            txt += '     done\n'
-           txt += 'fi\n'
         return txt
 
     def wsRegisterOutput(self):
@@ -374,19 +444,19 @@ class SchedulerGlite(Scheduler):
            txt += '#\n'
            txt += '#  Register output to LFC\n'
            txt += '#\n'
-           txt += '   if [[ $exe_result -eq 0 && $copy_exit_status -eq 0 ]]; then\n'
+           txt += '   if [ $copy_exit_status -eq 0 ]; then\n'
            txt += '      for out_file in $file_list ; do\n'
            txt += '         echo "Trying to register the output file into LFC"\n'
-           txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO sfn://$SE$SE_PATH/$out_file"\n'
-           txt += '         lcg-rf -l $LFN/$out_file --vo $VO sfn://$SE$SE_PATH/$out_file 2>&1 \n'
+           txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file 2>&1"\n'
+           txt += '         lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
            txt += '         echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
            txt += '         echo "STAGE_OUT = $register_exit_status"\n'
            txt += '         if [ $register_exit_status -ne 0 ]; then \n'
            txt += '            echo "Problems with the registration to LFC" \n'
            txt += '            echo "Try with srm protocol" \n'
-           txt += '            echo "lcg-rf -l $LFN/$out_file --vo $VO srm://$SE$SE_PATH/$out_file"\n'
-           txt += '            lcg-rf -l $LFN/$out_file --vo $VO srm://$SE$SE_PATH/$out_file 2>&1 \n'
+           txt += '            echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file 2>&1"\n'
+           txt += '            lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '            register_exit_status=$?\n'
            txt += '            echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
            txt += '            echo "STAGE_OUT = $register_exit_status"\n'
@@ -398,17 +468,17 @@ class SchedulerGlite(Scheduler):
            txt += '         fi \n'
            txt += '         echo "StageOutExitStatus = $register_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '      done\n'
-           txt += '   elif [[ $exe_result -eq 0 && $copy_exit_status -ne 0 ]]; then \n'
+           txt += '   else \n'
            txt += '      echo "Trying to copy output file to CloseSE"\n'
            txt += '      CLOSE_SE=`glite-brokerinfo getCloseSEs | head -1`\n'
            txt += '      for out_file in $file_list ; do\n'
-           txt += '         echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://`pwd`/$out_file" \n'
-           txt += '         lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://`pwd`/$out_file 2>&1 \n'
+           txt += '         echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1" \n'
+           txt += '         lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
            txt += '         echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
            txt += '         echo "STAGE_OUT = $register_exit_status"\n'
            txt += '         if [ $register_exit_status -ne 0 ]; then \n'
-           txt += '            echo "Problems with CloseSE" \n'
+           txt += '            echo "Problems with CloseSE or Catalog" \n'
            txt += '         else \n'
            txt += '            echo "The program was successfully executed"\n'
            txt += '            echo "SE = $CLOSE_SE"\n'
@@ -416,9 +486,8 @@ class SchedulerGlite(Scheduler):
            txt += '         fi \n'
            txt += '         echo "StageOutExitStatus = $register_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '      done\n'
-           txt += '   else\n'
-           txt += '      echo "Problem with the executable"\n'
            txt += '   fi \n'
+           txt += '   exit_status=$register_exit_status\n'
            txt += 'fi \n'
         return txt
 
@@ -432,118 +501,6 @@ class SchedulerGlite(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-    def listMatch(self, nj):
-        """
-        Check the compatibility of available resources
-        """
-        self.checkProxy()
-#        jdl = common.job_list[nj].jdlFilename()
-        jdl = common.work_space.shareDir()+"fake.jdl"
-        cmd = 'glite-job-list-match ' + self.configOpt_() + jdl 
-        cmd_out = runCommand(cmd,0,10)
-        if not cmd_out:
-            raise CrabException("ERROR: "+cmd+" failed!")
-
-        return self.parseListMatch_(cmd_out, jdl)
-
-    def parseListMatch_(self, out, jdl):
-        """
-        Parse the f* output of edg-list-match and produce something sensible
-        """
-        reComment = re.compile( r'^\**$' )
-        reEmptyLine = re.compile( r'^$' )
-        reVO = re.compile( r'Selected Virtual Organisation name.*' )
-        reLine = re.compile( r'.*')
-        reCE = re.compile( r'(.*:.*)')
-        reCEId = re.compile( r'CEId.*')
-        reNO = re.compile( r'No Computing Element matching' )
-        reRB = re.compile( r'Connecting to host' )
-        next = 0
-        CEs=[]
-        Match=0
-
-        #print out
-        lines = reLine.findall(out)
-
-        i=0
-        CEs=[]
-        for line in lines:
-            string.strip(line)
-            #print line
-            if reNO.match( line ):
-                common.logger.debug(5,line)
-                return 0
-                pass
-            if reVO.match( line ):
-                VO =reVO.match( line ).group()
-                common.logger.debug(5,"VO "+VO)
-                pass
-
-            if reRB.match( line ):
-                RB = reRB.match(line).group()
-                common.logger.debug(5,"RB "+RB)
-                pass
-
-            if reCEId.search( line ):
-                for lineCE in lines[i:-1]:
-                    if reCE.match( lineCE ):
-                        CE = string.strip(reCE.search(lineCE).group(1))
-                        CEs.append(CE.split(':')[0])
-                        pass 
-                    pass
-                pass
-            i=i+1
-            pass
-
-        common.logger.debug(5,"All CE :"+str(CEs))
-
-        sites = []
-        [sites.append(it) for it in CEs if not sites.count(it)]
-
-        common.logger.debug(5,"All Sites :"+str(sites))
-        return len(sites)
-
-    def noMatchFound_(self, jdl):
-        reReq = re.compile( r'Requirements' )
-        reString = re.compile( r'"\S*"' )
-        f = file(jdl,'r')
-        for line in f.readlines():
-            line= line.strip()
-            if reReq.match(line):
-                for req in reString.findall(line):
-                    if re.search("VO",req):
-                        common.logger.message( "SW required: "+req)
-                        continue
-                    if re.search('"\d+',req):
-                        common.logger.message("Other req  : "+req)
-                        continue
-                    common.logger.message( "CE required: "+req)
-                break
-            pass
-        raise CrabException("No compatible resources found!")
-
-    def submit(self, nj):
-        """
-        Submit one EDG job.
-        """
-
-        self.checkProxy()
-        jid = None
-        jdl = common.job_list[nj].jdlFilename()
-
-        cmd = 'glite-job-submit ' + self.configOpt_() + jdl 
-        cmd_out = runCommand(cmd)
-        if cmd_out != None:
-            reSid = re.compile( r'https.+' )
-            jid = reSid.search(cmd_out).group()
-            pass
-        return jid
-
-    def resubmit(self, nj_list):
-        """
-        Prepare jobs to be submit
-        """
-        return
 
     def getExitStatus(self, id):
         return self.getStatusAttribute_(id, 'exit_code')
@@ -585,116 +542,49 @@ class SchedulerGlite(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-    def getOutput(self, id):
-        """
-        Get output for a finished job with id.
-        Returns the name of directory with results.
-        """
-
-        self.checkProxy()
-        cmd = 'glite-job-get-output --dir ' + common.work_space.resDir() + ' ' + id
-        cmd_out = runCommand(cmd)
-
-        # Determine the output directory name
-        dir = common.work_space.resDir()
-        dir += os.environ['USER']
-        dir += '_' + os.path.basename(id)
-        return dir
-
-    def cancel(self, id):
-        """ Cancel the EDG job with id """
-        self.checkProxy()
-        cmd = 'glite-job-cancel --noint ' + id
-        cmd_out = runCommand(cmd)
-        return cmd_out
-
-
-    def createFakeJdl(self,nj):  # TMP Just waiting listmatch functionalitly  
-                                  # implementation into BOSS4   Daniele
-        """                          
-        Create a fake jdl considering
-        only requirements  
-        """
-        job = common.job_list[nj]
-        jbt = job.type()
-        inp_storage_subdir = ''
-        
-        
-        SPL = inp_storage_subdir
-        if ( SPL and SPL[-1] != '/' ) : SPL = SPL + '/'
-
-        jdl = open(common.work_space.shareDir()+"fake.jdl","w")
-
-        script = job.scriptFilename()
-        jdl.write('Executable = "' + os.path.basename(script) +'";\n')
-
-        req='Requirements = '
-        noreq=req
-        req = req + jbt.getRequirements()
-        #### and USER REQUIREMENT
-        if self.EDG_requirements:
-            if (req != noreq):
-                req = req +  ' && '
-            req = req + self.EDG_requirements
-        #### FEDE ##### 
-        if self.EDG_ce_white_list:
-            ce_white_list = string.split(self.EDG_ce_white_list,',')
-            #print "req = ", req
-            for i in range(len(ce_white_list)):
-                if i == 0:
-                    if (req != noreq):
-                        req = req +  ' && '
-                    req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
-                    pass
-                else:
-                    req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
-            req = req + ')'
-        
-        if self.EDG_ce_black_list:
-            ce_black_list = string.split(self.EDG_ce_black_list,',')
-            for ce in ce_black_list:
-                if (req != noreq):
-                    req = req +  ' && '
-                req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
+    ##### FEDE ######         
+    def findSites_(self, n_tot_job):
+        itr4 = []
+       # print "n_tot_job = ", n_tot_job
+        for n in range(n_tot_job):
+            sites = common.jobDB.destination(n)
+            #job = common.job_list[n]
+            #jbt = job.type()
+           # print "common.jobDB.destination(n) = ", common.jobDB.destination(n)
+           # print "sites = ", sites
+            itr = ''
+            for site in sites: 
+                #itr = itr + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
+                itr = itr + 'target.GlueSEUniqueID=="'+site+'" || '
                 pass
+            # remove last ||
+            itr = itr[0:-4]
+            itr4.append( itr )
+        # remove last , 
+       # print "itr4 = ", itr4
+        return itr4
 
-        ###############
-        clockTime=480
-        if self.EDG_clock_time:
-            clockTime= self.EDG_clock_time
-        if (req != noreq):
-            req = req + ' && '
-        req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+str(clockTime)+'))'
-
-        cpuTime=1000
-        if self.EDG_cpu_time:
-            cpuTime=self.EDG_cpu_time
-        if (req != noreq):
-            req = req + ' && '
-        req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+str(cpuTime)+'))'
-
-        if (req != noreq):
-            req = req + ';\n'
-            jdl.write(req)
-                                                                                                                                                             
-        jdl.write('VirtualOrganisation = "' + self.VO + '";\n')
-
-        if ( self.EDG_retry_count ):               
-            jdl.write('RetryCount = '+self.EDG_retry_count+';\n')
-            pass
-
-        jdl.write('MyProxyServer = "' + self.proxyServer + '";\n')
-
-        jdl.close()
-        return
-    def createXMLSchScript(self, nj):
+    def createXMLSchScript(self, nj, argsList):
+   # def createXMLSchScript(self, nj):
         """
         Create a XML-file for BOSS4.
         """
-        job = common.job_list[nj]
+  #      job = common.job_list[nj]
+        """
+        INDY
+        [begin] da rivedere:
+        in particolare passerei il jobType ed eliminerei le dipendenze da job
+        """
+        index = nj - 1
+        job = common.job_list[index]
         jbt = job.type()
-        inp_sandbox = jbt.inputSandbox(nj)
-        out_sandbox = jbt.outputSandbox(nj)
+        
+        inp_sandbox = jbt.inputSandbox(index)
+        out_sandbox = jbt.outputSandbox(index)
+        """
+        [end] da rivedere
+        """
+
         
         title = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
         jt_string = ''
@@ -708,8 +598,16 @@ class SchedulerGlite(Scheduler):
   
         to_writeReq = ''
         to_write = ''
+
         req=' '
-        req = req + jbt.getRequirements()
+        req = req + jbt.getRequirements(nj)
+
+
+        #sites = common.jobDB.destination(nj)
+        #if len(sites)>0 and sites[0]!="Any":
+        #    req = req + ' && anyMatch(other.storage.CloseSEs, (_ITR4_))'
+        #req = req     
+    
         if self.EDG_requirements:
             if (req == ' '):
                 req = req + self.EDG_requirements
@@ -747,11 +645,11 @@ class SchedulerGlite(Scheduler):
                 req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
             else:
                 req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
-        if (req != ' '):
-            req = req + '\n'
-            to_writeReq = req 
-                                                                                                                                                             
 
+        #if (req != ' '):
+        #    req = req + '\n'
+        #    to_writeReq = req 
+                                                                                                                                                             
         if ( self.EDG_retry_count ):               
             to_write = to_write + 'RetryCount = "'+self.EDG_retry_count+'"\n'
             pass
@@ -764,43 +662,88 @@ class SchedulerGlite(Scheduler):
         dir = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
 
-        if nj == 0: 
-            xml.write(str(title))
-            xml.write('<task name="' +str(taskName)+'">\n')
-            xml.write(jt_string)
-            #Here it must pass the extra Tags.. (into Task & out of chain)  
-            if (to_writeReq != ''):
-                xml.write('<extraTags>\n')
-                xml.write('<Requirements>\n')
-                xml.write('<![CDATA[\n')
-                xml.write(to_writeReq)
-                xml.write(']]>\n')
-                xml.write('</Requirements>\n')
-                xml.write('</extraTags>\n')
-                pass
+        xml.write(str(title))
+        xml.write('<task name="' +str(taskName)+'">\n')
+        xml.write(jt_string)
 
-            if (to_write != ''):
-                xml.write('<extraTags\n')
-                xml.write(to_write)
-                xml.write('/>\n')
-                pass
+        xml.write('<iterator>\n')
+
+        #print str(nj) 
+#        xml.write('\t<iteratorRule name="ITR1" rule="1:'+ str(nj) + '" />\n')
+        #print argsList
+#        xml.write('\t<iteratorRule name="ITR2" rule="'+ argsList + '" />\n')
+        #print jobList
+#        xml.write('\t<iteratorRule name="ITR3" rule="1:'+ str(nj) + ':6" />\n')        #print str(nj)
+        xml.write('\t<iteratorRule name="ITR1">\n')
+        xml.write('\t\t<ruleElement> 1:'+ str(nj) + ' </ruleElement>\n')
+        xml.write('\t</iteratorRule>\n')
+        xml.write('\t<iteratorRule name="ITR2">\n')
+        #print argsList
+        for arg in argsList:
+            xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
             pass
-  
+        xml.write('\t</iteratorRule>\n')
+        #print jobList
+        xml.write('\t<iteratorRule name="ITR3">\n')
+        xml.write('\t\t<ruleElement> 1:'+ str(nj) + ':1:6 </ruleElement>\n')
+        xml.write('\t</iteratorRule>\n')
+
+        #### FEDE #####
+        '''
+        indy: qui sotto ci sta itr4
+        '''
+        
+        itr4=self.findSites_(nj)
+        #print "--->>> itr4 = ", itr4
+        if (itr4 != ''):
+            xml.write('\t<iteratorRule name="ITR4">\n')
+        #print argsList
+            for arg in itr4:
+                xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
+                pass
+            xml.write('\t</iteratorRule>\n')
+            req = req + ' && anyMatch(other.storage.CloseSEs, (_ITR4_))'
+            pass
+        #    print "--->>> req= ", req         
+        
+        if (to_write != ''):
+            xml.write('<extraTags\n')
+            xml.write(to_write)
+            xml.write('/>\n')
+            pass
+
         xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
         xml.write(jt_string)
 
+        if (req != ' '):
+            req = req + '\n'
+            xml.write('<extraTags>\n')
+            xml.write('<Requirements>\n')
+            xml.write('<![CDATA[\n')
+            xml.write(req)
+            xml.write(']]>\n')
+            xml.write('</Requirements>\n')
+            xml.write('</extraTags>\n')
+            pass
+
         #executable
+
+        """
+        INDY
+        script dipende dal jobType: dovrebbe essere semplice tirarlo fuori in altro modo
+        """        
         script = job.scriptFilename()
-        xml.write('<program exec="' + os.path.basename(script) +'"\n')
+        xml.write('<program>\n')
+        xml.write('<exec> ' + os.path.basename(script) +' </exec>\n')
         xml.write(jt_string)
     
            
         ### only one .sh  JDL has arguments:
         ### Fabio
-        xml.write('args = "' + str(nj+1)+' '+ jbt.getJobTypeArguments(nj, "GLITE") +'"\n')
-        xml.write('program_types="crabjob"\n')
-        inp_box = 'infiles="'
-        inp_box = inp_box + '' + script + ','
+#        xml.write('args = "' + str(nj+1)+' '+ jbt.getJobTypeArguments(nj, "EDG") +'"\n')
+        xml.write('<args> <![CDATA[\n _ITR2_ \n]]> </args>\n')
+        xml.write('<program_types> crabjob </program_types>\n')
+        inp_box = script + ','
 
         if inp_sandbox != None:
             for fl in inp_sandbox:
@@ -824,21 +767,21 @@ class SchedulerGlite(Scheduler):
                 pass
 
         if inp_box[-1] == ',' : inp_box = inp_box[:-1]
-        inp_box = inp_box + ' "\n'
+        inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
         xml.write(inp_box)
-
-        xml.write('stderr="' + job.stdout() + '"\n')
-        xml.write('stdout="' + job.stderr() + '"\n')
         
+        base = jbt.name()
+        stdout = base + '__ITR3_.stdout'
+        stderr = base + '__ITR3_.stderr'
         
-        if job.stdout() == job.stderr():
-          out_box = 'outfiles="' + \
-                    job.stdout() + ',.BrokerInfo,'
-        else:
-          out_box = 'outfiles="' + \
-                    job.stdout() + ',' + \
-                    job.stderr() + ',.BrokerInfo,'
+        xml.write('<stderr> ' + stderr + '</stderr>\n')
+        xml.write('<stdout> ' + stdout + '</stdout>\n')
+        
 
+        out_box = stdout + ',' + \
+                  stderr + ',.BrokerInfo,'
+
+        """
         if int(self.return_data) == 1:
             if out_sandbox != None:
                 for fl in out_sandbox:
@@ -846,27 +789,32 @@ class SchedulerGlite(Scheduler):
                     pass
                 pass
             pass
-                                                                                                                                                             
-        if out_box[-1] == ',' : out_box = out_box[:-1]
-        out_box = out_box + '"'
-        xml.write(out_box+'\n')
- 
-        xml.write('group="'+taskName+'"\n')
-        xml.write('BossAttr="[crabjob.INTERNAL_ID=' + str(nj+1) +']"\n')
+        """
 
-        
-       
-        xml.write('/>\n')
+        """
+        INDY
+        qualcosa del genere andrebbe fatta per gli infiles
+        """        
+        if int(self.return_data) == 1:
+            for fl in jbt.output_file:
+                out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
+                pass
+            pass
+
+        if out_box[-1] == ',' : out_box = out_box[:-1]
+        out_box = '<outfiles> <![CDATA[\n' + out_box + '\n]]></outfiles>\n'
+        xml.write(out_box)
+ 
+        xml.write('<BossAttr> crabjob.INTERNAL_ID=_ITR1_ </BossAttr>\n')
+
+        xml.write('</program>\n')
         xml.write('</chain>\n')
 
-        if int(nj) == int(common.jobDB.nJobs()-1): xml.write('</task>\n')
-
+        xml.write('</iterator>\n')
+        xml.write('</task>\n')
 
         xml.close()
-
         return
-
-
 
     def checkProxy(self):
         """
@@ -878,8 +826,6 @@ class SchedulerGlite(Scheduler):
 
         minTimeLeftServer = 100 # in hours
 
-        #cmd = 'voms-proxy-info -exists -valid '+str(minTimeLeft)+':00'
-        #cmd = 'voms-proxy-info -timeleft'
         mustRenew = 0
         timeLeftLocal = runCommand('voms-proxy-info -timeleft 2>/dev/null')
         timeLeftServer = -999
@@ -904,8 +850,6 @@ class SchedulerGlite(Scheduler):
             except:
                 msg = "Unable to create a valid proxy!\n"
                 raise CrabException(msg)
-            # cmd = 'grid-proxy-info -timeleft'
-            # cmd_out = runCommand(cmd,0,20)
             pass
 
         ## now I do have a voms proxy valid, and I check the myproxy server
@@ -918,7 +862,6 @@ class SchedulerGlite(Scheduler):
         else:
             # if myproxy exist but not long enough, renew
             reTime = re.compile( r'timeleft: (\d+)' )
-            #print "<"+str(reTime.search( cmd_out ).group(1))+">"
             if reTime.match( cmd_out ):
                 time = reTime.search( line ).group(1)
                 if time < minTimeLeftServer:
