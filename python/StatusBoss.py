@@ -8,6 +8,7 @@ class StatusBoss(Actor):
     def __init__(self, *args):
         self.cfg_params = args[0]
         self.countToTjob = 0
+        self.countCreated = 0
         self.countDone = 0
         self.countRun = 0
         self.countSched = 0
@@ -107,15 +108,24 @@ class StatusBoss(Actor):
 ##            dest =  jobAttributes[bossid][3]
  
             job_exit_status = jobAttributes[bossid][4]   ##BOSS4 JOB_EXIT_STATUS
-            printline+=jobAttributes[bossid][0]   ##BOSS4 CHAIN_ID
+            #print "#####  sono qui  #####"
+            #printline+=jobAttributes[bossid][0]
+            #print 'jobAttributes[bossid][0] = ', jobAttributes[bossid][0]
+            #print "#########EEEEEEEEEE###"
             
             if jobStatus == 'Done (Success)' or jobStatus == 'Cleared(BOSS)':
-                printline+=' '+jobStatus+'   '+dest+'      '+exe_code+'       '+job_exit_status
+                printline+=jobAttributes[bossid][0]+' '+jobStatus+'   '+dest+'      '+exe_code+'       '+job_exit_status
+            elif jobStatus == 'Created(BOSS)':
+                pass
+                #self.countCreated = self.countCreated + 1
+                #printline+=' '+jobStatus+'   '+dest+'      '+exe_code+'       '+job_exit_status
             else:
-                printline+=' '+jobStatus+'   '+dest
+                printline+=jobAttributes[bossid][0]+' '+jobStatus+'   '+dest
             resFlag = 0
+
             if jobStatus != 'Created(BOSS)'  and jobStatus != 'Unknown(BOSS)':
                 jid1 = string.strip(jobAttributes[bossid][2])
+
         ##########--------> for the moment this is out, when BOSS will know also the ce we reimplement it  DS. 
    ##             if jobStatus == 'Aborted':
    ##                 Statistic.Monitor('checkstatus',resFlag,jid1,'abort')
@@ -127,14 +137,15 @@ class StatusBoss(Actor):
                     'sid': string.strip(jobAttributes[bossid][2]), 'StatusValueReason': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'reason'), \
                     'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][2]), 'stateEnterTime'), 'StatusDestination': dest}
                     self.cfg_params['apmon'].sendToML(params)
-            print printline
+            if printline != '': 
+                print printline
 
         self.update_(for_summary)
         return
 
     def status(self) :
         """ Return #jobs for each status as a tuple """
-        return (self.countToTjob,self.countReady,self.countSched,self.countRun,self.countCleared,self.countAbort,self.countCancel,self.countDone)
+        return (self.countToTjob,self.countCreated,self.countReady,self.countSched,self.countRun,self.countCleared,self.countAbort,self.countCancel,self.countDone)
 
     def update_(self,statusList) :
         """ update the status of the jobs """
@@ -142,6 +153,8 @@ class StatusBoss(Actor):
         common.jobDB.load()
         nj = 0
         for status in statusList:
+            if status == 'Created(BOSS)':
+                self.countCreated = self.countCreated + 1
             if status == 'Done (Success)' or status == 'Done (Aborted)':
                 self.countDone = self.countDone + 1
 	        common.jobDB.setStatus(nj, 'D')
@@ -172,6 +185,9 @@ class StatusBoss(Actor):
         print ''
         print ">>>>>>>>> %i Total Jobs " % (self.countToTjob)
 
+        if (self.countCreated != 0):
+            print ''
+            print ">>>>>>>>> %i Jobs Created" % (self.countCreated)
         if (self.countReady != 0):
             print ''
             print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
