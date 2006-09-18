@@ -398,7 +398,6 @@ class SchedulerBoss(Scheduler):
         CEs=[]
         for line in lines:
             string.strip(line)
-            #print line
             if reNO.match( line ):
                 common.logger.debug(5,line)
                 return 0
@@ -415,6 +414,8 @@ class SchedulerBoss(Scheduler):
 
             if reCEId.search( line ):
                 for lineCE in lines[i:-1]:
+                    if string.find(lineCE, "Log file created") != -1: 
+                       break 
                     if reCE.match( lineCE ):
                         CE = string.strip(reCE.search(lineCE).group(1))
                         CEs.append(CE.split(':')[0])
