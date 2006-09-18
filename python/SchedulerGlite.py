@@ -135,13 +135,6 @@ class SchedulerGlite(Scheduler):
         try: self.EDG_cpu_time = cfg_params['EDG.max_cpu_time']
         except KeyError: self.EDG_cpu_time = ''
 
-
-        try: self.schedulerName = cfg_params['CRAB.scheduler']
-        except KeyError: self.schedulerName = ''
-
-        try: self.jobtypeName = cfg_params['CRAB.jobtype']
-        except KeyError: self.jobtypeName = ''
-
         # Add EDG_WL_LOCATION to the python path
         try:
             path = os.environ['EDG_WL_LOCATION']
@@ -388,7 +381,7 @@ class SchedulerGlite(Scheduler):
            txt += '        echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
            txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
            txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
-           txt += '            echo "Problems with SE = $SE"\n'
+           txt += '            echo "Possible problem with SE = $SE"\n'
            txt += '            echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "lcg-cp failed, attempting srmcp"\n'
@@ -501,7 +494,6 @@ class SchedulerGlite(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-
     def getExitStatus(self, id):
         return self.getStatusAttribute_(id, 'exit_code')
 
@@ -533,7 +525,7 @@ class SchedulerGlite(Scheduler):
             for i in range(len(self.states)):
                 # Fill an hash table with all information retrieved from LB API
                 hstates[ self.states[i] ] = jobStat.loadStatus(st)[i]
-            result = jobStat.loadStatus(st)[ self.states.index(attr) ]
+            result = jobStat.loadStatus(st)[self.states.index(attr)]
             return result
 
     def queryDetailedStatus(self, id):
@@ -645,10 +637,6 @@ class SchedulerGlite(Scheduler):
                 req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
             else:
                 req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
-
-        #if (req != ' '):
-        #    req = req + '\n'
-        #    to_writeReq = req 
                                                                                                                                                              
         if ( self.EDG_retry_count ):               
             to_write = to_write + 'RetryCount = "'+self.EDG_retry_count+'"\n'
@@ -667,18 +655,10 @@ class SchedulerGlite(Scheduler):
         xml.write(jt_string)
 
         xml.write('<iterator>\n')
-
-        #print str(nj) 
-#        xml.write('\t<iteratorRule name="ITR1" rule="1:'+ str(nj) + '" />\n')
-        #print argsList
-#        xml.write('\t<iteratorRule name="ITR2" rule="'+ argsList + '" />\n')
-        #print jobList
-#        xml.write('\t<iteratorRule name="ITR3" rule="1:'+ str(nj) + ':6" />\n')        #print str(nj)
         xml.write('\t<iteratorRule name="ITR1">\n')
         xml.write('\t\t<ruleElement> 1:'+ str(nj) + ' </ruleElement>\n')
         xml.write('\t</iteratorRule>\n')
         xml.write('\t<iteratorRule name="ITR2">\n')
-        #print argsList
         for arg in argsList:
             xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
             pass
@@ -688,7 +668,6 @@ class SchedulerGlite(Scheduler):
         xml.write('\t\t<ruleElement> 1:'+ str(nj) + ':1:6 </ruleElement>\n')
         xml.write('\t</iteratorRule>\n')
 
-        #### FEDE #####
         '''
         indy: qui sotto ci sta itr4
         '''
@@ -751,13 +730,11 @@ class SchedulerGlite(Scheduler):
                 pass
             pass
 
-        # Marco (VERY TEMPORARY ML STUFF)
         inp_box = inp_box + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + ',' +\
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + ','+\
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + ','+\
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + ','+\
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') 
-        # End Marco
 
         if (not jbt.additional_inbox_files == []):
             inp_box = inp_box + ', '
