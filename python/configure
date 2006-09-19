@@ -20,15 +20,15 @@ TopDir=`\pwd`
 #############################################
 ######## BOSS CONFIGURATION #################
 #############################################
-BOSSVER=4_0_0
+BOSSVER=4_2_0
 BACKEND=SQLite
 
 function configureBoss {
 ## unpack and configure Boss
 cd Boss
 echo "unpacking BOSS distribution ${BOSSVER}"
-tar xzf boss-v${BOSSVER}-bin.tar.gz
-cd BOSS
+tar xzf BOSS_${BOSSVER}-bin.tar.gz
+cd BOSS_${BOSSVER}
 
 echo "Creating Env. files"
 source install.sh
