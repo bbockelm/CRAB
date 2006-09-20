@@ -17,4 +17,4 @@ export LD_LIBRARY_PATH=${GLITE_LOCATION}/lib:${LD_LIBRARY_PATH}
 # echo $LD_LIBRARY_PATH
 # ldd `which voms-proxy-info`
 
-/usr/bin/env python $CRABSCRIPT/python/crab.py $*
+/usr/bin/env python $CRABPYTHON/crab.py $*

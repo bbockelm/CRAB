@@ -27,7 +27,7 @@ function configureBoss {
 ## unpack and configure Boss
 cd Boss
 echo "unpacking BOSS distribution ${BOSSVER}"
-tar xzf boss-v${BOSSVER}-bin.tar.gz
+tar xzf BOSS_${BOSSVER}-bin.tar.gz
 cd BOSS
 
 echo "Creating Env. files"

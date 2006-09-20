@@ -20,9 +20,9 @@ class SchedulerBoss(Scheduler):
         """
         try:
             
-            self.bossenv = os.environ["BOSSDIR"]
+            self.bossenv = os.environ["BOSS_ROOT"]
         except:
-            msg = "Error: the BOSSDIR is not set."
+            msg = "Error: the BOSS_ROOT is not set."
             msg = msg + " Did you source crab.sh/csh or your bossenv.sh/csh from your BOSS area?\n"
             raise CrabException(msg)
         try:
@@ -33,11 +33,12 @@ class SchedulerBoss(Scheduler):
             raise CrabException(msg)
 
 
+    ###################### ---- OK for Boss4 ds
     def configBossDB_(self):
         """
         Configure Boss DB
         """
-        # first I have to chack if the db already esist
+        # first I have to check if the db already esist
         self.boss_db_dir = common.work_space.shareDir()
         self.boss_db_name = 'bossDB'
         if os.path.isfile(self.boss_db_dir+self.boss_db_name) :
@@ -58,14 +59,14 @@ class SchedulerBoss(Scheduler):
             confFile.write(']\n')
             confFile.close()
 
-            # then I have to run "boss configureDB"
-            out = runBossCommand('boss configureDB',0)
+            # then I have to run "bossAdmin configureDB"
+            out = runBossCommand('bossAdmin configureDB',0)
      
             os.chdir(cwd)
      
-        # that's it!
         return
 
+    ###################### ---- OK for Boss4 ds
     def configRT_(self): 
         """
         Configure Boss RealTime monitor
@@ -84,24 +85,25 @@ class SchedulerBoss(Scheduler):
 
             confFile.write('[\n')
             # BOSS MySQL database file
-            confFile.write('DB_NAME = "boss_rt_v3_6";')
+            confFile.write('DB_NAME = "boss_rt_v4_2";')
             # Host where the MySQL server is running
-            confFile.write('DB_HOST = "boss.bo.infn.it";')
-            confFile.write('DB_DOMAIN = "bo.infn.it";')
+            confFile.write('DB_HOST = "boss.bo.infn.it";\n')
+            confFile.write('DB_DOMAIN = "bo.infn.it";\n')
             # Default BOSS MySQL user and password
-            confFile.write('DB_USER = "BOSSv3_6manager";')
-            confFile.write('DB_USER_PW = "BossMySQL";')
+            confFile.write('DB_USER = "BOSSv4_2manager";')
+            confFile.write('DB_USER_PW = "BossMySQL";\n')
             # Guest BOSS MySQL user and password
-            confFile.write('DB_GUEST = "BOSSv3_6monitor";')
-            confFile.write('DB_GUEST_PW = "BossMySQL";')
+            confFile.write('DB_GUEST = "BOSSv4_2monitor";')
+            confFile.write('DB_GUEST_PW = "BossMySQL";\n')
             # MySQL table type
-            confFile.write('TABLE_TYPE = "";')
+            confFile.write('TABLE_TYPE = "";\n')
             # MySQL port
-            confFile.write('DB_PORT = 0;')
+            confFile.write('DB_PORT = 0;\n')
             # MySQL socket
-            confFile.write('DB_SOCKET = "";')
+            confFile.write('DB_SOCKET = "";\n')
             # MySQL client flag
-            confFile.write('DB_CLIENT_FLAG = 0;')
+            confFile.write('DB_CLIENT_FLAG = 0;\n')
+            confFile.write('DB_CONNECT_TIMEOUT = 30;\n')
             confFile.write(']\n')
             confFile.close()
 
@@ -195,8 +197,12 @@ class SchedulerBoss(Scheduler):
         self.checkJobtypeRegistration_(self.boss_scheduler_name) 
         self.checkJobtypeRegistration_('crab') 
         
+        try: self.schedulerName = cfg_params['CRAB.scheduler']
+        except KeyError: self.scheduler = ''
+
         return
 
+    ###################### ---- OK for Boss4 ds
     def checkSchedRegistration_(self, sched_name): 
         """
         Verify scheduler registration.
@@ -229,6 +235,7 @@ class SchedulerBoss(Scheduler):
         return
 
 
+    ###################### ---- OK for Boss4 ds
     def checkJobtypeRegistration_(self, jobtype): 
         """
         Verify jobtype registration.
@@ -237,7 +244,7 @@ class SchedulerBoss(Scheduler):
         if (self.jobtypeRegistered.has_key(jobtype)): return
 
         ## we should cache the result of the first test
-        boss_jobtype_check = "boss showJobTypes"
+        boss_jobtype_check = "boss showProgramTypes"
         boss_out = runBossCommand(boss_jobtype_check,0)
         if string.find(boss_out, jobtype) == -1 :
             msg =  'Warning:' + jobtype + ' jobtype not registered in BOSS\n'
@@ -262,24 +269,31 @@ class SchedulerBoss(Scheduler):
         return
 
 
+    ###################### ---- OK for Boss4 ds
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
         """
         return self.boss_scheduler.wsSetupEnvironment() 
 
-
-    def createSchScript(self, nj):
+    ###################### ---- OK for Boss4 ds
+#    def createXMLSchScript(self, nj):
+    """
+    INDY
+    come vedi qui ho cambiato il prototipo
+    createFakeJdl non dovrebbe aver bisogno di un job number:
+    in effetti usa il jobType, non il job.
+    In poche parole la cosa potrebbe essere piu' diretta
+    """
+    def createXMLSchScript(self, nj, argsList):
         """
         Create script_scheduler file (JDL for EDG)
         """
-
-        self.boss_scheduler.createSchScript(nj)
-        self.declareJob_(nj)
+        self.boss_scheduler.createXMLSchScript(nj, argsList)
         return
 
-
-    def declareJob_(self, nj):
+    ###################### ---- OK for Boss4 ds
+    def declareJob_(self):                       #Changed For BOSS4
         """
         BOSS declaration of jobs
         """
@@ -324,20 +338,20 @@ class SchedulerBoss(Scheduler):
                     common.logger.debug(4,"CHAIN ID =  "+self.chain_id)
         return 
 
-
     def checkProxy(self):
         """
         Check the Globus proxy. 
         """
         return self.boss_scheduler.checkProxy()
 
-
+    ###################### ---- OK for Boss4 ds
     def loggingInfo(self, nj):
         """
         retrieve the logging info from logging and bookkeeping and return it
         """
         return self.boss_scheduler.loggingInfo(nj) 
 
+    ##########################################   ---- OK for Boss4 ds
     def listMatch(self, nj):
         """
         Check the compatibility of available resources
@@ -408,6 +422,17 @@ class SchedulerBoss(Scheduler):
 
         common.logger.debug(5,"All CE :"+str(CEs))
 
+        sites = []
+        [sites.append(it) for it in CEs if not sites.count(it)]
+
+        common.logger.debug(5,"All Sites :"+str(sites))
+        common.logger.message("Matched Sites :"+str(sites))
+        return len(sites)
+    ##########################################   ----  add as workaround for list match with Boss4 ds
+    def createFakeJdl(self,nj):
+        return self.boss_scheduler.createFakeJdl(nj)
+    
+    ###################### ---- OK for Boss4 ds
     def submit(self, nj):
         """
         Submit BOSS function.
@@ -427,13 +452,23 @@ class SchedulerBoss(Scheduler):
         # debug
         msg = 'BOSS submission: ' + cmd
         common.logger.debug(4,msg)
-        cmd_out = runBossCommand(cmd)
+        msg = 'BOSS submission output: ' + cmd_out
+        common.logger.debug(4,msg)
 
         if not cmd_out :
             msg = 'ERROR: BOSS submission failed: ' + cmd
             common.logger.message(msg)
             return None
         else:
+            for line in cmd_out.splitlines(): # boss4
+                prefix = 'error'    #Boss4
+                SubmissionCheck = string.find(cmd_out, prefix)    
+                if  SubmissionCheck >= 0 :
+                    msg = 'ERROR: BOSS submission failed: ' + cmd
+                    common.logger.message(msg)
+                    raise CrabException(msg)
+                   # return None
+
             if cmd_out.find('https') != -1:
                 reSid = re.compile( r'https.+' )
                 jid = reSid.search(cmd_out).group()
@@ -442,34 +477,24 @@ class SchedulerBoss(Scheduler):
             return jid
 
 
-    # fede nuova funzione
-    def resubmit(self, nj_list):
-        """
-        Prepare jobs to be submit
-        """
-        for nj in nj_list:
-            self.declareJob_(int(nj)) 
-        return
-
-
+    ###################### ---- OK for Boss4 ds
     def moveOutput(self, int_id):
         """
         Move output of job already retrieved 
         """
         self.current_time = time.strftime('%y%m%d_%H%M%S',time.localtime(time.time()))
         resDir = common.work_space.resDir()
-        resDirSave = resDir + self.current_time
+        resDirSave = resDir+'res_backup'
         if not os.path.exists(resDirSave):
             os.mkdir(resDirSave)
 
-        boss_id = self.listBoss()[int(int_id)]
-
-        cmd = 'boss SQL -query "select OUT_FILES from JOB where JOB.ID='+str(boss_id)+'"'
+        boss_id = int(int_id) 
+        cmd = 'bossAdmin SQL -fieldsLen -query "select CHAIN_OUTFILES from CHAIN where ID='+str(boss_id)+'"'
         cmd_out = runBossCommand(cmd)
 
         nline = 0
         for line in cmd_out.splitlines():
-            if nline == 2:
+            if nline == 3:
                 files = line.split(',')
                 for i in files:
                     i=i.strip()
@@ -478,11 +503,11 @@ class SchedulerBoss(Scheduler):
                     i=i.strip('"')
                                     
                     if os.path.exists(self.outDir+'/'+i):
-                        os.rename(self.outDir+'/'+i, resDirSave+'/'+i)
+                        os.rename(self.outDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
                         common.logger.message('Output file '+i+' moved to '+resDirSave)
 
                     if os.path.exists(self.logDir+'/'+i):
-                        os.rename(self.logDir+'/'+i, resDirSave+'/'+i)
+                        os.rename(self.logDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
                         common.logger.message('Output file '+i+' moved to '+resDirSave)
             nline = nline + 1
         return
@@ -504,15 +529,12 @@ class SchedulerBoss(Scheduler):
             raise CrabException(msg)
         common.jobDB.load()
         self.boss_scheduler.checkProxy()
-#        dirGroup = string.split(common.work_space.topDir(), '/')
-#        group = dirGroup[len(dirGroup)-2]
-#        group = self.groupName
         allBoss_id = common.scheduler.listBoss()
         for i_id in int_id :
-            if int(i_id) not in allBoss_id.keys(): 
+            if int(i_id) not in allBoss_id: 
                 msg = 'Job # '+`int(i_id)`+' out of range for task '+ self.groupName
                 common.logger.message(msg) 
-            else: 
+            else:
                 dir = self.outDir 
                 logDir = self.logDir
                 boss_id = i_id 
@@ -535,7 +557,10 @@ class SchedulerBoss(Scheduler):
                         common.logger.message(msg)
                     resFlag = 0
                     jid = common.scheduler.boss_SID(int(i_id)) 
-                    exCode = common.scheduler.getExitStatus(jid)
+                    try:
+                        exCode = common.scheduler.getExitStatus(jid)
+                    except:
+                        exCode = ' '
                     Statistic.Monitor('retrieved',resFlag,jid,exCode)
                     common.jobDB.setStatus(int(i_id)-1, 'Y') 
                 else:
@@ -545,18 +570,15 @@ class SchedulerBoss(Scheduler):
                 dir += '_' + os.path.basename(str(boss_id))
             pass
         common.jobDB.save() 
-        return dir   
+        return
 
-
+    ###################### ---- OK for Boss4 ds
     def cancel(self,int_id):
         """ Cancel the EDG job with id """
         common.jobDB.load() 
-#        dirGroup = string.split(common.work_space.topDir(), '/')
-#        group = dirGroup[len(dirGroup)-2] 
-#        group = self.groupName
         allBoss_id = common.scheduler.listBoss() 
         for i_id in int_id :
-            if int(i_id) not in allBoss_id.keys():
+            if int(i_id) not in allBoss_id:
                 msg = 'Job # '+`(i_id)`+' out of range for task '+self.groupName
                 common.logger.message(msg)
             else:
@@ -586,6 +608,7 @@ class SchedulerBoss(Scheduler):
 
     def queryDest(self, id):  
         return self.boss_scheduler.getStatusAttribute_(id, 'destination')
+    ################################################################   (stop)
 
     def wsCopyInput(self):
         return self.boss_scheduler.wsCopyInput()
@@ -596,37 +619,22 @@ class SchedulerBoss(Scheduler):
     def wsRegisterOutput(self):  
         return self.boss_scheduler.wsRegisterOutput()
 
-    def boss_ID(self,int_ID):
-        """convert internal ID into Boss ID """ 
-
-        cmd = 'boss SQL -query "select JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and crabjob.INTERNAL_ID='+str(int_ID)+'"'
-        cmd_out = runBossCommand(cmd)
-        nline = 0
-        for line in cmd_out.splitlines():
-            if nline == 2:
-               boss_ID = line
-            nline = nline + 1
-              
-        return boss_ID 
-     
+    ##############################   OK for BOSS4 ds. 
+    ############################# ----> we use the SID for the postMortem... probably this functionality come for free with BOSS4? 
     def boss_SID(self,int_ID):
         """ Return Sid of job """
-
-#        dirGroup = string.split(common.work_space.topDir(), '/')
-#        group = self.groupName 
-
-        cmd = 'boss SQL -query "select JOB.SID  from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+self.groupName+'\' and crabjob.INTERNAL_ID='+str(int_ID)+'"'
+        cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from ENDED_JOB where CHAIN_ID=\''+str(int_ID)+'\'"'
         cmd_out = runBossCommand(cmd)
         nline = 0
-        SID=''
         for line in cmd_out.splitlines():
-            if nline == 2:
+            if nline == 3:
                SID = string.strip(line)
             nline = nline + 1
     
         return SID
 
-    def queryStatus(self,id):
+    ################################################## To change "much" when Boss4 store also this infos  DS.
+    def queryStatus(self,taskid,id):
         """ Query a status of the job with id """
 
         self.boss_scheduler.checkProxy()
@@ -658,11 +666,27 @@ class SchedulerBoss(Scheduler):
             'O?':'Done(BOSS)',
             'R?':'Running(BOSS)'             
             }
-        cmd = 'boss q -statusOnly -jobid '+str(id)
+        cmd = 'boss q -taskid '+str(taskid)+' -jobid '+str(id)+' -all' 
         cmd_out = runBossCommand(cmd)
-        js = cmd_out.split(None,2)
-        return EDGstatus[js[1]]
-
+        # debug
+        msg = 'BOSS status ' + cmd
+        common.logger.debug(4,msg)
+        msg = 'BOSS status output: ' + cmd_out
+        common.logger.debug(4,msg)
+        ###  
+        nline=0
+        for line in cmd_out.splitlines():
+            if nline==1:
+                header = line.split()
+                # debug
+                msg = 'header[5] = '+ header[5]
+                msg = msg + 'EDGstatus[header[5]] = ' + EDGstatus[header[5]]  
+                common.logger.debug(4,msg)
+                ### 
+                return EDGstatus[header[5]]
+            nline=nline+1
+    
+    ###################### ---- OK for Boss4 ds
     def listBoss(self):
         """
         Return a list of all boss_Id of a task
@@ -672,12 +696,13 @@ class SchedulerBoss(Scheduler):
         cmd_out = runBossCommand(cmd,0)
         nline = 0
         for line in cmd_out.splitlines():
-            if nline != 0 and nline != 1:
-                (internal_Id, boss_Id) = string.split(line)
-                ListBoss_ID[int(internal_Id)]=int(boss_Id)
+            if nline > 2 :
+                boss_Id = string.strip(line)
+                ListBoss_ID.append(int(boss_Id))
             nline = nline + 1
         return ListBoss_ID 
 
+    ###################### ---- OK for Boss4 ds
     def setOutLogDir(self,outDir,logDir):
         if not os.path.isdir(outDir):
             #Create the directory
