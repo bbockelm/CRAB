@@ -16,7 +16,7 @@ except:
     except:
         msg="ERROR no DBS API available"
         raise CrabException(msg)
-
+                                                                                              
 ## for python 2.2 add the pyexpat.so to PYTHONPATH
 pythonV=sys.version.split(' ')[0]
 if pythonV.find('2.2') >= 0 :
@@ -33,9 +33,9 @@ class DBSError(exceptions.Exception):
         args='\nERROR DBS %s : %s \n'%(errorName,errorMessage)
         exceptions.Exception.__init__(self, args)
         pass
-
+    
     def getErrorMessage(self):
-        """ Return exception error """
+        """ Return error message """
         return "%s" % (self.args)
 
 # #######################################
@@ -44,12 +44,12 @@ class DBSInvalidDataTierError(exceptions.Exception):
         args='\nERROR DBS %s : %s \n'%(errorName,errorMessage)
         exceptions.Exception.__init__(self, args)
         pass
-                                                                                      
+    
     def getErrorMessage(self):
-        """ Return exception error """
+        """ Return error message """
         return "%s" % (self.args)
 
-# ####################################
+# #######################################
 class DBSInfoError:
     def __init__(self, url):
         print '\nERROR accessing DBS url : '+url+'\n'
@@ -60,78 +60,111 @@ class DBSInfoError:
 ###############################################################################
 
 class DBSInfo:
-    def __init__(self):
-        # Construct api object
-        self.api = dbsCgiApi.DbsCgiApi()
-        # Configure api logging level
-        # self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_QUIET_)
-        #if common.logger.debugLevel() >= 4:
-        # self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_INFO_)
-        #if common.logger.debugLevel() >= 10:          
-        # self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_ALL_)
+    def __init__(self, dbs_url, dbs_instance):
+        """
+        Construct api object.
+        """
+        ## cgi service API
+        args = {}
+        args['instance']=dbs_instance
 
-# ####################################
-    def getMatchingDatasets (self, owner, dataset):
+        common.logger.debug(3,"Accessing DBS at: "+dbs_url+" "+dbs_instance)
+
+        self.api = dbsCgiApi.DbsCgiApi(dbs_url, args)
+        ## set log level
+        # self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_INFO_)
+        #self.api.setLogLevel(dbsApi.DBS_LOG_LEVEL_QUIET_)
+
+    def getMatchingDatasets (self, datasetPath):
         """ Query DBS to get provenance """
         try:
-            list = self.api.listProcessedDatasets("/%s/*/%s" % (dataset, owner))
+            list = self.api.listProcessedDatasets("%s" %datasetPath)
         except dbsApi.InvalidDataTier, ex:
             raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())
         except dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         except dbsCgiApi.DbsCgiToolError , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
-        except dbsCgiApi.DbsCgiApiException , ex:
+        except dbsCgiApi.DbsCgiBadResponse , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
 
         return list
 
-# ####################################
+
     def getDatasetProvenance(self, path, dataTiers):
-        """
-        query DBS to get provenance
-        """
+        """ Query DBS to get provenance """
         try:
             datasetParentList = self.api.getDatasetProvenance(path,dataTiers)
         except dbsApi.InvalidDataTier, ex:
-            raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())  
+            raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())
         except dbsApi.DbsApiException, ex:
-            raise DBSError(ex.getClassName(),ex.getErrorMessage())
-        except dbsCgiApi.DbsCgiApiException , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         return datasetParentList                                                                                                            
-        #parent = {}
-        #for aparent in datasetParentList:
-        #  common.logger.debug(6, "DBSInfo: parent path is "+aparent.getDatasetPath()+" datatier is "+aparent.getDataTier())
-        #  parent[aparent.getDatasetPath()]=aparent.getDataTier()
-        #
-        #return parent
 
-# ####################################
     def getEventsPerBlock(self, path):
-        """
-        query DBS to get event collections
-        """
+        """ Query DBS to get event collections """
+        # count events per block
+        nevtsbyblock = {}
         try:
-            fileBlockList = self.api.getDatasetContents(path)
+            contents = self.api.getDatasetContents(path)
         except dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
-        except dbsCgiApi.DbsCgiApiException , ex:
+        except dbsCgiApi.DbsCgiBadResponse, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
-        ## get the fileblock and event collections
-        nevtsbyblock= {}
-        for fileBlock in fileBlockList:
+        for fileBlock in contents:
             ## get the event collections for each block
+            nevts = 0
             eventCollectionList = fileBlock.get('eventCollectionList')
-            nevts=0
-            for eventCollection in eventCollectionList:
-                common.logger.debug(20,"DBSInfo:  evc: "+eventCollection.get('collectionName')+" nevts:%i"%eventCollection.get('numberOfEvents')) 
-                nevts=nevts+eventCollection.get('numberOfEvents')
+            for evc in eventCollectionList:
+                nevts = nevts + evc.get('numberOfEvents')
+
             common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(nevts,fileBlock.get('blockName')))
             nevtsbyblock[fileBlock.get('blockName')]=nevts
 
         # returning a map of fileblock-nevts  will be enough for now
         # TODO: in future the EvC collections grouped by fileblock should be returned
-        
         return nevtsbyblock
 
+    def getEventsPerFile(self, path):
+        """ Query DBS to get a dictionary of files:(events/file) """
+        numEventsByFile = {}
+        try:
+            contents = self.api.getDatasetContents(path)
+        except dbsApi.DbsApiException, ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
+        for fileBlock in contents:
+            numEvents = 0
+            eventCollectionList = fileBlock.get('eventCollectionList')
+            for evc in eventCollectionList:
+                numEvents = evc.get('numberOfEvents')
+                fileList = evc.get('fileList')
+                # As of 2006-08-10, event collections contain only one file
+                # => fileList contains only one dictionary
+                if len(fileList)>1:
+                    msg = "Event collection contains more than one file!  Exiting.\n"
+                    msg = msg + "CRAB and DBS must be upgraded to handle event collections with multiple files.\n"
+                    raise CrabException(msg)
+                fileDict = fileList[0]
+                fileName = fileDict.get('logicalFileName')
+                numEventsByFile[fileName] = numEvents
+        return numEventsByFile
+
+    def getDatasetFileBlocks(self, path):
+        """ Query DBS to get files/fileblocks """
+        try:
+            FilesbyBlock={}
+            try:
+                allBlocks = self.api.getDatasetFileBlocks(path)
+            except dbsCgiApi.DbsCgiBadResponse, ex:
+                raise DBSError(ex.getClassName(), ex.getErrorMessage())
+            for fileBlock in allBlocks:
+                blockname=fileBlock.get('blockName')
+                filesinblock=[]
+                for files in fileBlock.get('fileList'):
+                    #print "  block %s has file %s"%(blockname,files.getLogicalFileName())
+                    filesinblock.append(files.get('logicalFileName'))
+                FilesbyBlock[blockname]=filesinblock
+        except dbsApi.DbsApiException, ex:
+            raise DBSError(ex.getClassName(),ex.getErrorMessage())
+
+        return FilesbyBlock

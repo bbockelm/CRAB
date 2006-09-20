@@ -36,14 +36,13 @@ class ScriptWriter:
         self.actions[pattern] = action
         return
     
-    def modifyTemplateScript(self, nj):
+    def modifyTemplateScript(self):
         """
         Create a script from scratch.
         """
-        self.nj = nj
         
         tpl = open(self.template, 'r')
-        script = open(common.job_list[nj].scriptFilename(), 'w')
+        script = open(common.taskDB.dict('ScriptName'),'w')
 
         for line in tpl:
             if len(line) > 6 and line[:6] == '#CRAB ':

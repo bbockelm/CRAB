@@ -34,7 +34,6 @@ class Submitter(Actor):
         if (totalCreatedJobs==0):
             common.logger.message("No jobs to be submitted: first create them")
             return
-        
         #########
         # Loop over jobs
         njs = 0

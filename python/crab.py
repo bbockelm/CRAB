@@ -5,6 +5,7 @@ from crab_exceptions import *
 from crab_logger import Logger
 from WorkSpace import WorkSpace
 from JobDB import JobDB
+from TaskDB import TaskDB
 from JobList import JobList
 from Creator import Creator
 from Submitter import Submitter
@@ -85,6 +86,8 @@ class Crab:
         
         self.processOptions_(opts)
 
+        common.taskDB = TaskDB()
+
         if not self.flag_continue:
             self.createWorkingSpace_()
             optsToBeSaved={}
@@ -95,6 +98,8 @@ class Crab:
                     optsToBeSaved[it]=opts[it]
             common.work_space.saveConfiguration(optsToBeSaved, self.cfg_fname)
             pass
+        else:
+            common.taskDB.load()
 
         # At this point all configuration options have been read.
         
@@ -301,19 +306,6 @@ class Crab:
                     pass
                 pass
 
-#            elif ( opt in ('-use_boss', '-useboss') ):
-#                if ( val == '1' ):
-#                    self.scheduler_name = 'boss'
-#                    pass
-#                elif ( val == '0' ): 
-#                    pass
-#                else:
-#                    print common.prog_name+'. Bad flag for -use_boss option:',\
-#                          val,'Possible values are 0(=No) or 1(=Yes)'
-#                    usage()
-#                    pass
-#                pass
-
             elif string.find(opt,'.') == -1:
                 print common.prog_name+'. Unrecognized option '+opt
                 usage()
@@ -412,17 +404,6 @@ class Crab:
         For each user action instantiate a corresponding
         object and put it in the action dictionary.
         """
-#        for opt in opts.keys():
-#            self.flag_useboss = 0
-#            if ( opt == '-use_boss'):  
-#                val = opts[opt]
-#                if ( val == '1' ):
-#                    self.flag_useboss = 1
-#                    common.logger.message('Using BOSS')
-#                    pass
-#                else:
-#                    self.flag_useboss = 0
-#                    pass
 
         for opt in opts.keys():
           
@@ -461,11 +442,16 @@ class Crab:
                     common.job_list = JobList(common.jobDB.nJobs(),
                                               self.creator.jobType())
 
+                    common.taskDB.setDict('ScriptName',common.work_space.jobDir()+"/"+self.job_type_name+'.sh')
+                    common.taskDB.setDict('JdlName',common.work_space.jobDir()+"/"+self.job_type_name+'.jdl')
+                    common.taskDB.setDict('CfgName',common.work_space.jobDir()+"/"+self.creator.jobType().configFilename())
                     common.job_list.setScriptNames(self.job_type_name+'.sh')
                     common.job_list.setJDLNames(self.job_type_name+'.jdl')
                     common.job_list.setCfgNames(self.creator.jobType().configFilename())
 
                     self.creator.writeJobsSpecsToDB()
+
+                    common.taskDB.save()
                     pass
                 pass
 
@@ -545,12 +531,7 @@ class Crab:
                 jobs = self.parseRange_(val)
 
                 if len(jobs) != 0:
-                    if ( self.flag_useboss == 1 ):     
-                        self.actions[opt] = StatusBoss(self.cfg_params)
-                    else:                         
-                        self.actions[opt] = Status(self.cfg_params, jobs)
-                        pass
-                    pass
+                    self.actions[opt] = StatusBoss(self.cfg_params)
                 pass
 
             elif ( opt == '-kill' ):
@@ -782,7 +763,7 @@ class Crab:
                     pass
 
                 if len(nj_list) != 0:
-                    # Instantiate Submitter object
+                    # Instantiate Checker object
                     self.actions[opt] = Checker(self.cfg_params, nj_list)
 
                     # Create and initialize JobList
@@ -914,26 +895,6 @@ class Crab:
         common.scheduler = klass()
         common.scheduler.configure(self.cfg_params)
         return
-
-#    def createJobtype_(self):
-#        """
-#        Create the jobtype specified in the crab.cfg file
-#        """
-#        file_name = 'cms_'+ string.lower(self.job_type_name)
-#        klass_name = string.capitalize(self.job_type_name)
-#
-#        try:
-#            klass = importName(file_name, klass_name)
-#        except KeyError:
-#            msg = 'No `class '+klass_name+'` found in file `'+file_name+'.py`'
-#            raise CrabException(msg)
-#        except ImportError, e:
-#            msg = 'Cannot create job type '+self.job_type_name
-#            msg += ' (file: '+file_name+', class '+klass_name+'):\n'
-#            msg += str(e)
-#            raise CrabException(msg)
-#        job_type = klass(self.cfg_params)
-#        return job_type
 
     def run(self):
         """

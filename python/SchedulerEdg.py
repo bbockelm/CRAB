@@ -300,7 +300,6 @@ class SchedulerEdg(Scheduler):
         txt += '    echo "CE = $CE"\n'
         txt += 'elif [ $middleware == OSG ]; then \n'
         txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
-#        txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
         txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print ${args[0]}}\'` \n'
         txt += '    else \n'
         txt += '        echo "SET_CMS_ENV 10099 ==> OSG mode: ERROR in setting CE name from OSG_JOB_CONTACT" \n'
@@ -689,7 +688,47 @@ class SchedulerEdg(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-    def getOutput(self, id):
+    ##### FEDE ######         
+    def findSites_(self, n_tot_job):
+        itr4 = []
+       # print "n_tot_job = ", n_tot_job
+        for n in range(n_tot_job):
+            sites = common.jobDB.destination(n)
+            if len(sites)>0 and sites[0]=="Any": continue
+
+            #job = common.job_list[n]
+            #jbt = job.type()
+           # print "common.jobDB.destination(n) = ", common.jobDB.destination(n)
+           # print "sites = ", sites
+            itr = ''
+            for site in sites: 
+                #itr = itr + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
+                itr = itr + 'target.GlueSEUniqueID=="'+site+'" || '
+                pass
+            # remove last ||
+            itr = itr[0:-4]
+            itr4.append( itr )
+        # remove last , 
+       # print "itr4 = ", itr4
+        return itr4
+
+    def createXMLSchScript(self, nj, argsList):
+   # def createXMLSchScript(self, nj):
+        """
+        Create a XML-file for BOSS4.
+        """
+  #      job = common.job_list[nj]
+        """
+        INDY
+        [begin] da rivedere:
+        in particolare passerei il jobType ed eliminerei le dipendenze da job
+        """
+        index = nj - 1
+        job = common.job_list[index]
+        jbt = job.type()
+        
+        inp_sandbox = jbt.inputSandbox(index)
+        out_sandbox = jbt.outputSandbox(index)
         """
         Get output for a finished job with id.
         Returns the name of directory with results.
@@ -704,13 +743,6 @@ class SchedulerEdg(Scheduler):
         dir += os.environ['USER']
         dir += '_' + os.path.basename(id)
         return dir
-
-    def cancel(self, id):
-        """ Cancel the EDG job with id """
-        self.checkProxy()
-        cmd = 'edg-job-cancel --noint ' + id
-        cmd_out = runCommand(cmd)
-        return cmd_out
 
     def createSchScript(self, nj):
         """

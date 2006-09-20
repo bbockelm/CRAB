@@ -80,17 +80,17 @@ class JobDB:
     def save(self):
         db_file = open(self._dir+self._db_fname, 'w')
         for i in range(len(self._jobs)):
-            db_file.write(`(i+1)`+';')
-            db_file.write(self._jobs[i].status+';')
-            db_file.write(self._jobs[i].exitStatus+';')
-            db_file.write(self._jobs[i].jid+';')
-            db_file.write(self._jobs[i].bossid+';')
-            db_file.write(string.join(self._jobs[i].collections)+';')
-            db_file.write(string.join(self._jobs[i].inputSandbox)+';')
-            db_file.write(string.join(self._jobs[i].outputSandbox)+';')
-            db_file.write(str(self._jobs[i].taskId)+';')
-            db_file.write(string.join(self._jobs[i].arguments)+';')
-            db_file.write(string.join(self._jobs[i].dest)+';')
+            db_file.write(`(i+1)`+'|')
+            db_file.write(self._jobs[i].status+'|')
+            db_file.write(self._jobs[i].exitStatus+'|')
+            db_file.write(self._jobs[i].jid+'|')
+            db_file.write(self._jobs[i].bossid+'|')
+            db_file.write(string.join(self._jobs[i].collections)+'|')
+            db_file.write(string.join(self._jobs[i].inputSandbox)+'|')
+            db_file.write(string.join(self._jobs[i].outputSandbox)+'|')
+            db_file.write(str(self._jobs[i].taskId)+'|')
+            db_file.write(string.join(self._jobs[i].arguments)+'|')
+            db_file.write(string.join(self._jobs[i].dest)+'|')
             db_file.write('\n')
             pass
         db_file.close()
@@ -105,7 +105,7 @@ class JobDB:
 
         for line in db_file:
             db_entry = dbEntry()
-            (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, argumentsTMP, destTMP, rest) = string.split(line, ';')
+            (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, argumentsTMP, destTMP, rest) = string.split(line, '|')
             db_entry.collections = string.split(collectionsTMP)
             db_entry.inputSandbox = string.split(inputSandboxTMP)
             db_entry.outputSandbox = string.split(outputSandboxTMP)
@@ -118,6 +118,7 @@ class JobDB:
     
     
     def setStatus(self, nj, status):
+        self.check(nj)
         self._jobs[int(nj)].status = status
         return
     
@@ -125,6 +126,7 @@ class JobDB:
         return self._jobs[int(nj)].status
     
     def setExitStatus(self, nj, exitStatus):
+        self.check(nj)
         self._jobs[int(nj)].exitStatus = exitStatus
         return
     
@@ -132,6 +134,7 @@ class JobDB:
         return self._jobs[int(nj)].exitStatus
     
     def setJobId(self, nj, jid):
+        self.check(nj)
         self._jobs[int(nj)].jid = jid
         return
     
@@ -139,6 +142,7 @@ class JobDB:
         return self._jobs[int(nj)].jid
 
     def setBossId(self, nj, bossid):
+        self.check(nj)
         self._jobs[int(nj)].bossid = bossid
         return
     
@@ -146,6 +150,7 @@ class JobDB:
         return self._jobs[int(nj)].bossid
 
     def setArguments(self, nj, args):
+        self.check(nj)
         self._jobs[int(nj)].arguments = args
         return
     
@@ -153,6 +158,7 @@ class JobDB:
         return self._jobs[int(nj)].arguments
 
     def setCollections(self, nj, Collections):
+        self.check(nj)
         self._jobs[int(nj)].Collections = Collections
         return
     
@@ -160,6 +166,7 @@ class JobDB:
         return self._jobs[int(nj)].collections
 
     def setInputSandbox(self, nj, InputSandbox):
+        self.check(nj)
         self._jobs[int(nj)].inputSandbox = InputSandbox
         return
     
@@ -167,6 +174,7 @@ class JobDB:
         return self._jobs[int(nj)].inputSandbox
 
     def setOutputSandbox(self, nj, OutputSandbox):
+        self.check(nj)
         self._jobs[int(nj)].outputSandbox = OutputSandbox
         return
     
@@ -174,11 +182,20 @@ class JobDB:
         return self._jobs[int(nj)].outputSandbox
         
     def setTaskId(self, nj, taskId):
+        self.check(nj)
         self._jobs[int(nj)].taskId = taskId
 
+    def taskId(self, nj, taskId):
+        return self._jobs[int(nj)].taskId
+
     def setDestination(self, nj, args):
+        self.check(nj)
         self._jobs[int(nj)].dest = args
         return
     
     def destination(self, nj):
         return self._jobs[int(nj)].dest
+
+    def check(self, nj):
+        """ Check if the job nj is already present in DB (first job is 0) and create it if not """
+        if (int(nj) >= self.nJobs()): self._jobs.append(dbEntry())

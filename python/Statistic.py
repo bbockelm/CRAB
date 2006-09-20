@@ -6,8 +6,8 @@ import common
 import time
 
 def Monitor(operation,Resubmit,jid,exitCode):
-       fileCODE1 = open(common.work_space.shareDir()+"/.code","r")
-       array = fileCODE1.read().split('::')
+       common.taskDB.load()
+       array = common.taskDB.dict("CODE").split('::')
        time = array[0]
        jobtype = array[1]
        NjobCre = array[2]
@@ -19,7 +19,6 @@ def Monitor(operation,Resubmit,jid,exitCode):
            inputData = array[3]  
            executable = array[4]
            pass
-       fileCODE1.close()
           
        if operation != 'submit' :
           try:

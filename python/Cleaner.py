@@ -25,7 +25,7 @@ class Cleaner:
         self.status.compute() # compute the status
 
         ## SL: What a ugly interface (I use here). I should try a dictionary or something similar...
-        (ToTjob,countReady,countSche,countRun,countCleared,countAbort,countCancel,countDone) = self.status.status()
+        (ToTjob,countCreated,countReady,countSche,countRun,countCleared,countAbort,countCancel,countDone) = self.status.status()
 
         JobsOnGrid = countRun+countSche+countReady # job still on the grid
         if JobsOnGrid or countDone:

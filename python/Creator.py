@@ -38,18 +38,8 @@ class Creator(Actor):
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
         
         # This is code for proto-monitoring
-        fileCODE1 = open(common.work_space.shareDir()+"/.code","a")
-        if self.job_type.name() == 'ORCA' or self.job_type.name() == 'ORCA_PUBDB' :
-            self.owner = cfg_params['ORCA.owner']
-            self.dataset = cfg_params['ORCA.dataset']
-            fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.dataset)+'::'+str(self.owner))
-            pass
-        elif self.job_type.name() == 'FAMOS':
-            self.inputFile = cfg_params['FAMOS.input_lfn']
-            self.executable = cfg_params['FAMOS.executable']
-            fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.inputFile)+'::'+str(self.executable))
-            pass
-        elif self.job_type.name() == 'CMSSW':
+        code=common.taskDB.dict("CODE")
+        if self.job_type.name() == 'CMSSW':
             try: 
                 self.primaryDataset = cfg_params['CMSSW.datasetpath'].split("/")[1]
             except:
@@ -58,10 +48,8 @@ class Creator(Actor):
                 self.ProcessedDataset = cfg_params['CMSSW.datasetpath'].split("/")[3]
             except:
                 self.ProcessedDataset = '  '
-            fileCODE1.write('::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.primaryDataset)+'::'+str(self.ProcessedDataset))
+            common.taskDB.setDict("CODE",(code+'::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.primaryDataset)+'::'+str(self.ProcessedDataset)))
             pass
-
-        fileCODE1.close()
 
         # This is code for dashboard
           
@@ -94,11 +82,8 @@ class Creator(Actor):
         #
         # Set/Save Job Type name
 
-        jt_fname = common.work_space.shareDir() + 'jobtype'
-        if os.path.exists(jt_fname):
-            # Read stored job type name
-            jt_file = open(jt_fname, 'r')
-            jt = jt_file.read()
+        try:
+            jt = common.taskDB.dict("JobType")
             if self.job_type_name:
                 if ( jt != self.job_type_name+'\n' ):
                     msg = 'Job Type mismatch: requested <' + self.job_type_name
@@ -108,13 +93,10 @@ class Creator(Actor):
             else:
                 self.job_type_name = jt[:-1]
                 pass
-            jt_file.close()
             pass
-        else:
+        except CrabException:
             # Save job type name
-            jt_file = open(jt_fname, 'w')
-            jt_file.write(self.job_type_name+'\n')
-            jt_file.close()
+            common.taskDB.setDict("JobType",self.job_type_name)
             pass
         #end of deprecated code
 
@@ -178,9 +160,8 @@ class Creator(Actor):
 
             self.job_type.modifySteeringCards(nj)
             # Create script (sh)
-            #print "nel for prima del modifyTemplateScript, nj vale", nj
-            script_writer.modifyTemplateScript(nj)
-            os.chmod(common.job_list[nj].scriptFilename(), 0744)
+            script_writer.modifyTemplateScript()
+            os.chmod(common.taskDB.dict("ScriptName"), 0744)
 
             # Create scheduler scripts (jdl)
             common.scheduler.createSchScript(nj)
@@ -205,7 +186,7 @@ class Creator(Actor):
         ####
 
         common.jobDB.save()
-
+        common.taskDB.save()
         msg = '\nTotal of %d jobs created'%njc
         if njc != self.ncjobs: msg = msg + ' from %d requested'%self.ncjobs
         msg = msg + '.\n'

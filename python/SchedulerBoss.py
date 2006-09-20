@@ -107,11 +107,12 @@ class SchedulerBoss(Scheduler):
 
             # Registration of RealTime monitor
             register_script = 'registerMySQLRTmon'
-            register_path = self.boss_dir + '/script/'
+            register_path = self.boss_dir + '/'
             if os.path.exists(register_path+register_script):
                 boss_out = runBossCommand(register_path+register_script,0)
                 if (boss_out==None): raise CrabException('Cannot execute '+register_script+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
+                    # print "boss_out = ", boss_out 
                     msg = 'Error: Problem with RealTime monitor registration\n'
                     raise CrabException(msg)
             else:
@@ -211,8 +212,8 @@ class SchedulerBoss(Scheduler):
             msg = msg + 'Starting registration\n'
             common.logger.debug(5,msg)
             # On demand registration of job type
-            register_path = self.boss_dir + '/script/'
-            register_boss_scheduler = './register'+ string.upper(sched_name) + 'Scheduler'
+            register_path = self.boss_dir + '/'
+            register_boss_scheduler = 'register'+ string.upper(sched_name) + 'Scheduler'
             if os.path.exists(register_path+register_boss_scheduler):
                
                 boss_out = runBossCommand(register_path+register_boss_scheduler,0)
@@ -242,10 +243,10 @@ class SchedulerBoss(Scheduler):
             msg =  'Warning:' + jobtype + ' jobtype not registered in BOSS\n'
             msg = msg + 'Starting registration \n'
             common.logger.debug(5,msg)
-            register_path = self.boss_dir + '/script/'
-            register_boss_jobtype= './register' + string.upper(jobtype) + 'job'
+            register_path = self.boss_dir + '/'
+            register_boss_jobtype= 'register' + string.upper(jobtype) + 'job'
             if os.path.exists(register_path+register_boss_jobtype):
-                register_boss_jobtype= './register' + string.upper(jobtype) + 'job'
+                register_boss_jobtype= 'register' + string.upper(jobtype) + 'job'
                 boss_out = runBossCommand(register_path+register_boss_jobtype,0)
                 if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
                 if string.find(boss_out, 'Usage') != -1 :
@@ -282,49 +283,45 @@ class SchedulerBoss(Scheduler):
         """
         BOSS declaration of jobs
         """
-        
-        # copy of original file
-        sch_script_orig = common.job_list[nj].jdlFilename()
-        sch_script = sch_script_orig+"_boss"
-        shutil.copyfile(sch_script_orig, sch_script)
-        
-        # BOSS job declaration
-        dir = string.split(common.work_space.topDir(), '/')
-        sch = open(sch_script, 'a')
-        if (self.jobtypeRegistered[self.boss_jobtype] == 2):
-            types = 'jobtype=crabjob'
-        else:
-            types = 'jobtype=crabjob,'+self.boss_jobtype  
-        boss_scheduler_name = string.lower(self.boss_scheduler.name())
-        # da decidere se lasciare come if ...
-        if (self.jobtypeRegistered[self.boss_scheduler_name] != 2):
-            types += ','+self.boss_scheduler_name
-        sch.write(types+';\n')            
-        #print "types = ", types
-        sch.write('group='+ self.groupName +';\n')
-        sch.write('BossAttr=[')
-        sch.write('crabjob.INTERNAL_ID=' + str(nj+1) + ';')
-        sch.write('];\n')
-        sch.close()
- 
-        dirlog = common.work_space.logDir()
-        scriptName=os.path.basename(common.job_list[nj].scriptFilename())
+        common.logger.message('Creating jobs, please wait...')
+        cmd = 'boss declare -xmlfile '+common.work_space.shareDir()+self.boss_jobtype+'.xml'
+        cmd_out = runBossCommand(cmd,0,3600)
 
-        cmd = 'boss declare -group '+ self.groupName +' -classad '+ sch_script +' -log '+ dirlog + scriptName + '.log'       
-        msg = 'BOSS declaration:' + cmd
-        common.logger.debug(5,msg)
-        cmd_out = runBossCommand(cmd)
-        prefix = 'Job ID '
-        index = string.find(cmd_out, prefix)
-        if index < 0 :
-            common.logger.message('ERROR: BOSS declare failed: no BOSS ID for job')
+        # debug
+     #   msg = 'BOSS declaration:' + cmd
+     #   common.logger.debug(4,msg)
+     #   msg = 'BOSS declaration output:' + cmd_out
+     #   common.logger.debug(4,msg)
+        ###
+
+        #  -------------------------------------------------> From Here changed for Boss4
+        tasKprefix = 'Task'
+        tasKindex = string.find(cmd_out, tasKprefix)    
+        if tasKindex < 0 :
+            common.logger.message('ERROR: BOSS declare failed: no TASK ID for jobs')
             raise CrabException(msg)
-        else :
-            index = index + len(prefix)
-            boss_id = string.strip(cmd_out[index:])
-            common.jobDB.setBossId(nj, boss_id)
-            common.logger.debug(5,"BOSS ID =  "+boss_id)
-        os.remove(sch_script)
+     #   else:
+     #       tasKindex = tasKindex + len(tasKprefix)
+     #       self.Task_id = string.strip(cmd_out[tasKindex:])
+        nj = 0 
+        for line in cmd_out.splitlines(): # boss4
+            prefix = 'Chain'    #Boss4
+            index = string.find(line, prefix)
+            tasKcheck = string.find(line, tasKprefix)
+            if tasKcheck >= 0: 
+                taskid = str(line).split(":")[1]
+                self.Task_id = string.strip(taskid)
+                pass
+            if index < 0 :
+                continue
+            else:
+                chain_stop = line[-2:]
+                for nj in range(int(chain_stop)):
+                    self.chain_id = str(nj + 1)
+                    common.taskDB.setDict('BossTaskId',self.Task_id)
+                    common.logger.debug(4,"TASK ID =  "+self.Task_id)
+                    common.jobDB.setBossId(nj, self.chain_id)             
+                    common.logger.debug(4,"CHAIN ID =  "+self.chain_id)
         return 
 
 
@@ -345,7 +342,71 @@ class SchedulerBoss(Scheduler):
         """
         Check the compatibility of available resources
         """
-        return self.boss_scheduler.listMatch(nj)
+        schcladstring = ''
+        if self.schclassad != '':
+            schcladstring=' -schclassad '+self.schclassad
+        cmd = 'boss listMatch -scheduler '+ str(self.schedulerName) + ' -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
+        cmd_out = runBossCommand(cmd)
+
+        #return self.boss_scheduler.listMatch(nj)
+        jdl = ''
+        #cmd_out = runCommand(cmd,0,10)
+        if not cmd_out:
+            raise CrabException("ERROR: "+cmd+" failed!")
+
+        return self.parseListMatch_(cmd_out, jdl)
+
+    def parseListMatch_(self, out, jdl):
+        """
+        Parse the f* output of edg-list-match and produce something sensible
+        """
+        reComment = re.compile( r'^\**$' )
+        reEmptyLine = re.compile( r'^$' )
+        reVO = re.compile( r'Selected Virtual Organisation name.*' )
+        reLine = re.compile( r'.*')
+        reCE = re.compile( r'(.*:.*)')
+        reCEId = re.compile( r'CEId.*')
+        reNO = re.compile( r'No Computing Element matching' )
+        reRB = re.compile( r'Connecting to host' )
+        next = 0
+        CEs=[]
+        Match=0
+
+        #print out
+        lines = reLine.findall(out)
+
+        i=0
+        CEs=[]
+        for line in lines:
+            string.strip(line)
+            if reNO.match( line ):
+                common.logger.debug(5,line)
+                return 0
+                pass
+            if reVO.match( line ):
+                VO =reVO.match( line ).group()
+                common.logger.debug(5,"VO "+VO)
+                pass
+
+            if reRB.match( line ):
+                RB = reRB.match(line).group()
+                common.logger.debug(5,"RB "+RB)
+                pass
+
+            if reCEId.search( line ):
+                for lineCE in lines[i:-1]:
+                    if string.find(lineCE, "Log file created") != -1: 
+                       break 
+                    if reCE.match( lineCE ):
+                        CE = string.strip(reCE.search(lineCE).group(1))
+                        CEs.append(CE.split(':')[0])
+                        pass 
+                    pass
+                pass
+            i=i+1
+            pass
+
+        common.logger.debug(5,"All CE :"+str(CEs))
 
     def submit(self, nj):
         """
@@ -360,7 +421,10 @@ class SchedulerBoss(Scheduler):
         
         if self.schclassad != '':
             schcladstring=' -schclassad '+self.schclassad
-        cmd = 'boss submit -scheduler '+boss_scheduler_name+schcladstring+' -jobid '+common.jobDB.bossId(nj)
+        cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
+        cmd_out = runBossCommand(cmd)
+
+        # debug
         msg = 'BOSS submission: ' + cmd
         common.logger.debug(4,msg)
         cmd_out = runBossCommand(cmd)
@@ -429,7 +493,7 @@ class SchedulerBoss(Scheduler):
 
         return self.boss_scheduler.queryDetailedStatus(id)
 
-
+    ###################### ---- OK for Boss4 ds
     def getOutput(self, int_id):
         """
         Get output for a finished job with id.
@@ -451,11 +515,10 @@ class SchedulerBoss(Scheduler):
             else: 
                 dir = self.outDir 
                 logDir = self.logDir
-                boss_id = allBoss_id[int(i_id)] 
-                cmd = 'bossSid '+str(boss_id)
-                cmd_out = runCommand(cmd) 
-                if common.scheduler.queryStatus(boss_id) == 'Done (Success)' or common.scheduler.queryStatus(boss_id) == 'Done (Abort)':   
-                    cmd = 'boss getOutput -jobid '+str(boss_id) +' -outdir ' +dir 
+                boss_id = i_id 
+                bossTaskId = common.taskDB.dict('BossTaskId')
+                if common.scheduler.queryStatus(bossTaskId, boss_id) == 'Done (Success)' or common.scheduler.queryStatus(bossTaskId, boss_id) == 'Done (Abort)':   
+                    cmd = 'boss getOutput -taskid  '+bossTaskId+' -jobid ' +str(boss_id) +' -outdir ' +dir
                     cmd_out = runBossCommand(cmd)
                     if logDir != dir:
                         try:
@@ -476,7 +539,7 @@ class SchedulerBoss(Scheduler):
                     Statistic.Monitor('retrieved',resFlag,jid,exCode)
                     common.jobDB.setStatus(int(i_id)-1, 'Y') 
                 else:
-                    msg = 'Job # '+`int(i_id)`+' has status '+common.scheduler.queryStatus(boss_id)+' not possible to get output'
+                    msg = 'Job # '+`int(i_id)`+' has status '+common.scheduler.queryStatus(bossTaskId,boss_id)+' not possible to get output'
                     common.logger.message(msg)
                 dir += os.environ['USER']
                 dir += '_' + os.path.basename(str(boss_id))
@@ -497,13 +560,15 @@ class SchedulerBoss(Scheduler):
                 msg = 'Job # '+`(i_id)`+' out of range for task '+self.groupName
                 common.logger.message(msg)
             else:
-                boss_id = allBoss_id[int(i_id)]
-                status =  common.scheduler.queryStatus(boss_id) 
+               # boss_id = allBoss_id[int(i_id)]
+                boss_id = i_id 
+                bossTaskid = common.taskDB.dict('BossTaskId')
+                status =  common.scheduler.queryStatus(bossTaskId,boss_id) 
                 if status == 'Done (Success)' or status == 'Aborted(BOSS)' or status == 'Killed(BOSS)' or status =='Cleared(BOSS)' or status ==  'Done (Aborted)' or status == 'Created(BOSS)':
                     msg = 'Job # '+`int(i_id)`+' has status '+status+' not possible to Kill it'
                     common.logger.message(msg) 
                 else:
-                    cmd = 'boss kill -jobid '+str(boss_id) 
+                    cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(boss_id) 
                     cmd_out = runBossCommand(cmd)
                     common.jobDB.setStatus(int(i_id)-1, 'K')
                     common.logger.message("Killing job # "+`int(i_id)`)
@@ -512,6 +577,7 @@ class SchedulerBoss(Scheduler):
         common.jobDB.save()
         return #cmd_out    
 
+    ################################################################ To remove when Boss4 store this info  DS. (start)
     def getAttribute(self, id, attr):
         return self.boss_scheduler.getStatusAttribute_(id, attr)
 
@@ -601,9 +667,8 @@ class SchedulerBoss(Scheduler):
         """
         Return a list of all boss_Id of a task
         """
-        ListBoss_ID = {}
-        cmd = 'boss SQL -query "select crabjob.INTERNAL_ID, JOB.ID from JOB,crabjob where crabjob.JOBID=JOB.ID and JOB.GROUP_N=\''+self.groupName+'\'"'
-
+        ListBoss_ID = []
+        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID from JOB where JOB.TASK_ID=\''+common.taskDB.dict('BossTaskId')+'\'"'   
         cmd_out = runBossCommand(cmd,0)
         nline = 0
         for line in cmd_out.splitlines():

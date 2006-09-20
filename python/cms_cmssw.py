@@ -6,9 +6,9 @@ import math
 import common
 import PsetManipulator  
 
-import DBSInfo_EDM
-import DataDiscovery_EDM
-import DataLocation_EDM
+import DBSInfo
+import DataDiscovery
+import DataLocation
 import Scram
 
 import os, string, re
@@ -207,7 +207,7 @@ class Cmssw(JobType):
         # modify Pset
         try:
             if (self.datasetPath): # standard job
-                # always process all events in a file
+                # allow to processa a fraction of events in a file
                 self.PsetEdit.inputModule("INPUT")
                 self.PsetEdit.maxEvent("INPUTMAXEVENTS")
                 self.PsetEdit.skipEvent("INPUTSKIPEVENTS")
@@ -234,18 +234,19 @@ class Cmssw(JobType):
         dataTiers = dataTiersList.split(',')
 
         ## Contact the DBS
+        common.logger.message("Contacting DBS...")
         try:
-            self.pubdata=DataDiscovery_EDM.DataDiscovery_EDM(datasetPath, dataTiers, cfg_params)
+            self.pubdata=DataDiscovery.DataDiscovery(datasetPath, dataTiers, cfg_params)
             self.pubdata.fetchDBSInfo()
 
-        except DataDiscovery_EDM.NotExistingDatasetError, ex :
+        except DataDiscovery.NotExistingDatasetError, ex :
             msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
             raise CrabException(msg)
 
-        except DataDiscovery_EDM.NoDataTierinProvenanceError, ex :
+        except DataDiscovery.NoDataTierinProvenanceError, ex :
             msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
             raise CrabException(msg)
-        except DataDiscovery_EDM.DataDiscoveryError, ex:
+        except DataDiscovery.DataDiscoveryError, ex:
             msg = 'ERROR ***: failed Data Discovery in DBS  %s'%ex.getErrorMessage()
             raise CrabException(msg)
 
@@ -256,16 +257,20 @@ class Cmssw(JobType):
         self.filesbyblock=self.pubdata.getFiles()
         self.eventsbyblock=self.pubdata.getEventsPerBlock()
         self.eventsbyfile=self.pubdata.getEventsPerFile()
+        # print str(self.filesbyblock)
+        # print 'self.eventsbyfile',len(self.eventsbyfile)
+        # print str(self.eventsbyfile)
 
         ## get max number of events
         self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py 
         common.logger.message("\nThe number of available events is %s"%self.maxEvents)
 
+        common.logger.message("Contacting DLS...")
         ## Contact the DLS and build a list of sites hosting the fileblocks
         try:
-            dataloc=DataLocation_EDM.DataLocation_EDM(self.filesbyblock.keys(),cfg_params)
+            dataloc=DataLocation.DataLocation(self.filesbyblock.keys(),cfg_params)
             dataloc.fetchDLSInfo()
-        except DataLocation_EDM.DataLocationError , ex:
+        except DataLocation.DataLocationError , ex:
             msg = 'ERROR ***: failed Data Location in DLS \n %s '%ex.getErrorMessage()
             raise CrabException(msg)
         
@@ -313,6 +318,10 @@ class Cmssw(JobType):
         # If user requested less events than are in the dataset
         else:
             eventsRemaining = totalEventsRequested
+
+        # If user requested more events per job than are in the dataset
+        if (self.selectEventsPerJob and eventsPerJobRequested > self.maxEvents):
+            eventsPerJobRequested = self.maxEvents
 
         # For user info at end
         totalEventCount = 0
@@ -370,13 +379,17 @@ class Cmssw(JobType):
             while ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) and (jobCount < totalNumberOfJobs) ):
                 file = files[fileCount]
                 if newFile :
-                    numEventsInFile = self.eventsbyfile[file]
-                    common.logger.debug(6, "File "+str(file)+" has "+str(numEventsInFile)+" events")
-                    # increase filesEventCount
-                    filesEventCount += numEventsInFile
-                    # Add file to current job
-                    parString += '\\\"' + file + '\\\"\,'
-                    newFile = 0
+                    try:
+                        numEventsInFile = self.eventsbyfile[file]
+                        common.logger.debug(6, "File "+str(file)+" has "+str(numEventsInFile)+" events")
+                        # increase filesEventCount
+                        filesEventCount += numEventsInFile
+                        # Add file to current job
+                        parString += '\\\"' + file + '\\\"\,'
+                        newFile = 0
+                    except KeyError:
+                        common.logger.message("File "+str(file)+" has unknown numbe of events: skipping")
+                        
 
                 # if less events in file remain than eventsPerJobRequested
                 if ( filesEventCount - jobSkipEventCount < eventsPerJobRequested ) :
@@ -387,7 +400,7 @@ class Cmssw(JobType):
                         fullString = parString[:-2]
                         fullString += '\\}'
                         list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
-                        common.logger.message("Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
+                        common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
                         self.jobDestination.append(blockSites[block])
                         common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
                         # reset counter
@@ -410,7 +423,7 @@ class Cmssw(JobType):
                     fullString = parString[:-2]
                     fullString += '\\}'
                     list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                    common.logger.message("Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
+                    common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                     self.jobDestination.append(blockSites[block])
                     common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
                     # reset counter
@@ -430,7 +443,7 @@ class Cmssw(JobType):
                     fullString = parString[:-2]
                     fullString += '\\}'
                     list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                    common.logger.message("Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
+                    common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                     self.jobDestination.append(blockSites[block])
                     common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
                     # increase counter
@@ -444,9 +457,10 @@ class Cmssw(JobType):
                     filesEventCount = self.eventsbyfile[file]
                     parString = "\\{"
                     parString += '\\\"' + file + '\\\"\,'
+                pass # END if
             pass # END while (iterate over files in the block)
         pass # END while (iterate over blocks in the dataset)
-        self.total_number_of_jobs = jobCount
+        self.ncjobs = self.total_number_of_jobs = jobCount
         if (eventsRemaining > 0 and jobCount < totalNumberOfJobs ):
             common.logger.message("Could not run on all requested events because some blocks not hosted at allowed sites.")
         common.logger.message("\n"+str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
@@ -931,15 +945,13 @@ class Cmssw(JobType):
         # add "_txt"
         if len(p)>1:
           ext = p[len(p)-1]
-          #result = name + '_' + str(txt) + "." + ext
           result = name + '_' + txt + "." + ext
         else:
-          #result = name + '_' + str(txt)
           result = name + '_' + txt
         
         return result
 
-    def getRequirements(self, nj):
+    def getRequirements(self):
         """
         return job requirements to add to jdl files 
         """
@@ -950,20 +962,6 @@ class Cmssw(JobType):
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
 
         req = req + ' && (other.GlueHostNetworkAdapterOutboundIP)'
-
-        ## here we should get the requirement for job nj
-        sites = common.jobDB.destination(nj)
-
-        # check for "Any" site, in case no requirement for site
-        if len(sites)>0 and sites[0]!="Any":
-            req = req + ' && anyMatch(other.storage.CloseSEs, ('
-            for site in sites:
-                #req = req + 'other.GlueCEInfoHostName == "' + site + '" || '
-                req = req + 'target.GlueSEUniqueID=="' + site + '" || '
-                pass
-            # remove last ||
-            req = req[0:-4]
-            req = req + '))'
 
         return req
 

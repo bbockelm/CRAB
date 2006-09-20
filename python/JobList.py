@@ -54,20 +54,10 @@ class JobList:
             self._job_list[nj].setConfigFilename(fname)
 
         return
-        # (path, ext) = os.path.splitext(pattern)
-        # job_dir = common.work_space.jobDir()
-        # for nj in range(len(self._job_list)) :
-        #     num = self._job_list[nj].number()
-        #     fname = job_dir + path + '_' + num + ext
-        #     self._job_list[nj].setConfigFilename(fname)
-        # return
 
     def setScriptNames(self, pattern):
-        #(path, ext) = os.path.splitext(pattern)
         job_dir = common.work_space.jobDir()
         for nj in range(len(self._job_list)) :
-            #num = self._job_list[nj].number()
-            #fname = job_dir + path + '_' + num + ext
             fname = job_dir + pattern
             self._job_list[nj].setScriptFilename(fname)
             pass

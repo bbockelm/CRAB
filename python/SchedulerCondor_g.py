@@ -219,7 +219,6 @@ class SchedulerCondor_g(Scheduler):
         txt += 'nargs=$#\n'
         txt += 'shift $nargs\n'
         txt += "# job number (first parameter for job wrapper)\n"
-        #txt += "NJob=$1\n"
         txt += "NJob=${args[0]}\n"
 
         # create hash of cfg file
@@ -276,7 +275,6 @@ class SchedulerCondor_g(Scheduler):
               txt += 'echo "SE_PATH = $SE_PATH"\n'
                                                                                                                                                              
         txt += 'export VO='+self.VO+'\n'
-#        txt += 'CE=$4\n'
         txt += 'CE=${args[3]}\n'
         txt += 'echo "CE = $CE"\n'
         return txt

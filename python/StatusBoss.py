@@ -63,17 +63,15 @@ class StatusBoss(Actor):
         """
         compute the status
         """
-#        dir = string.split(common.work_space.topDir(), '/')
-#        group = dir[len(dir)-2]
-        group = self.cfg_params['taskId']
-        cmd = 'boss RTupdate -jobid all '
+        bossTaskId=common.taskDB.dict('BossTaskId')
+        cmd = 'boss RTupdate -taskid '+bossTaskId
         runBossCommand(cmd)
         add2tablelist=''
         addjoincondition = ''
         nodeattr='JOB.E_HOST'
-        cmd = 'boss SQL -query "select JOB.ID,crabjob.INTERNAL_ID,JOB.SID,crabjob.EXE_EXIT_CODE,JOB.E_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.JOBID=JOB.ID '+addjoincondition+' and JOB.GROUP_N=\''+group+'\' ORDER BY crabjob.JOBID"' #INTERNAL_ID" '
-        #print "#####################################################" 
-        #print "cmd = ", cmd 
+
+        ##BOSS4
+        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' ORDER BY crabjob.CHAIN_ID"' 
         cmd_out = runBossCommand(cmd)
         #print "cmd_out = ", cmd_out
         #print "#####################################################" 
@@ -102,7 +100,12 @@ class StatusBoss(Actor):
         #orderdBossID.sort()
         for bossid in orderdBossID:
             printline=''
-            jobStatus = common.scheduler.queryStatus(bossid)
+            jobStatus=''
+            jobStatus = common.scheduler.queryStatus(bossTaskId, bossid)
+            # debug
+            msg = 'jobStatus' + jobStatus
+            common.logger.debug(4,msg)
+            ###
             for_summary.append(jobStatus)
             exe_code =jobAttributes[bossid][3]
             try:
