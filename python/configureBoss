@@ -7,7 +7,7 @@
 # 02-Nov-2005
 
 ### BOSS configuration parameters
-BOSSVER=3_6_4
+BOSSVER=4_0_0
 BACKEND=SQLite
 BOSSDBPATH=${HOME}/boss/
 BOSSDBNAME=bossCrab
@@ -113,7 +113,7 @@ fi # backend MySQL
 ###### Configuring Boss DB ########
 ###################################
 echo "Configuring DB"
-boss configureDB
+bossAdmin configureDB
 
 #######################################
 ###### Configuring RealTime monitor ###
@@ -153,7 +153,7 @@ DB_CLIENT_FLAG = 0;
 EOF
 
 ### Registering RT monitor
-cd $BOSSDIR/BossRTMon/bin
+cd $BOSS_ROOT/BossRTMon/bin
 echo "Registering MySQL RTMon Service"
 ./registerMySQLRTmon 
 
@@ -162,7 +162,7 @@ echo "Registering MySQL RTMon Service"
 ######################################
 
 ### Registering Schedulers
-cd $BOSSDIR/BossSched/bin/
+cd $BOSS_ROOT/BossSched/bin/
 echo "Registering fork scheduler (default)"
 ./registerForkScheduler
 echo "Registering edg scheduler"
@@ -178,9 +178,9 @@ echo "Registering edg scheduler"
 # BBS
 #    ./registerBBSScheduler
 
-cd $BOSSDIR/..
+cd $BOSS_ROOT/..
 
 echo "Done!"
 
-# echo "Remember to source $BOSSDIR/bossenv.(c)sh"
+# echo "Remember to source $BOSS_ROOT/bossenv.(c)sh"
 # echo "at the beginning of every session"
