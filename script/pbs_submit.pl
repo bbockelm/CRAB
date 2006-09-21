@@ -29,14 +29,14 @@ if($len!=$correctlen) {
     print "0::0::0\n";
     die "Wrong number of arguments to sub script: $len, expected: $correctlen\n";
 }
-# Boss job ID
-$jid = $ARGV[0];
-# Configuration file (where the job wrapper reads the configuration)
+# Boss task ID
+$taskid = $ARGV[0];
+# stdinput 
 $stdin = $ARGV[1];
+# common sandbox
+$commonSandbox = $ARGV[2];
 # Log file (where the job wrapper writes its messages); argument of -log option
-$stdout = $ARGV[2];
-# Host where to submit job - argument of -host option
-$host = $ARGV[3];
+$log = $ARGV[3];
 #
 if (LOG) {
     print LOG "\n====>> New scheduler call number $jid\n";
@@ -52,22 +52,53 @@ $executable = `which jobExecutor`; chomp $executable;
 # (do not modify this section unless for fixing bugs - please inform authors!)
 &initSched();
 #
+# ------------------- Read jobList file and loop over jobs ------------------- 
+$jid="";
+$cladfile = "";
+$file = "submit\_$taskid";
+open FILE, $file or die $!;
+while ( <FILE> ) {
+#    print $_;
+    if ($_ =~ /(\d+):(\d+):(\d+)\n/) {
+	for ($val=$1; $val<=$2; ++$val) {
+	    $jid="$taskid\_$val\_$3";
+	    $stdout="$log\_$taskid\_$val.log";
+#
 # ------ Get additional information from classad file (if any)----------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
-$cladfile = "BossClassAdFile_$jid";
-if ( -f $cladfile ) {
-    %classad = &parseClassAd($cladfile);
-    &processClassAd();
-} else {
-    if (LOG) {
- 	print LOG "$jid: No classad file for this job\n";
-    }
-}
+	    $cladfile = "BossClassAdFile\_$taskid";
+	    if ( -f $cladfile ) {
+		%classad = &parseClassAd($cladfile);
+		&processClassAd();
+	    } else {
+		if (LOG) {
+		    print LOG "$jid: No classad file for this task\n";
+		}
+	    }
+	    $cladfile = "BossClassAdFile\_$taskid\_$val";
+	    if ( -f $cladfile ) {
+		%classad = &parseClassAd($cladfile);
+		&processClassAd();
+	    } else {
+		if (LOG) {
+		    print LOG "$jid: No classad file for this job\n";
+		}
+	    }
 #
 # --------------------------- Ready to submit --------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
-$sid = &submit();
-print $sid;
+	    $sid = &submit();
+	    print ("$val\t$3\t$sid");
+	}
+#
+# ----------------------- If something goes wrong ----------------------------
+    } else {
+	print LOG "$_: Incorrect format\n";
+	die;
+    }
+}
+print "EOF\n";
+#
 # ----------------------------- End of main ----------------------------------
 #
 # ---------------------- General pourpose routines --------------------------
@@ -116,15 +147,15 @@ sub processClassAd {
 #
 # Submit the job and return the scheduler id
 sub submit {
-    if ( $host ne "NULL" ) { 
-        if(LOG) {
-            print LOG "$jid: Submission to $host request is ignored:\n";
-            print LOG "$jid: PBS submission to default destination\n";
-        }
-    }
+#     if ( $host ne "NULL" ) { 
+#         if(LOG) {
+#             print LOG "$jid: Submission to $host request is ignored:\n";
+#             print LOG "$jid: PBS submission to default destination\n";
+#         }
+#     }
     #
-    $inbn = mybasename($stdin);
-    $subcmd = "qsub -i $stdin -o $stdout -j oe $executable -W stagein=BossArchive_$jid.tgz\@$subhost:$subdir/BossArchive_$jid.tgz,$inbn\@$subhost:$stdin -W stageout=BossOutArchive_$jid.tgz\@$subhost:$subdir/BossOutArchive_$jid.tgz |";
+#    $inbn = mybasename($stdin);
+    $subcmd = "qsub -i $subdir/$stdin -o $stdout -j oe $executable $val -W stagein=$commonSandbox\@$subhost:$subdir/$commonSandbox,BossArchive_$jid.tgz\@$subhost:$subdir/BossArchive_$jid.tgz,$stdin\@$subhost:$stdin -W stageout=BossOutArchive_$jid.tgz\@$subhost:$subdir/BossOutArchive_$jid.tgz |";
     if(LOG) {
         print LOG "$subcmd\n";
     }

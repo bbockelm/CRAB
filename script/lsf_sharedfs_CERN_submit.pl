@@ -48,7 +48,7 @@ if (LOG) {
 # The name of the executable to be submitted to the scheduler
 $executable = `which jobExecutor`; chomp $executable;
 #
-# ----- Scheduler specific initialization (before parsing classad -----------
+# ----------------- Scheduler specific initialization ------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
 &initSched();
 #
@@ -96,6 +96,7 @@ while ( <FILE> ) {
 	print LOG "$_: Incorrect format\n";
 	die;
     }
+    print "\n\n";
 }
 print "EOF\n";
 #
@@ -110,9 +111,9 @@ sub parseClassAd {
     my $cladstring="";
     open (CLAD, $cladfile);
     while ( <CLAD> ) {
-#	if (LOG) {
-#	    print LOG "ClassAd line: $_";
-#	}
+	# if (LOG) {
+	#     print LOG "ClassAd line: $_";
+	# }
 	$line = $_;
 	chomp($line);
 	$cladstring.=$line;
@@ -121,13 +122,10 @@ sub parseClassAd {
     if ( $cladstring =~ /.*\[(.+)\].*/ ) {
 	$cladstring=$1;
     }
-#    print LOG "$cladstring\n";
     my @attribs = split(/;/,$cladstring);
     foreach $attrib (@attribs) {
-#	print LOG "$attrib\n";
 	if ( $attrib =~ /\s*(\w+)\s*=\s*(.+)/ ) {
 	    $clad{$1}=$2;
-#	    print LOG "In hash: $1 = $clad{$1} \n";
 	}
     }
     return %clad;
@@ -145,95 +143,48 @@ sub mybasename {
 # --------------------- Scheduler specific routines -------------------------
 #     (Update the routines of this section to match your scheduler needs)
 #
-# Initialize variables used by the scheduler before parsing classad
+# Initialize variables used by the scheduler
 sub initSched {
 }
 #
 # Process a single entry of the classad
 sub processClassAd {
-    $rbconfigstring ="";
-    $ppend2JDL = "";
-    
-    foreach $ClAdKey ( keys %classad ) {
-#	print LOG "in hash2: $ClAdKey = $classad{$ClAdKey}\n";
-	$ClAdVal = $classad{$ClAdKey};
-#	    print LOG "$ClAdKey = $ClAdVal;\n";
-	if ( $ClAdKey eq "WMSconfig") {
-	    $ClAdVal =~ s/\s*{\s*\"\s*(.*)\s*\"\s*}\.*/$1/;
-#               print "$ClAdKey : $ClAdVal \n";                
-	    chomp($ClAdVal);
-	    $rbconfigstring="-c $ClAdVal";
-#               print "$rbconfigstring \n";
-	} elsif ( $ClAdKey ne "" ) {
-	    $ppend2JDL.="$ClAdKey = $ClAdVal;\n";
-	}
+    if(LOG) {
+	print LOG "$jid: ClassAd ignored:\n";
+	print LOG "$jid: This version of LSF submission doesn't support ClassAd\n";
     }
 }
 #
 # Submit the job and return the scheduler id
 sub submit {
-#     $hoststring="";
-#     if ( $host ne "NULL" ) { 
-# 	$hoststring="-r $host";
-#     }
-    $inSandBox  = "\"$executable\",\"$subdir/$stdin\"";
-    $inSandBox  .= ",\"$subdir/BossArchive_$jid.tgz\"";
-    $inSandBox  .= ",\"$subdir/$commonSandbox\"";
-    $outbn = mybasename($stdout);
-    $inbn = mybasename($stdin);
-    $outSandBox = "\"$outbn\",\"BossOutArchive_$jid.tgz\"";
-    # open a temporary file
-    $tmpfile = `mktemp glite_XXXXXX` || die "error";
-    chomp($tmpfile);    
-    open (JDL, ">$tmpfile") || die "error";
-    # Executable submit with edg-job-submit
-    print JDL ("Executable    = \"jobExecutor\";\n");
-    # input,output,error files passed to executable
-    # debug only
-    print JDL ("Arguments     = \"$val\";\n");
-    print JDL ("StdInput      = \"$inbn\";\n");
-    print JDL ("StdOutput     = \"$outbn\";\n");
-    print JDL ("StdError      = \"$outbn\";\n");
-    print JDL ("InputSandbox  = {$inSandBox};\n");
-    print JDL ("OutputSandbox = {$outSandBox};\n");
-    print JDL $ppend2JDL;
-    close(JDL);
-    # submitting command
-#    $subcmd = "glite-wms-job-delegate-proxy -d bossproxy $rbconfigstring";
-#    open (SUB, $subcmd);
-#    $subcmd = "glite-wms-job-submit -d bossproxy $rbconfigstring $tmpfile|";
-    $subcmd = "glite-wms-job-submit -a $rbconfigstring $tmpfile |";
-    # exit;
-    # open a pipe to read the stdout of glite-job-submit
-    open (SUB, $subcmd);
-    $id = "error";
-    $err_msg ="";
-    $err_code =0;
-    while ( <SUB> ) {
-	$err_msg .= "$_";
-	if ( $_ =~ m/Connecting.*/) {
-	    next;
-	} elsif ( $_ =~ m/Error.*/) {
-	    $err_code=1;
+    $hoststring="";
+    if ( $host ne "NULL" ) {
+	if ( $host =~ /.+\..+/ ) {
+            $hoststring="-m $host";
+	} else {
+	    $domain = `dnsdomainname`; chomp($domain);
+            $hoststring="-m $host.$domain";
 	}
-	if ( $_ =~ m/https:(.+)/) {
-            if (LOG) {
-		print LOG "$jid: Scheduler ID = https:$1\n";
-            }
-	    $id = "https:$1";
-	} 
     }
-    if ( $id eq "error" || $err_code != 0 ) {
-	print LOG "$jid: ERROR: Unable to submit the job\n"; 
-	print $err_msg ; 
-	$id = "error"; 
-    }
+    $tmpfile = `mktemp dg_XXXXXX` || die "error";
+    chomp($tmpfile);    
+    open (TMP, ">$tmpfile") || die "error";
+    # Executable submit with edg-job-submit
+    $arguments=$val; 
+    print TMP ("$executable $arguments < $subdir/$stdin \n");
+    close(TMP);
     
-    # close the file handles
+    $subcmd = "bsub -o $stdout -e  $stdout  sh $tmpfile |";
+    # open a pipe to read the stdout of bsub
+    open (SUB, $subcmd);
+    # find job id
+    $id = "error";
+    $_ = <SUB>;
+    if ( $_ =~ /Job \<(\d+)\>\s+is submitted\s+.*/ ) {
+        $id = $1;
+    }    
     close(SUB);
-    # delete temporary files
-    unlink "$tmpfile";
-    unlink "BossArchive_${jid}.tgz";
+    #
     return "$id\n";
 }
 #

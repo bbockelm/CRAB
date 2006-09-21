@@ -6,7 +6,7 @@ if($len != 1) {
   die "Kill: Wrong number of arguments";
 }
   
-if ($ARGV[0] =~ /(.+)::(\d+)::(\d+)/ ) {
+if ($ARGV[0] =~ /(.+)::(\d+_\d+_\d+)::(\d+)/ ) {
   $executable=$1;
   $jid = $2;
   $pid = $3;

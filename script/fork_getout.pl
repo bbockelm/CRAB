@@ -44,7 +44,7 @@ $currdir = `pwd`;
 #print STDERR "now in $currdir\n";
 if ( $currdir ne $outdir ) {
     $err = system("mv $outtar $outdir");
-    $err += system("mv $log $outdir");
+    $err2 += system("mv $log $outdir");
     if ( ! $err ) {
 	$status = "retrieved";
     }

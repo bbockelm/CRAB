@@ -1,4 +1,7 @@
 #! /usr/bin/perl
+#
+# From Oliver Gutsche: Many Thanks!
+#
 $status="error";
 $len=@ARGV;
 if ($len==1) {

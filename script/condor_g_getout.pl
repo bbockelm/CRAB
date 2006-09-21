@@ -2,6 +2,8 @@
 #
 $|=1;
 #
+# From Oliver Gutsche: Many Thanks!
+#
 # ------------------- Optional logging of submission -------------------------
 #   (change file name and comment/uncomment the open statement as you wish)
 $logFile = "bossSubmit.log";
@@ -26,6 +28,18 @@ $jid = $ARGV[0];
 $log = $ARGV[1];
 # Scheduler ID
 $sid = $ARGV[2];
+# retrieving submission number for log
+if ( $jid =~ /\d+_\d+_(\d+)/ ) {
+    $subN = $1;
+} else {
+    die "wrong boss id: $jid";
+}
+if ( $log =~ /(.*).log/ ) {
+    $log = "$1\_$subN";
+} else {
+    die "wrong boss id: $jid";
+}
+#
 # Job output directory
 $outdir = $ARGV[3];
 if (LOG) {
@@ -44,7 +58,7 @@ $currdir = `pwd`;
 #print STDERR "now in $currdir\n";
 if ( $currdir ne $outdir ) {
     $err = system("mv $outtar $outdir");
-#    $err += system("mv $log $outdir");
+    $err += system("mv $log.out $log.err condor_$jid.log $outdir");
     if ( ! $err ) {
 	$status = "retrieved";
     }

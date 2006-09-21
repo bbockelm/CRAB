@@ -1,7 +1,6 @@
 #! /usr/bin/perl
-
-$user = $ENV{'USER'};
-$command = "condor_q -submitter $user -global -constraint \"BossJob >0\" |";
+#
+$command = "condor_q |";
 open (CONQ , $command );
 
 # skip first four line

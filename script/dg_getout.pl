@@ -39,7 +39,7 @@ $status = "error";
 #     (Update the routines of this section to match your scheduler needs)
 #
 
-$getcmd = "edg-job-get-output --dir /tmp $sid|";
+$getcmd = "edg-job-get-output --noint --dir /tmp --logfile $outdir/edg_getoutput.log $sid |";
 open (GET, $getcmd);
 while ( <GET> ) {
 #    print $_;

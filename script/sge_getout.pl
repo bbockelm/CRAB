@@ -38,25 +38,23 @@ $status = "error";
 # --------------------- Scheduler specific section -------------------------
 #     (Update the routines of this section to match your scheduler needs)
 #
-$outTmpDir="/tmp/BossJob_$jid";
-$getcmd = "glite-wms-job-output --noint --dir $outTmpDir --logfile $outdir/glite_getoutput.log $sid|";
-open (GET, $getcmd);
-while ( <GET> ) {
-#    print $_;
-    if ( $_ =~ m/have been successfully retrieved and stored in the directory:/) {
-	$old = <GET>;
-	chomp($old);
-	print STDERR "glite output sandbox retrieved in $old\n";
-	$err = system("mv $old/* $outdir");
-	if ( ! $err ) {
-	    $status = "retrieved";
-	    $cleancmd = "cat ~/.bossGLITEjobs | grep -v $sid > $old/TMPbossGLITEjobs; mv $old/TMPbossGLITEjobs ~/.bossGLITEjobs";
-	    system $cleancmd;;
-	    system "rmdir $old";
-	}
+
+# With PBS the output tar is already in the submitting directory if using
+# qsub [...] -W stageout=BossOutArchive_$jid.tgz\@$subhost:$subdir/BossOutArchive_$jid.tgz
+$currdir = `pwd`;
+#print STDERR "now in $currdir\n";
+if ( $currdir ne $outdir ) {
+    $err = system("mv $outtar $outdir");
+    $err += system("mv $log $outdir");
+    if ( ! $err ) {
+	$status = "retrieved";
+    }
+} else {
+#    print STDERR "outtar already in destination directory\n";
+    if ( -r $outtar ) {
+	$status = "retrieved";
     }
 }
-
 print "$status\n";
 
 
