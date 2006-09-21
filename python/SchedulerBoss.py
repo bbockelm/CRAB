@@ -297,7 +297,6 @@ class SchedulerBoss(Scheduler):
         """
         BOSS declaration of jobs
         """
-        common.logger.message('Creating jobs, please wait...')
         cmd = 'boss declare -xmlfile '+common.work_space.shareDir()+self.boss_jobtype+'.xml'
         cmd_out = runBossCommand(cmd,0,3600)
 
@@ -584,7 +583,7 @@ class SchedulerBoss(Scheduler):
             else:
                # boss_id = allBoss_id[int(i_id)]
                 boss_id = i_id 
-                bossTaskid = common.taskDB.dict('BossTaskId')
+                bossTaskId = common.taskDB.dict('BossTaskId')
                 status =  common.scheduler.queryStatus(bossTaskId,boss_id) 
                 if status == 'Done (Success)' or status == 'Aborted(BOSS)' or status == 'Killed(BOSS)' or status =='Cleared(BOSS)' or status ==  'Done (Aborted)' or status == 'Created(BOSS)':
                     msg = 'Job # '+`int(i_id)`+' has status '+status+' not possible to Kill it'

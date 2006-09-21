@@ -6,14 +6,11 @@ import common
 import string, os
 
 class Cleaner:
-    def __init__(self, boss, cfg_params):
+    def __init__(self, cfg_params):
         """
         constructor
         """
-        if (boss):
-            self.status = StatusBoss(cfg_params)
-        else:
-            self.status = Status()
+        self.status = StatusBoss(cfg_params)
 
     def check(self):
         """

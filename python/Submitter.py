@@ -21,7 +21,7 @@ class Submitter(Actor):
     
     def run(self):
         """
-        The main method of the class.
+        The main method of the class: submit jobs in range self.nj_list
         """
         common.logger.debug(5, "Submitter::run() called")
 
@@ -40,6 +40,7 @@ class Submitter(Actor):
         try:
             lastDest=''
             for nj in self.nj_list:
+                same=0
                 # first check that status of the job is suitable for submission
                 st = common.jobDB.status(nj)
                 if st != 'C' and st != 'K' and st != 'A' and st != 'RC':
@@ -53,9 +54,13 @@ class Submitter(Actor):
                     match = common.scheduler.listMatch(nj)
                     lastDest = currDest
                 else:
-                    common.logger.message("Sites for job "+str(nj+1)+" the same as previous job")
+                    common.logger.debug(1,"Sites for job "+str(nj+1)+" the same as previous job")
+                    same=1
                 if match:
-                    common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
+                    if not same:
+                        common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
+                    else:
+                        common.logger.debug(1,"Found "+str(match)+" compatible site(s) for job "+str(nj+1))
                 else:
                     common.logger.message("No compatible site found, will not submit job "+str(nj+1))
                     continue

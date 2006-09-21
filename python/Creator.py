@@ -32,6 +32,7 @@ class Creator(Actor):
         common.logger.debug(5, __name__+": total # of jobs = "+`self.total_njobs`)
 
         # Set number of jobs to be created
+        # --------------------------------->  Boss4: changed, "all" by default 
 
         self.ncjobs = ncjobs
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
@@ -147,6 +148,7 @@ class Creator(Actor):
         script_writer = ScriptWriter('crab_template.sh')
 
         # Loop over jobs
+        argsList = []
 
         njc = 0
         for nj in range(self.total_njobs):
@@ -154,7 +156,7 @@ class Creator(Actor):
             st = common.jobDB.status(nj)
             if st != 'X': continue
 
-            common.logger.message("Creating job # "+`(nj+1)`)
+            common.logger.debug(1,"Creating job # "+`(nj+1)`)
 
             # Prepare configuration file
 
@@ -163,20 +165,15 @@ class Creator(Actor):
             script_writer.modifyTemplateScript()
             os.chmod(common.taskDB.dict("ScriptName"), 0744)
 
-            # Create scheduler scripts (jdl)
-            common.scheduler.createSchScript(nj)
+            # Create XML script and declare related jobs 
+            argsList.append( str(nj+1)+' '+ self.job_type.getJobTypeArguments(nj, self.cfg_params['CRAB.scheduler']) )
 
             common.jobDB.setStatus(nj, 'C')
             # common: write input and output sandbox
             common.jobDB.setInputSandbox(nj, self.job_type.inputSandbox(nj))
 
             outputSandbox=self.job_type.outputSandbox(nj)
-            stdout=common.job_list[nj].stdout()
-            stderr=common.job_list[nj].stderr()
-            outputSandbox.append(common.job_list[nj].stdout())
             # check if out!=err
-            if stdout != stderr:
-                outputSandbox.append(common.job_list[nj].stderr())
             common.jobDB.setOutputSandbox(nj, outputSandbox)
             common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
 
@@ -184,6 +181,9 @@ class Creator(Actor):
             pass
 
         ####
+        common.scheduler.createXMLSchScript(self.total_njobs, argsList)
+        common.logger.message('Creating '+str(self.total_njobs)+' jobs, please wait...')
+        common.scheduler.declareJob_()   #Add for BOSS4
 
         common.jobDB.save()
         common.taskDB.save()

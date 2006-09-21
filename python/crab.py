@@ -520,7 +520,7 @@ class Crab:
                 for nj in jobs:
                     #nj parte da 1 --> nj = internal_id di boss 
                     st = common.jobDB.status(nj-1)
-                    if st == 'S' or st == 'A':
+                    if st in ['S','K','Y','A']:
                         id = common.scheduler.boss_SID(nj)
                         print "Job: ",nj," Id = ", id 
                     else:
@@ -539,8 +539,7 @@ class Crab:
                 if ( self.flag_useboss == 1 ):
                     if val: 
                         if val =='all':
-                            allBoss_id = common.scheduler.listBoss()
-                            jobs = allBoss_id.keys()
+                            jobs = common.scheduler.listBoss()
                         else:
                             jobs = self.parseRange_(val)
                         common.scheduler.cancel(jobs)
@@ -567,87 +566,36 @@ class Crab:
 
             elif ( opt == '-getoutput' or opt == '-get'):
 
-                if ( self.flag_useboss == 1 ):
-                    if val=='all' or val==None or val=='':
-                        allBoss_id = common.scheduler.listBoss()
-                        jobs = allBoss_id.keys()
-                    else:
-                        jobs = self.parseRange_(val)
-                    common.scheduler.getOutput(jobs) 
+                if val=='all' or val==None or val=='':
+                    jobs = common.scheduler.listBoss()
                 else:
-                    jobs = self.parseRange_(val) 
+                    jobs = self.parseRange_(val)
 
-                    ## also this: create a ActorClass (GetOutput)
-                    jobs_done = []
-                    for nj in jobs:
-                        st = common.jobDB.status(nj)
-                        if st == 'D':
-                            jobs_done.append(nj)
-                            pass
-                        elif st == 'S':
-                            jid = common.jobDB.jobId(nj)
-                            currStatus = common.scheduler.queryStatus(jid)
-                            if currStatus=="Done":
-                                jobs_done.append(nj)
-                            else:
-                                msg = 'Job # '+`(nj+1)`+' submitted but still status '+currStatus+' not possible to get output'
-                                common.logger.message(msg)
-                            pass
-                        else:
-                          #  common.logger.message('Jobs #'+`(nj+1)`+' has status '+st+' not possible to get output')
-                            pass
+                jobs_done = []
+                statusDict = { 'D':'Done', 'S':'Submitted' , 'C':'Created'}
+                for nj in jobs:
+                    st = common.jobDB.status(nj-1)
+                    if st in  ['D','S']:
+                        jobs_done.append(nj)
                         pass
-
-                    for nj in jobs_done:
-                        jid = common.jobDB.jobId(nj)
-                        dir = common.scheduler.getOutput(jid)
-                        common.jobDB.setStatus(nj, 'Y')
-
-                    # Rename the directory with results to smth readable
-                    new_dir = common.work_space.resDir()
-                    if ( dir != '' ) :
-                        try:
-                            files = os.listdir(dir)
-                            for file in files:
-                                os.rename(dir+'/'+file, new_dir+'/'+file)
-                            os.rmdir(dir)
-                        except OSError, e:
-                            msg = 'rename files from '+dir+' to '+new_dir+' error: '
-                            msg += str(e)
-                            common.logger.message(msg)
-                            # ignore error
-                            pass
+                    else:
+                        common.logger.message('Jobs #'+`nj`+' has status '+statusDict[st]+' not possible to get output')
                         pass
-                    ###
-
-                    resFlag = 0
-                    exCode = common.scheduler.getExitStatus(jid)
-                    Statistic.Monitor('retrieved',resFlag,jid,exCode)
-
-                    msg = 'Results of Job # '+`(nj+1)`+' are in '+new_dir
-                    common.logger.message(msg)
                     pass
-
-                common.jobDB.save()
+                common.scheduler.getOutput(jobs_done)
                 pass
 
             elif ( opt == '-resubmit' ):
-                if ( self.flag_useboss == 1 ):
-                    if val=='all' or val==None or val=='':
-                        allBoss_id = common.scheduler.listBoss()
-                        jobs = allBoss_id.keys()
-                    else:
-                        jobs = self.parseRange_(val)
+                if val=='all' or val==None or val=='':
+                    jobs = common.scheduler.listBoss()
                 else:
-                    if val:
-                        jobs = self.parseRange_(val)
+                    jobs = self.parseRange_(val)
 
                 if val:
                     # create a list of jobs to be resubmitted.
 
                     ### as before, create a Resubmittter Class
-                    allBoss_id = common.scheduler.listBoss()
-                    maxIndex = allBoss_id.keys()
+                    maxIndex = common.scheduler.listBoss()
                     nj_list = []
                     for nj in jobs:
                         if int(nj) <= int(len(maxIndex)) :
@@ -674,7 +622,6 @@ class Crab:
                          pass
 
                     if len(nj_list) != 0:
-                        common.scheduler.resubmit(nj_list)
                         # Instantiate Submitter object
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
 
@@ -689,23 +636,15 @@ class Crab:
 
             elif ( opt == '-cancelAndResubmit' ):
 
-                if ( self.flag_useboss == 1 ):
-                    if val:
-                        if val =='all':
-                            allBoss_id = common.scheduler.listBoss()
-                            jobs = allBoss_id.keys()
-                        else:
-                            jobs = self.parseRange_(val)
-                        # kill submitted jobs
-                        common.scheduler.cancel(jobs)
+                if val:
+                    if val =='all':
+                        jobs = common.scheduler.listBoss()
                     else:
-                        common.logger.message("Warning: with '-cancelAndResubmit' you _MUST_ specify a job range or 'all'")
-                else:
-                    if val:    
                         jobs = self.parseRange_(val)
-                    else:
-                        common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
-                        pass
+                    # kill submitted jobs
+                    common.scheduler.cancel(jobs)
+                else:
+                    common.logger.message("Warning: with '-cancelAndResubmit' you _MUST_ specify a job range or 'all'")
 
                 # resubmit cancelled jobs.
                 if val:
@@ -802,7 +741,7 @@ class Crab:
                 if val != None:
                     raise CrabException("No range allowed for '-clean'")
                 
-                theCleaner = Cleaner(self.scheduler_name == 'boss', self.cfg_params)
+                theCleaner = Cleaner(self.cfg_params)
                 theCleaner.clean()
 
             pass

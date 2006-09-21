@@ -38,11 +38,6 @@ class SchedulerEdg(Scheduler):
         common.logger.debug(5,'Setting myproxy server to '+self.proxyServer)
 
         try:
-            self.role = cfg_params["EDG.rb"]
-        except KeyError:
-            self.role = None
-            
-        try:
             self.role = cfg_params["EDG.role"]
         except KeyError:
             self.role = None
@@ -167,6 +162,12 @@ class SchedulerEdg(Scheduler):
             self._taskId = cfg_params['taskId']
         except:
             self._taskId = ''
+
+        try: self.jobtypeName = cfg_params['CRAB.jobtype']
+        except KeyError: self.jobtypeName = ''
+ 
+        try: self.schedulerName = cfg_params['CRAB.scheduler']
+        except KeyError: self.scheduler = ''
 
         return
     
@@ -300,7 +301,7 @@ class SchedulerEdg(Scheduler):
         txt += '    echo "CE = $CE"\n'
         txt += 'elif [ $middleware == OSG ]; then \n'
         txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
-        txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print ${args[0]}}\'` \n'
+        txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
         txt += '    else \n'
         txt += '        echo "SET_CMS_ENV 10099 ==> OSG mode: ERROR in setting CE name from OSG_JOB_CONTACT" \n'
         txt += '        echo "JOB_EXIT_STATUS = 10099" \n'
@@ -322,7 +323,6 @@ class SchedulerEdg(Scheduler):
         txt = ''
         try:
             self.copy_input_data = common.analisys_common_info['copy_input_data']
-            #print "self.copy_input_data = ", self.copy_input_data
         except KeyError: self.copy_input_data = 0
         if int(self.copy_input_data) == 1:
         ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
@@ -335,13 +335,9 @@ class SchedulerEdg(Scheduler):
            txt += '   #\n'
            txt += '   #   Copy Input Data from SE to this WN\n'
            txt += '   #\n'
-### changed by georgia (put a loop copying more than one input files per jobs)           
+           ### changed by georgia (put a loop copying more than one input files per jobs)           
            txt += '   for input_file in $cur_file_list \n'
            txt += '   do \n'
-           #### FEDE
-           #txt += '      echo "which lcg-cp" \n'
-           #txt += '      which lcg-cp \n'
-           ######### 
            txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
            txt += '      copy_input_exit_status=$?\n'
            txt += '      echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
@@ -351,13 +347,9 @@ class SchedulerEdg(Scheduler):
            txt += '         echo "input copied into WN" \n'
            txt += '      fi \n'
            txt += '   done \n'
-### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
+           ### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
            txt += '   for file in $cur_pu_list \n'
            txt += '   do \n'
-           #### FEDE
-           #txt += '      echo "which lcg-cp" \n'
-           #txt += '      which lcg-cp \n'
-           #########
            txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
            txt += '      copy_input_pu_exit_status=$?\n'
            txt += '      echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
@@ -384,7 +376,6 @@ class SchedulerEdg(Scheduler):
            txt += '#\n'
            txt += '#   Copy output to SE = $SE\n'
            txt += '#\n'
-           #txt += 'if [ $exe_result -eq 0 ]; then\n'
            txt += '    if [ $middleware == OSG ]; then\n'
            txt += '        echo "X509_USER_PROXY = $X509_USER_PROXY"\n'
            txt += '        echo "source $OSG_APP/glite/setup_glite_ui.sh"\n'
@@ -442,7 +433,6 @@ class SchedulerEdg(Scheduler):
            txt += '            echo "lcg-cp succeeded"\n'
            txt += '         fi\n'
            txt += '     done\n'
-           #txt += 'fi\n'
         return txt
 
     def wsRegisterOutput(self):
@@ -462,14 +452,9 @@ class SchedulerEdg(Scheduler):
            txt += '#\n'
            txt += '#  Register output to LFC\n'
            txt += '#\n'
-           #txt += '   if [[ $exe_result -eq 0 && $copy_exit_status -eq 0 ]]; then\n'
            txt += '   if [ $copy_exit_status -eq 0 ]; then\n'
            txt += '      for out_file in $file_list ; do\n'
            txt += '         echo "Trying to register the output file into LFC"\n'
-           #### FEDE
-           #txt += '         echo "which lcg-rf" \n'
-           #txt += '         which lcg-rf \n'
-           #########
            txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file 2>&1"\n'
            txt += '         lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
@@ -478,10 +463,6 @@ class SchedulerEdg(Scheduler):
            txt += '         if [ $register_exit_status -ne 0 ]; then \n'
            txt += '            echo "Problems with the registration to LFC" \n'
            txt += '            echo "Try with srm protocol" \n'
-           #### FEDE
-           #txt += '            echo "which lcg-rf" \n'
-           #txt += '            which lcg-rf \n'
-           #########
            txt += '            echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file 2>&1"\n'
            txt += '            lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file 2>&1 \n'
            txt += '            register_exit_status=$?\n'
@@ -495,15 +476,10 @@ class SchedulerEdg(Scheduler):
            txt += '         fi \n'
            txt += '         echo "StageOutExitStatus = $register_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '      done\n'
-           #txt += '   elif [[ $exe_result -eq 0 && $copy_exit_status -ne 0 ]]; then \n'
            txt += '   else \n'
            txt += '      echo "Trying to copy output file to CloseSE"\n'
            txt += '      CLOSE_SE=`edg-brokerinfo getCloseSEs | head -1`\n'
            txt += '      for out_file in $file_list ; do\n'
-           #### FEDE
-           #txt += '         echo "which lcg-cr" \n'
-           #txt += '         which lcg-cr \n'
-           #########
            txt += '         echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1" \n'
            txt += '         lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1 \n'
            txt += '         register_exit_status=$?\n'
@@ -518,8 +494,6 @@ class SchedulerEdg(Scheduler):
            txt += '         fi \n'
            txt += '         echo "StageOutExitStatus = $register_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '      done\n'
-           #txt += '   else\n'
-           #txt += '      echo "Problem with the executable"\n'
            txt += '   fi \n'
            txt += '   exit_status=$register_exit_status\n'
            txt += 'fi \n'
@@ -534,119 +508,6 @@ class SchedulerEdg(Scheduler):
         #cmd_out = os.popen(cmd) 
         cmd_out = runCommand(cmd)
         return cmd_out
-
-    def listMatch(self, nj):
-        """
-        Check the compatibility of available resources
-        """
-        self.checkProxy()
-        jdl = common.job_list[nj].jdlFilename()
-        cmd = 'edg-job-list-match ' + self.configOpt_() + jdl 
-        cmd_out = runCommand(cmd,0,45)
-        if not cmd_out:
-            raise CrabException("ERROR: "+cmd+" failed!")
-
-        return self.parseListMatch_(cmd_out, jdl)
-
-    def parseListMatch_(self, out, jdl):
-        """
-        Parse the f* output of edg-list-match and produce something sensible
-        """
-        reComment = re.compile( r'^\**$' )
-        reEmptyLine = re.compile( r'^$' )
-        reVO = re.compile( r'Selected Virtual Organisation name.*' )
-        reLine = re.compile( r'.*')
-        reCE = re.compile( r'(.*:.*)')
-        reCEId = re.compile( r'CEId.*')
-        reNO = re.compile( r'No Computing Element matching' )
-        reRB = re.compile( r'Connecting to host' )
-        next = 0
-        CEs=[]
-        Match=0
-
-        #print out
-        lines = reLine.findall(out)
-
-        i=0
-        CEs=[]
-        for line in lines:
-            string.strip(line)
-            #print line
-            if reNO.match( line ):
-                common.logger.debug(5,line)
-                return 0
-                pass
-            if reVO.match( line ):
-                VO =reVO.match( line ).group()
-                common.logger.debug(5,"VO "+VO)
-                pass
-
-            if reRB.match( line ):
-                RB = reRB.match(line).group()
-                common.logger.debug(5,"RB "+RB)
-                pass
-
-            if reCEId.search( line ):
-                for lineCE in lines[i:-1]:
-                    if reCE.match( lineCE ):
-                        CE = string.strip(reCE.search(lineCE).group(1))
-                        CEs.append(CE.split(':')[0])
-                        pass 
-                    pass
-                pass
-            i=i+1
-            pass
-
-        common.logger.debug(5,"All CE :"+str(CEs))
-
-        sites = []
-        [sites.append(it) for it in CEs if not sites.count(it)]
-
-        common.logger.debug(5,"All Sites :"+str(sites))
-        common.logger.message("Matched Sites :"+str(sites))
-        return len(sites)
-
-    def noMatchFound_(self, jdl):
-        reReq = re.compile( r'Requirements' )
-        reString = re.compile( r'"\S*"' )
-        f = file(jdl,'r')
-        for line in f.readlines():
-            line= line.strip()
-            if reReq.match(line):
-                for req in reString.findall(line):
-                    if re.search("VO",req):
-                        common.logger.message( "SW required: "+req)
-                        continue
-                    if re.search('"\d+',req):
-                        common.logger.message("Other req  : "+req)
-                        continue
-                    common.logger.message( "CE required: "+req)
-                break
-            pass
-        raise CrabException("No compatible resources found!")
-
-    def submit(self, nj):
-        """
-        Submit one EDG job.
-        """
-
-        self.checkProxy()
-        jid = None
-        jdl = common.job_list[nj].jdlFilename()
-
-        cmd = 'edg-job-submit ' + self.configOpt_() + jdl 
-        cmd_out = runCommand(cmd)
-        if cmd_out != None:
-            reSid = re.compile( r'https.+' )
-            jid = reSid.search(cmd_out).group()
-            pass
-        return jid
-
-    def resubmit(self, nj_list):
-        """
-        Prepare jobs to be submit
-        """
-        return
 
     def getExitStatus(self, id):
         return self.getStatusAttribute_(id, 'exit_code')
@@ -679,7 +540,7 @@ class SchedulerEdg(Scheduler):
             for i in range(len(self.states)):
                 # Fill an hash table with all information retrieved from LB API
                 hstates[ self.states[i] ] = jobStat.loadStatus(st)[i]
-            result = jobStat.loadStatus(st)[ self.states.index(attr) ]
+            result = jobStat.loadStatus(st)[self.states.index(attr)]
             return result
 
     def queryDetailedStatus(self, id):
@@ -730,125 +591,45 @@ class SchedulerEdg(Scheduler):
         inp_sandbox = jbt.inputSandbox(index)
         out_sandbox = jbt.outputSandbox(index)
         """
-        Get output for a finished job with id.
-        Returns the name of directory with results.
+        [end] da rivedere
         """
 
-        self.checkProxy()
-        cmd = 'edg-job-get-output --dir ' + common.work_space.resDir() + ' ' + id
-        cmd_out = runCommand(cmd)
-
-        # Determine the output directory name
-        dir = common.work_space.resDir()
-        dir += os.environ['USER']
-        dir += '_' + os.path.basename(id)
-        return dir
-
-    def createSchScript(self, nj):
-        """
-        Create a JDL-file for EDG.
-        """
-
-        job = common.job_list[nj]
-        jbt = job.type()
-        inp_sandbox = jbt.inputSandbox(nj)
-        out_sandbox = jbt.outputSandbox(nj)
-        inp_storage_subdir = ''
         
-        title = '# This JDL was generated by '+\
-                common.prog_name+' (version '+common.prog_version_str+')\n'
+        title = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
         jt_string = ''
-
-
         
-        SPL = inp_storage_subdir
-        if ( SPL and SPL[-1] != '/' ) : SPL = SPL + '/'
+        xml_fname = str(self.jobtypeName)+'.xml'
+        xml = open(common.work_space.shareDir()+'/'+xml_fname, 'a')
 
-        jdl_fname = job.jdlFilename()
-        jdl = open(jdl_fname, 'w')
-        jdl.write(title)
+        #TaskName   
+        dir = string.split(common.work_space.topDir(), '/')
+        taskName = dir[len(dir)-2]
+  
+        to_writeReq = ''
+        to_write = ''
 
-        script = job.scriptFilename()
-        jdl.write('Executable = "' + os.path.basename(script) +'";\n')
-        jdl.write(jt_string)
-
-        ### only one .sh  JDL has arguments:
-
-        ### Fabio
-        jdl.write('Arguments = "' + str(nj+1)+' '+ jbt.getJobTypeArguments(nj, "EDG") +'";\n')
-        inp_box = 'InputSandbox = { '
-        inp_box = inp_box + '"' + script + '",'
-
-        if inp_sandbox != None:
-            for fl in inp_sandbox:
-                inp_box = inp_box + ' "' + fl + '",'
-                pass
-            pass
-
-        #if common.use_jam:
-        #   inp_box = inp_box+' "'+common.bin_dir+'/'+common.run_jam+'",'
-
-        # Marco (VERY TEMPORARY ML STUFF)
-        inp_box = inp_box+' "' + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + '", "' +\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + '", "'+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + '", "'+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + '", "'+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') + '"'
-        # End Marco
-
-        if (not jbt.additional_inbox_files == []):
-            inp_box = inp_box + ', '
-            for addFile in jbt.additional_inbox_files:
-                addFile = os.path.abspath(addFile)
-                inp_box = inp_box+' "'+addFile+'",'
-                pass
-
-        if inp_box[-1] == ',' : inp_box = inp_box[:-1]
-        inp_box = inp_box + ' };\n'
-        jdl.write(inp_box)
-
-        jdl.write('StdOutput     = "' + job.stdout() + '";\n')
-        jdl.write('StdError      = "' + job.stderr() + '";\n')
-        
-        
-        if job.stdout() == job.stderr():
-          out_box = 'OutputSandbox = { "' + \
-                    job.stdout() + '", ".BrokerInfo",'
-        else:
-          out_box = 'OutputSandbox = { "' + \
-                    job.stdout() + '", "' + \
-                    job.stderr() + '", ".BrokerInfo",'
-
-        if int(self.return_data) == 1:
-            if out_sandbox != None:
-                for fl in out_sandbox:
-                    out_box = out_box + ' "' + fl + '",'
-                    pass
-                pass
-            pass
-                                                                                                                                                             
-        if out_box[-1] == ',' : out_box = out_box[:-1]
-        out_box = out_box + ' };'
-        jdl.write(out_box+'\n')
+        req=' '
+        req = req + jbt.getRequirements()
 
 
-        req='Requirements = '
-        noreq=req
-        req = req + jbt.getRequirements(nj)
-        #### and USER REQUIREMENT
+        #sites = common.jobDB.destination(nj)
+        #if len(sites)>0 and sites[0]!="Any":
+        #    req = req + ' && anyMatch(other.storage.CloseSEs, (_ITR4_))'
+        #req = req     
+    
         if self.EDG_requirements:
-            if (req != noreq):
-                req = req +  ' && '
-            req = req + self.EDG_requirements
-        #### FEDE ##### 
+            if (req == ' '):
+                req = req + self.EDG_requirements
+            else:
+                req = req +  ' && ' + self.EDG_requirements
         if self.EDG_ce_white_list:
             ce_white_list = string.split(self.EDG_ce_white_list,',')
-            #print "req = ", req
             for i in range(len(ce_white_list)):
                 if i == 0:
-                    if (req != noreq):
-                        req = req +  ' && '
-                    req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    if (req == ' '):
+                        req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    else:
+                        req = req +  ' && ((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
                     pass
                 else:
                     req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
@@ -857,39 +638,176 @@ class SchedulerEdg(Scheduler):
         if self.EDG_ce_black_list:
             ce_black_list = string.split(self.EDG_ce_black_list,',')
             for ce in ce_black_list:
-                if (req != noreq):
-                    req = req +  ' && '
-                req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                if (req == ' '):
+                    req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                else:
+                    req = req +  ' && (!RegExp("' + ce + '", other.GlueCEUniqueId))'
                 pass
-
-        ###############
-        clockTime=480
         if self.EDG_clock_time:
-            clockTime= self.EDG_clock_time
-        if (req != noreq):
-            req = req + ' && '
-        req = req + '((other.GlueCEPolicyMaxWallClockTime == 0) || (other.GlueCEPolicyMaxWallClockTime>='+str(clockTime)+'))'
+            if (req == ' '):
+                req = req + 'other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
+            else:
+                req = req + ' && other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
 
-        cpuTime=1000
         if self.EDG_cpu_time:
-            cpuTime=self.EDG_cpu_time
-        if (req != noreq):
-            req = req + ' && '
-        req = req + '((other.GlueCEPolicyMaxCPUTime == 0) || (other.GlueCEPolicyMaxCPUTime>='+str(cpuTime)+'))'
-
-        if (req != noreq):
-            req = req + ';\n'
-            jdl.write(req)
-                                                                                                                                                             
-        jdl.write('VirtualOrganisation = "' + self.VO + '";\n')
-
+            if (req == ' '):
+                req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+            else:
+                req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+                                                                                           
         if ( self.EDG_retry_count ):               
-            jdl.write('RetryCount = '+self.EDG_retry_count+';\n')
+            to_write = to_write + 'RetryCount = "'+self.EDG_retry_count+'"\n'
             pass
 
-        jdl.write('MyProxyServer = "' + self.proxyServer + '";\n')
+        to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
+        to_write = to_write + 'VirtualOrganisation = "&quot;' + self.VO + '&quot;"\n'
 
-        jdl.close()
+
+        #TaskName   
+        dir = string.split(common.work_space.topDir(), '/')
+        taskName = dir[len(dir)-2]
+
+        xml.write(str(title))
+        xml.write('<task name="' +str(taskName)+'">\n')
+        xml.write(jt_string)
+
+        xml.write('<iterator>\n')
+        xml.write('\t<iteratorRule name="ITR1">\n')
+        xml.write('\t\t<ruleElement> 1:'+ str(nj) + ' </ruleElement>\n')
+        xml.write('\t</iteratorRule>\n')
+        xml.write('\t<iteratorRule name="ITR2">\n')
+        for arg in argsList:
+            xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
+            pass
+        xml.write('\t</iteratorRule>\n')
+        #print jobList
+        xml.write('\t<iteratorRule name="ITR3">\n')
+        xml.write('\t\t<ruleElement> 1:'+ str(nj) + ':1:6 </ruleElement>\n')
+        xml.write('\t</iteratorRule>\n')
+
+        '''
+        indy: qui sotto ci sta itr4
+        '''
+        
+        itr4=self.findSites_(nj)
+        #print "--->>> itr4 = ", itr4
+        if (itr4 != ''):
+            xml.write('\t<iteratorRule name="ITR4">\n')
+        #print argsList
+            for arg in itr4:
+                xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
+                pass
+            xml.write('\t</iteratorRule>\n')
+            req = req + ' && anyMatch(other.storage.CloseSEs, (_ITR4_))'
+            pass
+        #    print "--->>> req= ", req         
+        
+        if (to_write != ''):
+            xml.write('<extraTags\n')
+            xml.write(to_write)
+            xml.write('/>\n')
+            pass
+
+        xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
+        xml.write(jt_string)
+
+        if (req != ' '):
+            req = req + '\n'
+            xml.write('<extraTags>\n')
+            xml.write('<Requirements>\n')
+            xml.write('<![CDATA[\n')
+            xml.write(req)
+            xml.write(']]>\n')
+            xml.write('</Requirements>\n')
+            xml.write('</extraTags>\n')
+            pass
+
+        #executable
+
+        """
+        INDY
+        script dipende dal jobType: dovrebbe essere semplice tirarlo fuori in altro modo
+        """        
+        script = job.scriptFilename()
+        xml.write('<program>\n')
+        xml.write('<exec> ' + os.path.basename(script) +' </exec>\n')
+        xml.write(jt_string)
+    
+           
+        ### only one .sh  JDL has arguments:
+        ### Fabio
+#        xml.write('args = "' + str(nj+1)+' '+ jbt.getJobTypeArguments(nj, "EDG") +'"\n')
+        xml.write('<args> <![CDATA[\n _ITR2_ \n]]> </args>\n')
+        xml.write('<program_types> crabjob </program_types>\n')
+        inp_box = script + ','
+
+        if inp_sandbox != None:
+            for fl in inp_sandbox:
+                inp_box = inp_box + '' + fl + ','
+                pass
+            pass
+
+        inp_box = inp_box + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + ',' +\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + ','+\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + ','+\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + ','+\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') 
+
+        if (not jbt.additional_inbox_files == []):
+            inp_box = inp_box + ', '
+            for addFile in jbt.additional_inbox_files:
+                addFile = os.path.abspath(addFile)
+                inp_box = inp_box+''+addFile+','
+                pass
+
+        if inp_box[-1] == ',' : inp_box = inp_box[:-1]
+        inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
+        xml.write(inp_box)
+        
+        base = jbt.name()
+        stdout = base + '__ITR3_.stdout'
+        stderr = base + '__ITR3_.stderr'
+        
+        xml.write('<stderr> ' + stderr + '</stderr>\n')
+        xml.write('<stdout> ' + stdout + '</stdout>\n')
+        
+
+        out_box = stdout + ',' + \
+                  stderr + ',.BrokerInfo,'
+
+        """
+        if int(self.return_data) == 1:
+            if out_sandbox != None:
+                for fl in out_sandbox:
+                    out_box = out_box + '' + fl + ','
+                    pass
+                pass
+            pass
+        """
+
+        """
+        INDY
+        qualcosa del genere andrebbe fatta per gli infiles
+        """        
+        if int(self.return_data) == 1:
+            for fl in jbt.output_file:
+                out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
+                pass
+            pass
+
+        if out_box[-1] == ',' : out_box = out_box[:-1]
+        out_box = '<outfiles> <![CDATA[\n' + out_box + '\n]]></outfiles>\n'
+        xml.write(out_box)
+ 
+        xml.write('<BossAttr> crabjob.INTERNAL_ID=_ITR1_ </BossAttr>\n')
+
+        xml.write('</program>\n')
+        xml.write('</chain>\n')
+
+        xml.write('</iterator>\n')
+        xml.write('</task>\n')
+
+        xml.close()
         return
 
     def checkProxy(self):
@@ -902,8 +820,6 @@ class SchedulerEdg(Scheduler):
 
         minTimeLeftServer = 100 # in hours
 
-        #cmd = 'voms-proxy-info -exists -valid '+str(minTimeLeft)+':00'
-        #cmd = 'voms-proxy-info -timeleft'
         mustRenew = 0
         timeLeftLocal = runCommand('voms-proxy-info -timeleft 2>/dev/null')
         timeLeftServer = -999
