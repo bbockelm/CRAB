@@ -754,7 +754,7 @@ class SchedulerEdg(Scheduler):
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') 
 
         if (not jbt.additional_inbox_files == []):
-            inp_box = inp_box + ', '
+            inp_box = inp_box + ','
             for addFile in jbt.additional_inbox_files:
                 addFile = os.path.abspath(addFile)
                 inp_box = inp_box+''+addFile+','
