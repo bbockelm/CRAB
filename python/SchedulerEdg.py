@@ -562,13 +562,14 @@ class SchedulerEdg(Scheduler):
            # print "common.jobDB.destination(n) = ", common.jobDB.destination(n)
            # print "sites = ", sites
             itr = ''
-            for site in sites: 
-                #itr = itr + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
-                itr = itr + 'target.GlueSEUniqueID=="'+site+'" || '
-                pass
-            # remove last ||
-            itr = itr[0:-4]
-            itr4.append( itr )
+            if sites != [""]:#CarlosDaniele 
+                for site in sites: 
+                    #itr = itr + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
+                    itr = itr + 'target.GlueSEUniqueID=="'+site+'" || '
+                    pass
+                # remove last ||
+                itr = itr[0:-4]
+                itr4.append( itr )
         # remove last , 
        # print "itr4 = ", itr4
         return itr4
@@ -691,7 +692,7 @@ class SchedulerEdg(Scheduler):
         
         itr4=self.findSites_(nj)
         #print "--->>> itr4 = ", itr4
-        if (itr4 != ''):
+        if (itr4 != []):
             xml.write('\t<iteratorRule name="ITR4">\n')
         #print argsList
             for arg in itr4:

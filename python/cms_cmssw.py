@@ -34,7 +34,8 @@ class Cmssw(JobType):
         self.scriptExe = ''
         self.executable = ''
         self.tgz_name = 'default.tgz'
-
+        self.pset = ''      #scrip use case Da   
+        self.datasetPath = '' #scrip use case Da
 
         self.version = self.scram.getSWVersion()
         self.setParam_('application', self.version)
@@ -89,8 +90,11 @@ class Cmssw(JobType):
         try:
             self.pset = cfg_params['CMSSW.pset']
             log.debug(6, "Cmssw::Cmssw(): PSet file = "+self.pset)
-            if (not os.path.exists(self.pset)):
-                raise CrabException("User defined PSet file "+self.pset+" does not exist")
+            if self.pset.lower() != 'none' : 
+                if (not os.path.exists(self.pset)):
+                    raise CrabException("User defined PSet file "+self.pset+" does not exist")
+            else:
+                self.pset = None
         except KeyError:
             raise CrabException("PSet file missing. Cannot run cmsRun ")
 
@@ -117,14 +121,18 @@ class Cmssw(JobType):
         # script_exe file as additional file in inputSandbox
         try:
             self.scriptExe = cfg_params['USER.script_exe']
-            self.additional_inbox_files.append(self.scriptExe)
             if self.scriptExe != '':
                if not os.path.isfile(self.scriptExe):
                   msg ="WARNING. file "+self.scriptExe+" not found"
                   raise CrabException(msg)
+               self.additional_inbox_files.append(string.strip(self.scriptExe))
         except KeyError:
-           pass
-                  
+            self.scriptExe = ''
+        #CarlosDaniele
+        if self.datasetPath == None and self.pset == None and self.scriptExe == '' :
+           msg ="WARNING. script_exe  not defined"
+           raise CrabException(msg)
+
         ## additional input files
         try:
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
@@ -167,9 +175,14 @@ class Cmssw(JobType):
             self.total_number_of_events = 0
             self.selectTotalNumberEvents = 0
 
-        if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
-            msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
-            raise CrabException(msg)
+        if self.pset != None: #CarlosDaniele 
+             if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
+                 msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
+                 raise CrabException(msg)
+        else:
+             if (self.selectNumberOfJobs == 0):
+                 msg = 'Must specify  number_of_jobs.'
+                 raise CrabException(msg)
 
         ## source seed for pythia
         try:
@@ -183,8 +196,8 @@ class Cmssw(JobType):
         except KeyError:
             self.sourceSeedVtx = None
             common.logger.debug(5,"No vertex seed given")
-
-        self.PsetEdit = PsetManipulator.PsetManipulator(self.pset) #Daniele Pset
+        if self.pset != None: #CarlosDaniele
+            self.PsetEdit = PsetManipulator.PsetManipulator(self.pset) #Daniele Pset
 
         #DBSDLS-start
         ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code 
@@ -201,27 +214,31 @@ class Cmssw(JobType):
         self.tgzNameWithPath = self.getTarBall(self.executable)
     
         ## Select Splitting
-        if self.selectNoInput: self.jobSplittingNoInput()
+        if self.selectNoInput: 
+            if self.pset == None: #CarlosDaniele
+                self.jobSplittingForScript()
+            else:
+                self.jobSplittingNoInput()
         else: self.jobSplittingByBlocks(blockSites)
 
         # modify Pset
-        try:
-            if (self.datasetPath): # standard job
-                # allow to processa a fraction of events in a file
-                self.PsetEdit.inputModule("INPUT")
-                self.PsetEdit.maxEvent("INPUTMAXEVENTS")
-                self.PsetEdit.skipEvent("INPUTSKIPEVENTS")
-
-            else:  # pythia like job
-                self.PsetEdit.maxEvent(self.eventsPerJob)
-                if (self.sourceSeed) :
-                    self.PsetEdit.pythiaSeed("INPUT")
-                    if (self.sourceSeedVtx) :
-                        self.PsetEdit.pythiaSeedVtx("INPUTVTX")
-            self.PsetEdit.psetWriter(self.configFilename())
-        except:
-            msg='Error while manipuliating ParameterSet: exiting...'
-            raise CrabException(msg)
+        if self.pset != None: #CarlosDaniele
+            try:
+                if (self.datasetPath): # standard job
+                    # allow to processa a fraction of events in a file
+                    self.PsetEdit.inputModule("INPUT")
+                    self.PsetEdit.maxEvent("INPUTMAXEVENTS")
+                    self.PsetEdit.skipEvent("INPUTSKIPEVENTS")
+                else:  # pythia like job
+                    self.PsetEdit.maxEvent(self.eventsPerJob)
+                    if (self.sourceSeed) :
+                        self.PsetEdit.pythiaSeed("INPUT")
+                        if (self.sourceSeedVtx) :
+                            self.PsetEdit.pythiaSeedVtx("INPUTVTX")
+                self.PsetEdit.psetWriter(self.configFilename())
+            except:
+                msg='Error while manipuliating ParameterSet: exiting...'
+                raise CrabException(msg)
 
     def DataDiscoveryAndLocation(self, cfg_params):
 
@@ -502,7 +519,8 @@ class Cmssw(JobType):
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
             ## Since there is no input, any site is good
-            self.jobDestination.append(["Any"])
+           # self.jobDestination.append(["Any"])
+            self.jobDestination.append([""]) #must be empty to write correctly the xml 
             if (self.sourceSeed):
                 if (self.sourceSeedVtx):
                     ## pythia + vtx random seed
@@ -518,6 +536,30 @@ class Cmssw(JobType):
                 self.list_of_args.append([str(i)])
         #print self.list_of_args
 
+        return
+
+
+    def jobSplittingForScript(self):#CarlosDaniele
+        """
+        Perform job splitting based on number of job
+        """
+        common.logger.debug(5,'Splitting per job')
+        common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
+
+        self.total_number_of_jobs = self.theNumberOfJobs
+
+        common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
+
+        common.logger.message(str(self.total_number_of_jobs)+' jobs can be created')
+
+        # argument is seed number.$i
+        self.list_of_args = []
+        for i in range(self.total_number_of_jobs):
+            ## Since there is no input, any site is good
+           # self.jobDestination.append(["Any"])
+            self.jobDestination.append([""])
+            ## no random seed
+            self.list_of_args.append([str(i)])
         return
 
     def split(self, jobParams):
@@ -737,35 +779,36 @@ class Cmssw(JobType):
 
         # Prepare job-specific part
         job = common.job_list[nj]
-        pset = os.path.basename(job.configFilename())
-        txt += '\n'
-        if (self.datasetPath): # standard job
-            #txt += 'InputFiles=$2\n'
-            txt += 'InputFiles=${args[1]}\n'
-            txt += 'MaxEvents=${args[2]}\n'
-            txt += 'SkipEvents=${args[3]}\n'
-            txt += 'echo "Inputfiles:<$InputFiles>"\n'
-            txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset_tmp_1.cfg\n'
-            txt += 'echo "MaxEvents:<$MaxEvents>"\n'
-            txt += 'sed "s#INPUTMAXEVENTS#$MaxEvents#" $RUNTIME_AREA/ pset_tmp_1.cfg > pset_tmp_2.cfg\n'
-            txt += 'echo "SkipEvents:<$SkipEvents>"\n'
-            txt += 'sed "s#INPUTSKIPEVENTS#$SkipEvents#" $RUNTIME_AREA/ pset_tmp_2.cfg > pset.cfg\n'
-        else:  # pythia like job
-            if (self.sourceSeed):
-#                txt += 'Seed=$2\n'
-                txt += 'Seed=${args[1]}\n'
-                txt += 'echo "Seed: <$Seed>"\n'
-                txt += 'sed "s#\<INPUT\>#$Seed#" $RUNTIME_AREA/'+pset+' > tmp.cfg\n'
-                if (self.sourceSeedVtx):
-#                    txt += 'VtxSeed=$3\n'
-                    txt += 'VtxSeed=${args[2]}\n'
-                    txt += 'echo "VtxSeed: <$VtxSeed>"\n'
-                    txt += 'sed "s#INPUTVTX#$VtxSeed#" tmp.cfg > pset.cfg\n'
+        if self.pset != None: #CarlosDaniele
+            pset = os.path.basename(job.configFilename())
+            txt += '\n'
+            if (self.datasetPath): # standard job
+                #txt += 'InputFiles=$2\n'
+                txt += 'InputFiles=${args[1]}\n'
+                txt += 'MaxEvents=${args[2]}\n'
+                txt += 'SkipEvents=${args[3]}\n'
+                txt += 'echo "Inputfiles:<$InputFiles>"\n'
+                txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset_tmp_1.cfg\n'
+                txt += 'echo "MaxEvents:<$MaxEvents>"\n'
+                txt += 'sed "s#INPUTMAXEVENTS#$MaxEvents#" $RUNTIME_AREA/ pset_tmp_1.cfg > pset_tmp_2.cfg\n'
+                txt += 'echo "SkipEvents:<$SkipEvents>"\n'
+                txt += 'sed "s#INPUTSKIPEVENTS#$SkipEvents#" $RUNTIME_AREA/ pset_tmp_2.cfg > pset.cfg\n'
+            else:  # pythia like job
+                if (self.sourceSeed):
+#                    txt += 'Seed=$2\n'
+                    txt += 'Seed=${args[1]}\n'
+                    txt += 'echo "Seed: <$Seed>"\n'
+                    txt += 'sed "s#\<INPUT\>#$Seed#" $RUNTIME_AREA/'+pset+' > tmp.cfg\n'
+                    if (self.sourceSeedVtx):
+#                        txt += 'VtxSeed=$3\n'
+                        txt += 'VtxSeed=${args[2]}\n'
+                        txt += 'echo "VtxSeed: <$VtxSeed>"\n'
+                        txt += 'sed "s#INPUTVTX#$VtxSeed#" tmp.cfg > pset.cfg\n'
+                    else:
+                        txt += 'mv tmp.cfg pset.cfg\n'
                 else:
-                    txt += 'mv tmp.cfg pset.cfg\n'
-            else:
-                txt += '# Copy untouched pset\n'
-                txt += 'cp $RUNTIME_AREA/'+pset+' pset.cfg\n'
+                    txt += '# Copy untouched pset\n'
+                    txt += 'cp $RUNTIME_AREA/'+pset+' pset.cfg\n'
 
 
         if len(self.additional_inbox_files) > 0:
@@ -777,16 +820,17 @@ class Cmssw(JobType):
                 txt += 'fi\n'
             pass 
 
-        txt += 'echo "### END JOB SETUP ENVIRONMENT ###"\n\n'
-
-        txt += '\n'
-        txt += 'echo "***** cat pset.cfg *********"\n'
-        txt += 'cat pset.cfg\n'
-        txt += 'echo "****** end pset.cfg ********"\n'
-        txt += '\n'
-        # txt += 'echo "***** cat pset1.cfg *********"\n'
-        # txt += 'cat pset1.cfg\n'
-        # txt += 'echo "****** end pset1.cfg ********"\n'
+        if self.pset != None: #CarlosDaniele
+            txt += 'echo "### END JOB SETUP ENVIRONMENT ###"\n\n'
+        
+            txt += '\n'
+            txt += 'echo "***** cat pset.cfg *********"\n'
+            txt += 'cat pset.cfg\n'
+            txt += 'echo "****** end pset.cfg ********"\n'
+            txt += '\n'
+            # txt += 'echo "***** cat pset1.cfg *********"\n'
+            # txt += 'cat pset1.cfg\n'
+            # txt += 'echo "****** end pset1.cfg ********"\n'
         return txt
 
     def wsBuildExe(self, nj):
@@ -835,10 +879,16 @@ class Cmssw(JobType):
         """
         
     def executableName(self):
-        return self.executable
+        if self.pset == None: #CarlosDaniele
+            return "sh "
+        else:
+            return self.executable
 
     def executableArgs(self):
-        return " -p pset.cfg"
+        if self.pset == None:#CarlosDaniele
+            return   self.scriptExe + " $NJob"
+        else: 
+            return " -p pset.cfg"
 
     def inputSandbox(self, nj):
         """
@@ -851,7 +901,8 @@ class Cmssw(JobType):
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
         ## config
-        inp_box.append(common.job_list[nj].configFilename())
+        if not self.pset is None: #CarlosDaniele
+            inp_box.append(common.job_list[nj].configFilename())
         ## additional input files
         #for file in self.additional_inbox_files:
         #    inp_box.append(common.work_space.cwdDir()+file)
