@@ -60,8 +60,8 @@ class SchedulerCondor_g(Scheduler):
 
         self.checkCondorVariableIsTrue('ENABLE_GRID_MONITOR')
 
-        max_submit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE')
-        max_pending = self.queryCondorVariable('GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE')
+        max_submit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE').strip()
+        max_pending = self.queryCondorVariable('GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE').strip()
 
         print '[Condor-G Scheduler]'
         print 'Maximal number of jobs submitted to the grid   : GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE  = ',max_submit
@@ -112,6 +112,11 @@ class SchedulerCondor_g(Scheduler):
         return runCommand(cmd)
 
     def configure(self, cfg_params):
+
+        try:
+            self.role = cfg_params["EDG.role"]
+        except KeyError:
+            self.role = None
 
         self.copy_input_data = 0
 
@@ -197,6 +202,12 @@ class SchedulerCondor_g(Scheduler):
 
         self._taskId = cfg_params['taskId']
                 
+        try: self.jobtypeName = cfg_params['CRAB.jobtype']
+        except KeyError: self.jobtypeName = ''
+ 
+        try: self.schedulerName = cfg_params['CRAB.scheduler']
+        except KeyError: self.scheduler = ''
+
         return
     
 
@@ -231,12 +242,7 @@ class SchedulerCondor_g(Scheduler):
         txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
         txt += 'echo "middleware discovery " \n'
-        txt += 'if [ $VO_CMS_SW_DIR ]; then\n'
-        txt += '    middleware=LCG \n'
-        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '    echo "middleware =$middleware" \n'
-        txt += 'elif [ $GRID3_APP_DIR ]; then\n'
+        txt += 'if [ $GRID3_APP_DIR ]; then\n'
         txt += '    middleware=OSG \n'
         txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
@@ -244,6 +250,11 @@ class SchedulerCondor_g(Scheduler):
         txt += 'elif [ $OSG_APP ]; then \n'
         txt += '    middleware=OSG \n'
         txt += '    echo "SyncCE=`echo $hostname`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "middleware =$middleware" \n'
+        txt += 'elif [ $VO_CMS_SW_DIR ]; then\n'
+        txt += '    middleware=LCG \n'
+        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'else \n'
@@ -363,9 +374,10 @@ class SchedulerCondor_g(Scheduler):
         """
         retrieve the logging info from logging and bookkeeping and return it
         """
-        self.checkProxy()
-        cmd = 'condor_q -l -analyze ' + id
-        cmd_out = os.popen(cmd) 
+        schedd    = id.split('//')[0]
+        condor_id = id.split('//')[1]
+        cmd = 'condor_q -l -name ' + schedd + ' ' + condor_id
+        cmd_out = runCommand(cmd)
         return cmd_out
 
     def listMatch(self, nj):
@@ -412,32 +424,32 @@ class SchedulerCondor_g(Scheduler):
     def getStatusAttribute_(self, id, attr):
         """ Query a status of the job with id """
 
-        self.checkProxy()
         result = ''
         
         if ( attr == 'exit_code' ) :
-            for i in range(common.jobDB.nJobs()) :
-                if ( id == common.jobDB.jobId(i) ) :
-                    jobnum_str = '%06d' % (int(i)+1)
-                    opts = common.work_space.loadSavedOptions()
-                    base = string.upper(opts['-jobtype']) 
-                    log_file = common.work_space.resDir() + base + '_' + jobnum_str + '.stdout'
-                    logfile = open(log_file)
-                    log_line = logfile.readline()
-                    while log_line :
-                        log_line = log_line.strip()
-                        if log_line.startswith('JOB_EXIT_STATUS') :
-                            log_line_split = log_line.split()
-                            result = log_line_split[2]
-                            pass
-                        log_line = logfile.readline()
+            jobnum_str = '%06d' % (int(id))
+            # opts = common.work_space.loadSavedOptions()
+            base = string.upper(opts['-jobtype']) 
+            log_file = common.work_space.resDir() + base + '_' + jobnum_str + '.stdout'
+            logfile = open(log_file)
+            log_line = logfile.readline()
+            while log_line :
+                log_line = log_line.strip()
+                if log_line.startswith('JOB_EXIT_STATUS') :
+                    log_line_split = log_line.split()
+                    result = log_line_split[2]
+                    pass
+                log_line = logfile.readline()
+            result = ''
         elif ( attr == 'status' ) :
-            user = os.environ['USER']
-            cmd = 'condor_q -submitter ' + user
+            schedd    = id.split('//')[0]
+            condor_id = id.split('//')[1]
+            cmd = 'condor_q -name ' + schedd + ' ' + condor_id
             cmd_out = runCommand(cmd)
             if cmd_out != None:
+                status_flag = 0
                 for line in cmd_out.splitlines() :
-                    if line.strip().startswith(id.strip()) :
+                    if line.strip().startswith(condor_id.strip()) :
                         status = line.strip().split()[5]
                         if ( status == 'I' ):
                             result = 'Scheduled'
@@ -465,21 +477,9 @@ class SchedulerCondor_g(Scheduler):
             else :
                 result = 'Done'
         elif ( attr == 'destination' ) :
-            for i in range(common.jobDB.nJobs()) :
-                if ( id == common.jobDB.jobId(i) ) :
-                    jobnum_str = '%06d' % (int(i)+1)
-                    opts = common.work_space.loadSavedOptions()
-                    base = string.upper(opts['-jobtype']) 
-                    log_file = common.work_space.resDir() + base + '_' + jobnum_str + '.stdout'
-                    logfile = open(log_file)
-                    log_line = logfile.readline()
-                    while log_line :
-                        log_line = log_line.strip()
-                        if log_line.startswith('GridJobId') :
-                            log_line_split = log_line.split()
-                            result = os.path.split(log_line_split[2])[0]
-                            pass
-                        log_line = logfile.readline()
+            seSite = common.jobDB.destination(int(id)-1)[0]
+            oneSite = self.mapSEtoCE[seSite]
+            result = oneSite
         elif ( attr == 'reason' ) :
             result = 'status query'
         elif ( attr == 'stateEnterTime' ) :
@@ -744,19 +744,220 @@ class SchedulerCondor_g(Scheduler):
             jdl.close()
         return
 
+    def createXMLSchScript(self, nj, argsList):
+        """
+        Create a XML-file for BOSS4.
+        """
+
+        # job steering
+        index = nj - 1
+        job = common.job_list[index]
+        jbt = job.type()
+
+        # input and output sandboxes
+        inp_sandbox = jbt.inputSandbox(index)
+        out_sandbox = jbt.outputSandbox(index)
+
+        # title
+        title     = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+        jt_string = ''
+        
+        xml_fname = str(self.jobtypeName)+'.xml'
+        xml       = open(common.work_space.shareDir()+'/'+xml_fname, 'a')
+
+        # TaskName   
+        dir      = string.split(common.work_space.topDir(), '/')
+        taskName = dir[len(dir)-2]
+  
+        #TaskName   
+        dir = string.split(common.work_space.topDir(), '/')
+        taskName = dir[len(dir)-2]
+
+        xml.write(str(title))
+        xml.write('<task name="' +str(taskName)+'">\n')
+        xml.write(jt_string)
+
+        xml.write('<iterator>\n')
+        xml.write('\t<iteratorRule name="ITR1">\n')
+        xml.write('\t\t<ruleElement> 1:'+ str(nj) + ' </ruleElement>\n')
+        xml.write('\t</iteratorRule>\n')
+        xml.write('\t<iteratorRule name="ITR2">\n')
+        for arg in argsList:
+            xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
+            pass
+        xml.write('\t</iteratorRule>\n')
+        #print jobList
+        xml.write('\t<iteratorRule name="ITR3">\n')
+        xml.write('\t\t<ruleElement> 1:'+ str(nj) + ':1:6 </ruleElement>\n')
+        xml.write('\t</iteratorRule>\n')
+
+        xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
+        xml.write(jt_string)
+
+
+        #executable
+
+        """
+        INDY
+        script dipende dal jobType: dovrebbe essere semplice tirarlo fuori in altro modo
+        """        
+        script = job.scriptFilename()
+        xml.write('<program>\n')
+        xml.write('<exec> ' + os.path.basename(script) +' </exec>\n')
+        xml.write(jt_string)
+    
+        xml.write('<args> <![CDATA[\n _ITR2_ \n]]> </args>\n')
+        xml.write('<program_types> crabjob </program_types>\n')
+
+        # input sanbox
+        inp_box = script + ','
+
+        if inp_sandbox != None:
+            for fl in inp_sandbox:
+                inp_box = inp_box + '' + fl + ','
+                pass
+            pass
+
+        inp_box = inp_box + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + ',' +\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + ','+\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + ','+\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + ','+\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') 
+
+        if (not jbt.additional_inbox_files == []):
+            inp_box = inp_box + ', '
+            for addFile in jbt.additional_inbox_files:
+                addFile = os.path.abspath(addFile)
+                inp_box = inp_box+''+addFile+','
+                pass
+
+        if inp_box[-1] == ',' : inp_box = inp_box[:-1]
+        inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
+        xml.write(inp_box)
+        
+        # stdout and stderr
+        base = jbt.name()
+        stdout = base + '__ITR3_.stdout'
+        stderr = base + '__ITR3_.stderr'
+
+        xml.write('<stderr> ' + stderr + '</stderr>\n')
+        xml.write('<stdout> ' + stdout + '</stdout>\n')
+        
+        # output sanbox
+        out_box = stdout + ',' + stderr + ',' 
+
+        if int(self.return_data) == 1:
+            for fl in jbt.output_file:
+                out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
+                pass
+            pass
+
+        if out_box[-1] == ',' : out_box = out_box[:-1]
+        out_box = '<outfiles> <![CDATA[\n' + out_box + '\n]]></outfiles>\n'
+        xml.write(out_box)
+ 
+        xml.write('<BossAttr> crabjob.INTERNAL_ID=_ITR1_ </BossAttr>\n')
+
+        xml.write('</program>\n')
+
+        # start writing of extraTags
+        to_write = ''
+
+        # extraTag universe
+        to_write += 'universe = "&quot;globus&quot;"\n'
+
+        # extraTag globusscheduler
+
+        # use gridcat to query site
+        seSite = common.jobDB.destination(nj-1)[0]
+        oneSite = self.mapSEtoCE[seSite]
+        gridcat_service_url = "http://osg-cat.grid.iu.edu/services.php"
+        hostSvc = ''
+        try:
+            hostSvc = GridCatHostService(gridcat_service_url,oneSite)
+        except StandardError, ex:
+            gridcat_service_url = "http://osg-itb.ivdgl.org/gridcat/services.php"
+            try:
+                hostSvc = GridCatHostService(gridcat_service_url,oneSite)
+            except StandardError, ex:
+                print '[Condor-G Scheduler]: selected site: ',oneSite,' is not an OSG site!\n'
+                print '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
+                sys.exit(1)
+
+        try:
+            batchsystem = hostSvc.batchSystem()
+        except:
+            raise CrabException("Quitting: unable to find jobmanager for site "+str(oneSite))
+        if batchsystem <> '' : batchsystem='-'+batchsystem
+        to_write += 'globusscheduler = "&quot;' + str(oneSite) + '/jobmanager' + batchsystem + '&quot;"\n'
+
+        # extraTag globusrsl
+        if ( self.EDG_clock_time != '' ) :
+            to_write += 'globusrsl = "&quot;(maxWalltime='+self.EDG_clock_time+')&quot;"\n'
+
+        # extraTag condor transfer file flag
+        to_write += 'should_transfer_files = "&quot;YES&quot;"\n'
+
+        # extraTag when to write output
+        to_write += 'when_to_transfer_output = "&quot;ON_EXIT&quot;"\n'
+
+        # extraTag switch off streaming of stdout
+        to_write += 'stream_output = "&quot;false&quot;"\n'
+
+        # extraTag switch off streaming of stderr
+        to_write += 'stream_error = "&quot;false&quot;"\n'
+
+        # extraTag condor logfile
+        condor_log = jbt.name() + '__ITR3_.log'
+        to_write += 'Log    = "&quot;' + condor_log + '&quot;"\n'
+
+        # extraTag condor notification
+        to_write += 'notification="&quot;never&quot;"\n'
+
+        # extraTag condor queue statement
+        to_write += 'QUEUE = "&quot;1&quot;"\n'
+
+        if (to_write != ''):
+            xml.write('<extraTags\n')
+            xml.write(to_write)
+            xml.write('/>\n')
+            pass
+
+        xml.write('</chain>\n')
+
+        xml.write('</iterator>\n')
+        xml.write('</task>\n')
+
+        xml.close()
+        return
+
     def checkProxy(self):
         """
         Function to check the Globus proxy.
         """
         if (self.proxyValid): return
         timeleft = -999
-        minTimeLeft=10 # in hours
-        cmd = 'voms-proxy-info -exists -valid '+str(minTimeLeft)+':00'
-        # SL Here I have to use os.system since the stupid command exit with >0 if no valid proxy is found
-        cmd_out = os.system(cmd)
-        if (cmd_out>0):
+        minTimeLeft=10*3600 # in seconds
+
+        mustRenew = 0
+        timeLeftLocal = runCommand('voms-proxy-info -timeleft 2>/dev/null')
+        timeLeftServer = -999
+        if not timeLeftLocal or int(timeLeftLocal) <= 0 or not isInt(timeLeftLocal):
+            mustRenew = 1
+        else:
+            timeLeftServer = runCommand('voms-proxy-info -actimeleft 2>/dev/null | head -1')
+            if not timeLeftServer or not isInt(timeLeftServer):
+                mustRenew = 1
+            elif timeLeftLocal<minTimeLeft or timeLeftServer<minTimeLeft:
+                mustRenew = 1
+            pass
+        pass
+
+        if mustRenew:
             common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 96h\n")
-            cmd = 'voms-proxy-init -voms cms -valid 96:00'
+            cmd = 'voms-proxy-init -voms '+self.VO+' -valid 96:00'
+            if self.role:
+                cmd = 'voms-proxy-init -voms '+self.VO+':/'+self.VO+'/role='+self.role+' -valid 96:00'
             try:
                 # SL as above: damn it!
                 out = os.system(cmd)
@@ -764,8 +965,7 @@ class SchedulerCondor_g(Scheduler):
             except:
                 msg = "Unable to create a valid proxy!\n"
                 raise CrabException(msg)
-            # cmd = 'grid-proxy-info -timeleft'
-            # cmd_out = runCommand(cmd,0,20)
             pass
+
         self.proxyValid=1
         return
