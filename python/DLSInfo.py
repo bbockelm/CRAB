@@ -69,7 +69,7 @@ class DLSInfo:
                 try:
                     endpoint=self.cfg_params['CMSSW.dls_endpoint']
                 except KeyError:
-                    endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFC"
+                    endpoint="prod-lfc-cms-central.cern.ch/grid/cms/DLS/LFC"
 
             try:
                 import xml.dom.ext.reader
