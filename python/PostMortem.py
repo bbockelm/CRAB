@@ -1,5 +1,7 @@
 from Actor import *
+from crab_util import *
 import EdgLoggingInfo
+import CondorGLoggingInfo
 import common
 import string, os
 
@@ -37,9 +39,15 @@ class PostMortem(Actor):
             for line in out: jdl.write(line)
             jdl.close()
 
-            loggingInfo = EdgLoggingInfo.EdgLoggingInfo()
-
-            reason = loggingInfo.decodeReason(out)
+            reason = ''
+            if common.scheduler.boss_scheduler_name == "edg" :
+                loggingInfo = EdgLoggingInfo.EdgLoggingInfo()
+                reason = loggingInfo.decodeReason(out)
+            elif common.scheduler.boss_scheduler_name == "condor_g" :
+                loggingInfo = CondorGLoggingInfo.CondorGLoggingInfo()
+                reason = loggingInfo.decodeReason(out)
+            else :
+                reason = out
 
             common.logger.message('Logging info for job '+str(nj)+': '+reason+'\n      written to '+jdl_fname)
             
