@@ -61,18 +61,13 @@ class DataDiscovery:
         try:
             dbs_url=self.cfg_params['CMSSW.dbs_url']
         except KeyError:
-            # This URL is deprecated and no longer supported by the DBS team
-            #dbs_url="http://cmsdoc.cern.ch/cms/aprom/DBS/CGIServer/prodquery"
-            # This URL is supported by the DBS team and is 'stable'
             dbs_url="http://cmsdoc.cern.ch/cms/test/aprom/DBS/CGIServer/prodquery"
-            # This URL is used for testing of the most recent changes by the DBS team
-            #dbs_url = "http://cmsdoc.cern.ch/cms/test/aprom/DBS/CGIServer/prodquerytest"
 
         ## get info about the requested dataset
         try:
             dbs_instance=self.cfg_params['CMSSW.dbs_instance']
         except KeyError:
-            dbs_instance="MCLocal/Writer"
+            dbs_instance="MCGlobal/Writer"
  
         dbs = DBSInfo(dbs_url, dbs_instance)
         try:
