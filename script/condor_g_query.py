@@ -4,12 +4,15 @@ import os
 import time
 import popen2,select,string
 
-output = open('oli_output','w')
+#output = open('oli_output','w')
 
 for line in sys.stdin:
-    id = line.split('\n')[0]
-    user = os.environ['USER']
-    cmd = 'condor_q -submitter ' + user + ' ' + id
+    identifier = line.split('\n')[0]
+    #output.write(identifier)
+    #output.write('\n')
+    schedd = identifier.split('//')[0]
+    id = identifier.split('//')[1]
+    cmd = 'condor_q -name ' + schedd + ' ' + id
 
     # imported from crab_util
     child = popen2.Popen3(cmd, 1) # capture stdout and stderr from command
@@ -43,57 +46,57 @@ for line in sys.stdin:
 
     cmd_out = cmd_out + cmd_err
 
-    output.write(cmd_out)
-    output.write('\n\n')
+    #output.write(cmd_out)
+    #output.write('\n\n')
     if cmd_out != None:
         status_flag = 0
         for line in cmd_out.splitlines() :
             if line.strip().startswith(id.strip()) :
                 status = line.strip().split()[5]
                 if ( status == 'I' ):
-                    print id,' I'
-                    msg = 'status: '+ str(id) + ' RE\n\n'
-                    output.write(msg)
+                    print identifier,' I'
+                    msg = 'status: '+ identifier + ' RE\n\n'
+                    #output.write(msg)
                     status_flag=1
                     break
                 elif ( status == 'U' ) :
-                    print id,' RE'
-                    msg = 'status: '+ str(id) + ' RE\n\n'
-                    output.write(msg)
+                    print identifier,' RE'
+                    msg = 'status: '+ identifier + ' RE\n\n'
+                    #output.write(msg)
                     status_flag=1
                     break
                 elif ( status == 'H' ) :
-                    print id,' UN'
-                    msg = 'status: '+ str(id) + ' UN\n\n'
-                    output.write(msg)
+                    print identifier,' SA'
+                    msg = 'status: '+ identifier + ' SA\n\n'
+                    #output.write(msg)
                     status_flag=1
                     break
                 elif ( status == 'R' ) :
-                    print id,' R'
-                    msg = 'status: '+ str(id) + ' R\n\n'
-                    output.write(msg)
+                    print identifier,' R'
+                    msg = 'status: '+ identifier + ' R\n\n'
+                    #output.write(msg)
                     status_flag=1
                     break
                 elif ( status == 'X' ) :
-                    print id,' SK'
-                    msg = 'status: '+ str(id) + ' SK\n\n'
-                    output.write(msg)
+                    print identifier,' SK'
+                    msg = 'status: '+ identifier + ' SK\n\n'
+                    #output.write(msg)
                     status_flag=1
                     break
                 elif ( status == 'C' ) :
-                    print id,' OR'
-                    msg = 'status: '+ str(id) + ' OR\n\n'
-                    output.write(msg)
+                    print identifier,' OR'
+                    msg = 'status: '+ identifier + ' OR\n\n'
+                    #output.write(msg)
                     status_flag=1
                     break
                 else :
-                    print id,' UN'
-                    msg = 'status: '+ str(id) + ' UN\n\n'
-                    output.write(msg)
+                    print identifier,' UN'
+                    msg = 'status: '+ identifier + ' UN\n\n'
+                    #output.write(msg)
                     status_flag=1
                     break
         if status_flag == 0 :
-            print id,' OR'
-            msg = 'status: ' + str(id) + ' OR\n\n'
-            output.write(msg)
+            print identifier,' OR'
+            msg = 'status: ' + identifier + ' OR\n\n'
+            #output.write(msg)
 

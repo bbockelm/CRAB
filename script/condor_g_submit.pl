@@ -16,7 +16,7 @@ $subdir = `pwd`; chomp $subdir;
 # ------------------- Optional logging of submission -------------------------
 #   (change file name and comment/uncomment the open statement as you wish)
 $logFile = "$subdir/bossSubmit.log";
-#open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
+# open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
 #
 # --------------------------- Get arguments ----------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -203,7 +203,6 @@ sub submit {
   if ( ! ($globusrsl eq "") ) {
     print CMD ("globusrsl               = $globusrsl\n");
   }
-  print CMD ("ENABLE_GRID_MONITOR     = TRUE\n");
   # output,error files passed to executable
   print CMD ("initialdir              = $subdir\n");
   print CMD ("input                   = $stdin\n");
@@ -247,12 +246,10 @@ sub submit {
   
   # close the file handles
   close(SUB);
+  unlink "$tmpfile";
 
-  # delete temporary file
-#  unlink "$tmpfile";
-#  unlink "BossArchive_${jid}.tgz";
   #
-  return "$id\n";
+  return "$subhost//$id\n";
 }
 #
 # ----------------------------------------------------------------------------

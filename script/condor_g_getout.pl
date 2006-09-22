@@ -6,7 +6,7 @@ $|=1;
 #
 # ------------------- Optional logging of submission -------------------------
 #   (change file name and comment/uncomment the open statement as you wish)
-$logFile = "bossSubmit.log";
+$logFile = "bossGetoutput.log";
 #open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
 #
 # --------------------------- Get arguments ----------------------------------
@@ -58,16 +58,29 @@ $currdir = `pwd`;
 #print STDERR "now in $currdir\n";
 if ( $currdir ne $outdir ) {
     $err = system("mv $outtar $outdir");
+    if (LOG) {
+      print LOG "error outtar: $err";
+    }
     $err += system("mv $log.out $log.err condor_$jid.log $outdir");
+    if (LOG) {
+      print LOG "error rest: $err";
+    }
     if ( ! $err ) {
 	$status = "retrieved";
     }
 } else {
 #    print STDERR "outtar already in destination directory\n";
+    if (LOG) {
+      print LOG "outtar already in destination directory";
+    }
     if ( -r $outtar ) {
 	$status = "retrieved";
     }
 }
+if (LOG) {
+  print LOG "status: $status";
+}
+
 print "$status\n";
 
 
