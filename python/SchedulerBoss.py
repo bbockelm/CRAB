@@ -623,6 +623,7 @@ class SchedulerBoss(Scheduler):
     ############################# ----> we use the SID for the postMortem... probably this functionality come for free with BOSS4? 
     def boss_SID(self,int_ID):
         """ Return Sid of job """
+        SID = ''
         cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from JOB where CHAIN_ID=\''+str(int_ID)+'\'"'
         cmd_out = runBossCommand(cmd)
         nline = 0
@@ -630,6 +631,14 @@ class SchedulerBoss(Scheduler):
             if nline == 3:
                SID = string.strip(line)
             nline = nline + 1
+        if SID == '' :
+            cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from ENDED_JOB where CHAIN_ID=\''+str(int_ID)+'\'"'
+            cmd_out = runBossCommand(cmd)
+            nline = 0
+            for line in cmd_out.splitlines():
+                if nline == 3:
+                    SID = string.strip(line)
+                nline = nline + 1
     
         return SID
 
