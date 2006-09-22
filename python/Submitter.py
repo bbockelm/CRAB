@@ -51,7 +51,10 @@ class Submitter(Actor):
                 # SL perform listmatch only if destination has changed
                 currDest=common.jobDB.destination(nj)
                 if (currDest!=lastDest):
-                    match = common.scheduler.listMatch(nj)
+                    if common.scheduler.boss_scheduler_name != "condor_g" :
+                        match = common.scheduler.listMatch(nj)
+                    else :
+                        match = "1"
                     lastDest = currDest
                 else:
                     common.logger.debug(1,"Sites for job "+str(nj+1)+" the same as previous job")
