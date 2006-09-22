@@ -220,6 +220,7 @@ class SchedulerBoss(Scheduler):
             # On demand registration of job type
             register_path = self.boss_dir + '/'
             register_boss_scheduler = 'register'+ string.upper(sched_name) + 'Scheduler'
+            
             if os.path.exists(register_path+register_boss_scheduler):
                
                 boss_out = runBossCommand(register_path+register_boss_scheduler,0)
@@ -622,7 +623,7 @@ class SchedulerBoss(Scheduler):
     ############################# ----> we use the SID for the postMortem... probably this functionality come for free with BOSS4? 
     def boss_SID(self,int_ID):
         """ Return Sid of job """
-        cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from ENDED_JOB where CHAIN_ID=\''+str(int_ID)+'\'"'
+        cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from JOB where CHAIN_ID=\''+str(int_ID)+'\'"'
         cmd_out = runBossCommand(cmd)
         nline = 0
         for line in cmd_out.splitlines():
