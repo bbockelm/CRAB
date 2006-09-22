@@ -76,7 +76,7 @@ class DataLocation:
         try:
             dlstype=self.cfg_params['CMSSW.dls_type']
         except KeyError:
-            dlstype='mysql'
+            dlstype='dli'
         #DLS_type="DLS_TYPE_MYSQL"
         DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
