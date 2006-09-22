@@ -332,10 +332,8 @@ class Orca(JobType):
         txt += 'if [ $middleware == LCG ]; then \n' 
         txt += self.wsSetupCMSLCGEnvironment_()
         txt += 'elif [ $middleware == OSG ]; then\n'
-        txt += '    time=`date -u +"%s"`\n'
-        txt += '    WORKING_DIR=$OSG_WN_TMP/cms_$time\n'
-        txt += '    echo "Creating working directory: $WORKING_DIR"\n'
-        txt += '    /bin/mkdir -p $WORKING_DIR\n'
+        txt += '    WORKING_DIR=`/bin/mktemp  -d $OSG_WN_TMP/cms_XXXXXXXXXXXX`\n'
+        txt += '    echo "Created working directory: $WORKING_DIR"\n'
         txt += '    if [ ! -d $WORKING_DIR ] ;then\n'
         txt += '        echo "SET_CMS_ENV 10016 ==> OSG $WORKING_DIR could not be created on WN `hostname`"\n'
         txt += '	echo "JOB_EXIT_STATUS = 10016"\n'
