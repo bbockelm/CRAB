@@ -42,6 +42,9 @@ class StatusBoss(Actor):
         """
         compute the status
         """
+        # moved loading of jobDB before boss status check to enable condor_g scheduler to query jobdb for efficient access to destination
+        common.jobDB.load()
+
         bossTaskId=common.taskDB.dict('BossTaskId')
         cmd = 'boss RTupdate -taskid '+bossTaskId
         runBossCommand(cmd)
@@ -89,11 +92,14 @@ class StatusBoss(Actor):
         ###########------> This info must be come from BOSS4      DS.
         ###########------> For the moment BOSS know only WN, but then it will know also CE   DS.
             try:
-                ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][1]))  ##BOSS4 SCHED_ID 
+                if common.scheduler.boss_scheduler_name == "condor_g" :
+                    ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][0]))  ##BOSS4 CHAIN_ID
+                else :
+                    ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][1]))  ##BOSS4 SCHED_ID 
                 if ( ldest.find(":") != -1 ) :
                     dest = ldest.split(":")[0]
                 else :
-                    dest = ''
+                    dest = ldest
             except: 
                 dest = ''  
                 pass
@@ -137,7 +143,8 @@ class StatusBoss(Actor):
     def update_(self,statusList) :
         """ update the status of the jobs """
 
-        common.jobDB.load()
+        # moved loading of jobDB before boss status check to enable condor_g scheduler to query jobdb for efficient access to destination
+        # common.jobDB.load()
         nj = 0
         for status in statusList:
             if status == 'Created(BOSS)':
