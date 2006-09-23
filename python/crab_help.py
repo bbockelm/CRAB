@@ -36,7 +36,7 @@ The most useful general options (use '-h' to get complete help):
   "range" has syntax "n,m,l-p" which correspond to [n,m,l,l+1,...,p-1,p] and all possible combination
 
 Example:
-  crab.py -create 1 -submit 1
+  crab -create 1 -submit 1
 """
     print 
     sys.exit(2)
@@ -81,19 +81,19 @@ Source B<crab.(c)sh> from the CRAB installation area, which have been setup eith
 
 Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list: in particular set your jobtype (orca or famos) and fill the corresponding section. A template and commented B<crab.cfg> can be found on B<$CRABDIR/python/crab.cfg>
 
-~>crab.py -create 
+~>crab -create 
   create all jobs (no submission!)
 
-~>crab.py -submit 2 -continue [ui_working_dir]
+~>crab -submit 2 -continue [ui_working_dir]
   submit 2 jobs, the ones already created (-continue)
 
-~>crab.py -create 2 -submit 2
+~>crab -create 2 -submit 2
   create _and_ submit 2 jobs
 
-~>crab.py -status
+~>crab -status
   check the status of all jobs
 
-~>crab.py -getoutput
+~>crab -getoutput
   get back the output of all jobs
 
 =head1 RUNNING CMSSW WITH CRAB
@@ -381,7 +381,7 @@ Set the debug level: high number for high verbosity.
 
 =head1 CONFIGURATION PARAMETERS
 
-All the parameter describe in this section can be defined in the CRAB configuration file. The configuration file has different sections: [CRAB], [USER], etc. Each parameter must be defined in its proper section. An alternative way to pass a config parameter to CRAB is via command line interface; the syntax is: crab.py -SECTION.key value . For example I<crab.py -USER.outputdir MyDirWithFullPath> .
+All the parameter describe in this section can be defined in the CRAB configuration file. The configuration file has different sections: [CRAB], [USER], etc. Each parameter must be defined in its proper section. An alternative way to pass a config parameter to CRAB is via command line interface; the syntax is: crab -SECTION.key value . For example I<crab -USER.outputdir MyDirWithFullPath> .
 The parameters passed to CRAB at the creation step are stored, so they cannot be changed by changing the original crab.cfg . On the other hand the task is protected from any accidental change. If you want to change any parameters, this require the creation of a new task.
 Mandatory parameters are flagged with a *.
 
