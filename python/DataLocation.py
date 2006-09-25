@@ -157,7 +157,7 @@ class DataLocation:
             good=0
             for re in self.reCEWhiteList:
                 if re.search(string.lower(aSite)):
-                    common.logger.message('CE in white list, adding site '+aSite)
+                    common.logger.debug(5,'CE in white list, adding site '+aSite)
                     good=1
                 pass
             if good: goodSites.append(aSite)
