@@ -23,7 +23,7 @@ class Cmssw(JobType):
         self._params = {}
         self.cfg_params = cfg_params
 
-        # number of jobs requested to be created, limit ojb splitting
+        # number of jobs requested to be created, limit obj splitting
         self.ncjobs = ncjobs
 
         log = common.logger
@@ -280,7 +280,7 @@ class Cmssw(JobType):
 
         ## get max number of events
         self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py 
-        common.logger.message("\nThe number of available events is %s"%self.maxEvents)
+        common.logger.message("The number of available events is %s\n"%self.maxEvents)
 
         common.logger.message("Contacting DLS...")
         ## Contact the DLS and build a list of sites hosting the fileblocks
@@ -367,14 +367,11 @@ class Cmssw(JobType):
         # ---- we've met the requested total # of events    ---- #
         while ( (eventsRemaining > 0) and (blockCount < numBlocksInDataset) and (jobCount < totalNumberOfJobs)):
             block = blocks[blockCount]
+            blockCount += 1
+            
 
-
-            evInBlock = self.eventsbyblock[block]
-            common.logger.debug(5,'Events in Block File '+str(evInBlock))
-
-            #Correct - switch to this when DBS up
-            #numEventsInBlock = self.eventsbyblock[block]
-            numEventsInBlock = evInBlock
+            numEventsInBlock = self.eventsbyblock[block]
+            common.logger.debug(5,'Events in Block File '+str(numEventsInBlock))
             
             files = self.filesbyblock[block]
             numFilesInBlock = len(files)
@@ -405,13 +402,13 @@ class Cmssw(JobType):
                         parString += '\\\"' + file + '\\\"\,'
                         newFile = 0
                     except KeyError:
-                        common.logger.message("File "+str(file)+" has unknown numbe of events: skipping")
+                        common.logger.message("File "+str(file)+" has unknown number of events: skipping")
                         
 
                 # if less events in file remain than eventsPerJobRequested
                 if ( filesEventCount - jobSkipEventCount < eventsPerJobRequested ) :
                     # if last file in block
-                    if ( fileCount == numFilesInBlock ) :
+                    if ( fileCount == numFilesInBlock-1 ) :
                         # end job using last file, use remaining events in block
                         # close job and touch new file
                         fullString = parString[:-2]
@@ -422,8 +419,8 @@ class Cmssw(JobType):
                         common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
                         # reset counter
                         jobCount = jobCount + 1
-                        totalEventCount = totalEventCount + eventsPerJobRequested
-                        eventsRemaining = eventsRemaining - eventsPerJobRequested
+                        totalEventCount = totalEventCount + filesEventCount - jobSkipEventCount
+                        eventsRemaining = eventsRemaining - filesEventCount + jobSkipEventCount
                         jobSkipEventCount = 0
                         # reset file
                         parString = "\\{"
