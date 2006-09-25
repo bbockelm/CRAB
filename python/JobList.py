@@ -19,7 +19,7 @@ class JobList:
         else     : base = ''
 
         for nj in range(njobs):
-            job = Job(jtype, nj+1)
+            job = Job(jtype, nj)
             self._job_list.append(job)
             self._job_list[nj].setStdout(base + '_' + job.number() + '.stdout')
             self._job_list[nj].setStderr(base + '_' + job.number() + '.stderr')
