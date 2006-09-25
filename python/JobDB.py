@@ -80,7 +80,7 @@ class JobDB:
     def save(self):
         db_file = open(self._dir+self._db_fname, 'w')
         for i in range(len(self._jobs)):
-            db_file.write(`(i+1)`+'|')
+            db_file.write(str(i)+'|')
             db_file.write(self._jobs[i].status+'|')
             db_file.write(self._jobs[i].exitStatus+'|')
             db_file.write(self._jobs[i].jid+'|')
