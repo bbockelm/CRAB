@@ -302,40 +302,30 @@ class SchedulerBoss(Scheduler):
         cmd_out = runBossCommand(cmd,0,3600)
 
         # debug
-     #   msg = 'BOSS declaration:' + cmd
-     #   common.logger.debug(4,msg)
-     #   msg = 'BOSS declaration output:' + cmd_out
-     #   common.logger.debug(4,msg)
+        msg = 'BOSS declaration:' + cmd
+        common.logger.debug(4,msg)
+        msg = 'BOSS declaration output:' + cmd_out
+        common.logger.debug(4,msg)
         ###
 
         #  -------------------------------------------------> From Here changed for Boss4
-        tasKprefix = 'Task'
-        tasKindex = string.find(cmd_out, tasKprefix)    
-        if tasKindex < 0 :
+        if cmd_out.find('Task') < 0 :
             common.logger.message('ERROR: BOSS declare failed: no TASK ID for jobs')
             raise CrabException(msg)
-     #   else:
-     #       tasKindex = tasKindex + len(tasKprefix)
-     #       self.Task_id = string.strip(cmd_out[tasKindex:])
-        nj = 0 
+
+        # job counter, jobs in JobDB run from 0 - n-1
+        num_job = 0
+
         for line in cmd_out.splitlines(): # boss4
-            prefix = 'Chain'    #Boss4
-            index = string.find(line, prefix)
-            tasKcheck = string.find(line, tasKprefix)
-            if tasKcheck >= 0: 
-                taskid = str(line).split(":")[1]
-                self.Task_id = string.strip(taskid)
-                pass
-            if index < 0 :
-                continue
-            else:
-                chain_stop = line[-2:]
-                for nj in range(int(chain_stop)):
-                    self.chain_id = str(nj + 1)
-                    common.taskDB.setDict('BossTaskId',self.Task_id)
-                    common.logger.debug(4,"TASK ID =  "+self.Task_id)
-                    common.jobDB.setBossId(nj, self.chain_id)             
-                    common.logger.debug(4,"CHAIN ID =  "+self.chain_id)
+            if line.find('Task') >= 0 :
+                self.Task_id = line.split(":")[-1].strip()
+                common.taskDB.setDict('BossTaskId',self.Task_id)
+                common.logger.debug(4,"TASK ID =  "+self.Task_id)
+            if line.find('Declared Chain') >= 0 :
+                self.chain_id = line.split(":")[-1].strip()
+                common.jobDB.setBossId(num_job, self.chain_id)
+                common.logger.debug(4,"CHAIN ID =  "+self.chain_id+" of job: "+str(num_job))
+                num_job += 1
         return 
 
     def checkProxy(self):
