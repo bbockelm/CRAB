@@ -219,24 +219,25 @@ sub submit {
     $id = "error";
     $err_msg ="";
     $err_code =0;
+
     while ( <SUB> ) {
-        print LOG $_;
 	$err_msg .= "$_";
-	if ( $_ =~ m/.*Error.*/) {
-	    $err_code=1;
-#	    print $_;
-	}
-	if ( $_ =~ m/https:(.+)/) {
-            if (LOG) {
-		print LOG "$jid: Scheduler ID = https:$1\n";
-            }
+	if ( $_ =~ m/\s*JOB SUBMIT OUTCOME\s*/) {
+	    $getid=1;
+	} elsif ( $getid==1 && $_ =~ m/https:(.+)/) {
 	    $id = "https:$1";
-	} 
+	    if (LOG) {
+		print LOG "$jid: Scheduler ID = https:$1\n";
+	    }
+	}
     }
-    if ( $id eq "error" || $err_code != 0 ) {
-	print LOG "$jid: ERROR: Unable to submit the job\n";  
+
+    if ( $id eq "error" ) {
+	$err_msg .= "\nERROR: Unable to submit the job $jid\n";
 	print $err_msg ;
-	$id = "error";
+	if (LOG) {
+	    print $err_msg ; 
+	}
     }
     
     # close the file handles

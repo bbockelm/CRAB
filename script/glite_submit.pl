@@ -208,27 +208,26 @@ sub submit {
     open (SUB, $subcmd);
     $id = "error";
     $err_msg ="";
-    $err_code =0;
     while ( <SUB> ) {
 	$err_msg .= "$_";
-	if ( $_ =~ m/Connecting.*/) {
-	    next;
-	} elsif ( $_ =~ m/Error.*/) {
-	    $err_code=1;
-	}
-	if ( $_ =~ m/https:(.+)/) {
-            if (LOG) {
-		print LOG "$jid: Scheduler ID = https:$1\n";
-            }
+	if ( $_ =~ m/.*Success.*/) {
+	    $getid=1;
+	} elsif ( $getid==1 && $_ =~ m/https:(.+)/) {
 	    $id = "https:$1";
-	} 
+	    if (LOG) {
+		print LOG "$jid: Scheduler ID = https:$1\n";
+	    }
+	}
     }
-    if ( $id eq "error" || $err_code != 0 ) {
-	print LOG "$jid: ERROR: Unable to submit the job\n"; 
-	print $err_msg ; 
-	$id = "error"; 
+
+    if ( $id eq "error" ) {
+	$err_msg .= "\nERROR: Unable to submit the job $jid\n";
+	print $err_msg ;
+	if (LOG) {
+	    print $err_msg ; 
+	}
     }
-    
+
     # close the file handles
     close(SUB);
     # delete temporary files
