@@ -100,9 +100,8 @@ class DataLocation:
                 if len(replicas)!=0:
                     blockSites[fileblocks] = replicas
             except DLSNoReplicas, ex:
-                common.logger.message(str(ex.getErrorMessage()))
-                msg = "Proceeding without this block."
-                common.logger.message("Proceeding without this block.\n")
+                common.logger.debug(5,str(ex.getErrorMessage()))
+                common.logger.debug(5,"Proceeding without this block.\n")
                 failCount = failCount + 1
             except:
                 raise DataLocationError('')
@@ -135,14 +134,14 @@ class DataLocation:
             good=1
             for re in self.reCEBlackList:
                 if re.search(string.lower(aSite)):
-                    common.logger.message('CE in black list, skipping site '+aSite)
+                    common.logger.debug(5,'CE in black list, skipping site '+aSite)
                     good=0
                 pass
             if good: goodSites.append(aSite)
         if len(goodSites) == 0:
             msg = "No sites hosting the block %s after BlackList" % fileblocks
-            common.logger.message(msg)
-            common.logger.message("Proceeding without this block.\n")
+            common.logger.debug(5,msg)
+            common.logger.debug(5,"Proceeding without this block.\n")
         else:
             common.logger.debug(5,"Selected sites for block "+str(fileblocks)+" via BlackList are "+str(goodSites)+"\n")
         return goodSites
@@ -164,8 +163,8 @@ class DataLocation:
             if good: goodSites.append(aSite)
         if len(goodSites) == 0:
             msg = "No sites hosting the block %s after WhiteList" % fileblocks
-            common.logger.message(msg)
-            common.logger.message("Proceeding without this block.\n")
+            common.logger.debug(5,msg)
+            common.logger.debug(5,"Proceeding without this block.\n")
         else:
             common.logger.debug(5,"Selected sites for block "+str(fileblocks)+" via WhiteList are "+str(goodSites)+"\n")
         return goodSites 
