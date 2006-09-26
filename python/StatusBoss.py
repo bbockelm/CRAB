@@ -72,6 +72,22 @@ class StatusBoss(Actor):
                     CoupJobsID[int(js[0])]=int(js[0])
             nline = nline+1
 
+        # query also the ended table to get job status of jobs already retrieved
+        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS  from ENDED_JOB,ENDED_crabjob'+add2tablelist+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\' ORDER BY ENDED_crabjob.CHAIN_ID"' 
+        cmd_out = runBossCommand(cmd)
+        nline=0
+        for line in cmd_out.splitlines():
+            if nline==1:
+                fielddesc=line
+            else:
+                if nline==2:
+                    header = self.splitbyoffset_(line,fielddesc)
+                elif nline > 2:
+                    js = line.split(None,2)
+                    jobAttributes[int(js[0])]=self.splitbyoffset_(line,fielddesc)
+                    CoupJobsID[int(js[0])]=int(js[0])
+            nline = nline+1
+
         printline = ''
         printline+=header[0]
         printline+='   STATUS          E_HOST            EXE_EXIT_CODE        JOB_EXIT_STATUS'
