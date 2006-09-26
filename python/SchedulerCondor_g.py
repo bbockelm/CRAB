@@ -25,9 +25,10 @@ class SchedulerCondor_g(Scheduler):
         cmd = 'ps xau | grep -i condor_schedd | grep -v grep'
         cmd_out = runCommand(cmd)
         if cmd_out == None:
-            print '[Condor-G Scheduler]: condor_schedd is not running on this machine.'
-            print '[Condor-G Scheduler]: Please use another machine with installed condor and running condor_schedd or change the Scheduler in your crab.cfg.'
-            sys.exit(1)
+            msg  = '[Condor-G Scheduler]: condor_schedd is not running on this machine.\n'
+            msg += '[Condor-G Scheduler]: Please use another machine with installed condor and running condor_schedd or change the Scheduler in your crab.cfg.'
+            common.logger.message(msg)
+            raise CrabException(msg)
 
         self.checkExecutableInPath('condor_q')
         self.checkExecutableInPath('condor_submit')
@@ -43,9 +44,10 @@ class SchedulerCondor_g(Scheduler):
             version_major  = int(version[1])
             version_minor  = int(version[2])
         else :
-            print '[Condor-G Scheduler]: condor_version was not able to determine the installed condor version.'
-            print '[Condor-G Scheduler]: Please use another machine with properly installed condor or change the Scheduler in your crab.cfg.'
-            sys.exit(1)
+            msg  = '[Condor-G Scheduler]: condor_version was not able to determine the installed condor version.\n'
+            msg += '[Condor-G Scheduler]: Please use another machine with properly installed condor or change the Scheduler in your crab.cfg.'
+            common.logger.message(msg)
+            raise CrabException(msg)
 
         self.checkExecutableInPath('condor_config_val')
 
@@ -63,10 +65,11 @@ class SchedulerCondor_g(Scheduler):
         max_submit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE').strip()
         max_pending = self.queryCondorVariable('GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE').strip()
 
-        print '[Condor-G Scheduler]'
-        print 'Maximal number of jobs submitted to the grid   : GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE  = ',max_submit
-        print 'Maximal number of parallel submits to the grid : GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE = ',max_pending
-        print 'Ask the administrator of your local condor installation to increase these variables to enable more jobs to be executed on the grid in parallel.\n'
+        msg  = '[Condor-G Scheduler]\n'
+        msg += 'Maximal number of jobs submitted to the grid   : GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE  = '+max_submit+'\n'
+        msg += 'Maximal number of parallel submits to the grid : GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE = '+max_pending+'\n'
+        msg += 'Ask the administrator of your local condor installation to increase these variables to enable more jobs to be executed on the grid in parallel.\n'
+        common.logger.debug(2,msg)
 
         # Very bad. Needed to get CE from the SE provided by DLS.
         # GridCat currently doesn't have the capability to provide this.
@@ -82,29 +85,32 @@ class SchedulerCondor_g(Scheduler):
         cmd = 'which '+name
         cmd_out = runCommand(cmd)
         if cmd_out == None:
-            print '[Condor-G Scheduler]: ',name,' is not in the $PATH on this machine.'
-            print '[Condor-G Scheduler]: Please use another machine with installed condor or change the Scheduler in your crab.cfg.'
-            sys.exit(1)
+            msg  = '[Condor-G Scheduler]: '+name+' is not in the $PATH on this machine.\n'
+            msg += '[Condor-G Scheduler]: Please use another machine with installed condor or change the Scheduler in your crab.cfg.'
+            common.logger.message(msg)
+            raise CrabException(msg)
 
     def checkCondorVariablePointsToFile(self, name):
         ## check for condor variable
         cmd = 'condor_config_val '+name
         cmd_out = runCommand(cmd)
         if os.path.isfile(cmd_out) > 0 :
-            print '[Condor-G Scheduler]: the variable ',name,' is not properly set for the condor installation on this machine.'
-            print '[Condor-G Scheduler]: Please ask the administrator of the local condor installation to set the variable ',name,' properly,',
+            msg  = '[Condor-G Scheduler]: the variable '+name+' is not properly set for the condor installation on this machine.\n'
+            msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation to set the variable '+name+' properly,',
             'use another machine with properly installed condor or change the Scheduler in your crab.cfg.'
-            sys.exit(1)
+            common.logger.message(msg)
+            raise CrabException(msg)
 
     def checkCondorVariableIsTrue(self, name):
         ## check for condor variable
         cmd = 'condor_config_val '+name
         cmd_out = runCommand(cmd)
         if cmd_out == 'TRUE' :
-            print '[Condor-G Scheduler]: the variable ',name,' is not set to true for the condor installation on this machine.'
-            print '[Condor-G Scheduler]: Please ask the administrator of the local condor installation to set the variable ',name,' to true,',
+            msg  = '[Condor-G Scheduler]: the variable '+name+' is not set to true for the condor installation on this machine.\m'
+            msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation to set the variable '+name+' to true,',
             'use another machine with properly installed condor or change the Scheduler in your crab.cfg.'
-            sys.exit(1)
+            common.logger.message(msg)
+            raise CrabException(msg)
 
     def queryCondorVariable(self, name):
         ## check for condor variable
@@ -176,14 +182,16 @@ class SchedulerCondor_g(Scheduler):
         try:
             tmpGood = string.split(cfg_params['EDG.ce_white_list'],',')
         except KeyError:
-            print '[Condor-G Scheduler]: destination site is not selected properly.'
-            print '[Condor-G Scheduler]: Please select your destination site and only your destination site in the CE_white_list variable of the [EDG] section in your crab.cfg.'
-            sys.exit(1)
+            msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
+            msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the CE_white_list variable of the [EDG] section in your crab.cfg.'
+            common.logger.message(msg)
+            raise CrabException(msg)
             
         if len(tmpGood) != 1 :
-            print '[Condor-G Scheduler]: destination site is not selected properly.'
-            print '[Condor-G Scheduler]: Please select your destination site and only your destination site in the CE_white_list variable of the [EDG] section in your crab.cfg.'
-            sys.exit(1)
+            msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
+            msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the CE_white_list variable of the [EDG] section in your crab.cfg.'
+            common.logger.message(msg)
+            raise CrabException(msg)
 
         # activate Boss per default
         try:
@@ -308,13 +316,10 @@ class SchedulerCondor_g(Scheduler):
            txt += '#   Copy output to SE = $SE\n'
            txt += '#\n'
            txt += '\n'
-           txt += 'which srmcp\n'
-           txt += 'srmcp_location_exit_code=$?\n'
-           txt += '\n'
            txt += 'which lcg-cp\n'
            txt += 'lcgcp_location_exit_code=$?\n'
            txt += '\n'
-           txt += 'if [ $srmcp_location_exit_code -eq 1 AND lcgcp_location_exit_code -eq 1 ]; then\n'
+           txt += 'if [ $lcgcp_location_exit_code -eq 1 ]; then\n'
            txt += ''
            txt += '    echo "X509_USER_PROXY = $X509_USER_PROXY"\n'
            txt += '    echo "source $OSG_APP/glite/setup_glite_ui.sh"\n'
@@ -391,6 +396,8 @@ class SchedulerCondor_g(Scheduler):
         condor_id = id.split('//')[1]
         cmd = 'condor_q -l -name ' + schedd + ' ' + condor_id
         cmd_out = runCommand(cmd)
+        common.logger.debug(5,"Condor-G loggingInfo cmd: "+cmd)
+        common.logger.debug(5,"Condor-G loggingInfo cmd_out: "+cmd_out)
         return cmd_out
 
     def listMatch(self, nj):
@@ -570,9 +577,10 @@ class SchedulerCondor_g(Scheduler):
                 try:
                     hostSvc = GridCatHostService(gridcat_service_url,oneSite)
                 except StandardError, ex:
-                    print '[Condor-G Scheduler]: selected site: ',oneSite,' is not an OSG site!\n'
-                    print '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
-                    sys.exit(1)
+                    msg  = '[Condor-G Scheduler]: selected site: '+oneSite+' is not an OSG site!\n'
+                    msg += '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
+                    common.logger.message(msg)
+                    raise CrabException(msg)
 
             try:
                 batchsystem = hostSvc.batchSystem()
@@ -659,8 +667,7 @@ class SchedulerCondor_g(Scheduler):
             
             # use gridcat to query site
             oneSite = common.jobDB.destination(nj)[0]
-            print "SchedulerCondor_g got the first site for this job:\n"
-            print oneSite
+            common.logger.message("Job "+str(nj+1)+" will run at ['"+str(oneSite)+"']")
             gridcat_service_url = "http://osg-cat.grid.iu.edu/services.php"
             hostSvc = ''
             try:
@@ -670,9 +677,10 @@ class SchedulerCondor_g(Scheduler):
                 try:
                     hostSvc = GridCatHostService(gridcat_service_url,oneSite)
                 except StandardError, ex:
-                    print '[Condor-G Scheduler]: selected site: ',oneSite,' is not an OSG site!\n'
-                    print '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
-                    sys.exit(1)
+                    msg  = '[Condor-G Scheduler]: selected site: '+oneSite+' is not an OSG site!\n'
+                    msg += '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
+                    common.logger.message(msg)
+                    raise CrabException(msg)
 
             batchsystem = hostSvc.batchSystem()
 
@@ -799,7 +807,6 @@ class SchedulerCondor_g(Scheduler):
             xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
             pass
         xml.write('\t</iteratorRule>\n')
-        #print jobList
         xml.write('\t<iteratorRule name="ITR3">\n')
         xml.write('\t\t<ruleElement> 1:'+ str(nj) + ':1:6 </ruleElement>\n')
         xml.write('\t</iteratorRule>\n')
@@ -893,9 +900,10 @@ class SchedulerCondor_g(Scheduler):
             try:
                 hostSvc = GridCatHostService(gridcat_service_url,oneSite)
             except StandardError, ex:
-                print '[Condor-G Scheduler]: selected site: ',oneSite,' is not an OSG site!\n'
-                print '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
-                sys.exit(1)
+                    msg  = '[Condor-G Scheduler]: selected site: '+oneSite+' is not an OSG site!\n'
+                    msg += '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
+                    common.logger.message(msg)
+                    raise CrabException(msg)
 
         try:
             batchsystem = hostSvc.batchSystem()
