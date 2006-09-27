@@ -451,21 +451,13 @@ class SchedulerBoss(Scheduler):
             return None
         else:
             for line in cmd_out.splitlines(): # boss4
-                prefix = 'error'    #Boss4
-                SubmissionCheck = string.find(cmd_out, prefix)    
-                if  SubmissionCheck >= 0 :
+                if  line.find('error') >= 0 :
                     msg = 'ERROR: BOSS submission failed: ' + cmd
                     common.logger.message(msg)
                     raise CrabException(msg)
-                   # return None
-
-            if cmd_out.find('https') != -1:
-                reSid = re.compile( r'https.+' )
-                jid = reSid.search(cmd_out).group()
-            else :
-                jid = cmd_out.split()[2]
-            return jid
-
+                if line.find('Scheduler ID for job') >= 0 :
+                    jid = line.split()[-1]
+                    return jid
 
     ###################### ---- OK for Boss4 ds
     def moveOutput(self, int_id):
@@ -529,32 +521,47 @@ class SchedulerBoss(Scheduler):
                 logDir = self.logDir
                 boss_id = i_id 
                 bossTaskId = common.taskDB.dict('BossTaskId')
-                if common.scheduler.queryStatus(bossTaskId, boss_id) == 'Done (Success)' or common.scheduler.queryStatus(bossTaskId, boss_id) == 'Done (Abort)':   
+                bossTaskIdStatus = common.scheduler.queryStatus(bossTaskId, boss_id)
+                if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':   
                     cmd = 'boss getOutput -taskid  '+bossTaskId+' -jobid ' +str(boss_id) +' -outdir ' +dir
                     cmd_out = runBossCommand(cmd)
-                    if logDir != dir:
-                        try:
-                            cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo ' +str(logDir)
-                            cmd_out = runCommand(cmd)
-                            msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
-                            common.logger.message(msg)
-                        except:
-                            msg = 'Problem with copy of job results' 
-                            common.logger.message(msg)
-                            pass  
-                    else:   
-                        msg = 'Results of Job # '+`int(i_id)`+' are in '+dir
+                    if cmd_out.find('error retrieving output') >= 0 :
+                        msg = 'Results of Job # '+`int(i_id)`+' have been corrupted and could not be retrieved.'
                         common.logger.message(msg)
-                    resFlag = 0
-                    jid = common.scheduler.boss_SID(int(i_id)) 
-                    try:
-                        exCode = common.scheduler.getExitStatus(jid)
-                    except:
-                        exCode = ' '
-                    Statistic.Monitor('retrieved',resFlag,jid,exCode)
-                    common.jobDB.setStatus(int(i_id)-1, 'Y') 
+                        common.jobDB.setStatus(int(i_id)-1, 'Z') 
+                    else :
+                        if logDir != dir:
+                            try:
+                                cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo ' +str(logDir)
+                                cmd_out = runCommand(cmd)
+                                msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
+                                common.logger.message(msg)
+                            except:
+                                msg = 'Problem with copy of job results' 
+                                common.logger.message(msg)
+                                pass  
+                        else:   
+                            msg = 'Results of Job # '+`int(i_id)`+' are in '+dir
+                            common.logger.message(msg)
+                        resFlag = 0
+                        jid = common.scheduler.boss_SID(int(i_id)) 
+                        try:
+                            exCode = common.scheduler.getExitStatus(jid)
+                        except:
+                            exCode = ' '
+                        Statistic.Monitor('retrieved',resFlag,jid,exCode)
+                        common.jobDB.setStatus(int(i_id)-1, 'Y') 
+                elif bossTaskIdStatus == 'Running' :
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible yet to retrieve the output.'
+                    common.logger.message(msg)
+                elif bossTaskIdStatus == 'Cleared' :
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. The output was already retrieved.'
+                    common.logger.message(msg)
+                elif bossTaskIdStatus == 'Aborted' :
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible to retrieve the output.'
+                    common.logger.message(msg)
                 else:
-                    msg = 'Job # '+`int(i_id)`+' has status '+common.scheduler.queryStatus(bossTaskId,boss_id)+' not possible to get output'
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is currently not possible to retrieve the output.'
                     common.logger.message(msg)
                 dir += os.environ['USER']
                 dir += '_' + os.path.basename(str(boss_id))
@@ -576,7 +583,7 @@ class SchedulerBoss(Scheduler):
                 boss_id = i_id 
                 bossTaskId = common.taskDB.dict('BossTaskId')
                 status =  common.scheduler.queryStatus(bossTaskId,boss_id) 
-                if status == 'Done (Success)' or status == 'Aborted(BOSS)' or status == 'Killed(BOSS)' or status =='Cleared(BOSS)' or status ==  'Done (Aborted)' or status == 'Created(BOSS)':
+                if status == 'Done (Success)' or status == 'Killed' or status =='Cleared' or status ==  'Done (Aborted)' or status == 'Created':
                     msg = 'Job # '+`int(i_id)`+' has status '+status+' not possible to Kill it'
                     common.logger.message(msg) 
                 else:
@@ -638,11 +645,11 @@ class SchedulerBoss(Scheduler):
 
         self.boss_scheduler.checkProxy()
         EDGstatus={
-            'H':'Hold(Condor)',
-            'U':'Ready(Condor)',
-            'I':'Scheduled(Condor)',
-            'X':'Cancelled(Condor)',
-            'W':'Created(BOSS)',
+            'H':'Hold',
+            'U':'Ready',
+            'I':'Scheduled',
+            'X':'Canceled',
+            'W':'Created',
             'R':'Running',
             'SC':'Checkpointed',
             'SS':'Scheduled',
@@ -657,13 +664,14 @@ class SchedulerBoss(Scheduler):
             'DA':'Done (Aborted)',
             'SE':'Cleared',
             'OR':'Done (Success)',
-            'A?':'Aborted(BOSS)',
-            'K':'Killed(BOSS)',
-            'E':'Cleared(BOSS)',
-            'NA':'Unknown(BOSS)',
-            'I?':'Idle(BOSS)',
-            'O?':'Done(BOSS)',
-            'R?':'Running(BOSS)'             
+            'A?':'Aborted',
+            'K':'Killed',
+            'E':'Cleared',
+            'Z':'Cleared (Corrupt)',
+            'NA':'Unknown',
+            'I?':'Idle',
+            'O?':'Done',
+            'R?':'Running'             
             }
         cmd = 'boss q -taskid '+str(taskid)+' -jobid '+str(id)+' -all' 
         cmd_out = runBossCommand(cmd)
@@ -699,7 +707,16 @@ class SchedulerBoss(Scheduler):
                 boss_Id = string.strip(line)
                 ListBoss_ID.append(int(boss_Id))
             nline = nline + 1
-        return ListBoss_ID 
+        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID from ENDED_JOB where ENDED_JOB.TASK_ID=\''+common.taskDB.dict('BossTaskId')+'\'"'   
+        cmd_out = runBossCommand(cmd,0)
+        nline = 0
+        for line in cmd_out.splitlines():
+            if nline > 2 :
+                boss_Id = string.strip(line)
+                ListBoss_ID.append(int(boss_Id))
+            nline = nline + 1
+        ListBoss_ID.sort()
+        return ListBoss_ID
 
     ###################### ---- OK for Boss4 ds
     def setOutLogDir(self,outDir,logDir):
