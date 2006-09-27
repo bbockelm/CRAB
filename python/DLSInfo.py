@@ -24,12 +24,12 @@ except:
 ## for python 2.2 add the pyexpat.so to PYTHONPATH
 pythonV=sys.version.split(' ')[0]
 if pythonV.find('2.2') >= 0 :
- Crabpydir=commands.getoutput('which crab')
- Topdir=string.replace(Crabpydir,'/python/crab','')
- extradir=Topdir+'/DLSAPI/extra'
- if sys.path.count(extradir) <= 0:
-   if os.path.exists(extradir):
-    sys.path.insert(0, extradir)
+    Crabpydir=commands.getoutput('which crab')
+    Topdir=string.replace(Crabpydir,'/python/crab','')
+    extradir=Topdir+'/DLSAPI/extra'
+    if sys.path.count(extradir) <= 0:
+         if os.path.exists(extradir):
+            sys.path.insert(0, extradir)
 
 
 class DLSError:
@@ -61,15 +61,11 @@ class DLSInfo:
     def __init__(self, type, cfg_params):
         self.cfg_params = cfg_params
         jobtype = self.cfg_params['CRAB.jobtype']
-        ##SL I don't like all this hardcoded and jobtype dependent info put here
         if type=="DLS_TYPE_DLI":
-            if jobtype.count('orca')>0:
-                endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFCProto"
-            else:  
-                try:
-                    endpoint=self.cfg_params['CMSSW.dls_endpoint']
-                except KeyError:
-                    endpoint="prod-lfc-cms-central.cern.ch/grid/cms/DLS/LFC"
+            try:
+                endpoint=self.cfg_params['CMSSW.dls_endpoint']
+            except KeyError:
+                endpoint="prod-lfc-cms-central.cern.ch/grid/cms/DLS/LFC"
 
             try:
                 import xml.dom.ext.reader
@@ -85,13 +81,10 @@ class DLSInfo:
                 raise CrabException(msg)
 
         elif type=="DLS_TYPE_MYSQL":
-            if jobtype.count('orca')>0:
-                endpoint="lfc-cms-test.cern.ch/grid/cms/DLS/LFCProto"
-            else:  
-                try:
-                    endpoint=self.cfg_params['CMSSW.dls_endpoint']
-                except KeyError:
-                    endpoint="lxgate10.cern.ch:18081"
+            try:
+                endpoint=self.cfg_params['CMSSW.dls_endpoint']
+            except KeyError:
+                endpoint="lxgate10.cern.ch:18081"
         else:
             msg = "DLS type %s not among the supported DLS ( DLS_TYPE_DLI and DLS_TYPE_MYSQL ) "%type
             raise CrabException(msg)
