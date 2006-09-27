@@ -24,18 +24,15 @@ class PostMortem(Actor):
 
         # run a list-match on first job
         for nj in self.nj_list:
-            #nj parte da 1 --> nj = internal_id di boss 
             id = common.scheduler.boss_SID(nj)
             out = common.scheduler.loggingInfo(id)
-            # job_list inizia a contare da zero
             job = common.job_list[nj-1]
-            #print "job.jdlFilename()", job.jdlFilename()
-            jdl_fname = string.replace(job.jdlFilename(),'jdl','loggingInfo')
-            #print "jdl_fname = ", jdl_fname 
-            if os.path.exists(jdl_fname):
-                common.logger.message('Logging info for job '+str(nj)+' already present in '+jdl_fname+' Remove it for update')
+            jobnum_str = '%06d' % (int(nj))
+            fname = common.work_space.jobDir() + '/' + self.cfg_params['CRAB.jobtype'].upper() + '_' + jobnum_str + '.loggingInfo'
+            if os.path.exists(fname):
+                common.logger.message('Logging info for job '+str(nj)+' already present in '+fname+' Remove it for update')
                 continue
-            jdl = open(jdl_fname, 'w')
+            jdl = open(fname, 'w')
             for line in out: jdl.write(line)
             jdl.close()
 
@@ -49,7 +46,7 @@ class PostMortem(Actor):
             else :
                 reason = out
 
-            common.logger.message('Logging info for job '+str(nj)+': '+reason+'\n      written to '+jdl_fname)
+            common.logger.message('Logging info for job '+str(nj)+': '+reason+'\n      written to '+fname)
             
             # ML reporting
             jobId = ''
