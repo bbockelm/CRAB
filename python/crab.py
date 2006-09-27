@@ -572,16 +572,8 @@ class Crab:
                     jobs = self.parseRange_(val)
 
                 jobs_done = []
-                statusDict = { 'D':'Done', 'S':'Submitted' , 'C':'Created'}
                 for nj in jobs:
-                    st = common.jobDB.status(nj-1)
-                    if st in  ['D','S']:
-                        jobs_done.append(nj)
-                        pass
-                    else:
-                        common.logger.message('Jobs #'+`nj`+' has status '+statusDict[st]+' not possible to get output')
-                        pass
-                    pass
+                    jobs_done.append(nj)
                 common.scheduler.getOutput(jobs_done)
                 pass
 
