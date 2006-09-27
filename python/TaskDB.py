@@ -18,7 +18,11 @@ class TaskDB:
         """
         load the dictionary into memory
         """
-        fl = open(common.work_space.shareDir() + '/db/' + self.fName, 'r')
+        try:
+            fl = open(common.work_space.shareDir() + '/db/' + self.fName, 'r')
+        except IOError:
+            raise CrabException("TaskDB: not found. Task was not craeted successfully.")
+            
         for i in fl.readlines():
             (key,val) = i.split('|')
             self._theDict[key] = string.strip(val)
