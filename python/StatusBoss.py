@@ -145,9 +145,8 @@ class StatusBoss(Actor):
             if jobStatus == 'Done (Success)' or jobStatus == 'Cleared':
                 printline+="%-8s %-18s %-40s %-13s %-15s" % (jobAttributes[bossid][0],jobStatus,dest,exe_code,job_exit_status)
             elif jobStatus == 'Created':
+                printline+="%-8s %-18s %-40s %-13s %-15s" % (jobAttributes[bossid][0],'Created',dest,'','')
                 pass
-                #self.countCreated = self.countCreated + 1
-                #printline+=' '+jobStatus+'   '+dest+'      '+exe_code+'       '+job_exit_status
             else:
                 printline+="%-8s %-18s %-40s %-13s %-15s" % (jobAttributes[bossid][0],jobStatus,dest,'','')
             resFlag = 0
@@ -218,15 +217,19 @@ class StatusBoss(Actor):
         if (len(self.countCreated) != 0):
             print ''
             print ">>>>>>>>> %i Jobs Created" % len(self.countCreated)
+            print "          List of jobs: %s" % self.joinIntArray_(self.countCreated)
         if (len(self.countReady) != 0):
             print ''
             print ">>>>>>>>> %i Jobs Ready" % len(self.countReady)
+            print "          List of jobs: %s" % self.joinIntArray_(self.countReady)
         if (len(self.countSched) != 0):
             print ''
             print ">>>>>>>>> %i Jobs Scheduled" % len(self.countSched)
+            print "          List of jobs: %s" % self.joinIntArray_(self.countSched)
         if (len(self.countRun) != 0):
             print ''
             print ">>>>>>>>> %i Jobs Running" % len(self.countRun)
+            print "          List of jobs: %s" % self.joinIntArray_(self.countRun)
         if (len(self.countCancel) != 0):
             print ''
             print ">>>>>>>>> %i Jobs canceled/killed" % len(self.countCancel)
@@ -257,6 +260,8 @@ class StatusBoss(Actor):
         if (len(self.countCleared) != 0):
             print ''
             print ">>>>>>>>> %i Jobs cleared" % len(self.countCleared)
+            print "          List of jobs: %s" % self.joinIntArray_(self.countCleared)
+
          
 
     def joinIntArray_(self,array) :
