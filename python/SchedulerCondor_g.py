@@ -73,10 +73,15 @@ class SchedulerCondor_g(Scheduler):
 
         # Very bad. Needed to get CE from the SE provided by DLS.
         # GridCat currently doesn't have the capability to provide this.
-        self.mapSEtoCE = {"cmssrm.hep.wisc.edu":"cmsgrid02.hep.wisc.edu", "dcache.rcac.purdue.edu":"lepton.rcac.purdue.edu", \
-                     "ufdcache.phys.ufl.edu":"ufloridapg.phys.ufl.edu", "thpc-1.unl.edu":"red.unl.edu", \
-                     "cithep59.ultralight.org":"cit-gatekeeper.ultralight.org", "t2data2.t2.ucsd.edu":"osg-gw-2.t2.ucsd.edu", \
-                     "cmssrm.fnal.gov":"cmsosgce.fnal.gov", "se01.cmsaf.mit.edu":"ce01.cmsaf.mit.edu" }
+        self.mapSEtoCE = {"cmssrm.hep.wisc.edu":"cmsgrid02.hep.wisc.edu", \
+                          "dcache.rcac.purdue.edu":"lepton.rcac.purdue.edu", \
+                          "ufdcache.phys.ufl.edu":"ufloridapg.phys.ufl.edu", \
+                          "thpc-1.unl.edu":"red.unl.edu", \
+                          "cithep59.ultralight.org":"cit-gatekeeper.ultralight.org", \
+                          "t2data2.t2.ucsd.edu":"osg-gw-2.t2.ucsd.edu", \
+                          "cmssrm.fnal.gov":"cmsosgce.fnal.gov", \
+                          "se01.cmsaf.mit.edu":"ce01.cmsaf.mit.edu", \
+                          "spraid.if.usp.br":"spgrid.if.usp.br"}
         
         return
 
