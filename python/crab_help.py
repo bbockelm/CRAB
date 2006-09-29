@@ -16,9 +16,9 @@ def usage():
 
 The most useful general options (use '-h' to get complete help):
 
-  -create n           -- Create only n jobs. Default is 'all'. bunch_creation will become obsolete
-  -submit n           -- Submit only n jobs. Default is 0. bunch_submission will become obsolete   
-  -status [range]     -- check status of all jobs: if range is defined, only of selected jobs
+  -create             -- Create all the jobs.
+  -submit n           -- Submit the first n available jobs. Default is all.
+  -status             -- check status of all jobs.
   -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs
   -kill [range]       -- kill submitted jobs
   -cancelAndResubmit [range]  -- kill and resubmit submitted jobs
@@ -36,7 +36,7 @@ The most useful general options (use '-h' to get complete help):
   "range" has syntax "n,m,l-p" which correspond to [n,m,l,l+1,...,p-1,p] and all possible combination
 
 Example:
-  crab -create 1 -submit 1
+  crab -create -submit 1
 """
     print 
     sys.exit(2)
@@ -67,7 +67,7 @@ Parameters for CRAB usage and configuration are provided by the user changing th
 
 CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BOSS to interface to the grid scheduler, as well as for logging and bookkeeping and eventually real time monitoring.
 
-CRAB supports any ORCA based executable, including the user provided one, and deals with the output produced by the executable. CRAB provides an interface with CMS data discovery services (today RefDB and PubDB), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.  CRAB support also FAMOS based jobs.
+CRAB support any CMSSW based executable, with any modules/libraries, including the user provided one, and deals with the output produced by the executable. Up to version 1_2_1, also ORCA (and FAMOS) based executable were supported.  CRAB provides an interface with CMS data discovery services (DBS and DLS), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.
 
 CRAB web page is available at
 
@@ -87,7 +87,7 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 ~>crab -submit 2 -continue [ui_working_dir]
   submit 2 jobs, the ones already created (-continue)
 
-~>crab -create 2 -submit 2
+~>crab -create -submit 2
   create _and_ submit 2 jobs
 
 ~>crab -status
@@ -102,7 +102,7 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 
 =item B<A)>
 
-Develop your code in your CMSSW working area.  Do anything which is needed to run interactively your executable, including the setup or run time environment (I<eval `scramv1 runtime -sh|csh`>), a suitable I<ParameterSet>, etc.It seems silly, but B<be extra sure that you actaully did compile your code> 
+Develop your code in your CMSSW working area.  Do anything which is needed to run interactively your executable, including the setup of run time environment (I<eval `scramv1 runtime -sh|csh`>), a suitable I<ParameterSet>, etc. It seems silly, but B<be extra sure that you actaully did compile your code> I<scramv1 b>.
 
 =item B<B)> 
 
@@ -125,108 +125,6 @@ The most important parameters are the following (see below for complete descript
 You must have a valid voms-enabled grid proxy. See CRAB web page for details.
 
 =back
-
-=head1 RUNNING ORCA WITH CRAB
-
-=over 4
-
-=item B<A)>
-
-The preliminary steps are the same as CMSSW (both I<scram> and I<scramv1> are supported). The most important parameters in I<crab.cfg> are the following:
-
-=item B<Mandatory!>
-
-=over 6
-
-=item o dataset, owner to be accessed: also data_tiers if you want more than the one pointed by owner
-
-=item o the ORCA executable name (e.g. ExDigiStatistics): can be a user built executable or one available from the standard release (such as ExDigiStatistics)
-
-=item o the name of output file(s) produced by ORCA executable.
-
-=item o job splitting directives: the total number of events to analyze, the number of events for each job or the number of jobs and maybe the first event. B<Note that from CRAB 1_2_0 the job-splitting parameters have been moved into [ORCA] section>
-
-=item o the B<.orcarc> card to be used. This card will be modified by crab for data access and according to the job splitting. Use the very same cars you used in your interactive test: CRAB will modify what is needed.
-
-=back
-
-=item B<Might be useful:>
-
-=over 6
-
-=item o Comma separated list of files to be submitted via input sandbox. The files will be put in the working directory on WN. It's user responsibility to actually use them!
-
-=item o output_dir e log_dir, path of directory where crab will put the std_error and std_output of job.  If these parameters are commented, error and output will be put into the directory where sh and jdl script are (crab_0_date_time).
-
-=back
-
-=item B<Optional:>
-
-=over 6
-
-=item o the name of UI directory where crab will create jobs. By default the name is "crab_data_time"
-
-=back
-
-=item B<C)> 
-
-As stated before, you need to have a valid grid certificate (see CRAB web page for instruction) to submit to the grid. You need also a valid proxy: if you don't have it (or if it is too short), CRAB will issues that command for you. From version 1_1_0 CRAB uses I<voms> and I<myproxy> server to renew the proxy length, so if your proxy expires while your job is on the grid, the proxy will be extended by the myproxy server, to which you have delegated, and your job will continue. The voms proxy lenght is I<24> hours, while the myproxy delegation extends for I<7> days.
-
-At CERN, you can use "lxplus" as a UI by sourcing the file B</afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.(c)sh>
-
-=back
-
-=head1 RUNNING FAMOS WITH CRAB
-
-=over 2
-
-=item B<Registering files to LFC:>
-
-input ntuples to FAMOS should be first registered as Grid files on the LFC File Catalog (LFC) (RLS is not supported anymore): to select the proper LFC, set the following environmental variables:
-
-I<LCG_CATALOG_TYPE=lfc> and I<LFC_HOST=lfc-cms-test.cern.ch>
-
-LFC uses a directory structure (was not the case for RLS), so user has to create a directory under /grid/cms/ (strongly suggested something like I<lfc-mkdir /grid/cms/user>). User will have read/write permissions under this dir.  Then user can use the common lcg- commands:
-
-lcg-rf --vo cms -l /grid/cms/georgia/inputfile \ sfn://$SE/$SE_PATH/inputfile
-
-where SE = Storage element name (e.g. castorgrid.cern.ch)
-
-SE_PATH = storage element path  (e.g. /castor/cern.ch/user/u/user/)
-
-=item B<crab.cfg:>
-
-jobtype must be set to I<famos>. A [FAMOS] session is included in addition to the [ORCA] one. In there you will find some additional parameters introduced:
-
-=over 2
-
-=item "input_lfn" 
-
-stands for the general logical file name (LFN) used to register the ntuples (e.g. if ntuples named as su05_pyt_lm6_i.ntpl , you must put input_lfn = user/su05_pyt_lm6.ntpl);
-
-=item "events_per_ntuple" 
-
-the number of entries in each input ntuple;  
-
-=item "input_pu_lfn"
-
-stands for the general LFN used to register the pile-up ntuples (e.g. if pile-up ntuples are named mu05b_MBforPU_20200000i.ntpl, you must put input_pu_lfn = user/mu05b_MBforPU_20200000.ntpl);
-
-=item "number_pu_ntuples"
-
-the number of your pile-up ntuples you wish to access per job.
-
-=back
-
-=item B<Warning>:
-
-=item B<input ntuples>: the number of events per job should correspond to an integer multiple of the number of events in ntuple!     
-
-=item B<Pile-up ntuples>: you should leave all parameters, concerning pile-up reading in .orcarc, ON exactly as you do when you run locally.
-
-=back
-
-Run CRAB exactly as you run with ORCA jobtype.
 
 =head1 HOW TO RUN ON CONDOR-G
 
@@ -296,17 +194,17 @@ CE_white_list = "one of unl.edu,ufl.edu,ucsd.edu,wisc.edu,purdue.edu,ultralight.
 
 =over 4
 
-=item B<-create n>
+=item B<-create>
 
-Create n jobs: 'n' is either a positive integer or 'all' (default).
-The maximum number of jobs depens on dataset and splittig directives: if more are asked for, a warning is issued and job are created up to the maximum possible. This set of identical jobs accessing the same dataset are defined as a task.
+Create the jobs: from version 1_3_0 it is only possible to create all jobs.
+The maximum number of jobs depens on dataset and splittig directives. This set of identical jobs accessing the same dataset are defined as a task.
 This command create a directory with default name is I<crab_0_date_time> (can be changed via ui_working_dir parameter, see below). Inside this directory it is placed whatever is needed to submit your jobs. Also the output of your jobs (once finished) will be place there (see after). Do not cancel by hand this directory: rather use -clean (see).
 See also I<-continue>.
 
 =item B<-submit n>
 
 Submit n jobs: 'n' is either a positive integer or 'all'. Default is all.
-This option must be used in conjunction with -create (to create and submit immediately) or with -continue, to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.
+The first 'n' suitable jobs will be submitted. This option must be used in conjunction with -create (to create and submit immediately) or with -continue, to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.
 See also I<-continue>.
 
 =item B<-continue [dir] | -c [dir]>
@@ -314,9 +212,9 @@ See also I<-continue>.
 Apply the action on the task stored on directory [dir]. If the task directory is the standard one (crab_0_date_time), the more recent in time is taken. Any other directory must be specified.
 Basically all commands (but -create) need -continue, so it is automatically assumed, with exception of -submit, where it must be explicitly used. Of course, the standard task directory is used in this case.
 
-=item B<-status [range]>
+=item B<-status>
 
-Check the status of the jobs, in all states. If BOSS real time monitor is enabled, also some real time information are available, otherwise all the info will be available only after the output retrieval. See I<range> below for syntax.
+Check the status of the jobs, in all states. If BOSS real time monitor is enabled, also some real time information are available, otherwise all the info will be available only after the output retrieval.
 
 =item B<-getoutput|-get [range]>
 
@@ -336,7 +234,7 @@ Check if the job can find compatible resources. It's equivalent of doing I<edg-j
 
 =item B<-printId [range]>
 
-Just print the SID of the job(s).
+Just print the SID (grid job identifier) of the job(s).
 
 =item B<-postMortem [range]>
 
@@ -348,7 +246,7 @@ Dump technical informations about jobs: for developers only.
 
 =item B<-clean [dir]>
 
-Clean up (i.e. erase) the task working directory after a check whether there are still running jobs. In case, you are notified and asked to kill them or retrieve their output. B<Warning> this will eventually delete also the output produced by the task (if any)!
+Clean up (i.e. erase) the task working directory after a check whether there are still running jobs. In case, you are notified and asked to kill them or retrieve their output. B<Warning> this will possibly delete also the output produced by the task (if any)!
 
 =item B<-help [format] | -h [format]>
 
@@ -391,7 +289,7 @@ B<[CRAB]>
 
 =item B<jobtype *>
 
-The type of the job to be executed: I<cmssw> I<orca> I<famos> jobtypes are supported
+The type of the job to be executed: I<cmssw> jobtypes are supported
 
 =item B<scheduler *>
 
@@ -411,19 +309,15 @@ the path of processed dataset as defined on the DBS. It comes with the format I<
 
 the ParameterSet to be used
 
-=item I<the following three parameter are mutually exclusive.>
+=item I<Of the following three parameter exactly two must be used, otherwise CRAB will complain.>
 
 =item B<total_number_of_events *>
 
-the number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in caso of no input. In this case, the total number of events will be used to split the task in jobs, together with I<event_per_job>.
+the number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in case of no input. In this case, the total number of events will be used to split the task in jobs, together with I<event_per_job>.
 
-=item B<files_per_jobs *>
+=item B<events_per_job*>
 
-number of files (EventCollection) to be accessed by each job. The DBS provide a list of EvC available for a given datasetpath. Cannot be used with no input.
-
-=item B<events_per_job *>
-
-Define the number of events to be run for each job of the task. The actual number of events will be rounded matching the number of events per file, since each job accesses a integer number of files (or EventCollections). It can be used also with No input.
+number of events to be accessed by each job. Since a job cannot cross the boundary of a fileblock it might be that the actual number of events per job is not exactly what you asked for. It can be used also with No input.
 
 =item B<number_of_jobs *>
 
@@ -441,120 +335,23 @@ If the job is pythia based, and has I<untracked uint32 sourceSeed = x> in the Pa
 
 Seed for random number generation used for vertex smearing: to be used only if PSet has I<untracked uint32 VtxSmeared = x>. It is modified if and only if also I<pythia_seed> is set. As for I<pythia_seed> the actual seed will be of the type I<vtx_seed>I<$job_number>.
 
-=back
+=item I<DBS and DLS parameters.>
 
-B<[ORCA]>
+=item B<dbs_url>
 
-=over 4
+The URL of the DBS query page. For expert only.
 
-=item B<dataset *>
+=item B<dbs_instance>
 
-The dataset the user want to analyze.
+The instance of DBS to be accessed at a given URL. For expert only.
 
-=item B<owner *>
+=item B<dls_type>
 
-The owner name which the user want to access. These two parameter can be found using data discovery tool: for the time being, RefDB/PubDB. See production page (linked also from CRAB web page) for access to the list of available dataset/owner
+Type of DLS: can be DLI or mysql. For expert only.
 
-=item B<data_tier>
+=item B<dls_endpoint>
 
-The data tiers the user want to access: by deafult, only the tier corresponding to the given owner will be provided. If user needs more, he B<must> specify the full list.
-Syntax: comma separated list, known tiers are I<Hits>,I<Digi>, I<DST>
-
-=item B<order_catalogs>
-
-Define the order of the catalogs which will be put in the generated .orcarc fragment: for expert use only.
-
-=item B<executable *>
-
-The ORCA executable the user want to run on remote site. This must be on the I<path> of the user at the time of the creation of the jobs, so it is mandatory to issue the usual I<eval `scramv1 runtim -(c)sh`> from user ORCA working area before creating jobs. A warning will be prompted if the executable is not found in the path.
-
-=item B<script_exe>
-
-Name of a script that the user want to execute on remote site: full path must be provided. The ORCA executable whcih is executed by the script must be declared in any case, since CRAB must ship it to the remote site. The script can do anything, but change directory before the ORCA executable start. On the remote WN, the full scram-based environment will be found.
-
-=item B<first_event>
-
-The first event the user want to analyze in the dataset. Default is 0.
-
-=item B<total_number_of_events *>
-
-The total number of events the user want to analyze. I<-1> means all available events. If first even is set, a gran total of (total available events)-(first event) will be analyzed.
-
-=item B<job_number_of_events *>
-
-Numer of event for each job. Either this or I<total_number_of_jobs> must be defined.
-
-=item B<total_number_of_jobs>
-
-Total numer of jobs in which the task will be splitted. It is incompatible with previous I<job_number_of_events>. If both are set, this card will be ignored and a warning message issued.
-
-=item B<output_file *>
-
-Output files as produced by the executable: comma separated list of all the files. These are the file names which are produced by the executable also in the interactive environment. The output files will be modified by CRAB when returned in order to cope with the job splitting, by adding a "_N" to each file.
-
-=item B<orcarc_file *>
-
-User I<.orcarc> file: if it is not in the current directory, full path is needed. Use the very same file you used for your interactive test: CRAB will modify it according to data requested and splitting directives.
-
-=back
-
-B<[FAMOS]>
-
-User needs to define jobtype = famos.
-A [FAMOS] session is included in addition to the [ORCA] one. Inside you can find some additional parameters introduced:
-
-All parameters (in .orcarc) concerning pile-up ntuples should be left exactly as they are in interactive usage.
-
-=over 4
-
-=item B<input_lfn>
-
-LFN of the input file registered into the LFC catalog. It is stands for the general logical file name (LFN) used to register the ntuples (e.g. if ntuples named as su05_pyt_lm6_i.ntpl , you must put input_lfn = user/su05_pyt_lm6.ntpl)
-
-=item B<events_per_ntuple>
-
-number of events per ntuple
-
-=item B<input_pu_lfn>
-
-LFN for the input pile-up ntuples (already registered to LFC)
-It is the general LFN used to register the pile-up ntuples (e.g. if pile-up ntuples are named mu05b_MBforPU_20200000i.ntpl, you must put input_pu_lfn = user/mu05b_MBforPU_20200000.ntpl)
-
-=item B<number_pu_ntuples>
-
-It is the number of your pile-up ntuples you wish to access per job.   
-
-=item B<executable>
-
-FAMOS executable: user must provide the executable into his personal scram area.
-
-=item B<script_exe>
-
-or the script that calls the executable...
-
-=item B<first_event>
-
-The first event the user want to analyze in the dataset. Default is 0.
-
-=item B<total_number_of_events *>
-
-The total number of events the user want to analyze. I<-1> means all available events. If first even is set, a gran total of (total available events)-(first event) will be analyzed.
-
-=item B<job_number_of_events *>
-
-Numer of event for each job. Either this or I<total_number_of_jobs> must be defined.
-
-=item B<total_number_of_jobs>
-
-Total numer of jobs in which the task will be splitted. It is incompatible with previous I<job_number_of_events>. If both are set, this card will be ignored and a warning message issued.
-
-=item B<output_file>
-
-Output files produced by executable: comma separated list, can be empty but mut be present!
-
-=item B<orcarc_file>
-
-orcarc card provided by user (if not in current directory, the full path must to be provided) NB the file must exist (could be empty)
+Access point for DLS. For expert only.
 
 =back
 
@@ -564,7 +361,7 @@ B<[USER]>
 
 =item B<additional_input_files>
 
-Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. Please note that the full I<Data> directory of your private ORCA working are will be send to WN (if present). 
+Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. You don't need to specify the I<ParameterSet> you are using, which will be included automatically. Wildcards are allowed.
 
 =item B<ui_working_dir>
 
@@ -627,6 +424,10 @@ Which RB you want to use instead of the default one. The ones available for CMS 
 =item B<proxy_server>
 
 The proxy server to which you delegate the responsibility to renew your proxy once expired. The default is I<myproxy.cern.ch> : change only if you B<really> know what you are doing.
+
+=item B<role>
+
+The role to be set in the VOMS. See VOMS documentation for more info.
 
 =item B<requirements>
 
