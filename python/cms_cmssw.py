@@ -11,7 +11,7 @@ import DataDiscovery
 import DataLocation
 import Scram
 
-import os, string, re
+import glob, os, string, re
 
 class Cmssw(JobType):
     def __init__(self, cfg_params, ncjobs):
@@ -137,11 +137,17 @@ class Cmssw(JobType):
         try:
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
             for tmp in tmpAddFiles:
-                if not os.path.exists(tmp):
-                    raise CrabException("Additional input file not found: "+tmp)
-                self.additional_inbox_files.append(string.strip(tmp))
+                dirname = ''
+                if not tmp[0]=="/": dirname = "."
+                files = glob.glob(os.path.join(dirname, tmp))
+                for file in files:
+                    if not os.path.exists(file):
+                        raise CrabException("Additional input file not found: "+file)
+                    pass
+                    self.additional_inbox_files.append(string.strip(file))
                 pass
             pass
+            common.logger.debug(5,"Additional input files: "+str(self.additional_inbox_files))
         except KeyError:
             pass
 
