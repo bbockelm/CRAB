@@ -457,29 +457,11 @@ class Crab:
 
             elif ( opt == '-submit' ):
 
-                # total jobs
-                # get the first not already submitted
-                common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
-                lastSubmittedJob=0
-                for nj in range(common.jobDB.nJobs()):
-                    if (common.jobDB.status(nj) in ['S','K','Y','A','D']):
-                        lastSubmittedJob +=1
-                    else: break
-                # count job from 1
-                totalJobsSubmittable = common.jobDB.nJobs()-lastSubmittedJob
-                common.logger.debug(5,'lastSubmittedJob '+str(lastSubmittedJob))
-                common.logger.debug(5,'totalJobsSubmittable '+str(totalJobsSubmittable))
-
-                nsjobs = lastSubmittedJob+totalJobsSubmittable
                 # get user request
+                nsjobs = -1
                 if val:
                     if ( isInt(val) ):
-                        tmp = int(val)
-                        if (tmp > totalJobsSubmittable): 
-                            common.logger.message('asking to submit '+str(tmp)+' jobs, but only '+str(totalJobsSubmittable)+' left: submitting those')
-                            pass
-                        else:
-                            nsjobs=lastSubmittedJob+int(val)
+                        nsjobs = int(val)
                     elif (val=='all'):
                         pass
                     else:
@@ -488,10 +470,25 @@ class Crab:
                         msg += '      Generic range is not allowed"'
                         raise CrabException(msg)
                     pass
+
                 common.logger.debug(5,'nsjobs '+str(nsjobs))
+                # total jobs
+                nj_list = []
+                # get the first not already submitted
+                common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
+                jobSetForSubmission = 0
+                for nj in range(common.jobDB.nJobs()):
+                    if (common.jobDB.status(nj) not in ['S','K','Y','A','D']):
+                        jobSetForSubmission +=1
+                        nj_list.append(nj)
+                    else: continue
+                    if nsjobs >0 and nsjobs == jobSetForSubmission:
+                        break
+                    pass
+                if nsjobs>jobSetForSubmission:
+                    common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
     
                 # submit N from last submitted job
-                nj_list = range(lastSubmittedJob, nsjobs)
                 common.logger.debug(5,'nj_list '+str(nj_list))
 
                 if len(nj_list) != 0:
