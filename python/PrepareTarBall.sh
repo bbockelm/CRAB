@@ -13,7 +13,7 @@ echo "tag = $tag"
 CRABdir="$tag"
 echo "CRABDIR = $CRABDIR"
 CRABtag=$tag
-DBSAPItag="DBS_0_0_2"
+DBSAPItag="DBS_0_0_3"
 DLSAPItag="DLS_0_1_0"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
@@ -25,10 +25,11 @@ export CVSROOT=${CVSrepo}"/CMSSW"
 echo ">> downloading CRAB HEAD from CVS CRAB"
 #cvs co -r $CRABtag -d $CRABdir CRAB
 cvs co -d $CRABdir CRAB
-cvs up -P BossScript 
+#cvs up -P BossScript 
 cd $CRABdir
 #rm -r CVS
 #rm -r python/CVS
+chmod -x python/crab.py
 rm python/crab.*sh
 rm python/tar*
 rm python/zero
@@ -45,20 +46,15 @@ mv python/configureBoss .
 echo ">> downloading BOSS from http://boss.bo.infn.it/boss-v$2-bin.tar.gz "
 mkdir Boss
 cd Boss
-wget http://boss.bo.infn.it/boss-v${boss_version}-bin.tar.gz
-## remove doc from Boss
-gunzip boss-v${boss_version}-bin.tar.gz
-tar --delete boss-v${boss_version}/doc/note03_005.rtf -vf boss-v${boss_version}-bin.tar
-tar --delete boss-v${boss_version}/doc/note03_005.pdf -vf boss-v${boss_version}-bin.tar
-tar --delete boss-v${boss_version}/doc/BOSS-UserGuide-3.6.2.rtf -vf boss-v${boss_version}-bin.tar
-tar --delete boss-v${boss_version}/doc/BOSS-UserGuide-3.6.2.pdf -vf boss-v${boss_version}-bin.tar
-gzip boss-v${boss_version}-bin.tar
+wget http://boss.bo.infn.it/BOSS_${boss_version}-bin.tar.gz
+# wget http://www.bo.infn.it/~codispot/BOSS/BOSS-bin.tgz
+# mv BOSS-bin.tgz boss-v${boss_version}-bin.tar.gz
 
 ## download DBS API
 echo ">> downloading DBS API tag $DBSAPItag from CVS DBS/Clients/PythonAPI"
 cd ..
 cvs co -r ${DBSAPItag} -d DBSAPI COMP/DBS/Clients/PythonAPI
-rm -r DBSAPI/CVS
+#rm -r DBSAPI/CVS
 rm -r DBSAPI/lib  #remove SOAPy etc...
 # add this dir to the PYTHONPATH
 ## download DLS API
