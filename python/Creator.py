@@ -10,7 +10,8 @@ from crab_util import *
 import common
 
 import os, string, math
-# marco
+import time
+
 class Creator(Actor):
     def __init__(self, job_type_name, cfg_params, ncjobs):
         self.job_type_name = job_type_name
@@ -142,6 +143,7 @@ class Creator(Actor):
         """
 
         common.logger.debug(5, "Creator::run() called")
+        start = time.time()
 
         # Instantiate ScriptWriter
 
@@ -185,10 +187,15 @@ class Creator(Actor):
         common.logger.message('Creating '+str(self.total_njobs)+' jobs, please wait...')
         common.scheduler.declareJob_()   #Add for BOSS4
 
+        stop = time.time()
+        common.logger.debug(1, "Creation Time: "+str(stop - start))
+        common.logger.write("Creation Time: "+str(stop - start))
+
         common.jobDB.save()
         common.taskDB.save()
         msg = '\nTotal of %d jobs created'%njc
         if njc != self.ncjobs: msg = msg + ' from %d requested'%self.ncjobs
         msg = msg + '.\n'
         common.logger.message(msg)
+        
         return

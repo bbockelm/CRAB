@@ -3,6 +3,7 @@ import common, crab_util
 import string, os, sys, time
 import Statistic
 from SchedulerBoss import *
+import time
 
 class StatusBoss(Actor):
     def __init__(self, *args):
@@ -25,8 +26,12 @@ class StatusBoss(Actor):
         """
         common.logger.debug(5, "Status::run() called")
 
+        start = time.time()
         self.compute()
         self.PrintReport_()
+        stop = time.time()
+        common.logger.debug(1, "Status Time: "+str(stop - start))
+        common.logger.write("Status Time: "+str(stop - start))
         pass
         print ''
 

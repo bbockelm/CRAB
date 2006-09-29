@@ -134,6 +134,7 @@ class Submitter(Actor):
         
         stop = time.time()
         common.logger.debug(1, "Submission Time: "+str(stop - start))
+        common.logger.write("Submission Time: "+str(stop - start))
         #print "Submission Time: %d "%(stop - start)
         common.jobDB.save()
             
