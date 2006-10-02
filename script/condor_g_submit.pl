@@ -218,11 +218,19 @@ sub submit {
   print CMD ("when_to_transfer_output = ON_EXIT\n");
   print CMD ("transfer_input_files    = $inSandBox\n");
   print CMD ("transfer_output_files   = $outSandBox\n");
+  # make debugging easier
+  print CMD ("globusrsl=(condor_submit=('+SubmitterJobId' '\\\"\$ENV(HOSTNAME)#\$(Cluster).\$(Process)\\\"'))\n");
   # A string to help finding boss jobs in condor
   print CMD ("BossJob                = $jid\n");
   print CMD ("Queue 1\n");  
   close(CMD);
-  #
+  # print content of jdl into logfile
+  if (LOG) {
+    open (olitmp, $tmpfile);
+    while ( <olitmp> ) {
+      print LOG "jdl line: $_";
+    }
+  }
   $subcmd = "condor_submit $tmpfile |";
   # open a pipe to read the stdout of qsub
   open (SUB, $subcmd);
