@@ -791,9 +791,9 @@ class Cmssw(JobType):
                 txt += 'echo "Inputfiles:<$InputFiles>"\n'
                 txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset_tmp_1.cfg\n'
                 txt += 'echo "MaxEvents:<$MaxEvents>"\n'
-                txt += 'sed "s#INPUTMAXEVENTS#$MaxEvents#" $RUNTIME_AREA/ pset_tmp_1.cfg > pset_tmp_2.cfg\n'
+                txt += 'sed "s#INPUTMAXEVENTS#$MaxEvents#" pset_tmp_1.cfg > pset_tmp_2.cfg\n'
                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
-                txt += 'sed "s#INPUTSKIPEVENTS#$SkipEvents#" $RUNTIME_AREA/ pset_tmp_2.cfg > pset.cfg\n'
+                txt += 'sed "s#INPUTSKIPEVENTS#$SkipEvents#" pset_tmp_2.cfg > pset.cfg\n'
             else:  # pythia like job
                 if (self.sourceSeed):
 #                    txt += 'Seed=$2\n'
