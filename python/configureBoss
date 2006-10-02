@@ -17,6 +17,10 @@ BOSSDBNAME=bossCrab
 #############################################
 
 
+if [ ! -d ${HOME}/.bossrc ];  then
+    mkdir  ${HOME}/.bossrc
+fi
+
 echo "Creating ${HOME}/.bossrc/BossConfig.clad"
 cat > ${HOME}/.bossrc/BossConfig.clad <<EOF
 # This is the BOSS configuration file
