@@ -219,7 +219,7 @@ sub submit {
   print CMD ("transfer_input_files    = $inSandBox\n");
   print CMD ("transfer_output_files   = $outSandBox\n");
   # make debugging easier
-  print CMD ("globusrsl=(condor_submit=('+SubmitterJobId' '\\\"\$ENV(HOSTNAME)#\$(Cluster).\$(Process)\\\"'))\n");
+  # print CMD ("globusrsl=(condor_submit=('+SubmitterJobId' '\\\"\$ENV(HOSTNAME)#\$(Cluster).\$(Process)\\\"'))\n");
   # A string to help finding boss jobs in condor
   print CMD ("BossJob                = $jid\n");
   print CMD ("Queue 1\n");  
