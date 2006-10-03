@@ -18,7 +18,7 @@ class Cmssw(JobType):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
 
-        self.analisys_common_info = {}
+        #self.analisys_common_info = {}
         # Marco.
         self._params = {}
         self.cfg_params = cfg_params
@@ -39,10 +39,9 @@ class Cmssw(JobType):
 
         self.version = self.scram.getSWVersion()
         self.setParam_('application', self.version)
-        common.analisys_common_info['sw_version'] = self.version
+
         ### FEDE
         common.analisys_common_info['copy_input_data'] = 0
-        common.analisys_common_info['events_management'] = 1
 
         ### collect Data cards
         try:
@@ -1008,9 +1007,9 @@ class Cmssw(JobType):
         return job requirements to add to jdl files 
         """
         req = ''
-        if common.analisys_common_info['sw_version']:
+        if self.version:
             req='Member("VO-cms-' + \
-                 common.analisys_common_info['sw_version'] + \
+                 self.version + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
 
         req = req + ' && (other.GlueHostNetworkAdapterOutboundIP)'

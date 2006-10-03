@@ -35,6 +35,4 @@ work_space = None
 scheduler  = None
 job_list   = []
 jobDB      = None
-
-# TODO: very bad place for this variable
-analisys_common_info = {}
+taskDB     = None
