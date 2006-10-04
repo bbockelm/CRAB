@@ -41,7 +41,7 @@ class Cmssw(JobType):
         self.setParam_('application', self.version)
 
         ### FEDE
-        common.analisys_common_info['copy_input_data'] = 0
+        #common.analisys_common_info['copy_input_data'] = 0
 
         ### collect Data cards
         try:
