@@ -411,48 +411,38 @@ class Crab:
                                                                                                                
  
             if (  opt == '-create' ):
-                ncjobs = 0
                 if val:
-                    if ( isInt(val) ):
-                        ncjobs = int(val)
-                    elif ( val == 'all'):
-                        ncjobs = val
-                    else:
-                        msg = 'Bad creation bunch size <'+str(val)+'>\n'
-                        msg += '      Must be an integer or "all"'
-                        msg += '      Generic range is not allowed"'
-                        raise CrabException(msg)
+                    msg = 'No arguments can be passed to -create\n'
+                    msg += '      Generic range is not allowed'
+                    raise CrabException(msg)
+                ncjobs = 'all'
+
+                # Instantiate Creator object
+                self.creator = Creator(self.job_type_name,
+                                       self.cfg_params,
+                                       ncjobs)
+                self.actions[opt] = self.creator
+
+                # Initialize the JobDB object if needed
+                if not self.flag_continue:
+                    common.jobDB.create(self.creator.nJobs())
                     pass
-                else: ncjobs = 'all'
 
-                if ncjobs != 0:
-                    # Instantiate Creator object
-                    self.creator = Creator(self.job_type_name,
-                                           self.cfg_params,
-                                           ncjobs)
-                    self.actions[opt] = self.creator
+                # Create and initialize JobList
 
-                    # Initialize the JobDB object if needed
-                    if not self.flag_continue:
-                        common.jobDB.create(self.creator.nJobs())
-                        pass
+                common.job_list = JobList(common.jobDB.nJobs(),
+                                          self.creator.jobType())
 
-                    # Create and initialize JobList
+                common.taskDB.setDict('ScriptName',common.work_space.jobDir()+"/"+self.job_type_name+'.sh')
+                common.taskDB.setDict('JdlName',common.work_space.jobDir()+"/"+self.job_type_name+'.jdl')
+                common.taskDB.setDict('CfgName',common.work_space.jobDir()+"/"+self.creator.jobType().configFilename())
+                common.job_list.setScriptNames(self.job_type_name+'.sh')
+                common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                common.job_list.setCfgNames(self.creator.jobType().configFilename())
 
-                    common.job_list = JobList(common.jobDB.nJobs(),
-                                              self.creator.jobType())
+                self.creator.writeJobsSpecsToDB()
 
-                    common.taskDB.setDict('ScriptName',common.work_space.jobDir()+"/"+self.job_type_name+'.sh')
-                    common.taskDB.setDict('JdlName',common.work_space.jobDir()+"/"+self.job_type_name+'.jdl')
-                    common.taskDB.setDict('CfgName',common.work_space.jobDir()+"/"+self.creator.jobType().configFilename())
-                    common.job_list.setScriptNames(self.job_type_name+'.sh')
-                    common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                    common.job_list.setCfgNames(self.creator.jobType().configFilename())
-
-                    self.creator.writeJobsSpecsToDB()
-
-                    common.taskDB.save()
-                    pass
+                common.taskDB.save()
                 pass
 
             elif ( opt == '-submit' ):
