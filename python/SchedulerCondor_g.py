@@ -6,6 +6,7 @@ from crab_util import *
 from GridCatService import GridCatHostService
 import time
 import common
+import popen2
 
 import os, sys, time
 
@@ -62,8 +63,8 @@ class SchedulerCondor_g(Scheduler):
 
         self.checkCondorVariableIsTrue('ENABLE_GRID_MONITOR')
 
-        max_submit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE').strip()
-        max_pending = self.queryCondorVariable('GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE').strip()
+        max_submit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE',100).strip()
+        max_pending = self.queryCondorVariable('GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE','Unlimited').strip()
 
         msg  = '[Condor-G Scheduler]\n'
         msg += 'Maximal number of jobs submitted to the grid   : GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE  = '+max_submit+'\n'
@@ -117,10 +118,16 @@ class SchedulerCondor_g(Scheduler):
             common.logger.message(msg)
             raise CrabException(msg)
 
-    def queryCondorVariable(self, name):
+    def queryCondorVariable(self, name, default):
         ## check for condor variable
         cmd = 'condor_config_val '+name
-        return runCommand(cmd)
+        out = popen2.Popen3(cmd,1)
+        exit_code = out.wait()
+        cmd_out = out.fromchild.readline().strip()
+        if exit_code != 0 :
+            cmd_out = str(default)
+
+        return cmd_out
 
     def configure(self, cfg_params):
 
