@@ -68,10 +68,9 @@ class SchedulerEdg(Scheduler):
         try: self.return_data = cfg_params['USER.return_data']
         except KeyError: self.return_data = 1
 
-        try:
-             self.copy_input_data = common.analisys_common_info['copy_input_data']
-             #print "self.copy_input_data = ", self.copy_input_data
-        except KeyError: self.copy_input_data = 0
+        # was set t o zero in cms_cmssw.py to deactivate only for cmssw
+        # after CRAB_1_3_0, support for ORCA was dropped, so setting it here to zero and avoiding usage of non-existant analisys_common_info
+        self.copy_input_data = 0
 
         try: 
             self.copy_data = cfg_params["USER.copy_data"]
