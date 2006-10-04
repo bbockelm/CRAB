@@ -411,10 +411,11 @@ class Crab:
                                                                                                                
  
             if (  opt == '-create' ):
-                if val:
-                    msg = 'No arguments can be passed to -create\n'
-                    msg += '      Generic range is not allowed'
-                    raise CrabException(msg)
+                if val and val != 'all':
+                    msg  = 'Per default, CRAB will create all jobs as specified in the crab.cfg file, not the command line!'
+                    common.logger.message(msg)
+                    msg  = 'Submission will still take into account the number of jobs specified on the command line!\n'
+                    common.logger.message(msg)
                 ncjobs = 'all'
 
                 # Instantiate Creator object
