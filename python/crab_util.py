@@ -288,7 +288,7 @@ def makeCksum(filename) :
     make chksum using filename and content of file
     """
 
-    tmp_filename = runCommand('mktemp').strip()
+    tmp_filename = runCommand('mktemp crab_hash_XXXXXXXXXXXX').strip()
     output = open(tmp_filename,'w')
 
     # add filename as first line
