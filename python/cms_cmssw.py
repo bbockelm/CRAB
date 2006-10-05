@@ -18,7 +18,6 @@ class Cmssw(JobType):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
 
-        #self.analisys_common_info = {}
         # Marco.
         self._params = {}
         self.cfg_params = cfg_params
@@ -39,9 +38,6 @@ class Cmssw(JobType):
 
         self.version = self.scram.getSWVersion()
         self.setParam_('application', self.version)
-
-        ### FEDE
-        #common.analisys_common_info['copy_input_data'] = 0
 
         ### collect Data cards
         try:
