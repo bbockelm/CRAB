@@ -185,11 +185,14 @@ class SchedulerBoss(Scheduler):
         self.boss_scheduler = klass()
         self.boss_scheduler.configure(cfg_params)
 
-        # create additional classad file
+    #    # create additional classad file
         self.schclassad = ''
-        if (self.boss_scheduler.sched_parameter()):
-           self.schclassad = common.work_space.shareDir()+'/'+self.boss_scheduler.param
- 
+ #   #    if (self.boss_scheduler.sched_parameter()):
+ #       try:   
+ #           self.schclassad = common.work_space.shareDir()+'/'+self.boss_scheduler.param
+ #       except:
+ #           pass  
+
         # check scheduler and jobtype registration in BOSS
         self.checkSchedRegistration_(self.boss_scheduler_name)
 
@@ -290,6 +293,9 @@ class SchedulerBoss(Scheduler):
         """
         Create script_scheduler file (JDL for EDG)
         """
+        # create additional classad file
+        self.boss_scheduler.sched_parameter()
+
         self.boss_scheduler.createXMLSchScript(nj, argsList)
         return
 
@@ -298,9 +304,10 @@ class SchedulerBoss(Scheduler):
         """
         BOSS declaration of jobs
         """
+        start = time.time()
         cmd = 'boss declare -xmlfile '+common.work_space.shareDir()+self.boss_jobtype+'.xml'
         cmd_out = runBossCommand(cmd,0,3600)
-
+        stop = time.time()
         # debug
         msg = 'BOSS declaration:' + cmd
         common.logger.debug(4,msg)
@@ -342,11 +349,12 @@ class SchedulerBoss(Scheduler):
         return self.boss_scheduler.loggingInfo(nj) 
 
     ##########################################   ---- OK for Boss4 ds
-    def listMatch(self, nj):
+    def listMatch(self, nj,Block):
         """
         Check the compatibility of available resources
         """
         schcladstring = ''
+        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(Block)+'.clad'
         if self.schclassad != '':
             schcladstring=' -schclassad '+self.schclassad
         cmd = 'boss listMatch -scheduler '+ str(self.schedulerName) + ' -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
@@ -423,7 +431,8 @@ class SchedulerBoss(Scheduler):
         return self.boss_scheduler.createFakeJdl(nj)
     
     ###################### ---- OK for Boss4 ds
-    def submit(self, nj):
+    #def submit(self, nj):
+    def submit(self, first,last,i):
         """
         Submit BOSS function.
         Submit one job. nj -- job number.
@@ -433,18 +442,18 @@ class SchedulerBoss(Scheduler):
         boss_scheduler_id = None
 
         schcladstring = ''
-        
+        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(i)+'.clad'# TODO add a check is file exist
         if self.schclassad != '':
             schcladstring=' -schclassad '+self.schclassad
-        cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
+        #cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
+        cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(first)+':'+ common.jobDB.bossId(last)+ schcladstring
         cmd_out = runBossCommand(cmd)
-
         # debug
         msg = 'BOSS submission: ' + cmd
         common.logger.debug(4,msg)
         msg = 'BOSS submission output: ' + cmd_out
         common.logger.debug(4,msg)
-
+        jid=[]
         if not cmd_out :
             msg = 'ERROR: BOSS submission failed: ' + cmd
             common.logger.message(msg)
@@ -456,8 +465,9 @@ class SchedulerBoss(Scheduler):
                     common.logger.message(msg)
                     raise CrabException(msg)
                 if line.find('Scheduler ID for job') >= 0 :
-                    jid = line.split()[-1]
-                    return jid
+                    #jid = line.split()[-1]
+                    jid.append(line.split()[-1])
+        return jid
 
     ###################### ---- OK for Boss4 ds
     def moveOutput(self, int_id):
