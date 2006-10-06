@@ -299,7 +299,6 @@ class Crab:
             elif ( opt == '-scheduler' ):
                 if val:
                     self.scheduler_name = 'boss'
-                    self.flag_useboss = 1
                 else:
                     print common.prog_name+". No value for '-scheduler'."
                     usage()
@@ -524,33 +523,14 @@ class Crab:
 
             elif ( opt == '-kill' ):
 
-                if ( self.flag_useboss == 1 ):
-                    if val: 
-                        if val =='all':
-                            jobs = common.scheduler.listBoss()
-                        else:
-                            jobs = self.parseRange_(val)
-                        common.scheduler.cancel(jobs)
+                if val: 
+                    if val =='all':
+                        jobs = common.scheduler.listBoss()
                     else:
-                        common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
-                else:
-                    if val:
                         jobs = self.parseRange_(val)
-
-                        for nj in jobs:
-                            st = common.jobDB.status(nj)
-                            if st == 'S' or st == 'A':
-                                jid = common.jobDB.jobId(nj)
-                                common.logger.message("Killing job # "+`(nj+1)`)
-                                common.scheduler.cancel(jid)
-                                common.jobDB.setStatus(nj, 'K')
-                                pass
-                            pass
-
-                        common.jobDB.save()
-                        pass
-                    else:
-                         common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
+                    common.scheduler.cancel(jobs)
+                else:
+                    common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
 
             elif ( opt == '-getoutput' or opt == '-get'):
 
@@ -630,16 +610,6 @@ class Crab:
                 if val:
                     nj_list = []
                     for nj in jobs:
-                        if ( self.flag_useboss != 1 ):
-                            st = common.jobDB.status(nj)
-                            if st == 'S':
-                                jid = common.jobDB.jobId(nj)
-                                common.scheduler.cancel(jid)
-                                st = 'K'
-                                common.jobDB.setStatus(nj, st)
-                                pass
-                            common.jobDB.save()
-                            pass  
                         st = common.jobDB.status(int(nj)-1)
                         if st in ['K','A']:
                             nj_list.append(int(nj)-1)
@@ -705,7 +675,7 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
-                    self.actions[opt] = PostMortem(self.cfg_params, nj_list,self.flag_useboss)
+                    self.actions[opt] = PostMortem(self.cfg_params, nj_list)
 
                     # Create and initialize JobList
 

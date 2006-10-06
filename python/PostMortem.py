@@ -6,10 +6,9 @@ import common
 import string, os
 
 class PostMortem(Actor):
-    def __init__(self, cfg_params, nj_list, use_boss):
+    def __init__(self, cfg_params, nj_list):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
-        self.flag_useboss = use_boss
         return
     
     def run(self):
