@@ -48,7 +48,8 @@ class StatusBoss(Actor):
         """
         compute the status
         """
-        # moved loading of jobDB before boss status check to enable condor_g scheduler to query jobdb for efficient access to destination
+        # moved loading of jobDB before boss status check to enable condor_g
+        # scheduler to query jobdb for efficient access to destination
         common.jobDB.load()
 
         bossTaskId=common.taskDB.dict('BossTaskId')
