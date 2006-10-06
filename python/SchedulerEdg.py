@@ -38,6 +38,11 @@ class SchedulerEdg(Scheduler):
         common.logger.debug(5,'Setting myproxy server to '+self.proxyServer)
 
         try:
+            self.group = cfg_params["EDG.group"]
+        except KeyError:
+            self.group = None
+            
+        try:
             self.role = cfg_params["EDG.role"]
         except KeyError:
             self.role = None
@@ -66,7 +71,12 @@ class SchedulerEdg(Scheduler):
         except KeyError: self.VO = 'cms'
 
         try: self.return_data = cfg_params['USER.return_data']
-        except KeyError: self.return_data = 1
+        except KeyError: self.return_data = 0
+
+        # was set t o zero in cms_cmssw.py to deactivate only for cmssw
+        # after CRAB_1_3_0, support for ORCA was dropped, so setting it here to
+        # zero and avoiding usage of non-existant analisys_common_info
+        self.copy_input_data = 0
 
         try: 
             self.copy_data = cfg_params["USER.copy_data"]
@@ -380,44 +390,45 @@ class SchedulerEdg(Scheduler):
         """
         txt = ''
 
+        if int(self.copy_input_data) == 1:
         ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
-        txt += 'if [ $middleware == OSG ]; then\n' 
-        txt += '   #\n'
-        txt += '   #   Copy Input Data from SE to this WN deactivated in OSG mode\n'
-        txt += '   #\n'
-        txt += '   echo "Copy Input Data from SE to this WN deactivated in OSG mode"\n'
-        txt += 'elif [ $middleware == LCG ]; then \n'
-        txt += '   #\n'
-        txt += '   #   Copy Input Data from SE to this WN\n'
-        txt += '   #\n'
-        ### changed by georgia (put a loop copying more than one input files per jobs)           
-        txt += '   for input_file in $cur_file_list \n'
-        txt += '   do \n'
-        txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
-        txt += '      copy_input_exit_status=$?\n'
-        txt += '      echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
-        txt += '      if [ $copy_input_exit_status -ne 0 ]; then \n'
-        txt += '         echo "Problems with copying to WN" \n'
-        txt += '      else \n'
-        txt += '         echo "input copied into WN" \n'
-        txt += '      fi \n'
-        txt += '   done \n'
-        ### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
-        txt += '   for file in $cur_pu_list \n'
-        txt += '   do \n'
-        txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
-        txt += '      copy_input_pu_exit_status=$?\n'
-        txt += '      echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
-        txt += '      if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
-        txt += '         echo "Problems with copying pu to WN" \n'
-        txt += '      else \n'
-        txt += '         echo "input pu files copied into WN" \n'
-        txt += '      fi \n'
-        txt += '   done \n'
-        txt += '   \n'
-        txt += '   ### Check SCRATCH space available on WN : \n'
-        txt += '   df -h \n'
-        txt += 'fi \n' 
+           txt += 'if [ $middleware == OSG ]; then\n' 
+           txt += '   #\n'
+           txt += '   #   Copy Input Data from SE to this WN deactivated in OSG mode\n'
+           txt += '   #\n'
+           txt += '   echo "Copy Input Data from SE to this WN deactivated in OSG mode"\n'
+           txt += 'elif [ $middleware == LCG ]; then \n'
+           txt += '   #\n'
+           txt += '   #   Copy Input Data from SE to this WN\n'
+           txt += '   #\n'
+           ### changed by georgia (put a loop copying more than one input files per jobs)           
+           txt += '   for input_file in $cur_file_list \n'
+           txt += '   do \n'
+           txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
+           txt += '      copy_input_exit_status=$?\n'
+           txt += '      echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
+           txt += '      if [ $copy_input_exit_status -ne 0 ]; then \n'
+           txt += '         echo "Problems with copying to WN" \n'
+           txt += '      else \n'
+           txt += '         echo "input copied into WN" \n'
+           txt += '      fi \n'
+           txt += '   done \n'
+           ### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
+           txt += '   for file in $cur_pu_list \n'
+           txt += '   do \n'
+           txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
+           txt += '      copy_input_pu_exit_status=$?\n'
+           txt += '      echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
+           txt += '      if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
+           txt += '         echo "Problems with copying pu to WN" \n'
+           txt += '      else \n'
+           txt += '         echo "input pu files copied into WN" \n'
+           txt += '      fi \n'
+           txt += '   done \n'
+           txt += '   \n'
+           txt += '   ### Check SCRATCH space available on WN : \n'
+           txt += '   df -h \n'
+           txt += 'fi \n' 
            
         return txt
 
@@ -438,35 +449,41 @@ class SchedulerEdg(Scheduler):
            txt += '        export X509_CERT_DIR=$OSG_APP/glite/etc/grid-security/certificates\n'
            txt += '        echo "export X509_CERT_DIR=$X509_CERT_DIR"\n'
            txt += '    fi \n'
+
            txt += '    for out_file in $file_list ; do\n'
-           txt += '        echo "Trying to copy output file to $SE using lcg-cp"\n'
-           if common.logger.debugLevel() >= 5:
-               txt += '        echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-               txt += '        exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
-           else:
-               txt += '        echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-               txt += '        exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+           txt += '        echo "Trying to copy output file to $SE using srmcp"\n'
+           txt += '        echo "mkdir -p $HOME/.srmconfig"\n'
+           txt += '        mkdir -p $HOME/.srmconfig\n'
+           txt += '        if [ $middleware == LCG ]; then\n'
+           txt += '           echo "srmcp -retry_num 3 -retry_timeout 480000 file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
+           txt += '           exitstring=`srmcp -retry_num 3 -retry_timeout 480000 file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
+           txt += '        elif [ $middleware == OSG ]; then\n'
+           txt += '           echo "srmcp -retry_num 3 -retry_timeout 240000 -x509_user_trusted_certificates $X509_CERT_DIR file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
+           txt += '           exitstring=`srmcp -retry_num 3 -retry_timeout 240000 -x509_user_trusted_certificates $X509_CERT_DIR file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
+           txt += '        fi \n'
            txt += '        copy_exit_status=$?\n'
-           txt += '        echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
+           txt += '        echo "COPY_EXIT_STATUS for srmcp = $copy_exit_status"\n'
            txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
+
            txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
            txt += '            echo "Possible problem with SE = $SE"\n'
            txt += '            echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '            echo "lcg-cp failed.  For verbose lcg-cp output, use command line option -debug 5."\n'
-           txt += '            echo "lcg-cp failed, attempting srmcp"\n'
-           txt += '            echo "mkdir -p $HOME/.srmconfig"\n'
-           txt += '            mkdir -p $HOME/.srmconfig\n'
-           txt += '            if [ $middleware == LCG ]; then\n'
-           txt += '               echo "srmcp -retry_num 5 -retry_timeout 480000 file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
-           txt += '               exitstring=`srmcp -retry_num 5 -retry_timeout 480000 file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
-           txt += '            elif [ $middleware == OSG ]; then\n'
-           txt += '               echo "srmcp -retry_num 5 -retry_timeout 240000 -x509_user_trusted_certificates $OSG_APP/glite/etc/grid-security/certificates file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
-           txt += '               exitstring=`srmcp -retry_num 5 -retry_timeout 240000 -x509_user_trusted_certificates $OSG_APP/glite/etc/grid-security/certificates file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
-           txt += '            fi \n'
-           txt += '            copy_exit_status=$?\n'
+           txt += '            echo "srm failed."\n'
            txt += '            echo "COPY_EXIT_STATUS for srm = $copy_exit_status"\n'
            txt += '            echo "STAGE_OUT = $copy_exit_status"\n'
+           txt += '            echo "Trying to copy output file to $SE using lcg-cp"\n'
+           txt += '            echo "srmcp failed, attempting lcgcp"\n'
+           if common.logger.debugLevel() >= 5:
+               txt += '            echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+               txt += '            exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+           else:               
+               txt += '            echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+               txt += '            exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+           txt += '            copy_exit_status=$?\n'
+           txt += '            echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
+           txt += '            echo "STAGE_OUT = $copy_exit_status"\n'
+
            txt += '            if [ $copy_exit_status -ne 0 ]; then\n'
            txt += '               echo "Problems with SE = $SE"\n'
            txt += '               echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
@@ -478,14 +495,14 @@ class SchedulerEdg(Scheduler):
            txt += '               echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
            txt += '               echo "output copied into $SE/$SE_PATH directory"\n'
            txt += '               echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '               echo "srmcp succeeded"\n'
+           txt += '               echo "lcg-cp succeeded"\n'
            txt += '            fi\n'
            txt += '        else\n'
            txt += '            echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
            txt += '            echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '            echo "lcg-cp succeeded"\n'
+           txt += '            echo "srmcp succeeded"\n'
            txt += '         fi\n'
            txt += '     done\n'
         return txt
@@ -812,6 +829,7 @@ class SchedulerEdg(Scheduler):
         INDY
         something similar should be also done for infiles (if it makes sense!)
         """
+        
         if int(self.return_data) == 1:
             for fl in jbt.output_file:
                 out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
@@ -861,11 +879,15 @@ class SchedulerEdg(Scheduler):
 
         if mustRenew:
             common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 96h\n")
-            cmd = 'voms-proxy-init -voms '+self.VO+' -valid 96:00'
+            cmd = 'voms-proxy-init -voms '+self.VO
+            if self.group:
+                cmd += ':/'+self.VO+'/'+self.group
             if self.role:
-                cmd = 'voms-proxy-init -voms '+self.VO+':/'+self.VO+'/role='+self.role+' -valid 96:00'
+                cmd += '/role='+self.role
+            cmd += ' -valid 96:00'
             try:
                 # SL as above: damn it!
+                common.logger.debug(10,cmd)
                 out = os.system(cmd)
                 if (out>0): raise CrabException("Unable to create a valid proxy!\n")
             except:
