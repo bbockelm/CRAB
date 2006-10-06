@@ -38,11 +38,6 @@ class SchedulerEdg(Scheduler):
         common.logger.debug(5,'Setting myproxy server to '+self.proxyServer)
 
         try:
-            self.group = cfg_params["EDG.group"]
-        except KeyError:
-            self.group = None
-            
-        try:
             self.role = cfg_params["EDG.role"]
         except KeyError:
             self.role = None
@@ -58,23 +53,25 @@ class SchedulerEdg(Scheduler):
 
         try: 
             self.EDG_ce_black_list = cfg_params['EDG.ce_black_list']
+            #print "self.EDG_ce_black_list = ", self.EDG_ce_black_list
         except KeyError: 
             self.EDG_ce_black_list  = ''
 
         try: 
             self.EDG_ce_white_list = cfg_params['EDG.ce_white_list']
+            #print "self.EDG_ce_white_list = ", self.EDG_ce_white_list
         except KeyError: self.EDG_ce_white_list = ''
 
         try: self.VO = cfg_params['EDG.virtual_organization']
         except KeyError: self.VO = 'cms'
 
         try: self.return_data = cfg_params['USER.return_data']
-        except KeyError: self.return_data = 0 
+        except KeyError: self.return_data = 1
 
-        # was set t o zero in cms_cmssw.py to deactivate only for cmssw
-        # after CRAB_1_3_0, support for ORCA was dropped, so setting it here to
-        # zero and avoiding usage of non-existant analisys_common_info
-        self.copy_input_data = 0
+        try:
+             self.copy_input_data = common.analisys_common_info['copy_input_data']
+             #print "self.copy_input_data = ", self.copy_input_data
+        except KeyError: self.copy_input_data = 0
 
         try: 
             self.copy_data = cfg_params["USER.copy_data"]
@@ -177,18 +174,81 @@ class SchedulerEdg(Scheduler):
 
     def sched_parameter(self):
         """
-        Returns file with scheduler-specific parameters
+        Returns file with requirements and scheduler-specific parameters
         """
-       
-        if (self.edg_config and self.edg_config_vo != ''):
-            self.param='sched_param.clad'
+        index = int(common.jobDB.nJobs()) - 1
+        job = common.job_list[index]
+        jbt = job.type()
+        
+        lastDest=''
+        first = []
+        last  = []
+        for n in range(common.jobDB.nJobs()):
+            currDest=common.jobDB.destination(n)
+            if (currDest!=lastDest):
+                lastDest = currDest
+                first.append(n)
+                if n != 0:last.append(n-1) 
+        if len(first)>len(last) :last.append(common.jobDB.nJobs())
+  
+        req = ''
+        req = req + jbt.getRequirements()
+    
+        if self.EDG_requirements:
+            if (req == ' '):
+                req = req + self.EDG_requirements
+            else:
+                req = req +  ' && ' + self.EDG_requirements
+        if self.EDG_ce_white_list:
+            ce_white_list = string.split(self.EDG_ce_white_list,',')
+            for i in range(len(ce_white_list)):
+                if i == 0:
+                    if (req == ' '):
+                        req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    else:
+                        req = req +  ' && ((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    pass
+                else:
+                    req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+            req = req + ')'
+        
+        if self.EDG_ce_black_list:
+            ce_black_list = string.split(self.EDG_ce_black_list,',')
+            for ce in ce_black_list:
+                if (req == ' '):
+                    req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                else:
+                    req = req +  ' && (!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                pass
+        if self.EDG_clock_time:
+            if (req == ' '):
+                req = req + 'other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
+            else:
+                req = req + ' && other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
+
+        if self.EDG_cpu_time:
+            if (req == ' '):
+                req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+            else:
+                req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+                 
+        for i in range(len(first)): # Add loop DS
+            self.param='sched_param_'+str(i)+'.clad'
             param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
-            param_file.write('RBconfig = "'+self.edg_config+'";\n')   
-            param_file.write('RBconfigVO = "'+self.edg_config_vo+'";')
+
+            itr4=self.findSites_(first[i])
+            if (itr4 != []):
+                req1=''  
+                for arg in itr4:
+                    req1 = req + ' && anyMatch(other.storage.CloseSEs, ('+str(arg)+'))'
+            param_file.write('Requirements = '+req1 +';\n')   
+   
+            if (self.edg_config and self.edg_config_vo != ''):
+                param_file.write('RBconfig = "'+self.edg_config+'";\n')   
+                param_file.write('RBconfigVO = "'+self.edg_config_vo+'";')
+
             param_file.close()   
-            return 1
-        else:
-            return 0 
+
 
     def wsSetupEnvironment(self):
         """
@@ -257,7 +317,7 @@ class SchedulerEdg(Scheduler):
               txt += 'echo "SE_PATH = $SE_PATH"\n'
 
         txt += 'export VO='+self.VO+'\n'
-        ### FEDE: add some line for LFC catalog setting 
+        ### add some line for LFC catalog setting 
         txt += 'if [ $middleware == LCG ]; then \n'
         txt += '    if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
         txt += '        export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
@@ -324,7 +384,9 @@ class SchedulerEdg(Scheduler):
         Copy input data from SE to WN     
         """
         txt = ''
-
+        try:
+            self.copy_input_data = common.analisys_common_info['copy_input_data']
+        except KeyError: self.copy_input_data = 0
         if int(self.copy_input_data) == 1:
         ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
            txt += 'if [ $middleware == OSG ]; then\n' 
@@ -384,41 +446,35 @@ class SchedulerEdg(Scheduler):
            txt += '        export X509_CERT_DIR=$OSG_APP/glite/etc/grid-security/certificates\n'
            txt += '        echo "export X509_CERT_DIR=$X509_CERT_DIR"\n'
            txt += '    fi \n'
-
            txt += '    for out_file in $file_list ; do\n'
-           txt += '        echo "Trying to copy output file to $SE using srmcp"\n'
-           txt += '        echo "mkdir -p $HOME/.srmconfig"\n'
-           txt += '        mkdir -p $HOME/.srmconfig\n'
-           txt += '        if [ $middleware == LCG ]; then\n'
-           txt += '           echo "srmcp -retry_num 3 -retry_timeout 480000 file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
-           txt += '           exitstring=`srmcp -retry_num 3 -retry_timeout 480000 file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
-           txt += '        elif [ $middleware == OSG ]; then\n'
-           txt += '           echo "srmcp -retry_num 3 -retry_timeout 240000 -x509_user_trusted_certificates $X509_CERT_DIR file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
-           txt += '           exitstring=`srmcp -retry_num 3 -retry_timeout 240000 -x509_user_trusted_certificates $X509_CERT_DIR file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
-           txt += '        fi \n'
+           txt += '        echo "Trying to copy output file to $SE using lcg-cp"\n'
+           if common.logger.debugLevel() >= 5:
+               txt += '        echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+               txt += '        exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+           else:
+               txt += '        echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+               txt += '        exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
            txt += '        copy_exit_status=$?\n'
-           txt += '        echo "COPY_EXIT_STATUS for srmcp = $copy_exit_status"\n'
+           txt += '        echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
            txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
-
            txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
            txt += '            echo "Possible problem with SE = $SE"\n'
            txt += '            echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '            echo "srm failed."\n'
+           txt += '            echo "lcg-cp failed.  For verbose lcg-cp output, use command line option -debug 5."\n'
+           txt += '            echo "lcg-cp failed, attempting srmcp"\n'
+           txt += '            echo "mkdir -p $HOME/.srmconfig"\n'
+           txt += '            mkdir -p $HOME/.srmconfig\n'
+           txt += '            if [ $middleware == LCG ]; then\n'
+           txt += '               echo "srmcp -retry_num 5 -retry_timeout 480000 file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
+           txt += '               exitstring=`srmcp -retry_num 5 -retry_timeout 480000 file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
+           txt += '            elif [ $middleware == OSG ]; then\n'
+           txt += '               echo "srmcp -retry_num 5 -retry_timeout 240000 -x509_user_trusted_certificates $OSG_APP/glite/etc/grid-security/certificates file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
+           txt += '               exitstring=`srmcp -retry_num 5 -retry_timeout 240000 -x509_user_trusted_certificates $OSG_APP/glite/etc/grid-security/certificates file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
+           txt += '            fi \n'
+           txt += '            copy_exit_status=$?\n'
            txt += '            echo "COPY_EXIT_STATUS for srm = $copy_exit_status"\n'
            txt += '            echo "STAGE_OUT = $copy_exit_status"\n'
-           txt += '            echo "Trying to copy output file to $SE using lcg-cp"\n'
-           txt += '            echo "srmcp failed, attempting lcgcp"\n'
-           if common.logger.debugLevel() >= 5:
-               txt += '            echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-               txt += '            exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
-           else:               
-               txt += '            echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-               txt += '            exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
-           txt += '            copy_exit_status=$?\n'
-           txt += '            echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
-           txt += '            echo "STAGE_OUT = $copy_exit_status"\n'
-
            txt += '            if [ $copy_exit_status -ne 0 ]; then\n'
            txt += '               echo "Problems with SE = $SE"\n'
            txt += '               echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
@@ -430,14 +486,14 @@ class SchedulerEdg(Scheduler):
            txt += '               echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
            txt += '               echo "output copied into $SE/$SE_PATH directory"\n'
            txt += '               echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '               echo "lcg-cp succeeded"\n'
+           txt += '               echo "srmcp succeeded"\n'
            txt += '            fi\n'
            txt += '        else\n'
            txt += '            echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
            txt += '            echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '            echo "srmcp succeeded"\n'
+           txt += '            echo "lcg-cp succeeded"\n'
            txt += '         fi\n'
            txt += '     done\n'
         return txt
@@ -557,41 +613,31 @@ class SchedulerEdg(Scheduler):
         return cmd_out
 
     ##### FEDE ######         
-    def findSites_(self, n_tot_job):
-        itr4 = []
-       # print "n_tot_job = ", n_tot_job
-        for n in range(n_tot_job):
-            sites = common.jobDB.destination(n)
-            if len(sites)>0 and sites[0]=="Any": continue
-
-            #job = common.job_list[n]
-            #jbt = job.type()
-           # print "common.jobDB.destination(n) = ", common.jobDB.destination(n)
-           # print "sites = ", sites
-            itr = ''
-            if sites != [""]:#CarlosDaniele 
-                for site in sites: 
-                    #itr = itr + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
-                    itr = itr + 'target.GlueSEUniqueID=="'+site+'" || '
-                    #itr = itr + 'Member("'+site+'", other.GlueCESEBindGroupSEUniqueID) || '
-                    pass
-                # remove last ||
-                itr = itr[0:-4]
-                itr4.append( itr )
-        # remove last , 
-       # print "itr4 = ", itr4
+    def findSites_(self, n):
+        itr4 =[] 
+        sites = common.jobDB.destination(n)
+        if len(sites)>0 and sites[0]=="Any":
+            return itr4
+        itr = ''
+        if sites != [""]:#CarlosDaniele 
+            for site in sites: 
+                #itr = itr + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
+                itr = itr + 'target.GlueSEUniqueID=="'+site+'" || '
+            itr = itr[0:-4]
+            itr4.append( itr )
         return itr4
 
     def createXMLSchScript(self, nj, argsList):
    # def createXMLSchScript(self, nj):
+       
         """
         Create a XML-file for BOSS4.
         """
   #      job = common.job_list[nj]
         """
         INDY
-        [begin] da rivedere:
-        in particolare passerei il jobType ed eliminerei le dipendenze da job
+        [begin] FIX-ME:
+        I would pass jobType instead of job
         """
         index = nj - 1
         job = common.job_list[index]
@@ -600,7 +646,7 @@ class SchedulerEdg(Scheduler):
         inp_sandbox = jbt.inputSandbox(index)
         out_sandbox = jbt.outputSandbox(index)
         """
-        [end] da rivedere
+        [end] FIX-ME
         """
 
         
@@ -671,14 +717,19 @@ class SchedulerEdg(Scheduler):
         to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
         to_write = to_write + 'VirtualOrganisation = "&quot;' + self.VO + '&quot;"\n'
 
-
-        #TaskName   
+                #TaskName   
         dir = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
 
         xml.write(str(title))
         xml.write('<task name="' +str(taskName)+'">\n')
         xml.write(jt_string)
+        
+        if (to_write != ''):
+            xml.write('<extraTags\n')
+            xml.write(to_write)
+            xml.write('/>\n')
+            pass
 
         xml.write('<iterator>\n')
         xml.write('\t<iteratorRule name="ITR1">\n')
@@ -695,48 +746,18 @@ class SchedulerEdg(Scheduler):
         xml.write('\t</iteratorRule>\n')
 
         '''
-        indy: qui sotto ci sta itr4
+        indy: here itr4
         '''
         
-        itr4=self.findSites_(nj)
-        #print "--->>> itr4 = ", itr4
-        if (itr4 != []):
-            xml.write('\t<iteratorRule name="ITR4">\n')
-        #print argsList
-            for arg in itr4:
-                xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
-                pass
-            xml.write('\t</iteratorRule>\n')
-            req = req + ' && anyMatch(other.storage.CloseSEs, (_ITR4_))'
-            #req = req + ' && (_ITR4_)'
-            pass
-        #    print "--->>> req= ", req         
-        
-        if (to_write != ''):
-            xml.write('<extraTags\n')
-            xml.write(to_write)
-            xml.write('/>\n')
-            pass
 
         xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
         xml.write(jt_string)
-
-        if (req != ' '):
-            req = req + '\n'
-            xml.write('<extraTags>\n')
-            xml.write('<Requirements>\n')
-            xml.write('<![CDATA[\n')
-            xml.write(req)
-            xml.write(']]>\n')
-            xml.write('</Requirements>\n')
-            xml.write('</extraTags>\n')
-            pass
 
         #executable
 
         """
         INDY
-        script dipende dal jobType: dovrebbe essere semplice tirarlo fuori in altro modo
+        script depends on jobType: it should be probably get in a different way
         """        
         script = job.scriptFilename()
         xml.write('<program>\n')
@@ -797,8 +818,9 @@ class SchedulerEdg(Scheduler):
 
         """
         INDY
-        qualcosa del genere andrebbe fatta per gli infiles
-        """        
+        something similar should be also done for infiles (if it makes sense!)
+        """
+        
         if int(self.return_data) == 1:
             for fl in jbt.output_file:
                 out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
@@ -818,6 +840,8 @@ class SchedulerEdg(Scheduler):
         xml.write('</task>\n')
 
         xml.close()
+       
+
         return
 
     def checkProxy(self):
@@ -846,15 +870,11 @@ class SchedulerEdg(Scheduler):
 
         if mustRenew:
             common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 96h\n")
-            cmd = 'voms-proxy-init -voms '+self.VO
-            if self.group:
-                cmd += ':/'+self.VO+'/'+self.group
+            cmd = 'voms-proxy-init -voms '+self.VO+' -valid 96:00'
             if self.role:
-                cmd += '/role='+self.role
-            cmd += ' -valid 96:00'
+                cmd = 'voms-proxy-init -voms '+self.VO+':/'+self.VO+'/role='+self.role+' -valid 96:00'
             try:
                 # SL as above: damn it!
-                common.logger.debug(10,cmd)
                 out = os.system(cmd)
                 if (out>0): raise CrabException("Unable to create a valid proxy!\n")
             except:
