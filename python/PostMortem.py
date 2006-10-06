@@ -36,7 +36,7 @@ class PostMortem(Actor):
             jdl.close()
 
             reason = ''
-            if common.scheduler.boss_scheduler_name == "edg" :
+            if common.scheduler.boss_scheduler_name == "edg" or common.scheduler.boss_scheduler_name == "glite" :
                 loggingInfo = EdgLoggingInfo.EdgLoggingInfo()
                 reason = loggingInfo.decodeReason(out)
             elif common.scheduler.boss_scheduler_name == "condor_g" :
