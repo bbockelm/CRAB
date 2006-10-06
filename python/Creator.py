@@ -153,6 +153,8 @@ class Creator(Actor):
         argsList = []
 
         njc = 0
+        block = -1 # first block is 0
+        lastDest=''
         for nj in range(self.total_njobs):
             if njc == self.ncjobs : break
             st = common.jobDB.status(nj)
@@ -179,6 +181,12 @@ class Creator(Actor):
             common.jobDB.setOutputSandbox(nj, outputSandbox)
             common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
 
+            currDest=common.jobDB.destination(nj)
+            if (currDest!=lastDest):
+                block+=1
+                lastDest = currDest
+                pass
+            common.jobDB.setBlock(nj,block)
             njc = njc + 1
             pass
 

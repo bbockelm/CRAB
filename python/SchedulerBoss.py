@@ -349,7 +349,7 @@ class SchedulerBoss(Scheduler):
         return self.boss_scheduler.loggingInfo(nj) 
 
     ##########################################   ---- OK for Boss4 ds
-    def listMatch(self, nj,Block):
+    def listMatch(self, nj, Block):
         """
         Check the compatibility of available resources
         """

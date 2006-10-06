@@ -10,12 +10,6 @@ class Submitter(Actor):
     def __init__(self, cfg_params, nj_list):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
-        
-        try:
-            self.ML = int(cfg_params['USER.activate_monalisa'])
-        except KeyError:
-            self.ML = 0
-            pass
 
         return
     
@@ -40,8 +34,7 @@ class Submitter(Actor):
         try:
             first = []
             last  = []
-            lastDest=''
-            nBlock=0 
+            lastBlock=-1
             for nj in self.nj_list:
                 same=0
                 # first check that status of the job is suitable for submission
@@ -51,15 +44,14 @@ class Submitter(Actor):
                     msg = "Job # %d not submitted: status %s"%(nj+1, long_st)
                     common.logger.message(msg)
                     continue
-                # SL perform listmatch only if destination has changed
-                currDest=common.jobDB.destination(nj)
-                if (currDest!=lastDest):
+                currBlock = common.jobDB.block(nj)
+                # SL perform listmatch only if block has changed
+                if (currBlock!=lastBlock):
                     if common.scheduler.boss_scheduler_name != "condor_g" :
-                        match = common.scheduler.listMatch(nj,nBlock)
+                        match = common.scheduler.listMatch(nj, currBlock)
                     else :
                         match = "1"
-                    lastDest = currDest
-                    nBlock=nBlock+1 
+                    lastBlock = currBlock
                 else:
                     common.logger.debug(1,"Sites for job "+str(nj+1)+" the same as previous job")
                     same=1
@@ -75,6 +67,7 @@ class Submitter(Actor):
                 else:
                     common.logger.message("No compatible site found, will not submit job "+str(nj+1))
                     continue
+
             ############## TODO improve the follow control .....
             if len(first)>len(last): 
                 if common.jobDB.nJobs() == 1 : 
@@ -87,7 +80,7 @@ class Submitter(Actor):
                     last.append(self.nj_list[len(self.nj_list)-1])
                
             for ii in range(len(first)): # Add loop DS
-                print ' first job  ',first[ii] ,' last job  ',last[ii]
+                common.logger.message('Submitting job from '+str(first[ii]+1)+' to '+str(last[ii]+1))
                 #common.logger.message("Submitting job # "+`(nj+1)`)  
                 jidLista = common.scheduler.submit(first[ii],last[ii],ii)
        

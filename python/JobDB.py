@@ -14,7 +14,8 @@ class dbEntry:
         self.inputSandbox = []  # InputSandbox
         self.outputSandbox = [] # OutputSandbox
         self.taskId = ''        # Task job belongs to
-        self.arguments = []    ### Fabio: abstract job_type parameters
+        self.block = ''         # Task job belongs to
+        self.arguments = []     # abstract job_type parameters
         self.dest = []          # Destination for this job according to DLS
         return
 
@@ -22,7 +23,7 @@ class dbEntry:
         txt  = 'Status <' + self.status + '>; '
         if self.exitStatus!='':
             txt += 'exitStatus <' + str(self.exitStatus) + '>\n'
-        txt += 'Job Id <' + self.jid + '>\n'
+        txt += 'Job Id <' + self.jid + '> Block <'+self.block+'>\n'
         if self.arguments:
             txt += 'Job Type Arguments <' + str(self.arguments) + '>\n'
         if self.dest:
@@ -89,6 +90,7 @@ class JobDB:
             db_file.write(string.join(self._jobs[i].inputSandbox)+'|')
             db_file.write(string.join(self._jobs[i].outputSandbox)+'|')
             db_file.write(str(self._jobs[i].taskId)+'|')
+            db_file.write(str(self._jobs[i].block)+'|')
             db_file.write(string.join(self._jobs[i].arguments)+'|')
             db_file.write(string.join(self._jobs[i].dest)+'|')
             db_file.write('\n')
@@ -105,7 +107,7 @@ class JobDB:
 
         for line in db_file:
             db_entry = dbEntry()
-            (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, argumentsTMP, destTMP, rest) = string.split(line, '|')
+            (n, db_entry.status, db_entry.exitStatus, db_entry.jid, db_entry.bossid, collectionsTMP,  inputSandboxTMP , outputSandboxTMP , db_entry.taskId, db_entry.block, argumentsTMP, destTMP, rest) = string.split(line, '|')
             db_entry.collections = string.split(collectionsTMP)
             db_entry.inputSandbox = string.split(inputSandboxTMP)
             db_entry.outputSandbox = string.split(outputSandboxTMP)
@@ -185,8 +187,15 @@ class JobDB:
         self.check(nj)
         self._jobs[int(nj)].taskId = taskId
 
-    def taskId(self, nj, taskId):
+    def taskId(self, nj):
         return self._jobs[int(nj)].taskId
+
+    def setBlock(self, nj, block):
+        self.check(nj)
+        self._jobs[int(nj)].block = block
+
+    def block(self, nj):
+        return self._jobs[int(nj)].block
 
     def setDestination(self, nj, args):
         self.check(nj)
