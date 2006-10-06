@@ -43,6 +43,3 @@ class Scheduler :
         """
         return ''
 
-    def createJDL(self, nj):
-        return
-    
