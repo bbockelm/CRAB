@@ -68,11 +68,6 @@ class SchedulerEdg(Scheduler):
         try: self.return_data = cfg_params['USER.return_data']
         except KeyError: self.return_data = 1
 
-        try:
-             self.copy_input_data = common.analisys_common_info['copy_input_data']
-             #print "self.copy_input_data = ", self.copy_input_data
-        except KeyError: self.copy_input_data = 0
-
         try: 
             self.copy_data = cfg_params["USER.copy_data"]
             if int(self.copy_data) == 1:
@@ -384,10 +379,7 @@ class SchedulerEdg(Scheduler):
         Copy input data from SE to WN     
         """
         txt = ''
-        try:
-            self.copy_input_data = common.analisys_common_info['copy_input_data']
-        except KeyError: self.copy_input_data = 0
-        if int(self.copy_input_data) == 1:
+
         ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
         txt += 'if [ $middleware == OSG ]; then\n' 
         txt += '   #\n'
