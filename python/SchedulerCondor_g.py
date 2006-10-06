@@ -347,13 +347,12 @@ class SchedulerCondor_g(Scheduler):
            txt += '        echo "COPY_EXIT_STATUS for srm = $copy_exit_status"\n'
            txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
            txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
-           txt += '           echo "Problems with SE = $SE"\n'
+           txt += '           echo "Possible problems with SE = $SE"\n'
            txt += '           echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '           echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '           echo "srmcp failed, attempting lcg-cp"\n'
-           txt += '           echo "If storage_path in your config file contains a ? you may need a \? instead."\n'
            txt += '           echo "Trying to copy output file to $SE using lcg-cp"\n'
-           if common.loggerrrr.debugLevel() >= 5:
+           if common.logger.debugLevel() >= 5:
                txt += '           echo "lcg-cp --vo $VO --verbose -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
                txt += '           exitstring=`lcg-cp --vo $VO --verbose -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
            else:              
@@ -366,8 +365,8 @@ class SchedulerCondor_g(Scheduler):
            txt += '              echo "Problems with SE = $SE"\n'
            txt += '              echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '              echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '              echo "lcg-cp and srmcp failed"\n'
-           txt += '              echo "If storage_path in your config file contains a ? you may need a \? instead."\n'
+           txt += '          echo "lcg-cp failed.  For verbose lcg-cp output, use command line option -debug 5."\n'
+           txt += '              echo "lcg-cp and srmcp failed!"\n'
            txt += '           else\n'
            txt += '              echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '              echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
