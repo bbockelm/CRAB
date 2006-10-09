@@ -469,8 +469,8 @@ class SchedulerBoss(Scheduler):
                     #jid = line.split()[-1]
                     jid.append(line.split()[-1])
         stop = time.time()
-        common.logger.debug(3,"Submit time :"+str(start-stop))
-        common.logger.write("Submit time :"+str(start-stop))
+        common.logger.debug(3,"Submit time :"+str(stop-start))
+        common.logger.write("Submit time :"+str(stop-start))
         return jid
 
     ###################### ---- OK for Boss4 ds
