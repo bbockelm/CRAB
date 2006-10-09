@@ -135,6 +135,11 @@ class SchedulerCondor_g(Scheduler):
     def configure(self, cfg_params):
 
         try:
+            self.group = cfg_params["EDG.group"]
+        except KeyError:
+            self.group = None
+            
+        try:
             self.role = cfg_params["EDG.role"]
         except KeyError:
             self.role = None
@@ -785,10 +790,13 @@ class SchedulerCondor_g(Scheduler):
         pass
 
         if mustRenew:
-            common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 96h\n")
-            cmd = 'voms-proxy-init -voms '+self.VO+' -valid 96:00'
+            common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 192h\n")
+            cmd = 'voms-proxy-init -voms '+self.VO
+            if self.group:
+                cmd += ':/'+self.VO+'/'+self.group
             if self.role:
-                cmd = 'voms-proxy-init -voms '+self.VO+':/'+self.VO+'/role='+self.role+' -valid 96:00'
+                cmd += '/role='+self.role
+            cmd += ' -valid 192:00'
             try:
                 # SL as above: damn it!
                 out = os.system(cmd)

@@ -866,13 +866,13 @@ class SchedulerEdg(Scheduler):
         pass
 
         if mustRenew:
-            common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 96h\n")
+            common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 192h\n")
             cmd = 'voms-proxy-init -voms '+self.VO
             if self.group:
                 cmd += ':/'+self.VO+'/'+self.group
             if self.role:
                 cmd += '/role='+self.role
-            cmd += ' -valid 96:00'
+            cmd += ' -valid 192:00'
             try:
                 # SL as above: damn it!
                 common.logger.debug(10,cmd)
