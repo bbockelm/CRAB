@@ -10,6 +10,12 @@ class Submitter(Actor):
     def __init__(self, cfg_params, nj_list):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
+        
+        if common.scheduler.boss_scheduler_name == 'condor_g':
+            # create hash of cfg file
+            self.hash = makeCksum(common.work_space.cfgFileName())
+        else:
+            self.hash = ''
 
         return
     
@@ -80,7 +86,7 @@ class Submitter(Actor):
                     last.append(self.nj_list[len(self.nj_list)-1])
                
             for ii in range(len(first)): # Add loop DS
-                common.logger.message('Submitting job from '+str(first[ii]+1)+' to '+str(last[ii]+1))
+                common.logger.message('Submitting jobs '+str(first[ii]+1)+' to '+str(last[ii]+1))
                 #common.logger.message("Submitting job # "+`(nj+1)`)  
                 jidLista = common.scheduler.submit(first[ii],last[ii],ii)
        
@@ -117,9 +123,7 @@ class Submitter(Actor):
                     # OLI: JobID treatment, special for Condor-G scheduler
                     jobId = ''
                     if common.scheduler.boss_scheduler_name == 'condor_g':
-                        # create hash of cfg file
-                        hash = makeCksum(common.work_space.cfgFileName())
-                        jobId = str(nj + 1) + '_' + hash + '_' + self.cfg_params['sid']
+                        jobId = str(nj + 1) + '_' + self.hash + '_' + self.cfg_params['sid']
                         common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
                     else:
                         jobId = str(nj + 1) + '_' + self.cfg_params['sid']
