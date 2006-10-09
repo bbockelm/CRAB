@@ -5,10 +5,6 @@ import common
 from crab_util import *
 from crab_exceptions import *
 
-# Crabpydir=commands.getoutput('which crab')
-# Topdir=string.replace(Crabpydir,'/python/crab','')
-# sys.path.append(Topdir+'/PsetCode')
-
 from cmsconfig import cmsconfig
 from CfgInterface import CfgInterface
 
@@ -23,7 +19,6 @@ class PsetManipulator:
         #convert Pset
         self.pyPset = os.path.basename(pset)  
         cmd = 'EdmConfigToPython > '+common.work_space.shareDir()+self.pyPset+'py < '+ self.pset
-        #cmd = 'EdmConfigToPython > '+common.work_space.shareDir()+self.pset+'py < '+ self.pset
         cmd_out = runCommand(cmd)  
         if cmd_out != '':
             msg = 'Could not convert Pset.cfg into python Dictionary \n'
@@ -32,7 +27,6 @@ class PsetManipulator:
             pass
         
         self.par = file(common.work_space.shareDir()+self.pyPset+'py').read()
-       # par = file(common.work_space.shareDir()+self.pset+'py').read()
 
         # get PSet
         self.cfg = CfgInterface(self.par,True)
@@ -98,3 +92,35 @@ class PsetManipulator:
         file1.close()
 
         return
+
+    def addCrabFJR(self,name):
+        """
+
+        _addCrabFJR_
+
+        add CRAB specific FrameworkJobReport (FJR)
+
+        if already a FJR exist in input CMSSW parameter-set, add a second one
+
+        """
+
+        # check if MessageLogger service already exist in configuration, if not, add it
+        if not "MessageLogger" in self.cfg.cmsConfig.serviceNames() :
+            self.cfg.cmsConfig.psdata['services']['MessageLogger'] = {
+                '@classname': ('string', 'tracked', 'MessageLogger'),
+                }
+            
+        # get MessageLogger service
+        loggerSvc = self.cfg.cmsConfig.service("MessageLogger")
+
+        # check if FJR is in MessageLogger service configuration, if not, add it
+        if not loggerSvc.has_key("fwkJobReports"):
+            loggerSvc['fwkJobReports'] = ("vstring", "untracked", [])
+
+        # check if crab FJR configuration is in MessageLogger configuration, if not, add it
+        if not '\"'+name+'\"' in loggerSvc['fwkJobReports'][2] :
+            loggerSvc['fwkJobReports'][2].append('\"'+name+'\"')
+
+        # check that default is taken for CRAB FJR configuration and any user specific is removed
+        if loggerSvc.has_key(name):
+            del loggerSvc[name]
