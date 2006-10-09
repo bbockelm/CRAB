@@ -36,6 +36,9 @@ class Cmssw(JobType):
         self.pset = ''      #scrip use case Da   
         self.datasetPath = '' #scrip use case Da
 
+        # set FJR file name
+        self.fjrFileName = 'crab_fjr.xml'
+
         self.version = self.scram.getSWVersion()
         self.setParam_('application', self.version)
 
@@ -97,6 +100,9 @@ class Cmssw(JobType):
         try:
             self.output_file = []
 
+            # add fjr report by default
+            self.output_file.append(self.fjrFileName)
+
             tmp = cfg_params['CMSSW.output_file']
             if tmp != '':
                 tmpOutFiles = string.split(cfg_params['CMSSW.output_file'],',')
@@ -106,11 +112,11 @@ class Cmssw(JobType):
                     self.output_file.append(tmp)
                     pass
             else:
-                log.message("No output file defined: only stdout/err will be available")
+                log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available")
                 pass
             pass
         except KeyError:
-            log.message("No output file defined: only stdout/err will be available")
+            log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available")
             pass
 
         # script_exe file as additional file in inputSandbox
@@ -236,6 +242,8 @@ class Cmssw(JobType):
                         self.PsetEdit.pythiaSeed("INPUT")
                         if (self.sourceSeedVtx) :
                             self.PsetEdit.pythiaSeedVtx("INPUTVTX")
+                # add FrameworkJobReport to parameter-set
+                self.PsetEdit.addCrabFJR(self.fjrFileName)
                 self.PsetEdit.psetWriter(self.configFilename())
             except:
                 msg='Error while manipuliating ParameterSet: exiting...'
@@ -656,7 +664,19 @@ class Cmssw(JobType):
         dataDir = 'src/Data/'
         if os.path.isdir(swArea+'/'+dataDir):
             filesToBeTarred.append(dataDir)
- 
+
+        ## copy ProdAgent dir to swArea
+        cmd = '\cp -rf ' + os.environ['CRABDIR'] + '/ProdAgentApi ' + swArea
+        cmd_out = runCommand(cmd)
+        if cmd_out != '':
+            common.logger.message('ProdAgentApi directory could not be copied to local CMSSW project directory.')
+            common.logger.message('No FrameworkJobreport parsing is possible on the WorkerNode.')
+
+        ## Now check if the Data dir is present
+        paDir = 'ProdAgentApi'
+        if os.path.isdir(swArea+'/'+paDir):
+            filesToBeTarred.append(paDir)
+
         ## Create the tar-ball
         if len(filesToBeTarred)>0:
             cwd = os.getcwd()
@@ -864,6 +884,15 @@ class Cmssw(JobType):
             txt += 'else \n'
             txt += '   echo "Successful untar" \n'
             txt += 'fi \n'
+            txt += '\n'
+            txt += 'echo "Include ProdAgentApi in PYTHONPATH"\n'
+            txt += 'if [ -z "$PYTHONPATH" ]; then\n'
+            txt += '   export PYTHONPATH=ProdAgentApi\n'
+            txt += 'else\n'
+            txt += '   export PYTHONPATH=ProdAgentApi:${PYTHONPATH}\n'
+            txt += 'fi\n'
+            txt += '\n'
+
             pass
         
         return txt
