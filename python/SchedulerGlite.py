@@ -10,7 +10,8 @@ import os, sys, time
 
 class SchedulerGlite(SchedulerEdg):
     def __init__(self):
-            SchedulerEdg.__init__(self)
+        SchedulerEdg.__init__(self)
+
     def sched_parameter(self):
         """
         Returns file with requirements and scheduler-specific parameters
@@ -76,17 +77,17 @@ class SchedulerGlite(SchedulerEdg):
             param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
 
             itr4=self.findSites_(first[i])
-            if (itr4 != []):
-                req1=[]  
-                j = 0
-                concString = '||'
-                for arg in itr4:
-                    print "ITR: ", arg
-                    #############
-                    # MC Changed matching syntax to avoid gang matching
-                    #############
-                    req1.append(' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ')
-            param_file.write('Requirements = ' + req + " && (" + concString.join(req1) + ');\n')   
+            req1=[]  
+            j = 0
+            concString = '||'
+            for arg in itr4:
+                #############
+                # MC Changed matching syntax to avoid gang matching
+                #############
+                req1.append(' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ')
+            if len(req1): req = req + " && (" + concString.join(req1) + ')'
+            req = req + ';\n'
+            param_file.write('Requirements = ' + req )
    
             if (self.edg_config and self.edg_config_vo != ''):
                 param_file.write('RBconfig = "'+self.edg_config+'";\n')   
@@ -238,9 +239,7 @@ class SchedulerGlite(SchedulerEdg):
         return cmd_out
 
     def findSites_(self, n):
-        itr4 =[] 
         sites = common.jobDB.destination(n)
-        if len(sites)>0 and sites[0]=="Any":
-            return itr4
-        if sites != [""]: 
-            return sites
+        if len(sites)>0 and sites[0]=="":
+            return []
+        return sites
