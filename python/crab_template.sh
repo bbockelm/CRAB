@@ -73,6 +73,17 @@ echo "$executable started at `date`"
 start_exe_time=`date +%s`
 #CRAB run_executable
 executable_exit_status=$?
+if [ -s crab_fjr.xml ]; then
+    if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
+	cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml`
+	echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
+	executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
+    else
+	echo "python framework to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executeable from command line."
+    fi
+else
+    echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executeable from command line."
+fi
 stop_exe_time=`date +%s`
 #TIME_EXE=$stop_exe_time - $start_exe_time
 let "TIME_EXE = stop_exe_time - start_exe_time"
