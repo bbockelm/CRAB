@@ -94,7 +94,7 @@ class Submitter(Actor):
                 for jj in range(len(jidLista)): # Add loop over SID returned from group submission  DS
                     nj= int(jj+int(first[ii]))
                     jid=jidLista[jj]
-                    common.logger.message("Submitted job # "+`(nj+1)`)
+                    common.logger.debug(1,"Submitted job # "+`(nj+1)`)
        
                     common.jobDB.setStatus(nj, 'S')
                     common.jobDB.setJobId(nj, jid)
