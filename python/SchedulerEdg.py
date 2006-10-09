@@ -780,7 +780,8 @@ class SchedulerEdg(Scheduler):
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + ','+\
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + ','+\
                   os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + ','+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') 
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') + ','+\
+                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'parseCrabFjr.py')
 
         if (not jbt.additional_inbox_files == []):
             inp_box = inp_box + ','
