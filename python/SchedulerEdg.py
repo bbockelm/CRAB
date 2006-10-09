@@ -180,16 +180,13 @@ class SchedulerEdg(Scheduler):
         job = common.job_list[index]
         jbt = job.type()
         
-        lastDest=''
+        lastBlock=-1
         first = []
-        last  = []
         for n in range(common.jobDB.nJobs()):
-            currDest=common.jobDB.destination(n)
-            if (currDest!=lastDest):
-                lastDest = currDest
+            currBlock=common.jobDB.block(n)
+            if (currBlock!=lastBlock):
+                lastBlock = currBlock
                 first.append(n)
-                if n != 0:last.append(n-1) 
-        if len(first)>len(last) :last.append(common.jobDB.nJobs())
   
         req = ''
         req = req + jbt.getRequirements()
@@ -199,6 +196,7 @@ class SchedulerEdg(Scheduler):
                 req = req + self.EDG_requirements
             else:
                 req = req +  ' && ' + self.EDG_requirements
+
         if self.EDG_ce_white_list:
             ce_white_list = string.split(self.EDG_ce_white_list,',')
             for i in range(len(ce_white_list)):
@@ -237,11 +235,9 @@ class SchedulerEdg(Scheduler):
             param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
 
             itr4=self.findSites_(first[i])
-            if (itr4 != []):
-                req1=''  
-                for arg in itr4:
-                    req1 = req + ' && anyMatch(other.storage.CloseSEs, ('+str(arg)+'))'
-            param_file.write('Requirements = '+req1 +';\n')   
+            for arg in itr4:
+                req = req + ' && anyMatch(other.storage.CloseSEs, ('+str(arg)+'))'
+            param_file.write('Requirements = '+req +';\n')   
    
             if (self.edg_config and self.edg_config_vo != ''):
                 param_file.write('RBconfig = "'+self.edg_config+'";\n')   
@@ -592,7 +588,9 @@ class SchedulerEdg(Scheduler):
         # Instance of the Status class provided by LB API
         jobStat = Status()
         st = 0
+        #print id, level, attr, self.states.index(attr)
         jobStat.getStatus(id, level)
+        #print jobStat.loadStatus(st)
         err, apiMsg = jobStat.get_error()
         if err:
             common.logger.debug(5,'Error caught' + apiMsg) 
@@ -601,7 +599,9 @@ class SchedulerEdg(Scheduler):
             for i in range(len(self.states)):
                 # Fill an hash table with all information retrieved from LB API
                 hstates[ self.states[i] ] = jobStat.loadStatus(st)[i]
+                #print i, jobStat.loadStatus(st)[i]
             result = jobStat.loadStatus(st)[self.states.index(attr)]
+            #print str(result)
             return result
 
     def queryDetailedStatus(self, id):
