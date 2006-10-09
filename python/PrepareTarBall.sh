@@ -15,6 +15,7 @@ echo "CRABDIR = $CRABDIR"
 CRABtag=$tag
 DBSAPItag="DBS_0_0_3"
 DLSAPItag="DLS_0_1_1"
+PAAPItag="HEAD"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
@@ -60,6 +61,15 @@ cd ../..
 mv DLS/Client/lib DLSAPI
 rm -r DLS
 # add this dir to PATH
+
+## download PA API
+echo ">> downloading PA API tag ${DBSAPItag} from CVS DBS/Clients/PythonAPI"
+mkdir -p ProdAgentApi
+cd ProdAgentApi
+cvs co -r ${PAAPItag} -d IMProv COMP/PRODAGENT/src/python/IMProv
+cvs co -r ${PAAPItag} -d FwkJobRep COMP/PRODAGENT/src/python/FwkJobRep
+cd ..
+
 
 cd ..
 tar zcvf $CRABdir.tgz $CRABdir
