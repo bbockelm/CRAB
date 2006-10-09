@@ -3,7 +3,7 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
-import os, sys, tempfile, shutil
+import os, sys, tempfile, shutil, time
 from Submitter import *
 
 class SchedulerBoss(Scheduler):
@@ -42,9 +42,9 @@ class SchedulerBoss(Scheduler):
         self.boss_db_dir = common.work_space.shareDir()
         self.boss_db_name = 'bossDB'
         if os.path.isfile(self.boss_db_dir+self.boss_db_name) :
-            common.logger.debug(5,'BossDB already exist')
+            common.logger.debug(6,'BossDB already exist')
         else:
-            common.logger.debug(5,'Creating BossDB in '+self.boss_db_dir+self.boss_db_name)
+            common.logger.debug(6,'Creating BossDB in '+self.boss_db_dir+self.boss_db_name)
 
             # First I have to create a SQLiteConfig.clad file in the proper directory
             cwd = os.getcwd()
@@ -76,7 +76,7 @@ class SchedulerBoss(Scheduler):
         boss_rt_check = "boss showRTMon"
         boss_out = runBossCommand(boss_rt_check,0)
         if string.find(boss_out, 'Default rtmon is: mysql') == -1 :
-            common.logger.debug(5,'registering RT monitor')
+            common.logger.debug(6,'registering RT monitor')
             # First I have to create a SQLiteConfig.clad file in the proper directory
             cwd = os.getcwd()
             os.chdir(common.work_space.shareDir())
@@ -123,7 +123,7 @@ class SchedulerBoss(Scheduler):
             
             os.chdir(cwd)
         else:
-            common.logger.debug(5,'RT monitor already registered')
+            common.logger.debug(6,'RT monitor already registered')
             pass # RT already registered
 
         return
@@ -219,7 +219,7 @@ class SchedulerBoss(Scheduler):
         if string.find(boss_out, sched_name) == -1 :
             msg = sched_name + ' scheduler not registered in BOSS\n'
             msg = msg + 'Starting registration\n'
-            common.logger.debug(5,msg)
+            common.logger.debug(6,msg)
             # On demand registration of job type
             register_path = self.boss_dir + '/'
             register_boss_scheduler = 'register'+ string.upper(sched_name) + 'Scheduler'
@@ -253,7 +253,7 @@ class SchedulerBoss(Scheduler):
         if string.find(boss_out, jobtype) == -1 :
             msg =  'Warning:' + jobtype + ' jobtype not registered in BOSS\n'
             msg = msg + 'Starting registration \n'
-            common.logger.debug(5,msg)
+            common.logger.debug(6,msg)
             register_path = self.boss_dir + '/'
             register_boss_jobtype= 'register' + string.upper(jobtype) + 'job'
             if os.path.exists(register_path+register_boss_jobtype):
@@ -438,6 +438,7 @@ class SchedulerBoss(Scheduler):
         Submit one job. nj -- job number.
         """
 
+        start = time.clock()
         boss_scheduler_name = string.lower(self.boss_scheduler.name())
         boss_scheduler_id = None
 
@@ -467,6 +468,9 @@ class SchedulerBoss(Scheduler):
                 if line.find('Scheduler ID for job') >= 0 :
                     #jid = line.split()[-1]
                     jid.append(line.split()[-1])
+        stop = time.time()
+        common.logger.debug(3,"Submit time :"+str(start-stop))
+        common.logger.write("Submit time :"+str(start-stop))
         return jid
 
     ###################### ---- OK for Boss4 ds
