@@ -9,6 +9,13 @@ class PostMortem(Actor):
     def __init__(self, cfg_params, nj_list):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
+
+        if common.scheduler.boss_scheduler_name == 'condor_g':
+            # create hash of cfg file
+            self.hash = makeCksum(common.work_space.cfgFileName())
+        else:
+            self.hash = ''
+        
         return
     
     def run(self):
@@ -50,9 +57,7 @@ class PostMortem(Actor):
             # ML reporting
             jobId = ''
             if common.scheduler.boss_scheduler_name == 'condor_g':
-                # create hash of cfg file
-                hash = makeCksum(common.work_space.cfgFileName())
-                jobId = str(nj) + '_' + hash + '_' + id
+                jobId = str(nj) + '_' + self.hash + '_' + id
             else:
                 jobId = str(nj) + '_' + id
 
