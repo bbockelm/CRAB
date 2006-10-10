@@ -58,8 +58,6 @@ class Crab:
         # produce more output
         self.debug_level = 0
 
-        # Scheduler name, e.g. 'edg', 'lsf'
-        # self.scheduler_name = ''
 
         self.initialize_(opts)
 
@@ -759,7 +757,7 @@ class Crab:
              common.prog_name+'. Working options:\n'
         #print self.job_type_name 
         header = header +\
-                 '  scheduler           ' + self.scheduler_name + '\n'+\
+                 '  scheduler           ' + self.cfg_params['CRAB.scheduler'] + '\n'+\
                  '  job type            ' + self.job_type_name + '\n'+\
                  '  working directory   ' + common.work_space.topDir()\
                  + '\n'
