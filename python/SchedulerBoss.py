@@ -353,12 +353,16 @@ class SchedulerBoss(Scheduler):
         """
         Check the compatibility of available resources
         """
+        start = time.time()
         schcladstring = ''
         self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(Block)+'.clad'
         if self.schclassad != '':
             schcladstring=' -schclassad '+self.schclassad
         cmd = 'boss listMatch -scheduler '+ str(self.schedulerName) + ' -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
         cmd_out = runBossCommand(cmd)
+        stop = time.time()
+        common.logger.debug(1,"listMatch time :"+str(stop-start))
+        common.logger.write("listMatch time :"+str(stop-start))
 
         #return self.boss_scheduler.listMatch(nj)
         jdl = ''
@@ -438,7 +442,6 @@ class SchedulerBoss(Scheduler):
         Submit one job. nj -- job number.
         """
 
-        start = time.clock()
         boss_scheduler_name = string.lower(self.boss_scheduler.name())
         boss_scheduler_id = None
 
@@ -468,9 +471,6 @@ class SchedulerBoss(Scheduler):
                 if line.find('Scheduler ID for job') >= 0 :
                     #jid = line.split()[-1]
                     jid.append(line.split()[-1])
-        stop = time.time()
-        common.logger.debug(3,"Submit time :"+str(stop-start))
-        common.logger.write("Submit time :"+str(stop-start))
         return jid
 
     ###################### ---- OK for Boss4 ds
