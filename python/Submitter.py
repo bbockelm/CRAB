@@ -3,8 +3,10 @@ from crab_util import *
 import common
 from ApmonIf import ApmonIf
 import Statistic
-from random import random
+#from random import random
 import time
+from ProgressBar import ProgressBar
+from TerminalController import TerminalController
 
 class Submitter(Actor):
     def __init__(self, cfg_params, nj_list):
@@ -34,6 +36,7 @@ class Submitter(Actor):
         if (totalCreatedJobs==0):
             common.logger.message("No jobs to be submitted: first create them")
             return
+
         #########
         # Loop over jobs
         njs = 0
@@ -85,8 +88,13 @@ class Submitter(Actor):
                     last.remove(last[len(last)-1])
                     last.append(self.nj_list[len(self.nj_list)-1])
                
+            ### Progress Bar indicator
+            term = TerminalController()
+
             for ii in range(len(first)): # Add loop DS
                 common.logger.message('Submitting jobs '+str(first[ii]+1)+' to '+str(last[ii]+1))
+                try: pbar = ProgressBar(term, 'Submitting '+str(len(self.nj_list))+' jobs')
+                except: pbar = None
                 #common.logger.message("Submitting job # "+`(nj+1)`)  
                 jidLista = common.scheduler.submit(first[ii],last[ii],ii)
        
@@ -94,8 +102,8 @@ class Submitter(Actor):
                 for jj in range(len(jidLista)): # Add loop over SID returned from group submission  DS
                     nj= int(jj+int(first[ii]))
                     jid=jidLista[jj]
+                    if pbar: pbar.update(float(nj+1)/float(len(jidLista)),'please wait')
                     common.logger.debug(1,"Submitted job # "+`(nj+1)`)
-       
                     common.jobDB.setStatus(nj, 'S')
                     common.jobDB.setJobId(nj, jid)
                     common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
@@ -157,7 +165,7 @@ class Submitter(Actor):
         
         stop = time.time()
         common.logger.debug(1, "Submission Time: "+str(stop - start))
-        #print "Submission Time: %d "%(stop - start)
+        common.logger.write("Submission time :"+str(stop - start))
         common.jobDB.save()
             
         msg = '\nTotal of %d jobs submitted'%njs
