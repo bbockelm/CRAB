@@ -73,15 +73,19 @@ echo "$executable started at `date`"
 start_exe_time=`date +%s`
 #CRAB run_executable
 executable_exit_status=$?
+stop_exe_time=`date +%s`
+
+echo "Parse FrameworkJobReport crab_fjr.xml"
 # check for crab_fjr.xml in pwd
 if [ -s crab_fjr.xml ]; then
     # check for ProdAgentApi in pwd
     if [ -d ProdAgentApi ]; then
 	# check for parseCrabFjr.xml in $RUNTIME_AREA
 	if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
-	    cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml`
+	    cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorJobID --MonitorJobID $MonitorJobID`
 	    echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
 	    executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
+	    echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"
 	else
 	    echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
 	fi
@@ -91,8 +95,7 @@ if [ -s crab_fjr.xml ]; then
 else
     echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
 fi
-stop_exe_time=`date +%s`
-#TIME_EXE=$stop_exe_time - $start_exe_time
+
 let "TIME_EXE = stop_exe_time - start_exe_time"
 echo "TIME_EXE = $TIME_EXE sec"
 echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"
