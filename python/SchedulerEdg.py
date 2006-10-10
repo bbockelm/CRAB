@@ -133,13 +133,16 @@ class SchedulerEdg(Scheduler):
 
         try: self.EDG_requirements = cfg_params['EDG.requirements']
         except KeyError: self.EDG_requirements = ''
-                                                                                                                                                             
+
         try: self.EDG_retry_count = cfg_params['EDG.retry_count']
         except KeyError: self.EDG_retry_count = ''
-                                                                                                                                                             
+
+        try: self.EDG_shallow_retry_count= cfg_params['EDG.shallow_retry_count']
+        except KeyError: self.EDG_shallow_retry_count = ''
+
         try: self.EDG_clock_time = cfg_params['EDG.max_wall_clock_time']
         except KeyError: self.EDG_clock_time= ''
-                                                                                                                                                             
+
         try: self.EDG_cpu_time = cfg_params['EDG.max_cpu_time']
         except KeyError: self.EDG_cpu_time = ''
 
@@ -710,6 +713,10 @@ class SchedulerEdg(Scheduler):
                                                                                            
         if ( self.EDG_retry_count ):               
             to_write = to_write + 'RetryCount = "'+self.EDG_retry_count+'"\n'
+            pass
+
+        if ( self.EDG_shallow_retry_count ):               
+            to_write = to_write + 'ShallowResubmissionRetryCount = "'+self.EDG_shallow_retry_count+'"\n'
             pass
 
         to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
