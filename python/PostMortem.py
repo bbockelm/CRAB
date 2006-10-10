@@ -36,14 +36,15 @@ class PostMortem(Actor):
             jobnum_str = '%06d' % (int(nj))
             fname = common.work_space.jobDir() + '/' + self.cfg_params['CRAB.jobtype'].upper() + '_' + jobnum_str + '.loggingInfo'
             if os.path.exists(fname):
-                common.logger.message('Logging info for job '+str(nj)+' already present in '+fname+' Remove it for update')
+                common.logger.message('Logging info for job '+str(nj)+' already present in '+fname+'\nRemove it for update')
                 continue
             jdl = open(fname, 'w')
             for line in out: jdl.write(line)
             jdl.close()
 
             reason = ''
-            if common.scheduler.boss_scheduler_name == "edg" or common.scheduler.boss_scheduler_name == "glite" :
+            ## SL this if-elif is the negation of OO! Mus disappear ASAP
+            if common.scheduler.boss_scheduler_name == "edg" or common.scheduler.boss_scheduler_name == "glite" or common.scheduler.boss_scheduler_name == "glitecoll":
                 loggingInfo = EdgLoggingInfo.EdgLoggingInfo()
                 reason = loggingInfo.decodeReason(out)
             elif common.scheduler.boss_scheduler_name == "condor_g" :
