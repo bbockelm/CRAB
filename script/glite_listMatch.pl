@@ -85,7 +85,7 @@ sub listMatch {
     print JDL ("Executable    = \"/bin/echo\";\n");
     close(JDL);
     # submitting command
-    $subcmd = "glite-job-list-match --noint $rbconfigstring $tmpfile|";
+    $subcmd = "glite-wms-job-list-match -a --noint $rbconfigstring $tmpfile|";
 #    print $subcmd;
     if (LOG) {
 	print LOG "subcmd = $subcmd\n";

@@ -5,27 +5,35 @@ import socket
 
 # Add GLITE_WMS_LOCATION to the python path
 try:
-    path = os.environ['GLITE_WMS_LOCATION']
+    path = os.environ['GLITE_LOCATION']
+    libPath=os.path.join(path, "lib")
+    sys.path.append(libPath)
+    libPath=os.path.join(path, "lib", "python")
+    sys.path.append(libPath)
 except:
-    print  "error : the GLITE_WMS_LOCATION variable is not set."
-    sys.exit(1)
-    
-libPath=os.path.join(path, "lib")
-sys.path.append(libPath)
-libPath=os.path.join(path, "lib", "python")
-sys.path.append(libPath)
+    msg = "Error: the GLITE_LOCATION variable is not set."
+#
+try:
+    path = os.environ['GLITE_WMS_LOCATION']
+    libPath=os.path.join(path, "lib")
+    sys.path.append(libPath)
+    libPath=os.path.join(path, "lib", "python")
+    sys.path.append(libPath)
+except:
+    msg = "Error: the GLITE_WMS_LOCATION variable is not set."
+#
 # rimuovere al piu' presto!!!
 try :
     sys.path.append("/home/codispot/SOAPpy-0.12.0/build/lib")
 except :
     pass
-  
+#
 try:
     import SOAPpy
 except:
     print "error : SOAPpy not found in %s"%sys.path.__str__()
     sys.exit(2);
-    
+#
 try:
     from wmproxymethods import Wmproxy
     from wmproxymethods import BaseException
@@ -42,115 +50,85 @@ except:
 #
 # Initialize variables used by the scheduler before parsing classad
 def initSched () :
-    ifile,ofile=os.popen4("voms-proxy-info")
-    sfile=ofile.read().strip()
-    if sfile=="Couldn't find a valid proxy.":
-       print sfile
-       print "error"
-       print "execute voms-proxy-init --voms "
-       sys.exit()
-    elif  sfile.split("timeleft  :")[1].strip()=="0:00:00":
-       print "error"
-       print "proxy expired"
-       sys.exit()
+    pass
+    # ifile,ofile=os.popen4("voms-proxy-info")
+    # sfile=ofile.read().strip()
+    # if sfile=="Couldn't find a valid proxy.":
+    #    print sfile
+    #    print "error"
+    #    print "execute voms-proxy-init --voms "
+    #    sys.exit()
+    # elif  sfile.split("timeleft  :")[1].strip()=="0:00:00":
+    #    print "error"
+    #    print "proxy expired"
+    #    sys.exit()
 #
-# Read a file containing a classad 
-def parseClassAd (BossClassad, subdir):
+# Read a file containing a classad
+def parseClassAd (BossClassad, process='n'):
 #
-    try:
-        cladadd = ""
-        cladfile=open("%s/%s"%(subdir,BossClassad),"r")
-        clad=cladfile.read().strip()
-        cladfile.close()
-    except:
-        raise
-#
-    vofile = ""
+    cladDict = {}
+    endpoints = []
     configfile = ""
-    url = ""
-    vo = ""
-    try:    
-        while clad[0]=='[':
-            clad=clad[1:]
-            clad=clad[:-1]
-            clad.strip()
-        cladMap = clad.split(';')
+    cladDict,endpoints,configfile = processClassAd ( BossClassad, endpoints )
+#
+    if process=='y' :
+        dummyfile = ""
+        if ( len(configfile) != 0 ):
+            cladDict,endpoints,dummyfile = processClassAd(configfile, endpoints)
+        if len(endpoints) == 0 and len(configfile) == 0 :
+            try:
+                path = os.environ['GLITE_WMS_LOCATION']
+                vo = cladDict['virtualorganisation'].replace("\"", "")
+                configfile = "%s/etc/%s/glite_wms.conf"%(path,vo)
+                cladDict,endpoints,dummyfile = processClassAd(configfile, endpoints)
+            except :
+                pass
+        if ( len(endpoints) == 0  ) :
+            print "Missing WMS"
+            raise
+        # always allowZippedISB
+        cladDict[ "allowzippedisb" ] = "true"
+# make the actual jdl
+    cladadd = ''
+    for k, v in cladDict.iteritems():
+        cladadd += k + ' = ' + v + ';\n'
+    return endpoints,cladadd
+#
+# Parse config classad
+def processClassAd(  file, endpoints ):
+    cladDict = {}
+    configfile = ""
+    try:
+        fileh = open(file, "r" )
+        jdl=fileh.read().strip();
+        fileh.close
+        if len(jdl) == 0 :
+            raise
+        while jdl[0]=='[':
+            jdl=jdl[1:-1].strip()
+        if jdl.find("WmsClient") >=0 :
+            jdl = (jdl.split("WmsClient")[1]).strip()
+            while jdl[0]=='[' or jdl[0]== '=' :
+                jdl=jdl[1:-1].strip()
+        cladMap = jdl.split(';')
         for p in cladMap:
             p = p.strip()
             if len(p) == 0 or p[0]=='#' :
                 continue
-            key = p.split('=')[0].strip()
-            val = p.split('=')[1].strip()
-            if ( key.lower()== "wmsconfig" ) :
+            index = p.find('=')
+            key = p[0:index].strip().lower()
+            val = p[index+1:].strip()
+            if ( key == "wmsconfig" ) :
                 configfile = val.replace("\"", "")
-            elif ( key.lower() == "wmproxyendpoints" ) :
-                url = val.replace("\"", "")
-            elif ( key.lower() == "virtualorganisation" ) :
-                vo = val.replace("\"", "")
+            elif ( key == "wmproxyendpoints" ) :
+                url = val[ val.find('{') +1 : val.find('}') ]
+                endpoints = endpoints + url.split(',')
             else :
-                cladadd = cladadd + p + ";\n"
-#
-# check for vo
-#
-        jdl=""
-        if ( len(configfile) != 0 ):
-            fileh = open(configfile, "r" )
-            jdl=fileh.read();
-            fileh.close
-            mylist=jdl.lower().split("virtualorganisation")
-            try :
-                d=mylist[1]
-                d=d.split("\"")[1]
-                vo = d.strip()
-            except :
-                pass
-            mylist=jdl.split("WMProxyEndpoints")
-            try :
-                d=mylist[1]
-                d=d.split("\"")[1]
-                url = d.strip()
-            except :
-                pass
-        if  ( len(vo) == 0 ) :
-            print "Jdl mandatory attribute is missing : VirtualOrganisation"
-            print "Please add it in your schclassad"
-            raise
-        else :
-            cladadd += "VirtualOrganisation = \"%s\";\n"%vo
-#
-# check for wms
-#
-        if ( len(url) == 0  ) :
-            if ( len(configfile) == 0 ):
-                path = os.environ['GLITE_WMS_LOCATION']
-                configfile = "%s/etc/%s/glite_wms.conf"%(path,vo)
-                try:
-                    fileh = open(configfile, "r" )
-                    jdl=fileh.read();
-                    fileh.close
-                except IOError, (errno,strerror):
-                    print "error reading",configfile
-                    print "%d %s\n"%(errno,strerror)
-                    raise
-                except :
-                    print "error reading",path
-                    print sys.exc_info()[0]
-                    print sys.exc_info()[1]
-                    raise
-            mylist=jdl.split("WMProxyEndpoints")
-            try :
-                d=mylist[1]
-                d=d.split("\"")[1]
-                url = d.strip()
-            except :
-                pass
-        if ( len(url) == 0  ) :
-            print "Missing WMS"
-            raise
-#
-        return url,cladadd
+                cladDict[ key ] = val
     except:
         raise
+    return cladDict,endpoints,configfile
+#
 #
 # --------------------- Scheduler specific routines -------------------------
 #     (Update the routines of this section to match your scheduler needs)
@@ -158,21 +136,20 @@ def parseClassAd (BossClassad, subdir):
 # Submit the job and return the scheduler id
 def submit (jdl, subdir, task_id, resub, zippedISB, sandboxMap, url):
     try :
-# first check if the sandbox dir can be created        
+# first check if the sandbox dir can be created
         if os.path.exists("%s/SandboxDir"%subdir) != 0:
             print "Presence of this directory is dangerous."
             print "%s/SandboxDir"%subdir
             print "Remove it and try again the submission"
-            sys.exit()            
+            raise
         wmproxy = Wmproxy(url)
         wmproxy.soapInit()
 # tmp: delegate proxy a mano!
         ifile,ofile=os.popen4("glite-wms-job-delegate-proxy -d bossproxy --endpoint %s"%url)
         sfile=ofile.read()
         if sfile.find("Error -")>=0:
-            print "error"
+            print "Warning"
             print sfile
-            sys.exit()
         delegationId ="bossproxy"
 # it will be substituted by something like:
 # ns=wmproxy.getGrstNs()
@@ -190,7 +167,7 @@ def submit (jdl, subdir, task_id, resub, zippedISB, sandboxMap, url):
         if len(sfile)!=0:
             print "mkdir error"
             print sfile
-            sys.exit()
+            raise
         ifile,ofile=os.popen4("mv %s %s"%(sandboxMap,basedir))
         sfile=ofile.read()
         if len(sfile)!=0:
@@ -220,27 +197,16 @@ def submit (jdl, subdir, task_id, resub, zippedISB, sandboxMap, url):
             name = name.replace("BossJob_","")
             jobId = job.getJobId()
             print "%s\t%d\t%s\t%s" %(name,resub,jobId,taskId)
-    except BaseException, err:
-        print "wmproxy error"
+# cleaning up everything: delete temporary files and exit
+#        ifile,ofile=os.popen4("rm -rf SandboxDir")
         ifile,ofile=os.popen4("rm -rf SandboxDir %s"%zippedISB)
         sfile=ofile.read()
-        print err.toString()
-        sys.exit()
+        if len(sfile)!=0:
+            print sfile
     except:
         ifile,ofile=os.popen4("rm -rf SandboxDir %s"%zippedISB)
         sfile=ofile.read()
-        print "error: exiting"
-        sys.exit()
-# delete temporary files
-#    ifile,ofile=os.popen4("rm -rf SandboxDir")
-    ifile,ofile=os.popen4("rm -rf SandboxDir %s"%zippedISB)
-    sfile=ofile.read()
-    print sfile
-    if len(sfile)!=0:
-        print sfile
-        sys.exit()
-#
-#    return $id;
+        raise
 #
 # ---------------------------- Start of main ---------------------------------
 #
@@ -292,7 +258,7 @@ except:
     print "error"
     print sys.exc_info()[0]
     sys.exit()
-
+#
 if task_id < 1 :
     print "error"
     print "task_id must be > 0.\nYour task_id is %s" % args[1]
@@ -322,12 +288,10 @@ initSched()
 try:
     file=open("%s/submit_%d"%(subdir,task_id),"r")
 except IOError, (errno,strerror):
-    print "error"
     print "%s/submit_%d"%(subdir,task_id) 
     print "%d %s\n"%(errno,strerror)
     sys.exit()
 except :
-    print "error"
     print sys.exc_info()[0]
     print sys.exc_info()[1]
     sys.exit()
@@ -339,12 +303,13 @@ count =0
 #
 bossClassad = "BossClassAdFile_%d"%task_id
 try:
-    url,schedClassad = parseClassAd (bossClassad, subdir)
+    endpoints,schedClassad = parseClassAd (subdir + '/' + bossClassad, 'y')
 except:
     print bossClassad
     print sys.exc_info()[0]
     print sys.exc_info()[1]
     sys.exit()
+#
 for i in ranges:
     n=i.strip().split(":")
     if len(n)==0:
@@ -353,7 +318,6 @@ for i in ranges:
             end=start
             resub=1
         except:
-            print "error"
             print "wrong interval format:"+i
             sys.exit()
     if len(n)==1:
@@ -362,7 +326,6 @@ for i in ranges:
             end=start
             resub=1
         except:
-            print "error"
             print "wrong interval format:"+i
             sys.exit()
     if len(n)==2:
@@ -371,7 +334,6 @@ for i in ranges:
             end=int(n[1])
             resub=1
         except:
-            print "error"
             print "wrong interval format:"+i
             sys.exit()
     if len(n)>2:
@@ -380,24 +342,16 @@ for i in ranges:
             end=int(n[1])+1
             resub=int(n[2])
         except:
-            print "error"
             print "wrong interval format:"+i
             sys.exit()
+#
     jdl = "[\n"
     jdl += "Type = \"collection\" ;\n"
     bossGlobalArchive="%s/%s"%(subdir,commonSandbox)
     stdinfile="%s/%s"%(subdir,stdin)
     zippedISB = "BossFullArchive.tar.gz";
     GlobalSandbox = "\"file://%s\",\"file://%s\",\"file://%s\""%(bossGlobalArchive,executable,stdinfile)
-    jdl += "AllowZippedISB = true;\n"
     jdl += "ZippedISB = \"%s\";\n"%zippedISB
-    try:
-        url,add = parseClassAd (bossClassad, subdir)
-    except:
-        print bossClassad
-        print sys.exc_info()[0]
-        print sys.exc_info()[1]
-        sys.exit()
     jdl += schedClassad
     jdl += "Nodes = {\n"
 #
@@ -423,7 +377,7 @@ for i in ranges:
         jdl += "OutputSandbox = {\"BossOutArchive_%d_%d_%d.tgz\",\"%s\"};\n"%(task_id,id,resub,stdout)
         try:
             jobcladadd="BossClassAdFile_%d_%d"%(task_id,id)
-            jdl +=  parseClassAd (jobcladadd, subdir)
+            jdl +=  parseClassAd ( subdir + '/' + jobcladadd )
         except:
             pass
         if (id+1)==end :
@@ -439,6 +393,21 @@ for i in ranges:
 #
 # --------------------------- Ready to submit --------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
-    submit (jdl, subdir, task_id, resub, zippedISB, sandboxMap, url)
+    for url in endpoints :
+        try :
+            url = url.replace("\"", "").strip()
+            if  len( url ) == 0 or url[0]=='#' :
+                continue
+            submit (jdl, subdir, task_id, resub, zippedISB, sandboxMap, url)
+            sys.exit(0)
+        except BaseException, err:
+            print err.toString()
+            print "failed submission to",url
+            continue
+        except SystemExit, exit:
+            sys.exit()
+        except :
+            print "submission failed"
+            sys.exit()            
 #
 # ----------------------------- End of main ----------------------------------

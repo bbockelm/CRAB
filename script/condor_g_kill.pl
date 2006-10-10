@@ -5,10 +5,19 @@
 $status="error";
 $len=@ARGV;
 if ($len==1) {
-  $identifier = $ARGV[0];
-  if ( $identifier =~ /(.+)\/\/(.+)/ ) {
-    $schedd=$1;
-    $sid=$2;
+  $sid=$ARGV[0];
+  # use GlobalJobId to query for schedd name
+  $cmd = "condor_q -l $sid|";
+  open (CMD, $cmd);
+  $line = <CMD>;
+  while ($line) {
+    if ( $line =~ m/GlobalJobId/ ) {
+      print $line;
+      @array1 = split(/\"/, $line);
+      @array2 = split(/#/,@array1[1]);
+      $schedd = @array2[0];
+    }
+    $line = <CMD>;
   }
   $tmpfile = `mktemp condor_XXXXXX` || die "error";
   chomp($tmpfile);

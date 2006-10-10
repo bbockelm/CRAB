@@ -16,7 +16,7 @@ $subdir = `pwd`; chomp $subdir;
 # ------------------- Optional logging of submission -------------------------
 #   (change file name and comment/uncomment the open statement as you wish)
 $logFile = "$subdir/bossSubmit.log";
-# open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
+#open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
 #
 # --------------------------- Get arguments ----------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -203,6 +203,7 @@ sub submit {
   if ( ! ($globusrsl eq "") ) {
     print CMD ("globusrsl               = $globusrsl\n");
   }
+  print CMD ("ENABLE_GRID_MONITOR     = TRUE\n");
   # output,error files passed to executable
   print CMD ("initialdir              = $subdir\n");
   print CMD ("input                   = $stdin\n");
@@ -218,19 +219,11 @@ sub submit {
   print CMD ("when_to_transfer_output = ON_EXIT\n");
   print CMD ("transfer_input_files    = $inSandBox\n");
   print CMD ("transfer_output_files   = $outSandBox\n");
-  # make debugging easier
-  # print CMD ("globusrsl=(condor_submit=('+SubmitterJobId' '\\\"\$ENV(HOSTNAME)#\$(Cluster).\$(Process)\\\"'))\n");
   # A string to help finding boss jobs in condor
   print CMD ("BossJob                = $jid\n");
   print CMD ("Queue 1\n");  
   close(CMD);
-  # print content of jdl into logfile
-  if (LOG) {
-    open (olitmp, $tmpfile);
-    while ( <olitmp> ) {
-      print LOG "jdl line: $_";
-    }
-  }
+  #
   $subcmd = "condor_submit $tmpfile |";
   # open a pipe to read the stdout of qsub
   open (SUB, $subcmd);
@@ -254,10 +247,12 @@ sub submit {
   
   # close the file handles
   close(SUB);
-  unlink "$tmpfile";
 
+  # delete temporary file
+#  unlink "$tmpfile";
+#  unlink "BossArchive_${jid}.tgz";
   #
-  return "$subhost//$id\n";
+  return "$id\n";
 }
 #
 # ----------------------------------------------------------------------------

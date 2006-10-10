@@ -1,21 +1,24 @@
 #!/usr/bin/env python
+import sys
+import os
 #
 # ---------------------- General pourpose routines --------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
 #
 # Initialize variables used by the scheduler before parsing classad
 def initSched () :
-    ifile,ofile=os.popen4("voms-proxy-info")
-    sfile=ofile.read().strip()
-    if sfile=="Couldn't find a valid proxy.":
-       print sfile
-       print "error"
-       print "execute voms-proxy-init --voms "
-       sys.exit()
-    elif  sfile.split("timeleft  :")[1].strip()=="0:00:00":
-       print "error"
-       print "proxy expired"
-       sys.exit()
+    pass
+    # ifile,ofile=os.popen4("voms-proxy-info")
+    # sfile=ofile.read().strip()
+    # if sfile=="Couldn't find a valid proxy.":
+    #    print sfile
+    #    print "error"
+    #    print "execute voms-proxy-init --voms "
+    #    sys.exit()
+    # elif  sfile.split("timeleft  :")[1].strip()=="0:00:00":
+    #    print "error"
+    #    print "proxy expired"
+    #    sys.exit()
 ##
 # Read a file containing a classad 
 def parseClassAd (BossClassad, subdir):
@@ -50,57 +53,80 @@ def submit (subdir, task_id, resub,config ):
     if len(config) != 0 :
         configstr = "-c " + config
 # proxy delegation
-    ifile,ofile=os.popen4("glite-wms-job-delegate-proxy -d bossproxy "+configstr)                          
-    sfile=ofile.read()
-    if sfile.find("Error -")>=0:
-       print "error"
-       print sfile
-       sys.exit()
+#    ifile,ofile=os.popen4("glite-wms-job-delegate-proxy -d bossproxy "+configstr)                          
+#    sfile=ofile.read()
+#    if sfile.find("Error -")>=0:
+#       print "error"
+#       print sfile
+#       sys.exit()
 # submit        
-    ifile,ofile=os.popen4("glite-wms-job-submit -d bossproxy %s %s/parjdl_%d"%(configstr,subdir,task_id))
+#    ifile,ofile=os.popen4("glite-wms-job-submit -d bossproxy %s %s/parjdl_%d"%(configstr,subdir,task_id))
+    ifile,ofile=os.popen4("glite-wms-job-submit -a %s %s/parjdl_%d"%(configstr,subdir,task_id))
     sfile=ofile.read()
-    if sfile.find("Error -")>=0:
-        print "error in submission"
+    try:
+        c=sfile.split("Your job identifier is:")[1].strip()
+        parent=c.split("=")[0].strip()
+    except:
         print sfile
+        print "submission failed"
         sys.exit()
-    c=sfile.split("Your job identifier is:")[1].strip()
-    parent=c.split("=")[0].strip()
 #
 # retrieving children ids
 #
-    ifile, ofile=os.popen4("glite-wms-job-status "+ parent)
-    sfile=ofile.read()
-    if sfile.find("Error")>=0:
+    try:
+        path = os.environ['GLITE_LOCATION']
+        libPath=os.path.join(path, "lib")
+        sys.path.append(libPath)
+        libPath=os.path.join(path, "lib", "python")
+        sys.path.append(libPath)
+    except:
+        msg = "Error: the GLITE_LOCATION variable is not set."
+        #
+    try:
+        path = os.environ['GLITE_WMS_LOCATION']
+        libPath=os.path.join(path, "lib")
+        sys.path.append(libPath)
+        libPath=os.path.join(path, "lib", "python")
+        sys.path.append(libPath)
+    except:
+        msg = "Error: the GLITE_WMS_LOCATION variable is not set."
+    #
+    from glite_wmsui_LbWrapper import Status
+    from glite_wmsui_AdWrapper import DagWrapper
+    from Job import JobStatus
+#
+# instatiating status object
+    status =   Status()
+#
+# Loading dictionary with available parameters list
+    states = JobStatus.states
+    status.getStatus(parent,1)
+    err, apiMsg = status.get_error()
+    if err:
         print "error in retrieving children ids"
-        print sfile
         sys.exit()
-    d=sfile.split("- Nodes information")[1].strip()
-#
-    j=[]
-    d=d.split("Status info for the Job :")[1:]
-    for job in d:
-        j.append(job.split("\n")[0].strip())
-#
-    for job in j:
-        ifile, ofile=os.popen4("glite-job-status -v 3 %s" % job)
-        sfile=ofile.read()
-        c=sfile.split("BossJobID = \"")[1].strip()
-#        c=sfile.split("NodeName = \"")[1].strip()
-        c=c.split("\"")[0].strip()
-        print "%s\t%d\t%s\t%s" %(c,resub,job,parent)
-#
-# delete temporary files
-#    unlink "$tmpfile";
-#    unlink "BossArchive_${jid}.tgz";
-#    return $id;
+    jobidInfo = status.loadStatus(0)
+    jobidMap={}
+    jdl = jobidInfo[ states.index("jdl")  ]
+    dagad = DagWrapper()
+    if dagad.fromString(jdl):
+        err , apiMsg = dagad.get_error ()
+        errMsg('Warning','UI_JDL_WRONG_SYNTAX' ,  apiMsg)
+    else:
+        vectMap=dagad.getMap()
+        err , apiMsg = dagad.get_error ()
+        if err:
+            errMsg('Warning','UI_JDL_WRONG_SYNTAX' ,  apiMsg)
+        else:
+            for i in range(len(vectMap)/2):
+                print "%s\t%d\t%s\t%s" %(vectMap[i*2+1].split('_')[1],resub,vectMap[i*2],parent)
+    return
 #
 # ----------------------------------------------------------------------------
 #
 #
 # ---------------------------- Start of main ---------------------------------
 #
-import os
-import sys
 #
 # ------------------- Get info on local environment --------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -241,11 +267,12 @@ for i in ranges:
         cladadd,config=parseClassAd (bossClassad, subdir)
         ofile.write( cladadd )
     except:
-        print "error"
-        print bossClassad
-        print sys.exc_info()[0]
-        print sys.exc_info()[1]
-        sys.exit()
+        pass
+#        print "error"
+#        print bossClassad
+#        print sys.exc_info()[0]
+#        print sys.exc_info()[1]
+#        sys.exit()
     ofile.write("Nodes = {\n")
         
     for i in range(start,end):
@@ -262,7 +289,7 @@ for i in ranges:
         ofile.write("InputSandbox = {%s};\n"%InputSandbox)
         ofile.write("OutputSandbox = {\"BossOutArchive_%d_%d_%d.tgz\",\"%s\"};\n"%(task_id,i,resub,stdout))
         ofile.write("UserTags = [ \n")
-        ofile.write("BossJobID=\"%d\";\n"%i)
+        ofile.write("bossjobid=\"%d\";\n"%i)
         ofile.write("];\n")
         try:
             jobcladadd="BossClassAdFile_%d_%d"%(task_id,i)

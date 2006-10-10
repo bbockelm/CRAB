@@ -4,12 +4,12 @@ import os
 #
 #check proxy validity
 #
-ifile,ofile=os.popen4("voms-proxy-info")
-sfile=ofile.read().strip()
-if sfile=="Couldn't find a valid proxy.":
-    sys.exit()
-elif  sfile.split("timeleft  :")[1].strip()=="0:00:00":
-    sys.exit()
+# ifile,ofile=os.popen4("voms-proxy-info")
+# sfile=ofile.read().strip()
+# if sfile=="Couldn't find a valid proxy.":
+#     sys.exit()
+# elif  sfile.split("timeleft  :")[1].strip()=="0:00:00":
+#     sys.exit()
 #
 # Add GLITE_WMS_LOCATION to the python path
 #
