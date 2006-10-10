@@ -82,7 +82,7 @@ if [ -s crab_fjr.xml ]; then
     if [ -d ProdAgentApi ]; then
 	# check for parseCrabFjr.xml in $RUNTIME_AREA
 	if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
-	    cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorJobID --MonitorJobID $MonitorJobID`
+	    cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
 	    echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
 	    executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
 	    echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"
