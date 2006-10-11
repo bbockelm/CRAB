@@ -17,7 +17,7 @@ class StatusBoss(Actor):
         self.countCancel = []
         self.countAbort = []
         self.countCorrupt = []
-        self.countCleared = []
+        self.countCleared = {}
         return
 
     def run(self):
@@ -48,22 +48,41 @@ class StatusBoss(Actor):
         """
         compute the status
         """
-        # moved loading of jobDB before boss status check to enable condor_g
-        # scheduler to query jobdb for efficient access to destination
+
+        # load jobdb
         common.jobDB.load()
 
+        # query TaskId from taskdb
         bossTaskId=common.taskDB.dict('BossTaskId')
+
+        # update RT information
         cmd = 'boss RTupdate -taskid '+bossTaskId
         runBossCommand(cmd)
+        
+        # update status in Boss database
+        common.logger.message("Checking the status of all jobs")
+        results = common.scheduler.queryEveryStatus(bossTaskId)
+
+        # query Boss database
         add2tablelist=''
         addjoincondition = ''
-        nodeattr='JOB.E_HOST'
 
-        ##BOSS4
+        # SQL query format
+        # JOB.CHAIN_ID
+        # JOB.SCHED_ID
+        # JOB.EXEC_HOST
+        # JOB.SUB_T
+        # JOB.START_T
+        # JOB.STOP_T
+        # JOB.GETOUT_T
+        # JOB.LAST_T
+        # crabjob.EXE_EXIT_CODE
+        # crabjob.JOB_EXIT_STATUS
+
+        # query unfinished jobs
         cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' ORDER BY crabjob.CHAIN_ID"' 
         cmd_out = runBossCommand(cmd)
         jobAttributes={}
-        CoupJobsID={}
         nline=0
         header=''
         fielddesc=()
@@ -74,10 +93,21 @@ class StatusBoss(Actor):
                 if nline==2:
                     header = self.splitbyoffset_(line,fielddesc)
                 elif nline > 2:
-                    js = line.split(None,2)
-                    jobAttributes[int(js[0])]=self.splitbyoffset_(line,fielddesc)
-                    CoupJobsID[int(js[0])]=int(js[0])
+                    array = self.splitbyoffset_(line,fielddesc)
+                    jobAttributes[int(array[0])]= array
             nline = nline+1
+
+        # SQL query format
+        # ENDED_ JOB.CHAIN_ID
+        # ENDED_ JOB.SCHED_ID
+        # ENDED_ JOB.EXEC_HOST
+        # ENDED_ JOB.SUB_T
+        # ENDED_ JOB.START_T
+        # ENDED_ JOB.STOP_T
+        # ENDED_ JOB.GETOUT_T
+        # ENDED_ JOB.LAST_T
+        # ENDED_ crabjob.EXE_EXIT_CODE
+        # ENDED_ crabjob.JOB_EXIT_STATUS
 
         # query also the ended table to get job status of jobs already retrieved
         cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS  from ENDED_JOB,ENDED_crabjob'+add2tablelist+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\'  and ENDED_JOB.SCHED_ID!=\'\' ORDER BY ENDED_crabjob.CHAIN_ID"' 
@@ -90,9 +120,8 @@ class StatusBoss(Actor):
                 if nline==2:
                     header = self.splitbyoffset_(line,fielddesc)
                 elif nline > 2:
-                    js = line.split(None,2)
-                    jobAttributes[int(js[0])]=self.splitbyoffset_(line,fielddesc)
-                    CoupJobsID[int(js[0])]=int(js[0])
+                    array = self.splitbyoffset_(line,fielddesc)
+                    jobAttributes[int(array[0])]= array
             nline = nline+1
 
         # format output
@@ -102,33 +131,41 @@ class StatusBoss(Actor):
         # EXE_EXIT_CODE: field lenght 13
         # JOB_EXIT_CODE: field lenght 15
 
+        # secure header if BossDB does not give any answer back (jobs created but not submitted)
+        if header == '' :
+            header = ['Chain']
+
+        # pritn header
         printline = ''
         printline+= "%-8s " % header[0]
         printline+= "%-18s %-40s %-13s %-15s" % ('STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
         print printline
         print '---------------------------------------------------------------------------------------------------'
         for_summary = {}
-        orderdBossID = CoupJobsID.values()
+        orderedBossID = jobAttributes.keys()
+        orderedBossID.sort()
         counter = 0
-        for bossid in orderdBossID:
+        now = time.time()
+        for bossid in orderedBossID:
             # every 10 jobs, print a line for orientation
             if counter != 0 and counter%10 == 0 :
                 print '---------------------------------------------------------------------------------------------------'
             counter += 1
             printline=''
-            jobStatus=''
 
             # if JobDB status is 'Z', corrupted output tarball, don't check status
             if common.jobDB.status(int(jobAttributes[bossid][0].strip())-1) == 'Z' :
                 jobStatus = 'Cleared (Corrupt)'
             else :
-                jobStatus = common.scheduler.queryStatus(bossTaskId, bossid)
+                try: jobStatus = results[bossid]
+                except: jobStatus = 'Unknown'
+
             # debug
             msg = 'jobStatus' + jobStatus
             common.logger.debug(4,msg)
             ###
-            for_summary[int(jobAttributes[bossid][0].strip())] = jobStatus
             exe_code =jobAttributes[bossid][2]   ##BOSS4 EXE_EXIT_CODE
+            for_summary[int(jobAttributes[bossid][0].strip())] = jobStatus + '_' + str(exe_code)
    
         ###########------> This info must be come from BOSS4      DS.
         ###########------> For the moment BOSS know only WN, but then it will know also CE   DS.
@@ -186,28 +223,31 @@ class StatusBoss(Actor):
         # moved loading of jobDB before boss status check to enable condor_g scheduler to query jobdb for efficient access to destination
         # common.jobDB.load()
         for id in statusList.keys():
-            if statusList[id] == 'Created':
+            if statusList[id].split('_')[0] == 'Created':
                 self.countCreated.append(id)
-            elif statusList[id] == 'Done (Success)' or statusList[id] == 'Done (Aborted)':
+            elif statusList[id].split('_')[0] == 'Done (Success)' or statusList[id].split('_')[0] == 'Done (Aborted)':
                 self.countDone.append(id)
 	        common.jobDB.setStatus(int(id)-1, 'D')
-            elif statusList[id] == 'Running' :
+            elif statusList[id].split('_')[0] == 'Running' :
                 self.countRun.append(id)
-            elif statusList[id] == 'Scheduled' :
+            elif statusList[id].split('_')[0] == 'Scheduled' :
                 self.countSched.append(id)
-            elif statusList[id] == 'Ready' :
+            elif statusList[id].split('_')[0] == 'Ready' :
                 self.countReady.append(id)
-            elif statusList[id] == 'Cancelled' or statusList[id] == 'Killed':
+            elif statusList[id].split('_')[0] == 'Cancelled' or statusList[id].split('_')[0] == 'Killed':
                 self.countCancel.append(id)
                 common.jobDB.setStatus(int(id)-1, 'K')
-            elif statusList[id] == 'Aborted':
+            elif statusList[id].split('_')[0] == 'Aborted':
                 self.countAbort.append(id)
                 common.jobDB.setStatus(int(id)-1, 'A')
-            elif statusList[id] == 'Cleared (Corrupt)':
+            elif statusList[id].split('_')[0] == 'Cleared (Corrupt)':
                 self.countCorrupt.append(id)
                 common.jobDB.setStatus(int(id)-1, 'Z')
-            elif statusList[id] == 'Cleared':
-                self.countCleared.append(id)
+            elif statusList[id].split('_')[0] == 'Cleared':
+                if statusList[id].split('_')[-1] in self.countCleared.keys() :
+                    self.countCleared[statusList[id].split('_')[-1]].append(id)
+                else :
+                    self.countCleared[statusList[id].split('_')[-1]] = [id]
                 pass 
 
         common.jobDB.save()
@@ -263,10 +303,15 @@ class StatusBoss(Actor):
             print "          List of jobs: %s" % self.joinIntArray_(self.countCorrupt)
             print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number (or range of JOB)" 
             print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
-        if (len(self.countCleared) != 0):
+        if (len(self.countCleared.keys()) != 0):
+            total_size = 0
+            for key in self.countCleared.keys() :
+                total_size += len(self.countCleared[key])
             print ''
-            print ">>>>>>>>> %i Jobs cleared" % len(self.countCleared)
-            print "          List of jobs: %s" % self.joinIntArray_(self.countCleared)
+            print ">>>>>>>>> %i Jobs cleared" % total_size
+            for key in self.countCleared.keys() :
+                print "          %i Jobs with EXE_EXIT_CODE: %s" % (len(self.countCleared[key]),key)
+                print "          List of jobs: %s" % self.joinIntArray_(self.countCleared[key])
 
          
 
