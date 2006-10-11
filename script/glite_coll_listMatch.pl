@@ -69,7 +69,7 @@ sub processClassAd {
 #               print "$ClAdKey : $ClAdVal \n";                
 	    chomp($ClAdVal);
           print "ClAdVal = $ClAdVal \n";
-	    $rbconfigstring="$ClAdVal";
+	    $rbconfigstring="-c $ClAdVal";
           #     print "---->>>>>>> $rbconfigstring \n";
 	} elsif ( $ClAdKey ne "" ) {
 	    $ppend2JDL.="$ClAdKey = $ClAdVal;\n";
@@ -87,8 +87,8 @@ sub listMatch {
     print JDL ("Executable    = \"/bin/echo\";\n");
     close(JDL);
     # submitting command
-    $subcmd = "glite-wms-job-list-match -a -c $rbconfigstring $tmpfile|";
-#    print $subcmd;
+    $subcmd = "glite-wms-job-list-match -a $rbconfigstring $tmpfile|";
+    #print " ---->>>>> $subcmd \n";
     if (LOG) {
 	print LOG "subcmd = $subcmd\n";
     }
