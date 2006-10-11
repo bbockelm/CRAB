@@ -23,14 +23,11 @@ class SchedulerEdg(Scheduler):
     def configure(self, cfg_params):
 
         try:
-            RB = cfg_params["EDG.rb"]
-            edgConfig = EdgConfig(RB)
-            self.edg_config = edgConfig.config()
-            self.edg_config_vo = edgConfig.configVO()
+            RB=cfg_params["EDG.rb"]
+            self.rb_param_file=self.rb_configure(RB)
         except KeyError:
-            self.edg_config = ''
-            self.edg_config_vo = ''
-
+            self.rb_param_file=''
+            pass
         try:
             self.proxyServer = cfg_params["EDG.proxy_server"]
         except KeyError:
@@ -52,13 +49,11 @@ class SchedulerEdg(Scheduler):
 
         try: 
             self.EDG_ce_black_list = cfg_params['EDG.ce_black_list']
-            #print "self.EDG_ce_black_list = ", self.EDG_ce_black_list
         except KeyError: 
             self.EDG_ce_black_list  = ''
 
         try: 
             self.EDG_ce_white_list = cfg_params['EDG.ce_white_list']
-            #print "self.EDG_ce_white_list = ", self.EDG_ce_white_list
         except KeyError: self.EDG_ce_white_list = ''
 
         try: self.VO = cfg_params['EDG.virtual_organization']
@@ -169,6 +164,21 @@ class SchedulerEdg(Scheduler):
         return
     
 
+    def rb_configure(self, RB):
+        self.edg_config = ''
+        self.edg_config_vo = ''
+        self.rb_param_file = ''
+
+        edgConfig = EdgConfig(RB)
+        self.edg_config = edgConfig.config()
+        self.edg_config_vo = edgConfig.configVO()
+
+        if (self.edg_config and self.edg_config_vo != ''):
+            self.rb_param_file = 'RBconfig = "'+self.edg_config+'";\nRBconfigVO = "'+self.edg_config_vo+'";'
+            print "rb_param_file = ", self.rb_param_file
+        return self.rb_param_file
+       
+
     def sched_parameter(self):
         """
         Returns file with requirements and scheduler-specific parameters
@@ -236,9 +246,8 @@ class SchedulerEdg(Scheduler):
                 req = req + ' && anyMatch(other.storage.CloseSEs, ('+str(arg)+'))'
             param_file.write('Requirements = '+req +';\n')   
    
-            if (self.edg_config and self.edg_config_vo != ''):
-                param_file.write('RBconfig = "'+self.edg_config+'";\n')   
-                param_file.write('RBconfigVO = "'+self.edg_config_vo+'";')
+            if (self.rb_param_file != ''):
+                param_file.write(self.rb_param_file)   
 
             param_file.close()   
 
@@ -661,12 +670,6 @@ class SchedulerEdg(Scheduler):
         req=' '
         req = req + jbt.getRequirements()
 
-
-        #sites = common.jobDB.destination(nj)
-        #if len(sites)>0 and sites[0]!="Any":
-        #    req = req + ' && anyMatch(other.storage.CloseSEs, (_ITR4_))'
-        #req = req     
-    
         if self.EDG_requirements:
             if (req == ' '):
                 req = req + self.EDG_requirements
@@ -763,10 +766,6 @@ class SchedulerEdg(Scheduler):
         xml.write('<exec> ' + os.path.basename(script) +' </exec>\n')
         xml.write(jt_string)
     
-           
-        ### only one .sh  JDL has arguments:
-        ### Fabio
-#        xml.write('args = "' + str(nj+1)+' '+ jbt.getJobTypeArguments(nj, "EDG") +'"\n')
         xml.write('<args> <![CDATA[\n _ITR2_ \n]]> </args>\n')
         xml.write('<program_types> crabjob </program_types>\n')
         inp_box = script + ','
