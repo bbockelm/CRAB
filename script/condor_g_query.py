@@ -1,102 +1,85 @@
 #!/usr/bin/env python
-import sys
-import os
-import time
-import popen2,select,string
+import sys, os, string
 
-#output = open('oli_output','w')
+debug = 1
+if debug :
+    output = open('queryLog','w')
 
+# save bossId in dictionary with empty status
+boss_ids = {}
 for line in sys.stdin:
-    identifier = line.split('\n')[0]
-    #output.write(identifier)
-    #output.write('\n')
-    schedd = identifier.split('//')[0]
-    id = identifier.split('//')[1]
-    cmd = 'condor_q -name ' + schedd + ' ' + id
+    boss_ids[line.strip()] = ''
 
-    # imported from crab_util
-    child = popen2.Popen3(cmd, 1) # capture stdout and stderr from command
-    child.tochild.close()             # don't need to talk to child
-    outfile = child.fromchild 
-    outfd = outfile.fileno()
-    errfile = child.childerr
-    errfd = errfile.fileno()
-#    makeNonBlocking(outfd)            # don't deadlock!
-#    makeNonBlocking(errfd)
-    outdata = []
-    errdata = []
-    outeof = erreof = 0
 
-    ready = select.select([outfd,errfd],[],[]) # wait for input
-    if outfd in ready[0]:
-        outchunk = outfile.read()
-        if outchunk == '': outeof = 1
-        outdata.append(outchunk)
-    if errfd in ready[0]:
-        errchunk = errfile.read()
-        if errchunk == '': erreof = 1
-        errdata.append(errchunk)
-    if outeof and erreof:
-        err = child.wait()
-        break
-    select.select([],[],[],.1) # give a little time for buffers to fill
+# get schedd/jobids from boss_ids and save them in dictionary { 'schedd' : [id,id,..] , ... }
+job_ids = {}
+for id in boss_ids.keys():
+    # extract schedd and id from bossId
+    schedd = id.split('//')[0]
+    id     = id.split('//')[1]
+    # fill dictionary
+    if schedd in job_ids.keys() :
+        job_ids[schedd].append(id)
+    else :
+        job_ids[schedd] = [id]
 
-    cmd_out = string.join(outdata,"")
-    cmd_err = string.join(errdata,"")
+# call condor_q for each schedd in job_ids, parsing output and storing status in boss_ids
+for schedd in job_ids.keys() :
 
-    cmd_out = cmd_out + cmd_err
+    if debug :
+        output.write(schedd+'\n')
 
-    #output.write(cmd_out)
-    #output.write('\n\n')
-    if cmd_out != None:
-        status_flag = 0
-        for line in cmd_out.splitlines() :
-            if line.strip().startswith(id.strip()) :
-                status = line.strip().split()[5]
+    # call condor_q
+    cmd = 'condor_q -name ' + schedd + ' ' + os.environ['USER']
+    (input_file,output_file) = os.popen4(cmd)
+
+    # parse output and store status in dictionary { 'id' : 'status' , ... }
+    condor_status = {}
+    for line in output_file.readlines() :
+        line = line.strip()
+        if debug :
+            output.write(line+'\n')
+        try:
+            line_array = line.split()
+            if line_array[1].strip() == os.environ['USER'] :
+                condor_status[line_array[0].strip()] = line_array[5].strip()
+        except:
+            pass
+
+    # go through job_ids[schedd] and save status in boss_ids
+    for id in job_ids[schedd] :
+        for condor_id in condor_status.keys() :
+            if condor_id.find(id) != -1 :
+                status = condor_status[condor_id]
+                output.write(status+'\n')
                 if ( status == 'I' ):
-                    print identifier,' I'
-                    msg = 'status: '+ identifier + ' RE\n\n'
-                    #output.write(msg)
-                    status_flag=1
-                    break
+                    boss_ids[schedd+'//'+id] = 'I'
                 elif ( status == 'U' ) :
-                    print identifier,' RE'
-                    msg = 'status: '+ identifier + ' RE\n\n'
-                    #output.write(msg)
-                    status_flag=1
-                    break
+                    boss_ids[schedd+'//'+id] = 'RE'
                 elif ( status == 'H' ) :
-                    print identifier,' SA'
-                    msg = 'status: '+ identifier + ' SA\n\n'
-                    #output.write(msg)
-                    status_flag=1
-                    break
+                    boss_ids[schedd+'//'+id] = 'SA'
                 elif ( status == 'R' ) :
-                    print identifier,' R'
-                    msg = 'status: '+ identifier + ' R\n\n'
-                    #output.write(msg)
-                    status_flag=1
-                    break
+                    boss_ids[schedd+'//'+id] = 'R'
                 elif ( status == 'X' ) :
-                    print identifier,' SK'
-                    msg = 'status: '+ identifier + ' SK\n\n'
-                    #output.write(msg)
-                    status_flag=1
-                    break
+                    boss_ids[schedd+'//'+id] = 'SK'
                 elif ( status == 'C' ) :
-                    print identifier,' OR'
-                    msg = 'status: '+ identifier + ' OR\n\n'
-                    #output.write(msg)
-                    status_flag=1
-                    break
+                    boss_ids[schedd+'//'+id] = 'SD'
                 else :
-                    print identifier,' UN'
-                    msg = 'status: '+ identifier + ' UN\n\n'
-                    #output.write(msg)
-                    status_flag=1
-                    break
-        if status_flag == 0 :
-            print identifier,' OR'
-            msg = 'status: ' + identifier + ' OR\n\n'
-            #output.write(msg)
+                    boss_ids[schedd+'//'+id] = 'UN'
+
+# print status output using boss_ids
+# if no status was filled (job already removed from queue, set status to SD
+for id in boss_ids.keys() :
+    status = boss_ids[id]
+    if status == '' :
+        status_output = str(id)+' SD'
+    else :
+        status_output = str(id)+' '+str(status)
+    if debug :
+        output.write(status_output+'\n')
+    print status_output
+        
+
+
+
 
