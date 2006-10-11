@@ -3,7 +3,8 @@ from SchedulerEdg import SchedulerEdg
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-from EdgConfig import *
+#from EdgConfig import *
+from GliteConfig import *
 import common
 
 import os, sys, time
@@ -11,6 +12,18 @@ import os, sys, time
 class SchedulerGlite(SchedulerEdg):
     def __init__(self):
         SchedulerEdg.__init__(self)
+
+    def rb_configure(self, RB):
+        self.glite_config = ''
+        self.rb_param_file = ''
+
+        gliteConfig = GliteConfig(RB)
+        self.glite_config = gliteConfig.config()
+
+        if (self.glite_config != ''):
+            self.rb_param_file = 'WMSconfig = '+self.glite_config+';'
+            #print "rb_param_file = ", self.rb_param_file
+        return self.rb_param_file
 
     def sched_parameter(self):
         """
@@ -89,9 +102,13 @@ class SchedulerGlite(SchedulerEdg):
             req = req + ';\n'
             param_file.write('Requirements = ' + req )
    
-            if (self.edg_config and self.edg_config_vo != ''):
-                param_file.write('RBconfig = "'+self.edg_config+'";\n')   
-                param_file.write('RBconfigVO = "'+self.edg_config_vo+'";')
+#            if (self.edg_config and self.edg_config_vo != ''):
+#               param_file.write('RBconfig = "'+self.edg_config+'";\n')   
+#                param_file.write('RBconfigVO = "'+self.edg_config_vo+'";')
+
+            if (self.rb_param_file != ''):
+                param_file.write(self.rb_param_file)   
+
 
             param_file.close()   
 
