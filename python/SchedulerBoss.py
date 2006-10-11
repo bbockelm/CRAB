@@ -585,29 +585,43 @@ class SchedulerBoss(Scheduler):
 
     ###################### ---- OK for Boss4 ds
     def cancel(self,int_id):
-        """ Cancel the EDG job with id """
-        common.jobDB.load() 
-        allBoss_id = common.scheduler.listBoss() 
-        for i_id in int_id :
-            if int(i_id) not in allBoss_id:
-                msg = 'Job # '+`(i_id)`+' out of range for task '+self.groupName
-                common.logger.message(msg)
-            else:
-               # boss_id = allBoss_id[int(i_id)]
-                boss_id = i_id 
-                bossTaskId = common.taskDB.dict('BossTaskId')
-                status =  common.scheduler.queryStatus(bossTaskId,boss_id) 
-                if status == 'Done (Success)' or status == 'Killed' or status =='Cleared' or status ==  'Done (Aborted)' or status == 'Created':
-                    msg = 'Job # '+`int(i_id)`+' has status '+status+' not possible to Kill it'
-                    common.logger.message(msg) 
+        """
+        Cancel the EDG job with id: if id == -1, means all jobs.
+        """
+        
+        if len(int_id)==common.jobDB.nJobs():
+            bossTaskId = common.taskDB.dict('BossTaskId')
+            cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(int_id[0])+':'+str(int_id[-1])
+            cmd_out = runBossCommand(cmd)
+            for job in range(common.jobDB.nJobs()):
+                common.jobDB.setStatus(job, 'K')
+
+        else:
+
+            common.jobDB.load() 
+            allBoss_id = common.scheduler.listBoss() 
+            for i_id in int_id :
+                if int(i_id) not in allBoss_id:
+                    msg = 'Job # '+`(i_id)`+' out of range for task '+self.groupName
+                    common.logger.message(msg)
                 else:
-                    cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(boss_id) 
-                    cmd_out = runBossCommand(cmd)
-                    common.jobDB.setStatus(int(i_id)-1, 'K')
-                    common.logger.message("Killing job # "+`int(i_id)`)
+                   # boss_id = allBoss_id[int(i_id)]
+                    boss_id = i_id 
+                    bossTaskId = common.taskDB.dict('BossTaskId')
+                    status =  common.scheduler.queryStatus(bossTaskId,boss_id) 
+                    if status == 'Done (Success)' or status == 'Killed' or status =='Cleared' or status ==  'Done (Aborted)' or status == 'Created':
+                        msg = 'Job # '+`int(i_id)`+' has status '+status+' not possible to Kill it'
+                        common.logger.message(msg) 
+                    else:
+                        cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(boss_id) 
+                        cmd_out = runBossCommand(cmd)
+                        common.jobDB.setStatus(int(i_id)-1, 'K')
+                        common.logger.message("Killing job # "+`int(i_id)`)
+                        pass
                     pass
                 pass
-        common.jobDB.save()
+            common.jobDB.save()
+            pass
         return #cmd_out    
 
     ################################################################ To remove when Boss4 store this info  DS. (start)
