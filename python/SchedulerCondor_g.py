@@ -203,16 +203,16 @@ class SchedulerCondor_g(Scheduler):
         # check if one and only one entry is in $CE_WHITELIST
 
         try:
-            tmpGood = string.split(cfg_params['EDG.ce_white_list'],',')
+            tmpGood = string.split(cfg_params['EDG.se_white_list'],',')
         except KeyError:
             msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
-            msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the CE_white_list variable of the [EDG] section in your crab.cfg.'
+            msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
             common.logger.message(msg)
             raise CrabException(msg)
             
         if len(tmpGood) != 1 :
             msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
-            msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the CE_white_list variable of the [EDG] section in your crab.cfg.'
+            msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
             common.logger.message(msg)
             raise CrabException(msg)
 
