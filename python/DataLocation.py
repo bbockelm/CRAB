@@ -29,31 +29,31 @@ class DataLocation:
         self.SelectedSites = {}        # DLS output: list of sites hosting fileblocks
                                        #  retrieved using method getSites
 
-        CEBlackList = []
+        SEBlackList = []
         try:
-            tmpBad = string.split(self.cfg_params['EDG.ce_black_list'],',')
+            tmpBad = string.split(self.cfg_params['EDG.se_black_list'],',')
             for tmp in tmpBad:
                 tmp=string.strip(tmp)
-                CEBlackList.append(tmp)
+                SEBlackList.append(tmp)
         except KeyError:
             pass
-        common.logger.debug(5,'CEBlackList: '+str(CEBlackList))
-        self.reCEBlackList=[]
-        for bad in CEBlackList:
-            self.reCEBlackList.append(re.compile( string.lower(bad) ))
+        common.logger.debug(5,'SEBlackList: '+str(SEBlackList))
+        self.reSEBlackList=[]
+        for bad in SEBlackList:
+            self.reSEBlackList.append(re.compile( string.lower(bad) ))
 
-        CEWhiteList = []
+        SEWhiteList = []
         try:
-            tmpGood = string.split(self.cfg_params['EDG.ce_white_list'],',')
+            tmpGood = string.split(self.cfg_params['EDG.se_white_list'],',')
             for tmp in tmpGood:
                 tmp=string.strip(tmp)
-                CEWhiteList.append(tmp)
+                SEWhiteList.append(tmp)
         except KeyError:
             pass
-        common.logger.debug(5,'CEWhiteList: '+str(CEWhiteList))
-        self.reCEWhiteList=[]
-        for good in CEWhiteList:
-            self.reCEWhiteList.append(re.compile( string.lower(good) ))
+        common.logger.debug(5,'SEWhiteList: '+str(SEWhiteList))
+        self.reSEWhiteList=[]
+        for good in SEWhiteList:
+            self.reSEWhiteList.append(re.compile( string.lower(good) ))
 
         self.osgSitesDictionary = {"Wisconsin":"cmssrm.hep.wisc.edu", \
                                    "Purdue":"dcache.rcac.purdue.edu", \
@@ -126,15 +126,15 @@ class DataLocation:
 # #######################################################################
     def checkBlackList(self, Sites, fileblocks):
         """
-        select sites that are not excluded by the user (via CE black list)
+        select sites that are not excluded by the user (via SE black list)
         """
         goodSites = []
         for aSite in Sites:
             common.logger.debug(10,'Site '+aSite)
             good=1
-            for re in self.reCEBlackList:
+            for re in self.reSEBlackList:
                 if re.search(string.lower(aSite)):
-                    common.logger.debug(5,'CE in black list, skipping site '+aSite)
+                    common.logger.debug(5,'SE in black list, skipping site '+aSite)
                     good=0
                 pass
             if good: goodSites.append(aSite)
@@ -149,15 +149,15 @@ class DataLocation:
 # #######################################################################
     def checkWhiteList(self, Sites, fileblocks):
         """
-        select sites that are defined by the user (via CE white list)
+        select sites that are defined by the user (via SE white list)
         """
-        if len(self.reCEWhiteList)==0: return Sites
+        if len(self.reSEWhiteList)==0: return Sites
         goodSites = []
         for aSite in Sites:
             good=0
-            for re in self.reCEWhiteList:
+            for re in self.reSEWhiteList:
                 if re.search(string.lower(aSite)):
-                    common.logger.debug(5,'CE in white list, adding site '+aSite)
+                    common.logger.debug(5,'SE in white list, adding site '+aSite)
                     good=1
                 pass
             if good: goodSites.append(aSite)
