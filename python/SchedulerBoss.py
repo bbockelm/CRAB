@@ -668,11 +668,11 @@ class SchedulerBoss(Scheduler):
         return SID
 
     ################################################## To change "much" when Boss4 store also this infos  DS.
-    def queryStatus(self,taskid,id):
-        """ Query a status of the job with id """
+    def queryEveryStatus(self,taskid):
+        """ Query a status of all jobs with specified boss taskid """
 
         self.boss_scheduler.checkProxy()
-        EDGstatus={
+        status={
             'H':'Hold',
             'U':'Ready',
             'I':'Scheduled',
@@ -701,8 +701,64 @@ class SchedulerBoss(Scheduler):
             'O?':'Done',
             'R?':'Running'             
             }
-        cmd = 'boss q -taskid '+str(taskid)+' -jobid '+str(id)+' -all' 
+        cmd = 'boss q -taskid '+str(taskid)+' -all' 
         cmd_out = runBossCommand(cmd)
+
+        # debug
+        msg = 'BOSS status ' + cmd
+        common.logger.debug(4,msg)
+        msg = 'BOSS status output: ' + cmd_out
+        common.logger.debug(4,msg)
+        ###  
+
+        # fill dictionary { 'bossid' : 'status' , ... }
+        results = {}
+        nline=0
+        for line in cmd_out.splitlines():
+            if nline >= 1:
+                header = line.split()
+                if len(header) == 9 :
+                    results[int(header[1])] = status[header[5]]
+            nline=nline+1
+
+        return results
+
+    def queryStatus(self,taskid,id):
+        """ Query a status of the job with id """
+
+        self.boss_scheduler.checkProxy()
+        status={
+            'H':'Hold',
+            'U':'Ready',
+            'I':'Scheduled',
+            'X':'Canceled',
+            'W':'Created',
+            'R':'Running',
+            'SC':'Checkpointed',
+            'SS':'Scheduled',
+            'SR':'Ready',
+            'RE':'Ready',
+            'SW':'Waiting',
+            'SU':'Submitted',
+            'UN':'Undefined',
+            'SK':'Cancelled',
+            'SD':'Done (Success)',
+            'SA':'Aborted',
+            'DA':'Done (Aborted)',
+            'SE':'Cleared',
+            'OR':'Done (Success)',
+            'A?':'Aborted',
+            'K':'Killed',
+            'E':'Cleared',
+            'Z':'Cleared (Corrupt)',
+            'NA':'Unknown',
+            'I?':'Idle',
+            'O?':'Done',
+            'R?':'Running'             
+            }
+        cmd = 'boss q -taskid '+str(taskid)+' -jobid '+str(id)+' -all'
+        cmd_out = runBossCommand(cmd)
+        
         # debug
         msg = 'BOSS status ' + cmd
         common.logger.debug(4,msg)
@@ -713,14 +769,10 @@ class SchedulerBoss(Scheduler):
         for line in cmd_out.splitlines():
             if nline==1:
                 header = line.split()
-                # debug
-                msg = 'header[5] = '+ header[5]
-                msg = msg + 'EDGstatus[header[5]] = ' + EDGstatus[header[5]]  
-                common.logger.debug(4,msg)
-                ### 
-                return EDGstatus[header[5]]
+                return status[header[5]]
             nline=nline+1
-    
+
+
     ###################### ---- OK for Boss4 ds
     def listBoss(self):
         """
