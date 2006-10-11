@@ -77,7 +77,9 @@ class Submitter(Actor):
                     common.logger.message("No compatible site found, will not submit job "+str(nj+1))
                     continue
 
+
             ############## TODO improve the follow control .....
+            if not len(first): return
             if len(first)>len(last): 
                 if common.jobDB.nJobs() == 1 : 
                     last.append(0) # List of last index
