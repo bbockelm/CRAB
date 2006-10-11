@@ -50,12 +50,6 @@ class SchedulerEdg(Scheduler):
         try: self.LCG_version = cfg_params["EDG.lcg_version"]
         except KeyError: self.LCG_version = '2'
 
-        try: self.EDG_requirements = cfg_params['EDG.requirements']
-        except KeyError: self.EDG_requirements = ''
-
-        try: self.EDG_retry_count = cfg_params['EDG.retry_count']
-        except KeyError: self.EDG_retry_count = ''
-
         try: 
             self.EDG_ce_black_list = cfg_params['EDG.ce_black_list']
             #print "self.EDG_ce_black_list = ", self.EDG_ce_black_list
@@ -716,7 +710,7 @@ class SchedulerEdg(Scheduler):
             pass
 
         if ( self.EDG_shallow_retry_count ):               
-            to_write = to_write + 'ShallowResubmissionRetryCount = "'+self.EDG_shallow_retry_count+'"\n'
+            to_write = to_write + 'ShallowRetryCount = "'+self.EDG_shallow_retry_count+'"\n'
             pass
 
         to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
