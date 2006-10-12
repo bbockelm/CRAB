@@ -175,7 +175,7 @@ class SchedulerEdg(Scheduler):
 
         if (self.edg_config and self.edg_config_vo != ''):
             self.rb_param_file = 'RBconfig = "'+self.edg_config+'";\nRBconfigVO = "'+self.edg_config_vo+'";'
-            print "rb_param_file = ", self.rb_param_file
+            #print "rb_param_file = ", self.rb_param_file
         return self.rb_param_file
        
 
