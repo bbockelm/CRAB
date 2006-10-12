@@ -229,7 +229,15 @@ class StatusBoss(Actor):
                 job_last_time = jobAttributes[bossid][7]   ##BOSS4 LAST_T
             
             if jobStatus == 'Done (Success)' or jobStatus == 'Cleared':
-                printline+="%-8s %-18s %-40s %-13s %-15s" % (jobAttributes[bossid][0],jobStatus,dest,exe_code,job_exit_status)
+                if exe_code.find('NULL') != -1 :
+                    exe_code_string = ''
+                else :
+                    exe_code_string = exe_code
+                if job_exit_status.find('NULL') != -1 :
+                    job_exit_status_string = ''
+                else :
+                    job_exit_status_string = job_exit_status
+                printline+="%-8s %-18s %-40s %-13s %-15s" % (jobAttributes[bossid][0],jobStatus,dest,exe_code_string,job_exit_status_string)
             elif jobStatus == 'Created':
                 printline+="%-8s %-18s %-40s %-13s %-15s" % (jobAttributes[bossid][0],'Created',dest,'','')
                 pass
