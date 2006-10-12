@@ -98,7 +98,7 @@ def main(argv) :
                 else :
                     report[protocol][action] = [attempted,succeeded,total_size,total_time,min_time,max_time]
             else :
-                report[protocol] = {'action' : [attempted,succeeded,total_size,total_time,min_time,max_time] }
+                report[protocol] = {action : [attempted,succeeded,total_size,total_time,min_time,max_time] }
 
         if debug :
             for protocol in report.keys() :
@@ -112,16 +112,18 @@ def main(argv) :
         dashboard_report['MonitorID'] = MonitorID
         dashboard_report['MonitorJobID'] = MonitorJobID
         for protocol in report.keys() :
-            if 'read' in report[protocol].keys() :
-                try:
-                    size = float(report[protocol]['read'][2])
-                    time = float(report[protocol]['read'][3])
-                    dashboard_report['io_'+protocol] = size/time*1000
-                except:
-                    pass
+            for action in report[protocol].keys() :
+                try: size = float(report[protocol][action][2])
+                except: size = 'NULL'
+                try: time = float(report[protocol][action][3])*1000
+                except: time = 'NULL'
+                dashboard_report['io_'+protocol+'_'+action] = str(size)+'_'+str(time)
 
         if debug :
-            print dashboard_report
+            ordered = dashboard_report.keys()
+            ordered.sort()
+            for key in ordered:
+                print key,'=',dashboard_report[key]
 
         # send to DashBoard
         apmonSend(MonitorID, MonitorJobID, dashboard_report)
