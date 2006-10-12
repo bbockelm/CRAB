@@ -380,7 +380,8 @@ class SchedulerBoss(Scheduler):
         reEmptyLine = re.compile( r'^$' )
         reVO = re.compile( r'Selected Virtual Organisation name.*' )
         reLine = re.compile( r'.*')
-        reCE = re.compile( r'(.*:.*)')
+        #reCE = re.compile( r'(.*:.*)')
+        reCE = re.compile( r'(\S*):')
         reCEId = re.compile( r'CEId.*')
         reNO = re.compile( r'No Computing Element matching' )
         reRB = re.compile( r'Connecting to host' )
@@ -413,7 +414,7 @@ class SchedulerBoss(Scheduler):
                 for lineCE in lines[i:-1]:
                     if string.find(lineCE, "Log file created") != -1: 
                        break 
-                    if reCE.match( lineCE ):
+                    if reCE.search( lineCE ):
                         CE = string.strip(reCE.search(lineCE).group(1))
                         CEs.append(CE.split(':')[0])
                         pass 

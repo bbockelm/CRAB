@@ -21,7 +21,7 @@ class SchedulerGlite(SchedulerEdg):
         self.glite_config = gliteConfig.config()
 
         if (self.glite_config != ''):
-            self.rb_param_file = 'WMSconfig = '+self.glite_config+';'
+            self.rb_param_file = 'WMSconfig = '+self.glite_config+';\n'
             #print "rb_param_file = ", self.rb_param_file
         return self.rb_param_file
 
