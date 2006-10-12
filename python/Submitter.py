@@ -110,7 +110,7 @@ class Submitter(Actor):
                     common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
                     njs += 1
                     if pbar and not common.logger.debugLevel():
-                        pbar.update(float(njs)/float(len(jidLista)),'please wait')
+                        pbar.update(float(jj+1)/float(len(jidLista)),'please wait')
                     ############################################   
                
                     if st == 'C':
