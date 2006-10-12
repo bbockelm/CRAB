@@ -90,17 +90,18 @@ class SchedulerGlite(SchedulerEdg):
             param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
 
             itr4=self.findSites_(first[i])
-            req1=[]  
+            reqSites=''
+            reqtmp=[]  
             j = 0
             concString = '||'
             for arg in itr4:
                 #############
                 # MC Changed matching syntax to avoid gang matching
                 #############
-                req1.append(' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ')
-            if len(req1): req = req + " && (" + concString.join(req1) + ')'
-            req = req + ';\n'
-            param_file.write('Requirements = ' + req )
+                reqtmp.append(' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ')
+            if len(reqtmp): reqSites = reqSites + " && (" + concString.join(reqtmp) + ')'
+            reqSites = reqSites + ';\n'
+            param_file.write('Requirements = ' + req + reqSites )
    
 #            if (self.edg_config and self.edg_config_vo != ''):
 #               param_file.write('RBconfig = "'+self.edg_config+'";\n')   
