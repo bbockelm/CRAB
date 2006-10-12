@@ -83,7 +83,7 @@ class StatusBoss(Actor):
 
         # query unfinished jobs
         #cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' ORDER BY crabjob.CHAIN_ID"' 
-        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS,'+schedTableName+'.DEST_CE  from JOB,crabjob'+add2tablelist+','+schedTableName+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' and '+schedTableName+'.CHAIN_ID=JOB.CHAIN_ID  ORDER BY crabjob.CHAIN_ID"' 
+        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS,'+schedTableName+'.DEST_CE,'+schedTableName+'.STATUS_REASON,'+schedTableName+'.LAST_T  from JOB,crabjob'+add2tablelist+','+schedTableName+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' and '+schedTableName+'.CHAIN_ID=JOB.CHAIN_ID  ORDER BY crabjob.CHAIN_ID"' 
         cmd_out = runBossCommand(cmd)
         jobAttributes={}
         nline=0
@@ -111,9 +111,12 @@ class StatusBoss(Actor):
         # ENDED_ JOB.LAST_T
         # ENDED_ crabjob.EXE_EXIT_CODE
         # ENDED_ crabjob.JOB_EXIT_STATUS
+        # ENDED_ crabjob.DEST_CE
+        # ENDED_ crabjob.STATUS_REASON
+        # ENDED_ crabjob.LAST_T
 
         # query also the ended table to get job status of jobs already retrieved
-        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS,'+schedTableName+'.DEST_CE  from ENDED_JOB,ENDED_crabjob'+add2tablelist+','+schedTableName+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\'  and ENDED_JOB.SCHED_ID!=\'\' and '+schedTableName+'.CHAIN_ID=ENDED_JOB.CHAIN_ID ORDER BY ENDED_crabjob.CHAIN_ID"' 
+        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS,'+schedTableName+'.DEST_CE,'+schedTableName+'.STATUS_REASON,'+schedTableName+'.LAST_T  from ENDED_JOB,ENDED_crabjob'+add2tablelist+','+schedTableName+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\'  and ENDED_JOB.SCHED_ID!=\'\' and '+schedTableName+'.CHAIN_ID=ENDED_JOB.CHAIN_ID ORDER BY ENDED_crabjob.CHAIN_ID"' 
         cmd_out = runBossCommand(cmd)
         nline=0
         for line in cmd_out.splitlines():
@@ -189,6 +192,8 @@ class StatusBoss(Actor):
             dest = jobAttributes[bossid][5]
  
             job_exit_status = jobAttributes[bossid][4]   ##BOSS4 JOB_EXIT_STATUS
+            job_status_reason = jobAttributes[bossid][6]   ##BOSS4 STATUS_REASON
+            job_last_time = jobAttributes[bossid][7]   ##BOSS4 LAST_T
             
             if jobStatus == 'Done (Success)' or jobStatus == 'Cleared':
                 printline+="%-8s %-18s %-40s %-13s %-15s" % (jobAttributes[bossid][0],jobStatus,dest,exe_code,job_exit_status)
@@ -208,9 +213,14 @@ class StatusBoss(Actor):
    ##                 Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
 
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
-                    params = {'taskId': self.cfg_params['taskId'], 'jobId': str(bossid) + '_' + string.strip(jobAttributes[bossid][1]), \
-                    'sid': string.strip(jobAttributes[bossid][2]), 'StatusValueReason': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][1]), 'reason'), \
-                    'StatusValue': jobStatus, 'StatusEnterTime': common.scheduler.getAttribute(string.strip(jobAttributes[bossid][1]), 'stateEnterTime'), 'StatusDestination': dest}
+                    common.logger.debug(7,"sending info to ML")
+                    params = {'taskId': self.cfg_params['taskId'], \
+                    'jobId': str(bossid) + '_' + string.strip(jobAttributes[bossid][1]), \
+                    'sid': string.strip(jobAttributes[bossid][2]), \
+                    'StatusValueReason': job_status_reason, \
+                    'StatusValue': jobStatus, \
+                    'StatusEnterTime': job_last_time, \
+                    'StatusDestination': dest}
                     self.cfg_params['apmon'].sendToML(params)
             if printline != '': 
                 print printline
