@@ -55,12 +55,13 @@ class StatusBoss(Actor):
         # query TaskId from taskdb
         bossTaskId=common.taskDB.dict('BossTaskId')
 
+        common.logger.message("Checking the status of all jobs: please wait")
+
         # update RT information
         cmd = 'boss RTupdate -taskid '+bossTaskId
         runBossCommand(cmd)
         
         # update status in Boss database
-        common.logger.message("Checking the status of all jobs")
         results = common.scheduler.queryEveryStatus(bossTaskId)
 
         # query Boss database
@@ -78,9 +79,11 @@ class StatusBoss(Actor):
         # JOB.LAST_T
         # crabjob.EXE_EXIT_CODE
         # crabjob.JOB_EXIT_STATUS
+        schedTableName = 'SCHED_'+string.lower(common.scheduler.boss_scheduler_name)
 
         # query unfinished jobs
-        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' ORDER BY crabjob.CHAIN_ID"' 
+        #cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' ORDER BY crabjob.CHAIN_ID"' 
+        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS,'+schedTableName+'.DEST_CE  from JOB,crabjob'+add2tablelist+','+schedTableName+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' and '+schedTableName+'.CHAIN_ID=JOB.CHAIN_ID  ORDER BY crabjob.CHAIN_ID"' 
         cmd_out = runBossCommand(cmd)
         jobAttributes={}
         nline=0
@@ -110,7 +113,7 @@ class StatusBoss(Actor):
         # ENDED_ crabjob.JOB_EXIT_STATUS
 
         # query also the ended table to get job status of jobs already retrieved
-        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS  from ENDED_JOB,ENDED_crabjob'+add2tablelist+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\'  and ENDED_JOB.SCHED_ID!=\'\' ORDER BY ENDED_crabjob.CHAIN_ID"' 
+        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS,'+schedTableName+'.DEST_CE  from ENDED_JOB,ENDED_crabjob'+add2tablelist+','+schedTableName+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\'  and ENDED_JOB.SCHED_ID!=\'\' and '+schedTableName+'.CHAIN_ID=ENDED_JOB.CHAIN_ID ORDER BY ENDED_crabjob.CHAIN_ID"' 
         cmd_out = runBossCommand(cmd)
         nline=0
         for line in cmd_out.splitlines():
@@ -167,21 +170,23 @@ class StatusBoss(Actor):
             exe_code =jobAttributes[bossid][2]   ##BOSS4 EXE_EXIT_CODE
             for_summary[int(jobAttributes[bossid][0].strip())] = jobStatus + '_' + str(exe_code)
    
-        ###########------> This info must be come from BOSS4      DS.
-        ###########------> For the moment BOSS know only WN, but then it will know also CE   DS.
-            try:
-                if common.scheduler.boss_scheduler_name == "condor_g" :
-                    ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][0]))  ##BOSS4 CHAIN_ID
-                else :
-                    ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][1]))  ##BOSS4 SCHED_ID 
-                if ( ldest.find(":") != -1 ) :
-                    dest = ldest.split(":")[0]
-                else :
-                    dest = ldest
-            except: 
-                dest = ''  
-                pass
+            ###########------> This info must be come from BOSS4      DS.
+            ###########------> For the moment BOSS know only WN, but then it will know also CE   DS.
+            # try:
+            #     if common.scheduler.boss_scheduler_name == "condor_g" :
+            #         ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][0]))  ##BOSS4 CHAIN_ID
+            #     else :
+            #         ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][1]))  ##BOSS4 SCHED_ID 
+            #     if ( ldest.find(":") != -1 ) :
+            #         dest = ldest.split(":")[0]
+            #     else :
+            #         dest = ldest
+            # except: 
+            #     dest = ''  
+            #     pass
             ############# -----> For the moment is WN but it will became CE....    DS.
+
+            dest = jobAttributes[bossid][5]
  
             job_exit_status = jobAttributes[bossid][4]   ##BOSS4 JOB_EXIT_STATUS
             
