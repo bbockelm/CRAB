@@ -592,6 +592,7 @@ class SchedulerBoss(Scheduler):
         
         if len(int_id)==common.jobDB.nJobs():
             bossTaskId = common.taskDB.dict('BossTaskId')
+            common.logger.message("Killing jobs # "+str(int_id[0])+':'+str(int_id[-1]))
             cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(int_id[0])+':'+str(int_id[-1])
             cmd_out = runBossCommand(cmd)
             for job in range(common.jobDB.nJobs()):

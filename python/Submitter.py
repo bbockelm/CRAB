@@ -104,13 +104,13 @@ class Submitter(Actor):
                 for jj in range(len(jidLista)): # Add loop over SID returned from group submission  DS
                     nj= int(jj+int(first[ii]))
                     jid=jidLista[jj]
-                    if pbar and not common.logger.debugLevel():
-                        pbar.update(float(nj+1)/float(len(jidLista)),'please wait')
                     common.logger.debug(1,"Submitted job # "+`(nj+1)`)
                     common.jobDB.setStatus(nj, 'S')
                     common.jobDB.setJobId(nj, jid)
                     common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
                     njs += 1
+                    if pbar and not common.logger.debugLevel():
+                        pbar.update(float(njs)/float(len(jidLista)),'please wait')
                     ############################################   
                
                     if st == 'C':
