@@ -183,7 +183,7 @@ sub mybasename {
 }
 # Submit the job and return the scheduler id
 sub submit {
-  $inSandBox  = "$executable,$stdin,BossArchive_$jid.tgz,$commonSandbox";
+  $inSandBox  = "BossArchive_$jid.tgz,$commonSandbox";
   $outSandBox = "BossOutArchive_$jid.tgz";
   $outbn = "$log\_$jid.out";
   $errbn = "$log\_$jid.err";
