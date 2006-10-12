@@ -79,11 +79,26 @@ class StatusBoss(Actor):
         # JOB.LAST_T
         # crabjob.EXE_EXIT_CODE
         # crabjob.JOB_EXIT_STATUS
-        schedTableName = 'SCHED_'+string.lower(common.scheduler.boss_scheduler_name)
 
         # query unfinished jobs
         #cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS  from JOB,crabjob'+add2tablelist+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' ORDER BY crabjob.CHAIN_ID"' 
-        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS,'+schedTableName+'.DEST_CE,'+schedTableName+'.STATUS_REASON,'+schedTableName+'.LAST_T  from JOB,crabjob'+add2tablelist+','+schedTableName+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' and '+schedTableName+'.CHAIN_ID=JOB.CHAIN_ID  ORDER BY crabjob.CHAIN_ID"' 
+
+        
+        #SL SCHED_ table is not present for condor_g, so must change the SQL query
+        if common.scheduler.boss_scheduler_name != "condor_g" :
+            schedTableName = 'SCHED_'+string.lower(common.scheduler.boss_scheduler_name)
+            schedTable1 = ','+schedTableName+'.DEST_CE,'+schedTableName+'.STATUS_REASON,'+schedTableName+'.LAST_T'
+            schedTable2 = ','+schedTableName
+            schedTable3 = ' and '+schedTableName+'.CHAIN_ID=JOB.CHAIN_ID '
+            schedTable3Ended = ' and '+schedTableName+'.CHAIN_ID=ENDED_JOB.CHAIN_ID '
+        else:
+            schedTable1 = ''
+            schedTable2 = ''
+            schedTable3 = ''
+            schedTable3Ended = ''
+
+        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS'+schedTable1+' from JOB,crabjob'+add2tablelist+schedTable2+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' '+schedTable3+'  ORDER BY crabjob.CHAIN_ID"' 
+
         cmd_out = runBossCommand(cmd)
         jobAttributes={}
         nline=0
@@ -116,7 +131,8 @@ class StatusBoss(Actor):
         # ENDED_ crabjob.LAST_T
 
         # query also the ended table to get job status of jobs already retrieved
-        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS,'+schedTableName+'.DEST_CE,'+schedTableName+'.STATUS_REASON,'+schedTableName+'.LAST_T  from ENDED_JOB,ENDED_crabjob'+add2tablelist+','+schedTableName+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\'  and ENDED_JOB.SCHED_ID!=\'\' and '+schedTableName+'.CHAIN_ID=ENDED_JOB.CHAIN_ID ORDER BY ENDED_crabjob.CHAIN_ID"' 
+        #cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS,'+schedTableName+'.DEST_CE,'+schedTableName+'.STATUS_REASON,'+schedTableName+'.LAST_T  from ENDED_JOB,ENDED_crabjob'+add2tablelist+','+schedTableName+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\'  and ENDED_JOB.SCHED_ID!=\'\' and '+schedTableName+'.CHAIN_ID=ENDED_JOB.CHAIN_ID ORDER BY ENDED_crabjob.CHAIN_ID"' 
+        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS'+schedTable1+' from ENDED_JOB,ENDED_crabjob'+add2tablelist+schedTable2+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\' and ENDED_JOB.SCHED_ID!=\'\' '+schedTable3Ended+'  ORDER BY ENDED_crabjob.CHAIN_ID"' 
         cmd_out = runBossCommand(cmd)
         nline=0
         for line in cmd_out.splitlines():
@@ -189,11 +205,28 @@ class StatusBoss(Actor):
             #     pass
             ############# -----> For the moment is WN but it will became CE....    DS.
 
-            dest = jobAttributes[bossid][5]
  
             job_exit_status = jobAttributes[bossid][4]   ##BOSS4 JOB_EXIT_STATUS
-            job_status_reason = jobAttributes[bossid][6]   ##BOSS4 STATUS_REASON
-            job_last_time = jobAttributes[bossid][7]   ##BOSS4 LAST_T
+
+            ##SL For condor_g need to get some info from scheduler
+            if common.scheduler.boss_scheduler_name == "condor_g" :
+                try:
+                    ldest = common.scheduler.queryDest(string.strip(jobAttributes[bossid][0]))  ##BOSS4 CHAIN_ID
+                    if ( ldest.find(":") != -1 ) :
+                        dest = ldest.split(":")[0]
+                    else :
+                        dest = ldest
+                        job_status_reason = ''
+                        job_last_time = ''
+                except: 
+                    dest = ''  
+                    job_status_reason = common.scheduler.getAttribute(string.strip(jobAttributes[bossid][1]), 'reason')
+                    job_last_time = common.scheduler.getAttribute(string.strip(jobAttributes[bossid][1]), 'stateEnterTime')
+                    pass
+            else :
+                dest = jobAttributes[bossid][5]
+                job_status_reason = jobAttributes[bossid][6]   ##BOSS4 STATUS_REASON
+                job_last_time = jobAttributes[bossid][7]   ##BOSS4 LAST_T
             
             if jobStatus == 'Done (Success)' or jobStatus == 'Cleared':
                 printline+="%-8s %-18s %-40s %-13s %-15s" % (jobAttributes[bossid][0],jobStatus,dest,exe_code,job_exit_status)
@@ -295,29 +328,25 @@ class StatusBoss(Actor):
             print ''
             print ">>>>>>>>> %i Jobs canceled/killed" % len(self.countCancel)
             print "          List of jobs: %s" % self.joinIntArray_(self.countCancel)
-            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number (or range of JOB)" 
-            print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
+            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>" 
         if (len(self.countAbort) != 0):
             self.countAbort.sort()
             print ''
             print ">>>>>>>>> %i Jobs aborted" % len(self.countAbort)
             print "          List of jobs: %s" % self.joinIntArray_(self.countAbort)
-            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number (or range of JOB)" 
-            print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
+            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>" 
         if (len(self.countDone) != 0):
             self.countDone.sort()
             print ''
             print ">>>>>>>>> %i Jobs Done" % len(self.countDone)
             print "          List of jobs: %s" % self.joinIntArray_(self.countDone)
-            print "          Retrieve them with: crab -getoutput to retrieve all" 
-            print "          or specifying JOB numbers (i.e -getoutput 1-3 => 1 and 2 and 3 or -getoutput 1,3 => 1 and 3)"
+            print "          Retrieve them with: crab -getoutput <Jobs list>"
         if (len(self.countCorrupt) != 0):
             self.countCorrupt.sort()
             print ''
             print ">>>>>>>>> %i Jobs cleared with corrupt output" % len(self.countCorrupt)
             print "          List of jobs: %s" % self.joinIntArray_(self.countCorrupt)
-            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number (or range of JOB)" 
-            print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
+            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>" 
         if (len(self.countCleared.keys()) != 0):
             total_size = 0
             for key in self.countCleared.keys() :
