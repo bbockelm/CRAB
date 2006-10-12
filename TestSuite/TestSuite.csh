@@ -1,5 +1,5 @@
 #!/bin/csh
-setenv TestSuiteDIR `pwd`
+setenv TestSuiteDIR `\pwd`
 set TestSuitePATH=${TestSuiteDIR}
 set TestSuitePYTHON=${TestSuiteDIR}
 

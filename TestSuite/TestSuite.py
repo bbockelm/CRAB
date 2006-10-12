@@ -159,8 +159,8 @@ if __name__=='__main__':
     #logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
     logging.basicConfig(level=logging.INFO, format='TestSuite. %(levelname)s: %(message)s')
     t = TestSuite()
-    p = ProxyInit(t.t[0][0])
-    p.checkProxy()
+    # p = ProxyInit(t.t[0][0])
+    # p.checkProxy()
     if t.options.threads:
         t.mainThreads()
     else:
