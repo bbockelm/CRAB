@@ -717,7 +717,7 @@ class SchedulerBoss(Scheduler):
         for line in cmd_out.splitlines():
             if nline >= 1:
                 header = line.split()
-                if len(header) == 9 :
+                if len(header) >= 9 and len(header) <= 11 :
                     results[int(header[1])] = status[header[5]]
             nline=nline+1
 
