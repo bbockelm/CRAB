@@ -15,8 +15,8 @@ $subdir = `pwd`; chomp $subdir;
 #
 # ------------------- Optional logging of submission -------------------------
 #   (change file name and comment/uncomment the open statement as you wish)
-$logFile = "$subdir/bossSubmit.log";
-# open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
+$logFile = "CondorGSubmission.log";
+open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
 #
 # --------------------------- Get arguments ----------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -202,7 +202,7 @@ sub submit {
     print CMD ("globusrsl               = $globusrsl\n");
   }
   # output,error files passed to executable
-  print CMD ("initialdir              = $subdir\n");
+#  print CMD ("initialdir              = $subdir\n");
   print CMD ("input                   = $stdin\n");
   print CMD ("output                  = $outbn\n");
   print CMD ("stream_output           = false\n");
