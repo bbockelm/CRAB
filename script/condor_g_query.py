@@ -3,7 +3,7 @@ import sys, os, string
 
 debug = 1
 if debug :
-    output = open('queryLog','w')
+    output = open('CondorGQuery.log','w')
 
 # save bossId in dictionary with empty status
 boss_ids = {}
@@ -51,7 +51,8 @@ for schedd in job_ids.keys() :
         for condor_id in condor_status.keys() :
             if condor_id.find(id) != -1 :
                 status = condor_status[condor_id]
-                output.write(status+'\n')
+                if debug :
+                    output.write(status+'\n')
                 if ( status == 'I' ):
                     boss_ids[schedd+'//'+id] = 'I'
                 elif ( status == 'U' ) :
