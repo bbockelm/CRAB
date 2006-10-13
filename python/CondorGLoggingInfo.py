@@ -31,6 +31,7 @@ class CondorGLoggingInfo:
         extract meaningful message from condor_q -l
         """
 
+        msg = ''
         for line in input.splitlines() :
             if line.find('HoldReason') != -1 :
                 msg = line.split('\"')[-2]
