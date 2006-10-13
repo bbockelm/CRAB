@@ -286,6 +286,7 @@ class StatusBoss(Actor):
 	        common.jobDB.setStatus(int(id)-1, 'D')
             elif statusList[id].split('_')[0] == 'Running' :
                 self.countRun.append(id)
+	        common.jobDB.setStatus(int(id)-1, 'R')
             elif statusList[id].split('_')[0] == 'Scheduled' :
                 self.countSched.append(id)
             elif statusList[id].split('_')[0] == 'Ready' :
@@ -305,6 +306,7 @@ class StatusBoss(Actor):
                 else :
                     self.countCleared[statusList[id].split('_')[-1]] = [id]
                 pass 
+	        common.jobDB.setStatus(int(id)-1, 'Y')
 
         common.jobDB.save()
         common.logger.debug(5,'done loop StatusBoss::report')
