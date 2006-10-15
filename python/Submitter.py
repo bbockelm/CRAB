@@ -90,13 +90,15 @@ class Submitter(Actor):
                     last.remove(last[len(last)-1])
                     last.append(self.nj_list[len(self.nj_list)-1])
                
-            ### Progress Bar indicator
-            term = TerminalController()
+            ### Progress Bar indicator, deactivate for debug
+            if not common.logger.debugLevel() :
+                term = TerminalController()
 
             for ii in range(len(first)): # Add loop DS
                 common.logger.message('Submitting jobs '+str(first[ii]+1)+' to '+str(last[ii]+1))
-                try: pbar = ProgressBar(term, 'Submitting '+str(len(self.nj_list))+' jobs')
-                except: pbar = None
+                if not common.logger.debugLevel() :
+                    try: pbar = ProgressBar(term, 'Submitting '+str(len(self.nj_list))+' jobs')
+                    except: pbar = None
                 #common.logger.message("Submitting job # "+`(nj+1)`)  
                 jidLista = common.scheduler.submit(first[ii],last[ii],ii)
        
@@ -109,8 +111,9 @@ class Submitter(Actor):
                     common.jobDB.setJobId(nj, jid)
                     common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
                     njs += 1
-                    if pbar and not common.logger.debugLevel():
-                        pbar.update(float(jj+1)/float(len(jidLista)),'please wait')
+                    if not common.logger.debugLevel():
+                        if pbar :
+                            pbar.update(float(jj+1)/float(len(jidLista)),'please wait')
                     ############################################   
                
                     if st == 'C':
@@ -158,6 +161,9 @@ class Submitter(Actor):
                     for i in fl.readlines():
                         val = i.split(':')
                         params[val[0]] = string.strip(val[1])
+
+                    common.logger.debug(5,'Submission DashBoard report: '+str(params))
+                        
                     self.cfg_params['apmon'].sendToML(params)
 
         except:
