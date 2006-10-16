@@ -598,7 +598,9 @@ class SchedulerBoss(Scheduler):
             cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(int_id[0])+':'+str(int_id[-1])
             cmd_out = runBossCommand(cmd)
             for job in range(common.jobDB.nJobs()):
-                common.jobDB.setStatus(job, 'K')
+                status =  common.scheduler.queryStatus(bossTaskId,job) 
+                if status not in ['Done (Success)','Killed','Cleared','Done (Aborted)','Created']:
+                    common.jobDB.setStatus(job, 'K')
 
         else:
 
