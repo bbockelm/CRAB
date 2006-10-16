@@ -631,7 +631,7 @@ class Crab:
                         pass
                                                                                                                                                              
                     if len(nj_list) != 0:
-                        common.scheduler.resubmit(nj_list)
+#                        common.scheduler.resubmit(nj_list)
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
                         pass
                         pass
