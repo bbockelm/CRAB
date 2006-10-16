@@ -18,6 +18,13 @@ class StatusBoss(Actor):
         self.countAbort = []
         self.countCorrupt = []
         self.countCleared = {}
+
+        if common.scheduler.boss_scheduler_name == 'condor_g':
+            # create hash of cfg file
+            self.hash = makeCksum(common.work_space.cfgFileName())
+        else:
+            self.hash = ''
+
         return
 
     def run(self):
@@ -253,10 +260,18 @@ class StatusBoss(Actor):
    ##             else:
    ##                 Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
 
+                jobId = ''
+                if common.scheduler.boss_scheduler_name == 'condor_g':
+                    jobId = str(bossid) + '_' + self.hash + '_' + string.strip(jobAttributes[bossid][1])
+                    common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+                else:
+                    jobId = str(bossid) + '_' + string.strip(jobAttributes[bossid][1])
+                    common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
+
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
                     common.logger.debug(7,"sending info to ML")
                     params = {'taskId': self.cfg_params['taskId'], \
-                    'jobId': str(bossid) + '_' + string.strip(jobAttributes[bossid][1]), \
+                    'jobId': jobId,\
                     'sid': string.strip(jobAttributes[bossid][2]), \
                     'StatusValueReason': job_status_reason, \
                     'StatusValue': jobStatus, \
