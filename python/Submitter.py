@@ -41,14 +41,15 @@ class Submitter(Actor):
         # Loop over jobs
         njs = 0
         try:
-            first = []
-            last  = []
+            list=''
+            list_of_list = []   
             lastBlock=-1
+            count = 0
             for nj in self.nj_list:
                 same=0
                 # first check that status of the job is suitable for submission
                 st = common.jobDB.status(nj)
-                if st != 'C' :# and st != 'K' and st != 'A' and st != 'RC': ## commentato per ora...quindi NON risotomette
+                if st != 'C'  and st != 'K' and st != 'A' and st != 'RC': ## commentato per ora...quindi NON risotomette
                     long_st = crabJobStatusToString(st)
                     msg = "Job # %d not submitted: status %s"%(nj+1, long_st)
                     common.logger.message(msg)
@@ -66,45 +67,38 @@ class Submitter(Actor):
                     same=1
                 if match:
                     if not same:
-                        ######################  here create index list start:end  
-                        first.append(nj)
-                        if nj != 0:last.append(nj-1) 
-                        ######################
                         common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
                     else:
                         common.logger.debug(1,"Found "+str(match)+" compatible site(s) for job "+str(nj+1))
+                   # job list is string because boss can't manage list  
+                    list = list+str(nj+1)+',' 
+                   # list.append(nj+1)
+                    if nj < self.nj_list[len(self.nj_list)-1]:
+                        nextBlock = common.jobDB.block(self.nj_list[count+1])
+                        if  currBlock != nextBlock :
+                            list_of_list.append([currBlock,list])
+                            list=''    
+                    else:
+                        list_of_list.append([currBlock,list])
                 else:
                     common.logger.message("No compatible site found, will not submit job "+str(nj+1))
                     continue
-
-
-            ############## TODO improve the follow control .....
-            if not len(first): return
-            if len(first)>len(last): 
-                if common.jobDB.nJobs() == 1 : 
-                    last.append(0) # List of last index
-                else: 
-                    last.append(self.nj_list[len(self.nj_list)-1]) #List of last index 
-            else:
-                if first[len(first)-1] > last[len(last)-1]:
-                    last.remove(last[len(last)-1])
-                    last.append(self.nj_list[len(self.nj_list)-1])
-               
+                count += 1
             ### Progress Bar indicator, deactivate for debug
             if not common.logger.debugLevel() :
                 term = TerminalController()
 
-            for ii in range(len(first)): # Add loop DS
-                common.logger.message('Submitting jobs '+str(first[ii]+1)+' to '+str(last[ii]+1))
+            for ii in range(len(list_of_list)): # Add loop DS
+                common.logger.message('Submitting jobs '+str(list_of_list[ii][1]))
                 if not common.logger.debugLevel() :
                     try: pbar = ProgressBar(term, 'Submitting '+str(len(self.nj_list))+' jobs')
                     except: pbar = None
                 #common.logger.message("Submitting job # "+`(nj+1)`)  
-                jidLista = common.scheduler.submit(first[ii],last[ii],ii)
-       
+                jidLista = common.scheduler.submit(list_of_list[ii])
                 ####
                 for jj in range(len(jidLista)): # Add loop over SID returned from group submission  DS
-                    nj= int(jj+int(first[ii]))
+                   # nj= int(jj+int(list[0]))
+                    nj= int(str(list_of_list[ii][1]).split(',')[jj])-1
                     jid=jidLista[jj]
                     common.logger.debug(1,"Submitted job # "+`(nj+1)`)
                     common.jobDB.setStatus(nj, 'S')

@@ -356,7 +356,7 @@ class SchedulerBoss(Scheduler):
         start = time.time()
         schcladstring = ''
         self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(Block)+'.clad'
-        if self.schclassad != '':
+        if os.path.isfile(self.schclassad):  
             schcladstring=' -schclassad '+self.schclassad
         cmd = 'boss listMatch -scheduler '+ str(self.schedulerName) + ' -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
         cmd_out = runBossCommand(cmd)
@@ -437,7 +437,7 @@ class SchedulerBoss(Scheduler):
     
     ###################### ---- OK for Boss4 ds
     #def submit(self, nj):
-    def submit(self, first,last,i):
+    def submit(self,list):
         """
         Submit BOSS function.
         Submit one job. nj -- job number.
@@ -445,13 +445,15 @@ class SchedulerBoss(Scheduler):
 
         boss_scheduler_name = string.lower(self.boss_scheduler.name())
         boss_scheduler_id = None
-
+        i = list[0]
+        jobsList = list[1]
         schcladstring = ''
         self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(i)+'.clad'# TODO add a check is file exist
-        if self.schclassad != '':
+        if os.path.isfile(self.schclassad):  
             schcladstring=' -schclassad '+self.schclassad
         #cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
-        cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(first)+':'+ common.jobDB.bossId(last)+ schcladstring
+        #cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(first)+':'+ common.jobDB.bossId(last)+ schcladstring
+        cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid '+str(jobsList)+ schcladstring
         cmd_out = runBossCommand(cmd)
         # debug
         msg = 'BOSS submission: ' + cmd
