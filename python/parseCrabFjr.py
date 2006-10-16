@@ -115,7 +115,7 @@ def main(argv) :
             for action in report[protocol].keys() :
                 try: size = float(report[protocol][action][2])
                 except: size = 'NULL'
-                try: time = float(report[protocol][action][3])*1000
+                try: time = float(report[protocol][action][3])/1000
                 except: time = 'NULL'
                 dashboard_report['io_'+protocol+'_'+action] = str(size)+'_'+str(time)
 
