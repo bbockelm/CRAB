@@ -1,9 +1,7 @@
-#from Scheduler import Scheduler
 from SchedulerEdg import SchedulerEdg
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-#from EdgConfig import *
 from GliteConfig import *
 import common
 
@@ -103,13 +101,12 @@ class SchedulerGlite(SchedulerEdg):
             reqSites = reqSites + ';\n'
             param_file.write('Requirements = ' + req + reqSites )
    
-#            if (self.edg_config and self.edg_config_vo != ''):
-#               param_file.write('RBconfig = "'+self.edg_config+'";\n')   
-#                param_file.write('RBconfigVO = "'+self.edg_config_vo+'";')
-
             if (self.rb_param_file != ''):
                 param_file.write(self.rb_param_file)   
 
+            if len(self.EDG_addJdlParam):
+                for p in self.EDG_addJdlParam:
+                    param_file.write(p)
 
             param_file.close()   
 
