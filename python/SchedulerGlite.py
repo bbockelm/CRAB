@@ -243,7 +243,7 @@ class SchedulerGlite(SchedulerEdg):
         retrieve the logging info from logging and bookkeeping and return it
         """
         self.checkProxy()
-        cmd = 'glite-job-logging-info -v 2 ' + id
+        cmd = 'glite-job-logging-info -v 3 ' + id
         cmd_out = runCommand(cmd)
         return cmd_out
 
