@@ -137,13 +137,11 @@ class Cmssw(JobType):
         ## additional input files
         try:
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
-            print tmpAddFiles
             for tmp in tmpAddFiles:
                 tmp = string.strip(tmp)
                 dirname = ''
                 if not tmp[0]=="/": dirname = "."
                 files = glob.glob(os.path.join(dirname, tmp))
-                print tmp, files, (os.path.join(dirname, tmp))
                 for file in files:
                     if not os.path.exists(file):
                         raise CrabException("Additional input file not found: "+file)
