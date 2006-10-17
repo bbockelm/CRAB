@@ -1,5 +1,0 @@
-#!/bin/sh
-
-bossAdmin registerScheduler -name condor -submit $BOSS_ROOT/BossSched/bin/condor_submit.pl -query $BOSS_ROOT/BossSched/bin/condor_query.pl -kill $BOSS_ROOT/BossSched/bin/condor_kill.pl -getout $BOSS_ROOT/BossSched/bin/condor_getout.pl -topwdir NONE $@
-
-

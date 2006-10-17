@@ -1,3 +1,0 @@
-#!/bin/sh
-
-bossAdmin registerScheduler -name pbs -submit $BOSS_ROOT/BossSched/bin/pbs_submit.pl -query $BOSS_ROOT/BossSched/bin/pbs_query.pl -kill $BOSS_ROOT/BossSched/bin/pbs_kill.pl -getout $BOSS_ROOT/BossSched/bin/pbs_getout.pl -topwdir . $@

@@ -1,3 +1,0 @@
-#!/bin/sh
-
-bossAdmin registerScheduler -name sge -submit $BOSS_ROOT/BossSched/bin/sge_submit.pl -query $BOSS_ROOT/BossSched/bin/sge_query.pl -kill $BOSS_ROOT/BossSched/bin/sge_kill.pl -getout $BOSS_ROOT/BossSched/bin/sge_getout.pl -topwdir . -cpComm cp -cpWNPref . -cpRemPref '\$PWD' $@

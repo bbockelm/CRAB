@@ -1,3 +1,0 @@
-#!/bin/sh
-
-bossAdmin registerScheduler -name lsf -submit $BOSS_ROOT/BossSched/bin/lsf_sharedfs_CERN_submit.pl -query $BOSS_ROOT/BossSched/bin/lsf_query.pl -kill $BOSS_ROOT/BossSched/bin/lsf_kill.pl -getout $BOSS_ROOT/BossSched/bin/lsf_getout.pl -topwdir . -cpComm cp -cpWNPref . -cpRemPref '\$PWD' $@

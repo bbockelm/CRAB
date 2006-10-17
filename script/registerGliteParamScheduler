@@ -1,5 +1,0 @@
-#!/bin/sh
-
-bossAdmin registerScheduler -name gliteParam -submit $BOSS_ROOT/BossSched/bin/glite_parSubmit.py -query $BOSS_ROOT/BossSched/bin/glite_query.py -kill $BOSS_ROOT/BossSched/bin/glite_kill.pl -getout $BOSS_ROOT/BossSched/bin/glite_getout.pl -job_id_env_var GLITE_WMS_JOBID -schema $BOSS_ROOT/BossSched/bin/schema -listMatch $BOSS_ROOT/BossSched/bin/glite_listMatch.pl $@
-
-

@@ -1,5 +1,0 @@
-#!/bin/sh
-
-bossAdmin registerScheduler -name bbs -submit $BOSS_ROOT/BossSched/bin/bbs_submit.pl -query $BOSS_ROOT/BossSched/bin/bbs_query.pl -kill $BOSS_ROOT/BossSched/bin/bbs_kill.pl -getout $BOSS_ROOT/BossSched/bin/bbs_getout.pl -topwdir NONE $@
-
-

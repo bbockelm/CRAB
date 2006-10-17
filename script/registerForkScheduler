@@ -1,3 +1,0 @@
-#!/bin/sh
-
-bossAdmin registerScheduler -name fork -submit $BOSS_ROOT/BossSched/bin/fork_submit.pl -query $BOSS_ROOT/BossSched/bin/fork_query.pl -kill $BOSS_ROOT/BossSched/bin/fork_kill.pl -getout $BOSS_ROOT/BossSched/bin/fork_getout.pl -default -topwdir . -cpComm cp -cpWNPref . -cpRemPref '\$PWD' $@
