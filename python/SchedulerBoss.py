@@ -597,10 +597,14 @@ class SchedulerBoss(Scheduler):
             common.logger.message("Killing jobs # "+str(int_id[0])+':'+str(int_id[-1]))
             cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(int_id[0])+':'+str(int_id[-1])
             cmd_out = runBossCommand(cmd)
-            for job in range(common.jobDB.nJobs()):
-                status =  common.scheduler.queryStatus(bossTaskId,job) 
-                if status not in ['Done (Success)','Killed','Cleared','Done (Aborted)','Created']:
-                    common.jobDB.setStatus(job, 'K')
+            if not self.parseBossOutput(cmd_out): 
+                for job in range(common.jobDB.nJobs()):
+                    status =  common.scheduler.queryStatus(bossTaskId,job) 
+                    if status not in ['Done (Success)','Killed','Cleared','Done (Aborted)','Created']:
+                        common.jobDB.setStatus(job, 'K')
+            else:
+                common.logger.message("Error killing jobs # "+str(int_id[0])+':'+str(int_id[-1])+" . See log for details")
+                
 
         else:
 
@@ -620,9 +624,12 @@ class SchedulerBoss(Scheduler):
                         common.logger.message(msg) 
                     else:
                         cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(boss_id) 
-                        cmd_out = runBossCommand(cmd)
-                        common.jobDB.setStatus(int(i_id)-1, 'K')
                         common.logger.message("Killing job # "+`int(i_id)`)
+                        cmd_out = runBossCommand(cmd)
+                        if not self.parseBossOutput(cmd_out): 
+                            common.jobDB.setStatus(int(i_id)-1, 'K')
+                        else:
+                            common.logger.message("Error killing job # "+`int(i_id)`+" . See log for details")
                         pass
                     pass
                 pass
@@ -819,3 +826,11 @@ class SchedulerBoss(Scheduler):
                 common.logger('Cannot mkdir ' + logDir + ' Switching to default ' + common.work_space.resDir())
                 logDir = common.work_space.resDir()
         return outDir, logDir
+
+    ##################
+    def parseBossOutput(self, out):
+        reError = re.compile( r'status error' )
+        lines = reError.findall(out)
+        return len(lines)
+        
+        
