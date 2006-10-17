@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-15 -*-
 import time, os, string
 from os.path import abspath
 
