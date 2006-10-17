@@ -63,9 +63,14 @@ class Creator(Actor):
             common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
             taskType = 'analysis'
 
-            params = {'tool': common.prog_name, 'tool_ui': os.environ['HOSTNAME'], \
-                      'scheduler': self.cfg_params['CRAB.scheduler'], 'GridName': self.cfg_params['GridName'].strip(), \
-                      'taskType': taskType, 'vo': self.cfg_params['EDG.virtual_organization'], 'user': self.cfg_params['user']}
+            params = {'tool': common.prog_name,\
+                      'JSToolVersion': common.prog_version_str, \
+                      'tool_ui': os.environ['HOSTNAME'], \
+                      'scheduler': self.cfg_params['CRAB.scheduler'], \
+                      'GridName': self.cfg_params['GridName'].strip(), \
+                      'taskType': taskType, \
+                      'vo': self.cfg_params['EDG.virtual_organization'], \
+                      'user': self.cfg_params['user']}
             jtParam = self.job_type.getParams()
             for i in jtParam.iterkeys():
                 params[i] = string.strip(jtParam[i])
@@ -196,7 +201,7 @@ class Creator(Actor):
         common.scheduler.declareJob_()   #Add for BOSS4
 
         stop = time.time()
-        common.logger.debug(1, "Creation Time: "+str(stop - start))
+        common.logger.debug(2, "Creation Time: "+str(stop - start))
         common.logger.write("Creation Time: "+str(stop - start))
 
         common.jobDB.save()
