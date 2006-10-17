@@ -4,5 +4,6 @@ wants to run. Each row is in the form of:
 cfg, nC, nS
 where cfg is a string containing the name of a crab.cfg like file to
 open, nC is the number of job we expect to create and nS is the number
-of job to submit
+of job to submit (you can set these values to -1 to let CRAB self
+discovering the right number of jobs to create/submit)
 TestSuite -h gives a brief help about its options.

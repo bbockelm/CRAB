@@ -26,8 +26,8 @@ class TestSuite:
         print >> stderr, "* A row must contain a comma-separated triple of datas:  *"
         print >> stderr, "*         crab.cfg name, nC, nS                          *"
         print >> stderr, "* where crab.cfg name is the name of the crab.cfg to run *"
-        print >> stderr, "* nC is the number of jobs to create                     *"
-        print >> stderr, "* nS is the number of jobs to submit                     *"
+        print >> stderr, "* nC is the number of jobs to create (<1 for all)        *"
+        print >> stderr, "* nS is the number of jobs to submit (<1 for all)        *"
         print >> stderr, "**********************************************************"
         
 
@@ -73,17 +73,17 @@ class TestSuite:
                 cfg = path.abspath(cfg.strip())
                 try: # Check of nC
                     nC = int(nC)
-                    if nC < 1:
-                        self.printHelp()
-                        logging.error('nC must be a value greater than 0 in '+self.options.config+' row: '+str(i))
+                    #if nC < 1:
+                    #    self.printHelp()
+                    #    logging.error('nC must be a value greater than 0 in '+self.options.config+' row: '+str(i))
                 except ValueError:
                     self.printHelp()
                     logging.error('nC must be an integer value greater than 0 in '+self.options.config+' row: '+str(i))
                 try: # Check of nS
                     nS = int(nS)
-                    if nS < 1:
-                        self.printHelp()
-                        logging.error('nS must be a value greater than 0 in '+self.options.config+' row: '+str(i))
+                    #if nS < 1:
+                    #    self.printHelp()
+                    #    logging.error('nS must be a value greater than 0 in '+self.options.config+' row: '+str(i))
                 except ValueError:
                     self.printHelp()
                     logging.error('nS must be an integer value greater than 0 in '+self.options.config+' row: '+str(i))
