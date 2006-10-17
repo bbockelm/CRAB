@@ -1,5 +1,5 @@
 #!/bin/sh
 
-bossAdmin registerScheduler -name glite -submit $BOSS_ROOT/BossSched/bin/glite_submit.pl -query $BOSS_ROOT/BossSched/bin/glite_query.py -kill $BOSS_ROOT/BossSched/bin/glite_kill.pl -getout $BOSS_ROOT/BossSched/bin/glite_getout.pl -job_id_env_var GLITE_WMS_JOBID -schema $BOSS_ROOT/BossSched/bin/schema -listMatch $BOSS_ROOT/BossSched/bin/glite_listMatch.pl $@
+bossAdmin registerScheduler -name glite -submit $CRABSCRIPT/glite_submit.pl -query $CRABSCRIPT/glite_query.py -kill $CRABSCRIPT/glite_kill.pl -getout $CRABSCRIPT/glite_getout.pl -job_id_env_var GLITE_WMS_JOBID -schema $CRABSCRIPT/schema -listMatch $CRABSCRIPT/glite_listMatch.pl $@
 
 

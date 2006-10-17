@@ -261,7 +261,7 @@ for i in ranges:
     GlobalSandbox+="\"file://%s/%s\","%(subdir,stdin)
     GlobalSandbox+="\"file://%s\""%executable
     ofile.write("InputSandbox = {%s} ;\n"%GlobalSandbox)
-    ofile.write("AllowZippedISB = true;\n")
+#    ofile.write("AllowZippedISB = true;\n")
     config=""
     try:
         cladadd,config=parseClassAd (bossClassad, subdir)
