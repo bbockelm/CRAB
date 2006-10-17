@@ -59,6 +59,9 @@ class SchedulerEdg(Scheduler):
         try: self.VO = cfg_params['EDG.virtual_organization']
         except KeyError: self.VO = 'cms'
 
+        try: self.copy_input_data = cfg_params["USER.copy_input_data"]
+        except KeyError: self.copy_input_data = 0
+
         try: self.return_data = cfg_params['USER.return_data']
         except KeyError: self.return_data = 0
 
@@ -393,6 +396,7 @@ class SchedulerEdg(Scheduler):
         Copy input data from SE to WN     
         """
         txt = ''
+        if not self.copy_input_data: return txt
 
         ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
         txt += 'if [ $middleware == OSG ]; then\n' 
@@ -726,7 +730,7 @@ class SchedulerEdg(Scheduler):
         to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
         to_write = to_write + 'VirtualOrganisation = "&quot;' + self.VO + '&quot;"\n'
 
-                #TaskName   
+        #TaskName   
         dir = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
 
