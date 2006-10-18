@@ -475,9 +475,9 @@ class SchedulerBoss(Scheduler):
         else:
             for line in cmd_out.splitlines(): # boss4
                 if  line.find('error') >= 0 :
-                    msg = 'ERROR: BOSS submission failed: ' + cmd
+                    msg = 'ERROR: BOSS submission failed: ' + cmd + ', stopping submission at id ' + jid 
                     common.logger.message(msg)
-                    raise CrabException(msg)
+                    return jid, bjid
                 if line.find('Scheduler ID for job') >= 0 :
                     #jid = line.split()[-1]
                     jid.append(line.split()[-1])
