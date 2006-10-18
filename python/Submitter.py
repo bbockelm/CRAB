@@ -41,7 +41,7 @@ class Submitter(Actor):
         # Loop over jobs
         njs = 0
         try:
-            list=''
+            list=[]
             list_of_list = []   
             lastBlock=-1
             count = 0
@@ -49,11 +49,12 @@ class Submitter(Actor):
                 same=0
                 # first check that status of the job is suitable for submission
                 st = common.jobDB.status(nj)
-                if st != 'C'  and st != 'K' and st != 'A' and st != 'RC': ## commentato per ora...quindi NON risotomette
+                if st != 'C'  and st != 'K' and st != 'A' and st != 'RC':
                     long_st = crabJobStatusToString(st)
                     msg = "Job # %d not submitted: status %s"%(nj+1, long_st)
                     common.logger.message(msg)
                     continue
+
                 currBlock = common.jobDB.block(nj)
                 # SL perform listmatch only if block has changed
                 if (currBlock!=lastBlock):
@@ -65,22 +66,21 @@ class Submitter(Actor):
                 else:
                     common.logger.debug(1,"Sites for job "+str(nj+1)+" the same as previous job")
                     same=1
+
                 if match:
                     if not same:
                         common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
                     else:
                         common.logger.debug(1,"Found "+str(match)+" compatible site(s) for job "+str(nj+1))
-                   # job list is string because boss can't manage list  
-                   # list = list+str(nj+1)+',' 
-                    list = list+str(common.jobDB.bossId(nj))+',' 
-                   # list.append(nj+1)
-                    if nj < self.nj_list[len(self.nj_list)-1]:
-                        nextBlock = common.jobDB.block(self.nj_list[count+1])
-                        if  currBlock != nextBlock :
-                            list_of_list.append([currBlock,list])
-                            list=''    
-                    else:
+                    list.append(common.jobDB.bossId(nj))
+
+                    if nj == self.nj_list[-1]: # check that is not the last job in the list
                         list_of_list.append([currBlock,list])
+                    else: # check if next job has same group
+                        nextBlock = common.jobDB.block(nj+1)
+                        if  currBlock != nextBlock : # if not, close this group and reset
+                            list_of_list.append([currBlock,list])
+                            list=[]
                 else:
                     common.logger.message("No compatible site found, will not submit job "+str(nj+1))
                     continue
@@ -89,80 +89,68 @@ class Submitter(Actor):
             if not common.logger.debugLevel() :
                 term = TerminalController()
 
-            if not common.logger.debugLevel() :
-                try: pbar = ProgressBar(term, 'Submitting '+str(len(list_of_list))+' jobs')
-                except: pbar = None
             for ii in range(len(list_of_list)): # Add loop DS
                 common.logger.debug(1,'Submitting jobs '+str(list_of_list[ii][1]))
+                if not common.logger.debugLevel() :
+                    try: pbar = ProgressBar(term, 'Submitting '+str(len(list_of_list[ii][1]))+' jobs')
+                    except: pbar = None
+
                 jidLista, bjidLista = common.scheduler.submit(list_of_list[ii])
-                bjidLista = map(int, bjidLista)
-                ####
+                bjidLista = map(int, bjidLista) # cast all bjidLista to int
 
                 if not common.logger.debugLevel():
                     if pbar :
                         pbar.update(float(ii+1)/float(len(list_of_list)),'please wait')
 
                 for jj in bjidLista: # Add loop over SID returned from group submission  DS
-                    # nj= int(jj+int(list[0]))
-                    # nj= int(str(list_of_list[ii][1]).split(',')[jj])-1
-                    nj = jj - 1
+                    tmpNj = jj - 1
                     jid=jidLista[bjidLista.index(jj)]
-                    common.logger.debug(5,"Submitted job # "+`(nj+1)`)
-                    common.jobDB.setStatus(nj, 'S')
-                    common.jobDB.setJobId(nj, jid)
-                    common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
+                    common.logger.debug(5,"Submitted job # "+`(tmpNj+1)`)
+                    common.jobDB.setStatus(tmpNj, 'S')
+                    common.jobDB.setJobId(tmpNj, jid)
+                    common.jobDB.setTaskId(tmpNj, self.cfg_params['taskId'])
                     njs += 1
-                    ############################################   
                
-                    if st == 'C':
-                        resFlag = 0
-                    elif st == 'RC':
-                        resFlag = 2
-                    else:            
-                        resFlag = 0
-                        pass
-                      
+                    ##### DashBoard report #####################   
                     try:
+                        resFlag = 0
+                        if st == 'RC': resFlag = 2
                         Statistic.Monitor('submit',resFlag,jid,'-----')
                     except:
                         pass
                     
-                    fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
-                    self.cfg_params['sid'] = jid
-                    #### FF: per il momento commentiamo nevtJob che non c'e' piu' nel jobdb
-                    #nevtJob = common.jobDB.maxEvents(nj)
-               
                     # OLI: JobID treatment, special for Condor-G scheduler
                     jobId = ''
                     if common.scheduler.boss_scheduler_name == 'condor_g':
-                        jobId = str(nj + 1) + '_' + self.hash + '_' + self.cfg_params['sid']
+                        jobId = str(tmpNj + 1) + '_' + self.hash + '_' + jid
                         common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
                     else:
-                        jobId = str(nj + 1) + '_' + self.cfg_params['sid']
+                        jobId = str(tmpNj + 1) + '_' + jid
                         common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
                
                     if ( jid.find(":") != -1 ) :
                         rb = jid.split(':')[1]
-                        self.cfg_params['rb'] = rb.replace('//', '')
+                        rb = rb.replace('//', '')
                     else :
-                        self.cfg_params['rb'] = 'OSG'
+                        rb = 'OSG'
                
-                    #### FF: per il momento commentiamo nevtJob che non c'e' piu' nel jobdb
-                    #params = {'nevtJob': nevtJob, 'jobId': jobId, 'sid': self.cfg_params['sid'], \
-                    #          'broker': self.cfg_params['rb'], 'bossId': common.jobDB.bossId(nj)}
                     params = {'jobId': jobId, \
-                              'sid': self.cfg_params['sid'], \
-                              'broker': self.cfg_params['rb'], \
-                              'bossId': common.jobDB.bossId(nj), \
-                              'TargetCE': string.join((common.jobDB.destination(nj)),",")}
+                              'sid': jid, \
+                              'broker': rb, \
+                              'bossId': common.jobDB.bossId(tmpNj), \
+                              'TargetCE': string.join((common.jobDB.destination(tmpNj)),",")}
                
+                    fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
                     for i in fl.readlines():
                         val = i.split(':')
                         params[val[0]] = string.strip(val[1])
+                    fl.close()
 
                     common.logger.debug(5,'Submission DashBoard report: '+str(params))
                         
                     self.cfg_params['apmon'].sendToML(params)
+                pass
+            pass
 
         except:
             exctype, value = sys.exc_info()[:2]

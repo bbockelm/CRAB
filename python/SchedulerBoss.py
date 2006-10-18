@@ -453,7 +453,7 @@ class SchedulerBoss(Scheduler):
             schcladstring=' -schclassad '+self.schclassad
         #cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
         #cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(first)+':'+ common.jobDB.bossId(last)+ schcladstring
-        cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid '+str(jobsList)+ schcladstring
+        cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid '+string.join(jobsList,',')+ schcladstring
         cmd_out = runBossCommand(cmd)
         # debug
         msg = 'BOSS submission: ' + cmd
