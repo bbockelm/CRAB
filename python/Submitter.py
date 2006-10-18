@@ -71,7 +71,8 @@ class Submitter(Actor):
                     else:
                         common.logger.debug(1,"Found "+str(match)+" compatible site(s) for job "+str(nj+1))
                    # job list is string because boss can't manage list  
-                    list = list+str(nj+1)+',' 
+                   # list = list+str(nj+1)+',' 
+                    list = list+str(common.jobDB.bossId(nj))+',' 
                    # list.append(nj+1)
                     if nj < self.nj_list[len(self.nj_list)-1]:
                         nextBlock = common.jobDB.block(self.nj_list[count+1])
@@ -94,12 +95,16 @@ class Submitter(Actor):
                     try: pbar = ProgressBar(term, 'Submitting '+str(len(self.nj_list))+' jobs')
                     except: pbar = None
                 #common.logger.message("Submitting job # "+`(nj+1)`)  
-                jidLista = common.scheduler.submit(list_of_list[ii])
+                jidLista, bjidLista = common.scheduler.submit(list_of_list[ii])
+                bjidLista = map(int, bjidLista)
                 ####
-                for jj in range(len(jidLista)): # Add loop over SID returned from group submission  DS
+
+                for jj in bjidLista: # Add loop over SID returned from group submission  DS
                    # nj= int(jj+int(list[0]))
-                    nj= int(str(list_of_list[ii][1]).split(',')[jj])-1
-                    jid=jidLista[jj]
+                   # nj= int(str(list_of_list[ii][1]).split(',')[jj])-1
+                    #nj = common.jobDB.
+                    nj = jj - 1
+                    jid=jidLista[bjidLista.index(jj)]
                     common.logger.debug(1,"Submitted job # "+`(nj+1)`)
                     common.jobDB.setStatus(nj, 'S')
                     common.jobDB.setJobId(nj, jid)
