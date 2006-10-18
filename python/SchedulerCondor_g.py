@@ -82,7 +82,7 @@ class SchedulerCondor_g(Scheduler):
                           "t2data2.t2.ucsd.edu":"osg-gw-2.t2.ucsd.edu", \
                           "cmssrm.fnal.gov":"cmsosgce.fnal.gov", \
                           "se01.cmsaf.mit.edu":"ce01.cmsaf.mit.edu", \
-                          "spraid.if.usp.br":"spgrid.if.usp.br", \ 
+                          "spraid.if.usp.br":"spgrid.if.usp.br", \
                           "spdc00.if.usp.br":"spgrid.if.usp.br"} 
         
         # create hash
