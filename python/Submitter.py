@@ -89,30 +89,29 @@ class Submitter(Actor):
             if not common.logger.debugLevel() :
                 term = TerminalController()
 
+            if not common.logger.debugLevel() :
+                try: pbar = ProgressBar(term, 'Submitting '+str(len(list_of_list))+' jobs')
+                except: pbar = None
             for ii in range(len(list_of_list)): # Add loop DS
-                common.logger.message('Submitting jobs '+str(list_of_list[ii][1]))
-                if not common.logger.debugLevel() :
-                    try: pbar = ProgressBar(term, 'Submitting '+str(len(self.nj_list))+' jobs')
-                    except: pbar = None
-                #common.logger.message("Submitting job # "+`(nj+1)`)  
+                common.logger.debug(1,'Submitting jobs '+str(list_of_list[ii][1]))
                 jidLista, bjidLista = common.scheduler.submit(list_of_list[ii])
                 bjidLista = map(int, bjidLista)
                 ####
 
+                if not common.logger.debugLevel():
+                    if pbar :
+                        pbar.update(float(ii+1)/float(len(list_of_list)),'please wait')
+
                 for jj in bjidLista: # Add loop over SID returned from group submission  DS
-                   # nj= int(jj+int(list[0]))
-                   # nj= int(str(list_of_list[ii][1]).split(',')[jj])-1
-                    #nj = common.jobDB.
+                    # nj= int(jj+int(list[0]))
+                    # nj= int(str(list_of_list[ii][1]).split(',')[jj])-1
                     nj = jj - 1
                     jid=jidLista[bjidLista.index(jj)]
-                    common.logger.debug(1,"Submitted job # "+`(nj+1)`)
+                    common.logger.debug(5,"Submitted job # "+`(nj+1)`)
                     common.jobDB.setStatus(nj, 'S')
                     common.jobDB.setJobId(nj, jid)
                     common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
                     njs += 1
-                    if not common.logger.debugLevel():
-                        if pbar :
-                            pbar.update(float(jj+1)/float(len(jidLista)),'please wait')
                     ############################################   
                
                     if st == 'C':
