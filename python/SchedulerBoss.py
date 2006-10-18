@@ -461,6 +461,13 @@ class SchedulerBoss(Scheduler):
         msg = 'BOSS submission output: ' + cmd_out
         common.logger.debug(4,msg)
         jid=[]
+        #
+        # Marco.
+        #
+        bjid = []
+        #
+        # Marco.
+        #
         if not cmd_out :
             msg = 'ERROR: BOSS submission failed: ' + cmd
             common.logger.message(msg)
@@ -474,7 +481,14 @@ class SchedulerBoss(Scheduler):
                 if line.find('Scheduler ID for job') >= 0 :
                     #jid = line.split()[-1]
                     jid.append(line.split()[-1])
-        return jid
+                    #
+                    # Marco
+                    #
+                    bjid.append(line.split()[-3])
+        return jid, bjid
+        #
+        # Marco.
+        #
 
     ###################### ---- OK for Boss4 ds
     def moveOutput(self, int_id):
