@@ -605,19 +605,38 @@ class SchedulerBoss(Scheduler):
         """
         Cancel the EDG job with id: if id == -1, means all jobs.
         """
+        #print "CANCEL -------------------------"
+        #print "int_id ",int_id," nSubmitted ", common.jobDB.nSubmittedJobs()
         
-        if len(int_id)==common.jobDB.nJobs():
+        subm_id = []
+        for id in int_id:
+           if ( common.jobDB.status(id-1) in ['S','R']) and (id not in subm_id):
+              subm_id.append(id)
+        #print "--------------"
+        #print subm_id
+        
+        if len(subm_id)==common.jobDB.nSubmittedJobs() and common.jobDB.nSubmittedJobs()>0:
             bossTaskId = common.taskDB.dict('BossTaskId')
-            common.logger.message("Killing jobs # "+str(int_id[0])+':'+str(int_id[-1]))
-            cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(int_id[0])+':'+str(int_id[-1])
+            common.logger.message("Killing jobs # "+str(subm_id[0])+':'+str(subm_id[-1]))
+            cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(subm_id[0])+':'+str(subm_id[-1])
             cmd_out = runBossCommand(cmd)
+        #    for job in subm_id:
+        #        common.jobDB.setStatus(job-1, 'K')
+        #        
+        #if len(int_id)==common.jobDB.nJobs():
+        #    bossTaskId = common.taskDB.dict('BossTaskId')
+        #    common.logger.message("Killing jobs # "+str(int_id[0])+':'+str(int_id[-1]))
+        #    cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(int_id[0])+':'+str(int_id[-1])
+        #    cmd_out = runBossCommand(cmd)
             if not self.parseBossOutput(cmd_out): 
-                for job in range(common.jobDB.nJobs()):
+                #for job in range(common.jobDB.nJobs()):
+                for job in subm_id:
                     status =  common.scheduler.queryStatus(bossTaskId,job) 
                     if status not in ['Done (Success)','Killed','Cleared','Done (Aborted)','Created']:
-                        common.jobDB.setStatus(job, 'K')
+                        common.jobDB.setStatus(job -1, 'K')
             else:
-                common.logger.message("Error killing jobs # "+str(int_id[0])+':'+str(int_id[-1])+" . See log for details")
+                common.logger.message("Error killing jobs # "+str(subm_id[0])+':'+str(subm_id[-1])+" . See log for details")
+                #common.logger.message("Error killing jobs # "+str(int_id[0])+':'+str(int_id[-1])+" . See log for details")
                 
 
         else:

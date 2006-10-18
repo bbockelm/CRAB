@@ -61,6 +61,13 @@ class JobDB:
     def nJobs(self):
         return len(self._jobs)
 
+    def nSubmittedJobs(self):
+        n = 0
+        for i in range(self.nJobs()):
+           if self.status(i)=='S':
+               n += 1
+        return n
+
     def create(self, njobs):
 
         if os.path.exists(self._dir):
