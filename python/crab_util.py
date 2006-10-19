@@ -146,6 +146,7 @@ def crabJobStatusToString(crab_status):
     """
     if   crab_status == 'C': status = 'Created'
     elif crab_status == 'D': status = 'Done'
+    elif crab_status == 'R': status = 'Submitted'#Should be running? ds  
     elif crab_status == 'S': status = 'Submitted'
     elif crab_status == 'K': status = 'Killed'
     elif crab_status == 'X': status = 'None'

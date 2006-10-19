@@ -466,7 +466,7 @@ class Crab:
                 common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
                 jobSetForSubmission = 0
                 for nj in range(common.jobDB.nJobs()):
-                    if (common.jobDB.status(nj) not in ['S','K','Y','A','D']):
+                    if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D']):
                         jobSetForSubmission +=1
                         nj_list.append(nj)
                     else: continue
