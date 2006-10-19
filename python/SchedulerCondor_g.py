@@ -76,7 +76,7 @@ class SchedulerCondor_g(Scheduler):
         # GridCat currently doesn't have the capability to provide this.
         self.mapSEtoCE = {"cmssrm.hep.wisc.edu":"cmsgrid02.hep.wisc.edu", \
                           "dcache.rcac.purdue.edu":"lepton.rcac.purdue.edu", \
-                          "ufdcache.phys.ufl.edu":"ufloridapg.phys.ufl.edu", \
+                          "srm1.phys.ufl.edu":"ufloridapg.phys.ufl.edu", \
                           "thpc-1.unl.edu":"red.unl.edu", \
                           "cithep59.ultralight.org":"cit-gatekeeper.ultralight.org", \
                           "t2data2.t2.ucsd.edu":"osg-gw-2.t2.ucsd.edu", \
