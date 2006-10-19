@@ -25,6 +25,13 @@ class StatusBoss(Actor):
         else:
             self.hash = ''
 
+        # check rt flag
+        try:
+            self.doRT = int(cfg_params["USER.use_boss_rt"])
+        except:
+            self.doRT = 0
+
+
         return
 
     def run(self):
@@ -65,8 +72,9 @@ class StatusBoss(Actor):
         common.logger.message("Checking the status of all jobs: please wait")
 
         # update RT information
-        cmd = 'boss RTupdate -taskid '+bossTaskId
-        runBossCommand(cmd)
+        if self.doRT :
+            cmd = 'boss RTupdate -taskid '+bossTaskId
+            runBossCommand(cmd)
         
         # update status in Boss database
         results = common.scheduler.queryEveryStatus(bossTaskId)
