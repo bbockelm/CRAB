@@ -24,7 +24,7 @@ The most useful general options (use '-h' to get complete help):
   -cancelAndResubmit [range]  -- kill and resubmit submitted jobs
   -clean              -- gracefully cleanup the idrectory of a task
   -testJdl [range]    -- check if resources exist which are compatible with jdl
-  -list n or range    -- show technical job details
+  -list [range]       -- show technical job details
   -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
   -printId [range]    -- print the job SID
   -continue|-c [dir]  -- Apply command to task stored in [dir].
@@ -293,7 +293,7 @@ The type of the job to be executed: I<cmssw> jobtypes are supported
 
 =item B<scheduler *>
 
-The scheduler to be used: I<edg> is the grid one. In later version also other scheduler (local and grid) will be possible, including eg glite, condor-g, lsf, pbs, etc...
+The scheduler to be used: I<edg> is the standard grid one. Other choice are I<glite> or I<glitecoll> for bulk submission or I<condor_g> (see specific paragraph)
 
 =back
 
@@ -429,9 +429,18 @@ The proxy server to which you delegate the responsibility to renew your proxy on
 
 The role to be set in the VOMS. See VOMS documentation for more info.
 
+=item B<group>
+
+The group to be set in the VOMS, See VOMS documentation for more info.
+
 =item B<requirements>
 
 Any other requirements to be add to JDL. Must be written in compliance with JDL syntax (see LCG user manual for further info). No requirement on Computing element must be set.
+
+=item B<additional_jdl_parameters:>
+
+Any other parameters you want to add to jdl file: comma separated list, each
+item B<must> be complete, including the closing ";"
 
 =item B<max_cpu_time>
 
@@ -443,11 +452,19 @@ Same as previous, but with real time, and not CPU one.
 
 =item B<CE_black_list>
 
-All the CE whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (eg fnal, cern, ifae, fzk, cnaf, lnl,....)
+All the CE (Computing Element) whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (eg fnal, cern, ifae, fzk, cnaf, lnl,....)
 
 =item B<CE_white_list>
 
-Only the CE whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (eg fnal, cern, ifae, fzk, cnaf, lnl,....)
+Only the CE (Computing Element) whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (eg fnal, cern, ifae, fzk, cnaf, lnl,....)
+
+=item B<SE_black_list>
+
+All the SE (Storage Element) whose name contains the following strings (comma separated list) will not be considered for submission.
+
+=item B<SE_white_list>
+
+Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.
 
 =item B<virtual_organization>
 
@@ -456,6 +473,10 @@ You don't want to change this: it's cms!
 =item B<retry_count>
 
 Number of time the grid will try to resubmit your job in case of grid related problem.
+
+=item B<shallow_retry_count>
+
+Number of time shallow resubmission the grid will try: resubmissions are tried B<only> if the job aborted B<before> start. So you are guaranteed that your jobs run strictly once.
 
 =back
 
