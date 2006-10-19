@@ -842,7 +842,10 @@ class SchedulerBoss(Scheduler):
                 ListBoss_ID.append(int(boss_Id))
             nline = nline + 1
         ListBoss_ID.sort()
-        return ListBoss_ID
+        listBoss_Uniq = []
+        for i in ListBoss_ID:  # check if there double index
+            if i not in listBoss_Uniq: listBoss_Uniq.append(i)  
+        return listBoss_Uniq
 
     ###################### ---- OK for Boss4 ds
     def setOutLogDir(self,outDir,logDir):
