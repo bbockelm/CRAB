@@ -37,6 +37,19 @@ class Submitter(Actor):
             common.logger.message("No jobs to be submitted: first create them")
             return
 
+        # submit pre DashBoard information
+        params = {'jobId':'TaskMeta'}
+               
+        fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
+        for i in fl.readlines():
+            val = i.split(':')
+            params[val[0]] = string.strip(val[1])
+            fl.close()
+
+        common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
+                        
+        self.cfg_params['apmon'].sendToML(params)
+
         #########
         # Loop over jobs
         njs = 0
