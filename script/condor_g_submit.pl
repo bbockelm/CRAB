@@ -216,6 +216,7 @@ sub submit {
   print CMD ("when_to_transfer_output = ON_EXIT\n");
   print CMD ("transfer_input_files    = $inSandBox\n");
   print CMD ("transfer_output_files   = $outSandBox\n");
+  print CMD ("copy_to_spool           = false\n");
   # A string to help finding boss jobs in condor
   print CMD ("BossJob                = $jid\n");
   print CMD ("Queue 1\n");  
