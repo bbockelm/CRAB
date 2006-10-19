@@ -64,7 +64,7 @@ class JobDB:
     def nSubmittedJobs(self):
         n = 0
         for i in range(self.nJobs()):
-           if self.status(i)=='S':
+           if self.status(i) in ['S', 'R']:
                n += 1
         return n
 
