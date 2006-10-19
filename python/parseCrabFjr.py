@@ -58,7 +58,7 @@ def main(argv) :
     # load FwkJobRep
     jobReport = readJobReport(input)[0]
 
-    exit_satus = ''
+    exit_status = ''
     
     # get ExitStatus of last error
     if len(jobReport.errors) != 0 :
@@ -133,6 +133,8 @@ def main(argv) :
     exit_string = str(exit_status)
     for key in dashboard_report.keys() :
         exit_string += ';' + str(key) + '=' + str(dashboard_report[key])
+
+    
 
     return exit_string
 
