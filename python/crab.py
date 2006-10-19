@@ -466,7 +466,7 @@ class Crab:
                 common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
                 jobSetForSubmission = 0
                 for nj in range(common.jobDB.nJobs()):
-                    if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D']):
+                    if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
                         jobSetForSubmission +=1
                         nj_list.append(nj)
                     else: continue
@@ -494,7 +494,6 @@ class Crab:
 
             elif ( opt == '-list' ):
                 jobs = self.parseRange_(val)
-                print jobs
 
                 common.jobDB.dump(jobs)
                 pass
@@ -505,7 +504,7 @@ class Crab:
                 for nj in jobs:
                     #nj parte da 1 --> nj = internal_id di boss 
                     st = common.jobDB.status(nj-1)
-                    if st in ['S','K','Y','A']:
+                    if st in ['S','K','Y','A','Z']:
                         id = common.scheduler.boss_SID(nj)
                         print "Job: ",nj," Id = ", id 
                     else:
@@ -558,7 +557,7 @@ class Crab:
                     for nj in jobs:
                         if int(nj) <= int(len(maxIndex)) :
                             st = common.jobDB.status(int(nj)-1)
-                            if st in ['K','A']:
+                            if st in ['K','A','Z']:
                                 nj_list.append(int(nj)-1)
                                 common.jobDB.setStatus(int(nj)-1,'C')
                             elif st == 'Y':
