@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bossAdmin registerProgram -name glite -schema $CRABSCRIPT/edg.schema -post $CRABSCRIPT/edg.runtime -runtime $CRABSCRIPT/edg.runtime -comment "Job submitted to LCG/GLite"
+bossAdmin registerProgram -name glite -schema $CRABSCRIPT/edg.schema -pre $CRABSCRIPT/edg.preruntime -post $CRABSCRIPT/edg.runtime -runtime $CRABSCRIPT/edg.runtime -comment "Job submitted to LCG/GLite"
