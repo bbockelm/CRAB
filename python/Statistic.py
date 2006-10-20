@@ -5,7 +5,7 @@ import os
 import common
 import time
 
-def Monitor(operation,Resubmit,jid,exitCode):
+def Monitor(operation,Resubmit,jid,exitCode,dest):
        common.taskDB.load()
        array = common.taskDB.dict("CODE").split('::')
        time = array[0]
@@ -20,21 +20,9 @@ def Monitor(operation,Resubmit,jid,exitCode):
            executable = array[4]
            pass
           
-       if operation != 'submit' :
-          try:
-              dest = common.scheduler.queryDest(jid)
-              if ( dest.find(':') ) :
-                  dest = destination.split(":")[0]
-          except:
-              dest =  " "
-       else:
-          dest =  " "       
 
        SID = jid
        brok = dest
-       if ( jid.count('/') >= 3 ) :
-              SID =  jid.split("/")[3]
-              brok = jid.split("/")[2].split(":")[0]
 
        port = 8888
        address = 'crabstat.pg.infn.it'
@@ -48,7 +36,7 @@ def Monitor(operation,Resubmit,jid,exitCode):
        sockobj = socket(AF_INET,SOCK_DGRAM)
        sockobj.connect((address,port))
        if ( jobtype == 'ORCA' ) or ( jobtype == 'ORCA_PUBDB') or ( jobtype == 'CMSSW'):
-           sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
+           sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(jid)+'::'+str(time)+'::'+str(NjobCre))
        elif jobtype == 'FAMOS':
           # sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(inputData)+'::'+str(executable)+'::'+str(dest)+'::'+str(brok)+'::'+str(SID)+'::'+str(time)+'::'+str(NjobCre))
            pass 

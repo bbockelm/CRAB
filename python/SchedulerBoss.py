@@ -580,7 +580,7 @@ class SchedulerBoss(Scheduler):
                             exCode = common.scheduler.getExitStatus(jid)
                         except:
                             exCode = ' '
-                        Statistic.Monitor('retrieved',resFlag,jid,exCode)
+                        Statistic.Monitor('retrieved',resFlag,jid,exCode,'dest')
                         common.jobDB.setStatus(int(i_id)-1, 'Y') 
                 elif bossTaskIdStatus == 'Running' :
                     msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible yet to retrieve the output.'

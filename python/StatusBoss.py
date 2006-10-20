@@ -262,13 +262,13 @@ class StatusBoss(Actor):
                 printline+="%-8s %-18s %-40s %-13s %-15s" % (jobAttributes[bossid][0],jobStatus,dest,'','')
             resFlag = 0
             if jobStatus != 'Created'  and jobStatus != 'Unknown':
-                jid1 = string.strip(jobAttributes[bossid][2])
+                jid1 = string.strip(jobAttributes[bossid][1])
 
-            # ##########--------> for the moment this is out, when BOSS will know also the ce we reimplement it  DS. 
-            # if jobStatus == 'Aborted':
-            #     Statistic.Monitor('checkstatus',resFlag,jid1,'abort')
-            # else:
-            #     Statistic.Monitor('checkstatus',resFlag,jid1,exe_code)   
+                # CrabMon  
+                if jobStatus == 'Aborted':
+                    Statistic.Monitor('checkstatus',resFlag,jid1,'abort',dest)
+                else:
+                    Statistic.Monitor('checkstatus',resFlag,jid1,exe_code,dest)   
 
                 jobId = ''
                 if common.scheduler.boss_scheduler_name == 'condor_g':

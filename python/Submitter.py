@@ -128,7 +128,7 @@ class Submitter(Actor):
                     try:
                         resFlag = 0
                         if st == 'RC': resFlag = 2
-                        Statistic.Monitor('submit',resFlag,jid,'-----')
+                        Statistic.Monitor('submit',resFlag,jid,'-----','dest')
                     except:
                         pass
                     
