@@ -213,28 +213,60 @@ class SchedulerBoss(Scheduler):
         ## we don't need to test this at every call:
         if (self.schedRegistered.has_key(sched_name)): return
 
-        ## we should cache the result of the first test
-        boss_scheduler_check = "boss showSchedulers"
-        boss_out = runBossCommand(boss_scheduler_check,0)
-        if string.find(boss_out, sched_name) == -1 :
-            msg = sched_name + ' scheduler not registered in BOSS\n'
-            msg = msg + 'Starting registration\n'
-            common.logger.debug(6,msg)
-            # On demand registration of job type
-            register_path = self.boss_dir + '/'
-            register_boss_scheduler = 'register'+ string.upper(sched_name) + 'Scheduler'
-            
-            if os.path.exists(register_path+register_boss_scheduler):
-               
-                boss_out = runBossCommand(register_path+register_boss_scheduler,0)
-                if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
-                if string.find(boss_out, 'Usage') != -1 :
-                    msg = 'Error: Problem with scheduler '+sched_name+' registration\n'
-                    raise CrabException(msg)
-            else:
-                msg = 'Warning: file '+ register_boss_scheduler + ' does not exist!\n'
-                msg = msg + 'Please create your scheduler plugins\n'
+        ## in some circumstances, boss schowSchedulers can result in a timout condition returning 
+        ## BossDatabase::show :
+        ## Not connected
+        ## not connected
+        ##
+        ## implement 10 times retry for showSchedulers command with a sleep of 5 seconds in between
+        ## if not succeeded afterwards, throw exception
+        ##
+
+        counter = 0
+        query_succeeded = 0
+        max_retries = 10
+        sleep_interval = 5
+
+        while query_succeeded == 0 :
+            # increase counter, if reached max_retries, throw exception
+            counter += 1
+            if counter >= max_retries :
+                msg = 'Boss cmd: boss showScheduler failed with "not connected" error message for the' + str(max_retries) + ' time.\n'
+                msg += 'Abort registration.\n'
                 raise CrabException(msg)
+
+            ## we should cache the result of the first test
+            boss_scheduler_check = "boss showSchedulers"
+            boss_out = runBossCommand(boss_scheduler_check,0)
+            
+            if boss_out.find('not connected') == -1 :
+                query_succeeded = 1
+                if string.find(boss_out, sched_name) == -1 :
+                    msg = sched_name + ' scheduler not registered in BOSS\n'
+                    msg = msg + 'Starting registration\n'
+                    common.logger.debug(6,msg)
+                    # On demand registration of job type
+                    register_path = self.boss_dir + '/'
+                    register_boss_scheduler = 'register'+ string.upper(sched_name) + 'Scheduler'
+            
+                    if os.path.exists(register_path+register_boss_scheduler):
+                        boss_out = runBossCommand(register_path+register_boss_scheduler,0)
+                        if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
+                        if string.find(boss_out, 'Usage') != -1 :
+                            msg = 'Error: Problem with scheduler '+sched_name+' registration\n'
+                            raise CrabException(msg)
+                    else:
+                        msg = 'Warning: file '+ register_boss_scheduler + ' does not exist!\n'
+                        msg = msg + 'Please create your scheduler plugins\n'
+                        raise CrabException(msg)
+            else :
+                # sleep for defined sleep interval
+                msg = 'Boss cmd: boss showScheduler failed with "not connected" error message for the' + str(max_retries) + ' time.\n'
+                msg += 'Retry after ' + str(sleep_interval) + ' seconds.\n'
+                common.logger.debug(5,msg)
+                time.sleep(sleep_interval)
+
+        # sched registered
         self.schedRegistered[sched_name] = 1
         return
 
@@ -247,28 +279,62 @@ class SchedulerBoss(Scheduler):
         ## we don't need to test this at every call:
         if (self.jobtypeRegistered.has_key(jobtype)): return
 
+        ## in some circumstances, boss showProgramTypes can result in a timout condition returning 
+        ## BossDatabase::show :
+        ## Not connected
+        ## not connected
+        ##
+        ## implement 10 times retry for showProgramTypes command with a sleep of 5 seconds in between
+        ## if not succeeded afterwards, throw exception
+        ##
+
+        counter = 0
+        query_succeeded = 0
+        max_retries = 10
+        sleep_interval = 5
+
+        while query_succeeded == 0 :
+            # increase counter, if reached max_retries, throw exception
+            counter += 1
+            if counter >= max_retries :
+                msg = 'Boss cmd: boss showProgramTypes failed with "not connected" error message for the' + str(max_retries) + ' time.\n'
+                msg += 'Abort registration.\n'
+                raise CrabException(msg)
+
+            ## we should cache the result of the first test
+            boss_jobtype_check = "boss showProgramTypes"
+            boss_out = runBossCommand(boss_jobtype_check,0)
+            
+            if boss_out.find('not connected') == -1 :
+                query_succeeded = 1
+                if string.find(boss_out, jobtype) == -1 :
+                    msg =  'Warning:' + jobtype + ' jobtype not registered in BOSS\n'
+                    msg = msg + 'Starting registration \n'
+                    common.logger.debug(6,msg)
+                    register_path = self.boss_dir + '/'
+                    register_boss_jobtype= 'register' + string.upper(jobtype) + 'job'
+                    if os.path.exists(register_path+register_boss_jobtype):
+                        register_boss_jobtype= 'register' + string.upper(jobtype) + 'job'
+                        boss_out = runBossCommand(register_path+register_boss_jobtype,0)
+                        if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
+                        if string.find(boss_out, 'Usage') != -1 :
+                            msg = 'Error: Problem with job '+jobtype+' registration\n'
+                            raise CrabException(msg)
+                    else:
+                        self.jobtypeRegistered[jobtype] = 2
+                        msg = 'Warning: file '+ register_boss_jobtype + ' does not exist!\n'
+                        msg = msg + 'Will be used only JOB as default jobtype\n'
+                        common.logger.message(msg)
+                        return
+            else :
+                # sleep for defined sleep interval
+                msg = 'Boss cmd: boss showProgramTypes failed with "not connected" error message for the' + str(max_retries) + ' time.\n'
+                msg += 'Retry after ' + str(sleep_interval) + ' seconds.\n'
+                common.logger.debug(5,msg)
+                time.sleep(sleep_interval)
+
         ## we should cache the result of the first test
-        boss_jobtype_check = "boss showProgramTypes"
-        boss_out = runBossCommand(boss_jobtype_check,0)
-        if string.find(boss_out, jobtype) == -1 :
-            msg =  'Warning:' + jobtype + ' jobtype not registered in BOSS\n'
-            msg = msg + 'Starting registration \n'
-            common.logger.debug(6,msg)
-            register_path = self.boss_dir + '/'
-            register_boss_jobtype= 'register' + string.upper(jobtype) + 'job'
-            if os.path.exists(register_path+register_boss_jobtype):
-                register_boss_jobtype= 'register' + string.upper(jobtype) + 'job'
-                boss_out = runBossCommand(register_path+register_boss_jobtype,0)
-                if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
-                if string.find(boss_out, 'Usage') != -1 :
-                    msg = 'Error: Problem with job '+jobtype+' registration\n'
-                    raise CrabException(msg)
-            else:
-                self.jobtypeRegistered[jobtype] = 2
-                msg = 'Warning: file '+ register_boss_jobtype + ' does not exist!\n'
-                msg = msg + 'Will be used only JOB as default jobtype\n'
-                common.logger.message(msg)
-                return
+        # jobtype registered
         self.jobtypeRegistered[jobtype] = 1
         return
 
