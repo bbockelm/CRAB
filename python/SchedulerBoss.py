@@ -802,7 +802,7 @@ class SchedulerBoss(Scheduler):
             'O?':'Done',
             'R?':'Running'             
             }
-        cmd = 'boss q -taskid '+str(taskid)+' -jobid '+str(id)+' -all'
+        cmd = 'boss q -taskid '+str(taskid)+' -jobid '+str(id)
         cmd_out = runBossCommand(cmd)
         
         # debug
