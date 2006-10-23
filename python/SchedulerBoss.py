@@ -502,7 +502,7 @@ class SchedulerBoss(Scheduler):
             os.mkdir(resDirSave)
 
         boss_id = int(int_id) 
-        cmd = 'bossAdmin SQL -fieldsLen -query "select CHAIN_OUTFILES from CHAIN where ID='+str(boss_id)+'"'
+        cmd = 'bossAdmin SQL -fieldsLen -query "select CHAIN_OUTFILES from CHAIN where ID='+str(boss_id)+' and JOB.TASK_ID=\''+common.taskDB.dict('BossTaskId')+'\'"'
         cmd_out = runBossCommand(cmd)
 
         nline = 0
@@ -695,7 +695,7 @@ class SchedulerBoss(Scheduler):
     def boss_SID(self,int_ID):
         """ Return Sid of job """
         SID = ''
-        cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from JOB where CHAIN_ID=\''+str(int_ID)+'\'"'
+        cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from JOB where CHAIN_ID=\''+str(int_ID)+'\' and TASK_ID=\''+common.taskDB.dict('BossTaskId')+'\'"'
         cmd_out = runBossCommand(cmd)
         nline = 0
         for line in cmd_out.splitlines():
@@ -703,7 +703,7 @@ class SchedulerBoss(Scheduler):
                SID = string.strip(line)
             nline = nline + 1
         if SID == '' :
-            cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from ENDED_JOB where CHAIN_ID=\''+str(int_ID)+'\'"'
+            cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from ENDED_JOB where CHAIN_ID=\''+str(int_ID)+'\' and TASK_ID=\''+common.taskDB.dict('BossTaskId')+'\'"'
             cmd_out = runBossCommand(cmd)
             nline = 0
             for line in cmd_out.splitlines():
