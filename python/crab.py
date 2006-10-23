@@ -704,7 +704,10 @@ class Crab:
                 if os.listdir(new_dir):
                     msg = new_dir + ' already exists and is not empty. Please remove it before create new task'
                     raise CrabException(msg)
-            new_dir = self.cwd + new_dir
+            if  len(string.split(new_dir, '/')) == 1:
+                new_dir = self.cwd + new_dir
+            else:
+                new_dir = new_dir
         except KeyError:
             new_dir = common.prog_name + '_' + self.name + '_' + self.current_time
             self.cfg_params['taskId'] = self.cfg_params['user'] + '_' + new_dir 
