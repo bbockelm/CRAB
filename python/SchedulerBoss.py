@@ -751,21 +751,11 @@ class SchedulerBoss(Scheduler):
     def boss_SID(self,int_ID):
         """ Return Sid of job """
         SID = ''
-        cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from JOB where CHAIN_ID=\''+str(int_ID)+'\' and TASK_ID=\''+common.taskDB.dict('BossTaskId')+'\'"'
-        cmd_out = runBossCommand(cmd)
-        nline = 0
-        for line in cmd_out.splitlines():
-            if nline == 3:
-               SID = string.strip(line)
-            nline = nline + 1
-        if SID == '' :
-            cmd = 'bossAdmin SQL -fieldsLen -query "select SCHED_ID  from ENDED_JOB where CHAIN_ID=\''+str(int_ID)+'\' and TASK_ID=\''+common.taskDB.dict('BossTaskId')+'\'"'
-            cmd_out = runBossCommand(cmd)
-            nline = 0
-            for line in cmd_out.splitlines():
-                if nline == 3:
-                    SID = string.strip(line)
-                nline = nline + 1
+
+        if common.jobDB.nSubmittedJobs() == 0:
+            common.jobDB.load()
+
+        SID = common.jobDB.jobId(int_ID-1)
     
         return SID
 
