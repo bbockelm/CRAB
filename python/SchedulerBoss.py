@@ -618,41 +618,51 @@ class SchedulerBoss(Scheduler):
                 logDir = self.logDir
                 boss_id = i_id 
                 bossTaskId = common.taskDB.dict('BossTaskId')
-                cmd = 'boss getOutput -taskid  '+bossTaskId+' -jobid ' +str(boss_id) +' -outdir ' +dir
-                cmd_out = runBossCommand(cmd)
-                if cmd_out.find('error retrieving output') >= 0 :
-                    msg = 'Results of Job # '+`int(i_id)`+' have been corrupted and could not be retrieved.'
-                    common.logger.message(msg)
-                    common.jobDB.setStatus(int(i_id)-1, 'Z') 
-                elif cmd_out.find('not finished yet') >= 0 :
-                    msg = 'Job # '+`int(i_id)`+': It is not possible yet to retrieve the output because the job is either scheduled or running.'
-                    common.logger.message(msg)
-                elif cmd_out.find('already been retrieved') >= 0 :
-                    msg = 'Job # '+`int(i_id)`+': The output was already retrieved.'
-                    common.logger.message(msg)
-                else :
-                    if logDir != dir:
-                        try:
-                            cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo ' +str(logDir)
-                            cmd_out = runCommand(cmd)
-                            msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
-                            common.logger.message(msg)
-                        except:
-                            msg = 'Problem with copy of job results' 
-                            common.logger.message(msg)
-                            pass  
-                    else:   
-                        msg = 'Results of Job # '+`int(i_id)`+' are in '+dir
+                bossTaskIdStatus = common.scheduler.queryStatus(bossTaskId, boss_id)
+                if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':   
+                    cmd = 'boss getOutput -taskid  '+bossTaskId+' -jobid ' +str(boss_id) +' -outdir ' +dir
+                    cmd_out = runBossCommand(cmd)
+                    if cmd_out.find('error retrieving output') >= 0 :
+                        msg = 'Results of Job # '+`int(i_id)`+' have been corrupted and could not be retrieved.'
                         common.logger.message(msg)
-                    resFlag = 0
-                    jid = common.scheduler.boss_SID(int(i_id)) 
-                    try:
-                        exCode = common.scheduler.getExitStatus(jid)
-                    except:
-                        exCode = ' '
-                    Statistic.Monitor('retrieved',resFlag,jid,exCode,'dest')
-                    common.jobDB.setStatus(int(i_id)-1, 'Y') 
-
+                        common.jobDB.setStatus(int(i_id)-1, 'Z') 
+                    else :
+                        if logDir != dir:
+                            try:
+                                cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo ' +str(logDir)
+                                cmd_out = runCommand(cmd)
+                                msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
+                                common.logger.message(msg)
+                            except:
+                                msg = 'Problem with copy of job results' 
+                                common.logger.message(msg)
+                                pass  
+                        else:   
+                            msg = 'Results of Job # '+`int(i_id)`+' are in '+dir
+                            common.logger.message(msg)
+                        resFlag = 0
+                        jid = common.scheduler.boss_SID(int(i_id)) 
+                        try:
+                            exCode = common.scheduler.getExitStatus(jid)
+                        except:
+                            exCode = ' '
+                        Statistic.Monitor('retrieved',resFlag,jid,exCode,'dest')
+                        common.jobDB.setStatus(int(i_id)-1, 'Y') 
+                elif bossTaskIdStatus == 'Running' :
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible yet to retrieve the output.'
+                    common.logger.message(msg)
+                elif bossTaskIdStatus == 'Cleared' :
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. The output was already retrieved.'
+                    common.logger.message(msg)
+                elif bossTaskIdStatus == 'Aborted' :
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible to retrieve the output.'
+                    common.logger.message(msg)
+                else:
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is currently not possible to retrieve the output.'
+                    common.logger.message(msg)
+                dir += os.environ['USER']
+                dir += '_' + os.path.basename(str(boss_id))
+            pass
         common.jobDB.save() 
         return
 
