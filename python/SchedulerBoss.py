@@ -316,7 +316,7 @@ class SchedulerBoss(Scheduler):
                     if os.path.exists(register_path+register_boss_jobtype):
                         register_boss_jobtype= 'register' + string.upper(jobtype) + 'job'
                         boss_out = runBossCommand(register_path+register_boss_jobtype,0)
-                        if (boss_out==None): raise CrabException('Cannot execute '+register_boss_scheduler+'\nExiting')
+                        if (boss_out==None): raise CrabException('Cannot execute '+register_boss_jobtype+'\nExiting')
                         if string.find(boss_out, 'Usage') != -1 :
                             msg = 'Error: Problem with job '+jobtype+' registration\n'
                             raise CrabException(msg)
