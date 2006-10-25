@@ -107,8 +107,8 @@ class InteractCrab:
             logging.warning('`'+cmd+'`\n   failed with exit code '
                                   +`err`+'='+`(err&0xff)`+'(signal)+'
                                   +`(err>>8)`+'(status)')
-            logging.info(outdata)
-            logging.warning(errdata)
+            logging.info   ("\n--- CRAB STDOUT ---\n" + cmd_out + "\n------------------\n")
+            logging.warning("\n--- CRAB STDERR ---\n" + cmd_err + "\n------------------\n")
             return None
 
         cmd_out = cmd_out + cmd_err
