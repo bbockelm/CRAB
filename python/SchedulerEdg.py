@@ -834,6 +834,13 @@ class SchedulerEdg(Scheduler):
         INDY
         something similar should be also done for infiles (if it makes sense!)
         """
+        # Stuff to be returned _always_ via sandbox
+        for fl in jbt.output_file_sandbox:
+            out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
+            pass
+        pass
+
+        # via sandbox iif required return_data
         if int(self.return_data) == 1:
             for fl in jbt.output_file:
                 out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','

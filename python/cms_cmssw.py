@@ -97,11 +97,16 @@ class Cmssw(JobType):
             raise CrabException("PSet file missing. Cannot run cmsRun ")
 
         # output files
+        ## stuff which must be returned always via sandbox
+        self.output_file_sandbox = []
+
+        # add fjr report by default via sandbox
+        self.output_file_sandbox.append(self.fjrFileName)
+
+        # other output files to be returned via sandbox or copied to SE
         try:
             self.output_file = []
 
-            # add fjr report by default
-            self.output_file.append(self.fjrFileName)
 
             tmp = cfg_params['CMSSW.output_file']
             if tmp != '':
@@ -921,8 +926,8 @@ class Cmssw(JobType):
         Returns a list of filenames to be put in JDL input sandbox.
         """
         inp_box = []
-        # dict added to delete duplicate from input sandbox file list
-        seen = {}
+        # # dict added to delete duplicate from input sandbox file list
+        # seen = {}
         ## code
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
@@ -940,15 +945,14 @@ class Cmssw(JobType):
         """
         out_box = []
 
-        stdout=common.job_list[nj].stdout()
-        stderr=common.job_list[nj].stderr()
+        # stdout=common.job_list[nj].stdout()
+        # stderr=common.job_list[nj].stderr()
 
         ## User Declared output files
         for out in self.output_file:
             n_out = nj + 1 
             out_box.append(self.numberFile_(out,str(n_out)))
         return out_box
-        return []
 
     def prepareSteeringCards(self):
         """
