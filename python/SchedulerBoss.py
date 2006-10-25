@@ -864,6 +864,7 @@ class SchedulerBoss(Scheduler):
             'R?':'Running'             
             }
         allBoss_id = common.scheduler.listBoss()
+        tmpQ = ''
         if not len(allBoss_id)==len(list_id): tmpQ = ' -jobid '+string.join(map(str,list_id),",")
         cmd = 'boss q -taskid '+str(taskid)+tmpQ+' -all'
         cmd_out = runBossCommand(cmd)
