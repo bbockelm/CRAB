@@ -102,15 +102,15 @@ class StatusBoss(Actor):
             schedTableName = 'SCHED_'+string.lower(common.scheduler.boss_scheduler_name)
             schedTable1 = ','+schedTableName+'.DEST_CE,'+schedTableName+'.STATUS_REASON,'+schedTableName+'.LAST_T'
             schedTable2 = ','+schedTableName
-            schedTable3 = ' and '+schedTableName+'.CHAIN_ID=JOB.CHAIN_ID '
-            schedTable3Ended = ' and '+schedTableName+'.CHAIN_ID=ENDED_JOB.CHAIN_ID '
+            schedTable3 = ' and '+schedTableName+'.CHAIN_ID=JOB.CHAIN_ID and '+schedTableName+'.TASK_ID=JOB.TASK_ID'
+            schedTable3Ended = ' and '+schedTableName+'.CHAIN_ID=ENDED_JOB.CHAIN_ID and '+schedTableName+'.TASK_ID=ENDED_JOB.TASK_ID'
         else:
             schedTable1 = ''
             schedTable2 = ''
             schedTable3 = ''
             schedTable3Ended = ''
 
-        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS'+schedTable1+' from JOB,crabjob'+add2tablelist+schedTable2+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' '+schedTable3+'  ORDER BY crabjob.CHAIN_ID"' 
+        cmd = 'bossAdmin SQL -fieldsLen -query "select JOB.CHAIN_ID,JOB.SCHED_ID,crabjob.EXE_EXIT_CODE,JOB.EXEC_HOST,crabjob.JOB_EXIT_STATUS'+schedTable1+' from JOB,crabjob'+add2tablelist+schedTable2+' where crabjob.CHAIN_ID=JOB.CHAIN_ID '+addjoincondition+' and crabjob.TASK_ID=JOB.TASK_ID and JOB.TASK_ID=\''+bossTaskId+'\' and JOB.SCHED_ID!=\'\' '+schedTable3+'  ORDER BY crabjob.CHAIN_ID"' 
 
         cmd_out = runBossCommand(cmd)
         jobAttributes={}
@@ -144,7 +144,7 @@ class StatusBoss(Actor):
         # ENDED_ crabjob.LAST_T
 
         # query also the ended table to get job status of jobs ended but not yet retrieved
-        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS'+schedTable1+' from ENDED_JOB,ENDED_crabjob'+add2tablelist+schedTable2+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\' and ENDED_JOB.SCHED_ID!=\'\' '+schedTable3Ended+'  ORDER BY ENDED_crabjob.CHAIN_ID"' 
+        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS'+schedTable1+' from ENDED_JOB,ENDED_crabjob'+add2tablelist+schedTable2+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_crabjob.TASK_ID=ENDED_JOB.TASK_ID and  ENDED_JOB.TASK_ID=\''+bossTaskId+'\' and ENDED_JOB.SCHED_ID!=\'\' '+schedTable3Ended+'  ORDER BY ENDED_crabjob.CHAIN_ID"' 
         cmd_out = runBossCommand(cmd)
         nline=0
         for line in cmd_out.splitlines():
@@ -163,10 +163,10 @@ class StatusBoss(Actor):
             schedTableName = 'ENDED_SCHED_'+string.lower(common.scheduler.boss_scheduler_name)
             schedTable1 = ','+schedTableName+'.DEST_CE,'+schedTableName+'.STATUS_REASON,'+schedTableName+'.LAST_T'
             schedTable2 = ','+schedTableName
-            schedTable3 = ' and '+schedTableName+'.CHAIN_ID=JOB.CHAIN_ID '
-            schedTable3Ended = ' and '+schedTableName+'.CHAIN_ID=ENDED_JOB.CHAIN_ID '
+            schedTable3 = ' and '+schedTableName+'.CHAIN_ID=JOB.CHAIN_ID and '+schedTableName+'.TASK_ID=JOB.TASK_ID'
+            schedTable3Ended = ' and '+schedTableName+'.CHAIN_ID=ENDED_JOB.CHAIN_ID and '+schedTableName+'.TASK_ID=ENDED_JOB.TASK_ID'
 
-        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS'+schedTable1+' from ENDED_JOB,ENDED_crabjob'+add2tablelist+schedTable2+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_JOB.TASK_ID=\''+bossTaskId+'\' and ENDED_JOB.SCHED_ID!=\'\' '+schedTable3Ended+'  ORDER BY ENDED_crabjob.CHAIN_ID"' 
+        cmd = 'bossAdmin SQL -fieldsLen -query "select ENDED_JOB.CHAIN_ID,ENDED_JOB.SCHED_ID,ENDED_crabjob.EXE_EXIT_CODE,ENDED_JOB.EXEC_HOST,ENDED_crabjob.JOB_EXIT_STATUS'+schedTable1+' from ENDED_JOB,ENDED_crabjob'+add2tablelist+schedTable2+' where ENDED_crabjob.CHAIN_ID=ENDED_JOB.CHAIN_ID '+addjoincondition+' and ENDED_crabjob.TASK_ID=ENDED_JOB.TASK_ID and ENDED_JOB.TASK_ID=\''+bossTaskId+'\' and ENDED_JOB.SCHED_ID!=\'\' '+schedTable3Ended+'  ORDER BY ENDED_crabjob.CHAIN_ID"' 
         cmd_out = runBossCommand(cmd)
         nline=0
         for line in cmd_out.splitlines():
@@ -401,3 +401,4 @@ class StatusBoss(Actor):
         if output[-1] == ',' :
             output = output[:-1]
         return output
+
