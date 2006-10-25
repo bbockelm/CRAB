@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bossAdmin registerProgram -name crabjob -schema $CRABSCRIPT/crab.schema  -pre $CRABSCRIPT/crab.preruntime -post $CRABSCRIPT/crab.runtime -runtime $CRABSCRIPT/crab.runtime -comment "CRAB job"
+bossAdmin registerProgram -name crabjob -schema $CRABSCRIPT/crab.schema -post $CRABSCRIPT/crab.runtime -runtime $CRABSCRIPT/crab.runtime -comment "CRAB job"
