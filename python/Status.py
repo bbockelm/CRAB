@@ -59,6 +59,8 @@ class Status(Actor):
         """
         Update the status to DB
         """
+        bossTaskId = common.taskDB.dict('BossTaskId')
+        statusList = common.scheduler.queryStatusList(bossTaskId, int_id)
 
         common.jobDB.load()
         for nj in self.nj_list:
@@ -66,7 +68,8 @@ class Status(Actor):
             self.countToTjob = self.countToTjob + 1
             jid = common.jobDB.jobId(nj)
             if st == 'S' or st == 'A' or st == 'D' or st == 'K':
-                result = common.scheduler.queryStatus(jid)
+                #result = common.scheduler.queryStatus(jid)
+                result = statusList[jid]
                 self.processResult_(nj, result, jid)
                 exit = common.jobDB.exitStatus(nj)
                 print 'Job %03d:'%(nj+1),jid,result,exit

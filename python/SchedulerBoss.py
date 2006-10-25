@@ -609,6 +609,14 @@ class SchedulerBoss(Scheduler):
         common.jobDB.load()
         self.boss_scheduler.checkProxy()
         allBoss_id = common.scheduler.listBoss()
+        
+        bossTaskId = common.taskDB.dict('BossTaskId')
+        ## first get the status of all job in the list
+        statusList = common.scheduler.queryStatusList(bossTaskId, int_id)
+
+        ## then loop over jobs and retrieve it if it's the case
+
+
         for i_id in int_id :
             if int(i_id) not in allBoss_id: 
                 msg = 'Job # '+`int(i_id)`+' out of range for task '+ self.groupName
@@ -617,8 +625,8 @@ class SchedulerBoss(Scheduler):
                 dir = self.outDir 
                 logDir = self.logDir
                 boss_id = i_id 
-                bossTaskId = common.taskDB.dict('BossTaskId')
-                bossTaskIdStatus = common.scheduler.queryStatus(bossTaskId, boss_id)
+                #bossTaskIdStatus = common.scheduler.queryStatus(bossTaskId, boss_id)
+                bossTaskIdStatus = statusList[boss_id]
                 if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':   
                     cmd = 'boss getOutput -taskid  '+bossTaskId+' -jobid ' +str(boss_id) +' -outdir ' +dir
                     cmd_out = runBossCommand(cmd)
@@ -680,30 +688,25 @@ class SchedulerBoss(Scheduler):
               subm_id.append(id)
         #print "--------------"
         #print subm_id
+        bossTaskId = common.taskDB.dict('BossTaskId')
+        ## first get the status of all job in the list
+        statusList = common.scheduler.queryStatusList(bossTaskId, subm_id)
         
         if len(subm_id)==common.jobDB.nSubmittedJobs() and common.jobDB.nSubmittedJobs()>0:
             bossTaskId = common.taskDB.dict('BossTaskId')
             common.logger.message("Killing jobs # "+str(subm_id[0])+':'+str(subm_id[-1]))
             cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(subm_id[0])+':'+str(subm_id[-1])
             cmd_out = runBossCommand(cmd)
-        #    for job in subm_id:
-        #        common.jobDB.setStatus(job-1, 'K')
-        #        
-        #if len(int_id)==common.jobDB.nJobs():
-        #    bossTaskId = common.taskDB.dict('BossTaskId')
-        #    common.logger.message("Killing jobs # "+str(int_id[0])+':'+str(int_id[-1]))
-        #    cmd = 'boss kill -taskid '+bossTaskId+' -jobid '+str(int_id[0])+':'+str(int_id[-1])
-        #    cmd_out = runBossCommand(cmd)
+
             if not self.parseBossOutput(cmd_out): 
                 #for job in range(common.jobDB.nJobs()):
                 for job in subm_id:
-                    status =  common.scheduler.queryStatus(bossTaskId,job) 
+                    #status =  common.scheduler.queryStatus(bossTaskId,job) 
+                    status = statusList[job]
                     if status not in ['Done (Success)','Killed','Cleared','Done (Aborted)','Created']:
                         common.jobDB.setStatus(job -1, 'K')
             else:
                 common.logger.message("Error killing jobs # "+str(subm_id[0])+':'+str(subm_id[-1])+" . See log for details")
-                #common.logger.message("Error killing jobs # "+str(int_id[0])+':'+str(int_id[-1])+" . See log for details")
-                
 
         else:
 
@@ -716,8 +719,9 @@ class SchedulerBoss(Scheduler):
                 else:
                    # boss_id = allBoss_id[int(i_id)]
                     boss_id = i_id 
-                    bossTaskId = common.taskDB.dict('BossTaskId')
-                    status =  common.scheduler.queryStatus(bossTaskId,boss_id) 
+                    #bossTaskId = common.taskDB.dict('BossTaskId')
+                    #status =  common.scheduler.queryStatus(bossTaskId,boss_id) 
+                    status = statusList[boss_id]
                     if status == 'Done (Success)' or status == 'Killed' or status =='Cleared' or status ==  'Done (Aborted)' or status == 'Created':
                         msg = 'Job # '+`int(i_id)`+' has status '+status+' not possible to Kill it'
                         common.logger.message(msg) 
@@ -825,7 +829,8 @@ class SchedulerBoss(Scheduler):
 
         return results
 
-    def queryStatus(self,taskid,id):
+    ##################################################
+    def queryStatusList(self,taskid,list_id):
         """ Query a status of the job with id """
 
         self.boss_scheduler.checkProxy()
@@ -858,7 +863,9 @@ class SchedulerBoss(Scheduler):
             'O?':'Done',
             'R?':'Running'             
             }
-        cmd = 'boss q -taskid '+str(taskid)+' -jobid '+str(id)+' -submitted'
+        allBoss_id = common.scheduler.listBoss()
+        if not len(allBoss_id)==len(list_id): tmpQ = ' -jobid '+string.join(map(str,list_id),",")
+        cmd = 'boss q -taskid '+str(taskid)+tmpQ+' -all'
         cmd_out = runBossCommand(cmd)
         
         # debug
@@ -868,12 +875,18 @@ class SchedulerBoss(Scheduler):
         common.logger.debug(4,msg)
         ###  
         nline=0
+        result={}
+        fielddesc=()
         for line in cmd_out.splitlines():
-            if nline==1:
-                header = line.split()
-                return status[header[5]]
-            nline=nline+1
-
+            if nline==0:
+                fielddesc=line.split()
+            else:
+                if nline >= 1:
+                    array = line.split()
+                    if isInt(array[1]) :
+                        result[int(array[1])] = status[array[5]]
+            nline += 1
+        return result
 
     ###################### ---- OK for Boss4 ds
     def listBoss(self):
