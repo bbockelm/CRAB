@@ -433,6 +433,10 @@ The role to be set in the VOMS. See VOMS documentation for more info.
 
 The group to be set in the VOMS, See VOMS documentation for more info.
 
+=item B<dont_check_proxy>
+
+If you do not want CRAB to check your proxy. The creation of the proxy (with proper lenght), its delegation to a myproxyserver is your responsability.
+
 =item B<requirements>
 
 Any other requirements to be add to JDL. Must be written in compliance with JDL syntax (see LCG user manual for further info). No requirement on Computing element must be set.

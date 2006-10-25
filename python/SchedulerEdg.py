@@ -18,6 +18,7 @@ class SchedulerEdg(Scheduler):
                       "owner","parent_job", "reason","resubmitted","rsl","seed",\
                       "stateEnterTime","stateEnterTimes","subjob_failed", \
                       "user tags" , "status" , "status_code","hierarchy"]
+        
         return
 
     def configure(self, cfg_params):
@@ -166,6 +167,9 @@ class SchedulerEdg(Scheduler):
  
         try: self.schedulerName = cfg_params['CRAB.scheduler']
         except KeyError: self.scheduler = ''
+
+        try: self.dontCheckProxy=cfg_params["EDG.dont_check_proxy"]
+        except KeyError: self.dontCheckProxy = 0
 
         return
     
@@ -858,6 +862,12 @@ class SchedulerEdg(Scheduler):
         Function to check the Globus proxy.
         """
         if (self.proxyValid): return
+
+        ### Just return if asked to do so
+        if (self.dontCheckProxy):
+            self.proxyValid=1
+            return
+
         timeleft = -999
         minTimeLeft=10*3600 # in seconds
 
