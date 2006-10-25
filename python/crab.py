@@ -504,7 +504,7 @@ class Crab:
                 for nj in jobs:
                     #nj parte da 1 --> nj = internal_id di boss 
                     st = common.jobDB.status(nj-1)
-                    if st in ['S','K','Y','A','Z']:
+                    if st in ['S','R','K','Y','A','Z']:
                         id = common.scheduler.boss_SID(nj)
                         print "Job: ",nj," Id = ", id 
                     else:
