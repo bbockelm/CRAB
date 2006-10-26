@@ -945,11 +945,8 @@ class Cmssw(JobType):
         """
         out_box = []
 
-        # stdout=common.job_list[nj].stdout()
-        # stderr=common.job_list[nj].stderr()
-
         ## User Declared output files
-        for out in self.output_file:
+        for out in (self.output_file+self.output_file_sandbox):
             n_out = nj + 1 
             out_box.append(self.numberFile_(out,str(n_out)))
         return out_box
@@ -968,21 +965,15 @@ class Cmssw(JobType):
         txt = '\n'
         txt += '# directory content\n'
         txt += 'ls \n'
-        file_list = ''
-        for fileWithSuffix in self.output_file:
+
+        for fileWithSuffix in (self.output_file+self.output_file_sandbox):
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
-            file_list=file_list+output_file_num+' '
             txt += '\n'
             txt += '# check output file\n'
             txt += 'ls '+fileWithSuffix+'\n'
             txt += 'ls_result=$?\n'
-            #txt += 'exe_result=$?\n'
             txt += 'if [ $ls_result -ne 0 ] ; then\n'
             txt += '   echo "ERROR: Problem with output file"\n'
-            #txt += '   echo "JOB_EXIT_STATUS = $exe_result"\n'
-            #txt += '   echo "JobExitCode=60302" | tee -a $RUNTIME_AREA/$repo\n'
-            #txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-            ### OLI_DANIELE
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
                 txt += '        echo "prepare dummy output file"\n'
@@ -993,8 +984,6 @@ class Cmssw(JobType):
             txt += 'fi\n'
        
         txt += 'cd $RUNTIME_AREA\n'
-        file_list=file_list[:-1]
-        txt += 'file_list="'+file_list+'"\n'
         txt += 'cd $RUNTIME_AREA\n'
         ### OLI_DANIELE
         txt += 'if [ $middleware == OSG ]; then\n'  
@@ -1012,6 +1001,15 @@ class Cmssw(JobType):
         txt += '    fi\n'
         txt += 'fi\n'
         txt += '\n'
+
+        file_list = ''
+        ## Add to filelist only files to be possibly copied to SE
+        for fileWithSuffix in self.output_file:
+            output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
+            file_list=file_list+output_file_num+' '
+        file_list=file_list[:-1]
+        txt += 'file_list="'+file_list+'"\n'
+
         return txt
 
     def numberFile_(self, file, txt):
