@@ -623,13 +623,18 @@ class SchedulerBoss(Scheduler):
                 common.logger.message(msg) 
             else:
                 dir = self.outDir 
+                print "dir = ", dir
                 logDir = self.logDir
+                print "logDir = ", logDir  
                 boss_id = i_id 
                 #bossTaskIdStatus = common.scheduler.queryStatus(bossTaskId, boss_id)
                 bossTaskIdStatus = statusList[boss_id]
                 if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':   
                     cmd = 'boss getOutput -taskid  '+bossTaskId+' -jobid ' +str(boss_id) +' -outdir ' +dir
                     cmd_out = runBossCommand(cmd)
+                    ##### FEDE ####
+                    common.logger.message(cmd_out)
+                    ###############
                     if cmd_out.find('error retrieving output') >= 0 :
                         msg = 'Results of Job # '+`int(i_id)`+' have been corrupted and could not be retrieved.'
                         common.logger.message(msg)
@@ -637,7 +642,7 @@ class SchedulerBoss(Scheduler):
                     else :
                         if logDir != dir:
                             try:
-                                cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/.BrokerInfo ' +str(logDir)
+                                cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/*.log '+str(dir)+'/.BrokerInfo ' +str(logDir)
                                 cmd_out = runCommand(cmd)
                                 msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
                                 common.logger.message(msg)
