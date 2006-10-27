@@ -623,9 +623,7 @@ class SchedulerBoss(Scheduler):
                 common.logger.message(msg) 
             else:
                 dir = self.outDir 
-                print "dir = ", dir
                 logDir = self.logDir
-                print "logDir = ", logDir  
                 boss_id = i_id 
                 #bossTaskIdStatus = common.scheduler.queryStatus(bossTaskId, boss_id)
                 bossTaskIdStatus = statusList[boss_id]
@@ -689,7 +687,7 @@ class SchedulerBoss(Scheduler):
         
         subm_id = []
         for id in int_id:
-           if ( common.jobDB.status(id-1) in ['S','R']) and (id not in subm_id):
+           if ( common.jobDB.status(id-1) in ['S','R','A']) and (id not in subm_id):
               subm_id.append(id)
         #print "--------------"
         #print subm_id
@@ -706,7 +704,7 @@ class SchedulerBoss(Scheduler):
             if not self.parseBossOutput(cmd_out): 
                 #for job in range(common.jobDB.nJobs()):
                 for job in subm_id:
-                    #status =  common.scheduler.queryStatus(bossTaskId,job) 
+                    #status =  common.scheduler.queryStatus(bossTaskId,job)
                     status = statusList[job]
                     if status not in ['Done (Success)','Killed','Cleared','Done (Aborted)','Created']:
                         common.jobDB.setStatus(job -1, 'K')
@@ -717,7 +715,7 @@ class SchedulerBoss(Scheduler):
 
             common.jobDB.load() 
             allBoss_id = common.scheduler.listBoss() 
-            for i_id in int_id :
+            for i_id in subm_id :
                 if int(i_id) not in allBoss_id:
                     msg = 'Job # '+`(i_id)`+' out of range for task '+self.groupName
                     common.logger.message(msg)
@@ -879,6 +877,7 @@ class SchedulerBoss(Scheduler):
         common.logger.debug(4,msg)
         msg = 'BOSS status output: ' + cmd_out
         common.logger.debug(4,msg)
+
         ###  
         nline=0
         result={}
