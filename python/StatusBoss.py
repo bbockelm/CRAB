@@ -245,7 +245,7 @@ class StatusBoss(Actor):
                 job_status_reason = jobAttributes[bossid][6]   ##BOSS4 STATUS_REASON
                 job_last_time = jobAttributes[bossid][7]   ##BOSS4 LAST_T
             
-            if jobStatus == 'Done (Success)' or jobStatus == 'Cleared':
+            if jobStatus == 'Done (Success)' or jobStatus == 'Cleared' or jobStatus == 'Done (Aborted)':
                 if exe_code.find('NULL') != -1 :
                     exe_code_string = ''
                 else :

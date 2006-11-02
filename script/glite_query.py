@@ -51,7 +51,7 @@ statusMap={'Undefined':'UN',
            'Aborted':'SA',
            'Cancelled':'SK',
            'Unknown':'UN',
-           'Done(failed)':'SA'           
+           'Done(failed)':'DA'           
            }
 #
 st=0
