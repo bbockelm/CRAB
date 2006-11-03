@@ -11,5 +11,5 @@ fi
 if [ -z "$PYTHONPATH" ]; then
 export PYTHONPATH=${TestSuitePYTHON}
 else
-export PYTHONPATH=${TestSuitePYTHON}:${PYTHONPATH}
+export PYTHONPATH=${PYTHONPATH}:${TestSuitePYTHON}
 fi

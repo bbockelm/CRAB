@@ -1,5 +1,5 @@
 #!/bin/csh
-setenv TestSuiteDIR `\pwd`
+setenv TestSuiteDIR `pwd`
 set TestSuitePATH=${TestSuiteDIR}
 set TestSuitePYTHON=${TestSuiteDIR}
 
@@ -11,5 +11,5 @@ endif
 if ( ! $?PYTHONPATH ) then
 setenv PYTHONPATH ${TestSuitePYTHON}
 else
-setenv PYTHONPATH ${TestSuitePYTHON}:${PYTHONPATH}
+setenv PYTHONPATH ${PYTHONPATH}:${TestSuitePYTHON}
 endif

@@ -38,13 +38,15 @@ class Scanner:
         statusJob = 101 # created black magic code Sk.
         count = 0 # Count how many jobs are in the state not submitted Sk.
         if opt == 1:
-            s1 = "Submitting"
+            #s1 = "Submitting"
+            s1 = "Submitted"
             s2 = "submitted"
             statusJob = 102 # submitted black magic code Sk.
             ## if not submitted, crab will return: "crab. Job # 4 not submitted: status None"
             ##                                     "crab. Total of 3 jobs submitted (from 4 requested)."
         elif opt == 0:
-            s1 = "Creating"
+            #s1 = "Creating"
+            s1 = "Created"
             s2 = "created"
         if type(text) != type(''): # Detect if the text is empty, which is a clear signal of troubles! Sk.
             return -2
