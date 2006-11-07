@@ -583,47 +583,8 @@ class SchedulerEdg(Scheduler):
         """
         self.checkProxy()
         cmd = 'edg-job-get-logging-info -v 2 ' + id
-        #cmd_out = os.popen(cmd) 
         cmd_out = runCommand(cmd)
         return cmd_out
-
-    def getExitStatus(self, id):
-        return self.getStatusAttribute_(id, 'exit_code')
-
-    def queryStatus(self, id):
-        return self.getStatusAttribute_(id, 'status')
-
-    def queryDest(self, id):  
-        return self.getStatusAttribute_(id, 'destination')
-
-
-    def getStatusAttribute_(self, id, attr):
-        """ Query a status of the job with id """
-
-        self.checkProxy()
-        hstates = {}
-        Status = importName('edg_wl_userinterface_common_LbWrapper', 'Status')
-        # Bypass edg-job-status interfacing directly to C++ API
-        # Job attribute vector to retrieve status without edg-job-status
-        level = 0
-        # Instance of the Status class provided by LB API
-        jobStat = Status()
-        st = 0
-        #print id, level, attr, self.states.index(attr)
-        jobStat.getStatus(id, level)
-        #print jobStat.loadStatus(st)
-        err, apiMsg = jobStat.get_error()
-        if err:
-            common.logger.debug(5,'Error caught' + apiMsg) 
-            return None
-        else:
-            for i in range(len(self.states)):
-                # Fill an hash table with all information retrieved from LB API
-                hstates[ self.states[i] ] = jobStat.loadStatus(st)[i]
-                #print i, jobStat.loadStatus(st)[i]
-            result = jobStat.loadStatus(st)[self.states.index(attr)]
-            #print str(result)
-            return result
 
     def queryDetailedStatus(self, id):
         """ Query a detailed status of the job with id """
@@ -647,7 +608,6 @@ class SchedulerEdg(Scheduler):
         return itr4
 
     def createXMLSchScript(self, nj, argsList):
-   # def createXMLSchScript(self, nj):
        
         """
         Create a XML-file for BOSS4.

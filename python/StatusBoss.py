@@ -77,7 +77,7 @@ class StatusBoss(Actor):
             runBossCommand(cmd)
         
         # update status in Boss database
-        results = common.scheduler.queryEveryStatus(bossTaskId)
+        results = common.scheduler.queryStatusAllJobs(bossTaskId)
 
         # query Boss database
         add2tablelist=''

@@ -78,6 +78,26 @@ def isBool(str):
     return 0
 
 ###########################################################################
+def rangeize(list):
+    """
+    Task as argument a sorted list, and return ranges of consecutive elements.
+    Input: (sorted) list
+    Output: List of firsts elements of ranges, list of last elements of ranges
+    Ex: [1,2,4,5] is transormed into [1,4],[2,5]
+    """
+    first = []
+    last = []
+    if not len(list): return first,last
+    first.append(list[0])
+    for l in list[1:-1]:
+        if not l == list[list.index(l)-1]+1:
+            first.append(l)
+            last.append(list[list.index(l)-1])
+        pass
+    last.append(list[-1])
+    return first,last
+
+###########################################################################
 def parseRange(range):
     """
     Takes as the input a string with two integers separated by

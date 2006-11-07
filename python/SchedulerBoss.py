@@ -4,7 +4,8 @@ from crab_exceptions import *
 from crab_util import *
 import common
 import os, sys, tempfile, shutil, time
-from Submitter import *
+#from Submitter import *
+import Statistic
 
 class SchedulerBoss(Scheduler):
     def __init__(self):
@@ -502,7 +503,6 @@ class SchedulerBoss(Scheduler):
         return self.boss_scheduler.createFakeJdl(nj)
     
     ###################### ---- OK for Boss4 ds
-    #def submit(self, nj):
     def submit(self,list):
         """
         Submit BOSS function.
@@ -511,46 +511,43 @@ class SchedulerBoss(Scheduler):
 
         boss_scheduler_name = string.lower(self.boss_scheduler.name())
         boss_scheduler_id = None
-        i = list[0]
+        block = list[0]
         jobsList = list[1]
+        first,last = rangeize(map(int,jobsList))
         schcladstring = ''
-        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(i)+'.clad'# TODO add a check is file exist
+        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(block)+'.clad'# TODO add a check is file exist
         if os.path.isfile(self.schclassad):  
             schcladstring=' -schclassad '+self.schclassad
-        #cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(nj) + schcladstring
-        #cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid ' +common.jobDB.bossId(first)+':'+ common.jobDB.bossId(last)+ schcladstring
-        cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid '+string.join(jobsList,',')+ schcladstring
-        cmd_out = runBossCommand(cmd)
-        # debug
-        msg = 'BOSS submission: ' + cmd
-        common.logger.debug(4,msg)
-        msg = 'BOSS submission output: ' + cmd_out
-        common.logger.debug(4,msg)
+
+        ## Scheduer Ids
         jid=[]
-        #
-        # Marco.
-        #
+        ## Boss Ids
         bjid = []
-        #
-        # Marco.
-        #
-        if not cmd_out :
-            msg = 'ERROR: BOSS submission failed: ' + cmd
-            common.logger.message(msg)
-            return None
-        else:
-            for line in cmd_out.splitlines(): # boss4
-                if  line.find('error') >= 0 :
-                    msg = 'ERROR: BOSS submission failed: ' + cmd + ', stopping submission at id ' + jid 
-                    common.logger.message(msg)
-                    return jid, bjid
-                if line.find('Scheduler ID for job') >= 0 :
-                    #jid = line.split()[-1]
-                    jid.append(line.split()[-1])
-                    #
-                    # Marco
-                    #
-                    bjid.append(line.split()[-3])
+        for i in range(len(first)):
+            cmd = 'boss submit -taskid  '+common.taskDB.dict('BossTaskId')+' -jobid '+str(first[i])+':'+str(last[i])+ schcladstring
+            cmd_out = runBossCommand(cmd)
+
+            # debug
+            msg = 'BOSS submission: ' + cmd
+            common.logger.debug(4,msg)
+            msg = 'BOSS submission output: ' + cmd_out
+            common.logger.debug(4,msg)
+            if not cmd_out :
+                msg = 'ERROR: BOSS submission failed: ' + cmd
+                common.logger.message(msg)
+                return None
+            else:
+                for line in cmd_out.splitlines(): # boss4
+                    if  line.find('error') >= 0 :
+                        msg = 'ERROR: BOSS submission failed: ' + cmd + ', stopping submission at id ' + jid 
+                        common.logger.message(msg)
+                        return jid, bjid
+                    if line.find('Scheduler ID for job') >= 0 :
+                        jid.append(line.split()[-1])
+                        bjid.append(line.split()[-3])
+                    pass
+                pass
+            pass
         return jid, bjid
         #
         # Marco.
@@ -678,19 +675,13 @@ class SchedulerBoss(Scheduler):
         return
 
     ###################### ---- OK for Boss4 ds
-    def cancel(self,int_id):
+    def cancel(self,subm_id):
         """
         Cancel the EDG job with id: if id == -1, means all jobs.
         """
         #print "CANCEL -------------------------"
         #print "int_id ",int_id," nSubmitted ", common.jobDB.nSubmittedJobs()
         
-        subm_id = []
-        for id in int_id:
-           if ( common.jobDB.status(id-1) in ['S','R','A']) and (id not in subm_id):
-              subm_id.append(id)
-        #print "--------------"
-        #print subm_id
         bossTaskId = common.taskDB.dict('BossTaskId')
         ## first get the status of all job in the list
         statusList = common.scheduler.queryStatusList(bossTaskId, subm_id)
@@ -702,9 +693,7 @@ class SchedulerBoss(Scheduler):
             cmd_out = runBossCommand(cmd)
 
             if not self.parseBossOutput(cmd_out): 
-                #for job in range(common.jobDB.nJobs()):
                 for job in subm_id:
-                    #status =  common.scheduler.queryStatus(bossTaskId,job)
                     status = statusList[job]
                     if status not in ['Done (Success)','Killed','Cleared','Done (Aborted)','Created']:
                         common.jobDB.setStatus(job -1, 'K')
@@ -722,8 +711,6 @@ class SchedulerBoss(Scheduler):
                 else:
                    # boss_id = allBoss_id[int(i_id)]
                     boss_id = i_id 
-                    #bossTaskId = common.taskDB.dict('BossTaskId')
-                    #status =  common.scheduler.queryStatus(bossTaskId,boss_id) 
                     status = statusList[boss_id]
                     if status == 'Done (Success)' or status == 'Killed' or status =='Cleared' or status ==  'Done (Aborted)' or status == 'Created':
                         msg = 'Job # '+`int(i_id)`+' has status '+status+' not possible to Kill it'
@@ -741,18 +728,7 @@ class SchedulerBoss(Scheduler):
                 pass
             common.jobDB.save()
             pass
-        return #cmd_out    
-
-    ################################################################ To remove when Boss4 store this info  DS. (start)
-    def getAttribute(self, id, attr):
-        return self.boss_scheduler.getStatusAttribute_(id, attr)
-
-    def getExitStatus(self, id):
-        return self.boss_scheduler.getStatusAttribute_(id, 'exit_code')
-
-    def queryDest(self, id):  
-        return self.boss_scheduler.getStatusAttribute_(id, 'destination')
-    ################################################################   (stop)
+        return
 
     def wsCopyInput(self):
         return self.boss_scheduler.wsCopyInput()
@@ -776,65 +752,16 @@ class SchedulerBoss(Scheduler):
     
         return SID
 
-    ################################################## To change "much" when Boss4 store also this infos  DS.
-    def queryEveryStatus(self,taskid):
+    ##################################################
+    def queryStatusAllJobs(self,taskid):
         """ Query a status of all jobs with specified boss taskid """
 
-        self.boss_scheduler.checkProxy()
-        status={
-            'H':'Hold',
-            'U':'Ready',
-            'I':'Scheduled',
-            'X':'Canceled',
-            'W':'Created',
-            'R':'Running',
-            'SC':'Checkpointed',
-            'SS':'Scheduled',
-            'SR':'Ready',
-            'RE':'Ready',
-            'SW':'Waiting',
-            'SU':'Submitted',
-            'UN':'Undefined',
-            'SK':'Cancelled',
-            'SD':'Done (Success)',
-            'SA':'Aborted',
-            'DA':'Done (Aborted)',
-            'SE':'Cleared',
-            'OR':'Done (Success)',
-            'A?':'Aborted',
-            'K':'Killed',
-            'E':'Cleared',
-            'Z':'Cleared (Corrupt)',
-            'NA':'Unknown',
-            'I?':'Idle',
-            'O?':'Done',
-            'R?':'Running'             
-            }
-        cmd = 'boss q -taskid '+str(taskid)+' -all' 
-        cmd_out = runBossCommand(cmd)
-
-        # debug
-        msg = 'BOSS status ' + cmd
-        common.logger.debug(4,msg)
-        msg = 'BOSS status output: ' + cmd_out
-        common.logger.debug(4,msg)
-        ###  
-
-        # fill dictionary { 'bossid' : 'status' , ... }
-        results = {}
-        nline=0
-        for line in cmd_out.splitlines():
-            if nline >= 1:
-                header = line.split()
-                if len(header) >= 9 and len(header) <= 11 :
-                    results[int(header[1])] = status[header[5]]
-            nline=nline+1
-
-        return results
+        list_id = range(1,common.jobDB.nJobs()+1)
+        return self.queryStatusList(taskid,list_id)
 
     ##################################################
     def queryStatusList(self,taskid,list_id):
-        """ Query a status of the job with id """
+        """ Query a status of the job in specified task with id in list"""
 
         self.boss_scheduler.checkProxy()
         status={
@@ -866,31 +793,31 @@ class SchedulerBoss(Scheduler):
             'O?':'Done',
             'R?':'Running'             
             }
-        allBoss_id = common.scheduler.listBoss()
-        tmpQ = ''
-        if not len(allBoss_id)==len(list_id): tmpQ = ' -jobid '+string.join(map(str,list_id),",")
-        cmd = 'boss q -taskid '+str(taskid)+tmpQ+' -all'
-        cmd_out = runBossCommand(cmd)
-        
-        # debug
-        msg = 'BOSS status ' + cmd
-        common.logger.debug(4,msg)
-        msg = 'BOSS status output: ' + cmd_out
-        common.logger.debug(4,msg)
+        first,last = rangeize(list_id)
 
-        ###  
-        nline=0
         result={}
-        fielddesc=()
-        for line in cmd_out.splitlines():
-            if nline==0:
-                fielddesc=line.split()
-            else:
-                if nline >= 1:
-                    array = line.split()
-                    if isInt(array[1]) :
-                        result[int(array[1])] = status[array[5]]
-            nline += 1
+        for i in range(len(first)):
+            tmpQ = ' -jobid '+str(first[i])+':'+str(last[i])
+            cmd = 'boss q -taskid '+str(taskid)+tmpQ+' -all'
+            cmd_out = runBossCommand(cmd)
+            
+            # debug
+            common.logger.debug(4,'BOSS status ' + cmd)
+            common.logger.debug(4,'BOSS status output: ' + cmd_out)
+            ###  
+
+            nline=0
+            fielddesc=()
+            for line in cmd_out.splitlines():
+                if nline==0:
+                    fielddesc=line.split()
+                else:
+                    if nline >= 1:
+                        array = line.split()
+                        if isInt(array[1]) :
+                            result[int(array[1])] = status[array[5]]
+                nline += 1
+            pass
         return result
 
     ###################### ---- OK for Boss4 ds

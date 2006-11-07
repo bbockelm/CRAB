@@ -820,20 +820,6 @@ def processHelpOptions(opts):
 ###########################################################################
 if __name__ == '__main__':
 
-
-#    # Initial settings for Python modules. Avoid appending manually lib paths.
-#    try:
-#        path=os.environ['EDG_WL_LOCATION']
-#    except:
-#        print "Error: Please set the EDG_WL_LOCATION environment variable pointing to the userinterface installation path"
-#        sys.exit(1)
-#                                                                                                                                                             
-#    libPath=os.path.join(path, "lib")
-#    sys.path.append(libPath)
-#    libPath=os.path.join(path, "lib", "python")
-#    sys.path.append(libPath)
-
-
     # Parse command-line options and create a dictionary with
     # key-value pairs.
 
