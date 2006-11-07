@@ -1,5 +1,5 @@
 #!/bin/sh
-export TestSuiteDIR=`pwd`
+export TestSuiteDIR=$CRABDIR/TestSuite
 TestSuitePATH=${TestSuiteDIR}
 TestSuitePYTHON=${TestSuiteDIR}
 
