@@ -1,1 +1,4 @@
-CE:string,SE_IN:string,SE_OUT:string,SE_PATH:string,LFN:string,RB:string,COPY_STATUS:string,REGISTER_STATUS:string
+# schema definition file for scheduler specific parameters
+
+DEST_CE : string,SCHED_STATUS : string,STATUS_REASON : string,DEST_QUEUE : string, LB_TIMESTAMP : int
+

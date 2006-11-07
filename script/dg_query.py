@@ -64,12 +64,11 @@ for line in sys.stdin:
         jobidInfo = status.loadStatus(st)
         try:
             result = jobidInfo[states.index('status')]
-            if result == 'Done' and jobidInfo[ states.index('done_code') ] != '0' :
-                result = 'Done(failed)'
         except:
             continue
         try:
             reason = jobidInfo[states.index('reason')].replace(" ","-")
+            reason = reason.replace("'","''")
         except :
             pass
         try:
@@ -79,12 +78,17 @@ for line in sys.stdin:
         except :
             pass
         try:
-            timestamps = jobidInfo[states.index('stateEnterTimes')].split(' ')
-            running = timestamps[5].upper()
-            submitted = timestamps[1].upper()
+            timestamp = jobidInfo[states.index('stateEnterTimes')]
+            pos = timestamp.find(result)
+            timestamp = timestamp[timestamp.find('=', pos)+1:timestamp.find(' ', pos)]
         except :
             pass
-        print id,statusMap[result],"SCHED_STATUS="+result,"DEST_CE="+dest_ce,"DEST_QUEUE="+dest_ce_queue,"STATUS_REASON="+reason,submitted,running
+        try:
+            if result == 'Done' and jobidInfo[ states.index('done_code') ] != '0' :
+                result = 'Done(failed)'
+        except :
+            pass
+        print id,statusMap[result],"SCHED_STATUS="+result,"DEST_CE="+dest_ce,"DEST_QUEUE="+dest_ce_queue,"STATUS_REASON="+reason,"LB_TIMESTAMP="+timestamp
         st=st+1
     except:
         continue
