@@ -30,7 +30,7 @@ class Job:
     def changeSt(self, status):
         self.statusPre = self.status
         self.status = status
-        if status == "Done" or status == "Cleared": # Sk. nomore (BOSS)":
+        if status == "Done" or status == "Cleared":
             completed = 1
 
     def getId(self):

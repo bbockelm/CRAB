@@ -169,23 +169,24 @@ class Scanner:
         """
            get the extension of the file named "name"
         """
-        e = ""
-        l = len(name)
-        i = 0
-        nP = 0
-        n = name
-        while (i < l):
-            c = n[i]
-            if c == ".":
-                nP = nP +1
-                e = n.split(c, nP)
-                n = e[nP]
-                i = 0
-                l = len(n)
-                nP = 0
-            i = i + 1
+        return string.split(name,'.')[-1]
+        # e = ""
+        # l = len(name)
+        # i = 0
+        # nP = 0
+        # n = name
+        # while (i < l):
+        #     c = n[i]
+        #     if c == ".":
+        #         nP = nP +1
+        #         e = n.split(c, nP)
+        #         n = e[nP]
+        #         i = 0
+        #         l = len(n)
+        #         nP = 0
+        #     i = i + 1
 
-        return e
+        # return e
 
     def getPreName(self, name, ext):
         """
