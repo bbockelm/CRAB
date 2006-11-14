@@ -421,6 +421,7 @@ class SchedulerBoss(Scheduler):
         Check the compatibility of available resources
         """
         start = time.time()
+        self.checkProxy()
         schcladstring = ''
         self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(Block)+'.clad'
         if os.path.isfile(self.schclassad):  
