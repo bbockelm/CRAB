@@ -219,21 +219,21 @@ class SchedulerEdg(Scheduler):
             for i in range(len(ce_white_list)):
                 if i == 0:
                     if (req == ' '):
-                        req = req + '((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                        req = req + '((RegExp("' + string.strip(ce_white_list[i]) + '", other.GlueCEUniqueId))'
                     else:
-                        req = req +  ' && ((RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                        req = req +  ' && ((RegExp("' +  string.strip(ce_white_list[i]) + '", other.GlueCEUniqueId))'
                     pass
                 else:
-                    req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
+                    req = req +  ' || (RegExp("' +  string.strip(ce_white_list[i]) + '", other.GlueCEUniqueId))'
             req = req + ')'
         
         if self.EDG_ce_black_list:
             ce_black_list = string.split(self.EDG_ce_black_list,',')
             for ce in ce_black_list:
                 if (req == ' '):
-                    req = req + '(!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                    req = req + '(!RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId))'
                 else:
-                    req = req +  ' && (!RegExp("' + ce + '", other.GlueCEUniqueId))'
+                    req = req +  ' && (!RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId))'
                 pass
         if self.EDG_clock_time:
             if (req == ' '):
