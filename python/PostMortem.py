@@ -1,73 +1,187 @@
 from Actor import *
 from crab_util import *
-import EdgLoggingInfo
-import CondorGLoggingInfo
 import common
-import string, os
+from ApmonIf import ApmonIf
+import Statistic
+#from random import random
+import time
+from ProgressBar import ProgressBar
+from TerminalController import TerminalController
 
-class PostMortem(Actor):
+class Submitter(Actor):
     def __init__(self, cfg_params, nj_list):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
-
+        
         if common.scheduler.boss_scheduler_name == 'condor_g':
             # create hash of cfg file
             self.hash = makeCksum(common.work_space.cfgFileName())
         else:
             self.hash = ''
-        
+
         return
     
     def run(self):
         """
-        The main method of the class.
+        The main method of the class: submit jobs in range self.nj_list
         """
-        common.logger.debug(5, "PostMortem::run() called")
+        common.logger.debug(5, "Submitter::run() called")
 
-        if len(self.nj_list)==0:
-            common.logger.debug(5, "No jobs to check")
-            return
-
-        # run a list-match on first job
-        for nj in self.nj_list:
-            id = common.scheduler.boss_SID(nj)
-            out = common.scheduler.loggingInfo(id)
-            job = common.job_list[nj-1]
-            jobnum_str = '%06d' % (int(nj))
-            fname = common.work_space.jobDir() + '/' + self.cfg_params['CRAB.jobtype'].upper() + '_' + jobnum_str + '.loggingInfo'
-            if os.path.exists(fname):
-                common.logger.message('Logging info for job '+str(nj)+' already present in '+fname+'\nRemove it for update')
-                continue
-            jdl = open(fname, 'w')
-            for line in out: jdl.write(line)
-            jdl.close()
-
-            reason = ''
-            ## SL this if-elif is the negation of OO! Mus disappear ASAP
-            if common.scheduler.boss_scheduler_name == "edg" or common.scheduler.boss_scheduler_name == "glite" or common.scheduler.boss_scheduler_name == "glitecoll":
-                loggingInfo = EdgLoggingInfo.EdgLoggingInfo()
-                reason = loggingInfo.decodeReason(out)
-            elif common.scheduler.boss_scheduler_name == "condor_g" :
-                loggingInfo = CondorGLoggingInfo.CondorGLoggingInfo()
-                reason = loggingInfo.decodeReason(out)
-            else :
-                reason = out
-
-            common.logger.message('Logging info for job '+str(nj)+': '+reason+'\n      written to '+fname)
-            
-            # ML reporting
-            jobId = ''
-            if common.scheduler.boss_scheduler_name == 'condor_g':
-                jobId = str(nj) + '_' + self.hash + '_' + id
-            else:
-                jobId = str(nj) + '_' + id
-
-            params = {'taskId': self.cfg_params['taskId'], 'jobId':  jobId, \
-                      'sid': id,
-                      'PostMortemCategory': loggingInfo.getCategory(), \
-                      'PostMortemReason': loggingInfo.getReason()}
-            self.cfg_params['apmon'].sendToML(params)
+        totalCreatedJobs= 0
+        start = time.time()
+        for nj in range(common.jobDB.nJobs()):
+            if (common.jobDB.status(nj)=='C') or (common.jobDB.status(nj)=='RC'): totalCreatedJobs +=1
             pass
 
-        return
+        if (totalCreatedJobs==0):
+            common.logger.message("No jobs to be submitted: first create them")
+            return
 
+        # submit pre DashBoard information
+        params = {'jobId':'TaskMeta'}
+               
+        fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
+        for i in fl.readlines():
+            val = i.split(':')
+            params[val[0]] = string.strip(val[1])
+            fl.close()
+
+        common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
+                        
+        self.cfg_params['apmon'].sendToML(params)
+
+        #########
+        # Loop over jobs
+        njs = 0
+        try:
+            list=[]
+            list_of_list = []   
+            lastBlock=-1
+            count = 0
+            for nj in self.nj_list:
+                same=0
+                # first check that status of the job is suitable for submission
+                st = common.jobDB.status(nj)
+                if st != 'C'  and st != 'K' and st != 'A' and st != 'RC':
+                    long_st = crabJobStatusToString(st)
+                    msg = "Job # %d not submitted: status %s"%(nj+1, long_st)
+                    common.logger.message(msg)
+                    continue
+     
+                currBlock = common.jobDB.block(nj)
+                # SL perform listmatch only if block has changed
+                if (currBlock!=lastBlock):
+                    if common.scheduler.boss_scheduler_name != "condor_g" :
+                        match = common.scheduler.listMatch(nj, currBlock)
+                    else :
+                        match = "1"
+                    lastBlock = currBlock
+                else:
+                    common.logger.debug(1,"Sites for job "+str(nj+1)+" the same as previous job")
+                    same=1
+     
+                if match:
+                    if not same:
+                        common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
+                    else:
+                        common.logger.debug(1,"Found "+str(match)+" compatible site(s) for job "+str(nj+1))
+                    list.append(common.jobDB.bossId(nj))
+     
+                    if nj == self.nj_list[-1]: # check that is not the last job in the list
+                        list_of_list.append([currBlock,list])
+                    else: # check if next job has same group
+                        nextBlock = common.jobDB.block(nj+1)
+                        if  currBlock != nextBlock : # if not, close this group and reset
+                            list_of_list.append([currBlock,list])
+                            list=[]
+                else:
+                    common.logger.message("No compatible site found, will not submit job "+str(nj+1))
+                    continue
+                count += 1
+            ### Progress Bar indicator, deactivate for debug
+            if not common.logger.debugLevel() :
+                term = TerminalController()
+     
+            for ii in range(len(list_of_list)): # Add loop DS
+                common.logger.debug(1,'Submitting jobs '+str(list_of_list[ii][1]))
+#                if not common.logger.debugLevel() :
+#                    try: pbar = ProgressBar(term, 'Submitting '+str(len(list_of_list[ii][1]))+' jobs')
+#                    except: pbar = None
+     
+                jidLista, bjidLista = common.scheduler.submit(list_of_list[ii])
+                bjidLista = map(int, bjidLista) # cast all bjidLista to int
+     
+#                if not common.logger.debugLevel():
+#                    if pbar :
+#                        pbar.update(float(ii+1)/float(len(list_of_list)),'please wait')
+     
+                for jj in bjidLista: # Add loop over SID returned from group submission  DS
+                    tmpNj = jj - 1
+                    jid=jidLista[bjidLista.index(jj)]
+                    common.logger.debug(5,"Submitted job # "+ `(jj)`)
+                    common.jobDB.setStatus(tmpNj, 'S')
+                    common.jobDB.setJobId(tmpNj, jid)
+                    common.jobDB.setTaskId(tmpNj, self.cfg_params['taskId'])
+                    njs += 1
+               
+                    ##### DashBoard report #####################   
+                    try:
+                        resFlag = 0
+                        if st == 'RC': resFlag = 2
+                        Statistic.Monitor('submit',resFlag,jid,'-----','dest')
+                    except:
+                        pass
+                    
+                    # OLI: JobID treatment, special for Condor-G scheduler
+                    jobId = ''
+                    if common.scheduler.boss_scheduler_name == 'condor_g':
+                        jobId = str(jj) + '_' + self.hash + '_' + jid
+                        common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+                    else:
+                        jobId = str(jj) + '_' + jid
+                        common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
+               
+                    if ( jid.find(":") != -1 ) :
+                        rb = jid.split(':')[1]
+                        rb = rb.replace('//', '')
+                    else :
+                        rb = 'OSG'
+               
+                    params = {'jobId': jobId, \
+                              'sid': jid, \
+                              'broker': rb, \
+                              'bossId': jj, \
+                              'TargetSE': string.join((common.jobDB.destination(tmpNj)),",")}
+               
+                    fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
+                    for i in fl.readlines():
+                        val = i.split(':')
+                        params[val[0]] = string.strip(val[1])
+                    fl.close()
+     
+                    common.logger.debug(5,'Submission DashBoard report: '+str(params))
+                        
+                    self.cfg_params['apmon'].sendToML(params)
+                pass
+            pass
+
+        except:
+            exctype, value = sys.exc_info()[:2]
+            print "Type: %s Value: %s"%(exctype, value)
+            common.logger.message("Submitter::run Exception raised: %s %s"%(exctype, value))
+            common.jobDB.save()
+        
+        stop = time.time()
+        common.logger.debug(1, "Submission Time: "+str(stop - start))
+        common.logger.write("Submission time :"+str(stop - start))
+        common.jobDB.save()
+            
+        msg = '\nTotal of %d jobs submitted'%njs
+        if njs != len(self.nj_list) :
+            msg += ' (from %d requested).'%(len(self.nj_list))
+            pass
+        else:
+            msg += '.'
+            pass
+        common.logger.message(msg)
+        return
