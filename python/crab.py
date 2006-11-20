@@ -18,6 +18,12 @@ from Cleaner import Cleaner
 import common
 import Statistic
 
+from BossSession import BossSession
+from BossSession import BossTask
+from BossSession import SUBMITTED
+from BossSession import ALL
+from BossSession import BossAdministratorSession
+
 import sys, os, time, string
 
 ###########################################################################
@@ -465,6 +471,13 @@ class Crab:
                 # get the first not already submitted
                 common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
                 jobSetForSubmission = 0
+                # Marco
+#                common.scheduler.bossTask.query(ALL)
+#                task = common.scheduler.bossTask.jobsDict()
+
+#                for c, v in task.iteritems():
+#                    k = int(c)
+#                    if v['STATUS'] == 'W':
                 for nj in range(common.jobDB.nJobs()):
                     if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
                         jobSetForSubmission +=1
@@ -481,7 +494,6 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Submitter object
-#                    self.actions[opt] = Submitter(self.cfg_params, nj_list, self.job_type)
                     self.actions[opt] = Submitter(self.cfg_params, nj_list)
                     # Create and initialize JobList
                     if len(common.job_list) == 0 :
@@ -499,16 +511,21 @@ class Crab:
                 pass
 
             elif ( opt == '-printId' ):
-                jobs = self.parseRange_(val)
+            
+#                val = string.replace(val,'-',':')
+                #jobs = self.parseRange_(val)
+                common.scheduler.bossTask.query(ALL)
+                task = common.scheduler.bossTask.jobsDict()
 
-                for nj in jobs:
-                    #nj parte da 1 --> nj = internal_id di boss 
-                    st = common.jobDB.status(nj-1)
-                    if st in ['S','R','K','Y','A','Z']:
-                        id = common.scheduler.boss_SID(nj)
-                        print "Job: ",nj," Id = ", id 
-                    else:
-                        print "Job: ",nj," No ID yet"
+                for c, v in task.iteritems():
+                    k = int(c)
+                    nj=k
+                    id = v['CHAIN_ID']
+                    jid = v['SCHED_ID']
+                    if jid:
+                        print "Job: %-5s Id = %-40s " %(id,jid)
+                    #else:
+                    #    print "Job: ",id," No ID yet"
                 pass
 
             elif ( opt == '-status' ):
@@ -550,24 +567,34 @@ class Crab:
 
                 if val:
                     # create a list of jobs to be resubmitted.
+                    val = string.replace(val,'-',':')
 
                     ### as before, create a Resubmittter Class
                     maxIndex = common.scheduler.listBoss()
+                    ##
+                    # Marco. Vediamo se va meglio cosi'...
+                    ##
+                    common.scheduler.bossTask.query(ALL, val)
+                    task = common.scheduler.bossTask.jobsDict()
+                        
                     nj_list = []
-                    for nj in jobs:
+                    for c, v in task.iteritems():
+                        k = int(c)
+                        nj=k
+                        st = v['STATUS']
+
                         if int(nj) <= int(len(maxIndex)) :
-                            st = common.jobDB.status(int(nj)-1)
-                            if st in ['K','A','Z']:
+                            if st in ['K','SA','Z']:
                                 nj_list.append(int(nj)-1)
                                 common.jobDB.setStatus(int(nj)-1,'C')
-                            elif st == 'Y':
+                            elif st == 'SE':
                                 common.scheduler.moveOutput(nj)
                                 nj_list.append(int(nj)-1)
                                 st = common.jobDB.setStatus(int(nj)-1,'RC')
-                            elif st in ['C','X']:
+                            elif st in ['W']:
                                 common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!')
                                 pass
-                            elif st == 'D':
+                            elif st in ['SD', 'OR']:
                                 common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
                             else:
                                 common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
@@ -579,6 +606,7 @@ class Crab:
                          pass
 
                     if len(nj_list) != 0:
+                        nj_list.sort()
                         # Instantiate Submitter object
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
 
@@ -661,17 +689,20 @@ class Crab:
                     pass
 
             elif ( opt == '-postMortem' ):
-                jobs = self.parseRange_(val)
-                nj_list = []
-                for nj in jobs:
-                    # fede: nj scala di uno perche' e' l'internal id di boss
-                    # ed il jobDB parte da zero ...
-                    st = common.jobDB.status(int(nj)-1)
-                    if st not in ['X', 'C']: nj_list.append(int(nj))
+            
+                nj_list = {} 
+                common.scheduler.bossTask.query(ALL)
+                task = common.scheduler.bossTask.jobsDict()
+
+                for c, v in task.iteritems():
+                    k = int(c)
+                    nj=k
+                    if v['SCHED_ID']: nj_list[v['CHAIN_ID']]=v['SCHED_ID']
                     pass
 
+
                 if len(nj_list) != 0:
-                    # Instantiate Submitter object
+                    # Instantiate PostMortem object
                     self.actions[opt] = PostMortem(self.cfg_params, nj_list)
 
                     # Create and initialize JobList
@@ -814,16 +845,16 @@ def processHelpOptions(opts):
                 return 1
     else:
         usage()
+
     return 0
 
-#################################################
+###########################################################################
 if __name__ == '__main__':
+
     import warnings
     ## Get rid of some useless warning
     warnings.simplefilter("ignore", RuntimeWarning)
-    # warnings.filterwarnings("ignore","Python C API version mismatch for  module _edg_wl_userinterface_common_LbWrapper",RuntimeWarning)
-    # warnings.filterwarnings("ignore","Python C API version mismatch for module _glite_wmsui_LbWrapper",RuntimeWarning)
-    # warnings.filterwarnings("ignore","Python C API version mismatch for module _glite_wmsui_AdWrapper",RuntimeWarning)
+
     # Parse command-line options and create a dictionary with
     # key-value pairs.
 
