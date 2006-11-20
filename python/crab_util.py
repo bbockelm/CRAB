@@ -78,26 +78,6 @@ def isBool(str):
     return 0
 
 ###########################################################################
-def rangeize(list):
-    """
-    Task as argument a sorted list, and return ranges of consecutive elements.
-    Input: (sorted) list
-    Output: List of firsts elements of ranges, list of last elements of ranges
-    Ex: [1,2,4,5] is transormed into [1,4],[2,5]
-    """
-    first = []
-    last = []
-    if not len(list): return first,last
-    first.append(list[0])
-    for l in list[1:-1]:
-        if not l == list[list.index(l)-1]+1:
-            first.append(l)
-            last.append(list[list.index(l)-1])
-        pass
-    last.append(list[-1])
-    return first,last
-
-###########################################################################
 def parseRange(range):
     """
     Takes as the input a string with two integers separated by
@@ -164,17 +144,47 @@ def crabJobStatusToString(crab_status):
     """
     Convert one-letter crab job status into more readable string.
     """
-    if   crab_status == 'C': status = 'Created'
-    elif crab_status == 'D': status = 'Done'
-    elif crab_status == 'R': status = 'Submitted'#Should be running? ds  
-    elif crab_status == 'S': status = 'Submitted'
-    elif crab_status == 'K': status = 'Killed'
-    elif crab_status == 'X': status = 'None'
-    elif crab_status == 'Y': status = 'Output retrieved'
-    elif crab_status == 'A': status = 'Aborted'
-    elif crab_status == 'RC': status = 'ReCreated'
-    else: status = '???'
-    return status
+    status={
+           'H':'Hold',
+           'U':'Ready',
+           'I':'Scheduled',
+           'X':'Canceled',
+           'W':'Created',
+           'R':'Running',
+           'SC':'Checkpointed',
+           'SS':'Scheduled',
+           'SR':'Ready',
+           'RE':'Ready',
+           'SW':'Waiting',
+           'SU':'Submitted',
+           'S' :'Submitted (Boss)',
+           'UN':'Undefined',
+           'SK':'Cancelled',
+           'SD':'Done (Success)',
+           'SA':'Aborted',
+           'DA':'Done (Aborted)',
+           'SE':'Cleared',
+           'OR':'Done (Success)',
+           'A?':'Aborted',
+           'K':'Killed',
+           'E':'Cleared',
+           'Z':'Cleared (Corrupt)',
+           'NA':'Unknown',
+           'I?':'Idle',
+           'O?':'Done',
+           'R?':'Running'
+           }
+#    if   crab_status == 'C': status = 'Created'
+#    elif crab_status == 'D': status = 'Done'
+#    elif crab_status == 'R': status = 'Submitted'#Should be running? ds  
+#    elif crab_status == 'S': status = 'Submitted'
+#    elif crab_status == 'K': status = 'Killed'
+#    elif crab_status == 'X': status = 'None'
+#    elif crab_status == 'Y': status = 'Output retrieved'
+#    elif crab_status == 'A': status = 'Aborted'
+#    elif crab_status == 'RC': status = 'ReCreated'
+#    else: status = '???'
+    return status[crab_status]
 
 ###########################################################################
 def findLastWorkDir(dir_prefix, where = None):
