@@ -25,6 +25,9 @@ libPath=os.path.join(path, "lib", "python")
 sys.path.append(libPath)
 
 from glite_wmsui_LbWrapper import Status
+import warnings
+## Get rid of some useless warning
+warnings.simplefilter("ignore", RuntimeWarning)
 from Job import JobStatus
 #
 # instatiating status object

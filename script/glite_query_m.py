@@ -15,6 +15,9 @@ libPath=os.path.join(path, "lib", "python")
 sys.path.append(libPath)
 
 from glite_wmsui_LbWrapper import Status
+import warnings
+## Get rid of some useless warning
+warnings.simplefilter("ignore", RuntimeWarning)
 
 states= [ "Acl", "cancelReason", "cancelling","ce_node","children", \
           "children_hist","children_num","children_states","condorId","condor_jdl", \

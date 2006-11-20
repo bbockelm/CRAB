@@ -93,6 +93,9 @@ def submit (subdir, task_id, resub,config ):
     #
     from glite_wmsui_LbWrapper import Status
     from glite_wmsui_AdWrapper import DagWrapper
+    import warnings
+    ## Get rid of some useless warning
+    warnings.simplefilter("ignore", RuntimeWarning)
     from Job import JobStatus
 #
 # instatiating status object

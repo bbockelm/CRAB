@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import sys
 import os
+import warnings
+## Get rid of some useless warning
+warnings.simplefilter("ignore", RuntimeWarning)
 #
 #check proxy validity
 #
