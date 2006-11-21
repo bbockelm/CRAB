@@ -74,7 +74,7 @@ class Outputter:
         """
 #        print('')
 #        print ' ****  ', str, '  ****'
-        logging.info(self.roboLogDir.rsplit('/',3)[-2]+': '+str+'\n') # Sk.
+        logging.info(self.roboLogDir.rsplit('/',3)[-2]+': '+str) # Sk.
         self.writeOut( '', str, 1 )
 
         return

@@ -87,7 +87,7 @@ class JobsManager:
         ##print "Called setIncompleted"
         while i < self.jobsN:
             if self.jobList[i].toSubmit != 0:
-                if self.getStatus(i) != "Done" and self.getStatus(i) != "Created": # Sk nomore (BOSS)":
+                if self.getStatus(i) != "Done" and self.getStatus(i) != "Created(BOSS)":
                     ##print "incompleted job",i+1
                     self.done( i + 1, -1 )                
             i = i + 1
@@ -143,8 +143,8 @@ class JobsManager:
         i = 0
         stts = 1
         while i < self.nJobs():
-            if self.jobList[i].getStatus() != "Done" and self.jobList[i].getStatus() != "Cleared": # Sk nomore (BOSS)":
-                if self.jobList[i].getStatus() != "Killed" and self.jobList[i].getStatus() != "Killed": # Sk nomore (BOSS)":
+            if self.jobList[i].getStatus() != "Done" and self.jobList[i].getStatus() != "Cleared(BOSS)":
+                if self.jobList[i].getStatus() != "Killed" and self.jobList[i].getStatus() != "Killed(BOSS)":
                     if self.jobList[i].toSubmit != 0:
                         stts = 0
                 else:
@@ -175,7 +175,7 @@ class JobsManager:
         i = 0
         stringa = ""
         while i < len(self.jobList):
-            if self.jobList[i].getStatus() != "Done" or self.jobList[i].getStatus() != "Cleared": #  Sk. nomore (BOSS)":
+            if self.jobList[i].getStatus() != "Done" or self.jobList[i].getStatus() != "Cleared(BOSS)":
                 temp = str( self.jobList[i].getId() )
                 if len(stringa) > 0:
                    stringa = stringa + "," + temp

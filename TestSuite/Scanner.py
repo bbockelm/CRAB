@@ -38,15 +38,13 @@ class Scanner:
         statusJob = 101 # created black magic code Sk.
         count = 0 # Count how many jobs are in the state not submitted Sk.
         if opt == 1:
-            #s1 = "Submitting"
-            s1 = "Submitted"
+            s1 = "Submitting"
             s2 = "submitted"
             statusJob = 102 # submitted black magic code Sk.
             ## if not submitted, crab will return: "crab. Job # 4 not submitted: status None"
             ##                                     "crab. Total of 3 jobs submitted (from 4 requested)."
         elif opt == 0:
-            #s1 = "Creating"
-            s1 = "Created"
+            s1 = "Creating"
             s2 = "created"
         if type(text) != type(''): # Detect if the text is empty, which is a clear signal of troubles! Sk.
             return -2
@@ -169,24 +167,23 @@ class Scanner:
         """
            get the extension of the file named "name"
         """
-        return string.split(name,'.')[-1]
-        # e = ""
-        # l = len(name)
-        # i = 0
-        # nP = 0
-        # n = name
-        # while (i < l):
-        #     c = n[i]
-        #     if c == ".":
-        #         nP = nP +1
-        #         e = n.split(c, nP)
-        #         n = e[nP]
-        #         i = 0
-        #         l = len(n)
-        #         nP = 0
-        #     i = i + 1
+        e = ""
+        l = len(name)
+        i = 0
+        nP = 0
+        n = name
+        while (i < l):
+            c = n[i]
+            if c == ".":
+                nP = nP +1
+                e = n.split(c, nP)
+                n = e[nP]
+                i = 0
+                l = len(n)
+                nP = 0
+            i = i + 1
 
-        # return e
+        return e
 
     def getPreName(self, name, ext):
         """

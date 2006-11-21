@@ -24,19 +24,14 @@ class PostMortem(Actor):
         """
         common.logger.debug(5, "PostMortem::run() called")
 
-        if len(self.nj_list)==0:
-            common.logger.debug(5, "No jobs to check")
-            return
-
-        # run a list-match on first job
-        for nj in self.nj_list:
-            id = common.scheduler.boss_SID(nj)
-            out = common.scheduler.loggingInfo(id)
-            job = common.job_list[nj-1]
-            jobnum_str = '%06d' % (int(nj))
+        for c, v in self.nj_list.iteritems():
+            id = int(c)
+            out = common.scheduler.loggingInfo(v)
+            job = common.job_list[id - 1]
+            jobnum_str = '%06d' % (id)
             fname = common.work_space.jobDir() + '/' + self.cfg_params['CRAB.jobtype'].upper() + '_' + jobnum_str + '.loggingInfo'
             if os.path.exists(fname):
-                common.logger.message('Logging info for job '+str(nj)+' already present in '+fname+'\nRemove it for update')
+                common.logger.message('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
                 continue
             jdl = open(fname, 'w')
             for line in out: jdl.write(line)
@@ -53,17 +48,17 @@ class PostMortem(Actor):
             else :
                 reason = out
 
-            common.logger.message('Logging info for job '+str(nj)+': '+reason+'\n      written to '+fname)
+            common.logger.message('Logging info for job '+ str(id) +': '+reason+'\n      written to '+fname)
             
             # ML reporting
             jobId = ''
             if common.scheduler.boss_scheduler_name == 'condor_g':
-                jobId = str(nj) + '_' + self.hash + '_' + id
+                jobId = str(id) + '_' + self.hash + '_' + v
             else:
-                jobId = str(nj) + '_' + id
+                jobId = str(id) + '_' + v
 
             params = {'taskId': self.cfg_params['taskId'], 'jobId':  jobId, \
-                      'sid': id,
+                      'sid': v,
                       'PostMortemCategory': loggingInfo.getCategory(), \
                       'PostMortemReason': loggingInfo.getReason()}
             self.cfg_params['apmon'].sendToML(params)

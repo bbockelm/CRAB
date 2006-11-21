@@ -67,7 +67,7 @@ class Submitter(Actor):
                     msg = "Job # %d not submitted: status %s"%(nj+1, long_st)
                     common.logger.message(msg)
                     continue
-
+     
                 currBlock = common.jobDB.block(nj)
                 # SL perform listmatch only if block has changed
                 if (currBlock!=lastBlock):
@@ -79,14 +79,14 @@ class Submitter(Actor):
                 else:
                     common.logger.debug(1,"Sites for job "+str(nj+1)+" the same as previous job")
                     same=1
-
+     
                 if match:
                     if not same:
                         common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
                     else:
                         common.logger.debug(1,"Found "+str(match)+" compatible site(s) for job "+str(nj+1))
                     list.append(common.jobDB.bossId(nj))
-
+     
                     if nj == self.nj_list[-1]: # check that is not the last job in the list
                         list_of_list.append([currBlock,list])
                     else: # check if next job has same group
@@ -101,24 +101,24 @@ class Submitter(Actor):
             ### Progress Bar indicator, deactivate for debug
             if not common.logger.debugLevel() :
                 term = TerminalController()
-
+     
             for ii in range(len(list_of_list)): # Add loop DS
                 common.logger.debug(1,'Submitting jobs '+str(list_of_list[ii][1]))
-                if not common.logger.debugLevel() :
-                    try: pbar = ProgressBar(term, 'Submitting '+str(len(list_of_list[ii][1]))+' jobs')
-                    except: pbar = None
-
+#                if not common.logger.debugLevel() :
+#                    try: pbar = ProgressBar(term, 'Submitting '+str(len(list_of_list[ii][1]))+' jobs')
+#                    except: pbar = None
+     
                 jidLista, bjidLista = common.scheduler.submit(list_of_list[ii])
                 bjidLista = map(int, bjidLista) # cast all bjidLista to int
-
-                if not common.logger.debugLevel():
-                    if pbar :
-                        pbar.update(float(ii+1)/float(len(list_of_list)),'please wait')
-
+     
+#                if not common.logger.debugLevel():
+#                    if pbar :
+#                        pbar.update(float(ii+1)/float(len(list_of_list)),'please wait')
+     
                 for jj in bjidLista: # Add loop over SID returned from group submission  DS
                     tmpNj = jj - 1
                     jid=jidLista[bjidLista.index(jj)]
-                    common.logger.debug(5,"Submitted job # "+`(tmpNj+1)`)
+                    common.logger.debug(5,"Submitted job # "+ `(jj)`)
                     common.jobDB.setStatus(tmpNj, 'S')
                     common.jobDB.setJobId(tmpNj, jid)
                     common.jobDB.setTaskId(tmpNj, self.cfg_params['taskId'])
@@ -135,10 +135,10 @@ class Submitter(Actor):
                     # OLI: JobID treatment, special for Condor-G scheduler
                     jobId = ''
                     if common.scheduler.boss_scheduler_name == 'condor_g':
-                        jobId = str(tmpNj + 1) + '_' + self.hash + '_' + jid
+                        jobId = str(jj) + '_' + self.hash + '_' + jid
                         common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
                     else:
-                        jobId = str(tmpNj + 1) + '_' + jid
+                        jobId = str(jj) + '_' + jid
                         common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
                
                     if ( jid.find(":") != -1 ) :
@@ -150,15 +150,15 @@ class Submitter(Actor):
                     params = {'jobId': jobId, \
                               'sid': jid, \
                               'broker': rb, \
-                              'bossId': common.jobDB.bossId(tmpNj), \
-                              'TargetCE': string.join((common.jobDB.destination(tmpNj)),",")}
+                              'bossId': jj, \
+                              'TargetSE': string.join((common.jobDB.destination(tmpNj)),",")}
                
                     fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
                     for i in fl.readlines():
                         val = i.split(':')
                         params[val[0]] = string.strip(val[1])
                     fl.close()
-
+     
                     common.logger.debug(5,'Submission DashBoard report: '+str(params))
                         
                     self.cfg_params['apmon'].sendToML(params)

@@ -1,5 +1,5 @@
 #!/bin/sh
-export TestSuiteDIR=$CRABDIR/TestSuite
+export TestSuiteDIR=`pwd`
 TestSuitePATH=${TestSuiteDIR}
 TestSuitePYTHON=${TestSuiteDIR}
 
@@ -11,5 +11,5 @@ fi
 if [ -z "$PYTHONPATH" ]; then
 export PYTHONPATH=${TestSuitePYTHON}
 else
-export PYTHONPATH=${PYTHONPATH}:${TestSuitePYTHON}
+export PYTHONPATH=${TestSuitePYTHON}:${PYTHONPATH}
 fi

@@ -15,8 +15,7 @@ class InteractCrab:
         self.nCreate = str(nC)
         self.nSubmit = str(nS)
         self.jobs = JobsManager()
-        if (int(self.nCreate > 0)):
-            self.jobs.createList(self.nCreate, self.nSubmit)
+        self.jobs.createList(self.nCreate, self.nSubmit)
         self.debug = dbg
         self.shorTSleep = wait
         self.longTSleep = 60
@@ -107,23 +106,13 @@ class InteractCrab:
             logging.warning('`'+cmd+'`\n   failed with exit code '
                                   +`err`+'='+`(err&0xff)`+'(signal)+'
                                   +`(err>>8)`+'(status)')
-            logging.info   ("\n--- CRAB STDOUT ---\n" + cmd_out + "\n------------------\n")
-            logging.warning("\n--- CRAB STDERR ---\n" + cmd_err + "\n------------------\n")
+            logging.info(outdata)
+            logging.warning(errdata)
             return None
 
         cmd_out = cmd_out + cmd_err
 
         return cmd_out
-
-    def discoverJobsNumber(self, workingDir): ## Sk.
-        cnt=0
-        try:
-            for rows in open(workingDir+"/share/db/jobs"):
-                cnt += 1
-        except OSError, str:
-            logging.error("Can't discover how many jobs were created: "+str)
-            sys.exit(1)
-        return cnt
 
     def createNotSubmit(self, putOut, workingDir, parser, flag ):   ## Matt.
         """
@@ -132,31 +121,15 @@ class InteractCrab:
         # Messages must be somethings like CrabRob: ....  D.
         #putOut.printStep('TestSuite: CRAB is creating '+self.nCreate+' JOBS')
         putOut.printStep('CRAB is creating '+self.nCreate+' JOBS') # Sk.
-
-
+        creatioNumber = self.nCreate
+        cmd ="crab -create " + creatioNumber + " -debug 10 -cfg " + self.cfgFileName + " -USER.ui_working_dir " + workingDir
         if flag > 0:
             creatioNumber = str(flag)
-        else:
-           creatioNumber = str (self.nCreate)
-        
-        if flag > 0:
             cmd = "crab -create " + creatioNumber + " -c " + workingDir
-        elif int(creatioNumber) < 1:
-            cmd = "crab -create -debug 10 -cfg " + self.cfgFileName + " -USER.ui_working_dir " + workingDir
-        else:
-            cmd ="crab -create " + creatioNumber + " -debug 10 -cfg " + self.cfgFileName + " -USER.ui_working_dir " + workingDir
-
         # "USER.ui_working_dir" is a CRAB's option that allow to change the CRAB's workingDir
 
-        strOut = self.run( cmd, putOut ) ## Selfdiscovering of jobs' number... Sk.
-        if int(creatioNumber) < 1:
-            creatioNumber = self.discoverJobsNumber (workingDir)
-            self.nCreate = str(creatioNumber)
-            if int(self.nSubmit) < 1 or int(self.nSubmit) > int(self.nCreate):
-                self.nSubmit = str(self.nCreate)
-            self.jobs.createList(self.nCreate, self.nSubmit)
+        strOut = self.run( cmd, putOut )
 
-        
         if ( parser.scanCreate( strOut, self.nCreate, self.jobs ) == 0 ):
             putOut.writeOut( cmd, strOut, 0 )
             putOut.printStep('          Creation:  Ok  ')   # D.
