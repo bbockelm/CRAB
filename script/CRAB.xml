@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<configuration>
+<program_type  	name="crabjob"
+		schema="$CRABSCRIPT/crab.schema"
+            	pre="SKIP"
+            	runtime="$CRABSCRIPT/crab.runtime"
+            	post="$CRABSCRIPT/crab.runtime" 
+            	comment="CRAB job"
+/>
+
+
+</configuration>

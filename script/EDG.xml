@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<configuration>
+<scheduler     name="edg"
+	       submit="$BOSS_ROOT/BossSched/bin/dg_submit.pl"
+	       query="$BOSS_ROOT/BossSched/bin/dg_query.py"
+	       kill="$BOSS_ROOT/BossSched/bin/dg_kill.pl"
+	       getout="$BOSS_ROOT/BossSched/bin/dg_getout.pl"
+	       default=""
+	       topwdir=""
+	       cpComm=""
+	       cpWNPref=""
+	       cpRemPref=""
+	       job_id_env_var="EDG_WL_JOBID"
+	       schema ="$BOSS_ROOT/BossSched/bin/schema"
+	       listMatch = "$BOSS_ROOT/BossSched/bin/dg_listMatch.pl"
+/>
+</configuration>

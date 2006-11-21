@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<configuration>
+
+<rtupdator  name="mysql"
+		updatorPath="$BOSS_ROOT/BossRTMon/bin/bossrtupdatorMySQL"
+            clientPath="$BOSS_ROOT/BossRTMon/bin/bossrtclientMySQL"
+            configPath="$HOME/.bossrc/MySQLRTConfig.clad"
+            default="y" 
+/>
+
+</configuration>
