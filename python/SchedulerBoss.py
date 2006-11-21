@@ -18,27 +18,14 @@ from BossSession import BossAdministratorSession
 class SchedulerBoss(Scheduler):
     def __init__(self):
         Scheduler.__init__(self,"BOSS")
-        self.bossConfigDir = str("")
-        if ( common.work_space.use_central_bossdb==1):
-            self.bossConfigDir = str("")
-        elif (common.work_space.use_central_bossdb==2):
-            pass
-#            need to be set to emulate -c option        
-#            bossConfigDir = str(cfg_params["USER.boss_clads"])
-
-        else:
-             self.configBossDB_()
         self.checkBoss_()
         self.schedRegistered = {}
         self.jobtypeRegistered = {}
-        self.bossUser = BossSession(self.bossConfigDir)
-        self.bossUser.showConfigs()
-        taskid = ""
-        try:
-            taskid = common.taskDB.dict('BossTaskId')
-        except :
-            pass
-        self.bossTask = self.bossUser.makeBossTask(taskid)
+#        taskid = ""
+#        try:
+#            taskid = common.taskDB.dict('BossTaskId')
+#        except :
+#            pass
 
         # Map for Boss Status to Human Readable Status
         self.status={
@@ -204,6 +191,25 @@ class SchedulerBoss(Scheduler):
             self.logDir = cfg_params["USER.logdir"]
         except:
             self.logDir = common.work_space.resDir()
+            
+        self.bossConfigDir = str("")
+        if ( int(cfg_params["USER.use_central_bossdb"]) == 1 ):
+            pass
+        elif ( int(cfg_params["USER.use_central_bossdb"] == 2) ):
+            pass
+#            need to be set to emulate -c option        
+#            bossConfigDir = str(cfg_params["USER.boss_clads"])
+        else:
+             self.configBossDB_()
+             
+        self.bossUser = BossSession(self.bossConfigDir)
+        self.bossUser.showConfigs()
+        taskid = ""
+        try:
+            taskid = common.taskDB.dict('BossTaskId')
+        except :
+            pass
+        self.bossTask = self.bossUser.makeBossTask(taskid)
 
         try: 
             self.boss_scheduler_name = cfg_params["CRAB.scheduler"]
@@ -255,8 +261,7 @@ class SchedulerBoss(Scheduler):
 
         # check scheduler and jobtype registration in BOSS        
         try:
-            if (int(cfg_params["USER.use_boss_rt"])==1):
-                self.configRT_(bossAdmin)
+            if (int(cfg_params["USER.use_boss_rt"])==1): self.configRT_(bossAdmin)
         except KeyError:
             pass
 
