@@ -40,6 +40,7 @@ class Cmssw(JobType):
         self.fjrFileName = 'crab_fjr.xml'
 
         self.version = self.scram.getSWVersion()
+        common.taskDB.setDict('codeVersion',self.version)
         self.setParam_('application', self.version)
 
         ### collect Data cards
