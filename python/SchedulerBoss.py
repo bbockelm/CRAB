@@ -193,14 +193,15 @@ class SchedulerBoss(Scheduler):
             self.logDir = common.work_space.resDir()
             
         self.bossConfigDir = str("")
+#       central db
         if ( int(cfg_params["USER.use_central_bossdb"]) == 1 ):
             pass
-        elif ( int(cfg_params["USER.use_central_bossdb"] == 2) ):
-            pass
-#            need to be set to emulate -c option        
-#            bossConfigDir = str(cfg_params["USER.boss_clads"])
+#       emulate -c option        
+        elif ( int(cfg_params["USER.use_central_bossdb"]) == 2 ):
+            self.bossConfigDir = str(cfg_params["USER.boss_clads"])
         else:
-             self.configBossDB_()
+            self.configBossDB_()
+
              
         self.bossUser = BossSession(self.bossConfigDir)
         self.bossUser.showConfigs()
@@ -588,7 +589,7 @@ class SchedulerBoss(Scheduler):
         boss_id = int(int_id)
         
         try:
-            self.bossTask.query (ALL, tmpQ)
+            self.bossTask.load (ALL, tmpQ )
             task = self.bossTask.jobsDict()
             cmd_out = task[int_id]['CHAIN_OUTFILES']
         except RuntimeError,e:
@@ -734,7 +735,7 @@ class SchedulerBoss(Scheduler):
                 range = str(subm_id[0])+":"+str(subm_id[-1])
                 common.logger.message("Killing job # "+str(subm_id[0])+":"+str(subm_id[-1]))
                 self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]))
-                self.bossTask.query(ALL, range)
+                self.bossTask.load(ALL, range)
                 task = self.bossTask.jobsDict()
                 for k, v in task.iteritems():
                     k = int(k)
@@ -795,13 +796,12 @@ class SchedulerBoss(Scheduler):
         """
 
         self.boss_scheduler.checkProxy()
-        self.bossTask.query(SUBMITTED)
 
         results = {}
         job = {}
         try:
             # fill dictionary { 'bossid' : 'status' , ... }
-            self.bossTask.query(ALL)
+            self.bossTask.query( ALL )
             task = self.bossTask.jobsDict()
             for c, v in task.iteritems():
                 k = int(c)
@@ -828,12 +828,11 @@ class SchedulerBoss(Scheduler):
         """ Query a status of all jobs with specified boss taskid """
 
         self.boss_scheduler.checkProxy()
-        self.bossTask.query(SUBMITTED)
 
         results = {}
         try:
             # fill dictionary { 'bossid' : 'status' , ... }
-            self.bossTask.query (ALL)
+            self.bossTask.query( ALL )
             task = self.bossTask.jobsDict()
             for k, v in task.iteritems():
                 results[k] = self.status[v['STATUS']]
@@ -847,7 +846,6 @@ class SchedulerBoss(Scheduler):
         """ Query a status of the job with id """
 
         self.boss_scheduler.checkProxy()
-        self.bossTask.query(SUBMITTED)
 
         allBoss_id = common.scheduler.listBoss()
         tmpQ = ''
@@ -856,7 +854,8 @@ class SchedulerBoss(Scheduler):
         results = {}
         try:
             # fill dictionary { 'bossid' : 'status' , ... }
-            self.bossTask.query (ALL, tmpQ)
+            # fill dictionary { 'bossid' : 'status' , ... }
+            self.bossTask.query( ALL, tmpQ )
             task = self.bossTask.jobsDict()
             for k, v in task.iteritems():
                 results[int(k)] = self.status[v['STATUS']]
