@@ -902,4 +902,6 @@ class SchedulerBoss(Scheduler):
         lines = reError.findall(out)
         return len(lines)
         
-        
+    ##################
+    def getAttribute(self, id, attr):
+        return self.boss_scheduler.getStatusAttribute_(id, attr)
