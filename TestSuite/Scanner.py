@@ -1,6 +1,7 @@
 import string, os, commands
 from LockerFile import *
 from JobsManager import *
+import re
 
 class Scanner:
     def __init__(self, cfgName = 'crab.cfg'): # Rebuilt Sk.
@@ -9,6 +10,37 @@ class Scanner:
         self.nameOutput = ''
         self.created = None
         self.jobType = 'CMSSW'
+
+    def scanCreatePolished(self, lines):
+        """
+        searches through lines looking for "crab. Total of # jobs created." and return #
+        if a row like this doesn't exist it returns -1
+        """
+        r = re.compile("crab\\. Total of ([\\d]*) jobs created\\.")
+        for line in lines:
+            if res = r.match(line):
+                return res.group(1) # Restutuisce il numero dei job matchati
+        return -1
+
+    def scanStatusPolished(lines):
+        """
+        search the jobs status table and parse it
+        """
+        foundTable = False
+        jobs = []
+        # Matcha una riga di -status senza EXE_EXIT_CODE e JOB_EXIT_STATUS
+        r1 = re.compile("([\\d]*)[\\s]* ([\\w]*(\\([\\w]\\))?)[\\s]*(.*)")
+        # Matcha una intera riga di -status
+        r2 = re.compile("([\\d]*)[\\s]*([\\w]*(\\([\\w]\\))?)[\\s]*(.*)[\\s]*([\\d]*)[\\s]*([\\d]*)")
+        for line in lines:
+            if "-----------" in line:
+                foundTable = True
+            if foundTable:
+                if res = r2.match(line):
+                    jobs.append(res.group(1,2,3,4,5)
+                elif res = r1.match(line):
+                    jobs.append(res.group(1,2,3)
+        return jobs
 
     def checkDim(self, path):
         """
@@ -23,7 +55,7 @@ class Scanner:
         return text.find(str) != -1
 
     #def add2JobList(self, nJob, status): # Sk.
-        #self.created 
+        #self.created
 
     def findNJob(self, text, nJobs, opt, jobs):
         """
@@ -92,7 +124,7 @@ class Scanner:
             checks the crab's output for the option "-create"
             text is a list of string representing the output to be parsed
             n is the total number of jobs
-            jobs is the number of 
+            jobs is the number of
         """
         if self.findNJob( text, int(n), 0, jobs ):
            #self.findInside (text, "crab. Total of %(#)d jobs created"%{'#' : int(n)} ):
@@ -118,7 +150,7 @@ class Scanner:
         #print ret
         if ret == -1:
             return 0
-        elif ret >= 0: 
+        elif ret >= 0:
             return ret
         else:
             print "\n"
@@ -161,7 +193,7 @@ class Scanner:
                     #stringa = stringa + "." + i
                 #else:
                     #stringa = i
-###        print stringa     
+###        print stringa
         #return stringa
 
 
@@ -205,11 +237,11 @@ class Scanner:
         jb = self.loadField(path, "jobtype")
         jobtype = ""
         for charact in jb:
-            if ord(charact) != 32 and ord(charact) != 10:   
+            if ord(charact) != 32 and ord(charact) != 10:
                 jobtype = jobtype + charact.upper()
 
         self.jobType = jobtype
-        
+
         fOut = open( self.nameCfg )
         self.locks.lock_F( fOut, 1 )
         extens = 'aida'       # default
@@ -326,7 +358,7 @@ class Scanner:
                 #print ord(idJob), ord(stringa[i][0])
                 h2 = self.compareAscii( str(idJob), stringa[i] )
                 if h2 > 0:
-                    #print "OK: trovato ",idJob, stringa[i][0], stringa[i]    
+                    #print "OK: trovato ",idJob, stringa[i][0], stringa[i]
                 #if ord(idJob) == ord(stringa[i][0]):
                     while j < l and flag == 0:
                         #h = j + 1
