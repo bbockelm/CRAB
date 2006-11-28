@@ -690,8 +690,12 @@ class Crab:
 
             elif ( opt == '-postMortem' ):
             
+                if val:
+                    val = string.replace(val,'-',':')
+                else: val=''
                 nj_list = {} 
-                common.scheduler.bossTask.query(ALL)
+
+                common.scheduler.bossTask.query(ALL, val)
                 task = common.scheduler.bossTask.jobsDict()
 
                 for c, v in task.iteritems():
