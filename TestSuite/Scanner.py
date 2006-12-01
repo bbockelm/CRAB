@@ -11,36 +11,36 @@ class Scanner:
         self.created = None
         self.jobType = 'CMSSW'
 
-    def scanCreatePolished(self, lines):
-        """
-        searches through lines looking for "crab. Total of # jobs created." and return #
-        if a row like this doesn't exist it returns -1
-        """
-        r = re.compile("crab\\. Total of ([\\d]*) jobs created\\.")
-        for line in lines:
-            if res = r.match(line):
-                return res.group(1) # Restutuisce il numero dei job matchati
-        return -1
-
-    def scanStatusPolished(lines):
-        """
-        search the jobs status table and parse it
-        """
-        foundTable = False
-        jobs = []
-        # Matcha una riga di -status senza EXE_EXIT_CODE e JOB_EXIT_STATUS
-        r1 = re.compile("([\\d]*)[\\s]* ([\\w]*(\\([\\w]\\))?)[\\s]*(.*)")
-        # Matcha una intera riga di -status
-        r2 = re.compile("([\\d]*)[\\s]*([\\w]*(\\([\\w]\\))?)[\\s]*(.*)[\\s]*([\\d]*)[\\s]*([\\d]*)")
-        for line in lines:
-            if "-----------" in line:
-                foundTable = True
-            if foundTable:
-                if res = r2.match(line):
-                    jobs.append(res.group(1,2,3,4,5)
-                elif res = r1.match(line):
-                    jobs.append(res.group(1,2,3)
-        return jobs
+#    def scanCreatePolished(self, lines):
+#        """
+#        searches through lines looking for "crab. Total of # jobs created." and return #
+#        if a row like this doesn't exist it returns -1
+#        """
+#        r = re.compile("crab\\. Total of ([\\d]*) jobs created\\.")
+#        for line in lines:
+#            if res = r.match(line):
+#                return res.group(1) # Restutuisce il numero dei job matchati
+#        return -1
+#
+#    def scanStatusPolished(lines):
+#        """
+#        search the jobs status table and parse it
+#        """
+#        foundTable = False
+#        jobs = []
+#        # Matcha una riga di -status senza EXE_EXIT_CODE e JOB_EXIT_STATUS
+#        r1 = re.compile("([\\d]*)[\\s]* ([\\w]*(\\([\\w]\\))?)[\\s]*(.*)")
+#        # Matcha una intera riga di -status
+#        r2 = re.compile("([\\d]*)[\\s]*([\\w]*(\\([\\w]\\))?)[\\s]*(.*)[\\s]*([\\d]*)[\\s]*([\\d]*)")
+#        for line in lines:
+#            if "-----------" in line:
+#                foundTable = True
+#            if foundTable:
+#                if res = r2.match(line):
+#                    jobs.append(res.group(1,2,3,4,5)
+#                elif res = r1.match(line):
+#                    jobs.append(res.group(1,2,3)
+#        return jobs
 
     def checkDim(self, path):
         """
