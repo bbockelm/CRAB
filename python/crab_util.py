@@ -218,6 +218,8 @@ def importName(module_name, name):
 
 
 ###########################################################################
+
+### WARNING This Function become OBSOLETE after Boss API implementation
 def runBossCommand(cmd, printout=0, timeout=3600):
     """
     Cd to correct directory before running a boss command
