@@ -104,16 +104,16 @@ class Submitter(Actor):
      
             for ii in range(len(list_of_list)): # Add loop DS
                 common.logger.debug(1,'Submitting jobs '+str(list_of_list[ii][1]))
-#                if not common.logger.debugLevel() :
-#                    try: pbar = ProgressBar(term, 'Submitting '+str(len(list_of_list[ii][1]))+' jobs')
-#                    except: pbar = None
+                if not common.logger.debugLevel() :
+                    try: pbar = ProgressBar(term, 'Submitting '+str(len(list_of_list[ii][1]))+' jobs')
+                    except: pbar = None
      
                 jidLista, bjidLista = common.scheduler.submit(list_of_list[ii])
                 bjidLista = map(int, bjidLista) # cast all bjidLista to int
      
-#                if not common.logger.debugLevel():
-#                    if pbar :
-#                        pbar.update(float(ii+1)/float(len(list_of_list)),'please wait')
+                if not common.logger.debugLevel():
+                    if pbar :
+                        pbar.update(float(ii+1)/float(len(list_of_list)),'please wait')
      
                 for jj in bjidLista: # Add loop over SID returned from group submission  DS
                     tmpNj = jj - 1
