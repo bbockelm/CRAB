@@ -11,7 +11,7 @@ import DataDiscovery
 import DataLocation
 import Scram
 
-import glob, os, string, re
+import glob, os, string, re, shutil
 
 class Cmssw(JobType):
     def __init__(self, cfg_params, ncjobs):
@@ -33,6 +33,7 @@ class Cmssw(JobType):
         self.scriptExe = ''
         self.executable = ''
         self.tgz_name = 'default.tgz'
+        self.scriptName = 'CMSSW.sh'
         self.pset = ''      #scrip use case Da   
         self.datasetPath = '' #scrip use case Da
 
@@ -233,7 +234,8 @@ class Cmssw(JobType):
                 self.jobSplittingForScript()
             else:
                 self.jobSplittingNoInput()
-        else: self.jobSplittingByBlocks(blockSites)
+        else: 
+            self.jobSplittingByBlocks(blockSites)
 
         # modify Pset
         if self.pset != None: #CarlosDaniele
@@ -612,7 +614,10 @@ class Cmssw(JobType):
         """
         
         # if it exist, just return it
-        self.tgzNameWithPath = common.work_space.shareDir()+self.tgz_name
+        #
+        # Marco. Let's start to use relative path for Boss XML files
+        #
+        self.tgzNameWithPath = common.work_space.pathForTgz()+'share/'+self.tgz_name
         if os.path.exists(self.tgzNameWithPath):
             return self.tgzNameWithPath
 
@@ -664,12 +669,14 @@ class Cmssw(JobType):
  
         ## Now check if module dir is present
         moduleDir = 'module'
-        if os.path.isdir(swArea+'/'+moduleDir):
+        module = swArea + '/' + moduleDir
+        if os.path.isdir(module):
             filesToBeTarred.append(moduleDir)
 
         ## Now check if the Data dir is present
         dataDir = 'src/Data/'
-        if os.path.isdir(swArea+'/'+dataDir):
+        data = swArea + '/' + dataDir
+        if os.path.isdir(data):
             filesToBeTarred.append(dataDir)
 
         ## copy ProdAgent dir to swArea
@@ -681,20 +688,22 @@ class Cmssw(JobType):
 
         ## Now check if the Data dir is present
         paDir = 'ProdAgentApi'
-        if os.path.isdir(swArea+'/'+paDir):
+        pa = swArea + '/' + 'ProdAgentApi'
+        if os.path.isdir(pa):
             filesToBeTarred.append(paDir)
+        
+        for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py']:
+            shutil.copyfile(os.environ['CRABDIR']+'/python/'+file, swArea+'/'+file)
+            filesToBeTarred.append(file)
 
         ## Create the tar-ball
         if len(filesToBeTarred)>0:
-            cwd = os.getcwd()
-            os.chdir(swArea)
-            tarcmd = 'tar zcvf ' + self.tgzNameWithPath + ' ' 
+            tarcmd = 'tar zcvf ' + self.tgzNameWithPath + ' -C ' + swArea + ' ' 
             for line in filesToBeTarred:
                 tarcmd = tarcmd + line + ' '
             cout = runCommand(tarcmd)
             if not cout:
                 raise CrabException('Could not create tar-ball')
-            os.chdir(cwd)
         else:
             common.logger.debug(5,"No files to be to be tarred")
         
@@ -934,7 +943,7 @@ class Cmssw(JobType):
             inp_box.append(self.tgzNameWithPath)
         ## config
         if not self.pset is None: #CarlosDaniele
-            inp_box.append(common.job_list[nj].configFilename())
+            inp_box.append(common.work_space.pathForTgz() + 'job/' + self.configFilename())
         ## additional input files
         #for file in self.additional_inbox_files:
         #    inp_box.append(common.work_space.cwdDir()+file)

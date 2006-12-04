@@ -5,7 +5,7 @@ from crab_util import *
 from EdgConfig import *
 import common
 
-import os, sys, time
+import os, sys, time, gzip
 
 class SchedulerEdg(Scheduler):
     def __init__(self):
@@ -699,7 +699,7 @@ class SchedulerEdg(Scheduler):
         taskName = dir[len(dir)-2]
 
         xml.write(str(title))
-        xml.write('<task name="' +str(taskName)+'">\n')
+        xml.write('<task name="' +str(taskName)+'" sub_path="' + common.work_space.bossCache() + '">\n') 
         xml.write(jt_string)
         
         if (to_write != ''):
@@ -740,23 +740,16 @@ class SchedulerEdg(Scheduler):
         xml.write('<program>\n')
         xml.write('<exec> ' + os.path.basename(script) +' </exec>\n')
         xml.write(jt_string)
-    
+
         xml.write('<args> <![CDATA[\n _ITR2_ \n]]> </args>\n')
         xml.write('<program_types> crabjob </program_types>\n')
-        inp_box = script + ','
+        inp_box = common.work_space.pathForTgz() + 'job/' + jbt.scriptName + ','
 
         if inp_sandbox != None:
             for fl in inp_sandbox:
                 inp_box = inp_box + '' + fl + ','
                 pass
             pass
-
-        inp_box = inp_box + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + ',' +\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + ','+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + ','+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + ','+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') + ','+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'parseCrabFjr.py')
 
         if (not jbt.additional_inbox_files == []):
             inp_box = inp_box + ','
