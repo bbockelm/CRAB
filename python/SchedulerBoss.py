@@ -87,7 +87,6 @@ class SchedulerBoss(Scheduler):
         # first I have to check if the db already esist
         configClad = common.work_space.shareDir()+"/BossConfig.clad"
         self.bossConfigDir = str(common.work_space.shareDir())
-        print "DIR", self.bossConfigDir
         if ( not os.path.exists(configClad)  ) :
             bossCfg = os.environ["HOME"]+"/.bossrc/BossConfig.clad"
             shutil.copyfile(bossCfg,configClad)
@@ -656,8 +655,8 @@ class SchedulerBoss(Scheduler):
                         self.bossTask.getOutput (str(boss_id), str(dir))
                         if logDir != dir:
                             try:
-                                cmd = 'mv '+str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/*.log '+str(dir)+'/.BrokerInfo ' +str(logDir)
-                                cmd_out = runCommand(cmd)
+                                toMove = str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/*.log '+str(dir)+'/.BrokerInfo ' 
+                                shutil.move(toMove, str(logDir))
                                 msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
                                 common.logger.message(msg)
                             except:
@@ -673,7 +672,7 @@ class SchedulerBoss(Scheduler):
                             exCode = common.scheduler.getExitStatus(jid)
                         except:
                             exCode = ' '
-                        Statistic.Monitor('retrieved',resFlag,jid,exCode,'dest')
+#                        Statistic.Monitor('retrieved',resFlag,jid,exCode,'dest')
                         common.jobDB.setStatus(int(i_id)-1, 'Y') 
                     except RuntimeError,e:
                         common.logger.message(e.__str__())
@@ -731,21 +730,22 @@ class SchedulerBoss(Scheduler):
         else:
 
             common.jobDB.load() 
-            try:
-                range = str(subm_id[0])+":"+str(subm_id[-1])
-                common.logger.message("Killing job # "+str(subm_id[0])+":"+str(subm_id[-1]))
-                self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]))
-                self.bossTask.load(ALL, range)
-                task = self.bossTask.jobsDict()
-                for k, v in task.iteritems():
-                    k = int(k)
-                    status = v['STATUS']
-                    if k in subm_id and status == 'K':
-                        common.jobDB.setStatus(k - 1, 'K')
-            except RuntimeError,e:
-                common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id[0])+" . See log for details")
-            common.jobDB.save()
-            pass
+            if len( subm_id ) > 0:
+                try:
+                    range = str(subm_id[0])+":"+str(subm_id[-1])
+                    common.logger.message("Killing job # "+str(subm_id[0])+":"+str(subm_id[-1]))
+                    self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]))
+                    self.bossTask.load(ALL, range)
+                    task = self.bossTask.jobsDict()
+                    for k, v in task.iteritems():
+                        k = int(k)
+                        status = v['STATUS']
+                        if k in subm_id and status == 'K':
+                            common.jobDB.setStatus(k - 1, 'K')
+                except RuntimeError,e:
+                    common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id[0])+" . See log for details")
+                common.jobDB.save()
+                pass
         return #cmd_out    
 
     ################################################################ To remove when Boss4 store this info  DS. (start)
