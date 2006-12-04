@@ -10,6 +10,7 @@ dumpStatus() {
 echo ">>>>>>> Cat $1"
 cat $1
 echo ">>>>>>> End Cat jobreport"
+chmod a+x $RUNTIME_AREA/report.py 
 $RUNTIME_AREA/report.py $(cat $1)
 }
 
