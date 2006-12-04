@@ -167,7 +167,7 @@ class EdgLoggingInfo:
             self.reason = self._categories[3]
             self.category = self._categories[3]
         elif final_category == self._categories[4] :
-            msg = 'finished correctly but failed with error code: '+final_done_code
+            msg = 'finished correctly but failed with error code: ', final_done_code
             self.reason = msg
             self.category = self._categories[4]
         elif final_category == self._categories[5] :
