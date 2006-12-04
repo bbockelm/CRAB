@@ -12,6 +12,8 @@ class WorkSpace:
         self._job_dir = self._top_dir + '/job'     # job pars, scripts, jdl's
         self._res_dir = self._top_dir + '/res'     # dir to store job results
         self._share_dir = self._top_dir + '/share' # directory for common stuff
+        self._pathForTgz = string.split(top_dir, '/')[-1]
+        self._boss_cache = self._top_dir + '/.boss_cache'
 
         try:    
             self.outDir = cfg_params["USER.outputdir"]
@@ -32,6 +34,7 @@ class WorkSpace:
             os.mkdir(self._job_dir)
             os.mkdir(self._res_dir)
             os.mkdir(self._share_dir)
+            os.mkdir(self._boss_cache)
 
             common.taskDB.setDict("CODE",(str(time.time())))
             pass
@@ -63,7 +66,8 @@ class WorkSpace:
         delete the whole workspace without doing any test!!!
         """
         if os.path.exists(self._top_dir):
-            shutil.rmtree(self._top_dir)
+#            shutil.rmtree(self._top_dir)
+            os.system("rm -rf %s" % self._top_dir )
             pass
         return
 
@@ -84,6 +88,13 @@ class WorkSpace:
 
     def shareDir(self):
         return self._share_dir + '/'
+        
+    def pathForTgz(self):
+        return self._pathForTgz + '/'
+        
+    def bossCache(self):
+        return self._boss_cache + '/'
+
 
     def setResDir(self, dir):
         self._res_dir = dir
