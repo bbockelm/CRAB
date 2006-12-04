@@ -28,6 +28,12 @@ repo=jobreport.txt
 # SETUP ENVIRONMENT
 #
 
+#
+# PREPARE AND RUN EXECUTABLE
+#
+
+#CRAB build_executable
+
 #CRAB setup_scheduler_environment
 
 #CRAB setup_jobtype_environment
@@ -41,12 +47,6 @@ repo=jobreport.txt
 #
 
 #CRAB copy_input 
-
-#
-# PREPARE AND RUN EXECUTABLE
-#
-
-#CRAB build_executable
 
 echo "Executable $executable"
 which $executable
