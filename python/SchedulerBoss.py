@@ -540,9 +540,10 @@ class SchedulerBoss(Scheduler):
             else:
                 for line in cmd_out.splitlines(): # boss4
                     if  line.find('error') >= 0 :
-                        msg = 'ERROR: BOSS submission failed: ' + cmd + ', stopping submission at id ' + jid 
+                        msg = 'ERROR: BOSS submission failed: ' + cmd + ', for job ' + str(i)
                         common.logger.message(msg)
-                        return jid, bjid
+                        ## SL: Why return and stop here????
+                        #return jid, bjid
                     if line.find('Scheduler ID for job') >= 0 :
                         jid.append(line.split()[-1])
                         bjid.append(line.split()[-3])
