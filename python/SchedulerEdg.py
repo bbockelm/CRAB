@@ -248,13 +248,14 @@ class SchedulerEdg(Scheduler):
                 req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
                  
         for i in range(len(first)): # Add loop DS
+            groupReq = req
             self.param='sched_param_'+str(i)+'.clad'
             param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
 
             itr4=self.findSites_(first[i])
             for arg in itr4:
-                req = req + ' && anyMatch(other.storage.CloseSEs, ('+str(arg)+'))'
-            param_file.write('Requirements = '+req +';\n')   
+                groupReq = groupReq + ' && anyMatch(other.storage.CloseSEs, ('+str(arg)+'))'
+            param_file.write('Requirements = '+groupReq +';\n')   
    
             if (self.rb_param_file != ''):
                 param_file.write(self.rb_param_file)   
