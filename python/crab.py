@@ -818,12 +818,14 @@ def processHelpOptions(opts):
 
 #################################################
 if __name__ == '__main__':
-    import warnings
+
     ## Get rid of some useless warning
-    warnings.simplefilter("ignore", RuntimeWarning)
-    # warnings.filterwarnings("ignore","Python C API version mismatch for  module _edg_wl_userinterface_common_LbWrapper",RuntimeWarning)
-    # warnings.filterwarnings("ignore","Python C API version mismatch for module _glite_wmsui_LbWrapper",RuntimeWarning)
-    # warnings.filterwarnings("ignore","Python C API version mismatch for module _glite_wmsui_AdWrapper",RuntimeWarning)
+    try:
+        import warnings
+        warnings.simplefilter("ignore", RuntimeWarning)
+    except:
+        pass # too bad, you'll get the warning
+
     # Parse command-line options and create a dictionary with
     # key-value pairs.
 
