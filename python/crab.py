@@ -382,6 +382,9 @@ class Crab:
         minus = string.find(aRange, '-')
         if ( minus < 0 ):
             if isInt(aRange) and int(aRange)>0:
+                # FEDE
+                #result.append(int(aRange)-1)
+                ###
                 result.append(int(aRange))
             else:
                 common.logger.message("parseSimpleRange_  ERROR "+aRange)
@@ -392,7 +395,8 @@ class Crab:
         else:
             (start, end) = string.split(aRange, '-')
             if isInt(start) and isInt(end) and int(start)>0 and int(start)<int(end):
-                result=range(int(start), int(end)+1)  
+                #result=range(int(start)-1, int(end))
+                result=range(int(start), int(end)+1) #Daniele  
             else:
                 common.logger.message("parseSimpleRange_ ERROR "+start+end)
 
@@ -467,13 +471,6 @@ class Crab:
                 # get the first not already submitted
                 common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
                 jobSetForSubmission = 0
-                # Marco
-#                common.scheduler.bossTask.query(ALL)
-#                task = common.scheduler.bossTask.jobsDict()
-
-#                for c, v in task.iteritems():
-#                    k = int(c)
-#                    if v['STATUS'] == 'W':
                 for nj in range(common.jobDB.nJobs()):
                     if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
                         jobSetForSubmission +=1
@@ -508,15 +505,19 @@ class Crab:
 
             elif ( opt == '-printId' ):
             
-#                val = string.replace(val,'-',':')
-                #jobs = self.parseRange_(val)
-                common.scheduler.bossTask.query(ALL)
+                try: 
+                    common.scheduler.bossTask.query(ALL)
+                except RuntimeError,e:
+                    common.logger.message( e.__str__() )
+                except ValueError,e:
+                    print "Warning : Scheduler interaction in query operation failed for jobs:"
+                    print e.what(),'\n'
+                    pass
                 task = common.scheduler.bossTask.jobsDict()
 
-                #for c, v in task.iteritems():
-                for v in task.iteritems():
-                    #k = int(c)
-                    #nj=k
+                for c, v in task.iteritems():
+                    k = int(c)
+                    nj=k
                     id = v['CHAIN_ID']
                     jid = v['SCHED_ID']
                     if jid:
@@ -571,33 +572,39 @@ class Crab:
                     ##
                     # Marco. Vediamo se va meglio cosi'...
                     ##
-                    common.scheduler.bossTask.query(ALL, val)
+                    try: 
+                        common.scheduler.bossTask.query(ALL, val)
+                    except RuntimeError,e:
+                        common.logger.message( e.__str__() )
+                    except ValueError,e:
+                        print "Warning : Scheduler interaction in query operation failed for jobs:"
+                        print e.what(),'\n'
+                        pass
                     task = common.scheduler.bossTask.jobsDict()
                         
                     nj_list = []
                     for c, v in task.iteritems():
-                        #k = int(c)
-                        #nj=k
-                        nj = int(c)
+                        k = int(c)
+                        nj=k
                         st = v['STATUS']
 
-                        if nj <= int(len(maxIndex)) :
+                        if int(nj) <= int(len(maxIndex)) :
                             if st in ['K','SA','Z']:
-                                nj_list.append(nj-1)
-                                common.jobDB.setStatus(nj-1,'C')
+                                nj_list.append(int(nj)-1)
+                                common.jobDB.setStatus(int(nj)-1,'C')
                             elif st == 'SE':
                                 common.scheduler.moveOutput(nj)
-                                nj_list.append(nj-1)
-                                st = common.jobDB.setStatus(nj-1,'RC')
+                                nj_list.append(int(nj)-1)
+                                st = common.jobDB.setStatus(int(nj)-1,'RC')
                             elif st in ['W']:
-                                common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!')
+                                common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!')
                                 pass
                             elif st in ['SD', 'OR']:
-                                common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
+                                common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
                             else:
                                 common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                         else:
-                            common.logger.message('Job #'+`nj`+' no possible to resubmit!! out of range')
+                            common.logger.message('Job #'+`int(nj)`+' no possible to resubmit!! out of range')
                     if len(common.job_list) == 0 :
                          common.job_list = JobList(common.jobDB.nJobs(),None)
                          common.job_list.setJDLNames(self.job_type_name+'.jdl')
@@ -635,17 +642,17 @@ class Crab:
                     for nj in jobs:
                         st = common.jobDB.status(int(nj)-1)
                         if st in ['K','A']:
-                            nj_list.append(nj-1)
-                            common.jobDB.setStatus(nj-1,'C')
+                            nj_list.append(int(nj)-1)
+                            common.jobDB.setStatus(int(nj)-1,'C')
                         elif st == 'Y':
                             common.scheduler.moveOutput(nj)
-                            nj_list.append(nj-1)
-                            st = common.jobDB.setStatus(nj-1,'RC')
+                            nj_list.append(int(nj)-1)
+                            st = common.jobDB.setStatus(int(nj)-1,'RC')
                         elif st in ['C','X']:
-                            common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!')
+                            common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!')
                             pass
                         elif st == 'D':
-                            common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
+                            common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
                         else:
                             common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
                             pass
@@ -693,12 +700,20 @@ class Crab:
                 else: val=''
                 nj_list = {} 
 
-                common.scheduler.bossTask.query(ALL, val)
+                try:
+                    common.scheduler.bossTask.query(ALL, val)
+                except RuntimeError,e:
+                    common.logger.message( e.__str__() )
+                except ValueError,e:
+                    print "Warning : Scheduler interaction in query operation failed for jobs:"
+                    print e.what(),'\n'
+                    pass
+
                 task = common.scheduler.bossTask.jobsDict()
 
                 for c, v in task.iteritems():
-                    #k = int(c)
-                    #nj=k
+                    k = int(c)
+                    nj=k
                     if v['SCHED_ID']: nj_list[v['CHAIN_ID']]=v['SCHED_ID']
                     pass
 
@@ -775,7 +790,6 @@ class Crab:
         return
 
     def updateHistory_(self, args):
-
         history_fname = common.prog_name+'.history'
         history_file = open(history_fname, 'a')
         history_file.write(self.current_time+': '+args+'\n')
