@@ -21,6 +21,8 @@ class SchedulerBoss(Scheduler):
         self.checkBoss_()
         self.schedRegistered = {}
         self.jobtypeRegistered = {}
+        self.bossLogDir = common.work_space.bossCache()
+        self.bossLogFile = "boss.log"
 #        taskid = ""
 #        try:
 #            taskid = common.taskDB.dict('BossTaskId')
@@ -202,7 +204,7 @@ class SchedulerBoss(Scheduler):
             self.configBossDB_()
 
              
-        self.bossUser = BossSession(self.bossConfigDir)
+        self.bossUser = BossSession(self.bossConfigDir, "3", self.bossLogDir+'/'+self.bossLogFile)
         self.bossUser.showConfigs()
         taskid = ""
         try:
@@ -560,8 +562,13 @@ class SchedulerBoss(Scheduler):
             schcladstring=self.schclassad
         try:
             self.bossTask.submit(string.join(jobsList,','), schcladstring)
+        except ValueError,e:
+            print "Warning : Scheduler interaction failed for jobs:"
+            print e.what(),'\n'
+            pass
         except RuntimeError,e:
-            common.logger.debug( e.__str__() )
+            print "Error : BOSS command failed with message:"
+            print common.logger.debug(e.what(),'\n')
         
         jid=[]
         bjid = []
@@ -902,6 +909,4 @@ class SchedulerBoss(Scheduler):
         lines = reError.findall(out)
         return len(lines)
         
-    ##################
-    def getAttribute(self, id, attr):
-        return self.boss_scheduler.getStatusAttribute_(id, attr)
+        
