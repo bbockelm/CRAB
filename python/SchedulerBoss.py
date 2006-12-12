@@ -123,7 +123,7 @@ class SchedulerBoss(Scheduler):
 
         # check if RT is already configured
         boss_rt_check = self.bossUser.RTMons()
-#        boss_rt_check = self.bossUser.defaultRTmon()
+   #     boss_rt_check = self.bossUser.defaultRTmon()
         if 'mysql' not in boss_rt_check:
             common.logger.debug(6,'registering RT monitor')
             # First I have to create a SQLiteConfig.clad file in the proper directory
@@ -205,7 +205,7 @@ class SchedulerBoss(Scheduler):
 
              
         self.bossUser = BossSession(self.bossConfigDir, "3", self.bossLogDir+'/'+self.bossLogFile)
-        self.bossUser.showConfigs()
+       # self.bossUser.showConfigs()
         taskid = ""
         try:
             taskid = common.taskDB.dict('BossTaskId')
@@ -460,6 +460,10 @@ class SchedulerBoss(Scheduler):
         CEs=[]
         try:
             CEs=self.bossUser.schedListMatch( str(self.schedulerName), schcladstring, self.bossTask.id())
+        except ValueError,e:
+            print "Warning : Scheduler interaction failed for jobs:"
+            print e.what(),'\n'
+            pass
         except RuntimeError,e:
             raise CrabException("ERROR: listMatch failed with message" + e.__str__())
         stop = time.time()
@@ -545,7 +549,6 @@ class SchedulerBoss(Scheduler):
         return self.boss_scheduler.createFakeJdl(nj)
     
     ###################### ---- OK for Boss4 ds
-    #def submit(self, nj):
     def submit(self,list):
         """
         Submit BOSS function.
@@ -574,7 +577,14 @@ class SchedulerBoss(Scheduler):
         bjid = []
         self.bossTask.clear()
         range = str(jobsList[0]) + ":" + str(jobsList[len(jobsList) - 1])
-        self.bossTask.query(ALL, range)
+        try:
+            self.bossTask.query(ALL, range)
+        except ValueError,e:
+            print "Warning : Scheduler interaction failed for jobs:"
+            print e.what(),'\n'
+            pass
+        except RuntimeError,e:
+            common.logger.message( e.__str__() ) 
         task = self.bossTask.jobsDict()
         for k, v in task.iteritems():
             jid.append(v["SCHED_ID"])
@@ -681,6 +691,10 @@ class SchedulerBoss(Scheduler):
                             exCode = ' '
 #                        Statistic.Monitor('retrieved',resFlag,jid,exCode,'dest')
                         common.jobDB.setStatus(int(i_id)-1, 'Y') 
+                    except ValueError,e:
+                        print "Warning : Scheduler interaction failed for jobs:"
+                        print e.what(),'\n'
+                        pass
                     except RuntimeError,e:
                         common.logger.message(e.__str__())
                         msg = 'Results of Job # '+`int(i_id)`+' have been corrupted and could not be retrieved.'
@@ -716,9 +730,14 @@ class SchedulerBoss(Scheduler):
         #print "int_id ",int_id," nSubmitted ", common.jobDB.nSubmittedJobs()
         
         subm_id = []
+
+        nTot = common.jobDB.nJobs()
         for id in int_id:
-           if ( common.jobDB.status(id-1) in ['S','R','A']) and (id not in subm_id):
-              subm_id.append(id)
+            if nTot >= id: ## TODO check the number of jobs..else: 'IndexError: list index out of range'
+                if ( common.jobDB.status(id-1) in ['S','R','A']) and (id not in subm_id):
+                    subm_id.append(id)
+            else:
+                common.logger.message("Warning: job # "+str(id)+" doesn't exists! Not possible to kill it.")
         bossTaskId = common.taskDB.dict('BossTaskId')
         ## first get the status of all job in the list
         statusList = self.queryStatusList(bossTaskId, subm_id)
@@ -729,6 +748,10 @@ class SchedulerBoss(Scheduler):
             try:
                 common.logger.message("Killing jobs # "+str(subm_id[0])+':'+str(subm_id[-1]))
                 self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]))
+            except ValueError,e:
+                print "Warning : Scheduler interaction failed for jobs:"
+                print e.what(),'\n'
+                pass
             except RuntimeError,e:
                 common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id[0])+" . See log for details")
                 
@@ -739,9 +762,10 @@ class SchedulerBoss(Scheduler):
             common.jobDB.load() 
             if len( subm_id ) > 0:
                 try:
-                    range = str(subm_id[0])+":"+str(subm_id[-1])
-                    common.logger.message("Killing job # "+str(subm_id[0])+":"+str(subm_id[-1]))
-                    self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]))
+                    subm_id.sort()
+                    range = self.prepString( subm_id )
+                    common.logger.message("Killing job # " + str(subm_id).replace("[","",1).replace("]","",1) )
+                    self.bossTask.kill( range )
                     self.bossTask.load(ALL, range)
                     task = self.bossTask.jobsDict()
                     for k, v in task.iteritems():
@@ -749,11 +773,43 @@ class SchedulerBoss(Scheduler):
                         status = v['STATUS']
                         if k in subm_id and status == 'K':
                             common.jobDB.setStatus(k - 1, 'K')
+                except ValueError,e:
+                    print "Warning : Scheduler interaction failed for jobs:"
+                    print e.what(),'\n'
+                    pass
                 except RuntimeError,e:
                     common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id[0])+" . See log for details")
-                common.jobDB.save()
-                pass
+            else:
+                common.logger.message("\nError killing jobs # "+str(int_id).replace("[","",1).replace("]","",1)+" . See log for details")
+            common.jobDB.save()
+            pass
         return #cmd_out    
+
+    def setFlag( self, list, index ):
+        if len( list ) > (index + 1):
+            if list[index + 1] == ( list[index] + 1 ):
+                return -2
+            return -1
+        return list[ len(list) - 1 ]
+
+    def prepString( self, list ):
+        s = ""
+        flag = 0
+        comapare = -1
+        for i in range( len( list ) ):
+            if flag == 0:
+                s = str( list[i] )
+                flag = self.setFlag( list, i )
+            elif flag == -1:
+                s = s + "," + str( list[i] )
+                flag = self.setFlag( list, i )
+            elif flag == -2:
+                flag = self.setFlag( list, i )
+                if flag == -1:
+                    s = s + ":" + str( list[i] )
+        if flag > 0:
+            s = s + ":" + str( list[i] )
+        return s
 
     ################################################################ To remove when Boss4 store this info  DS. (start)
     def getAttribute(self, id, attr):
@@ -789,14 +845,6 @@ class SchedulerBoss(Scheduler):
         return SID
 
     ##################################################
-    '''
-
-    questo metodo restituisce una mappa con tutte le info che servono
-    a StatusBoss.py che a questo punto le puo semplicemente utilizzare
-    senza fare parsing o cose del genere
-
-    '''
-
     def queryEverything(self,taskid):
         """
         Query needed info of all jobs with specified boss taskid
@@ -824,6 +872,10 @@ class SchedulerBoss(Scheduler):
                 programs = self.bossTask.jobPrograms(c)
                 results[k]['EXE_EXIT_CODE'] = programs['1']['EXE_EXIT_CODE']
                 results[k]['JOB_EXIT_STATUS'] = programs['1']['JOB_EXIT_STATUS']
+        except ValueError,e:
+            print "Warning : Scheduler interaction failed for jobs:"
+            print e.what(),'\n'
+            pass
         except RuntimeError,e:
             common.logger.message( e.__str__() )
                 
@@ -843,6 +895,10 @@ class SchedulerBoss(Scheduler):
             task = self.bossTask.jobsDict()
             for k, v in task.iteritems():
                 results[k] = self.status[v['STATUS']]
+        except ValueError,e:
+            print "Warning : Scheduler interaction failed for jobs:"
+            print e.what(),'\n'
+            pass
         except RuntimeError,e:
             common.logger.message( e.__str__() )
                 
@@ -866,6 +922,10 @@ class SchedulerBoss(Scheduler):
             task = self.bossTask.jobsDict()
             for k, v in task.iteritems():
                 results[int(k)] = self.status[v['STATUS']]
+        except ValueError,e:
+            print "Warning : Scheduler interaction failed for jobs:"
+            print e.what(),'\n'
+            pass
         except RuntimeError,e:
             common.logger.message( e.__str__() )
                 
