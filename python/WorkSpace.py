@@ -13,7 +13,7 @@ class WorkSpace:
         self._res_dir = self._top_dir + '/res'     # dir to store job results
         self._share_dir = self._top_dir + '/share' # directory for common stuff
         self._pathForTgz = string.split(top_dir, '/')[-1]
-        self._boss_cache = self._top_dir + '/log'
+        self._boss_cache = self._share_dir + '/.boss_cache'
 
         try:    
             self.outDir = cfg_params["USER.outputdir"]
@@ -34,7 +34,7 @@ class WorkSpace:
             os.mkdir(self._job_dir)
             os.mkdir(self._res_dir)
             os.mkdir(self._share_dir)
-#            os.mkdir(self._boss_cache)
+            os.mkdir(self._boss_cache)
 
             common.taskDB.setDict("CODE",(str(time.time())))
             pass
