@@ -1,5 +1,0 @@
-#!/bin/sh
-
-bossAdmin registerScheduler -name edg -submit $CRABSCRIPT/dg_submit.pl -query $CRABSCRIPT/dg_query.py -kill $CRABSCRIPT/dg_kill.pl -getout $CRABSCRIPT/dg_getout.pl -job_id_env_var EDG_WL_JOBID -schema $CRABSCRIPT/schema -listMatch $CRABSCRIPT/dg_listMatch.pl $@
-
-

@@ -1,1 +1,0 @@
-boss registerRTMon -name sqlite -updatorPath bossrtupdatorSQLite -clientPath bossrtclientSQLite -configPath ${HOME}/.bossrc/SQLiteRTConfig.clad -default
