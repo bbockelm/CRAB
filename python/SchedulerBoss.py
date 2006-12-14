@@ -161,7 +161,7 @@ class SchedulerBoss(Scheduler):
             if os.path.exists(register_path+register_script):
                 try :
                     bossAdmin.registerPlugins( register_path+register_script )
-                except RuntimeError,e:
+                except BossError,e:
                     common.logger.debug( 4, e.__str__() )
                     msg = 'Problem with RealTime monitor registration\n'
                     raise CrabException(msg)           
@@ -302,7 +302,7 @@ class SchedulerBoss(Scheduler):
                 register_boss_scheduler = string.upper(sched_name) + '.xml'
                 bossAdmin.registerPlugins( register_path+register_boss_scheduler )
                 break
-            except RuntimeError,e:
+            except BossError,e:
                 if e.__str__().find('not connected') != -1 :
                     # sleep for defined sleep interval
                     msg = 'Boss cmd: boss showScheduler failed with "'
@@ -355,7 +355,7 @@ class SchedulerBoss(Scheduler):
                 register_boss_jobtype = string.upper(string.upper(jobtype)) + '.xml'
                 bossAdmin.registerPlugins( register_path+register_boss_jobtype )
                 break
-            except RuntimeError,e:
+            except BossError,e:
                 if e.__str__().find('not connected') != -1 :
                     # sleep for defined sleep interval
                     msg = 'Boss cmd: boss registerPlugins failed with "'
@@ -426,7 +426,7 @@ class SchedulerBoss(Scheduler):
                 common.jobDB.setBossId(num_job, str(k + 1))
                 common.logger.debug(4,"CHAIN ID =  "+ str(k + 1) +" of job: "+str(num_job))
                 num_job += 1
-        except RuntimeError,e:
+        except BossError,e:
             common.logger.message(e.__str__())
             raise CrabException(e.__str__())
 
@@ -459,11 +459,11 @@ class SchedulerBoss(Scheduler):
         CEs=[]
         try:
             CEs=self.bossUser.schedListMatch( str(self.schedulerName), schcladstring, self.bossTask.id())
-        except ValueError,e:
-            print "Warning : Scheduler interaction failed for jobs:"
-            print e.what(),'\n'
+        except SchedulerError,e:
+            print "Warning : Scheduler interaction in list-match operation failed for jobs:"
+            print e.__str__(),'\n'
             pass
-        except RuntimeError,e:
+        except BossError,e:
             raise CrabException("ERROR: listMatch failed with message" + e.__str__())
         stop = time.time()
         common.logger.debug(1,"listMatch time :"+str(stop-start))
@@ -564,13 +564,13 @@ class SchedulerBoss(Scheduler):
             schcladstring=self.schclassad
         try:
             self.bossTask.submit(string.join(jobsList,','), schcladstring)
-        except ValueError,e:
-            print "Warning : Scheduler interaction failed for jobs:"
-            print e.what(),'\n'
+        except SchedulerError,e:
+            print "Warning : Scheduler interaction in submit operation failed for jobs:"
+            print e.__str__(),'\n'
             pass
-        except RuntimeError,e:
+        except BossError,e:
             print "Error : BOSS command failed with message:"
-            print common.logger.debug(e.what(),'\n')
+            print common.logger.debug(e.__str__(),'\n')
         
         jid=[]
         bjid = []
@@ -578,13 +578,13 @@ class SchedulerBoss(Scheduler):
         range = str(jobsList[0]) + ":" + str(jobsList[len(jobsList) - 1])
         try:
             self.bossTask.query(ALL, range)
-        except ValueError,e:
+        except SchedulerError,e:
             print "Warning : Scheduler interaction in query operation failed for jobs:"
-            print e.what(),'\n'
+            print e.__str__(),'\n'
             pass
-        except RuntimeError,e:
+        except BossError,e:
             print "Error : BOSS command failed with message:"
-            print common.logger.debug(e.what(),'\n')
+            print common.logger.debug(e.__str__(),'\n')
         task = self.bossTask.jobsDict()
         for k, v in task.iteritems():
             jid.append(v["SCHED_ID"])
@@ -608,7 +608,7 @@ class SchedulerBoss(Scheduler):
             self.bossTask.load (ALL, tmpQ )
             task = self.bossTask.jobsDict()
             cmd_out = task[int_id]['CHAIN_OUTFILES']
-        except RuntimeError,e:
+        except BossError,e:
             common.logger.message( e.__str__() )
 
         nline = 0
@@ -691,19 +691,15 @@ class SchedulerBoss(Scheduler):
                             exCode = ' '
 #                        Statistic.Monitor('retrieved',resFlag,jid,exCode,'dest')
                         common.jobDB.setStatus(int(i_id)-1, 'Y') 
-                    except ValueError,e:
-                        print "Warning : Scheduler interaction failed for jobs:"
-                        print e.what(),'\n'
+                    except SchedulerError,e:
+                        print "Warning : Scheduler interaction in getOutput operation failed for jobs:"
+                        print e.__str__(),'\n'
                         pass
-                    except RuntimeError,e:
+                    except BossError,e:
                         common.logger.message(e.__str__())
                         msg = 'Results of Job # '+`int(i_id)`+' have been corrupted and could not be retrieved.'
                         common.logger.message(msg)
                         common.jobDB.setStatus(int(i_id)-1, 'Z') 
-                    except ValueError,e:
-                        print "Warning : Scheduler interaction for getoutput operation failed for jobs:"
-                        print e.what(),'\n'
-                        pass
 #                elif bossTaskIdStatus == 'Running' :
 #                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible yet to retrieve the output.'
 #                    common.logger.message(msg)
@@ -752,16 +748,12 @@ class SchedulerBoss(Scheduler):
             try:
                 common.logger.message("Killing jobs # "+str(subm_id[0])+':'+str(subm_id[-1]))
                 self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]))
-            except ValueError,e:
-                print "Warning : Scheduler interaction failed for jobs:"
-                print e.what(),'\n'
+            except SchedulerError,e:
+                print "Warning : Scheduler interaction in kill operation failed for jobs:"
+                print e.__str__(),'\n'
                 pass
-            except RuntimeError,e:
+            except BossError,e:
                 common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id[0])+" . See log for details")
-            except ValueError,e:
-                print "Warning : Scheduler interaction on kill operation failed for jobs:"
-                print e.what(),'\n'
-                pass
                 
             for i in subm_id: common.jobDB.setStatus(i-1, 'K')
 
@@ -781,12 +773,12 @@ class SchedulerBoss(Scheduler):
                         status = v['STATUS']
                         if k in subm_id and status == 'K':
                             common.jobDB.setStatus(k - 1, 'K')
-                except RuntimeError,e:
-                    common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id[0])+" . See log for details")
-                except ValueError,e:
+                except SchedulerError,e:
                     print "Warning : Scheduler interaction on kill operation failed for jobs:"
-                    print e.what(),'\n'
+                    print e.__str__(),'\n'
                     pass
+                except BossError,e:
+                    common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id[0])+" . See log for details")
                 common.jobDB.save()
                 pass
             else:
@@ -882,15 +874,12 @@ class SchedulerBoss(Scheduler):
                 programs = self.bossTask.jobPrograms(c)
                 results[k]['EXE_EXIT_CODE'] = programs['1']['EXE_EXIT_CODE']
                 results[k]['JOB_EXIT_STATUS'] = programs['1']['JOB_EXIT_STATUS']
-        except ValueError,e:
+        except SchedulerError,e:
             print "Warning : Scheduler interaction failed for jobs:"
-            print e.what(),'\n'
+            print e.__str__(),'\n'
             pass
-        except RuntimeError,e:
+        except BossError,e:
             common.logger.message( e.__str__() )
-        except ValueError,e:
-            print "Warning : Scheduler interaction in query operation failed for jobs:"
-            print e.what(),'\n'
             pass
                 
         return results
@@ -909,16 +898,12 @@ class SchedulerBoss(Scheduler):
             task = self.bossTask.jobsDict()
             for k, v in task.iteritems():
                 results[k] = self.status[v['STATUS']]
-        except ValueError,e:
-            print "Warning : Scheduler interaction failed for jobs:"
-            print e.what(),'\n'
+        except SchedulerError,e:
+            print "Warning : Scheduler interaction on query operation failed for jobs:"
+            print e.__str__(),'\n'
             pass
-        except RuntimeError,e:
+        except BossError,e:
             common.logger.message( e.__str__() )
-        except ValueError,e:
-            print "Warning : Scheduler interaction in query operation failed for jobs:"
-            print e.what(),'\n'
-            pass
                 
         return results
 
@@ -940,16 +925,12 @@ class SchedulerBoss(Scheduler):
             task = self.bossTask.jobsDict()
             for k, v in task.iteritems():
                 results[int(k)] = self.status[v['STATUS']]
-        except ValueError,e:
-            print "Warning : Scheduler interaction failed for jobs:"
-            print e.what(),'\n'
+        except SchedulerError,e:
+            print "Warning : Scheduler interaction on query operation failed for jobs:"
+            print e.__str__(),'\n'
             pass
-        except RuntimeError,e:
+        except BossError,e:
             common.logger.message( e.__str__() )
-        except ValueError,e:
-            print "Warning : Scheduler interaction in query operation failed for jobs:"
-            print e.what(),'\n'
-            pass
                 
         return results
 
