@@ -130,17 +130,17 @@ class StatusBoss(Actor):
             ##SL For condor_g need to get some info from scheduler
             if common.scheduler.boss_scheduler_name == "condor_g" :
                 try:
-                    ldest = common.scheduler.queryDest(string.strip(bossid)) ##BOSS4 CHAIN_ID
+                    ldest = common.scheduler.queryDest(bossid) ##BOSS4 CHAIN_ID
                     if ( ldest.find(":") != -1 ) :
                         dest = ldest.split(":")[0]
                     else :
                         dest = ldest
-                        job_status_reason = ''
-                        job_last_time = ''
+                    job_status_reason = common.scheduler.getAttribute(bossid, 'reason')
+                    job_last_time = common.scheduler.getAttribute(bossid, 'stateEnterTime')
                 except: 
                     dest = ''  
-                    job_status_reason = common.scheduler.getAttribute(string.strip(bossid), 'reason')
-                    job_last_time = common.scheduler.getAttribute(string.strip(bossid), 'stateEnterTime')
+                    job_status_reason = common.scheduler.getAttribute(bossid, 'reason')
+                    job_last_time = common.scheduler.getAttribute(bossid, 'stateEnterTime')
                     pass
             else :
                 dest = ''
