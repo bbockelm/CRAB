@@ -613,12 +613,8 @@ class SchedulerCondor_g(Scheduler):
         dir      = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
   
-        #TaskName   
-        dir = string.split(common.work_space.topDir(), '/')
-        taskName = dir[len(dir)-2]
-
         xml.write(str(title))
-        xml.write('<task name="' +str(taskName)+'">\n')
+        xml.write('<task name="' +str(taskName)+'" sub_path="' + common.work_space.bossCache() + '">\n') 
         xml.write(jt_string)
 
         xml.write('<iterator>\n')
