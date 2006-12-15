@@ -3,7 +3,7 @@ from JobList import JobList
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-from GridCatService import GridCatHostService
+from GridCatService import *
 import time
 import common
 import popen2
@@ -74,22 +74,82 @@ class SchedulerCondor_g(Scheduler):
 
         # Very bad. Needed to get CE from the SE provided by DLS.
         # GridCat currently doesn't have the capability to provide this.
-        self.mapSEtoCE = {"cmssrm.hep.wisc.edu":"cmsgrid02.hep.wisc.edu", \
-                          "dcache.rcac.purdue.edu":"lepton.rcac.purdue.edu", \
-                          "srm1.phys.ufl.edu":"ufloridapg.phys.ufl.edu", \
-                          "thpc-1.unl.edu":"red.unl.edu", \
-                          "cithep59.ultralight.org":"cit-gatekeeper.ultralight.org", \
-                          "t2data2.t2.ucsd.edu":"osg-gw-2.t2.ucsd.edu", \
-                          "cmssrm.fnal.gov":"cmsosgce.fnal.gov", \
-                          "se01.cmsaf.mit.edu":"ce01.cmsaf.mit.edu", \
-                          "spraid.if.usp.br":"spgrid.if.usp.br", \
-                          "spdc00.if.usp.br":"spgrid.if.usp.br"} 
+        #self.mapSEtoCE = {"cmssrm.hep.wisc.edu":"cmsgrid02.hep.wisc.edu", \
+        #                  "dcache.rcac.purdue.edu":"lepton.rcac.purdue.edu", \
+        #                  "srm1.phys.ufl.edu":"ufloridapg.phys.ufl.edu", \
+        #                  "thpc-1.unl.edu":"red.unl.edu", \
+        #                  "cithep59.ultralight.org":"cit-gatekeeper.ultralight.org", \
+        #                  "t2data2.t2.ucsd.edu":"osg-gw-2.t2.ucsd.edu", \
+        #                  "cmssrm.fnal.gov":"cmsosgce.fnal.gov", \
+        #                  "se01.cmsaf.mit.edu":"ce01.cmsaf.mit.edu", \
+        #                  "spraid.if.usp.br":"spgrid.if.usp.br", \
+        #                  "spdc00.if.usp.br":"spgrid.if.usp.br"} 
+        gridcat_service_url = "http://osg-cat.grid.iu.edu/services.php"
+        # oneSite = self.mapSEtoCE[seSite]
+        #ce_hostnames=[]
+        self.gridCatSvc = None
+        try:
+            self.gridCatSvc = GridCatService(gridcat_service_url)
+        except StandardError, ex:
+            gridcat_service_url = "http://osg-itb.ivdgl.org/gridcat/services.php"
+            try:
+                self.gridCatSvc = GridCatService(gridcat_service_url)
+            except StandardError, ex:
+                    msg  = '[Condor-G Scheduler]: GridCatService is not available on OSG site!\n'
+                    msg += '[Condor-G Scheduler]: Direct Condor-G submission is not possible!\n'
+                    common.logger.message(msg)
+                    raise CrabException(msg)
         
         # create hash
         self.hash = makeCksum(common.work_space.cfgFileName())
 
         return
 
+    def getCEfromSE(self, seSite):
+
+        try:
+            ce_hostnames = self.gridCatSvc.mapSEtoCE(seSite)
+        except:
+            if self.cfg_params['CMSSW.datasetpath'] == 'None' :
+               msg="datasetpath is None so use EDG.ce_white_list"
+               common.logger.message(msg)
+               ce_hostnames = self.gridCatSvc.hostnames()
+               for i in range(len(ce_hostnames)):
+                  try:
+                     tmpCE = string.split(self.cfg_params['EDG.ce_white_list'],',')
+                  except KeyError:
+                     msg  = '[Condor-G Scheduler]: No CE in EDG.ce_white_list : '
+                     common.logger.message(msg)
+                     raise CrabException(msg)
+            
+                  if len(tmpCE) == 1 and ce_hostnames[i] == tmpCE[0] :
+                     oneSite=ce_hostnames[i]
+                     return oneSite
+            msg = "Quitting: unable to find CE for site "+str(seSite)   
+            common.logger.message(msg)
+            raise CrabException(msg)
+
+        oneSite=''
+        if ( len(ce_hostnames) == 1 ) :
+           oneSite=ce_hostnames[0]
+        elif ( len(ce_hostnames) > 1 ) :
+            if 'EDG.ce_white_list' in self.cfg_params.keys() and len(self.cfg_params['EDG.ce_white_list'].split(',')) == 1 and self.cfg_params['EDG.ce_white_list'].strip() in ce_hostnames :
+                oneSite = self.cfg_params['EDG.ce_white_list']
+            else :
+                msg  = '[Condor-G Scheduler]: More than one Compute Element (CE) is available for job submission.\n'
+                msg += '[Condor-G Scheduler]: Please select one of the following CE:\n'
+                msg += '[Condor-G Scheduler]:'
+                for host in ce_hostnames :
+                    msg += ' ' + host
+                msg += '\n'
+                msg += '[Condor-G Scheduler]: and enter this CE in the CE_white_list variable of the [EDG] section in your crab.cfg.\n'
+                common.logger.message(msg)
+                raise CrabException(msg)
+        else :
+           raise CrabException('[Condor-G Scheduler]: CE hostname(s) for SE '+seSite+' could not be determined from GridCat.')
+        
+        return oneSite
+        
     def checkExecutableInPath(self, name):
         # check if executable is in PATH
         cmd = 'which '+name
@@ -116,7 +176,7 @@ class SchedulerCondor_g(Scheduler):
         cmd = 'condor_config_val '+name
         cmd_out = runCommand(cmd)
         if cmd_out == 'TRUE' :
-            msg  = '[Condor-G Scheduler]: the variable '+name+' is not set to true for the condor installation on this machine.\m'
+            msg  = '[Condor-G Scheduler]: the variable '+name+' is not set to true for the condor installation on this machine.\n'
             msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation to set the variable '+name+' to true,',
             'use another machine with properly installed condor or change the Scheduler in your crab.cfg.'
             common.logger.message(msg)
@@ -134,6 +194,8 @@ class SchedulerCondor_g(Scheduler):
         return cmd_out
 
     def configure(self, cfg_params):
+
+        self.cfg_params = cfg_params
 
         try:
             self.group = cfg_params["EDG.group"]
@@ -545,7 +607,7 @@ class SchedulerCondor_g(Scheduler):
                 result = 'Done'
         elif ( attr == 'destination' ) :
             seSite = common.jobDB.destination(int(id)-1)[0]
-            oneSite = self.mapSEtoCE[seSite]
+            oneSite = self.getCEfromSE(seSite)
             result = oneSite
         elif ( attr == 'reason' ) :
             result = 'status query'
@@ -712,8 +774,29 @@ class SchedulerCondor_g(Scheduler):
 
         # use gridcat to query site
         seSite = common.jobDB.destination(nj-1)[0]
-        oneSite = self.mapSEtoCE[seSite]
         gridcat_service_url = "http://osg-cat.grid.iu.edu/services.php"
+        ## oneSite = self.mapSEtoCE[seSite]
+        oneSite = self.getCEfromSE(seSite)
+        #ce_hostnames=[]
+        #try:
+        #    gridCatSvc = GridCatService(gridcat_service_url)
+        #except StandardError, ex:
+        #    gridcat_service_url = "http://osg-itb.ivdgl.org/gridcat/services.php"
+        #    try:
+        #        gridCatSvc = GridCatService(gridcat_service_url)
+        #    except StandardError, ex:
+        #            msg  = '[Condor-G Scheduler]: GridCatService is not available on OSG site!\n'
+        #            msg += '[Condor-G Scheduler]: Direct Condor-G submission is not possible!\n'
+        #            common.logger.message(msg)
+        #            raise CrabException(msg)
+        # 
+        #try:
+        #    ce_hostnames = gridCatSvc.mapSEtoCE(seSite)
+        #except:
+        #    raise CrabException("Quitting: unable to find CE for site "+str(seSite))
+
+
+        
         hostSvc = ''
         try:
             hostSvc = GridCatHostService(gridcat_service_url,oneSite)

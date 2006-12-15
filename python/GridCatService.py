@@ -47,6 +47,35 @@ class GridCatService:
         """
         siteList = self._Server.sitenames().split()
         return siteList
+
+    def mapSEtoCE(self, se_hostname):
+        """
+        _mapSEtoCE_
+        returns CE(s) for an OSG SE
+        Default None
+        """
+        # special : Multipel SE -> Single CE
+        if se_hostname == "spraid.if.usp.br" : se_hostname = "spdc00.if.usp.br"
+        ce_hostnames=[]
+        try:
+           ce_hostnames.append(self._Server.getresult("sites", "ldap_server_hostname", "WHERE ss_gatekeeper_hostname='"+se_hostname+"'").strip())
+
+           # special : Mutiple CE <- Single SE
+           if ce_hostnames[0] == 'cithep90.ultralight.org' :
+              ce_hostnames=[]
+              ce_hostnames.append('cit-gatekeeper.ultralight.org')
+
+           if ce_hostnames[0] == 'ufloridapg.phys.ufl.edu' :
+              ce_hostnames.append('ufgrid01.phys.ufl.edu')
+              ce_hostnames.append('iogw1.hpc.ufl.edu')
+
+           if ce_hostnames[0] == 'osg.rcac.purdue.edu' :
+              ce_hostnames.append('lepton.rcac.purdue.edu')
+              
+        except StandardError, ex:
+           ce_hostnames=None
+           
+        return ce_hostnames
     
 
 
