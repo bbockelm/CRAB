@@ -74,6 +74,8 @@ class DataDiscovery:
             self.datasets = dbs.getMatchingDatasets(self.datasetPath)
         except dbsCgiApi.DbsCgiExecutionError, msg:
             raise DataDiscoveryError(msg)
+        except DBSError, msg:
+            raise DataDiscoveryError(msg)
 
         if len(self.datasets) == 0:
             raise DataDiscoveryError("DatasetPath=%s unknown to DBS" %self.datasetPath)
