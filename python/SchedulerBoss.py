@@ -244,9 +244,8 @@ class SchedulerBoss(Scheduler):
  #           self.schclassad = common.work_space.shareDir()+'/'+self.boss_scheduler.param
  #       except:
  #           pass  
-    
-        
-        bossAdmin = BossAdministratorSession(self.bossConfigDir)
+     
+        bossAdmin = BossAdministratorSession(self.bossConfigDir, "3", common.work_space.logDir()+'/'+self.bossLogFile)    
         
         try:
             if (int(cfg_params["USER.use_central_bossdb"])==0):
