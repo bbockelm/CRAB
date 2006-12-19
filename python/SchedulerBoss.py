@@ -8,12 +8,7 @@ import os, sys, tempfile, shutil, time
 from shutil import copyfile
 import Statistic
 
-from BossSession import BossSession
-from BossSession import BossTask
-from BossSession import SUBMITTED
-from BossSession import ALL
-from BossSession import BossAdministratorSession
-
+from BossSession import *
 
 class SchedulerBoss(Scheduler):
     def __init__(self):

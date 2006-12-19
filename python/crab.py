@@ -18,11 +18,7 @@ from Cleaner import Cleaner
 import common
 import Statistic
 
-from BossSession import BossSession
-from BossSession import BossTask
-from BossSession import SUBMITTED
-from BossSession import ALL
-from BossSession import BossAdministratorSession
+from BossSession import *
 
 import sys, os, time, string
 
