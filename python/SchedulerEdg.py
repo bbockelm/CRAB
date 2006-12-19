@@ -700,7 +700,7 @@ class SchedulerEdg(Scheduler):
         taskName = dir[len(dir)-2]
 
         xml.write(str(title))
-        xml.write('<task name="' +str(taskName)+'" sub_path="' + common.work_space.bossCache() + '">\n') 
+        xml.write('<task name="' +str(taskName)+'" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache">\n') 
         xml.write(jt_string)
         
         if (to_write != ''):
