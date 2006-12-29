@@ -59,6 +59,13 @@ class PsetManipulator:
         inModule.setPythiaVtxSeed(self.cfg,vtxSeed)
         return 
 
+    def pythiaFirstRun(self, firstrun):
+        """ """ 
+        # set input module
+        inModule = self.cfg.inputSource
+        inModule.setFirstRun(firstrun)   ## Add Daniele 
+        return
+
     def maxEvent(self, maxEv):
         """ """ 
         # set input module

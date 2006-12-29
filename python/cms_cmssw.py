@@ -211,6 +211,11 @@ class Cmssw(JobType):
         except KeyError:
             self.sourceSeedVtx = None
             common.logger.debug(5,"No vertex seed given")
+        try:
+            self.firstRun = int(cfg_params['CMSSW.first_run'])
+        except KeyError:
+            self.firstRun = None
+            common.logger.debug(5,"No first run given")
         if self.pset != None: #CarlosDaniele
             self.PsetEdit = PsetManipulator.PsetManipulator(self.pset) #Daniele Pset
 
@@ -247,6 +252,8 @@ class Cmssw(JobType):
                     self.PsetEdit.skipEvent("INPUTSKIPEVENTS")
                 else:  # pythia like job
                     self.PsetEdit.maxEvent(self.eventsPerJob)
+                    if (self.firstRun):
+                        self.PsetEdit.pythiaFirstRun("INPUTFIRSTRUN")  #First Run
                     if (self.sourceSeed) :
                         self.PsetEdit.pythiaSeed("INPUT")
                         if (self.sourceSeedVtx) :
@@ -536,20 +543,36 @@ class Cmssw(JobType):
             ## Since there is no input, any site is good
            # self.jobDestination.append(["Any"])
             self.jobDestination.append([""]) #must be empty to write correctly the xml 
+            args='' 
+            if (self.firstRun):
+                    ## pythia first run
+                #self.list_of_args.append([(str(self.firstRun)+str(i))])
+                args=args+(str(self.firstRun)+str(i))
+            else:
+                ## no first run
+                #self.list_of_args.append([str(i)])
+                args=args+str(i)
             if (self.sourceSeed):
                 if (self.sourceSeedVtx):
                     ## pythia + vtx random seed
-                    self.list_of_args.append([
-                                              str(self.sourceSeed)+str(i),
-                                              str(self.sourceSeedVtx)+str(i)
-                                              ])
+                    #self.list_of_args.append([
+                    #                          str(self.sourceSeed)+str(i),
+                    #                          str(self.sourceSeedVtx)+str(i)
+                    #                          ])
+                    args=args+str(',')+str(self.sourceSeed)+str(i)+str(',')+str(self.sourceSeedVtx)+str(i)
                 else:
                     ## only pythia random seed
-                    self.list_of_args.append([(str(self.sourceSeed)+str(i))])
+                    #self.list_of_args.append([(str(self.sourceSeed)+str(i))])
+                    args=args +str(',')+str(self.sourceSeed)+str(i)
             else:
                 ## no random seed
-                self.list_of_args.append([str(i)])
-        #print self.list_of_args
+                if str(args)=='': args=args+(str(self.firstRun)+str(i))
+            arguments=args.split(',')
+            if len(arguments)==3:self.list_of_args.append([str(arguments[0]),str(arguments[1]),str(arguments[2])])
+            elif len(arguments)==2:self.list_of_args.append([str(arguments[0]),str(arguments[1])])
+            else :self.list_of_args.append([str(arguments[0])])
+            
+     #   print self.list_of_args
 
         return
 
@@ -827,20 +850,28 @@ class Cmssw(JobType):
                 txt += 'sed "s#INPUTSKIPEVENTS#$SkipEvents#" pset_tmp_2.cfg > pset.cfg\n'
             else:  # pythia like job
                 if (self.sourceSeed):
-#                    txt += 'Seed=$2\n'
-                    txt += 'Seed=${args[1]}\n'
-                    txt += 'echo "Seed: <$Seed>"\n'
-                    txt += 'sed "s#\<INPUT\>#$Seed#" $RUNTIME_AREA/'+pset+' > tmp.cfg\n'
-                    if (self.sourceSeedVtx):
-#                        txt += 'VtxSeed=$3\n'
-                        txt += 'VtxSeed=${args[2]}\n'
-                        txt += 'echo "VtxSeed: <$VtxSeed>"\n'
-                        txt += 'sed "s#INPUTVTX#$VtxSeed#" tmp.cfg > pset.cfg\n'
-                    else:
-                        txt += 'mv tmp.cfg pset.cfg\n'
+                    txt += 'FirstRun=${args[1]}\n'
+                    txt += 'echo "FirstRun: <$FirstRun>"\n'
+                    txt += 'sed "s#\<INPUTFIRSTRUN\>#$FirstRun#" $RUNTIME_AREA/'+pset+' > tmp_1.cfg\n'
                 else:
                     txt += '# Copy untouched pset\n'
-                    txt += 'cp $RUNTIME_AREA/'+pset+' pset.cfg\n'
+                    txt += 'cp $RUNTIME_AREA/'+pset+' tmp_1.cfg\n'
+                if (self.sourceSeed):
+#                    txt += 'Seed=$2\n'
+                    txt += 'Seed=${args[2]}\n'
+                    txt += 'echo "Seed: <$Seed>"\n'
+                    txt += 'sed "s#\<INPUT\>#$Seed#" tmp_1.cfg > tmp_2.cfg\n'
+                    if (self.sourceSeedVtx):
+#                        txt += 'VtxSeed=$3\n'
+                        txt += 'VtxSeed=${args[3]}\n'
+                        txt += 'echo "VtxSeed: <$VtxSeed>"\n'
+                        txt += 'sed "s#INPUTVTX#$VtxSeed#" tmp_2.cfg > pset.cfg\n'
+                    else:
+                        txt += 'mv tmp_2.cfg pset.cfg\n'
+                else:
+                    txt += 'mv tmp_1.cfg pset.cfg\n'
+                   # txt += '# Copy untouched pset\n'
+                   # txt += 'cp $RUNTIME_AREA/'+pset+' pset.cfg\n'
 
 
         if len(self.additional_inbox_files) > 0:
