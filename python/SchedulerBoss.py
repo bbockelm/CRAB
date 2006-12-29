@@ -244,8 +244,8 @@ class SchedulerBoss(Scheduler):
  #           self.schclassad = common.work_space.shareDir()+'/'+self.boss_scheduler.param
  #       except:
  #           pass  
-     
-        bossAdmin = BossAdministratorSession(self.bossConfigDir, "3", common.work_space.logDir()+'/'+self.bossLogFile)    
+    
+        bossAdmin = BossAdministratorSession(self.bossConfigDir, "3", common.work_space.logDir()+'/'+self.bossLogFile) 
         
         try:
             if (int(cfg_params["USER.use_central_bossdb"])==0):
@@ -597,10 +597,11 @@ class SchedulerBoss(Scheduler):
             os.mkdir(resDirSave)
 
         boss_id = int(int_id)
-        
         try:
-            self.bossTask.load (ALL, tmpQ )
+            self.bossTask.load (ALL,tmpQ  )
             task = self.bossTask.jobsDict()
+            print task
+ 
             cmd_out = task[int_id]['CHAIN_OUTFILES']
         except BossError,e:
             common.logger.message( e.__str__() )
@@ -694,18 +695,18 @@ class SchedulerBoss(Scheduler):
                         msg = 'Results of Job # '+`int(i_id)`+' have been corrupted and could not be retrieved.'
                         common.logger.message(msg)
                         common.jobDB.setStatus(int(i_id)-1, 'Z') 
-#                elif bossTaskIdStatus == 'Running' :
-#                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible yet to retrieve the output.'
-#                    common.logger.message(msg)
-#                elif bossTaskIdStatus == 'Cleared' :
-#                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. The output was already retrieved.'
-#                    common.logger.message(msg)
-#                elif bossTaskIdStatus == 'Aborted' :
-#                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible to retrieve the output.'
-#                    common.logger.message(msg)
-#                else:
-#                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is currently not possible to retrieve the output.'
-#                    common.logger.message(msg)
+                elif bossTaskIdStatus == 'Running' :
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible yet to retrieve the output.'
+                    common.logger.message(msg)
+                elif bossTaskIdStatus == 'Cleared' :
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. The output was already retrieved.'
+                    common.logger.message(msg)
+                elif bossTaskIdStatus == 'Aborted' :
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible to retrieve the output.'
+                    common.logger.message(msg)
+                else:
+                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is currently not possible to retrieve the output.'
+                    common.logger.message(msg)
                 dir += os.environ['USER']
                 dir += '_' + os.path.basename(str(boss_id))
             pass
