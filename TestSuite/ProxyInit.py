@@ -29,7 +29,7 @@ class ProxyInit:
 
         child = popen2.Popen3(cmd, 1) # capture stdout and stderr from command
         child.tochild.close()             # don't need to talk to child
-        outfile = child.fromchild 
+        outfile = child.fromchild
         outfd = outfile.fileno()
         errfile = child.childerr
         errfd = errfile.fileno()
@@ -38,7 +38,7 @@ class ProxyInit:
         outdata = []
         errdata = []
         outeof = erreof = 0
- 
+
         if timeout > 0 :
             maxwaittime = time.time() + timeout
 
