@@ -195,22 +195,29 @@ class Session:
             local, remote = self.jobsHistory.getJobStatus(i)
             host, exitcode, exitstatus = self.jobsHistory.getJobAttrs(i)
 
-            if not exitcode or not exitstatus:
-                self.logger.warning("Job "+str(i)+" not ended cleanly: EXITCODE="+str(exitcode)+" EXITSTATUS="+str(exitstatus))
-
             if not remote in CLEARED:
                 raise TestException, "Status of job "+str(i)+" after getoutput isn't correctly cleared!"
 
             # Checking the existance of output files in the UI
-            for name in self.outNames:
-                self.logger.debug("Verifing "+name+" was retrieved...")
-                name = name.rsplit(".",1)
-                assert(len(name) == 2)
-                name = os.path.join(self.cwd, "res", name[0]+"_"+str(i)+"."+name[1])
-                try:
-                    open(name, "rb").close()
-                except IOError:
-                    raise TestException, "Output "+name+ "for job "+str(i)+" doesn't exist!"
+            try:
+                for name in self.outNames:
+                    self.logger.debug("Verifing "+name+" was retrieved...")
+                    name = name.rsplit(".",1)
+                    assert(len(name) == 2)
+                    name = os.path.join(self.cwd, "res", name[0]+"_"+str(i)+"."+name[1])
+                    try:
+                        open(name, "rb").close()
+                    except IOError:
+                        raise TestException, "Output "+name+ " for job "+str(i)+" doesn't exist!"
+            except TestException, txt:
+                if not exitcode or not exitstatus: # The job hasn't correctly ended
+                    self.logger.error(txt) # no need to say crab failed
+                else:
+                    raise TestException, txt # well, maybe here crab failed!
+    
+            if not exitcode or not exitstatus:
+                self.logger.warning("Job "+str(i)+" not ended cleanly: EXITCODE="+str(exitcode)+" EXITSTATUS="+str(exitstatus))
+
     
         return getoutput
 
@@ -272,7 +279,7 @@ class Session:
             if expectedIds:
                 raise TestException
         
-        if (not set(expectedIds) == set(submitted)):
+        if not (set(expectedIds) == set(submitted)):
             raise TestException, "crab didn't succeed in resubmitting every output"
 
         for i in expectedIds:
@@ -289,7 +296,7 @@ class Session:
     def crabPostMortem(self):
         cmd = ['-postMortem', '-c', str(self.cwd)]
         self.crabRunner(cmd)
-        cmd = ['-status', '-debug', '10', '-c', str(self.cwd)]
-        returncode, outdata, errdata = self.crabRunner(cmd)
-        return returncode, outdata, errdata
+        #cmd = ['-status', '-debug', '10', '-c', str(self.cwd)]
+        #returncode, outdata, errdata = self.crabRunner(cmd)
+        #return returncode, outdata, errdata
         

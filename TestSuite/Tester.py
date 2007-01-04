@@ -51,9 +51,10 @@ class Tester(threading.Thread):
             self.logger.error("\n--- Last command STDOUT ---\n"+outdata+"\n----------------------- ---\n")
             self.logger.error("\n--- Last command STDERR ---\n"+errdata+"\n----------------------- ---\n")
         self.logger.error("\nJobs history\n"+s.jobsHistory.__repr__())
-        returncode, outdata, errdata = s.crabPostMortem()
-        self.logger.error("\n--- Crab -status STDOUT ---\n"+outdata+"\n----------------------- ---\n")
-        self.logger.error("\n--- Crab -status STDERR ---\n"+errdata+"\n----------------------- ---\n")
+        #returncode, outdata, errdata = s.crabPostMortem()
+        s.crabPostMortem()
+        #self.logger.error("\n--- Crab -status STDOUT ---\n"+outdata+"\n----------------------- ---\n")
+        #self.logger.error("\n--- Crab -status STDERR ---\n"+errdata+"\n----------------------- ---\n")
         self.filelog.close()
 
     def linearTester(self, session):
@@ -111,8 +112,10 @@ class Tester(threading.Thread):
                 clearedJobs = session.jobsHistory.getJobsInRemoteStatus(CLEARED)
                 killedJobs = session.jobsHistory.getJobsInRemoteStatus(KILLED)
                 abortedJobs = session.jobsHistory.getJobsInRemoteStatus(BAD)
+                waitingJobs = session.jobsHistory.getJobsInRemoteStatus(WAITING)
+                submittedJobs = session.jobsHistory.getJobsInRemoteStatus(SUBMITTED)
 
-                killable = runningJobs
+                killable = runningJobs | waitingJobs | submittedJobs
                 retrievable = doneJobs
                 resubmittable = abortedJobs | killedJobs
 
@@ -159,7 +162,7 @@ class Tester(threading.Thread):
         else: # Un sottoinsieme di tutti i job
             ret = [x for x in range(1, tot+1) if random.random() > .25]
         if ret:
-            return ret
+            return set(ret)
         else:
-            return jobsList
+            return set(jobsList)
 
