@@ -4,7 +4,7 @@ import threading, os, time
 import random
 
 class Tester(threading.Thread):
-    def __init__(self, configFile, name, timeout):
+    def __init__(self, configFile, name, timeout, debug = False):
         """ Tester constructor.
 
         Tester constructor: configFile is the path to crab.cfg, name is a identification name for the test and timeout is the
@@ -17,11 +17,16 @@ class Tester(threading.Thread):
         self.name = name
         self.root = os.path.abspath(name+"-"+time.strftime("%Y%m%d%H%M%S")) # basename for the test and the log file.
         self.timeout = timeout
+        self.debug = debug
         
         self.logger = logging.getLogger(self.name)
-        self.logger.setLevel(logging.INFO)
         self.filelog = logging.FileHandler(filename=self.name+"-"+time.strftime("%Y%m%d%H%M%S")+".log")
-        self.filelog.setLevel(logging.INFO)
+        if self.debug:
+            self.logger.setLevel(logging.DEBUG)
+            self.filelog.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
+            self.filelog.setLevel(logging.INFO)
         #self.stdout = logging.StreamHandler()
         #self.stdout.setLevel(logging.INFO)
         formatter = logging.Formatter("%(asctime)s\t%(levelname)s\t%(message)s")
@@ -37,12 +42,6 @@ class Tester(threading.Thread):
             s = Session(self.logger, self.configFile, self.root+"-linear")
             self.linearTester(s)
             self.logger.info("Linear Test ended successfully!")
-
-            self.logger.info("Running Wow Test")
-            s = Session(self.logger, self.configFile, self.root+"-wow")
-            self.wowTester(s)
-            self.logger.info("Wow Test ended successfully!")
-
         except TestException, txt:
             self.logger.error(txt)
         except CrabException, (cmd, returncode, outdata, errdata):
@@ -51,11 +50,27 @@ class Tester(threading.Thread):
             self.logger.error("\n--- Last command STDOUT ---\n"+outdata+"\n----------------------- ---\n")
             self.logger.error("\n--- Last command STDERR ---\n"+errdata+"\n----------------------- ---\n")
         self.logger.error("\nJobs history\n"+s.jobsHistory.__repr__())
-        #returncode, outdata, errdata = s.crabPostMortem()
         s.crabPostMortem()
-        #self.logger.error("\n--- Crab -status STDOUT ---\n"+outdata+"\n----------------------- ---\n")
-        #self.logger.error("\n--- Crab -status STDERR ---\n"+errdata+"\n----------------------- ---\n")
-        self.filelog.close()
+        s.logger.info("Please clean "+s.cwd+" by hand.")
+
+        try:
+            self.logger.info("Running Wow Test")
+            s = Session(self.logger, self.configFile, self.root+"-wow")
+            self.wowTester(s)
+            self.logger.info("Wow Test ended successfully!")
+        except TestException, txt:
+            self.logger.error(txt)
+        except CrabException, (cmd, returncode, outdata, errdata):
+            self.logger.error("Error executing: "+str(cmd))
+            self.logger.error("Return log: "+returncode)
+            self.logger.error("\n--- Last command STDOUT ---\n"+outdata+"\n----------------------- ---\n")
+            self.logger.error("\n--- Last command STDERR ---\n"+errdata+"\n----------------------- ---\n")
+        self.logger.error("\nJobs history\n"+s.jobsHistory.__repr__())
+        s.crabPostMortem()
+        s.logger.info("Please clean "+s.cwd+" by hand.")
+
+
+
 
     def linearTester(self, session):
         session.crabCreate()
@@ -84,7 +99,6 @@ class Tester(threading.Thread):
         if len(jobsCleared) < session.totJobs:
             session.logger.warning("Not every output was retrieved!")
         session.logger.info("Linear test completed!")
-        session.logger.info("Please clean "+session.cwd+" by hand.")
 
     def wowTester(self, session):
         toSubmit = session.crabCreate()
@@ -115,7 +129,7 @@ class Tester(threading.Thread):
                 waitingJobs = session.jobsHistory.getJobsInRemoteStatus(WAITING)
                 submittedJobs = session.jobsHistory.getJobsInRemoteStatus(SUBMITTED)
 
-                killable = runningJobs | waitingJobs | submittedJobs
+                killable = runningJobs 
                 retrievable = doneJobs
                 resubmittable = abortedJobs | killedJobs
 
@@ -127,13 +141,13 @@ class Tester(threading.Thread):
                     session.crabGetOutput(toRetrieve, retrievable & toRetrieve)
                     getoutputTest = True
                     session.logger.info("Getoutput tests: OK!")
-                elif resubmittable and random.random() > 0.5:
+                elif resubmittable and random.random() > 0.50:
                     self.logger.debug("resubmitting")
                     toResubmit = self.randomList(resubmittable, session.totJobs)
                     session.crabResubmit(toResubmit, resubmittable & toResubmit)
                     resubmitTest = True
                     session.logger.info("Resubmit tests: OK!")
-                elif killable and random.random() > 0.75:
+                elif killable and random.random() > 0.90:
                     self.logger.debug("killing")
                     toKill = self.randomList(killable, session.totJobs)
                     session.crabKill(toKill, killable & toKill)
@@ -149,7 +163,6 @@ class Tester(threading.Thread):
             session.logger.warning("Not tested crab -getoutput")
                         
         session.logger.info("Linear test completed!")
-        session.logger.info("Please clean "+session.cwd+" by hand.")
 
     def randomList(self, jobsList, tot):
         r = random.random()

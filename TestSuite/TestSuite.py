@@ -92,7 +92,7 @@ class TestSuite:
         logging.debug('Starting tests...')
         tests = []
         for (nicename, cfg, timeout) in self.t:
-            test = Tester (cfg, nicename, timeout)
+            test = Tester (cfg, nicename, timeout, self.options.debug)
             logging.debug('Thread '+test.getName()+' initialized')
             tests.append(test)
             test.start()

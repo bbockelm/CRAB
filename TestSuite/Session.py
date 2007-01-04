@@ -273,23 +273,24 @@ class Session:
         if not expectedIds:
             expectedIds = jobIds
 
+        for i in expectedIds:
+            self.jobsHistory.setLocalJobStatus(i, 'resubmitted')
+
         try:
             resubmitted = parseSubmit(outdata)
         except TestException, txt:
             if expectedIds:
-                raise TestException
+                raise TestException, txt
         
-        if not (set(expectedIds) == set(submitted)):
-            raise TestException, "crab didn't succeed in resubmitting every output"
+        if not (set(expectedIds) == set(resubmitted)):
+            raise TestException, "crab didn't succeed in resubmitting every excpected job"
 
-        for i in expectedIds:
-            self.jobsHistory.setLocalJobStatus(i, 'resubmitted')
         
         self.crabStatus()
 
         for i in expectedIds:
             local, remote = self.jobsHistory.getJobStatus(i)
-            if not (remote in WAITING or remote in RUNNING or remote in DONE):
+            if not (remote in SUBMITTED or remote in WAITING or remote in RUNNING or remote in DONE):
                 raise TestException, "Job "+str(i)+" not resubmitted correctly!"
         return set(expectedIds)
 
