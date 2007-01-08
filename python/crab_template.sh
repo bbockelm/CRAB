@@ -21,6 +21,12 @@ echo "Working directory `pwd`"
 ls -Al
 repo=jobreport.txt
 
+echo "tar zxvf MLfiles.tgz"
+tar zxvf MLfiles.tgz
+if [ $? -ne 0 ]; then
+    echo "Warning: Failed to untar ML files"
+fi    
+
 #
 # END OF HEAD
 #
@@ -33,11 +39,11 @@ repo=jobreport.txt
 # PREPARE AND RUN EXECUTABLE
 #
 
-#CRAB build_executable
-
 #CRAB setup_scheduler_environment
 
 #CRAB setup_jobtype_environment
+
+#CRAB build_executable
 
 #
 # END OF SETUP ENVIRONMENT
