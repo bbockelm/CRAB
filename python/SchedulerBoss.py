@@ -595,34 +595,24 @@ class SchedulerBoss(Scheduler):
         if not os.path.exists(resDirSave):
             os.mkdir(resDirSave)
 
-        boss_id = int(int_id)
+        boss_id = str(int_id)
         try:
-            self.bossTask.load (ALL,tmpQ  )
+            self.bossTask.load (ALL, boss_id )
             task = self.bossTask.jobsDict()
-            print task
- 
-            cmd_out = task[int_id]['CHAIN_OUTFILES']
+            programs = self.bossTask.jobPrograms(boss_id)
+            cmd_out = programs['1']['OUTFILES']
         except BossError,e:
             common.logger.message( e.__str__() )
+        
+        files = cmd_out.split(',')
+        for i in files:
+            if os.path.exists(self.outDir+'/'+i):
+                os.rename(self.outDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
+                common.logger.message('Output file '+i+' moved to '+resDirSave)
 
-        nline = 0
-        for line in cmd_out.splitlines():
-            if nline == 3:
-                files = line.split(',')
-                for i in files:
-                    i=i.strip()
-                    i=i.strip('{}')
-                    i=i.strip()
-                    i=i.strip('"')
-                                    
-                    if os.path.exists(self.outDir+'/'+i):
-                        os.rename(self.outDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
-                        common.logger.message('Output file '+i+' moved to '+resDirSave)
-
-                    if os.path.exists(self.logDir+'/'+i):
-                        os.rename(self.logDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
-                        common.logger.message('Output file '+i+' moved to '+resDirSave)
-            nline = nline + 1
+            if os.path.exists(self.logDir+'/'+i):
+                os.rename(self.logDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
+                common.logger.message('Output file '+i+' moved to '+resDirSave)
         return
 
 

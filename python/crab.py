@@ -588,7 +588,7 @@ class Crab:
                             if st in ['K','SA','Z']:
                                 nj_list.append(int(nj)-1)
                                 common.jobDB.setStatus(int(nj)-1,'C')
-                            elif st == 'SE':
+                            elif st in ['E','SE']:
                                 common.scheduler.moveOutput(nj)
                                 nj_list.append(int(nj)-1)
                                 st = common.jobDB.setStatus(int(nj)-1,'RC')
