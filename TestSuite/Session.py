@@ -95,7 +95,7 @@ class Session:
             raise TestException, "Can't get the WD!"
         
         for i in range(1, self.totJobs+1):
-            self.jobsHistory.setLocalJobStatus(i, 'created')
+            self.jobsHistory.setLocalJobStatus(i, 'create')
         
         self.crabStatus()
         
@@ -138,7 +138,7 @@ class Session:
         submitted = parseSubmit(outdata)
 
         for i in range(self.submitted+1, self.submitted+submitted+1):
-            self.jobsHistory.setLocalJobStatus(i, 'submitted')
+            self.jobsHistory.setLocalJobStatus(i, 'submit')
         
         self.logger.info("#### submitting -> "+self.jobIds2str(range(self.submitted+1, self.submitted+submitted+1)))
         
@@ -185,11 +185,12 @@ class Session:
             if expectedIds:
                 raise TestException, txt
 
+        for i in getoutput:
+            self.jobsHistory.setLocalJobStatus(i, 'getouput')
+
         if expectedIds > getoutput: # If something was retrievable but wasn't retrieved
             raise TestException, "Crab didn't succeed in getting every output requested!"
 
-        for i in getoutput:
-            self.jobsHistory.setLocalJobStatus(i, 'retrieved')
 
         self.crabStatus()
         
@@ -240,18 +241,20 @@ class Session:
         
         returncode, outdata, errdata = self.crabRunner(cmd)
 
-
         if not expectedIds:
             expectedIds = jobIds
 
         for i in expectedIds:
-            self.jobsHistory.setLocalJobStatus(i, 'killed')
-        time.sleep(10) # Wait for jobs to die!
+            self.jobsHistory.setLocalJobStatus(i, 'kill')
+        
+        time.sleep(10) # Wait for jobs to die! -> Hack!
         self.crabStatus()
         for i in expectedIds:
             local, remote = self.jobsHistory.getJobStatus(i)
-            if not remote in KILLED:
+            if not remote in KILLED and not remote in DONE:
                 raise TestException, "Status of job "+str(i)+" after killing isn't aborted or killed!"
+            elif remote in DONE:
+                self.logger.warning("Job "+str(i)+" ended before killing")
 
         return set(expectedIds)
 
@@ -276,19 +279,18 @@ class Session:
             expectedIds = jobIds
 
         for i in expectedIds:
-            self.jobsHistory.setLocalJobStatus(i, 'resubmitted')
+            self.jobsHistory.setLocalJobStatus(i, 'resubmit')
 
+        resubmitted = 0
         try:
             resubmitted = parseSubmit(outdata)
         except TestException, txt:
             if expectedIds:
                 raise TestException, txt
 
-        if resubmitted and expectedIds:
-            if not (set(expectedIds) <= set(resubmitted)):
+        if expectedIds:
+            if resubmitted < len(expectedIds):
                 raise TestException, "crab didn't succeed in resubmitting every excpected job!"
-        if not resubmitted and expectedIds:
-            raise TestException, "crab didn't resubmit any job!"
 
 
         

@@ -121,7 +121,6 @@ class TestSuite:
 
 
 if __name__=='__main__':
+    checkProxies()
     t = TestSuite()
-    p = ProxyInit(t.t[0][1]) # Necessary!
-    p.checkProxy() # Necessary!
     t.mainThreads()

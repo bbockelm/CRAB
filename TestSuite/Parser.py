@@ -7,8 +7,8 @@ from Session import *
 #                                                               #
 # crab. Total of 3 jobs created. -> created = 3
 createdRE = re.compile("crab\. Total of (?P<created>[\\d]*) jobs created\.")
-# crab. Total of 3 jobs submitted. -> 
-submittedRE = re.compile("crab\. Total of (?P<submitted>[\\d]*) jobs submitted\.")
+# crab. Total of 7 jobs submitted (from 3 requested).
+submittedRE = re.compile("crab\. Total of (?P<submitted>[\\d]*) jobs submitted( \(from (?P<requested>[\\d]*) requested\))?\.")
 # crab. Results of job # 3 are in /afs/cern.ch/user/s/skaplun/scratch0/prova/crab_xxx/res
 getoutputRE = re.compile("crab\. Results of Job # (?P<jobid>[\\d]*) are in .*")
 # >>>>>>>>> 3 Total Jobs
@@ -38,8 +38,14 @@ def parseSubmit(text):
     for line in text.split("\n"):
         g = submittedRE.search(line)
         if g:
-            return int(g.group("submitted"))
-    raise TestException, "Possible troubles in parsing crab -submit"
+            submitted = int(g.group("submitted"))
+            requested = g.group("requested")
+            if requested:
+                requested = int(requested)
+                if requested < submitted:
+                    raise TestException, "More jobs submitted than requested"
+            return submitted
+    raise TestException, "Possible troubles in parsing crab -(re)submit"
 
 def parseGetOutput(text):
     """ Parses crab -getoutput returning the set of jobIds retrieved. """

@@ -4,15 +4,34 @@ from Tester import Tester
 import random
 
 class WowTester(Tester):
+    """ This class implements a complex behavioural test for CRAB stressing it in all its main action. """
     def __init__(self, configFile, name, timeout, debug = False):
+        """ WowTester constructor.
+
+        WowTester constructor: configFile is the path to crab.cfg, name is a identification name for the test and timeout is the
+        time after which the test is stopped.
+        """
         Tester.__init__(self, configFile, name+"-wow", timeout, debug)
 
     def testAction(self, name, jobList, debugName):
+        """ Handy method to test a particular crab action.
+
+        name is the actual name of the action among getoutput, kill and resubmit.
+        jobList is the list of jobs number to pass to the action.
+        debugName is a name to print on the debug screen.
+        This method call Crab with the requested action, passing it a job list built from
+        the parameter jobList, and check its result, updating the tests statistics.
+        """
         self.logger.debug(debugName)
-        actualJobList = self.randomList(jobList, self.session.totJobs)
+        jobList = set(jobList)
+        actualJobList = self.randomList(jobList, self.session.totJobs) 
         try:
             if name == "getoutput":
                 self.session.crabGetOutput(actualJobList, jobList & actualJobList)
+            if name == "kill":
+                self.session.crabKill(actualJobList, jobList & actualJobList)
+            if name == "resubmit":
+                self.session.crabResubmit(actualJobList, jobList & actualJobList)
         except TestException, txt:
             self.dumpError(txt)
             self.tests[name] = False
@@ -21,31 +40,36 @@ class WowTester(Tester):
         
     
     def test(self):
-        self.tests["create"] = False
-        toSubmit = self.session.crabCreate()
+        """ The Wow Test :-). """
+
+        # Creation
+        self.tests["create"] = False 
+        toSubmit = self.session.crabCreate() # toSubmit is a set of job created
         self.tests["create"] = True
 
+        # Main cicle
         while self.checkTimeout():
+            # Status update
             self.session.crabStatus()
             if self.session.jobsHistory.isChanged():
                 self.session.logger.info(str(self.session.jobsHistory))
-            clearedJobs = set()
-            if len(toSubmit) > 0 and random.random() > .75:
+            # Submit with a certain probability and if it is possible
+            if (len(toSubmit) > 0 and random.random() > .75) or len(toSubmit) == self.session.totJobs:
                 self.logger.debug("submitting...")
                 weSubmit = random.randint(1, len(toSubmit))
                 self.tests["submit"] = False
                 submitted = self.session.crabSubmit(weSubmit)
                 self.tests["submit"] = True
-                toSubmit.difference_update(submitted) # rimuovo dai job da sottomettere quelli sottomessi
+                toSubmit.difference_update(submitted) # Subtracting the job submitted from those to submit
+                clearedJobs = set() # hack
             else:
+                # other actions
                 self.logger.debug("playing...")
                 runningJobs = self.session.jobsHistory.getJobsInRemoteStatus(RUNNING)
                 doneJobs = self.session.jobsHistory.getJobsInRemoteStatus(DONE)
                 clearedJobs = self.session.jobsHistory.getJobsInRemoteStatus(CLEARED)
                 killedJobs = self.session.jobsHistory.getJobsInRemoteStatus(KILLED)
                 abortedJobs = self.session.jobsHistory.getJobsInRemoteStatus(BAD)
-                waitingJobs = self.session.jobsHistory.getJobsInRemoteStatus(WAITING)
-                submittedJobs = self.session.jobsHistory.getJobsInRemoteStatus(SUBMITTED)
 
                 killable = runningJobs 
                 retrievable = doneJobs
@@ -63,6 +87,3 @@ class WowTester(Tester):
             
             if len(clearedJobs) == self.session.totJobs:
                 break;
-
-
-        
