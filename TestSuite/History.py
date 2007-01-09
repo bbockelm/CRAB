@@ -184,5 +184,5 @@ class History:
             local, remote = job.getStatus()
             statusList.add(remote)
         for status in statusList:
-            ret += str(status)+"->"+self.jobIds2str(self.getJobsInRemoteStatus(status))+", "
+            ret += str(status)+"->"+self.jobIds2str(self.getJobsInRemoteStatus([status]))+", "
         return ret[:-2]

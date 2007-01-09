@@ -3,6 +3,8 @@
 import os, sys, logging, subprocess, time
 from optparse import OptionParser
 from Tester import *
+from WowTester import WowTester
+from LinearTester import LinearTester
 from os import path
 from subprocess import Popen
 from ProxyInit import *
@@ -21,10 +23,11 @@ class TestSuite:
         print >> stderr, "* TestSuite needs a simple config file to get happy.     *"
         print >> stderr, "* Each row represents a particular test to run.          *"
         print >> stderr, "* A row must contain a comma-separated of 3 data:        *"
-        print >> stderr, "*         testname, crab.cfg filename, timeout           *"
+        print >> stderr, "*         testname, crab.cfg filename, timeout, timeout2 *"
         print >> stderr, "* where testname is a nice name to display               *"
         print >> stderr, "* crab.cfg name is the name of the crab.cfg to run       *"
-        print >> stderr, "* timeout after which the test ends (in seconds)         *"
+        print >> stderr, "* timeout after which the linear test ends (in seconds)  *"
+        print >> stderr, "* timeout2 after which the wow test ends (in seconds)    *"
         print >> stderr, "**********************************************************"
 
 
@@ -63,7 +66,7 @@ class TestSuite:
             line = line.strip()
             if line != '' and line[0] != '#':
                 try:
-                    nicename, cfg, timeout = line.split(',', 2)
+                    nicename, cfg, timeout, timeout2 = line.split(',', 3)
                 except ValueError:
                     self.printHelp()
                     logging.error('Error while reading in '+self.options.config+' rows: '+str(i))
@@ -79,9 +82,15 @@ class TestSuite:
                     timeout=float(timeout)
                 except ValueError:
                     self.printHelp()
-                    logging.error('Timeout must be a number in seconds')
+                    logging.error('Linear Timeout must be a number in seconds')
                 
-                self.t.append((nicename, cfg, timeout))
+                try:
+                    timeout2=float(timeout2)
+                except ValueError:
+                    self.printHelp()
+                    logging.error('Wow Timeout must be a number in seconds')
+                
+                self.t.append((nicename, cfg, timeout, timeout2))
             i += 1
         if (len(self.t) == 0):
             logging.error('Empty config file!? Nothing to do!')
@@ -91,12 +100,20 @@ class TestSuite:
     def mainThreads(self):
         logging.debug('Starting tests...')
         tests = []
-        for (nicename, cfg, timeout) in self.t:
-            test = Tester (cfg, nicename, timeout, self.options.debug)
+        for (nicename, cfg, timeout, timeout2) in self.t:
+            test = LinearTester (cfg, nicename, timeout, self.options.debug)
             logging.debug('Thread '+test.getName()+' initialized')
             tests.append(test)
             test.start()
             logging.debug('Thread '+test.getName()+' started')
+            
+            test = WowTester (cfg, nicename, timeout2, self.options.debug)
+            logging.debug('Thread '+test.getName()+' initialized')
+            tests.append(test)
+            test.start()
+            logging.debug('Thread '+test.getName()+' started')
+
+            
         for test in tests:
             logging.debug('Waiting for '+test.getName())
             test.join()

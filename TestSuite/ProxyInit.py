@@ -1,7 +1,9 @@
 import logging, string, os, popen2, select, fcntl
 
 class ProxyInit:
-    """ Class that takes care to initialize voms-proxy and myproxy. """
+    """ Class taken from Mattia's work
+    We need this class to be sure we have a correct certificate proxy before running threads or processes
+    """
     def __init__(self, cfg):
         self.cfg = str(cfg)
 

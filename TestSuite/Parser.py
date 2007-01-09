@@ -31,7 +31,7 @@ def parseCreate(text):
         g = createdRE.search(line)
         if g:
             return int(g.group("created"))
-    raise TestException, "crab -create"
+    raise TestException, "Possible troubles in parsing crab -create"
 
 def parseSubmit(text):
     """ Parses crab -submit returning the number of submitted jobs. """
@@ -39,7 +39,7 @@ def parseSubmit(text):
         g = submittedRE.search(line)
         if g:
             return int(g.group("submitted"))
-    raise TestException, "crab -submit"
+    raise TestException, "Possible troubles in parsing crab -submit"
 
 def parseGetOutput(text):
     """ Parses crab -getoutput returning the set of jobIds retrieved. """
@@ -49,7 +49,7 @@ def parseGetOutput(text):
         if g:
             jobIds.append(int(g.group("jobid")))
     if not jobIds:
-        raise TestException, "crab -getoutput"
+        raise TestException, "Possible troubles in parsing crab -getoutput"
     return set(jobIds)
 
 def parseStatus1(text):
@@ -71,7 +71,7 @@ def parseStatus1(text):
         else:
             break;
     if not tabFound:
-        raise TestException, "crab -status 1st part"
+        raise TestException, "Possible troubles in parsing crab -status 1st part"
     return jobs
                 
 def parseStatus2(text):
@@ -113,7 +113,7 @@ def parseStatus2(text):
                     nextLineJobsList = False
                     currentStatus = None
     if not totFound:
-        raise TestException, "crab -status 2nd part"
+        raise TestException, "Possible troubles in parsing crab -status 2nd part"
     return jobs
 
 def parseEntireStatus(text):

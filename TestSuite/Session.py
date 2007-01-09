@@ -39,6 +39,10 @@ class Session:
         self.totJobs = None # Jobs managed (discovered after crab -crete)
         self.submitted = 0 # jobs submitted
         self.logger = logger
+        self.returncode = None
+        self.outdata = None
+        self.errdata = None
+        self.cmd = None
 
     def jobIds2str(self, jobIds):
         """ Translates a list of jobs into a string. "all" means a complete list of jobs built using self.totJobs.
@@ -65,10 +69,11 @@ class Session:
         """
         cmd = ["crab"] + cmd
         self.logger.debug("Testing: "+" ".join(cmd))
-        returncode, outdata, errdata = runner(cmd)
-        if returncode:
-            raise CrabException, (cmd, returncode, outdata, errdata)
-        return returncode, outdata, errdata
+        self.cmd = " ".join(cmd)
+        self.returncode, self.outdata, self.errdata = runner(cmd)
+        if self.returncode:
+            raise CrabException, (cmd, self.returncode, self.outdata, self.errdata)
+        return self.returncode, self.outdata, self.errdata
 
 
     def crabCreate(self):
@@ -82,7 +87,7 @@ class Session:
         if int(self.totJobs < 1):
             raise TestException, "No jobs created!"
         
-        self.logger.info("creating->"+self.jobIds2str(range(1,self.totJobs+1)))
+        self.logger.info("#### creating -> "+self.jobIds2str(range(1,self.totJobs+1)))
 
         self.jobsHistory.setJobsNumber(self.totJobs)
         self.cwd = findCrabWD(outdata)
@@ -135,7 +140,7 @@ class Session:
         for i in range(self.submitted+1, self.submitted+submitted+1):
             self.jobsHistory.setLocalJobStatus(i, 'submitted')
         
-        self.logger.info("submitting->"+self.jobIds2str(range(self.submitted+1, self.submitted+submitted+1)))
+        self.logger.info("#### submitting -> "+self.jobIds2str(range(self.submitted+1, self.submitted+submitted+1)))
         
         self.crabStatus()
 
@@ -168,12 +173,9 @@ class Session:
         if jobIds == "all":
             jobIds = set(range(1, self.totJobs+1))
 
-        self.logger.info("retrieving->"+self.jobIds2str(jobIds))
-
+        self.logger.info("#### retrieving -> "+self.jobIds2str(jobIds))
         returncode, outdata, errdata = self.crabRunner(cmd)
         
-
-
         if not expectedIds:
             expectedIds = jobIds
 
@@ -216,7 +218,7 @@ class Session:
                     raise TestException, txt # well, maybe here crab failed!
     
             if not exitcode or not exitstatus:
-                self.logger.warning("Job "+str(i)+" not ended cleanly: EXITCODE="+str(exitcode)+" EXITSTATUS="+str(exitstatus))
+                raise TestException, "Job "+str(i)+" not ended cleanly: EXITCODE="+str(exitcode)+" EXITSTATUS="+str(exitstatus)
 
     
         return getoutput
@@ -234,7 +236,7 @@ class Session:
         if jobIds == "all":
             jobIds = set(range(1, self.totJobs+1))
 
-        self.logger.info("killing->"+self.jobIds2str(jobIds))
+        self.logger.info("#### killing -> "+self.jobIds2str(jobIds))
         
         returncode, outdata, errdata = self.crabRunner(cmd)
 
@@ -266,7 +268,7 @@ class Session:
         if jobIds == "all":
             jobIds = set(range(1, self.totJobs+1))
 
-        self.logger.info("resubmitting->"+self.jobIds2str(jobIds))
+        self.logger.info("#### resubmitting -> "+self.jobIds2str(jobIds))
 
         returncode, outdata, errdata = self.crabRunner(cmd)
 
@@ -281,9 +283,13 @@ class Session:
         except TestException, txt:
             if expectedIds:
                 raise TestException, txt
-        
-        if not (set(expectedIds) == set(resubmitted)):
-            raise TestException, "crab didn't succeed in resubmitting every excpected job"
+
+        if resubmitted and expectedIds:
+            if not (set(expectedIds) <= set(resubmitted)):
+                raise TestException, "crab didn't succeed in resubmitting every excpected job!"
+        if not resubmitted and expectedIds:
+            raise TestException, "crab didn't resubmit any job!"
+
 
         
         self.crabStatus()

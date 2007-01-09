@@ -23,146 +23,75 @@ class Tester(threading.Thread):
         self.filelog = logging.FileHandler(filename=self.name+"-"+time.strftime("%Y%m%d%H%M%S")+".log")
         if self.debug:
             self.logger.setLevel(logging.DEBUG)
-            self.filelog.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)
-            self.filelog.setLevel(logging.INFO)
-        #self.stdout = logging.StreamHandler()
-        #self.stdout.setLevel(logging.INFO)
-        formatter = logging.Formatter("%(asctime)s\t%(levelname)s\t%(message)s")
-        #formatter2 = logging.Formatter("%(name)s\t%(asctime)s\t%(levelname)s\t%(message)s")
+        self.filelog.setLevel(logging.INFO)
+        formatter = logging.Formatter("%(levelname)s\t%(message)s")
         self.filelog.setFormatter(formatter)
-        #self.stdout.setFormatter(formatter2)
+        
         self.logger.addHandler(self.filelog)
-        #self.logger.addHandler(self.stdout)
+        self.tests = {"create" : None, "submit" : None, "kill" : None, "getoutput" : None, "resubmit" : None}
+        self.logger.info("Running "+self.name+" test...")
+        self.session = Session(self.logger, self.configFile, self.root)
+        self.begin = time.time() # Time when the test begin
+
+        self.timerLogger = logging.getLogger(self.name+"-timer")
+        timerLog = logging.StreamHandler()
+        timerFormatter = logging.Formatter("%(name)s\t%(message)s")
+        timerLog.setFormatter(timerFormatter)
+        timerLog.setLevel(logging.INFO)
+        self.timerLogger.addHandler(timerLog)
+
 
     def run(self):
         try:
-            self.logger.info("Running Linear Test")
-            s = Session(self.logger, self.configFile, self.root+"-linear")
-            self.linearTester(s)
-            self.logger.info("Linear Test ended successfully!")
+            self.test()
+            self.logger.info(self.name+" ended successfully!")
         except TestException, txt:
-            self.logger.error(txt)
+            self.dumpError(txt)
+            
         except CrabException, (cmd, returncode, outdata, errdata):
-            self.logger.error("Error executing: "+str(cmd))
-            self.logger.error("Return log: "+returncode)
-            self.logger.error("\n--- Last command STDOUT ---\n"+outdata+"\n----------------------- ---\n")
-            self.logger.error("\n--- Last command STDERR ---\n"+errdata+"\n----------------------- ---\n")
-        self.logger.error("\nJobs history\n"+s.jobsHistory.__repr__())
-        s.crabPostMortem()
-        s.logger.info("Please clean "+s.cwd+" by hand.")
-
+            error = "\nError executing: " + str(cmd) + "\n"
+            error += "Return code: " + str(returncode) + "\n"
+            error += "\n--- Last command STDOUT ---\n" + outdata + "\n---------------------------\n"
+            error += "\n--- Last command STDERR ---\n" + errdata + "\n---------------------------\n"
+            self.logger.error(error)
         try:
-            self.logger.info("Running Wow Test")
-            s = Session(self.logger, self.configFile, self.root+"-wow")
-            self.wowTester(s)
-            self.logger.info("Wow Test ended successfully!")
-        except TestException, txt:
-            self.logger.error(txt)
+            self.session.crabPostMortem()
         except CrabException, (cmd, returncode, outdata, errdata):
-            self.logger.error("Error executing: "+str(cmd))
-            self.logger.error("Return log: "+returncode)
-            self.logger.error("\n--- Last command STDOUT ---\n"+outdata+"\n----------------------- ---\n")
-            self.logger.error("\n--- Last command STDERR ---\n"+errdata+"\n----------------------- ---\n")
-        self.logger.error("\nJobs history\n"+s.jobsHistory.__repr__())
-        s.crabPostMortem()
-        s.logger.info("Please clean "+s.cwd+" by hand.")
-
-
-
-
-    def linearTester(self, session):
-        session.crabCreate()
-        session.logger.info("Create test: OK!")
-        session.crabSubmit()
-        session.logger.info("Submit test: OK!")
-        getoutputTest = False
-        ok = True
-        begin = time.time()
-        while time.time() - begin <= self.timeout or not getoutputTest:
-            session.logger.info("Time remaining: "+str(int(self.timeout-(time.time()-begin)))+"s")
-            sleep(10)
-            session.crabStatus()
-            if session.jobsHistory.isChanged():
-                session.logger.info(str(session.jobsHistory))
-                            
-            jobsDone = session.jobsHistory.getJobsInRemoteStatus(DONE)
-            if jobsDone:
-                session.crabGetOutput(jobsDone)
-                getoutputTest = True
-            jobsCleared = session.jobsHistory.getJobsInRemoteStatus(CLEARED)
-            if len(jobsCleared) == session.totJobs:
-                break
-        if getoutputTest:
-            session.logger.info("GetOutput test: OK!")
-        if len(jobsCleared) < session.totJobs:
-            session.logger.warning("Not every output was retrieved!")
-        session.logger.info("Linear test completed!")
-
-    def wowTester(self, session):
-        toSubmit = session.crabCreate()
-        session.logger.info("Create test: OK!")
-        begin = time.time()
-        killTest = False
-        resubmitTest = False
-        getoutputTest = False
-        while time.time() - begin <= self.timeout:
-            session.logger.info("Time remaining: "+str(int(self.timeout-(time.time()-begin)))+"s")
-            sleep(10)
-            session.crabStatus()
-            if session.jobsHistory.isChanged():
-                session.logger.info(str(session.jobsHistory))
-            clearedJobs = set()
-            if len(toSubmit) > 0 and random.random() > .75:
-                self.logger.debug("submitting...")
-                weSubmit = random.randint(1, len(toSubmit))
-                submitted = session.crabSubmit(weSubmit)
-                toSubmit.difference_update(submitted) # rimuovo dai job da sottomettere quelli sottomessi
+            error = "Yes: it happens, even crab -postmortem could fail!\n"
+            error += "Return code: " + str(returncode) + "\n"
+            error += "\n--- Last command STDOUT ---\n" + outdata + "\n---------------------------\n"
+            error += "\n--- Last command STDERR ---\n" + errdata + "\n---------------------------\n"
+            self.logger.error(error)
+            
+        self.logger.info("\n------ Jobs history -------\n" + self.session.jobsHistory.__repr__() + "\n---------------------------\n")
+            
+        for testname,result in self.tests.iteritems():
+            if result == None:
+                self.logger.warning(testname + ": test not performed...")
+            elif result:
+                self.logger.info(testname + ": test OK!")
             else:
-                self.logger.debug("playing...")
-                runningJobs = session.jobsHistory.getJobsInRemoteStatus(RUNNING)
-                doneJobs = session.jobsHistory.getJobsInRemoteStatus(DONE)
-                clearedJobs = session.jobsHistory.getJobsInRemoteStatus(CLEARED)
-                killedJobs = session.jobsHistory.getJobsInRemoteStatus(KILLED)
-                abortedJobs = session.jobsHistory.getJobsInRemoteStatus(BAD)
-                waitingJobs = session.jobsHistory.getJobsInRemoteStatus(WAITING)
-                submittedJobs = session.jobsHistory.getJobsInRemoteStatus(SUBMITTED)
-
-                killable = runningJobs 
-                retrievable = doneJobs
-                resubmittable = abortedJobs | killedJobs
-
-                self.logger.debug("killable->"+str(killable)+" retrievable->"+str(retrievable)+" resubmittable->"+str(resubmittable))
-
-                if retrievable and random.random() > 0.25:
-                    self.logger.debug("retrieving")
-                    toRetrieve = self.randomList(retrievable, session.totJobs)
-                    session.crabGetOutput(toRetrieve, retrievable & toRetrieve)
-                    getoutputTest = True
-                    session.logger.info("Getoutput tests: OK!")
-                elif resubmittable and random.random() > 0.50:
-                    self.logger.debug("resubmitting")
-                    toResubmit = self.randomList(resubmittable, session.totJobs)
-                    session.crabResubmit(toResubmit, resubmittable & toResubmit)
-                    resubmitTest = True
-                    session.logger.info("Resubmit tests: OK!")
-                elif killable and random.random() > 0.90:
-                    self.logger.debug("killing")
-                    toKill = self.randomList(killable, session.totJobs)
-                    session.crabKill(toKill, killable & toKill)
-                    killTest = True
-                    session.logger.info("Kill tests: OK!")
-            if len(clearedJobs) == session.totJobs:
-                break;
-        if not killTest:
-            session.logger.warning("Not tested crab -kill")
-        if not resubmitTest:
-            session.logger.warning("Not tested crab -resubmit")
-        if not getoutputTest:
-            session.logger.warning("Not tested crab -getoutput")
+                self.logger.error(testname + ": some or all tests failed!!")
                         
-        session.logger.info("Linear test completed!")
+        self.logger.info(self.name+" test completed!")
+        self.logger.info("Please clean "+self.session.cwd+" by hand.")
+
+    def dumpError(self, txt):
+        error = str(txt)+"\n"
+        error += "Last command: "+self.session.cmd + "\n"
+        error += "\n--- Last command STDOUT ---\n"+self.session.outdata+"\n---------------------------\n"
+        error += "\n--- Last command STDERR ---\n"+self.session.errdata+"\n---------------------------\n"
+        self.logger.error(error)
+        
+
+    def checkTimeout(self):
+        still = self.timeout - (time.time() - self.begin)
+        self.logger.info("Time remaining: "+str(int(still))+"s") 
+        #self.logger.info("Time remaining: "+str(int(still))+"s")
+        sleep(10)
+        return still >= 0.
 
     def randomList(self, jobsList, tot):
         r = random.random()
@@ -174,7 +103,9 @@ class Tester(threading.Thread):
             ret = [x for x in jobsList if random.random() > .25]
         else: # Un sottoinsieme di tutti i job
             ret = [x for x in range(1, tot+1) if random.random() > .25]
-        if ret:
+        ret = set(ret)
+        jobsList = set(jobsList)
+        if ret & jobsList: # If there's at least one job in the required situation
             return set(ret)
         else:
             return set(jobsList)
