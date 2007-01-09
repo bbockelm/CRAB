@@ -148,12 +148,12 @@ class Cmssw(JobType):
                 tmp = string.strip(tmp)
                 dirname = ''
                 if not tmp[0]=="/": dirname = "."
-                files = glob.glob(os.path.join(dirname, tmp))
-                for file in files:
-                    if not os.path.exists(file):
-                        raise CrabException("Additional input file not found: "+file)
+                shutil.copyfile(tmp, common.work_space.shareDir()+tmp)
+                files = common.work_space.pathForTgz()+'share/' + tmp
+                if not os.path.exists(files):
+                    raise CrabException("Additional input file not found: "+files)
                     pass
-                    self.additional_inbox_files.append(string.strip(file))
+                self.additional_inbox_files.append(string.strip(files))
                 pass
             pass
             common.logger.debug(5,"Additional input files: "+str(self.additional_inbox_files))
@@ -664,6 +664,7 @@ class Cmssw(JobType):
             return
 
         filesToBeTarred = []
+        mlFiles = []
         ## First find the executable
         if (self.executable != ''):
             exeWithPath = self.scram.findFile_(executable)
@@ -716,9 +717,17 @@ class Cmssw(JobType):
             filesToBeTarred.append(paDir)
         
         for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py']:
-            shutil.copyfile(os.environ['CRABDIR']+'/python/'+file, swArea+'/'+file)
-            filesToBeTarred.append(file)
+            #shutil.copyfile(os.environ['CRABDIR']+'/python/'+file, swArea+'/'+file)
+            mlFiles.append(file)
+        self.MLtgzfile =  common.work_space.pathForTgz()+'share/MLfiles.tgz' 
 
+        tarcmd = 'tar zcvf ' + self.MLtgzfile + ' -C ' + os.environ['CRABDIR'] + '/python/' + ' '
+        for f in mlFiles:
+            tarcmd = tarcmd + f + ' '
+        cout = runCommand(tarcmd)
+        if not cout:
+            raise CrabException('Could not create ML files tar-ball')
+        
         ## Create the tar-ball
         if len(filesToBeTarred)>0:
             tarcmd = 'tar zcvf ' + self.tgzNameWithPath + ' -C ' + swArea + ' ' 
@@ -797,7 +806,9 @@ class Cmssw(JobType):
         txt += 'echo "CMSSW_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
         ### needed grep for bug in scramv1 ###
+        txt += scram+' runtime -sh\n'
         txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
+        txt += 'echo $PATH\n'
 
         # Handle the arguments:
         txt += "\n"
@@ -972,6 +983,8 @@ class Cmssw(JobType):
         ## code
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
+        if os.path.isfile(self.MLtgzfile):
+            inp_box.append(self.MLtgzfile)
         ## config
         if not self.pset is None: #CarlosDaniele
             inp_box.append(common.work_space.pathForTgz() + 'job/' + self.configFilename())

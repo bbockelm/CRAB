@@ -753,9 +753,9 @@ class SchedulerEdg(Scheduler):
             pass
 
         if (not jbt.additional_inbox_files == []):
-            inp_box = inp_box + ','
+#            inp_box = inp_box + ','
             for addFile in jbt.additional_inbox_files:
-                addFile = os.path.abspath(addFile)
+                #addFile = os.path.abspath(addFile)
                 inp_box = inp_box+''+addFile+','
                 pass
 
