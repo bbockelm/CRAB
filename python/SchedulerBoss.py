@@ -639,6 +639,11 @@ class SchedulerBoss(Scheduler):
         check = 0
 
         ## then loop over jobs and retrieve it if it's the case
+        create= []
+        run= []
+        clear=[]
+        abort=[]
+        other=[]
 
         for i_id in int_id :
             if i_id not in allBoss_id:
@@ -685,17 +690,23 @@ class SchedulerBoss(Scheduler):
                         common.logger.message(msg)
                         common.jobDB.setStatus(int(i_id)-1, 'Z') 
                 elif bossTaskIdStatus == 'Running' :
-                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible yet to retrieve the output.'
-                    common.logger.message(msg)
+                     run.append(i_id)
+            #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible yet to retrieve the output.'
+            #        common.logger.message(msg)
                 elif bossTaskIdStatus == 'Cleared' :
-                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. The output was already retrieved.'
-                    common.logger.message(msg)
+                     clear.append(i_id)
+            #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. The output was already retrieved.'
+            #        common.logger.message(msg)
                 elif bossTaskIdStatus == 'Aborted' :
-                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible to retrieve the output.'
-                    common.logger.message(msg)
+                     abort.append(i_id)
+            #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible to retrieve the output.'
+            #        common.logger.message(msg)
+                elif bossTaskIdStatus == 'Created' :
+                     create.append(i_id)  
                 else:
-                    msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is currently not possible to retrieve the output.'
-                    common.logger.message(msg)
+                     other.append(i_id)  
+            #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is currently not possible to retrieve the output.'
+            #        common.logger.message(msg)
                 dir += os.environ['USER']
                 dir += '_' + os.path.basename(str(boss_id))
             pass
@@ -703,6 +714,12 @@ class SchedulerBoss(Scheduler):
         if check == 0: 
             msg = '\n\n*********No job in Done status. It is not possible yet to retrieve the output.\n'
             common.logger.message(msg)
+        if len(create)!=0: print str(len(create))+' jobs not yet submitted'     
+        if len(run)!=0: print str(len(run))+' jobs still running'     
+        if len(other)!=0: print str(len(other))+' jobs submitted'     
+        if len(clear)!=0: print str(len(clear))+' jobs already cleared'     
+        if len(abort)!=0: print str(len(abort))+' jobs aborted'   
+        print ' ' 
         return
 
     ###################### ---- OK for Boss4 ds
