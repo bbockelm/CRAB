@@ -1,3 +1,0 @@
-#!/bin/sh
-
-bossAdmin registerProgram -name cmssw -schema $CRABSCRIPT/cmssw.schema  -pre $CRABSCRIPT/cmssw.preruntime -post $CRABSCRIPT/cmssw.runtime -runtime $CRABSCRIPT/cmssw.runtime -comment "CMSSW job"
