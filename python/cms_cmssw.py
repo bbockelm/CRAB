@@ -721,7 +721,7 @@ class Cmssw(JobType):
             mlFiles.append(file)
         self.MLtgzfile =  common.work_space.pathForTgz()+'share/MLfiles.tgz' 
 
-        tarcmd = 'tar zcvf ' + self.MLtgzfile + ' -C ' + os.environ['CRABDIR'] + '/python/' + ' '
+        tarcmd = 'tar zhcvf ' + self.MLtgzfile + ' -C ' + os.environ['CRABDIR'] + '/python/' + ' '
         for f in mlFiles:
             tarcmd = tarcmd + f + ' '
         cout = runCommand(tarcmd)
@@ -730,7 +730,7 @@ class Cmssw(JobType):
         
         ## Create the tar-ball
         if len(filesToBeTarred)>0:
-            tarcmd = 'tar zcvf ' + self.tgzNameWithPath + ' -C ' + swArea + ' ' 
+            tarcmd = 'tar zhcvf ' + self.tgzNameWithPath + ' ' 
             for line in filesToBeTarred:
                 tarcmd = tarcmd + line + ' '
             cout = runCommand(tarcmd)
