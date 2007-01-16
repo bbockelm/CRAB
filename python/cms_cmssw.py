@@ -697,11 +697,11 @@ class Cmssw(JobType):
         if os.path.isdir(module):
             filesToBeTarred.append(moduleDir)
 
-        ## Now check if the Data dir is present
-        dataDir = 'src/Data/'
-        data = swArea + '/' + dataDir
-        if os.path.isdir(data):
-            filesToBeTarred.append(dataDir)
+        ## Now check if any data dir(s) is present
+        for root, dirs, files in os.walk(swArea):
+            if "data" in dirs:
+                common.logger.debug(5,"data "+root+"/data"+" to be tarred")
+                filesToBeTarred.append(root+"/data")
 
         ## copy ProdAgent dir to swArea
         cmd = '\cp -rf ' + os.environ['CRABDIR'] + '/ProdAgentApi ' + swArea
@@ -710,7 +710,7 @@ class Cmssw(JobType):
             common.logger.message('ProdAgentApi directory could not be copied to local CMSSW project directory.')
             common.logger.message('No FrameworkJobreport parsing is possible on the WorkerNode.')
 
-        ## Now check if the Data dir is present
+        ## Add ProdAgent dir to tar
         paDir = 'ProdAgentApi'
         pa = swArea + '/' + 'ProdAgentApi'
         if os.path.isdir(pa):
@@ -730,7 +730,7 @@ class Cmssw(JobType):
         
         ## Create the tar-ball
         if len(filesToBeTarred)>0:
-            tarcmd = 'tar zhcvf ' + self.tgzNameWithPath + ' ' 
+            tarcmd = 'tar zhcvf ' + self.tgzNameWithPath + ' -C ' + swArea + ' ' 
             for line in filesToBeTarred:
                 tarcmd = tarcmd + line + ' '
             cout = runCommand(tarcmd)
