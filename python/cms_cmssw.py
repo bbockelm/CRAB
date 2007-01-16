@@ -663,81 +663,76 @@ class Cmssw(JobType):
         if swReleaseTop == '' or swArea == swReleaseTop:
             return
 
-        filesToBeTarred = []
-        mlFiles = []
-        ## First find the executable
-        if (self.executable != ''):
-            exeWithPath = self.scram.findFile_(executable)
-#           print exeWithPath
-            if ( not exeWithPath ):
-                raise CrabException('User executable '+executable+' not found')
- 
-            ## then check if it's private or not
-            if exeWithPath.find(swReleaseTop) == -1:
-                # the exe is private, so we must ship
-                common.logger.debug(5,"Exe "+exeWithPath+" to be tarred")
-                path = swArea+'/'
-                exe = string.replace(exeWithPath, path,'')
-                filesToBeTarred.append(exe)
-                pass
-            else:
-                # the exe is from release, we'll find it on WN
-                pass
- 
-        ## Now get the libraries: only those in local working area
-        libDir = 'lib'
-        lib = swArea+'/' +libDir
-        common.logger.debug(5,"lib "+lib+" to be tarred")
-        if os.path.exists(lib):
-            filesToBeTarred.append(libDir)
- 
-        ## Now check if module dir is present
-        moduleDir = 'module'
-        module = swArea + '/' + moduleDir
-        if os.path.isdir(module):
-            filesToBeTarred.append(moduleDir)
+        import tarfile
+        try: # create tar ball
+            tar = tarfile.open(self.tgzNameWithPath, "w:gz")
+            ## First find the executable
+            if (self.executable != ''):
+                exeWithPath = self.scram.findFile_(executable)
+                if ( not exeWithPath ):
+                    raise CrabException('User executable '+executable+' not found')
+     
+                ## then check if it's private or not
+                if exeWithPath.find(swReleaseTop) == -1:
+                    # the exe is private, so we must ship
+                    common.logger.debug(5,"Exe "+exeWithPath+" to be tarred")
+                    path = swArea+'/'
+                    exe = string.replace(exeWithPath, path,'')
+                    tar.add(path+exe,exe)
+                    pass
+                else:
+                    # the exe is from release, we'll find it on WN
+                    pass
+     
+            ## Now get the libraries: only those in local working area
+            libDir = 'lib'
+            lib = swArea+'/' +libDir
+            common.logger.debug(5,"lib "+lib+" to be tarred")
+            if os.path.exists(lib):
+                tar.add(lib,libDir)
+     
+            ## Now check if module dir is present
+            moduleDir = 'module'
+            module = swArea + '/' + moduleDir
+            if os.path.isdir(module):
+                tar.add(module,moduleDir)
 
-        ## Now check if any data dir(s) is present
-        for root, dirs, files in os.walk(swArea):
-            if "data" in dirs:
-                common.logger.debug(5,"data "+root+"/data"+" to be tarred")
-                filesToBeTarred.append(root+"/data")
+            ## Now check if any data dir(s) is present
+            swAreaLen=len(swArea)
+            for root, dirs, files in os.walk(swArea):
+                if "data" in dirs:
+                    common.logger.debug(5,"data "+root+"/data"+" to be tarred")
+                    tar.add(root+"/data",root[swAreaLen:]+"/data")
 
-        ## copy ProdAgent dir to swArea
-        cmd = '\cp -rf ' + os.environ['CRABDIR'] + '/ProdAgentApi ' + swArea
-        cmd_out = runCommand(cmd)
-        if cmd_out != '':
-            common.logger.message('ProdAgentApi directory could not be copied to local CMSSW project directory.')
-            common.logger.message('No FrameworkJobreport parsing is possible on the WorkerNode.')
+            ## copy ProdAgent dir to swArea
+            # cmd = '\cp -rf ' + os.environ['CRABDIR'] + '/ProdAgentApi ' + swArea
+            # cmd_out = runCommand(cmd)
+            # if cmd_out != '':
+            #     common.logger.message('ProdAgentApi directory could not be copied to local CMSSW project directory.')
+            #     common.logger.message('No FrameworkJobreport parsing is possible on the WorkerNode.')
 
-        ## Add ProdAgent dir to tar
-        paDir = 'ProdAgentApi'
-        pa = swArea + '/' + 'ProdAgentApi'
-        if os.path.isdir(pa):
-            filesToBeTarred.append(paDir)
+            ## Add ProdAgent dir to tar
+            paDir = 'ProdAgentApi'
+            pa = os.environ['CRABDIR'] + '/' + 'ProdAgentApi'
+            if os.path.isdir(pa):
+                tar.add(pa,paDir)
         
-        for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py']:
-            #shutil.copyfile(os.environ['CRABDIR']+'/python/'+file, swArea+'/'+file)
-            mlFiles.append(file)
+            common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
+            tar.close()
+        except :
+            raise CrabException('Could not create tar-ball')
+        
+        ## create tar-ball with ML stuff
         self.MLtgzfile =  common.work_space.pathForTgz()+'share/MLfiles.tgz' 
-
-        tarcmd = 'tar zhcvf ' + self.MLtgzfile + ' -C ' + os.environ['CRABDIR'] + '/python/' + ' '
-        for f in mlFiles:
-            tarcmd = tarcmd + f + ' '
-        cout = runCommand(tarcmd)
-        if not cout:
+        try:
+            tar = tarfile.open(self.MLtgzfile, "w:gz")
+            path=os.environ['CRABDIR'] + '/python/'
+            for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py']:
+                tar.add(path+file,file)
+            common.logger.debug(5,"Files added to "+self.MLtgzfile+" : "+str(tar.getnames()))
+            tar.close()
+        except :
             raise CrabException('Could not create ML files tar-ball')
-        
-        ## Create the tar-ball
-        if len(filesToBeTarred)>0:
-            tarcmd = 'tar zhcvf ' + self.tgzNameWithPath + ' -C ' + swArea + ' ' 
-            for line in filesToBeTarred:
-                tarcmd = tarcmd + line + ' '
-            cout = runCommand(tarcmd)
-            if not cout:
-                raise CrabException('Could not create tar-ball')
-        else:
-            common.logger.debug(5,"No files to be to be tarred")
         
         return
         
