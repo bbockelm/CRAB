@@ -1,6 +1,6 @@
 #!/usr/bin/env python
                                                                                                                                                              
-import os, sys, commands
+import os
 import common
 from crab_util import *
 from crab_exceptions import *

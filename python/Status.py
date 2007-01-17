@@ -1,6 +1,5 @@
 from Actor import *
-import common, crab_util
-import string, os
+import common
 import Statistic
 
 class Status(Actor):
@@ -60,7 +59,7 @@ class Status(Actor):
         Update the status to DB
         """
         bossTaskId = common.taskDB.dict('BossTaskId')
-        statusList = common.scheduler.queryStatusList(bossTaskId, int_id)
+        statusList = common.scheduler.queryStatusList(bossTaskId, self.nj_list)
 
         common.jobDB.load()
         for nj in self.nj_list:
@@ -71,11 +70,11 @@ class Status(Actor):
                 #result = common.scheduler.queryStatus(jid)
                 result = statusList[jid]
                 self.processResult_(nj, result, jid)
-                exit = common.jobDB.exitStatus(nj)
-                print 'Job %03d:'%(nj+1),jid,result,exit
+                exitStatus = common.jobDB.exitStatus(nj)
+                print 'Job %03d:'%(nj+1),jid,result,exitStatus
                 dest = common.scheduler.queryDest(jid)
                 if ( dest.find(":") != -1 ) :
-                    dest = destination.split(":")[0]
+                    dest = dest.split(":")[0]
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
                     params = {'taskId': 'JobStatus', 'jobId': jid, 'StatusValueReason': common.scheduler.getStatusAttribute_(jid, 'reason'), \
                     'StatusValue': st, 'StatusEnterTime': common.scheduler.getStatusAttribute_(jid, 'stateEnterTime'), 'StatusDestination': dest}
@@ -85,8 +84,8 @@ class Status(Actor):
                     self.cfg_params['apmon'].sendToML(params)
                 pass
             else:
-                exit = common.jobDB.exitStatus(nj)
-                #print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exit
+                exitStatus = common.jobDB.exitStatus(nj)
+                #print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exitStatus
                 pass
 
         common.jobDB.save()
@@ -99,10 +98,10 @@ class Status(Actor):
             destination = destination.split(":")[0]
             
         if ( jid.find(":") != -1 ) :
-            ID3 =  jid.split("/")[3]
+            #ID3 =  jid.split("/")[3]
             broker = jid.split("/")[2].split(":")[0]
         else :
-            ID3 = jid
+            #ID3 = jid
             broker = 'OSG'
             
         resFlag = 0
@@ -114,31 +113,31 @@ class Status(Actor):
                 exCode = common.scheduler.getExitStatus(jid)
                 common.jobDB.setStatus(nj, 'D')
                 jid = common.jobDB.jobId(nj)
-                exit = common.scheduler.getExitStatus(jid)
-                common.jobDB.setExitStatus(nj, exit)
-                Statistic.Monitor('checkstatus',resFlag,jid,exCode)
+                exitStatus = common.scheduler.getExitStatus(jid)
+                common.jobDB.setExitStatus(nj, exitStatus)
+                Statistic.Monitor('checkstatus',resFlag,jid,exCode,broker)
             elif result == 'Ready':
                 self.countReady = self.countReady + 1
-                Statistic.Monitor('checkstatus',resFlag,jid,'-----')
+                Statistic.Monitor('checkstatus',resFlag,jid,'-----',broker)
             elif result == 'Scheduled':
                 self.countSched = self.countSched + 1
-                Statistic.Monitor('checkstatus',resFlag,jid,'-----')
+                Statistic.Monitor('checkstatus',resFlag,jid,'-----',broker)
             elif result == 'Running':
                 self.countRun = self.countRun + 1
-                Statistic.Monitor('checkstatus',resFlag,jid,'-----')
+                Statistic.Monitor('checkstatus',resFlag,jid,'-----',broker)
             elif result == 'Aborted':
                 common.jobDB.setStatus(nj, 'A')
                 self.countAbort = self.countAbort + 1
-                Statistic.Monitor('checkstatus',resFlag,jid,'abort')
+                Statistic.Monitor('checkstatus',resFlag,jid,'abort',broker)
                 pass
             elif result == 'Cancelled':
                 common.jobDB.setStatus(nj, 'K')
                 self.countCancel = self.countCancel + 1
-                Statistic.Monitor('checkstatus',resFlag,jid,'cancel')
+                Statistic.Monitor('checkstatus',resFlag,jid,'cancel',broker)
                 pass
             elif result == 'Cleared':
                 exCode = common.scheduler.getExitStatus(jid) 
-                Statistic.Monitor('checkstatus',resFlag,jid,exCode) 
+                Statistic.Monitor('checkstatus',resFlag,jid,exCode,broker) 
                 self.countCleared = self.countCleared + 1
         except UnboundLocalError:
             common.logger.message('ERROR: UnboundLocalError with ')

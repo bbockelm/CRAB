@@ -1,15 +1,13 @@
 #!/usr/bin/env python
-import sys, os, string, re
-import urllib, urllister
-import urllib2
+import os, string, re
 import common
 from DLSInfo import *
 
 # ####################################
 class DataLocationError(exceptions.Exception):
     def __init__(self, errorMessage):
-        args=errorMessage
-        exceptions.Exception.__init__(self, args)
+        self.args=errorMessage
+        exceptions.Exception.__init__(self, self.args)
         pass
                                                                                       
     def getErrorMessage(self):
@@ -70,8 +68,6 @@ class DataLocation:
         Contact DLS
         """
         countblock=0
-        Sites = []
-        allblockSites = []
 
         try:
             dlstype=self.cfg_params['CMSSW.dls_type']

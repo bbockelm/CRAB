@@ -5,7 +5,7 @@ from crab_util import *
 from EdgConfig import *
 import common
 
-import os, sys, time, gzip
+import os, sys, time
 
 class SchedulerEdg(Scheduler):
     def __init__(self):
@@ -624,7 +624,7 @@ class SchedulerEdg(Scheduler):
         jbt = job.type()
         
         inp_sandbox = jbt.inputSandbox(index)
-        out_sandbox = jbt.outputSandbox(index)
+        #out_sandbox = jbt.outputSandbox(index)
         """
         [end] FIX-ME
         """
@@ -640,7 +640,6 @@ class SchedulerEdg(Scheduler):
         dir = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
   
-        to_writeReq = ''
         to_write = ''
 
         req=' '
@@ -829,7 +828,6 @@ class SchedulerEdg(Scheduler):
             self.proxyValid=1
             return
 
-        timeleft = -999
         minTimeLeft=10*3600 # in seconds
 
         minTimeLeftServer = 100 # in hours
@@ -878,7 +876,7 @@ class SchedulerEdg(Scheduler):
             reTime = re.compile( r'timeleft: (\d+)' )
             #print "<"+str(reTime.search( cmd_out ).group(1))+">"
             if reTime.match( cmd_out ):
-                time = reTime.search( line ).group(1)
+                time = reTime.search( cmd_out ).group(1)
                 if time < minTimeLeftServer:
                     renewProxy = 1
                     common.logger.message('No credential delegation will expire in '+time+' hours: renew it')

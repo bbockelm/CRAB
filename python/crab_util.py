@@ -8,6 +8,7 @@ import string, sys, os, time
 import ConfigParser, re, popen2, select, fcntl
 
 import common
+from crab_exceptions import CrabException
 
 ###########################################################################
 def parseOptions(argv):
@@ -112,8 +113,8 @@ def parseRange2(range):
     'n1-n2'       -> [n1, n1+1, ..., n2]
     'n1,n2-n3,n4' -> [n1, n2, n2+1, ..., n3, n4]
     """
-    list = []
-    if not range: return list
+    result = []
+    if not range: return result
 
     comma = string.find(range, ',')
     if comma == -1: left = range
@@ -122,7 +123,7 @@ def parseRange2(range):
     (n1, n2) = parseRange(left)
     while ( n1 <= n2 ):
         try:
-            list.append(n1)
+            result.append(n1)
             n1 += 1
             pass
         except:
@@ -131,13 +132,13 @@ def parseRange2(range):
 
     if comma != -1:
         try:
-            list.extend(parseRange2(range[comma+1:]))
+            result.extend(parseRange2(range[comma+1:]))
             pass
         except:
             msg = 'Syntax error in range <'+range+'>'
             raise CrabException(msg)
 
-    return list
+    return result
 
 ###########################################################################
 def crabJobStatusToString(crab_status):
@@ -337,10 +338,10 @@ def makeCksum(filename) :
     tmpfile.write(filename+'\n')
 
     # fill input file in tmp file
-    input = open(filename)
-    tmpfile.writelines(input.readlines())
+    infile = open(filename)
+    tmpfile.writelines(infile.readlines())
     tmpfile.flush()
-    input.close()
+    infile.close()
 
     cmd = 'cksum '+tmp_filename
     cmd_out = runCommand(cmd)
@@ -354,7 +355,6 @@ def makeCksum(filename) :
 
 ####################################
 if __name__ == '__main__':
-    import sys
     print 'sys.argv[1] =',sys.argv[1]
     list = parseRange2(sys.argv[1])
     print list

@@ -90,7 +90,6 @@ class SchedulerGlite(SchedulerEdg):
             itr4=self.findSites_(first[i])
             reqSites=''
             reqtmp=[]  
-            j = 0
             concString = '||'
             for arg in itr4:
                 #############

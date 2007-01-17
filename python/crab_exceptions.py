@@ -1,5 +1,6 @@
 class CrabException(Exception):
     def __init__(self, msg):
+        Exception.__init__(self, msg)
         self._msg = msg
         return
 
@@ -8,6 +9,7 @@ class CrabException(Exception):
 
 class DBException(Exception):
     def __init__(self, msg):
+        Exception.__init__(self, msg)
         self._msg = msg
         return
 

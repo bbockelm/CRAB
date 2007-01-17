@@ -1,21 +1,10 @@
 #!/usr/bin/env python
-import sys, os, string, re, commands
+import sys, os, string, commands
 import exceptions
 import common
 from crab_exceptions import *
-try:
-    import dbsCgiApi
-    import dbsApi
-except:
-    try:
-        Crabpydir=commands.getoutput('which crab')
-        Topdir=string.replace(Crabpydir,'/python/crab','')
-        sys.path.append(Topdir+'/DBSAPI')
-        import dbsCgiApi
-        import dbsApi
-    except:
-        msg="ERROR no DBS API available"
-        raise CrabException(msg)
+import dbsCgiApi
+import dbsApi
                                                                                               
 ## for python 2.2 add the pyexpat.so to PYTHONPATH
 pythonV=sys.version.split(' ')[0]
@@ -30,8 +19,8 @@ if pythonV.find('2.2') >= 0 :
 # #######################################
 class DBSError(exceptions.Exception):
     def __init__(self, errorName, errorMessage):
-        args='\nERROR DBS %s : %s \n'%(errorName,errorMessage)
-        exceptions.Exception.__init__(self, args)
+        exceptions.Exception.__init__(self, self.args)
+        self.args='\nERROR DBS %s : %s \n'%(errorName,errorMessage)
         pass
     
     def getErrorMessage(self):
@@ -41,8 +30,8 @@ class DBSError(exceptions.Exception):
 # #######################################
 class DBSInvalidDataTierError(exceptions.Exception):
     def __init__(self, errorName, errorMessage):
-        args='\nERROR DBS %s : %s \n'%(errorName,errorMessage)
-        exceptions.Exception.__init__(self, args)
+        exceptions.Exception.__init__(self, self.args)
+        self.args='\nERROR DBS %s : %s \n'%(errorName,errorMessage)
         pass
     
     def getErrorMessage(self):
@@ -78,7 +67,7 @@ class DBSInfo:
     def getMatchingDatasets (self, datasetPath):
         """ Query DBS to get provenance """
         try:
-            list = self.api.listProcessedDatasets("%s" %datasetPath)
+            result = self.api.listProcessedDatasets("%s" %datasetPath)
         except dbsApi.InvalidDataTier, ex:
             raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())
         except dbsApi.DbsApiException, ex:
@@ -88,7 +77,7 @@ class DBSInfo:
         except dbsCgiApi.DbsCgiBadResponse , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
 
-        return list
+        return result
 
 
     def getDatasetProvenance(self, path, dataTiers):

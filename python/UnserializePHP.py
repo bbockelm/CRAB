@@ -1,4 +1,4 @@
-import types, string
+import string
 
 """
 Unserialize class for the PHP RefDB serialization format.
@@ -10,7 +10,7 @@ Unserialize class for the PHP RefDB serialization format.
 @Scott Hurring; scott at hurring dot com
 @copyright Copyright (c) 2005 Scott Hurring
 @license http://opensource.org/licenses/gpl-license.php GNU Public License
-$Id: unserializePHP.py,v 1.1 2005/05/16 13:51:22 afanfani Exp $
+$Id: UnserializePHP.py,v 1.1 2005/07/25 14:31:24 slacapra Exp $
 
 Most recent version can be found at:
 http://hurring.com/code/python/phpserialize/
@@ -51,7 +51,6 @@ class PHPUnserialize(object):
 		offset = raw offset from start of data
 		"""
 		
-		buf = []
 		dtype = string.lower(data[offset:offset+1])
 
 		#print "# dtype =", dtype
@@ -59,7 +58,7 @@ class PHPUnserialize(object):
 		# 't:' = 2 chars
 		dataoffset = offset + 2
 		typeconvert = lambda x : x
-		chars = datalength = 0
+		chars = 0
 
  		# int => Integer
 		if dtype == 'i':

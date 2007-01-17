@@ -10,6 +10,7 @@ from crab_exceptions import *
 class JobType:
     def __init__(self, name):
         self._name = name
+        self._params={}
         return
 
     # ### Fabio

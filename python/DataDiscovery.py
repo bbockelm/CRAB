@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-import sys, os, string, re
 from DBSInfo import *
 
 
 # ####################################
 class DataDiscoveryError(exceptions.Exception):
     def __init__(self, errorMessage):
-        args=errorMessage
-        exceptions.Exception.__init__(self, args)
+        exceptions.Exception.__init__(self, self.args)
+        self.args=errorMessage
         pass
 
     def getErrorMessage(self):
@@ -17,8 +16,8 @@ class DataDiscoveryError(exceptions.Exception):
 # ####################################
 class NotExistingDatasetError(exceptions.Exception):
     def __init__(self, errorMessage):
-        args=errorMessage
-        exceptions.Exception.__init__(self, args)
+        exceptions.Exception.__init__(self, self.args)
+        self.args=errorMessage
         pass
 
     def getErrorMessage(self):
@@ -28,8 +27,8 @@ class NotExistingDatasetError(exceptions.Exception):
 # ####################################
 class NoDataTierinProvenanceError(exceptions.Exception):
     def __init__(self, errorMessage):
-        args=errorMessage
-        exceptions.Exception.__init__(self, args)
+        exceptions.Exception.__init__(self, self.args)
+        self.args=errorMessage
         pass
 
     def getErrorMessage(self):

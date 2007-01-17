@@ -1,9 +1,8 @@
 from Actor import *
-import common, crab_util
-import string, os, sys, time
+import common
+import string, os, time
 import Statistic
 from SchedulerBoss import *
-import time
 
 class StatusBoss(Actor):
     def __init__(self, *args):
@@ -27,7 +26,7 @@ class StatusBoss(Actor):
 
         # check rt flag
         try:
-            self.doRT = int(cfg_params["USER.use_boss_rt"])
+            self.doRT = int(self.cfg_params["USER.use_boss_rt"])
         except:
             self.doRT = 0
 
@@ -73,14 +72,15 @@ class StatusBoss(Actor):
 
         # update RT information
         if self.doRT :
-            common.scheduler.bossUser.RTupdate(bossTaskId)
+            try:
+                common.scheduler.bossUser.RTupdate(bossTaskId)
+            except:
+                common.logger.message("Problem in contacting RealTime server")
         
         # update status in Boss database
         jobAttributes = common.scheduler.queryEverything(bossTaskId)
 
         # query Boss database
-        add2tablelist=''
-        addjoincondition = ''
 
         # format output
         # header: field length 8
@@ -90,7 +90,7 @@ class StatusBoss(Actor):
         # JOB_EXIT_CODE: field lenght 15
 
         # secure header if BossDB does not give any answer back (jobs created but not submitted)
-        header = ['Chain', 'SCHED_ID', 'STATUS', 'EXEC_HOST', 'STATUS_REASON','LAST_T','DEST_CE','EXE_EXIT_CODE','JOB_EXIT_STATUS']
+        # header = ['Chain', 'SCHED_ID', 'STATUS', 'EXEC_HOST', 'STATUS_REASON','LAST_T','DEST_CE','EXE_EXIT_CODE','JOB_EXIT_STATUS']
 
         # pritn header
 #        printline = ''
@@ -101,9 +101,9 @@ class StatusBoss(Actor):
         for_summary = {}
         orderedBossID = jobAttributes.keys()
         orderedBossID.sort()
-        counter = 0
+        # counter = 0
         toPrint = []
-        now = time.time()
+        # now = time.time()
         for bossid in orderedBossID:
             # every 10 jobs, print a line for orientation
 #            if counter != 0 and counter%10 == 0 :
@@ -233,35 +233,35 @@ class StatusBoss(Actor):
 
         # moved loading of jobDB before boss status check to enable condor_g scheduler to query jobdb for efficient access to destination
         # common.jobDB.load()
-        for id in statusList.keys():
-            if statusList[id].split('_')[0] == 'Created':
-                self.countCreated.append(id)
-            elif statusList[id].split('_')[0] == 'Done (Success)' or statusList[id].split('_')[0] == 'Done (Aborted)':
-                self.countDone.append(id)
-	        common.jobDB.setStatus(int(id)-1, 'D')
-            elif statusList[id].split('_')[0] == 'Running' :
-                self.countRun.append(id)
-	        common.jobDB.setStatus(int(id)-1, 'R')
-            elif statusList[id].split('_')[0] == 'Scheduled' :
-                self.countSched.append(id)
-            elif statusList[id].split('_')[0] == 'Ready' :
-                self.countReady.append(id)
-            elif statusList[id].split('_')[0] == 'Cancelled' or statusList[id].split('_')[0] == 'Killed':
-                self.countCancel.append(id)
-                common.jobDB.setStatus(int(id)-1, 'K')
-            elif statusList[id].split('_')[0] == 'Aborted':
-                self.countAbort.append(id)
-                common.jobDB.setStatus(int(id)-1, 'A')
-            elif statusList[id].split('_')[0] == 'Cleared (Corrupt)':
-                self.countCorrupt.append(id)
-                common.jobDB.setStatus(int(id)-1, 'Z')
-            elif statusList[id].split('_')[0] == 'Cleared':
-                if statusList[id].split('_')[-1] in self.countCleared.keys() :
-                    self.countCleared[statusList[id].split('_')[-1]].append(id)
+        for iid in statusList.keys():
+            if statusList[iid].split('_')[0] == 'Created':
+                self.countCreated.append(iid)
+            elif statusList[iid].split('_')[0] == 'Done (Success)' or statusList[iid].split('_')[0] == 'Done (Aborted)':
+                self.countDone.append(iid)
+	        common.jobDB.setStatus(int(iid)-1, 'D')
+            elif statusList[iid].split('_')[0] == 'Running' :
+                self.countRun.append(iid)
+	        common.jobDB.setStatus(int(iid)-1, 'R')
+            elif statusList[iid].split('_')[0] == 'Scheduled' :
+                self.countSched.append(iid)
+            elif statusList[iid].split('_')[0] == 'Ready' :
+                self.countReady.append(iid)
+            elif statusList[iid].split('_')[0] == 'Cancelled' or statusList[iid].split('_')[0] == 'Killed':
+                self.countCancel.append(iid)
+                common.jobDB.setStatus(int(iid)-1, 'K')
+            elif statusList[iid].split('_')[0] == 'Aborted':
+                self.countAbort.append(iid)
+                common.jobDB.setStatus(int(iid)-1, 'A')
+            elif statusList[iid].split('_')[0] == 'Cleared (Corrupt)':
+                self.countCorrupt.append(iid)
+                common.jobDB.setStatus(int(iid)-1, 'Z')
+            elif statusList[iid].split('_')[0] == 'Cleared':
+                if statusList[iid].split('_')[-1] in self.countCleared.keys() :
+                    self.countCleared[statusList[iid].split('_')[-1]].append(iid)
                 else :
-                    self.countCleared[statusList[id].split('_')[-1]] = [id]
+                    self.countCleared[statusList[iid].split('_')[-1]] = [iid]
                 pass 
-	        common.jobDB.setStatus(int(id)-1, 'Y')
+	        common.jobDB.setStatus(int(iid)-1, 'Y')
 
         common.jobDB.save()
         common.logger.debug(5,'done loop StatusBoss::report')

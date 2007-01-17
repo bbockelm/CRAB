@@ -67,6 +67,7 @@ class Logger :
         """
         Stores the given message into log-file.
         """
+        if (msg[-1]!='\n'): msg+='\n'
         self.lock.acquire()
         self.log_file.write(msg)
         self.lock.release()

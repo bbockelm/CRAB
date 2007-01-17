@@ -3,7 +3,7 @@ from crab_logger import Logger
 from StatusBoss import StatusBoss
 from Status import Status
 import common
-import string, os
+import string
 
 class Cleaner:
     def __init__(self, cfg_params):
@@ -16,8 +16,6 @@ class Cleaner:
         """
         Check whether no job is still running or not yet retrieved
         """
-        submittedJobs=0
-        doneJobs=0
 
         self.status.compute() # compute the status
 

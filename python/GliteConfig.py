@@ -4,7 +4,7 @@ from crab_util import *
 import common
 
 import urllib
-import os, sys, time
+import os, time
 
 class GliteConfig:
     def __init__(self, RB):

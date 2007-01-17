@@ -2,16 +2,14 @@ from JobType import JobType
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-import math
 import common
 import PsetManipulator  
 
-import DBSInfo
 import DataDiscovery
 import DataLocation
 import Scram
 
-import glob, os, string, re, shutil
+import os, string, re, shutil
 
 class Cmssw(JobType):
     def __init__(self, cfg_params, ncjobs):
@@ -28,7 +26,6 @@ class Cmssw(JobType):
         log = common.logger
         
         self.scram = Scram.Scram(cfg_params)
-        scramArea = ''
         self.additional_inbox_files = []
         self.scriptExe = ''
         self.executable = ''
@@ -108,8 +105,6 @@ class Cmssw(JobType):
         # other output files to be returned via sandbox or copied to SE
         try:
             self.output_file = []
-
-
             tmp = cfg_params['CMSSW.output_file']
             if tmp != '':
                 tmpOutFiles = string.split(cfg_params['CMSSW.output_file'],',')
@@ -146,8 +141,6 @@ class Cmssw(JobType):
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
             for tmp in tmpAddFiles:
                 tmp = string.strip(tmp)
-                dirname = ''
-                if not tmp[0]=="/": dirname = "."
                 shutil.copyfile(tmp, common.work_space.shareDir()+tmp)
                 files = common.work_space.pathForTgz()+'share/' + tmp
                 if not os.path.exists(files):
@@ -320,8 +313,8 @@ class Cmssw(JobType):
         sites = dataloc.getSites()
         allSites = []
         listSites = sites.values()
-        for list in listSites:
-            for oneSite in list:
+        for listSite in listSites:
+            for oneSite in listSite:
                 allSites.append(oneSite)
         allSites = self.uniquelist(allSites)
 
@@ -654,8 +647,8 @@ class Cmssw(JobType):
         # First of all declare the user Scram area
         swArea = self.scram.getSWArea_()
         #print "swArea = ", swArea
-        swVersion = self.scram.getSWVersion()
-        #print "swVersion = ", swVersion
+        # swVersion = self.scram.getSWVersion()
+        # print "swVersion = ", swVersion
         swReleaseTop = self.scram.getReleaseTop_()
         #print "swReleaseTop = ", swReleaseTop
         
@@ -895,7 +888,7 @@ class Cmssw(JobType):
             # txt += 'echo "****** end pset1.cfg ********"\n'
         return txt
 
-    def wsBuildExe(self, nj):
+    def wsBuildExe(self, nj=0):
         """
         Put in the script the commands to build an executable
         or a library.
@@ -1072,7 +1065,7 @@ class Cmssw(JobType):
         
         return result
 
-    def getRequirements(self):
+    def getRequirements(self, nj=[]):
         """
         return job requirements to add to jdl files 
         """

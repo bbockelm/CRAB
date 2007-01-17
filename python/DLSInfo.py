@@ -5,21 +5,9 @@ from crab_exceptions import *
 from crab_util import *
 import common
 
-try:
-    import dlsApi
-    import dlsClient
-    from dlsDataObjects import DlsLocation, DlsFileBlock, DlsEntry
-except:
-    try:
-        Crabpydir=commands.getoutput('which crab')
-        Topdir=string.replace(Crabpydir,'/python/crab','')
-        sys.path.append(Topdir+'/DLSAPI')
-        import dlsApi
-        import dlsClient
-        from dlsDataObjects import DlsLocation, DlsFileBlock, DlsEntry
-    except:
-        msg="ERROR no DLS API available"
-        raise CrabException(msg)
+import dlsApi
+import dlsClient
+from dlsDataObjects import DlsLocation, DlsFileBlock, DlsEntry
                                                                                             
 ## for python 2.2 add the pyexpat.so to PYTHONPATH
 pythonV=sys.version.split(' ')[0]
@@ -40,8 +28,8 @@ class DLSError:
 
 class DLSNoReplicas(exceptions.Exception):
     def __init__(self, FileBlock):
-        args ="No replicas exists for fileblock: "+FileBlock+"\n"
-        exceptions.Exception.__init__(self, args)
+        exceptions.Exception.__init__(self, self.args)
+        self.args ="No replicas exists for fileblock: "+FileBlock+"\n"
         pass
 
     def getClassName(self):
@@ -60,7 +48,6 @@ class DLSNoReplicas(exceptions.Exception):
 class DLSInfo:
     def __init__(self, type, cfg_params):
         self.cfg_params = cfg_params
-        jobtype = self.cfg_params['CRAB.jobtype']
         if type=="DLS_TYPE_DLI":
             try:
                 endpoint=self.cfg_params['CMSSW.dls_endpoint']
@@ -93,7 +80,7 @@ class DLSInfo:
         try:
             self.api = dlsClient.getDlsApi(dls_type=type,dls_endpoint=endpoint)
         except dlsApi.DlsApiError, inst:
-            msg = "Error when binding the DLS interface: %s  Server %s"%(str(inst),self.DLSServer_)
+            msg = "Error when binding the DLS interface: %s  Server %s"%(str(inst),endpoint)
             #print msg
             raise CrabException(msg)
  
@@ -106,7 +93,7 @@ class DLSInfo:
         try:
             entryList=self.api.getLocations([fileblocks])
         except dlsApi.DlsApiError, inst:
-            msg = "Error in the DLS query: %s." % str(inst)
+            #msg = "Error in the DLS query: %s." % str(inst)
             #print msg
             raise DLSNoReplicas(fileblocks)
 

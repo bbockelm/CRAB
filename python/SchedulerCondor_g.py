@@ -7,8 +7,7 @@ from GridCatService import *
 import time
 import common
 import popen2
-
-import os, sys, time
+import os
 
 class SchedulerCondor_g(Scheduler):
     def __init__(self):
@@ -303,10 +302,6 @@ class SchedulerCondor_g(Scheduler):
         """
         Returns file with scheduler-specific parameters
         """
-        index = int(common.jobDB.nJobs()) - 1
-        job = common.job_list[index]
-        jbt = job.type()
-        
         lastDest=''
         first = []
         last  = []
@@ -513,7 +508,7 @@ class SchedulerCondor_g(Scheduler):
         """
         Check the compatibility of available resources
         """
-        self.checkProxy()
+        #self.checkProxy()
         return 1
 
     def submit(self, nj):
@@ -558,7 +553,7 @@ class SchedulerCondor_g(Scheduler):
         if ( attr == 'exit_code' ) :
             jobnum_str = '%06d' % (int(id))
             # opts = common.work_space.loadSavedOptions()
-            base = string.upper(opts['-jobtype']) 
+            base = string.upper(common.taskDB.dict("JobType"))
             log_file = common.work_space.resDir() + base + '_' + jobnum_str + '.stdout'
             logfile = open(log_file)
             log_line = logfile.readline()
@@ -628,7 +623,7 @@ class SchedulerCondor_g(Scheduler):
         Returns the name of directory with results.
         not needed for condor-g
         """
-        self.checkProxy()
+        #self.checkProxy()
         return ''
 
     def cancel(self, id):
@@ -644,7 +639,7 @@ class SchedulerCondor_g(Scheduler):
                 if line.strip().startswith('--') :
                     schedd = line.strip().split()[6]
                 if line.strip().startswith(id.strip()) :
-                    status = line.strip().split()[5]
+                    # status = line.strip().split()[5]
                     break
         cmd = 'condor_rm -name ' + schedd + ' ' + id
         cmd_out = runCommand(cmd)
@@ -662,7 +657,7 @@ class SchedulerCondor_g(Scheduler):
 
         # input and output sandboxes
         inp_sandbox = jbt.inputSandbox(index)
-        out_sandbox = jbt.outputSandbox(index)
+        #out_sandbox = jbt.outputSandbox(index)
 
         # title
         title     = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
@@ -859,7 +854,7 @@ class SchedulerCondor_g(Scheduler):
         Function to check the Globus proxy.
         """
         if (self.proxyValid): return
-        timeleft = -999
+        #timeleft = -999
         minTimeLeft=10*3600 # in seconds
 
         mustRenew = 0

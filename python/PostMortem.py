@@ -27,7 +27,7 @@ class PostMortem(Actor):
         for c, v in self.nj_list.iteritems():
             id = int(c)
             out = common.scheduler.loggingInfo(v)
-            job = common.job_list[id - 1]
+            # job = common.job_list[id - 1]
             jobnum_str = '%06d' % (id)
             fname = common.work_space.jobDir() + '/' + self.cfg_params['CRAB.jobtype'].upper() + '_' + jobnum_str + '.loggingInfo'
             if os.path.exists(fname):

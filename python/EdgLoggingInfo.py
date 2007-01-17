@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, string
+import sys
 
 class EdgLoggingInfo:
     def __init__(self) :
@@ -48,10 +48,6 @@ class EdgLoggingInfo:
         """
 
         # init final variables
-        final_event = ''
-        final_reason = ''
-        final_exit_code = ''
-        final_time = ''
         final_done_code = 0
         final_abort_msg = ''
         final_done_msg  = ''
@@ -64,7 +60,6 @@ class EdgLoggingInfo:
         event     = ''
         reason    = ''
         exit_code = ''
-        time      = ''
 
         lines = input.split('\n')
 
@@ -81,8 +76,8 @@ class EdgLoggingInfo:
                 reason = self.parse_reason(line.split('=')[1].strip())
             if line.count('exit_code') >= 1 :
                 exit_code = line.split('=')[1].strip()
-            if line.count('time') >= 1 :
-                time = line.split('=')[1].strip()
+            # if line.count('time') >= 1 :
+            #     time = line.split('=')[1].strip()
             
             if ( line.count('---') >= 1 or line.count('***') >= 1 ) and event != '' :
                 if event in self._events :
@@ -94,8 +89,6 @@ class EdgLoggingInfo:
                             final_done_msg += '. '+reason
                     elif event == 'Abort' :
                         final_abort_msg = reason
-                    final_exit_code = exit_code
-                    final_time = time
 
 
         if final_abort_msg.count('no compatible resources') >= 1 :

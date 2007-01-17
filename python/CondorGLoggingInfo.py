@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, string
+import sys
 
 class CondorGLoggingInfo:
     def __init__(self) :
@@ -37,7 +37,7 @@ class CondorGLoggingInfo:
                 msg = line.split('\"')[-2]
                 break
 
-        if msg.find('authentication with the remote server failed') :
+        if msg.find('authentication with the remote server failed')>=0 :
             self.category = self._categories[2]
         else :
             self.category = self._categories[0]

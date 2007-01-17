@@ -3,7 +3,6 @@
 from socket import *
 import os
 import common
-import time
 
 def Monitor(operation,Resubmit,jid,exitCode,dest):
        common.taskDB.load()
@@ -17,7 +16,6 @@ def Monitor(operation,Resubmit,jid,exitCode,dest):
            owner = array[4]
            pass
 
-       SID = jid
        brok = dest
 
        port = 8888

@@ -3,10 +3,7 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
-import os, sys, tempfile, shutil, time
-#from Submitter import *
-from shutil import copyfile
-import Statistic
+import os, time, shutil
 
 from BossSession import *
 
@@ -358,7 +355,7 @@ class SchedulerBoss(Scheduler):
                     common.logger.debug(5,msg)
                     time.sleep(sleep_interval)
                 else :
-                    msg = e.__str__() + '\nError: Problem with job '+sched_name+' registration\n'
+                    msg = e.__str__() + '\nError: Problem with jobtype '+jobtype+' registration\n'
                     raise CrabException(msg)
         
         # jobtype registered
@@ -404,8 +401,9 @@ class SchedulerBoss(Scheduler):
             # debug
             msg = 'BOSS declaration:' + common.work_space.shareDir()+self.boss_jobtype+'.xml'
             common.logger.debug(4,msg)
-            #        msg = 'BOSS declaration output:' + cmd_out
-            #        common.logger.debug(4,msg)
+            msg = 'BOSS declaration took ' +str(stop-start)
+            common.logger.debug(1,msg)
+            common.logger.write(msg)
         ###
             self.Task_id = self.bossTask.id()
             common.taskDB.setDict('BossTaskId',self.Task_id)
@@ -462,12 +460,7 @@ class SchedulerBoss(Scheduler):
         common.logger.debug(1,"listMatch time :"+str(stop-start))
         common.logger.write("listMatch time :"+str(stop-start))
 
-        #return self.boss_scheduler.listMatch(nj)
-        jdl = ''
-        #cmd_out = runCommand(cmd,0,10)
-        '''
-        cosa ne faccio di CEs
-        '''
+        # print something about CEs
         sites = []
         for it in CEs :
             it = it.split(':')[0]
@@ -477,65 +470,6 @@ class SchedulerBoss(Scheduler):
         common.logger.message("Matched Sites :"+str(sites))
         return len(sites)
 
-    def parseListMatch_(self, out, jdl): # inutile ormai!
-        """
-        Parse the f* output of edg-list-match and produce something sensible
-        """
-        reComment = re.compile( r'^\**$' )
-        reEmptyLine = re.compile( r'^$' )
-        reVO = re.compile( r'Selected Virtual Organisation name.*' )
-        reLine = re.compile( r'.*')
-        #reCE = re.compile( r'(.*:.*)')
-        reCE = re.compile( r'(\S*):')
-        reCEId = re.compile( r'CEId.*')
-        reNO = re.compile( r'No Computing Element matching' )
-        reRB = re.compile( r'Connecting to host' )
-        next = 0
-        CEs=[]
-        Match=0
-
-        #print out
-        lines = reLine.findall(out)
-
-        i=0
-        CEs=[]
-        for line in lines:
-            string.strip(line)
-            if reNO.match( line ):
-                common.logger.debug(5,line)
-                return 0
-                pass
-            if reVO.match( line ):
-                VO =reVO.match( line ).group()
-                common.logger.debug(5,"VO "+VO)
-                pass
-
-            if reRB.match( line ):
-                RB = reRB.match(line).group()
-                common.logger.debug(5,"RB "+RB)
-                pass
-
-            if reCEId.search( line ):
-                for lineCE in lines[i:-1]:
-                    if string.find(lineCE, "Log file created") != -1: 
-                       break 
-                    if reCE.search( lineCE ):
-                        CE = string.strip(reCE.search(lineCE).group(1))
-                        CEs.append(CE.split(':')[0])
-                        pass 
-                    pass
-                pass
-            i=i+1
-            pass
-
-        common.logger.debug(5,"All CE :"+str(CEs))
-
-        sites = []
-        [sites.append(it) for it in CEs if not sites.count(it)]
-
-        common.logger.debug(5,"All Sites :"+str(sites))
-        common.logger.message("Matched Sites :"+str(sites))
-        return len(sites)
     ##########################################   ----  add as workaround for list match with Boss4 ds
     def createFakeJdl(self,nj):
         return self.boss_scheduler.createFakeJdl(nj)
@@ -547,8 +481,6 @@ class SchedulerBoss(Scheduler):
         Submit one job. nj -- job number.
         """
 
-        boss_scheduler_name = string.lower(self.boss_scheduler.name())
-        boss_scheduler_id = None
         i = list[0]
         jobsList = list[1]
         schcladstring = ''
@@ -598,7 +530,6 @@ class SchedulerBoss(Scheduler):
         boss_id = str(int_id)
         try:
             self.bossTask.load (ALL, boss_id )
-            task = self.bossTask.jobsDict()
             programs = self.bossTask.jobPrograms(boss_id)
             cmd_out = programs['1']['OUTFILES']
         except BossError,e:
@@ -672,13 +603,13 @@ class SchedulerBoss(Scheduler):
                         else:   
                             msg = 'Results of Job # '+`int(i_id)`+' are in '+dir
                             common.logger.message(msg)
-                        resFlag = 0
-                        jid = common.scheduler.boss_SID(int(i_id)) 
-                        try:
-                            exCode = common.scheduler.getExitStatus(jid)
-                        except:
-                            exCode = ' '
-#                        Statistic.Monitor('retrieved',resFlag,jid,exCode,'dest')
+                        # resFlag = 0
+                        # jid = common.scheduler.boss_SID(int(i_id)) 
+                        #  try:
+                        #      exCode = common.scheduler.getExitStatus(jid)
+                        #  except:
+                        #      exCode = ' '
+                        # Statistic.Monitor('retrieved',resFlag,jid,exCode,'dest')
                         common.jobDB.setStatus(int(i_id)-1, 'Y') 
                     except SchedulerError,e:
                         print "Warning : Scheduler interaction in getOutput operation failed for jobs:"
@@ -739,22 +670,20 @@ class SchedulerBoss(Scheduler):
                     subm_id.append(id)
             else:
                 common.logger.message("Warning: job # "+str(id)+" doesn't exists! Not possible to kill it.")
-        bossTaskId = common.taskDB.dict('BossTaskId')
         ## first get the status of all job in the list
-        statusList = self.queryStatusList(bossTaskId, subm_id)
+        # bossTaskId = common.taskDB.dict('BossTaskId')
+        # statusList = self.queryStatusList(bossTaskId, subm_id)
         
         if len(subm_id)==common.jobDB.nSubmittedJobs() and common.jobDB.nSubmittedJobs()>0:
-            bossTaskId = common.taskDB.dict('BossTaskId')
             
             try:
                 common.logger.message("Killing jobs # "+str(subm_id[0])+':'+str(subm_id[-1]))
                 self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]))
             except SchedulerError,e:
-                print "Warning : Scheduler interaction in kill operation failed for jobs:"
-                print e.__str__(),'\n'
+                common.logger.message("Warning : Scheduler interaction in kill operation failed for jobs:"+e.__str__())
                 pass
             except BossError,e:
-                common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id[0])+" . See log for details")
+                common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id)+" . See log for details")
                 
             for i in subm_id: common.jobDB.setStatus(i-1, 'K')
 
@@ -775,18 +704,17 @@ class SchedulerBoss(Scheduler):
                         if k in subm_id and status == 'K':
                             common.jobDB.setStatus(k - 1, 'K')
                 except SchedulerError,e:
-                    print "Warning : Scheduler interaction on kill operation failed for jobs:"
-                    print e.__str__(),'\n'
+                    common.logger.message("Warning : Scheduler interaction on kill operation failed for jobs:"+ e.__str__())
                     pass
                 except BossError,e:
-                    common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id[0])+" . See log for details")
+                    common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id)+" . See log for details")
                 common.jobDB.save()
                 pass
             else:
                 common.logger.message("\nError killing jobs # "+str(int_id).replace("[","",1).replace("]","",1)+" . See log for details")
             common.jobDB.save()
             pass
-        return #cmd_out    
+        return
 
     def setFlag( self, list, index ):
         if len( list ) > (index + 1):
@@ -798,7 +726,6 @@ class SchedulerBoss(Scheduler):
     def prepString( self, list ):
         s = ""
         flag = 0
-        comapare = -1
         for i in range( len( list ) ):
             if flag == 0:
                 s = str( list[i] )
@@ -856,7 +783,6 @@ class SchedulerBoss(Scheduler):
         self.boss_scheduler.checkProxy()
 
         results = {}
-        job = {}
         try:
             # fill dictionary { 'bossid' : 'status' , ... }
             self.bossTask.query( ALL )
@@ -921,7 +847,6 @@ class SchedulerBoss(Scheduler):
         results = {}
         try:
             # fill dictionary { 'bossid' : 'status' , ... }
-            # fill dictionary { 'bossid' : 'status' , ... }
             self.bossTask.query( ALL, tmpQ )
             task = self.bossTask.jobsDict()
             for k, v in task.iteritems():
@@ -941,7 +866,6 @@ class SchedulerBoss(Scheduler):
         Return a list of all boss_Id of a task
         """
         ListBoss_ID = []
-        results = {}
         task = self.bossTask.jobsDict()
         for k, v in task.iteritems():
             ListBoss_ID.append(int(k))

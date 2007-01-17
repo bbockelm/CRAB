@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, re, time
+import sys, re
 
 class TerminalController:
     """
