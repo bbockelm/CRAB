@@ -1,4 +1,5 @@
 import re
+import termios, sys, cStringIO
 from logging import debug
 from subprocess import Popen,PIPE
 
@@ -11,12 +12,15 @@ def shellRunner(cmd):
     returncode = p.wait()
     outdata = p.stdout.read()
     errdata = p.stderr.read()
-    p.stdout.close()
-    p.stderr.close()
     debug("----- Process stdout -----\n"+outdata+"\n--------------------------\n")
     debug("----- Process stderr -----\n"+errdata+"\n--------------------------\n")
     return (returncode, outdata, errdata)
 
+def shellSimpleRunner(cmd):
+    debug("Executing: "+str(cmd))
+    p = Popen(cmd)
+    returncode = p.wait()
+    return returncode
 
 def isVomsProxyOk(minTime = 0):
     returncode, outdata, errdata = shellRunner(["voms-proxy-info", "-timeleft"])
@@ -39,14 +43,13 @@ def isMyProxyOk(minTime = 45*60):
     return timeleft > minTime
 
 def initVomsProxy():
-    print ("Insert password to init voms-proxy: ")
-    returncode, outdata, errdata = shellRunner(["voms-proxy-init", "-voms", "cms"])
+    shellSimpleRunner(["voms-proxy-init", "-voms", "cms"])
 
 def initMyProxy():
-    print ("Insert password to init myproxy: ")
-    returncode, outdata, errdata = shellRunner(["myproxy-init", "-d", "-s"])
-    
+    shellSimpleRunner(["myproxy-init", "-d"])
+
 def checkProxies():
+    password = None
     if not isVomsProxyOk():
         initVomsProxy()
         if not isVomsProxyOk():
@@ -59,3 +62,15 @@ def checkProxies():
             return False
     return True
     
+def getPass(prompt = "Password: "):
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    new = termios.tcgetattr(fd)
+    new[3] = new[3] & ~termios.ECHO          # lflags
+    try:
+        termios.tcsetattr(fd, termios.TCSADRAIN, new)
+        passwd = raw_input(prompt)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+    return passwd
+  
