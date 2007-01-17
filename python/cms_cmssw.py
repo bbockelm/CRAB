@@ -704,13 +704,6 @@ class Cmssw(JobType):
                     common.logger.debug(5,"data "+root+"/data"+" to be tarred")
                     tar.add(root+"/data",root[swAreaLen:]+"/data")
 
-            ## copy ProdAgent dir to swArea
-            # cmd = '\cp -rf ' + os.environ['CRABDIR'] + '/ProdAgentApi ' + swArea
-            # cmd_out = runCommand(cmd)
-            # if cmd_out != '':
-            #     common.logger.message('ProdAgentApi directory could not be copied to local CMSSW project directory.')
-            #     common.logger.message('No FrameworkJobreport parsing is possible on the WorkerNode.')
-
             ## Add ProdAgent dir to tar
             paDir = 'ProdAgentApi'
             pa = os.environ['CRABDIR'] + '/' + 'ProdAgentApi'
