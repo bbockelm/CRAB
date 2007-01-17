@@ -219,7 +219,7 @@ def importName(module_name, name):
 
 ###########################################################################
 
-### WARNING This Function become OBSOLETE after Boss API implementation
+### WARNING This Function become USELESS after Boss API implementation
 def runBossCommand(cmd, printout=0, timeout=3600):
     """
     Cd to correct directory before running a boss command
@@ -256,6 +256,7 @@ def runCommand(cmd, printout=0, timeout=-1):
     else:
         common.logger.debug(10,cmd)
         common.logger.write(cmd)
+        pass
 
     child = popen2.Popen3(cmd, 1) # capture stdout and stderr from command
     child.tochild.close()             # don't need to talk to child
@@ -312,6 +313,7 @@ def runCommand(cmd, printout=0, timeout=-1):
     else:
         common.logger.debug(10,cmd_out)
         common.logger.write(cmd_out)
+        pass
     #print "<"+cmd_out+">"
     return cmd_out
 
@@ -321,28 +323,32 @@ def makeCksum(filename) :
     make chksum using filename and content of file
     """
 
-    tmp_filename = runCommand('mktemp crab_hash_XXXXXXXXXXXX').strip()
-    output = open(tmp_filename,'w')
+    try:
+        import tempfile
+        tmpfile= tempfile.NamedTemporaryFile(mode='w')
+        tmp_filename = tmpfile.name
+    except:
+        ## SL in case py2.2 is used, fall back to old solution
+        tmp_filename = tempfile.mktemp()
+        tmpfile= open(tmp_filename,'w')
+        tobedeleted=1
 
     # add filename as first line
-    output.write(filename+'\n')
+    tmpfile.write(filename+'\n')
 
     # fill input file in tmp file
     input = open(filename)
-    input_line = input.readline()
-    while input_line :
-        output.write(input_line+'\n')
-        input_line = input.readline()
-    output.close()
-
+    tmpfile.writelines(input.readlines())
+    tmpfile.flush()
+    input.close()
 
     cmd = 'cksum '+tmp_filename
     cmd_out = runCommand(cmd)
 
     cksum = cmd_out.split()[0]
 
-    # delete file
-    runCommand('rm -f '+tmp_filename)
+    ## SL this is not needed if we use NamedTemporaryFile, which is not available in py2.2
+    if (tobedeleted): os.remove(tmp_filename)
 
     return cksum
 
@@ -352,4 +358,6 @@ if __name__ == '__main__':
     print 'sys.argv[1] =',sys.argv[1]
     list = parseRange2(sys.argv[1])
     print list
+    cksum = makeCksum("crab_util.py")
+    print cksum
     
