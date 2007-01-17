@@ -46,7 +46,7 @@ def initVomsProxy():
     shellSimpleRunner(["voms-proxy-init", "-voms", "cms"])
 
 def initMyProxy():
-    shellSimpleRunner(["myproxy-init", "-d"])
+    shellSimpleRunner(["myproxy-init", "-d", "-n"])
 
 def checkProxies():
     password = None
