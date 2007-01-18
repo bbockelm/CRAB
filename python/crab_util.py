@@ -324,6 +324,7 @@ def makeCksum(filename) :
     make chksum using filename and content of file
     """
 
+    tobedeleted=0
     try:
         import tempfile
         tmpfile= tempfile.NamedTemporaryFile(mode='w')
