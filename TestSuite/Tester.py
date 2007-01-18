@@ -6,7 +6,7 @@ import random
 # Tester class: it's an abstract class implementing a thread running a test on CRAB
 
 class Tester(threading.Thread):
-    def __init__(self, configFile, name, timeout, debug = False):
+    def __init__(self, configFile, name, timeout, semaphore, debug = False):
         """ Tester constructor.
 
         Tester constructor: configFile is the path to crab.cfg, name is a identification name for the test and timeout is the
@@ -15,6 +15,7 @@ class Tester(threading.Thread):
         
         threading.Thread.__init__(self) # Mandatory
 
+        self.semaphore = semaphore
         self.configFile = configFile # crab.cfg path
         self.name = name # identification name
         self.root = os.path.abspath(name+"-"+time.strftime("%Y%m%d%H%M%S")) # basename for the test and the log file.
@@ -41,6 +42,7 @@ class Tester(threading.Thread):
         self.session = Session(self.logger, self.configFile, self.root) # Creating the CRAB session
 
         self.begin = time.time() # Starting the timer (for timeout handling)
+        self.toBeChecked = False
 
     def test(self):
         """ The actual implementation of the test. """
@@ -54,6 +56,7 @@ class Tester(threading.Thread):
             self.logger.info(self.name+" ended successfully!")
         except TestException, txt:
             self.dumpError(txt)
+            self.toBeChecked = True
             
         except CrabException, (cmd, returncode, outdata, errdata):
             error = "\nError executing: " + str(cmd) + "\n"
@@ -61,6 +64,7 @@ class Tester(threading.Thread):
             error += "\n--- Last command STDOUT ---\n" + outdata + "\n---------------------------\n"
             error += "\n--- Last command STDERR ---\n" + errdata + "\n---------------------------\n"
             self.logger.error(error)
+            self.toBeChecked = True
 
         # Test finished. Dumping results
         try:
@@ -71,21 +75,37 @@ class Tester(threading.Thread):
             error += "\n--- Last command STDOUT ---\n" + outdata + "\n---------------------------\n"
             error += "\n--- Last command STDERR ---\n" + errdata + "\n---------------------------\n"
             self.logger.error(error)
+            self.toBeChecked = True
 
         # Dumping the jobs history
         self.logger.info("\n------ Jobs history -------\n" + self.session.jobsHistory.__repr__() + "\n---------------------------\n")
 
         # Dumping crab actions tests performed
+        briefLog = logging.getLogger("brief")
+        logresult = ""
         for testname,result in self.tests.iteritems():
+            logresult += testname+" -> "
             if result == None:
                 self.logger.warning(testname + ": test not performed...")
+                logresult += "n/a\t"
             elif result:
                 self.logger.info(testname + ": test OK!")
+                logresult += "ok!\t"
             else:
                 self.logger.error(testname + ": some or all tests failed!!")
+                logresult += "BAD!\t"
+
+        logresult += self.name
+        if self.toBeChecked:
+            logresult += " (To be checked!)"
+        briefLog.info(logresult)
                         
         self.logger.info(self.name+" test completed!")
         self.logger.info("Please clean "+str(self.session.cwd)+" by hand.")
+
+        
+        
+        self.semaphore.release()
 
     def dumpError(self, txt):
         """ Dump an error, printing txt and last command executed output. """

@@ -150,7 +150,7 @@ class Session:
         for i in range(self.submitted+1, self.submitted+submitted+1):
             local, remote = self.jobsHistory.getJobStatus(i)
             if not (remote in SUBMITTED or remote in WAITING or remote in RUNNING or remote in DONE):
-                raise TestException, "Job "+str(i+1)+" not submitted correctly!"
+                raise TestException, "Job "+str(i)+" not submitted correctly!"
 
         self.submitted += submitted
         

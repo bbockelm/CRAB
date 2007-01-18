@@ -3,8 +3,8 @@ from Session import *
 from Tester import Tester
 
 class LinearTester(Tester):
-    def __init__(self, configFile, name, timeout, debug = False):
-        Tester.__init__(self, configFile, name+"-linear", timeout, debug)
+    def __init__(self, configFile, name, timeout, semaphore, debug = False):
+        Tester.__init__(self, configFile, name+"-linear", timeout, semaphore, debug)
         
     def test(self):
         self.tests["create"] = False
@@ -19,6 +19,10 @@ class LinearTester(Tester):
 
         while self.checkTimeout():
             self.session.crabStatus()
+            badJobs = self.session.jobsHistory.getJobsInRemoteStatus(BAD)
+            if badJobs and not self.toBeChecked:
+                self.logger.warning("Some jobs in a bad status!")
+                self.toBeChecked = True
             if self.session.jobsHistory.isChanged():
                 self.session.logger.info(str(self.session.jobsHistory))
                             

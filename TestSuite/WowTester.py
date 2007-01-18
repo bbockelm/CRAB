@@ -5,13 +5,13 @@ import random
 
 class WowTester(Tester):
     """ This class implements a complex behavioural test for CRAB stressing it in all its main action. """
-    def __init__(self, configFile, name, timeout, debug = False):
+    def __init__(self, configFile, name, timeout, semaphore, debug = False):
         """ WowTester constructor.
 
         WowTester constructor: configFile is the path to crab.cfg, name is a identification name for the test and timeout is the
         time after which the test is stopped.
         """
-        Tester.__init__(self, configFile, name+"-wow", timeout, debug)
+        Tester.__init__(self, configFile, name+"-wow", timeout, semaphore, debug)
 
     def testAction(self, name, jobList, debugName):
         """ Handy method to test a particular crab action.
@@ -51,6 +51,12 @@ class WowTester(Tester):
         while self.checkTimeout():
             # Status update
             self.session.crabStatus()
+            
+            badJobs = self.session.jobsHistory.getJobsInRemoteStatus(BAD)
+            if badJobs and not self.toBeChecked:
+                self.logger.warning("Some jobs in a bad status!")
+                self.toBeChecked = True
+
             if self.session.jobsHistory.isChanged():
                 self.session.logger.info(str(self.session.jobsHistory))
             # Submit with a certain probability and if it is possible

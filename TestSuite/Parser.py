@@ -40,10 +40,10 @@ def parseSubmit(text):
         if g:
             submitted = int(g.group("submitted"))
             requested = g.group("requested")
-            if requested:
-                requested = int(requested)
-                if requested < submitted:
-                    raise TestException, "More jobs submitted than requested"
+            #if requested:
+                #requested = int(requested)
+                #if requested < submitted:
+                    #raise TestException, "More jobs submitted than requested"
             return submitted
     raise TestException, "Possible troubles in parsing crab -(re)submit"
 

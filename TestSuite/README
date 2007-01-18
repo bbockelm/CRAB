@@ -6,3 +6,8 @@ lately, cfg is a string containing the name of a crab.cfg like file to
 open and timeout/timeout2 is the number of second after which the
 linear/wow test respectively is interrupted.
 TestSuite -h gives a brief help about its options.
+
+TestCreate is a little python script to prepare many test from a skeleton
+one. It iterates on the main parameters of crab.cfg creating many new
+crab.cfg in the current dir. It output a suitable configuration that you
+can redirect to TestSuite.cfg

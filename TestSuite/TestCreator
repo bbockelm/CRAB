@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+from optparse import OptionParser
+import sys
+
+def setParameter(cfg, section, var, value):
+    sectionFound = False
+    updated = False
+    ret = []
+    for line in cfg:
+        sline = line.strip()
+        comment = sline.find("#")
+        if comment > -1:
+            sline = sline[:comment]
+        if sline:
+            if not sectionFound:
+                ret.append(line)
+                if sline == "["+section+"]":
+                    sectionFound = True
+                    continue
+            else:
+                if sline[0] == "[" and sline[-1] == "]":
+                    if not updated:
+                        ret.append(str(var)+" = "+str(value)+"\n")
+                    sectionFound = False # Found a new section. Current correct section finished.
+                    ret.append(line)
+                else:
+                    sline = sline.split("=") # Splitting variable name from its value.
+                    if len(sline) == 2 and sline[0].strip() == var:
+                        ret.append(str(var)+" = "+str(value)+"\n")
+                        updated = True
+                    else:
+                        ret.append(line)
+        else:
+            ret.append(line)
+    return ret
+
+def createTests(cfgName, lineartimeout, wowtimeout):
+    root, ext = cfgName.split(".")
+    cfg = open(cfgName).readlines()
+    for sched in ["edg", "glite", "glitecoll"]:
+        cfg = setParameter(cfg, "CRAB", "scheduler", sched)
+        for retdata in ["ret", "copy", "retcopy"]:
+            if retdata == "ret":
+                cfg = setParameter(cfg, "USER", "return_data", 1)
+                cfg = setParameter(cfg, "USER", "copy_data", 0)
+            elif retdata == "copy":
+                cfg = setParameter(cfg, "USER", "return_data", 0)
+                cfg = setParameter(cfg, "USER", "copy_data", 1)
+            else:
+                cfg = setParameter(cfg, "USER", "return_data", 1)
+                cfg = setParameter(cfg, "USER", "copy_data", 1)
+            for bossrt in [0, 1]:
+                name = root+"-"+sched+"-"+retdata
+                if bossrt:
+                    name += "-rt"
+                cfg = setParameter(cfg, "USER", "use_boss_rt", bossrt)
+                out = open(name+".cfg", "w")
+                out.writelines(cfg)
+                out.close()
+                print name+", "+name+".cfg, "+str(lineartimeout)+", "+str(wowtimeout)
+
+
+parser = OptionParser(version='0.1')
+parser.add_option('-c', '--config', action='store', type='string', dest='config', default='crab.cfg', help='set the config file to parse (default %default)')
+parser.add_option('-l', '--linear', action='store', type='int', dest='linear', default=600, help='set the linear test timeout (default %default)')
+parser.add_option('-w', '--wow', action='store', type='int', dest='wow', default=1200, help='set the wow test timeout (default %default)')
+
+(options, args) = parser.parse_args()
+
+try:
+    createTests(options.config, options.linear, options.wow)
+except IOError, msg:
+    parser.error("Can't correctly open "+options.config+": "+str(msg))
+    sys.exit(1)

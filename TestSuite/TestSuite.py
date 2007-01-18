@@ -9,6 +9,7 @@ from os import path
 from subprocess import Popen
 from ProxyInit import *
 from sys import stderr
+from threading import BoundedSemaphore
 
 class TestSuite:
     def __init__(self):
@@ -16,6 +17,14 @@ class TestSuite:
         self.options = None
         self.getOptions()
         self.getConfig()
+        briefLog = logging.getLogger("brief")
+        filelog = logging.FileHandler("TestSuite-brief.log")
+        briefLog.setLevel(logging.INFO)
+        filelog.setLevel(logging.INFO)
+        formatter = logging.Formatter("%(message)s")
+        filelog.setFormatter(formatter)
+        briefLog.addHandler(filelog)
+
 
     def printHelp(self):
         print >> stderr
@@ -33,10 +42,11 @@ class TestSuite:
 
     def getOptions (self):
         logging.debug('Parsing the command line') 
-        parser = OptionParser(version='0.1')
+        parser = OptionParser(version='1.0.1')
         parser.add_option('-c', '--config', action='store', type='string', dest='config', default='TestSuite.cfg', help='set the config file of the testsuite (default %default)')
         parser.add_option('-l', '--logname', action='store', type='string', dest='log', default='TestSuite.log', help='set the log file name of the TestSuite (default %default)')
         parser.add_option('-d', '--debug', action='store', type='int', dest='debug', default=0, help='Activate debug output (the greater the value the more verbouse output) (default: %default)')
+        parser.add_option('-t', '--threads', action='store', type='int', dest='threads', default=3, help='Max number of threads (default: %default)')
         (self.options, args) = parser.parse_args()
 
         self.options.config=path.abspath(self.options.config.strip())
@@ -99,15 +109,18 @@ class TestSuite:
 
     def mainThreads(self):
         logging.debug('Starting tests...')
+        semaphore = BoundedSemaphore(self.options.threads)
         tests = []
         for (nicename, cfg, timeout, timeout2) in self.t:
-            test = LinearTester (cfg, nicename, timeout, self.options.debug)
+            semaphore.acquire()
+            test = LinearTester (cfg, nicename, timeout, semaphore, self.options.debug)
             logging.debug('Thread '+test.getName()+' initialized')
             tests.append(test)
             test.start()
             logging.debug('Thread '+test.getName()+' started')
             
-            test = WowTester (cfg, nicename, timeout2, self.options.debug)
+            semaphore.acquire()
+            test = WowTester (cfg, nicename, timeout2, semaphore, self.options.debug)
             logging.debug('Thread '+test.getName()+' initialized')
             tests.append(test)
             test.start()
