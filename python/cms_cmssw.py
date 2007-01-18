@@ -126,7 +126,7 @@ class Cmssw(JobType):
             self.scriptExe = cfg_params['USER.script_exe']
             if self.scriptExe != '':
                if not os.path.isfile(self.scriptExe):
-                  msg ="WARNING. file "+self.scriptExe+" not found"
+                  msg ="ERROR. file "+self.scriptExe+" not found"
                   raise CrabException(msg)
                self.additional_inbox_files.append(string.strip(self.scriptExe))
         except KeyError:
@@ -139,17 +139,18 @@ class Cmssw(JobType):
         ## additional input files
         try:
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
-            for tmp in tmpAddFiles:
-                tmp = string.strip(tmp)
-                shutil.copyfile(tmp, common.work_space.shareDir()+tmp)
-                files = common.work_space.pathForTgz()+'share/' + tmp
-                if not os.path.exists(files):
-                    raise CrabException("Additional input file not found: "+files)
+            common.logger.debug(5,"Additional input files: "+str(tmpAddFiles))
+            for tmpFile in tmpAddFiles:
+                tmpFile = string.strip(tmpFile)
+                if not os.path.exists(tmpFile):
+                    raise CrabException("Additional input file not found: "+tmpFile)
                     pass
-                self.additional_inbox_files.append(string.strip(files))
+                storedFile = common.work_space.shareDir()+ tmpFile
+                shutil.copyfile(tmpFile, storedFile)
+                self.additional_inbox_files.append(string.strip(storedFile))
                 pass
+            common.logger.debug(5,"Inbox files so far : "+str(self.additional_inbox_files))
             pass
-            common.logger.debug(5,"Additional input files: "+str(self.additional_inbox_files))
         except KeyError:
             pass
 
