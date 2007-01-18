@@ -62,6 +62,8 @@ class Creator(Actor):
             self.cfg_params['GridName'] = runCommand("voms-proxy-info -identity")
             common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
             taskType = 'analysis'
+            try: VO = cfg_params['EDG.virtual_organization']
+            except KeyError: VO = 'cms'
 
             params = {'tool': common.prog_name,\
                       'JSToolVersion': common.prog_version_str, \
@@ -69,7 +71,7 @@ class Creator(Actor):
                       'scheduler': self.cfg_params['CRAB.scheduler'], \
                       'GridName': self.cfg_params['GridName'].strip(), \
                       'taskType': taskType, \
-                      'vo': self.cfg_params['EDG.virtual_organization'], \
+                      'vo': VO, \
                       'user': self.cfg_params['user']}
             jtParam = self.job_type.getParams()
             for i in jtParam.iterkeys():
