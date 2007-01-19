@@ -98,7 +98,7 @@ class SchedulerCondor_g(Scheduler):
                     msg += '[Condor-G Scheduler]: Direct Condor-G submission is not possible!\n'
                     common.logger.message(msg)
                     raise CrabException(msg)
-        
+
         # create hash
         self.hash = makeCksum(common.work_space.cfgFileName())
 
@@ -120,7 +120,7 @@ class SchedulerCondor_g(Scheduler):
                      msg  = '[Condor-G Scheduler]: No CE in EDG.ce_white_list : '
                      common.logger.message(msg)
                      raise CrabException(msg)
-            
+
                   if len(tmpCE) == 1 and ce_hostnames[i] == tmpCE[0] :
                      oneSite=ce_hostnames[i]
                      return oneSite
@@ -146,9 +146,9 @@ class SchedulerCondor_g(Scheduler):
                 raise CrabException(msg)
         else :
            raise CrabException('[Condor-G Scheduler]: CE hostname(s) for SE '+seSite+' could not be determined from GridCat.')
-        
+
         return oneSite
-        
+
     def checkExecutableInPath(self, name):
         # check if executable is in PATH
         cmd = 'which '+name
@@ -200,7 +200,7 @@ class SchedulerCondor_g(Scheduler):
             self.group = cfg_params["EDG.group"]
         except KeyError:
             self.group = None
-            
+
         try:
             self.role = cfg_params["EDG.role"]
         except KeyError:
@@ -250,7 +250,7 @@ class SchedulerCondor_g(Scheduler):
             msg = msg + " it's necessary to know the home catalog dir"
             common.logger.message(msg)
             raise CrabException(msg)
-      
+
         try: self.VO = cfg_params['EDG.virtual_organization']
         except KeyError: self.VO = 'cms'
 
@@ -259,7 +259,15 @@ class SchedulerCondor_g(Scheduler):
 
         try: self.GLOBUS_RSL = cfg_params['CONDORG.globus_rsl']
         except KeyError: self.GLOBUS_RSL = ''
-                                                                                                                                                             
+
+        # Provide an override for the batchsystem that condor_g specifies as a grid resource.
+        # this is to handle the case where the site supports several batchsystem but gridcat
+        # only allows a site to public one.
+	try: 
+           self.batchsystem = cfg_params['CONDORG.batchsystem']
+           msg = '[Condor-G Scheduler]: batchsystem overide specified in your crab.cfg'
+           common.logger.message(msg)
+	except KeyError: self.batchsystem = ''                                                                                                                                                     
         self.register_data = 0
 
         # check if one and only one entry is in $CE_WHITELIST
@@ -271,7 +279,7 @@ class SchedulerCondor_g(Scheduler):
             msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
             common.logger.message(msg)
             raise CrabException(msg)
-            
+
         if len(tmpGood) != 1 :
             msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
             msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
@@ -288,15 +296,15 @@ class SchedulerCondor_g(Scheduler):
         self.checkProxy()
 
         self._taskId = cfg_params['taskId']
-                
+
         try: self.jobtypeName = cfg_params['CRAB.jobtype']
         except KeyError: self.jobtypeName = ''
- 
+
         try: self.schedulerName = cfg_params['CRAB.scheduler']
         except KeyError: self.scheduler = ''
 
         return
-    
+
 
     def sched_parameter(self):
         """
@@ -312,7 +320,7 @@ class SchedulerCondor_g(Scheduler):
                 first.append(n)
                 if n != 0:last.append(n-1) 
         if len(first)>len(last) :last.append(common.jobDB.nJobs())
-                   
+
         for i in range(len(first)): # Add loop DS
             self.param='sched_param_'+str(i)+'.clad'
             param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
@@ -322,7 +330,7 @@ class SchedulerCondor_g(Scheduler):
             # extraTag maxWallTime
             if ( self.EDG_clock_time != '' ) :
                 param_file.write('(maxWalltime='+self.EDG_clock_time+')')
-                
+
             # extraTag additional GLOBUS_RSL
             if ( self.GLOBUS_RSL != '' ) :
                 param_file.write(self.GLOBUS_RSL)
@@ -331,7 +339,7 @@ class SchedulerCondor_g(Scheduler):
 
             param_file.close()   
 
-       
+
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
@@ -397,7 +405,7 @@ class SchedulerCondor_g(Scheduler):
               if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
               txt += 'export SE_PATH='+self.SE_PATH+'\n'
               txt += 'echo "SE_PATH = $SE_PATH"\n'
-                                                                                                                                                             
+
         txt += 'export VO='+self.VO+'\n'
         txt += 'CE=${args[3]}\n'
         txt += 'echo "CE = $CE"\n'
@@ -549,7 +557,7 @@ class SchedulerCondor_g(Scheduler):
         """ Query a status of the job with id """
 
         result = ''
-        
+
         if ( attr == 'exit_code' ) :
             jobnum_str = '%06d' % (int(id))
             # opts = common.work_space.loadSavedOptions()
@@ -662,14 +670,14 @@ class SchedulerCondor_g(Scheduler):
         # title
         title     = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
         jt_string = ''
-        
+
         xml_fname = str(self.jobtypeName)+'.xml'
         xml       = open(common.work_space.shareDir()+'/'+xml_fname, 'a')
 
         # TaskName   
         dir      = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
-  
+
         xml.write(str(title))
         xml.write('<task name="' +str(taskName)+'" sub_path="' + common.work_space.bossCache() + '">\n') 
         xml.write(jt_string)
@@ -697,7 +705,7 @@ class SchedulerCondor_g(Scheduler):
         xml.write('<program>\n')
         xml.write('<exec> ' + os.path.basename(script) +' </exec>\n')
         xml.write(jt_string)
-    
+
         xml.write('<args> <![CDATA[\n _ITR2_ \n]]> </args>\n')
         xml.write('<program_types> crabjob </program_types>\n')
 
@@ -727,7 +735,7 @@ class SchedulerCondor_g(Scheduler):
         if inp_box[-1] == ',' : inp_box = inp_box[:-1]
         inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
         xml.write(inp_box)
-        
+
         # stdout and stderr
         base = jbt.name()
         stdout = base + '__ITR3_.stdout'
@@ -735,7 +743,7 @@ class SchedulerCondor_g(Scheduler):
 
         xml.write('<stderr> ' + stderr + '</stderr>\n')
         xml.write('<stdout> ' + stdout + '</stdout>\n')
-        
+
         # output sanbox
         out_box = stdout + ',' + stderr + ',' 
 
@@ -754,7 +762,7 @@ class SchedulerCondor_g(Scheduler):
         if out_box[-1] == ',' : out_box = out_box[:-1]
         out_box = '<outfiles> <![CDATA[\n' + out_box + '\n]]></outfiles>\n'
         xml.write(out_box)
- 
+
         xml.write('<BossAttr> crabjob.INTERNAL_ID=_ITR1_ </BossAttr>\n')
 
         xml.write('</program>\n')
@@ -791,7 +799,7 @@ class SchedulerCondor_g(Scheduler):
         #    raise CrabException("Quitting: unable to find CE for site "+str(seSite))
 
 
-        
+
         hostSvc = ''
         try:
             hostSvc = GridCatHostService(gridcat_service_url,oneSite)
@@ -805,10 +813,16 @@ class SchedulerCondor_g(Scheduler):
                     common.logger.message(msg)
                     raise CrabException(msg)
 
-        try:
-            batchsystem = hostSvc.batchSystem()
-        except:
-            raise CrabException("Quitting: unable to find jobmanager for site "+str(oneSite))
+        if(self.batchsystem <> ''):
+            # Provide an override for the batchsystem that condor_g uses
+            batchsystem = self.batchsystem
+        else:
+            try:
+                batchsystem = hostSvc.batchSystem()
+            except:
+                raise CrabException("Quitting: unable to find jobmanager for site "+str(oneSite))
+
+
         if batchsystem <> '' : batchsystem='-'+batchsystem
         to_write += 'globusscheduler = "&quot;' + str(oneSite) + '/jobmanager' + batchsystem + '&quot;"\n'
 
@@ -890,3 +904,4 @@ class SchedulerCondor_g(Scheduler):
 
         self.proxyValid=1
         return
+
