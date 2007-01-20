@@ -515,11 +515,16 @@ class Cmssw(JobType):
             raise CrabException(msg)
 
         if (self.selectEventsPerJob):
-            self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
+            if (self.selectTotalNumberEvents):
+                self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
+            elif(self.selectNumberOfJobs) :  
+                self.total_number_of_jobs =self.theNumberOfJobs
+                self.total_number_of_events =int(self.theNumberOfJobs*self.eventsPerJob) 
+
         elif (self.selectNumberOfJobs) :
             self.total_number_of_jobs = self.theNumberOfJobs
             self.eventsPerJob = int(self.total_number_of_events/self.total_number_of_jobs)
-
+ 
         common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
 
         # is there any remainder?
