@@ -44,7 +44,8 @@ class SchedulerGlite(SchedulerEdg):
   
         req = ''
         req = req + jbt.getRequirements()
-    
+   
+  
         if self.EDG_requirements:
             if (req == ' '):
                 req = req + self.EDG_requirements
@@ -71,6 +72,8 @@ class SchedulerGlite(SchedulerEdg):
                 else:
                     req = req +  ' && (!RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId))'
                 pass
+        
+
         if self.EDG_clock_time:
             if (req == ' '):
                 req = req + 'other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
@@ -96,8 +99,9 @@ class SchedulerGlite(SchedulerEdg):
                 # MC Changed matching syntax to avoid gang matching
                 #############
                 reqtmp.append(' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ')
-            if len(reqtmp): reqSites = reqSites + " && (" + concString.join(reqtmp) + ')'
-            reqSites = reqSites + ';\n'
+            if len(reqtmp): reqSites = reqSites + " && (" + concString.join(reqtmp)  
+            # requirement added to skip gliteCE
+            reqSites = reqSites + '&& (!RegExp("*blah*", other.GlueCEUniqueId)));\n'
             param_file.write('Requirements = ' + req + reqSites )
    
             if (self.rb_param_file != ''):
