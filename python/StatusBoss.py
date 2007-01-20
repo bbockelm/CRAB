@@ -236,7 +236,7 @@ class StatusBoss(Actor):
         for iid in statusList.keys():
             if statusList[iid].split('_')[0] == 'Created':
                 self.countCreated.append(iid)
-            elif statusList[iid].split('_')[0] == 'Done (Success)' or statusList[iid].split('_')[0] == 'Done (Aborted)':
+            elif statusList[iid].split('_')[0] == 'Done (Success)' :
                 self.countDone.append(iid)
 	        common.jobDB.setStatus(int(iid)-1, 'D')
             elif statusList[iid].split('_')[0] == 'Running' :
@@ -249,7 +249,7 @@ class StatusBoss(Actor):
             elif statusList[iid].split('_')[0] == 'Cancelled' or statusList[iid].split('_')[0] == 'Killed':
                 self.countCancel.append(iid)
                 common.jobDB.setStatus(int(iid)-1, 'K')
-            elif statusList[iid].split('_')[0] == 'Aborted':
+            elif statusList[iid].split('_')[0] == 'Aborted' or statusList[iid].split('_')[0] == 'Done (Aborted)':
                 self.countAbort.append(iid)
                 common.jobDB.setStatus(int(iid)-1, 'A')
             elif statusList[iid].split('_')[0] == 'Cleared (Corrupt)':
