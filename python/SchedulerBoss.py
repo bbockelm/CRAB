@@ -194,7 +194,7 @@ class SchedulerBoss(Scheduler):
         else:
             self.configBossDB_()
 
-        self.bossUser =BossSession(self.bossConfigDir, "3", common.work_space.logDir()+'/crab.log')       
+        self.bossUser =BossSession(self.bossConfigDir, "0", common.work_space.logDir()+'/crab.log')       
        # self.bossUser.showConfigs()
         taskid = ""
         try:
@@ -241,7 +241,7 @@ class SchedulerBoss(Scheduler):
  #       except:
  #           pass  
   
-        bossAdmin =  BossAdministratorSession(self.bossConfigDir, "3", common.work_space.logDir()+'/crab.log')
+        bossAdmin =  BossAdministratorSession(self.bossConfigDir, "0", common.work_space.logDir()+'/crab.log')
  
         try:
             if (int(cfg_params["USER.use_central_bossdb"])==0):
