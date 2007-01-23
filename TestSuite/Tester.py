@@ -93,7 +93,8 @@ class Tester(threading.Thread):
                 logresult += "ok!\t"
             else:
                 self.logger.error(testname + ": some or all tests failed!!")
-                logresult += "BAD!\t"
+                self.toBeChecked = True
+                logresult += "BAD\t"
 
         logresult += self.name
         if self.toBeChecked:

@@ -128,14 +128,24 @@ class Session:
 
         assert(self.cwd)
 
+        nSubmit = int(nSubmit)
+        
         if int(nSubmit) < 0:
             cmd = ['-submit', '-c', self.cwd]
         else:
             cmd = ['-submit', str(nSubmit), '-c', self.cwd]
 
+        if nSubmit < 0:
+            nSubmit = self.totJobs
+    
         returncode, outdata, errdata = self.crabRunner(cmd)
 
         submitted = parseSubmit(outdata)
+        if not submitted:
+            raise TestException, "Wasn't able to submit any jobs correctly!"
+        elif submitted < nSubmit:
+            self.logger.error("Requested "+str(nSubmit)+" jobs but submitted only "+str(submitted)+"!")
+        
 
         for i in range(self.submitted+1, self.submitted+submitted+1):
             self.jobsHistory.setLocalJobStatus(i, 'submit')
