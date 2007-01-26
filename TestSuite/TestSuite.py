@@ -18,7 +18,7 @@ class TestSuite:
         self.getOptions()
         self.getConfig()
         briefLog = logging.getLogger("brief")
-        filelog = logging.FileHandler("TestSuite-brief.log")
+        filelog = logging.FileHandler(self.options.log)
         briefLog.setLevel(logging.INFO)
         filelog.setLevel(logging.INFO)
         formatter = logging.Formatter("%(message)s")
@@ -41,11 +41,11 @@ class TestSuite:
 
 
     def getOptions (self):
-        logging.debug('Parsing the command line') 
+        logging.debug('Parsing the command line')
         parser = OptionParser(version='1.0.1')
         parser.add_option('-c', '--config', action='store', type='string', dest='config', default='TestSuite.cfg', help='set the config file of the testsuite (default %default)')
-        parser.add_option('-l', '--logname', action='store', type='string', dest='log', default='TestSuite.log', help='set the log file name of the TestSuite (default %default)')
-        parser.add_option('-d', '--debug', action='store', type='int', dest='debug', default=0, help='Activate debug output (the greater the value the more verbouse output) (default: %default)')
+        parser.add_option('-l', '--logname', action='store', type='string', dest='log', default='TestSuite-brief.log', help='set the brief log file name (default %default)')
+        parser.add_option('-d', '--debug', action='store_true', dest='debug', default=False, help='Activate debug output (default: no debug info)')
         parser.add_option('-t', '--threads', action='store', type='int', dest='threads', default=3, help='Max number of threads (default: %default)')
         (self.options, args) = parser.parse_args()
 
@@ -56,7 +56,7 @@ class TestSuite:
             logging.basicConfig(level=logging.DEBUG, format='%(name)s\t%(levelname)s\t%(message)s')
         else:
             logging.basicConfig(level=logging.INFO, format='%(name)s\t%(levelname)s\t%(message)s')
-            
+
 
         try:
             open(self.options.config)
@@ -68,6 +68,8 @@ class TestSuite:
             open(self.options.log, 'a')
         except IOError, msg:
             parser.error('Error while creating the log file '+self.options.log+': '+str(msg))
+
+
 
     def getConfig (self):
         logging.debug('Parsing the config file') # Sk.
@@ -93,13 +95,13 @@ class TestSuite:
                 except ValueError:
                     self.printHelp()
                     logging.error('Linear Timeout must be a number in seconds')
-                
+
                 try:
                     timeout2=float(timeout2)
                 except ValueError:
                     self.printHelp()
                     logging.error('Wow Timeout must be a number in seconds')
-                
+
                 self.t.append((nicename, cfg, timeout, timeout2))
             i += 1
         if (len(self.t) == 0):
@@ -118,7 +120,7 @@ class TestSuite:
             tests.append(test)
             test.start()
             logging.debug('Thread '+test.getName()+' started')
-            
+
             semaphore.acquire()
             test = WowTester (cfg, nicename, timeout2, semaphore, self.options.debug)
             logging.debug('Thread '+test.getName()+' initialized')
@@ -126,7 +128,7 @@ class TestSuite:
             test.start()
             logging.debug('Thread '+test.getName()+' started')
 
-            
+
         for test in tests:
             logging.debug('Waiting for '+test.getName())
             test.join()
@@ -134,6 +136,6 @@ class TestSuite:
 
 
 if __name__=='__main__':
-    checkProxies()
     t = TestSuite()
+    checkProxies()
     t.mainThreads()
