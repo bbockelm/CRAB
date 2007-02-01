@@ -5,8 +5,8 @@ from DBSInfo import *
 # ####################################
 class DataDiscoveryError(exceptions.Exception):
     def __init__(self, errorMessage):
-        exceptions.Exception.__init__(self, self.args)
         self.args=errorMessage
+        exceptions.Exception.__init__(self, self.args)
         pass
 
     def getErrorMessage(self):
@@ -16,8 +16,8 @@ class DataDiscoveryError(exceptions.Exception):
 # ####################################
 class NotExistingDatasetError(exceptions.Exception):
     def __init__(self, errorMessage):
-        exceptions.Exception.__init__(self, self.args)
         self.args=errorMessage
+        exceptions.Exception.__init__(self, self.args)
         pass
 
     def getErrorMessage(self):
@@ -27,8 +27,8 @@ class NotExistingDatasetError(exceptions.Exception):
 # ####################################
 class NoDataTierinProvenanceError(exceptions.Exception):
     def __init__(self, errorMessage):
-        exceptions.Exception.__init__(self, self.args)
         self.args=errorMessage
+        exceptions.Exception.__init__(self, self.args)
         pass
 
     def getErrorMessage(self):
@@ -38,11 +38,10 @@ class NoDataTierinProvenanceError(exceptions.Exception):
 # ####################################
 # class to find and extact info from published data
 class DataDiscovery:
-    def __init__(self, datasetPath, dataTiers, cfg_params):
+    def __init__(self, datasetPath, cfg_params):
 
 #       Attributes
         self.datasetPath = datasetPath
-        self.dataTiers = dataTiers
         self.cfg_params = cfg_params
 
         self.eventsPerBlock = {}  # DBS output: map fileblocks-events for collection
@@ -71,7 +70,7 @@ class DataDiscovery:
         dbs = DBSInfo(dbs_url, dbs_instance)
         try:
             self.datasets = dbs.getMatchingDatasets(self.datasetPath)
-        except dbsCgiApi.DbsCgiExecutionError, msg:
+        except DBS1API.dbsCgiApi.DbsCgiExecutionError, msg:
             raise DataDiscoveryError(msg)
         except DBSError, msg:
             raise DataDiscoveryError(msg)
