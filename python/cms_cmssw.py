@@ -6,6 +6,7 @@ import common
 import PsetManipulator  
 
 import DataDiscovery
+import DataDiscovery_DBS2
 import DataLocation
 import Scram
 
@@ -42,6 +43,14 @@ class Cmssw(JobType):
         self.setParam_('application', self.version)
 
         ### collect Data cards
+
+        ## get DBS mode
+        self.use_dbs_2 = 0
+        try:
+            self.use_dbs_2 = int(self.cfg_params['CMSSW.use_dbs_2'])
+        except KeyError:
+            self.use_dbs_2 = 0
+            
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
             log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
@@ -265,14 +274,14 @@ class Cmssw(JobType):
 
         datasetPath=self.datasetPath
 
-        ## TODO
-        dataTiersList = ""
-        dataTiers = dataTiersList.split(',')
-
         ## Contact the DBS
         common.logger.message("Contacting DBS...")
         try:
-            self.pubdata=DataDiscovery.DataDiscovery(datasetPath, dataTiers, cfg_params)
+
+            if self.use_dbs_2 == 1 :
+                self.pubdata=DataDiscovery_DBS2.DataDiscovery_DBS2(datasetPath, cfg_params)
+            else :
+                self.pubdata=DataDiscovery.DataDiscovery(datasetPath, cfg_params)
             self.pubdata.fetchDBSInfo()
 
         except DataDiscovery.NotExistingDatasetError, ex :
@@ -283,19 +292,15 @@ class Cmssw(JobType):
             msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
             raise CrabException(msg)
         except DataDiscovery.DataDiscoveryError, ex:
-            msg = 'ERROR ***: failed Data Discovery in DBS  %s'%ex.getErrorMessage()
+            msg = 'ERROR ***: failed Data Discovery in DBS :  %s'%ex.getErrorMessage()
             raise CrabException(msg)
 
         ## get list of all required data in the form of dbs paths  (dbs path = /dataset/datatier/owner)
-        ## self.DBSPaths=self.pubdata.getDBSPaths()
         common.logger.message("Required data are :"+self.datasetPath)
 
         self.filesbyblock=self.pubdata.getFiles()
         self.eventsbyblock=self.pubdata.getEventsPerBlock()
         self.eventsbyfile=self.pubdata.getEventsPerFile()
-        # print str(self.filesbyblock)
-        # print 'self.eventsbyfile',len(self.eventsbyfile)
-        # print str(self.eventsbyfile)
 
         ## get max number of events
         self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py 
