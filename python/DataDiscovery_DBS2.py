@@ -102,8 +102,7 @@ class DataDiscovery_DBS2:
         args = {}
         args['url']     = dbs_url
         args['version'] = dbs_version
-
-        common.logger.debug(3,"Accessing DBS at: "+dbs_url+" with version: "+dbs_version)
+        args['level']   = 'CRITICAL'
 
         api = DBSAPI.dbsApi.DbsApi(args)
         try:
