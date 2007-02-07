@@ -3,8 +3,8 @@ import sys, os, string, commands
 import exceptions
 import common
 from crab_exceptions import *
-import DBS1API.dbsCgiApi
-import DBS1API.dbsApi
+import DBSAPIOLD.dbsCgiApi
+import DBSAPIOLD.dbsApi
                                                                                               
 ## for python 2.2 add the pyexpat.so to PYTHONPATH
 pythonV=sys.version.split(' ')[0]
@@ -59,22 +59,22 @@ class DBSInfo:
 
         common.logger.debug(3,"Accessing DBS at: "+dbs_url+" "+dbs_instance)
 
-        self.api = DBS1API.dbsCgiApi.DbsCgiApi(dbs_url, args)
+        self.api = DBSAPIOLD.dbsCgiApi.DbsCgiApi(dbs_url, args)
         ## set log level
-        # self.api.setLogLevel(DBS1API.dbsApi.DBS_LOG_LEVEL_INFO_)
-        #self.api.setLogLevel(DBS1API.dbsApi.DBS_LOG_LEVEL_QUIET_)
+        # self.api.setLogLevel(DBSAPIOLD.dbsApi.DBS_LOG_LEVEL_INFO_)
+        #self.api.setLogLevel(DBSAPIOLD.dbsApi.DBS_LOG_LEVEL_QUIET_)
 
     def getMatchingDatasets (self, datasetPath):
         """ Query DBS to get provenance """
         try:
             result = self.api.listProcessedDatasets("%s" %datasetPath)
-        except DBS1API.dbsApi.InvalidDataTier, ex:
+        except DBSAPIOLD.dbsApi.InvalidDataTier, ex:
             raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())
-        except DBS1API.dbsApi.DbsApiException, ex:
+        except DBSAPIOLD.dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
-        except DBS1API.dbsCgiApi.DbsCgiToolError , ex:
+        except DBSAPIOLD.dbsCgiApi.DbsCgiToolError , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
-        except DBS1API.dbsCgiApi.DbsCgiBadResponse , ex:
+        except DBSAPIOLD.dbsCgiApi.DbsCgiBadResponse , ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
 
         return result
@@ -84,9 +84,9 @@ class DBSInfo:
         """ Query DBS to get provenance """
         try:
             datasetParentList = self.api.getDatasetProvenance(path,dataTiers)
-        except DBS1API.dbsApi.InvalidDataTier, ex:
+        except DBSAPIOLD.dbsApi.InvalidDataTier, ex:
             raise DBSInvalidDataTierError(ex.getClassName(),ex.getErrorMessage())
-        except DBS1API.dbsApi.DbsApiException, ex:
+        except DBSAPIOLD.dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         return datasetParentList                                                                                                            
 
@@ -96,9 +96,9 @@ class DBSInfo:
         nevtsbyblock = {}
         try:
             contents = self.api.getDatasetContents(path)
-        except DBS1API.dbsApi.DbsApiException, ex:
+        except DBSAPIOLD.dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
-        except DBS1API.dbsCgiApi.DbsCgiBadResponse, ex:
+        except DBSAPIOLD.dbsCgiApi.DbsCgiBadResponse, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         for fileBlock in contents:
             ## get the event collections for each block
@@ -119,7 +119,7 @@ class DBSInfo:
         numEventsByFile = {}
         try:
             contents = self.api.getDatasetContents(path)
-        except DBS1API.dbsApi.DbsApiException, ex:
+        except DBSAPIOLD.dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
         for fileBlock in contents:
             numEvents = 0
@@ -144,7 +144,7 @@ class DBSInfo:
             FilesbyBlock={}
             try:
                 allBlocks = self.api.getDatasetFileBlocks(path)
-            except DBS1API.dbsCgiApi.DbsCgiBadResponse, ex:
+            except DBSAPIOLD.dbsCgiApi.DbsCgiBadResponse, ex:
                 raise DBSError(ex.getClassName(), ex.getErrorMessage())
             for fileBlock in allBlocks:
                 blockname=fileBlock.get('blockName')
@@ -153,7 +153,7 @@ class DBSInfo:
                     #print "  block %s has file %s"%(blockname,files.getLogicalFileName())
                     filesinblock.append(files.get('logicalFileName'))
                 FilesbyBlock[blockname]=filesinblock
-        except DBS1API.dbsApi.DbsApiException, ex:
+        except DBSAPIOLD.dbsApi.DbsApiException, ex:
             raise DBSError(ex.getClassName(),ex.getErrorMessage())
 
         return FilesbyBlock

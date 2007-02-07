@@ -13,7 +13,7 @@ echo "tag = $tag"
 CRABdir="$tag"
 echo "CRABDIR = $CRABDIR"
 CRABtag=$tag
-DBSAPItag="v00_00_10"
+DBSAPItag="v00_00_11"
 DLSAPItag="DLS_0_1_1"
 PAAPItag="HEAD"
 
@@ -46,17 +46,7 @@ wget http://boss.bo.infn.it/BOSS_${boss_version}-bin.tar.gz
 ## download DBS API
 echo ">> downloading DBS API tag ${DBSAPItag} from CVS DBS/Clients/PythonAPI"
 cd ..
-mkdir DBSAPI
-cd DBSAPI
-cvs co -r ${DBSAPItag} -d DBS1API COMP/DBS/Clients/PythonAPI
-cvs co -r ${DBSAPItag} -d DBS2API COMP/DBS/Clients/Python
-#rm -r DBSAPI/CVS
-rm -r DBS1API/lib  #remove SOAPy etc...
-rm -r DBS2API/UnitTests
-rm -r DBS2API/UserExamples
-touch DBS1API/__init__.py
-touch DBS2API/__init__.py
-cd ..
+cvs co -r ${DBSAPItag} -d DBSAPI COMP/DBS/Clients/Python
 # add this dirs to the PYTHONPATH
 ## download DLS API
 echo ">> downloading DLS CLI tag ${DLSAPItag} from CVS DLS/Client"

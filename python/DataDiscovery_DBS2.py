@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import exceptions
-import DBS2API.dbsApi
-from DBS2API.dbsApiException import * 
+import DBSAPI.dbsApi
+from DBSAPI.dbsApiException import * 
 import common
 
 
@@ -98,13 +98,13 @@ class DataDiscovery_DBS2:
 
         common.logger.debug(3,"Accessing DBS at: "+dbs_url)
 
-        api = DBS2API.dbsApi.DbsApi(args)
+        api = DBSAPI.dbsApi.DbsApi(args)
         try:
             files = api.listFiles(self.datasetPath)
         except DbsBadRequest, msg:
-            raise DataDiscoveryError(msg)
+            raise DataDiscoveryError_DBS2(msg)
         except DBSError_DBS2, msg:
-            raise DataDiscoveryError(msg)
+            raise DataDiscoveryError_DBS2(msg)
         
         # parse files and fill arrays
         for file in files :
@@ -131,7 +131,7 @@ class DataDiscovery_DBS2:
             self.maxEvents += events
 
         if len(self.eventsPerBlock) <= 0:
-            raise NotExistingDatasetError (("\nNo data for %s in DBS\nPlease check"
+            raise NotExistingDatasetError_DBS2 (("\nNo data for %s in DBS\nPlease check"
                                             + " dataset path variables in crab.cfg")
                                             % self.datasetPath)
 

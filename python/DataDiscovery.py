@@ -70,7 +70,7 @@ class DataDiscovery:
         dbs = DBSInfo(dbs_url, dbs_instance)
         try:
             self.datasets = dbs.getMatchingDatasets(self.datasetPath)
-        except DBS1API.dbsCgiApi.DbsCgiExecutionError, msg:
+        except DBSAPIOLD.dbsCgiApi.DbsCgiExecutionError, msg:
             raise DataDiscoveryError(msg)
         except DBSError, msg:
             raise DataDiscoveryError(msg)
