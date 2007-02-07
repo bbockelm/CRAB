@@ -287,11 +287,19 @@ class Cmssw(JobType):
         except DataDiscovery.NotExistingDatasetError, ex :
             msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
             raise CrabException(msg)
-
         except DataDiscovery.NoDataTierinProvenanceError, ex :
             msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
             raise CrabException(msg)
         except DataDiscovery.DataDiscoveryError, ex:
+            msg = 'ERROR ***: failed Data Discovery in DBS :  %s'%ex.getErrorMessage()
+            raise CrabException(msg)
+        except DataDiscovery_DBS2.NotExistingDatasetError_DBS2, ex :
+            msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
+            raise CrabException(msg)
+        except DataDiscovery_DBS2.NoDataTierinProvenanceError_DBS2, ex :
+            msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
+            raise CrabException(msg)
+        except DataDiscovery_DBS2.DataDiscoveryError_DBS2, ex:
             msg = 'ERROR ***: failed Data Discovery in DBS :  %s'%ex.getErrorMessage()
             raise CrabException(msg)
 

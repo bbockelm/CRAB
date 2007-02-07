@@ -92,11 +92,18 @@ class DataDiscovery_DBS2:
         except KeyError:
             dbs_url="http://cmsdoc.cern.ch/cms/test/aprom/DBS/CGIServer/prodquery"
 
+        ## get DBS URL
+        try:
+            dbs_version=self.cfg_params['CMSSW.dbs_version']
+        except KeyError:
+            dbs_version="v00_00_05"
+
         ## service API
         args = {}
-        args['url']=dbs_url
+        args['url']     = dbs_url
+        args['version'] = dbs_version
 
-        common.logger.debug(3,"Accessing DBS at: "+dbs_url)
+        common.logger.debug(3,"Accessing DBS at: "+dbs_url+" with version: "+dbs_version)
 
         api = DBSAPI.dbsApi.DbsApi(args)
         try:
