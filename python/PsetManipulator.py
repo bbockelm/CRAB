@@ -19,9 +19,9 @@ class PsetManipulator:
         #convert Pset
         self.pyPset = os.path.basename(pset)  
         cmd = 'EdmConfigToPython > '+common.work_space.shareDir()+self.pyPset+'py < '+ self.pset
-        cmd_out = runCommand(cmd)  
-        if cmd_out != '':
-            msg = 'Could not convert Pset.cfg into python Dictionary \n'
+	exit_code = os.system(cmd)
+        if exit_code != 0 : 
+            msg = 'Could not convert '+self.pset+' into a python Dictionary \n'
             msg1= '      Did you do eval `scramv1 runtime ...` from your CMSSW working area ?'
             raise CrabException(msg+msg1)
             pass
