@@ -401,7 +401,6 @@ class Cmssw(JobType):
             block = blocks[blockCount]
             blockCount += 1
             
-
             if self.eventsbyblock.has_key(block) :
                 numEventsInBlock = self.eventsbyblock[block]
                 common.logger.debug(5,'Events in Block File '+str(numEventsInBlock))
