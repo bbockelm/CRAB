@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# till now just calls prodAgentd
+#
+
+echo $*
+
+prodAgentd $*
+ 
+
