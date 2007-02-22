@@ -59,7 +59,7 @@ class DataDiscovery:
         try:
             dbs_url=self.cfg_params['CMSSW.dbs_url']
         except KeyError:
-            dbs_url="http://cmsdoc.cern.ch/cms/test/aprom/DBS/CGIServer/prodquery"
+            dbs_url="http://cmsdbs.cern.ch/cms/prod/comp/DBS/CGIServer/prodquery"
 
         ## get info about the requested dataset
         try:
