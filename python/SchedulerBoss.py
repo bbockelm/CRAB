@@ -186,10 +186,16 @@ class SchedulerBoss(Scheduler):
             
         self.bossConfigDir = str("")
 #       central db
-        if ( int(cfg_params["USER.use_central_bossdb"]) == 1 ):
+        whichBossDb=0
+        try:
+            whichBossDb=int(cfg_params["USER.use_central_bossdb"])
+        except KeyError:
+            whichBossDb=0
+
+        if ( whichBossDb == 1 ):
             pass
 #       emulate -c option        
-        elif ( int(cfg_params["USER.use_central_bossdb"]) == 2 ):
+        elif ( whichBossDb == 2 ):
             self.bossConfigDir = str(cfg_params["USER.boss_clads"])
         else:
             self.configBossDB_()
