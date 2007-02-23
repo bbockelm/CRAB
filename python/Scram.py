@@ -69,8 +69,10 @@ class Scram:
         """
 
         ver = ''
-        ##SL take  sw version from scramArea/.SCRAM/Environment
         envFileName=self.scramArea+"/.SCRAM/Environment"
+        if os.environ.has_key("CMSSW_VERSION"):
+           ver= os.environ["CMSSW_VERSION"]
+        ##SL Else take  sw version from scramArea/.SCRAM/Environment
         if os.path.exists(envFileName):
             reVer=re.compile( r'SCRAM_PROJECTVERSION=(\S*)' )
             envFile = open(envFileName,'r')
