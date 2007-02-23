@@ -187,7 +187,7 @@ class Submitter(Actor):
         ## add some more verbose message in case submission is not complete
         if (njs < len(self.nj_list)):
             msg =  'Submission performed using the Requirements: \n'
-            msg += string.upper(common.taskDB.dict("JobType"))+' version: '+string.upper(common.taskDB.dict("codeVersion"))+'\n'
+            msg += common.taskDB.dict("JobType")+' version: '+common.taskDB.dict("codeVersion")+'\n'
             try: msg += 'SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
             except KeyError: pass
             try: msg += 'SE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
@@ -196,7 +196,7 @@ class Submitter(Actor):
             except KeyError: pass
             try: msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
             except KeyError: pass
-            msg += '(Hint: please check if '+string.upper(common.taskDB.dict("JobType"))+' is available at the Sites)\n'
+            msg += '(Hint: please check if '+common.taskDB.dict("JobType")+' is available at the Sites)\n'
             
         common.logger.message(msg)
             
