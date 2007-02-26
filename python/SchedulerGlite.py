@@ -101,7 +101,7 @@ class SchedulerGlite(SchedulerEdg):
                 reqtmp.append(' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ')
             if len(reqtmp): reqSites = reqSites + " && (" + concString.join(reqtmp)  
             # requirement added to skip gliteCE
-            reqSites = reqSites + '&& (!RegExp("*blah*", other.GlueCEUniqueId)));\n'
+            reqSites = reqSites + '&& (!RegExp("blah", other.GlueCEUniqueId)));\n'
             param_file.write('Requirements = ' + req + reqSites )
    
             if (self.rb_param_file != ''):
