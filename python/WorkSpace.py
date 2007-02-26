@@ -67,6 +67,8 @@ class WorkSpace:
         """
         if os.path.exists(self._top_dir):
 #            shutil.rmtree(self._top_dir)
+            os.system("rm -rf %s" % self._top_dir ) 
+            # SL For some obscure reason the lgo dir is not removed at the first try
             os.system("rm -rf %s" % self._top_dir )
             pass
         return
