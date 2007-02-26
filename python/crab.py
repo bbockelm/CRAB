@@ -162,20 +162,10 @@ class Crab:
 
         if not self.flag_continue:
             for opt in opts.keys():
-                if ( opt in (self.aux_actions) ):
+                if ( opt in (self.aux_actions) or opt == "-submit"):
                     self.flag_continue = 1
                     break
                 pass
-            pass
-            submit_flag=0
-            create_flag=0
-            for opt in opts.keys():
-                if opt == "-submit": submit_flag=1
-                if opt == "-create": create_flag=1
-                pass
-            if (submit_flag and not create_flag):
-                msg = "'-submit' must be used with either '-create' or '-continue'."
-                raise CrabException(msg)
             pass
 
         if not self.flag_continue: return
@@ -491,6 +481,8 @@ class Crab:
                         common.job_list.setJDLNames(self.job_type_name+'.jdl')
                         pass
                     pass
+                else:
+                    common.logger.message('No jobs left to submit: exiting...')
                 pass
 
             elif ( opt == '-list' ):

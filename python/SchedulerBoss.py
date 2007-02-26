@@ -14,11 +14,6 @@ class SchedulerBoss(Scheduler):
         self.schedRegistered = {}
         self.jobtypeRegistered = {}
         self.bossLogFile = "boss.log"
-#        taskid = ""
-#        try:
-#            taskid = common.taskDB.dict('BossTaskId')
-#        except :
-#            pass
 
         # Map for Boss Status to Human Readable Status
         self.status={
@@ -190,7 +185,7 @@ class SchedulerBoss(Scheduler):
         try:
             whichBossDb=int(cfg_params["USER.use_central_bossdb"])
         except KeyError:
-            whichBossDb=0
+            pass
 
         if ( whichBossDb == 1 ):
             pass
@@ -250,11 +245,15 @@ class SchedulerBoss(Scheduler):
         bossAdmin =  BossAdministratorSession(self.bossConfigDir, "0", common.work_space.logDir()+'/crab.log')
  
         try:
-            if (int(cfg_params["USER.use_central_bossdb"])==0):
-                if ( self.bossTask.id() == "" ) :
-                    bossAdmin.configureDB()
-        except KeyError:
-            bossAdmin.configureDB()
+            self.bossUser.clientID() # BOSS DB already setup
+        except:
+            try:
+                if (int(cfg_params["USER.use_central_bossdb"])==0):
+                    if ( self.bossTask.id() == "" ) :
+                        bossAdmin.configureDB()
+            except KeyError:
+                bossAdmin.configureDB()
+            pass
 
         # check scheduler and jobtype registration in BOSS        
         try:
@@ -281,35 +280,13 @@ class SchedulerBoss(Scheduler):
         ## we don't need to test this at every call:
         if (self.schedRegistered.has_key(sched_name)): return
 
-        counter = 0
-        query_succeeded = 0
-        max_retries = 10
-        sleep_interval = 5
-
-        while query_succeeded == 0 :
-            # increase counter, if reached max_retries, throw exception
-            counter += 1
-            if counter >= max_retries :
-                msg = 'Boss cmd: boss showScheduler failed with "not connected" error message for the' + str(max_retries) + ' time.\n'
-                msg += 'Abort registration.\n'
-                raise CrabException(msg)
-            try :
-                register_path = self.boss_dir + '/'
-                register_boss_scheduler = string.upper(sched_name) + '.xml'
-                bossAdmin.registerPlugins( register_path+register_boss_scheduler )
-                break
-            except BossError,e:
-                if e.__str__().find('not connected') != -1 :
-                    # sleep for defined sleep interval
-                    msg = 'Boss cmd: boss showScheduler failed with "'
-                    msg += e.__str__()
-                    msg += '" error message for the' + str(max_retries) + ' time.\n'
-                    msg += 'Retry after ' + str(sleep_interval) + ' seconds.\n'
-                    common.logger.debug(5,msg)
-                    time.sleep(sleep_interval)
-                else :
-                    msg = e.__str__() + '\nError: Problem with scheduler '+sched_name+' registration\n'
-                    raise CrabException(msg)
+        try :
+            register_path = self.boss_dir + '/'
+            register_boss_scheduler = string.upper(sched_name) + '.xml'
+            bossAdmin.registerPlugins( register_path+register_boss_scheduler )
+        except BossError,e:
+            msg = e.__str__() + '\nError: Problem with scheduler '+sched_name+' registration\n'
+            raise CrabException(msg)
         
         # sched registered
         self.schedRegistered[sched_name] = 1
@@ -324,45 +301,13 @@ class SchedulerBoss(Scheduler):
         ## we don't need to test this at every call:
         if (self.jobtypeRegistered.has_key(jobtype)): return
 
-        ## in some circumstances, boss showProgramTypes can result in a timout condition returning 
-        ## BossDatabase::show :
-        ## Not connected
-        ## not connected
-        ##
-        ## implement 10 times retry for showProgramTypes command with a sleep of 5 seconds in between
-        ## if not succeeded afterwards, throw exception
-        ##
-
-        counter = 0
-        query_succeeded = 0
-        max_retries = 10
-        sleep_interval = 5
-
-        while query_succeeded == 0 :
-            # increase counter, if reached max_retries, throw exception
-            counter += 1
-            if counter >= max_retries :
-                msg = 'Boss cmd: boss registerPlugins failed with "not connected" error message for the' + str(max_retries) + ' time.\n'
-                msg += 'Abort registration.\n'
-                raise CrabException(msg)
-
-            try :
-                register_path = self.boss_dir + '/'
-                register_boss_jobtype = string.upper(string.upper(jobtype)) + '.xml'
-                bossAdmin.registerPlugins( register_path+register_boss_jobtype )
-                break
-            except BossError,e:
-                if e.__str__().find('not connected') != -1 :
-                    # sleep for defined sleep interval
-                    msg = 'Boss cmd: boss registerPlugins failed with "'
-                    msg += e.__str__()
-                    msg += '" error message for the' + str(max_retries) + ' time.\n'
-                    msg += 'Retry after ' + str(sleep_interval) + ' seconds.\n'
-                    common.logger.debug(5,msg)
-                    time.sleep(sleep_interval)
-                else :
-                    msg = e.__str__() + '\nError: Problem with jobtype '+jobtype+' registration\n'
-                    raise CrabException(msg)
+        try :
+            register_path = self.boss_dir + '/'
+            register_boss_jobtype = string.upper(string.upper(jobtype)) + '.xml'
+            bossAdmin.registerPlugins( register_path+register_boss_jobtype )
+        except BossError,e:
+            msg = e.__str__() + '\nError: Problem with jobtype '+jobtype+' registration\n'
+            raise CrabException(msg)
         
         # jobtype registered
         self.jobtypeRegistered[jobtype] = 1
@@ -377,14 +322,6 @@ class SchedulerBoss(Scheduler):
         return self.boss_scheduler.wsSetupEnvironment() 
 
     ###################### ---- OK for Boss4 ds
-#    def createXMLSchScript(self, nj):
-    """
-    INDY
-    come vedi qui ho cambiato il prototipo
-    createFakeJdl non dovrebbe aver bisogno di un job number:
-    in effetti usa il jobType, non il job.
-    In poche parole la cosa potrebbe essere piu' diretta
-    """
     def createXMLSchScript(self, nj, argsList):
         """
         Create script_scheduler file (JDL for EDG)
@@ -508,7 +445,7 @@ class SchedulerBoss(Scheduler):
         self.bossTask.clear()
         range = str(jobsList[0]) + ":" + str(jobsList[len(jobsList) - 1])
         try:
-            self.bossTask.query(ALL, range)
+            self.bossTask.load(ALL, range)
         except SchedulerError,e:
             print "Warning : Scheduler interaction in query operation failed for jobs:"
             print e.__str__(),'\n'
@@ -518,8 +455,10 @@ class SchedulerBoss(Scheduler):
             print common.logger.debug(e.__str__(),'\n')
         task = self.bossTask.jobsDict()
         for k, v in task.iteritems():
-            jid.append(v["SCHED_ID"])
-            bjid.append(k)
+            if (v["STATUS"] == 'S'):
+                jid.append(v["SCHED_ID"])
+                bjid.append(k)
+            pass    
         return jid, bjid
 
     ###################### ---- OK for Boss4 ds
