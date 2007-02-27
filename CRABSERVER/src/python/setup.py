@@ -1,12 +1,28 @@
 #!/usr/bin/env python
+"""
+_CrabServer_
+
+Python packages for CRAB server
+
+"""
+
+__revision__ = "$Id$"
+
 from distutils.core import setup
 
-setup (name='prodcommon',
-       version='1.0',
-       package_dir={'CrabServerWorker': 'CrabServerWorker',
-                    'Notification': 'Notification',
-                    'ProxyTarballAssociator': 'ProxyTarballAssociator',
-                    'TaskTracking': 'TaskTracking',
-                    'DropBoxGuardian': 'DropBoxGuardian'},
-       packages=['CrabServerWorker', 'Notification',
-		 'ProxyTarballAssociator', 'TaskTracking', 'DropBoxGuardian'],)
+packages = [
+    'CrabServerWorker',
+    'DropBoxGuardian',
+    'Notification',
+    'ProxyTarballAssociator',
+    'TaskTracking',
+    ]
+
+setup(name='CrabServer',
+      version='1.0',
+      description='CRAB server',
+      author='',
+      author_email='',
+      url='',
+      packages=packages,
+     )
