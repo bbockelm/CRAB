@@ -88,6 +88,7 @@ class Crab:
 
         common.taskDB = TaskDB()
 
+
         if not self.flag_continue:
             self.createWorkingSpace_()
             optsToBeSaved={}
@@ -96,6 +97,8 @@ class Crab:
                     pass
                 else:
                     optsToBeSaved[it]=opts[it]
+                    # store in taskDB the opts
+                    common.taskDB.setDict(it[1:], optsToBeSaved[it])
             common.work_space.saveConfiguration(optsToBeSaved, self.cfg_fname)
             pass
         else:
@@ -287,12 +290,6 @@ class Crab:
                 pass
 
             elif ( opt == '-scheduler' ):
-                if val:
-                    self.scheduler_name = 'boss'
-                else:
-                    print common.prog_name+". No value for '-scheduler'."
-                    usage()
-                    pass
                 pass
 
             elif string.find(opt,'.') == -1:
@@ -805,7 +802,7 @@ class Crab:
         """
         Creates a scheduler object instantiated by its name.
         """
-        klass_name = 'Scheduler' + string.capitalize(self.scheduler_name)
+        klass_name = 'SchedulerBoss'
         file_name = klass_name
         try:
             klass = importName(file_name, klass_name)
@@ -813,7 +810,7 @@ class Crab:
             msg = 'No `class '+klass_name+'` found in file `'+file_name+'.py`'
             raise CrabException(msg)
         except ImportError, e:
-            msg = 'Cannot create scheduler '+self.scheduler_name
+            msg = 'Cannot create scheduler Boss'
             msg += ' (file: '+file_name+', class '+klass_name+'):\n'
             msg += str(e)
             raise CrabException(msg)
