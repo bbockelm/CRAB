@@ -85,29 +85,8 @@ class Creator(Actor):
             common.logger.message("Creator::run Exception raised in collection params for dashboard: %s %s"%(exctype, value))
             pass
 
-        #TODO: deprecated code, not needed,
-        # will be eliminated when WorkSpace.saveConfiguration()
-        # will be improved.
-        #
         # Set/Save Job Type name
-
-        try:
-            jt = common.taskDB.dict("JobType")
-            if self.job_type_name:
-                if ( jt != self.job_type_name+'\n' ):
-                    msg = 'Job Type mismatch: requested <' + self.job_type_name
-                    msg += '>, found <' + jt[:-1] + '>.'
-                    raise CrabException(msg)
-                pass
-            else:
-                self.job_type_name = jt[:-1]
-                pass
-            pass
-        except CrabException:
-            # Save job type name
-            common.taskDB.setDict("JobType",self.job_type_name)
-            pass
-        #end of deprecated code
+        self.job_type_name = common.taskDB.dict("jobtype")
 
         common.logger.debug(5, "Creator constructor finished")
         return

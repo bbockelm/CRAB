@@ -561,7 +561,7 @@ class SchedulerCondor_g(Scheduler):
         if ( attr == 'exit_code' ) :
             jobnum_str = '%06d' % (int(id))
             # opts = common.work_space.loadSavedOptions()
-            base = string.upper(common.taskDB.dict("JobType"))
+            base = string.upper(common.taskDB.dict("jobtype"))
             log_file = common.work_space.resDir() + base + '_' + jobnum_str + '.stdout'
             logfile = open(log_file)
             log_line = logfile.readline()
