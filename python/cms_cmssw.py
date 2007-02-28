@@ -4,13 +4,12 @@ from crab_exceptions import *
 from crab_util import *
 import common
 import PsetManipulator  
-
 import DataDiscovery
 import DataDiscovery_DBS2
 import DataLocation
 import Scram
 
-import os, string, re, shutil
+import os, string, re, shutil, glob
 
 class Cmssw(JobType):
     def __init__(self, cfg_params, ncjobs):
@@ -140,26 +139,30 @@ class Cmssw(JobType):
                self.additional_inbox_files.append(string.strip(self.scriptExe))
         except KeyError:
             self.scriptExe = ''
+
         #CarlosDaniele
         if self.datasetPath == None and self.pset == None and self.scriptExe == '' :
-           msg ="WARNING. script_exe  not defined"
+           msg ="Error. script_exe  not defined"
            raise CrabException(msg)
 
         ## additional input files
         try:
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
-            common.logger.debug(5,"Additional input files: "+str(tmpAddFiles))
-            for tmpFile in tmpAddFiles:
-                tmpFile = string.strip(tmpFile)
-                if not os.path.exists(tmpFile):
-                    raise CrabException("Additional input file not found: "+tmpFile)
+            for tmp in tmpAddFiles:
+                tmp = string.strip(tmp)
+                dirname = ''
+                if not tmp[0]=="/": dirname = "."
+                files = glob.glob(os.path.join(dirname, tmp))
+                for file in files:
+                    if not os.path.exists(file):
+                        raise CrabException("Additional input file not found: "+file)
                     pass
-                storedFile = common.work_space.shareDir()+ tmpFile
-                shutil.copyfile(tmpFile, storedFile)
-                self.additional_inbox_files.append(string.strip(storedFile))
+                    storedFile = common.work_space.shareDir()+file
+                    shutil.copyfile(file, storedFile)
+                    self.additional_inbox_files.append(string.strip(storedFile))
                 pass
-            common.logger.debug(5,"Inbox files so far : "+str(self.additional_inbox_files))
             pass
+            common.logger.debug(5,"Additional input files: "+str(self.additional_inbox_files))
         except KeyError:
             pass
 
@@ -962,13 +965,13 @@ class Cmssw(JobType):
         """
         
     def executableName(self):
-        if self.pset == None: #CarlosDaniele
+        if self.scriptExe: #CarlosDaniele
             return "sh "
         else:
             return self.executable
 
     def executableArgs(self):
-        if self.pset == None:#CarlosDaniele
+        if self.scriptExe:#CarlosDaniele
             return   self.scriptExe + " $NJob"
         else: 
             return " -p pset.cfg"
@@ -986,11 +989,11 @@ class Cmssw(JobType):
         if os.path.isfile(self.MLtgzfile):
             inp_box.append(self.MLtgzfile)
         ## config
-        if not self.pset is None: #CarlosDaniele
+        if not self.pset is None:
             inp_box.append(common.work_space.pathForTgz() + 'job/' + self.configFilename())
         ## additional input files
-        #for file in self.additional_inbox_files:
-        #    inp_box.append(common.work_space.cwdDir()+file)
+        for file in self.additional_inbox_files:
+            inp_box.append(file)
         return inp_box
 
     def outputSandbox(self, nj):
