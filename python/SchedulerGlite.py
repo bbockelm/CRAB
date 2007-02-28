@@ -47,44 +47,32 @@ class SchedulerGlite(SchedulerEdg):
    
   
         if self.EDG_requirements:
-            if (req == ' '):
-                req = req + self.EDG_requirements
-            else:
-                req = req +  ' && ' + self.EDG_requirements
+            if (not req == ' '): req = req +  ' && '
+            req = req + self.EDG_requirements
+
         if self.EDG_ce_white_list:
             ce_white_list = string.split(self.EDG_ce_white_list,',')
-            for i in range(len(ce_white_list)):
-                if i == 0:
-                    if (req == ' '):
-                        req = req + '((RegExp("' + string.strip(ce_white_list[i]) + '", other.GlueCEUniqueId))'
-                    else:
-                        req = req +  ' && ((RegExp("' + string.strip(ce_white_list[i]) + '", other.GlueCEUniqueId))'
-                    pass
-                else:
-                    req = req +  ' || (RegExp("' + string.strip(ce_white_list[i]) + '", other.GlueCEUniqueId))'
-            req = req + ')'
+            tmpCe=[]
+            concString = '&&'
+            for ce in ce_white_list:
+                tmpCe.append('RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId)')
+            if len(tmpCe): req = req + " && (" + concString.join(tmpCe) + ") "
         
         if self.EDG_ce_black_list:
             ce_black_list = string.split(self.EDG_ce_black_list,',')
+            tmpCe=[]
+            concString = '&&'
             for ce in ce_black_list:
-                if (req == ' '):
-                    req = req + '(!RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId))'
-                else:
-                    req = req +  ' && (!RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId))'
-                pass
-        
+                tmpCe.append('(!RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId))')
+            if len(tmpCe): req = req + " && (" + concString.join(tmpCe) + ") "
 
         if self.EDG_clock_time:
-            if (req == ' '):
-                req = req + 'other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
-            else:
-                req = req + ' && other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
+            if (not req == ' '): req = req + ' && '
+            req = req + 'other.GlueCEPolicyMaxWallClockTime>='+self.EDG_clock_time
 
         if self.EDG_cpu_time:
-            if (req == ' '):
-                req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
-            else:
-                req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
+            if (not req == ' '): req = req + ' && '
+            req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
                  
         for i in range(len(first)): # Add loop DS
             self.param='sched_param_'+str(i)+'.clad'
@@ -94,14 +82,18 @@ class SchedulerGlite(SchedulerEdg):
             reqSites=''
             reqtmp=[]  
             concString = '||'
+
+            #############
+            # MC Changed matching syntax to avoid gang matching
+            #############
             for arg in itr4:
-                #############
-                # MC Changed matching syntax to avoid gang matching
-                #############
                 reqtmp.append(' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ')
-            if len(reqtmp): reqSites = reqSites + " && (" + concString.join(reqtmp)  
+
+            if len(reqtmp): reqSites = reqSites + " && (" + concString.join(reqtmp) + ") "
+
             # requirement added to skip gliteCE
-            reqSites = reqSites + '&& (!RegExp("blah", other.GlueCEUniqueId)));\n'
+            reqSites = reqSites + '&& (!RegExp("blah", other.GlueCEUniqueId));\n'
+
             param_file.write('Requirements = ' + req + reqSites )
    
             if (self.rb_param_file != ''):
