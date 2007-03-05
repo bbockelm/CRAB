@@ -126,3 +126,13 @@ class Scram:
         else:
             return None
 
+    def getArch(self):
+        """
+        Return the architecture of the current scram project
+        """
+        if os.environ.has_key("SCRAM_ARCH"):
+            return os.environ["SCRAM_ARCH"]
+        else:
+            cmd=self.commandName() + ' arch'
+            out = RunCommand(cmd)
+            return out
