@@ -483,11 +483,11 @@ class SchedulerBoss(Scheduler):
         files = cmd_out.split(',')
         for i in files:
             if os.path.exists(self.outDir+'/'+i):
-                os.rename(self.outDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
+                shutil.move(self.outDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
                 common.logger.message('Output file '+i+' moved to '+resDirSave)
 
             if os.path.exists(self.logDir+'/'+i):
-                os.rename(self.logDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
+                shutil.move(self.logDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
                 common.logger.message('Output file '+i+' moved to '+resDirSave)
         return
 
