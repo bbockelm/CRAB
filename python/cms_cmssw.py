@@ -29,6 +29,7 @@ class Cmssw(JobType):
         self.additional_inbox_files = []
         self.scriptExe = ''
         self.executable = ''
+        self.executable_arch = self.scram.getArch()
         self.tgz_name = 'default.tgz'
         self.scriptName = 'CMSSW.sh'
         self.pset = ''      #scrip use case Da   
@@ -807,6 +808,7 @@ class Cmssw(JobType):
         txt += '   exit 1 \n'
         txt += 'fi \n'
         txt += 'echo "CMSSW_VERSION =  '+self.version+'"\n'
+        txt += 'export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += 'cd '+self.version+'\n'
         ### needed grep for bug in scramv1 ###
         txt += scram+' runtime -sh\n'
@@ -1194,23 +1196,6 @@ class Cmssw(JobType):
         txt += '       fi\n'
         txt += '   fi\n'
         txt += '   \n'
-        txt += '   string=`cat /etc/redhat-release`\n'
-        txt += '   echo $string\n'
-        txt += '   if [[ $string = *alhalla* ]]; then\n'
-        txt += '       echo "SCRAM_ARCH= $SCRAM_ARCH"\n'
-        txt += '   elif [[ $string = *Enterprise* ]] || [[ $string = *cientific* ]]; then\n'
-        txt += '       export SCRAM_ARCH=slc3_ia32_gcc323\n'
-        txt += '       echo "SCRAM_ARCH= $SCRAM_ARCH"\n'
-        txt += '   else\n'
-        txt += '       echo "SET_CMS_ENV 10033 ==> ERROR OS unknown, LCG environment not initialized"\n'
-        txt += '       echo "JOB_EXIT_STATUS = 10033"\n'
-        txt += '       echo "JobExitCode=10033" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       rm -f $RUNTIME_AREA/$repo \n'
-        txt += '       echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '       echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '       exit 1\n'
-        txt += '   fi\n'
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
         txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'
         return txt
