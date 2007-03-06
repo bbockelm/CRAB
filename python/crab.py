@@ -165,11 +165,13 @@ class Crab:
 
         if not self.flag_continue:
             for opt in opts.keys():
-                if ( opt in (self.aux_actions) or opt == "-submit"):
+                if ( opt in (self.aux_actions)):
                     self.flag_continue = 1
                     break
                 pass
             pass
+            if ("-submit" in opts.keys() and "-create" not in opts.keys() ):
+                self.flag_continue = 1
 
         if not self.flag_continue: return
 
