@@ -108,7 +108,11 @@ class SchedulerBoss(Scheduler):
         """
 
         # check if RT is already configured
-        boss_rt_check = self.bossUser.RTMons()
+        boss_rt_check = []
+        try:
+            boss_rt_check = self.bossUser.RTMons()
+        except:
+            pass
    #     boss_rt_check = self.bossUser.defaultRTmon()
         if 'mysql' not in boss_rt_check:
             common.logger.debug(6,'registering RT monitor')
