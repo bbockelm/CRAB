@@ -134,5 +134,5 @@ class Scram:
             return os.environ["SCRAM_ARCH"]
         else:
             cmd=self.commandName() + ' arch'
-            out = RunCommand(cmd)
+            out = runCommand(cmd)
             return out
