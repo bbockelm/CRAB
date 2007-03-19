@@ -28,8 +28,8 @@ class DLSError:
 
 class DLSNoReplicas(exceptions.Exception):
     def __init__(self, FileBlock):
-        exceptions.Exception.__init__(self, self.args)
         self.args ="No replicas exists for fileblock: "+FileBlock+"\n"
+        exceptions.Exception.__init__(self, self.args)
         pass
 
     def getClassName(self):
