@@ -417,11 +417,7 @@ class SchedulerBoss(Scheduler):
         common.logger.message("Matched Sites :"+str(sites))
         return len(sites)
 
-    ##########################################   ----  add as workaround for list match with Boss4 ds
-    def createFakeJdl(self,nj):
-        return self.boss_scheduler.createFakeJdl(nj)
     
-    ###################### ---- OK for Boss4 ds
     def submit(self,list):
         """
         Submit BOSS function.
@@ -479,8 +475,7 @@ class SchedulerBoss(Scheduler):
         boss_id = str(int_id)
         try:
             self.bossTask.load (ALL, boss_id )
-            programs = self.bossTask.jobPrograms(boss_id)
-            cmd_out = programs['1']['OUTFILES']
+            cmd_out = self.bossTask.program(boss_id, '1')['OUTFILES']
         except BossError,e:
             common.logger.message( e.__str__() )
         
@@ -747,9 +742,9 @@ class SchedulerBoss(Scheduler):
                     results[k]['DEST_CE'] = v['DEST_CE']
                 if v.has_key('LB_TIMESTAMP') :
                     results[k]['LB_TIMESTAMP'] = v['LB_TIMESTAMP']
-                programs = self.bossTask.jobPrograms(c)
-                results[k]['EXE_EXIT_CODE'] = programs['1']['EXE_EXIT_CODE']
-                results[k]['JOB_EXIT_STATUS'] = programs['1']['JOB_EXIT_STATUS']
+                program = self.bossTask.specific(c, '1')
+                results[k]['EXE_EXIT_CODE'] = program['EXE_EXIT_CODE']
+                results[k]['JOB_EXIT_STATUS'] = program['JOB_EXIT_STATUS']
         except SchedulerError,e:
             print "Warning : Scheduler interaction failed for jobs:"
             print e.__str__(),'\n'
