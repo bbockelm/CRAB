@@ -43,9 +43,13 @@ class UtilSubject:
         """
         /C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Mattia Cinquilli/CN=proxy
         """
+        org = "NotSpecified"
+        name = "Unknown"
         if os.path.exists( self.path ):
             org, name = self.parseUserSubj( open(self.path).read() )
-            return org, name
+            ##return org, name
+            return self.getOriginalTaskName(org, name)
+        return org, name
 
     def getOriginalTaskName(self, org, name):
         newName = self.taskName
