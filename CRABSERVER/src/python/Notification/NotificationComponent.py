@@ -110,6 +110,7 @@ class NotificationComponent:
         # subscribe to messages
         self.ms.subscribeTo("JobSuccess")
 	self.ms.subscribeTo("TaskSuccess")
+        self.ms.subscribeTo("TaskFailed")
         #self.ms.subscribeTo("NOTIFICATION_SHOWJOBS")
         #self.ms.subscribeTo("NOTIFICATION_RESET")
         #self.ms.subscribeTo("NOTIFICATION_PAUSE")
@@ -287,3 +288,81 @@ class NotificationComponent:
 			self.jobs.unlock()
 			self.ms.commit()
                 continue
+
+##-------------------------------------------------------------------
+            
+            if type == "TaskFailed":
+                pieces = payload.split(":")
+                if len(pieces) < 3:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing TaskFailed's payload ["
+                    msg += payload + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                emaillist = pieces[2].split(",")
+                taskname = pieces[0]
+                username = pieces[1]
+
+                ##print "emaillist=[%s]\n" % emaillist
+                 
+                if not emaillist:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing TaskFailed payload's"
+                    msg += " email's list [" + pieces[2] + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                if len(emaillist) < 1:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing TaskFailed payload's"
+                    msg += " email's list [" + pieces[2] + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                if len(emaillist) == 1:
+                    if emaillist[0] == "":
+                        msg = "Notification.NotificationComponent.MainLoop: empty email address ["
+                        msg += emaillist[0] + "]"
+                        logging.error("%s" % msg)
+                        self.ms.commit()
+                        continue
+ 
+                infoFile = "/tmp/crabNotifInfoFile." + str(time.time())
+
+                try:
+                    os.remove(infoFile)
+                except OSError:
+                    pass
+
+                mailMess = "The task [" + taskname + "] owned by [" + username + "] is Failed"
+                FILE = open(infoFile,"w")
+        	FILE.write(mailMess)
+        	FILE.close()
+
+                mainEmail = emaillist.pop(0)
+                CCRecipients = ",".join( emaillist )
+
+                if len(pieces[2].split(",")) >=2:
+                    cmd = "mail -s \"CRAB Server Notification: Task Failed! \" "
+                    cmd += mainEmail + " -c " + CCRecipients + " < " + infoFile
+                else:
+                    cmd = "mail -s \"CRAB Server Notification: Task Failed! \" "
+                    cmd += mainEmail + " < " + infoFile
+
+                msg = "Notification.Consumer.Notify: Sending mail to [" + pieces[2] + "]"
+                logging.info( msg )
+		logging.info( cmd )
+                
+	        retCode = os.system( cmd )
+
+        	if(retCode != 0):
+                    errmsg = "ERROR! Command ["+cmd+"] FAILED!"
+                    logging.error(errmsg)
+                    
+                try:
+                    os.remove(infoFile)
+                except OSError:
+                    pass
+                
+                self.ms.commit()

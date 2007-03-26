@@ -8,6 +8,8 @@ import xml.dom.minidom
 import xml.dom.ext
 import string
 import os
+import re
+
 class CreateXmlJobReport:
     """
     _CreateXmlJobReport_
@@ -43,6 +45,18 @@ class CreateXmlJobReport:
 	
 	taskrep.setAttribute(self.TASKNAME,     tname)
 	email = email.strip()
+
+        # remove leading and traling spaces
+        email = email.strip()
+
+        # check email format validity
+        #for addr in email.split():
+        #    if not self.checkEmailAddress( addr ):
+        #        errmsg = "Error parsing email address; address ["+ addr +"] has "
+        #        errmsg += "an invalid format"
+        #        raise RuntimeError, errmsg
+            
+        
         taskrep.setAttribute(self.EMAIL,        email)
         taskrep.setAttribute(self.ENDED,        str(percent_ended))
 	taskrep.setAttribute(self.THRESHOLDREQ, str(threshold))
@@ -70,12 +84,20 @@ class CreateXmlJobReport:
     #------------------------------------------------------------------------
     def addEmailAddress(self, email):
     	if not self.init:
-		raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
+            raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
+
+        reg = re.compile('^[\w\.-]+@[\w\.-]+$')
+        if not reg.match( email ):
+            errmsg = "Error parsing email address; address ["+email+"] has "
+            errmsg += "an invalid format"
+            raise RuntimeError, errmsg
+
+        
 	
-	currentMail = self.doc.childNodes[0].childNodes[1].getAttribute(self.EMAIL)
+	currentMail = self.doc.childNodes[0].childNodes[0].getAttribute(self.EMAIL)
 	currentMail += " " + email
 	currentMail = currentMail.strip(  )
-	self.doc.childNodes[0].childNodes[1].setAttribute( self.EMAIL, currentMail )
+	self.doc.childNodes[0].childNodes[0].setAttribute( self.EMAIL, currentMail )
 
     #------------------------------------------------------------------------
     def toXml(self):
@@ -154,8 +176,19 @@ class CreateXmlJobReport:
     #------------------------------------------------------------------------
     def getOwner(self):
 	if not self.init:
-                raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
-	return self.doc.childNodes[0].childNodes[1].getAttribute(self.OWNER)
+            raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
+        return self.doc.childNodes[0].childNodes[1].getAttribute(self.OWNER)
+
+    #------------------------------------------------------------------------
+    def checkEmailFormat(self, email):
+        reg = re.compile('^[\w\.-]+@[\w\.-]+$')
+        if not reg.match( email ):
+            return False
+##            errmsg = "Error parsing email address; address ["+email+"] has "
+##            errmsg += "an invalid format"
+##            raise RuntimeError, errmsg
+        
+        return True
 
     #------------------------------------------------------------------------
     def toFile(self, filename):
@@ -193,6 +226,14 @@ class CreateXmlJobReport:
 		
 	mail = tr.getAttribute( self.EMAIL )
 	mail = mail.strip(  )
+
+        # check email format validity
+        for addr in mail.split():
+            if not self.checkEmailFormat( addr ):
+                errmsg = "Error parsing email address; address ["+ addr +"] has "
+                errmsg += "an invalid format. Multiple addresses must be separated by spaces."
+                raise RuntimeError, errmsg
+        
 	tr.setAttribute( self.EMAIL, mail )
 	
 	for element in self.doc.childNodes[0].childNodes:
@@ -209,7 +250,7 @@ class CreateXmlJobReport:
 if __name__=="__main__":
 	c = CreateXmlJobReport()
 	#c.initialize("a", "b", 1)
-	c.fromFile("/data/dorigoa/prova_01.xml")
+	c.fromFile("xmlReportFile.xml")
 	c.addStatusCount("JobFailed",1)
         c.addStatusCount("JobSuccess", "2")
 	c.addEmailAddress("tdluigi@yahoo.it")

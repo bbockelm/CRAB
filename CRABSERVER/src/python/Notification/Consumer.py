@@ -192,8 +192,11 @@ class Consumer(Thread):
         	FILE.write(message)
         	FILE.close()
 
-		emailAddr = ",".join( task.getUserMail() )
-		mainAddr = task.getUserMail()[0]
+                emails = task.getUserMail()
+                mainAddr = emails.pop(0)
+                
+		emailAddr = ",".join( emails )
+		#mainAddr = task.getUserMail()[0]
 		if(len(task.getUserMail())>1):
         		cmd = "mail -s \"CRAB Server Notification: Task Report available\" " +mainAddr + " -c " + emailAddr +" < " + infoFile 
 		else:
