@@ -13,6 +13,7 @@ import pickle
 import logging
 import time
 import popen2
+import random
 from logging.handlers import RotatingFileHandler
 
 from ProdAgentCore.Configuration import ProdAgentConfiguration
@@ -55,7 +56,6 @@ class CrabServerWorkerComponent:
         logHandler.setFormatter(logFormatter)
         logging.getLogger().addHandler(logHandler)
         logging.getLogger().setLevel(logging.INFO)
-        
         logging.info("CrabServerWorkerComponent Started...")
 
         self.dropBoxPath = str(args['dropBoxPath'])
@@ -75,7 +75,12 @@ class CrabServerWorkerComponent:
         logging.debug("Event: %s %s" % (event, payload))
 
         if event == "ProxyTarballAssociatorComponent:CrabWork":
-            self.pool.insertRequest(payload)
+            self.pool.insertRequest( (payload, False) )
+            return
+        if event == "CrabServerWorkerNotifyThread:Retry":
+            logging.info("Resubmission")
+            logging.info(payload)
+            self.pool.insertRequest( (payload, True) )
             return
         if event == "CrabServerWorkerComponent:StartDebug":
             logging.getLogger().setLevel(logging.DEBUG)
@@ -91,7 +96,6 @@ class CrabServerWorkerComponent:
 
         Start up the component
         """
-     
         # create message service instances
         self.ms = MessageService()
         self.msNotify = MessageService()
@@ -102,51 +106,55 @@ class CrabServerWorkerComponent:
         
         # subscribe to messages
         self.ms.subscribeTo("ProxyTarballAssociatorComponent:CrabWork")
+        self.ms.subscribeTo("CrabServerWorkerNotifyThread:Retry")
         self.ms.subscribeTo("CrabServerWorkerComponent:StartDebug")
         self.ms.subscribeTo("CrabServerWorkerComponent:EndDebug")
         
         # create a pool of threads that will execute a performCrabWork action
-        self.pool = PoolThread(int(self.args['maxThreads']), self)
-
+        self.pool = PoolThread(int(self.args['maxThreads']), self, logging)
         # create notifier thread
         notifier = Notifier(self.pool, self.msNotify, logging)
 
-        # get BOSS cfg informations # Fabio
-        # self.cfgObject = ProdAgentConfiguration()
-        # self.cfgObject.loadFromFile(config)
-        # self.bossCfgDir = self.cfgObject.get("BOSS")['configDir'] 
-        # logging.info("Using BOSS configuration from " + self.bossCfgDir)
-        
         while True:
             type, payload = self.ms.get()
             self.ms.commit()
             logging.debug("CrabServerWorkerComponent: %s %s" % ( type, payload))
             self.__call__(type, payload)
 
-    def performCrabWork(self,payload):
+    def performCrabWork(self, payload, performRetry = False):
        proxy = payload.split(':')[0]
        CrabworkDir =  payload.split(':')[1]
        uniqDir = payload.split(':')[2]
+       retry = int(payload.split(':')[3])
+       retMsg = CrabworkDir.split('/')[-1]
 
        # Prepare the project and submit
        os.chdir(self.dropBoxPath)
        try:
-            self.registerTask(CrabworkDir)
-            pass
+            if performRetry == False:
+            	self.registerTask(CrabworkDir)
+            else:
+                logging.info("Resubmission for "+str(CrabworkDir) )
        except Exception, e:
             logging.info("Error during BOSS Registration: "+ str(e) )
 
        # Submit the task
-       try:
-            cmd = 'export X509_USER_PROXY='+proxy+'; '  # Fabio #+ CrabworkDir+'/share/userProxy;'
-            cmd = cmd + 'crab -submit all -c '+ uniqDir + self.debug
-            os.system(cmd)
-       except Exception, e:
-            logging.info("Error during CRAB call: "+ str(e) ) 
-
        logging.info("Put CRAB at work on "+ CrabworkDir + " with proxy " + proxy)
-       logging.debug(cmd)
-       return CrabworkDir.split('/')[-1]
+       retCode = self.crab_submit(proxy, uniqDir)
+
+       # Prepare the proper payload to be managed by the notifier queue
+       if retCode == 0:
+            retMsg = CrabworkDir.split('/')[-1]
+       elif retCode!=0 and retry==0:
+            retCode = -2
+            retMsg = CrabworkDir.split('/')[-1]
+            logging.info("WARNING: CRAB submission failed too many times\n The task will not be submitted.")
+       elif retCode!=0 and retry>0:
+            retCode = -1
+            retMsg = proxy+":"+CrabworkDir+":"+uniqDir+":"+str(retry-1)
+            logging.info("Task "+uniqDir+ "will be tried " + str(retry-1) + " more times.")
+     
+       return (retMsg, retCode)
 
     def registerTask(self, cwDir):
         jNameBase = cwDir.split('/')[-1]
@@ -175,6 +183,7 @@ class CrabServerWorkerComponent:
                 idfile.write("JobId=%s"%jid)
                 idfile.close()
                 # logging.info("cacheArea %s"%cacheArea)
+                del fakeJobSpec
             except Exception, e:
                 logging.info("BOSS Registration problem %s"%cacheArea + str(e))
 
@@ -183,20 +192,45 @@ class CrabServerWorkerComponent:
             JobStateChangeAPI.submit(jobName)
         pass
 
-    def crab_submit(self, proxy, uniqDir, workdir, dbgLv):
-        from crab import Crab
-        # actual code here
-        dbg = 0
-        if dbgLv!='':
-              dbg = int(dbgLv)
+    def crab_submit(self, proxy, uniqDir):
+       ret = 0
+       catchErrorList = ["No compatible site found, will not submit"]
 
-        # NOTE: the multithread nature of the component could bring to some race condition problems in 
-        # the X509 var env overriding by the various threads. A solution have to be discussed.
-        # 1. Simplest way: use system to: isolate the execution environment
-        # 2. Sychronize the submissions: whe would have parallel task registrations (time consuming part, good speed up anyway)
-        # 3. Find a way to isolate the thread environments (aka convert them to processes triggered by IPC communication)
-        # Fabio 
-        cmd = 'export X509_USER_PROXY='+proxy+'; '
-        cmd = cmd + 'crab -submit all -c '+ uniqDir + ' -debug ' + str(dbg)
-        os.system(cmd)
-        pass
+       cmd = 'export X509_USER_PROXY='+proxy+'; '
+       cmd = cmd + 'crab -submit all -c '+ uniqDir + self.debug
+
+       # inf, outf, errf = os.popen3(cmd)
+       # errlog = errf.readlines()
+       # outlog = outf.readlines()
+       errcode = 0
+       errcode = os.system(cmd)
+       # outf.close()
+       # inf.close()
+       # errf.close()
+       
+       # logging.info(outlog) 
+       if errcode != 0: #len(errlog)>0:
+           logging.info("Submission failed for " + str(uniqDir) )
+           ret = 1
+           return ret
+
+       f = open(uniqDir+"/log/crab.log","r")
+       outlog = f.readlines()
+       f.close()
+
+       ret = 0
+       for l in outlog:
+           for e in catchErrorList:
+                if e in l:
+                     ret += 2
+                     break
+           if ret >= 2:
+                break
+
+       if ret == 0:
+           logging.info("Submission completed for "+ str(uniqDir))
+       else:
+           logging.info("Submission delayed for " + str(uniqDir) )
+
+       return ret
+

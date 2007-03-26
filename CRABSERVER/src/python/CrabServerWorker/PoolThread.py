@@ -12,6 +12,8 @@ __version__ = "$Revision$"
 import sys
 from threading import Thread
 import Queue
+from random import Random
+import time
 
 """
 Class: PoolThread
@@ -23,13 +25,15 @@ class PoolThread:
     Crab work.
     """
     
-    def __init__(self, numThreads, workerComponent):
+    def __init__(self, numThreads, workerComponent, log):
         """
         initialize the pool by creating an input and an output queue,
         and a specified number of threads, that will perform the action
         performCrabWork on the workerComponent.
         """
-        
+
+        self.logging = log
+
         # create queues
         self.requests = Queue.Queue()
         self.results = Queue.Queue()
@@ -53,7 +57,7 @@ class PoolThread:
         for i in range(numThreads):
             self.threads.append(CrabWorker(self.requests,
                                             self.results,
-                                            self.component))
+                                            self.component, self.logging))
             
     def insertRequest(self, request):
         """
@@ -78,7 +82,7 @@ class CrabWorker(Thread):
     crab work.
     """
     
-    def __init__(self, inQueue, outQueue, component):
+    def __init__(self, inQueue, outQueue, component, log):
         """
         initialize input and output queues, register the component
         and start thread work.
@@ -88,6 +92,7 @@ class CrabWorker(Thread):
         self.inQueue = inQueue
         self.outQueue = outQueue
         self.component = component
+        self.logging = log
         self.setDaemon(1)
         self.start()
         
@@ -96,24 +101,17 @@ class CrabWorker(Thread):
         main body of the thread: get a request from the input queue,
         process it and store its return value in the output queue.
         """
-        
         # do forever
         while True:
-            
             # get request
-            payload = self.inQueue.get()
-
+            payload, retry = self.inQueue.get()
             # execute CRAB work
             try:
-                returnData = str(self.component.performCrabWork(payload))
-                
-            # generate error message when processing fails
+                returnData, retCode = self.component.performCrabWork(payload, retry)
+                # store return code in output queue
+                self.outQueue.put( (returnData, retCode) )
             except:
-                returnData = "Exception when processing payload: " + \
-                                payload
-                
-            # store return code in output queue
-            self.outQueue.put(returnData)
+                logging.info("Exception when processing payload: " + str(payload))
             
 """
 Class: Notifier
@@ -136,6 +134,7 @@ class Notifier(Thread):
         self.pool = pool
         self.ms = ms
         self.logging = logging
+        self.r = Random()
         self.setDaemon(1)
         self.start()
         
@@ -144,18 +143,31 @@ class Notifier(Thread):
         main body of the thread. Wait for a result to arrive and send the
         corresponding message.
         """
-        
         # do forever
         while True:
+            try:    
+                # get result
+                result, code = self.pool.getResult()
             
-            # get result
-            result = self.pool.getResult()
-            
-            # send the message
-            self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", result)
-            self.ms.commit()
-            
-            # logging info
-            self.logging.info("CrabWorkPerformed: "+ result)
-            
-            
+                # send the message
+                if int(code) == 0: 
+                    self.logging.info("CrabWorkPerformed: "+ str(result))
+                    self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", str(result))
+                    self.ms.commit()
+                elif int(code) == -2:
+                    self.logging.info("CrabWorkFailed: "+ str(result))
+                    self.ms.publish("CrabServerWorkerComponent:CrabWorkFailed", str(result))
+                    self.ms.commit()
+                elif int(code) == -1:
+                    self.logging.info("CrabWorkRetry: "+ str(result))
+                    twait = "00:%d%d:00"%(self.r.randint(0, 0), self.r.randint(0, 9))
+                    self.logging.info("Short Delay time (modify for production code):"+str(twait)) 
+                    countDest = 0
+                    countDest += self.ms.publish("CrabServerWorkerNotifyThread:Retry", str(result), twait) 
+                    self.logging.info("Retry listeners count:" + str(countDest))
+                    self.ms.commit()
+                
+            except Exception, e:
+                 self.logging.info("Notify Thread problem: "+str(e))
+        pass           
+
