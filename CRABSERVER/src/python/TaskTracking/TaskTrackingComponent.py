@@ -271,12 +271,13 @@ class TaskTrackingComponent:
         prepares a list of eMails from str "eMail"
         """
 
-        eMaiList = eMail.split(";")
         eMaiList2 = []
-        for index in range(len(eMaiList)):
-            temp = eMaiList[index].replace(" ","")
-            if self.checkEmail( temp ):
-                eMaiList2.append( temp )
+        if eMail != None:
+            eMaiList = eMail.split(";")
+            for index in range(len(eMaiList)):
+                temp = eMaiList[index].replace(" ","")
+                if self.checkEmail( temp ):
+                    eMaiList2.append( temp )
 
         return eMaiList2
 
