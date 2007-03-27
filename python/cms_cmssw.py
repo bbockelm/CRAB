@@ -20,6 +20,11 @@ class Cmssw(JobType):
         self._params = {}
         self.cfg_params = cfg_params
 
+        try:
+            self.MaxTarBallSize = float(self.cfg_params['EDG.maxtarballsize'])
+        except KeyError:
+            self.MaxTarBallSize = 100.0
+
         # number of jobs requested to be created, limit obj splitting
         self.ncjobs = ncjobs
 
@@ -45,7 +50,6 @@ class Cmssw(JobType):
         ### collect Data cards
 
         ## get DBS mode
-        self.use_dbs_2 = 0
         try:
             self.use_dbs_2 = int(self.cfg_params['CMSSW.use_dbs_2'])
         except KeyError:
@@ -730,7 +734,12 @@ class Cmssw(JobType):
             tar.close()
         except :
             raise CrabException('Could not create tar-ball')
-        
+
+        ## check for tarball size
+        tarballinfo = os.stat(self.tgzNameWithPath)
+        if ( tarballinfo.st_size > self.MaxTarBallSize*1024*1024 ) :
+            raise CrabException('Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + str(self.MaxTarBallSize) + ' MB input sandbox limit and not supported by the used GRID submission system. Please make sure that no unnecessary files are in all data directories in your local CMSSW project area as they are automatically packed into the input sandbox.')
+
         ## create tar-ball with ML stuff
         self.MLtgzfile =  common.work_space.pathForTgz()+'share/MLfiles.tgz' 
         try:
