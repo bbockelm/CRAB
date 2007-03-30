@@ -172,7 +172,7 @@ def getAllNotFinished():
     """
     queryString = "SELECT taskName,eMail,tresholdLevel,notificationSent,endedLevel"+\
                   " FROM js_taskInstance"+\
-		  " WHERE endedLevel<100 AND notificationSent<2;"
+		  " WHERE endedLevel < 100 or notificationSent<2;"
     task2Check = queryMethod(queryString)
     
     return task2Check
