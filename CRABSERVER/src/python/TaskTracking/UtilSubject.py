@@ -27,8 +27,9 @@ class UtilSubject:
                         if len(tag) > 1:
                             org = tag[1]
                     elif tag[0] == "CN":
+		        #logging.info(" " + str(tag))
                         if len(tag) > 1 and not found:
-			    if self.taskName.find(tag[1]) != -1:
+			    if self.taskName.find(tag[1].replace(" ","_")) != -1:
                                 name = tag[1]
                                 found = 1
         return org, name
