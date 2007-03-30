@@ -28,15 +28,16 @@ class UtilSubject:
                             org = tag[1]
                     elif tag[0] == "CN":
                         if len(tag) > 1 and not found:
-                            name = tag[1]
-                            found = 1
+			    if self.taskName.find(tag[1]) != -1:
+                                name = tag[1]
+                                found = 1
         return org, name
 
     def invert(self, invertable_object):
         try:
             return invertable_object[::-1]
-        except:
-            print 'Object not invertable'
+        except Exception, e:
+            logging.info('Object not invertable: ' + str(e))
         return 1
 
     def getInfos(self):
@@ -59,9 +60,15 @@ class UtilSubject:
         name = name.replace(" ", "_")
         name = self.invert(name)
         newName = self.invert(newName)
-        newName = newName.split(org,1)[1]
-        newName = newName.split(name,1)[1]
-        newName = newName[1:]
+	if org != '' and org != None:
+            newName = newName.split(org,1)[1]
+	if name != '' and name != None:
+            newName = newName.split(name,1)[1]
+	if (org != '' and org != None) and (name != '' and name != None):
+	    if newName != '' and newName != None:
+                newName = newName[1:]
+	    else:
+	        return self.invert(newName), self.userName
         return self.invert(newName), self.userName
 
 if __name__=="__main__":
