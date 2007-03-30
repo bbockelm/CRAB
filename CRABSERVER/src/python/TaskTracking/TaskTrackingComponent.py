@@ -365,8 +365,8 @@ class TaskTrackingComponent:
 	    for task in task2Check:
 		taskName = task[0]
 		eMail = task[1]
-		notified = task[2]
-		thresholdLevel = task[3]
+		notified = task[3]
+		thresholdLevel = task[2]
 		endedLevel = task[4]
 
 	        taskDict = mySession.loadByName( taskName )
@@ -414,8 +414,10 @@ class TaskTrackingComponent:
 		    try:
                         percentage = (100 * endedJob) / len(statusJobsTask)
 			pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + resSubDir
-			if percentage != endedLevel or (percentage == 0 and (not os.path.exists(pathToWrite + xmlReportFileName)) ):
-		       
+			if percentage != endedLevel or \
+			   (percentage == 0 and (not os.path.exists(pathToWrite + xmlReportFileName)) )\
+			   or (notified < 2 and endedLevel == 100):
+			
 		           ###  updating endedLevel  ###
 			    TaskStateAPI.updatingEndedPA( taskName, str(percentage) )
 
