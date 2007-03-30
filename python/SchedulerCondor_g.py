@@ -3,7 +3,7 @@ from JobList import JobList
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-from GridCatService import *
+from osg_bdii import *
 import time
 import common
 import popen2
@@ -27,7 +27,7 @@ class SchedulerCondor_g(Scheduler):
         if cmd_out == None:
             msg  = '[Condor-G Scheduler]: condor_schedd is not running on this machine.\n'
             msg += '[Condor-G Scheduler]: Please use another machine with installed condor and running condor_schedd or change the Scheduler in your crab.cfg.'
-            common.logger.message(msg)
+            common.logger.debug(2,msg)
             raise CrabException(msg)
 
         self.checkExecutableInPath('condor_q')
@@ -46,7 +46,7 @@ class SchedulerCondor_g(Scheduler):
         else :
             msg  = '[Condor-G Scheduler]: condor_version was not able to determine the installed condor version.\n'
             msg += '[Condor-G Scheduler]: Please use another machine with properly installed condor or change the Scheduler in your crab.cfg.'
-            common.logger.message(msg)
+            common.logger.debug(2,msg)
             raise CrabException(msg)
 
         self.checkExecutableInPath('condor_config_val')
@@ -71,81 +71,42 @@ class SchedulerCondor_g(Scheduler):
         msg += 'Ask the administrator of your local condor installation to increase these variables to enable more jobs to be executed on the grid in parallel.\n'
         common.logger.debug(2,msg)
 
-        # Very bad. Needed to get CE from the SE provided by DLS.
-        # GridCat currently doesn't have the capability to provide this.
-        #self.mapSEtoCE = {"cmssrm.hep.wisc.edu":"cmsgrid02.hep.wisc.edu", \
-        #                  "dcache.rcac.purdue.edu":"lepton.rcac.purdue.edu", \
-        #                  "srm1.phys.ufl.edu":"ufloridapg.phys.ufl.edu", \
-        #                  "thpc-1.unl.edu":"red.unl.edu", \
-        #                  "cithep59.ultralight.org":"cit-gatekeeper.ultralight.org", \
-        #                  "t2data2.t2.ucsd.edu":"osg-gw-2.t2.ucsd.edu", \
-        #                  "cmssrm.fnal.gov":"cmsosgce.fnal.gov", \
-        #                  "se01.cmsaf.mit.edu":"ce01.cmsaf.mit.edu", \
-        #                  "spraid.if.usp.br":"spgrid.if.usp.br", \
-        #                  "spdc00.if.usp.br":"spgrid.if.usp.br"} 
-        gridcat_service_url = "http://osg-cat.grid.iu.edu/services.php"
-        # oneSite = self.mapSEtoCE[seSite]
-        #ce_hostnames=[]
-        self.gridCatSvc = None
-        try:
-            self.gridCatSvc = GridCatService(gridcat_service_url)
-        except StandardError, ex:
-            gridcat_service_url = "http://osg-itb.ivdgl.org/gridcat/services.php"
-            try:
-                self.gridCatSvc = GridCatService(gridcat_service_url)
-            except StandardError, ex:
-                    msg  = '[Condor-G Scheduler]: GridCatService is not available on OSG site!\n'
-                    msg += '[Condor-G Scheduler]: Direct Condor-G submission is not possible!\n'
-                    common.logger.message(msg)
-                    raise CrabException(msg)
-
         # create hash
         self.hash = makeCksum(common.work_space.cfgFileName())
 
         return
 
     def getCEfromSE(self, seSite):
+        # returns the ce including jobmanager
+        ces = jm_from_se_bdii(seSite)
 
-        try:
-            ce_hostnames = self.gridCatSvc.mapSEtoCE(seSite)
-        except:
-            if self.cfg_params['CMSSW.datasetpath'] == 'None' :
-               msg="datasetpath is None so use EDG.ce_white_list"
-               common.logger.message(msg)
-               ce_hostnames = self.gridCatSvc.hostnames()
-               for i in range(len(ce_hostnames)):
-                  try:
-                     tmpCE = string.split(self.cfg_params['EDG.ce_white_list'],',')
-                  except KeyError:
-                     msg  = '[Condor-G Scheduler]: No CE in EDG.ce_white_list : '
-                     common.logger.message(msg)
-                     raise CrabException(msg)
+        # hardcode fnal as BDII maps cmssrm.fnal.gov to cmslcgce.fnal.gov
+        if seSite.find ('fnal.gov') >= 0 :
+            return 'cmsosgce.fnal.gov:2119/jobmanager-condor'
 
-                  if len(tmpCE) == 1 and ce_hostnames[i] == tmpCE[0] :
-                     oneSite=ce_hostnames[i]
-                     return oneSite
-            msg = "Quitting: unable to find CE for site "+str(seSite)   
-            common.logger.message(msg)
-            raise CrabException(msg)
+        # mapping ce_hostname to full ce name including jobmanager
+        ce_hostnames = {}
+        for ce in ces :
+            ce_hostnames[ce.split(':')[0].strip()] = ce
 
         oneSite=''
-        if ( len(ce_hostnames) == 1 ) :
-           oneSite=ce_hostnames[0]
-        elif ( len(ce_hostnames) > 1 ) :
-            if 'EDG.ce_white_list' in self.cfg_params.keys() and len(self.cfg_params['EDG.ce_white_list'].split(',')) == 1 and self.cfg_params['EDG.ce_white_list'].strip() in ce_hostnames :
-                oneSite = self.cfg_params['EDG.ce_white_list']
+        if ( len(ce_hostnames.keys()) == 1 ) :
+           oneSite=ce_hostnames[ce_hostnames.keys()[0]]
+        elif ( len(ce_hostnames.keys()) > 1 ) :
+            if 'EDG.ce_white_list' in self.cfg_params.keys() and len(self.cfg_params['EDG.ce_white_list'].split(',')) == 1 and self.cfg_params['EDG.ce_white_list'].strip() in ce_hostnames.keys() :
+                oneSite = ce_hostnames[self.cfg_params['EDG.ce_white_list']]
             else :
                 msg  = '[Condor-G Scheduler]: More than one Compute Element (CE) is available for job submission.\n'
                 msg += '[Condor-G Scheduler]: Please select one of the following CE:\n'
                 msg += '[Condor-G Scheduler]:'
-                for host in ce_hostnames :
+                for host in ce_hostnames.keys() :
                     msg += ' ' + host
                 msg += '\n'
                 msg += '[Condor-G Scheduler]: and enter this CE in the CE_white_list variable of the [EDG] section in your crab.cfg.\n'
-                common.logger.message(msg)
+                common.logger.debug(2,msg)
                 raise CrabException(msg)
         else :
-           raise CrabException('[Condor-G Scheduler]: CE hostname(s) for SE '+seSite+' could not be determined from GridCat.')
+           raise CrabException('[Condor-G Scheduler]: CE hostname(s) for SE '+seSite+' could not be determined from BDII.')
 
         return oneSite
 
@@ -156,7 +117,7 @@ class SchedulerCondor_g(Scheduler):
         if cmd_out == None:
             msg  = '[Condor-G Scheduler]: '+name+' is not in the $PATH on this machine.\n'
             msg += '[Condor-G Scheduler]: Please use another machine with installed condor or change the Scheduler in your crab.cfg.'
-            common.logger.message(msg)
+            common.logger.debug(2,msg)
             raise CrabException(msg)
 
     def checkCondorVariablePointsToFile(self, name):
@@ -167,7 +128,7 @@ class SchedulerCondor_g(Scheduler):
             msg  = '[Condor-G Scheduler]: the variable '+name+' is not properly set for the condor installation on this machine.\n'
             msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation to set the variable '+name+' properly,',
             'use another machine with properly installed condor or change the Scheduler in your crab.cfg.'
-            common.logger.message(msg)
+            common.logger.debug(2,msg)
             raise CrabException(msg)
 
     def checkCondorVariableIsTrue(self, name):
@@ -178,7 +139,7 @@ class SchedulerCondor_g(Scheduler):
             msg  = '[Condor-G Scheduler]: the variable '+name+' is not set to true for the condor installation on this machine.\n'
             msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation to set the variable '+name+' to true,',
             'use another machine with properly installed condor or change the Scheduler in your crab.cfg.'
-            common.logger.message(msg)
+            common.logger.debug(2,msg)
             raise CrabException(msg)
 
     def queryCondorVariable(self, name, default):
@@ -220,7 +181,7 @@ class SchedulerCondor_g(Scheduler):
                 except KeyError:
                     msg = "Error. The [USER] section does not have 'storage_element'"
                     msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
-                    common.logger.message(msg)
+                    common.logger.debug(2,msg)
                     raise CrabException(msg)
         except KeyError: self.copy_data = 0 
 
@@ -234,21 +195,21 @@ class SchedulerCondor_g(Scheduler):
         except KeyError:
             msg = "Error. The [EDG] section does not have 'lfc_host' value"
             msg = msg + " it's necessary to know the LFC host name"
-            common.logger.message(msg)
+            common.logger.debug(2,msg)
             raise CrabException(msg)
         try:
             self.lcg_catalog_type = cfg_params['EDG.lcg_catalog_type']
         except KeyError:
             msg = "Error. The [EDG] section does not have 'lcg_catalog_type' value"
             msg = msg + " it's necessary to know the catalog type"
-            common.logger.message(msg)
+            common.logger.debug(2,msg)
             raise CrabException(msg)
         try:
             self.lfc_home = cfg_params['EDG.lfc_home']
         except KeyError:
             msg = "Error. The [EDG] section does not have 'lfc_home' value"
             msg = msg + " it's necessary to know the home catalog dir"
-            common.logger.message(msg)
+            common.logger.debug(2,msg)
             raise CrabException(msg)
 
         try: self.VO = cfg_params['EDG.virtual_organization']
@@ -261,12 +222,12 @@ class SchedulerCondor_g(Scheduler):
         except KeyError: self.GLOBUS_RSL = ''
 
         # Provide an override for the batchsystem that condor_g specifies as a grid resource.
-        # this is to handle the case where the site supports several batchsystem but gridcat
+        # this is to handle the case where the site supports several batchsystem but bdii
         # only allows a site to public one.
 	try: 
            self.batchsystem = cfg_params['CONDORG.batchsystem']
            msg = '[Condor-G Scheduler]: batchsystem overide specified in your crab.cfg'
-           common.logger.message(msg)
+           common.logger.debug(2,msg)
 	except KeyError: self.batchsystem = ''                                                                                                                                                     
         self.register_data = 0
 
@@ -277,13 +238,13 @@ class SchedulerCondor_g(Scheduler):
         except KeyError:
             msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
             msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
-            common.logger.message(msg)
+            common.logger.debug(2,msg)
             raise CrabException(msg)
 
         if len(tmpGood) != 1 :
             msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
             msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
-            common.logger.message(msg)
+            common.logger.debug(2,msg)
             raise CrabException(msg)
 
         try:
@@ -610,7 +571,7 @@ class SchedulerCondor_g(Scheduler):
                 result = 'Done'
         elif ( attr == 'destination' ) :
             seSite = common.jobDB.destination(int(id)-1)[0]
-            oneSite = self.getCEfromSE(seSite)
+            oneSite = self.getCEfromSE(seSite).split(':')[0].strip()
             result = oneSite
         elif ( attr == 'reason' ) :
             result = 'status query'
@@ -775,56 +736,23 @@ class SchedulerCondor_g(Scheduler):
 
         # extraTag globusscheduler
 
-        # use gridcat to query site
+        # use bdii to query ce including jobmanager from site
         seSite = common.jobDB.destination(nj-1)[0]
-        gridcat_service_url = "http://osg-cat.grid.iu.edu/services.php"
-        ## oneSite = self.mapSEtoCE[seSite]
         oneSite = self.getCEfromSE(seSite)
-        #ce_hostnames=[]
-        #try:
-        #    gridCatSvc = GridCatService(gridcat_service_url)
-        #except StandardError, ex:
-        #    gridcat_service_url = "http://osg-itb.ivdgl.org/gridcat/services.php"
-        #    try:
-        #        gridCatSvc = GridCatService(gridcat_service_url)
-        #    except StandardError, ex:
-        #            msg  = '[Condor-G Scheduler]: GridCatService is not available on OSG site!\n'
-        #            msg += '[Condor-G Scheduler]: Direct Condor-G submission is not possible!\n'
-        #            common.logger.message(msg)
-        #            raise CrabException(msg)
-        # 
-        #try:
-        #    ce_hostnames = gridCatSvc.mapSEtoCE(seSite)
-        #except:
-        #    raise CrabException("Quitting: unable to find CE for site "+str(seSite))
+        # do not check the site status check for FNAL (OSG not in BDII)
+        if oneSite.find('fnal.gov') < 0 :
+            # query if site is in production
+            status = cestate_from_ce_bdii(oneSite.split(':')[0].strip())
+            if status != 'Production' :
+                msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + oneSite.split(':')[0].strip() + ' because the site has status ' + status + ' and is currently not operational.\n'
+                msg += '[Condor-G Scheduler]: Please choose another site for your jobs.'
+                common.logger.debug(2,msg)
+                raise CrabException(msg)
 
-
-
-        hostSvc = ''
-        try:
-            hostSvc = GridCatHostService(gridcat_service_url,oneSite)
-        except StandardError, ex:
-            gridcat_service_url = "http://osg-itb.ivdgl.org/gridcat/services.php"
-            try:
-                hostSvc = GridCatHostService(gridcat_service_url,oneSite)
-            except StandardError, ex:
-                    msg  = '[Condor-G Scheduler]: selected site: '+oneSite+' is not an OSG site!\n'
-                    msg += '[Condor-G Scheduler]: Direct Condor-G submission to LCG sites is not possible!\n'
-                    common.logger.message(msg)
-                    raise CrabException(msg)
-
-        if(self.batchsystem <> ''):
-            # Provide an override for the batchsystem that condor_g uses
-            batchsystem = self.batchsystem
-        else:
-            try:
-                batchsystem = hostSvc.batchSystem()
-            except:
-                raise CrabException("Quitting: unable to find jobmanager for site "+str(oneSite))
-
-
-        if batchsystem <> '' : batchsystem='-'+batchsystem
-        to_write += 'globusscheduler = "&quot;' + str(oneSite) + '/jobmanager' + batchsystem + '&quot;"\n'
+        if self.batchsystem != '' :
+            oneSite = oneSite.split('/')[0].strip() + '/' + self.batchsystem
+        
+        to_write += 'globusscheduler = "&quot;' + str(oneSite) + '&quot;"\n'
 
         # extraTag condor transfer file flag
         to_write += 'should_transfer_files = "&quot;YES&quot;"\n'
