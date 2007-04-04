@@ -20,7 +20,8 @@ TopDir=`\pwd`
 #############################################
 ######## BOSS CONFIGURATION #################
 #############################################
-BOSSVER=4_3_1
+#BOSSVER=4_3_1
+BOSSVER=hybrid
 BACKEND=SQLite
 
 function configureBoss {
@@ -90,7 +91,7 @@ export PYTHONPATH=\${PYTHONPATH}:\${CRABPYTHON}:\${CRABDBSAPIPYTHON}:\${CRABDLSA
 fi
 
 # BOSS related Stuff
-source $BOSS_ROOT/bossenv.sh
+source $TopDir/Boss/BOSS_$BOSSVER/bossenv.sh
 
 # check whether central boss db is configured
 
@@ -159,7 +160,7 @@ setenv PYTHONPATH \${PYTHONPATH}:\${CRABPYTHON}:\${CRABDBSAPIPYTHON}:\${CRABDLSA
 endif
 
 # BOSS related Stuff
-source $BOSS_ROOT/bossenv.csh
+source $TopDir/Boss/BOSS_$BOSSVER/bossenv.csh
 
 # check whether central boss db is configured
 
