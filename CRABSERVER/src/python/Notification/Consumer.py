@@ -198,9 +198,9 @@ class Consumer(Thread):
 		emailAddr = ",".join( emails )
 		#mainAddr = task.getUserMail()[0]
 		if(len(task.getUserMail())>1):
-        		cmd = "mail -s \"CRAB Server Notification: Task Report available\" " +mainAddr + " -c " + emailAddr +" < " + infoFile 
+        		cmd = "mail -s \"CRAB Server Notification: Report available for Task ["+ task.getTaskname() +"]\" " +mainAddr + " -c " + emailAddr +" < " + infoFile 
 		else:
-			cmd = "mail -s \"CRAB Server Notification: Task Report available\" " +mainAddr + " <"+ infoFile 
+			cmd = "mail -s \"CRAB Server Notification: Report available for Task ["+ task.getTaskname()+"]\" " +mainAddr + " <"+ infoFile 
 			
 	        msg = "Notification.Consumer.Notify: Sending mail to [" + emailAddr + "]"
         	logging.info( msg )
