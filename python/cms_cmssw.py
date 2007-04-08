@@ -697,8 +697,12 @@ class Cmssw(JobType):
                     # the exe is private, so we must ship
                     common.logger.debug(5,"Exe "+exeWithPath+" to be tarred")
                     path = swArea+'/'
-                    exe = string.replace(exeWithPath, path,'')
-                    tar.add(path+exe,executable)
+                    # distinguish case when script is in user project area or given by full path somewhere else
+                    if exeWithPath.find(path) >= 0 :
+                        exe = string.replace(exeWithPath, path,'')
+                        tar.add(path+exe,os.path.basename(executable))
+                    else :
+                        tar.add(exeWithPath,os.path.basename(executable))
                     pass
                 else:
                     # the exe is from release, we'll find it on WN
