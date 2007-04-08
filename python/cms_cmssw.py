@@ -687,7 +687,7 @@ class Cmssw(JobType):
         try: # create tar ball
             tar = tarfile.open(self.tgzNameWithPath, "w:gz")
             ## First find the executable
-            if (self.executable != ''):
+            if (executable != ''):
                 exeWithPath = self.scram.findFile_(executable)
                 if ( not exeWithPath ):
                     raise CrabException('User executable '+executable+' not found')
@@ -698,7 +698,7 @@ class Cmssw(JobType):
                     common.logger.debug(5,"Exe "+exeWithPath+" to be tarred")
                     path = swArea+'/'
                     exe = string.replace(exeWithPath, path,'')
-                    tar.add(path+exe,exe)
+                    tar.add(path+exe,executable)
                     pass
                 else:
                     # the exe is from release, we'll find it on WN
