@@ -75,8 +75,12 @@ class Cmssw(JobType):
             self.setParam_('owner', 'None')
         else:
             datasetpath_split = self.datasetPath.split("/")
-            self.setParam_('dataset', datasetpath_split[1])
-            self.setParam_('owner', datasetpath_split[-1])
+            if self.use_dbs_2 == 1 :
+                self.setParam_('dataset', datasetpath_split[1])
+                self.setParam_('owner', datasetpath_split[2])
+            else :
+                self.setParam_('dataset', datasetpath_split[1])
+                self.setParam_('owner', datasetpath_split[-1])
 
         self.setTaskid_()
         self.setParam_('taskId', self.cfg_params['taskId'])

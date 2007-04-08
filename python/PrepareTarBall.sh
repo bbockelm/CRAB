@@ -13,7 +13,7 @@ echo "tag = $tag"
 CRABdir="$tag"
 echo "CRABDIR = $CRABDIR"
 CRABtag=$tag
-DBSAPItag="v00_00_11"
+DBSAPItag="DBS_1_0_0_pre6"
 DLSAPItag="DLS_0_1_1"
 PAAPItag="HEAD"
 
