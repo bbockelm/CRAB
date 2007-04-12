@@ -3,20 +3,20 @@ import logging
 
 class UtilSubject:
 
-    def __init__(self, dropBox, taskN):
+    def __init__(self, dropBox, taskN, uid):
         self.location = dropBox
         self.taskName = taskN
         self.share = "share/"
         self.userSubj = "userSubj"
         self.path = self.location + "/" + self.taskName + "/" + self.share + self.userSubj
         self.userName = ""
+	self.uuid = uid
 
         pass
 
     def parseUserSubj( self, text ):
         org = ""
         name = ""
-        found = 0
         for line in text.split("\n"):
             line = line.strip()
             for line2 in line.split("/"):
@@ -28,52 +28,41 @@ class UtilSubject:
                             org = tag[1]
                     elif tag[0] == "CN":
 		        #logging.info(" " + str(tag))
-                        if len(tag) > 1 and not found:
-			    if self.taskName.find(tag[1].replace(" ","_")) != -1:
+                        if len(tag) > 1:
+			    if tag[1] != "proxy":
                                 name = tag[1]
-                                found = 1
         return org, name
 
     def invert(self, invertable_object):
         try:
             return invertable_object[::-1]
         except Exception, e:
-            logging.info('Object not invertable: ' + str(e))
+            logging.error('Object not invertable: ' + str(e))
         return 1
 
     def getInfos(self):
         """
         /C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Mattia Cinquilli/CN=proxy
         """
-        org = "NotSpecified"
+        tName = self.taskName
         name = "Unknown"
         if os.path.exists( self.path ):
-            org, name = self.parseUserSubj( open(self.path).read() )
-            ##return org, name
-            return self.getOriginalTaskName(org, name)
-        return org, name
+            org, self.userName = self.parseUserSubj( open(self.path).read() )
+	    return self.getOriginalTaskName2(), self.userName
+        return tName, name
 
-    def getOriginalTaskName(self, org, name):
+    def getOriginalTaskName2( self ):
         newName = self.taskName
         newName = newName.split("_",1)[1]
-        org = self.invert(org)
-        self.userName = name
-        name = name.replace(" ", "_")
-        name = self.invert(name)
-        newName = self.invert(newName)
-	if org != '' and org != None:
-            newName = newName.split(org,1)[1]
-	if name != '' and name != None:
-            newName = newName.split(name,1)[1]
-	if (org != '' and org != None) and (name != '' and name != None):
-	    if newName != '' and newName != None:
-                newName = newName[1:]
-	    else:
-	        return self.invert(newName), self.userName
-        return self.invert(newName), self.userName
-
+	if self.uuid != '' and self.uuid != None:
+  	    newName = newName.split(self.uuid,1)[0]
+	else:
+	    newName = newName.split("_",1)[1]
+        newName = newName[:len(newName)-1]
+	return newName
+	
 if __name__=="__main__":
 
-    obj = UtilSubject("/data/SEDir", "crab_crab_0_070209_143745_Mattia_Cinquilli_INFN_1171028265")
+    obj = UtilSubject("/flatfiles/cms", "crab_crab_0_070410_185513_fb9f93a1-fad4-4f14-9bc5-dc83de7eceb2",  "fb9f93a1-fad4-4f14-9bc5-dc83de7eceb2")
     par1, par2 = obj.getInfos()
-    print obj.getOriginalTaskName(par1, par2)
+    print str(par1), str(par2)

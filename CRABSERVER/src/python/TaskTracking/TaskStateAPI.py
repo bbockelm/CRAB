@@ -11,6 +11,7 @@ from JobState.Database.Api.TransitionException import TransitionException
 from ProdAgentCore.ProdAgentException import ProdAgentException
 from ProdAgentDB.Connect import connect
 
+
 def openConnPA():
     """
     _openConnPA_
@@ -66,18 +67,24 @@ def checkNSubmit( taskName, idJob):
 	raise
     return 1
 
-def insertTaskPA( taskName, eMail, thresholdLevel ):
+def insertTaskPA( taskName, status ):
     """
     _insertTaskPA_
     """
 
     notificationSent = 0
     endedLevel = 0
+    eMail = ''
+    tresholdLevel = 0
+    proxy = ''
+    uuid = ""
 
     ## opening connection with PA's DB
     conn, dbCur = openConnPA()
     try:
-	sqlStr="INSERT INTO js_taskInstance VALUES('','"+taskName+"','"+eMail+"','"+str(thresholdLevel)+"','"+str(notificationSent)+"','"+str(endedLevel)+"');"
+	sqlStr="INSERT INTO js_taskInstance VALUES('','"+taskName+"','"+eMail+"','"+str(tresholdLevel)+"','"+str(notificationSent)+"',\
+	                                           '"+str(endedLevel)+"','"+proxy+"','"+uuid+"','"+status+"');"
+	logging.info(sqlStr)
         dbCur.execute("START TRANSACTION")
         try:
             dbCur.execute(sqlStr)
@@ -92,6 +99,68 @@ def insertTaskPA( taskName, eMail, thresholdLevel ):
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
 	logging.error( "Error inserting a new task ("+ taskName +") in the PA's DB!" )
+	raise
+
+
+def updateNotSubmitted( taskName, eMail, tresholdLevel, proxy, uuid, status ):
+    """
+    _updateNotSubmitted_
+
+    updating after message from proxyTarBall component
+    """
+    logging.info( "   -> updating the task table for task: " + taskName )
+
+    ## opening connection with PA's DB
+    conn, dbCur = openConnPA()
+    try:
+        dbCur.execute("START TRANSACTION")
+        if checkExistPA(conn, dbCur, taskName):
+	    sqlStr='UPDATE js_taskInstance SET eMail="'+eMail+'", tresholdLevel="'+str(tresholdLevel)+'", status="'+status+'", proxy="'+proxy+'", uuid="'+uuid+'"\
+		    WHERE taskName="'+taskName+'";'
+	    #logging.info(sqlStr)
+            try:
+                rowModified=dbCur.execute(sqlStr)
+            except Exception,ex:
+                raise ProdAgentException("Error updating 'endedLevel' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+        dbCur.execute("COMMIT")
+        ## closing connection with PA's DB
+        closeConnPA( dbCur, conn )
+    except:
+	dbCur.execute("ROLLBACK")
+        ## closing connection with PA's DB
+        closeConnPA( dbCur, conn )
+	logging.error( "Error updating PA DB! Method: " + updateNotSumbitted.__name__ )
+	raise
+
+
+def updateStatus( taskName, status ):
+    """
+    _updateStatus_
+
+    updating after message from proxyTarBall component, and when the task is being submitted
+    """
+    logging.info( "   -> updating the task table for task: " + taskName )
+
+    ## opening connection with PA's DB
+    conn, dbCur = openConnPA()
+    try:
+        dbCur.execute("START TRANSACTION")
+        if checkExistPA(conn, dbCur, taskName):
+	    sqlStr='UPDATE js_taskInstance SET status="'+status+'"\
+		    WHERE taskName="'+taskName+'";'
+	    #logging.info(sqlStr)
+            try:
+                rowModified=dbCur.execute(sqlStr)
+            except Exception,ex:
+                raise ProdAgentException("Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+        dbCur.execute("COMMIT")
+        ## closing connection with PA's DB
+        closeConnPA( dbCur, conn )
+    except:
+	dbCur.execute("ROLLBACK")
+        ## closing connection with PA's DB
+        closeConnPA( dbCur, conn )
+	logging.error( "Error updating PA DB! Method: " + updatingEndedPA.__name__ )
 	raise
 
 
@@ -140,21 +209,34 @@ def findTaskPA( taskName):
 	logging.error( "Error quering PA DB! Method: " + findTaskPA.__name__ )
 	raise
 
-def queryMethod(strQuery):
+def queryMethod(strQuery, taskName):
     """
     _queryMethod_
 
     standard method for doing queries
     """
+    #logging.info(strQuery)
     ## opening connection with PA's DB
     conn, dbCur = openConnPA()
     try:
         dbCur.execute("START TRANSACTION")
-	try:
-	    dbCur.execute(strQuery)
-        except Exception,ex:
-            raise ProdAgentException("Tasks not found in js_taskInstance.")
-	rows = dbCur.fetchall()
+	if taskName != None:
+	    if checkExistPA(conn, dbCur, taskName):
+		try:
+		    dbCur.execute(strQuery)
+	        except Exception,ex:
+	            raise ProdAgentException("Task not found in js_taskInstance.")
+   	        rows = dbCur.fetchall()
+	    else:
+	        dbCur.execute("COMMIT")
+		closeConnPA( dbCur, conn )
+		return None
+	else:
+            try:
+	        dbCur.execute(strQuery)
+   	    except Exception,ex:
+	        raise ProdAgentException("Task not found in js_taskInstance.")
+	    rows = dbCur.fetchall()
 	dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
@@ -170,12 +252,38 @@ def getAllNotFinished():
     """
     _getAllNotFinished_
     """
-    queryString = "SELECT taskName,eMail,tresholdLevel,notificationSent,endedLevel"+\
+    queryString = "SELECT taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid"+\
                   " FROM js_taskInstance"+\
-		  " WHERE endedLevel < 100 or notificationSent<2;"
-    task2Check = queryMethod(queryString)
+		  " WHERE status <> 'killed' AND status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
+    task2Check = queryMethod(queryString, None)
     
     return task2Check
+
+def getStatusUUIDEmail( taskName ):
+    """
+    _getStatus_
+    """
+
+    queryString =  "SELECT status, uuid, eMail from js_taskInstance where taskName = '"+taskName+"';"
+    task2Check = queryMethod(queryString,taskName)
+    logging.info("task2Check = " + str(task2Check) )
+    try:
+        logging.info("task2Check[0] = " + str(task2Check[0]) )
+    except:
+        pass
+    if task2Check != None:
+        return task2Check[0]
+    return None
+   
+def getStatus( taskName ):
+    """
+    _getEmail_
+    """
+    queryString =  "SELECT status from js_taskInstance where taskName = '"+taskName+"';"
+    task2Check = queryMethod(queryString, taskName)
+
+    return task2Check
+
 
 def checkExistPA( conn, dbCur, taskName):
     """
@@ -203,19 +311,20 @@ def checkExistPA( conn, dbCur, taskName):
     return 0
 
 
-def updatingEndedPA( taskName, newPercentage):
+def updatingEndedPA( taskName, newPercentage, status ):
     """
     _updatingEndedPA_
     """
-    logging.info( "   Updating the task table for task: " + taskName )
+    logging.info( "   -> updating the task table for task: " + taskName )
     logging.debug( "   Setting the field endedLevel at '" + newPercentage +"'")
+    logging.debug( "   Setting the field status  at '" + status +"'")
 
     ## opening connection with PA's DB
     conn, dbCur = openConnPA()
     try:
         dbCur.execute("START TRANSACTION")
         if checkExistPA(conn, dbCur, taskName):
-	    sqlStr='UPDATE js_taskInstance SET endedLevel="'+newPercentage+'"\
+	    sqlStr='UPDATE js_taskInstance SET endedLevel="'+newPercentage+'", status="'+status+'"\
 		    WHERE taskName="'+taskName+'";'
             try:
                 rowModified=dbCur.execute(sqlStr)
@@ -238,7 +347,7 @@ def updatingNotifiedPA( taskName, sended):
     """
 
     sendFlag = str(sended)
-    logging.info( "   Updating the task table for task: " + taskName )
+    logging.info( "   -> updating the task table for task: " + taskName )
     logging.debug( "   Setting the field notificationSend at '" + sendFlag +"'")
 
     ## opening connection with PA's DB
@@ -263,6 +372,37 @@ def updatingNotifiedPA( taskName, sended):
         closeConnPA( dbCur, conn )
 	logging.error( "Error updating PA DB! Method: " + updatingNotifiedPA.__name__ )
 	raise
+
+def updatingStatus( taskName, status, notification ):
+    """
+    updatingStatus
+    """
+    
+    logging.info( "   -> updating the task table for task: " + taskName )
+
+    ## opening connection with PA's DB
+    conn, dbCur = openConnPA()
+    try:
+        ## opening connection with PA's DB
+        conn, dbCur = openConnPA()
+	dbCur.execute("START TRANSACTION")
+	if checkExistPA(conn, dbCur, taskName):
+	    sqlStr='UPDATE js_taskInstance SET status="'+status+'", notificationSent="'+str(notification)+'"\
+		    WHERE taskName="'+taskName+'";'
+            try:
+                rowModified=dbCur.execute(sqlStr)
+            except Exception,ex:
+                raise ProdAgentException("Error updating task killed in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+	dbCur.execute("COMMIT")
+        ## closing connection with PA's DB
+        closeConnPA( dbCur, conn )
+    except:
+	dbCur.execute("ROLLBACK")
+        ## closing connection with PA's DB
+        closeConnPA( dbCur, conn )
+	logging.error( "Error updating PA DB! Method: " + updatingNotifiedPA.__name__ )
+	raise
+
 
 def cleaningTaskPA( taskName ):
     """
