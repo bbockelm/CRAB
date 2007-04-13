@@ -6,18 +6,22 @@ $|=1;
 # (do not modify this section unless for fixing bugs - please inform authors!)
 #
 # ------------------- Optional logging of submission -------------------------
-#   (change file name and comment/uncomment the open statement as you wish)
-#$logFile = "$subdir/bossSubmit.log";
-#open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
-#
+#  Log file 
+$len=@ARGV;
+if ( $len == 1 ) {
+    $logFile = $ARGV[0];
+    open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
+    print LOG "\n\t************************************************\n\n";
+    print LOG "retrieving availbale sites from user requirements\n";
+}
 #
 # ----------------------------------- Main  -----------------------------------
 %classad = &parseClassAd($cladfile);
 if ( %classad ) {
     &processClassAd();
     &listMatch();
-} else {
-    print "Error: passed empty classad\n\n";
+} elsif (LOG) {
+    print LOG "Error: passed empty classad\n\n";
 }
 #
 # ----------------------------- End of main ----------------------------------
@@ -57,7 +61,7 @@ sub parseClassAd {
 sub processClassAd {
     $rbconfigstring ="";
     $rbconfigVO="";
-    $ppend2JDL = "";
+    $append2JDL = "";
     
     foreach $ClAdKey ( keys %classad ) {
 #	print LOG "in hash2: $ClAdKey = $classad{$ClAdKey}\n";
@@ -76,7 +80,7 @@ sub processClassAd {
 	    $rbconfigVO="--config-vo $ClAdVal";
 #               print "rbconfigVO $rbconfigVO \n";
 	} elsif ( $ClAdKey ne "" ) {
-	    $ppend2JDL.="$ClAdKey = $ClAdVal;\n";
+	    $append2JDL.="$ClAdKey = $ClAdVal;\n";
 	}
     }
 }
@@ -87,21 +91,33 @@ sub listMatch {
     $tmpfile = `mktemp dg_XXXXXX` || die "error";
     chomp($tmpfile);    
     open (JDL, ">$tmpfile") || die "error";
-    print JDL $ppend2JDL;
-    print JDL ("Executable    = \"/bin/echo\";\n");
+    $append2JDL.="Executable    = \"/bin/echo\";\n";
+    print JDL $append2JDL;
     close(JDL);
+    # put jdl in the log file
+    if (LOG) {
+	print LOG "user JDL: [\n";
+	print LOG $append2JDL;
+	print LOG ("]\n\n");
+    }
     # submitting command
     $subcmd = "edg-job-list-match --noint $hoststring $rbconfigstring $rbconfigVO $tmpfile|";
 #    print $subcmd;
-    if (LOG) {
-	print LOG "subcmd = $subcmd\n";
-    }
-    # exit;
-    # open a pipe to read the stdout of edg-job-submit
+    print LOG "subcmd = $subcmd\n";
+    # open a pipe to read the stdout of edg-job-list-match
     open (SUB, $subcmd);
     while ( <SUB> ) {
-        print $_;
+	if ( $_ =~ m/\s*CEId*/) {
+	    $getid=1;
+	} elsif ( $getid==1 ) {
+	    if ( $_ =~ m/\*+/  ) {
+		last;
+	    }
+	    print $_;
+	}
+	print LOG $_;
     }
+
     unlink "$tmpfile";
 }
 #

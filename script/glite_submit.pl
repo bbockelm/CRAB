@@ -11,36 +11,30 @@ $subhost = `hostname --fqdn`; chomp $subhost;
 # submitting path
 $subdir = `pwd`; chomp $subdir;
 #
-# ------------------- Optional logging of submission -------------------------
-#   (change file name and comment/uncomment the open statement as you wish)
-$logFile = "$subdir/bossSubmit.log";
-#open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
-#
 # --------------------------- Get arguments ----------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
 # check number of arguments
 $correctlen = 4;
 $len=@ARGV;
-if($len!=$correctlen) {
-    if (LOG) {
-	print LOG "Wrong number of arguments: $len, expected: $correctlen\n";
-	close(LOG);
-    }
-    print "0::0::0\n";
+if($len < $correctlen) {
     die "Wrong number of arguments to sub script: $len, expected: $correctlen\n";
 }
 # Boss task ID
 $taskid = $ARGV[0];
-# stdinput 
-$stdin = $ARGV[1];
 # common sandbox
-$commonSandbox = $ARGV[2];
+$commonSandbox = $ARGV[1];
 # Log file (where the job wrapper writes its messages); argument of -log option
-$log = $ARGV[3];
+$log = $ARGV[2];
+# File with jobs to be submitted
+$jobList = $ARGV[3];
 #
-if (LOG) {
-    print LOG "\n====>> New scheduler call number $jid\n";
-    print LOG "$jid: Redirecting stderr & stdout to log file $stdout\n";
+# ------------------- Optional logging of submission -------------------------
+# (do not modify this section unless for fixing bugs - please inform authors!)
+if ( $len == 5 ) {
+    $logFile = $ARGV[4];
+    open (LOG, ">>$logFile") || {print STDERR "unable to write to $logFile. Logging disabled\n"};
+    print LOG "\n\t************************************************\n\n";
+    print LOG "Submitting jobs from task $taskid\n";
 }
 #
 # ------------------------ Other configuration -------------------------------
@@ -48,21 +42,24 @@ if (LOG) {
 # The name of the executable to be submitted to the scheduler
 $executable = `which jobExecutor`; chomp $executable;
 #
-# ----- Scheduler specific initialization (before parsing classad -----------
+# -------- Scheduler specific initialization (before parsing classad) --------
 # (do not modify this section unless for fixing bugs - please inform authors!)
 &initSched();
 #
-# ------------------- Read jobList file and loop over jobs ------------------- 
+# ------------------- Read jobList file and loop over jobs -------------------
+# (do not modify this section unless for fixing bugs - please inform authors!)
 $jid="";
 $cladfile = "";
-$file = "submit\_$taskid";
-open FILE, $file or die $!;
+open FILE, $jobList or die $!;
 while ( <FILE> ) {
 #    print $_;
     if ($_ =~ /(\d+):(\d+):(\d+)\n/) {
-	for ($val=$1; $val<=$2; ++$val) {
-	    $jid="$taskid\_$val\_$3";
-	    $stdout="$log\_$taskid\_$val.log";
+	for ($id=$1; $id<=$2; ++$id) {
+	    $subn=$3;
+	    $jid="$taskid\_$id\_$subn";
+	    $jobLog="$log\_$taskid\_$id.log";
+	    $stdin = "BossWrapperSTDIN\_$jid.clad";
+	    $specArchive="BossArchive\_$taskid\_$id.tgz";
 #
 # ------ Get additional information from classad file (if any)----------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
@@ -70,33 +67,30 @@ while ( <FILE> ) {
 	    if ( -f $cladfile ) {
 		%classad = &parseClassAd($cladfile);
 		&processClassAd();
-	    } else {
-		if (LOG) {
-		    print LOG "$jid: No classad file for this task\n";
-		}
-	    }
-	    $cladfile = "BossClassAdFile\_$taskid\_$val";
+		print LOG "$taskid: Found classad file for this task\n";
+	    } 
+	    $cladfile = "BossClassAdFile\_$taskid\_$id";
 	    if ( -f $cladfile ) {
 		%classad = &parseClassAd($cladfile);
 		&processClassAd();
-	    } else {
-		if (LOG) {
-		    print LOG "$jid: No classad file for this job\n";
-		}
+		print LOG "$jid: Found classad file for this job\n";
 	    }
 #
 # --------------------------- Ready to submit --------------------------------
 # (do not modify this section unless for fixing bugs - please inform authors!)
 	    $sid = &submit();
-	    print ("$val\t$3\t$sid");
+	    print ("$id\t$subn\t$sid\n");
 	}
 #
 # ----------------------- If something goes wrong ----------------------------
+# (do not modify this section unless for fixing bugs - please inform authors!)
     } else {
 	print LOG "$_: Incorrect format\n";
 	die;
     }
 }
+unlink "$commonSandbox";
+unlink "$stdin";
 print "EOF\n";
 #
 # ----------------------------- End of main ----------------------------------
@@ -110,9 +104,7 @@ sub parseClassAd {
     my $cladstring="";
     open (CLAD, $cladfile);
     while ( <CLAD> ) {
-#	if (LOG) {
-#	    print LOG "ClassAd line: $_";
-#	}
+#	print LOG "ClassAd line: $_";
 	$line = $_;
 	chomp($line);
 	$cladstring.=$line;
@@ -132,16 +124,7 @@ sub parseClassAd {
     }
     return %clad;
 }
-
-sub mybasename {
-    my $rf = $_[0];
-    $rf =~ s/^.\///;
-    if ( !($rf =~ m#/dev/null#) ) {
-           $rf =~ s/.+\/// ;
-    }
-    return $rf;
-}
-
+#
 # --------------------- Scheduler specific routines -------------------------
 #     (Update the routines of this section to match your scheduler needs)
 #
@@ -177,63 +160,50 @@ sub submit {
 # 	$hoststring="-r $host";
 #     }
     $inSandBox  = "\"$executable\",\"$subdir/$stdin\"";
-    $inSandBox  .= ",\"$subdir/BossArchive_$jid.tgz\"";
     $inSandBox  .= ",\"$subdir/$commonSandbox\"";
-    $outbn = mybasename($stdout);
-    $inbn = mybasename($stdin);
-    $outSandBox = "\"$outbn\",\"BossOutArchive_$jid.tgz\"";
+    if ( -s "$subdir/$specArchive" ) {
+	print LOG "Found specific archive for job : $specArchive\n";
+	$inSandBox  .= ",\"$subdir/$specArchive\"";
+    }
+    $outSandBox = "\"$jobLog\",\"BossOutArchive_$jid.tgz\"";
     # open a temporary file
-    $tmpfile = `mktemp glite_XXXXXX` || die "error";
+    $tmpfile = `mktemp glite\_$jid\_XXXXXX` || die "error";
     chomp($tmpfile);    
     open (JDL, ">$tmpfile") || die "error";
     # Executable submit with edg-job-submit
     print JDL ("Executable    = \"jobExecutor\";\n");
     # input,output,error files passed to executable
     # debug only
-    print JDL ("Arguments     = \"$val\";\n");
-    print JDL ("StdInput      = \"$inbn\";\n");
-    print JDL ("StdOutput     = \"$outbn\";\n");
-    print JDL ("StdError      = \"$outbn\";\n");
+    print JDL ("Arguments     = \"$id\";\n");
+    print JDL ("StdInput      = \"$stdin\";\n");
+    print JDL ("StdOutput     = \"$jobLog\";\n");
+    print JDL ("StdError      = \"$jobLog\";\n");
     print JDL ("InputSandbox  = {$inSandBox};\n");
     print JDL ("OutputSandbox = {$outSandBox};\n");
     print JDL $ppend2JDL;
     close(JDL);
     # submitting command
-#    $subcmd = "glite-wms-job-delegate-proxy -d bossproxy $rbconfigstring";
-#    open (SUB, $subcmd);
 #    $subcmd = "glite-wms-job-submit -d bossproxy $rbconfigstring $tmpfile|";
     $subcmd = "glite-wms-job-submit -a $rbconfigstring $tmpfile |";
-    # exit;
+    print LOG "$jid : Redirecting stderr & stdout to log file $jobLog\n";
+    print LOG "subcmd = $subcmd\n";
     # open a pipe to read the stdout of glite-job-submit
     open (SUB, $subcmd);
-    $id = "error";
-    $err_msg ="";
+    $sid = "error";
+    $getid = 0;
     while ( <SUB> ) {
-	$err_msg .= "$_";
+	print LOG $_;
 	if ( $_ =~ m/.*Success.*/) {
 	    $getid=1;
 	} elsif ( $getid==1 && $_ =~ m/https:(.+)/) {
-	    $id = "https:$1";
-	    if (LOG) {
-		print LOG "$jid: Scheduler ID = https:$1\n";
-	    }
+	    $sid = "https:$1";
 	}
     }
-
-    if ( $id eq "error" ) {
-	$err_msg .= "\nERROR: Unable to submit the job $jid\n";
-	print $err_msg ;
-	if (LOG) {
-	    print $err_msg ; 
-	}
-    }
-
-    # close the file handles
+    # close the file handle
     close(SUB);
     # delete temporary files
-    unlink "$tmpfile";
-    unlink "BossArchive_${jid}.tgz";
-    return "$id\n";
+    # unlink "$tmpfile";
+    return "$sid";
 }
 #
 # ----------------------------------------------------------------------------

@@ -2,6 +2,21 @@
 import sys
 import os
 #
+logFile = 0
+# log system
+args=sys.argv
+if len(args) == 2:
+    logFile = open(args[1],'a')
+#
+# remove runtime warnings
+#
+try:
+    import warnings
+    warnings.simplefilter("ignore", RuntimeWarning)
+    warnings.simplefilter("ignore", DeprecationWarning)
+except:
+    pass
+#
 def printSt( nodeInfo ):
     try:
         result=''
@@ -43,33 +58,45 @@ def printSt( nodeInfo ):
 ifile,ofile=os.popen4("voms-proxy-info")
 sfile=ofile.read().strip()
 if sfile=="Couldn't find a valid proxy.":
+    if logFile : logFile.write ( sfile + '\n' )
     sys.exit()
 elif  sfile.split("timeleft  :")[1].strip()=="0:00:00":
+    if logFile : logFile.write ( sfile + '\n' )
     sys.exit()
 #
 # Add GLITE_WMS_LOCATION to the python path
 #
 try:
-    path = os.environ['GLITE_LOCATION']
-    libPath=os.path.join(path, "lib")
-    sys.path.append(libPath)
-    libPath=os.path.join(path, "lib", "python")
-    sys.path.append(libPath)
-except:
-    msg = "Error: the GLITE_LOCATION variable is not set."
-#
-try:
     path = os.environ['GLITE_WMS_LOCATION']
     libPath=os.path.join(path, "lib")
-    sys.path.append(libPath)
+    sys.path.insert(0,libPath)
     libPath=os.path.join(path, "lib", "python")
     sys.path.append(libPath)
 except:
-    msg = "Error: the GLITE_WMS_LOCATION variable is not set."
+    msg = "Error: the GLITE_WMS_LOCATION variable is not set.\n"
 #
-from glite_wmsui_LbWrapper import Status
-from Job import JobStatus
-from glite_wmsui_AdWrapper import DagWrapper
+try:
+    path = os.environ['GLITE_LOCATION']
+    libPath=os.path.join(path, "lib")
+    sys.path.insert(0,libPath)
+    libPath=os.path.join(path, "lib", "python")
+    sys.path.append(libPath)
+except:
+    msg = "Error: the GLITE_LOCATION variable is not set.\n"
+    if logFile : logFile.write ( msg + '\n' )
+#
+#
+#
+try:
+    from glite_wmsui_LbWrapper import Status
+    from Job import JobStatus
+    from glite_wmsui_AdWrapper import DagWrapper
+except:
+    if logFile :
+        logFile.write ( msg )
+        logFile.write ( sys.exc_info()[1].__str__() )
+        logFile.write ( '\n' )
+    sys.exit()
 #
 # instatiating status object
 status =   Status()
@@ -101,6 +128,7 @@ for line in sys.stdin:
         status.getStatus(id,0)
         err, apiMsg = status.get_error()
         if err:
+            if logFile : logFile.write ( apiMsg )
             continue
         jobidInfo = status.loadStatus(st)
         intervals = int ( len(jobidInfo) / VECT_OFFSET )
