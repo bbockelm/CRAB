@@ -281,13 +281,12 @@ class TaskTrackingComponent:
             logging.error("  <-- - -- - -->")
         
     
-    def prepareReport( self, taskName, uuid, eMail, thresholdLevel, succ, fail, run ):
+    def prepareReport( self, taskName, uuid, eMail, thresholdLevel, percentage, dictReportTot ):
         """
 	_prepareReport_
 	"""
 
         pathToWrite = pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
-	percentage = "0"
 
 	if os.path.exists( pathToWrite ):
 	   ###  get user name & original task name  ###
@@ -306,9 +305,11 @@ class TaskTrackingComponent:
 			 c.addEmailAddress( eMaiList[index] )
 		     else:
 			 c.initialize( origTaskName, eMaiList[0], userName, percentage, thresholdLevel)
-	    c.addStatusCount( "JobSuccess", succ)
-	    c.addStatusCount( "JobFailed", fail)
-            c.addStatusCount( "JobInProgress", run )
+	    for state in dictReportTot:
+                c.addStatusCount( str(state), str(dictReportTot[state]) )
+	    #c.addStatusCount( "JobSuccess", succ)
+	    #c.addStatusCount( "JobFailed", fail)
+            #c.addStatusCount( "JobInProgress", run )
 	    c.toXml()
             c.toFile( pathToWrite + self.xmlReportFileName )
 
@@ -335,8 +336,8 @@ class TaskTrackingComponent:
             logging.error( "         using default value 'thresholdLevel = 100'")
             logging.error("  <-- - -- - -->")
             thresholdLevel = 100
-       
-        self.prepareReport( taskName, uuid, eMail, thresholdLevel, 0, 0, "all")
+        dictionaryReport =  {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': "all"}
+        self.prepareReport( taskName, uuid, eMail, thresholdLevel, 0, dictionaryReport )
 	#logging.info("Report Prepared")
 
         try:
@@ -379,7 +380,8 @@ class TaskTrackingComponent:
 		        uuid = valuess[1]
 		        if len(valuess) > 2:
 		    	    eMail = valuess[2]
-	            self.prepareReport( payload, uuid, eMail, "", 0, "all", 0)
+	            dictionaryReport = {'JobSuccess': 0, 'JobFailed': "all", 'JobInProgress': 0}
+	            self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport )
 		    self.prepareTaskFailed( payload, uuid, eMail )
         except Exception, ex:
 	    logging.error("  <-- - -- - -->")
@@ -569,37 +571,20 @@ class TaskTrackingComponent:
 			try:
 			    percentage = (100 * endedJob) / len(statusJobsTask)
 			    pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
-			    if percentage != endedLevel or \
-			       (percentage == 0 and (not os.path.exists(pathToWrite + self.xmlReportFileName)) and status == self.taskState[3] )\
-			       or (notified < 2 and endedLevel == 100):
 			    
+			    if percentage != endedLevel or \
+			       (percentage == 0 and status == self.taskState[3] ) or \
+			       (notified < 2 and endedLevel == 100):
+			   #and (not os.path.exists(pathToWrite + self.xmlReportFileName))\
+
 		 	        ###  updating endedLevel  ###
 				if endedLevel == 100:
  				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
-				else:
+				elif percentage != endedLevel:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
 
 				if os.path.exists( pathToWrite ):
-				   ###  get user name & original task name  ###
-				    obj = UtilSubject(self.args['dropBoxPath'], taskName, uuid)
-				    origTaskName, userName = obj.getInfos()
-				    del obj
-				   ###  preparing xml report  ###
-				    c = CreateXmlJobReport()
-				    eMaiList = self.getMoreMails( eMail )
-				    #logging.info("eMaiList = " +str(eMaiList) + " --- eMail = "+ str(eMail) )
-				    if len(eMaiList) < 1: 
-					c.initialize( origTaskName, "ASdevel@cern.ch", userName, percentage, thresholdLevel)
-				    else:
-					 for index in range(len(eMaiList)):
-					     if index != 0:
-						 c.addEmailAddress( eMaiList[index] )
-					     else:
-						 c.initialize( origTaskName, eMaiList[0], userName, percentage, thresholdLevel)
-				    for state in dictReportTot:
-					c.addStatusCount( str(state), str(dictReportTot[state]) )
-				    c.toXml()
-				    c.toFile( pathToWrite + self.xmlReportFileName )
+				    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictReportTot )
 
 				   ### prepare tarball & send eMail ###
 				    if percentage >= thresholdLevel:
