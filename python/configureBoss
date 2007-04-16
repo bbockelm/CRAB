@@ -7,7 +7,7 @@
 # 02-Nov-2005
 
 ### BOSS configuration parameters
-BOSSVER=4_0_0
+BOSSVER=4_3_2
 BACKEND=SQLite
 BOSSDBPATH=${HOME}/boss/
 BOSSDBNAME=bossCrab
