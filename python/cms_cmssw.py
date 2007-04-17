@@ -161,7 +161,12 @@ class Cmssw(JobType):
                 tmp = string.strip(tmp)
                 dirname = ''
                 if not tmp[0]=="/": dirname = "."
-                files = glob.glob(os.path.join(dirname, tmp))
+                files = []
+                if string.find(tmp,"*")>-1:
+                    files = glob.glob(os.path.join(dirname, tmp))
+                    if len(files)==0:
+                        raise CrabException("No additional input file found with this pattern: "+tmp)
+                else: files.append(tmp)
                 for file in files:
                     if not os.path.exists(file):
                         raise CrabException("Additional input file not found: "+file)
