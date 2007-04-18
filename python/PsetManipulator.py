@@ -19,11 +19,13 @@ class PsetManipulator:
         #convert Pset
         self.pyPset = os.path.basename(pset)  
         cmd = 'EdmConfigToPython > '+common.work_space.shareDir()+self.pyPset+'py < '+ self.pset
-	exit_code = os.system(cmd)
+        exit_code = os.system(cmd)
         if exit_code != 0 : 
             msg = 'Could not convert '+self.pset+' into a python Dictionary \n'
-            msg1= '      Did you do eval `scramv1 runtime ...` from your CMSSW working area ?'
-            raise CrabException(msg+msg1)
+            msg += 'Failed to execute '+cmd+'\n'
+            msg += 'Exit code : '+exit_code
+
+            raise CrabException(msg)
             pass
         
         self.par = file(common.work_space.shareDir()+self.pyPset+'py').read()
@@ -50,13 +52,31 @@ class PsetManipulator:
         inModule.setPythiaSeed(self.cfg,seed)
         return 
 
-    def pythiaSeedVtx(self,vtxSeed):
+    def vtxSeed(self,vtxSeed):
         """ 
         Set vtx seed key
         """
         # set seed
         inModule = self.cfg.inputSource
-        inModule.setPythiaVtxSeed(self.cfg,vtxSeed)
+        inModule.setVtxSeed(self.cfg,vtxSeed)
+        return 
+
+    def g4Seed(self,g4Seed):
+        """ 
+        Set g4 seed key
+        """
+        # set seed
+        inModule = self.cfg.inputSource
+        inModule.setG4Seed(self.cfg, g4Seed)
+        return 
+
+    def mixSeed(self,mixSeed):
+        """ 
+        Set mix seed key
+        """
+        # set seed
+        inModule = self.cfg.inputSource
+        inModule.setMixSeed(self.cfg, mixSeed)
         return 
 
     def pythiaFirstRun(self, firstrun):

@@ -231,6 +231,19 @@ class Cmssw(JobType):
         except KeyError:
             self.sourceSeedVtx = None
             common.logger.debug(5,"No vertex seed given")
+
+        try:
+            self.sourceSeedG4 = int(cfg_params['CMSSW.g4_seed'])
+        except KeyError:
+            self.sourceSeedG4 = None
+            common.logger.debug(5,"No g4 sim hits seed given")
+
+        try:
+            self.sourceSeedMix = int(cfg_params['CMSSW.mix_seed'])
+        except KeyError:
+            self.sourceSeedMix = None
+            common.logger.debug(5,"No mix seed given")
+
         try:
             self.firstRun = int(cfg_params['CMSSW.first_run'])
         except KeyError:
@@ -264,26 +277,30 @@ class Cmssw(JobType):
 
         # modify Pset
         if self.pset != None: #CarlosDaniele
-            try:
-                if (self.datasetPath): # standard job
-                    # allow to processa a fraction of events in a file
-                    self.PsetEdit.inputModule("INPUT")
-                    self.PsetEdit.maxEvent("INPUTMAXEVENTS")
-                    self.PsetEdit.skipEvent("INPUTSKIPEVENTS")
-                else:  # pythia like job
-                    self.PsetEdit.maxEvent(self.eventsPerJob)
-                    if (self.firstRun):
-                        self.PsetEdit.pythiaFirstRun("INPUTFIRSTRUN")  #First Run
-                    if (self.sourceSeed) :
-                        self.PsetEdit.pythiaSeed("INPUT")
-                        if (self.sourceSeedVtx) :
-                            self.PsetEdit.pythiaSeedVtx("INPUTVTX")
-                # add FrameworkJobReport to parameter-set
-                self.PsetEdit.addCrabFJR(self.fjrFileName)
-                self.PsetEdit.psetWriter(self.configFilename())
-            except:
-                msg='Error while manipuliating ParameterSet: exiting...'
-                raise CrabException(msg)
+           # try:
+            if (self.datasetPath): # standard job
+                # allow to processa a fraction of events in a file
+                self.PsetEdit.inputModule("INPUT")
+                self.PsetEdit.maxEvent("INPUTMAXEVENTS")
+                self.PsetEdit.skipEvent("INPUTSKIPEVENTS")
+            else:  # pythia like job
+                self.PsetEdit.maxEvent(self.eventsPerJob)
+                if (self.firstRun):
+                    self.PsetEdit.pythiaFirstRun("INPUTFIRSTRUN")  #First Run
+                if (self.sourceSeed) :
+                    self.PsetEdit.pythiaSeed("INPUT")
+                    if (self.sourceSeedVtx) :
+                        self.PsetEdit.vtxSeed("INPUTVTX")
+                    if (self.sourceSeedG4) :
+                        self.PsetEdit.g4Seed("INPUTG4")
+                    if (self.sourceSeedMix) :
+                        self.PsetEdit.mixSeed("INPUTMIX")
+            # add FrameworkJobReport to parameter-set
+            self.PsetEdit.addCrabFJR(self.fjrFileName)
+            self.PsetEdit.psetWriter(self.configFilename())
+            # except:
+            #     msg='Error while manipuliating ParameterSet: exiting...'
+            #     raise CrabException(msg)
 
     def DataDiscoveryAndLocation(self, cfg_params):
 
@@ -570,38 +587,31 @@ class Cmssw(JobType):
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
             ## Since there is no input, any site is good
-           # self.jobDestination.append(["Any"])
             self.jobDestination.append([""]) #must be empty to write correctly the xml 
-            args='' 
+            args=[] 
             if (self.firstRun):
                     ## pythia first run
-                #self.list_of_args.append([(str(self.firstRun)+str(i))])
-                args=args+(str(self.firstRun)+str(i))
+                args.append(str(self.firstRun)+str(i))
             else:
                 ## no first run
-                #self.list_of_args.append([str(i)])
-                args=args+str(i)
+                args.append(str(i))
             if (self.sourceSeed):
+                args.append(str(self.sourceSeed)+str(i))
                 if (self.sourceSeedVtx):
-                    ## pythia + vtx random seed
-                    #self.list_of_args.append([
-                    #                          str(self.sourceSeed)+str(i),
-                    #                          str(self.sourceSeedVtx)+str(i)
-                    #                          ])
-                    args=args+str(',')+str(self.sourceSeed)+str(i)+str(',')+str(self.sourceSeedVtx)+str(i)
-                else:
-                    ## only pythia random seed
-                    #self.list_of_args.append([(str(self.sourceSeed)+str(i))])
-                    args=args +str(',')+str(self.sourceSeed)+str(i)
-            else:
-                ## no random seed
-                if str(args)=='': args=args+(str(self.firstRun)+str(i))
-            arguments=args.split(',')
-            if len(arguments)==3:self.list_of_args.append([str(arguments[0]),str(arguments[1]),str(arguments[2])])
-            elif len(arguments)==2:self.list_of_args.append([str(arguments[0]),str(arguments[1])])
-            else :self.list_of_args.append([str(arguments[0])])
-            
-     #   print self.list_of_args
+                    ## + vtx random seed
+                    args.append(str(self.sourceSeedVtx)+str(i))
+                if (self.sourceSeedG4):
+                    ## + G4 random seed
+                    args.append(str(self.sourceSeedG4)+str(i))
+                if (self.sourceSeedMix):
+                    ## + Mix random seed
+                    args.append(str(self.sourceSeedMix)+str(i))
+                pass
+            pass
+            self.list_of_args.append(args)
+        pass
+
+        #common.logger.debug(5,"Arguments list (pythia-like job):"+str(self.list_of_args))
 
         return
 
@@ -875,41 +885,49 @@ class Cmssw(JobType):
         if self.pset != None: #CarlosDaniele
             pset = os.path.basename(job.configFilename())
             txt += '\n'
+            txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
             if (self.datasetPath): # standard job
                 #txt += 'InputFiles=$2\n'
                 txt += 'InputFiles=${args[1]}\n'
                 txt += 'MaxEvents=${args[2]}\n'
                 txt += 'SkipEvents=${args[3]}\n'
                 txt += 'echo "Inputfiles:<$InputFiles>"\n'
-                txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset_tmp_1.cfg\n'
+                txt += 'sed "s#{\'INPUT\'}#$InputFiles#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                 txt += 'echo "MaxEvents:<$MaxEvents>"\n'
-                txt += 'sed "s#INPUTMAXEVENTS#$MaxEvents#" pset_tmp_1.cfg > pset_tmp_2.cfg\n'
+                txt += 'sed "s#INPUTMAXEVENTS#$MaxEvents#" '+pset+' > tmp && mv -f tmp '+pset+'\n' 
                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
-                txt += 'sed "s#INPUTSKIPEVENTS#$SkipEvents#" pset_tmp_2.cfg > pset.cfg\n'
+                txt += 'sed "s#INPUTSKIPEVENTS#$SkipEvents#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
             else:  # pythia like job
-                if (self.sourceSeed):
-                    txt += 'FirstRun=${args[1]}\n'
+                seedIndex=1
+                if (self.firstRun):
+                    txt += 'FirstRun=${args['+str(seedIndex)+']}\n'
                     txt += 'echo "FirstRun: <$FirstRun>"\n'
-                    txt += 'sed "s#\<INPUTFIRSTRUN\>#$FirstRun#" $RUNTIME_AREA/'+pset+' > tmp_1.cfg\n'
-                else:
-                    txt += '# Copy untouched pset\n'
-                    txt += 'cp $RUNTIME_AREA/'+pset+' tmp_1.cfg\n'
+                    txt += 'sed "s#\<INPUTFIRSTRUN\>#$FirstRun#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                    seedIndex += 1
                 if (self.sourceSeed):
-#                    txt += 'Seed=$2\n'
-                    txt += 'Seed=${args[2]}\n'
+                    txt += 'Seed=${args['+str(seedIndex)+']}\n'
                     txt += 'echo "Seed: <$Seed>"\n'
-                    txt += 'sed "s#\<INPUT\>#$Seed#" tmp_1.cfg > tmp_2.cfg\n'
+                    txt += 'sed "s#\<INPUT\>#$Seed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                    seedIndex += 1
+                    ## the following seeds are not always present
                     if (self.sourceSeedVtx):
-#                        txt += 'VtxSeed=$3\n'
-                        txt += 'VtxSeed=${args[3]}\n'
+                        txt += 'VtxSeed=${args['+str(seedIndex)+']}\n'
                         txt += 'echo "VtxSeed: <$VtxSeed>"\n'
-                        txt += 'sed "s#INPUTVTX#$VtxSeed#" tmp_2.cfg > pset.cfg\n'
-                    else:
-                        txt += 'mv tmp_2.cfg pset.cfg\n'
-                else:
-                    txt += 'mv tmp_1.cfg pset.cfg\n'
-                   # txt += '# Copy untouched pset\n'
-                   # txt += 'cp $RUNTIME_AREA/'+pset+' pset.cfg\n'
+                        txt += 'sed "s#\<INPUTVTX\>#$VtxSeed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                        seedIndex += 1
+                    if (self.sourceSeedG4):
+                        txt += 'G4Seed=${args['+str(seedIndex)+']}\n'
+                        txt += 'echo "G4Seed: <$G4Seed>"\n'
+                        txt += 'sed "s#\<INPUTG4\>#$G4Seed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                        seedIndex += 1
+                    if (self.sourceSeedMix):
+                        txt += 'mixSeed=${args['+str(seedIndex)+']}\n'
+                        txt += 'echo "MixSeed: <$mixSeed>"\n'
+                        txt += 'sed "s#\<INPUTMIX\>#$mixSeed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                        seedIndex += 1
+                    pass
+                pass
+            txt += 'mv -f '+pset+' pset.cfg\n'
 
 
         if len(self.additional_inbox_files) > 0:
