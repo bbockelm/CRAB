@@ -15,6 +15,7 @@ import time
 import popen2
 import random
 from logging.handlers import RotatingFileHandler
+from threading import Thread
 
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 from MessageService.MessageService import MessageService
@@ -75,7 +76,19 @@ class CrabServerWorkerComponent:
         logging.debug("Event: %s %s" % (event, payload))
 
         if event == "ProxyTarballAssociatorComponent:CrabWork":
+            logging.info("ProxyTarballAssociatorComponent:CrabWork Arrived!Payload = "+payload)
             self.pool.insertRequest( (payload, False) )
+            logging.info("New Task inserted in the queue")
+
+            #Matteo add: Message to TaskTracking for New Task in Queue 
+            taskWorkDir = payload.split(':')[1]
+            taskName = str(taskWorkDir.split('/')[-1])
+            #proxyName = payload.split(':')[0]
+            #ttMsg = str(taskName+':'+proxyName)
+            self.ms.publish("CrabServerWorkerComponent:TaskArrival", taskName)
+            self.ms.commit()
+            logging.info("Message TaskArrival sent to TaskTracking for task "+ taskName)
+
             return
         if event == "CrabServerWorkerNotifyThread:Retry":
             logging.info("Resubmission")
@@ -127,20 +140,21 @@ class CrabServerWorkerComponent:
        uniqDir = payload.split(':')[2]
        retry = int(payload.split(':')[3])
        retMsg = CrabworkDir.split('/')[-1]
-
+       
        # Prepare the project and submit
        os.chdir(self.dropBoxPath)
        try:
             if performRetry == False:
             	self.registerTask(CrabworkDir)
+                logging.info("Registered Task")
             else:
                 logging.info("Resubmission for "+str(CrabworkDir) )
        except Exception, e:
             logging.info("Error during BOSS Registration: "+ str(e) )
 
        # Submit the task
-       logging.info("Put CRAB at work on "+ CrabworkDir + " with proxy " + proxy)
-       retCode = self.crab_submit(proxy, uniqDir)
+       logging.info("Self: " + str(self) + "Put CRAB at work on "+ CrabworkDir + " with proxy " + proxy + " PerformRETRY " + str(performRetry))
+       retCode = self.crab_submit(proxy, uniqDir, performRetry)
 
        # Prepare the proper payload to be managed by the notifier queue
        if retCode == 0:
@@ -165,7 +179,7 @@ class CrabServerWorkerComponent:
         fin.close()
 
         jobNumber = int(ruleList[0].split(' ')[1].split(':')[1])
-        logging.info("Job Numbers :"+ str(jobNumber))
+        logging.info("Self: " + str(self) + " Job Numbers :"+ str(jobNumber))
 
         # register the whole task
         for jid in xrange(1, jobNumber+1):
@@ -192,24 +206,33 @@ class CrabServerWorkerComponent:
             JobStateChangeAPI.submit(jobName)
         pass
 
-    def crab_submit(self, proxy, uniqDir):
+    def crab_submit(self, proxy, uniqDir, retry=False):
        ret = 0
-       catchErrorList = ["No compatible site found, will not submit"]
-
+       catchErrorList = ["No compatible site found, will not submit", "TaskDB: key projectName not found"]
+       
+       action = '-submit'
+       if retry==True:   
+            action = '-submit' #'-resubmit' 
+	    
        cmd = 'export X509_USER_PROXY='+proxy+'; '
-       cmd = cmd + 'crab -submit all -c '+ uniqDir + self.debug
-
-       # inf, outf, errf = os.popen3(cmd)
-       # errlog = errf.readlines()
-       # outlog = outf.readlines()
+       cmd = cmd + 'crab '+action+' all -c '+ uniqDir + self.debug
+       
        errcode = 0
+       
+       #inf, outf, errf = os.popen3(cmd)
+       #errlog = errf.readlines()
+       #outlog = outf.readlines()
+       # 
+       #if len(errlog)!=0:
+       #     errcode = -1     
+       #     logging.info("Error message returned: " + str(errlog) )
        errcode = os.system(cmd)
-       # outf.close()
-       # inf.close()
-       # errf.close()
+       #outf.close()
+       #inf.close()
+       #errf.close()
        
        # logging.info(outlog) 
-       if errcode != 0: #len(errlog)>0:
+       if errcode != 0:
            logging.info("Submission failed for " + str(uniqDir) )
            ret = 1
            return ret
@@ -222,9 +245,9 @@ class CrabServerWorkerComponent:
        for l in outlog:
            for e in catchErrorList:
                 if e in l:
-                     ret += 2
+                     ret = 2
                      break
-           if ret >= 2:
+           if ret == 2:
                 break
 
        if ret == 0:

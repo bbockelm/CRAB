@@ -93,7 +93,7 @@ class CrabWorker(Thread):
         self.outQueue = outQueue
         self.component = component
         self.logging = log
-        self.setDaemon(1)
+        #self.setDaemon(1)
         self.start()
         
     def run(self):
