@@ -53,7 +53,7 @@ class DropBoxGuardianComponent:
         self.sleepTime = int(self.args['sleepTime'])
         self.dropBoxPath = str(self.args['dropBoxPath'])
         self.proxyDir = str(self.args['ProxiesDir'])
-        
+	
         try:
             path = self.dropBoxPath+"/drop.set"
             logging.info("Opening Dropbox "+path)
@@ -62,11 +62,13 @@ class DropBoxGuardianComponent:
             f.close()
             self.previousDropBoxStatus = lload[0]
             self.previousProxyList = lload[1]
+            self.tarSizeRegistry = lload[2]
             logging.info("dropBox status loaded from file")
         except IOError, ex:
             logging.info("Building a new dropBox status")
             self.previousDropBoxStatus = [] # python 2.2 lacks set object
             self.previousProxyList = []
+            self.tarSizeRegistry = {} 
             self.materializeDropBoxStatus()
 
         logging.info("DropBoxGuardianComponent Started...")
@@ -75,6 +77,7 @@ class DropBoxGuardianComponent:
         ldump = []
         ldump.append(self.previousDropBoxStatus)
         ldump.append(self.previousProxyList)
+	ldump.append(self.tarSizeRegistry)
  
         f = open( self.dropBoxPath+"/drop.set", 'w')
         pickle.dump(ldump, f)
@@ -118,37 +121,69 @@ class DropBoxGuardianComponent:
         while True:
             ## Watch the dropbox and find new arrivals
             time.sleep(self.sleepTime)
-
-            ## Watch for new projects
-            newFiles = []
-            newProxies = []
             dropBoxStatus = os.listdir(self.dropBoxPath)
-            newFiles = [s for s in dropBoxStatus if (s not in self.previousDropBoxStatus) and (s.split('.')[-1]=='tgz')]
-            self.previousDropBoxStatus = dropBoxStatus
+	    
+            # Marco. Modified for Kill command
+            newCommand = []
+            newCommand = [s for s in dropBoxStatus if (s not in self.previousDropBoxStatus) and (s.split('.')[-1]=='xml')]
 
-            ## Watch for new proxies iif you have not recived new project files
+            # Watch for new projects
+            newFiles = []
+	    preservedTars = []
+            ## newFiles = [s.split('.tgz')[0] for s in dropBoxStatus if (s not in self.previousDropBoxStatus) and (s.split('.')[-1]=='tgz')]
+            # gridFTP tar arrival bugfix -- Fabio
+            for s in dropBoxStatus:
+                 if s.split('.')[-1]=='tgz' and (s not in self.previousDropBoxStatus):
+                     logging.info(s) # Debug -- Fabio
+                     tarSize = 0
+                     try:
+                          tarSize = int(os.stat(os.path.join(self.dropBoxPath ,s))[6])
+                          if s in self.tarSizeRegistry and tarSize == self.tarSizeRegistry[s]:
+                               newFiles.append(s.split('.tgz')[0])
+                               del self.tarSizeRegistry[s]
+                          else:
+                               self.tarSizeRegistry[s] = tarSize
+                               preservedTars.append(s)
+                     except Exception, e:
+                          logging.info("%s has encoutered problems, it wont be processed."%s)
+                          logging.info(e)
+                          if s in self.tarSizeRegistry:
+                               del self.tarSizeRegistry[s]
+                          pass
+                 pass
+            pass
+
+            # Watch for new proxies iif you have not recived new project files
+            newProxies = []
             if newFiles == []: 
                   proxyList = os.listdir(self.proxyDir)
-                  newProxies = [p for p in proxyList if (p not in self.previousProxyList) and (p.split('.')[-1]=='proxy')]
+                  newProxies = [p for p in proxyList if (p not in self.previousProxyList) ]
                   self.previousProxyList = proxyList
             else:
                   self.previousProxyList=os.listdir(self.proxyDir)
-            
-            self.materializeDropBoxStatus()
 
+            # Update persistent data-structures
+            self.previousDropBoxStatus = dropBoxStatus
+	    for t in preservedTars:
+	    	self.previousDropBoxStatus.remove(t)
+		
+            self.materializeDropBoxStatus()
+	    
+	    # Logging
             if newFiles != []:
                  logging.info("New Project(s) Arrived:" + str(len(newFiles)) )
             if newProxies != []:
                  logging.info("New Proxy Arrived:" + str(len(newProxies)) )
+            if newCommand != []:
+                 logging.info("New Command Arrived:" + str(len(newCommand)) )
 
-            ## Notify the arrival for the new tarball
+            # Notify the arrival for the new tarball
             for i in newFiles:
                self.ms.publish("DropBoxGuardianComponent:NewFile",i)
-            # no payload is needed. It is just a trigger to proxy arrival
-            if newProxies != []:
+            for i in newCommand:
+               self.ms.publish("DropBoxGuardianComponent:NewCommand",i)
+            if newProxies != [] and newFiles==[]:
                self.ms.publish("DropBoxGuardianComponent:NewProxy", "")
-
-            # Commit all the tickets
             self.ms.commit()
 
 
