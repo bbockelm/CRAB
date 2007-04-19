@@ -394,9 +394,10 @@ class SchedulerBoss(Scheduler):
         if os.path.isfile(self.schclassad):  
             schcladstring=self.schclassad
 
+        timeout = 60
         CEs=[]
         try:
-            CEs=self.bossUser.schedListMatch( str(self.schedulerName), schcladstring, self.bossTask.id())
+            CEs=self.bossUser.schedListMatch( str(self.schedulerName), schcladstring, self.bossTask.id(), "", timeout)
         except SchedulerError,e:
             common.logger.message( "Warning : Scheduler interaction in list-match operation failed for jobs:")
             common.logger.message( e.__str__())
@@ -431,7 +432,8 @@ class SchedulerBoss(Scheduler):
         if os.path.isfile(self.schclassad):  
             schcladstring=self.schclassad
         try:
-            self.bossTask.submit(string.join(jobsList,','), schcladstring)
+            timeout = len(list[1])*60
+            self.bossTask.submit(string.join(jobsList,','), schcladstring, "", "" , "", timeout)
         except SchedulerError,e:
             common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
             common.logger.message(e.__str__())
@@ -533,7 +535,8 @@ class SchedulerBoss(Scheduler):
                 if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':   
                     check = 1
                     try:
-                        self.bossTask.getOutput (str(boss_id), str(dir))
+                        timeout = 60 
+                        self.bossTask.getOutput (str(boss_id), str(dir), timeout)
                         if logDir != dir:
                             try:
                                 toMove = str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/*.log '+str(dir)+'/.BrokerInfo ' 
@@ -622,7 +625,8 @@ class SchedulerBoss(Scheduler):
             
             try:
                 common.logger.message("Killing jobs # "+str(subm_id[0])+':'+str(subm_id[-1]))
-                self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]))
+                timeout =len(subm_id)*60
+                self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]), timeout)
             except SchedulerError,e:
                 common.logger.message("Warning : Scheduler interaction in kill operation failed for jobs:"+e.__str__())
                 pass
@@ -639,7 +643,8 @@ class SchedulerBoss(Scheduler):
                     subm_id.sort()
                     range = self.prepString( subm_id )
                     common.logger.message("Killing job # " + str(subm_id).replace("[","",1).replace("]","",1) )
-                    self.bossTask.kill( range )
+                    timeout =len(subm_id)*60
+                    self.bossTask.kill( range, timeout )
                     self.bossTask.load(ALL, range)
                     task = self.bossTask.jobsDict()
                     for k, v in task.iteritems():
@@ -729,7 +734,9 @@ class SchedulerBoss(Scheduler):
         results = {}
         try:
             # fill dictionary { 'bossid' : 'status' , ... }
-            self.bossTask.query( ALL )
+            nTot = common.jobDB.nJobs()
+            timeout = nTot*20 
+            self.bossTask.query( ALL, "all", "", "", "", "", "", timeout )
             task = self.bossTask.jobsDict()
             for c, v in task.iteritems():
                 k = int(c)
@@ -764,8 +771,10 @@ class SchedulerBoss(Scheduler):
 
         results = {}
         try:
+            nTot = common.jobDB.nJobs()
+            timeout = nTot*20 
             # fill dictionary { 'bossid' : 'status' , ... }
-            self.bossTask.query( ALL )
+            self.bossTask.query( ALL, "all", "", "", "", "", "", timeout )
             task = self.bossTask.jobsDict()
             for k, v in task.iteritems():
                 results[k] = self.status[v['STATUS']]
@@ -790,8 +799,9 @@ class SchedulerBoss(Scheduler):
 
         results = {}
         try:
+            timeout = len(list_id)*20 
             # fill dictionary { 'bossid' : 'status' , ... }
-            self.bossTask.query( ALL, tmpQ )
+            self.bossTask.query( ALL, tmpQ, "", "", "", "", "", timeout )
             task = self.bossTask.jobsDict()
             for k, v in task.iteritems():
                 results[int(k)] = self.status[v['STATUS']]
