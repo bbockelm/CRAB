@@ -46,7 +46,6 @@ class StatusBoss(Actor):
         common.logger.debug(1, "Status Time: "+str(stop - start))
         common.logger.write("Status Time: "+str(stop - start))
         pass
-        print ''
 
     def splitbyoffset_(self,line,fields):
         ret_val=[]

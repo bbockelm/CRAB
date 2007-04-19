@@ -497,8 +497,8 @@ class Crab:
                 except RuntimeError,e:
                     common.logger.message( e.__str__() )
                 except ValueError,e:
-                    print "Warning : Scheduler interaction in query operation failed for jobs:"
-                    print e.what(),'\n'
+                    common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
+                    common.logger.message(e.what())
                     pass
                 task = common.scheduler.bossTask.jobsDict()
 
@@ -564,8 +564,8 @@ class Crab:
                     except RuntimeError,e:
                         common.logger.message( e.__str__() )
                     except ValueError,e:
-                        print "Warning : Scheduler interaction in query operation failed for jobs:"
-                        print e.what(),'\n'
+                        common.logger.message( "Warning : Scheduler interaction in query operation failed for jobs:")
+                        common.logger.message(e.what())
                         pass
                     task = common.scheduler.bossTask.jobsDict()
                         
@@ -692,8 +692,8 @@ class Crab:
                 except RuntimeError,e:
                     common.logger.message( e.__str__() )
                 except ValueError,e:
-                    print "Warning : Scheduler interaction in query operation failed for jobs:"
-                    print e.what(),'\n'
+                    common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
+                    common.logger.message( e.what())
                     pass
 
                 task = common.scheduler.bossTask.jobsDict()
