@@ -15,10 +15,7 @@ import time
 from logging.handlers import RotatingFileHandler
 import popen2
 import re
-
 from MessageService.MessageService import MessageService
-
-# RC-Component: 12 Feb 2007 # Fabio
 
 class ProxyTarballAssociatorComponent:
     """
@@ -87,27 +84,39 @@ class ProxyTarballAssociatorComponent:
             try:
                 # Unpack the project
                 os.chdir(self.dropBoxPath)
-                uniqDir = payload.split('.')[0]
+                uniqDir = "" + payload
+                payload = payload + '.tgz'
+                #uniqDir = payload.split('.')[0] Matteo 
                 # Build the unique dir and copy the payload 
-                outp, inp =popen2.popen4("tar -z --list --file=%s | head -n 1"%payload)
+                outp, inp = popen2.popen4("tar -z --list --file=%s | head -n 1"%payload)
                 prjName = outp.readlines()[0][:-1]
                 outp.close()
                 inp.close()
                 cmd = 'tar xvzf '+ payload + ' > /dev/null; rm -f '+ payload +"; " 
                 cmd = cmd + 'mv '+prjName+ ' '+uniqDir 
                 os.system(cmd)
+                #Matteo Add:send a message to Task Tracking for Extracted Tar
+                #extract UUID
+                startU=5+len(prjName)
+                uuid = uniqDir[startU:]
+                logging.info("PAYLOAD ="+payload+" prjName = "+prjName+" uniqDir = "+uniqDir+" UUID = "+uuid)
+                #msg1TT = uniqDir+':'+uuid
+                #self.ms.publish("ProxyTarballAssociatorComponent:TarExtract", msg1TT )
+                #self.ms.commit()
+
                 # get the project name
                 os.chdir(self.dropBoxPath)
            
                 # Associate project to proxy
                 self.CrabworkDir = self.dropBoxPath+'/'+uniqDir # +':'+projDir
-                self.associated = self.matchingProxy(self.CrabworkDir)
+                self.associated = self.matchingProxy(uuid, self.CrabworkDir)
                 logging.debug(""+str(self.associated) )
                 
                 # materialize the component status to preserve it from crashes
-                f = open( self.dropBoxPath+"/proxytar.set", 'w')
+                f = open( self.dropBoxPath+"/proxytar_tmp", 'w')
                 pickle.dump(self.files, f)
                 f.close()
+		os.rename(self.dropBoxPath+"/proxytar_tmp",  self.dropBoxPath+"/proxytar.set")
             except Exception, e:
                 logging.info("Warning: Unable to associate " + str(self.CrabworkDir) +"\n"+str(e))
             return
@@ -159,7 +168,7 @@ class ProxyTarballAssociatorComponent:
             logging.info(self.associated)# for Debug only #Fabio
 
 # ## Matching Procedure
-    def matchingProxy(self, taskDir = None):
+    def matchingProxy(self, uuid=None, taskDir = None):
         pProxy = []
         prePayload = ""
         # cache the pending tasks list
@@ -190,9 +199,10 @@ class ProxyTarballAssociatorComponent:
                 f = open(pendingTaskDir+"/share/"+subjFileName, 'r')
                 subject = f.readline()
                 f.close()
-            except:
+            except Exception, e:
                 logging.info("Warning: Unable to open " + str(pendingTaskDir+"/share/"+subjFileName))
                 logging.info("   the project file could be corrupted. It won't be processed.")
+		logging.info(e)
                 dummyFileList.remove(pendingTaskDir)
                 self.files = dummyFileList
                 # send also a message to task tracking??? # Fabio
@@ -206,28 +216,43 @@ class ProxyTarballAssociatorComponent:
                  
                  i = pCache.index(s)
                  logging.debug("pProxy: " + pProxy[i])
-                 cmd = 'ln -s '+ pProxy[i] +' '+ pendingTaskDir+'/share/userProxy; '
-                 proxy = pProxy[i] #+'_tmp'
-                 cmd = cmd + 'chmod 600 '+ proxy + ';'
+                 cmd = 'ln -s '+ str(pProxy[i]) +' '+ pendingTaskDir+'/share/userProxy; '
+                 cmd = cmd + 'chmod 600 '+ str(pProxy[i]) + ';'
                  cmd = cmd + 'cp ' + pendingTaskDir+'/share/cmssw.xml ' + pendingTaskDir+'/share/cmssw.xml.orig'
                  os.system(cmd)
 
                  # crab.cfg server personalizations
                  self.cfg4server(pendingTaskDir) # substitutes the cfg4server script # Fabio
                  self.xml4server(pendingTaskDir)
+
+                 #Matteo Add: send a massage to Task Tracking for modified configuration for server
+                 taskName = str(pendingTaskDir.split('/')[-1])
+                 # self.ms.publish("ProxyTarballAssociatorComponent:ModCfg", taskName)
+                 # self.ms.commit()
+
                  logging.info("Proxy->Project Association: "+pProxy[i]+"->"+pendingTaskDir)
+
                  # build notification
-                 matched.append(proxy+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)) 
+		 cwMsg = str(pProxy[i])+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
+                 matched.append(cwMsg) 
                  logging.debug(matched[0])
                  try:  
                      dummyFileList.remove(pendingTaskDir)
                  except:
                      pass
+              
+                 #Matteo Add: send a massage to Task Tracking for Proxy->Project Association
+		 if uuid != None:
+                      proxyName = str(pProxy[i].split('/')[-1])
+                      ttMsg = str(uuid+':'+taskName+':'+proxyName)
+                      self.ms.publish("ProxyTarballAssociatorComponent:WorkDone", ttMsg)
+                      self.ms.commit()
+
                  # subjects loop
                  break
             # pending Task loop
             pass
-        # list for stll wayting projects 
+        # list for still wayting projects 
         self.files = dummyFileList
         return matched
 
@@ -236,12 +261,12 @@ class ProxyTarballAssociatorComponent:
        # old gridsite version
        for root, dirs, files in os.walk(self.proxyDir):
             for f in files:
-                if f == 'usercert.pem':
+                if f == 'userproxy.pem':
                     pfList.append(os.path.join(root, f))
 
        # new gridsite version
        if len(pfList)==0:
-            pfList = [ self.proxyDir+'/'+q  for q in os.listdir(self.proxyDir) ]
+            pfList = [ self.proxyDir+'/'+q  for q in os.listdir(self.proxyDir) if q[0]!="." ]
 
        return pfList
 
