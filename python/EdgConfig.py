@@ -10,8 +10,8 @@ class EdgConfig:
     def __init__(self, RB):
         common.logger.debug(5,'Calling EdgConfig')
         self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
-        self.configFileName = 'edg_wl_ui_cmd_var.conf.CMS_'+str(RB)
-        self.configVOFileName = 'edg_wl_ui.conf.CMS_'+str(RB)
+        self.configFileName = 'edg_wl_ui_cmd_var.conf.CMS_'+str.upper(RB)
+        self.configVOFileName = 'edg_wl_ui.conf.CMS_'+str.upper(RB)
         self.theConfigVO = self.getConfigVO_()
         self.theConfig = self.getConfig_()
         pass
