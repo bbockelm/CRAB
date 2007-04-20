@@ -394,7 +394,7 @@ class SchedulerBoss(Scheduler):
         if os.path.isfile(self.schclassad):  
             schcladstring=self.schclassad
 
-        timeout = 60
+        timeout = 120
         CEs=[]
         try:
             CEs=self.bossUser.schedListMatch( str(self.schedulerName), schcladstring, self.bossTask.id(), "", timeout)
@@ -432,7 +432,7 @@ class SchedulerBoss(Scheduler):
         if os.path.isfile(self.schclassad):  
             schcladstring=self.schclassad
         try:
-            timeout = len(list[1])*60
+            timeout = len(list[1])*120
             self.bossTask.submit(string.join(jobsList,','), schcladstring, "", "" , "", timeout)
         except SchedulerError,e:
             common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
@@ -535,7 +535,7 @@ class SchedulerBoss(Scheduler):
                 if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':   
                     check = 1
                     try:
-                        timeout = 60 
+                        timeout =120 
                         self.bossTask.getOutput (str(boss_id), str(dir), timeout)
                         if logDir != dir:
                             try:
