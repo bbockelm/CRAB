@@ -497,6 +497,10 @@ class SchedulerEdg(Scheduler):
            txt += '               echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '               echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '               echo "srmcp and lcg-cp and failed!"\n'
+           txt += '               SE=""\n'
+           txt += '               echo "SE = $SE"\n'
+           txt += '               SE_PATH=""\n'
+           txt += '               echo "SE_PATH = $SE_PATH"\n'
            txt += '            else\n'
            txt += '               echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '               echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
@@ -512,6 +516,7 @@ class SchedulerEdg(Scheduler):
            txt += '            echo "srmcp succeeded"\n'
            txt += '         fi\n'
            txt += '     done\n'
+           txt += '     exit_status=$copy_exit_status\n'
         return txt
 
     def wsRegisterOutput(self):
