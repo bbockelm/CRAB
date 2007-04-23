@@ -23,7 +23,7 @@ class Cmssw(JobType):
         try:
             self.MaxTarBallSize = float(self.cfg_params['EDG.maxtarballsize'])
         except KeyError:
-            self.MaxTarBallSize = 100.0
+            self.MaxTarBallSize = 9.5 # actual (23-Apr-2007) limit is 10 Mb
 
         # number of jobs requested to be created, limit obj splitting
         self.ncjobs = ncjobs
