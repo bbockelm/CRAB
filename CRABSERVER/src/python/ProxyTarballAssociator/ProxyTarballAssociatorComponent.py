@@ -202,7 +202,7 @@ class ProxyTarballAssociatorComponent:
             except Exception, e:
                 logging.info("Warning: Unable to open " + str(pendingTaskDir+"/share/"+subjFileName))
                 logging.info("   the project file could be corrupted. It won't be processed.")
-		logging.info(e)
+                logging.info(e)
                 dummyFileList.remove(pendingTaskDir)
                 self.files = dummyFileList
                 # send also a message to task tracking??? # Fabio
@@ -233,7 +233,12 @@ class ProxyTarballAssociatorComponent:
                  logging.info("Proxy->Project Association: "+pProxy[i]+"->"+pendingTaskDir)
 
                  # build notification
-		 cwMsg = str(pProxy[i])+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
+                 #
+                 # redefine proxy location for X509_USER_PROXY to be passed as payload to CrabServerWorker
+                 #
+                 proxyLnk = pendingTaskDir+'/share/userProxy'
+                 cwMsg = str(proxyLnk)+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
+                 #cwMsg = str(pProxy[i])+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
                  matched.append(cwMsg) 
                  logging.debug(matched[0])
                  try:  
@@ -242,7 +247,7 @@ class ProxyTarballAssociatorComponent:
                      pass
               
                  #Matteo Add: send a massage to Task Tracking for Proxy->Project Association
-		 if uuid != None:
+                 if uuid != None:
                       proxyName = str(pProxy[i].split('/')[-1])
                       ttMsg = str(uuid+':'+taskName+':'+proxyName)
                       self.ms.publish("ProxyTarballAssociatorComponent:WorkDone", ttMsg)
