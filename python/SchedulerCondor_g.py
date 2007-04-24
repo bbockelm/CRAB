@@ -79,6 +79,7 @@ class SchedulerCondor_g(Scheduler):
     def getCEfromSE(self, seSite):
         # returns the ce including jobmanager
         ces = jm_from_se_bdii(seSite)
+        
 
         # hardcode fnal as BDII maps cmssrm.fnal.gov to cmslcgce.fnal.gov
         if seSite.find ('fnal.gov') >= 0 :
@@ -433,8 +434,11 @@ class SchedulerCondor_g(Scheduler):
            txt += '              echo "Problems with SE = $SE"\n'
            txt += '              echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '              echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '          echo "lcg-cp failed.  For verbose lcg-cp output, use command line option -debug 5."\n'
            txt += '              echo "lcg-cp and srmcp failed!"\n'
+           txt += '              SE=""\n'
+           txt += '              echo "SE = $SE"\n'
+           txt += '              SE_PATH=""\n'
+           txt += '              echo "SE_PATH = $SE_PATH"\n'
            txt += '           else\n'
            txt += '              echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '              echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
@@ -450,6 +454,7 @@ class SchedulerCondor_g(Scheduler):
            txt += '           echo "srmcp succeeded"\n'
            txt += '        fi\n'
            txt += '     done\n'
+           txt += '     exit_status=$copy_exit_status\n'
 
         return txt
 
@@ -571,6 +576,10 @@ class SchedulerCondor_g(Scheduler):
                 result = 'Done'
         elif ( attr == 'destination' ) :
             seSite = common.jobDB.destination(int(id)-1)[0]
+            # if no site was selected during job splitting (datasetPath=None)
+            # set to self.cfg_params['EDG.se_white_list']
+            if seSite == '' :
+                seSite = self.cfg_params['EDG.se_white_list']
             oneSite = self.getCEfromSE(seSite).split(':')[0].strip()
             result = oneSite
         elif ( attr == 'reason' ) :
@@ -738,6 +747,10 @@ class SchedulerCondor_g(Scheduler):
 
         # use bdii to query ce including jobmanager from site
         seSite = common.jobDB.destination(nj-1)[0]
+        # if no site was selected during job splitting (datasetPath=None)
+        # set to self.cfg_params['EDG.se_white_list']
+        if seSite == '' :
+            seSite = self.cfg_params['EDG.se_white_list']
         oneSite = self.getCEfromSE(seSite)
         # do not check the site status check for FNAL (OSG not in BDII)
         if oneSite.find('fnal.gov') < 0 :
