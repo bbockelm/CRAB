@@ -355,6 +355,8 @@ class ProxyTarballAssociatorComponent:
                 readedData[m] = 'RBconfigVO = "'+ self.dropBoxPath + '/'+ n.split('/')[-1]
            elif 'RBconfig' in n:
                 readedData[m] = 'RBconfig = "'+ self.dropBoxPath + '/'+ n.split('/')[-1]
+           elif 'WMSconfig' in n:
+                readedData[m] = 'WMSconfig = '+ self.dropBoxPath + '/'+ n.split('/')[-1]
            pass
        pass
        f = open('sched_param_0.clad','w')
