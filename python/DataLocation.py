@@ -69,11 +69,21 @@ class DataLocation:
         """
         countblock=0
 
+        # check if dbs-2 is activated, set default to dbs
+        # else, set default to dli
+        try:
+            use_dbs_2 = int(self.cfg_params['CMSSW.use_dbs_2'])
+        except:
+            use_dbs_2 = 0
+
         try:
             dlstype=self.cfg_params['CMSSW.dls_type']
         except KeyError:
-            dlstype='dli'
-        #DLS_type="DLS_TYPE_MYSQL"
+            if use_dbs_2 == 1:
+                dlstype='dbs'
+            else :
+                dlstype='dli'
+
         DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
         ## find the replicas for each block
