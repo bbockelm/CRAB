@@ -72,6 +72,11 @@ class DLSInfo:
                 endpoint=self.cfg_params['CMSSW.dls_endpoint']
             except KeyError:
                 endpoint="lxgate10.cern.ch:18081"
+        elif type=="DLS_TYPE_DBS":
+            try:
+                endpoint=self.cfg_params['CMSSW.dls_endpoint']
+            except KeyError:
+                endpoint="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
         else:
             msg = "DLS type %s not among the supported DLS ( DLS_TYPE_DLI and DLS_TYPE_MYSQL ) "%type
             raise CrabException(msg)
