@@ -90,7 +90,7 @@ class DataDiscovery_DBS2:
         try:
             dbs_url=self.cfg_params['CMSSW.dbs_url']
         except KeyError:
-            dbs_url="http://cmsdbsprod.cern.ch/cms_dbs_int_global/servlet/DBSServlet"
+            dbs_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
 
         ## get DBS URL
         try:
