@@ -98,6 +98,9 @@ class DataDiscovery_DBS2:
         except KeyError:
             dbs_version="v00_00_06"
 
+        common.logger.debug(3,"Accessing DBS at: "+dbs_url+" with version: "+dbs_version)
+
+
         ## service API
         args = {}
         args['url']     = dbs_url
@@ -135,6 +138,9 @@ class DataDiscovery_DBS2:
 
             # total number of events
             self.maxEvents += events
+
+        for block in self.eventsPerBlock.keys() :
+            common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(self.eventsPerBlock[block],block))
 
         if len(self.eventsPerBlock) <= 0:
             raise NotExistingDatasetError_DBS2 (("\nNo data for %s in DBS\nPlease check"
