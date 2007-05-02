@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <configuration>
 <scheduler     name="glitecoll"
-	       submit="$BOSS_ROOT/BossSched/bin/glite_collSubmit.py"
+	       submit="$BOSS_ROOT/BossSched/bin/gliteAPI_collSubmit.py"
 	       query="$BOSS_ROOT/BossSched/bin/glite_bulk_query.py"
 	       kill="$BOSS_ROOT/BossSched/bin/glite_kill.pl"
 	       getout="$BOSS_ROOT/BossSched/bin/glite_getout.pl"
