@@ -32,6 +32,7 @@ chmod -x python/crab.py
 rm python/crab.*sh
 rm python/tar*
 rm python/zero
+rm -rf CRABSERVER
 mv python/configure .
 mv python/configureBoss .
 
