@@ -576,7 +576,7 @@ class Crab:
                         st = v['STATUS']
 
                         if int(nj) <= int(len(maxIndex)) :
-                            if st in ['K','SA','Z']:
+                            if st in ['K','SA','Z','DA']:
                                 nj_list.append(int(nj)-1)
                                 common.jobDB.setStatus(int(nj)-1,'C')
                             elif st in ['E','SE']:
