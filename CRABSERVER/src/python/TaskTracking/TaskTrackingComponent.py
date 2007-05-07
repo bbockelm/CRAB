@@ -13,7 +13,7 @@ import sys
 import re
 
 # BOSS API import
-#from ProdAgentBOSS import BOSSCommands
+from ProdAgentBOSS import BOSSCommands
 from BossSession import *
 
 # Message service import
@@ -70,6 +70,7 @@ class TaskTrackingComponent:
         self.args.setdefault("Logfile", None)
         self.args.setdefault("bossClads", "/home/ASdevel/test/BOSS/config/")
         self.args.setdefault("dropBoxPath", "/flatfiles/cms/")
+	self.args.setdefault("jobDetail", "nop")
 
         # update parameters
         self.args.update(args)
@@ -155,6 +156,26 @@ class TaskTrackingComponent:
                 logging.error("ERROR: empty payload from [" +event+ "]!!!!")
                 logging.error(" ")
             return
+
+	if event == "ProxyTarballAssociatorComponent:UnableToManage":
+	    if payload != None:
+                logging.info("  <-- - -- - -->")
+                logging.info("Problem with the project: %s" % payload)
+		try:
+		    TaskStateAPI.updateNotSubmitted( payload, "", "", "", "", self.taskState[2] )
+		except Exception, ex:
+		    logging.error("  <-- - -- - -->")
+		    logging.error( "ERROR while updating the task " + str(taskName) )
+		    logging.error( "      "+str(ex))
+		    logging.error("  <-- - -- - -->")
+                logging.info("              task updated.")
+                logging.info("  <-- - -- - -->")
+            else:
+                logging.error(" ")
+                logging.error("ERROR: empty payload from [" +event+ "]!!!!")
+                logging.error(" ")
+            return
+
 
 	if event == "CrabServerWorkerComponent:TaskArrival":
 	    if payload != None:
@@ -274,7 +295,7 @@ class TaskTrackingComponent:
 
         try:
             TaskStateAPI.insertTaskPA( payload, self.taskState[0] )
-        except Excpetion, ex:
+        except Exception, ex:
             logging.error("  <-- - -- - -->")
             logging.error( "ERROR while inserting the task " + str(payload) )
 	    logging.error( "      "+str(ex))
@@ -527,7 +548,7 @@ class TaskTrackingComponent:
 		    #logging.info(" - - - - - - - - ")
 		    #logging.info(taskName + " - num.: " + str(len(taskDict)))
                    
-		    if len(taskDict) > 0:# and taskName == "crab_PASQUAL_ONE":
+		    if len(taskDict) > 0:# and taskName == "crab_AnotherDay_AnotherTest_f9f1751c-3811-485c-981d-c8d2a5ad8cdb":
 
                         logging.info(" - - - - - - - - ")
 			logging.info(taskName + " ["+str(status)+"] - num.: " + str(len(taskDict)))
@@ -543,6 +564,8 @@ class TaskTrackingComponent:
 			
 			    resubmitting = TaskStateAPI.checkNSubmit( taskName, job )
 			    runInfoJob =  v.specific(job,"1")
+			    if string.lower(self.args['jobDetail']) == "yes":
+                                logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']))
 
 			    if stato == "SE" or stato == "E":
 				if runInfoJob['EXE_EXIT_CODE'] == "0" and runInfoJob['JOB_EXIT_STATUS'] == "0":
@@ -658,6 +681,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkFailed")
 	self.ms.subscribeTo("DropBoxGuardianComponent:NewFile")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:WorkDone")
+	self.ms.subscribeTo("ProxyTarballAssociatorComponent:UnableToManage")
 	self.ms.subscribeTo("CommandManager:Killed")
 
         # start polling thread
