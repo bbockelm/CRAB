@@ -419,7 +419,9 @@ Version of LCG middleware to be used.
 
 =item B<RB>
 
-Which RB you want to use instead of the default one. The ones available for CMS are I<CERN> and I<CNAF>: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used. If the files are already present on the working directory they will be used.
+Which RB you want to use instead of the default one, as defined in the configuration of your UI. The ones available for CMS are I<CERN> and I<CNAF>: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used. If the files are already present on the working directory they will be used.
+You can use any other RB which is available, if you provide the proper configuration files. Eg, for RB XYZ, you should provide I<edg_wl_ui.conf.CMS_XYZ> and I<edg_wl_ui_cmd_var.conf.CMS_XYZ> for EDG RB, or I<glite.conf.CMS_XYZ> for glite WMS. These files are searched for in the current working directory, and, if not found, on crab web page. So, if you put your private configuration files in the working directory, they will be used, even if they are not available on crab web page.
+Please get in contact with crab team if you wish to provide your RB or WMS as a service to the CMS community.
 
 =item B<proxy_server>
 
