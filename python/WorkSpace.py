@@ -26,6 +26,12 @@ class WorkSpace:
         return
 
     def create(self):
+        if (string.split(self._top_dir,'/')[-2]=='data'):
+            msg = 'Cannot run CRAB from "data" directory.\n'
+            msg += 'please change direcotry\n'
+            raise CrabException(msg)
+
+        
         if not os.path.exists(self._top_dir):
             os.mkdir(self._top_dir)
             pass
