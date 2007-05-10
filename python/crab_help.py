@@ -335,23 +335,47 @@ If the job is pythia based, and has I<untracked uint32 sourceSeed = x> in the Pa
 
 Seed for random number generation used for vertex smearing: to be used only if PSet has I<untracked uint32 VtxSmeared = x>. It is modified if and only if also I<pythia_seed> is set. As for I<pythia_seed> the actual seed will be of the type I<vtx_seed>I<$job_number>.
 
-=item I<DBS and DLS parameters.>
+=item B<g4_seed>
+
+Seed for randome generation of Geant4 SimHits I<untracked uint32 g4SimHits = x>. The treatment is that of I<vtx_seed> above
+
+=item B<mix_seed>
+
+Seed for randome generation of mixing module I<untracked uint32 mix = x>. The treatment is that of I<vtx_seed> above
+
+=item B<first_run>
+
+First run to be generated in a generation jobs. Relevant only for no-input workflow.
+
+=item B<script_exe>
+
+A user executable that will be run on WN instead of cmsrun. It's up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The script itself will be added automatically to the input sandbox.
+
+=item I<DBS and DLS parameters:>
+
+=item B<use_dbs_1>
+
+To use DBS1 instead of default DBS2
 
 =item B<dbs_url>
 
-The URL of the DBS query page. For expert only.
+The URL of the DBS query page. For expert only. (both DBS1 and DBS2)
+
+=item B<dbs_version>
+
+Version of DBS2 to use: relevant only for DBS2
 
 =item B<dbs_instance>
 
-The instance of DBS to be accessed at a given URL. For expert only.
+The instance of DBS to be accessed at a given URL. For expert only. For DBS1 only.
 
 =item B<dls_type>
 
-Type of DLS: can be DLI or mysql. For expert only.
+Type of DLS: can be DLI or mysql. For expert only. For DBS1 only
 
 =item B<dls_endpoint>
 
-Access point for DLS. For expert only.
+Access point for DLS. For expert only. For DBS1 only
 
 =back
 
@@ -483,6 +507,10 @@ Number of time the grid will try to resubmit your job in case of grid related pr
 =item B<shallow_retry_count>
 
 Number of time shallow resubmission the grid will try: resubmissions are tried B<only> if the job aborted B<before> start. So you are guaranteed that your jobs run strictly once.
+
+=item B<maxtarballsize>
+
+Maximum size of tar-ball in Mb. If bigger, an error will be generated. The actual limit is that on the RB input sandbox. Default is 9.5 Mb (sandbox limit is 10 Mb)
 
 =back
 
