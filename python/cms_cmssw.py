@@ -51,9 +51,9 @@ class Cmssw(JobType):
 
         ## get DBS mode
         try:
-            self.use_dbs_2 = int(self.cfg_params['CMSSW.use_dbs_2'])
+            self.use_dbs_1 = int(self.cfg_params['CMSSW.use_dbs_1'])
         except KeyError:
-            self.use_dbs_2 = 0
+            self.use_dbs_1 = 0
             
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
@@ -75,8 +75,17 @@ class Cmssw(JobType):
             self.setParam_('owner', 'None')
         else:
             datasetpath_split = self.datasetPath.split("/")
+<<<<<<< cms_cmssw.py
+            if self.use_dbs_1 == 1 :
+                self.setParam_('dataset', datasetpath_split[1])
+                self.setParam_('owner', datasetpath_split[-1])
+            else:
+                self.setParam_('dataset', datasetpath_split[1])
+                self.setParam_('owner', datasetpath_split[2])
+=======
             self.setParam_('dataset', datasetpath_split[1])
             self.setParam_('owner', datasetpath_split[-1])
+>>>>>>> 1.79
 
         self.setTaskid_()
         self.setParam_('taskId', self.cfg_params['taskId'])
@@ -286,10 +295,10 @@ class Cmssw(JobType):
         common.logger.message("Contacting DBS...")
         try:
 
-            if self.use_dbs_2 == 1 :
-                self.pubdata=DataDiscovery_DBS2.DataDiscovery_DBS2(datasetPath, cfg_params)
-            else :
+            if self.use_dbs_1 == 1 :
                 self.pubdata=DataDiscovery.DataDiscovery(datasetPath, cfg_params)
+            else :
+                self.pubdata=DataDiscovery_DBS2.DataDiscovery_DBS2(datasetPath, cfg_params)
             self.pubdata.fetchDBSInfo()
 
         except DataDiscovery.NotExistingDatasetError, ex :

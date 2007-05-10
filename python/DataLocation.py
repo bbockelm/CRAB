@@ -72,17 +72,17 @@ class DataLocation:
         # check if dbs-2 is activated, set default to dbs
         # else, set default to dli
         try:
-            use_dbs_2 = int(self.cfg_params['CMSSW.use_dbs_2'])
+            use_dbs_1 = int(self.cfg_params['CMSSW.use_dbs_1'])
         except:
-            use_dbs_2 = 0
+            use_dbs_1 = 0
 
         try:
             dlstype=self.cfg_params['CMSSW.dls_type']
         except KeyError:
-            if use_dbs_2 == 1:
-                dlstype='dbs'
-            else :
+            if use_dbs_1 == 1:
                 dlstype='dli'
+            else:
+                dlstype='dbs'
 
         DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
