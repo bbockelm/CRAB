@@ -22,8 +22,8 @@ class PsetManipulator:
         exit_code = os.system(cmd)
         if exit_code != 0 : 
             msg = 'Could not convert '+self.pset+' into a python Dictionary \n'
-            msg += 'Failed to execute '+cmd+'\n'
-            msg += 'Exit code : '+exit_code
+            msg += 'Failed to execute \n'+cmd+'\n'
+            msg += 'Exit code : '+str(exit_code)
 
             raise CrabException(msg)
             pass
