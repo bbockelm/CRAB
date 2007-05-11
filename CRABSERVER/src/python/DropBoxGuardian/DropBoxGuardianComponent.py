@@ -134,7 +134,6 @@ class DropBoxGuardianComponent:
             # gridFTP tar arrival bugfix -- Fabio
             for s in dropBoxStatus:
                  if s.split('.')[-1]=='tgz' and (s not in self.previousDropBoxStatus):
-                     logging.info(s) # Debug -- Fabio
                      tarSize = 0
                      try:
                           tarSize = int(os.stat(os.path.join(self.dropBoxPath ,s))[6])
@@ -145,8 +144,7 @@ class DropBoxGuardianComponent:
                                self.tarSizeRegistry[s] = tarSize
                                preservedTars.append(s)
                      except Exception, e:
-                          logging.info("%s has encoutered problems, it wont be processed."%s)
-                          logging.info(e)
+                          logging.info("%s has encoutered problems, it wont be processed."%s + '\n'+ str(e))
                           if s in self.tarSizeRegistry:
                                del self.tarSizeRegistry[s]
                           pass
@@ -172,10 +170,13 @@ class DropBoxGuardianComponent:
 	    # Logging
             if newFiles != []:
                  logging.info("New Project(s) Arrived:" + str(len(newFiles)) )
+                 logging.info(newFiles) # change me if needed # F&M
             if newProxies != []:
                  logging.info("New Proxy Arrived:" + str(len(newProxies)) )
+                 logging.debug(newProxies)
             if newCommand != []:
                  logging.info("New Command Arrived:" + str(len(newCommand)) )
+                 logging.debug(newCommand)
 
             # Notify the arrival for the new tarball
             for i in newFiles:
