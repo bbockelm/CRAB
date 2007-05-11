@@ -16,6 +16,7 @@ import popen2
 import random
 from logging.handlers import RotatingFileHandler
 from threading import Thread
+import commands
 
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 from MessageService.MessageService import MessageService
@@ -76,9 +77,8 @@ class CrabServerWorkerComponent:
         logging.debug("Event: %s %s" % (event, payload))
 
         if event == "ProxyTarballAssociatorComponent:CrabWork":
-            logging.info("ProxyTarballAssociatorComponent:CrabWork Arrived!Payload = "+payload)
+            logging.info("ProxyTarballAssociatorComponent:CrabWork Arrived!Payload = "+str(payload))
             self.pool.insertRequest( (payload, False) )
-            logging.info("New Task inserted in the queue")
 
             #Matteo add: Message to TaskTracking for New Task in Queue 
             taskWorkDir = payload.split(':')[1]
@@ -87,12 +87,11 @@ class CrabServerWorkerComponent:
             #ttMsg = str(taskName+':'+proxyName)
             self.ms.publish("CrabServerWorkerComponent:TaskArrival", taskName)
             self.ms.commit()
-            logging.info("Message TaskArrival sent to TaskTracking for task "+ taskName)
+            #logging.info("Message TaskArrival sent to TaskTracking for task "+ taskName)
 
             return
         if event == "CrabServerWorkerNotifyThread:Retry":
-            logging.info("Resubmission")
-            logging.info(payload)
+            logging.info("Resubmission :"+ str(payload))
             self.pool.insertRequest( (payload, True) )
             return
         if event == "CrabServerWorkerComponent:StartDebug":
@@ -166,7 +165,7 @@ class CrabServerWorkerComponent:
        elif retCode!=0 and retry>0:
             retCode = -1
             retMsg = proxy+":"+CrabworkDir+":"+uniqDir+":"+str(retry-1)
-            logging.info("Task "+uniqDir+ "will be tried " + str(retry-1) + " more times.")
+            logging.info("Task "+uniqDir+ " will be tried " + str(retry-1) + " more times.")
      
        return (retMsg, retCode)
 
@@ -179,7 +178,6 @@ class CrabServerWorkerComponent:
         fin.close()
 
         jobNumber = int(ruleList[0].split(' ')[1].split(':')[1])
-        logging.info("Self: " + str(self) + " Job Numbers :"+ str(jobNumber))
 
         # register the whole task
         for jid in xrange(1, jobNumber+1):
@@ -207,42 +205,40 @@ class CrabServerWorkerComponent:
         pass
 
     def crab_submit(self, proxy, uniqDir, retry=False):
+       # Preparation phase
        ret = 0
-       catchErrorList = ["No compatible site found, will not submit", "TaskDB: key projectName not found"]
-       
+       catchErrorList = ["No compatible site found, will not submit", 
+                         "TaskDB: key projectName not found", 
+                         "wrong format: submission failed", 
+                         "Failed to declare task Boss infile not found",
+			 "Operation failed",
+			 "Total of 0 jobs submitted"]
+			 
+       # Command composition
        action = '-submit'
        if retry==True:   
             action = '-submit' #'-resubmit' 
 	    
-       cmd = 'export X509_USER_PROXY='+proxy+'; '
+       cmd = 'export X509_USER_PROXY='+proxy+' && '
        cmd = cmd + 'crab '+action+' all -c '+ uniqDir + self.debug
        
-       errcode = 0
+       # Command summoning
+       errcode, outlog = commands.getstatusoutput(cmd)
+      
+       # -------- Previous Version -------- # Fabio
+       #errcode = 0
+       #errcode = os.system(cmd)
+       #f = open(uniqDir+"/log/crab.log","r")
+       #outlog = f.readlines()
+       #f.close()
        
-       #inf, outf, errf = os.popen3(cmd)
-       #errlog = errf.readlines()
-       #outlog = outf.readlines()
-       # 
-       #if len(errlog)!=0:
-       #     errcode = -1     
-       #     logging.info("Error message returned: " + str(errlog) )
-       errcode = os.system(cmd)
-       #outf.close()
-       #inf.close()
-       #errf.close()
-       
-       # logging.info(outlog) 
+       # Output parsing
        if errcode != 0:
-           logging.info("Submission failed for " + str(uniqDir) )
+           logging.info("Submission failed for %s. Return Code=%d"%(str(uniqDir), errcode))
            ret = 1
            return ret
-
-       f = open(uniqDir+"/log/crab.log","r")
-       outlog = f.readlines()
-       f.close()
-
-       ret = 0
-       for l in outlog:
+	   
+       for l in outlog.split('\n'):
            for e in catchErrorList:
                 if e in l:
                      ret = 2
@@ -250,10 +246,9 @@ class CrabServerWorkerComponent:
            if ret == 2:
                 break
 
-       if ret == 0:
+       if ret==0:
            logging.info("Submission completed for "+ str(uniqDir))
        else:
            logging.info("Submission delayed for " + str(uniqDir) )
-
        return ret
 
