@@ -15,6 +15,8 @@ import Queue
 from random import Random
 import time
 
+from TaskTracking.TaskStateAPI import *
+
 """
 Class: PoolThread
 """
@@ -37,6 +39,11 @@ class PoolThread:
         # create queues
         self.requests = Queue.Queue()
         self.results = Queue.Queue()
+	
+	## introspecion-like structures # Fabio
+	## put here materialization, else...
+	#self.shadowReq = []
+	#self.shadowRes = []
         
         # store reference to component that uses the pool
         self.component = workerComponent
@@ -63,14 +70,42 @@ class PoolThread:
         """
         insert a request into the input queue of the pool.
         """
-        self.requests.put(request)
+
+        # Early kill
+        # taskName = str(request[1].split(':')[1].split('/')[-1])
+	taskName = ""+str(request[1])
+	taskName = str(taskName.split(':')[1]).split('/')[-1]
+	
+	query = "" 
+        #query += "SELECT status FROM js_taskInstance WHERE taskName=\'" + taskName + "\'"
+        #self.logging.info(query)
+        
+	rows = []
+	#rows += queryMethod(query, taskName)
+	#self.logging.info(rows)
+	
+        dontSubmit = False
+	for r in rows:
+             if (str(r[0]) in ['ended', 'killed']):
+                  dontSubmit = True
+		  self.logging.info("Early kill for task %s"%taskName)
+                  break
+		  
+        # Schedule submission
+	if dontSubmit == False:
+             #self.shadowReq.append(request)
+             self.requests.put(request)
+
+	pass
         
     def getResult(self):
         """
         return the first result from the output queue of the pool.
         """
-
-        return self.results.get()
+        value = self.results.get()
+	# if value in self.shadowRes:
+	#      self.shadowRes.remove(value)
+        return value
 
 """
 Class: CrabWorker
@@ -82,7 +117,7 @@ class CrabWorker(Thread):
     crab work.
     """
     
-    def __init__(self, inQueue, outQueue, component, log):
+    def __init__(self, inQueue, outQueue, component, log): #, shadows=None):
         """
         initialize input and output queues, register the component
         and start thread work.
@@ -93,7 +128,8 @@ class CrabWorker(Thread):
         self.outQueue = outQueue
         self.component = component
         self.logging = log
-        #self.setDaemon(1)
+        # To prevent zombies -- self.setDaemon(1)
+	# self.shadows = shadows
         self.start()
         
     def run(self):
@@ -105,11 +141,16 @@ class CrabWorker(Thread):
         while True:
             # get request
             payload, retry = self.inQueue.get()
+	    # if self.shadows!=None:
+	    #     self.shadows[0].remove( (payload, retry) )
+	    
             # execute CRAB work
             try:
                 returnData, retCode = self.component.performCrabWork(payload, retry)
                 # store return code in output queue
                 self.outQueue.put( (returnData, retCode) )
+                # if self.shadows!=None:
+                #     self.shadows[1].append( (returnData, retCode) )
             except:
                 logging.info("Exception when processing payload: " + str(payload))
             
@@ -135,7 +176,7 @@ class Notifier(Thread):
         self.ms = ms
         self.logging = logging
         self.r = Random()
-        self.setDaemon(1)
+        ## self.setDaemon(1)
         self.start()
         
     def run(self):
