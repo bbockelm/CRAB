@@ -14,6 +14,7 @@ import logging
 import time
 from logging.handlers import RotatingFileHandler
 import popen2
+import commands
 import re
 from MessageService.MessageService import MessageService
 
@@ -86,29 +87,43 @@ class ProxyTarballAssociatorComponent:
                 os.chdir(self.dropBoxPath)
                 uniqDir = "" + payload
                 payload = payload + '.tgz'
-                #uniqDir = payload.split('.')[0] Matteo 
-                # Build the unique dir and copy the payload 
-                outp, inp = popen2.popen4("tar -z --list --file=%s | head -n 1"%payload)
-                prjName = outp.readlines()[0][:-1]
-                outp.close()
-                inp.close()
-                cmd = 'tar xvzf '+ payload + ' > /dev/null; rm -f '+ payload +"; " 
-                cmd = cmd + 'mv '+prjName+ ' '+uniqDir 
+
+                # Build the unique dir and copy the payload
+                cmd = "tar -z --list --file=%s"%payload
+                #outp, inp, errp = popen2.popen3(cmd)
+                #errBuf = errp.readlines()
+                #outBuf = outp.readlines()
+                #inp.close()
+                #errp.close()
+                #outp.close()
+
+		# Fabio -- new Fix
+                retCode, outBuf = commands.getstatusoutput(cmd)
+
+                if retCode != 0: #str(errBuf) != '[]':
+                     logging.info("Warning: Unable to open " + str(payload))# + '\nThe file will be removed.')
+		     logging.info("RetCode =%d"%retCode)
+                     #os.system('rm -f '+ payload)
+		     os.system('mv %s %s.bad'%(payload, payload) )
+                     raise Exception
+		     
+                prjName = outBuf.split('\n')[0] #outBuf[0][:-1]
+                cmd = 'tar xvzf '+ payload + ' > /dev/null; rm -f '+ payload +" && " 
+                cmd = cmd + 'mv '+prjName+ ' '+uniqDir
+                logging.debug(cmd)
                 os.system(cmd)
+		
                 #Matteo Add:send a message to Task Tracking for Extracted Tar
                 #extract UUID
                 startU=5+len(prjName)
                 uuid = uniqDir[startU:]
                 logging.info("PAYLOAD ="+payload+" prjName = "+prjName+" uniqDir = "+uniqDir+" UUID = "+uuid)
-                #msg1TT = uniqDir+':'+uuid
-                #self.ms.publish("ProxyTarballAssociatorComponent:TarExtract", msg1TT )
-                #self.ms.commit()
 
                 # get the project name
                 os.chdir(self.dropBoxPath)
            
                 # Associate project to proxy
-                self.CrabworkDir = self.dropBoxPath+'/'+uniqDir # +':'+projDir
+                self.CrabworkDir = self.dropBoxPath+'/'+uniqDir 
                 self.associated = self.matchingProxy(uuid, self.CrabworkDir)
                 logging.debug(""+str(self.associated) )
                 
@@ -119,6 +134,8 @@ class ProxyTarballAssociatorComponent:
 		os.rename(self.dropBoxPath+"/proxytar_tmp",  self.dropBoxPath+"/proxytar.set")
             except Exception, e:
                 logging.info("Warning: Unable to associate " + str(self.CrabworkDir) +"\n"+str(e))
+                self.ms.publish("ProxyTarballAssociatorComponent:UnableToManage", uniqDir)
+                self.ms.commit()  
             return
 
         # Logging events 
@@ -202,7 +219,7 @@ class ProxyTarballAssociatorComponent:
             except Exception, e:
                 logging.info("Warning: Unable to open " + str(pendingTaskDir+"/share/"+subjFileName))
                 logging.info("   the project file could be corrupted. It won't be processed.")
-                logging.info(e)
+		logging.info(e)
                 dummyFileList.remove(pendingTaskDir)
                 self.files = dummyFileList
                 # send also a message to task tracking??? # Fabio
@@ -233,12 +250,7 @@ class ProxyTarballAssociatorComponent:
                  logging.info("Proxy->Project Association: "+pProxy[i]+"->"+pendingTaskDir)
 
                  # build notification
-                 #
-                 # redefine proxy location for X509_USER_PROXY to be passed as payload to CrabServerWorker
-                 #
-                 proxyLnk = pendingTaskDir+'/share/userProxy'
-                 cwMsg = str(proxyLnk)+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
-                 #cwMsg = str(pProxy[i])+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
+		 cwMsg = str(pProxy[i])+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
                  matched.append(cwMsg) 
                  logging.debug(matched[0])
                  try:  
@@ -247,7 +259,7 @@ class ProxyTarballAssociatorComponent:
                      pass
               
                  #Matteo Add: send a massage to Task Tracking for Proxy->Project Association
-                 if uuid != None:
+		 if uuid != None:
                       proxyName = str(pProxy[i].split('/')[-1])
                       ttMsg = str(uuid+':'+taskName+':'+proxyName)
                       self.ms.publish("ProxyTarballAssociatorComponent:WorkDone", ttMsg)
@@ -345,20 +357,25 @@ class ProxyTarballAssociatorComponent:
        f.close()
 
        # Matteo add
-       os.system('cp sched_param_0.clad sched_param_0.clad.orig')
-       f = open('sched_param_0.clad','r')
-       readedData = f.readlines()
-       f.close()
-       for m in xrange(len(readedData)):
-           n = readedData[m]
-           if 'RBconfigVO' in n:
-                readedData[m] = 'RBconfigVO = "'+ self.dropBoxPath + '/'+ n.split('/')[-1]
-           elif 'RBconfig' in n:
-                readedData[m] = 'RBconfig = "'+ self.dropBoxPath + '/'+ n.split('/')[-1]
-           elif 'WMSconfig' in n:
-                readedData[m] = 'WMSconfig = '+ self.dropBoxPath + '/'+ n.split('/')[-1]
-           pass
+       for sched in [cl for cl in os.listdir('.') if cl.split('.')[-1]=='clad' and 'sched_param' in cl]:
+            os.system( 'cp %s %s.orig'%(sched,sched) )
+            f = open(sched,'r')
+            readedData = f.readlines()
+            f.close()
+            for m in xrange(len(readedData)):
+                 n = readedData[m]
+                 if 'RBconfigVO' in n:
+                      readedData[m] = 'RBconfigVO = "'+ self.dropBoxPath + '/'+ n.split('/')[-1]
+                 elif 'RBconfig' in n:
+                      readedData[m] = 'RBconfig = "'+ self.dropBoxPath + '/'+ n.split('/')[-1]
+                 elif 'WMSconfig' in n:
+                      readedData[m] = 'WMSconfig = '+ self.dropBoxPath + '/'+ n.split('/')[-1]
+                 pass
+            pass
+            f = open(sched,'w')
+            f.writelines(readedData)
+            f.close()
        pass
-       f = open('sched_param_0.clad','w')
-       f.writelines(readedData)
-       f.close() 
+
+
+
