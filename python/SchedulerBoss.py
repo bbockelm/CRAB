@@ -348,6 +348,7 @@ class SchedulerBoss(Scheduler):
             # debug
             msg = 'BOSS declaration:' + common.work_space.shareDir()+self.boss_jobtype+'.xml'
             common.logger.debug(4,msg)
+            common.logger.write(msg)
             msg = 'BOSS declaration took ' +str(stop-start)
             common.logger.debug(1,msg)
             common.logger.write(msg)
@@ -355,6 +356,7 @@ class SchedulerBoss(Scheduler):
             self.Task_id = self.bossTask.id()
             common.taskDB.setDict('BossTaskId',self.Task_id)
             common.logger.debug(4,"TASK ID =  "+self.Task_id)
+            common.logger.write("TASK ID =  "+self.Task_id)
      
             # job counter, jobs in JobDB run from 0 - n-1
             num_job = 0
