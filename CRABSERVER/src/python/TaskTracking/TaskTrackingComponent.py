@@ -301,12 +301,21 @@ class TaskTrackingComponent:
 	    logging.error( "      "+str(ex))
             logging.error("  <-- - -- - -->")
         
-    
-    def prepareReport( self, taskName, uuid, eMail, thresholdLevel, percentage, dictReportTot ):
+   
+    def convertStatus( self, status ):
+        """
+	_convertStatus_
+	"""
+	stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Cleared','E': 'Cleared','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'NotSubmitted','K': 'Killed', 'S': 'Submitted'}
+        if status in stateConverting:
+  	    return stateConverting[status]
+        return 'Unknown'
+	
+   
+    def prepareReport( self, taskName, uuid, eMail, thresholdLevel, percentage, dictReportTot, nJobs, flag ):
         """
 	_prepareReport_
 	"""
-
         pathToWrite = pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
 
 	if os.path.exists( pathToWrite ):
@@ -317,21 +326,23 @@ class TaskTrackingComponent:
 	   ###  preparing xml report  ###
 	    c = CreateXmlJobReport()
 	    eMaiList = self.getMoreMails( eMail )
-	    #logging.info("eMaiList = " +str(eMaiList) + " --- eMail = "+ str(eMail) )
 	    if len(eMaiList) < 1: 
-		c.initialize( origTaskName, "ASdevel@cern.ch", userName, percentage, thresholdLevel)
+		c.initialize( origTaskName, "ASdevel@cern.ch", userName, percentage, thresholdLevel, nJobs)
 	    else:
 		 for index in range(len(eMaiList)):
 		     if index != 0:
 			 c.addEmailAddress( eMaiList[index] )
 		     else:
-			 c.initialize( origTaskName, eMaiList[0], userName, percentage, thresholdLevel)
-	    for state in dictReportTot:
-                c.addStatusCount( str(state), str(dictReportTot[state]) )
-	    #c.addStatusCount( "JobSuccess", succ)
-	    #c.addStatusCount( "JobFailed", fail)
-            #c.addStatusCount( "JobInProgress", run )
-	    c.toXml()
+			 c.initialize( origTaskName, eMaiList[0], userName, percentage, thresholdLevel, nJobs)
+#	    for state in dictReportTot:
+#                c.addStatusCount( str(state), str(dictReportTot[state]) )
+	
+	    for singleJob in dictReportTot:
+	        J = Job()
+		J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][1], dictReportTot[singleJob][2] )##id,status,eec,jes
+		c.addJob( J )
+
+   	    c.toXml()
             c.toFile( pathToWrite + self.xmlReportFileName )
 
 
@@ -357,8 +368,9 @@ class TaskTrackingComponent:
             logging.error( "         using default value 'thresholdLevel = 100'")
             logging.error("  <-- - -- - -->")
             thresholdLevel = 100
-        dictionaryReport =  {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': "all"}
-        self.prepareReport( taskName, uuid, eMail, thresholdLevel, 0, dictionaryReport )
+        dictionaryReport =  {"all": ["Submitted", "", ""]} #{'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': "all"}
+	#*# dictionaryReport = {}
+        self.prepareReport( taskName, uuid, eMail, thresholdLevel, 0, dictionaryReport, 0, 0 )
 	#logging.info("Report Prepared")
 
         try:
@@ -369,9 +381,6 @@ class TaskTrackingComponent:
             logging.error( "ERROR while updating the task " + str(taskName) )
 	    logging.error( "      "+str(ex))
             logging.error("  <-- - -- - -->")
-
-        return
-
 
     
     def updateTaskStatus(self, payload, status):
@@ -401,8 +410,14 @@ class TaskTrackingComponent:
 		        uuid = valuess[1]
 		        if len(valuess) > 2:
 		    	    eMail = valuess[2]
-	            dictionaryReport = {'JobSuccess': 0, 'JobFailed': "all", 'JobInProgress': 0}
-	            self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport )
+	            ## XML report file
+	            #dictionaryReport = {'JobSuccess': 0, 'JobFailed': "all", 'JobInProgress': 0}
+		    dictionaryReport =  {"all": ["NotSubmitted", "", ""]}
+	            self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
+		    ## DONE tgz file
+		    pathToWrite = str(self.args['dropBoxPath']) + "/" + payload + "/" + self.resSubDir
+		    self.prepareTarball( pathToWrite, payload )
+		    ## MAIL report user
 		    self.prepareTaskFailed( payload, uuid, eMail )
         except Exception, ex:
 	    logging.error("  <-- - -- - -->")
@@ -478,7 +493,6 @@ class TaskTrackingComponent:
         logging.debug("path: " + str(path) + "/done.tgz")
         os.system('tar --create -z --file='+path+'/done.tgz job* --exclude done.tgz --exclude xmlReportFile.xml')
         os.chdir( work_dir )
-        return
 
     def taskSuccess( self, taskPath ):
         """
@@ -557,6 +571,11 @@ class TaskTrackingComponent:
 			dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
 			countNotSubmitted = 0 
 
+			## allowed state in a dictionary for count how many jobs there are in each state
+	                ##dictStateTot = {'RUNNING': 0, 'ABORTED': 0, 'DONE_OK': 0, 'DONE_FAILED': 0, 'CLEARED': 0, 'CANCELLED':0, 'READY': 0, 'SUBMITTED': 0, 'SCHEDULED': 0, 'UNKNOWN': 0, 'WAITING': 0}
+			
+			dictStateTot = {}
+
 			v = taskDict.values()[0]
 			statusJobsTask = v.jobStates()
 
@@ -566,7 +585,9 @@ class TaskTrackingComponent:
 			    runInfoJob =  v.specific(job,"1")
 			    if string.lower(self.args['jobDetail']) == "yes":
                                 logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']))
-
+			    vect = [self.convertStatus(stato), runInfoJob['EXE_EXIT_CODE'], runInfoJob['JOB_EXIT_STATUS']]
+                            dictStateTot.setdefault(job, vect)
+			    
 			    if stato == "SE" or stato == "E":
 				if runInfoJob['EXE_EXIT_CODE'] == "0" and runInfoJob['JOB_EXIT_STATUS'] == "0":
 				    dictReportTot['JobSuccess'] += 1
@@ -591,6 +612,7 @@ class TaskTrackingComponent:
 			    logging.info( "    -> of which not yet submitted: " + str(countNotSubmitted) )
 
 			endedJob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed']
+			##endedJob = dictStateTot['ABORTED'] + dictStateTot['CLEARED'] + dictStateTot['DONE_OK'] 
 			try:
 			    percentage = (100 * endedJob) / len(statusJobsTask)
 			    pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
@@ -607,7 +629,7 @@ class TaskTrackingComponent:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
 
 				if os.path.exists( pathToWrite ):
-				    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictReportTot )
+				    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
 
 				   ### prepare tarball & send eMail ###
 				    if percentage >= thresholdLevel:
@@ -752,6 +774,7 @@ class PollThread(Thread):
                 self.poll()
 
             # error
+            
             except Exception, ex:
 
                 # log error message
@@ -773,4 +796,5 @@ class PollThread(Thread):
             # no errors, reset failure counter
             else:
                 failedAttempts = 0
+            
 
