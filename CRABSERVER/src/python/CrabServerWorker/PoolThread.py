@@ -73,8 +73,8 @@ class PoolThread:
 
         # Early kill
         # taskName = str(request[1].split(':')[1].split('/')[-1])
-	taskName = ""+str(request[1])
-	taskName = str(taskName.split(':')[1]).split('/')[-1]
+	#taskName = ""+str(request[1])
+	#taskName = str(taskName.split(':')[1]).split('/')[-1]
 	
 	query = "" 
         #query += "SELECT status FROM js_taskInstance WHERE taskName=\'" + taskName + "\'"
