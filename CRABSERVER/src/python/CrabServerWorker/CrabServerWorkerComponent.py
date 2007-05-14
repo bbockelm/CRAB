@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.0 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.0 2006/11/20 15:15:00 farinafa Exp $"
+__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.4 2007/05/11 15:06:17 spiga Exp $"
 
 import os
 import socket
@@ -24,7 +24,7 @@ from CrabServerWorker.PoolThread import PoolThread, Notifier
 
 # Imported to allow BOSS Declaration (method registerJob) # Fabio
 from JobState.JobStateAPI import JobStateChangeAPI
-from MCPayloads.JobSpec import JobSpec
+from ProdCommon.MCPayloads.JobSpec import JobSpec
 #WB: NEEDED FOR RESUBMISSION WITH CVS JobSubmitterComponent
 
 class CrabServerWorkerComponent:
