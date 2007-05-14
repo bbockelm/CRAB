@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id$"
-__version__ = "$Revision$"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.8 2007/05/11 12:24:55 mcinquil Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import os
 import time
@@ -491,7 +491,9 @@ class TaskTrackingComponent:
         work_dir = os.getcwd()
         os.chdir( path )
         logging.debug("path: " + str(path) + "/done.tgz")
-        os.system('tar --create -z --file='+path+'/done.tgz job* --exclude done.tgz --exclude xmlReportFile.xml')
+	cmd = 'tar --create -z --file='+path+'/.temp_done.tgz job* --exclude done.tgz --exclude xmlReportFile.xml; '
+        cmd += 'mv '+path+'/.temp_done.tgz '+path+'/done.tgz'
+	os.system( cmd )
         os.chdir( work_dir )
 
     def taskSuccess( self, taskPath ):
