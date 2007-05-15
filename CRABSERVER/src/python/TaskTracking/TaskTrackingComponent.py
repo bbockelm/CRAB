@@ -13,7 +13,6 @@ import sys
 import re
 
 # BOSS API import
-from ProdAgentBOSS import BOSSCommands
 from BossSession import *
 
 # Message service import
@@ -25,6 +24,9 @@ from threading import Thread
 # logging
 import logging
 from logging.handlers import RotatingFileHandler
+import  ProdAgentCore.LoggingUtils as LoggingUtils
+from ProdAgentCore.ProdAgentException import ProdAgentException
+
 
 # DB PA
 import TaskStateAPI
@@ -306,7 +308,7 @@ class TaskTrackingComponent:
         """
 	_convertStatus_
 	"""
-	stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Cleared','E': 'Cleared','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'NotSubmitted','K': 'Killed', 'S': 'Submitted'}
+	stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'NotSubmitted','K': 'Killed', 'S': 'Submitted'}
         if status in stateConverting:
   	    return stateConverting[status]
         return 'Unknown'
@@ -493,7 +495,8 @@ class TaskTrackingComponent:
         logging.debug("path: " + str(path) + "/done.tgz")
 	cmd = 'tar --create -z --file='+path+'/.temp_done.tgz job* --exclude done.tgz --exclude xmlReportFile.xml; '
         cmd += 'mv '+path+'/.temp_done.tgz '+path+'/done.tgz'
-	os.system( cmd )
+        os.system( cmd )
+			
         os.chdir( work_dir )
 
     def taskSuccess( self, taskPath ):
@@ -607,7 +610,13 @@ class TaskTrackingComponent:
 				dictReportTot['JobInProgress'] += 1
 			    else:
 				dictReportTot['JobInProgress'] += 1
-				
+			
+			rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
+			rev_items.sort()
+			dictStateTot = {}
+			for valu3, k3y in rev_items:
+			    dictStateTot.setdefault( k3y, valu3 )
+											    
 			for state in dictReportTot:
 			    logging.info( " Job " + state + ": " + str(dictReportTot[state]) )
 			if countNotSubmitted > 0:
