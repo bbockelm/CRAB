@@ -127,20 +127,27 @@ class Crab:
 
         self.createScheduler_()
 
-        if common.logger.debugLevel() >= 6:
-            common.logger.debug(6, 'Used properties:')
-            keys = self.cfg_params.keys()
-            keys.sort()
-            for k in keys:
-                if self.cfg_params[k]:
-                    common.logger.debug(6, '   '+k+' : '+str(self.cfg_params[k]))
-                    pass
-                else:
-                    common.logger.debug(6, '   '+k+' : ')
-                    pass
+        common.logger.debug(6, 'Used properties:')
+        if (common.logger.debugLevel()<6 ):
+            common.logger.write('Used properties:')
+        keys = self.cfg_params.keys()
+        keys.sort()
+        for k in keys:
+            if self.cfg_params[k]:
+                common.logger.debug(6, '   '+k+' : '+str(self.cfg_params[k]))
+                if (common.logger.debugLevel()<6 ):
+                    common.logger.write('   '+k+' : '+str(self.cfg_params[k]))
                 pass
-            common.logger.debug(6, 'End of used properties.\n')
+            else:
+                common.logger.debug(6, '   '+k+' : ')
+                if (common.logger.debugLevel()<6 ):
+                    common.logger.write('   '+k+' : ')
+                pass
             pass
+        common.logger.debug(6, 'End of used properties.\n')
+        if (common.logger.debugLevel()<6 ):
+            common.logger.write('End of used properties.\n')
+
         self.initializeActions_(opts)
         return
 
