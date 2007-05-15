@@ -1,3 +1,4 @@
+from Actor import *
 from crab_exceptions import *
 from crab_logger import Logger
 from StatusBoss import StatusBoss
@@ -5,7 +6,7 @@ from Status import Status
 import common
 import string
 
-class Cleaner:
+class Cleaner(Actor):
     def __init__(self, cfg_params):
         """
         constructor
@@ -35,7 +36,7 @@ class Cleaner:
 
         pass
 
-    def clean(self):
+    def run(self):
         """
         remove all
         """
@@ -43,6 +44,6 @@ class Cleaner:
             self.check()
 
         # here I should first purge boss DB if central
-        print 'directory '+common.work_space.topDir()+' removed'
-        common.logger.close()
+        common.scheduler.clean()
         common.work_space.delete()
+        print 'directory '+common.work_space.topDir()+' removed'

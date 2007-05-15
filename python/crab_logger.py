@@ -39,7 +39,6 @@ class Logger :
     def __del__(self):
         if not self.flag_quiet:
             print self.prog_name+'. Log-file is '+self.log_fname
-        self.log_file.close()
         return
     
     def close(self):

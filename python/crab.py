@@ -723,8 +723,7 @@ class Crab:
                 if val != None:
                     raise CrabException("No range allowed for '-clean'")
                 
-                theCleaner = Cleaner(self.cfg_params)
-                theCleaner.clean()
+                self.actions[opt] = Cleaner(self.cfg_params)
 
             pass
         return

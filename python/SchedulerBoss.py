@@ -857,10 +857,16 @@ class SchedulerBoss(Scheduler):
     def taskDeclared( self, taskName ):
         #mySession = BossSession(self.bossConfigDir)
         #taskDict =mySession.loadByName( common.work_space.shareDir() )
-	taskDict = self.bossUser.loadByName( taskName )
-	#common.logger.debug(5, "taskName: " + str(taskName) )
-	#common.logger.debug(5, "\n\n task: " + str(taskDict) + "\n\n")
+        taskDict = self.bossUser.loadByName( taskName )
+        #common.logger.debug(5, "taskName: " + str(taskName) )
+        #common.logger.debug(5, "\n\n task: " + str(taskDict) + "\n\n")
         #mySession.clear()
         if len(taskDict) > 0:
             return True
         return False
+
+    def clean(self):
+        """ destroy boss instance """
+        #self.bossUser.destroyBossTask(self.bossTask)
+        del self.bossUser
+        return

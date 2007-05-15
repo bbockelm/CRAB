@@ -71,8 +71,11 @@ class WorkSpace:
         """
         delete the whole workspace without doing any test!!!
         """
+        common.logger.quiet(1)
+        common.logger.close()
         if os.path.exists(self._top_dir):
 #            shutil.rmtree(self._top_dir)
+            # os.system("/usr/sbin/lsof %s/crab.log" % self._log_dir ) 
             os.system("rm -rf %s" % self._top_dir ) 
             # SL For some obscure reason the lgo dir is not removed at the first try
             os.system("rm -rf %s" % self._top_dir )

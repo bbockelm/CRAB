@@ -43,3 +43,7 @@ class Scheduler :
         """
         return ''
 
+    def clean(self):
+        """ destroy instance """
+        return
+
