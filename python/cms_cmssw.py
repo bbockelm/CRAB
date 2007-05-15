@@ -4,9 +4,9 @@ from crab_exceptions import *
 from crab_util import *
 import common
 import PsetManipulator  
-import DataDiscovery
-import DataDiscovery_DBS2
-import DataLocation
+# import DataDiscovery
+# import DataDiscovery_DBS2
+# import DataLocation
 import Scram
 
 import os, string, re, shutil, glob
@@ -281,6 +281,9 @@ class Cmssw(JobType):
 
     def DataDiscoveryAndLocation(self, cfg_params):
 
+        import DataDiscovery
+        import DataDiscovery_DBS2
+        import DataLocation
         common.logger.debug(10,"CMSSW::DataDiscoveryAndLocation()")
 
         datasetPath=self.datasetPath
