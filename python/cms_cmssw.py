@@ -795,6 +795,8 @@ class Cmssw(JobType):
         scram = self.scram.commandName()
         txt += '\n\n'
         txt += 'echo "### SPECIFIC JOB SETUP ENVIRONMENT ###"\n'
+        txt += 'echo "Setting SCRAM_ARCH='+self.executable_arch+'"\n'
+        txt += 'export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += scram+' project CMSSW '+self.version+'\n'
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
@@ -823,7 +825,6 @@ class Cmssw(JobType):
         txt += '   exit 1 \n'
         txt += 'fi \n'
         txt += 'echo "CMSSW_VERSION =  '+self.version+'"\n'
-        txt += 'export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += 'cd '+self.version+'\n'
         ### needed grep for bug in scramv1 ###
         txt += scram+' runtime -sh\n'
