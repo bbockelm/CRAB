@@ -22,23 +22,26 @@ class Job:
         self.EXITSTATUS     = "exe_exit"
         self.JOBEXIT        = "job_exit"
         self.JOBREPORT      = "Job"
-        self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed")
+	self.JOBCLEARED     = "cleared"
+        self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed","Submitting")
         
         self.jobid      = ""
         self.status     = ""
         self.exitstatus = ""
         self.jobexit    = ""
+	self.jobcleared = ""
         
         self.doc            = xml.dom.minidom.Document()
 	#self.root           = self.doc.createElement( self.ROOTNAME )
 	#self.init           = False
         
     #------------------------------------------------------------------------
-    def initialize(self, jobid, status, job_exit, exe_exit):
+    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared ):
         self.jobid      = jobid
         self.status     = status
         self.exitstatus = exe_exit
         self.jobexit    = job_exit
+	self.jobcleared = job_cleared
 
         jobrep = self.doc.createElement(self.JOBREPORT)
         jobrep.setAttribute(self.JOBID, str(self.jobid))
@@ -52,6 +55,7 @@ class Job:
         jobrep.setAttribute(self.STATUS, self.status)
         jobrep.setAttribute(self.EXITSTATUS, str(self.exitstatus))
         jobrep.setAttribute(self.JOBEXIT, str(self.jobexit))
+	jobrep.setAttribute(self.JOBCLEARED, str(self.jobcleared))
 
         self.report = jobrep
         return self
@@ -79,6 +83,10 @@ class Job:
     #------------------------------------------------------------------------
     def getExeExitCode(self):
         return self.exitstatus
+
+    #------------------------------------------------------------------------
+    def getJobCleared(self):
+        return self.jobcleared
     
     #------------------------------------------------------------------------
     def getJobID(self):
@@ -116,7 +124,7 @@ class CreateXmlJobReport:
 	self.ENDED          = "ended"
 	self.THRESHOLDREQ   = "thresholdRequested"
         self.TOTJOB         = "totJob"
-        self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed")
+        self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed","Submitting")
 	self.COUNT          = 'count'
 	
 	self.doc            = xml.dom.minidom.Document()
@@ -159,7 +167,7 @@ class CreateXmlJobReport:
 	self.init = True
 
     #------------------------------------------------------------------------
-    def addJob(self, jobid, status, jobexit, exeexit):
+    def addJob(self, jobid, status, jobexit, exeexit, cleared):
         J = Job()
         
         #JJ = Job()
@@ -175,7 +183,7 @@ class CreateXmlJobReport:
 
         #xmldoc = xml.dom.minidom.parseString( "<pippo alfa='1'/>" )
         
-        self.root.appendChild( J.initialize(jobid, status, jobexit, exeexit).getDoc() )
+        self.root.appendChild( J.initialize(jobid, status, jobexit, exeexit, cleared).getDoc() )
         #self.root.appendChild( JJ.getDoc() )
 
         #localTaskRep = self.doc.getElementsByTagName(self.TASKREPORT)[0]

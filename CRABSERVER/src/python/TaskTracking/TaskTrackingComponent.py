@@ -308,7 +308,7 @@ class TaskTrackingComponent:
         """
 	_convertStatus_
 	"""
-	stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'NotSubmitted','K': 'Killed', 'S': 'Submitted'}
+	stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'Submitting','K': 'Killed', 'S': 'Submitted'}
         if status in stateConverting:
   	    return stateConverting[status]
         return 'Unknown'
@@ -340,8 +340,8 @@ class TaskTrackingComponent:
 #                c.addStatusCount( str(state), str(dictReportTot[state]) )
 	
 	    for singleJob in dictReportTot:
-	        J = Job()
-		J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][1], dictReportTot[singleJob][2] )##id,status,eec,jes
+	        J = Job()   ##    id             status                        eec                            jes                       clear
+		J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][1], dictReportTot[singleJob][2],dictReportTot[singleJob][3] )
 		c.addJob( J )
 
    	    c.toXml()
@@ -370,7 +370,7 @@ class TaskTrackingComponent:
             logging.error( "         using default value 'thresholdLevel = 100'")
             logging.error("  <-- - -- - -->")
             thresholdLevel = 100
-        dictionaryReport =  {"all": ["Submitted", "", ""]} #{'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': "all"}
+        dictionaryReport =  {"all": ["Submitted", "", "", 0]} #{'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': "all"}
 	#*# dictionaryReport = {}
         self.prepareReport( taskName, uuid, eMail, thresholdLevel, 0, dictionaryReport, 0, 0 )
 	#logging.info("Report Prepared")
@@ -414,7 +414,7 @@ class TaskTrackingComponent:
 		    	    eMail = valuess[2]
 	            ## XML report file
 	            #dictionaryReport = {'JobSuccess': 0, 'JobFailed': "all", 'JobInProgress': 0}
-		    dictionaryReport =  {"all": ["NotSubmitted", "", ""]}
+		    dictionaryReport =  {"all": ["NotSubmitted", "", "", 0]}
 	            self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
 		    ## DONE tgz file
 		    pathToWrite = str(self.args['dropBoxPath']) + "/" + payload + "/" + self.resSubDir
@@ -493,7 +493,7 @@ class TaskTrackingComponent:
         work_dir = os.getcwd()
         os.chdir( path )
         logging.debug("path: " + str(path) + "/done.tgz")
-	cmd = 'tar --create -z --file='+path+'/.temp_done.tgz job* --exclude done.tgz --exclude xmlReportFile.xml; '
+	cmd = 'tar --create -z --file='+path+'/.temp_done.tgz * --exclude done.tgz; '
         cmd += 'mv '+path+'/.temp_done.tgz '+path+'/done.tgz'
         os.system( cmd )
 			
@@ -590,12 +590,17 @@ class TaskTrackingComponent:
 			    runInfoJob =  v.specific(job,"1")
 			    if string.lower(self.args['jobDetail']) == "yes":
                                 logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']))
-			    vect = [self.convertStatus(stato), runInfoJob['EXE_EXIT_CODE'], runInfoJob['JOB_EXIT_STATUS']]
+			    vect = []
+			    if runInfoJob['EXE_EXIT_CODE'] == "NULL" and runInfoJob['JOB_EXIT_STATUS'] == "NULL": 
+   			        vect = [self.convertStatus(stato), "", "", 0]
+			    else:
+                                vect = [self.convertStatus(stato), runInfoJob['EXE_EXIT_CODE'], runInfoJob['JOB_EXIT_STATUS'], 0]
                             dictStateTot.setdefault(job, vect)
 			    
 			    if stato == "SE" or stato == "E":
 				if runInfoJob['EXE_EXIT_CODE'] == "0" and runInfoJob['JOB_EXIT_STATUS'] == "0":
 				    dictReportTot['JobSuccess'] += 1
+				    dictStateTot[job][3] = 1
 				elif not resubmitting:
 				    dictReportTot['JobFailed'] += 1
 				else:
@@ -630,6 +635,7 @@ class TaskTrackingComponent:
 			    
 			    if percentage != endedLevel or \
 			       (percentage == 0 and status == self.taskState[3] ) or \
+			       (percentage == 0 and status == self.taskState[1] ) or \
 			       (notified < 2 and endedLevel == 100):
 			   #and (not os.path.exists(pathToWrite + self.xmlReportFileName))\
 
