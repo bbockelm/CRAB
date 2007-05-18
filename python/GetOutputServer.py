@@ -7,6 +7,9 @@ import time
 from ProgressBar import ProgressBar
 from TerminalController import TerminalController
 
+import xml.dom.minidom
+import xml.dom.ext
+
 class GetOutputServer(Actor):
  
     def __init__(self, cfg_params,):
@@ -32,26 +35,57 @@ class GetOutputServer(Actor):
         try:
             ### retrieving poject from the server
             common.logger.message("Retrieving the poject from the server...\n")
-            cmd = 'lcg-cp --vo cms --verbose gsiftp://' + str(server_name) + str(projectUniqName)+'/res/done.tgz file://'+common.work_space.resDir()+'done.tgz'
+
+            copyHere = common.work_space.resDir() # MATT
+        #    print copyHere
+        #    print self.cfg_params["USER.outputdir"]
+        #    if os.path.isdir(self.cfg_params["USER.outputdir"]): # MATT
+        #        copyHere = self.cfg_params["USER.outputdir"] + "/" # MATT
+             
+            cmd = 'lcg-cp --vo cms --verbose gsiftp://' + str(server_name) + str(projectUniqName)+'/res/done.tgz file://'+copyHere+'done.tgz'# MATT
+            common.logger.debug(5, cmd)
             copyOut = os.system(cmd +' >& /dev/null')
         except:
             msg = ("Output not yet available")
             raise CrabException(msg)
 
         zipOut = "done.tgz"
-        if os.path.exists( common.work_space.resDir() + zipOut ):
+        if os.path.exists( copyHere + zipOut ): # MATT
             cwd = os.getcwd()
-            os.chdir(common.work_space.resDir())
+            os.chdir( copyHere )# MATT
             common.logger.debug( 5, 'tar -zxvf ' + zipOut )
   	    cmd = 'tar -zxvf ' + zipOut
 	    cmd_out = runCommand(cmd)
 	    os.chdir(cwd)
-            common.logger.debug( 5, 'rm -f '+common.work_space.resDir()+zipOut )
-	    cmd = 'rm -f '+common.work_space.resDir()+zipOut
+            common.logger.debug( 5, 'rm -f '+copyHere+zipOut )# MATT 
+	    cmd = 'rm -f '+copyHere+zipOut# MATT
 	    cmd_out = runCommand(cmd)
 
+            try:
+                file = open(common.work_space.resDir()+"xmlReportFile.xml", "r")
+                doc = xml.dom.minidom.parse(common.work_space.resDir()+ "xmlReportFile.xml" )
+
+                task     = doc.childNodes[0].childNodes[1].getAttribute("taskName")
+                self.countToTjob = int(doc.childNodes[0].childNodes[1].getAttribute("totJob") )
+
+                addTree = 3
+                if doc.childNodes[0].childNodes[3].getAttribute("id") != "all":
+                    common.jobDB.load()
+                    for job in range( self.countToTjob ):
+                        idJob = doc.childNodes[0].childNodes[job+addTree].getAttribute("id")
+                        status = doc.childNodes[0].childNodes[job+addTree].getAttribute("status")
+                        cleared = doc.childNodes[0].childNodes[job+addTree].getAttribute("cleared")
+                        if int(cleared) == 1 and status == "Done":
+                            common.jobDB.setStatus( str(int(idJob)-1), "Y" )
+                        addTree += 1
+                    common.jobDB.save()
+            except Exception, ex:
+                msg = ("problems reading report file: " + str(ex))
+                raise CrabException(msg)
+
+
 	    msg='Results of project '+str(WorkDirName)+' succesfuly retrieved from the server \n'      
-	    msg+='and copied in '+common.work_space.resDir()+' \n'      
+	    msg+='and copied in '+copyHere+' \n'      # MATT
 	    common.logger.message(msg)
         else:
             common.logger.message(" Output is not yet ready untill job is not finished (check it with the [status] option).\n")
