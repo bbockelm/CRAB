@@ -15,8 +15,33 @@ class StatusServer(Actor):
  
     def __init__(self, cfg_params,):
         self.cfg_params = cfg_params
+
+        self.countSubmit = 0
+        self.countSubmitting = 0
+        self.countDone = 0
+        self.countReady = 0
+        self.countSched = 0
+        self.countRun = 0
+        self.countAbort = 0
+        self.countCancel = 0
+        self.countCleared = 0
+        self.countToTjob = 0
+
         return
-    
+
+    def translateStatus(self, status):
+        """
+        simmetric as server
+        """
+
+        stateConverting = {'Running': 'R', 'Aborted': 'A', 'Done': 'D',\
+                           'Cleared': 'D', 'Cancelled': 'K', 'Killed': 'K'}
+
+        if status in stateConverting:
+            return stateConverting[status]
+        return None
+
+
     def run(self):
         """
         The main method of the class: check the status of the task
@@ -29,7 +54,7 @@ class StatusServer(Actor):
         for nj in range(common.jobDB.nJobs()):
             if (common.jobDB.status(nj)!='S'):
                 totalCreatedJobs +=1
-                flagSubmit = 0
+        #        flagSubmit = 0
 
         if not flagSubmit:
             common.logger.message("Not all jobs are submitted: before checking the status submit all the jobs.")
@@ -45,6 +70,7 @@ class StatusServer(Actor):
         try: 
             common.logger.message ("Checking the status...\n")
             cmd = 'lcg-cp --vo cms  gsiftp://' + str(server_name) + str(projectUniqName)+'/res/xmlReportFile.xml file://'+common.work_space.resDir()+'xmlReportFile.xml'
+            common.logger.debug(6, cmd)
             os.system(cmd +' >& /dev/null')  
 
         except: 
@@ -59,31 +85,101 @@ class StatusServer(Actor):
             msg = ("problems reading report file")
             raise CrabException(msg)
 
-        task     = doc.childNodes[0].childNodes[1].getAttribute("taskName")
-        success   =str(doc.childNodes[0].childNodes[3].getAttribute("count"))
-        failed   = str(doc.childNodes[0].childNodes[5].getAttribute("count"))
-        progress = str(doc.childNodes[0].childNodes[7].getAttribute("count"))
-        totJob =-1 
-        try:
-            totJob = int(success)+ int(failed) +int(progress)
-        except:
-            pass
+        ###  <Job status='Submitted' job_exit='NULL' id='1' exe_exit='NULL'/>
 
-        common.logger.message('This is a preliminary command line implementation for the status check\n')
-        if (totJob>=0): 
-            msg = '****    Total number of jobs  =  '+str(totJob)
-            msg +='\n\n      ****    Jobs finished with success   =  '+str(success)
-            msg +='\n      ****    Jobs failed  =   '+str(failed)
-            msg +='\n      ****    Jobs running =   '+str(progress)+'\n'
-            common.logger.message ( msg )
-        elif progress == "all":
-            common.logger.message ('****    The task  '+str(task)+'  is under management on the server.\n' )
-        elif failed == "all":
-            common.logger.message ('****    The task  '+str(task)+'  is failed.\n' )
-        elif success == "all":
-            common.logger.message ('****    The task  '+str(task)+'  is ended.\n' )
+        task     = doc.childNodes[0].childNodes[1].getAttribute("taskName")
+        self.countToTjob = int(doc.childNodes[0].childNodes[1].getAttribute("totJob") )
+       
+        addTree = 3
+
+        common.jobDB.load()
+
+        if doc.childNodes[0].childNodes[3].getAttribute("id") == "all":
+            if doc.childNodes[0].childNodes[3].getAttribute("status") == "Submitted":
+                self.countSubmitting = common.jobDB.nJobs()
+                for nj in range(common.jobDB.nJobs()):
+                    common.jobDB.setStatus(nj, 'S')
+            else:
+                self.countAbort = common.jobDB.nJobs()
+                for nj in range(common.jobDB.nJobs()):
+                    common.jobDB.setStatus(nj, 'A')
+            self.countToTjob = common.jobDB.nJobs()
         else:
-            common.logger.message ('****    The status of the task  '+str(task)+'  is not known.\n' )
+            printline = ''
+            printline+= "%-10s %-20s %-20s %-25s" % ('JOBID','STATUS','EXE_EXIT_CODE','JOB_EXIT_STATUS')
+            print printline
+            print '-------------------------------------------------------------------------------------'
+
+            for job in range( self.countToTjob ):
+                idJob = doc.childNodes[0].childNodes[job+addTree].getAttribute("id")
+                stato = doc.childNodes[0].childNodes[job+addTree].getAttribute("status")
+                exe_exit_code = doc.childNodes[0].childNodes[job+addTree].getAttribute("job_exit")
+                job_exit_status = doc.childNodes[0].childNodes[job+addTree].getAttribute("exe_exit")
+                jobDbStatus = self.translateStatus(stato)
  
-        return
+                if jobDbStatus != None:
+                    common.logger.debug(5, '*** Updating jobdb for job %s ***' %idJob)
+                    if common.jobDB.status( str(int(idJob)-1) ) != "Y":
+                        common.jobDB.setStatus( str(int(idJob)-1), self.translateStatus(stato) )
+                    else:
+                        stato = "Cleared"
+                    common.jobDB.setExitStatus(  str(int(idJob)-1), job_exit_status )
+                if stato != "Done" and stato != "Cleared" and stato != "Aborted":
+                    print "%-10s %-20s" % (idJob,stato)
+                else:
+                    print "%-10s %-20s %-20s %-25s" % (idJob,stato,exe_exit_code,job_exit_status)
+
+                if stato == 'Running':
+                    self.countRun += 1
+                elif stato == 'Aborted':
+                    self.countAbort += 1
+                elif stato == 'Done':
+                    self.countDone += 1
+                elif stato == 'Cancelled':
+                    self.countCancel += 1
+                elif stato == 'Submitted':
+                    self.countSubmit += 1
+                elif stato == 'Submitting':
+                    self.countSubmitting += 1
+                elif stato == 'Ready':
+                    self.countReady += 1
+                elif stato == 'Scheduled':
+                    self.countSched += 1
+                elif stato == 'Cleared':
+                    self.countCleared += 1
+
+                addTree += 1
+        common.jobDB.save()
+
+        self.PrintReport_()
+
+
+    def PrintReport_(self) :
+
+        """ Report #jobs for each status  """
+
+
+        print ''
+        print ">>>>>>>>> %i Total Jobs " % (self.countToTjob)
+        print ''
+
+        if (self.countReady != 0):
+            print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
+        if (self.countSubmitting != 0) :
+            print ">>>>>>>>> %i Jobs Submitting by the server" % (self.countSubmitting)
+        if (self.countSubmit != 0):
+            print ">>>>>>>>> %i Jobs Submitted" % (self.countSubmit)
+        if (self.countAbort != 0):
+            print ">>>>>>>>> %i Jobs Aborted" % (self.countAbort)
+        if (self.countSched != 0):
+            print ">>>>>>>>> %i Jobs Scheduled" % (self.countSched)
+        if (self.countRun != 0):
+            print ">>>>>>>>> %i Jobs Running" % (self.countRun)
+        if (self.countCleared != 0):
+            print ">>>>>>>>> %i Jobs Cleared" % (self.countRun)
+        if (self.countDone != 0):
+            print ">>>>>>>>> %i Jobs Done" % (self.countDone)
+            print "          Retrieve them with: crab.py -getoutput -continue"
+        print ''
+        pass
 
