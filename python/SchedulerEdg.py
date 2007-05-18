@@ -756,12 +756,12 @@ class SchedulerEdg(Scheduler):
                 pass
             pass
 
-        if (not jbt.additional_inbox_files == []):
+#        if (not jbt.additional_inbox_files == []):
 #            inp_box = inp_box + ','
-            for addFile in jbt.additional_inbox_files:
-                #addFile = os.path.abspath(addFile)
-                inp_box = inp_box+''+addFile+','
-                pass
+#            for addFile in jbt.additional_inbox_files:
+#                #addFile = os.path.abspath(addFile)
+#                inp_box = inp_box+''+addFile+','
+#                pass
 
         if inp_box[-1] == ',' : inp_box = inp_box[:-1]
         inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
