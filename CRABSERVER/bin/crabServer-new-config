@@ -71,8 +71,8 @@ if  BOSSDIR == None:
 # core fields not associated to components
   
 crabServerConfiguration = {
-    'dropBoxPath':'/flatfiles/cms/',
-    'bossClads':'PIPPI',
+    'dropBoxPath':'',
+    'bossClads':'',
     'ProxiesDir':'/tmp/del_proxies/',
     'debugLevel':'9',
 }
@@ -98,8 +98,8 @@ componentFields = {
     'ComponentDir':None,
     'PollInterval':'30',
     'debugLevel':'9',
-    'dropBoxPath':'/flatfiles/cms/',
-    'bossClads':'PIPPI', 
+    'dropBoxPath':'',
+    'bossClads':'', 
     },
 
     "Notification" : {
@@ -115,7 +115,7 @@ componentFields = {
 
 print "Creating ProdAgent configuration\n"
  
-os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler")
+os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder")
 
 # read configuration
 
