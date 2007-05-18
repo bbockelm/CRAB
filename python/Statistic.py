@@ -25,10 +25,12 @@ def Monitor(operation,Resubmit,jid,exitCode,dest):
        # for name in os.popen('whoami').readlines():
            name = name.strip()
            UIname = name.split(" ")[0]
-
-       sockobj = socket(AF_INET,SOCK_DGRAM)
-       sockobj.connect((address,port))
-       if ( jobtype == 'CMSSW'):
-           sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(jid)+'::'+str(time)+'::'+str(NjobCre))
+       try:
+           sockobj = socket(AF_INET,SOCK_DGRAM)
+           sockobj.connect((address,port))
+           if ( jobtype == 'CMSSW'):
+               sockobj.send(str(UIname)+'::'+str(operation)+'::'+str(jobtype)+'::'+str(Resubmit)+'::'+str(exitCode)+'::'+str(dataset)+'::'+str(owner)+'::'+str(dest)+'::'+str(brok)+'::'+str(jid)+'::'+str(time)+'::'+str(NjobCre))
+               pass 
+           sockobj.close()
+       except: 
            pass 
-       sockobj.close()
