@@ -189,6 +189,7 @@ class CrabServerWorkerComponent:
                 os.mkdir(cacheArea)
                 # WB: NEEDED FOR RESUBMISSION WITH CVS JobSubmitterComponent
                 fakeJobSpec=JobSpec()
+                fakeJobSpec.setJobName(jobName) # WB suggested fix for new PA version # Fabio
                 fakeJobSpec.save("%s/%s-JobSpec.xml"%(cacheArea,jobName))
                 idfile=open("%s/%sid"%(cacheArea,jobName),'w')
 
