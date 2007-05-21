@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.8 2007/05/11 12:24:55 mcinquil Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.11 2007/05/17 12:25:31 mcinquil Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import time
@@ -370,6 +370,10 @@ class TaskTrackingComponent:
             logging.error( "         using default value 'thresholdLevel = 100'")
             logging.error("  <-- - -- - -->")
             thresholdLevel = 100
+        elif int(thresholdLevel) < 0:
+            thresholdLevel = 0
+        elif int(thresholdLevel) > 100:
+            thresholdLevel = 100
         dictionaryReport =  {"all": ["Submitted", "", "", 0]} #{'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': "all"}
 	#*# dictionaryReport = {}
         self.prepareReport( taskName, uuid, eMail, thresholdLevel, 0, dictionaryReport, 0, 0 )
@@ -499,6 +503,38 @@ class TaskTrackingComponent:
 			
         os.chdir( work_dir )
 
+
+    def prepareTarballDone( self, path, taskName, nJob ):
+        """
+        _prepareTarballDone_
+        """
+        work_dir = os.getcwd()
+        os.chdir( path )
+        cmd = 'mkdir .tmpDone;'
+        for i in range(1, nJob+1):
+            cmd += 'cp -r job'+str(i)+'/JobTracking/Success/Submission_1/*/* .tmpDone;'
+        cmd += 'tar --create -z --file='+path+'/.temp_done.tgz .tmpDone/* --exclude done.tgz --exclude failed.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;'
+        cmd += 'rm -drf .tmpDone/;'
+        cmd += 'mv '+path+'/.temp_done.tgz '+path+'/done.tgz'
+        os.system( cmd )
+        os.chdir( work_dir )
+
+    def prepareTarballFailed( self, path, taskName, nJob ):
+        """
+        _prepareTarballFailed_
+        """
+        work_dir = os.getcwd()
+        os.chdir( path )
+        cmd = 'mkdir .tmpFailed;'
+        for i in range(1, nJob+1):
+            cmd += 'cp -r job'+str(i)+'/JobTracking/Failed/Submission_4/*/* .tmpFailed;'
+        cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/* --exclude failed.tgz --exclude done.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;';
+        cmd += 'rm -drf .tmpFailed;'
+        cmd += 'mv '+path+'/.temp_failed.tgz '+path+'/failed.tgz'
+        os.system( cmd )
+        os.chdir( work_dir )
+   
+
     def taskSuccess( self, taskPath ):
         """
         _taskSuccess_
@@ -603,13 +639,17 @@ class TaskTrackingComponent:
 				    dictStateTot[job][3] = 1
 				elif not resubmitting:
 				    dictReportTot['JobFailed'] += 1
+                                    dictStateTot[job][0] = "Done (Failed)"
+                                    dictStateTot[job][3] = 1
 				else:
 				    dictReportTot['JobInProgress'] += 1
+                                    dictStateTot[job][0] = "Managing by server"
 			    elif stato == "SA" or stato == "SK" or stato == "K":
 				if not resubmitting:
 				    dictReportTot['JobFailed'] += 1
 				else:
 				    dictReportTot['JobInProgress'] += 1
+                                    dictStateTot[job][0] = "Managing by server"
 			    elif stato == "W":
 				countNotSubmitted += 1 
 				dictReportTot['JobInProgress'] += 1
@@ -621,7 +661,6 @@ class TaskTrackingComponent:
 			dictStateTot = {}
 			for valu3, k3y in rev_items:
 			    dictStateTot.setdefault( k3y, valu3 )
-											    
 			for state in dictReportTot:
 			    logging.info( " Job " + state + ": " + str(dictReportTot[state]) )
 			if countNotSubmitted > 0:
@@ -632,6 +671,12 @@ class TaskTrackingComponent:
 			try:
 			    percentage = (100 * endedJob) / len(statusJobsTask)
 			    pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
+
+                            if percentage <= 100 :
+                                if os.path.exists( pathToWrite ):
+                                    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+                                else:
+                                    logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
 			    
 			    if percentage != endedLevel or \
 			       (percentage == 0 and status == self.taskState[3] ) or \
@@ -645,8 +690,8 @@ class TaskTrackingComponent:
 				elif percentage != endedLevel:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
 
-				if os.path.exists( pathToWrite ):
-				    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+				#if os.path.exists( pathToWrite ):
+				#    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
 
 				   ### prepare tarball & send eMail ###
 				    if percentage >= thresholdLevel:
@@ -659,8 +704,8 @@ class TaskTrackingComponent:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName )
 					    notified = 1
 					    TaskStateAPI.updatingNotifiedPA( taskName, notified )
-				else:
-				    logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
+				#else:
+				#    logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
 				    
 			    elif status == '':
 			        if dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress'] > countNotSubmitted:

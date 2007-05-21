@@ -23,7 +23,7 @@ class Job:
         self.JOBEXIT        = "job_exit"
         self.JOBREPORT      = "Job"
 	self.JOBCLEARED     = "cleared"
-        self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed","Submitting")
+        self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed","Submitting","Done (Failed)","Managing by server")
         
         self.jobid      = ""
         self.status     = ""
@@ -124,7 +124,7 @@ class CreateXmlJobReport:
 	self.ENDED          = "ended"
 	self.THRESHOLDREQ   = "thresholdRequested"
         self.TOTJOB         = "totJob"
-        self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed","Submitting")
+        self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed","Submitting", "Done (Failed)","Managing by server")
 	self.COUNT          = 'count'
 	
 	self.doc            = xml.dom.minidom.Document()
