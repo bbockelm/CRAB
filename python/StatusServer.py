@@ -27,6 +27,13 @@ class StatusServer(Actor):
         self.countCleared = 0
         self.countToTjob = 0
 
+        try:  
+            self.server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
+        except KeyError:
+            msg = 'No server selected ...' 
+            msg = msg + 'Please specify a server in the crab cfg file' 
+            raise CrabException(msg) 
+
         return
 
     def translateStatus(self, status):
@@ -60,8 +67,6 @@ class StatusServer(Actor):
             common.logger.message("Not all jobs are submitted: before checking the status submit all the jobs.")
             return
 
-        server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
-
         common.scheduler.checkProxy()
 
         common.taskDB.load()
@@ -69,7 +74,7 @@ class StatusServer(Actor):
         projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict('TasKUUID')     
         try: 
             common.logger.message ("Checking the status...\n")
-            cmd = 'lcg-cp --vo cms  gsiftp://' + str(server_name) + str(projectUniqName)+'/res/xmlReportFile.xml file://'+common.work_space.resDir()+'xmlReportFile.xml'
+            cmd = 'lcg-cp --vo cms  gsiftp://' + str(self.server_name) + str(projectUniqName)+'/res/xmlReportFile.xml file://'+common.work_space.resDir()+'xmlReportFile.xml'
             common.logger.debug(6, cmd)
             os.system(cmd +' >& /dev/null')  
 

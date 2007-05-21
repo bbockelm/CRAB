@@ -14,6 +14,12 @@ class GetOutputServer(Actor):
  
     def __init__(self, cfg_params,):
         self.cfg_params = cfg_params
+        try:  
+            self.server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
+        except KeyError:
+            msg = 'No server selected ...' 
+            msg = msg + 'Please specify a server in the crab cfg file' 
+            raise CrabException(msg) 
         return
     
     def run(self):
@@ -23,7 +29,6 @@ class GetOutputServer(Actor):
         common.logger.debug(5, "GetOutput server::run() called")
 
         start = time.time()
-        server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
 
         common.scheduler.checkProxy()
 
@@ -42,7 +47,7 @@ class GetOutputServer(Actor):
         #    if os.path.isdir(self.cfg_params["USER.outputdir"]): # MATT
         #        copyHere = self.cfg_params["USER.outputdir"] + "/" # MATT
              
-            cmd = 'lcg-cp --vo cms --verbose gsiftp://' + str(server_name) + str(projectUniqName)+'/res/done.tgz file://'+copyHere+'done.tgz'# MATT
+            cmd = 'lcg-cp --vo cms --verbose gsiftp://' + str(self.server_name) + str(projectUniqName)+'/res/done.tgz file://'+copyHere+'done.tgz'# MATT
             common.logger.debug(5, cmd)
             copyOut = os.system(cmd +' >& /dev/null')
         except:
@@ -54,7 +59,8 @@ class GetOutputServer(Actor):
             cwd = os.getcwd()
             os.chdir( copyHere )# MATT
             common.logger.debug( 5, 'tar -zxvf ' + zipOut )
-  	    cmd = 'tar -zxvf ' + zipOut
+  	    cmd = 'tar -zxvf ' + zipOut 
+            cmd += '; mv .tmp/* .; rm -drf .tmp/'
 	    cmd_out = runCommand(cmd)
 	    os.chdir(cwd)
             common.logger.debug( 5, 'rm -f '+copyHere+zipOut )# MATT 
