@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.12 2007/05/21 10:31:49 mcinquil Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.13 2007/05/23 07:09:58 mcinquil Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import os
 import time
@@ -512,7 +512,17 @@ class TaskTrackingComponent:
         os.chdir( path )
         cmd = 'mkdir .tmpDone;'
         for i in range(1, nJob+1):
-            cmd += 'cp -r job'+str(i)+'/JobTracking/Success/Submission_1/*/* .tmpDone;'
+            cmd += 'cp *.xml .tmpDone;'  ## adde also the report file into the output package. DS 
+            cmd += 'cp -r job'+str(i)+'/JobTracking/Failed/Submission_4/*/* .tmpDone;' ## Added also this stuff at done.tgz DS
+                                                                                        ## This "4" MUST be parametric!!! otherwise 
+                                                                                        ## In done.tgz I want ALL the stuff related
+                                                                                        ## also to the jobs that finished even if failing.      
+                                                                                        ## This means that done.tgz must conteins all the stuff
+                                                                                        ## both for jobs exiting with "0" "0" and something !="0". DS 
+     
+        cmd += 'cp -r job'+str(i)+'/JobTracking/Success/Submission_1/*/* .tmpDone;'  ## AND if a job finish with succes NOT the first time????
+                                                                                     ## i.e. submission_3?? ;)
+                                                                                     ## as above  here must parametrize considering the submission index!!
         cmd += 'tar --create -z --file='+path+'/.temp_done.tgz .tmpDone/* --exclude done.tgz --exclude failed.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;'
         cmd += 'rm -drf .tmpDone/;'
         cmd += 'mv '+path+'/.temp_done.tgz '+path+'/done.tgz'
@@ -527,7 +537,10 @@ class TaskTrackingComponent:
         os.chdir( path )
         cmd = 'mkdir .tmpFailed;'
         for i in range(1, nJob+1):
-            cmd += 'cp -r job'+str(i)+'/JobTracking/Failed/Submission_4/*/* .tmpFailed;'
+            cmd += 'cp *.xml .tmpFailed;'  ## adde also the report file into the output package. DS
+            cmd += 'cp -r job'+str(i)+'/JobTracking/Failed/Submission_4/*/* .tmpFailed;'  ## I didn' correct anything, but the failed must be preparesd 
+                                                                                          ## only for the kill and the abort logginginfo file whose are in 
+                                                                                          ## job1/JobTracking/Failed/Submission_*/log/   DS. 
         cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/* --exclude failed.tgz --exclude done.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;';
         cmd += 'rm -drf .tmpFailed;'
         cmd += 'mv '+path+'/.temp_failed.tgz '+path+'/failed.tgz'
@@ -696,10 +709,10 @@ class TaskTrackingComponent:
 				   ### prepare tarball & send eMail ###
 				    if percentage >= thresholdLevel:
 				    ## COMMENT THE LINE BELOW FOR ACTIVATE "DOUBLE OUTPUT"
-					self.prepareTarball( pathToWrite, taskName )
+			##		self.prepareTarball( pathToWrite, taskName )
 				    ## DE-COMMENT THE 2 LINES BELOW FOR ACTIVATE "DOUBLE OUTPUT"
-                        ##                self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
-                        ##                self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
+                                        self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
+                                        self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
 					if percentage == 100:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName )
 					    notified = 2
