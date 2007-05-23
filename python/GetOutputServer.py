@@ -60,7 +60,7 @@ class GetOutputServer(Actor):
             os.chdir( copyHere )# MATT
             common.logger.debug( 5, 'tar -zxvf ' + zipOut )
   	    cmd = 'tar -zxvf ' + zipOut 
-            cmd += '; mv .tmp/* .; rm -drf .tmp/'
+            cmd += '; mv .tmpDone/* .; rm -drf .tmpDone/'
 	    cmd_out = runCommand(cmd)
 	    os.chdir(cwd)
             common.logger.debug( 5, 'rm -f '+copyHere+zipOut )# MATT 
