@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.11 2007/05/17 12:25:31 mcinquil Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.12 2007/05/21 10:31:49 mcinquil Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import os
 import time
@@ -672,11 +672,11 @@ class TaskTrackingComponent:
 			    percentage = (100 * endedJob) / len(statusJobsTask)
 			    pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
 
-                            if percentage <= 100 :
-                                if os.path.exists( pathToWrite ):
-                                    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
-                                else:
-                                    logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
+                            #if percentage <= 100 :
+                            #    if os.path.exists( pathToWrite ):
+                            #        self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+                            #    else:
+                            #        logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
 			    
 			    if percentage != endedLevel or \
 			       (percentage == 0 and status == self.taskState[3] ) or \
@@ -695,7 +695,11 @@ class TaskTrackingComponent:
 
 				   ### prepare tarball & send eMail ###
 				    if percentage >= thresholdLevel:
+				    ## COMMENT THE LINE BELOW FOR ACTIVATE "DOUBLE OUTPUT"
 					self.prepareTarball( pathToWrite, taskName )
+				    ## DE-COMMENT THE 2 LINES BELOW FOR ACTIVATE "DOUBLE OUTPUT"
+                        ##                self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
+                        ##                self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
 					if percentage == 100:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName )
 					    notified = 2
@@ -712,6 +716,13 @@ class TaskTrackingComponent:
 				    TaskStateAPI.updateTaskStatus( taskName, self.taskState[3] )
 				else:
 				    TaskStateAPI.updateTaskStatus( taskName, self.taskState[2] )
+ 
+                           ## MATT. 23/10/07 - 9.07 - 
+                            if percentage <= 100:
+                                if os.path.exists( pathToWrite ):
+                                    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+                                else:
+                                    logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
 				
 			except ZeroDivisionError, detail:
 			    logging.info("  <-- - -- - -->")
