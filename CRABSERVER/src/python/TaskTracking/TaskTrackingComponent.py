@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.13 2007/05/23 07:09:58 mcinquil Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.14 2007/05/23 15:07:10 spiga Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import os
 import time
@@ -520,7 +520,7 @@ class TaskTrackingComponent:
                                                                                         ## This means that done.tgz must conteins all the stuff
                                                                                         ## both for jobs exiting with "0" "0" and something !="0". DS 
      
-        cmd += 'cp -r job'+str(i)+'/JobTracking/Success/Submission_1/*/* .tmpDone;'  ## AND if a job finish with succes NOT the first time????
+            cmd += 'cp -r job'+str(i)+'/JobTracking/Success/Submission_1/*/* .tmpDone;'  ## AND if a job finish with succes NOT the first time????
                                                                                      ## i.e. submission_3?? ;)
                                                                                      ## as above  here must parametrize considering the submission index!!
         cmd += 'tar --create -z --file='+path+'/.temp_done.tgz .tmpDone/* --exclude done.tgz --exclude failed.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;'
