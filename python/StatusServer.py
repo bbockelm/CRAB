@@ -41,7 +41,7 @@ class StatusServer(Actor):
         simmetric as server
         """
 
-        stateConverting = {'Running': 'R', 'Aborted': 'A', 'Done': 'D',\
+        stateConverting = {'Running': 'R', 'Aborted': 'A', 'Done': 'D', 'Done (Failed)': 'D',\
                            'Cleared': 'D', 'Cancelled': 'K', 'Killed': 'K'}
 
         if status in stateConverting:
@@ -129,7 +129,7 @@ class StatusServer(Actor):
                     else:
                         stato = "Cleared"
                     common.jobDB.setExitStatus(  str(int(idJob)-1), job_exit_status )
-                if stato != "Done" and stato != "Cleared" and stato != "Aborted":
+                if stato != "Done" and stato != "Cleared" and stato != "Aborted" and stato != "Done (Failed)":
                     print "%-10s %-20s" % (idJob,stato)
                 else:
                     print "%-10s %-20s %-20s %-25s" % (idJob,stato,exe_exit_code,job_exit_status)

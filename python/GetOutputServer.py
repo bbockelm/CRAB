@@ -81,7 +81,7 @@ class GetOutputServer(Actor):
                         idJob = doc.childNodes[0].childNodes[job+addTree].getAttribute("id")
                         status = doc.childNodes[0].childNodes[job+addTree].getAttribute("status")
                         cleared = doc.childNodes[0].childNodes[job+addTree].getAttribute("cleared")
-                        if int(cleared) == 1 and status == "Done":
+                        if int(cleared) == 1 and (status == "Done" or status  == "Done (Failed)"):
                             common.jobDB.setStatus( str(int(idJob)-1), "Y" )
                         addTree += 1
                     common.jobDB.save()
