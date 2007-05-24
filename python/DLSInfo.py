@@ -73,8 +73,11 @@ class DLSInfo:
             except KeyError:
                 endpoint="lxgate10.cern.ch:18081"
         elif type=="DLS_TYPE_DBS":
+            #
+            # use dbs_url as dls_endpoint if dls_type is dbs
+            #
             try:
-                endpoint=self.cfg_params['CMSSW.dls_endpoint']
+                endpoint=self.cfg_params['CMSSW.dbs_url']
             except KeyError:
                 endpoint="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
         else:
