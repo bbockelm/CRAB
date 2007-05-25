@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.14 2007/05/23 15:07:10 spiga Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.15 2007/05/23 16:27:33 spiga Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import os
 import time
@@ -512,15 +512,30 @@ class TaskTrackingComponent:
         os.chdir( path )
         cmd = 'mkdir .tmpDone;'
         for i in range(1, nJob+1):
+            ## Add parametric indexes for failed and successful jobs # Fabio
+            jtResDir = 'job'+str(i)+'/JobTracking'
             cmd += 'cp *.xml .tmpDone;'  ## adde also the report file into the output package. DS 
-            cmd += 'cp -r job'+str(i)+'/JobTracking/Failed/Submission_4/*/* .tmpDone;' ## Added also this stuff at done.tgz DS
+            ## Get the most recent failure and copy that to tmp # Fabio
+            failIndex = 4                # Default Value # Fabio
+            if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
+                 failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
+            ## 
+            cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/*/* .tmpDone;' 
+                                                                                        ## ----> Fixed # Fabio
+                                                                                        ## Added also this stuff at done.tgz DS
                                                                                         ## This "4" MUST be parametric!!! otherwise 
                                                                                         ## In done.tgz I want ALL the stuff related
                                                                                         ## also to the jobs that finished even if failing.      
                                                                                         ## This means that done.tgz must conteins all the stuff
                                                                                         ## both for jobs exiting with "0" "0" and something !="0". DS 
-     
-            cmd += 'cp -r job'+str(i)+'/JobTracking/Success/Submission_1/*/* .tmpDone;'  ## AND if a job finish with succes NOT the first time????
+            ## Find the successful submission # Fabio
+            succDir = 'Submission_1'
+            if len(os.listdir('./'+jtResDir+'/Success/')) > 0:
+                  succDir = os.listdir('./'+jtResDir+'/Success/')[0]
+            ##
+            cmd += 'cp -r '+ jtResDir +'/Success/'+str(succDir)+'/*/* .tmpDone;'  
+                                                                                     ## ----> Fixed # Fabio
+                                                                                     ## AND if a job finish with succes NOT the first time????
                                                                                      ## i.e. submission_3?? ;)
                                                                                      ## as above  here must parametrize considering the submission index!!
         cmd += 'tar --create -z --file='+path+'/.temp_done.tgz .tmpDone/* --exclude done.tgz --exclude failed.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;'
@@ -537,8 +552,16 @@ class TaskTrackingComponent:
         os.chdir( path )
         cmd = 'mkdir .tmpFailed;'
         for i in range(1, nJob+1):
+            ## Add parametric indexes for failed and successful jobs 
+            jtResDir = 'job'+str(i)+'/JobTracking'
+            ## Get the most recent failure and copy that to tmp 
+            failIndex = 4                # Default Value 
+            if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
+                 failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
+            ## 
             cmd += 'cp *.xml .tmpFailed;'  ## adde also the report file into the output package. DS
-            cmd += 'cp -r job'+str(i)+'/JobTracking/Failed/Submission_4/*/* .tmpFailed;'  ## I didn' correct anything, but the failed must be preparesd 
+            cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/* .tmpFailed;' ## MATT use Fabio's fix
+#            cmd += 'cp -r job'+str(i)+'/JobTracking/Failed/Submission_4/*/* .tmpFailed;'  ## I didn' correct anything, but the failed must be preparesd 
                                                                                           ## only for the kill and the abort logginginfo file whose are in 
                                                                                           ## job1/JobTracking/Failed/Submission_*/log/   DS. 
         cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/* --exclude failed.tgz --exclude done.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;';
