@@ -17,8 +17,14 @@ from ApmonIf import ApmonIf
 from Cleaner import Cleaner
 import common
 import Statistic
+import commands
 
 from BossSession import *
+
+#modified to support server mode
+from SubmitterServer import SubmitterServer
+from GetOutputServer import GetOutputServer
+from StatusServer import StatusServer
 
 import sys, os, time, string
 
@@ -114,6 +120,13 @@ class Crab:
 
         common.jobDB = JobDB()
         
+        self.UseServer=0
+        try:
+            self.UseServer=int(self.cfg_params['CRAB.server_mode'])
+        except KeyError:
+            pass
+
+
         if int(self.cfg_params['USER.activate_monalisa']): self.cfg_params['apmon'] = ApmonIf()
         
         if self.flag_continue:
@@ -276,6 +289,10 @@ class Crab:
                 self.cfg_params['CRAB.'+opt[1:]] = val
                 continue
             
+            elif ( opt == '-server_mode' ):  #Add for server mode usage
+                pass
+            elif ( opt == '-server_name' ):
+                pass
 
             elif ( opt == '-cfg' ):
                 pass
@@ -361,6 +378,11 @@ class Crab:
 
         return (len(list)==len(uniqueList))
 
+    def uuidgen(self):
+        """Generate a UUID"""
+        return commands.getoutput('uuidgen')
+
+
     def parseSimpleRange_(self, aRange):
         """
         Takes as the input a string with two integers separated by
@@ -437,59 +459,65 @@ class Crab:
                 common.job_list.setCfgNames(self.creator.jobType().configFilename())
 
                 self.creator.writeJobsSpecsToDB()
+  		taskUnicId= self.uuidgen()
+		common.taskDB.setDict('TasKUUID',taskUnicId)
 
                 common.taskDB.save()
                 pass
 
             elif ( opt == '-submit' ):
-
-                # get user request
-                nsjobs = -1
-                if val:
-                    if ( isInt(val) ):
-                        nsjobs = int(val)
-                    elif (val=='all'):
+                # modified to support server mode
+                if (self.UseServer== 1):
+                    self.actions[opt] = SubmitterServer(self.cfg_params)
+                else:
+                # modified to support server mode
+                    # get user request
+                    nsjobs = -1
+                    if val:
+                        if ( isInt(val) ):
+                            nsjobs = int(val)
+                        elif (val=='all'):
+                            pass
+                        else:
+                            msg = 'Bad submission option <'+str(val)+'>\n'
+                            msg += '      Must be an integer or "all"'
+                            msg += '      Generic range is not allowed"'
+                            raise CrabException(msg)
+                        pass
+                 
+                    common.logger.debug(5,'nsjobs '+str(nsjobs))
+                    # total jobs
+                    nj_list = []
+                    # get the first not already submitted
+                    common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
+                    jobSetForSubmission = 0
+                    for nj in range(common.jobDB.nJobs()):
+                        if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
+                            jobSetForSubmission +=1
+                            nj_list.append(nj)
+                        else: continue
+                        if nsjobs >0 and nsjobs == jobSetForSubmission:
+                            break
+                        pass
+                    if nsjobs>jobSetForSubmission:
+                        common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
+                 
+                    # submit N from last submitted job
+                    common.logger.debug(5,'nj_list '+str(nj_list))
+                 
+                    if len(nj_list) != 0:
+                        # Instantiate Submitter object
+                        self.actions[opt] = Submitter(self.cfg_params, nj_list)
+                        # Create and initialize JobList
+                        if len(common.job_list) == 0 :
+                            common.job_list = JobList(common.jobDB.nJobs(),
+                                                      None)
+                            common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                            pass
                         pass
                     else:
-                        msg = 'Bad submission option <'+str(val)+'>\n'
-                        msg += '      Must be an integer or "all"'
-                        msg += '      Generic range is not allowed"'
-                        raise CrabException(msg)
+                        common.logger.message('No jobs left to submit: exiting...')
                     pass
-
-                common.logger.debug(5,'nsjobs '+str(nsjobs))
-                # total jobs
-                nj_list = []
-                # get the first not already submitted
-                common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
-                jobSetForSubmission = 0
-                for nj in range(common.jobDB.nJobs()):
-                    if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
-                        jobSetForSubmission +=1
-                        nj_list.append(nj)
-                    else: continue
-                    if nsjobs >0 and nsjobs == jobSetForSubmission:
-                        break
-                    pass
-                if nsjobs>jobSetForSubmission:
-                    common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
-    
-                # submit N from last submitted job
-                common.logger.debug(5,'nj_list '+str(nj_list))
-
-                if len(nj_list) != 0:
-                    # Instantiate Submitter object
-                    self.actions[opt] = Submitter(self.cfg_params, nj_list)
-                    # Create and initialize JobList
-                    if len(common.job_list) == 0 :
-                        common.job_list = JobList(common.jobDB.nJobs(),
-                                                  None)
-                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                        pass
-                    pass
-                else:
-                    common.logger.message('No jobs left to submit: exiting...')
-                pass
 
             elif ( opt == '-list' ):
                 jobs = self.parseRange_(val)
@@ -521,11 +549,15 @@ class Crab:
                 pass
 
             elif ( opt == '-status' ):
-                jobs = self.parseRange_(val)
-
-                if len(jobs) != 0:
-                    self.actions[opt] = StatusBoss(self.cfg_params)
-                pass
+                # modified to support server mode 
+                if (self.UseServer== 1):
+                    self.actions[opt] = StatusServer(self.cfg_params)
+                else:
+                    jobs = self.parseRange_(val)
+                
+                    if len(jobs) != 0:
+                        self.actions[opt] = StatusBoss(self.cfg_params)
+                    pass
 
             elif ( opt == '-kill' ):
 
@@ -539,17 +571,21 @@ class Crab:
                     common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
 
             elif ( opt == '-getoutput' or opt == '-get'):
-
-                if val=='all' or val==None or val=='':
-                    jobs = common.scheduler.listBoss()
+                # modified to support server mode
+                if (self.UseServer== 1):
+                    self.actions[opt] = GetOutputServer(self.cfg_params)
                 else:
-                    jobs = self.parseRange_(val)
 
-                jobs_done = []
-                for nj in jobs:
-                    jobs_done.append(nj)
-                common.scheduler.getOutput(jobs_done)
-                pass
+                    if val=='all' or val==None or val=='':
+                        jobs = common.scheduler.listBoss()
+                    else:
+                        jobs = self.parseRange_(val)
+                
+                    jobs_done = []
+                    for nj in jobs:
+                        jobs_done.append(nj)
+                    common.scheduler.getOutput(jobs_done)
+                    pass
 
             elif ( opt == '-resubmit' ):
                 if val=='all' or val==None or val=='':
