@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.15 2007/05/23 16:27:33 spiga Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.16 2007/05/25 08:45:20 mcinquil Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import os
 import time
@@ -517,10 +517,10 @@ class TaskTrackingComponent:
             cmd += 'cp *.xml .tmpDone;'  ## adde also the report file into the output package. DS 
             ## Get the most recent failure and copy that to tmp # Fabio
             failIndex = 4                # Default Value # Fabio
-            if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
-                 failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
-            ## 
-            cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/*/* .tmpDone;' 
+            if os.path.exists('./'+jtResDir+'/Failed/'):
+                if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
+                    failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
+                cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/*/* .tmpDone;' 
                                                                                         ## ----> Fixed # Fabio
                                                                                         ## Added also this stuff at done.tgz DS
                                                                                         ## This "4" MUST be parametric!!! otherwise 
@@ -528,19 +528,11 @@ class TaskTrackingComponent:
                                                                                         ## also to the jobs that finished even if failing.      
                                                                                         ## This means that done.tgz must conteins all the stuff
                                                                                         ## both for jobs exiting with "0" "0" and something !="0". DS 
-            ## Find the successful submission # Fabio
-            succDir = 'Submission_1'
-            if len(os.listdir('./'+jtResDir+'/Success/')) > 0:
-                  succDir = os.listdir('./'+jtResDir+'/Success/')[0]
-            ##
-            cmd += 'cp -r '+ jtResDir +'/Success/'+str(succDir)+'/*/* .tmpDone;'  
-                                                                                     ## ----> Fixed # Fabio
-                                                                                     ## AND if a job finish with succes NOT the first time????
-                                                                                     ## i.e. submission_3?? ;)
-                                                                                     ## as above  here must parametrize considering the submission index!!
+            cmd += 'cp -r '+jtResDir+'/Success/Submission_*/*/* .tmpDone;'
         cmd += 'tar --create -z --file='+path+'/.temp_done.tgz .tmpDone/* --exclude done.tgz --exclude failed.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;'
         cmd += 'rm -drf .tmpDone/;'
-        cmd += 'mv '+path+'/.temp_done.tgz '+path+'/done.tgz'
+        cmd += 'mv '+path+'/.temp_done.tgz '+path+'/done.tgz;'
+        #logging.info('\n'+str(cmd)+'\n')
         os.system( cmd )
         os.chdir( work_dir )
 
@@ -555,18 +547,18 @@ class TaskTrackingComponent:
             ## Add parametric indexes for failed and successful jobs 
             jtResDir = 'job'+str(i)+'/JobTracking'
             ## Get the most recent failure and copy that to tmp 
-            failIndex = 4                # Default Value 
-            if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
-                 failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
-            ## 
-            cmd += 'cp *.xml .tmpFailed;'  ## adde also the report file into the output package. DS
-            cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/* .tmpFailed;' ## MATT use Fabio's fix
-#            cmd += 'cp -r job'+str(i)+'/JobTracking/Failed/Submission_4/*/* .tmpFailed;'  ## I didn' correct anything, but the failed must be preparesd 
+            failIndex = 4 
+            if os.path.exists('./'+jtResDir+'/Failed/'):
+                if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
+                    failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
+                cmd += 'cp *.xml .tmpFailed;' 
+                cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/* .tmpFailed;' 
+                                                                                          ## I didn' correct anything, but the failed must be preparesd 
                                                                                           ## only for the kill and the abort logginginfo file whose are in 
                                                                                           ## job1/JobTracking/Failed/Submission_*/log/   DS. 
         cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/* --exclude failed.tgz --exclude done.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;';
         cmd += 'rm -drf .tmpFailed;'
-        cmd += 'mv '+path+'/.temp_failed.tgz '+path+'/failed.tgz'
+        cmd += 'mv '+path+'/.temp_failed.tgz '+path+'/failed.tgz;'
         os.system( cmd )
         os.chdir( work_dir )
    
@@ -726,8 +718,8 @@ class TaskTrackingComponent:
 				elif percentage != endedLevel:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
 
-				#if os.path.exists( pathToWrite ):
-				#    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+				if os.path.exists( pathToWrite ):
+				    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
 
 				   ### prepare tarball & send eMail ###
 				    if percentage >= thresholdLevel:
@@ -735,7 +727,9 @@ class TaskTrackingComponent:
 			##		self.prepareTarball( pathToWrite, taskName )
 				    ## DE-COMMENT THE 2 LINES BELOW FOR ACTIVATE "DOUBLE OUTPUT"
                                         self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
-                                        self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
+                                        #self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
+                                        if dictReportTot['JobFailed'] > 0:
+                                            self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
 					if percentage == 100:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName )
 					    notified = 2
@@ -754,7 +748,7 @@ class TaskTrackingComponent:
 				    TaskStateAPI.updateTaskStatus( taskName, self.taskState[2] )
  
                            ## MATT. 23/10/07 - 9.07 - 
-                            if percentage <= 100:
+                            elif percentage <= 100:
                                 if os.path.exists( pathToWrite ):
                                     self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
                                 else:
