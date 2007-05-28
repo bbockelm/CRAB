@@ -53,8 +53,14 @@ class Creator(Actor):
             common.taskDB.setDict("CODE",(code+'::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.primaryDataset)+'::'+str(self.ProcessedDataset)))
             pass
 
+
+        self.UseServer=0
+        try:
+            self.UseServer=int(self.cfg_params['CRAB.server_mode'])
+        except KeyError:
+            pass
+
         # This is code for dashboard
-          
         #First checkProxy
         common.scheduler.checkProxy()
         try:
@@ -179,7 +185,12 @@ class Creator(Actor):
         ####
         common.scheduler.createXMLSchScript(self.total_njobs, argsList)
         common.logger.message('Creating '+str(self.total_njobs)+' jobs, please wait...')
-        common.scheduler.declareJob_()   #Add for BOSS4
+        # modified to support server mode -  DS
+        # if crab is used in server mode the client must skyp 
+        # boss declare step. In this case it is performed at server level  
+        # just before the submission  step   
+        if (self.UseServer== 0):
+            common.scheduler.declareJob_()   #Add for BOSS4
 
         stop = time.time()
         common.logger.debug(2, "Creation Time: "+str(stop - start))

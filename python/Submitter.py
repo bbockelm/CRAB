@@ -19,6 +19,12 @@ class Submitter(Actor):
         else:
             self.hash = ''
 
+        self.UseServer=0
+        try:
+            self.UseServer=int(self.cfg_params['CRAB.server_mode'])
+        except KeyError:
+            pass
+
         return
     
     def run(self):
@@ -50,6 +56,19 @@ class Submitter(Actor):
                         
         self.cfg_params['apmon'].sendToML(params)
 
+        # modified to support server mode
+        # The boss declare step is performed here 
+        # only if  crab is used server mode 
+        if (self.UseServer== 9999):
+            if not common.scheduler.taskDeclared( common.taskDB.dict('projectName') ): #os.path.basename(os.path.split(common.work_space.topDir())[0]) ):
+                common.logger.debug(5,'Declaring jobs to BOSS')
+                common.scheduler.declareJob_()   #Add for BOSS4
+            else:
+                common.logger.debug(5,'Jobs already declared into BOSS')
+            common.jobDB.save()
+            common.taskDB.save()
+                                                                                                                                               
+        #########
         #########
         # Loop over jobs
         njs = 0
