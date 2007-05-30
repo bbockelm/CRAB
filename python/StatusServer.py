@@ -120,11 +120,16 @@ class StatusServer(Actor):
                 stato = doc.childNodes[0].childNodes[job+addTree].getAttribute("status")
                 exe_exit_code = doc.childNodes[0].childNodes[job+addTree].getAttribute("job_exit")
                 job_exit_status = doc.childNodes[0].childNodes[job+addTree].getAttribute("exe_exit")
+                cleared = doc.childNodes[0].childNodes[job+addTree].getAttribute("cleared")
                 jobDbStatus = self.translateStatus(stato)
  
                 if jobDbStatus != None:
                     common.logger.debug(5, '*** Updating jobdb for job %s ***' %idJob)
                     if common.jobDB.status( str(int(idJob)-1) ) != "Y":
+                        if jobDbStatus == 'D' and int(cleared) != 1:#exe_exit_code =='' and job_exit_status=='':
+                            ## 'Done' but not yet cleared (server side) still showing 'Running'
+                            stato = 'Running'
+                            jobDbStatus = 'R'
                         common.jobDB.setStatus( str(int(idJob)-1), self.translateStatus(stato) )
                     else:
                         stato = "Cleared"
