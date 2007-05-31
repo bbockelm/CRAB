@@ -4,8 +4,8 @@ _ProxyTarballAssociatorComponent_
 
 """
 
-__version__ = "$Revision: 1.0 $"
-__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.0 2006/11/20 17:50:00 farinafa Exp $"
+__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.6 2007/05/11 15:14:37 spiga Exp $"
 
 import os
 import socket
@@ -240,7 +240,7 @@ class ProxyTarballAssociatorComponent:
 
                  # crab.cfg server personalizations
                  self.cfg4server(pendingTaskDir) # substitutes the cfg4server script # Fabio
-                 self.xml4server(pendingTaskDir)
+                 self.xml4server(pendingTaskDir, pProxy[i]) ## MATTY: added proxy field
 
                  #Matteo Add: send a massage to Task Tracking for modified configuration for server
                  taskName = str(pendingTaskDir.split('/')[-1])
@@ -250,7 +250,8 @@ class ProxyTarballAssociatorComponent:
                  logging.info("Proxy->Project Association: "+pProxy[i]+"->"+pendingTaskDir)
 
                  # build notification
-		 cwMsg = str(pProxy[i])+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
+                 useProxy = pendingTaskDir+'/share/userProxy'
+		 cwMsg = str(useProxy)+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
                  matched.append(cwMsg) 
                  logging.debug(matched[0])
                  try:  
@@ -287,7 +288,7 @@ class ProxyTarballAssociatorComponent:
 
        return pfList
 
-    def xml4server(self, taskDir):
+    def xml4server(self, taskDir, proxy):  ## MATTY: added proxy par
          # new names convension cfg4server
          lines = []
          f = open(taskDir+'/share/cmssw.xml', 'r')
@@ -301,6 +302,18 @@ class ProxyTarballAssociatorComponent:
          
          for l in xrange(len(lines)):
               lines[l]=lines[l].replace(name, taskDir.split('/')[-1] )
+
+         ## MATTY: *start* changing proxy field
+         try:
+              proxyInit = buf.find("task_info=")+ len("task_info=") + 1
+              proxyEnd = buf.find("\"", proxyInit)
+              name = buf[proxyInit:proxyEnd]
+              for ll in xrange(len(lines)):
+                   lines[ll]=lines[ll].replace(name, proxy )
+         except Exception, ex:
+              logging.error("Exception changing proxy on cmssw.xml: ["+str(ex)+"]")
+              logging.error("If you are using an old versione of SchedulerEdg.py in your client forget this problem!")
+         ## MATTY: *end* changing proxy field
 
          f = open(taskDir+'/share/cmssw.xml', 'w')
          f.writelines(lines)
