@@ -218,18 +218,31 @@ class TaskTrackingComponent:
                 logging.error(" ")
             return
 
-	if event == "CommandManager:Killed":
-	    if payload != None:
+        if event == "TaskKilled":
+            if payload != None:
                 logging.info("  <-- - -- - -->")
-                logging.info("NewTask: %s" % payload)
-		self.updateTaskKilled( payload )
-                logging.info("                   new task inserted.")
+                logging.info("   Killed task: %s" % payload)
+                self.updateTaskKilled( payload )
                 logging.info("  <-- - -- - -->")
             else:
                 logging.error(" ")
                 logging.error("ERROR: empty payload from [" +event+ "]!!!!")
                 logging.error(" ")
             return
+
+        if event == "TaskKilledFailed":
+            if payload != None:
+                logging.info("  <-- - -- - -->")
+                logging.info("   Killed task: %s" % payload)
+                self.killTaskFailed( payload )
+                logging.info("  <-- - -- - -->")
+            else:
+                logging.error(" ")
+                logging.error("ERROR: empty payload from [" +event+ "]!!!!")
+                logging.error(" ")
+            return
+
+
         
         # start debug event
         if event == "TaskTracking:StartDebug":
@@ -449,9 +462,40 @@ class TaskTrackingComponent:
 
     def updateTaskKilled ( self, taskName ):
         """
-	_updateTaskKilled_
-	"""
-	TaskStateAPI.updatingStatus( taskName, self.taskState[4], 2 )
+        _updateTaskKilled_
+        """
+
+        eMail = ""
+        uuid = ""
+
+        try:
+            valuess = TaskStateAPI.getStatusUUIDEmail( taskName )
+            if valuess != None:
+                status = valuess[0]
+                if status != self.taskState[2]:
+                    if len(valuess) > 1:
+                        uuid = valuess[1]
+                        if len(valuess) > 2:
+                            eMail = valuess[2]
+                    #dictionaryReport = {'JobSuccess': 0, 'JobFailed': "all killed", 'JobInProgress': 0}
+                    dictionaryReport =  {"all": ["Killed", "", "", 0]}
+                    self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
+                    self.prepareTaskFailed( taskName, uuid, eMail )
+        except Exception, ex:
+            logging.error("  <-- - -- - -->")
+            logging.error( "ERROR while reporting info about the task " + str(taskName) )
+            logging.error( "      "+str(ex))
+            logging.error("  <-- - -- - -->")
+
+        TaskStateAPI.updatingStatus( taskName, self.taskState[4], 2 )
+
+    def killTaskFailed (self, taskName ):
+        """
+        _killTaskFailed_
+        """
+        logging.error("Error killing task: " + taskName )
+        ### DO SOMETHING LIKE FLAG THE TASK ###
+
 
 
     def getMoreMails ( self, eMail ):
@@ -552,11 +596,15 @@ class TaskTrackingComponent:
                 if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
                     failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
                 cmd += 'cp *.xml .tmpFailed;' 
+                cmd += 'cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;'
+        """
                 cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/* .tmpFailed;' 
                                                                                           ## I didn' correct anything, but the failed must be preparesd 
                                                                                           ## only for the kill and the abort logginginfo file whose are in 
                                                                                           ## job1/JobTracking/Failed/Submission_*/log/   DS. 
         cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/* --exclude failed.tgz --exclude done.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;';
+        """
+        cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/edgLoggingInfo_*.log;' 
         cmd += 'rm -drf .tmpFailed;'
         cmd += 'mv '+path+'/.temp_failed.tgz '+path+'/failed.tgz;'
         os.system( cmd )
@@ -807,7 +855,9 @@ class TaskTrackingComponent:
 	self.ms.subscribeTo("DropBoxGuardianComponent:NewFile")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:WorkDone")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:UnableToManage")
-	self.ms.subscribeTo("CommandManager:Killed")
+        self.ms.subscribeTo("TaskKilled")
+        self.ms.subscribeTo("TaskKilledFailed")
+
 
         # start polling thread
         pollingThread = PollThread(self.pollTasks)
