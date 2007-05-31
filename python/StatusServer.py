@@ -24,6 +24,7 @@ class StatusServer(Actor):
         self.countRun = 0
         self.countAbort = 0
         self.countCancel = 0
+        self.countKilled = 0
         self.countCleared = 0
         self.countToTjob = 0
 
@@ -104,6 +105,10 @@ class StatusServer(Actor):
                 self.countSubmitting = common.jobDB.nJobs()
                 for nj in range(common.jobDB.nJobs()):
                     common.jobDB.setStatus(nj, 'S')
+            elif doc.childNodes[0].childNodes[3].getAttribute("status") == "Killed":
+                self.countKilled = common.jobDB.nJobs()
+                for nj in range(common.jobDB.nJobs()):
+                    common.jobDB.setStatus(nj, 'K')
             else:
                 self.countAbort = common.jobDB.nJobs()
                 for nj in range(common.jobDB.nJobs()):
@@ -173,23 +178,26 @@ class StatusServer(Actor):
         print ">>>>>>>>> %i Total Jobs " % (self.countToTjob)
         print ''
 
-        if (self.countReady != 0):
-            print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
         if (self.countSubmitting != 0) :
             print ">>>>>>>>> %i Jobs Submitting by the server" % (self.countSubmitting)
         if (self.countSubmit != 0):
             print ">>>>>>>>> %i Jobs Submitted" % (self.countSubmit)
-        if (self.countAbort != 0):
-            print ">>>>>>>>> %i Jobs Aborted" % (self.countAbort)
+        if (self.countReady != 0):
+            print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
         if (self.countSched != 0):
             print ">>>>>>>>> %i Jobs Scheduled" % (self.countSched)
         if (self.countRun != 0):
             print ">>>>>>>>> %i Jobs Running" % (self.countRun)
-        if (self.countCleared != 0):
-            print ">>>>>>>>> %i Jobs Cleared" % (self.countRun)
         if (self.countDone != 0):
             print ">>>>>>>>> %i Jobs Done" % (self.countDone)
-            print "          Retrieve them with: crab.py -getoutput -continue"
+            print "          Retrieve them with: crab -getoutput -continue"
+        if (self.countKilled != 0):
+            print ">>>>>>>>> %i Jobs Killed" % (self.countKilled)
+             print "          Retrieve more information with: crab -postMortem -continue"
+        if (self.countAbort != 0):
+            print ">>>>>>>>> %i Jobs Aborted" % (self.countAbort)
+        if (self.countCleared != 0):
+            print ">>>>>>>>> %i Jobs Cleared" % (self.countRun)
         print ''
         pass
 
