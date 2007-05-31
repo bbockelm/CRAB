@@ -193,7 +193,7 @@ class StatusServer(Actor):
             print "          Retrieve them with: crab -getoutput -continue"
         if (self.countKilled != 0):
             print ">>>>>>>>> %i Jobs Killed" % (self.countKilled)
-             print "          Retrieve more information with: crab -postMortem -continue"
+            print "          Retrieve more information with: crab -postMortem -continue"
         if (self.countAbort != 0):
             print ">>>>>>>>> %i Jobs Aborted" % (self.countAbort)
         if (self.countCleared != 0):
