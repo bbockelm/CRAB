@@ -649,7 +649,8 @@ class SchedulerCondor_g(Scheduler):
         taskName = dir[len(dir)-2]
 
         xml.write(str(title))
-        xml.write('<task name="' +str(taskName)+'" sub_path="' + common.work_space.bossCache() + '">\n') 
+        xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + os.environ["X509_USER_PROXY"] + '">\n')
+       # xml.write('<task name="' +str(taskName)+'" sub_path="' + common.work_space.bossCache() + '">\n') 
         xml.write(jt_string)
 
         xml.write('<iterator>\n')
@@ -665,7 +666,8 @@ class SchedulerCondor_g(Scheduler):
         xml.write('\t\t<ruleElement> 1:'+ str(nj) + ':1:6 </ruleElement>\n')
         xml.write('\t</iteratorRule>\n')
 
-        xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
+        xml.write('<chain name="' +str(taskName)+'__ITR1_" scheduler="'+str(self.schedulerName)+'">\n') 
+    #   xmliwrite('<chain scheduler="'+str(self.schedulerName)+'">\n')
         xml.write(jt_string)
 
 

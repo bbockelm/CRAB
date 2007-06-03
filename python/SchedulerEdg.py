@@ -704,7 +704,10 @@ class SchedulerEdg(Scheduler):
         taskName = dir[len(dir)-2]
 
         xml.write(str(title))
-        xml.write('<task name="' +str(taskName)+'" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache">\n') 
+        #xml.write('<task name="' +str(taskName)+'" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache">\n') 
+
+        #xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + '" task_info="' + os.path.expandvars('X509_USER_PROXY') + '">\n')
+        xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + os.environ["X509_USER_PROXY"] + '">\n')
         xml.write(jt_string)
         
         if (to_write != ''):
@@ -731,8 +734,8 @@ class SchedulerEdg(Scheduler):
         indy: here itr4
         '''
         
-
-        xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
+        xml.write('<chain name="' +str(taskName)+'__ITR1_" scheduler="'+str(self.schedulerName)+'">\n') 
+       # xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
         xml.write(jt_string)
 
         #executable
