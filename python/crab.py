@@ -25,6 +25,7 @@ from BossSession import *
 from SubmitterServer import SubmitterServer
 from GetOutputServer import GetOutputServer
 from StatusServer import StatusServer
+from PostMortemServer import PostMortemServer
 
 import sys, os, time, string
 
@@ -724,43 +725,44 @@ class Crab:
                     pass
 
             elif ( opt == '-postMortem' ):
-            
-                if val:
-                    val = string.replace(val,'-',':')
-                else: val=''
-                nj_list = {} 
 
-                try:
-                    common.scheduler.bossTask.query(ALL, val)
-                except RuntimeError,e:
-                    common.logger.message( e.__str__() )
-                except ValueError,e:
-                    common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
-                    common.logger.message( e.what())
-                    pass
+                # modified to support server mode
+                if (self.UseServer== 1):
+                    self.actions[opt] = PostMortemServer(self.cfg_params)
+                else:            
+                    if val:
+                        val = string.replace(val,'-',':')
+                    else: val=''
+                    nj_list = {} 
 
-                task = common.scheduler.bossTask.jobsDict()
-
-                for c, v in task.iteritems():
-                    k = int(c)
-                    nj=k
-                    if v['SCHED_ID']: nj_list[v['CHAIN_ID']]=v['SCHED_ID']
-                    pass
-
-
-                if len(nj_list) != 0:
-                    # Instantiate PostMortem object
-                    self.actions[opt] = PostMortem(self.cfg_params, nj_list)
-
-                    # Create and initialize JobList
-
-                    if len(common.job_list) == 0 :
-                        common.job_list = JobList(common.jobDB.nJobs(), None)
-                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                    try:
+                        common.scheduler.bossTask.query(ALL, val)
+                    except RuntimeError,e:
+                        common.logger.message( e.__str__() )
+                    except ValueError,e:
+                        common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
+                        common.logger.message( e.what())
                         pass
-                    pass
-                else:
-                    common.logger.message("No jobs to analyze")
+
+                    task = common.scheduler.bossTask.jobsDict()
+   
+                    for c, v in task.iteritems():
+                        k = int(c)
+                        nj=k
+                        if v['SCHED_ID']: nj_list[v['CHAIN_ID']]=v['SCHED_ID']
+                        pass
+
+                    if len(nj_list) != 0:
+                    # Instantiate PostMortem object
+                        self.actions[opt] = PostMortem(self.cfg_params, nj_list)
+                    # Create and initialize JobList
+                        if len(common.job_list) == 0 :
+                            common.job_list = JobList(common.jobDB.nJobs(), None)
+                            common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                            pass
+                        pass
+                    else:
+                        common.logger.message("No jobs to analyze")
 
             elif ( opt == '-clean' ):
                 if val != None:
