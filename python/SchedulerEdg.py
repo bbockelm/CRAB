@@ -832,7 +832,7 @@ class SchedulerEdg(Scheduler):
         if (self.proxyValid): return
 
         ### Just return if asked to do so
-        if (self.dontCheckProxy):
+        if (self.dontCheckProxy==1):
             self.proxyValid=1
             return
 
