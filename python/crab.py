@@ -26,6 +26,7 @@ from SubmitterServer import SubmitterServer
 from GetOutputServer import GetOutputServer
 from StatusServer import StatusServer
 from PostMortemServer import PostMortemServer
+from KillerServer import KillerServer
 
 import sys, os, time, string
 
@@ -562,14 +563,17 @@ class Crab:
 
             elif ( opt == '-kill' ):
 
-                if val: 
-                    if val =='all':
-                        jobs = common.scheduler.listBoss()
-                    else:
-                        jobs = self.parseRange_(val)
-                    common.scheduler.cancel(jobs)
+                if (self.UseServer== 1):
+                    self.actions[opt] = KillerServer(self.cfg_params)
                 else:
-                    common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
+                    if val: 
+                        if val =='all':
+                            jobs = common.scheduler.listBoss()
+                        else:
+                            jobs = self.parseRange_(val)
+                        common.scheduler.cancel(jobs)
+                    else:
+                        common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
 
             elif ( opt == '-getoutput' or opt == '-get'):
                 # modified to support server mode
