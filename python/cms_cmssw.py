@@ -1059,6 +1059,10 @@ class Cmssw(JobType):
             txt += 'ls '+fileWithSuffix+'\n'
             txt += 'ls_result=$?\n'
             txt += 'if [ $ls_result -ne 0 ] ; then\n'
+            #txt += '   JOB_EXIT_STATUS=60302\n'
+            ### FEDE 
+            txt += '   exit_status=60302\n'
+            ####
             txt += '   echo "ERROR: Problem with output file"\n'
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
@@ -1144,9 +1148,11 @@ class Cmssw(JobType):
         txt += '   echo "### SETUP CMS OSG  ENVIRONMENT ###"\n'
         txt += '   if [ -f $GRID3_APP_DIR/cmssoft/cmsset_default.sh ] ;then\n'
         txt += '      # Use $GRID3_APP_DIR/cmssoft/cmsset_default.sh to setup cms software\n'
+        txt += '       export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += '       source $GRID3_APP_DIR/cmssoft/cmsset_default.sh '+self.version+'\n'
         txt += '   elif [ -f $OSG_APP/cmssoft/cms/cmsset_default.sh ] ;then\n'
         txt += '      # Use $OSG_APP/cmssoft/cms/cmsset_default.sh to setup cms software\n'
+        txt += '       export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += '       source $OSG_APP/cmssoft/cms/cmsset_default.sh '+self.version+'\n'
         txt += '   else\n'
         txt += '       echo "SET_CMS_ENV 10020 ==> ERROR $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'

@@ -347,9 +347,9 @@ Seed for randome generation of mixing module I<untracked uint32 mix = x>. The tr
 
 First run to be generated in a generation jobs. Relevant only for no-input workflow.
 
-=item B<script_exe>
+=item B<executable>
 
-A user executable that will be run on WN instead of cmsrun. It's up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The script itself will be added automatically to the input sandbox.
+The name of the executable to be run on remote WN. The default is cmsrun. The executable is either to be found on the release area of the WN, or has been built on user working area on the UI and is (automatically) shipped to WN. If you want to run a script (which might internally call I<cmsrun>, use B<USER.script_exe> instead.
 
 =item I<DBS and DLS parameters:>
 
@@ -386,6 +386,10 @@ B<[USER]>
 =item B<additional_input_files>
 
 Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. You don't need to specify the I<ParameterSet> you are using, which will be included automatically. Wildcards are allowed.
+
+=item B<script_exe>
+
+A user script that will be run on WN (instead of default cmsrun). It's up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (eg scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The script itself will be added automatically to the input sandbox.
 
 =item B<ui_working_dir>
 
