@@ -16,6 +16,7 @@ class StatusServer(Actor):
     def __init__(self, cfg_params,):
         self.cfg_params = cfg_params
 
+        self.countNotSubmit = 0
         self.countSubmit = 0
         self.countSubmitting = 0
         self.countDone = 0
@@ -43,7 +44,7 @@ class StatusServer(Actor):
         """
 
         stateConverting = {'Running': 'R', 'Aborted': 'A', 'Done': 'D', 'Done (Failed)': 'D',\
-                           'Cleared': 'D', 'Cancelled': 'K', 'Killed': 'K'}
+                           'Cleared': 'D', 'Cancelled': 'K', 'Killed': 'K', 'NotSubmitted': 'C'}
 
         if status in stateConverting:
             return stateConverting[status]
@@ -109,10 +110,10 @@ class StatusServer(Actor):
                 self.countKilled = common.jobDB.nJobs()
                 for nj in range(common.jobDB.nJobs()):
                     common.jobDB.setStatus(nj, 'K')
-            else:
-                self.countAbort = common.jobDB.nJobs()
+            elif doc.childNodes[0].childNodes[3].getAttribute("status") == "NotSubmitted":
+                self.countNotSubmit = common.jobDB.nJobs()
                 for nj in range(common.jobDB.nJobs()):
-                    common.jobDB.setStatus(nj, 'A')
+                    common.jobDB.setStatus(nj, 'C')
             self.countToTjob = common.jobDB.nJobs()
         else:
             printline = ''
@@ -162,6 +163,8 @@ class StatusServer(Actor):
                     self.countSched += 1
                 elif stato == 'Cleared':
                     self.countCleared += 1
+                elif stato == 'NotSubmitted':
+                    self.countSubmitting += 1
 
                 addTree += 1
         common.jobDB.save()
@@ -180,6 +183,8 @@ class StatusServer(Actor):
 
         if (self.countSubmitting != 0) :
             print ">>>>>>>>> %i Jobs Submitting by the server" % (self.countSubmitting)
+        if (self.countNotSubmit != 0):
+            print ">>>>>>>>> %i Jobs Not Submitted to the grid" % (self.countNotSubmit)
         if (self.countSubmit != 0):
             print ">>>>>>>>> %i Jobs Submitted" % (self.countSubmit)
         if (self.countReady != 0):
