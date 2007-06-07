@@ -1059,6 +1059,10 @@ class Cmssw(JobType):
             txt += 'ls '+fileWithSuffix+'\n'
             txt += 'ls_result=$?\n'
             txt += 'if [ $ls_result -ne 0 ] ; then\n'
+            #txt += '   JOB_EXIT_STATUS=60302\n'
+            ### FEDE 
+            txt += '   exit_status=60302\n'
+            ####
             txt += '   echo "ERROR: Problem with output file"\n'
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
