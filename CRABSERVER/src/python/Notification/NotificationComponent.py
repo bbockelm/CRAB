@@ -4,8 +4,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 0.0 $"
-__revision__ = "$Id: NotifyComponent.py,v 0.0 2006/12/22 10:40:00 dorigoa Exp $"
+__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.2 2007/03/26 11:05:24 spiga Exp $"
 
 import os
 import socket
@@ -16,7 +16,7 @@ import JobInfo
 import Consumer
 import JobInfoList
 import TaskInfoList
-from TaskTracking import CreateXmlJobReport
+from CreateXmlJobReport import *
 #from CreateXmlJobReport import *
 import string
 import re
@@ -111,6 +111,7 @@ class NotificationComponent:
         self.ms.subscribeTo("JobSuccess")
 	self.ms.subscribeTo("TaskSuccess")
         self.ms.subscribeTo("TaskFailed")
+        self.ms.subscribeTo("TaskNotSubmitted")
         #self.ms.subscribeTo("NOTIFICATION_SHOWJOBS")
         #self.ms.subscribeTo("NOTIFICATION_RESET")
         #self.ms.subscribeTo("NOTIFICATION_PAUSE")
@@ -260,7 +261,7 @@ class NotificationComponent:
                     self.ms.commit()
                     continue
             
-	    if type == "TaskSuccess":
+	    if type == "TaskSuccess" or type == "TaskNotSubmitted":
 	    	if not self.PERTASK:
 			continue
 		C = self.MessageTaskParser( payload )
@@ -273,10 +274,11 @@ class NotificationComponent:
 		msg = "Notification.NotificationComponent.MainLoop: Adding new task ["
                 msg += C.getTaskname() + "] owned by [" + ",".join(C.getUserMail()) + "]"
                 logging.info( msg )
+                #print "Notification.NotificationComponent.MainLoop: [%s]\n" % C.getTaskReport()
 		self.tasks.pushTask( C )
 		self.tasks.unlock()
 		self.ms.commit()
-	    
+                
             if type == "NotificationSetup":
 	        if payload == "RESET":
                 	logging.info( "Clearing list of jobs to notify..." )
