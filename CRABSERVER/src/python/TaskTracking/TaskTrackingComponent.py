@@ -104,7 +104,7 @@ class TaskTrackingComponent:
         self.xmlReportFileName = "xmlReportFile.xml"
 
 	#
-	self.taskState = ["arrived", "submitting", "not submitted", "submitted", "killed", "ended", "unpacked"]
+	self.taskState = ["arrived", "submitting", "not submitted", "submitted", "killed", "ended", "unpacked", "partially submitted"]
 
     ##########################################################################
     # handle events
@@ -202,7 +202,7 @@ class TaskTrackingComponent:
                 logging.info("  <-- - -- - -->")
             else:
                 logging.error(" ")
-                logging.error("ERROR: empty payload from 'CrabServerWorkerComponent:CrabWorkPerformed'!!!!")
+                logging.error("ERROR: empty payload from '"+str(event)+"'!!!!")
                 logging.error(" ")
             return
 
@@ -214,7 +214,19 @@ class TaskTrackingComponent:
 		self.updateTaskStatus(payload, self.taskState[2])
             else:
                 logging.error(" ")
-                logging.error("ERROR: empty payload from 'CrabServerWorkerComponent:CrabWorkFailed'!!!!")
+                logging.error("ERROR: empty payload from '"+str(event)+"'!!!!")
+                logging.error(" ")
+            return
+
+        if event == "CrabServerWorkerComponent:CrabWorkPerformedPartial":
+            if payload != None:
+                logging.info("  <-- - -- - -->")
+                logging.info("CrabWorkPerformedPartial: %s" % payload)
+                logging.info("  <-- - -- - -->")
+                self.preUpdatePartialTask(payload, self.taskState[7])
+            else:
+                logging.error(" ")
+                logging.error("ERROR: empty payload from '"+str(event)+"'!!!!")
                 logging.error(" ")
             return
 
@@ -222,7 +234,7 @@ class TaskTrackingComponent:
             if payload != None:
                 logging.info("  <-- - -- - -->")
                 logging.info("   Killed task: %s" % payload)
-                self.updateTaskKilled( payload )
+                self.updateTaskKilled( payload, self.taskState[4] )
                 logging.info("  <-- - -- - -->")
             else:
                 logging.error(" ")
@@ -260,7 +272,7 @@ class TaskTrackingComponent:
         logging.debug("  <-- - -- - -->")
 
     ##########################################################################
-    # insert task in database
+    # read task config file
     ##########################################################################
 
     def parseCrabCfg( self, text, section, var ):
@@ -303,62 +315,23 @@ class TaskTrackingComponent:
         return eMail, thresholdLevel
 
 
+    ##########################################################################
+    # insert and update task in database
+    ##########################################################################
+
+
     def insertNewTask( self, payload ):
         """
-	_insertNewTask_
-	"""
+        _insertNewTask_
+        """
 
         try:
             TaskStateAPI.insertTaskPA( payload, self.taskState[0] )
         except Exception, ex:
             logging.error("  <-- - -- - -->")
             logging.error( "ERROR while inserting the task " + str(payload) )
-	    logging.error( "      "+str(ex))
+            logging.error( "      "+str(ex))
             logging.error("  <-- - -- - -->")
-        
-   
-    def convertStatus( self, status ):
-        """
-	_convertStatus_
-	"""
-	stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'Submitting','K': 'Killed', 'S': 'Submitted'}
-        if status in stateConverting:
-  	    return stateConverting[status]
-        return 'Unknown'
-	
-   
-    def prepareReport( self, taskName, uuid, eMail, thresholdLevel, percentage, dictReportTot, nJobs, flag ):
-        """
-	_prepareReport_
-	"""
-        pathToWrite = pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
-
-	if os.path.exists( pathToWrite ):
-	   ###  get user name & original task name  ###
-	    obj = UtilSubject(self.args['dropBoxPath'], taskName, uuid)
-	    origTaskName, userName = obj.getInfos()
-	    del obj
-	   ###  preparing xml report  ###
-	    c = CreateXmlJobReport()
-	    eMaiList = self.getMoreMails( eMail )
-	    if len(eMaiList) < 1: 
-		c.initialize( origTaskName, "ASdevel@cern.ch", userName, percentage, thresholdLevel, nJobs)
-	    else:
-		 for index in range(len(eMaiList)):
-		     if index != 0:
-			 c.addEmailAddress( eMaiList[index] )
-		     else:
-			 c.initialize( origTaskName, eMaiList[0], userName, percentage, thresholdLevel, nJobs)
-#	    for state in dictReportTot:
-#                c.addStatusCount( str(state), str(dictReportTot[state]) )
-	
-	    for singleJob in dictReportTot:
-	        J = Job()   ##    id             status                        eec                            jes                       clear
-		J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][1], dictReportTot[singleJob][2],dictReportTot[singleJob][3] )
-		c.addJob( J )
-
-   	    c.toXml()
-            c.toFile( pathToWrite + self.xmlReportFileName )
 
 
     def updateInfoTask( self, payload ):
@@ -371,7 +344,6 @@ class TaskTrackingComponent:
         uuid, taskName, proxy = payload.split(":",3)
 	
         eMail, thresholdLevel = self.readInfoCfg( self.args['dropBoxPath'] + "/" + taskName )
-	#logging.info(eMail + " - " + thresholdLevel)
         if eMail == None:
             logging.error("  <-- - -- - -->")
             logging.error( "ERROR: missing 'eMail' from " + self.crabcfg + " for task: " + str(taskName) )
@@ -387,19 +359,53 @@ class TaskTrackingComponent:
             thresholdLevel = 0
         elif int(thresholdLevel) > 100:
             thresholdLevel = 100
-        dictionaryReport =  {"all": ["Submitted", "", "", 0]} #{'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': "all"}
-	#*# dictionaryReport = {}
+        dictionaryReport =  {"all": ["NotSubmitted", "", "", 0]} 
         self.prepareReport( taskName, uuid, eMail, thresholdLevel, 0, dictionaryReport, 0, 0 )
-	#logging.info("Report Prepared")
 
         try:
             TaskStateAPI.updateNotSubmitted( taskName, eMail, thresholdLevel, proxy, uuid, self.taskState[6] )
-	    #logging.info("Task updated")
         except Exception, ex:
             logging.error("  <-- - -- - -->")
             logging.error( "ERROR while updating the task " + str(taskName) )
 	    logging.error( "      "+str(ex))
             logging.error("  <-- - -- - -->")
+
+
+    def preUpdatePartialTask( self, payload, status ):
+        """
+        _preUpdatePartialTask_
+
+        split the payload-sends email(updates status)
+        """
+
+        fields = payload.split("::")
+        taskName = fields[0]
+        totJobs = int(fields[1])
+        jobList = eval( fields[2] )
+
+        ## call function that updates DB
+        #self.updateTaskStatus(taskName, status)
+
+        uuid = ""
+        eMail = ""
+        valuess = TaskStateAPI.getStatusUUIDEmail( taskName )
+        if valuess != None:
+            #status = valuess[0]
+            if len(valuess) > 1:
+                uuid = valuess[1]
+                if len(valuess) > 2:
+                    eMail = valuess[2]
+            ## XML report file
+            dictionaryReport =  {}
+            for jobId in range(1,totJobs+1):
+                vect = ["Submitted", "", "", 0]
+                dictionaryReport.setdefault(jobId, vect)
+            for jobId in jobList:
+                dictionaryReport[jobId][0] = "NotSubmitted"
+            logging.info(str(dictionaryReport))
+            self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
+            ## MAIL report user
+            self.prepareTaskFailed( payload, uuid, eMail, status )
 
     
     def updateTaskStatus(self, payload, status):
@@ -430,37 +436,42 @@ class TaskTrackingComponent:
 		        if len(valuess) > 2:
 		    	    eMail = valuess[2]
 	            ## XML report file
-	            #dictionaryReport = {'JobSuccess': 0, 'JobFailed': "all", 'JobInProgress': 0}
 		    dictionaryReport =  {"all": ["NotSubmitted", "", "", 0]}
 	            self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
 		    ## DONE tgz file
 		    pathToWrite = str(self.args['dropBoxPath']) + "/" + payload + "/" + self.resSubDir
 		    self.prepareTarball( pathToWrite, payload )
 		    ## MAIL report user
-		    self.prepareTaskFailed( payload, uuid, eMail )
+		    self.prepareTaskFailed( payload, uuid, eMail, status )
         except Exception, ex:
 	    logging.error("  <-- - -- - -->")
             logging.error( "ERROR while reporting info about the task " + str(payload) )
             logging.error( "      "+str(ex))
             logging.error("  <-- - -- - -->")
 
-    def prepareTaskFailed( self, taskName, uuid, eMail ):
+    def prepareTaskFailed( self, taskName, uuid, eMail, status ):
         """
 	_prepareTaskFailed_
 	
 	"""
 	obj = UtilSubject( self.args['dropBoxPath'], taskName, uuid )
 	origTaskName, userName = obj.getInfos()
+        ###logging.info(userName)
         del obj
 	eMaiList = self.getMoreMails(eMail)
 	strEmail = ""
 	for mail in eMaiList:
 	    strEmail += str(mail) + ","
 	TaskStateAPI.updatingNotifiedPA( taskName, 2 )
-        self.taskFailed(origTaskName, strEmail[0:len(strEmail)-1], userName)
+        if status == self.taskState[2]:
+            self.taskNotSubmitted(origTaskName, strEmail[0:len(strEmail)-1], userName)
+        elif status == self.taskState[7]:
+            self.taskIncompleteSubmission(origTaskName, strEmail[0:len(strEmail)-1], userName)
+        else:
+            self.taskFailed(origTaskName, strEmail[0:len(strEmail)-1], userName)
 	 
 
-    def updateTaskKilled ( self, taskName ):
+    def updateTaskKilled ( self, taskName, status ):
         """
         _updateTaskKilled_
         """
@@ -471,16 +482,15 @@ class TaskTrackingComponent:
         try:
             valuess = TaskStateAPI.getStatusUUIDEmail( taskName )
             if valuess != None:
-                status = valuess[0]
-                if status != self.taskState[2]:
+                stato = valuess[0]
+                if stato != self.taskState[2]:
                     if len(valuess) > 1:
                         uuid = valuess[1]
                         if len(valuess) > 2:
                             eMail = valuess[2]
-                    #dictionaryReport = {'JobSuccess': 0, 'JobFailed': "all killed", 'JobInProgress': 0}
                     dictionaryReport =  {"all": ["Killed", "", "", 0]}
                     self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
-                    self.prepareTaskFailed( taskName, uuid, eMail )
+                    self.prepareTaskFailed( taskName, uuid, eMail, status )
         except Exception, ex:
             logging.error("  <-- - -- - -->")
             logging.error( "ERROR while reporting info about the task " + str(taskName) )
@@ -496,6 +506,51 @@ class TaskTrackingComponent:
         logging.error("Error killing task: " + taskName )
         ### DO SOMETHING LIKE FLAG THE TASK ###
 
+
+    ##########################################################################
+    # utilities
+    ##########################################################################
+
+    def convertStatus( self, status ):
+        """
+        _convertStatus_
+        """
+        stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'Submitting','K': 'Killed', 'S': 'Submitted'}
+        if status in stateConverting:
+            return stateConverting[status]
+        return 'Unknown'
+
+
+    def prepareReport( self, taskName, uuid, eMail, thresholdLevel, percentage, dictReportTot, nJobs, flag ):
+        """
+        _prepareReport_
+        """
+        pathToWrite = pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
+
+        if os.path.exists( pathToWrite ):
+           ###  get user name & original task name  ###
+            obj = UtilSubject(self.args['dropBoxPath'], taskName, uuid)
+            origTaskName, userName = obj.getInfos()
+            del obj
+           ###  preparing xml report  ###
+            c = CreateXmlJobReport()
+            eMaiList = self.getMoreMails( eMail )
+            if len(eMaiList) < 1:
+                c.initialize( origTaskName, "ASdevel@cern.ch", userName, percentage, thresholdLevel, nJobs)
+            else:
+                 for index in range(len(eMaiList)):
+                     if index != 0:
+                         c.addEmailAddress( eMaiList[index] )
+                     else:
+                         c.initialize( origTaskName, eMaiList[0], userName, percentage, thresholdLevel, nJobs)
+
+            for singleJob in dictReportTot:
+                J = Job()   ##    id             status                        eec                            jes                       clear
+                J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][1], dictReportTot[singleJob][2],dictReportTot[singleJob][3] )
+                c.addJob( J )
+
+            c.toXml()
+            c.toFile( pathToWrite + self.xmlReportFileName )
 
 
     def getMoreMails ( self, eMail ):
@@ -609,7 +664,11 @@ class TaskTrackingComponent:
         cmd += 'mv '+path+'/.temp_failed.tgz '+path+'/failed.tgz;'
         os.system( cmd )
         os.chdir( work_dir )
-   
+  
+
+    ##########################################################################
+    # publishing messages
+    ##########################################################################
 
     def taskSuccess( self, taskPath ):
         """
@@ -618,15 +677,12 @@ class TaskTrackingComponent:
         Trasmit the "TaskSuccess" event to the prodAgent
         
         """
-        logging.debug("  <-- - -- - -->")
-        logging.debug( "Publishing 'TaskSuccess' with payload=" + taskPath )
-        logging.debug("  <-- - -- - -->")
         self.msThread.publish("TaskSuccess", taskPath)
         self.msThread.commit()
 
-        logging.info("  <-- - -- - -->")
-        logging.info("Published 'TaskSuccess' message with payload: %s" % taskPath)
-	logging.info("  <-- - -- - -->")
+        logging.info("         *-*-*-*-*")
+        logging.info("-------> Published 'TaskSuccess' message with payload: %s" % taskPath)
+	logging.info("         *-*-*-*-*")
 
     def taskFailed( self, taskName, eMaiList, userName ):
         """
@@ -638,15 +694,45 @@ class TaskTrackingComponent:
 	if userName == "" or userName == None:
 	    userName = "Unknown"
         payload = taskName + ":" + userName + ":" + eMaiList
-        logging.debug("  <-- - -- - -->")
-        logging.debug( "Publishing 'TaskFailed' with payload=" + payload )
-        logging.debug("  <-- - -- - -->")
         self.msThread.publish("TaskFailed", payload)
         self.msThread.commit()
 
-        logging.info("  <-- - -- - -->")
+        logging.info("         *-*-*-*-* ")
         logging.info("Published 'TaskFailed' message with payload: %s" % payload)
-        logging.info("  <-- - -- - -->")
+        logging.info("         *-*-*-*-* ")
+
+    def taskNotSubmitted( self, taskName, eMaiList, userName ):
+        """
+        _taskNotSubmitted_
+        """
+        if userName == "" or userName == None:
+            userName = "Unknown"
+        payload = taskName + ":" + userName + ":" + eMaiList
+        self.msThread.publish("TaskNotSubmitted", payload)
+        self.msThread.commit()
+
+        logging.info("         *-*-*-*-* ")
+        logging.info("Published 'TaskNotSubmitted' message with payload: %s" % payload)
+        logging.info("         *-*-*-*-* ")
+
+    def taskIncompleteSubmission( self, taskName, eMaiList, userName ):
+        """
+        _taskIncompleteSubmission_
+        """
+        if userName == "" or userName == None:
+            userName = "Unknown"
+        payload = taskName + ":" + userName + ":" + eMaiList
+        self.msThread.publish("TaskIncompleteSubmission", payload)
+        self.msThread.commit()
+
+        logging.info("         *-*-*-*-* ")
+        logging.info("Published 'TaskIncompleteSubmission' message with payload: %s" % payload)
+        logging.info("         *-*-*-*-* ")
+
+
+    ##########################################################################
+    # polling js_taskInstance and BOSS DB
+    ##########################################################################
 
     def pollTasks(self):
         """
@@ -674,12 +760,9 @@ class TaskTrackingComponent:
                 if status == self.taskState[2] and notified < 2:
 		    self.prepareTaskFailed( taskName, uuid, eMail )
 		else:
-
     	            taskDict = mySession.loadByName( taskName )
-		    #logging.info(" - - - - - - - - ")
-		    #logging.info(taskName + " - num.: " + str(len(taskDict)))
                    
-		    if len(taskDict) > 0:# and taskName == "crab_AnotherDay_AnotherTest_f9f1751c-3811-485c-981d-c8d2a5ad8cdb":
+		    if len(taskDict) > 0:
 
                         logging.info(" - - - - - - - - ")
 			logging.info(taskName + " ["+str(status)+"] - num.: " + str(len(taskDict)))
@@ -687,12 +770,7 @@ class TaskTrackingComponent:
 			pathToWrite = ""
 			dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
 			countNotSubmitted = 0 
-
-			## allowed state in a dictionary for count how many jobs there are in each state
-	                ##dictStateTot = {'RUNNING': 0, 'ABORTED': 0, 'DONE_OK': 0, 'DONE_FAILED': 0, 'CLEARED': 0, 'CANCELLED':0, 'READY': 0, 'SUBMITTED': 0, 'SCHEDULED': 0, 'UNKNOWN': 0, 'WAITING': 0}
-			
 			dictStateTot = {}
-
 			v = taskDict.values()[0]
 			statusJobsTask = v.jobStates()
 
@@ -700,6 +778,7 @@ class TaskTrackingComponent:
 			
 			    resubmitting = TaskStateAPI.checkNSubmit( taskName, job )
 			    runInfoJob =  v.specific(job,"1")
+
 			    if string.lower(self.args['jobDetail']) == "yes":
                                 logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']))
 			    vect = []
@@ -719,13 +798,13 @@ class TaskTrackingComponent:
                                     dictStateTot[job][3] = 1
 				else:
 				    dictReportTot['JobInProgress'] += 1
-                                    dictStateTot[job][0] = "Managing by server"
+                                    dictStateTot[job][0] = "Resubmitting by server"#"Managing by server"
 			    elif stato == "SA" or stato == "SK" or stato == "K":
 				if not resubmitting:
 				    dictReportTot['JobFailed'] += 1
 				else:
 				    dictReportTot['JobInProgress'] += 1
-                                    dictStateTot[job][0] = "Managing by server"
+                                    dictStateTot[job][0] = "Resubmitting by server"#"Managing by server"
 			    elif stato == "W":
 				countNotSubmitted += 1 
 				dictReportTot['JobInProgress'] += 1
@@ -743,17 +822,11 @@ class TaskTrackingComponent:
 			    logging.info( "    -> of which not yet submitted: " + str(countNotSubmitted) )
 
 			endedJob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed']
-			##endedJob = dictStateTot['ABORTED'] + dictStateTot['CLEARED'] + dictStateTot['DONE_OK'] 
+
 			try:
 			    percentage = (100 * endedJob) / len(statusJobsTask)
 			    pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
 
-                            #if percentage <= 100 :
-                            #    if os.path.exists( pathToWrite ):
-                            #        self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
-                            #    else:
-                            #        logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
-			    
 			    if percentage != endedLevel or \
 			       (percentage == 0 and status == self.taskState[3] ) or \
 			       (percentage == 0 and status == self.taskState[1] ) or \
@@ -761,46 +834,39 @@ class TaskTrackingComponent:
 			   #and (not os.path.exists(pathToWrite + self.xmlReportFileName))\
 
 		 	        ###  updating endedLevel  ###
-				if endedLevel == 100:
- 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
-				elif percentage != endedLevel:
+				#if endedLevel == 100:
+ 				#    TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
+				#elif percentage != endedLevel:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
 
-				if os.path.exists( pathToWrite ):
-				    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+				#if os.path.exists( pathToWrite ):
+				#    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
 
 				   ### prepare tarball & send eMail ###
 				    if percentage >= thresholdLevel:
-				    ## COMMENT THE LINE BELOW FOR ACTIVATE "DOUBLE OUTPUT"
-			##		self.prepareTarball( pathToWrite, taskName )
-				    ## DE-COMMENT THE 2 LINES BELOW FOR ACTIVATE "DOUBLE OUTPUT"
                                         self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
-                                        #self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
                                         if dictReportTot['JobFailed'] > 0:
                                             self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
 					if percentage == 100:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName )
 					    notified = 2
 					    TaskStateAPI.updatingNotifiedPA( taskName, notified )
-					elif notified == 0:
+					elif notified <= 0:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName )
 					    notified = 1
 					    TaskStateAPI.updatingNotifiedPA( taskName, notified )
 				#else:
 				#    logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
-				    
 			    elif status == '':
 			        if dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress'] > countNotSubmitted:
 				    TaskStateAPI.updateTaskStatus( taskName, self.taskState[3] )
 				else:
 				    TaskStateAPI.updateTaskStatus( taskName, self.taskState[2] )
  
-                           ## MATT. 23/10/07 - 9.07 - 
-                            elif percentage <= 100:
-                                if os.path.exists( pathToWrite ):
-                                    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
-                                else:
-                                    logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
+                            if os.path.exists( pathToWrite ):
+                                self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+                            else:
+                                logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
 				
 			except ZeroDivisionError, detail:
 			    logging.info("  <-- - -- - -->")
@@ -852,6 +918,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:TaskArrival")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformed")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkFailed")
+        self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformedPartial")
 	self.ms.subscribeTo("DropBoxGuardianComponent:NewFile")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:WorkDone")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:UnableToManage")

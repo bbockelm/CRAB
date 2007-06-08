@@ -266,11 +266,11 @@ def getStatusUUIDEmail( taskName ):
 
     queryString =  "SELECT status, uuid, eMail from js_taskInstance where taskName = '"+taskName+"';"
     task2Check = queryMethod(queryString,taskName)
-    logging.info("task2Check = " + str(task2Check) )
-    try:
-        logging.info("task2Check[0] = " + str(task2Check[0]) )
-    except:
-        pass
+    #logging.info("task2Check = " + str(task2Check) )
+    #try:
+    #    logging.info("task2Check[0] = " + str(task2Check[0]) )
+    #except:
+    #    pass
     if task2Check != None:
         return task2Check[0]
     return None
