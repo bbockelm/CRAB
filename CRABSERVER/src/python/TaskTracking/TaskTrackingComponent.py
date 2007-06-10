@@ -834,9 +834,9 @@ class TaskTrackingComponent:
 			   #and (not os.path.exists(pathToWrite + self.xmlReportFileName))\
 
 		 	        ###  updating endedLevel  ###
-				#if endedLevel == 100:
- 				#    TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
-				#elif percentage != endedLevel:
+				if endedLevel == 100:
+ 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
+				elif percentage != endedLevel:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
 
 				#if os.path.exists( pathToWrite ):
