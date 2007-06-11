@@ -4,8 +4,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.2 2007/03/26 11:05:24 spiga Exp $"
+__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.3 2007/06/08 16:22:00 mcinquil Exp $"
 
 import os
 import socket
@@ -16,8 +16,8 @@ import JobInfo
 import Consumer
 import JobInfoList
 import TaskInfoList
+#from CrabServer.CreateXmlJobReport import *
 from CreateXmlJobReport import *
-#from CreateXmlJobReport import *
 import string
 import re
 from ProdAgentCore.Configuration import ProdAgentConfiguration
@@ -223,7 +223,7 @@ class NotificationComponent:
 	                        + "xml task report %s is not a regular file." % pathfile)
 	        return
 		
-	C = CreateXmlJobReport.CreateXmlJobReport()
+	C = CreateXmlJobReport()#.CreateXmlJobReport()
 	try:
 		C.fromFile( pathfile )
 	except RuntimeError, r:
@@ -236,6 +236,7 @@ class NotificationComponent:
     def MainLoop(self):
         while True:
             type, payload = self.ms.get(True) # this call is blocking...
+            logging.info("  -> " + str(type) + " <-  ")
             if type == "JobSuccess":
 	    	if not self.PERJOB:
 			continue
