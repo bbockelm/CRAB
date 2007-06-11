@@ -202,7 +202,14 @@ class StatusServer(Actor):
         if (self.countAbort != 0):
             print ">>>>>>>>> %i Jobs Aborted" % (self.countAbort)
         if (self.countCleared != 0):
-            print ">>>>>>>>> %i Jobs Cleared" % (self.countRun)
+            print ">>>>>>>>> %i Jobs Cleared" % (self.countCleared)
+
+        countUnderMngmt = self.countToTjob - (self.countSubmitting+ self.countNotSubmit + self.countSubmit)
+        countUnderMngmt -= (self.countReady + self.countSched + self.countRun + self.countDone) 
+        countUnderMngmt -= (self.countKilled + self.countAbort + self.countCleared)
+        if (countUnderMngmt != 0):
+            print ">>>>>>>>> %i Jobs Waiting or Under Server Management" % (countUnderMngmt)
+
         print ''
         pass
 
