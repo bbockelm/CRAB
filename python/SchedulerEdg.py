@@ -81,7 +81,12 @@ class SchedulerEdg(Scheduler):
 
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
            msg = 'Warning: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n' 
-           msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n' 
+           msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n' 
+           raise CrabException(msg)
+
+        if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
+           msg = 'Warning: return_data = 1 and copy_data = 1\n' 
+           msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n' 
            raise CrabException(msg)
 
         try:
