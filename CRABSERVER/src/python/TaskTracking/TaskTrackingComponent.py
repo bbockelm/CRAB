@@ -428,6 +428,7 @@ class TaskTrackingComponent:
 	uuid = ""
 
         try:
+#        if 1:
 	    if status == self.taskState[2]:
 	        valuess = TaskStateAPI.getStatusUUIDEmail( payload )
 		if valuess != None:
@@ -465,7 +466,7 @@ class TaskTrackingComponent:
 	    strEmail += str(mail) + ","
 	TaskStateAPI.updatingNotifiedPA( taskName, 2 )
         if status == self.taskState[2]:
-            self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + origTaskName,  + "/res/" + self.xmlReportFileName )
+            self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + taskName  + "/res/" + self.xmlReportFileName )
 #origTaskName, strEmail[0:len(strEmail)-1], userName)
         elif status == self.taskState[7]:
             self.taskIncompleteSubmission(origTaskName, strEmail[0:len(strEmail)-1], userName)
@@ -703,18 +704,18 @@ class TaskTrackingComponent:
         logging.info("Published 'TaskFailed' message with payload: %s" % payload)
         logging.info("         *-*-*-*-* ")
 
-    def taskNotSubmitted( self, taskName, eMaiList, userName ):
+    def taskNotSubmitted( self, taskPath ): #Name, eMaiList, userName ):
         """
         _taskNotSubmitted_
         """
-        if userName == "" or userName == None:
-            userName = "Unknown"
-        payload = taskName + ":" + userName + ":" + eMaiList
-        self.msThread.publish("TaskNotSubmitted", payload)
+#        if userName == "" or userName == None:
+#            userName = "Unknown"
+#        payload = taskName + ":" + userName + ":" + eMaiList
+        self.msThread.publish("TaskNotSubmitted", taskPath) # payload)
         self.msThread.commit()
 
         logging.info("         *-*-*-*-* ")
-        logging.info("Published 'TaskNotSubmitted' message with payload: %s" % payload)
+        logging.info("Published 'TaskNotSubmitted' message with payload: %s" % taskPath) #payload)
         logging.info("         *-*-*-*-* ")
 
     def taskIncompleteSubmission( self, taskName, eMaiList, userName ):
