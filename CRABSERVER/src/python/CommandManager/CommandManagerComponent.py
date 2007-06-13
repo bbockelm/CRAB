@@ -89,7 +89,7 @@ class CommandManagerComponent:
         logging.debug('TaskName:%s'+str(taskName))
 
         
-        #Matteo Fix for manage exceptions from listdir when there are not searched files in DropBox 
+        #Matteo add: manages exceptions from listdir when there are not searched files in DropBox 
         #
         dBStatus=[]
         try:
@@ -110,7 +110,9 @@ class CommandManagerComponent:
              os.rename(filename, filename+'.noGood')
              return
         logging.info('Now Cheking the Proxy')
-        # check proxy matching
+
+
+        # Matteo add: check proxy matching
 
         subject = ""
         try:
@@ -121,18 +123,8 @@ class CommandManagerComponent:
              logging.info("Warning: Unable to read " + str(taskName+'/share/userSubj'))
              logging.info(e)
 
-       # rCode, outp = commands.getstatusoutput('openssl x509 -in %s -subject -noout'%(taskName+'/share/userProxy') )
-       # logging.info('Proxy Cheked: now the response    '+str(rCode)+" "+str(outp))
-       # if rCode!=0:
-       #      logging.info('Unable to open a valid proxy for %s'%taskName)
-       #      logging.info('The command file will not be processed.')
-       #      #os.remove(filename)
-       #      os.rename(filename, filename+'.noGood')
-       #      return
-       
-
-        logging.info(str(subject)+'MMM'+str(dict['Subject'])+'MMM') 
-        if  dict['Subject'].strip() != subject.strip():      #Matteo Fix proxy problems
+        logging.info(str(subject)+'   '+str(dict['Subject'])) 
+        if dict['Subject'].strip() != subject.strip():    
              logging.info('Unable to match subjects for %s'%taskName)
              logging.info('The command file will not be processed.')
              #os.remove(filename)
@@ -140,7 +132,16 @@ class CommandManagerComponent:
              return
 
         # 2 - query the TT to get the taskId
-        taskDict = self.BSession.loadByName( taskName ) # just for crosscheck: exists iif CrabWorker performed the registration
+
+        #Matteo add: manages DB interaction problems and publish message for TT
+        try:
+             taskDict = self.BSession.loadByName( taskName ) # just for crosscheck: exists iif CrabWorker performed the registration
+             logging.info('loadByname terminated   '+str(taskDict))
+        except Exception, e:
+                logging.info('Problems with DB interaction  %s\n'%payload + str(e))
+                self.msFwdCmd.publish("TaskKilledFailed", taskSpecId)
+                self.msFwdCmd.commit()
+
         taskSpecId = ''
         if len(taskDict) > 0:
              taskSpecId = taskName
