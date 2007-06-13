@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.16 2007/05/25 08:45:20 mcinquil Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.20 2007/06/10 12:13:28 mcinquil Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import os
 import time
@@ -32,6 +32,7 @@ from ProdAgentCore.ProdAgentException import ProdAgentException
 import TaskStateAPI
 
 # XML
+#from CrabServer.CreateXmlJobReport import *
 from CreateXmlJobReport import *
 
 # subject & original name
@@ -359,7 +360,7 @@ class TaskTrackingComponent:
             thresholdLevel = 0
         elif int(thresholdLevel) > 100:
             thresholdLevel = 100
-        dictionaryReport =  {"all": ["NotSubmitted", "", "", 0]} 
+        dictionaryReport =  {"all": ["Submitting", "", "", 0]} 
         self.prepareReport( taskName, uuid, eMail, thresholdLevel, 0, dictionaryReport, 0, 0 )
 
         try:
@@ -401,7 +402,7 @@ class TaskTrackingComponent:
                 vect = ["Submitted", "", "", 0]
                 dictionaryReport.setdefault(jobId, vect)
             for jobId in jobList:
-                dictionaryReport[jobId][0] = "NotSubmitted"
+                dictionaryReport[jobId+1][0] = "NotSubmitted"
             logging.info(str(dictionaryReport))
             self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
             ## MAIL report user
@@ -464,7 +465,8 @@ class TaskTrackingComponent:
 	    strEmail += str(mail) + ","
 	TaskStateAPI.updatingNotifiedPA( taskName, 2 )
         if status == self.taskState[2]:
-            self.taskNotSubmitted(origTaskName, strEmail[0:len(strEmail)-1], userName)
+            self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + origTaskName,  + "/res/" + self.xmlReportFileName )
+#origTaskName, strEmail[0:len(strEmail)-1], userName)
         elif status == self.taskState[7]:
             self.taskIncompleteSubmission(origTaskName, strEmail[0:len(strEmail)-1], userName)
         else:
@@ -515,7 +517,7 @@ class TaskTrackingComponent:
         """
         _convertStatus_
         """
-        stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'Submitting','K': 'Killed', 'S': 'Submitted'}
+        stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'Submitting','K': 'Killed', 'S': 'Submitted', 'DA': 'Done (Failed)'}
         if status in stateConverting:
             return stateConverting[status]
         return 'Unknown'
@@ -839,12 +841,11 @@ class TaskTrackingComponent:
 				elif percentage != endedLevel:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
 
-				#if os.path.exists( pathToWrite ):
-				#    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
-
 				   ### prepare tarball & send eMail ###
-				    if percentage >= thresholdLevel:
+				#    if percentage >= thresholdLevel:
+                                    if percentage != endedLevel:
                                         self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
+                                    if percentage >= thresholdLevel:
                                         if dictReportTot['JobFailed'] > 0:
                                             self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
 					if percentage == 100:
@@ -865,6 +866,7 @@ class TaskTrackingComponent:
  
                             if os.path.exists( pathToWrite ):
                                 self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+                                ## add to tgz
                             else:
                                 logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
 				
