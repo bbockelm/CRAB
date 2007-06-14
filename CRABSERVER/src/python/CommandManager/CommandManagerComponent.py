@@ -101,6 +101,8 @@ class CommandManagerComponent:
         if taskName in [ s.split('.tgz')[0] for s in dBStatus]:
              logging.info('Task %s not yet managed.'%taskName)
              logging.info('The command will be retried during next DropBox cycle.')
+             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
+             self.msFwdCmd.commit()
              return
 
         if taskName not in os.listdir(self.dropBoxPath):
@@ -122,6 +124,7 @@ class CommandManagerComponent:
         except Exception, e:
              logging.info("Warning: Unable to read " + str(taskName+'/share/userSubj'))
              logging.info(e)
+             return
 
         logging.info(str(subject)+'   '+str(dict['Subject'])) 
         if dict['Subject'].strip() != subject.strip():    
@@ -138,9 +141,10 @@ class CommandManagerComponent:
              taskDict = self.BSession.loadByName( taskName ) # just for crosscheck: exists iif CrabWorker performed the registration
              logging.info('loadByname terminated   '+str(taskDict))
         except Exception, e:
-                logging.info('Problems with DB interaction  %s\n'%payload + str(e))
-                self.msFwdCmd.publish("TaskKilledFailed", taskSpecId)
+                logging.info('Problems with DB interaction  %s\n'%filename + str(e))
+                self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
                 self.msFwdCmd.commit()
+                return
 
         taskSpecId = ''
         if len(taskDict) > 0:
@@ -148,13 +152,15 @@ class CommandManagerComponent:
         else:
              del taskDict
              logging.info('Task %s not found in BOSS. Maybe not yet submitted.'%taskName)
+             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
+             self.msFwdCmd.commit()
              return
 
         # 3 - publish the message to the JobKiller
         logging.info('Now pubblish the message for jobKiller')
         del taskDict
         fwPayload = taskSpecId+':'+self.dropBoxPath+'/'+taskName+'/share/userProxy' #Matteo add: Payload is taskName:pathUserProxy
-        self.msFwdCmd.publish('KillTask', fwPayload)
+        self.msFwdCmd.publish('KillTask', fwPayload, "00:00:10")
         self.msFwdCmd.commit()
         logging.info('....Command dispatched!')
         # Command dispatched, the file is no more needed. Remove it #Fabio
