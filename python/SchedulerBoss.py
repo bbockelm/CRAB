@@ -430,7 +430,7 @@ class SchedulerBoss(Scheduler):
         i = list[0]
         jobsList = list[1]
         schcladstring = ''
-        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(i)+'.clad'# TODO add a check is file exist
+        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(i)+'.clad' # TODO add a check is file exist
         if os.path.isfile(self.schclassad):  
             schcladstring=self.schclassad
         try:
