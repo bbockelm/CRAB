@@ -1129,6 +1129,10 @@ class Cmssw(JobType):
             req='Member("VO-cms-' + \
                  self.version + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
+        if self.executable_arch:
+            req='Member("VO-cms-' + \
+                 self.executable_arch + \
+                 '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
 
         req = req + ' && (other.GlueHostNetworkAdapterOutboundIP)'
 
