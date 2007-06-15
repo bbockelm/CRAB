@@ -442,7 +442,7 @@ class SchedulerBoss(Scheduler):
             pass
         except BossError,e:
             common.logger.message("Error : BOSS command failed with message:")
-            common.logger.debug(e.__str__())
+            common.logger.debug( 1, e.__str__())
         
         jid=[]
         bjid = []
@@ -456,7 +456,7 @@ class SchedulerBoss(Scheduler):
             pass
         except BossError,e:
             common.logger.message("Error : BOSS command failed with message:")
-            common.logger.debug(e.__str__())
+            common.logger.debug( 1, e.__str__())
         task = self.bossTask.jobsDict()
         for k, v in task.iteritems():
             if (v["STATUS"] == 'S'):
