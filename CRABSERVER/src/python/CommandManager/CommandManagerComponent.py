@@ -15,7 +15,7 @@ from logging.handlers import RotatingFileHandler
 import xml.dom.minidom
 
 from MessageService.MessageService import MessageService
-# from TaskTracking.TaskStateAPI import *
+from TaskTracking.TaskStateAPI import *
 import commands
 
 # BOSS API import
@@ -133,25 +133,38 @@ class CommandManagerComponent:
              #os.remove(filename)
              os.rename(filename, filename+'.noGood')
              return
-
+        logging.info("Proxy subject verified") 
         # 2 - query the TT to get the taskId
 
         #Matteo add: manages DB interaction problems and publish message for TT
+        taskDict=""
         try:
              taskDict = self.BSession.loadByName( taskName ) # just for crosscheck: exists iif CrabWorker performed the registration
              logging.info('loadByname terminated   '+str(taskDict))
         except Exception, e:
-                logging.info('Problems with DB interaction  %s\n'%filename + str(e))
-                self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
-                self.msFwdCmd.commit()
-                return
+             logging.info('Problems with DB interaction  %s\n'%filename + str(e))
+             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
+             self.msFwdCmd.commit()
+             return
 
         taskSpecId = ''
-        if len(taskDict) > 0:
+        
+        # Retrive tasks status from TT
+        try:
+             stat="" 
+             stat=getStatus(taskName)
+             logging.info('Task status returned by TT:   '+str(stat))
+        except Exception, e:
+             logging.info('Problems with TT Api:  %s\n'%filename + str(e))
+             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
+             self.msFwdCmd.commit()
+             return
+
+        if len(taskDict) > 0 and stat not in ["partially submitted", "submitted"]:
              taskSpecId = taskName
         else:
              del taskDict
-             logging.info('Task %s not found in BOSS. Maybe not yet submitted.'%taskName)
+             logging.info('Task %s not found in BOSS or in no killable status. '%taskName)
              self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
              self.msFwdCmd.commit()
              return

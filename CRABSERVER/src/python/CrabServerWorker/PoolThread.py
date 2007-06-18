@@ -6,8 +6,8 @@ Implements a pool of threads used to distribute Crab workload.
 
 """
 
-__revision__ = "$Id$"
-__version__ = "$Revision$"
+__revision__ = "$Id: PoolThread.py,v 1.5 2007/05/12 13:51:31 spiga Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import sys
 from threading import Thread
@@ -39,11 +39,6 @@ class PoolThread:
         # create queues
         self.requests = Queue.Queue()
         self.results = Queue.Queue()
-	
-	## introspecion-like structures # Fabio
-	## put here materialization, else...
-	#self.shadowReq = []
-	#self.shadowRes = []
         
         # store reference to component that uses the pool
         self.component = workerComponent
@@ -93,7 +88,6 @@ class PoolThread:
 		  
         # Schedule submission
 	if dontSubmit == False:
-             #self.shadowReq.append(request)
              self.requests.put(request)
 
 	pass
@@ -103,8 +97,6 @@ class PoolThread:
         return the first result from the output queue of the pool.
         """
         value = self.results.get()
-	# if value in self.shadowRes:
-	#      self.shadowRes.remove(value)
         return value
 
 """
@@ -117,7 +109,7 @@ class CrabWorker(Thread):
     crab work.
     """
     
-    def __init__(self, inQueue, outQueue, component, log): #, shadows=None):
+    def __init__(self, inQueue, outQueue, component, log):
         """
         initialize input and output queues, register the component
         and start thread work.
@@ -129,7 +121,6 @@ class CrabWorker(Thread):
         self.component = component
         self.logging = log
         # To prevent zombies -- self.setDaemon(1)
-	# self.shadows = shadows
         self.start()
         
     def run(self):
@@ -141,16 +132,12 @@ class CrabWorker(Thread):
         while True:
             # get request
             payload, retry = self.inQueue.get()
-	    # if self.shadows!=None:
-	    #     self.shadows[0].remove( (payload, retry) )
 	    
             # execute CRAB work
             try:
                 returnData, retCode = self.component.performCrabWork(payload, retry)
                 # store return code in output queue
                 self.outQueue.put( (returnData, retCode) )
-                # if self.shadows!=None:
-                #     self.shadows[1].append( (returnData, retCode) )
             except:
                 logging.info("Exception when processing payload: " + str(payload))
             
@@ -194,6 +181,10 @@ class Notifier(Thread):
                 if int(code) == 0: 
                     self.logging.info("CrabWorkPerformed: "+ str(result))
                     self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", str(result))
+                    self.ms.commit()
+                elif int(code) == -3:
+                    self.logging.info("CrabWorkPerformed with partial submission: "+ str(result))
+                    self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformedPartial", str(result))
                     self.ms.commit()
                 elif int(code) == -2:
                     self.logging.info("CrabWorkFailed: "+ str(result))
