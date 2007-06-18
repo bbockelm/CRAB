@@ -361,10 +361,6 @@ To use DBS1 instead of default DBS2
 
 The URL of the DBS query page. For expert only. (both DBS1 and DBS2)
 
-=item B<dbs_version>
-
-Version of DBS2 to use: relevant only for DBS2
-
 =item B<dbs_instance>
 
 The instance of DBS to be accessed at a given URL. For expert only. For DBS1 only.

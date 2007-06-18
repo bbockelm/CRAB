@@ -92,29 +92,22 @@ class DataDiscovery_DBS2:
         except KeyError:
             dbs_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
 
-        ## get DBS URL
-        try:
-            dbs_version=self.cfg_params['CMSSW.dbs_version']
-        except KeyError:
-            dbs_version="v00_00_06"
-
-        common.logger.debug(3,"Accessing DBS at: "+dbs_url+" with version: "+dbs_version)
+        common.logger.debug(3,"Accessing DBS at: "+dbs_url)
 
 
         ## service API
         args = {}
         args['url']     = dbs_url
-        args['version'] = dbs_version
         args['level']   = 'CRITICAL'
 
         api = DBSAPI.dbsApi.DbsApi(args)
         try:
-            files = api.listFiles(self.datasetPath)
+            files = api.listDatasetFiles(self.datasetPath)
         except DbsBadRequest, msg:
             raise DataDiscoveryError_DBS2(msg)
         except DBSError_DBS2, msg:
             raise DataDiscoveryError_DBS2(msg)
-        
+
         # parse files and fill arrays
         for file in files :
             filename = file['LogicalFileName']
