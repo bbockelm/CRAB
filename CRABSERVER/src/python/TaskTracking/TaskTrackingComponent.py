@@ -103,6 +103,7 @@ class TaskTrackingComponent:
         self.crabcfg = "crab.cfg"
 	self.resSubDir = "res/"
         self.xmlReportFileName = "xmlReportFile.xml"
+        self.tempxmlReportFile = ".tempxmlReportFileName"
 
 	#
 	self.taskState = ["arrived", "submitting", "not submitted", "submitted", "killed", "ended", "unpacked", "partially submitted"]
@@ -553,7 +554,11 @@ class TaskTrackingComponent:
                 c.addJob( J )
 
             c.toXml()
-            c.toFile( pathToWrite + self.xmlReportFileName )
+            if flag == 1:
+                c.toFile ( pathToWrite + self.tempxmlReportFile )
+                self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
+            else:
+                c.toFile ( pathToWrite + self.tempxmlReportFile )
 
 
     def getMoreMails ( self, eMail ):
@@ -616,7 +621,7 @@ class TaskTrackingComponent:
         for i in range(1, nJob+1):
             ## Add parametric indexes for failed and successful jobs # Fabio
             jtResDir = 'job'+str(i)+'/JobTracking'
-            cmd += 'cp *.xml .tmpDone;'  ## adde also the report file into the output package. DS 
+            cmd += 'cp '+self.tempxmlReportFile+' .tmpDone/'+self.xmlReportFileName+' ;'  ## adde also the report file into the output package. DS 
             ## Get the most recent failure and copy that to tmp # Fabio
             failIndex = 4                # Default Value # Fabio
             if os.path.exists('./'+jtResDir+'/Failed/'):
@@ -653,8 +658,9 @@ class TaskTrackingComponent:
             if os.path.exists('./'+jtResDir+'/Failed/'):
                 if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
                     failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
-                cmd += 'cp *.xml .tmpFailed;' 
+                cmd += 'cp '+self.tempxmlReportFile+' .tmpDone/'+self.xmlReportFileName+' ;'
                 cmd += 'cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;'
+                logging.info('cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;')
         """
                 cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/* .tmpFailed;' 
                                                                                           ## I didn' correct anything, but the failed must be preparesd 
@@ -667,7 +673,15 @@ class TaskTrackingComponent:
         cmd += 'mv '+path+'/.temp_failed.tgz '+path+'/failed.tgz;'
         os.system( cmd )
         os.chdir( work_dir )
-  
+ 
+
+    def undiscoverXmlFile (self, path, taskName, fromFileName, toFileName):
+        if os.path.exists(path + fromFileName):
+            infile = file(path + fromFileName , 'r').read()
+            outfile = file(path + toFileName , 'w').write(infile)
+            #infile.close()
+            #outfile.close()
+ 
 
     ##########################################################################
     # publishing messages
@@ -830,20 +844,23 @@ class TaskTrackingComponent:
 			    percentage = (100 * endedJob) / len(statusJobsTask)
 			    pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
 
+                            if os.path.exists( pathToWrite ):
+                                self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+                            else:
+                                logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
+
+
 			    if percentage != endedLevel or \
 			       (percentage == 0 and status == self.taskState[3] ) or \
 			       (percentage == 0 and status == self.taskState[1] ) or \
 			       (notified < 2 and endedLevel == 100):
-			   #and (not os.path.exists(pathToWrite + self.xmlReportFileName))\
 
 		 	        ###  updating endedLevel  ###
 				if endedLevel == 100:
- 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
+                                    TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
 				elif percentage != endedLevel:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
-
 				   ### prepare tarball & send eMail ###
-				#    if percentage >= thresholdLevel:
                                     if percentage != endedLevel:
                                         self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
                                     if percentage >= thresholdLevel:
@@ -857,20 +874,13 @@ class TaskTrackingComponent:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName )
 					    notified = 1
 					    TaskStateAPI.updatingNotifiedPA( taskName, notified )
-				#else:
-				#    logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
 			    elif status == '':
 			        if dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress'] > countNotSubmitted:
 				    TaskStateAPI.updateTaskStatus( taskName, self.taskState[3] )
 				else:
 				    TaskStateAPI.updateTaskStatus( taskName, self.taskState[2] )
+                            self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
  
-                            if os.path.exists( pathToWrite ):
-                                self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
-                                ## add to tgz
-                            else:
-                                logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
-				
 			except ZeroDivisionError, detail:
 			    logging.info("  <-- - -- - -->")
 			    logging.info("WARNING: No jobs in the task " + taskName )
