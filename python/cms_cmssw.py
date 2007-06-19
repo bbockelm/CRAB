@@ -3,7 +3,7 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
-import PsetManipulator  
+# import PsetManipulator  
 # import DataDiscovery
 # import DataDiscovery_DBS2
 # import DataLocation
@@ -232,13 +232,27 @@ class Cmssw(JobType):
         except KeyError:
             self.sourceSeedVtx = None
             common.logger.debug(5,"No vertex seed given")
+
+        try:
+            self.sourceSeedG4 = int(cfg_params['CMSSW.g4_seed'])
+        except KeyError:
+            self.sourceSeedG4 = None
+            common.logger.debug(5,"No g4 sim hits seed given")
+
+        try:
+            self.sourceSeedMix = int(cfg_params['CMSSW.mix_seed'])
+        except KeyError:
+            self.sourceSeedMix = None
+            common.logger.debug(5,"No mix seed given")
+
         try:
             self.firstRun = int(cfg_params['CMSSW.first_run'])
         except KeyError:
             self.firstRun = None
             common.logger.debug(5,"No first run given")
         if self.pset != None: #CarlosDaniele
-            self.PsetEdit = PsetManipulator.PsetManipulator(self.pset) #Daniele Pset
+            import PsetManipulator  
+            PsetEdit = PsetManipulator.PsetManipulator(self.pset) #Daniele Pset
 
         #DBSDLS-start
         ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code 
@@ -268,20 +282,24 @@ class Cmssw(JobType):
             try:
                 if (self.datasetPath): # standard job
                     # allow to processa a fraction of events in a file
-                    self.PsetEdit.inputModule("INPUT")
-                    self.PsetEdit.maxEvent("INPUTMAXEVENTS")
-                    self.PsetEdit.skipEvent("INPUTSKIPEVENTS")
+                    PsetEdit.inputModule("INPUT")
+                    PsetEdit.maxEvent("INPUTMAXEVENTS")
+                    PsetEdit.skipEvent("INPUTSKIPEVENTS")
                 else:  # pythia like job
-                    self.PsetEdit.maxEvent(self.eventsPerJob)
+                    PsetEdit.maxEvent(self.eventsPerJob)
                     if (self.firstRun):
-                        self.PsetEdit.pythiaFirstRun("INPUTFIRSTRUN")  #First Run
+                        PsetEdit.pythiaFirstRun("INPUTFIRSTRUN")  #First Run
                     if (self.sourceSeed) :
-                        self.PsetEdit.pythiaSeed("INPUT")
+                        PsetEdit.pythiaSeed("INPUT")
                         if (self.sourceSeedVtx) :
-                            self.PsetEdit.pythiaSeedVtx("INPUTVTX")
+                            PsetEdit.vtxSeed("INPUTVTX")
+                        if (self.sourceSeedG4) :
+                            self.PsetEdit.g4Seed("INPUTG4")
+                        if (self.sourceSeedMix) :
+                            self.PsetEdit.mixSeed("INPUTMIX")
                 # add FrameworkJobReport to parameter-set
-                self.PsetEdit.addCrabFJR(self.fjrFileName)
-                self.PsetEdit.psetWriter(self.configFilename())
+                PsetEdit.addCrabFJR(self.fjrFileName)
+                PsetEdit.psetWriter(self.configFilename())
             except:
                 msg='Error while manipuliating ParameterSet: exiting...'
                 raise CrabException(msg)
@@ -576,36 +594,32 @@ class Cmssw(JobType):
             ## Since there is no input, any site is good
            # self.jobDestination.append(["Any"])
             self.jobDestination.append([""]) #must be empty to write correctly the xml 
-            args='' 
+            args=[]
             if (self.firstRun):
                     ## pythia first run
                 #self.list_of_args.append([(str(self.firstRun)+str(i))])
-                args=args+(str(self.firstRun)+str(i))
+                args.append(str(self.firstRun)+str(i))
             else:
                 ## no first run
                 #self.list_of_args.append([str(i)])
-                args=args+str(i)
+                args.append(str(i))
             if (self.sourceSeed):
+                args.append(str(self.sourceSeed)+str(i))
                 if (self.sourceSeedVtx):
-                    ## pythia + vtx random seed
-                    #self.list_of_args.append([
-                    #                          str(self.sourceSeed)+str(i),
-                    #                          str(self.sourceSeedVtx)+str(i)
-                    #                          ])
-                    args=args+str(',')+str(self.sourceSeed)+str(i)+str(',')+str(self.sourceSeedVtx)+str(i)
-                else:
-                    ## only pythia random seed
-                    #self.list_of_args.append([(str(self.sourceSeed)+str(i))])
-                    args=args +str(',')+str(self.sourceSeed)+str(i)
-            else:
-                ## no random seed
-                if str(args)=='': args=args+(str(self.firstRun)+str(i))
-            arguments=args.split(',')
-            if len(arguments)==3:self.list_of_args.append([str(arguments[0]),str(arguments[1]),str(arguments[2])])
-            elif len(arguments)==2:self.list_of_args.append([str(arguments[0]),str(arguments[1])])
-            else :self.list_of_args.append([str(arguments[0])])
+                    ## + vtx random seed
+                    args.append(str(self.sourceSeedVtx)+str(i))
+                if (self.sourceSeedG4):
+                    ## + G4 random seed
+                    args.append(str(self.sourceSeedG4)+str(i))
+                if (self.sourceSeedMix):    
+                    ## + Mix random seed
+                    args.append(str(self.sourceSeedMix)+str(i))
+                pass
+            pass
+            self.list_of_args.append(args)
+        pass
             
-     #   print self.list_of_args
+        # print self.list_of_args
 
         return
 
@@ -788,9 +802,9 @@ class Cmssw(JobType):
         txt += '    echo "Created working directory: $WORKING_DIR"\n'
         txt += '    if [ ! -d $WORKING_DIR ] ;then\n'
         txt += '        echo "SET_CMS_ENV 10016 ==> OSG $WORKING_DIR could not be created on WN `hostname`"\n'
-        txt += '	echo "JOB_EXIT_STATUS = 10016"\n'
-        txt += '	echo "JobExitCode=10016" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '	dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '    echo "JOB_EXIT_STATUS = 10016"\n'
+        txt += '    echo "JobExitCode=10016" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '        rm -f $RUNTIME_AREA/$repo \n'
         txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
@@ -824,10 +838,10 @@ class Cmssw(JobType):
         txt += '        cd $RUNTIME_AREA\n'
         txt += '        /bin/rm -rf $WORKING_DIR\n'
         txt += '        if [ -d $WORKING_DIR ] ;then\n'
-        txt += '	    echo "SET_CMS_ENV 10018 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
-        txt += '	    echo "JOB_EXIT_STATUS = 10018"\n'
-        txt += '	    echo "JobExitCode=10018" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '        echo "SET_CMS_ENV 10018 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
+        txt += '        echo "JOB_EXIT_STATUS = 10018"\n'
+        txt += '        echo "JobExitCode=10018" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '            rm -f $RUNTIME_AREA/$repo \n'
         txt += '            echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '            echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
@@ -862,10 +876,10 @@ class Cmssw(JobType):
         txt += '        cd $RUNTIME_AREA\n'
         txt += '        /bin/rm -rf $WORKING_DIR\n'
         txt += '        if [ -d $WORKING_DIR ] ;then\n'
-        txt += '	    echo "SET_EXE_ENV 50114 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Too few arguments for CRAB job wrapper"\n'
-        txt += '	    echo "JOB_EXIT_STATUS = 50114"\n'
-        txt += '	    echo "JobExitCode=50114" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '        echo "SET_EXE_ENV 50114 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Too few arguments for CRAB job wrapper"\n'
+        txt += '        echo "JOB_EXIT_STATUS = 50114"\n'
+        txt += '        echo "JobExitCode=50114" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '            rm -f $RUNTIME_AREA/$repo \n'
         txt += '            echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '            echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
@@ -886,36 +900,42 @@ class Cmssw(JobType):
                 txt += 'MaxEvents=${args[2]}\n'
                 txt += 'SkipEvents=${args[3]}\n'
                 txt += 'echo "Inputfiles:<$InputFiles>"\n'
-                txt += 'sed "s#{\'INPUT\'}#$InputFiles#" $RUNTIME_AREA/'+pset+' > pset_tmp_1.cfg\n'
+                txt += 'sed "s#{\'INPUT\'}#$InputFiles#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                 txt += 'echo "MaxEvents:<$MaxEvents>"\n'
-                txt += 'sed "s#INPUTMAXEVENTS#$MaxEvents#" pset_tmp_1.cfg > pset_tmp_2.cfg\n'
+                txt += 'sed "s#INPUTMAXEVENTS#$MaxEvents#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
-                txt += 'sed "s#INPUTSKIPEVENTS#$SkipEvents#" pset_tmp_2.cfg > pset.cfg\n'
+                txt += 'sed "s#INPUTSKIPEVENTS#$SkipEvents#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
             else:  # pythia like job
-                if (self.sourceSeed):
-                    txt += 'FirstRun=${args[1]}\n'
+                seedIndex=1
+                if (self.firstRun):
+                    txt += 'FirstRun=${args['+str(seedIndex)+']}\n'
                     txt += 'echo "FirstRun: <$FirstRun>"\n'
-                    txt += 'sed "s#\<INPUTFIRSTRUN\>#$FirstRun#" $RUNTIME_AREA/'+pset+' > tmp_1.cfg\n'
-                else:
-                    txt += '# Copy untouched pset\n'
-                    txt += 'cp $RUNTIME_AREA/'+pset+' tmp_1.cfg\n'
-                if (self.sourceSeed):
-#                    txt += 'Seed=$2\n'
-                    txt += 'Seed=${args[2]}\n'
-                    txt += 'echo "Seed: <$Seed>"\n'
-                    txt += 'sed "s#\<INPUT\>#$Seed#" tmp_1.cfg > tmp_2.cfg\n'
-                    if (self.sourceSeedVtx):
-#                        txt += 'VtxSeed=$3\n'
-                        txt += 'VtxSeed=${args[3]}\n'
-                        txt += 'echo "VtxSeed: <$VtxSeed>"\n'
-                        txt += 'sed "s#INPUTVTX#$VtxSeed#" tmp_2.cfg > pset.cfg\n'
-                    else:
-                        txt += 'mv tmp_2.cfg pset.cfg\n'
-                else:
-                    txt += 'mv tmp_1.cfg pset.cfg\n'
-                   # txt += '# Copy untouched pset\n'
-                   # txt += 'cp $RUNTIME_AREA/'+pset+' pset.cfg\n'
+                    txt += 'sed "s#\<INPUTFIRSTRUN\>#$FirstRun#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                    seedIndex=seedIndex+1
 
+                if (self.sourceSeed):
+                    txt += 'Seed=${args['+str(seedIndex)+']}\n'
+                    txt += 'sed "s#\<INPUT\>#$Seed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                    seedIndex=seedIndex+1
+                    ## the following seeds are not always present
+                    if (self.sourceSeedVtx):
+                        txt += 'VtxSeed=${args['+str(seedIndex)+']}\n'
+                        txt += 'echo "VtxSeed: <$VtxSeed>"\n'
+                        txt += 'sed "s#\<INPUTVTX\>#$VtxSeed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                        seedIndex += 1
+                    if (self.sourceSeedG4):
+                        txt += 'G4Seed=${args['+str(seedIndex)+']}\n'
+                        txt += 'echo "G4Seed: <$G4Seed>"\n'
+                        txt += 'sed "s#\<INPUTG4\>#$G4Seed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                        seedIndex += 1
+                    if (self.sourceSeedMix):
+                        txt += 'mixSeed=${args['+str(seedIndex)+']}\n'
+                        txt += 'echo "MixSeed: <$mixSeed>"\n'
+                        txt += 'sed "s#\<INPUTMIX\>#$mixSeed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                        seedIndex += 1
+                    pass
+                pass
+            txt += 'mv -f '+pset+' pset.cfg\n'
 
         if len(self.additional_inbox_files) > 0:
             for file in self.additional_inbox_files:
@@ -934,9 +954,6 @@ class Cmssw(JobType):
             txt += 'cat pset.cfg\n'
             txt += 'echo "****** end pset.cfg ********"\n'
             txt += '\n'
-            # txt += 'echo "***** cat pset1.cfg *********"\n'
-            # txt += 'cat pset1.cfg\n'
-            # txt += 'echo "****** end pset1.cfg ********"\n'
         return txt
 
     def wsBuildExe(self, nj=0):
@@ -1081,10 +1098,10 @@ class Cmssw(JobType):
         txt += '    echo "Remove working directory: $WORKING_DIR"\n'
         txt += '    /bin/rm -rf $WORKING_DIR\n'
         txt += '    if [ -d $WORKING_DIR ] ;then\n'
-        txt += '	echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
-        txt += '	echo "JOB_EXIT_STATUS = 60999"\n'
-        txt += '	echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '	dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '    echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
+        txt += '    echo "JOB_EXIT_STATUS = 60999"\n'
+        txt += '    echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '        rm -f $RUNTIME_AREA/$repo \n'
         txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
@@ -1110,13 +1127,13 @@ class Cmssw(JobType):
         # take away last extension
         name = p[0]
         for x in p[1:-1]:
-           name=name+"."+x
+            name=name+"."+x
         # add "_txt"
         if len(p)>1:
-          ext = p[len(p)-1]
-          result = name + '_' + txt + "." + ext
+            ext = p[len(p)-1]
+            result = name + '_' + txt + "." + ext
         else:
-          result = name + '_' + txt
+            result = name + '_' + txt
         
         return result
 
@@ -1172,10 +1189,10 @@ class Cmssw(JobType):
         txt += '       cd $RUNTIME_AREA\n'
         txt += '       /bin/rm -rf $WORKING_DIR\n'
         txt += '       if [ -d $WORKING_DIR ] ;then\n'
-        txt += '	    echo "SET_CMS_ENV 10017 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n' 
-        txt += '	    echo "JOB_EXIT_STATUS = 10017"\n' 
-        txt += '	    echo "JobExitCode=10017" | tee -a $RUNTIME_AREA/$repo\n' 
-        txt += '	    dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '        echo "SET_CMS_ENV 10017 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n' 
+        txt += '        echo "JOB_EXIT_STATUS = 10017"\n' 
+        txt += '        echo "JobExitCode=10017" | tee -a $RUNTIME_AREA/$repo\n' 
+        txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '            rm -f $RUNTIME_AREA/$repo \n'
         txt += '            echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '            echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
