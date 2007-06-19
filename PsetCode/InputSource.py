@@ -96,7 +96,7 @@ class InputSource:
         
             
         
-    def setPythiaVtxSeed(self,cfg, vtxSeed):
+    def setVtxSeed(self,cfg, vtxSeed):
         """set pythia  vertex seed"""
 
         modName = 'moduleSeeds'
@@ -109,6 +109,40 @@ class InputSource:
                     seedSvc[modName][i]["VtxSmeared"] =  ('uint32', 'untracked', vtxSeed )
                     check = 1
             if not check: print 'no VtxSmeared in ',modName
+        else:
+            print 'no ',modName,' in Pset '
+            pass        
+
+    def setG4Seed(self,cfg, g4Seed):
+        """set G4 seed"""
+
+        modName = 'moduleSeeds'
+        _SvcName = "RandomNumberGeneratorService" 
+        seedSvc = cfg.cmsConfig.service(_SvcName)
+        check = 0
+        if  modName in seedSvc.keys():
+            for i in range(len(seedSvc[modName])): 
+                if string.find(str(seedSvc[modName][i]), 'g4SimHits') != -1: 
+                    seedSvc[modName][i]["g4SimHits"] =  ('uint32', 'untracked', vtxSeed )
+                    check = 1
+            if not check: print 'no g4SimHits in ',modName
+        else:
+            print 'no ',modName,' in Pset '
+            pass        
+
+    def setMixSeed(self,cfg, g4Seed):
+        """set Mixing seed"""
+
+        modName = 'moduleSeeds'
+        _SvcName = "RandomNumberGeneratorService" 
+        seedSvc = cfg.cmsConfig.service(_SvcName)
+        check = 0
+        if  modName in seedSvc.keys():
+            for i in range(len(seedSvc[modName])): 
+                if string.find(str(seedSvc[modName][i]), 'mix') != -1: 
+                    seedSvc[modName][i]["mix"] =  ('uint32', 'untracked', vtxSeed )
+                    check = 1
+            if not check: print 'no mix in ',modName
         else:
             print 'no ',modName,' in Pset '
             pass        
