@@ -15,6 +15,7 @@ from Status import Status
 from StatusBoss import StatusBoss 
 from ApmonIf import ApmonIf
 from Cleaner import Cleaner
+from DBS2Publisher import Publisher
 import common
 import Statistic
 import commands
@@ -35,10 +36,11 @@ class Crab:
     def __init__(self, opts):
         ## test_tag
         # The order of main_actions is important !
-        self.main_actions = [ '-create', '-submit' ] 
+        self.main_actions = [ '-create', '-submit' ]
+        ### FEDE new option "-publish" FOR DBS OUTPUT PUBLICATION
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput','-get',
                              '-resubmit' , '-cancelAndResubmit', '-testJdl', '-postMortem', '-clean',
-                             '-printId' ]
+                             '-printId', '-publish' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -779,6 +781,21 @@ class Crab:
                 
                 self.actions[opt] = Cleaner(self.cfg_params)
 
+            ### FEDE DBS/DLS OUTPUT PUBLICATION 
+            elif ( opt == '-publish' ):
+                if val:
+                    username,dataname=string.split(val,'_')
+                    #print "username = ", username
+                    #print "dataname = ",  dataname
+                    ### from script to class...
+                    thePublisher = Publisher(self.cfg_params, username,dataname)
+                    publish_exit_status = thePublisher.publish()
+                    if (publish_exit_status == '1'):
+                        common.logger.message("user data publication --> problems")
+                    else:
+                        common.logger.message("user data publication --> ok ")
+                else: 
+                    common.logger.message("Warning: with '-publish' you _MUST_ specify 'username_dataname' as value, where username is your surname and dataname is the name you want to use to publish your produced data")
             pass
         return
 

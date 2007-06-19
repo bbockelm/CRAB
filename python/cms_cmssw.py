@@ -784,6 +784,14 @@ class Cmssw(JobType):
             pa = os.environ['CRABDIR'] + '/' + 'ProdAgentApi'
             if os.path.isdir(pa):
                 tar.add(pa,paDir)
+
+            ### FEDE FOR DBS PUBLICATION
+            ## Add PRODCOMMON dir to tar
+            prodcommonDir = 'ProdCommon'
+            prodcommonPath = os.environ['CRABDIR'] + '/' + 'ProdCommon'
+            if os.path.isdir(prodcommonPath):
+                tar.add(prodcommonPath,prodcommonDir)
+            #############################    
         
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
             tar.close()
@@ -915,6 +923,25 @@ class Cmssw(JobType):
 
         # Prepare job-specific part
         job = common.job_list[nj]
+        ### FEDE FOR DBS OUTPUT PUBLICATION
+        if (self.datasetPath): 
+            txt += '\n'
+            txt += 'DatasetPath='+self.datasetPath+'\n'
+
+            datasetpath_split = self.datasetPath.split("/")
+            
+            txt += 'PrimaryDataset='+datasetpath_split[1]+'\n'
+            txt += 'DataTier='+datasetpath_split[2]+'\n'
+            txt += 'ProcessedDataset='+datasetpath_split[3]+'\n'
+            txt += 'ApplicationFamily=Online\n'
+
+        else:
+            txt += 'DatasetPath=MCDataTier\n'
+            txt += 'PrimaryDataset=null\n'
+            txt += 'DataTier=null\n'
+            txt += 'ProcessedDataset=null\n'
+            txt += 'ApplicationFamily=MCDataTier\n'
+        ##################    
         if self.pset != None: #CarlosDaniele
             pset = os.path.basename(job.configFilename())
             txt += '\n'
@@ -978,6 +1005,13 @@ class Cmssw(JobType):
             txt += 'cat pset.cfg\n'
             txt += 'echo "****** end pset.cfg ********"\n'
             txt += '\n'
+            ### FEDE FOR DBS OUTPUT PUBLICATION
+            txt += 'PSETHASH=`EdmConfigHash < pset.cfg`'
+            ############## 
+            txt += '\n'
+            # txt += 'echo "***** cat pset1.cfg *********"\n'
+            # txt += 'cat pset1.cfg\n'
+            # txt += 'echo "****** end pset1.cfg ********"\n'
         return txt
 
     def wsBuildExe(self, nj=0):
@@ -1016,11 +1050,16 @@ class Cmssw(JobType):
             txt += '   echo "Successful untar" \n'
             txt += 'fi \n'
             txt += '\n'
-            txt += 'echo "Include ProdAgentApi in PYTHONPATH"\n'
+            txt += 'echo "Include ProdAgentApi and PRODCOMMON in PYTHONPATH"\n'
             txt += 'if [ -z "$PYTHONPATH" ]; then\n'
-            txt += '   export PYTHONPATH=ProdAgentApi\n'
+            #### FEDE FOR DBS OUTPUT PUBLICATION
+            txt += '   export PYTHONPATH=`pwd`/ProdAgentApi:`pwd`/ProdCommon\n'
+            #txt += '   export PYTHONPATH=ProdAgentApi\n'
             txt += 'else\n'
-            txt += '   export PYTHONPATH=ProdAgentApi:${PYTHONPATH}\n'
+            txt += '   export PYTHONPATH=`pwd`/ProdAgentApi:`pwd`/ProdCommon:${PYTHONPATH}\n'
+            #txt += '   export PYTHONPATH=ProdAgentApi:${PYTHONPATH}\n'
+            txt += 'echo "PYTHONPATH=$PYTHONPATH"\n'
+            ###################  
             txt += 'fi\n'
             txt += '\n'
 
@@ -1100,10 +1139,7 @@ class Cmssw(JobType):
             txt += 'ls '+fileWithSuffix+'\n'
             txt += 'ls_result=$?\n'
             txt += 'if [ $ls_result -ne 0 ] ; then\n'
-            #txt += '   JOB_EXIT_STATUS=60302\n'
-            ### FEDE 
             txt += '   exit_status=60302\n'
-            ####
             txt += '   echo "ERROR: Problem with output file"\n'
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
@@ -1111,10 +1147,12 @@ class Cmssw(JobType):
                 txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
                 txt += '    fi \n'
             txt += 'else\n'
-            txt += '   cp '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            ### FEDE FOR DBS OUTPUT PUBLICATION
+            txt += '   mv '+fileWithSuffix+' $RUNTIME_AREA\n'
+            txt += '   cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            #################################
             txt += 'fi\n'
        
-        txt += 'cd $RUNTIME_AREA\n'
         txt += 'cd $RUNTIME_AREA\n'
         ### OLI_DANIELE
         txt += 'if [ $middleware == OSG ]; then\n'  
@@ -1277,6 +1315,39 @@ class Cmssw(JobType):
         txt += '   echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
         txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'
         return txt
+
+    ### FEDE FOR DBS OUTPUT PUBLICATION 
+    def modifyReport(self, nj):
+        """
+        insert the part of the script that modifies the FrameworkJob Report 
+        """
+        
+        txt = '' 
+        txt += 'echo "Modify Job Report" \n'
+        txt += 'chmod a+x $RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
+        txt += 'if [ -z "$SE" ]; then\n'
+        txt += '    SE="" \n'
+        txt += 'fi \n' 
+        txt += 'if [ -z "$SE_PATH" ]; then\n'
+        txt += '    SE_PATH="" \n'
+        txt += 'fi \n' 
+        txt += 'echo "SE = $SE"\n' 
+        txt += 'echo "SE_PATH = $SE_PATH"\n'
+        txt += 'FOR_LFN=$DatasetPath/$MonitorID\n'
+        txt += 'echo "FOR_LFN = $FOR_LFN"\n'
+        txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n'
+        txt += 'echo "$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n' 
+        txt += '$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
+        txt += 'modifyReport_result=$?\n'
+        txt += 'echo modifyReport_result = $modifyReport_result\n'
+        txt += 'if [ $modify_result -ne 0 ]; then\n'
+        txt += '    exit_status=1\n'
+        txt += '    echo "ERROR: Problem with ModifyJobReport"\n'
+        txt += 'else\n'
+        txt += '    mv NewFrameworkJobReport.xml crab_fjr_$NJob.xml\n'
+        txt += 'fi\n'
+        return txt
+    #################
 
     def setParam_(self, param, value):
         self._params[param] = value

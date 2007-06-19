@@ -10,7 +10,7 @@ import string,os
 class ScriptWriter:
     def __init__(self, template):
         # pattern -> action
-        ### FEDE aggiunte ultime due azioni
+        ### FEDE added modify_report FOR DBS OUTPUT PUBLICATION
         self.actions = {
             'title'                       : self.title_,
             'setup_scheduler_environment' : self.setupSchedulerEnvironment_,
@@ -20,7 +20,8 @@ class ScriptWriter:
             'run_executable'              : self.runExe_,
             'rename_output'               : self.renameOutput_,
             'copy_output'                 : self.copyOutput_,
-            'register_output'             : self.registerOutput_
+            'register_output'             : self.registerOutput_,
+            'modify_report'               : self.modifyReport_
             }
         
         if os.path.isfile("./"+template):
@@ -140,3 +141,11 @@ class ScriptWriter:
         txt = common.scheduler.wsRegisterOutput()
         return txt
 
+    ### FEDE FOR DBS OUTPUT PUBLICATION 
+    def modifyReport_(self):
+        """
+        Returns part of a job script which modifies the FrameworkJobReport.
+        """
+        jbt = common.job_list.type()
+        txt = jbt.modifyReport(self.nj)
+        return txt

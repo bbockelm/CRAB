@@ -155,6 +155,10 @@ pwd
 echo "ls -Al"
 ls -Al
 
+### FEDE FOR DBS OUTPUT PUBLICATION
+#CRAB modify_report
+#######################
+
 echo "JobExitCode=$exit_status" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 rm -f $RUNTIME_AREA/$repo
