@@ -28,7 +28,7 @@ The most useful general options (use '-h' to get complete help):
   -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
   -printId [range]    -- print the job SID
   -continue|-c [dir]  -- Apply command to task stored in [dir].
-  -h [format]         -- Detailed help. Formats: man (default), tex, html.
+  -h [format]         -- Detailed help. Formats: man (default), tex, html, txt.
   -cfg fname          -- Configuration file name. Default is 'crab.cfg'.
   -debug N            -- set the verbosity level to N
   -v                  -- Print version and exit.
@@ -585,6 +585,12 @@ B<CRAB> is a tool for the CMS analysis on the grid environment. It is based on t
         pod2html = 'pod2html --title='+common.prog_name+\
                    ' --infile='+pod+' --outfile='+fname
         os.system(pod2html)
+        print 'See '+fname
+        pass
+    elif option == 'txt':
+        fname = common.prog_name+'-v'+common.prog_version_str+'.txt'
+        pod2text = 'pod2text '+pod+' '+fname
+        os.system(pod2text)
         print 'See '+fname
         pass
 
