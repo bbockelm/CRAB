@@ -19,6 +19,10 @@ echo "Job submitted on host `hostname`"
 uname -a
 echo "Working directory `pwd`"
 ls -Al
+echo "current user is `id`"
+echo "voms-proxy-info"
+voms-proxy-info -all
+
 repo=jobreport.txt
 
 echo "tar zxvf MLfiles.tgz"
