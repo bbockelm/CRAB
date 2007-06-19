@@ -105,9 +105,13 @@ class DataLocation:
                     replicas = self.checkWhiteList(replicas, fileblocks)
                 if len(replicas)!=0:
                     blockSites[fileblocks] = replicas
+                else:
+                    # add empty entry if no replicas found
+                    blockSites[fileblocks] = ''
             except DLSNoReplicas, ex:
                 common.logger.debug(5,str(ex.getErrorMessage()))
-                common.logger.debug(5,"Proceeding without this block.\n")
+                common.logger.debug(5,"Block not hosted by any site, continuing.\n")
+                blockSites[fileblocks] = ''
                 failCount = failCount + 1
             except:
                 raise DataLocationError('')

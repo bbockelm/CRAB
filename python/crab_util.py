@@ -354,6 +354,31 @@ def makeCksum(filename) :
 
     return cksum
 
+def spanRanges(jobArray):
+    """
+    take array of job numbers and concatenate 1,2,3 to 1-3
+    return string
+    """
+
+    output = ""
+
+    previous = jobArray[0]-1
+    for job in jobArray:
+        if previous+1 == job:
+            previous = job
+            if len(output) > 0 :
+                if output[-1] != "-":
+                    output += "-"
+            else :
+                output += str(previous)
+        else:
+            output += str(previous) + "," + str(job)
+            previous = job
+    if len(jobArray) > 1 :
+        output += str(previous)
+
+    return output
+
 ####################################
 if __name__ == '__main__':
     print 'sys.argv[1] =',sys.argv[1]

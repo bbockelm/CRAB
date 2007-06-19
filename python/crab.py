@@ -493,17 +493,22 @@ class Crab:
                     # get the first not already submitted
                     common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
                     jobSetForSubmission = 0
+                    jobSkippedInSubmission = []
                     for nj in range(common.jobDB.nJobs()):
-                        if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
-                            jobSetForSubmission +=1
-                            nj_list.append(nj)
-                        else: continue
+                        if len(common.jobDB.destination(nj)) != 0 :
+                            if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
+                                jobSetForSubmission +=1
+                                nj_list.append(nj)
+                            else: continue
+                        else :
+                            jobSkippedInSubmission.append(nj+1)
                         if nsjobs >0 and nsjobs == jobSetForSubmission:
                             break
                         pass
                     if nsjobs>jobSetForSubmission:
                         common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
-                 
+                    if len(jobSkippedInSubmission) > 0 :
+                        common.logger.message("Jobs: " + spanRanges(jobSkippedInSubmission) + " skipped because no sites are hosting this data")
                     # submit N from last submitted job
                     common.logger.debug(5,'nj_list '+str(nj_list))
                  

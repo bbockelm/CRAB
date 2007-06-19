@@ -3,10 +3,6 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
-# import PsetManipulator  
-# import DataDiscovery
-# import DataDiscovery_DBS2
-# import DataLocation
 import Scram
 
 import os, string, re, shutil, glob
@@ -74,13 +70,19 @@ class Cmssw(JobType):
             self.setParam_('dataset', 'None')
             self.setParam_('owner', 'None')
         else:
-            datasetpath_split = self.datasetPath.split("/")
-            if self.use_dbs_1 == 1 :
-                self.setParam_('dataset', datasetpath_split[1])
-                self.setParam_('owner', datasetpath_split[-1])
-            else:
-                self.setParam_('dataset', datasetpath_split[1])
-                self.setParam_('owner', datasetpath_split[2])
+            try:
+                datasetpath_split = self.datasetPath.split("/")
+                # standard style
+                if self.use_dbs_1 == 1 :
+                    self.setParam_('dataset', datasetpath_split[1])
+                    self.setParam_('owner', datasetpath_split[-1])
+                else:
+                    self.setParam_('dataset', datasetpath_split[1])
+                    self.setParam_('owner', datasetpath_split[2])
+            except:
+                self.setParam_('dataset', self.datasetPath)
+                self.setParam_('owner', self.datasetPath)
+                
         self.setTaskid_()
         self.setParam_('taskId', self.cfg_params['taskId'])
 
@@ -130,11 +132,11 @@ class Cmssw(JobType):
                     self.output_file.append(tmp)
                     pass
             else:
-                log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available")
+                log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available\n")
                 pass
             pass
         except KeyError:
-            log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available")
+            log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available\n")
             pass
 
         # script_exe file as additional file in inputSandbox
@@ -274,7 +276,7 @@ class Cmssw(JobType):
                 self.jobSplittingForScript()
             else:
                 self.jobSplittingNoInput()
-        else: 
+        else:
             self.jobSplittingByBlocks(blockSites)
 
         # modify Pset
@@ -314,7 +316,7 @@ class Cmssw(JobType):
         datasetPath=self.datasetPath
 
         ## Contact the DBS
-        common.logger.message("Contacting DBS...")
+        common.logger.message("Contacting Data Discovery Services ...")
         try:
 
             if self.use_dbs_1 == 1 :
@@ -342,18 +344,13 @@ class Cmssw(JobType):
             msg = 'ERROR ***: failed Data Discovery in DBS :  %s'%ex.getErrorMessage()
             raise CrabException(msg)
 
-        ## get list of all required data in the form of dbs paths  (dbs path = /dataset/datatier/owner)
-        common.logger.message("Required data are :"+self.datasetPath)
-
         self.filesbyblock=self.pubdata.getFiles()
         self.eventsbyblock=self.pubdata.getEventsPerBlock()
         self.eventsbyfile=self.pubdata.getEventsPerFile()
 
         ## get max number of events
         self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py 
-        common.logger.message("The number of available events is %s\n"%self.maxEvents)
 
-        common.logger.message("Contacting DLS...")
         ## Contact the DLS and build a list of sites hosting the fileblocks
         try:
             dataloc=DataLocation.DataLocation(self.filesbyblock.keys(),cfg_params)
@@ -371,8 +368,9 @@ class Cmssw(JobType):
                 allSites.append(oneSite)
         allSites = self.uniquelist(allSites)
 
-        common.logger.message("Sites ("+str(len(allSites))+") hosting part/all of dataset: "+str(allSites)) 
-        common.logger.debug(6, "List of Sites: "+str(allSites))
+        # screen output
+        common.logger.message("Requested dataset: " + datasetPath + " has " + str(self.maxEvents) + " events in " + str(len(self.filesbyblock.keys())) + " blocks.\n")
+
         return sites
     
     def jobSplittingByBlocks(self, blockSites):
@@ -434,6 +432,9 @@ class Cmssw(JobType):
         jobCount = 0
         list_of_lists = []
 
+        # list tracking which jobs are in which jobs belong to which block
+        jobsOfBlock = {}
+
         # ---- Iterate over the blocks in the dataset until ---- #
         # ---- we've met the requested total # of events    ---- #
         while ( (eventsRemaining > 0) and (blockCount < numBlocksInDataset) and (jobCount < totalNumberOfJobs)):
@@ -488,6 +489,11 @@ class Cmssw(JobType):
                             common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
                             self.jobDestination.append(blockSites[block])
                             common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
+                            # fill jobs of block dictionary
+                            if block in jobsOfBlock.keys() :
+                                jobsOfBlock[block].append(jobCount+1)
+                            else:
+                                jobsOfBlock[block] = [jobCount+1]
                             # reset counter
                             jobCount = jobCount + 1
                             totalEventCount = totalEventCount + filesEventCount - jobSkipEventCount
@@ -511,6 +517,10 @@ class Cmssw(JobType):
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         self.jobDestination.append(blockSites[block])
                         common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
+                        if block in jobsOfBlock.keys() :
+                            jobsOfBlock[block].append(jobCount+1)
+                        else:
+                            jobsOfBlock[block] = [jobCount+1]
                         # reset counter
                         jobCount = jobCount + 1
                         totalEventCount = totalEventCount + eventsPerJobRequested
@@ -531,6 +541,10 @@ class Cmssw(JobType):
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         self.jobDestination.append(blockSites[block])
                         common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
+                        if block in jobsOfBlock.keys() :
+                            jobsOfBlock[block].append(jobCount+1)
+                        else:
+                            jobsOfBlock[block] = [jobCount+1]
                         # increase counter
                         jobCount = jobCount + 1
                         totalEventCount = totalEventCount + eventsPerJobRequested
@@ -548,8 +562,18 @@ class Cmssw(JobType):
         self.ncjobs = self.total_number_of_jobs = jobCount
         if (eventsRemaining > 0 and jobCount < totalNumberOfJobs ):
             common.logger.message("Could not run on all requested events because some blocks not hosted at allowed sites.")
-        common.logger.message("\n"+str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
+        common.logger.message(str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
         
+        # screen output
+        screenOutput = "List of jobs and available destination sites:\n\n"
+
+        blockCounter = 0
+        for block in jobsOfBlock.keys():
+            blockCounter += 1
+            screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),','.join(blockSites[block]))
+
+        common.logger.message(screenOutput)
+
         self.list_of_args = list_of_lists
         return
 
