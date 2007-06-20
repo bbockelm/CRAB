@@ -176,15 +176,11 @@ class Notifier(Thread):
             try:    
                 # get result
                 result, code = self.pool.getResult()
-            
+                self.logging.info("DEBUG: poolResult %s, %s"%(str(result), str(code)) ) 
                 # send the message
                 if int(code) == 0: 
                     self.logging.info("CrabWorkPerformed: "+ str(result))
                     self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", str(result))
-                    self.ms.commit()
-                elif int(code) == -3:
-                    self.logging.info("CrabWorkPerformed with partial submission: "+ str(result))
-                    self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformedPartial", str(result))
                     self.ms.commit()
                 elif int(code) == -2:
                     self.logging.info("CrabWorkFailed: "+ str(result))
@@ -198,7 +194,12 @@ class Notifier(Thread):
                     countDest += self.ms.publish("CrabServerWorkerNotifyThread:Retry", str(result), twait) 
                     self.logging.info("Retry listeners count:" + str(countDest))
                     self.ms.commit()
-                
+                elif int(code) == -3:
+                    self.logging.info("CrabWorkPerformed with partial submission: "+ str(result))
+                    self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformedPartial", str(result))
+                    self.ms.commit()
+                else:
+                    self.logging.info("WARNING: Unexpected result from worker pool.")
             except Exception, e:
                  self.logging.info("Notify Thread problem: "+str(e))
         pass           
