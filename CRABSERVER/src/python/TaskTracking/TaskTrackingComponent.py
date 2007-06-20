@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.20 2007/06/10 12:13:28 mcinquil Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.23 2007/06/18 08:16:04 mcinquil Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import os
 import time
@@ -34,6 +34,8 @@ import TaskStateAPI
 # XML
 #from CrabServer.CreateXmlJobReport import *
 from CreateXmlJobReport import *
+
+from Outputting import *
 
 # subject & original name
 from UtilSubject import *
@@ -402,8 +404,12 @@ class TaskTrackingComponent:
             for jobId in range(1,totJobs+1):
                 vect = ["Submitted", "", "", 0]
                 dictionaryReport.setdefault(jobId, vect)
-            for jobId in jobList:
-                dictionaryReport[jobId+1][0] = "NotSubmitted"
+            try:
+                for jobId in jobList:
+                    dictionaryReport[jobId+1][0] = "NotSubmitted"
+            except Exception, ex:
+                logging.error( str(ex) )
+                logging.error( str(ex.args) )
             logging.info(str(dictionaryReport))
             self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
             ## MAIL report user
@@ -459,7 +465,6 @@ class TaskTrackingComponent:
 	"""
 	obj = UtilSubject( self.args['dropBoxPath'], taskName, uuid )
 	origTaskName, userName = obj.getInfos()
-        ###logging.info(userName)
         del obj
 	eMaiList = self.getMoreMails(eMail)
 	strEmail = ""
@@ -468,7 +473,6 @@ class TaskTrackingComponent:
 	TaskStateAPI.updatingNotifiedPA( taskName, 2 )
         if status == self.taskState[2]:
             self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + taskName  + "/res/" + self.xmlReportFileName )
-#origTaskName, strEmail[0:len(strEmail)-1], userName)
         elif status == self.taskState[7]:
             self.taskIncompleteSubmission(origTaskName, strEmail[0:len(strEmail)-1], userName)
         else:
@@ -479,6 +483,13 @@ class TaskTrackingComponent:
         """
         _updateTaskKilled_
         """
+        try:
+            TaskStateAPI.updateStatus( taskName, status )
+        except Exception, ex:
+            logging.error("  <-- - -- - -->")
+            logging.error( "ERROR while updating the task " + str(taskName) )
+            logging.error( "      "+str(ex))
+            logging.error("  <-- - -- - -->")
 
         eMail = ""
         uuid = ""
@@ -501,7 +512,7 @@ class TaskTrackingComponent:
             logging.error( "      "+str(ex))
             logging.error("  <-- - -- - -->")
 
-        TaskStateAPI.updatingStatus( taskName, self.taskState[4], 2 )
+        #TaskStateAPI.updatingStatus( taskName, self.taskState[4], 2 )
 
     def killTaskFailed (self, taskName ):
         """
@@ -554,11 +565,9 @@ class TaskTrackingComponent:
                 c.addJob( J )
 
             c.toXml()
-            if flag == 1:
-                c.toFile ( pathToWrite + self.tempxmlReportFile )
+            c.toFile ( pathToWrite + self.tempxmlReportFile )
+            if not flag:
                 self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
-            else:
-                c.toFile ( pathToWrite + self.tempxmlReportFile )
 
 
     def getMoreMails ( self, eMail ):
@@ -660,7 +669,7 @@ class TaskTrackingComponent:
                     failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
                 cmd += 'cp '+self.tempxmlReportFile+' .tmpDone/'+self.xmlReportFileName+' ;'
                 cmd += 'cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;'
-                logging.info('cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;')
+                #logging.info('cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;')
         """
                 cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/* .tmpFailed;' 
                                                                                           ## I didn' correct anything, but the failed must be preparesd 
@@ -788,6 +797,7 @@ class TaskTrackingComponent:
 			dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
 			countNotSubmitted = 0 
 			dictStateTot = {}
+                        dictFinishedJobs = {}
 			v = taskDict.values()[0]
 			statusJobsTask = v.jobStates()
 
@@ -809,24 +819,39 @@ class TaskTrackingComponent:
 				if runInfoJob['EXE_EXIT_CODE'] == "0" and runInfoJob['JOB_EXIT_STATUS'] == "0":
 				    dictReportTot['JobSuccess'] += 1
 				    dictStateTot[job][3] = 1
+                                    dictFinishedJobs.setdefault(job,1)
 				elif not resubmitting:
 				    dictReportTot['JobFailed'] += 1
                                     dictStateTot[job][0] = "Done (Failed)"
                                     dictStateTot[job][3] = 1
+                                    dictFinishedJobs.setdefault(job,1)
 				else:
 				    dictReportTot['JobInProgress'] += 1
                                     dictStateTot[job][0] = "Resubmitting by server"#"Managing by server"
+                                    dictFinishedJobs.setdefault(job,0)
 			    elif stato == "SA" or stato == "SK" or stato == "K":
 				if not resubmitting:
 				    dictReportTot['JobFailed'] += 1
+                                    dictFinishedJobs.setdefault(job,1)
 				else:
 				    dictReportTot['JobInProgress'] += 1
                                     dictStateTot[job][0] = "Resubmitting by server"#"Managing by server"
+                                    dictFinishedJobs.setdefault(job,0)
 			    elif stato == "W":
-				countNotSubmitted += 1 
-				dictReportTot['JobInProgress'] += 1
-			    else:
-				dictReportTot['JobInProgress'] += 1
+                                if not resubmitting:
+   				    countNotSubmitted += 1 
+				    dictReportTot['JobFailed'] += 1
+                                    dictFinishedJobs.setdefault(job,1)
+                                else:
+                                    countNotSubmitted += 1
+                                    dictReportTot['JobInProgress'] += 1
+                                    dictFinishedJobs.setdefault(job,0)
+			    elif not resubmitting:
+   				dictReportTot['JobFailed'] += 1
+                                dictFinishedJobs.setdefault(job,1)
+                            else:
+                                dictReportTot['JobInProgress'] += 1
+                                dictFinishedJobs.setdefault(job,0)
 			
 			rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
 			rev_items.sort()
@@ -862,7 +887,16 @@ class TaskTrackingComponent:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
 				   ### prepare tarball & send eMail ###
                                     if percentage != endedLevel:
-                                        self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
+                                        obj = Outputting( self.xmlReportFileName, self.tempxmlReportFile )
+                                        logging.info("**** ** **** ** ****")
+                                        #logging.info("TESTING: preparing output")
+                                        obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
+                                        if os.path.exists( pathToWrite+"/done.tar.gz" ):
+                                            logging.info("TESTING: preparing output finished")
+                                        else:
+                                            logging.info("TESTING: preparing output FAILED")
+                                        logging.info("**** ** **** ** ****")
+                                #        self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
                                     if percentage >= thresholdLevel:
                                         if dictReportTot['JobFailed'] > 0:
                                             self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
@@ -870,6 +904,7 @@ class TaskTrackingComponent:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName )
 					    notified = 2
 					    TaskStateAPI.updatingNotifiedPA( taskName, notified )
+                                            obj.deleteTempTar( pathToWrite )
 					elif notified <= 0:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName )
 					    notified = 1
