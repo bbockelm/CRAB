@@ -109,6 +109,10 @@ componentFields = {
     'Notification_per_task':'true',
     'debugLevel':'9',
     },
+
+    "CommandManager": {
+    'ComponentDir':None,
+    },
 }
 
 # call ProdAgent configuration tool
