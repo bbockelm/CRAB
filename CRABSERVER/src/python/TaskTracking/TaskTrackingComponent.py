@@ -388,7 +388,7 @@ class TaskTrackingComponent:
         jobList = eval( fields[2] )
 
         ## call function that updates DB
-        #self.updateTaskStatus(taskName, status)
+        self.updateTaskStatus(taskName, status)
 
         uuid = ""
         eMail = ""
@@ -410,7 +410,7 @@ class TaskTrackingComponent:
             except Exception, ex:
                 logging.error( str(ex) )
                 logging.error( str(ex.args) )
-            logging.info(str(dictionaryReport))
+            #logging.info(str(dictionaryReport))
             self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
             ## MAIL report user
             self.prepareTaskFailed( payload, uuid, eMail, status )
@@ -530,7 +530,7 @@ class TaskTrackingComponent:
         """
         _convertStatus_
         """
-        stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'Submitting','K': 'Killed', 'S': 'Submitted', 'DA': 'Done (Failed)'}
+        stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'Submitting','K': 'Killed', 'S': 'Submitted', 'DA': 'Done (Failed)', 'NotSubmitted': 'NotSubmitted'}
         if status in stateConverting:
             return stateConverting[status]
         return 'Unknown'
@@ -809,7 +809,7 @@ class TaskTrackingComponent:
 			    if string.lower(self.args['jobDetail']) == "yes":
                                 logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']))
 			    vect = []
-			    if runInfoJob['EXE_EXIT_CODE'] == "NULL" and runInfoJob['JOB_EXIT_STATUS'] == "NULL": 
+			    if runInfoJob['EXE_EXIT_CODE'] == "NULL" and runInfoJob['JOB_EXIT_STATUS'] == "NULL":
    			        vect = [self.convertStatus(stato), "", "", 0]
 			    else:
                                 vect = [self.convertStatus(stato), runInfoJob['EXE_EXIT_CODE'], runInfoJob['JOB_EXIT_STATUS'], 0]
@@ -852,6 +852,10 @@ class TaskTrackingComponent:
                             else:
                                 dictReportTot['JobInProgress'] += 1
                                 dictFinishedJobs.setdefault(job,0)
+
+                            ## TEMPORARY FIX
+                            if status == "partially submitted" and dictStateTot[job][0] == "Submitting":
+                                dictStateTot[job][0] = "NotSubmitted"
 			
 			rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
 			rev_items.sort()
@@ -889,7 +893,7 @@ class TaskTrackingComponent:
                                     if percentage != endedLevel:
                                         obj = Outputting( self.xmlReportFileName, self.tempxmlReportFile )
                                         logging.info("**** ** **** ** ****")
-                                        #logging.info("TESTING: preparing output")
+                                        logging.info("TESTING: preparing output")
                                         obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
                                         if os.path.exists( pathToWrite+"/done.tar.gz" ):
                                             logging.info("TESTING: preparing output finished")
