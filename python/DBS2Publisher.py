@@ -28,7 +28,8 @@ class Publisher:
         self.resDir = common.work_space.resDir()
         common.logger.message('self.resDir = '+self.resDir)
         #### this value can be put in the crab.cfg file 
-        self.DBSURL='http://cmssrv18.fnal.gov:8989/DBS/servlet/DBSServlet'
+        #self.DBSURL='http://cmssrv18.fnal.gov:8989/DBS/servlet/DBSServlet'
+        self.DBSURL='http://cmssrv17.fnal.gov:8989/DBS_1_0_4_pre2/servlet/DBSServlet'
         common.logger.message('self.DBSURL = '+self.DBSURL)
         self.SEName=''
         self.CMSSW_VERSION=''
@@ -74,8 +75,11 @@ class Publisher:
         #dataset['PSetContent']="FIXME" # add here real cfg file content 
         #dataset['DataTier']='USER'
         for dataset in datasets:
+            #### FEDE overwrites some info contained in the xml file
+            #### if we want we can change these infos directly in the ModifyJobReport   
             dataset['ProcessedDataset']=self.username+self.dataname
-            #### to better understand.....
+            ##############################################
+            #### to better understand how to fill ....
             cfgMeta = {'Name' : 'usercfg' , 'Type' : 'user' , 'Annotation': 'user cfg', 'Version' : 'private version'} # add real name of user cfg
             common.logger.message("PrimaryDataset = %s"%dataset['PrimaryDataset'])
             common.logger.message("ProcessedDataset = %s"%dataset['ProcessedDataset'])
@@ -85,7 +89,6 @@ class Publisher:
 
             processed = DBSWriterObjects.createProcessedDataset(primary, algo, dataset, dbswriter.dbs)
             common.logger.message("Inserted primary %s processed %s"%(primary,processed))
-            print "Inserted primary %s processed %s"%(primary,processed)
 
     def publishAJobReport(self,f,procdataset):
         """
