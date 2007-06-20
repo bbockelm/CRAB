@@ -1,6 +1,7 @@
 #!/bin/sh
 
 ### $1 is the tag value CRAB_X_X_X ###
+### the second argument is the BOSS version: 4_3_4-sl3-sl4 (for DBS2 publication)###
 if [ $# -lt 1 ]; then
   echo "Usage: `basename $0` <CRAB_X_Y_Z> <BOSS X_Y_Z>"
   exit 1
@@ -17,6 +18,7 @@ DBSAPItag="DBS_1_0_4_pre2"
 DLSAPItag="DLS_1_0_0"
 #PAAPItag="HEAD"
 PAAPItag="PRODAGENT_0_2_1"
+PRODCOMMONtag="PRODCOMMON_0_3_0"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
@@ -70,6 +72,18 @@ cvs co -r ${PAAPItag} -d IMProv COMP/PRODAGENT/src/python/IMProv
 cvs co -r ${PAAPItag} -d FwkJobRep COMP/PRODAGENT/src/python/FwkJobRep
 cd ..
 
+### FEDE FOR DBS2 PUBLICATION
+### add modify report file
+echo "mv ModifyJobReport.py file from python to ProdAgentApi/FwkJobRep"
+mv python/ModifyJobReport.py ProdAgentApi/FwkJobRep/ModifyJobReport.py
+
+## download PRODCOMMON
+echo ">> downloading PRODCOMMON tag ${PRODCOMMONtag} from CVS PRODCOMMON"
+mkdir -p ProdCommon
+cd ProdCommon
+cvs co -r ${PRODCOMMONtag} -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
+cd ..
+##################
 
 cd ..
 tar zcvf $CRABdir.tgz $CRABdir
