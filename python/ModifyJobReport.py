@@ -153,7 +153,8 @@ if __name__ == '__main__':
         PrimaryDataset=''
         pass 
     try: 
-        DataTier = sys.argv[5]
+        #DataTier = sys.argv[5]
+        DataTier = 'USER'
     except:
         Datatier=''
         pass 
