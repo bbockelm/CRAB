@@ -57,7 +57,7 @@ def checkNSubmit( taskName, idJob):
         closeConnPA( dbCur, conn )
 
 	if len(rows) == 1:
-	    if rows[0][0] == rows[0][1]:
+	    if rows[0][0] <= rows[0][1]:
 		return 0
     except:
 	dbCur.execute("ROLLBACK")
