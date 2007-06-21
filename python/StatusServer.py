@@ -81,7 +81,9 @@ class StatusServer(Actor):
             os.system(cmd +' >& /dev/null')  
 
         except: 
-            msg = ("task status not yet available")
+            #msg = ("task status not yet available")
+            msg = "The server is managing your task."
+            msg += "\n      A detailed report will be ready soon.\n"
             raise CrabException(msg)
 
         try:     
@@ -89,7 +91,9 @@ class StatusServer(Actor):
             doc = xml.dom.minidom.parse(common.work_space.resDir()+ "xmlReportFile.xml" )
         
         except: 
-            msg = ("problems reading report file")
+            #msg = ("problems reading report file")
+            msg = "The server is managing your task."
+            msg += "\n      A detailed report will be ready soon.\n"
             raise CrabException(msg)
 
         ###  <Job status='Submitted' job_exit='NULL' id='1' exe_exit='NULL'/>
