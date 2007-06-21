@@ -47,14 +47,14 @@ class GetOutputServer(Actor):
         #    if os.path.isdir(self.cfg_params["USER.outputdir"]): # MATT
         #        copyHere = self.cfg_params["USER.outputdir"] + "/" # MATT
              
-            cmd = 'lcg-cp --vo cms --verbose gsiftp://' + str(self.server_name) + str(projectUniqName)+'/res/done.tgz file://'+copyHere+'done.tgz'# MATT
+            cmd = 'lcg-cp --vo cms --verbose gsiftp://' + str(self.server_name) + str(projectUniqName)+'/res/done.tar.gz file://'+copyHere+'done.tar.gz'# MATT
             common.logger.debug(5, cmd)
             copyOut = os.system(cmd +' >& /dev/null')
         except:
             msg = ("Output not yet available")
             raise CrabException(msg)
 
-        zipOut = "done.tgz"
+        zipOut = "done.tar.gz"
         if os.path.exists( copyHere + zipOut ): # MATT
             cwd = os.getcwd()
             os.chdir( copyHere )# MATT
