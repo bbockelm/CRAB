@@ -4,6 +4,7 @@ from crab_exceptions import *
 from crab_util import *
 import common
 import os, time, shutil
+import Scram
 
 from BossSession import *
 
@@ -168,6 +169,8 @@ class SchedulerBoss(Scheduler):
         return
 
     def configure(self, cfg_params):
+        
+        self.cfg_params = cfg_params
         
         try:    
             self.groupName = cfg_params['taskId']
@@ -418,6 +421,25 @@ class SchedulerBoss(Scheduler):
                 sites.append(it)
         common.logger.debug(5,"All Sites :"+str(sites))
         common.logger.message("Matched Sites :"+str(sites))
+        if len(sites) == 0:
+            version = Scram.Scram(self.cfg_params).getSWVersion()
+            SEs = common.jobDB.destination(nj)
+            for i in SEs:
+                cmd = "lcg-info --vo cms --list-se --attrs CloseCE --query \"SE=*" + i + "*\""
+                fout, fin, ferr = popen2.popen3(cmd)
+                res = string.strip(fout.readlines()[1])
+                ce = re.match(".*CloseCE(.*):.*", res).group(1).strip()
+                cmd = "lcg-info --vo cms --list-ce --attrs CEStatus --query \"CE=*" + ce + "*,Tag=*" + version + "*\""
+                fout, fin, ferr = popen2.popen3(cmd)
+                try:
+                    res = fout.readlines()[1]
+                    print "\n Empty CE list. Displaying status:"
+                    print "\033[1;35m CE %s status: \n %s "%(ce, str(res))
+                    print "\033[0m"
+                except IndexError:
+                    print "\n \033[1;35m Software Tag %s not found on CE"%version
+                    print "\033[0m"
+                    pass
         return len(sites)
 
     
@@ -430,7 +452,7 @@ class SchedulerBoss(Scheduler):
         i = list[0]
         jobsList = list[1]
         schcladstring = ''
-        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(i)+'.clad' # TODO add a check is file exist
+        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(i)+'.clad'# TODO add a check is file exist
         if os.path.isfile(self.schclassad):  
             schcladstring=self.schclassad
         try:
@@ -442,7 +464,7 @@ class SchedulerBoss(Scheduler):
             pass
         except BossError,e:
             common.logger.message("Error : BOSS command failed with message:")
-            common.logger.debug( 1, e.__str__())
+            common.logger.debug(1, e.__str__())
         
         jid=[]
         bjid = []
@@ -456,7 +478,7 @@ class SchedulerBoss(Scheduler):
             pass
         except BossError,e:
             common.logger.message("Error : BOSS command failed with message:")
-            common.logger.debug( 1, e.__str__())
+            common.logger.debug(1, e.__str__())
         task = self.bossTask.jobsDict()
         for k, v in task.iteritems():
             if (v["STATUS"] == 'S'):
