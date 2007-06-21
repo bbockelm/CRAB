@@ -28,14 +28,35 @@ class Publisher:
         self.resDir = common.work_space.resDir()
         common.logger.message('self.resDir = '+self.resDir)
         #### this value can be put in the crab.cfg file 
-        #self.DBSURL='http://cmssrv18.fnal.gov:8989/DBS/servlet/DBSServlet'
-        self.DBSURL='http://cmssrv17.fnal.gov:8989/DBS_1_0_4_pre2/servlet/DBSServlet'
+        ####### da passare dal cfg di crab
+        #old api self.DBSURL='http://cmssrv18.fnal.gov:8989/DBS/servlet/DBSServlet'
+        self.DBSURL=cfg_params['CMSSW.dbs_url_for_publication']
+        #self.DBSURL='http://cmssrv17.fnal.gov:8989/DBS_1_0_4_pre2/servlet/DBSServlet'
         common.logger.message('self.DBSURL = '+self.DBSURL)
+        self.datasetpath=cfg_params['CMSSW.datasetpath']
+        common.logger.message('self.datasetpath = '+self.datasetpath)
         self.SEName=''
         self.CMSSW_VERSION=''
         self.exit_status=''
         self.time = time.strftime('%y%m%d_%H%M%S',time.localtime(time.time()))
-
+        
+    
+    def importParentDataset(self,globalDBS, datasetpath):
+       """
+       """ 
+       dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
+       try:
+           #dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL)
+           dbsWriter.importDataset(globalDBS, self.datasetpath, self.DBSURL)
+       except DBSWriterError, ex:
+           msg = "Error importing dataset to be processed into local DBS\n"
+           msg += "Source Dataset: %s\n" % datasetpath
+           msg += "Source DBS: %s\n" % globalDBS
+           msg += "Destination DBS: %s\n" % self.DBSURL
+           msg += "%s"%ex
+           common.logger.message(msg)
+           return 1
+          
     def publishDataset(self,f):
         """
         """
@@ -46,6 +67,13 @@ class Publisher:
             self.exit_status = '1'
             msg = "Error: Problem with "+self.resDir + f+" file"  
             raise CrabException(msg)
+        ##### for parents    
+        try:
+            globalDBS="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+            self.importParentDataset(globalDBS, self.datasetpath)
+        except:
+            common.logger.message('Problem with parent import from the global DBS '+globalDBS+ 'to the local one '+self.DBSURL)
+        ########################3    
         #  //
         # // DBS to contact
         #//
@@ -63,24 +91,17 @@ class Publisher:
             return self.exit_status
 
         common.logger.message("FileInfo = " + str(fileinfo))
-        print "FileInfo %s "%fileinfo
+        #print "FileInfo %s "%fileinfo
         datasets=fileinfo.dataset 
         common.logger.message("DatasetInfo = " + str(datasets))
-        print "DatasetInfo %s "%datasets
-        # 
-        #dataset['ApplicationFamily']="Userfamily" 
-        #dataset['ApplicationVersion']=dataset['CMSSW_VERSION'] # why are cmssw version and  
-        #dataset['PSetHash']=dataset['PSETHASH']                # psethash named differently
-        #dataset['PrimaryDataset']="testAF"
-        #dataset['PSetContent']="FIXME" # add here real cfg file content 
-        #dataset['DataTier']='USER'
+        #print "DatasetInfo %s "%datasets
         for dataset in datasets:
             #### FEDE overwrites some info contained in the xml file
             #### if we want we can change these infos directly in the ModifyJobReport   
             dataset['ProcessedDataset']=self.username+self.dataname
             ##############################################
             #### to better understand how to fill ....
-            cfgMeta = {'Name' : 'usercfg' , 'Type' : 'user' , 'Annotation': 'user cfg', 'Version' : 'private version'} # add real name of user cfg
+            cfgMeta = {'name' : 'usercfg' , 'Type' : 'user' , 'annotation': 'user cfg', 'version' : 'private version'} # add real name of user cfg
             common.logger.message("PrimaryDataset = %s"%dataset['PrimaryDataset'])
             common.logger.message("ProcessedDataset = %s"%dataset['ProcessedDataset'])
             common.logger.message("Inserting primary: %s processed : %s"%(dataset['PrimaryDataset'],dataset['ProcessedDataset']))
@@ -112,8 +133,10 @@ class Publisher:
         #
         # insert files
         #
+        Blocks=None
         try:
             Blocks=dbswriter.insertFiles(jobReport)
+            print  "in publishAJobReport------>>>> Blocks = %s"%Blocks
         except DBSWriterError, ex:
             print "%s"%ex
         return Blocks
@@ -142,14 +165,19 @@ class Publisher:
                     self.publishDataset(f)
                     common.logger.message("Publishing files")
                     Blocks=self.publishAJobReport(f,self.username+self.dataname)
-                    [BlocksList.append(x) for x in Blocks]
+                    if Blocks:
+                        [BlocksList.append(x) for x in Blocks]
             #
             # close the blocks
             #       
             dbswriter = DBSWriter(self.DBSURL,level='ERROR')
             for BlockName in BlocksList:
-                dbswriter.manageFileBlock(BlockName,maxFiles= 1)
-            
+                try:   
+                    closeBlock=dbswriter.manageFileBlock(BlockName,maxFiles= 1)
+                    #print "closeBlock closeBlock closeBlock closeBlock %s"%closeBlock
+                    #dbswriter.dbs.closeBlock(BlockName)
+                except DBSWriterError, ex:
+                    common.logger.message("%s"%ex)
             return self.exit_status
 
 
