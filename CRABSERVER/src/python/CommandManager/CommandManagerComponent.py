@@ -51,7 +51,7 @@ class CommandManagerComponent:
         logging.getLogger().setLevel(logging.INFO)
        
         self.dropBoxPath = str( self.args['dropBoxPath'] )
-        self.BSession = BossSession( self.args['bossClads'] )
+        # self.BSession = BossSession( self.args['bossClads'] )
         logging.info("CommandManager Started...")
 
 
@@ -110,6 +110,11 @@ class CommandManagerComponent:
              logging.info('The command file will not be processed.')
              #os.remove(filename)
              os.rename(filename, filename+'.noGood')
+
+             # publish a task killed failed message
+             self.msFwdCmd.publish("TaskKilledFailed", taskName)
+             self.msFwdCmd.commit()
+             logging.info("Message TaskKilledFailed sent") #Matteo Add: switch to debug
              return
         logging.info('Now Cheking the Proxy')
 
@@ -124,6 +129,11 @@ class CommandManagerComponent:
         except Exception, e:
              logging.info("Warning: Unable to read " + str(taskName+'/share/userSubj'))
              logging.info(e)
+
+             # publish a task killed failed message
+             self.msFwdCmd.publish("TaskKilledFailed", taskName)
+             self.msFwdCmd.commit()
+             logging.info("Message TaskKilledFailed sent") #Matteo Add: switch to debug
              return
 
         logging.info(str(subject)+'   '+str(dict['Subject'])) 
@@ -132,18 +142,26 @@ class CommandManagerComponent:
              logging.info('The command file will not be processed.')
              #os.remove(filename)
              os.rename(filename, filename+'.noGood')
+
+             # publish a task killed failed message
+             self.msFwdCmd.publish("TaskKilledFailed", taskName)
+             self.msFwdCmd.commit()
+             logging.info("Message TaskKilledFailed sent") #Matteo Add: switch to debug
              return
+
         logging.info("Proxy subject verified") 
         # 2 - query the TT to get the taskId
 
         #Matteo add: manages DB interaction problems and publish message for TT
         taskDict=""
         try:
-             taskDict = self.BSession.loadByName( taskName ) # just for crosscheck: exists iif CrabWorker performed the registration
+             BSession = BossSession( self.args['bossClads'] )
+             taskDict = BSession.loadByName( taskName ) # just for crosscheck: exists iif CrabWorker performed the registration
              logging.info('loadByname terminated   '+str(taskDict))
+             del BSession
         except Exception, e:
              logging.info('Problems with DB interaction  %s\n'%filename + str(e))
-             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
+             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
              self.msFwdCmd.commit()
              return
 
@@ -151,22 +169,29 @@ class CommandManagerComponent:
         
         # Retrive tasks status from TT
         try:
-             stat="" 
-             stat=getStatus(taskName)
-             logging.info('Task status returned by TT:   '+str(stat))
+             #stat="" 
+             stat=getStatus(taskName)[0]
+             logging.info('Task status returned by TT is:   '+str(stat[0]))
         except Exception, e:
              logging.info('Problems with TT Api:  %s\n'%filename + str(e))
-             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
+             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
              self.msFwdCmd.commit()
              return
 
-        if len(taskDict) > 0 and stat not in ["partially submitted", "submitted"]:
+        if len(taskDict) > 0 and stat[0] in ["partially submitted", "submitted"]:
              taskSpecId = taskName
         else:
-             del taskDict
-             logging.info('Task %s not found in BOSS or in no killable status. '%taskName)
-             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
-             self.msFwdCmd.commit()
+             if stat[0] in ["not submitted","killed"]:
+                  logging.info('Task %s is in no killable status. The command will be remove '%taskName)
+                  # publish a task killed failed message
+                  self.msFwdCmd.publish("TaskKilledFailed", taskName)
+                  self.msFwdCmd.commit()
+                  logging.info("Message TaskKilledFailed sent") #Matteo Add: switch to debug
+             else:   
+                  del taskDict
+                  logging.info('Task %s not found in BOSS or in no killable status. The command will be retried'%taskName)
+                  self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
+                  self.msFwdCmd.commit()
              return
 
         # 3 - publish the message to the JobKiller
