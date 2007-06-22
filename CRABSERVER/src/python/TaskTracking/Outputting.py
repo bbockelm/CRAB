@@ -55,6 +55,7 @@ class Outputting:
                 if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
                     failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
                 cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpDone/edgLoggingInfo_'+str(i)+'.log ;'
+                cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/std*/* .tmpDone/;'
             cmd += 'cp -r '+jtResDir+'/Success/Submission_*/*/* .tmpDone;'
             cmd += 'cp -r '+jtResDir+'/Success/Submission_*/log/edgLoggingInfo.log .tmpDone/edgLoggingInfo_'+str(i)+'.log ;'
             cmd += 'rm .tmpDone/BossChainer.log .tmpDone/BossProgram_1.log .tmpDone/edg_getoutput.log .tmpDone/edgLoggingInfo.log;'
