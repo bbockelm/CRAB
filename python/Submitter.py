@@ -126,21 +126,23 @@ class Submitter(Actor):
                 if not common.logger.debugLevel() :
                     try: pbar = ProgressBar(term, 'Submitting '+str(len(list_of_list[ii][1]))+' jobs')
                     except: pbar = None
-     
-                jidLista, bjidLista = common.scheduler.submit(list_of_list[ii])
+
+                jidLista, bjidLista = common.scheduler.submit(list_of_list[ii],self.UseServer)
                 bjidLista = map(int, bjidLista) # cast all bjidLista to int
-     
+
                 if not common.logger.debugLevel():
                     if pbar :
                         pbar.update(float(ii+1)/float(len(list_of_list)),'please wait')
      
                 for jj in bjidLista: # Add loop over SID returned from group submission  DS
                     tmpNj = jj - 1
+
                     jid=jidLista[bjidLista.index(jj)]
                     common.logger.debug(5,"Submitted job # "+ `(jj)`)
                     common.jobDB.setStatus(tmpNj, 'S')
                     common.jobDB.setJobId(tmpNj, jid)
                     common.jobDB.setTaskId(tmpNj, self.cfg_params['taskId'])
+
                     njs += 1
                
                     ##### DashBoard report #####################   
