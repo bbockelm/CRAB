@@ -1006,7 +1006,8 @@ class Cmssw(JobType):
             txt += 'echo "****** end pset.cfg ********"\n'
             txt += '\n'
             ### FEDE FOR DBS OUTPUT PUBLICATION
-            txt += 'PSETHASH=`EdmConfigHash < pset.cfg`'
+            txt += 'PSETHASH=`EdmConfigHash < pset.cfg` \n'
+            txt += 'echo "PSETHASH = $PSETHASH" \n'
             ############## 
             txt += '\n'
             # txt += 'echo "***** cat pset1.cfg *********"\n'
@@ -1321,10 +1322,16 @@ class Cmssw(JobType):
         """
         insert the part of the script that modifies the FrameworkJob Report 
         """
-        
+
         txt = '' 
         txt += 'echo "Modify Job Report" \n'
         txt += 'chmod a+x $RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
+        ############ FEDE NUOVI CAMBI PER DBS2
+        try:
+            publish_data = int(self.cfg_params['USER.publish_data'])           
+        except KeyError:
+            publish_data = 0
+
         txt += 'if [ -z "$SE" ]; then\n'
         txt += '    SE="" \n'
         txt += 'fi \n' 
@@ -1333,9 +1340,26 @@ class Cmssw(JobType):
         txt += 'fi \n' 
         txt += 'echo "SE = $SE"\n' 
         txt += 'echo "SE_PATH = $SE_PATH"\n'
-        txt += 'FOR_LFN=$DatasetPath/$MonitorID\n'
-        txt += 'echo "FOR_LFN = $FOR_LFN"\n'
-        txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n'
+
+        if (publish_data == 1):  
+            #processedDataset = self.cfg_params['USER.processed_datasetname']
+            processedDataset = self.cfg_params['USER.publish_data_name']
+            txt += 'ProcessedDataset='+processedDataset+'\n'
+            #### LFN=/store/user/<user>/processedDataset_PSETHASH
+            txt += 'if [ "$SE_PATH" == "" ]; then\n'
+            txt += '    FOR_LFN=copy_problems/ \n'
+            txt += 'else \n' 
+            txt += '    tmp=`echo $SE_PATH | awk -F \'store\' \'{print$2}\'` \n'
+            txt += '    FOR_LFN=/store$tmp \n'
+            txt += 'fi \n' 
+            txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
+            txt += 'echo "FOR_LFN = $FOR_LFN" \n'
+        else:
+            txt += 'ProcessedDataset=no_data_to_publish \n' 
+            txt += 'FOR_LFN=/local \n'
+            txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
+            txt += 'echo "FOR_LFN = $FOR_LFN" \n'
+        txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
         txt += 'echo "$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n' 
         txt += '$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
         txt += 'modifyReport_result=$?\n'
