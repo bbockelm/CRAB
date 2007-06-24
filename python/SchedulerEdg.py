@@ -89,6 +89,26 @@ class SchedulerEdg(Scheduler):
            msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n' 
            raise CrabException(msg)
 
+        ########### FEDE FOR DBS2 ##############################
+        try: 
+            self.publish_data = cfg_params["USER.publish_data"]
+            if int(self.publish_data) == 1:
+                try:
+                    #self.publish_data_name = cfg_params['USER.processed_datasetname']
+                    self.publish_data_name = cfg_params['USER.publish_data_name']
+                except KeyError:
+                    #msg = "Error. The [USER] section does not have 'processed_datasetname'"
+                    msg = "Error. The [USER] section does not have 'publish_data_name'"
+                    common.logger.message(msg)
+                    raise CrabException(msg)
+        except KeyError: self.publish_data = 0 
+
+        if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
+           msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n' 
+           msg = msg + 'Please modify copy_data value in your crab.cfg file\n' 
+           common.logger.message(msg)
+           raise CrabException(msg)
+        #################################################
         try:
             self.lfc_host = cfg_params['EDG.lfc_host']
         except KeyError:
@@ -329,14 +349,14 @@ class SchedulerEdg(Scheduler):
         
         txt += '\n\n'
 
-        if int(self.copy_data) == 1:
-           if self.SE:
-              txt += 'export SE='+self.SE+'\n'
-              txt += 'echo "SE = $SE"\n'
-           if self.SE_PATH:
-              if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
-              txt += 'export SE_PATH='+self.SE_PATH+'\n'
-              txt += 'echo "SE_PATH = $SE_PATH"\n'
+#        if int(self.copy_data) == 1:
+#           if self.SE:
+#              txt += 'export SE='+self.SE+'\n'
+#              txt += 'echo "SE = $SE"\n'
+#           if self.SE_PATH:
+#              if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
+#              txt += 'export SE_PATH='+self.SE_PATH+'\n'
+#              txt += 'echo "SE_PATH = $SE_PATH"\n'
 
         txt += 'export VO='+self.VO+'\n'
         ### add some line for LFC catalog setting 
@@ -455,7 +475,32 @@ class SchedulerEdg(Scheduler):
         to copy produced output into a storage element.
         """
         txt = ''
+
+        ##### FEDE MOVED FROM SET_ENVIRONMENT ##############
+        
+        SE_PATH=''
         if int(self.copy_data) == 1:
+           if self.SE:
+              txt += 'export SE='+self.SE+'\n'
+              txt += 'echo "SE = $SE"\n'
+           if self.SE_PATH:
+              if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
+              SE_PATH=self.SE_PATH
+              ####### FEDE FOR DBS2
+              if int(self.publish_data) == 1:
+                  txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
+                  txt += 'subject=`voms-proxy-info -subject | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'` \n'
+                  txt += 'echo "subject = $subject" \n'
+                  
+                  path_add = '${subject}/'+ self.publish_data_name +'_${PSETHASH}/'
+                  SE_PATH = SE_PATH + path_add
+
+              txt += 'export SE_PATH='+SE_PATH+'\n'
+              txt += 'echo "SE_PATH = $SE_PATH"\n'
+
+        ##########################################################  
+
+        #if int(self.copy_data) == 1:
            txt += '#\n'
            txt += '#   Copy output to SE = $SE\n'
            txt += '#\n'
@@ -488,11 +533,16 @@ class SchedulerEdg(Scheduler):
            txt += '            echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "srmcp failed, attempting lcg-cp."\n'
            if common.logger.debugLevel() >= 5:
-               txt += '            echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-               txt += '            exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+               ########### FEDE CHANGES TO WRITE IN SRM LNL.INFN.IT #################
+               #txt += '            echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+               #txt += '            exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+               txt += '            echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
+               txt += '            exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
            else:               
-               txt += '            echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-               txt += '            exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+               #txt += '            echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
+               #txt += '            exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
+               txt += '            echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
+               txt += '            exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
            txt += '            copy_exit_status=$?\n'
            txt += '            echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
            txt += '            echo "STAGE_OUT = $copy_exit_status"\n'
@@ -603,7 +653,6 @@ class SchedulerEdg(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-    ##### FEDE ######         
     def findSites_(self, n):
         itr4 =[] 
         sites = common.jobDB.destination(n)
