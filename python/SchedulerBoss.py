@@ -456,7 +456,8 @@ class SchedulerBoss(Scheduler):
         if os.path.isfile(self.schclassad):  
             schcladstring=self.schclassad
         try:
-            Tout = len(list[1])*120
+#            Tout = len(list[1])*120
+            Tout = int(self.boss_scheduler.submitTout(list))
             self.bossTask.submit(string.join(jobsList,','), schcladstring, "", "" , "", Tout)
         except SchedulerError,e:
             common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
