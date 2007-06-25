@@ -107,6 +107,9 @@ componentFields = {
     'NotificationDelay':'10',
     'Notification_per_job':'false',
     'Notification_per_task':'true',
+    'Notification_SenderName': None,
+    'Notification_SMTPServer': None,
+    'Notification_SMTPServerDBGLVL': '3',
     'debugLevel':'9',
     },
 
