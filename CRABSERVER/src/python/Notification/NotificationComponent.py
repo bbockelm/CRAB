@@ -1,11 +1,26 @@
 #!/usr/bin/env python
+
+## CONFIG PARAMS
+
+#<ConfigBlock Name="Notification">
+#<Parameter Name="ComponentDir" Value="/data/dorigoa/PA_workdir/Notification"/>
+#<Parameter Name="Author" Value="Alvise"/>
+#<Parameter Name="NotificationDelay" Value="10"/>
+#<Parameter Name="Notification_per_job" Value="false"/>
+#<Parameter Name="Notification_per_task" Value="true"/>
+#<Parameter Name="Notification_SenderName" Value="crab@crabas.lnl.infn.it"/>
+#<Parameter Name="Notification_SMTPServer" Value="crabas.lnl.infn.it"/>
+#<Parameter Name="Notification_SMTPServerDBGLVL" Value="0"/>
+#</ConfigBlock>
+
+
 """
 _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.3 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.3 2007/06/08 16:22:00 mcinquil Exp $"
+__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.4 2007/06/11 15:15:08 mcinquil Exp $"
 
 import os
 import socket
@@ -16,10 +31,12 @@ import JobInfo
 import Consumer
 import JobInfoList
 import TaskInfoList
+import Mailer
 #from CrabServer.CreateXmlJobReport import *
 from CreateXmlJobReport import *
 import string
 import re
+import sys
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 
 from logging.handlers import RotatingFileHandler
@@ -27,6 +44,8 @@ from threading import Thread
 from MessageService.MessageService import MessageService
 from FwkJobRep.ReportParser import readJobReport
 from xml.dom import minidom
+
+import smtplib
 
 class NotificationComponent:
 
@@ -95,6 +114,17 @@ class NotificationComponent:
 	
 	if self.PERTASK:
 		logging.info("Notification PER TASK is active")
+
+##	senderName = notifCfg.get("Notification_SenderName")
+##	self.senderName = senderName
+
+##	self.smtpServer = notifCfg.get("Notification_SMTPServer")
+
+        try:
+            self.mailer = Mailer.Mailer(config)
+        except RuntimeError, mex:
+            logging.error( mex )
+            sys.exit(1)
 
     #--------------------------------------------------------------------------------------        
     def startComponent(self):
@@ -339,33 +369,57 @@ class NotificationComponent:
                     pass
 
                 mailMess = "The task [" + taskname + "] owned by [" + username + "] is Failed"
-                FILE = open(infoFile,"w")
-        	FILE.write(mailMess)
-        	FILE.close()
+                #FILE = open(infoFile,"w")
+        	#FILE.write(mailMess)
+        	#FILE.close()
 
-                mainEmail = emaillist.pop(0)
-                CCRecipients = ",".join( emaillist )
+                #mainEmail = emaillist.pop(0)
+                #CCRecipients = ",".join( emaillist )
+		
+		#toaddrs  = emaillist
+		    
+#                if len(pieces[2].split(",")) >=2:
+#                    cmd = "mail -s \"CRAB Server Notification: Task Failed! \" "
+#                    cmd += mainEmail + " -c " + CCRecipients + " < " + infoFile
+#		    
+#		    fromaddr = self.senderName
+#		    toaddrs  = emaillist
+#                else:
+#                    cmd = "mail -s \"CRAB Server Notification: Task Failed! \" "
+#                    cmd += mainEmail + " < " + infoFile
 
-                if len(pieces[2].split(",")) >=2:
-                    cmd = "mail -s \"CRAB Server Notification: Task Failed! \" "
-                    cmd += mainEmail + " -c " + CCRecipients + " < " + infoFile
-                else:
-                    cmd = "mail -s \"CRAB Server Notification: Task Failed! \" "
-                    cmd += mainEmail + " < " + infoFile
+##		try:
+##			#server = smtplib.SMTP('crabas.lnl.infn.it')
+##			server = smtplib.SMTP( self.smtpServer )
+##			server.set_debuglevel(1)
+##			server.sendmail(self.senderName, emaillist, mailMess)
+##			server.quit()
+			
+##		except SMTPException, ex:
+##			errmsg = "ERROR! " + str(ex)
+##			logging.error(errmsg)
 
-                msg = "Notification.Consumer.Notify: Sending mail to [" + pieces[2] + "]"
+                msg = "Notification.Consumer.Notify: Sending mail to [" + emaillist + "] using SMTPLIB"
                 logging.info( msg )
-		logging.info( cmd )
-                
-	        retCode = os.system( cmd )
 
-        	if(retCode != 0):
-                    errmsg = "ERROR! Command ["+cmd+"] FAILED!"
-                    logging.error(errmsg)
-                    
+                completeMessage = "Subject:\"CRAB Server Notification: Task Failed! \"\n\n" + mailMess
+                
                 try:
-                    os.remove(infoFile)
-                except OSError:
-                    pass
+                    self.mailer.SendMail(emaillist, completeMessage)
+                except RuntimeError, mess:
+                    logging.error(mess)
+                
+		#logging.info( cmd )
+                
+	        #retCode = os.system( cmd )
+
+        	#if(retCode != 0):
+                 #   errmsg = "ERROR! Command ["+cmd+"] FAILED!"
+                  #  logging.error(errmsg)
+                    
+                #try:
+                #    os.remove(infoFile)
+                #except OSError:
+                #    pass
                 
                 self.ms.commit()
