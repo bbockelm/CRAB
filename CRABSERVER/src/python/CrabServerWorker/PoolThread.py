@@ -176,7 +176,6 @@ class Notifier(Thread):
             try:    
                 # get result
                 result, code = self.pool.getResult()
-                self.logging.info("DEBUG: poolResult %s, %s"%(str(result), str(code)) ) 
                 # send the message
                 if int(code) == 0: 
                     self.logging.info("CrabWorkPerformed: "+ str(result))

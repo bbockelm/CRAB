@@ -78,7 +78,7 @@ class CrabServerWorkerComponent:
         logging.debug("Event: %s %s" % (event, payload))
 
         if event == "ProxyTarballAssociatorComponent:CrabWork":
-            logging.info("ProxyTarballAssociatorComponent:CrabWork Arrived!Payload = "+str(payload))
+            # logging.info("ProxyTarballAssociatorComponent:CrabWork Arrived!Payload = "+str(payload))
             self.pool.insertRequest( (payload, False) )
 
             #Matteo add: Message to TaskTracking for New Task in Queue 
@@ -147,7 +147,7 @@ class CrabServerWorkerComponent:
        try:
             if performRetry == False:
             	self.registerTask(CrabworkDir)
-                logging.info("Registered Task")
+                # logging.info("Registered Task")
             else:
                 logging.info("Resubmission for "+str(CrabworkDir) )
        except Exception, e:
@@ -172,7 +172,7 @@ class CrabServerWorkerComponent:
             retCode = 0
             return (retMsg, retCode)
        # retCode in [1, 2] by default
-       if retry >= 0:
+       if retry > 0:
             # failure with retry hope 
             retCode = -1
             retMsg = proxy+":"+CrabworkDir+":"+uniqDir+":"+str(retry-1)
@@ -182,7 +182,7 @@ class CrabServerWorkerComponent:
        # failure without retry left
        retCode = -2
        retMsg = CrabworkDir.split('/')[-1]
-       logging.info("WARNING: CRAB submission failed too many times\n The task will not be submitted.")
+       logging.info("WARNING: CRAB submission failed too many times. The task will not be submitted.")
        return (retMsg, retCode)
 
     def registerTask(self, cwDir):
@@ -244,8 +244,7 @@ class CrabServerWorkerComponent:
        errcode, outlog = commands.getstatusoutput(cmd)
        
        if errcode != 0: 
-            logging.info("Submission failed for %s. Return Code = %d"%(uniqDir, errcode))
-            logging.info("Resubmission will be tried.") # Less aggressive version... #Fabio
+            logging.info("Submission failed for %s. Return Code = %d. Resubmission will be tried."%(uniqDir, errcode))
             ret = 2 #1
             return ret
 
@@ -255,29 +254,41 @@ class CrabServerWorkerComponent:
        outlist = []
        nTotalJobs = -1
 
-       try:
-         outlist = outlog.split('\n')
-         for l in outlist:
+       outlist = outlog.split('\n')
+       for l in outlist:
             # silent errors
             for e in catchErrorList:
                  if e in l:
                       ret = 2
                       logging.info("Submission delayed for " + str(uniqDir) )
                       return ret
-            # partial submission
+            # partial submission list
             if "nj_list" in l:
                  jobList = eval( l.split("nj_list")[1] )
                  nTotalJobs = len(jobList)
                  continue
-            if ("Total of" in l) and ("jobs submitted" in l):
-                 crabSubmCounter = eval( str(l.split("Total of")[1]).split("jobs submitted")[0] )
-                 continue
-            pass
+       
+       # get list of actually submitted jobs # Fix Fabio
+       errcode, outlog = commands.getstatusoutput('export X509_USER_PROXY=%s && crab -printId -c %s'%(proxy, uniqDir) )
+       if errcode != 0:
+            logging.info("Process ID listing failed for %s. Return Code = %d. "%(uniqDir, errcode))
+            ret = 1 # not recoverable error
+            return ret
+
+       crabSubmCounter = 0
+       outlist = outlog.split('\n')
+       try:
+            for l in outlist:
+                 if 'Job: ' in l:
+                      jid = eval(l.split('Job: ')[1].split(' ')[0]) - 1
+                      if jid in jobList:
+                           jobList.remove(jid)
+                           crabSubmCounter += 1
        except Exception, e:
             logging.info(e)
 
        # check if the number of successful submission is equal to the number of expected jobs
-       if nTotalJobs == 0 or nTotalJobs == crabSubmCounter:
+       if len(jobList) == 0: #or nTotalJobs == crabSubmCounter:
             ret = 0
             logging.info("Submission completed for "+ str(uniqDir))
             return ret
@@ -286,30 +297,31 @@ class CrabServerWorkerComponent:
        #
        #
        logging.info("Resubmission phase: %d jobs over %d submitted in %s."%(crabSubmCounter, nTotalJobs, uniqDir))
+       
+       errcode, outlog = commands.getstatusoutput(cmd + ' && crab -printId -c %s'%uniqDir)
+       if errcode != 0:
+            logging.info("Errors during partial resubmission of %s: exitCode %d. The submission will be retried."%(uniqDir, errcode) )
+            ret = 2
+            return ret
 
-       for heurResubPartial in xrange(10): 
-            # 10% submission at least
-            errcode, outlog = commands.getstatusoutput(cmd)
-            if errcode != 0:
-                 logging.info("Errors during partial resubmission of %s: exitCode %d. The submission will be retried."%(uniqDir, errcode) )
-                 ret = 2
-                 return ret
-            # parse output and check enhancement on the pending job list
-            try:
-                 outlist = outlog.split('\n')
-                 for l in outlist:
-                      if "nj_list" in l:
-                           jobList = eval( l.split("nj_list")[1] )
-                           break
-                 # ##
-            except Exception, e:
-                 logging.info(e)
-            # everything is submitted
-            if len(jobList) == 0:
-                 ret = 0
-                 logging.info("Submission completed for "+ str(uniqDir))
-                 return ret
-            pass
+       # parse output and check enhancement on the pending job list
+       outlist = outlog.split('\n')
+       try:
+            for l in outlist:
+                 if 'Job: ' in l:
+                      jid = eval(l.split('Job: ')[1].split(' ')[0]) - 1
+                      if jid in jobList:
+                           jobList.remove(jid)
+                           crabSubmCounter += 1
+       except Exception, e:
+            logging.info(e)
+
+       # everything is submitted
+       if len(jobList) == 0: # or nTotalJobs == crabSubmCounter:
+            ret = 0
+            logging.info("Submission completed for "+ str(uniqDir))
+            return ret
+       
        # Still missing jobs
        logging.info("Still missing %d jobs for %s."%(len(jobList), uniqDir))
        # allign back crab and boss job numbers
