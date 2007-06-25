@@ -113,13 +113,18 @@ componentFields = {
     "CommandManager": {
     'ComponentDir':None,
     },
+
+    "CW_WatchDog": {
+    'ComponentDir':None,
+    },
+
 }
 
 # call ProdAgent configuration tool
 
 print "Creating ProdAgent configuration\n"
  
-os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder")
+os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder,JobKiller")
 
 # read configuration
 
