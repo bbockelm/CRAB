@@ -253,3 +253,7 @@ class SchedulerGlite(SchedulerEdg):
         if len(sites)>0 and sites[0]=="":
             return []
         return sites
+
+    def submitTout(self, list):
+        return 120
+
