@@ -94,10 +94,8 @@ class SchedulerEdg(Scheduler):
             self.publish_data = cfg_params["USER.publish_data"]
             if int(self.publish_data) == 1:
                 try:
-                    #self.publish_data_name = cfg_params['USER.processed_datasetname']
                     self.publish_data_name = cfg_params['USER.publish_data_name']
                 except KeyError:
-                    #msg = "Error. The [USER] section does not have 'processed_datasetname'"
                     msg = "Error. The [USER] section does not have 'publish_data_name'"
                     common.logger.message(msg)
                     raise CrabException(msg)
