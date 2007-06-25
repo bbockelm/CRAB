@@ -443,7 +443,7 @@ class SchedulerBoss(Scheduler):
         return len(sites)
 
     
-    def submit(self,list,server):
+    def submit(self,list):
         """
         Submit BOSS function.
         Submit one job. nj -- job number.
@@ -482,16 +482,14 @@ class SchedulerBoss(Scheduler):
             common.logger.debug(1, e.__str__())
         task = self.bossTask.jobsDict()
         for k, v in task.iteritems():
-            if server == 9999:
-                if (v["STATUS"] != 'C'): ## fix for server by Matty
-                    jid.append(v["SCHED_ID"])
-                    bjid.append(k)
-                pass
-            else:
-                if (v["STATUS"] == 'S'):
-                    jid.append(v["SCHED_ID"])
-                    bjid.append(k)
-                pass
+            if (v["STATUS"] != 'W'):
+                jid.append(v["SCHED_ID"])
+                bjid.append(k)
+            pass
+          #  if (v["STATUS"] == 'S'):
+          #      jid.append(v["SCHED_ID"])
+          #      bjid.append(k)
+          #  pass
         return jid, bjid
 
     ###################### ---- OK for Boss4 ds

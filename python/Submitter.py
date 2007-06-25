@@ -127,7 +127,7 @@ class Submitter(Actor):
                     try: pbar = ProgressBar(term, 'Submitting '+str(len(list_of_list[ii][1]))+' jobs')
                     except: pbar = None
 
-                jidLista, bjidLista = common.scheduler.submit(list_of_list[ii],self.UseServer)
+                jidLista, bjidLista = common.scheduler.submit(list_of_list[ii])
                 bjidLista = map(int, bjidLista) # cast all bjidLista to int
 
                 if not common.logger.debugLevel():
