@@ -32,6 +32,7 @@ class Cmssw(JobType):
         self.executable = ''
         self.executable_arch = self.scram.getArch()
         self.tgz_name = 'default.tgz'
+        self.additional_tgz_name = 'additional.tgz'
         self.scriptName = 'CMSSW.sh'
         self.pset = ''      #scrip use case Da   
         self.datasetPath = '' #scrip use case Da
@@ -253,8 +254,13 @@ class Cmssw(JobType):
             self.firstRun = None
             common.logger.debug(5,"No first run given")
         if self.pset != None: #CarlosDaniele
-            import PsetManipulator  
-            PsetEdit = PsetManipulator.PsetManipulator(self.pset) #Daniele Pset
+            ver = string.split(self.version,"_")
+            print ver
+            if (int(ver[1])>=1 and int(ver[2])>=5):
+                import PsetManipulator150 as pp
+            else:
+                import PsetManipulator as pp
+            PsetEdit = pp.PsetManipulator(self.pset) #Daniele Pset
 
         #DBSDLS-start
         ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code 
@@ -817,6 +823,19 @@ class Cmssw(JobType):
         
         return
         
+    def additionalInputFileTgz(self):
+        """
+        Put all additional files into a tar ball and return its name
+        """
+        import tarfile
+        tarName=  common.work_space.pathForTgz()+'share/'+self.additional_tgz_name
+        tar = tarfile.open(tarName, "w:gz")
+        for file in self.additional_inbox_files:
+            tar.add(file,string.split(file,'/')[-1])
+        common.logger.debug(5,"Files added to "+self.additional_tgz_name+" : "+str(tar.getnames()))
+        tar.close()
+        return tarName
+
     def wsSetupEnvironment(self, nj):
         """
         Returns part of a job script which prepares
@@ -990,12 +1009,9 @@ class Cmssw(JobType):
             txt += 'mv -f '+pset+' pset.cfg\n'
 
         if len(self.additional_inbox_files) > 0:
-            for file in self.additional_inbox_files:
-                relFile = file.split("/")[-1]
-                txt += 'if [ -e $RUNTIME_AREA/'+relFile+' ] ; then\n'
-                txt += '   cp $RUNTIME_AREA/'+relFile+' .\n'
-                txt += '   chmod +x '+relFile+'\n'
-                txt += 'fi\n'
+            txt += 'if [ -e $RUNTIME_AREA/'+self.additional_tgz_name+' ] ; then\n'
+            txt += '  tar xzvf $RUNTIME_AREA/'+self.additional_tgz_name+'\n'
+            txt += 'fi\n'
             pass 
 
         if self.pset != None: #CarlosDaniele
@@ -1103,8 +1119,8 @@ class Cmssw(JobType):
         if not self.pset is None:
             inp_box.append(common.work_space.pathForTgz() + 'job/' + self.configFilename())
         ## additional input files
-        for file in self.additional_inbox_files:
-            inp_box.append(file)
+        tgz = self.additionalInputFileTgz()
+        inp_box.append(tgz)
         return inp_box
 
     def outputSandbox(self, nj):
