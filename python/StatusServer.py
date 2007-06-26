@@ -19,6 +19,7 @@ class StatusServer(Actor):
         self.countNotSubmit = 0
         self.countSubmit = 0
         self.countSubmitting = 0
+        self.countWait = 0
         self.countDone = 0
         self.countReady = 0
         self.countSched = 0
@@ -153,7 +154,7 @@ class StatusServer(Actor):
                     self.countRun += 1
                 elif stato == 'Aborted':
                     self.countAbort += 1
-                elif stato == 'Done':
+                elif stato == 'Done' or stato == 'Done (Failed)':
                     self.countDone += 1
                 elif stato == 'Cancelled':
                     self.countCancel += 1
@@ -169,6 +170,8 @@ class StatusServer(Actor):
                     self.countCleared += 1
                 elif stato == 'NotSubmitted':
                     self.countSubmitting += 1
+                elif stato == 'Waiting':
+                    self.countWait += 1
 
                 addTree += 1
         common.jobDB.save()
@@ -191,6 +194,8 @@ class StatusServer(Actor):
             print ">>>>>>>>> %i Jobs Not Submitted to the grid" % (self.countNotSubmit)
         if (self.countSubmit != 0):
             print ">>>>>>>>> %i Jobs Submitted" % (self.countSubmit)
+        if (self.countWait != 0):
+            print ">>>>>>>>> %i Jobs Waiting" % (self.countWait)
         if (self.countReady != 0):
             print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
         if (self.countSched != 0):
@@ -210,7 +215,7 @@ class StatusServer(Actor):
 
         countUnderMngmt = self.countToTjob - (self.countSubmitting+ self.countNotSubmit + self.countSubmit)
         countUnderMngmt -= (self.countReady + self.countSched + self.countRun + self.countDone) 
-        countUnderMngmt -= (self.countKilled + self.countAbort + self.countCleared)
+        countUnderMngmt -= (self.countKilled + self.countAbort + self.countCleared + self.countWait)
         if (countUnderMngmt != 0):
             print ">>>>>>>>> %i Jobs Waiting or Under Server Management" % (countUnderMngmt)
 
