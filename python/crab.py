@@ -15,7 +15,6 @@ from Status import Status
 from StatusBoss import StatusBoss 
 from ApmonIf import ApmonIf
 from Cleaner import Cleaner
-from DBS2Publisher import Publisher
 import common
 import Statistic
 import commands
@@ -797,6 +796,7 @@ class Crab:
             #    else: 
             #        common.logger.message("Warning: with '-publish' you _MUST_ specify 'username_dataname' as value, where username is your surname and dataname is the name you want to use to publish your produced data")
             elif ( opt == '-publish' ):
+                from DBS2Publisher import Publisher
                 try: 
                     if (int(self.cfg_params['USER.copy_data']) == 1 and int(self.cfg_params['USER.publish_data']) == 1):
                         try:
