@@ -945,6 +945,7 @@ class Cmssw(JobType):
         if self.pset != None: #CarlosDaniele
             pset = os.path.basename(job.configFilename())
             txt += '\n'
+            txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
             if (self.datasetPath): # standard job
                 #txt += 'InputFiles=$2\n'
                 txt += 'InputFiles=${args[1]}\n'
