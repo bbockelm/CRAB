@@ -12,6 +12,7 @@ class GliteConfig:
         self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
         self.configFileName = 'glite.conf.CMS_'+str(RB)
         self.theConfig = self.getConfig_()
+        print "dentro config ", self.theConfig
         pass
         
     def config(self):
@@ -23,10 +24,10 @@ class GliteConfig:
             common.logger.message('Downloading config files for RB: '+url)
             try:
                 f = urllib.urlopen(url)
-                ff = open(self.configFileName, 'w')
+                ff = open(common.work_space.shareDir() + '/' + self.configFileName, 'w')
                 ff.write(f.read())
                 ff.close()
             except IOError:
                 # print 'Cannot access URL: '+url
                 raise CrabException('Cannot download config file '+self.configFileName+' from '+self.url)
-        return os.getcwd()+'/'+self.configFileName
+        return common.work_space.shareDir() + '/' + self.configFileName
