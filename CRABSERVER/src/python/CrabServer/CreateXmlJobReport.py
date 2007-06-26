@@ -260,17 +260,41 @@ class CreateXmlJobReport:
         allJobs = self.root.getElementsByTagName( Job().getJobTagName() )
         #print "len=%d\n" % len(allJobs)
         if allJobs[0].getAttribute( Job().getStatusTagName())=="NotSubmitted":
-            report = "has not been submitted by the server to the grid.\nTry to execute the command 'crab -testJdl' to verify if there are sites that can satisfy your requirements."
+            report = " has not been submitted by the server to the grid.\nTry to execute the command 'crab -testJdl' to verify if there are sites that can satisfy your requirements."
             #return report
 
         if allJobs[0].getAttribute( Job().getStatusTagName())=="Killed":
-            report = "has been correctly killed."
+            report = " has been correctly killed."
             
             
         if allJobs[0].getAttribute( Job().getStatusTagName())=="NotKilled":
-            report = "has not been correctly killed."                                                                  
+            report = " has not been correctly killed."                                                                  
         return report
-        
+          
+    #------------------------------------------------------------------------
+    def getTaskOutcome(self):
+
+        allJobs = self.root.getElementsByTagName( Job().getJobTagName() )
+        if len(allJobs) == 1 and allJobs[0].getAttribute( Job().getJobIDTagName())== "all":
+            outcome = ""
+            allJobs = self.root.getElementsByTagName( Job().getJobTagName() )
+            
+            if allJobs[0].getAttribute( Job().getStatusTagName())=="NotSubmitted":
+                outcome = " has not been submitted by the server to the grid."
+                
+            if allJobs[0].getAttribute( Job().getStatusTagName())=="Killed":
+                outcome = " has been correctly killed."
+                
+            if allJobs[0].getAttribute( Job().getStatusTagName())=="NotKilled":
+                outcome = " has not been correctly killed."                                                                  
+        else:
+            if(  int( self.getPercentTaskCompleted() ) == 100):
+		outcome = "is completed at 100%"
+            else:
+                outcome = "Reached the requested threshold level "+ str(self.getThresholdRequest()) + "%"
+            
+        return outcome
+    
     #------------------------------------------------------------------------
     def getTaskReport(self):
 

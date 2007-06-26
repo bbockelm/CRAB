@@ -35,12 +35,8 @@ class Consumer(Thread):
         cfgObject.loadFromFile(config)
         notifCfg = cfgObject.getConfig("Notification")
 
-        #print "list config=[%s]" % cfgObject.listComponents()
-        
         self.notif_delay = notifCfg.get("NotificationDelay")
 
-        #print "Notifying every %s seconds" % self.notif_delay
-        
         if self.notif_delay == None:
             self.notif_delay = 1800
             
@@ -100,7 +96,6 @@ class Consumer(Thread):
                 logging.info(msg)
                 # HERE must send an email to job's owner
                 # if mail sending is succesful remove job from self.jobList
-                #localJobList.append( self.jobList.getJobInfo(job) )
                     
         self.NotifyJobs( self.jobList.getJobList() ) # Keep locked because Notify will remove the notified jobs
 
@@ -124,7 +119,6 @@ class Consumer(Thread):
                 logging.info(msg)
                 # HERE must send an email to job's owner
                 # if mail sending is succesful remove job from self.jobList
-                #localJobList.append( self.jobList.getJobInfo(job) )
                     
         self.NotifyTasks( self.taskList.getTaskList() ) # Keep locked because Notify will remove the notified jobs
         
@@ -132,8 +126,7 @@ class Consumer(Thread):
     # ***************************************
     #
     def NotifyJobs(self, joblist):
-        #print "Notify: joblist=" + str( joblist )
-        #listFile = "/tmp/jobList." + str(time.time())
+
         ownerListMapInfo = {}
         
         for job in joblist:
@@ -143,31 +136,13 @@ class Consumer(Thread):
             ownerListMapInfo[job.getOwner()].append( job )
 
         for user in ownerListMapInfo.keys():
-            #msg = "Switching to user [" + user + "]"
-            #logging.info( msg )
+
             message = "Dear user [" + user + "], the following job(s) are available for output sandbox retrieve:\n\n"
             listToRemove = []
             for aJob in ownerListMapInfo[user]:
                 message += "JobID: [" +aJob.getJobID() + "] - TaskName: [" + aJob.getTaskName() + "]\n"
                 listToRemove.append( aJob )
             
-##            try:
-##                os.remove(listFile)
-##            except OSError:
-##                pass
-
-            # before writing the file in /tmp, check for partition's free space
-            
-##            FILE = open(listFile,"w")
-##            FILE.write(message)
-##            FILE.close()
-
-##            cmd = "mail -s \"CRAB Server Notification: Job Output available\" " +str(user) + "< " + listFile 
-##            msg = "Notification.Consumer.Notify: Sending mail to [" + str(user) + "]"
-##            logging.info( msg )
-##	    logging.info( cmd )
-##            retCode = os.system( cmd )
-
             toList = []
             toList.appen( user )
 
@@ -179,52 +154,26 @@ class Consumer(Thread):
             except RuntimeError, mess:
                 logging.error(mess)
 
-                
-            #if(retCode != 0):
-##                errmsg = "ERROR! Command ["+cmd+"] FAILED! Won't remove these jobs from queue, will retry later"
-##                logging.error(errmsg)
-##            else:
-##                self.jobList.removeJobs(listToRemove)
-                
-##            try:
-##                os.remove(listFile)
-##            except OSError:
-##                pass
-
         
     #
     # ***************************************
     #
     def NotifyTasks(self, tasklist):
-        #print "Notify: joblist=" + str( tasklist )
-        #infoFile = "/tmp/taskInfo." + str(time.time())
         
         listToRemove = [];
             
 	for task in tasklist:
-##		try:
-##        		os.remove(infoFile)
-##	        except OSError:
-##        	        pass
- 		
 		message = task.getTaskReport() 
-##	        FILE = open(infoFile,"w")
-##        	FILE.write(message)
-##        	FILE.close()
 
                 emails = task.getUserMail()
 
-                #msg = "Notification.Consumer.NotifyTasks: tasks=["+task.getTaskname()+"] emails=[" + ",".join(emails) + "]"
-                #logging.info(msg)
-                #mainAddr = emails.pop(0)
-                
 		emailAddr = ",".join( emails )
-		#mainAddr = task.getUserMail()[0]
+
                 
                 msg = "Notification.Consumer.Notify: Sending mail to [" + emailAddr + "]"
         	logging.info( msg )
 
-                completeMessage = "Subject:\"CRAB Server Notification: Report available for Task ["+ task.getTaskname() +"]\n\n" + message
+                completeMessage = "Subject:\"CRAB Server Notification: The task ["+ task.getTaskname() + "] " + task.getTaskOutcome() + "\n\n" + message
 
                 try:
                     self.mailer.SendMail( emails, completeMessage )
@@ -232,25 +181,3 @@ class Consumer(Thread):
                     self.taskList.removeTasks(listToRemove)
                 except RuntimeError, mex:
                     logging.error(mex)
-                
-##		if(len(task.getUserMail())>1):
-##        		cmd = "mail -s \"CRAB Server Notification: Report available for Task ["+ task.getTaskname() +"]\" " +mainAddr + " -c " + emailAddr +" < " + infoFile 
-##		else:
-##			cmd = "mail -s \"CRAB Server Notification: Report available for Task ["+ task.getTaskname()+"]\" " +mainAddr + " <"+ infoFile 
-			
-##	        msg = "Notification.Consumer.Notify: Sending mail to [" + emailAddr + "]"
-##        	logging.info( msg )
-##		logging.info( cmd )
-##	        retCode = os.system( cmd )
-
-##        	if(retCode != 0):
-##			errmsg = "ERROR! Command ["+cmd+"] FAILED! Won't remove these jobs from queue, will retry later"
-##	                logging.error(errmsg)
-##        	else:
-##			listToRemove.append( task )
-##	                self.taskList.removeTasks(listToRemove)
-                
-##        	try:
-##                	os.remove(infoFile)
-##	        except OSError:
-##        	        pass
