@@ -57,3 +57,21 @@ class CfgInterface:
     def __str__(self):
         """string rep of self: give python format PSet"""
         return self.cmsConfig.asPythonString()
+
+    def hackMaxEvents(self, maxEv):
+        """
+        _hackMaxEvents_
+
+        Drop the source maxEvents value into the cfg file PSet
+
+        """
+        
+        maxEvents = self.cmsConfig.psdata['psets'].get("maxEvents", None)
+
+        if maxEvents == None:
+            # no maxEvents PSet in cfg so skip
+            return
+        
+        psetContent = self.cmsConfig.psdata['psets']['maxEvents'][2]
+        psetContent['input'] = ('int32', 'untracked', maxEv )
+        return
