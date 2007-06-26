@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.23 2007/06/18 08:16:04 mcinquil Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.25 2007/06/20 16:38:00 mcinquil Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import os
 import time
@@ -612,9 +612,9 @@ class TaskTrackingComponent:
         """
         work_dir = os.getcwd()
         os.chdir( path )
-        logging.debug("path: " + str(path) + "/done.tgz")
-	cmd = 'tar --create -z --file='+path+'/.temp_done.tgz * --exclude done.tgz; '
-        cmd += 'mv '+path+'/.temp_done.tgz '+path+'/done.tgz'
+        logging.debug("path: " + str(path) + "/done.tar.gz")
+	cmd = 'tar --create -z --file='+path+'/.temp_done.tar.gz * --exclude done.tar.gz; '
+        cmd += 'mv '+path+'/.temp_done.tar.gz '+path+'/done.tar.gz'
         os.system( cmd )
 			
         os.chdir( work_dir )
@@ -645,9 +645,9 @@ class TaskTrackingComponent:
                                                                                         ## This means that done.tgz must conteins all the stuff
                                                                                         ## both for jobs exiting with "0" "0" and something !="0". DS 
             cmd += 'cp -r '+jtResDir+'/Success/Submission_*/*/* .tmpDone;'
-        cmd += 'tar --create -z --file='+path+'/.temp_done.tgz .tmpDone/* --exclude done.tgz --exclude failed.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;'
+        cmd += 'tar --create -z --file='+path+'/.temp_done.tar.gz .tmpDone/* --exclude done.tar.gz --exclude failed.tar.gz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;'
         cmd += 'rm -drf .tmpDone/;'
-        cmd += 'mv '+path+'/.temp_done.tgz '+path+'/done.tgz;'
+        cmd += 'mv '+path+'/.temp_done.tar.gz '+path+'/done.tar.gz;'
         #logging.info('\n'+str(cmd)+'\n')
         os.system( cmd )
         os.chdir( work_dir )
