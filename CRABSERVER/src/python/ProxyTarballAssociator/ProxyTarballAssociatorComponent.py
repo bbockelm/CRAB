@@ -4,8 +4,8 @@ _ProxyTarballAssociatorComponent_
 
 """
 
-__version__ = "$Revision: 1.6 $"
-__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.6 2007/05/11 15:14:37 spiga Exp $"
+__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.7 2007/05/31 12:47:00 mcinquil Exp $"
 
 import os
 import socket
@@ -378,11 +378,11 @@ class ProxyTarballAssociatorComponent:
             for m in xrange(len(readedData)):
                  n = readedData[m]
                  if 'RBconfigVO' in n:
-                      readedData[m] = 'RBconfigVO = "'+ self.dropBoxPath + '/'+ n.split('/')[-1]
+                      readedData[m] = 'RBconfigVO = "'+ taskDir + '/share/'+ n.split('/')[-1]
                  elif 'RBconfig' in n:
-                      readedData[m] = 'RBconfig = "'+ self.dropBoxPath + '/'+ n.split('/')[-1]
+                      readedData[m] = 'RBconfig = "'+ taskDir + '/share/'+ n.split('/')[-1]
                  elif 'WMSconfig' in n:
-                      readedData[m] = 'WMSconfig = '+ self.dropBoxPath + '/'+ n.split('/')[-1]
+                      readedData[m] = 'WMSconfig = '+ taskDir + '/share/'+ n.split('/')[-1]
                  pass
             pass
             f = open(sched,'w')
