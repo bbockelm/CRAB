@@ -41,6 +41,5 @@ class PsetManipulator(PsetManipulator) :
 
     def maxEvent(self, maxEv):
         """ Set max event in the standalone untracked module """ 
-        print 'PsetManipulator150::maxEvent'
         self.cfg.hackMaxEvents(maxEv)
         return

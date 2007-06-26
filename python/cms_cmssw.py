@@ -255,7 +255,6 @@ class Cmssw(JobType):
             common.logger.debug(5,"No first run given")
         if self.pset != None: #CarlosDaniele
             ver = string.split(self.version,"_")
-            print ver
             if (int(ver[1])>=1 and int(ver[2])>=5):
                 import PsetManipulator150 as pp
             else:
