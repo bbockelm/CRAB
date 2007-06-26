@@ -12,7 +12,6 @@ class GliteConfig:
         self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
         self.configFileName = 'glite.conf.CMS_'+str(RB)
         self.theConfig = self.getConfig_()
-        print "dentro config ", self.theConfig
         pass
         
     def config(self):
