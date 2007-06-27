@@ -12,7 +12,6 @@ class Cmssw(JobType):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
 
-        # Marco.
         self._params = {}
         self.cfg_params = cfg_params
 
@@ -901,6 +900,10 @@ class Cmssw(JobType):
         txt += 'fi \n'
         txt += 'echo "CMSSW_VERSION =  '+self.version+'"\n'
         txt += 'cd '+self.version+'\n'
+        ########## FEDE FOR DBS2 ######################
+        txt += 'SOFTWARE_DIR=`pwd`\n'
+        txt += 'echo SOFTWARE_DIR=$SOFTWARE_DIR \n'
+        ###############################################
         ### needed grep for bug in scramv1 ###
         txt += scram+' runtime -sh\n'
         txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
@@ -959,7 +962,6 @@ class Cmssw(JobType):
             txt += 'DataTier=null\n'
             #txt += 'ProcessedDataset=null\n'
             txt += 'ApplicationFamily=MCDataTier\n'
-        ##################    
         if self.pset != None: #CarlosDaniele
             pset = os.path.basename(job.configFilename())
             txt += '\n'
@@ -1070,10 +1072,12 @@ class Cmssw(JobType):
             txt += 'echo "Include ProdAgentApi and PRODCOMMON in PYTHONPATH"\n'
             txt += 'if [ -z "$PYTHONPATH" ]; then\n'
             #### FEDE FOR DBS OUTPUT PUBLICATION
-            txt += '   export PYTHONPATH=`pwd`/ProdAgentApi:`pwd`/ProdCommon\n'
+            txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdAgentApi:$SOFTWARE_DIR/ProdCommon\n'
+            #txt += '   export PYTHONPATH=`pwd`/ProdAgentApi:`pwd`/ProdCommon\n'
             #txt += '   export PYTHONPATH=ProdAgentApi\n'
             txt += 'else\n'
-            txt += '   export PYTHONPATH=`pwd`/ProdAgentApi:`pwd`/ProdCommon:${PYTHONPATH}\n'
+            txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdAgentApi:$SOFTWARE_DIR/ProdCommon:${PYTHONPATH}\n'
+            #txt += '   export PYTHONPATH=`pwd`/ProdAgentApi:`pwd`/ProdCommon:${PYTHONPATH}\n'
             #txt += '   export PYTHONPATH=ProdAgentApi:${PYTHONPATH}\n'
             txt += 'echo "PYTHONPATH=$PYTHONPATH"\n'
             ###################  
@@ -1171,22 +1175,23 @@ class Cmssw(JobType):
             txt += 'fi\n'
        
         txt += 'cd $RUNTIME_AREA\n'
+        #### FEDE this is the cleanEnv function
         ### OLI_DANIELE
-        txt += 'if [ $middleware == OSG ]; then\n'  
-        txt += '    cd $RUNTIME_AREA\n'
-        txt += '    echo "Remove working directory: $WORKING_DIR"\n'
-        txt += '    /bin/rm -rf $WORKING_DIR\n'
-        txt += '    if [ -d $WORKING_DIR ] ;then\n'
-        txt += '        echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
-        txt += '        echo "JOB_EXIT_STATUS = 60999"\n'
-        txt += '        echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '        rm -f $RUNTIME_AREA/$repo \n'
-        txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '    fi\n'
-        txt += 'fi\n'
-        txt += '\n'
+        #txt += 'if [ $middleware == OSG ]; then\n'  
+        #txt += '    cd $RUNTIME_AREA\n'
+        #txt += '    echo "Remove working directory: $WORKING_DIR"\n'
+        #txt += '    /bin/rm -rf $WORKING_DIR\n'
+        #txt += '    if [ -d $WORKING_DIR ] ;then\n'
+        #txt += '        echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
+        #txt += '        echo "JOB_EXIT_STATUS = 60999"\n'
+        #txt += '        echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
+        #txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
+        #txt += '        rm -f $RUNTIME_AREA/$repo \n'
+        #txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        #txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        #txt += '    fi\n'
+        #txt += 'fi\n'
+        #txt += '\n'
 
         file_list = ''
         ## Add to filelist only files to be possibly copied to SE
@@ -1341,8 +1346,10 @@ class Cmssw(JobType):
 
         txt = '' 
         txt += 'echo "Modify Job Report" \n'
-        txt += 'chmod a+x $RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
-        ############ FEDE NUOVI CAMBI PER DBS2
+        #txt += 'chmod a+x $RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
+        ################ FEDE FOR DBS2 #############################################
+        txt += 'chmod a+x $SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
+        #############################################################################
         try:
             publish_data = int(self.cfg_params['USER.publish_data'])           
         except KeyError:
@@ -1376,8 +1383,10 @@ class Cmssw(JobType):
             txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
         txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-        txt += 'echo "$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n' 
-        txt += '$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
+        #txt += 'echo "$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n' 
+        txt += 'echo "$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n' 
+        txt += '$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
+        #txt += '$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
         txt += 'modifyReport_result=$?\n'
         txt += 'echo modifyReport_result = $modifyReport_result\n'
         txt += 'if [ $modify_result -ne 0 ]; then\n'
@@ -1387,7 +1396,26 @@ class Cmssw(JobType):
         txt += '    mv NewFrameworkJobReport.xml crab_fjr_$NJob.xml\n'
         txt += 'fi\n'
         return txt
-    #################
+
+    def cleanEnv(self):
+        ### OLI_DANIELE
+        txt = '' 
+        txt += 'if [ $middleware == OSG ]; then\n'  
+        txt += '    cd $RUNTIME_AREA\n'
+        txt += '    echo "Remove working directory: $WORKING_DIR"\n'
+        txt += '    /bin/rm -rf $WORKING_DIR\n'
+        txt += '    if [ -d $WORKING_DIR ] ;then\n'
+        txt += '	      echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
+        txt += '	      echo "JOB_EXIT_STATUS = 60999"\n'
+        txt += '	      echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '	      dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '        rm -f $RUNTIME_AREA/$repo \n'
+        txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    fi\n'
+        txt += 'fi\n'
+        txt += '\n'
+        return txt
 
     def setParam_(self, param, value):
         self._params[param] = value
@@ -1401,7 +1429,6 @@ class Cmssw(JobType):
     def getTaskid(self):
         return self._taskId
 
-#######################################################################
     def uniquelist(self, old):
         """
         remove duplicates from a list
