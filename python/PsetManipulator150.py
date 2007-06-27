@@ -24,7 +24,6 @@ class PsetManipulator(PsetManipulator) :
             raise CrabException(msg)
             
         cmd = cmdEdmToPy+' > '+common.work_space.shareDir()+self.pyPset+'py < '+ self.pset
-        print cmd
         exit_code = os.system(cmd)
         if exit_code != 0 : 
             msg = 'Could not convert '+self.pset+' into a python Dictionary \n'
