@@ -1389,7 +1389,7 @@ class Cmssw(JobType):
         #txt += '$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
         txt += 'modifyReport_result=$?\n'
         txt += 'echo modifyReport_result = $modifyReport_result\n'
-        txt += 'if [ $modify_result -ne 0 ]; then\n'
+        txt += 'if [ $modifyReport_result -ne 0 ]; then\n'
         txt += '    exit_status=1\n'
         txt += '    echo "ERROR: Problem with ModifyJobReport"\n'
         txt += 'else\n'
