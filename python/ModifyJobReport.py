@@ -73,13 +73,13 @@ def modifyFile(file, n_job, seName):
     pref =  str.split(str(file['PFN']), '.')[0]
     suff = str.split(str(file['PFN']), '.')[1]
     if (seName == ''):
-        newPfn = pref+'_'+n_job+'.'+suff
+        newPfn = pref + '_' + n_job + '.' + suff
     else:    
-        newPfn = seName + path +'/'+pref+'_'+n_job+'.'+suff
+        newPfn = seName + path + pref + '_' + n_job + '.' + suff
     print "newPfn = ", newPfn  
 
-    newLfn = for_lfn +'/'+ pref+'_'+n_job+'.'+suff 
-    print "newLfn = ", newLfn  
+    newLfn = for_lfn + pref + '_' + n_job + '.' + suff 
+    print "newLfn = ", newLfn
 
     updatePFN(file, file['LFN'], newPfn, seName)
 
