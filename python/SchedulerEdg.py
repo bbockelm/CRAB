@@ -92,7 +92,11 @@ class SchedulerEdg(Scheduler):
                     self.publish_data_name = cfg_params['USER.publish_data_name']
                 except KeyError:
                     msg = "Error. The [USER] section does not have 'publish_data_name'"
-                    common.logger.message(msg)
+                    raise CrabException(msg)
+                try:
+                    self.UserGridName = string.strip(runCommand("voms-proxy-info -identity | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'"))
+                except:
+                    msg = "Error. Problem with voms-proxy-info -identity command"
                     raise CrabException(msg)
         except KeyError: self.publish_data = 0 
 
@@ -102,6 +106,7 @@ class SchedulerEdg(Scheduler):
            common.logger.message(msg)
            raise CrabException(msg)
         #################################################
+
         try:
             self.lfc_host = cfg_params['EDG.lfc_host']
         except KeyError:
@@ -482,10 +487,10 @@ class SchedulerEdg(Scheduler):
               ####### FEDE FOR DBS2
               if int(self.publish_data) == 1:
                   txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
-                  txt += 'subject=`voms-proxy-info -subject | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'` \n'
-                  txt += 'echo "subject = $subject" \n'
-                  
-                  path_add = '${subject}/'+ self.publish_data_name +'_${PSETHASH}/'
+                  #txt += 'subject=`voms-proxy-info -subject | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'` \n'
+                  #txt += 'echo "subject = $subject" \n'
+                  #path_add = '${subject}/'+ self.publish_data_name +'_${PSETHASH}/'
+                  path_add = self.UserGridName + '/' + self.publish_data_name +'_${PSETHASH}/'
                   SE_PATH = SE_PATH + path_add
 
               txt += 'export SE_PATH='+SE_PATH+'\n'
