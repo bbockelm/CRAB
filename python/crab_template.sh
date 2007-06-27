@@ -159,6 +159,8 @@ ls -Al
 #CRAB modify_report
 #######################
 
+#CRAB clean_env 
+
 echo "JobExitCode=$exit_status" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 rm -f $RUNTIME_AREA/$repo

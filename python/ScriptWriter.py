@@ -21,7 +21,8 @@ class ScriptWriter:
             'rename_output'               : self.renameOutput_,
             'copy_output'                 : self.copyOutput_,
             'register_output'             : self.registerOutput_,
-            'modify_report'               : self.modifyReport_
+            'modify_report'               : self.modifyReport_,
+            'clean_env'                   : self.cleanEnv_
             }
         
         if os.path.isfile("./"+template):
@@ -148,4 +149,13 @@ class ScriptWriter:
         """
         jbt = common.job_list.type()
         txt = jbt.modifyReport(self.nj)
+        return txt
+
+    ### FEDE FOR DBS OUTPUT PUBLICATION 
+    def cleanEnv_(self):
+        """
+        In OSG environment this function removes the WORKING_DIR
+        """
+        jbt = common.job_list.type()
+        txt = jbt.cleanEnv()
         return txt
