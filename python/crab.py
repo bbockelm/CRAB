@@ -535,27 +535,37 @@ class Crab:
                 pass
 
             elif ( opt == '-printId' ):
-            
-                try: 
-                    common.scheduler.bossTask.query(ALL)
-                except RuntimeError,e:
-                    common.logger.message( e.__str__() )
-                except ValueError,e:
-                    common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
-                    common.logger.message(e.what())
+                # modified to support server mode 
+                if (self.UseServer== 1):
+                     try: 
+                         common.taskDB.load()
+                         WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
+                         projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict('TasKUUID')
+                         print "Task Id = %-40s " %(projectUniqName)   
+                     except:
+                         common.logger.message("Warning :Interaction in query task unique ID failed")
+                         pass 
+                else:         
+                    try:      
+                        common.scheduler.bossTask.query(ALL)
+                    except RuntimeError,e:
+                        common.logger.message( e.__str__() )
+                    except ValueError,e:
+                        common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
+                        common.logger.message(e.what())
+                        pass
+                    task = common.scheduler.bossTask.jobsDict()
+               
+                    for c, v in task.iteritems():
+                        k = int(c)
+                        nj=k
+                        id = v['CHAIN_ID']
+                        jid = v['SCHED_ID']
+                        if jid:
+                            print "Job: %-5s Id = %-40s " %(id,jid)
+                        #else:
+                        #    print "Job: ",id," No ID yet"
                     pass
-                task = common.scheduler.bossTask.jobsDict()
-
-                for c, v in task.iteritems():
-                    k = int(c)
-                    nj=k
-                    id = v['CHAIN_ID']
-                    jid = v['SCHED_ID']
-                    if jid:
-                        print "Job: %-5s Id = %-40s " %(id,jid)
-                    #else:
-                    #    print "Job: ",id," No ID yet"
-                pass
 
             elif ( opt == '-status' ):
                 # modified to support server mode 
