@@ -191,7 +191,7 @@ class SchedulerEdg(Scheduler):
         try: self.schedulerName = cfg_params['CRAB.scheduler']
         except KeyError: self.scheduler = ''
 
-        try: self.dontCheckProxy=cfg_params["EDG.dont_check_proxy"]
+        try: self.dontCheckProxy=int(cfg_params["EDG.dont_check_proxy"])
         except KeyError: self.dontCheckProxy = 0
 
         return
