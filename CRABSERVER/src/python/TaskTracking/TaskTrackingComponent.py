@@ -86,7 +86,7 @@ class TaskTrackingComponent:
                                                 "ComponentLog")
         # create log handler
         logHandler = RotatingFileHandler(self.args['Logfile'],
-                                         "a", 1000000, 3)
+                                         "a", 1000000, 7)
 
         # define log format
         logFormatter = logging.Formatter("%(asctime)s:%(message)s")
@@ -490,7 +490,7 @@ class TaskTrackingComponent:
             logging.error( "ERROR while updating the task " + str(taskName) )
             logging.error( "      "+str(ex))
             logging.error("  <-- - -- - -->")
-
+        """
         eMail = ""
         uuid = ""
 
@@ -503,15 +503,15 @@ class TaskTrackingComponent:
                         uuid = valuess[1]
                         if len(valuess) > 2:
                             eMail = valuess[2]
-                    dictionaryReport =  {"all": ["Killed", "", "", 0]}
-                    self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
-                    self.prepareTaskFailed( taskName, uuid, eMail, status )
+        #            dictionaryReport =  {"all": ["Killed", "", "", 0]}
+        #            self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
+        #            self.prepareTaskFailed( taskName, uuid, eMail, status )
         except Exception, ex:
             logging.error("  <-- - -- - -->")
             logging.error( "ERROR while reporting info about the task " + str(taskName) )
             logging.error( "      "+str(ex))
             logging.error("  <-- - -- - -->")
-
+        """
         #TaskStateAPI.updatingStatus( taskName, self.taskState[4], 2 )
 
     def killTaskFailed (self, taskName ):
@@ -847,8 +847,12 @@ class TaskTrackingComponent:
                                     dictReportTot['JobInProgress'] += 1
                                     dictFinishedJobs.setdefault(job,0)
 			    elif not resubmitting:
-   				dictReportTot['JobFailed'] += 1
-                                dictFinishedJobs.setdefault(job,1)
+                                #if status != self.taskState[4]:
+     				#    dictReportTot['JobFailed'] += 1
+                                #    dictFinishedJobs.setdefault(job,1)
+                                #else:
+                                dictReportTot['JobInProgress'] += 1
+                                dictFinishedJobs.setdefault(job,0)
                             else:
                                 dictReportTot['JobInProgress'] += 1
                                 dictFinishedJobs.setdefault(job,0)
