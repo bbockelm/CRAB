@@ -47,7 +47,7 @@ class StatusServer(Actor):
 
         stateConverting = {'Running': 'R', 'Aborted': 'A', 'Done': 'D', 'Done (Failed)': 'D',\
                            'Cleared': 'D', 'Cancelled': 'K', 'Killed': 'K', 'NotSubmitted': 'C',\
-                           'Retrieving': 'R' }
+                           'Retrieving by the server': 'R' }
 
         if status in stateConverting:
             return stateConverting[status]
@@ -142,7 +142,7 @@ class StatusServer(Actor):
                         if jobDbStatus == 'D' and int(cleared) != 1:#exe_exit_code =='' and job_exit_status=='':
                             ## 'Done' but not yet cleared (server side) still showing 'Running'
                             ##stato = 'Running'
-                            stato = 'Retrieving'  ## changed - is this user friendly? 
+                            stato = 'Retrieving by the server'  ## changed - is this user friendly? 
                             jobDbStatus = 'R'
                         common.jobDB.setStatus( str(int(idJob)-1), self.translateStatus(stato) )
                     else:
@@ -175,7 +175,7 @@ class StatusServer(Actor):
                     self.countSubmitting += 1
                 elif stato == 'Waiting':
                     self.countWait += 1
-                elif stato == 'Retrieving':
+                elif stato == 'Retrieving by the server':
                     self.countRet += 1
 
                 addTree += 1
@@ -206,7 +206,7 @@ class StatusServer(Actor):
         if (self.countSched != 0):
             print ">>>>>>>>> %i Jobs Scheduled" % (self.countSched)
         if (self.countRet != 0):
-            print ">>>>>>>>> %i Jobs Retrieving" % (self.countRet)
+            print ">>>>>>>>> %i Jobs Retrieving by the server" % (self.countRet)
         if (self.countRun != 0):
             print ">>>>>>>>> %i Jobs Running" % (self.countRun)
         if (self.countDone != 0):
