@@ -495,8 +495,9 @@ class Crab:
                     common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
                     jobSetForSubmission = 0
                     jobSkippedInSubmission = []
+                    datasetpath=self.cfg_params['CMSSW.datasetpath']
                     for nj in range(common.jobDB.nJobs()):
-                        if len(common.jobDB.destination(nj)) != 0 :
+                        if (len(common.jobDB.destination(nj)) != 0) or (datasetpath != None ):
                             if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
                                 jobSetForSubmission +=1
                                 nj_list.append(nj)
