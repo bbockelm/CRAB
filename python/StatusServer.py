@@ -26,6 +26,7 @@ class StatusServer(Actor):
         self.countRun = 0
         self.countAbort = 0
         self.countCancel = 0
+        self.countRet = 0
         self.countKilled = 0
         self.countCleared = 0
         self.countToTjob = 0
@@ -45,7 +46,8 @@ class StatusServer(Actor):
         """
 
         stateConverting = {'Running': 'R', 'Aborted': 'A', 'Done': 'D', 'Done (Failed)': 'D',\
-                           'Cleared': 'D', 'Cancelled': 'K', 'Killed': 'K', 'NotSubmitted': 'C'}
+                           'Cleared': 'D', 'Cancelled': 'K', 'Killed': 'K', 'NotSubmitted': 'C',\
+                           'Retrieving': 'R' }
 
         if status in stateConverting:
             return stateConverting[status]
@@ -139,7 +141,8 @@ class StatusServer(Actor):
                     if common.jobDB.status( str(int(idJob)-1) ) != "Y":
                         if jobDbStatus == 'D' and int(cleared) != 1:#exe_exit_code =='' and job_exit_status=='':
                             ## 'Done' but not yet cleared (server side) still showing 'Running'
-                            stato = 'Running'
+                            ##stato = 'Running'
+                            stato = 'Retrieving'  ## changed - is this user friendly? 
                             jobDbStatus = 'R'
                         common.jobDB.setStatus( str(int(idJob)-1), self.translateStatus(stato) )
                     else:
@@ -172,6 +175,8 @@ class StatusServer(Actor):
                     self.countSubmitting += 1
                 elif stato == 'Waiting':
                     self.countWait += 1
+                elif stato == 'Retrieving':
+                    self.countRet += 1
 
                 addTree += 1
         common.jobDB.save()
@@ -200,6 +205,8 @@ class StatusServer(Actor):
             print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
         if (self.countSched != 0):
             print ">>>>>>>>> %i Jobs Scheduled" % (self.countSched)
+        if (self.countRet != 0):
+            print ">>>>>>>>> %i Jobs Retrieving" % (self.countRet)
         if (self.countRun != 0):
             print ">>>>>>>>> %i Jobs Running" % (self.countRun)
         if (self.countDone != 0):
