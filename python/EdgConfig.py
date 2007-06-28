@@ -28,13 +28,13 @@ class EdgConfig:
             common.logger.message('Downloading config files for RB: '+url)
             try:
                 f = urllib.urlopen(url)
-                ff = open(common.work_space.shareDir() + '/' + self.configFileName, 'w')
+                ff = open(self.configFileName, 'w')
                 ff.write(f.read())
                 ff.close()
             except IOError:
                 # print 'Cannot access URL: '+url
                 raise CrabException('Cannot download config file '+self.configFileName+' from '+self.url)
-        return common.work_space.shareDir() +'/'+self.configFileName
+        return os.getcwd()+'/'+self.configFileName
 
     def getConfigVO_(self):
         if not os.path.exists(self.configVOFileName):
@@ -42,9 +42,9 @@ class EdgConfig:
             common.logger.message('Downloading config files for RB: '+url)
             try:
                 f = urllib.urlopen(url)
-                ff = open(common.work_space.shareDir() + '/' + self.configVOFileName, 'w')
+                ff = open(self.configVOFileName, 'w')
                 ff.write(f.read())
                 ff.close()
             except IOError:
                 raise CrabException('Cannot download configVO file '+self.configVOFileName+' from '+self.url)
-        return common.work_space.shareDir() + '/'+self.configVOFileName
+        return os.getcwd()+'/'+self.configVOFileName

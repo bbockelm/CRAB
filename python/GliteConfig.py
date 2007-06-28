@@ -23,10 +23,10 @@ class GliteConfig:
             common.logger.message('Downloading config files for RB: '+url)
             try:
                 f = urllib.urlopen(url)
-                ff = open(common.work_space.shareDir() + '/' + self.configFileName, 'w')
+                ff = open(self.configFileName, 'w')
                 ff.write(f.read())
                 ff.close()
             except IOError:
                 # print 'Cannot access URL: '+url
                 raise CrabException('Cannot download config file '+self.configFileName+' from '+self.url)
-        return common.work_space.shareDir() + '/' + self.configFileName
+        return os.getcwd()+'/'+self.configFileName
