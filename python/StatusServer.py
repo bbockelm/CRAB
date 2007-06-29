@@ -117,6 +117,7 @@ class StatusServer(Actor):
                 self.countKilled = common.jobDB.nJobs()
                 for nj in range(common.jobDB.nJobs()):
                     common.jobDB.setStatus(nj, 'K')
+                    self.countKilled = common.jobDB.nJobs()
             elif doc.childNodes[0].childNodes[3].getAttribute("status") == "NotSubmitted":
                 self.countNotSubmit = common.jobDB.nJobs()
                 for nj in range(common.jobDB.nJobs()):
@@ -177,6 +178,8 @@ class StatusServer(Actor):
                     self.countWait += 1
                 elif stato == 'Retrieving by the server':
                     self.countRet += 1
+                elif stato == 'Killed':
+                    self.countKilled += 1
 
                 addTree += 1
         common.jobDB.save()
@@ -205,23 +208,23 @@ class StatusServer(Actor):
             print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
         if (self.countSched != 0):
             print ">>>>>>>>> %i Jobs Scheduled" % (self.countSched)
-        if (self.countRet != 0):
-            print ">>>>>>>>> %i Jobs Retrieving by the server" % (self.countRet)
         if (self.countRun != 0):
             print ">>>>>>>>> %i Jobs Running" % (self.countRun)
+        if (self.countRet != 0):
+            print ">>>>>>>>> %i Jobs Retrieving by the server" % (self.countRet)
         if (self.countDone != 0):
             print ">>>>>>>>> %i Jobs Done" % (self.countDone)
             print "          Retrieve them with: crab -getoutput -continue"
         if (self.countKilled != 0):
             print ">>>>>>>>> %i Jobs Killed" % (self.countKilled)
-            print "          Retrieve more information with: crab -postMortem -continue"
+#            print "          Retrieve more information with: crab -postMortem -continue"
         if (self.countAbort != 0):
             print ">>>>>>>>> %i Jobs Aborted" % (self.countAbort)
         if (self.countCleared != 0):
             print ">>>>>>>>> %i Jobs Cleared" % (self.countCleared)
 
         countUnderMngmt = self.countToTjob - (self.countSubmitting+ self.countNotSubmit + self.countSubmit)
-        countUnderMngmt -= (self.countReady + self.countSched + self.countRun + self.countDone) 
+        countUnderMngmt -= (self.countReady + self.countSched + self.countRun + self.countDone + self.countRet) 
         countUnderMngmt -= (self.countKilled + self.countAbort + self.countCleared + self.countWait)
         if (countUnderMngmt != 0):
             print ">>>>>>>>> %i Jobs Waiting or Under Server Management" % (countUnderMngmt)
