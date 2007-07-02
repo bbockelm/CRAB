@@ -138,7 +138,7 @@ class NotificationComponent:
         self.ms.registerAs("NotificationComponent")
         
         # subscribe to messages
-        self.ms.subscribeTo("JobSuccess")
+        #self.ms.subscribeTo("JobSuccess")
 	self.ms.subscribeTo("TaskSuccess")
         self.ms.subscribeTo("TaskFailed")
         self.ms.subscribeTo("TaskNotSubmitted")
@@ -269,6 +269,7 @@ class NotificationComponent:
             logging.info("  -> " + str(type) + " <-  ")
             if type == "JobSuccess":
 	    	if not self.PERJOB:
+                        self.ms.commit()
 			continue
 			
                 pieces = []
