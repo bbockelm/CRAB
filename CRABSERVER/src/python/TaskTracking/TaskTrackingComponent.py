@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.25 2007/06/20 16:38:00 mcinquil Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.27 2007/06/28 16:54:43 mcinquil Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import os
 import time
@@ -32,8 +32,7 @@ from ProdAgentCore.ProdAgentException import ProdAgentException
 import TaskStateAPI
 
 # XML
-#from CrabServer.CreateXmlJobReport import *
-from CreateXmlJobReport import *
+from CreateXmlJobReport import * 
 
 from Outputting import *
 
@@ -69,6 +68,7 @@ class TaskTrackingComponent:
           none
 
         """
+
         # initialize the server
         self.args = {}
         self.args.setdefault("PollInterval", 5 )
@@ -76,7 +76,7 @@ class TaskTrackingComponent:
         self.args.setdefault("bossClads", "/home/ASdevel/test/BOSS/config/")
         self.args.setdefault("dropBoxPath", "/flatfiles/cms/")
 	self.args.setdefault("jobDetail", "nop")
-
+        
         # update parameters
         self.args.update(args)
 
@@ -806,8 +806,8 @@ class TaskTrackingComponent:
 			    resubmitting = TaskStateAPI.checkNSubmit( taskName, job )
 			    runInfoJob =  v.specific(job,"1")
 
-			    if string.lower(self.args['jobDetail']) == "yes":
-                                logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']))
+			    #if lower(self.args['jobDetail']) == "yes":
+                            #    logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']))
 			    vect = []
 			    if runInfoJob['EXE_EXIT_CODE'] == "NULL" and runInfoJob['JOB_EXIT_STATUS'] == "NULL":
    			        vect = [self.convertStatus(stato), "", "", 0]
