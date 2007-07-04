@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.4 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.4 2007/06/11 15:15:08 mcinquil Exp $"
+__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.6 2007/07/02 09:48:50 mcinquil Exp $"
 
 import os
 import socket
@@ -32,8 +32,8 @@ import Consumer
 import JobInfoList
 import TaskInfoList
 import Mailer
-#from CrabServer.CreateXmlJobReport import *
-from CreateXmlJobReport import *
+from CrabServer.CreateXmlJobReport import *
+#from CreateXmlJobReport import *
 import string
 import re
 import sys

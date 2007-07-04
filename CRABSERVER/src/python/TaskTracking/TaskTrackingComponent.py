@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.27 2007/06/28 16:54:43 mcinquil Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.28 2007/07/02 17:00:17 mcinquil Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import os
 import time
@@ -32,7 +32,7 @@ from ProdAgentCore.ProdAgentException import ProdAgentException
 import TaskStateAPI
 
 # XML
-from CreateXmlJobReport import * 
+from CrabServer.CreateXmlJobReport import * 
 
 from Outputting import *
 
