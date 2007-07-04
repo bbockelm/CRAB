@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.28 2007/07/02 17:00:17 mcinquil Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.27 2007/06/28 16:54:43 mcinquil Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import os
 import time
@@ -26,7 +26,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import  ProdAgentCore.LoggingUtils as LoggingUtils
 from ProdAgentCore.ProdAgentException import ProdAgentException
-
+from ProdAgentCore.Configuration import ProdAgentConfiguration
 
 # DB PA
 import TaskStateAPI
@@ -71,14 +71,16 @@ class TaskTrackingComponent:
 
         # initialize the server
         self.args = {}
-        self.args.setdefault("PollInterval", 5 )
+        self.args.setdefault("PollInterval", 35 )
         self.args.setdefault("Logfile", None)
-        self.args.setdefault("bossClads", "/home/ASdevel/test/BOSS/config/")
-        self.args.setdefault("dropBoxPath", "/flatfiles/cms/")
+        self.args.setdefault("bossClads", None)
+        self.args.setdefault("dropBoxPath", None)
 	self.args.setdefault("jobDetail", "nop")
         
         # update parameters
         self.args.update(args)
+        logging.info("Using "+str(self.args['dropBoxPath'])+" as DropBox")
+        logging.info("Using "+str(self.args['bossClads'])+" for BOSS configuration")
 
         # define log file
         if self.args['Logfile'] == None:
@@ -787,7 +789,7 @@ class TaskTrackingComponent:
 		    self.prepareTaskFailed( taskName, uuid, eMail )
 		else:
     	            taskDict = mySession.loadByName( taskName )
-                   
+                    #logging.info(taskDict)
 		    if len(taskDict) > 0:
 
                         logging.info(" - - - - - - - - ")
