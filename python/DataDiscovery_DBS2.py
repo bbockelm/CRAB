@@ -3,6 +3,7 @@ import exceptions
 import DBSAPI.dbsApi
 from DBSAPI.dbsApiException import * 
 import common
+from crab_util import *
 
 
 # #######################################
@@ -94,6 +95,11 @@ class DataDiscovery_DBS2:
 
         common.logger.debug(3,"Accessing DBS at: "+dbs_url)
 
+        ## check if runs are selected
+        try:
+            runselection = parseRange2(self.cfg_params['CMSSW.runselection'])
+        except:
+            runselection = []
 
         ## service API
         args = {}
@@ -102,7 +108,10 @@ class DataDiscovery_DBS2:
 
         api = DBSAPI.dbsApi.DbsApi(args)
         try:
-            files = api.listDatasetFiles(self.datasetPath)
+            if len(runselection) <= 0 :
+                files = api.listDatasetFiles(self.datasetPath)
+            else :
+                files = api.listFiles(path=self.datasetPath, details=True)
         except DbsBadRequest, msg:
             raise DataDiscoveryError_DBS2(msg)
         except DBSError_DBS2, msg:
@@ -111,26 +120,38 @@ class DataDiscovery_DBS2:
         # parse files and fill arrays
         for file in files :
             filename = file['LogicalFileName']
-            events = file['NumberOfEvents']
-            fileblock = file['Block']['Name']
+            if filename.find('.dat') < 0 :
+                fileblock = file['Block']['Name']
+                events    = file['NumberOfEvents']
+                continue_flag = 0
+                if len(runselection) > 0 :
+                    runslist = file['RunsList']
+                    for run in runslist :
+                        runnumber = run['RunNumber']
+                        for selected_run in runselection :
+                            if runnumber == selected_run :
+                                continue_flag = 1
+                else :
+                    continue_flag = 1
 
-            # number of events per block
-            if fileblock in self.eventsPerBlock.keys() :
-                self.eventsPerBlock[fileblock] += events
-            else :
-                self.eventsPerBlock[fileblock] = events
+                if continue_flag == 1 :
+                    # number of events per block
+                    if fileblock in self.eventsPerBlock.keys() :
+                        self.eventsPerBlock[fileblock] += events
+                    else :
+                        self.eventsPerBlock[fileblock] = events
 
-            # number of events per file
-            self.eventsPerFile[filename] = events
+                    # number of events per file
+                    self.eventsPerFile[filename] = events
 
-            # number of events per block
-            if fileblock in self.blocksinfo.keys() :
-                self.blocksinfo[fileblock].append(filename)
-            else :
-                self.blocksinfo[fileblock] = [filename]
+                    # number of events per block
+                    if fileblock in self.blocksinfo.keys() :
+                        self.blocksinfo[fileblock].append(filename)
+                    else :
+                        self.blocksinfo[fileblock] = [filename]
 
-            # total number of events
-            self.maxEvents += events
+                    # total number of events
+                    self.maxEvents += events
 
         for block in self.eventsPerBlock.keys() :
             common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(self.eventsPerBlock[block],block))
