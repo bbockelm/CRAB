@@ -98,8 +98,6 @@ componentFields = {
     'ComponentDir':None,
     'PollInterval':'30',
     'debugLevel':'9',
-    'dropBoxPath':'',
-    'bossClads':'', 
     },
 
     "Notification" : {
@@ -150,6 +148,17 @@ prodAgentBlock = config.getConfig("ProdAgent")
 config['CrabServerConfigurations'] = ConfigBlock("CrabServerConfigurations")
 for parameter, value in crabServerConfiguration.items():
     config['CrabServerConfigurations'][parameter] = value
+
+## set default fields
+try:
+    config['CrabServerConfigurations']['bossClads'] = os.path.join(prodAgentBlock['ProdAgentWorkDir'], "BOSS/config/")
+
+    config['JobSubmitter']['SubmitterName'] = "RESubmitter"
+    config['JobKiller']['KillerName'] = "BOSSKiller"
+except Exception, ex:
+    msg = "\n Unable to configure the component file: "
+    msg += str(ex) + "\n"
+    print msg
 
 # create new components
 
