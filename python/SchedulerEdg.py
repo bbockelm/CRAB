@@ -99,7 +99,7 @@ class SchedulerEdg(Scheduler):
                     reCN=re.compile(r'CN=')
                     for t in tmp:
                         if reCN.match(t):
-                            self.UserGridName=(t.replace('CN=','')).replace(' ','')
+                            self.UserGridName=string.strip((t.replace('CN=','')).replace(' ',''))
                         
                     #self.UserGridName = string.strip(runCommand("voms-proxy-info -identity | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'"))
                 except:
