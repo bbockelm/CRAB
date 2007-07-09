@@ -1,6 +1,7 @@
 import sys, getopt, string
 import common
-import time 
+import time, glob
+from Actor import *
 from FwkJobRep.ReportParser import readJobReport
 from crab_util import *
 from crab_logger import Logger
@@ -13,7 +14,7 @@ import ProdCommon.DataMgmt.DBS.DBSWriterObjects as DBSWriterObjects
 
 
 
-class Publisher:
+class Publisher(Actor):
     def __init__(self, cfg_params):
         """
         Publisher class: 
@@ -23,7 +24,16 @@ class Publisher:
         - publishes output data on DBS and DLS
         """
 
-        self.processedData = cfg_params['USER.publish_data_name']
+        try:
+            self.processedData = cfg_params['USER.publish_data_name']
+        except KeyError:
+            raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
+
+        try:
+            if (int(cfg_params['USER.copy_data']) != 1): raise KeyError
+        except KeyError:
+            raise CrabException('You can not publish data because you did not selected *** copy_data = 1  *** in the crab.cfg file')
+
         common.logger.message('self.processedData = '+self.processedData)
         self.resDir = common.work_space.resDir()
         common.logger.message('self.resDir = '+self.resDir)
@@ -40,46 +50,48 @@ class Publisher:
         
     
     def importParentDataset(self,globalDBS, datasetpath):
-       """
-       """ 
-       status_import='0'
-       dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
-       try:
-           common.logger.message("----->>>>importing parent dataset in the local dbs")
-           dbsWriter.importDataset(globalDBS, self.datasetpath, self.DBSURL)
-       except DBSWriterError, ex:
-           msg = "Error importing dataset to be processed into local DBS\n"
-           msg += "Source Dataset: %s\n" % datasetpath
-           msg += "Source DBS: %s\n" % globalDBS
-           msg += "Destination DBS: %s\n" % self.DBSURL
-           common.logger.message(msg)
-           status_import = '1'
-       return status_import
+        """
+        """ 
+        dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
+        
+        try:
+            common.logger.message("----->>>>importing parent dataset in the local dbs")
+            dbsWriter.importDataset(globalDBS, self.datasetpath, self.DBSURL)
+        except DBSWriterError, ex:
+            msg = "Error importing dataset to be processed into local DBS\n"
+            msg += "Source Dataset: %s\n" % datasetpath
+            msg += "Source DBS: %s\n" % globalDBS
+            msg += "Destination DBS: %s\n" % self.DBSURL
+            common.logger.message(msg)
+            return 1
+        return 0
           
-    def publishDataset(self,f):
+    def publishDataset(self,file):
         """
         """
-        try:   
-            jobReport = readJobReport(self.resDir+f)[0]
-            msg = "--->>> reading "+self.resDir + f+" file"  
+        try:
+            jobReport = readJobReport(file)[0]
+            msg = "--->>> reading "+file+" file"  
             common.logger.message(msg)
             self.exit_status = '0'
         except IndexError:
             self.exit_status = '1'
-            msg = "Error: Problem with "+self.resDir + f+" file"  
+            msg = "Error: Problem with "+file+" file"  
             common.logger.message(msg)
             return self.exit_status
         #####for parents information import ######################################### 
         #### the globalDBS has to be written in the crab cfg file!!!!! ###############
         globalDBS="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
-        status_import=self.importParentDataset(globalDBS, self.datasetpath)
-        if (status_import == '1'):
-            common.logger.message('Problem with parent import from the global DBS '+globalDBS+ 'to the local one '+self.DBSURL)
-            self.exit_status='1'
-            ###############################################################################
-            ##  ___ >>>>>>>  comment out the next line, if you have problem with the import
-            ###############################################################################
-            return self.exit_status
+        if (self.datasetpath != 'None'):
+            status_import=self.importParentDataset(globalDBS, self.datasetpath)
+            if (status_import == 1):
+                common.logger.message('Problem with parent import from the global DBS '+globalDBS+ 'to the local one '+self.DBSURL)
+                self.exit_status='1'
+                ###############################################################################
+                ##  ___ >>>>>>>  comment out the next line, if you have problem with the import
+                ###############################################################################
+                return self.exit_status
+            pass
         #// DBS to contact
         dbswriter = DBSWriter(self.DBSURL,level='ERROR')                        
         # publish a dataset : it should be done only once for the task
@@ -89,7 +101,7 @@ class Publisher:
             self.exit_status = '0'
         except IndexError:
             self.exit_status = '1'
-            msg = "Error: No file to publish in xml file"+self.resDir + f+" file"  
+            msg = "Error: No file to publish in xml file"+file+" file"  
             common.logger.message(msg)
             return self.exit_status
 
@@ -112,15 +124,15 @@ class Publisher:
             common.logger.message("Inserted primary %s processed %s"%(primary,processed))
         return self.exit_status    
 
-    def publishAJobReport(self,f,procdataset):
+    def publishAJobReport(self,file,procdataset):
         """
         """
         try:
-            jobReport = readJobReport(self.resDir+f)[0]
+            jobReport = readJobReport(file)[0]
             self.exit_status = '0'
         except IndexError:
             self.exit_status = '1'
-            msg = "Error: Problem with "+self.resDir + f+" file"
+            msg = "Error: Problem with "+file+" file"
             raise CrabException(msg)
 
         # overwite ProcessedDataset with user defined value
@@ -138,12 +150,12 @@ class Publisher:
             common.logger.message("insert file error: %s"%ex)
         return Blocks
 
-    def publish(self):
+    def run(self):
         """
         parse of all xml file on res dir and creation of distionary
         """
         common.logger.message("Starting data publish")
-        file_list = os.listdir(self.resDir)
+        file_list = glob.glob(self.resDir+"crab_fjr*.xml")
         common.logger.debug(6, "file_list = "+str(file_list))
         common.logger.debug(6, "len(file_list) = "+str(len(file_list)))
         # FIXME: 
@@ -151,19 +163,16 @@ class Publisher:
         #
         if (len(file_list)>0):
             BlocksList=[]
-            for f in file_list:
-                if str(f).find('xml') == -1:
-                    continue
-                else:
-                    common.logger.message("file = "+f)
-                    common.logger.message("Publishing dataset")
-                    self.exit_status=self.publishDataset(f)
-                    if (self.exit_status == '1'):
-                       return self.exit_status 
-                    common.logger.message("Publishing files")
-                    Blocks=self.publishAJobReport(f,self.processedData)
-                    if Blocks:
-                        [BlocksList.append(x) for x in Blocks]
+            for file in file_list:
+                common.logger.message("file = "+file)
+                common.logger.message("Publishing dataset")
+                self.exit_status=self.publishDataset(file)
+                if (self.exit_status == '1'):
+                    return self.exit_status 
+                common.logger.message("Publishing files")
+                Blocks=self.publishAJobReport(file,self.processedData)
+                if Blocks:
+                    [BlocksList.append(x) for x in Blocks]
             # close the blocks
             common.logger.message("------>>>> BlocksList = %s"%BlocksList)
             dbswriter = DBSWriter(self.DBSURL,level='ERROR')

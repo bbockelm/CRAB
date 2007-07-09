@@ -792,40 +792,19 @@ class Crab:
                 self.actions[opt] = Cleaner(self.cfg_params)
 
             ### FEDE DBS/DLS OUTPUT PUBLICATION 
-            #elif ( opt == '-publish' ):
-            #    if val:
-            #        username,dataname=string.split(val,'_')
-            #        #print "username = ", username
-            #        #print "dataname = ",  dataname
-            #        ### from script to class...
-            #        thePublisher = Publisher(self.cfg_params, username,dataname)
-            #        publish_exit_status = thePublisher.publish()
-            #        if (publish_exit_status == '1'):
-            #            common.logger.message("user data publication --> problems")
-            #        else:
-            #            common.logger.message("user data publication --> ok ")
-            #    else: 
-            #        common.logger.message("Warning: with '-publish' you _MUST_ specify 'username_dataname' as value, where username is your surname and dataname is the name you want to use to publish your produced data")
             elif ( opt == '-publish' ):
                 from DBS2Publisher import Publisher
-                try: 
-                    if (int(self.cfg_params['USER.copy_data']) == 1 and int(self.cfg_params['USER.publish_data']) == 1):
-                        try:
-                            #self.cfg_params['USER.processed_datasetname']
-                            precessedData=self.cfg_params['USER.publish_data_name']
-                            thePublisher = Publisher(self.cfg_params)
-                            publish_exit_status = thePublisher.publish()
-                            if (publish_exit_status == '1'):
-                                common.logger.message("user data publication --> problems")
-                            else:
-                                common.logger.message("user data publication --> ok ")
-                        except KeyError:
-                            raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
-                    else:
-                        common.logger.message("You can not publish data because you did not selected *** copy_data = 1 AND publish_data =1 *** in the crab.cfg file")
-                except KeyError:
-                    raise CrabException('You can not publish data because you did not selected *** copy_data = 1 AND publish_data =1 *** in the crab.cfg file')
-            #########################################
+                self.actions[opt] = Publisher(self.cfg_params)
+
+                #precessedData=self.cfg_params['USER.publish_data_name']
+                #self.cfg_params['USER.processed_datasetname']
+                #thePublisher = Publisher(self.cfg_params)
+                # publish_exit_status = thePublisher.publish()
+                # if (publish_exit_status == '1'):
+                #     common.logger.message("user data publication --> problems")
+                # else:
+                #     common.logger.message("user data publication --> ok ")
+                #########################################
             pass
         return
 
