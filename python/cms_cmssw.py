@@ -844,6 +844,10 @@ class Cmssw(JobType):
    
         ## OLI_Daniele at this level  middleware already known
 
+        txt += 'echo "### Firtst set SCRAM ARCH and BUILD_ARCH ###"\n'
+        txt += 'echo "Setting SCRAM_ARCH='+self.executable_arch+'"\n'
+        txt += 'export SCRAM_ARCH='+self.executable_arch+'\n'
+        txt += 'export BUILD_ARCH='+self.executable_arch+'\n'
         txt += 'if [ $middleware == LCG ]; then \n' 
         txt += self.wsSetupCMSLCGEnvironment_()
         txt += 'elif [ $middleware == OSG ]; then\n'
@@ -869,8 +873,8 @@ class Cmssw(JobType):
         scram = self.scram.commandName()
         txt += '\n\n'
         txt += 'echo "### SPECIFIC JOB SETUP ENVIRONMENT ###"\n'
-        txt += 'echo "Setting SCRAM_ARCH='+self.executable_arch+'"\n'
-        txt += 'export SCRAM_ARCH='+self.executable_arch+'\n'
+#        txt += 'echo "Setting SCRAM_ARCH='+self.executable_arch+'"\n'
+#        txt += 'export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += scram+' project CMSSW '+self.version+'\n'
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
