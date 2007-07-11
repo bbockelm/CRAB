@@ -1,7 +1,7 @@
 #! /bin/sh
 # CRAB related Stuff
 export CRABDIR=`\pwd`/..
-export CRABSCRIPT=${CRABDIR}
+export CRABSCRIPT=${CRABDIR}/script
 
 CRABPATH=${CRABDIR}/python
 CRABPYTHON=${CRABDIR}/python
