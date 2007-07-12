@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.30 2007/07/04 15:12:24 mcinquil Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.31 2007/07/12 13:35:21 mcinquil Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import os
 import time
@@ -474,7 +474,7 @@ class TaskTrackingComponent:
 	    strEmail += str(mail) + ","
 	TaskStateAPI.updatingNotifiedPA( taskName, 2 )
         if status == self.taskState[2]:
-            self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + taskName  + "/res/" + self.xmlReportFileName )
+            self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + taskName  + "/res/" + self.xmlReportFileName, taskName )
         elif status == self.taskState[7]:
             self.taskIncompleteSubmission(origTaskName, strEmail[0:len(strEmail)-1], userName)
         else:
@@ -697,6 +697,22 @@ class TaskTrackingComponent:
     ##########################################################################
     # publishing messages
     ##########################################################################
+    def taskEnded( self, taskName ):
+        """
+        _taskEnded_
+        
+        Starting managing by TaskLifeManager component
+        """
+        pathToWrite = self.args['dropBoxPath'] + '/' + taskName
+        if os.path.exists( pathToWrite ):
+           ###  get user name & original task name  ###
+#            obj = UtilSubject(self.args['dropBoxPath'], taskName, uuid)
+#            origTaskName, userName = obj.getInfos()
+#            del obj
+            self.msThread.publish("TaskTracking:TaskEnded", taskName)
+            logging.info("-------> Published 'TaskEnded' message with payload: %s" % taskName)
+            self.msThread.commit()
+
 
     def taskSuccess( self, taskPath ):
         """
@@ -727,9 +743,10 @@ class TaskTrackingComponent:
 
         logging.info("         *-*-*-*-* ")
         logging.info("Published 'TaskFailed' message with payload: %s" % payload)
+        self.taskEnded(taskName)
         logging.info("         *-*-*-*-* ")
 
-    def taskNotSubmitted( self, taskPath ): #Name, eMaiList, userName ):
+    def taskNotSubmitted( self, taskPath, taskName ): #Name, eMaiList, userName ):
         """
         _taskNotSubmitted_
         """
@@ -741,6 +758,7 @@ class TaskTrackingComponent:
 
         logging.info("         *-*-*-*-* ")
         logging.info("Published 'TaskNotSubmitted' message with payload: %s" % taskPath) #payload)
+        self.taskEnded(taskName)
         logging.info("         *-*-*-*-* ")
 
     def taskIncompleteSubmission( self, taskName, eMaiList, userName ):
@@ -912,6 +930,7 @@ class TaskTrackingComponent:
                                             self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
 					if percentage == 100:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName )
+                                            self.taskEnded(taskName)
 					    notified = 2
 					    TaskStateAPI.updatingNotifiedPA( taskName, notified )
                                             obj.deleteTempTar( pathToWrite )
