@@ -1,6 +1,6 @@
 #! /bin/csh
 # CRAB related Stuff
-setenv CRABDIR `\pwd`/..
+#setenv CRABDIR `\pwd`/..
 setenv CRABSCRIPT ${CRABDIR}/script
 
 set CRABPATH=${CRABDIR}/python
