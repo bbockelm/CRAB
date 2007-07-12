@@ -45,33 +45,37 @@ class Outputting:
 
     def prepareTempDir( self, path, taskName, nJob, jobs2Add ):
         cmd = 'mkdir .tmpDone;'
-        for i in jobs2Add: #range(1, nJob+1):
-            ## Add parametric indexes for failed and successful jobs # Fabio
-            jtResDir = 'job'+str(i)+'/JobTracking'
-            cmd += 'cp '+self.tempxmlReportFile+' .tmpDone/'+self.xmlReportFileName+' ;' ## SP
-            ## Get the most recent failure and copy that to tmp # Fabio
-            failIndex = 4
-            if os.path.exists('./'+jtResDir+'/Failed/'):
-                if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
-                    failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
-                cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpDone/edgLoggingInfo_'+str(i)+'.log ;'
-                cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/std*/* .tmpDone/;'
-            cmd += 'cp -r '+jtResDir+'/Success/Submission_*/*/* .tmpDone;'
-            cmd += 'cp -r '+jtResDir+'/Success/Submission_*/log/edgLoggingInfo.log .tmpDone/edgLoggingInfo_'+str(i)+'.log ;'
-            cmd += 'rm .tmpDone/BossChainer.log .tmpDone/BossProgram_1.log .tmpDone/edg_getoutput.log .tmpDone/edgLoggingInfo.log;'
         os.system( cmd )
-        listFileTemp = []
-        for file in os.listdir(path+ '.tmpDone'):
-            listFileTemp.append( '.tmpDone/' + str(file) )
-        return listFileTemp
+        if os.path.exists('.tmpDone'):
+            for i in jobs2Add: #range(1, nJob+1):
+                ## Add parametric indexes for failed and successful jobs # Fabio
+                jtResDir = 'job'+str(i)+'/JobTracking'
+                cmd = 'cp '+self.tempxmlReportFile+' .tmpDone/'+self.xmlReportFileName+' ;' ## SP
+                ## Get the most recent failure and copy that to tmp # Fabio
+                failIndex = 4
+                if os.path.exists('./'+jtResDir+'/Failed/'):
+                    if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
+                        failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
+                    cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpDone/edgLoggingInfo_'+str(i)+'.log ;'
+                    cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/std*/* .tmpDone/;'
+                cmd += 'cp -r '+jtResDir+'/Success/Submission_*/*/* .tmpDone;'
+                cmd += 'cp -r '+jtResDir+'/Success/Submission_*/log/edgLoggingInfo.log .tmpDone/edgLoggingInfo_'+str(i)+'.log ;'
+                cmd += 'rm .tmpDone/BossChainer.log .tmpDone/BossProgram_1.log .tmpDone/edg_getoutput.log .tmpDone/edgLoggingInfo.log;'
+            os.system( cmd )
+            listFileTemp = []
+            for file in os.listdir(path+ '.tmpDone'):
+                listFileTemp.append( '.tmpDone/' + str(file) )
+            return listFileTemp
 
     def cleanTmpDir( self, path ):
-        cmd = 'rm -drf '+path+'/.tmpDone/;'
-        os.system( cmd )
+        if os.path.exists(path+'/.tmpDone/'):
+            cmd = 'rm -drf '+path+'/.tmpDone/;'
+            os.system( cmd )
 
     def deleteTempTar( self, path ):
-        cmd = 'rm -f '+path+self.tempTar
-        os.system( cmd )
+        if os.path.exists(path+self.tempTar):
+            cmd = 'rm -f '+path+self.tempTar
+            os.system( cmd )
 
     def prepareGunzip( self, path ):
         cmd = 'gzip -c ' + path + '/' + self.tempTar + ' > ' + path + self.tempTarball + '; '
@@ -115,8 +119,9 @@ class Outputting:
                 jobs2Write.append(int(job))
         self.add2List( path, self.jobEndedCache, jobs2Write )
         fileList = self.prepareTempDir( path, taskName, nJob, jobs2Write )
-        self.add2Tar( path, fileList )
-        self.prepareGunzip( path )
+        if fileList != None:
+            self.add2Tar( path, fileList )
+            self.prepareGunzip( path )
 
         os.chdir( work_dir )
 

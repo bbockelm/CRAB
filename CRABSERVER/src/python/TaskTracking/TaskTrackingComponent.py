@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.27 2007/06/28 16:54:43 mcinquil Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.30 2007/07/04 15:12:24 mcinquil Exp $"
+__version__ = "$Revision: 1.30 $"
 
 import os
 import time
@@ -173,7 +173,7 @@ class TaskTrackingComponent:
 		    TaskStateAPI.updateNotSubmitted( payload, "", "", "", "", self.taskState[2] )
 		except Exception, ex:
 		    logging.error("  <-- - -- - -->")
-		    logging.error( "ERROR while updating the task " + str(taskName) )
+		    logging.error( "ERROR while updating the task " + str(payload) )
 		    logging.error( "      "+str(ex))
 		    logging.error("  <-- - -- - -->")
                 logging.info("              task updated.")
@@ -316,8 +316,8 @@ class TaskTrackingComponent:
         eMail = None
         thresholdLevel = None
         if os.path.exists( pathFile ):
-           eMail = self.parseCrabCfg(open(pathFile).read(), "USER", "eMail")
-           thresholdLevel = self.parseCrabCfg(open(pathFile).read(), "USER", "thresholdLevel")
+            eMail = self.parseCrabCfg(open(pathFile).read(), "USER", "eMail")
+            thresholdLevel = self.parseCrabCfg(open(pathFile).read(), "USER", "thresholdLevel")
         return eMail, thresholdLevel
 
 
@@ -555,11 +555,11 @@ class TaskTrackingComponent:
             if len(eMaiList) < 1:
                 c.initialize( origTaskName, "ASdevel@cern.ch", userName, percentage, thresholdLevel, nJobs)
             else:
-                 for index in range(len(eMaiList)):
-                     if index != 0:
-                         c.addEmailAddress( eMaiList[index] )
-                     else:
-                         c.initialize( origTaskName, eMaiList[0], userName, percentage, thresholdLevel, nJobs)
+                for index in range(len(eMaiList)):
+                    if index != 0:
+                        c.addEmailAddress( eMaiList[index] )
+                    else:
+                        c.initialize( origTaskName, eMaiList[0], userName, percentage, thresholdLevel, nJobs)
 
             for singleJob in dictReportTot:
                 J = Job()   ##    id             status                        eec                            jes                       clear
@@ -899,12 +899,12 @@ class TaskTrackingComponent:
                                     if percentage != endedLevel:
                                         obj = Outputting( self.xmlReportFileName, self.tempxmlReportFile )
                                         logging.info("**** ** **** ** ****")
-                                        logging.info("TESTING: preparing output")
+                                        logging.info("  preparing OUTPUT")
                                         obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
                                         if os.path.exists( pathToWrite+"/done.tar.gz" ):
-                                            logging.info("TESTING: preparing output finished")
+                                            logging.info("  preparing OUTPUT finished")
                                         else:
-                                            logging.info("TESTING: preparing output FAILED")
+                                            logging.info("  preparing OUTPUT FAILED")
                                         logging.info("**** ** **** ** ****")
                                 #        self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
                                     if percentage >= thresholdLevel:
