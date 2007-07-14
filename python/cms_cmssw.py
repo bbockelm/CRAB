@@ -444,6 +444,8 @@ class Cmssw(JobType):
         while ( (eventsRemaining > 0) and (blockCount < numBlocksInDataset) and (jobCount < totalNumberOfJobs)):
             block = blocks[blockCount]
             blockCount += 1
+            if block not in jobsOfBlock.keys() :
+                jobsOfBlock[block] = []
             
             if self.eventsbyblock.has_key(block) :
                 numEventsInBlock = self.eventsbyblock[block]
@@ -494,10 +496,7 @@ class Cmssw(JobType):
                             self.jobDestination.append(blockSites[block])
                             common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
                             # fill jobs of block dictionary
-                            if block in jobsOfBlock.keys() :
-                                jobsOfBlock[block].append(jobCount+1)
-                            else:
-                                jobsOfBlock[block] = [jobCount+1]
+                            jobsOfBlock[block].append(jobCount+1)
                             # reset counter
                             jobCount = jobCount + 1
                             totalEventCount = totalEventCount + filesEventCount - jobSkipEventCount
@@ -521,10 +520,7 @@ class Cmssw(JobType):
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         self.jobDestination.append(blockSites[block])
                         common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
-                        if block in jobsOfBlock.keys() :
-                            jobsOfBlock[block].append(jobCount+1)
-                        else:
-                            jobsOfBlock[block] = [jobCount+1]
+                        jobsOfBlock[block].append(jobCount+1)
                         # reset counter
                         jobCount = jobCount + 1
                         totalEventCount = totalEventCount + eventsPerJobRequested
@@ -545,10 +541,7 @@ class Cmssw(JobType):
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         self.jobDestination.append(blockSites[block])
                         common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
-                        if block in jobsOfBlock.keys() :
-                            jobsOfBlock[block].append(jobCount+1)
-                        else:
-                            jobsOfBlock[block] = [jobCount+1]
+                        jobsOfBlock[block].append(jobCount+1)
                         # increase counter
                         jobCount = jobCount + 1
                         totalEventCount = totalEventCount + eventsPerJobRequested
@@ -572,9 +565,10 @@ class Cmssw(JobType):
         screenOutput = "List of jobs and available destination sites:\n\n"
 
         blockCounter = 0
-        for block in jobsOfBlock.keys():
-            blockCounter += 1
-            screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),','.join(blockSites[block]))
+        for block in blocks:
+            if block in jobsOfBlock.keys() :
+                blockCounter += 1
+                screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),','.join(blockSites[block]))
 
         common.logger.message(screenOutput)
 
