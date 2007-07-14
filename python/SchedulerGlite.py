@@ -249,10 +249,22 @@ class SchedulerGlite(SchedulerEdg):
         return cmd_out
 
     def findSites_(self, n):
+        itr4 = []
         sites = common.jobDB.destination(n)
         if len(sites)>0 and sites[0]=="":
-            return []
-        return sites
+            return itr4
+        if sites != [""]: 
+            ##Addedd Daniele
+            replicas = self.checkBlackList(sites,n)
+            if len(replicas)!=0:
+                replicas = self.checkWhiteList(replicas,n)
+              
+            if len(replicas)==0:
+                msg = 'No sites remaining that host any part of the requested data! Exiting... '
+                raise CrabException(msg)
+            itr4 = replicas 
+            #####         
+        return itr4
 
     def submitTout(self, list):
         return 120
