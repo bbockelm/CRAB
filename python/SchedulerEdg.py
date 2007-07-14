@@ -18,11 +18,40 @@ class SchedulerEdg(Scheduler):
                       "owner","parent_job", "reason","resubmitted","rsl","seed",\
                       "stateEnterTime","stateEnterTimes","subjob_failed", \
                       "user tags" , "status" , "status_code","hierarchy"]
-        
         return
 
     def configure(self, cfg_params):
+##Addedd Daniele
+######################################        
 
+        SEBlackList = []
+        try:
+            tmpBad = string.split(cfg_params['EDG.se_black_list'],',')
+            for tmp in tmpBad:
+                tmp=string.strip(tmp)
+                SEBlackList.append(tmp)
+        except KeyError:
+            pass
+        common.logger.debug(5,'SEBlackList: '+str(SEBlackList))
+        self.reSEBlackList=[]
+        for bad in SEBlackList:
+            self.reSEBlackList.append(re.compile( string.lower(bad) ))
+
+        SEWhiteList = []
+        try:
+            tmpGood = string.split(cfg_params['EDG.se_white_list'],',')
+            for tmp in tmpGood:
+                tmp=string.strip(tmp)
+                SEWhiteList.append(tmp)
+        except KeyError:
+            pass
+        common.logger.debug(5,'SEWhiteList: '+str(SEWhiteList))
+        self.reSEWhiteList=[]
+        for good in SEWhiteList:
+            self.reSEWhiteList.append(re.compile( string.lower(good) ))
+
+
+######################################        
         try:
             RB=cfg_params["EDG.rb"]
             self.rb_param_file=self.rb_configure(RB)
@@ -332,7 +361,8 @@ class SchedulerEdg(Scheduler):
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $VO_CMS_SW_DIR ]; then \n'
         txt += '    middleware=LCG \n'
-        txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
+   #     txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "SyncCE=`glite-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'else \n'
@@ -405,7 +435,8 @@ class SchedulerEdg(Scheduler):
               txt += '\n'
 
         txt += 'if [ $middleware == LCG ]; then\n' 
-        txt += '    CloseCEs=`edg-brokerinfo getCE`\n'
+    #    txt += '    CloseCEs=`edg-brokerinfo getCE`\n'
+        txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
         txt += '    echo "CloseCEs = $CloseCEs"\n'
         txt += '    CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
         txt += '    echo "CE = $CE"\n'
@@ -622,7 +653,8 @@ class SchedulerEdg(Scheduler):
            txt += '      done\n'
            txt += '   else \n'
            txt += '      echo "Trying to copy output file to CloseSE"\n'
-           txt += '      CLOSE_SE=`edg-brokerinfo getCloseSEs | head -1`\n'
+ #          txt += '      CLOSE_SE=`edg-brokerinfo getCloseSEs | head -1`\n'
+           txt += '      CLOSE_SE=`glite-brokerinfo getCloseSEs | head -1`\n'
            txt += '      for out_file in $file_list ; do\n'
            txt += '         echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1" \n'
            txt += '         lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1 \n'
@@ -658,14 +690,77 @@ class SchedulerEdg(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
+##Addedd Daniele
+# #######################################################################
+    def checkBlackList(self, Sites, fileblocks):
+        """
+        select sites that are not excluded by the user (via SE black list)
+        """
+        goodSites = []
+        for aSite in Sites:
+            common.logger.debug(10,'Site '+aSite)
+            good=1
+            for re in self.reSEBlackList:
+                if re.search(string.lower(aSite)):
+                    common.logger.debug(5,'SE in black list, skipping site '+aSite)
+                    good=0
+                pass
+            if good: goodSites.append(aSite)
+        if len(goodSites) == 0:
+            msg = "No sites hosting the block %s after BlackList" % fileblocks
+            common.logger.debug(5,msg)
+            common.logger.debug(5,"Proceeding without this block.\n")
+        else:
+            common.logger.debug(5,"Selected sites for block "+str(fileblocks)+" via BlackList are "+str(goodSites)+"\n")
+        return goodSites
+
+# #######################################################################
+    def checkWhiteList(self, Sites, fileblocks):
+        """
+        select sites that are defined by the user (via SE white list)
+        """
+        if len(self.reSEWhiteList)==0: return Sites
+        goodSites = []
+        for aSite in Sites:
+            good=0
+            for re in self.reSEWhiteList:
+                if re.search(string.lower(aSite)):
+                    common.logger.debug(5,'SE in white list, adding site '+aSite)
+                    good=1
+                pass
+            if good: goodSites.append(aSite)
+        
+        if len(goodSites) == 0:
+            msg = "No sites hosting the block %s after WhiteList" % fileblocks
+            common.logger.debug(5,msg)
+            common.logger.debug(5,"Proceeding without this block.\n")
+        else:
+            common.logger.debug(5,"Selected sites for block "+str(fileblocks)+" via WhiteList are "+str(goodSites)+"\n")
+       
+        return goodSites 
+
+# #######################################################################
     def findSites_(self, n):
         itr4 =[] 
+
         sites = common.jobDB.destination(n)
-        if len(sites)>0 and sites[0]=="Any":
+
+        if len(sites)>0 and sites[0]=="":
             return itr4
+
         itr = ''
         if sites != [""]:#CarlosDaniele 
-            for site in sites: 
+            ##Addedd Daniele
+            replicas = self.checkBlackList(sites,n)
+            if len(replicas)!=0:
+                replicas = self.checkWhiteList(replicas,n)
+              
+            if len(replicas)==0:
+                msg = 'No sites remaining that host any part of the requested data! Exiting... '
+                raise CrabException(msg)
+            #####         
+           # for site in sites: 
+            for site in replicas: 
                 #itr = itr + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
                 itr = itr + 'target.GlueSEUniqueID=="'+site+'" || '
             itr = itr[0:-4]
