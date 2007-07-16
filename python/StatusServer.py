@@ -125,9 +125,9 @@ class StatusServer(Actor):
             self.countToTjob = common.jobDB.nJobs()
         else:
             printline = ''
-            printline+= "%-10s %-20s %-20s %-25s" % ('JOBID','STATUS','EXE_EXIT_CODE','JOB_EXIT_STATUS')
+            printline+= "%-10s %-20s %-20s %-20s %-18s %-20s" % ('JOBID','STATUS','SITE','JOB_EXIT_STATUS','EXE_EXIT_CODE','RESUBMIT')
             print printline
-            print '-------------------------------------------------------------------------------------'
+            print '-------------------------------------------------------------------------------------------------------'
 
             for job in range( self.countToTjob ):
                 idJob = doc.childNodes[0].childNodes[job+addTree].getAttribute("id")
@@ -135,8 +135,21 @@ class StatusServer(Actor):
                 exe_exit_code = doc.childNodes[0].childNodes[job+addTree].getAttribute("job_exit")
                 job_exit_status = doc.childNodes[0].childNodes[job+addTree].getAttribute("exe_exit")
                 cleared = doc.childNodes[0].childNodes[job+addTree].getAttribute("cleared")
+
+                try:
+                    site = doc.childNodes[0].childNodes[job+addTree].getAttribute("site")
+                    resub = doc.childNodes[0].childNodes[job+addTree].getAttribute("resubmit")
+                    if site == "none" or site == "NULL" or site=="None":
+                        site=''
+                    if resub == "none" or resub =="None" or resub == "0":
+                        resub=''
+                    if stato == "Killed":
+                        resub=''
+                except Excpetion, ex:
+                    common.logger.message ("Problem reading report file: are you using the latest crab version?")
+                    common.logger.debug( 1 , str(ex) )
+
                 jobDbStatus = self.translateStatus(stato)
- 
                 if jobDbStatus != None:
                     common.logger.debug(5, '*** Updating jobdb for job %s ***' %idJob)
                     if common.jobDB.status( str(int(idJob)-1) ) != "Y":
@@ -150,9 +163,9 @@ class StatusServer(Actor):
                         stato = "Cleared"
                     common.jobDB.setExitStatus(  str(int(idJob)-1), job_exit_status )
                 if stato != "Done" and stato != "Cleared" and stato != "Aborted" and stato != "Done (Failed)":
-                    print "%-10s %-20s" % (idJob,stato)
+                    print "%-10s %-20s %-20s %-20s %-18s %-20s" % (idJob,stato,site,'','',resub)
                 else:
-                    print "%-10s %-20s %-20s %-25s" % (idJob,stato,exe_exit_code,job_exit_status)
+                    print "%-10s %-20s %-20s %-20s %-18s %-20s" % (idJob,stato,site,exe_exit_code,job_exit_status,resub)
 
                 if stato == 'Running':
                     self.countRun += 1
