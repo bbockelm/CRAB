@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.31 2007/07/12 13:35:21 mcinquil Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.32 2007/07/12 14:53:59 mcinquil Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import os
 import time
@@ -188,8 +188,8 @@ class TaskTrackingComponent:
 	if event == "CrabServerWorkerComponent:TaskArrival":
 	    if payload != None:
                 logging.info("  <-- - -- - -->")
-                logging.info("Submitting Task: %s" % str(payload.split(":",1)[0]) )
-		self.updateTaskStatus( str(payload.split(":",1)[0]), self.taskState[1] )
+                logging.info("Submitting Task: %s" % str(payload.split(":", 1)[0]) )
+		self.updateTaskStatus( str(payload.split(":", 1)[0]), self.taskState[1] )
                 logging.info("              task updated.")
                 logging.info("  <-- - -- - -->")
             else:
@@ -347,7 +347,7 @@ class TaskTrackingComponent:
         updating a task that is just sumitted
         """
 
-        uuid, taskName, proxy = payload.split(":",3)
+        uuid, taskName, proxy = payload.split(":", 3)
 	
         eMail, thresholdLevel = self.readInfoCfg( self.args['dropBoxPath'] + "/" + taskName )
         if eMail == None:
@@ -562,15 +562,24 @@ class TaskTrackingComponent:
                         c.initialize( origTaskName, eMaiList[0], userName, percentage, thresholdLevel, nJobs)
 
             for singleJob in dictReportTot:
-                J = Job()   ##    id             status                        eec                            jes                       clear
-                J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][1], dictReportTot[singleJob][2],dictReportTot[singleJob][3] )
+                J = Job()   ##    id             status                        eec
+                J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][1],\
+                            ##         jes                       clear                       Resub
+                              dictReportTot[singleJob][2], dictReportTot[singleJob][3], self.getListEl(dictReportTot[singleJob], 4),\
+                            ##         site
+                              self.getListEl(dictReportTot[singleJob], 5) )
                 c.addJob( J )
-
             c.toXml()
             c.toFile ( pathToWrite + self.tempxmlReportFile )
             if not flag:
                 self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
 
+    def getListEl(self, list, el):
+        try:
+            return list[el]
+        except Exception, ex:
+            logging.error(" problems reading destination site info.")
+            return None
 
     def getMoreMails ( self, eMail ):
         """
@@ -583,7 +592,7 @@ class TaskTrackingComponent:
         if eMail != None:
             eMaiList = eMail.split(";")
             for index in range(len(eMaiList)):
-                temp = eMaiList[index].replace(" ","")
+                temp = eMaiList[index].replace(" ", "")
                 if self.checkEmail( temp ):
                     eMaiList2.append( temp )
 
@@ -822,65 +831,76 @@ class TaskTrackingComponent:
 			statusJobsTask = v.jobStates()
 
 			for job,stato in statusJobsTask.iteritems():
-			
-			    resubmitting = TaskStateAPI.checkNSubmit( taskName, job )
-			    runInfoJob =  v.specific(job,"1")
+
+                            jobInfo = v.Job(job)
+                            resubmitting, MaxResub, Resub = TaskStateAPI.checkNSubmit( taskName, job )
+                            runInfoJob =  jobInfo.specific("1")
+                            site = "None"
+                            sId = "None"
+                            if stato != "W":
+                                infoRunningJobs = jobInfo.runningInfo()
+                                if str(infoRunningJobs) != "Job not existing or not loaded":
+                                    site = infoRunningJobs.get( 'DEST_CE',  None )
+                                    sId = infoRunningJobs.get( 'SCHED_ID', None )
+                                del infoRunningJobs
+
+##			    resubmitting = TaskStateAPI.checkNSubmit( taskName, job )
+##			    runInfoJob =  v.specific(job,"1")
 
 			    #if lower(self.args['jobDetail']) == "yes":
                             #    logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']))
 			    vect = []
 			    if runInfoJob['EXE_EXIT_CODE'] == "NULL" and runInfoJob['JOB_EXIT_STATUS'] == "NULL":
-   			        vect = [self.convertStatus(stato), "", "", 0]
+   			        vect = [self.convertStatus(stato), "", "", 0, Resub, site]
 			    else:
-                                vect = [self.convertStatus(stato), runInfoJob['EXE_EXIT_CODE'], runInfoJob['JOB_EXIT_STATUS'], 0]
+                                vect = [self.convertStatus(stato), runInfoJob['EXE_EXIT_CODE'], runInfoJob['JOB_EXIT_STATUS'], 0, Resub, site]
                             dictStateTot.setdefault(job, vect)
 			    
 			    if stato == "SE" or stato == "E":
 				if runInfoJob['EXE_EXIT_CODE'] == "0" and runInfoJob['JOB_EXIT_STATUS'] == "0":
 				    dictReportTot['JobSuccess'] += 1
 				    dictStateTot[job][3] = 1
-                                    dictFinishedJobs.setdefault(job,1)
+                                    dictFinishedJobs.setdefault(job, 1)
 				elif not resubmitting:
 				    dictReportTot['JobFailed'] += 1
                                     dictStateTot[job][0] = "Done (Failed)"
                                     dictStateTot[job][3] = 1
-                                    dictFinishedJobs.setdefault(job,1)
+                                    dictFinishedJobs.setdefault(job, 1)
 				else:
 				    dictReportTot['JobInProgress'] += 1
                                     dictStateTot[job][0] = "Resubmitting by server"#"Managing by server"
-                                    dictFinishedJobs.setdefault(job,0)
+                                    dictFinishedJobs.setdefault(job, 0)
 			    elif stato == "SA" or stato == "SK" or stato == "K":
 				if not resubmitting:
 				    dictReportTot['JobFailed'] += 1
-                                    dictFinishedJobs.setdefault(job,1)
+                                    dictFinishedJobs.setdefault(job, 1)
 				else:
 				    dictReportTot['JobInProgress'] += 1
                                     dictStateTot[job][0] = "Resubmitting by server"#"Managing by server"
-                                    dictFinishedJobs.setdefault(job,0)
+                                    dictFinishedJobs.setdefault(job, 0)
 			    elif stato == "W":
                                 if not resubmitting:
    				    countNotSubmitted += 1 
 				    dictReportTot['JobFailed'] += 1
-                                    dictFinishedJobs.setdefault(job,1)
+                                    dictFinishedJobs.setdefault(job, 1)
                                 else:
                                     countNotSubmitted += 1
                                     dictReportTot['JobInProgress'] += 1
-                                    dictFinishedJobs.setdefault(job,0)
+                                    dictFinishedJobs.setdefault(job, 0)
 			    elif not resubmitting:
                                 #if status != self.taskState[4]:
      				#    dictReportTot['JobFailed'] += 1
                                 #    dictFinishedJobs.setdefault(job,1)
                                 #else:
                                 dictReportTot['JobInProgress'] += 1
-                                dictFinishedJobs.setdefault(job,0)
+                                dictFinishedJobs.setdefault(job, 0)
                             else:
                                 dictReportTot['JobInProgress'] += 1
-                                dictFinishedJobs.setdefault(job,0)
+                                dictFinishedJobs.setdefault(job, 0)
 
                             ## TEMPORARY FIX
                             if status == "partially submitted" and dictStateTot[job][0] == "Submitting":
                                 dictStateTot[job][0] = "NotSubmitted"
-			
 			rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
 			rev_items.sort()
 			dictStateTot = {}
@@ -957,7 +977,7 @@ class TaskTrackingComponent:
                     ##clear tasks from memory
                     mySession.clear()
             
-        except BossError,e:
+        except BossError, e:
             logging.info( e.__str__() )
 
         time.sleep(float(self.args['PollInterval']))

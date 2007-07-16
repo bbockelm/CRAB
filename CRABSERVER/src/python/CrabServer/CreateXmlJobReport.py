@@ -27,19 +27,23 @@ class Job:
         self.JOBREPORT      = "Job"
 	self.JOBCLEARED     = "cleared"
         self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","NotKilled","Killed","Submitting","Done (Failed)", "Resubmitting by server")#"Managing by server")
-        
+        self.SITE           = "site"
+        self.RESUB          = "resubmit" 
+
         self.jobid      = ""
         self.status     = ""
         self.exitstatus = ""
         self.jobexit    = ""
 	self.jobcleared = ""
+        self.site       = ""
+        self.resub      = ""
         
         self.doc            = xml.dom.minidom.Document()
 	#self.root           = self.doc.createElement( self.ROOTNAME )
 	#self.init           = False
         
     #------------------------------------------------------------------------
-    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared ):
+    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site):
         self.jobid      = jobid
         self.status     = status
         self.exitstatus = exe_exit
@@ -59,6 +63,8 @@ class Job:
         jobrep.setAttribute(self.EXITSTATUS, str(self.exitstatus))
         jobrep.setAttribute(self.JOBEXIT, str(self.jobexit))
 	jobrep.setAttribute(self.JOBCLEARED, str(self.jobcleared))
+        jobrep.setAttribute(self.SITE, str(site))
+        jobrep.setAttribute(self.RESUB, str(resub))
 
         self.report = jobrep
         return self
@@ -144,6 +150,8 @@ class CreateXmlJobReport:
         self.TOTJOB         = "totJob"
         self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","NotKilled","Killed","Submitting", "Done (Failed)", "Resubmitting by server")#"Managing by server")
 	self.COUNT          = 'count'
+        self.SITE           = "site"
+        self.RESUB          = "resubmit"
 	
 	self.doc            = xml.dom.minidom.Document()
 	self.root           = self.doc.createElement( self.ROOTNAME )
@@ -184,10 +192,10 @@ class CreateXmlJobReport:
 	self.init = True
 
     #------------------------------------------------------------------------
-    def addJob(self, jobid, status, jobexit, exeexit, cleared):
+    def addJob(self, jobid, status, jobexit, exeexit, cleared, resub, site):
         J = Job()
         
-        self.root.appendChild( J.initialize(jobid, status, jobexit, exeexit, cleared).getDoc() )
+        self.root.appendChild( J.initialize(jobid, status, jobexit, exeexit, cleared, resub, site).getDoc() )
 
 
     #------------------------------------------------------------------------
