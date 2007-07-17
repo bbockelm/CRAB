@@ -547,7 +547,7 @@ class Crab:
                          pass 
                 else:         
                     try:      
-                        common.scheduler.bossTask.query(ALL)
+                        common.scheduler.bossTask.load(ALL)
                     except RuntimeError,e:
                         common.logger.message( e.__str__() )
                     except ValueError,e:
