@@ -550,8 +550,8 @@ class SchedulerEdg(Scheduler):
 
            txt += '    for out_file in $file_list ; do\n'
            txt += '        echo "Trying to copy output file to $SE using srmcp"\n'
-           txt += '        echo "mkdir -p $HOME/.srmconfig"\n'
-           txt += '        mkdir -p $HOME/.srmconfig\n'
+           # txt += '        echo "mkdir -p $HOME/.srmconfig"\n'
+           # txt += '        mkdir -p $HOME/.srmconfig\n'
            txt += '        if [ $middleware == LCG ]; then\n'
            txt += '           echo "srmcp -retry_num 3 -retry_timeout 480000 file:///`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
            txt += '           exitstring=`srmcp -retry_num 3 -retry_timeout 480000 file:///\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
