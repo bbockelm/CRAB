@@ -837,7 +837,8 @@ class TaskTrackingComponent:
                             runInfoJob =  jobInfo.specific("1")
                             site = "None"
                             sId = "None"
-                            if stato != "W":
+                            if stato != "W" and (status == self.taskState[3] or status == self.taskState[4] or\
+                                                 status == self.taskState[7] or status == self.taskState[1] ):
                                 infoRunningJobs = jobInfo.runningInfo()
                                 if str(infoRunningJobs) != "Job not existing or not loaded":
                                     site = infoRunningJobs.get( 'DEST_CE',  None )
@@ -906,6 +907,7 @@ class TaskTrackingComponent:
 			dictStateTot = {}
 			for valu3, k3y in rev_items:
 			    dictStateTot.setdefault( k3y, valu3 )
+
 			for state in dictReportTot:
 			    logging.info( " Job " + state + ": " + str(dictReportTot[state]) )
 			if countNotSubmitted > 0:
@@ -939,6 +941,7 @@ class TaskTrackingComponent:
                                         logging.info("**** ** **** ** ****")
                                         logging.info("  preparing OUTPUT")
                                         obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
+                                        logging.info( str(dictFinishedJobs) )
                                         if os.path.exists( pathToWrite+"/done.tar.gz" ):
                                             logging.info("  preparing OUTPUT finished")
                                         else:

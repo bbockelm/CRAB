@@ -61,7 +61,7 @@ class Outputting:
                 cmd += 'cp -r '+jtResDir+'/Success/Submission_*/*/* .tmpDone;'
                 cmd += 'cp -r '+jtResDir+'/Success/Submission_*/log/edgLoggingInfo.log .tmpDone/edgLoggingInfo_'+str(i)+'.log ;'
                 cmd += 'rm .tmpDone/BossChainer.log .tmpDone/BossProgram_1.log .tmpDone/edg_getoutput.log .tmpDone/edgLoggingInfo.log;'
-            os.system( cmd )
+                os.system( cmd )
             listFileTemp = []
             for file in os.listdir(path+ '.tmpDone'):
                 listFileTemp.append( '.tmpDone/' + str(file) )
@@ -88,7 +88,11 @@ class Outputting:
             if len(infile) > 0: 
                 jobList = infile.split(":")
                 jobList[len(jobList)-1] = jobList[len(jobList)-1].split("\n")[0]
-                return jobList
+                listInt = []
+                for job in jobList:
+                    if job != "":
+                        listInt.append(int(job))
+                return listInt #jobList
         return []
 
     def add2List ( self, path, fileName, jobList ):
@@ -109,14 +113,15 @@ class Outputting:
     def prepare( self, path, taskName, nJob, jobs2Add ):
         work_dir = os.getcwd()
         os.chdir( path )
-
+        
         jobsAdded = self.getList( path, self.jobEndedCache )
         for job in jobsAdded:
-            jobs2Add[int(job)] = 0
+            if str(job) in jobs2Add:
+                jobs2Add[str(job)] = 0
         jobs2Write = []
         for job, flag in jobs2Add.iteritems():
-            if flag:
-                jobs2Write.append(int(job))
+            if flag == 1 :
+                jobs2Write.append(job)
         self.add2List( path, self.jobEndedCache, jobs2Write )
         fileList = self.prepareTempDir( path, taskName, nJob, jobs2Write )
         if fileList != None:
@@ -129,5 +134,6 @@ class Outputting:
 if __name__=="__main__":
     obj = Outputting("./.tempxmlReportFileName", "xmlReportFileName.xml")
     cazzona = { 1:1, 2:1, 3:1, 4:1, 5:1, 6:1, 7:1, 8:1, 9:1, 10:1 }
-    obj.prepare( "/home/serverAdmin/test/TESTA/crab_testClearedDone_92efb295-538f-4a7c-bd1f-f5f6895ce222/res/", "crab_testClearedDone_92efb295-538f-4a7c-bd1f-f5f6895ce222", 10, cazzona )
-
+    #obj.prepare( "/home/serverAdmin/test/TESTA/crab_testClearedDone_92efb295-538f-4a7c-bd1f-f5f6895ce222/res/", "crab_testClearedDone_92efb295-538f-4a7c-bd1f-f5f6895ce222", 10, cazzona )
+    #obj.prepare( "/flatfiles/cms/crab_test_8e3b228b-c300-4867-af21-732b4e419dcc/res/", "crab_test_8e3b228b-c300-4867-af21-732b4e419dcc", 3, {1:1,2:1,3:1} )
+    obj.prepare( "/flatfiles/cms/crab_crab_0_070717_160939_45572c02-7e0f-457e-9f94-0a3b1ba14583/res/","crab_crab_0_070717_160939_45572c02-7e0f-457e-9f94-0a3b1ba14583", 5, {'1': 1, '3': 1, '2': 1, '5': 1, '4': 1} )
