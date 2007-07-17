@@ -27,6 +27,7 @@ from GetOutputServer import GetOutputServer
 from StatusServer import StatusServer
 from PostMortemServer import PostMortemServer
 from KillerServer import KillerServer
+from CleanerServer import CleanerServer
 
 import sys, os, time, string
 
@@ -788,9 +789,11 @@ class Crab:
             elif ( opt == '-clean' ):
                 if val != None:
                     raise CrabException("No range allowed for '-clean'")
-                
-                self.actions[opt] = Cleaner(self.cfg_params)
-
+                if (self.UseServer== 1):
+                    self.actions[opt] = CleanerServer(self.cfg_params)
+                else:
+                    self.actions[opt] = Cleaner(self.cfg_params)
+               
             ### FEDE DBS/DLS OUTPUT PUBLICATION 
             elif ( opt == '-publish' ):
                 from DBS2Publisher import Publisher
