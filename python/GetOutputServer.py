@@ -38,8 +38,8 @@ class GetOutputServer(Actor):
         #Need to add a check on the treashold level 
         # and on the task readness  TODO  
         try:
-            ### retrieving poject from the server
-            common.logger.message("Retrieving the poject from the server...\n")
+            ### retrieving project from the server
+            common.logger.message("Retrieving the project from the server...\n")
 
             copyHere = common.work_space.resDir() # MATT
         #    print copyHere
@@ -55,16 +55,16 @@ class GetOutputServer(Actor):
             raise CrabException(msg)
 
         zipOut = "done.tar.gz"
-        if os.path.exists( copyHere + zipOut ): # MATT
+        if os.path.exists( copyHere + zipOut ): 
             cwd = os.getcwd()
-            os.chdir( copyHere )# MATT
+            os.chdir( copyHere )
             common.logger.debug( 5, 'tar -zxvf ' + zipOut )
   	    cmd = 'tar -zxvf ' + zipOut 
             cmd += '; mv .tmpDone/* .; rm -drf .tmpDone/'
 	    cmd_out = runCommand(cmd)
 	    os.chdir(cwd)
-            common.logger.debug( 5, 'rm -f '+copyHere+zipOut )# MATT 
-	    cmd = 'rm -f '+copyHere+zipOut# MATT
+            common.logger.debug( 5, 'rm -f '+copyHere+zipOut )
+	    cmd = 'rm -f '+copyHere+zipOut
 	    cmd_out = runCommand(cmd)
 
             try:
@@ -73,6 +73,8 @@ class GetOutputServer(Actor):
 
                 task     = doc.childNodes[0].childNodes[1].getAttribute("taskName")
                 self.countToTjob = int(doc.childNodes[0].childNodes[1].getAttribute("totJob") )
+
+                ended = doc.childNodes[0].childNodes[1].getAttribute("ended")
 
                 addTree = 3
                 if doc.childNodes[0].childNodes[3].getAttribute("id") != "all":
@@ -89,10 +91,10 @@ class GetOutputServer(Actor):
                 msg = ("problems reading report file: " + str(ex))
                 raise CrabException(msg)
 
-
+            common.logger.message('Task Completed at '+str(ended)+' %\n')
 	    msg='Results of project '+str(WorkDirName)+' succesfuly retrieved from the server \n'      
-	    msg+='and copied in '+copyHere+' \n'      # MATT
-	    common.logger.message(msg)
+	    msg+='and copied in '+copyHere+' \n'
+            common.logger.message(msg)
         else:
             common.logger.message(" Output is not yet ready untill job is not finished (check it with the [status] option).\n")
 
