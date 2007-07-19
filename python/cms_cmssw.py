@@ -5,7 +5,7 @@ from crab_util import *
 import common
 import Scram
 
-import os, string, re, shutil, glob
+import os, string, glob
 
 class Cmssw(JobType):
     def __init__(self, cfg_params, ncjobs):
@@ -173,10 +173,10 @@ class Cmssw(JobType):
                     if not os.path.exists(file):
                         raise CrabException("Additional input file not found: "+file)
                     pass
-                    fname = string.split(file, '/')[-1]
-                    storedFile = common.work_space.pathForTgz()+'share/'+fname
-                    shutil.copyfile(file, storedFile)
-                    self.additional_inbox_files.append(string.strip(storedFile))
+                    # fname = string.split(file, '/')[-1]
+                    # storedFile = common.work_space.pathForTgz()+'share/'+fname
+                    # shutil.copyfile(file, storedFile)
+                    self.additional_inbox_files.append(string.strip(file))
                 pass
             pass
             common.logger.debug(5,"Additional input files: "+str(self.additional_inbox_files))
@@ -867,8 +867,6 @@ class Cmssw(JobType):
         scram = self.scram.commandName()
         txt += '\n\n'
         txt += 'echo "### SPECIFIC JOB SETUP ENVIRONMENT ###"\n'
-#        txt += 'echo "Setting SCRAM_ARCH='+self.executable_arch+'"\n'
-#        txt += 'export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += scram+' project CMSSW '+self.version+'\n'
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
@@ -1155,11 +1153,11 @@ class Cmssw(JobType):
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
             txt += '\n'
             txt += '# check output file\n'
-            txt += 'ls '+fileWithSuffix+'\n'
-            txt += 'ls_result=$?\n'
-            txt += 'if [ $ls_result -ne 0 ] ; then\n'
+            # txt += 'ls '+fileWithSuffix+'\n'
+            # txt += 'ls_result=$?\n'
+            txt += 'if [ -e '+fileWithSuffix+' ] ; then\n'
             txt += '   exit_status=60302\n'
-            txt += '   echo "ERROR: Problem with output file"\n'
+            txt += '   echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
                 txt += '        echo "prepare dummy output file"\n'
@@ -1167,10 +1165,13 @@ class Cmssw(JobType):
                 txt += '    fi \n'
             txt += 'else\n'
             ### FEDE FOR DBS OUTPUT PUBLICATION
-            txt += '   mv '+fileWithSuffix+' $RUNTIME_AREA\n'
-            txt += '   cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            txt += '   mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             #################################
             txt += 'fi\n'
+        file_list = []
+        for fileWithSuffix in (self.output_file):
+             file_list.append(self.numberFile_(fileWithSuffix, '$NJob'))
+        txt += 'file_list="'+string.join(file_list,' ')+'"\n'
        
         txt += 'cd $RUNTIME_AREA\n'
         #### FEDE this is the cleanEnv function
@@ -1191,13 +1192,6 @@ class Cmssw(JobType):
         #txt += 'fi\n'
         #txt += '\n'
 
-        file_list = ''
-        ## Add to filelist only files to be possibly copied to SE
-        for fileWithSuffix in self.output_file:
-            output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
-            file_list=file_list+output_file_num+' '
-        file_list=file_list[:-1]
-        txt += 'file_list="'+file_list+'"\n'
 
         return txt
 
@@ -1228,10 +1222,12 @@ class Cmssw(JobType):
             req='Member("VO-cms-' + \
                  self.version + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-        # if self.executable_arch:
-        #     req='Member("VO-cms-' + \
-        #          self.executable_arch + \
-        #          '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
+        ## SL add requirement for OS version only if SL4
+        reSL4 = re.compile( r'slc4' )
+        if self.executable_arch and reSL4.search(self.executable_arch):
+            req='Member("VO-cms-' + \
+                 self.executable_arch + \
+                 '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
 
         req = req + ' && (other.GlueHostNetworkAdapterOutboundIP)'
 
