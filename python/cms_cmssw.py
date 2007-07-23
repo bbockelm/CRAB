@@ -1155,7 +1155,9 @@ class Cmssw(JobType):
             txt += '# check output file\n'
             # txt += 'ls '+fileWithSuffix+'\n'
             # txt += 'ls_result=$?\n'
-            txt += 'if [ -e '+fileWithSuffix+' ] ; then\n'
+            txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
+            txt += '   mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            txt += 'else\n'
             txt += '   exit_status=60302\n'
             txt += '   echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
             if common.scheduler.boss_scheduler_name == 'condor_g':
@@ -1163,10 +1165,6 @@ class Cmssw(JobType):
                 txt += '        echo "prepare dummy output file"\n'
                 txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
                 txt += '    fi \n'
-            txt += 'else\n'
-            ### FEDE FOR DBS OUTPUT PUBLICATION
-            txt += '   mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            #################################
             txt += 'fi\n'
         file_list = []
         for fileWithSuffix in (self.output_file):
