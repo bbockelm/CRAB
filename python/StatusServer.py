@@ -62,14 +62,15 @@ class StatusServer(Actor):
         start = time.time()
 
         totalCreatedJobs = 0
-        flagSubmit = 1
+        flagSubmit = 0
         for nj in range(common.jobDB.nJobs()):
-            if (common.jobDB.status(nj)!='S'):
+            if (common.jobDB.status(nj)=='S'):
                 totalCreatedJobs +=1
-        #        flagSubmit = 0
+                flagSubmit = 1
 
         if not flagSubmit:
-            common.logger.message("Not all jobs are submitted: before checking the status submit all the jobs.")
+            common.logger.message("Not Submitted jobs!")
+            common.logger.message("Before checking the status submit your jobs with the command:  crab -submit all -c\n")
             return
 
         common.scheduler.checkProxy()
@@ -125,9 +126,9 @@ class StatusServer(Actor):
             self.countToTjob = common.jobDB.nJobs()
         else:
             printline = ''
-            printline+= "%-10s %-20s %-20s %-20s %-18s %-20s" % ('JOBID','STATUS','SITE','JOB_EXIT_STATUS','EXE_EXIT_CODE','RESUBMIT')
+            printline+= "%-10s %-23s %-20s %-20s %-18s %-20s" % ('JOBID','STATUS','SITE','JOB_EXIT_STATUS','EXE_EXIT_CODE','RESUBMIT')
             print printline
-            print '-------------------------------------------------------------------------------------------------------'
+            print '---------------------------------------------------------------------------------------------------------'
 
             for job in range( self.countToTjob ):
                 idJob = doc.childNodes[0].childNodes[job+addTree].getAttribute("id")
@@ -163,9 +164,9 @@ class StatusServer(Actor):
                         stato = "Cleared"
                     common.jobDB.setExitStatus(  str(int(idJob)-1), job_exit_status )
                 if stato != "Done" and stato != "Cleared" and stato != "Aborted" and stato != "Done (Failed)":
-                    print "%-10s %-20s %-20s %-20s %-18s %-20s" % (idJob,stato,site,'','',resub)
+                    print "%-10s %-23s %-20s %-20s %-18s %-20s" % (idJob,stato,site,'','',resub)
                 else:
-                    print "%-10s %-20s %-20s %-20s %-18s %-20s" % (idJob,stato,site,exe_exit_code,job_exit_status,resub)
+                    print "%-10s %-23s %-20s %-20s %-18s %-20s" % (idJob,stato,site,exe_exit_code,job_exit_status,resub)
 
                 if stato == 'Running':
                     self.countRun += 1
