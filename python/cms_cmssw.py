@@ -1099,8 +1099,21 @@ class Cmssw(JobType):
     def executableArgs(self):
         if self.scriptExe:#CarlosDaniele
             return   self.scriptExe + " $NJob"
-        else: 
-            return " -p pset.cfg"
+        else:
+            # if >= CMSSW_1_5_X, add -e
+            version_array = self.scram.getSWVersion().split('_')
+            major = 0
+            minor = 0
+            try:
+                major = int(version_array[1])
+                minor = int(version_array[2])
+            except:
+                msg = "Cannot parse CMSSW version string: " + "_".join(version_array) + " for major and minor release number!"   
+                raise CrabException(msg)
+            if major >= 1 and minor >= 5 :
+                return " -e -p pset.cfg"
+            else:
+                return " -p pset.cfg"
 
     def inputSandbox(self, nj):
         """
@@ -1223,7 +1236,7 @@ class Cmssw(JobType):
         ## SL add requirement for OS version only if SL4
         reSL4 = re.compile( r'slc4' )
         if self.executable_arch and reSL4.search(self.executable_arch):
-            req='Member("VO-cms-' + \
+            req+=' && Member("VO-cms-' + \
                  self.executable_arch + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
 
