@@ -64,12 +64,12 @@ class StatusServer(Actor):
         totalCreatedJobs = 0
         flagSubmit = 0
         for nj in range(common.jobDB.nJobs()):
-            if (common.jobDB.status(nj)=='S'):
+            if (common.jobDB.status(nj) != 'C'):
                 totalCreatedJobs +=1
                 flagSubmit = 1
 
         if not flagSubmit:
-            common.logger.message("Not Submitted jobs!")
+            common.logger.message("Your jobs are not yet submitted!")
             common.logger.message("Before checking the status submit your jobs with the command:  crab -submit all -c\n")
             return
 
@@ -80,7 +80,8 @@ class StatusServer(Actor):
         projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict('TasKUUID')     
         try: 
             common.logger.message ("Checking the status...\n")
-            cmd = 'lcg-cp --vo cms  gsiftp://' + str(self.server_name) + str(projectUniqName)+'/res/xmlReportFile.xml file://'+common.work_space.resDir()+'xmlReportFile.xml'
+            cmd = 'lcg-cp --vo cms  gsiftp://' + str(self.server_name) + str(projectUniqName)+\
+                  '/res/xmlReportFile.xml file://'+common.work_space.resDir()+'xmlReportFile.xml'
             common.logger.debug(6, cmd)
             os.system(cmd +' >& /dev/null')  
 
@@ -140,14 +141,14 @@ class StatusServer(Actor):
                 try:
                     site = doc.childNodes[0].childNodes[job+addTree].getAttribute("site")
                     resub = doc.childNodes[0].childNodes[job+addTree].getAttribute("resubmit")
-                    if site == "none" or site == "NULL" or site=="None":
+                    if site == "NULL" or site=="None":
                         site=''
-                    if resub == "none" or resub =="None" or resub == "0":
+                    if resub == "NULL" or resub =="None" or resub == "0":
                         resub=''
                     if stato == "Killed":
                         resub=''
                 except Excpetion, ex:
-                    common.logger.message ("Problem reading report file: are you using the latest crab version?")
+                    common.logger.message ("Problem reading report file!")
                     common.logger.debug( 1 , str(ex) )
 
                 jobDbStatus = self.translateStatus(stato)
