@@ -82,8 +82,8 @@ class SchedulerCondor_g(Scheduler):
         
 
         # hardcode fnal as BDII maps cmssrm.fnal.gov to cmslcgce.fnal.gov
-        if seSite.find ('fnal.gov') >= 0 :
-            return 'cmsosgce.fnal.gov:2119/jobmanager-condor'
+        #if seSite.find ('fnal.gov') >= 0 :
+        #    return 'cmsosgce.fnal.gov:2119/jobmanager-condor'
 
         # mapping ce_hostname to full ce name including jobmanager
         ce_hostnames = {}
@@ -756,14 +756,14 @@ class SchedulerCondor_g(Scheduler):
             seSite = self.cfg_params['EDG.se_white_list']
         oneSite = self.getCEfromSE(seSite)
         # do not check the site status check for FNAL (OSG not in BDII)
-        if oneSite.find('fnal.gov') < 0 :
-            # query if site is in production
-            status = cestate_from_ce_bdii(oneSite.split(':')[0].strip())
-            if status != 'Production' :
-                msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + oneSite.split(':')[0].strip() + ' because the site has status ' + status + ' and is currently not operational.\n'
-                msg += '[Condor-G Scheduler]: Please choose another site for your jobs.'
-                common.logger.debug(2,msg)
-                raise CrabException(msg)
+        #if oneSite.find('fnal.gov') < 0 :
+        # query if site is in production
+        status = cestate_from_ce_bdii(oneSite.split(':')[0].strip())
+        if status != 'Production' :
+            msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + oneSite.split(':')[0].strip() + ' because the site has status ' + status + ' and is currently not operational.\n'
+            msg += '[Condor-G Scheduler]: Please choose another site for your jobs.'
+            common.logger.debug(2,msg)
+            raise CrabException(msg)
 
         if self.batchsystem != '' :
             oneSite = oneSite.split('/')[0].strip() + '/' + self.batchsystem
