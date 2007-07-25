@@ -19,7 +19,7 @@ from BossSession import *
 from MessageService.MessageService import MessageService
 
 # threads
-from threading import Thread
+from threading import Thread, BoundedSemaphore
 
 # logging
 import logging
@@ -42,6 +42,11 @@ from UtilSubject import *
 ##############################################################################
 # TaskTrackingComponent class
 ##############################################################################
+
+maxnum = 1
+newstate={}#communication between thread
+semvar = BoundedSemaphore(maxnum)#for synchronisation between thread 
+semfile = BoundedSemaphore(maxnum)#for synchronisation between thread 
 
 class TaskTrackingComponent:
     """
@@ -110,7 +115,11 @@ class TaskTrackingComponent:
         self.tempxmlReportFile = ".tempxmlReportFileName"
 
 	#
-	self.taskState = ["arrived", "submitting", "not submitted", "submitted", "killed", "ended", "unpacked", "partially submitted"]
+	self.taskState = [\
+                          "arrived", "submitting", "not submitted", "submitted",\
+                          "killed", "ended", "unpacked", "partially submitted",\
+                          "partially killed"\
+                         ]
 
     ##########################################################################
     # handle events
@@ -227,9 +236,28 @@ class TaskTrackingComponent:
         if event == "CrabServerWorkerComponent:CrabWorkPerformedPartial":
             if payload != None:
                 logging.info("  <-- - -- - -->")
-                logging.info("CrabWorkPerformedPartial: %s" % payload)
+                logging.info( event + ": %s" % payload)
                 logging.info("  <-- - -- - -->")
+                
                 self.preUpdatePartialTask(payload, self.taskState[7])
+
+                semvar.acquire()
+                newstate[payload]="fail"
+                semvar.release()
+
+            else:
+                logging.error(" ")
+                logging.error("ERROR: empty payload from '"+str(event)+"'!!!!")
+                logging.error(" ")
+            return
+
+        if event == "CrabServerWorkerComponent:FastKill":
+            if payload != None:
+                logging.info("  <-- - -- - -->")
+                logging.info( event + ": %s ", payload )
+                logging.info("  <-- - -- - -->")
+                self.updateTaskStatus(payload, self.taskState[4])
+                self.updateTaskStatus(payload, self.taskState[5])
             else:
                 logging.error(" ")
                 logging.error("ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -239,8 +267,16 @@ class TaskTrackingComponent:
         if event == "TaskKilled":
             if payload != None:
                 logging.info("  <-- - -- - -->")
-                logging.info("   Killed task: %s" % payload)
-                self.updateTaskKilled( payload, self.taskState[4] )
+                rangeKillJobs = "all"
+                if payload.find("::") != -1:
+                    taskName, rangeKillJobs = payload.split("::")
+                else:
+                    taskName = payload
+                logging.info("   Killed task: %s" % taskName)
+                if rangeKillJobs == "all":
+                    self.updateTaskKilled( taskName, self.taskState[4] )
+                else:
+                    self.updateTaskKilled( taskName, self.taskState[8] )
                 logging.info("  <-- - -- - -->")
             else:
                 logging.error(" ")
@@ -251,8 +287,16 @@ class TaskTrackingComponent:
         if event == "TaskKilledFailed":
             if payload != None:
                 logging.info("  <-- - -- - -->")
-                logging.info("   Killed task: %s" % payload)
-                self.killTaskFailed( payload )
+                rangeKillJobs = "all"
+                if payload.find("::") != -1:
+                    taskName, rangeKillJobs = payload.split("::")
+                else:
+                    taskName = payload
+                logging.info("   Error killing task: %s" % taskName)
+                if rangeKillJobs == "all":
+                    self.killTaskFailed( taskName )
+                else:
+                    self.killTaskFailed( taskName )
                 logging.info("  <-- - -- - -->")
             else:
                 logging.error(" ")
@@ -388,6 +432,8 @@ class TaskTrackingComponent:
         taskName = fields[0]
         totJobs = int(fields[1])
         jobList = eval( fields[2] )
+        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
+        self.addJobsToFile( pathToWrite, jobList )#, totJobs)
 
         ## call function that updates DB
         self.updateTaskStatus(taskName, status)
@@ -409,6 +455,7 @@ class TaskTrackingComponent:
             try:
                 for jobId in jobList:
                     dictionaryReport[jobId+1][0] = "NotSubmitted"
+        #        self.addJobsToFile()
             except Exception, ex:
                 logging.error( str(ex) )
                 logging.error( str(ex.args) )
@@ -416,6 +463,22 @@ class TaskTrackingComponent:
             self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
             ## MAIL report user
             self.prepareTaskFailed( payload, uuid, eMail, status )
+
+    def addJobsToFile(self, taskPath, jobList):#, totJobs):
+        """
+        _addJobToFile_
+        """
+        fileName = "/.notSubmitted.TT"
+        outfile = file(taskPath + fileName, 'w').write(str(jobList))#+"::"+str(totJobs))
+
+    def getJobFromFile(self, taskPath):
+        """
+        _getJobFromFile_
+        """
+        fileName = "/.notSubmitted.TT"
+        if os.path.exists( taskPath + fileName ):
+            return eval( file(taskPath + fileName, 'r').read() )#.split("::")
+        return []
 
     
     def updateTaskStatus(self, payload, status):
@@ -437,8 +500,7 @@ class TaskTrackingComponent:
 	uuid = ""
 
         try:
-#        if 1:
-	    if status == self.taskState[2]:
+	    if status == self.taskState[2] or status == self.taskState[4]:
 	        valuess = TaskStateAPI.getStatusUUIDEmail( payload )
 		if valuess != None:
 		    status = valuess[0]
@@ -446,14 +508,21 @@ class TaskTrackingComponent:
 		        uuid = valuess[1]
 		        if len(valuess) > 2:
 		    	    eMail = valuess[2]
-	            ## XML report file
-		    dictionaryReport =  {"all": ["NotSubmitted", "", "", 0]}
-	            self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
-		    ## DONE tgz file
-		    pathToWrite = str(self.args['dropBoxPath']) + "/" + payload + "/" + self.resSubDir
-		    self.prepareTarball( pathToWrite, payload )
-		    ## MAIL report user
-		    self.prepareTaskFailed( payload, uuid, eMail, status )
+                    if status == self.taskState[2]:
+	                ## XML report file
+                        dictionaryReport =  {"all": ["NotSubmitted", "", "", 0]}
+                        self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
+                        ## DONE tgz file
+                        pathToWrite = str(self.args['dropBoxPath']) + "/" + payload + "/" + self.resSubDir
+                        self.prepareTarball( pathToWrite, payload )
+                        ## MAIL report user
+                        self.prepareTaskFailed( payload, uuid, eMail, status )
+                    else:
+                        ## XML report file
+                        dictionaryReport =  {"all": ["Killed", "", "", 0]}
+                        self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
+		        ## MAIL report user
+                        self.taskFastKill( self.args['dropBoxPath'] + "/" + payload  + "/res/" + self.xmlReportFileName, payload )
         except Exception, ex:
 	    logging.error("  <-- - -- - -->")
             logging.error( "ERROR while reporting info about the task " + str(payload) )
@@ -563,9 +632,9 @@ class TaskTrackingComponent:
 
             for singleJob in dictReportTot:
                 J = Job()   ##    id             status                        eec
-                J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][1],\
+                J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][2],\
                             ##         jes                       clear                       Resub
-                              dictReportTot[singleJob][2], dictReportTot[singleJob][3], self.getListEl(dictReportTot[singleJob], 4),\
+                              dictReportTot[singleJob][1], dictReportTot[singleJob][3], self.getListEl(dictReportTot[singleJob], 4),\
                             ##         site
                               self.getListEl(dictReportTot[singleJob], 5) )
                 c.addJob( J )
@@ -578,7 +647,7 @@ class TaskTrackingComponent:
         try:
             return list[el]
         except Exception, ex:
-            logging.error(" problems reading destination site info.")
+            logging.debug(" problems reading destination site info.")
             return None
 
     def getMoreMails ( self, eMail ):
@@ -677,7 +746,12 @@ class TaskTrackingComponent:
             failIndex = 4 
             if os.path.exists('./'+jtResDir+'/Failed/'):
                 if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
-                    failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
+                    try:
+                        failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
+                    except Exception, ex:
+                        logging.error(str(ex) + " " + str(failIndex))
+                        #for s in os.listdir('./'+jtResDir+'/Failed/'):
+                        #    logging.error( str(int(s.split('Submission_')[-1])) )
                 cmd += 'cp '+self.tempxmlReportFile+' .tmpDone/'+self.xmlReportFileName+' ;'
                 cmd += 'cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;'
                 #logging.info('cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;')
@@ -770,6 +844,20 @@ class TaskTrackingComponent:
         self.taskEnded(taskName)
         logging.info("         *-*-*-*-* ")
 
+    def taskFastKill( self, taskPath, taskName ):
+        """
+        _taskFastKill_
+        """
+        self.msThread.publish("TaskFastKill", taskPath) # payload) 
+        self.msThread.commit()
+
+        logging.info("         *-*-*-*-* ")
+        logging.info("Published 'TaskFastKill' message with payload: %s" % taskPath) #payload)
+        self.taskEnded(taskName)
+        logging.info("         *-*-*-*-* ")
+
+        
+
     def taskIncompleteSubmission( self, taskName, eMaiList, userName ):
         """
         _taskIncompleteSubmission_
@@ -813,7 +901,18 @@ class TaskTrackingComponent:
 		uuid = task[6]
 
                 if status == self.taskState[2] and notified < 2:
-		    self.prepareTaskFailed( taskName, uuid, eMail )
+                    semvar.acquire()
+                    if newstate.has_key(taskName):
+                        del newstate[taskName]
+                    semvar.release()
+                    ######### Taskfailed is prepared now
+                    self.prepareTaskFailed( taskName, uuid, eMail, status)
+  
+                elif newstate.has_key( taskName ) and status == self.taskState[1]:
+                    semvar.acquire()
+                    del newstate[taskName]
+                    semvar.release()
+
 		else:
     	            taskDict = mySession.loadByName( taskName )
                     #logging.info(taskDict)
@@ -845,20 +944,19 @@ class TaskTrackingComponent:
                                     sId = infoRunningJobs.get( 'SCHED_ID', None )
                                 del infoRunningJobs
 
-##			    resubmitting = TaskStateAPI.checkNSubmit( taskName, job )
-##			    runInfoJob =  v.specific(job,"1")
-
 			    #if lower(self.args['jobDetail']) == "yes":
-                            #    logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']))
+                                #logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']) + " - resubmitting, MaxResub, Resub = " + str(TaskStateAPI.checkNSubmit( taskName, job )))
 			    vect = []
 			    if runInfoJob['EXE_EXIT_CODE'] == "NULL" and runInfoJob['JOB_EXIT_STATUS'] == "NULL":
    			        vect = [self.convertStatus(stato), "", "", 0, Resub, site]
 			    else:
                                 vect = [self.convertStatus(stato), runInfoJob['EXE_EXIT_CODE'], runInfoJob['JOB_EXIT_STATUS'], 0, Resub, site]
                             dictStateTot.setdefault(job, vect)
-			    
+ 
+			    jobPartList = self.getJobFromFile(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir)
+
 			    if stato == "SE" or stato == "E":
-				if runInfoJob['EXE_EXIT_CODE'] == "0" and runInfoJob['JOB_EXIT_STATUS'] == "0":
+				if runInfoJob['EXE_EXIT_CODE'] == "0": #and runInfoJob['JOB_EXIT_STATUS'] == "0":
 				    dictReportTot['JobSuccess'] += 1
 				    dictStateTot[job][3] = 1
                                     dictFinishedJobs.setdefault(job, 1)
@@ -884,24 +982,28 @@ class TaskTrackingComponent:
    				    countNotSubmitted += 1 
 				    dictReportTot['JobFailed'] += 1
                                     dictFinishedJobs.setdefault(job, 1)
+                                elif int(job) in jobPartList:
+                                    countNotSubmitted += 1
+                                    dictReportTot['JobFailed'] += 1
+                                    dictFinishedJobs.setdefault(job, 0)
+                                    dictStateTot[job][0] = "NotSubmitted"
                                 else:
+                                    if status == "partially submitted":
+                                        #logging.info("[ID= " + str(job) + " ]")
+                                        #logging.info( str(jobPartList) )
+                                        #if int(job) in jobPartList:
+                                        #    logging.info("Present in jobPartList")
                                     countNotSubmitted += 1
                                     dictReportTot['JobInProgress'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
 			    elif not resubmitting:
-                                #if status != self.taskState[4]:
-     				#    dictReportTot['JobFailed'] += 1
-                                #    dictFinishedJobs.setdefault(job,1)
-                                #else:
-                                dictReportTot['JobInProgress'] += 1
+                                dictReportTot['JobFailed'] += 1
                                 dictFinishedJobs.setdefault(job, 0)
+                                
                             else:
                                 dictReportTot['JobInProgress'] += 1
                                 dictFinishedJobs.setdefault(job, 0)
 
-                            ## TEMPORARY FIX
-                            if status == "partially submitted" and dictStateTot[job][0] == "Submitting":
-                                dictStateTot[job][0] = "NotSubmitted"
 			rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
 			rev_items.sort()
 			dictStateTot = {}
@@ -920,11 +1022,21 @@ class TaskTrackingComponent:
 			    pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
 
                             if os.path.exists( pathToWrite ):
-                                self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+                                if status == self.taskState[1]:
+                                    if newstate.has_key(taskName):
+                                        semvar.acquire()
+                                        del newstate[taskName]
+                                        semvar.release()
+                                    else:
+                                        ## avoiding simultaneous access ##
+                                        semfile.acquire()
+                                        self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+                                        semfile.release()
+                                else:
+                                    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
                             else:
                                 logging.info("Error: the path " + pathToWrite + " does not exist!\n" )
-
-
+                            #self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
 			    if percentage != endedLevel or \
 			       (percentage == 0 and status == self.taskState[3] ) or \
 			       (percentage == 0 and status == self.taskState[1] ) or \
@@ -941,7 +1053,7 @@ class TaskTrackingComponent:
                                         logging.info("**** ** **** ** ****")
                                         logging.info("  preparing OUTPUT")
                                         obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
-                                        logging.info( str(dictFinishedJobs) )
+                                        #logging.info(str(self.printDictKey(dictFinishedJobs,1)) )
                                         if os.path.exists( pathToWrite+"/done.tar.gz" ):
                                             logging.info("  preparing OUTPUT finished")
                                         else:
@@ -986,6 +1098,23 @@ class TaskTrackingComponent:
         time.sleep(float(self.args['PollInterval']))
 
 
+    def printDictKey( self, dict, value ):
+        """
+        _printDictKey_
+        """
+        msg = "Ended jobs: * "
+        try:
+            for valu3, k3y in dict.iteritems():
+#                logging.info( str(valu3) + " " + str(k3y) )
+                if str(valu3) == int(value) or\
+                   int(valu3) == int(value) or\
+                   valu3 == value:
+                    msg += str(k3y) + " * "
+        except Exception, ex:
+            logging.error(str(ex))
+        return msg
+                
+
     ##########################################################################
     # start component execution
     ##########################################################################
@@ -1019,6 +1148,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformed")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkFailed")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformedPartial")
+        self.ms.subscribeTo("CrabServerWorkerComponent:FastKill")
 	self.ms.subscribeTo("DropBoxGuardianComponent:NewFile")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:WorkDone")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:UnableToManage")
@@ -1033,8 +1163,9 @@ class TaskTrackingComponent:
         # wait for messages
         while True:
             messageType, payload = self.ms.get()
-            self.ms.commit()
             self.__call__(messageType, payload)
+            self.ms.commit()
+##            self.__call__(messageType, payload)
 
 ##############################################################################
 # PollDBS class
@@ -1116,5 +1247,4 @@ class PollThread(Thread):
             # no errors, reset failure counter
             else:
                 failedAttempts = 0
-            
 

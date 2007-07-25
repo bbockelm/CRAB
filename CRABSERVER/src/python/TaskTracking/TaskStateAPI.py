@@ -122,8 +122,6 @@ def updateNotSubmitted( taskName, eMail, tresholdLevel, proxy, uuid, status ):
                 rowModified=dbCur.execute(sqlStr)
             except Exception,ex:
                 raise ProdAgentException("Error updating 'endedLevel' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
-        else:
-            logging.error( "Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
         dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
@@ -258,7 +256,8 @@ def getAllNotFinished():
     """
     queryString = "SELECT taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid"+\
                   " FROM js_taskInstance"+\
-		  " WHERE status <> 'killed' AND status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
+		  " WHERE status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
+#status <> 'killed' AND status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
     task2Check = queryMethod(queryString, None)
     
     return task2Check
@@ -334,8 +333,6 @@ def updatingEndedPA( taskName, newPercentage, status ):
                 rowModified=dbCur.execute(sqlStr)
             except Exception,ex:
                 raise ProdAgentException("Error updating 'endedLevel' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
-        else:
-            logging.error( "Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
         dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
@@ -369,8 +366,6 @@ def updatingNotifiedPA( taskName, sended):
                 rowModified=dbCur.execute(sqlStr)
             except Exception,ex:
                 raise ProdAgentException("Error updating 'notificationSent' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
-        else:
-            logging.error( "Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
 	dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
@@ -401,8 +396,6 @@ def updatingStatus( taskName, status, notification ):
                 rowModified=dbCur.execute(sqlStr)
             except Exception,ex:
                 raise ProdAgentException("Error updating task killed in js_taskInstance. TaskName: '" + str(taskName) + "'.")
-        else:
-            logging.error( "Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
 	dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
@@ -433,8 +426,6 @@ def cleaningTaskPA( taskName ):
                 rowModified=dbCur.execute(sqlStr)
             except Exception,ex:
                 raise ProdAgentException("Error cleaning js_taskInstance for task: '" + str(taskName) + "'.")
-        else:
-            logging.error( "Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
         dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )

@@ -1,4 +1,7 @@
 import os
+import logging
+from logging.handlers import RotatingFileHandler
+import  ProdAgentCore.LoggingUtils as LoggingUtils
 
 class Outputting:
 
@@ -8,9 +11,9 @@ class Outputting:
     jobEndedCache = "./.TTcache"
     tempTarball = "./.done.tar.gz"
     tarball = "./done.tar.gz"
-    
+ 
 
-    def __init__( self, TEMPxmlReportFile, xmlReportFile ):
+    def __init__( self, xmlReportFile, TEMPxmlReportFile ):
         self.tempxmlReportFile = TEMPxmlReportFile
         self.xmlReportFileName = xmlReportFile
 
@@ -29,16 +32,16 @@ class Outputting:
             else:
                 tar = tarfile.open( path + self.tempTar, "a" )
         except:
-            print("Unable to open tar file.")
+            logging.error ("Error: Unable to open tar file.")
             raise
         try:
             for name in fileList:
                 try:
                     tar.add(name)
                 except ValueError:
-                    print('Warning: Unable to store: ')
-                    print(name)
-                    print('\n')
+                    logging.error ('Warning: Unable to store: ')
+                    logging.error (str(name))
+                    logging.error ('\n')
         finally:
             tar.close()
             self.cleanTmpDir( path )
@@ -61,6 +64,7 @@ class Outputting:
                 cmd += 'cp -r '+jtResDir+'/Success/Submission_*/*/* .tmpDone;'
                 cmd += 'cp -r '+jtResDir+'/Success/Submission_*/log/edgLoggingInfo.log .tmpDone/edgLoggingInfo_'+str(i)+'.log ;'
                 cmd += 'rm .tmpDone/BossChainer.log .tmpDone/BossProgram_1.log .tmpDone/edg_getoutput.log .tmpDone/edgLoggingInfo.log;'
+                logging.debug(  cmd )
                 os.system( cmd )
             listFileTemp = []
             for file in os.listdir(path+ '.tmpDone'):
@@ -122,6 +126,7 @@ class Outputting:
         for job, flag in jobs2Add.iteritems():
             if flag == 1 :
                 jobs2Write.append(job)
+        logging.info("  Ended jobs: " + str(jobs2Write))
         self.add2List( path, self.jobEndedCache, jobs2Write )
         fileList = self.prepareTempDir( path, taskName, nJob, jobs2Write )
         if fileList != None:
@@ -136,4 +141,5 @@ if __name__=="__main__":
     cazzona = { 1:1, 2:1, 3:1, 4:1, 5:1, 6:1, 7:1, 8:1, 9:1, 10:1 }
     #obj.prepare( "/home/serverAdmin/test/TESTA/crab_testClearedDone_92efb295-538f-4a7c-bd1f-f5f6895ce222/res/", "crab_testClearedDone_92efb295-538f-4a7c-bd1f-f5f6895ce222", 10, cazzona )
     #obj.prepare( "/flatfiles/cms/crab_test_8e3b228b-c300-4867-af21-732b4e419dcc/res/", "crab_test_8e3b228b-c300-4867-af21-732b4e419dcc", 3, {1:1,2:1,3:1} )
-    obj.prepare( "/flatfiles/cms/crab_crab_0_070717_160939_45572c02-7e0f-457e-9f94-0a3b1ba14583/res/","crab_crab_0_070717_160939_45572c02-7e0f-457e-9f94-0a3b1ba14583", 5, {'1': 1, '3': 1, '2': 1, '5': 1, '4': 1} )
+#    obj.prepare( "/flatfiles/cms/crab_crab_0_070717_160939_45572c02-7e0f-457e-9f94-0a3b1ba14583/res/","crab_crab_0_070717_160939_45572c02-7e0f-457e-9f94-0a3b1ba14583", 5, {'1': 1, '3': 1, '2': 1, '5': 1, '4': 1} )
+    obj.prepare( "/flatfiles/cms/crab_crab_0_070718_190911_ae583a0d-de24-481e-acab-a7952568e78f/res/","crab_crab_0_070718_190911_ae583a0d-de24-481e-acab-a7952568e78f", 3, {'1': 1, '3': 1, '2': 1} )
