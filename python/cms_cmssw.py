@@ -1237,9 +1237,9 @@ class Cmssw(JobType):
             req='Member("VO-cms-' + \
                  self.version + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-        ## SL add requirement for OS version only if SL4
-        reSL4 = re.compile( r'slc4' )
-        if self.executable_arch and reSL4.search(self.executable_arch):
+        # ## SL add requirement for OS version only if SL4
+        # reSL4 = re.compile( r'slc4' )
+        if self.executable_arch: # and reSL4.search(self.executable_arch):
             req+=' && Member("VO-cms-' + \
                  self.executable_arch + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
