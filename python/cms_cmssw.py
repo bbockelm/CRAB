@@ -2,6 +2,7 @@ from JobType import JobType
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
+from BlackWhiteListParser import BlackWhiteListParser
 import common
 import Scram
 
@@ -14,6 +15,9 @@ class Cmssw(JobType):
 
         self._params = {}
         self.cfg_params = cfg_params
+
+        # init BlackWhiteListParser
+        self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
 
         try:
             self.MaxTarBallSize = float(self.cfg_params['EDG.maxtarballsize'])
@@ -568,7 +572,7 @@ class Cmssw(JobType):
         for block in blocks:
             if block in jobsOfBlock.keys() :
                 blockCounter += 1
-                screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),','.join(blockSites[block]))
+                screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)))
 
         common.logger.message(screenOutput)
 

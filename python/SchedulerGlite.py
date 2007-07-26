@@ -255,9 +255,9 @@ class SchedulerGlite(SchedulerEdg):
             return itr4
         if sites != [""]: 
             ##Addedd Daniele
-            replicas = self.checkBlackList(sites,n)
+            replicas = self.blackWhiteListParser.checkBlackList(sites,n)
             if len(replicas)!=0:
-                replicas = self.checkWhiteList(replicas,n)
+                replicas = self.blackWhiteListParser.checkWhiteList(replicas,n)
               
             if len(replicas)==0:
                 msg = 'No sites remaining that host any part of the requested data! Exiting... '
