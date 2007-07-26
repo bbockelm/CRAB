@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.32 2007/07/12 14:53:59 mcinquil Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.35 2007/07/25 15:42:44 mcinquil Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import os
 import time
@@ -988,7 +988,7 @@ class TaskTrackingComponent:
                                     dictFinishedJobs.setdefault(job, 0)
                                     dictStateTot[job][0] = "NotSubmitted"
                                 else:
-                                    if status == "partially submitted":
+                                    #if status == "partially submitted":
                                         #logging.info("[ID= " + str(job) + " ]")
                                         #logging.info( str(jobPartList) )
                                         #if int(job) in jobPartList:
@@ -1045,6 +1045,8 @@ class TaskTrackingComponent:
 		 	        ###  updating endedLevel  ###
 				if endedLevel == 100:
                                     TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
+                                    if notified < 2:
+                                        TaskStateAPI.updatingNotifiedPA( taskName, 2 )
 				elif percentage != endedLevel:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
 				   ### prepare tarball & send eMail ###
