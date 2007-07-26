@@ -77,3 +77,7 @@ def cestate_from_ce_bdii(ce, bdii='exp-bdii.cern.ch'):
             status = m.groups()[0]
 
     return status            
+
+if __name__ == '__main__':
+    print jm_from_se_bdii(sys.argv[1])
+
