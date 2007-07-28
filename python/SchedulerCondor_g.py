@@ -8,6 +8,7 @@ import time
 import common
 import popen2
 import os
+from BlackWhiteListParser import BlackWhiteListParser
 
 class SchedulerCondor_g(Scheduler):
     def __init__(self):
@@ -78,12 +79,7 @@ class SchedulerCondor_g(Scheduler):
 
     def getCEfromSE(self, seSite):
         # returns the ce including jobmanager
-        ces = jm_from_se_bdii(seSite)
-        
-
-        # hardcode fnal as BDII maps cmssrm.fnal.gov to cmslcgce.fnal.gov
-        #if seSite.find ('fnal.gov') >= 0 :
-        #    return 'cmsosgce.fnal.gov:2119/jobmanager-condor'
+        ces = jm_from_se_bdii(seSite)        
 
         # mapping ce_hostname to full ce name including jobmanager
         ce_hostnames = {}
@@ -157,6 +153,9 @@ class SchedulerCondor_g(Scheduler):
     def configure(self, cfg_params):
 
         self.cfg_params = cfg_params
+
+        # init BlackWhiteListParser
+        self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
 
         try:
             self.group = cfg_params["EDG.group"]
@@ -267,6 +266,13 @@ class SchedulerCondor_g(Scheduler):
 
         return
 
+    def cleanForBlackWhiteList(self,destinations):
+        """
+        clean for black/white lists using parser
+        """
+
+        return [','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(destinations,''),''))]
+
 
     def sched_parameter(self):
         """
@@ -276,7 +282,7 @@ class SchedulerCondor_g(Scheduler):
         first = []
         last  = []
         for n in range(common.jobDB.nJobs()):
-            currDest=common.jobDB.destination(n)
+            currDest=self.cleanForBlackWhiteList(common.jobDB.destination(n))
             if (currDest!=lastDest):
                 lastDest = currDest
                 first.append(n)
@@ -576,7 +582,7 @@ class SchedulerCondor_g(Scheduler):
             else :
                 result = 'Done'
         elif ( attr == 'destination' ) :
-            seSite = common.jobDB.destination(int(id)-1)[0]
+            seSite = self.cleanForBlackWhiteList(common.jobDB.destination(int(id)-1))[0]
             # if no site was selected during job splitting (datasetPath=None)
             # set to self.cfg_params['EDG.se_white_list']
             if seSite == '' :
@@ -749,7 +755,7 @@ class SchedulerCondor_g(Scheduler):
         # extraTag globusscheduler
 
         # use bdii to query ce including jobmanager from site
-        seSite = common.jobDB.destination(nj-1)[0]
+        seSite = self.cleanForBlackWhiteList(common.jobDB.destination(nj-1))[0]
         # if no site was selected during job splitting (datasetPath=None)
         # set to self.cfg_params['EDG.se_white_list']
         if seSite == '' :
