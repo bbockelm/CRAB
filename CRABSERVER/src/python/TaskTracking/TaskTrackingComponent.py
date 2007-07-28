@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.35 2007/07/25 15:42:44 mcinquil Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.32 2007/07/12 14:53:59 mcinquil Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import os
 import time
@@ -257,7 +257,7 @@ class TaskTrackingComponent:
                 logging.info( event + ": %s ", payload )
                 logging.info("  <-- - -- - -->")
                 self.updateTaskStatus(payload, self.taskState[4])
-                self.updateTaskStatus(payload, self.taskState[5])
+                #self.updateTaskStatus(payload, self.taskState[5])
             else:
                 logging.error(" ")
                 logging.error("ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -516,13 +516,13 @@ class TaskTrackingComponent:
                         pathToWrite = str(self.args['dropBoxPath']) + "/" + payload + "/" + self.resSubDir
                         self.prepareTarball( pathToWrite, payload )
                         ## MAIL report user
-                        self.prepareTaskFailed( payload, uuid, eMail, status )
+                        #self.prepareTaskFailed( payload, uuid, eMail, status )
                     else:
                         ## XML report file
                         dictionaryReport =  {"all": ["Killed", "", "", 0]}
                         self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
 		        ## MAIL report user
-                        self.taskFastKill( self.args['dropBoxPath'] + "/" + payload  + "/res/" + self.xmlReportFileName, payload )
+                        #self.taskFastKill( self.args['dropBoxPath'] + "/" + payload  + "/res/" + self.xmlReportFileName, payload )
         except Exception, ex:
 	    logging.error("  <-- - -- - -->")
             logging.error( "ERROR while reporting info about the task " + str(payload) )
@@ -853,7 +853,7 @@ class TaskTrackingComponent:
 
         logging.info("         *-*-*-*-* ")
         logging.info("Published 'TaskFastKill' message with payload: %s" % taskPath) #payload)
-        self.taskEnded(taskName)
+        #self.taskEnded(taskName)
         logging.info("         *-*-*-*-* ")
 
         
@@ -987,23 +987,26 @@ class TaskTrackingComponent:
                                     dictReportTot['JobFailed'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
                                     dictStateTot[job][0] = "NotSubmitted"
+                                elif status == "killed":
+                                    countNotSubmitted += 1
+                                    dictReportTot['JobFailed'] += 1
+                                    dictFinishedJobs.setdefault(job, 0)
+                                    dictStateTot[job][0] = "Killed"
                                 else:
-                                    #if status == "partially submitted":
-                                        #logging.info("[ID= " + str(job) + " ]")
-                                        #logging.info( str(jobPartList) )
-                                        #if int(job) in jobPartList:
-                                        #    logging.info("Present in jobPartList")
                                     countNotSubmitted += 1
                                     dictReportTot['JobInProgress'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
 			    elif not resubmitting:
-                                dictReportTot['JobFailed'] += 1
-                                dictFinishedJobs.setdefault(job, 0)
-                                
+                                if status == "killed":
+                                    dictReportTot['JobInProgress'] += 1
+                                    dictFinishedJobs.setdefault(job, 0)
+                                else:
+                                    dictReportTot['JobFailed'] += 1
+                                    dictFinishedJobs.setdefault(job, 0)
                             else:
                                 dictReportTot['JobInProgress'] += 1
                                 dictFinishedJobs.setdefault(job, 0)
-
+                             #logging.info("resubm: " +str(resubmitting)+ " - stato: " +str(stato)+ " - status: " +str(status))
 			rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
 			rev_items.sort()
 			dictStateTot = {}
