@@ -842,11 +842,10 @@ class Cmssw(JobType):
    
         ## OLI_Daniele at this level  middleware already known
 
-        txt += 'echo "### Firtst set SCRAM ARCH and BUILD_ARCH ###"\n'
-        txt += 'echo "Setting SCRAM_ARCH='+self.executable_arch+'"\n'
-        txt += 'export SCRAM_ARCH='+self.executable_arch+'\n'
-        txt += 'export BUILD_ARCH='+self.executable_arch+'\n'
         txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += '    echo "### First set SCRAM ARCH and BUILD_ARCH to ' + self.executable_arch + ' ###"\n'
+        txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
+        txt += '    export BUILD_ARCH='+self.executable_arch+'\n'
         txt += self.wsSetupCMSLCGEnvironment_()
         txt += 'elif [ $middleware == OSG ]; then\n'
         txt += '    WORKING_DIR=`/bin/mktemp  -d $OSG_WN_TMP/cms_XXXXXXXXXXXX`\n'
@@ -865,6 +864,8 @@ class Cmssw(JobType):
         txt += '    echo "Change to working directory: $WORKING_DIR"\n'
         txt += '    cd $WORKING_DIR\n'
         txt += self.wsSetupCMSOSGEnvironment_() 
+        txt += '    echo "### Set SCRAM ARCH to ' + self.executable_arch + ' ###"\n'
+        txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += 'fi\n'
 
         # Prepare JobType-specific part
