@@ -264,6 +264,19 @@ class SchedulerCondor_g(Scheduler):
         try: self.schedulerName = cfg_params['CRAB.scheduler']
         except KeyError: self.scheduler = ''
 
+        
+        self.datasetPath = ''
+        try:
+            tmp =  cfg_params['CMSSW.datasetpath']
+            if string.lower(tmp)=='none':
+                self.datasetPath = None
+                self.selectNoInput = 1
+            else:
+                self.datasetPath = tmp
+                self.selectNoInput = 0
+        except KeyError:
+            msg = "Error: datasetpath not defined "  
+            raise CrabException(msg)
         return
 
     def cleanForBlackWhiteList(self,destinations):
@@ -759,7 +772,13 @@ class SchedulerCondor_g(Scheduler):
         # if no site was selected during job splitting (datasetPath=None)
         # set to self.cfg_params['EDG.se_white_list']
         if seSite == '' :
-            seSite = self.cfg_params['EDG.se_white_list']
+            if self.datasetPath == None :
+                seSite = self.cfg_params['EDG.se_white_list']
+            else :
+                msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + self.cfg_params['EDG.se_white_list'] + 'because the dataset ' + self.datasetPath + ' is not available at this site.\n'
+            common.logger.debug(2,msg)
+            raise CrabException(msg)
+                
         oneSite = self.getCEfromSE(seSite)
         # do not check the site status check for FNAL (OSG not in BDII)
         #if oneSite.find('fnal.gov') < 0 :
