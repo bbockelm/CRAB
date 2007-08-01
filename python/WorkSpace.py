@@ -7,13 +7,25 @@ import os, shutil, string, time
 class WorkSpace:
     def __init__(self, top_dir, cfg_params):
         self._cwd_dir = os.getcwd()+'/'
+
         self._top_dir = top_dir                    # top working directory
+
+        #Matteo: Necessary to manage user ui_working_dir
+        if 'USER.ui_working_dir' in cfg_params.keys():    
+            self._top_dir = cfg_params['USER.ui_working_dir']
+            self._pathForTgz = cfg_params['USER.ui_working_dir']
+
         self._log_dir = self._top_dir + '/log'     # log-directory
         self._job_dir = self._top_dir + '/job'     # job pars, scripts, jdl's
         self._res_dir = self._top_dir + '/res'     # dir to store job results
         self._share_dir = self._top_dir + '/share' # directory for common stuff
-        self._pathForTgz = string.split(top_dir, '/')[-1]
+
+        #Matteo: Necessary to manage user ui_working_dir
+        if 'USER.ui_working_dir' not in cfg_params.keys():    
+            self._pathForTgz = string.split(top_dir, '/')[-1]
+
         self._boss_cache = self._share_dir + '/.boss_cache'
+
 
         try:    
             self.outDir = cfg_params["USER.outputdir"]
