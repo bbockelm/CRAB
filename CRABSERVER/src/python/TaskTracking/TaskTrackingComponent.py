@@ -39,6 +39,8 @@ from Outputting import *
 # subject & original name
 from UtilSubject import *
 
+import traceback
+
 ##############################################################################
 # TaskTrackingComponent class
 ##############################################################################
@@ -147,7 +149,7 @@ class TaskTrackingComponent:
 
         # new task to insert
 	if event == "DropBoxGuardianComponent:NewFile":
-	    if payload != None:
+	    if payload != None or payload != "" or len(payload) > 0:
                 logging.info("  <-- - -- - -->")
                 logging.info("NewTask: %s" % payload)
 		tName = payload
@@ -162,7 +164,7 @@ class TaskTrackingComponent:
             return
 	    
 	if event == "ProxyTarballAssociatorComponent:WorkDone":
-	    if payload != None:
+	    if payload != None or payload != "" or len(payload) > 0:
                 logging.info("  <-- - -- - -->")
                 logging.info("Task Ready to be submitted: %s" % payload)
 		self.updateInfoTask( payload )
@@ -175,7 +177,7 @@ class TaskTrackingComponent:
             return
 
 	if event == "ProxyTarballAssociatorComponent:UnableToManage":
-	    if payload != None:
+	    if payload != None or payload != "" or len(payload) > 0:
                 logging.info("  <-- - -- - -->")
                 logging.info("Problem with the project: %s" % payload)
 		try:
@@ -195,7 +197,7 @@ class TaskTrackingComponent:
 
 
 	if event == "CrabServerWorkerComponent:TaskArrival":
-	    if payload != None:
+	    if payload != None or payload != "" or len(payload) > 0:
                 logging.info("  <-- - -- - -->")
                 logging.info("Submitting Task: %s" % str(payload.split(":", 1)[0]) )
 		self.updateTaskStatus( str(payload.split(":", 1)[0]), self.taskState[1] )
@@ -209,7 +211,7 @@ class TaskTrackingComponent:
 
 
         if event == "CrabServerWorkerComponent:CrabWorkPerformed":
-            if payload != None:
+            if payload != None or payload != "" or len(payload) > 0:
                 logging.info("  <-- - -- - -->")
                 logging.info("CrabWorkPerformed: %s" % payload)
 		self.updateTaskStatus(payload, self.taskState[3])
@@ -222,7 +224,7 @@ class TaskTrackingComponent:
             return
 
         if event == "CrabServerWorkerComponent:CrabWorkFailed":
-            if payload != None:
+            if payload != None or payload != "" or len(payload) > 0:
                 logging.info("  <-- - -- - -->")
                 logging.info("CrabWorkFailed: %s" % payload)
                 logging.info("  <-- - -- - -->")
@@ -234,7 +236,7 @@ class TaskTrackingComponent:
             return
 
         if event == "CrabServerWorkerComponent:CrabWorkPerformedPartial":
-            if payload != None:
+            if payload != None or payload != "" or len(payload) > 0:
                 logging.info("  <-- - -- - -->")
                 logging.info( event + ": %s" % payload)
                 logging.info("  <-- - -- - -->")
@@ -252,7 +254,7 @@ class TaskTrackingComponent:
             return
 
         if event == "CrabServerWorkerComponent:FastKill":
-            if payload != None:
+            if payload != None or payload != "" or len(payload) > 0:
                 logging.info("  <-- - -- - -->")
                 logging.info( event + ": %s ", payload )
                 logging.info("  <-- - -- - -->")
@@ -265,7 +267,7 @@ class TaskTrackingComponent:
             return
 
         if event == "TaskKilled":
-            if payload != None:
+            if payload != None or payload != "" or len(payload) > 0:
                 logging.info("  <-- - -- - -->")
                 rangeKillJobs = "all"
                 if payload.find("::") != -1:
@@ -285,7 +287,7 @@ class TaskTrackingComponent:
             return
 
         if event == "TaskKilledFailed":
-            if payload != None:
+            if payload != None or payload != "" or len(payload) > 0:
                 logging.info("  <-- - -- - -->")
                 rangeKillJobs = "all"
                 if payload.find("::") != -1:
@@ -988,7 +990,7 @@ class TaskTrackingComponent:
                                     dictFinishedJobs.setdefault(job, 0)
                                     dictStateTot[job][0] = "NotSubmitted"
                                 elif status == "killed":
-                                    countNotSubmitted += 1
+                                    #countNotSubmitted += 1
                                     dictReportTot['JobFailed'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
                                     dictStateTot[job][0] = "Killed"
@@ -1001,8 +1003,14 @@ class TaskTrackingComponent:
                                     dictReportTot['JobInProgress'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
                                 else:
-                                    dictReportTot['JobFailed'] += 1
-                                    dictFinishedJobs.setdefault(job, 0)
+                                   file("JobStupidi", 'w').write("resubm: " +str(resubmitting)+ " - stato: " +str(stato)+ " - status: " +str(status))
+                                   logging.debug("resubm: " +str(resubmitting)+ " - stato: " +str(stato)+ " - status: " +str(status))
+                                   if stato != "K": ## ridondante
+                                       dictReportTot['JobInProgress'] += 1
+                                       dictFinishedJobs.setdefault(job, 0)
+                                #else:
+                                #    dictReportTot['JobFailed'] += 1
+                                #    dictFinishedJobs.setdefault(job, 0)
                             else:
                                 dictReportTot['JobInProgress'] += 1
                                 dictFinishedJobs.setdefault(job, 0)
@@ -1235,6 +1243,7 @@ class PollThread(Thread):
 
                 # log error message
                 logging.error("Error in polling thread: " + str(ex))
+                logging.error( str(traceback.format_exc()) )
 
                 # try at most 3 times
                 if failedAttempts == 3:
