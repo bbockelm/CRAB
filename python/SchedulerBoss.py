@@ -403,6 +403,7 @@ class SchedulerBoss(Scheduler):
         CEs=[]
         try:
             CEs=self.bossUser.schedListMatch( str(self.schedulerName), schcladstring, self.bossTask.id(), "", Tout)
+            print"CEs = ", CEs
         except SchedulerError,e:
             common.logger.message( "Warning : Scheduler interaction in list-match operation failed for jobs:")
             common.logger.message( e.__str__())
@@ -412,34 +413,46 @@ class SchedulerBoss(Scheduler):
         stop = time.time()
         common.logger.debug(1,"listMatch time :"+str(stop-start))
         common.logger.write("listMatch time :"+str(stop-start))
-
         # print something about CEs
         sites = []
-        for it in CEs :
-            it = it.split(':')[0]
-            if not sites.count(it) :
-                sites.append(it)
-        common.logger.debug(5,"All Sites :"+str(sites))
-        common.logger.message("Matched Sites :"+str(sites))
+        if (len(CEs)!=0):
+            #sites = []
+            for it in CEs :
+                it = it.split(':')[0]
+                if not sites.count(it) :
+                    sites.append(it)
+            common.logger.debug(5,"All Sites :"+str(sites))
+            common.logger.message("Matched Sites :"+str(sites))
         if len(sites) == 0:
+            common.logger.message("No matched Sites :"+str(sites))
+            common.logger.message("Printing info about CE close to SE storing data to analize")
             version = Scram.Scram(self.cfg_params).getSWVersion()
             SEs = common.jobDB.destination(nj)
             for i in SEs:
+                common.logger.message("\nSE = " + i)
                 cmd = "lcg-info --vo cms --list-se --attrs CloseCE --query \"SE=*" + i + "*\""
                 fout, fin, ferr = popen2.popen3(cmd)
-                res = string.strip(fout.readlines()[1])
-                ce = re.match(".*CloseCE(.*):.*", res).group(1).strip()
+                try:
+                    res = string.strip(fout.readlines()[1])
+                    ce = re.match(".*CloseCE(.*):.*", res).group(1).strip()
+                    common.logger.message("CloseCE = " + ce)
+                except IndexError:
+                    common.logger.message("No CloseCE info available") 
+                    continue
                 cmd = "lcg-info --vo cms --list-ce --attrs CEStatus --query \"CE=*" + ce + "*,Tag=*" + version + "*\""
                 fout, fin, ferr = popen2.popen3(cmd)
                 try:
                     res = fout.readlines()[1]
-                    print "\n Empty CE list. Displaying status:"
-                    print "\033[1;35m CE %s status: \n %s "%(ce, str(res))
+                    print "\033[1;35m CloseCE %s status: \n %s "%(ce, str(res))
+                    print "\033[1;35m Software Tag %s available"%version
+                    common.logger.write("Software Tag %s available "%version)
                     print "\033[0m"
                 except IndexError:
-                    print "\n \033[1;35m Software Tag %s not found on CE"%version
+                    print "\033[1;35m Software Tag %s not found on CloseCE %s"%(version, ce)
+                    common.logger.write("Software Tag %s not found on CloseCE"%version)
                     print "\033[0m"
                     pass
+            common.logger.write("\n")
         return len(sites)
 
     
@@ -449,7 +462,11 @@ class SchedulerBoss(Scheduler):
         Submit one job. nj -- job number.
         """
 
-        i = list[0]
+        try:
+            i = list[0]
+        except IndexError:
+            common.logger.message("No sites where to submit jobs")
+            pass 
         jobsList = list[1]
         schcladstring = ''
         self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(i)+'.clad'# TODO add a check is file exist
