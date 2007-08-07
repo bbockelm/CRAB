@@ -2,7 +2,6 @@ from JobType import JobType
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-from BlackWhiteListParser import BlackWhiteListParser
 import common
 import Scram
 
@@ -15,9 +14,6 @@ class Cmssw(JobType):
 
         self._params = {}
         self.cfg_params = cfg_params
-
-        # init BlackWhiteListParser
-        self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
 
         try:
             self.MaxTarBallSize = float(self.cfg_params['EDG.maxtarballsize'])
@@ -572,9 +568,9 @@ class Cmssw(JobType):
         for block in blocks:
             if block in jobsOfBlock.keys() :
                 blockCounter += 1
-                screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)))
+                screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),','.join(blockSites[block]))
 
-        common.logger.message(screenOutput)
+       # common.logger.message(screenOutput)
 
         self.list_of_args = list_of_lists
         return
@@ -842,10 +838,11 @@ class Cmssw(JobType):
    
         ## OLI_Daniele at this level  middleware already known
 
+        txt += 'echo "### Firtst set SCRAM ARCH and BUILD_ARCH ###"\n'
+        txt += 'echo "Setting SCRAM_ARCH='+self.executable_arch+'"\n'
+        txt += 'export SCRAM_ARCH='+self.executable_arch+'\n'
+        txt += 'export BUILD_ARCH='+self.executable_arch+'\n'
         txt += 'if [ $middleware == LCG ]; then \n' 
-        txt += '    echo "### First set SCRAM ARCH and BUILD_ARCH to ' + self.executable_arch + ' ###"\n'
-        txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
-        txt += '    export BUILD_ARCH='+self.executable_arch+'\n'
         txt += self.wsSetupCMSLCGEnvironment_()
         txt += 'elif [ $middleware == OSG ]; then\n'
         txt += '    WORKING_DIR=`/bin/mktemp  -d $OSG_WN_TMP/cms_XXXXXXXXXXXX`\n'
@@ -864,8 +861,6 @@ class Cmssw(JobType):
         txt += '    echo "Change to working directory: $WORKING_DIR"\n'
         txt += '    cd $WORKING_DIR\n'
         txt += self.wsSetupCMSOSGEnvironment_() 
-        txt += '    echo "### Set SCRAM ARCH to ' + self.executable_arch + ' ###"\n'
-        txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += 'fi\n'
 
         # Prepare JobType-specific part
@@ -1104,21 +1099,8 @@ class Cmssw(JobType):
     def executableArgs(self):
         if self.scriptExe:#CarlosDaniele
             return   self.scriptExe + " $NJob"
-        else:
-            # if >= CMSSW_1_5_X, add -e
-            version_array = self.scram.getSWVersion().split('_')
-            major = 0
-            minor = 0
-            try:
-                major = int(version_array[1])
-                minor = int(version_array[2])
-            except:
-                msg = "Cannot parse CMSSW version string: " + "_".join(version_array) + " for major and minor release number!"   
-                raise CrabException(msg)
-            if major >= 1 and minor >= 5 :
-                return " -e -p pset.cfg"
-            else:
-                return " -p pset.cfg"
+        else: 
+            return " -p pset.cfg"
 
     def inputSandbox(self, nj):
         """
@@ -1238,8 +1220,8 @@ class Cmssw(JobType):
             req='Member("VO-cms-' + \
                  self.version + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-        # ## SL add requirement for OS version only if SL4
-        # reSL4 = re.compile( r'slc4' )
+        ## SL add requirement for OS version only if SL4
+        #reSL4 = re.compile( r'slc4' )
         if self.executable_arch: # and reSL4.search(self.executable_arch):
             req+=' && Member("VO-cms-' + \
                  self.executable_arch + \
