@@ -439,12 +439,14 @@ class SchedulerBoss(Scheduler):
                 except IndexError:
                     common.logger.message("No CloseCE info available") 
                     continue
-                cmd = "lcg-info --vo cms --list-ce --attrs CEStatus --query \"CE=*" + ce + "*,Tag=*" + version + "*\""
+                cmd = "lcg-info --vo cms --list-ce --attrs CEStatus,Tag --query \"CE=*" + ce + "*,Tag=*" + version + "*\""
                 fout, fin, ferr = popen2.popen3(cmd)
                 try:
-                    res = fout.readlines()[1]
-                    print "\033[1;35m CloseCE %s status: \n %s "%(ce, str(res))
+                    res = fout.readlines()
+                    b=re.findall(r"\'VO-cms-slc\d_ia\d+_gcc\d+\'",str(map(lambda x: x.strip(), res)))
+                    print "\033[1;35m CloseCE %s status: \n %s "%(ce, str(res[1]))
                     print "\033[1;35m Software Tag %s available"%version
+                    print "\033[1;35m Software Architecture set to %s"%str(b)
                     common.logger.write("Software Tag %s available "%version)
                     print "\033[0m"
                 except IndexError:
