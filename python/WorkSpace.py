@@ -1,14 +1,14 @@
 from crab_exceptions import *
 #from threading import RLock
 import common
-
 import os, shutil, string, time
+#from crab_logger import Logger
 
 class WorkSpace:
     def __init__(self, top_dir, cfg_params):
-        self._cwd_dir = os.getcwd()+'/'
 
-        self._top_dir = top_dir                    # top working directory
+        self._cwd_dir = os.getcwd()+'/'
+        self._top_dir = top_dir    # top working directory
 
         #Matteo: Necessary to manage user ui_working_dir
         if 'USER.ui_working_dir' in cfg_params.keys():    
@@ -26,7 +26,6 @@ class WorkSpace:
 
         self._boss_cache = self._share_dir + '/.boss_cache'
 
-
         try:    
             self.outDir = cfg_params["USER.outputdir"]
         except:
@@ -38,10 +37,18 @@ class WorkSpace:
         return
 
     def create(self):
-        if (string.split(self._top_dir,'/')[-2]=='data'):
+        # Matteo change in order to ban only "data" in "CMSSW" dir and 
+        # not crash when short path is given    
+        subpath = self._top_dir.split('CMSSW')
+        if len(subpath)!=1 and len(subpath[-1].split("data"))!=1:  
             msg = 'Cannot run CRAB from "data" directory.\n'
             msg += 'please change direcotry\n'
             raise CrabException(msg)
+
+      #  if (string.split(self._top_dir,'/')[-2]=='data'):
+      #      msg = 'Cannot run CRAB from "data" directory.\n'
+      #      msg += 'please change direcotry\n'
+      #      raise CrabException(msg)
 
         
         if not os.path.exists(self._top_dir):
