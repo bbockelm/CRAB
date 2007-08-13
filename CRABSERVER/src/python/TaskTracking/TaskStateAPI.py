@@ -57,15 +57,16 @@ def checkNSubmit( taskName, idJob):
         closeConnPA( dbCur, conn )
 	if len(rows) == 1:
 	    if rows[0][0] <= rows[0][1]:
-		return 0, None, None
-        #rows[0][0], rows[0][1]
+		return 0, rows[0][0], rows[0][1]#None, None
+            return 1, rows[0][0], rows[0][1]
     except:
 	dbCur.execute("ROLLBACK")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
 	logging.error( "Error quering PA DB! Method: " + checkNSubmit.__name__ )
 	raise
-    return 1, rows[0][0], rows[0][1]
+    return 1, None, None
+    #, rows[0][0], rows[0][1]
 
 def insertTaskPA( taskName, status ):
     """
@@ -256,7 +257,7 @@ def getAllNotFinished():
     """
     queryString = "SELECT taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid"+\
                   " FROM js_taskInstance"+\
-		  " WHERE status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
+		  " WHERE (status <> 'not submitted' AND notificationSent < 2) AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
 #status <> 'killed' AND status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
     task2Check = queryMethod(queryString, None)
     
