@@ -120,7 +120,7 @@ class TaskTrackingComponent:
 	self.taskState = [\
                           "arrived", "submitting", "not submitted", "submitted",\
                           "killed", "ended", "unpacked", "partially submitted",\
-                          "partially killed"\
+                          "partially killed", "range submitted"\
                          ]
 
     ##########################################################################
@@ -229,6 +229,11 @@ class TaskTrackingComponent:
                 logging.info("CrabWorkFailed: %s" % payload)
                 logging.info("  <-- - -- - -->")
 		self.updateTaskStatus(payload, self.taskState[2])
+
+                semvar.acquire()
+                newstate[payload]="fail"
+                semvar.release()
+
             else:
                 logging.error(" ")
                 logging.error("ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -240,13 +245,7 @@ class TaskTrackingComponent:
                 logging.info("  <-- - -- - -->")
                 logging.info( event + ": %s" % payload)
                 logging.info("  <-- - -- - -->")
-                
                 self.preUpdatePartialTask(payload, self.taskState[7])
-
-                semvar.acquire()
-                newstate[payload]="fail"
-                semvar.release()
-
             else:
                 logging.error(" ")
                 logging.error("ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -265,6 +264,18 @@ class TaskTrackingComponent:
                 logging.error("ERROR: empty payload from '"+str(event)+"'!!!!")
                 logging.error(" ")
             return
+
+        if event == "CrabServerWorkerComponent:CrabWorkRangeSubmitPerformed":
+           if payload != None or payload != "" or len(payload) > 0:
+                logging.info("  <-- - -- - -->")
+                logging.info( event + ": %s ", payload )
+                logging.info("  <-- - -- - -->")
+                self.preUpdatePartialTask(payload, self.taskState[7])
+           else:
+                logging.error(" ")
+                logging.error("ERROR: empty payload from '"+str(event)+"'!!!!")
+                logging.error(" ")
+           return
 
         if event == "TaskKilled":
             if payload != None or payload != "" or len(payload) > 0:
@@ -463,8 +474,10 @@ class TaskTrackingComponent:
                 logging.error( str(ex.args) )
             #logging.info(str(dictionaryReport))
             self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
+            """
             ## MAIL report user
             self.prepareTaskFailed( payload, uuid, eMail, status )
+            """
 
     def addJobsToFile(self, taskPath, jobList):#, totJobs):
         """
@@ -988,8 +1001,13 @@ class TaskTrackingComponent:
                                     countNotSubmitted += 1
                                     dictReportTot['JobFailed'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
-                                    dictStateTot[job][0] = "NotSubmitted"
-                                elif status == "killed":
+                                    if status == self.taskState[7]:
+                                        dictStateTot[job][0] = "NotSubmitted"
+                                    elif status == self.taskState[9]:
+                                        dictStateTot[job][0] = "Created"
+                                    else:
+                                        dictStateTot[job][0] = "NotSubmitted"
+                                elif status == self.taskState[4]:
                                     #countNotSubmitted += 1
                                     dictReportTot['JobFailed'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
@@ -999,11 +1017,14 @@ class TaskTrackingComponent:
                                     dictReportTot['JobInProgress'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
 			    elif not resubmitting:
-                                if status == "killed":
+                                if status == self.taskState[4]:
                                     dictReportTot['JobInProgress'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
                                 else:
-                                   file("JobStupidi", 'w').write("resubm: " +str(resubmitting)+ " - stato: " +str(stato)+ " - status: " +str(status))
+                                   file("JobStupidi", 'a').write("task name: " + str(taskName) +\
+                                                              " - resubm: " + str(resubmitting) +\
+                                                              " - stato: " + str(stato) +\
+                                                              " - status: " + str(status) )
                                    logging.debug("resubm: " +str(resubmitting)+ " - stato: " +str(stato)+ " - status: " +str(status))
                                    if stato != "K": ## ridondante
                                        dictReportTot['JobInProgress'] += 1
@@ -1162,12 +1183,12 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkFailed")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformedPartial")
         self.ms.subscribeTo("CrabServerWorkerComponent:FastKill")
+        self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkRangeSubmitPerformed")
 	self.ms.subscribeTo("DropBoxGuardianComponent:NewFile")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:WorkDone")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:UnableToManage")
         self.ms.subscribeTo("TaskKilled")
         self.ms.subscribeTo("TaskKilledFailed")
-
 
         # start polling thread
         pollingThread = PollThread(self.pollTasks)
@@ -1178,7 +1199,6 @@ class TaskTrackingComponent:
             messageType, payload = self.ms.get()
             self.__call__(messageType, payload)
             self.ms.commit()
-##            self.__call__(messageType, payload)
 
 ##############################################################################
 # PollDBS class
