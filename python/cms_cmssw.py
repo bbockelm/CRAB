@@ -1189,7 +1189,7 @@ class Cmssw(JobType):
             # txt += 'ls_result=$?\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
             ###### FEDE 14444 - 08 - 2007 ########
-            txt += '   mv '+fileWithSuffix+' $RUNTIME_AREA'\n'
+            txt += '   mv '+fileWithSuffix+' $RUNTIME_AREA\n'
             txt += '   cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             ###################################
             txt += 'else\n'
