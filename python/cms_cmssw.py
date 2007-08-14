@@ -40,20 +40,6 @@ class Cmssw(JobType):
         self.fjrFileName = 'crab_fjr.xml'
 
         self.version = self.scram.getSWVersion()
-        
-        #
-        # Try to block creation in case of arch/version mismatch
-        #
-
-        a = string.split(self.version, "_")
-
-        if int(a[1]) == 1 and (int(a[2]) < 5 and self.executable_arch.find('slc4') == 0):
-            msg = "Error: CMS does not support %s with %s architecture"%(self.version, self.executable_arch)
-            raise CrabException(msg)
-        if int(a[1]) == 1 and (int(a[2]) >= 5 and self.executable_arch.find('slc3') == 0):
-            msg = "Error: CMS does not support %s with %s architecture"%(self.version, self.executable_arch)
-            raise CrabException(msg)
-        
         common.taskDB.setDict('codeVersion',self.version)
         self.setParam_('application', self.version)
 
