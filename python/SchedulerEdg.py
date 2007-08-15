@@ -94,6 +94,7 @@ class SchedulerEdg(Scheduler):
         ########### FEDE FOR DBS2 ##############################
         try: 
             self.publish_data = cfg_params["USER.publish_data"]
+            self.checkProxy()
             if int(self.publish_data) == 1:
                 try:
                     self.publish_data_name = cfg_params['USER.publish_data_name']
@@ -110,7 +111,6 @@ class SchedulerEdg(Scheduler):
                         
                     #self.UserGridName = string.strip(runCommand("voms-proxy-info -identity | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'"))
                 except:
-                    self.checkProxy()
                     msg = "Error. Problem with voms-proxy-info -identity command"
                     raise CrabException(msg)
         except KeyError: self.publish_data = 0 
