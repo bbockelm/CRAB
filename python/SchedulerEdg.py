@@ -543,7 +543,6 @@ class SchedulerEdg(Scheduler):
            txt += '            echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '            echo "srmcp failed, attempting lcg-cp."\n'
            if common.logger.debugLevel() >= 5:
-               ########### FEDE CHANGES TO WRITE IN SRM LNL.INFN.IT #################
                txt += '            echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
                txt += '            exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
                #txt += '            echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
@@ -562,10 +561,12 @@ class SchedulerEdg(Scheduler):
            txt += '               echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '               echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '               echo "srmcp and lcg-cp and failed!"\n'
-           txt += '               SE=""\n'
-           txt += '               echo "SE = $SE"\n'
-           txt += '               SE_PATH=""\n'
-           txt += '               echo "SE_PATH = $SE_PATH"\n'
+           ################### FEDE moved out of for ##############
+           #txt += '               SE=""\n'
+           #txt += '               echo "SE = $SE"\n'
+           #txt += '               SE_PATH=""\n'
+           #txt += '               echo "SE_PATH = $SE_PATH"\n'
+           ########################################################
            txt += '            else\n'
            txt += '               echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
            txt += '               echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
@@ -581,6 +582,12 @@ class SchedulerEdg(Scheduler):
            txt += '            echo "srmcp succeeded"\n'
            txt += '         fi\n'
            txt += '     done\n'
+           txt += '     if [ $copy_exit_status -ne 0 ]; then\n'
+           txt += '           SE=""\n'
+           txt += '           echo "SE = $SE"\n'
+           txt += '           SE_PATH=""\n'
+           txt += '           echo "SE_PATH = $SE_PATH"\n'
+           txt += '     fi\n'
            txt += '     exit_status=$copy_exit_status\n'
         return txt
 
