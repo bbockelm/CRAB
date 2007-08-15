@@ -161,14 +161,14 @@ class SchedulerGlite(SchedulerEdg):
         
         txt += '\n\n'
 
-        if int(self.copy_data) == 1:
-           if self.SE:
-              txt += 'export SE='+self.SE+'\n'
-              txt += 'echo "SE = $SE"\n'
-           if self.SE_PATH:
-              if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
-              txt += 'export SE_PATH='+self.SE_PATH+'\n'
-              txt += 'echo "SE_PATH = $SE_PATH"\n'
+        #if int(self.copy_data) == 1:
+        #   if self.SE:
+        #      txt += 'export SE='+self.SE+'\n'
+        #      txt += 'echo "SE = $SE"\n'
+        #   if self.SE_PATH:
+        #      if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
+        #      txt += 'export SE_PATH='+self.SE_PATH+'\n'
+        #      txt += 'echo "SE_PATH = $SE_PATH"\n'
 
         txt += 'export VO='+self.VO+'\n'
         ### some line for LFC catalog setting 
