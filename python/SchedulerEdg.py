@@ -26,6 +26,10 @@ class SchedulerEdg(Scheduler):
         # init BlackWhiteListParser
         self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
 
+        self.proxyValid=0
+        try: self.dontCheckProxy=int(cfg_params["EDG.dont_check_proxy"])
+        except KeyError: self.dontCheckProxy = 0
+
         try:
             RB=cfg_params["EDG.rb"]
             self.rb_param_file=self.rb_configure(RB)
@@ -106,6 +110,7 @@ class SchedulerEdg(Scheduler):
                         
                     #self.UserGridName = string.strip(runCommand("voms-proxy-info -identity | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'"))
                 except:
+                    self.checkProxy()
                     msg = "Error. Problem with voms-proxy-info -identity command"
                     raise CrabException(msg)
         except KeyError: self.publish_data = 0 
@@ -188,8 +193,6 @@ class SchedulerEdg(Scheduler):
         libPath=os.path.join(path, "lib", "python")
         sys.path.append(libPath)
 
-        self.proxyValid=0
-
         try:
             self._taskId = cfg_params['taskId']
         except:
@@ -200,9 +203,6 @@ class SchedulerEdg(Scheduler):
  
         try: self.schedulerName = cfg_params['CRAB.scheduler']
         except KeyError: self.scheduler = ''
-
-        try: self.dontCheckProxy=int(cfg_params["EDG.dont_check_proxy"])
-        except KeyError: self.dontCheckProxy = 0
 
         return
     
