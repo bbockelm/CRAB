@@ -403,7 +403,7 @@ class SchedulerBoss(Scheduler):
         CEs=[]
         try:
             CEs=self.bossUser.schedListMatch( str(self.schedulerName), schcladstring, self.bossTask.id(), "", Tout)
-            print"CEs = ", CEs
+            common.logger.debug(1,"CEs :"+str(CEs))
         except SchedulerError,e:
             common.logger.message( "Warning : Scheduler interaction in list-match operation failed for jobs:")
             common.logger.message( e.__str__())
