@@ -478,14 +478,6 @@ class SchedulerCondor_g(Scheduler):
 
         return txt
 
-    def wsRegisterOutput(self):
-        """
-        Returns part of a job script which does scheduler-specific work.
-        """
-
-        txt = ''
-        return txt
-
     def loggingInfo(self, id):
         """
         retrieve the logging info from logging and bookkeeping and return it

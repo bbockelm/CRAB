@@ -139,7 +139,7 @@ class ScriptWriter:
         """
         Returns part of a job script which registers output files to RLS catalog.
         """
-        txt = common.scheduler.wsRegisterOutput()
+        txt = ''
         return txt
 
     ### FEDE FOR DBS OUTPUT PUBLICATION 
