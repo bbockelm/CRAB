@@ -5,6 +5,98 @@
 #
 #
 
+function cmscp {
+## SL 17-Aug-2007 Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
+## safe copy of local file in current directory to remote SE via srmcp, including success checking
+## input:
+##    $1 local file (with respect to current working directory)
+##    $2 remote SE
+##    $3 remote SE_PATH (absolute)
+##    $4 remote file name
+##    $5 grid environment: LCG (default) | OSG
+## output:
+##      return 0 if all ok
+##      return 1 if srmcp failed
+##      return 2 if copy sucessful but size mismatch
+###########################
+  max_retry_num=0
+  sleep_time=10
+
+  if [ $# -le 4 ]; then
+    echo -e "\t$0 usage:"
+    echo -e "\t$0 source <remote SE> <remote SE PATH> <remote output file name> <grid env: LCG(default)|OSG>"
+    exit 1
+  fi 
+  file=$1
+  SE=$2
+  SEPath=$3
+  remoteFile=$4
+  middleware='LCG'
+  if [ $# == 5 ]; then
+    middleware=$5
+  fi
+
+# Set OSG certificates directory
+  if [ $middleware == OSG ]; then
+    echo "X509_USER_PROXY = $X509_USER_PROXY"
+    echo "source $OSG_APP/glite/setup_glite_ui.sh"
+    source $OSG_APP/glite/setup_glite_ui.sh
+    export X509_CERT_DIR=$OSG_APP/glite/etc/grid-security/certificates
+    echo "export X509_CERT_DIR=$X509_CERT_DIR"
+  fi
+
+## do the actual copy
+  opt=" -report ./srmcp.report "
+  opt="${opt} -retry_timeout 480000"
+  if [ $middleware == OSG ]; then
+    opt="${opt} -retry_timeout 240000 -x509_user_trusted_certificates"
+  fi
+
+  exit_status=0
+  retry_num=0
+  max_retry_num=0
+  while [ $retry_num -le $max_retry_num ]
+  do
+    let retry_num=retry_num+1
+    echo "Attempt #$retry_num"
+    source=file:///`pwd`/$file
+    destination=srm://${SE}:8443${SE_PATH}$out_file
+
+    cmd="srmcp $opt $source $destination"
+    echo $cmd
+    exitstring=`$cmd 2>&1`
+    copy_exit_status=$?
+    if [ $copy_exit_status -ne 0 ]; then
+      echo "Problem copying $source to $destination"
+      echo "StageOutExitStatus = $copy_exit_status"
+      echo "StageOutExitStatusReason = $exitstring"
+      echo "StageOutReport = `cat ./srmcp.report`"
+      exit_status=1
+      continue
+    fi
+
+## Put into an array the remote file metadata
+    remoteMetadata=(`srm-get-metadata $destination`)
+    remoteSize=`echo ${remoteMetadata[5]}| tr -d :`
+
+## ditto for local file
+    localFileSize=(`ls -l $file`)
+    localSize=${localFileSize[5]}
+
+    if [ $localSize != $remoteSize ]; then
+    echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
+      echo "Copy failed: removing remote file $destiantion"
+      srmrm $destination
+      exit_status=2
+      continue
+    fi
+
+    sleep $sleep_time
+  done
+
+  return $exit_status
+}
+
 RUNTIME_AREA=`pwd`
 dumpStatus() {
 echo ">>>>>>> Cat $1"
