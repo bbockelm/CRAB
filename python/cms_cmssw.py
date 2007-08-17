@@ -1188,13 +1188,18 @@ class Cmssw(JobType):
             # txt += 'ls '+fileWithSuffix+'\n'
             # txt += 'ls_result=$?\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-            ###### FEDE 14444 - 08 - 2007 ########
-            txt += '   mv '+fileWithSuffix+' $RUNTIME_AREA\n'
-            txt += '   cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            ###################################
+            ###### FEDE FOR OUTPUT DATA PUBLICATION ########
+            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
+            txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            ################################################
             txt += 'else\n'
-            txt += '   exit_status=60302\n'
-            txt += '   echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
+            txt += '    exit_status=60302\n'
+            txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
+            ############# FEDE ADDED CHECK FOR OUTPUT #############
+            if fileWithSuffix in self.output_file:
+                txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
+                txt += '    exit $exit_status\n'
+            #######################################################    
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
                 txt += '        echo "prepare dummy output file"\n'
@@ -1204,28 +1209,9 @@ class Cmssw(JobType):
         file_list = []
         for fileWithSuffix in (self.output_file):
              file_list.append(self.numberFile_(fileWithSuffix, '$NJob'))
+             
         txt += 'file_list="'+string.join(file_list,' ')+'"\n'
-       
         txt += 'cd $RUNTIME_AREA\n'
-        #### FEDE this is the cleanEnv function
-        ### OLI_DANIELE
-        #txt += 'if [ $middleware == OSG ]; then\n'  
-        #txt += '    cd $RUNTIME_AREA\n'
-        #txt += '    echo "Remove working directory: $WORKING_DIR"\n'
-        #txt += '    /bin/rm -rf $WORKING_DIR\n'
-        #txt += '    if [ -d $WORKING_DIR ] ;then\n'
-        #txt += '        echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
-        #txt += '        echo "JOB_EXIT_STATUS = 60999"\n'
-        #txt += '        echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
-        #txt += '        rm -f $RUNTIME_AREA/$repo \n'
-        #txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '    fi\n'
-        #txt += 'fi\n'
-        #txt += '\n'
-
-
         return txt
 
     def numberFile_(self, file, txt):
