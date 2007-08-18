@@ -22,12 +22,12 @@ import commands
 from BossSession import *
 
 #modified to support server mode
-from SubmitterServer import SubmitterServer
-from GetOutputServer import GetOutputServer
-from StatusServer import StatusServer
-from PostMortemServer import PostMortemServer
-from KillerServer import KillerServer
-from CleanerServer import CleanerServer
+#from SubmitterServer import SubmitterServer
+#from GetOutputServer import GetOutputServer
+#from StatusServer import StatusServer
+#from PostMortemServer import PostMortemServer
+#from KillerServer import KillerServer
+#from CleanerServer import CleanerServer
 
 import sys, os, time, string
 
@@ -472,6 +472,7 @@ class Crab:
             elif ( opt == '-submit' ):
                 # modified to support server mode
                 if (self.UseServer== 1):
+                    from SubmitterServer import SubmitterServer
                     self.actions[opt] = SubmitterServer(self.cfg_params)
                 else:
                 # modified to support server mode
@@ -571,6 +572,7 @@ class Crab:
             elif ( opt == '-status' ):
                 # modified to support server mode 
                 if (self.UseServer== 1):
+                    from StatusServer import StatusServer
                     self.actions[opt] = StatusServer(self.cfg_params)
                 else:
                     jobs = self.parseRange_(val)
@@ -582,6 +584,7 @@ class Crab:
             elif ( opt == '-kill' ):
 
                 if (self.UseServer== 1):
+                    from KillerServer import KillerServer
                     self.actions[opt] = KillerServer(self.cfg_params)
                 else:
                     if val: 
@@ -596,6 +599,7 @@ class Crab:
             elif ( opt == '-getoutput' or opt == '-get'):
                 # modified to support server mode
                 if (self.UseServer== 1):
+                    from GetOutputServer import GetOutputServer
                     self.actions[opt] = GetOutputServer(self.cfg_params)
                 else:
 
@@ -750,6 +754,7 @@ class Crab:
 
                 # modified to support server mode
                 if (self.UseServer== 1):
+                    from PostMortemServer import PostMortemServer
                     self.actions[opt] = PostMortemServer(self.cfg_params)
                 else:            
                     if val:
@@ -790,6 +795,7 @@ class Crab:
                 if val != None:
                     raise CrabException("No range allowed for '-clean'")
                 if (self.UseServer== 1):
+                    from CleanerServer import CleanerServer
                     self.actions[opt] = CleanerServer(self.cfg_params)
                 else:
                     self.actions[opt] = Cleaner(self.cfg_params)
