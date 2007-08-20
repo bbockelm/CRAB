@@ -4,8 +4,8 @@ _CommandManager_
 
 """
 
-__version__ = "$Revision: 1.0 $"
-__revision__ = "$Id: CommandManager.py,v 1.0 2007/05/28 17:50:00 farinafa Exp $"
+__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: CommandManagerComponent.py,v 1.6 2007/06/21 19:12:31 farinafa Exp $"
 
 import os
 import socket
@@ -51,7 +51,6 @@ class CommandManagerComponent:
         logging.getLogger().setLevel(logging.INFO)
        
         self.dropBoxPath = str( self.args['dropBoxPath'] )
-        # self.BSession = BossSession( self.args['bossClads'] )
         logging.info("CommandManager Started...")
 
 
@@ -63,7 +62,7 @@ class CommandManagerComponent:
         """
         # create message service
         self.ms = MessageService()
-        self.msFwdCmd = MessageService() # To forward commands # Fabio
+        self.msFwdCmd = MessageService() 
         self.ms.registerAs("CommandManager")
         self.msFwdCmd.registerAs("CommandManagerForwarder")
                                                                                 
@@ -74,23 +73,22 @@ class CommandManagerComponent:
 
         # Events listening and translation
         while True :
-            type, payload = self.ms.get()
-            self.ms.commit() # anticipated to avoid pending items to block the startup # Fabio 
-            logging.debug("CommandManager: %s %s" % ( type, payload))
-            self.__call__(type, payload)
-            pass
+             type, payload = self.ms.get()
+             self.ms.commit()  
+             logging.debug("CommandManager: %s %s" % ( type, payload))
+             self.__call__(type, payload)
+             pass
 
     def processKillCommand(self, dict, filename):
         # 1 - get the taskName from the dict
         logging.info('debug message:%s'+str(dict) ) # Convert to debug # Fabio
 
         # locate taskName and dir to check if proxyTar has managed the task
-        taskName = str(dict['Task'])   #.split('.')[0].strip() Matteo FIX: Task name is yet correct and ready to use
-        logging.debug('TaskName:%s'+str(taskName))
+        taskName = str(dict['Task'])   
+        logging.debug('TaskName: ' + str(taskName))
 
         
-        #Matteo add: manages exceptions from listdir when there are not searched files in DropBox 
-        #
+        #manages exceptions from listdir when there are not searched files in DropBox 
         dBStatus=[]
         try:
              dBStatus = os.listdir(self.dropBoxPath+'*.tgz')
@@ -107,101 +105,141 @@ class CommandManagerComponent:
 
         if taskName not in os.listdir(self.dropBoxPath):
              logging.info('Unable to locate directory for task %s'%taskName)
-             logging.info('The command file will not be processed.')
-             #os.remove(filename)
-             os.rename(filename, filename+'.noGood')
-
-             # publish a task killed failed message
-             self.msFwdCmd.publish("TaskKilledFailed", taskName)
+             logging.info('The command will be retried during next DropBox cycle.')
+             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
              self.msFwdCmd.commit()
-             logging.info("Message TaskKilledFailed sent") #Matteo Add: switch to debug
              return
         logging.info('Now Cheking the Proxy')
 
 
-        # Matteo add: check proxy matching
-
+        # check proxy matching
         subject = ""
         try:
-             f = open(taskName+'/share/userSubj', 'r')
+             proxyPath = self.dropBoxPath+'/'+taskName+'/share/userSubj'
+             fwPayload = taskName+':'+self.dropBoxPath+'/'+taskName+'/share/userProxy'+':'+str(dict['Range'])
+             # fwPayload = taskName+'::'+self.dropBoxPath+'/'+taskName+'/share/userProxy'+'::'+str(dict['Range']) Activate it when switch to new msg standard
+             f = open(proxyPath, 'r')
              subject =f.readline()
              f.close()
         except Exception, e:
              logging.info("Warning: Unable to read " + str(taskName+'/share/userSubj'))
              logging.info(e)
 
-             # publish a task killed failed message
-             self.msFwdCmd.publish("TaskKilledFailed", taskName)
+             self.msFwdCmd.publish("TaskKilledFailed", taskName+'::'+dict["Range"])
              self.msFwdCmd.commit()
-             logging.info("Message TaskKilledFailed sent") #Matteo Add: switch to debug
+             logging.info("Message TaskKilledFailed sent")
              return
 
-        logging.info(str(subject)+'   '+str(dict['Subject'])) 
         if dict['Subject'].strip() != subject.strip():    
              logging.info('Unable to match subjects for %s'%taskName)
              logging.info('The command file will not be processed.')
              #os.remove(filename)
              os.rename(filename, filename+'.noGood')
 
-             # publish a task killed failed message
-             self.msFwdCmd.publish("TaskKilledFailed", taskName)
+             self.msFwdCmd.publish("TaskKilledFailed", taskName+'::'+dict["Range"])
              self.msFwdCmd.commit()
-             logging.info("Message TaskKilledFailed sent") #Matteo Add: switch to debug
+             logging.info("Message TaskKilledFailed sent") 
              return
 
         logging.info("Proxy subject verified") 
-        # 2 - query the TT to get the taskId
 
-        #Matteo add: manages DB interaction problems and publish message for TT
+        # 2 - query BOSS to have the taskId
+
+        # manages DB interaction problems and publish message for TT
         taskDict=""
         try:
              BSession = BossSession( self.args['bossClads'] )
-             taskDict = BSession.loadByName( taskName ) # just for crosscheck: exists iif CrabWorker performed the registration
+             taskDict = BSession.loadByName(taskName)
              logging.info('loadByname terminated   '+str(taskDict))
              del BSession
+
+             # PreKill for task not in BOSS (pre ProxyTar work finish)
+             if len(taskDict)== 0 and dict['Range']=='all':
+                  logging.info('Range = %s and task not in Boss: try PreKill     \n'%dict['Range'])
+                  self.msFwdCmd.publish("CommandManagerComponent:prekill",fwPayload)
+                  self.msFwdCmd.commit()
+                  logging.info('Message to Watch Dog sended for task '+ taskName)
+                  os.remove(filename) 
+                  return  
         except Exception, e:
-             logging.info('Problems with DB interaction  %s\n'%filename + str(e))
-             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
-             self.msFwdCmd.commit()
+
+             # PreKill here is necessary? Temporary! 
+             if dict['Range']=='all':
+                  logging.info('Range = %s and task not in Boss: try PreKill     \n'%dict['Range'])
+                  self.msFwdCmd.publish("CommandManagerComponent:prekill",fwPayload)
+                  self.msFwdCmd.commit()
+                  logging.info('Message to Watch Dog sended for task '+ taskName)
+                  os.remove(filename)  
+             else: 
+                  logging.info('Problems with DB interaction  %s\n'%filename + str(e))
+                  self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
+                  self.msFwdCmd.commit()
              return
 
         taskSpecId = ''
         
         # Retrive tasks status from TT
         try:
-             #stat="" 
              stat=getStatus(taskName)[0]
              logging.info('Task status returned by TT is:   '+str(stat[0]))
         except Exception, e:
-             logging.info('Problems with TT Api:  %s\n'%filename + str(e))
+             logging.info('Problems with TT Api for:  %s . The command will be retried!\n'%filename + str(e))
              self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
              self.msFwdCmd.commit()
              return
 
-        if len(taskDict) > 0 and stat[0] in ["partially submitted", "submitted"]:
-             taskSpecId = taskName
-        else:
-             if stat[0] in ["not submitted","killed"]:
+        if len(taskDict) > 0:
+             
+             # Killable status  
+             if stat[0] in ["partially submitted", "submitted", "ended", "partially killed"]:
+                  taskSpecId = taskName
+
+             # No killable status
+             elif stat[0] in ["not submitted","killed"]: 
                   logging.info('Task %s is in no killable status. The command will be remove '%taskName)
-                  # publish a task killed failed message
-                  self.msFwdCmd.publish("TaskKilledFailed", taskName)
+                  self.msFwdCmd.publish("TaskKilledFailed", taskName+'::'+dict["Range"])
                   self.msFwdCmd.commit()
-                  logging.info("Message TaskKilledFailed sent") #Matteo Add: switch to debug
-             else:   
+                  logging.info("Message TaskKilledFailed sent") 
+                  os.remove(filename)
+                  return
+
+             # Status consistent with PreKill  
+             elif stat[0] in ["submitting","arrived","unpacked"]:
+                  if dict['Range']=='all':
+                       logging.info('Range = %s and status submitting: try PreKill     \n'%dict['Range'])
+                       self.msFwdCmd.publish("CommandManagerComponent:prekill",fwPayload)
+                       self.msFwdCmd.commit()
+                       logging.info('Message to Watch Dog sended for task '+ taskName)
+                       os.remove(filename)
+                  else: 
+                       logging.info('Task %s is in no killable status. The command will be retried'%taskName)
+                       self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
+                       self.msFwdCmd.commit()
+                  return
+
+             # Unexpected status  
+             else:    
                   del taskDict
-                  logging.info('Task %s not found in BOSS or in no killable status. The command will be retried'%taskName)
+                  logging.info('Unexpected status '+ str(stat[0]) +' for the task %s. The command will be retried!' %taskName)
                   self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
                   self.msFwdCmd.commit()
-             return
-
+                  return
+        else:
+              logging.info('Taskdict for task %s is empty. No jobs to kill: The command will be remove '%taskName)
+              self.msFwdCmd.publish("TaskKilledFailed", taskName+'::'+dict["Range"])
+              self.msFwdCmd.commit()
+              os.remove(filename)
+              logging.info("Message TaskKilledFailed sent")
+              return
+         
         # 3 - publish the message to the JobKiller
         logging.info('Now pubblish the message for jobKiller')
         del taskDict
-        fwPayload = taskSpecId+':'+self.dropBoxPath+'/'+taskName+'/share/userProxy' #Matteo add: Payload is taskName:pathUserProxy
         self.msFwdCmd.publish('KillTask', fwPayload, "00:00:10")
         self.msFwdCmd.commit()
         logging.info('....Command dispatched!')
-        # Command dispatched, the file is no more needed. Remove it #Fabio
+
+        # The file is no more needed. Remove it 
         os.remove(filename)
         pass
 
@@ -215,20 +253,19 @@ class CommandManagerComponent:
 
         if event=='DropBoxGuardianComponent:NewCommand':
             try:
+
                 # Parse XML file with generic command data structure
                 os.chdir(self.dropBoxPath)
                 doc = xml.dom.minidom.parse(payload)
-                dict = {}
+                dict = {'Range':'all'}
                 for node in doc.documentElement.childNodes:
                     if node.attributes:
 		        for i in range(node.attributes.length):
 		            a = node.attributes.item(i)
 		            dict[str(node.attributes.item(i).name)] = str(node.attributes.item(i).value)
                 doc.unlink()
-
-                #
+                
                 # Dispatch the command to the proper handler/component
-                #
                 if str(dict['Command'])=='kill':
                      logging.info('Now Process Kill Command!')                        
                      self.processKillCommand(dict, payload)

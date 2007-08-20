@@ -5,9 +5,15 @@ import xml.dom.minidom
 import xml.dom.ext
 
 class KillerServer(Actor):
-    def __init__(self, cfg_params):
+    # Matteo for kill by range
+    def __init__(self, cfg_params, range):
         self.cfg_params = cfg_params
+        self.range = range
         return
+
+#    def __init__(self, cfg_params):
+#        self.cfg_params = cfg_params
+#        return
 
     def run(self):
         """
@@ -33,6 +39,7 @@ class KillerServer(Actor):
             node.setAttribute("Task", projectUniqName)
             node.setAttribute("Subject", string.strip(pSubj))
             node.setAttribute("Command", "kill")
+            node.setAttribute("Range", str(self.range)) # Matteo for kill by range
             root.appendChild(node)
             self.cfile.appendChild(root)
             self.toFile(WorkDirName + '/share/command.xml')

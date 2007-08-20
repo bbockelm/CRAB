@@ -6,8 +6,8 @@ Implements a pool of threads used to distribute Crab workload.
 
 """
 
-__revision__ = "$Id: PoolThread.py,v 1.5 2007/05/12 13:51:31 spiga Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: PoolThread.py,v 1.9 2007/07/17 18:05:39 farinafa Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import sys
 from threading import Thread
@@ -65,31 +65,7 @@ class PoolThread:
         """
         insert a request into the input queue of the pool.
         """
-
-        # Early kill
-        # taskName = str(request[1].split(':')[1].split('/')[-1])
-	#taskName = ""+str(request[1])
-	#taskName = str(taskName.split(':')[1]).split('/')[-1]
-	
-	query = "" 
-        #query += "SELECT status FROM js_taskInstance WHERE taskName=\'" + taskName + "\'"
-        #self.logging.info(query)
-        
-	rows = []
-	#rows += queryMethod(query, taskName)
-	#self.logging.info(rows)
-	
-        dontSubmit = False
-	for r in rows:
-             if (str(r[0]) in ['ended', 'killed']):
-                  dontSubmit = True
-		  self.logging.info("Early kill for task %s"%taskName)
-                  break
-		  
-        # Schedule submission
-	if dontSubmit == False:
-             self.requests.put(request)
-
+        self.requests.put(request)
 	pass
         
     def getResult(self):
@@ -140,6 +116,7 @@ class CrabWorker(Thread):
                 self.outQueue.put( (returnData, retCode) )
             except:
                 logging.info("Exception when processing payload: " + str(payload))
+                logging.info(e)
             
 """
 Class: Notifier
@@ -178,6 +155,15 @@ class Notifier(Thread):
                 result, code = self.pool.getResult()
                 # send the message
                 if int(code) == 0: 
+                    # Missed fast kill
+                    if str(result) in self.pool.component.killSet.keys():
+                         killMsg = str(self.pool.component.killSet[result])
+                         self.pool.component.killSet[result] = -1
+                         self.logging.info("Delayed fast kill for task %s. The task will be killed by JobKiller."%result)
+                         self.ms.publish("KillTask", killMsg)
+                         self.ms.commit()
+
+                    # Real successful submissions
                     self.logging.info("CrabWorkPerformed: "+ str(result))
                     self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", str(result))
                     self.ms.commit()
@@ -194,9 +180,21 @@ class Notifier(Thread):
                     self.logging.info("Retry listeners count:" + str(countDest))
                     self.ms.commit()
                 elif int(code) == -3:
+                    tName = result.split('::')[0] 
+                    if str(tName) in self.pool.component.killSet.keys():
+                         killMsg = str(self.pool.component.killSet[tName])
+                         self.pool.component.killSet[tName] = -1
+                         self.logging.info("Delayed fast kill for task %s. The task will be killed by JobKiller."%tName)
+                         self.ms.publish("KillTask", killMsg)
+                         self.ms.commit()
+                         continue
                     self.logging.info("CrabWorkPerformed with partial submission: "+ str(result))
                     self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformedPartial", str(result))
                     self.ms.commit()
+                elif int(code) == -4:
+                    self.ms.publish("CrabServerWorkerComponent:FastKill", str(result))
+                    self.ms.commit()
+                    self.logging.info("Fast kill for task %s. This task wont be submitted."%str(result))
                 else:
                     self.logging.info("WARNING: Unexpected result from worker pool.")
             except Exception, e:

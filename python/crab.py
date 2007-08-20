@@ -585,9 +585,19 @@ class Crab:
 
                 if (self.UseServer== 1):
                     from KillerServer import KillerServer
-                    self.actions[opt] = KillerServer(self.cfg_params)
+
+                    # Matteo for server kill by range
+                    if val:
+                        if val !='all':
+                            val = self.parseRange_(val)
+                    else:
+                        val='all'
+
+                    self.actions[opt] = KillerServer(self.cfg_params,val)
+
+                    #self.actions[opt] = KillerServer(self.cfg_params)
                 else:
-                    if val: 
+                    if val:
                         if val =='all':
                             jobs = common.scheduler.listBoss()
                         else:
@@ -595,6 +605,8 @@ class Crab:
                         common.scheduler.cancel(jobs)
                     else:
                         common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
+
+
 
             elif ( opt == '-getoutput' or opt == '-get'):
                 # modified to support server mode
