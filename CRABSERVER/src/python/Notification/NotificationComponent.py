@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.6 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.6 2007/07/02 09:48:50 mcinquil Exp $"
+__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.7 2007/07/04 09:11:23 mcinquil Exp $"
 
 import os
 import socket
@@ -142,6 +142,7 @@ class NotificationComponent:
 	self.ms.subscribeTo("TaskSuccess")
         self.ms.subscribeTo("TaskFailed")
         self.ms.subscribeTo("TaskNotSubmitted")
+        self.ms.subscribeTo("TaskLifeManager:TaskNotifyLife")
         #self.ms.subscribeTo("NOTIFICATION_SHOWJOBS")
         #self.ms.subscribeTo("NOTIFICATION_RESET")
         #self.ms.subscribeTo("NOTIFICATION_PAUSE")
@@ -324,6 +325,92 @@ class NotificationComponent:
                 continue
 
 ##-------------------------------------------------------------------
+
+            if type == "TaskLifeManager:TaskNotifyLife":
+                pieces = payload.split("::")
+                if len(pieces) < 3:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload ["
+                    msg += payload + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+                emaillist = pieces[3].split(",")
+                taskname = pieces[0]
+                lifetime = pieces[1]
+                username = pieces[2]
+                
+                if not emaillist:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload"
+                    msg += " email's list [" + pieces[2] + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                if len(emaillist) < 1:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload"
+                    msg += " email's list [" + pieces[2] + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                if len(emaillist) == 1:
+                    if emaillist[0] == "":
+                        msg = "Notification.NotificationComponent.MainLoop: empty email address ["
+                        msg += emaillist[0] + "]"
+                        logging.error("%s" % msg)
+                        self.ms.commit()
+                        continue
+
+                infoFile = "/tmp/crabNotifInfoFile." + str(time.time())
+
+                try:
+                    os.remove(infoFile)
+                except OSError:
+                    pass
+
+                hours, mins, secs = lifetime.split(":")
+                hours = int(hours)
+                mins = int(mins)
+                secs = int(secs)
+                days = 0
+                if hours > 24:
+                    days = int(hours/24)
+                    hours = int(hours - days * 24)
+
+                timeMsg = " "
+                if days > 0:
+                    timeMsg += str(days) + " days "
+                if hours > 0:
+                    timeMsg += str(hours) + " hours "
+                if mins > 0:
+                    timeMsg += str(mins) + " minutes "
+                if secs > 0:
+                    timeMsg += str(secs) + " seconds"
+
+                mailMess = "The task [" + taskname + "] owned by [" + username + "] is ended and will be deleted within " + timeMsg
+                mailMess += ".\nIf you have to retrieve the outputs of those jobs, you should execute the command:\n\n"
+                mailMess += "\tcrab -getoutput -c " + taskname
+                mailMess += "\n\nfrom your working area."
+
+                msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
+                logging.info( msg )
+
+                completeMessage = 'Subject:"CRAB Server Notification: Task Cleaning"\n\n' + mailMess
+                try:
+                    self.mailer.SendMail(emaillist, completeMessage)
+                except RuntimeError, mess:
+                    logging.error(mess)
+                except gaierror, mess:
+                    logging.error("gaierror: " + mess )
+                except timeout, mess:
+                    logging.error("timeout error: " + mess )
+                except:
+                    print "Unexpected error: ", sys.exc_info()[0]
+
+                self.ms.commit()
+
+
+##-------------------------------------------------------------------
             
             if type == "TaskFailed":
                 pieces = payload.split(":")
@@ -400,7 +487,7 @@ class NotificationComponent:
 ##			errmsg = "ERROR! " + str(ex)
 ##			logging.error(errmsg)
 
-                msg = "Notification.Consumer.Notify: Sending mail to [" + emaillist + "] using SMTPLIB"
+                msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                 logging.info( msg )
 
                 completeMessage = "Subject:\"CRAB Server Notification: Task Failed! \"\n\n" + mailMess
