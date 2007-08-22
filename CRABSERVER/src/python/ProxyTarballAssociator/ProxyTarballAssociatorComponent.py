@@ -4,8 +4,8 @@ _ProxyTarballAssociatorComponent_
 
 """
 
-__version__ = "$Revision: 1.8 $"
-__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.8 2007/06/26 15:35:45 corvo Exp $"
+__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.9 2007/06/28 23:17:13 spiga Exp $"
 
 import os
 import socket
@@ -90,24 +90,15 @@ class ProxyTarballAssociatorComponent:
 
                 # Build the unique dir and copy the payload
                 cmd = "tar -z --list --file=%s"%payload
-                #outp, inp, errp = popen2.popen3(cmd)
-                #errBuf = errp.readlines()
-                #outBuf = outp.readlines()
-                #inp.close()
-                #errp.close()
-                #outp.close()
-
-		# Fabio -- new Fix
                 retCode, outBuf = commands.getstatusoutput(cmd)
 
-                if retCode != 0: #str(errBuf) != '[]':
-                     logging.info("Warning: Unable to open " + str(payload))# + '\nThe file will be removed.')
+                if retCode != 0:
+                     logging.info("Warning: Unable to open " + str(payload))
 		     logging.info("RetCode =%d"%retCode)
-                     #os.system('rm -f '+ payload)
 		     os.system('mv %s %s.bad'%(payload, payload) )
                      raise Exception
 		     
-                prjName = outBuf.split('\n')[0] #outBuf[0][:-1]
+                prjName = outBuf.split('\n')[0]
                 cmd = 'tar xvzf '+ payload + ' > /dev/null; rm -f '+ payload +" && " 
                 cmd = cmd + 'mv '+prjName+ ' '+uniqDir
                 logging.debug(cmd)
@@ -125,7 +116,7 @@ class ProxyTarballAssociatorComponent:
                 # Associate project to proxy
                 self.CrabworkDir = self.dropBoxPath+'/'+uniqDir 
                 self.associated = self.matchingProxy(uuid, self.CrabworkDir)
-                logging.debug(""+str(self.associated) )
+                logging.debug(self.associated)
                 
                 # materialize the component status to preserve it from crashes
                 f = open( self.dropBoxPath+"/proxytar_tmp", 'w')
@@ -145,7 +136,6 @@ class ProxyTarballAssociatorComponent:
         if event == "ProxyTarballAssociatorComponent:EndDebug":
             logging.getLogger().setLevel(logging.INFO)
             return
-
         return 
         
     def startComponent(self):
@@ -184,7 +174,7 @@ class ProxyTarballAssociatorComponent:
             # Prepared project ticket
             logging.info(self.associated)# for Debug only #Fabio
 
-# ## Matching Procedure
+### ## Matching Procedure
     def matchingProxy(self, uuid=None, taskDir = None):
         pProxy = []
         prePayload = ""
@@ -196,13 +186,11 @@ class ProxyTarballAssociatorComponent:
 
         # update the local knowledge on proxies
         pProxy = self.getProxyList(self.proxyDir)
-        ## MATT - start
         pCache = []
         for p in pProxy:
             pCacheT = os.popen3('openssl x509 -in '+p+' -subject -noout')[1].readlines()
             if len(pCacheT) > 0:
                 pCache.append( pCacheT[0] )
-        ## MATT - end
 
         # get the subject informations from the file in taskDir/share
         subjFileName = 'userSubj'         
@@ -212,6 +200,7 @@ class ProxyTarballAssociatorComponent:
         logging.debug("FileList:"+str(dummyFileList))
         for pendingTaskDir in self.files:
             subject = ""
+            # extract user subject informations
             try: 
                 f = open(pendingTaskDir+"/share/"+subjFileName, 'r')
                 subject = f.readline()
@@ -219,55 +208,65 @@ class ProxyTarballAssociatorComponent:
             except Exception, e:
                 logging.info("Warning: Unable to open " + str(pendingTaskDir+"/share/"+subjFileName))
                 logging.info("   the project file could be corrupted. It won't be processed.")
-		logging.info(e)
+                logging.info(e)
                 dummyFileList.remove(pendingTaskDir)
                 self.files = dummyFileList
-                # send also a message to task tracking??? # Fabio
                 break
-
+            
+            # perform association
             for s in pCache:
-                 logging.debug("pCache: " + s)
-                 if  subject.strip() not in s.strip():
+                logging.debug("pCache: " + s)
+                if subject.strip() not in s.strip():
                      # if there is no a valid proxy yet then skip the task for this iteration
                      continue
                  
-                 i = pCache.index(s)
-                 logging.debug("pProxy: " + pProxy[i])
-                 cmd = 'ln -s '+ str(pProxy[i]) +' '+ pendingTaskDir+'/share/userProxy; '
-                 cmd = cmd + 'chmod 600 '+ str(pProxy[i]) + ';'
-                 cmd = cmd + 'cp ' + pendingTaskDir+'/share/cmssw.xml ' + pendingTaskDir+'/share/cmssw.xml.orig'
-                 os.system(cmd)
+                i = pCache.index(s)
+                logging.debug("pProxy: " + pProxy[i])
+                cmd = 'ln -s '+ str(pProxy[i]) +' '+ pendingTaskDir+'/share/userProxy; '
+                cmd = cmd + 'chmod 600 '+ str(pProxy[i]) + ';'
+                cmd = cmd + 'cp ' + pendingTaskDir+'/share/cmssw.xml ' + pendingTaskDir+'/share/cmssw.xml.orig'
+                os.system(cmd)
 
-                 # crab.cfg server personalizations
-                 self.cfg4server(pendingTaskDir) # substitutes the cfg4server script # Fabio
-                 self.xml4server(pendingTaskDir, pProxy[i]) ## MATTY: added proxy field
+                # crab.cfg server personalizations
+                self.cfg4server(pendingTaskDir) # substitutes the cfg4server script # Fabio
+                self.xml4server(pendingTaskDir, pProxy[i]) ## MATTY: added proxy field
 
-                 #Matteo Add: send a massage to Task Tracking for modified configuration for server
-                 taskName = str(pendingTaskDir.split('/')[-1])
-                 # self.ms.publish("ProxyTarballAssociatorComponent:ModCfg", taskName)
-                 # self.ms.commit()
+                # Matteo Add: send a massage to Task Tracking for modified configuration for server
+                taskName = str(pendingTaskDir.split('/')[-1])
+                logging.info("Proxy->Project Association: "+pProxy[i]+"->"+pendingTaskDir)
+                
+                # extract range submission directives
+                direct = 'all'
+                try:
+                     f_direct = open('%s/share/submit_directive'%pendingTaskDir, 'r')
+                     direct = f_direct.readlines()[0]
+                     f_direct.close()
+                     direct = direct.split('\n')[0]
+                     logging.debug('Submission directives: %s'%direct)
+                except Exception, e:
+                     direct = 'all'
 
-                 logging.info("Proxy->Project Association: "+pProxy[i]+"->"+pendingTaskDir)
-
-                 # build notification
-                 useProxy = pendingTaskDir+'/share/userProxy'
-		 cwMsg = str(useProxy)+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
-                 matched.append(cwMsg) 
-                 logging.debug(matched[0])
-                 try:  
+                # build notification
+                ## ## cwMsg = str(useProxy)+':'+pendingTaskDir+':'+prePayload+':'+str(self.maxRetry)
+                # NEW PAYLOAD WITH Range submission directive
+                useProxy = pendingTaskDir+'/share/userProxy'
+                cwMsg = str(useProxy)+'::'+pendingTaskDir+'::'+direct+'::'+str(self.maxRetry)
+                matched.append(cwMsg) 
+                logging.debug(matched[0])
+                try:  
                      dummyFileList.remove(pendingTaskDir)
-                 except:
+                except:
                      pass
               
-                 #Matteo Add: send a massage to Task Tracking for Proxy->Project Association
-		 if uuid != None:
+                #Matteo Add: send a massage to Task Tracking for Proxy->Project Association
+		if uuid != None:
                       proxyName = str(pProxy[i].split('/')[-1])
                       ttMsg = str(uuid+':'+taskName+':'+proxyName)
                       self.ms.publish("ProxyTarballAssociatorComponent:WorkDone", ttMsg)
                       self.ms.commit()
 
-                 # subjects loop
-                 break
+                # subjects loop
+                break
             # pending Task loop
             pass
         # list for still wayting projects 
@@ -309,10 +308,10 @@ class ProxyTarballAssociatorComponent:
               proxyEnd = buf.find("\"", proxyInit)
               name = buf[proxyInit:proxyEnd]
               for ll in xrange(len(lines)):
-                   lines[ll]=lines[ll].replace(name, proxy )
+                   lines[ll]=lines[ll].replace(name, proxy)
          except Exception, ex:
               logging.error("Exception changing proxy on cmssw.xml: ["+str(ex)+"]")
-              logging.error("If you are using an old versione of SchedulerEdg.py in your client forget this problem!")
+              # logging.error("If you are using an old version of SchedulerEdg.py in your client forget this problem!")
          ## MATTY: *end* changing proxy field
 
          f = open(taskDir+'/share/cmssw.xml', 'w')
