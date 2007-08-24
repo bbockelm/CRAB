@@ -38,19 +38,13 @@ function cmscp {
 
 # Set OSG certificates directory
   if [ $middleware == OSG ]; then
-    echo "X509_USER_PROXY = $X509_USER_PROXY"
-    echo "source $OSG_APP/glite/setup_glite_ui.sh"
-    source $OSG_APP/glite/setup_glite_ui.sh
-    export X509_CERT_DIR=$OSG_APP/glite/etc/grid-security/certificates
-    echo "export X509_CERT_DIR=$X509_CERT_DIR"
+    echo "source OSG GRID setup script"
+    source $OSG_GRID/setup.sh
   fi
 
 ## do the actual copy
   opt=" -report ./srmcp.report "
   opt="${opt} -retry_timeout 480000"
-  if [ $middleware == OSG ]; then
-    opt="${opt} -retry_timeout 240000 -x509_user_trusted_certificates"
-  fi
 
   exit_status=0
   retry_num=0
