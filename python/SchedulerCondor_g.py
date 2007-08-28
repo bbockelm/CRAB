@@ -724,14 +724,19 @@ class SchedulerCondor_g(Scheduler):
         # extraTag globusscheduler
 
         # use bdii to query ce including jobmanager from site
-        seSite = self.cleanForBlackWhiteList(common.jobDB.destination(nj-1))[0]
+        # use first job with non-empty
+        seSite = ''
+        for i in range(nj) :
+            seSite = self.cleanForBlackWhiteList(common.jobDB.destination(i-1))[0]
+            if seSite != '' :
+                break;
         # if no site was selected during job splitting (datasetPath=None)
         # set to self.cfg_params['EDG.se_white_list']
         if seSite == '' :
             if self.datasetPath == None :
                 seSite = self.cfg_params['EDG.se_white_list']
             else :
-                msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + self.cfg_params['EDG.se_white_list'] + 'because the dataset ' + self.datasetPath + ' is not available at this site.\n'
+                msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + self.cfg_params['EDG.se_white_list'] + ' because the dataset ' + self.datasetPath + ' is not available at this site.\n'
             common.logger.debug(2,msg)
             raise CrabException(msg)
                 
