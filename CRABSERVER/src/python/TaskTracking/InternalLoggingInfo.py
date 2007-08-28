@@ -17,7 +17,10 @@ class InternalLoggingInfo:
         if self.__thereIs__( filePath ):
             f = open(filePath, 'a')
         else:
-            f = open(filePath, 'w')
+            try:
+                f = open(filePath, 'w')
+            except:
+                return
         import fcntl
         fcntl.flock( f.fileno(), fcntl.LOCK_EX )
         ### start zona protetta ###
