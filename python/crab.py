@@ -18,6 +18,7 @@ from Cleaner import Cleaner
 import common
 import Statistic
 import commands
+from BlackWhiteListParser import BlackWhiteListParser
 
 from BossSession import *
 
@@ -124,6 +125,9 @@ class Crab:
 
         common.jobDB = JobDB()
         
+        # init BlackWhiteListParser
+        self.blackWhiteListParser = BlackWhiteListParser(self.cfg_params)
+
         self.UseServer=0
         try:
             self.UseServer=int(self.cfg_params['CRAB.server_mode'])
@@ -499,7 +503,7 @@ class Crab:
                     jobSkippedInSubmission = []
                     datasetpath=self.cfg_params['CMSSW.datasetpath']
                     for nj in range(common.jobDB.nJobs()):
-                        if (len(common.jobDB.destination(nj)) != 0) or (datasetpath != None ):
+                        if (self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(nj)) != '') or (datasetpath == None ):
                             if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
                                 jobSetForSubmission +=1
                                 nj_list.append(nj)

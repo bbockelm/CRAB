@@ -83,3 +83,11 @@ class BlackWhiteListParser:
             common.logger.debug(5,"Selected sites for block "+str(fileblocks)+" via WhiteList are "+str(goodSites)+"\n")
        
         return goodSites 
+    
+    def cleanForBlackWhiteList(self,destinations):
+        """
+        clean for black/white lists using parser
+        """
+
+        return ','.join(self.checkWhiteList(self.checkBlackList(destinations,''),''))
+

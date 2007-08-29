@@ -260,14 +260,6 @@ class SchedulerCondor_g(Scheduler):
             raise CrabException(msg)
         return
 
-    def cleanForBlackWhiteList(self,destinations):
-        """
-        clean for black/white lists using parser
-        """
-
-        return [','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(destinations,''),''))]
-
-
     def sched_parameter(self):
         """
         Returns file with scheduler-specific parameters
@@ -276,7 +268,7 @@ class SchedulerCondor_g(Scheduler):
         first = []
         last  = []
         for n in range(common.jobDB.nJobs()):
-            currDest=self.cleanForBlackWhiteList(common.jobDB.destination(n))
+            currDest=self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(n))
             if (currDest!=lastDest):
                 lastDest = currDest
                 first.append(n)
@@ -551,10 +543,10 @@ class SchedulerCondor_g(Scheduler):
             else :
                 result = 'Done'
         elif ( attr == 'destination' ) :
-            seSite = self.cleanForBlackWhiteList(common.jobDB.destination(int(id)-1))[0]
+            seSite = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(int(id)-1))
             # if no site was selected during job splitting (datasetPath=None)
             # set to self.cfg_params['EDG.se_white_list']
-            if seSite == '' :
+            if self.datasetPath == 'None':
                 seSite = self.cfg_params['EDG.se_white_list']
             oneSite = self.getCEfromSE(seSite).split(':')[0].strip()
             result = oneSite
@@ -727,7 +719,7 @@ class SchedulerCondor_g(Scheduler):
         # use first job with non-empty
         seSite = ''
         for i in range(nj) :
-            seSite = self.cleanForBlackWhiteList(common.jobDB.destination(i-1))[0]
+            seSite = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(i-1))
             if seSite != '' :
                 break;
         # if no site was selected during job splitting (datasetPath=None)
