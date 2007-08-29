@@ -22,8 +22,13 @@ from ProdAgentCore.Configuration import ProdAgentConfiguration
 from MessageService.MessageService import MessageService
 from CrabServerWorker.PoolThread import PoolThread, Notifier
 
-from JobState.JobStateAPI import JobStateChangeAPI
-from JobState.JobStateAPI import JobStateInfoAPI
+#from JobState.JobStateAPI import JobStateChangeAPI
+#from JobState.JobStateAPI import JobStateInfoAPI
+from ProdAgent.WorkflowEntities import JobState
+from ProdAgent.WorkflowEntities import Job
+from ProdAgentDB.Config import defaultConfig as dbConfig
+from ProdCommon.Database import Session
+
 from ProdCommon.MCPayloads.JobSpec import JobSpec
 
 class CrabServerWorkerComponent:
@@ -142,10 +147,15 @@ class CrabServerWorkerComponent:
         notifier = Notifier(self.pool, self.msNotify, logging)
 
         while True:
+            Session.set_database(dbConfig)
+            Session.connect()
+            Session.start_transaction()
             type, payload = self.ms.get()
             self.ms.commit()
             logging.debug("CrabServerWorkerComponent: %s %s" % ( type, payload))
             self.__call__(type, payload)
+            Session.commit_all()
+            Session.close_all()
 
     def performCrabWork(self, payload, performRetry = False):
         proxy = payload.split('::')[0]
@@ -245,12 +255,16 @@ class CrabServerWorkerComponent:
         for jid in idRange:
             jobName = jNameBase + "_" + str(jid)
             # check if the job is already registered
-            if JobStateInfoAPI.isRegistered(jobName) == True:
+            # if JobStateInfoAPI.isRegistered(jobName) == True:
+            logging.info("Now Try controll jobs state")    
+            if JobState.isRegistered(jobName) == True:
                 continue
+            logging.info("DONE WITHOUT PROBLEMS")  
             # otherwise register it
             try:
                 # insert job in db
-                JobStateChangeAPI.register(jobName, 'Processing',4 ,1)
+                # JobStateChangeAPI.register(jobName, 'Processing',4 ,1)
+                JobState.register(jobName, 'Processing',4 ,1) 
                 # create cache area 
                 cacheArea = cwDir+"/res"
                 cacheArea += "/job%s"%jid
@@ -267,9 +281,14 @@ class CrabServerWorkerComponent:
             except Exception, e:
                 logging.info("BOSS Registration problem %s"%cacheArea + str(e))
 
-            JobStateChangeAPI.create(jobName, cacheArea)
-            JobStateChangeAPI.inProgress(jobName)
-            JobStateChangeAPI.submit(jobName)
+          #  JobStateChangeAPI.create(jobName, cacheArea)
+          #  JobStateChangeAPI.inProgress(jobName)
+          #  JobStateChangeAPI.submit(jobName)
+
+            JobState.create(jobName, cacheArea)
+            JobState.inProgress(jobName)
+            JobState.submit(jobName)
+ 
         pass
 
     def crab_submit(self, proxy, uniqDir, retry=False, rangeSubmit='all'):
