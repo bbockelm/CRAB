@@ -11,6 +11,7 @@ from JobState.Database.Api.TransitionException import TransitionException
 from ProdAgentCore.ProdAgentException import ProdAgentException
 from ProdAgentDB.Connect import connect
 
+from ProdAgent.WorkflowEntities import JobState
 
 def openConnPA():
     """
@@ -44,13 +45,13 @@ def checkNSubmit( taskName, idJob):
     ## opening connection with PA's DB
     conn, dbCur = openConnPA()
     try:
-        sqlStr='SELECT MaxRetries, Retries from js_JobSpec where JobSpecID="'+taskName+'_'+idJob+'" ;'
+        sqlStr='SELECT max_retries, retries from we_Job where id="'+taskName+'_'+idJob+'" ;'
 
         dbCur.execute("START TRANSACTION")
         try:
             dbCur.execute(sqlStr)
         except Exception,ex:
-            raise ProdAgentException("Error checking the jobs in js_JobSpec. Taskname: '" + str(taskName) +"' - jobId: '" + str(idJob) + "'." )
+            raise ProdAgentException("Error checking the jobs in we_Job. Taskname: '" + str(taskName) +"' - jobId: '" + str(idJob) + "'." )
 	rows = dbCur.fetchall()
 	dbCur.execute("COMMIT")
         ## closing connection with PA's DB
