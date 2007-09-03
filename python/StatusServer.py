@@ -127,7 +127,7 @@ class StatusServer(Actor):
             self.countToTjob = common.jobDB.nJobs()
         else:
             printline = ''
-            printline+= "%-10s %-23s %-20s %-20s %-18s %-20s" % ('JOBID','STATUS','SITE','JOB_EXIT_STATUS','EXE_EXIT_CODE','RESUBMIT')
+            printline+= "%-10s %-24s %-20s %-20s %-18s %-20s" % ('JOBID','STATUS','SITE','JOB_EXIT_STATUS','EXE_EXIT_CODE','RESUBMIT')
             print printline
             print '---------------------------------------------------------------------------------------------------------'
 
@@ -165,9 +165,9 @@ class StatusServer(Actor):
                         stato = "Cleared"
                     common.jobDB.setExitStatus(  str(int(idJob)-1), job_exit_status )
                 if stato != "Done" and stato != "Cleared" and stato != "Aborted" and stato != "Done (Failed)":
-                    print "%-10s %-23s %-20s %-20s %-18s %-20s" % (idJob,stato,site,'','',resub)
+                    print "%-10s %-24s %-20s %-20s %-18s %-20s" % (idJob,stato,site,'','',resub)
                 else:
-                    print "%-10s %-23s %-20s %-20s %-18s %-20s" % (idJob,stato,site,exe_exit_code,job_exit_status,resub)
+                    print "%-10s %-24s %-20s %-20s %-18s %-20s" % (idJob,stato,site,exe_exit_code,job_exit_status,resub)
 
                 if stato == 'Running':
                     self.countRun += 1
@@ -188,7 +188,7 @@ class StatusServer(Actor):
                 elif stato == 'Cleared':
                     self.countCleared += 1
                 elif stato == 'NotSubmitted':
-                    self.countSubmitting += 1
+                    self.countNotSubmit += 1
                 elif stato == 'Waiting':
                     self.countWait += 1
                 elif stato == 'Retrieving by the server':
