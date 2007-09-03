@@ -70,7 +70,7 @@ function cmscp {
     fi
 
 ## Put into an array the remote file metadata
-    remoteMetadata=(`srm-get-metadata $destination`)
+    remoteMetadata=(`srm-get-metadata $destination | grep -v WARNING`)
     remoteSize=`echo ${remoteMetadata[5]}| tr -d :`
 
 ## ditto for local file
