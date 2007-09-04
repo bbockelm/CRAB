@@ -568,6 +568,11 @@ class SchedulerBoss(Scheduler):
         run= []
         clear=[]
         abort=[]
+        canc=[]
+        read=[]
+        wait=[]
+        sched=[]
+        kill=[]
         other=[]
 
         for i_id in int_id :
@@ -627,8 +632,18 @@ class SchedulerBoss(Scheduler):
                      abort.append(i_id)
             #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible to retrieve the output.'
             #        common.logger.message(msg)
-                elif bossTaskIdStatus == 'Created' :
-                     create.append(i_id)  
+                elif bossTaskIdStatus == 'Cleared' :
+                     create.append(i_id)
+                elif bossTaskIdStatus == 'Cancelled' :
+                     canc.append(i_id)  
+                elif bossTaskIdStatus == 'Ready' :
+                     read.append(i_id)
+                elif bossTaskIdStatus == 'Scheduled' :
+                     sched.append(i_id)
+                elif bossTaskIdStatus == 'Waiting' :
+                     wait.append(i_id)
+                elif bossTaskIdStatus == 'Killed' :
+                     kill.append(i_id)
                 else:
                      other.append(i_id)  
             #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is currently not possible to retrieve the output.'
@@ -640,11 +655,18 @@ class SchedulerBoss(Scheduler):
         if check == 0: 
             msg = '\n\n*********No job in Done status. It is not possible yet to retrieve the output.\n'
             common.logger.message(msg)
-        if len(create)!=0: print str(len(create))+' jobs not yet submitted'     
-        if len(run)!=0: print str(len(run))+' jobs still running'     
-        if len(other)!=0: print str(len(other))+' jobs submitted'     
+
         if len(clear)!=0: print str(len(clear))+' jobs already cleared'     
         if len(abort)!=0: print str(len(abort))+' jobs aborted'   
+        if len(canc)!=0: print str(len(canc))+' jobs cancelled'
+        if len(kill)!=0: print str(len(kill))+' jobs killed'
+        if len(run)!=0: print str(len(run))+' jobs still running'
+        if len(sched)!=0: print str(len(sched))+' jobs scheduled'
+        if len(wait)!=0: print str(len(wait))+' jobs waiting'
+        if len(read)!=0: print str(len(read))+' jobs ready'
+        if len(other)!=0: print str(len(other))+' jobs submitted'
+        if len(create)!=0: print str(len(create))+' jobs not yet submitted'
+
         print ' ' 
         return
 
