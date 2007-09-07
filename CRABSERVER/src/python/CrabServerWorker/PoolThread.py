@@ -15,7 +15,10 @@ import Queue
 from random import Random
 import time
 
-from TaskTracking.TaskStateAPI import *
+## from TaskTracking.TaskStateAPI import *
+
+from ProdAgentDB.Config import defaultConfig as dbConfig
+from ProdCommon.Database import Session
 
 """
 Class: PoolThread
@@ -96,7 +99,6 @@ class CrabWorker(Thread):
         self.outQueue = outQueue
         self.component = component
         self.logging = log
-        # To prevent zombies -- self.setDaemon(1)
         self.start()
         
     def run(self):
@@ -134,13 +136,10 @@ class Notifier(Thread):
         initialize the pool instance and start the thread, which will
         send messages by using the message service instance provided.
         """
-        
         Thread.__init__(self)
         self.pool = pool
         self.ms = ms
         self.logging = logging
-        self.r = Random()
-        ## self.setDaemon(1)
         self.start()
         
     def run(self):
@@ -153,51 +152,79 @@ class Notifier(Thread):
             try:    
                 # get result
                 result, code = self.pool.getResult()
-                # send the message
-                if int(code) == 0: 
-                    # Missed fast kill
-                    if str(result) in self.pool.component.killSet.keys():
-                         killMsg = str(self.pool.component.killSet[result])
-                         self.pool.component.killSet[result] = -1
-                         self.logging.info("Delayed fast kill for task %s. The task will be killed by JobKiller."%result)
-                         self.ms.publish("KillTask", killMsg)
-                         self.ms.commit()
 
-                    # Real successful submissions
-                    self.logging.info("CrabWorkPerformed: "+ str(result))
-                    self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", str(result))
-                    self.ms.commit()
-                elif int(code) == -2:
+                # parse the result and prepare the messages
+                msgList = self.parseResult(result, code)
+                if len(msgList) == 0:
+                     continue
+
+                # publish results using one-shot sessions
+                Session.set_database(dbConfig)
+                Session.connect()
+                Session.start_transaction()
+
+                for topic, msg, wtime in msgList:
+                     self.ms.publish(topic, msg, wtime)
+                     self.ms.commit()
+
+                Session.commit_all()
+                Session.close_all()
+                
+            except Exception, e:
+                self.logging.info("Notify Thread problem: "+str(e))
+            pass
+
+    def parseResult(self, result, code):
+        retList = []
+
+        if int(code) == 0: 
+             if str(result) in self.pool.component.killSet.keys():
+                  self.logging.info("Delayed fast kill for task %s. The task will be killed by JobKiller."%result)
+                  #
+                  killMsg = str(self.pool.component.killSet[result])
+                  self.pool.component.killSet[result] = -1
+                  #
+                  retList.append( ("KillTask", killMsg, "00:00:00") )
+
+             self.logging.info("CrabWorkPerformed: "+ str(result))
+             retList.append( ("CrabServerWorkerComponent:CrabWorkPerformed", result, "00:00:00") )
+             return retList
+
+        elif int(code) == -2:
                     self.logging.info("CrabWorkFailed: "+ str(result))
-                    self.ms.publish("CrabServerWorkerComponent:CrabWorkFailed", str(result))
-                    self.ms.commit()
-                elif int(code) == -1:
+                    retList.append( ("CrabServerWorkerComponent:CrabWorkFailed", result, "00:00:00") )
+                    return retList
+
+        elif int(code) == -1:
+                    r = Random()
                     self.logging.info("CrabWorkRetry: "+ str(result))
-                    twait = "00:%d%d:00"%(self.r.randint(0, 0), self.r.randint(0, 9))
+                    twait = "00:%d%d:00"%(r.randint(0, 0), r.randint(0, 9))
+                    #
                     self.logging.info("Short Delay time (modify for production code):"+str(twait)) 
-                    countDest = 0
-                    countDest += self.ms.publish("CrabServerWorkerNotifyThread:Retry", str(result), twait) 
-                    self.logging.info("Retry listeners count:" + str(countDest))
-                    self.ms.commit()
-                elif int(code) == -3:
+                    retList.append( ("CrabServerWorkerNotifyThread:Retry", result, twait) )
+                    return retList
+
+        elif int(code) == -3:
                     tName = result.split('::')[0] 
                     if str(tName) in self.pool.component.killSet.keys():
                          killMsg = str(self.pool.component.killSet[tName])
                          self.pool.component.killSet[tName] = -1
+                         #
                          self.logging.info("Delayed fast kill for task %s. The task will be killed by JobKiller."%tName)
-                         self.ms.publish("KillTask", killMsg)
-                         self.ms.commit()
-                         continue
+                         retList.append( ("KillTask", killMsg, "00:00:00") )
+                         return retList
+
                     self.logging.info("CrabWorkPerformed with partial submission: "+ str(result))
-                    self.ms.publish("CrabServerWorkerComponent:CrabWorkPerformedPartial", str(result))
-                    self.ms.commit()
-                elif int(code) == -4:
-                    self.ms.publish("CrabServerWorkerComponent:FastKill", str(result))
-                    self.ms.commit()
+                    retList.append( ("CrabServerWorkerComponent:CrabWorkPerformedPartial", result, "00:00:00") )
+                    return retList
+
+        elif int(code) == -4:
                     self.logging.info("Fast kill for task %s. This task wont be submitted."%str(result))
-                else:
+                    retList.append( ("CrabServerWorkerComponent:FastKill", result, "00:00:00") )
+                    return retList
+
+        else:
                     self.logging.info("WARNING: Unexpected result from worker pool.")
-            except Exception, e:
-                 self.logging.info("Notify Thread problem: "+str(e))
-        pass           
+        #
+        return retList
 

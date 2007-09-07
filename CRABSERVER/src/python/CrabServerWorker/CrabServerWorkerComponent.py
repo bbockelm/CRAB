@@ -7,6 +7,7 @@ _CrabServerWorkerComponent_
 __version__ = "$Revision: 1.10 $"
 __revision__ = "$Id: CrabServerWorkerComponent.py,v 1.10 2007/07/16 12:52:39 farinafa Exp $"
 
+import pdb
 import os
 import socket
 import pickle
@@ -22,14 +23,8 @@ from ProdAgentCore.Configuration import ProdAgentConfiguration
 from MessageService.MessageService import MessageService
 from CrabServerWorker.PoolThread import PoolThread, Notifier
 
-#from JobState.JobStateAPI import JobStateChangeAPI
-#from JobState.JobStateAPI import JobStateInfoAPI
-from ProdAgent.WorkflowEntities import JobState
-from ProdAgent.WorkflowEntities import Job
 from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.Database import Session
-
-from ProdCommon.MCPayloads.JobSpec import JobSpec
 
 class CrabServerWorkerComponent:
     """
@@ -61,7 +56,7 @@ class CrabServerWorkerComponent:
         logFormatter = logging.Formatter("%(asctime)s:%(message)s")
         logHandler.setFormatter(logFormatter)
         logging.getLogger().addHandler(logHandler)
-        logging.getLogger().setLevel(logging.INFO)
+        logging.getLogger().setLevel(logging.DEBUG)
         logging.info("CrabServerWorkerComponent Started...")
 
         self.dropBoxPath = str(args['dropBoxPath'])
@@ -146,6 +141,7 @@ class CrabServerWorkerComponent:
         # create notifier thread
         notifier = Notifier(self.pool, self.msNotify, logging)
 
+        #pdb.set_trace()
         while True:
             Session.set_database(dbConfig)
             Session.connect()
@@ -233,15 +229,18 @@ class CrabServerWorkerComponent:
         return (retMsg, retCode)
 
     def registerTask(self, cwDir, rangeSubmit='all'):
+
+        from ProdAgent.WorkflowEntities import Job
+        from ProdCommon.MCPayloads.JobSpec import JobSpec
+
         jNameBase = cwDir.split('/')[-1]
-        cmd = "cat "+ cwDir+"/share/cmssw.xml | grep ruleElement"
+        cmd = "cat "+cwDir+"/share/cmssw.xml | grep ruleElement"
         fout, fin = popen2.popen4(cmd)
         ruleList = fout.readlines()
+        jobNumber = int(ruleList[0].split(' ')[1].split(':')[1])
         fout.close()
         fin.close()
         
-        jobNumber = int(ruleList[0].split(' ')[1].split(':')[1])
-        # conditional submission range # NEW PART # FABIO
         if type(rangeSubmit) is list:
             idRange = rangeSubmit
         elif type(rangeSubmit) is int:
@@ -254,24 +253,20 @@ class CrabServerWorkerComponent:
         # register the whole task
         for jid in idRange:
             jobName = jNameBase + "_" + str(jid)
-            # check if the job is already registered
-            # if JobStateInfoAPI.isRegistered(jobName) == True:
-            logging.info("Now Try controll jobs state")    
-            if JobState.isRegistered(jobName) == True:
+            if Job.exists(jobName) == True:
                 continue
-            logging.info("DONE WITHOUT PROBLEMS")  
-            # otherwise register it
+            # create cache area 
             try:
-                # insert job in db
-                # JobStateChangeAPI.register(jobName, 'Processing',4 ,1)
-                JobState.register(jobName, 'Processing',4 ,1) 
-                # create cache area 
                 cacheArea = cwDir+"/res"
                 cacheArea += "/job%s"%jid
                 os.mkdir(cacheArea)
                 # WB: NEEDED FOR RESUBMISSION WITH CVS JobSubmitterComponent
                 fakeJobSpec = JobSpec()
-                fakeJobSpec.setJobName(jobName) # WB suggested fix for new PA version # Fabio
+                # Mattia troubleshooting: missing SubmitterCount # Fabio
+                # ugly attribute visibility violation, but its Python and it works
+                fakeJobSpec.parameters['SubmissionCount'] = 0  
+                #
+                fakeJobSpec.setJobName(jobName)
                 fakeJobSpec.save("%s/%s-JobSpec.xml"%(cacheArea,jobName))
                 del fakeJobSpec
                 # create id-file 
@@ -279,16 +274,35 @@ class CrabServerWorkerComponent:
                 idfile.write("JobId=%s"%jid)
                 idfile.close()
             except Exception, e:
-                logging.info("BOSS Registration problem %s"%cacheArea + str(e))
+                logging.info("BOSS Registration problem %s. Cache area creation."%cacheArea + str(e))
 
-          #  JobStateChangeAPI.create(jobName, cacheArea)
-          #  JobStateChangeAPI.inProgress(jobName)
-          #  JobStateChangeAPI.submit(jobName)
+            # insert job in db
+            try:
+                # Fix suggested by Carlos for non thread safe Sessions. # Fabio
+                # NOTE: this is the ONLY method inside worker threads that interacts with DB
+                #       it should work fine now... I guess
+                Session.set_database(dbConfig)
+                Session.connect()
+                Session.start_transaction()
+                #
 
-            JobState.create(jobName, cacheArea)
-            JobState.inProgress(jobName)
-            JobState.submit(jobName)
- 
+                jobDetails={'id':jobName,'job_type':'Processing','max_retries':4,'max_racers':1, 'owner':jNameBase}
+                workflowID = jNameBase # original PA default value = ' ' 
+                Job.register(workflowID, None, jobDetails)
+                
+                Job.setState(jobName,'create')
+                Job.setCacheDir(jobName,cacheArea)
+                Job.setState(jobName,'inProgress')
+                Job.setState(jobName,'submit')
+
+                # close the one-shot session
+                Session.commit_all()
+                Session.close_all()
+                #
+            except Exception, e:
+                logging.info("BOSS Registration problem %s. DB insertion."%cacheArea + str(e))
+
+            pass # End of task registration cycle
         pass
 
     def crab_submit(self, proxy, uniqDir, retry=False, rangeSubmit='all'):
@@ -316,7 +330,6 @@ class CrabServerWorkerComponent:
        cmd = cmd + 'crab -submit %s -c %s %s'%(cmdRangeSubmit, uniqDir, self.debug)
 
        # logging.info('\n DEBUG: %s\n'%cmd)
-
        errcode, outlog = commands.getstatusoutput(cmd)
        if errcode != 0: 
             logging.info("Submission failed for %s. Return Code = %d. Resubmission will be tried."%(uniqDir, errcode))
