@@ -2,16 +2,15 @@ import logging
 import string
 
 # DB PA
-from JobState.Database.Api import JobStateInfoAPIMySQL
-from JobState.Database.Api.RacerException import RacerException
-from JobState.Database.Api.RetryException import RetryException
-from JobState.Database.Api.RunException import RunException
-from JobState.Database.Api.SubmitException import SubmitException
-from JobState.Database.Api.TransitionException import TransitionException
 from ProdAgentCore.ProdAgentException import ProdAgentException
 from ProdAgentDB.Connect import connect
 
 from ProdAgent.WorkflowEntities import JobState
+from ProdAgent.WorkflowEntities import Job
+from ProdAgentDB.Config import defaultConfig as dbConfig
+from ProdCommon.Database import Session
+
+import traceback
 
 def openConnPA():
     """
@@ -41,7 +40,38 @@ def checkNSubmit( taskName, idJob):
     return 0 if the job is resubmitted the max number of times (MaxRetries)
     return 1 if the job is not resubmitted the max number of times (MaxRetries)
     """
+##    """
+    jobMaxRetries = 0
+    jobRetries = 0
+    jobSpecId = taskName + "_" + str(idJob)
+    try:
+        Session.set_database(dbConfig)
+        Session.connect()
+        Session.start_transaction()
 
+        jobInfo = { 'MaxRetries': 1, 'Retries': 0 }
+        if JobState.isRegistered( jobSpecId ) == True:
+            jobInfo = JobState.general(jobSpecId)
+
+        Session.commit_all()
+        Session.close_all()
+
+        jobMaxRetries = int(jobInfo['MaxRetries'])
+        jobRetries = int(jobInfo['Retries'])
+    except Exception, ex:
+        Session.commit_all()
+        Session.close_all()
+
+        logging.error(" Error in method "  + checkNSubmit.__name__ )
+        logging.error(" Exception: " + str(ex) )
+        logging.error( str(traceback.format_exc()) )
+        return 1, None, None
+
+    if jobMaxRetries > jobRetries:
+        return 1, jobMaxRetries, jobRetries
+    return 0, jobMaxRetries, jobRetries
+
+    """
     ## opening connection with PA's DB
     conn, dbCur = openConnPA()
     try:
@@ -68,6 +98,7 @@ def checkNSubmit( taskName, idJob):
 	raise
     return 1, None, None
     #, rows[0][0], rows[0][1]
+    """
 
 def insertTaskPA( taskName, status ):
     """
