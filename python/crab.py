@@ -839,14 +839,14 @@ class Crab:
         try:
             new_dir = self.cfg_params['USER.ui_working_dir']
             self.cfg_params['taskId'] = self.cfg_params['user'] + '_' + string.split(new_dir, '/')[len(string.split(new_dir, '/')) - 1] + '_' + self.current_time
-            if os.path.exists(new_dir):
-                if os.listdir(new_dir):
-                    msg = new_dir + ' already exists and is not empty. Please remove it before create new task'
-                    raise CrabException(msg)
             if  len(string.split(new_dir, '/')) == 1:
                 new_dir = self.cwd + new_dir
             else:
                 new_dir = new_dir
+            if os.path.exists(new_dir):
+                if os.listdir(new_dir):
+                    msg = new_dir + ' already exists and is not empty. Please remove it before create new task'
+                    raise CrabException(msg)
         except KeyError:
             new_dir = common.prog_name + '_' + self.name + '_' + self.current_time
             self.cfg_params['taskId'] = self.cfg_params['user'] + '_' + new_dir 
