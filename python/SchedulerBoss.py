@@ -690,49 +690,31 @@ class SchedulerBoss(Scheduler):
         ## first get the status of all job in the list
         # bossTaskId = common.taskDB.dict('BossTaskId')
         # statusList = self.queryStatusList(bossTaskId, subm_id)
-        
-        if len(subm_id)==common.jobDB.nSubmittedJobs() and common.jobDB.nSubmittedJobs()>0:
-            
+        common.jobDB.load() 
+        if len( subm_id ) > 0:
             try:
-                common.logger.message("Killing jobs # "+str(subm_id[0])+':'+str(subm_id[-1]))
+                subm_id.sort()
+                range = self.prepString( subm_id )
+                common.logger.message("Killing job # " + str(subm_id).replace("[","",1).replace("]","",1) )
                 Tout =len(subm_id)*60
-                self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]), Tout)
+                self.bossTask.kill( range, Tout )
+                self.bossTask.load(ALL, range)
+                task = self.bossTask.jobsDict()
+                for k, v in task.iteritems():
+                    k = int(k)
+                    status = v['STATUS']
+                    if k in subm_id and status == 'K':
+                        common.jobDB.setStatus(k - 1, 'K')
             except SchedulerError,e:
-                common.logger.message("Warning : Scheduler interaction in kill operation failed for jobs:"+e.__str__())
+                common.logger.message("Warning : Scheduler interaction on kill operation failed for jobs:"+ e.__str__())
                 pass
             except BossError,e:
                 common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id)+" . See log for details")
-                
-            for i in subm_id: common.jobDB.setStatus(i-1, 'K')
-
-        else:
-
-            common.jobDB.load() 
-            if len( subm_id ) > 0:
-                try:
-                    subm_id.sort()
-                    range = self.prepString( subm_id )
-                    common.logger.message("Killing job # " + str(subm_id).replace("[","",1).replace("]","",1) )
-                    Tout =len(subm_id)*60
-                    self.bossTask.kill( range, Tout )
-                    self.bossTask.load(ALL, range)
-                    task = self.bossTask.jobsDict()
-                    for k, v in task.iteritems():
-                        k = int(k)
-                        status = v['STATUS']
-                        if k in subm_id and status == 'K':
-                            common.jobDB.setStatus(k - 1, 'K')
-                except SchedulerError,e:
-                    common.logger.message("Warning : Scheduler interaction on kill operation failed for jobs:"+ e.__str__())
-                    pass
-                except BossError,e:
-                    common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id)+" . See log for details")
-                common.jobDB.save()
-                pass
-            else:
-                common.logger.message("\nError killing jobs # "+str(int_id).replace("[","",1).replace("]","",1)+" . See log for details")
             common.jobDB.save()
             pass
+        else:
+            common.logger.message("\nError killing jobs # "+str(int_id).replace("[","",1).replace("]","",1)+" . See log for details")
+        common.jobDB.save()
         return
 
     def setFlag( self, list, index ):
