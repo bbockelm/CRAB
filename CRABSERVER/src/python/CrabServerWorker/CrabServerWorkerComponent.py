@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.10 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.10 2007/07/16 12:52:39 farinafa Exp $"
+__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.12 2007/09/07 09:47:31 farinafa Exp $"
 
 import pdb
 import os
@@ -25,6 +25,7 @@ from CrabServerWorker.PoolThread import PoolThread, Notifier
 
 from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.Database import Session
+from threading import Condition
 
 class CrabServerWorkerComponent:
     """
@@ -32,8 +33,11 @@ class CrabServerWorkerComponent:
 
     """
     def __init__(self, **args):
-        self.args = {}
-        
+
+        # threading safeness fix
+        self.mutex = Condition()
+
+        self.args = {}        
         self.args['Logfile'] = None
         self.args['dropBoxPath'] = None
         self.args['bossClads'] = None
@@ -141,17 +145,19 @@ class CrabServerWorkerComponent:
         # create notifier thread
         notifier = Notifier(self.pool, self.msNotify, logging)
 
-        #pdb.set_trace()
+        Session.set_database(dbConfig)
         while True:
-            Session.set_database(dbConfig)
-            Session.connect()
-            Session.start_transaction()
+            #Session.connect('CSW_session')
+            #Session.start_transaction('CSW_session')
+            #Session.set_session('CSW_session')
+ 
             type, payload = self.ms.get()
             self.ms.commit()
             logging.debug("CrabServerWorkerComponent: %s %s" % ( type, payload))
             self.__call__(type, payload)
-            Session.commit_all()
-            Session.close_all()
+
+            #Session.commit('CSW_session')
+            #Session.close('CSW_session')
 
     def performCrabWork(self, payload, performRetry = False):
         proxy = payload.split('::')[0]
@@ -229,7 +235,6 @@ class CrabServerWorkerComponent:
         return (retMsg, retCode)
 
     def registerTask(self, cwDir, rangeSubmit='all'):
-
         from ProdAgent.WorkflowEntities import Job
         from ProdCommon.MCPayloads.JobSpec import JobSpec
 
@@ -249,16 +254,54 @@ class CrabServerWorkerComponent:
             idRange = range(1, rangeSubmit + 1)
         else: # rangeSubmit  == 'all':
             idRange = range(1, jobNumber + 1)
-        
-        # register the whole task
+
+        # Fix suggested by Carlos for non thread safe Sessions. # Fabio
+        Session.connect(jNameBase)
+  
         for jid in idRange:
             jobName = jNameBase + "_" + str(jid)
+            cacheArea = cwDir+"/res/job%s"%jid
+            jobDetails={'id':jobName,'job_type':'Processing','max_retries':4,'max_racers':1, 'owner':jNameBase}
+
+            # check if the job is already registered
+            self.mutex.acquire()
+            Session.start_transaction(jNameBase)
+            Session.set_session(jNameBase)
+            
             if Job.exists(jobName) == True:
+                Session.commit(jNameBase)
+                self.mutex.notifyAll()
+                self.mutex.release()
                 continue
+
+            Session.commit(jNameBase)
+            # self.mutex.notifyAll()
+            self.mutex.release()
+
+            # insert job in db
+            try:
+                self.mutex.acquire()
+                Session.start_transaction(jNameBase)
+                Session.set_session(jNameBase)
+
+                Job.register(jNameBase, None, jobDetails)
+                Job.setState(jobName,'create')
+                Job.setCacheDir(jobName,cacheArea)
+                Job.setState(jobName,'inProgress')
+                Job.setState(jobName,'submit')
+
+                Session.commit(jNameBase)
+
+                # self.mutex.notifyAll()
+                self.mutex.release()
+            except Exception, e:
+                logging.info("BOSS Registration error %s. DB insertion."%cacheArea + str(e))
+                Session.rollback(jNameBase)
+                # self.mutex.notifyAll()
+                self.mutex.release()
+
             # create cache area 
             try:
-                cacheArea = cwDir+"/res"
-                cacheArea += "/job%s"%jid
                 os.mkdir(cacheArea)
                 # WB: NEEDED FOR RESUBMISSION WITH CVS JobSubmitterComponent
                 fakeJobSpec = JobSpec()
@@ -274,35 +317,10 @@ class CrabServerWorkerComponent:
                 idfile.write("JobId=%s"%jid)
                 idfile.close()
             except Exception, e:
-                logging.info("BOSS Registration problem %s. Cache area creation."%cacheArea + str(e))
-
-            # insert job in db
-            try:
-                # Fix suggested by Carlos for non thread safe Sessions. # Fabio
-                # NOTE: this is the ONLY method inside worker threads that interacts with DB
-                #       it should work fine now... I guess
-                Session.set_database(dbConfig)
-                Session.connect()
-                Session.start_transaction()
-                #
-
-                jobDetails={'id':jobName,'job_type':'Processing','max_retries':4,'max_racers':1, 'owner':jNameBase}
-                workflowID = jNameBase # original PA default value = ' ' 
-                Job.register(workflowID, None, jobDetails)
-                
-                Job.setState(jobName,'create')
-                Job.setCacheDir(jobName,cacheArea)
-                Job.setState(jobName,'inProgress')
-                Job.setState(jobName,'submit')
-
-                # close the one-shot session
-                Session.commit_all()
-                Session.close_all()
-                #
-            except Exception, e:
-                logging.info("BOSS Registration problem %s. DB insertion."%cacheArea + str(e))
+                logging.info("BOSS Registration error %s. Cache area creation."%cacheArea + str(e))
 
             pass # End of task registration cycle
+        Session.close(jNameBase)
         pass
 
     def crab_submit(self, proxy, uniqDir, retry=False, rangeSubmit='all'):

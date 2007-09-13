@@ -6,8 +6,8 @@ Implements a pool of threads used to distribute Crab workload.
 
 """
 
-__revision__ = "$Id: PoolThread.py,v 1.9 2007/07/17 18:05:39 farinafa Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: PoolThread.py,v 1.10 2007/09/07 09:47:31 farinafa Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import sys
 from threading import Thread
@@ -159,16 +159,16 @@ class Notifier(Thread):
                      continue
 
                 # publish results using one-shot sessions
-                Session.set_database(dbConfig)
-                Session.connect()
-                Session.start_transaction()
+                # Session.set_database(dbConfig)
+                # Session.connect()
+                # Session.start_transaction()
 
                 for topic, msg, wtime in msgList:
                      self.ms.publish(topic, msg, wtime)
                      self.ms.commit()
 
-                Session.commit_all()
-                Session.close_all()
+                # Session.commit_all()
+                # Session.close_all()
                 
             except Exception, e:
                 self.logging.info("Notify Thread problem: "+str(e))

@@ -17,7 +17,8 @@ import commands
 import MySQLdb
 from MessageService.MessageService import MessageService
 
-
+from ProdAgentDB.Config import defaultConfig as dbConfig
+from ProdCommon.Database import Session
 
 ms = MessageService()
 ms.registerAs("Component1")
@@ -372,7 +373,12 @@ class CW_WatchDogComponent:
         # Inizialize counter for statistics
         self.counterForStat = 0
         try:
+            Session.set_database(dbConfig)
+            Session.connect('CWWD_session')
+ 
             while True :
+                Session.start_transaction('CWWD_session')
+                Session.set_session('CWWD_session')
 
                 # Events listening and translation
                 type, payload = self.ms.get()
@@ -389,6 +395,11 @@ class CW_WatchDogComponent:
                     if self.timeStat[1]!=0:
                         s += " AverageSubmissionTime " + str(self.timeStat[0]/self.timeStat[1])  
                     logging.info(s)
-            pass
+                # 
+                Session.commit('CWWD_session')
+                pass 
+            Session.close('CWWD_session')
         except Exception, e:
             logging.info("Errors during main cycle: Try to debug!\n"+str(e))
+
+
