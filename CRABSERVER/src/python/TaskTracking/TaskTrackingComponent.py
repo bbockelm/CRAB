@@ -25,8 +25,13 @@ from threading import Thread, BoundedSemaphore
 import logging
 from logging.handlers import RotatingFileHandler
 import  ProdAgentCore.LoggingUtils as LoggingUtils
+
 from ProdAgentCore.ProdAgentException import ProdAgentException
 from ProdAgentCore.Configuration import ProdAgentConfiguration
+
+# session
+#from ProdAgentDB.Config import defaultConfig as dbConfig
+#from ProdCommon.Database import Session
 
 # DB PA
 import TaskStateAPI
@@ -132,14 +137,16 @@ class TaskTrackingComponent:
         
         update debug informations about task processing
         """
-
+        #"""
         from InternalLoggingInfo import InternalLoggingInfo
  
         dbgInfo = InternalLoggingInfo()
         path2Wr = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
         #logging.info("Appending: \n\n" + message + "\n\n")
-        dbgInfo.appendLoggingInfo( path2Wr, "***"+str(time.asctime())+"***\n\n" + message )
+        dbgInfo.appendLoggingInfo( path2Wr, "***"+str(time.asctime())+"***\n" + message )
         del dbgInfo
+        #"""
+        #pass
     
     def __call__(self, event, payload):
         """
@@ -1057,7 +1064,7 @@ class TaskTrackingComponent:
                                 del infoRunningJobs
 
 			    #if lower(self.args['jobDetail']) == "yes":
-                                #logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']) + " - resubmitting, MaxResub, Resub = " + str(TaskStateAPI.checkNSubmit( taskName, job )))
+#                            logging.info("STATUS = " + str(stato) + "")## - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']) + " - resubmitting, MaxResub, Resub = " + str(TaskStateAPI.checkNSubmit( taskName, job )))
 			    vect = []
 			    if runInfoJob['EXE_EXIT_CODE'] == "NULL" and runInfoJob['JOB_EXIT_STATUS'] == "NULL":
    			        vect = [self.convertStatus(stato), "", "", 0, Resub, site]
@@ -1094,6 +1101,10 @@ class TaskTrackingComponent:
    				    countNotSubmitted += 1 
 				    dictReportTot['JobFailed'] += 1
                                     dictFinishedJobs.setdefault(job, 1)
+                                    if status == self.taskState[4]:
+                                        dictStateTot[job][0] = "Killed"
+                                    else:
+                                        dictStateTot[job][0] = "NotSubmitted"
                                 elif int(job) in jobPartList:
                                     countNotSubmitted += 1
                                     dictReportTot['JobFailed'] += 1
@@ -1123,9 +1134,9 @@ class TaskTrackingComponent:
                                                               " - stato: " + str(stato) +\
                                                               " - status: " + str(status) )
                                    logging.debug("resubm: " +str(resubmitting)+ " - stato: " +str(stato)+ " - status: " +str(status))
-                            ##       if stato != "K": ## ridondante
-                                   dictReportTot['JobInProgress'] += 1
-                                   dictFinishedJobs.setdefault(job, 0)
+#                            elif stato != "K": ## ridondante
+#                                dictReportTot['JobFailed'] += 1
+#                                dictFinishedJobs.setdefault(job, 0)
                                 #else:
                                 #    dictReportTot['JobFailed'] += 1
                                 #    dictFinishedJobs.setdefault(job, 0)
@@ -1176,7 +1187,7 @@ class TaskTrackingComponent:
                                     TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
                                     if notified < 2:
                                         TaskStateAPI.updatingNotifiedPA( taskName, 2 )
-                                    self.__appendDbgInfo__( taskName, "  Task [" + str(taskName) + "] complete: archivied.")
+                                    self.__appendDbgInfo__( taskName, "  Task [" + str(taskName) + "] complete: archivied.\n\n")
 				elif percentage != endedLevel:
 				    TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
 				   ### prepare tarball & send eMail ###
@@ -1192,7 +1203,7 @@ class TaskTrackingComponent:
                                         else:
                                             logging.info("  preparing OUTPUT FAILED")
                                         logging.info("**** ** **** ** ****")
-                                        loggingMessage += "  ...update complete!"
+                                        loggingMessage += "  ...update complete!\n\n"
                                         self.__appendDbgInfo__( taskName, loggingMessage)
                                 #        self.prepareTarballDone(pathToWrite, taskName, len(statusJobsTask) )
                                     if percentage >= thresholdLevel:
@@ -1204,7 +1215,7 @@ class TaskTrackingComponent:
 					    notified = 2
 					    TaskStateAPI.updatingNotifiedPA( taskName, notified )
                                             obj.deleteTempTar( pathToWrite )
-                                            self.__appendDbgInfo__( taskName, "  Task [" + str(taskName) + "] complete: archivied.")
+                                            self.__appendDbgInfo__( taskName, "  Task [" + str(taskName) + "] complete: archivied.\n\n")
 					elif notified <= 0:
 					    self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
 					    notified = 1
@@ -1296,8 +1307,18 @@ class TaskTrackingComponent:
         pollingThread.start()
 
         # wait for messages
+#        Session.set_database(dbConfig)
         while True:
+#            Session.set_database(dbConfig)
+#            Session.connect('TT_Session')
+#            Session.start_transaction('TT_Session')
+#            Session.set_session('TT_Session')
+
             messageType, payload = self.ms.get()
+
+#            Session.commit('TT_Session')
+#            Session.close('TT_Session')
+
             vectInfo = self.__call__(messageType, payload)
             self.ms.commit()
             if vectInfo != None:
