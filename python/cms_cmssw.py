@@ -318,9 +318,9 @@ class Cmssw(JobType):
                         if (self.sourceSeedVtx) :
                             PsetEdit.vtxSeed("INPUTVTX")
                         if (self.sourceSeedG4) :
-                            self.PsetEdit.g4Seed("INPUTG4")
+                            PsetEdit.g4Seed("INPUTG4")
                         if (self.sourceSeedMix) :
-                            self.PsetEdit.mixSeed("INPUTMIX")
+                            PsetEdit.mixSeed("INPUTMIX")
                 # add FrameworkJobReport to parameter-set
                 PsetEdit.addCrabFJR(self.fjrFileName)
                 PsetEdit.psetWriter(self.configFilename())
