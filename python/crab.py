@@ -965,6 +965,8 @@ if __name__ == '__main__':
     except:
         pass # too bad, you'll get the warning
 
+    os.putenv("PATH", definePath("new") )
+ 
     # Parse command-line options and create a dictionary with
     # key-value pairs.
 
