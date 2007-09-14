@@ -783,6 +783,8 @@ class SchedulerBoss(Scheduler):
 
         self.boss_scheduler.checkProxy()
 
+
+        os.putenv("PATH", definePath("original") )
         results = {}
         try:
             # fill dictionary { 'bossid' : 'status' , ... }
