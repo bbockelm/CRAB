@@ -9,6 +9,7 @@ CREATE TABLE js_taskInstance (
      proxy varchar(255) NOT NULL default '',
      uuid varchar(255) NOT NULL default '',
      status varchar(255) NOT NULL default 'not submitted',
+     work_status TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '0=free task; 1=busy task; 2:controlled task' CHECK(VALUE>=0 AND VALUE<=2),
      primary key(id),
      unique(taskName),
      key(taskName)
