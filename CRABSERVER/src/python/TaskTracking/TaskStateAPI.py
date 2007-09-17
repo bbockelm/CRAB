@@ -1,16 +1,20 @@
 import logging
 import string
+# threads
+from threading import BoundedSemaphore
 
 # DB PA
 from ProdAgentCore.ProdAgentException import ProdAgentException
 from ProdAgentDB.Connect import connect
 
+from ProdCommon.Database import Session
+from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdAgent.WorkflowEntities import JobState
 from ProdAgent.WorkflowEntities import Job
-from ProdAgentDB.Config import defaultConfig as dbConfig
-from ProdCommon.Database import Session
 
 import traceback
+
+semWorkStatus = BoundedSemaphore(1)#for synchronisation between thread 
 
 def openConnPA():
     """
@@ -20,7 +24,7 @@ def openConnPA():
     """
     conn=connect(False)
     dbCur=conn.cursor()
-    logging.debug( "Conn opened\n" )
+    #logging.debug( "Conn opened\n" )
     return conn, dbCur
 
 def closeConnPA( conn, dbCur):
@@ -31,7 +35,8 @@ def closeConnPA( conn, dbCur):
     """
     dbCur.close()
     conn.close()
-    logging.debug("Conn closed\n")
+    #logging.debug("Conn closed\n")
+
 
 def checkNSubmit( taskName, idJob):
     """
@@ -40,21 +45,22 @@ def checkNSubmit( taskName, idJob):
     return 0 if the job is resubmitted the max number of times (MaxRetries)
     return 1 if the job is not resubmitted the max number of times (MaxRetries)
     """
-##    """
+#    return 1, 1, 0
+#    """
     jobMaxRetries = 0
     jobRetries = 0
     jobSpecId = taskName + "_" + str(idJob)
     try:
         Session.set_database(dbConfig)
-        Session.connect()
-        Session.start_transaction()
+        Session.connect(jobSpecId)
+        Session.start_transaction(jobSpecId)
 
         jobInfo = { 'MaxRetries': 1, 'Retries': 0 }
         if JobState.isRegistered( jobSpecId ) == True:
             jobInfo = JobState.general(jobSpecId)
 
-        Session.commit_all()
-        Session.close_all()
+        Session.commit(jobSpecId)
+        Session.close(jobSpecId)
 
         jobMaxRetries = int(jobInfo['MaxRetries'])
         jobRetries = int(jobInfo['Retries'])
@@ -71,6 +77,7 @@ def checkNSubmit( taskName, idJob):
         return 1, jobMaxRetries, jobRetries
     return 0, jobMaxRetries, jobRetries
 
+#    """
     """
     ## opening connection with PA's DB
     conn, dbCur = openConnPA()
@@ -100,6 +107,7 @@ def checkNSubmit( taskName, idJob):
     #, rows[0][0], rows[0][1]
     """
 
+
 def insertTaskPA( taskName, status ):
     """
     _insertTaskPA_
@@ -115,14 +123,15 @@ def insertTaskPA( taskName, status ):
     ## opening connection with PA's DB
     conn, dbCur = openConnPA()
     try:
-	sqlStr="INSERT INTO js_taskInstance VALUES('','"+taskName+"','"+eMail+"','"+str(tresholdLevel)+"','"+str(notificationSent)+"',\
-	                                           '"+str(endedLevel)+"','"+proxy+"','"+uuid+"','"+status+"');"
-	logging.info(sqlStr)
+	sqlStr="INSERT INTO js_taskInstance (id, taskName, eMail, tresholdLevel, notificationSent, endedLevel, proxy, uuid, status, work_status) "\
+               "VALUES('','"+taskName+"','"+eMail+"','"+str(tresholdLevel)+"','"+str(notificationSent)+"',\
+	                                           '"+str(endedLevel)+"','"+proxy+"','"+uuid+"','"+status+"', 0);"
+	#logging.info(sqlStr)
         dbCur.execute("START TRANSACTION")
-        try:
-            dbCur.execute(sqlStr)
-        except Exception,ex:
-            raise ProdAgentException("Error inserting the task in js_taskInstance. Taskname: '" + str(taskName) + "'.")
+        #try:
+        dbCur.execute(sqlStr)
+        #except Exception,ex:
+        #raise ProdAgentException("Error inserting the task in js_taskInstance. Taskname: '" + str(taskName) + "'.")
 	dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
@@ -131,7 +140,7 @@ def insertTaskPA( taskName, status ):
 	dbCur.execute("ROLLBACK")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
-	logging.error( "Error inserting a new task ("+ taskName +") in the PA's DB!" )
+	#logging.error( "Error inserting a new task ("+ taskName +") in the PA's DB!" )
 	raise
 
 
@@ -162,7 +171,7 @@ def updateNotSubmitted( taskName, eMail, tresholdLevel, proxy, uuid, status ):
 	dbCur.execute("ROLLBACK")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
-	logging.error( "Error updating PA DB! Method: " + updateNotSumbitted.__name__ )
+	#logging.error( "Error updating PA DB! Method: " + updateNotSumbitted.__name__ )
 	raise
 
 
@@ -182,12 +191,12 @@ def updateStatus( taskName, status ):
 	    sqlStr='UPDATE js_taskInstance SET status="'+status+'"\
 		    WHERE taskName="'+taskName+'";'
 	    #logging.info(sqlStr)
-            try:
-                rowModified=dbCur.execute(sqlStr)
-            except Exception,ex:
-                raise ProdAgentException("Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+            #try:
+            dbCur.execute(sqlStr)
+            #except Exception,ex:
+            #raise ProdAgentException("Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
         else:
-            logging.error( "Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+            logging.error( "Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "': task not found.")
         dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
@@ -195,7 +204,7 @@ def updateStatus( taskName, status ):
 	dbCur.execute("ROLLBACK")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
-	logging.error( "Error updating PA DB! Method: " + updatingEndedPA.__name__ )
+	#logging.error( "Error updating PA DB! Method: " + updatingEndedPA.__name__ )
 	raise
 
 
@@ -244,6 +253,7 @@ def findTaskPA( taskName):
 	logging.error( "Error quering PA DB! Method: " + findTaskPA.__name__ )
 	raise
 
+
 def queryMethod(strQuery, taskName):
     """
     _queryMethod_
@@ -283,17 +293,381 @@ def queryMethod(strQuery, taskName):
         logging.error( "Error quering PA DB! Query: " + strQuery)
 	raise
 
-def getAllNotFinished():
+#def getAllNotFinished():
+#    """
+#    _getAllNotFinished_
+#    """
+#    queryString = "SELECT taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid"+\
+#                  " FROM js_taskInstance"+\
+#		  " WHERE status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
+##status <> 'killed' AND status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
+#    task2Check = queryMethod(queryString, None)
+#    
+#    return task2Check
+
+
+def unlockTask(taskId):
     """
-    _getAllNotFinished_
+    unlockTask
+    - created by lepri 25/07/07
+    - input:
+    - output:
+      number of rows affected, 0 or 1.
+    - work: take first task not locked and not finished is one exist and lock it
     """
-    queryString = "SELECT taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid"+\
-                  " FROM js_taskInstance"+\
-		  " WHERE (status <> 'not submitted' AND notificationSent < 2) AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
-#status <> 'killed' AND status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2);"
-    task2Check = queryMethod(queryString, None)
-    
-    return task2Check
+    sql = "UPDATE js_taskInstance "+\
+          "SET work_status=0 "\
+          "WHERE work_status = 1 AND ID = " + str(taskId) + ";"
+ 
+    conn, dbCur = openConnPA()
+
+    #TODO: execute dont return the number of affected rows, need to refactor it.
+    rowsAffected = 0
+    try:
+        semWorkStatus.acquire()
+        try:
+            try:
+                dbCur.execute("START TRANSACTION")
+                rowsAffected = dbCur.execute(sql)
+                dbCur.execute("COMMIT")
+            except:
+                dbCur.execute("ROLLBACK")
+                raise
+        finally:
+            semWorkStatus.release()
+    finally:
+        closeConnPA(dbCur, conn)
+
+    return rowsAffected
+
+
+def resetAllWorkStatus():
+    """
+    resetAllWorkStatus
+    - input:
+    - output:
+    - work: set all work_status to 0
+    """
+    sql = "UPDATE js_taskInstance "+\
+          "SET work_status=0 "\
+          "WHERE work_status <> 0;"
+
+    conn, dbCur = openConnPA()
+
+    try:
+        semWorkStatus.acquire()
+        try:
+            try:
+                dbCur.execute("START TRANSACTION")
+                rowsAffected = dbCur.execute(sql)
+                dbCur.execute("COMMIT")
+            except:
+                dbCur.execute("ROLLBACK")
+                raise
+        finally:
+            semWorkStatus.release()
+    finally:
+        closeConnPA(dbCur, conn)
+
+
+def unlockTaskByTaskName(taskName):
+    """
+    unlockTask
+    - created by lepri 25/07/07
+    - input: taskName
+    - output: record affected
+      number of rows affected, 0 or 1.
+    - work: unlock the task
+    """
+    #lepri: take first task not locked and lock it.
+    sql = "UPDATE js_taskInstance "+\
+          "SET work_status=0 "\
+          "WHERE work_status = 1 AND TaskName = '" + taskName + "';"
+
+    conn, dbCur = openConnPA()
+
+    #TODO: execute dont return rowsAffected, need to be refact this methid
+    rowsAffected = 0 
+    try:
+        semWorkStatus.acquire()
+        try:
+            try:
+                dbCur.execute("START TRANSACTION")
+                dbCur.execute(sql)
+                rowsAffected = 1
+                dbCur.execute("COMMIT")
+            except:
+                dbCur.execute("ROLLBACK")
+                raise
+        finally:
+            semWorkStatus.release()
+    finally:
+        closeConnPA(dbCur, conn)
+
+    return rowsAffected
+
+
+def setTaskControlled(taskId):
+    """
+    setTaskControlled
+    see the description of the private function __setTaskControlled__
+    """
+    conn, dbCur = openConnPA()
+
+    try:
+        dbCur.execute("START TRANSACTION") 
+        try:
+            __setTaskControlled__(taskId, conn, dbCur)
+            dbCur.execute("COMMIT")
+        except:
+            dbCur.execute("ROLLBACK")
+            raise
+    finally:
+        closeConnPA(dbCur, conn)
+
+
+def resetControlledTasks():
+    """
+    resetControlledTasks
+    see the description of the private function __resetControlledTasks__
+    """
+    conn, dbCur = openConnPA()
+
+    try:
+        dbCur.execute("START TRANSACTION")
+        try:
+            __resetControlledTasks__(conn, dbCur)
+            dbCur.execute("COMMIT")
+        except:
+            dbCur.execute("ROLLBACK")
+            raise
+    finally:
+        closeConnPA(dbCur, conn)
+
+
+def lockUnlockedTaskByTaskName(taskName):
+    """
+    lockTask
+    - created by lepri 25/07/07
+    - input: task name
+    - output: record affected
+      number of rows affected, 0 or 1, -1 id task dont exist.
+    - work: try to lock the task if it wasnt (work_status = 0 or = 2) , if the task was just locked, return 0 of course
+    """
+    #lepri: take first task not locked and lock it.
+
+    conn, dbCur = openConnPA()
+    rowsAffected = 0
+    try:
+        semWorkStatus.acquire()
+        try:
+            try:
+                dbCur.execute("START TRANSACTION")
+                sql = 'SELECT COUNT(*) FROM js_taskInstance WHERE TaskName = "' + taskName + '" AND (work_status = 0 OR work_status = 2)'
+                dbCur.execute(sql)
+                rows = dbCur.fetchall()
+                count = int(rows[0][0])
+                if count > 0:
+                    sql = 'UPDATE js_taskInstance '+\
+                          'SET work_status = 1 '\
+                          'WHERE TaskName = "' + taskName + '";'
+                    dbCur.execute(sql)
+                    sql = 'SELECT COUNT(*) FROM js_taskInstance WHERE TaskName = "' + taskName + '" AND work_status = 1'
+                    dbCur.execute(sql)
+                    rows = dbCur.fetchall()
+                    count = int(rows[0][0])
+                    if count == 1:
+                        rowsAffected = 1
+                else:
+                    #check if task still exist
+                    sql = 'SELECT COUNT(*) FROM js_taskInstance WHERE TaskName = "' + taskName + '"'
+                    dbCur.execute(sql)
+                    rows = dbCur.fetchall()
+                    count = int(rows[0][0])
+                    if count == 0:
+                        rowsAffected = -1
+
+                if rowsAffected == 1:
+                    dbCur.execute("COMMIT")
+                else:
+                    dbCur.execute("ROLLBACK")
+            except:
+                dbCur.execute("ROLLBACK")
+                raise
+        finally:
+            semWorkStatus.release()
+    finally:
+        closeConnPA(dbCur, conn)
+
+    return rowsAffected
+
+
+def getNLockFirstNotFinished():
+    """
+    getNLockFirstNotFinished
+    - created by lepri 24/07/07
+    - input:
+    - output:
+      a row if one exist
+    - work: take first task not locked and not finished is one exist and lock it
+    """
+    queryString = "SELECT ID "+\
+        "FROM js_taskInstance "+\
+        "WHERE (work_status = 0) "+\
+        "AND (status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2)) OR  (status = 'not submitted' AND notificationSent < 2);"+\
+        "ORDER BY ID "+\
+        "LIMIT 1;"
+
+        #"WHERE (work_status = 0) "+\
+        #"AND (status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2)) OR  (status = 'not submitted' AND notificationSent < 2) " +\
+    conn, dbCur = openConnPA()
+
+    ok = 0
+    row = None
+    try:
+        semWorkStatus.acquire()
+        try:
+            try:
+                while ok == 0:
+                    dbCur.execute("START TRANSACTION")
+                    row = __getFirstNotFinished__(conn, dbCur)
+                    if len(row) > 1:
+                        raise Exception("len(row) > 1 unnexcepted from getFirstNotFinished(..) = " + str(len(row)))
+
+                    if len(row) == 0:
+                        ok = 1
+                    else:#len(row) == 1
+                        ok = 0
+
+                    if ok == 0: #a task
+                        taskId = row[0][0]
+                        rowsAffected = __lockTask__(taskId, conn, dbCur)
+                        if rowsAffected == 1:
+                            ok = 1 #record successfully locked
+                        elif rowsAffected != 0:
+                            raise Exception("rowsAffected for lockTask(..) = " + str(rowsAffected))
+                        else:
+                            dbCur.execute("ROLLBACK")
+            finally:
+                semWorkStatus.release()
+
+            dbCur.execute("COMMIT")
+        except:
+            dbCur.execute("ROLLBACK")
+            raise
+    finally:
+        closeConnPA(dbCur, conn)
+
+    return row
+
+
+def __getFirstNotFinished__(conn, dbCur):
+   """
+   __getFirstNotFinished__
+   - created by lepri 24/07/07
+   - *private function*
+   - input:
+     #1 conn
+     #2 dbCur
+   - output:
+     a row if one exist
+   - work: take first task not locked and not finished
+   """
+   sql = "SELECT ID, taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid "+\
+      "FROM js_taskInstance "+\
+      "WHERE (work_status = 0) "+\
+      "AND (status <> 'not submitted' AND notificationSent < 2) AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2)"+\
+      "ORDER BY ID "\
+      "LIMIT 1;"
+
+   #try:
+   dbCur.execute(sql)
+   row = dbCur.fetchall()
+   #except:
+   #logging.error( "Error quering PA DB! Query: " + sql)
+   #raise
+
+   return row
+
+
+def __lockTask__(taskId, conn, dbCur):
+    """
+    __lockTask__
+    - created by lepri 24/07/07
+    - *private function*
+    - input:
+       #1 taskId
+    - output:
+       #1 rows affected
+    - work: try to lock the task by work_status = 1
+    """
+    #TODO: need to refactor the recordAffected value ^^
+    sql = "UPDATE js_taskInstance "\
+          "SET work_status=1 "\
+          "WHERE ID = " + str(taskId) + " AND work_status = 0"
+          #"AND (status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2)) OR  (status = 'not submitted' AND notificationSent < 2);"
+    #try:
+    dbCur.execute(sql)
+    rowsAffected = 1
+    sql = "SELECT work_status "+\
+        "FROM js_taskInstance "+\
+        "WHERE id = '" + str(taskId) + "';"
+    row = dbCur.fetchall()
+    if len(row) == 1:
+        if row[0][0] == 1:
+            rowsAffected = 1
+
+    return rowsAffected
+
+
+def __getTaskWorkStatusByTaskId__(taskId, conn, dbCur):
+    """
+    __resetControlledTasks__
+    - created by lepri 23/08/07
+    - *private function*
+    - input: taskId, conn & dbCur
+    - output: none
+    - work: set to work_status = 0 all the task with work_status = 2
+    """
+    sql = "SELECT work_status FROM js_taskInstance "\
+          "WHERE ID = " + str(taskId)
+    dbCur.execute(sql)
+    row = dbCur.fetchall()
+    if len(row) > 0:
+        return int(row[0][0])
+    else:
+        return -1
+
+
+def __resetControlledTasks__(conn, dbCur):
+    """
+    __resetControlledTasks__
+    - created by lepri 23/08/07
+    - *private function*
+    - input: conn & dbCur
+    - output: none
+    - work: set to work_status = 0 all the task with work_status = 2
+    """
+    sql = "UPDATE js_taskInstance "\
+          "SET work_status = 0 "\
+          "WHERE (work_status = 2)"
+    dbCur.execute(sql)
+
+
+def __setTaskControlled__(taskId, conn, dbCur):
+    """
+    __resetControlledTasks__
+    - created by lepri 23/08/07
+    - *private function*
+    - input: conn & dbCur
+    - output: none
+    - work: set to work_status = 2
+    """
+    sql = "UPDATE js_taskInstance "\
+          "SET work_status = 2 "\
+          "WHERE ID = " + str(taskId)
+    dbCur.execute(sql)
+
 
 def getStatusUUIDEmail( taskName ):
     """
@@ -351,9 +725,10 @@ def updatingEndedPA( taskName, newPercentage, status ):
     """
     _updatingEndedPA_
     """
-    logging.info( "   -> updating the task table for task: " + taskName )
-    logging.debug( "   Setting the field endedLevel at '" + newPercentage +"'")
-    logging.debug( "   Setting the field status  at '" + status +"'")
+    msg = ""
+    msg += "   -> updating the task table for task: " + taskName
+    msg += "   Setting the field endedLevel at '" + newPercentage +"'"
+    msg += "   Setting the field status  at '" + status +"'"
 
     ## opening connection with PA's DB
     conn, dbCur = openConnPA()
@@ -362,10 +737,10 @@ def updatingEndedPA( taskName, newPercentage, status ):
         if checkExistPA(conn, dbCur, taskName):
 	    sqlStr='UPDATE js_taskInstance SET endedLevel="'+newPercentage+'", status="'+status+'"\
 		    WHERE taskName="'+taskName+'";'
-            try:
-                rowModified=dbCur.execute(sqlStr)
-            except Exception,ex:
-                raise ProdAgentException("Error updating 'endedLevel' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+            #try:
+            rowModified=dbCur.execute(sqlStr)
+            #except Exception,ex:
+            #raise ProdAgentException("Error updating 'endedLevel' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
         dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
@@ -373,18 +748,20 @@ def updatingEndedPA( taskName, newPercentage, status ):
 	dbCur.execute("ROLLBACK")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
-	logging.error( "Error updating PA DB! Method: " + updatingEndedPA.__name__ )
+	#logging.error( "Error updating PA DB! Method: " + updatingEndedPA.__name__ )
 	raise
+
+    return msg;
 
 
 def updatingNotifiedPA( taskName, sended):
     """
     _updatingNotified_
     """
-
+    msg = ""
     sendFlag = str(sended)
-    logging.info( "   -> updating the task table for task: " + taskName )
-    logging.debug( "   Setting the field notificationSend at '" + sendFlag +"'")
+    msg += "   -> updating the task table for task: " + taskName
+    msg += "   Setting the field notificationSend at '" + sendFlag +"'"
 
     ## opening connection with PA's DB
     conn, dbCur = openConnPA()
@@ -395,10 +772,10 @@ def updatingNotifiedPA( taskName, sended):
 	if checkExistPA(conn, dbCur, taskName):
 	    sqlStr='UPDATE js_taskInstance SET notificationSent="'+sendFlag+'"\
 		    WHERE taskName="'+taskName+'";'
-            try:
-                rowModified=dbCur.execute(sqlStr)
-            except Exception,ex:
-                raise ProdAgentException("Error updating 'notificationSent' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+            #try:
+            rowModified=dbCur.execute(sqlStr)
+            #except Exception,ex:
+            #    raise ProdAgentException("Error updating 'notificationSent' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
 	dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
@@ -406,15 +783,18 @@ def updatingNotifiedPA( taskName, sended):
 	dbCur.execute("ROLLBACK")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
-	logging.error( "Error updating PA DB! Method: " + updatingNotifiedPA.__name__ )
+	#logging.error( "Error updating PA DB! Method: " + updatingNotifiedPA.__name__ )
 	raise
+
+    return msg
+
 
 def updatingStatus( taskName, status, notification ):
     """
     updatingStatus
     """
-    
-    logging.info( "   -> updating the task table for task: " + taskName )
+    msg = "" 
+    msg += "   -> updating the task table for task: " + taskName
 
     ## opening connection with PA's DB
     conn, dbCur = openConnPA()
@@ -425,10 +805,10 @@ def updatingStatus( taskName, status, notification ):
 	if checkExistPA(conn, dbCur, taskName):
 	    sqlStr='UPDATE js_taskInstance SET status="'+status+'", notificationSent="'+str(notification)+'"\
 		    WHERE taskName="'+taskName+'";'
-            try:
-                rowModified=dbCur.execute(sqlStr)
-            except Exception,ex:
-                raise ProdAgentException("Error updating task killed in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+            #try:
+            rowModified=dbCur.execute(sqlStr)
+            #except Exception,ex:
+            #    raise ProdAgentException("Error updating task killed in js_taskInstance. TaskName: '" + str(taskName) + "'.")
 	dbCur.execute("COMMIT")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
@@ -436,9 +816,10 @@ def updatingStatus( taskName, status, notification ):
 	dbCur.execute("ROLLBACK")
         ## closing connection with PA's DB
         closeConnPA( dbCur, conn )
-	logging.error( "Error updating PA DB! Method: " + updatingNotifiedPA.__name__ )
+	#logging.error( "Error updating PA DB! Method: " + updatingNotifiedPA.__name__ )
 	raise
 
+    return msg
 
 def cleaningTaskPA( taskName ):
     """
