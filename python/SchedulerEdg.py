@@ -204,6 +204,12 @@ class SchedulerEdg(Scheduler):
         try: self.schedulerName = cfg_params['CRAB.scheduler']
         except KeyError: self.scheduler = ''
 
+        self.UseServer=0
+        try:
+            self.UseServer=int(cfg_params['CRAB.server_mode'])
+        except KeyError:
+            pass
+
         return
     
 
@@ -676,7 +682,11 @@ class SchedulerEdg(Scheduler):
         #xml.write('<task name="' +str(taskName)+'" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache">\n') 
 
         #xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + '" task_info="' + os.path.expandvars('X509_USER_PROXY') + '">\n')
-        xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + os.environ["X509_USER_PROXY"] + '">\n')
+        if (self.UseServer== 9999):
+            xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + os.environ["X509_USER_PROXY"] + '">\n')
+        else:
+            xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="NONE">\n')
+
         xml.write(jt_string)
         
         if (to_write != ''):
