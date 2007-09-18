@@ -18,6 +18,9 @@ from MessageService.MessageService import MessageService
 from TaskTracking.TaskStateAPI import *
 import commands
 
+from ProdAgentDB.Config import defaultConfig as dbConfig
+from ProdCommon.Database import Session
+
 # BOSS API import
 from BossSession import *
 
@@ -73,13 +76,22 @@ class CommandManagerComponent:
 
         # Events listening and translation
         while True :
+             # Session.set_database(dbConfig)
+             # Session.connect('ComMan_session')
+             # Session.set_session('ComMan_session')
+             # Session.start_transaction('ComMan_session')
+
              type, payload = self.ms.get()
              self.ms.commit()  
              logging.debug("CommandManager: %s %s" % ( type, payload))
              self.__call__(type, payload)
-             pass
 
-    def processKillCommand(self, dict, filename):
+             # close the session
+             # Session.commit('ComMan_session')
+             # Session.close('ComMan_session')
+        pass
+
+    def processKillCommand(self, dict, filename, nretry):
         # 1 - get the taskName from the dict
         logging.info('debug message:%s'+str(dict) ) # Convert to debug # Fabio
 
@@ -87,7 +99,10 @@ class CommandManagerComponent:
         taskName = str(dict['Task'])   
         logging.debug('TaskName: ' + str(taskName))
 
-        
+        #Prapare massage payload 
+        fwPayload = taskName+':'+self.dropBoxPath+'/'+taskName+'/share/userProxy'+':'+str(dict['Range'])
+        # fwPayload = taskName+'::'+self.dropBoxPath+'/'+taskName+'/share/userProxy'+'::'+str(dict['Range']) Activate it when switch to new msg standard        
+
         #manages exceptions from listdir when there are not searched files in DropBox 
         dBStatus=[]
         try:
@@ -98,16 +113,39 @@ class CommandManagerComponent:
 
         if taskName in [ s.split('.tgz')[0] for s in dBStatus]:
              logging.info('Task %s not yet managed.'%taskName)
+             if nretry == '5':
+                  logging.info('The command'+ str(filename) +' will be removed. ')
+                  os.remove(filename)
+                  self.msFwdCmd.publish("TaskKilledFailed", taskName+'::'+dict["Range"])
+                  self.msFwdCmd.commit()
+                  logging.info("Message TaskKilledFailed sent")
+                  return
+
              logging.info('The command will be retried during next DropBox cycle.')
-             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
-             self.msFwdCmd.commit()
+             newfilename = taskName + '.' + str(eval(nretry)+1) + '.xml'
+             os.rename(filename, newfilename)  
+             logging.info('The new file name is '+newfilename)
+             #self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", newfilename, "00:00:30")
+             #self.msFwdCmd.commit()
              return
 
         if taskName not in os.listdir(self.dropBoxPath):
              logging.info('Unable to locate directory for task %s'%taskName)
+
+             if nretry == '5':
+                  logging.info('The command'+ str(filename) +' will be removed. ')
+                  os.remove(filename)
+                  self.msFwdCmd.publish("TaskKilledFailed", taskName+'::'+dict["Range"])
+                  self.msFwdCmd.commit()
+                  logging.info("Message TaskKilledFailed sent")
+                  return
+
              logging.info('The command will be retried during next DropBox cycle.')
-             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
-             self.msFwdCmd.commit()
+             newfilename = taskName + '.' + str(eval(nretry)+1) + '.xml'
+             os.rename(filename, newfilename)
+             logging.info('The new file name is '+newfilename)
+             #self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", newfilename, "00:00:30")
+             #self.msFwdCmd.commit()
              return
         logging.info('Now Cheking the Proxy')
 
@@ -116,8 +154,6 @@ class CommandManagerComponent:
         subject = ""
         try:
              proxyPath = self.dropBoxPath+'/'+taskName+'/share/userSubj'
-             fwPayload = taskName+':'+self.dropBoxPath+'/'+taskName+'/share/userProxy'+':'+str(dict['Range'])
-             # fwPayload = taskName+'::'+self.dropBoxPath+'/'+taskName+'/share/userProxy'+'::'+str(dict['Range']) Activate it when switch to new msg standard
              f = open(proxyPath, 'r')
              subject =f.readline()
              f.close()
@@ -163,7 +199,7 @@ class CommandManagerComponent:
                   return  
         except Exception, e:
 
-             # PreKill here is necessary? Temporary! 
+             # PreKill  
              if dict['Range']=='all':
                   logging.info('Range = %s and task not in Boss: try PreKill     \n'%dict['Range'])
                   self.msFwdCmd.publish("CommandManagerComponent:prekill",fwPayload)
@@ -172,8 +208,20 @@ class CommandManagerComponent:
                   os.remove(filename)  
              else: 
                   logging.info('Problems with DB interaction  %s\n'%filename + str(e))
-                  self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
-                  self.msFwdCmd.commit()
+                  if nretry == '5':
+                       logging.info('The command'+ str(filename) +' will be removed. ')
+                       os.remove(filename)
+                       self.msFwdCmd.publish("TaskKilledFailed", taskName+'::'+dict["Range"])
+                       self.msFwdCmd.commit()
+                       logging.info("Message TaskKilledFailed sent")
+                       return
+
+                  logging.info('The command will be retried during next DropBox cycle.')
+                  newfilename = taskName + '.' + str(eval(nretry)+1) + '.xml'
+                  os.rename(filename, newfilename)
+                  logging.info('The new file name is '+newfilename)
+                  #self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
+                  #self.msFwdCmd.commit()
              return
 
         taskSpecId = ''
@@ -184,8 +232,20 @@ class CommandManagerComponent:
              logging.info('Task status returned by TT is:   '+str(stat[0]))
         except Exception, e:
              logging.info('Problems with TT Api for:  %s . The command will be retried!\n'%filename + str(e))
-             self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
-             self.msFwdCmd.commit()
+             if nretry == '5':
+                  logging.info('The command'+ str(filename) +' will be removed. ')
+                  os.remove(filename)
+                  self.msFwdCmd.publish("TaskKilledFailed", taskName+'::'+dict["Range"])
+                  self.msFwdCmd.commit()
+                  logging.info("Message TaskKilledFailed sent")
+                  return
+
+             logging.info('The command will be retried during next DropBox cycle.')
+             newfilename = taskName + '.' + str(eval(nretry)+1) + '.xml'
+             os.rename(filename, newfilename)
+             logging.info('The new file name is '+newfilename)
+             #self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
+             #self.msFwdCmd.commit()
              return
 
         if len(taskDict) > 0:
@@ -221,8 +281,20 @@ class CommandManagerComponent:
              else:    
                   del taskDict
                   logging.info('Unexpected status '+ str(stat[0]) +' for the task %s. The command will be retried!' %taskName)
-                  self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
-                  self.msFwdCmd.commit()
+                  if nretry == '5':
+                       logging.info('The command'+ str(filename) +' will be removed. ')
+                       os.remove(filename)
+                       self.msFwdCmd.publish("TaskKilledFailed", taskName+'::'+dict["Range"])
+                       self.msFwdCmd.commit()
+                       logging.info("Message TaskKilledFailed sent")
+                       return
+
+                  logging.info('The command will be retried during next DropBox cycle.')
+                  newfilename = taskName + '.' + str(eval(nretry)+1) + '.xml'
+                  os.rename(filename, newfilename)
+                  logging.info('The new file name is '+newfilename)
+                  #self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:01:00")
+                  #self.msFwdCmd.commit()
                   return
         else:
               logging.info('Taskdict for task %s is empty. No jobs to kill: The command will be remove '%taskName)
@@ -243,6 +315,53 @@ class CommandManagerComponent:
         os.remove(filename)
         pass
 
+    def processSubmitRangeCommand(self, dict, filename, nretry):
+        # Create a fake ProxyTar message to drive the CW to the submission
+        subject = ''
+        taskName = str(dict['Task']) 
+        proxyPath = self.dropBoxPath+'/'+taskName+'/share/userSubj'
+
+        if taskName not in os.listdir(self.dropBoxPath):
+             logging.info('Unable to locate directory for task %s'%taskName + '. The command will be retried later.')
+             if nretry == '5':
+                  logging.info('The command'+ str(filename) +' will be removed. ')
+                  logging.info("Partial submission wont be performed.") 
+                  os.remove(filename)
+                  return
+
+             logging.info('The command will be retried during next DropBox cycle.')
+             newfilename = taskName + '.' + str(eval(nretry)+1) + '.xml'
+             os.rename(filename, newfilename)
+             logging.info('The new file name is '+newfilename)
+             #self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
+             #self.msFwdCmd.commit()
+             return
+
+        # check the proxy matching
+        try:
+             f = open(proxyPath, 'r')
+             subject = f.readline()
+             f.close()
+        except Exception, e:
+             logging.info("Warning: Unable to read " + str(taskName+'/share/userSubj') + str(e) )
+             logging.info("Partial submission wont be performed.")
+             return
+
+        if dict['Subject'].strip() != subject.strip():
+             logging.info('Unable to match subjects for %s'%taskName)
+             logging.info('The partial submission command file will not be processed.')
+             os.rename(filename, filename+'.noGood')
+             return
+
+        # push the message
+        cwMsg = proxyPath+'::'+taskName+'::'+str(dict['Range'])+'::'+int(self.args['crabMaxRetry'])
+        self.msFwdCmd.publish("ProxyTarballAssociatorComponent:CrabWork", cwMsg)
+        self.msFwdCmd.commit()
+
+        # The file is no more needed. Remove it
+        os.remove(filename)
+        pass
+
     def __call__(self, event, payload):
         """
         _operator()_
@@ -256,6 +375,13 @@ class CommandManagerComponent:
 
                 # Parse XML file with generic command data structure
                 os.chdir(self.dropBoxPath)
+                numretry = '0'
+ 
+                # Extract the number of retry
+                if len(payload.split("."))==3: 
+                    numretry=payload.split(".")[1] 
+                    logging.info('Retry number '+str(numretry))
+
                 doc = xml.dom.minidom.parse(payload)
                 dict = {'Range':'all'}
                 for node in doc.documentElement.childNodes:
@@ -267,8 +393,11 @@ class CommandManagerComponent:
                 
                 # Dispatch the command to the proper handler/component
                 if str(dict['Command'])=='kill':
-                     logging.info('Now Process Kill Command!')                        
-                     self.processKillCommand(dict, payload)
+                     logging.info('Now Processing Kill Command!')                        
+                     self.processKillCommand(dict, payload, numretry)   # MODIFICATO
+                elif str(dict['Command'])=='submit_range':
+                     logging.info('Now Processing Range Submission Directive Command!')
+                     self.processSubmitRangeCommand(dict, payload, numretry)
                 elif str(dict['Command'])=='somethingElse':
                        # self.processSomethingElseCommand(dict, payload)
                        pass
