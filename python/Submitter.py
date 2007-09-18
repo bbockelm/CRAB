@@ -146,6 +146,12 @@ class Submitter(Actor):
                     njs += 1
                
                     ##### DashBoard report #####################   
+                    ## To distinguish if job is direct or through the server   
+                    if (self.UseServer == 0):
+                        Sub_Type = 'Direct'
+                    else:   
+                        Sub_Type = 'Server'
+               
                     try:
                         resFlag = 0
                         if st == 'RC': resFlag = 2
@@ -167,12 +173,18 @@ class Submitter(Actor):
                         rb = rb.replace('//', '')
                     else :
                         rb = 'OSG'
-               
+
+                    if len(common.jobDB.destination(tmpNj)) <= 2 :
+                        T_SE=string.join((common.jobDB.destination(tmpNj)),",")    
+                    else :
+                        T_SE=str(len(common.jobDB.destination(tmpNj)))+'_Selected_SE'
                     params = {'jobId': jobId, \
                               'sid': jid, \
                               'broker': rb, \
                               'bossId': jj, \
-                              'TargetSE': string.join((common.jobDB.destination(tmpNj)),",")}
+                              'SubmissionType': Sub_Type, \
+                              'TargetSE': T_SE,}
+                    common.logger.debug(5,str(params))
                
                     fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
                     for i in fl.readlines():
