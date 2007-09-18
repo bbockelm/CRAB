@@ -477,7 +477,7 @@ class Crab:
                 # modified to support server mode
                 if (self.UseServer== 1):
                     from SubmitterServer import SubmitterServer
-                    self.actions[opt] = SubmitterServer(self.cfg_params)
+                    self.actions[opt] = SubmitterServer(self.cfg_params, val)
                 else:
                 # modified to support server mode
                     # get user request
