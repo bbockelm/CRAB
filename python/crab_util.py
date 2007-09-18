@@ -58,7 +58,7 @@ def definePath(isOriginal):
         paths = bpath_original.split(':')
         bpath = ''
         for p in paths:
-            if p.find( cmssw ) != -1 and p.find( 'python') != -1:continue
+            if p.find( cmssw ) != -1 and p.find( 'python') != -1 and p.find( 'Crab') == -1:continue
             bpath+= p + ':'
     except:
         import traceback
