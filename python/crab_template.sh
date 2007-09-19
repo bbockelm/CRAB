@@ -72,15 +72,16 @@ function cmscp {
 ## Put into an array the remote file metadata
     remoteMetadata=(`srm-get-metadata $destination | grep -v WARNING`)
     remoteSize=`echo ${remoteMetadata[5]}| tr -d :`
-
+    echo "--> remote Size = $remoteSize"
 ## ditto for local file
     localFileSize=(`ls -l $file`)
-    localSize=${localFileSize[5]}
+    localSize=${localFileSize[4]}
+    echo "-->  local Size = $localSize"
 
     if [ $localSize != $remoteSize ]; then
     echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
       echo "Copy failed: removing remote file $destiantion"
-      srmrm $destination
+      srm-advisory-delete $destination
       exit_status=2
       continue
     fi
