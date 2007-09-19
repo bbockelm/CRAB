@@ -23,28 +23,28 @@ class EdgConfig:
         return self.theConfigVO
 
     def getConfig_(self):
-        if not os.path.exists(self.configFileName):
-            url = self.url+self.configFileName
-            common.logger.message('Downloading config files for RB: '+url)
-            try:
-                f = urllib.urlopen(url)
-                ff = open(self.configFileName, 'w')
-                ff.write(f.read())
-                ff.close()
-            except IOError:
-                # print 'Cannot access URL: '+url
-                raise CrabException('Cannot download config file '+self.configFileName+' from '+self.url)
+#        if not os.path.exists(self.configFileName):
+        url = self.url+self.configFileName
+        common.logger.message('Downloading config files for RB: '+url)
+        try:
+            f = urllib.urlopen(url)
+            ff = open(self.configFileName, 'w')
+            ff.write(f.read())
+            ff.close()
+        except IOError:
+            # print 'Cannot access URL: '+url
+            raise CrabException('Cannot download config file '+self.configFileName+' from '+self.url)
         return os.getcwd()+'/'+self.configFileName
 
     def getConfigVO_(self):
-        if not os.path.exists(self.configVOFileName):
-            url = self.url+self.configVOFileName
-            common.logger.message('Downloading config files for RB: '+url)
-            try:
-                f = urllib.urlopen(url)
-                ff = open(self.configVOFileName, 'w')
-                ff.write(f.read())
-                ff.close()
-            except IOError:
-                raise CrabException('Cannot download configVO file '+self.configVOFileName+' from '+self.url)
+#        if not os.path.exists(self.configVOFileName):
+        url = self.url+self.configVOFileName
+        common.logger.message('Downloading config files for RB: '+url)
+        try:
+            f = urllib.urlopen(url)
+            ff = open(self.configVOFileName, 'w')
+            ff.write(f.read())
+            ff.close()
+        except IOError:
+            raise CrabException('Cannot download configVO file '+self.configVOFileName+' from '+self.url)
         return os.getcwd()+'/'+self.configVOFileName
