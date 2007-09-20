@@ -35,6 +35,8 @@ class CommandManagerComponent:
         self.args['dropBoxPath'] = None
         self.args['bossClads'] = None
 
+        self.args['crabMaxRetry'] = 5
+
         self.args.update(args)
            
         if self.args['Logfile'] == None:
@@ -330,7 +332,7 @@ class CommandManagerComponent:
                   return
 
              logging.info('The command will be retried during next DropBox cycle.')
-             newfilename = taskName + '.' + str(eval(nretry)+1) + '.xml'
+             newfilename = taskName + '.' + str(int(nretry)+1) + '.xml'
              os.rename(filename, newfilename)
              logging.info('The new file name is '+newfilename)
              #self.msFwdCmd.publish("DropBoxGuardianComponent:NewCommand", filename, "00:00:30")
@@ -354,7 +356,7 @@ class CommandManagerComponent:
              return
 
         # push the message
-        cwMsg = proxyPath+'::'+taskName+'::'+str(dict['Range'])+'::'+int(self.args['crabMaxRetry'])
+        cwMsg = proxyPath+'::'+taskName+'::'+str(dict['Range'])+'::'+str(self.args['crabMaxRetry'])
         self.msFwdCmd.publish("ProxyTarballAssociatorComponent:CrabWork", cwMsg)
         self.msFwdCmd.commit()
 

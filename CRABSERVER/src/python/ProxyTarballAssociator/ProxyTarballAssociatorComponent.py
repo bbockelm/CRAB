@@ -18,6 +18,9 @@ import commands
 import re
 from MessageService.MessageService import MessageService
 
+from ProdAgentDB.Config import defaultConfig as dbConfig
+from ProdCommon.Database import Session
+
 class ProxyTarballAssociatorComponent:
     """
     _ProxyTarballAssociatorComponent_
@@ -30,6 +33,12 @@ class ProxyTarballAssociatorComponent:
         self.args['ProxiesDir'] = None
         self.args['bossClads'] = None
         self.args['crabMaxRetry'] = 5
+        ## mcinquil ##
+        self.args['resourceBroker'] = "CNAF"
+        self.args['uiConfigRB'] = None
+        self.args['uiConfigRBVO'] = None
+        self.args['uiConfigWMS'] = "/home/crab/src_dir/CRABSERVER/src/python/ProxyTarballAssociator/glite.conf.CMS_CERN"#None
+        ######################
         self.args.update(args)
            
         if self.args['Logfile'] == None:
@@ -57,6 +66,12 @@ class ProxyTarballAssociatorComponent:
         self.CrabworkDir = ''
         self.bossClads = str(self.args['bossClads'])
         self.maxRetry = int(self.args['crabMaxRetry'])
+        ## mcinquil ##
+        self.resourceBroker = str( self.args['resourceBroker'] )
+        self.uiConfigRB = str( self.args['uiConfigRB'] )
+        self.uiConfigWMS = str( self.args['uiConfigWMS'] )
+        self.uiConfigRBVO = str( self.args['uiConfigRBVO'] )
+        ######################
 
         try:
             path = self.dropBoxPath+"/proxytar.set"
@@ -67,6 +82,24 @@ class ProxyTarballAssociatorComponent:
         except IOError, ex:
             logging.info("Failed to open proxytar.set. Building a new status item")
             self.files = []
+
+        ## mcinquil ##
+        ## downloading RB-WMS config each time the component starts ##
+        self.listGet = []
+        if not os.path.exists( self.uiConfigRB ) or not os.path.exists( self.uiConfigWMS ) or not os.path.exists( self.uiConfigRBVO ):
+            self._getConfig_()
+        if os.path.exists( self.uiConfigRB ):
+            logging.info(" Using for edg configuration in: " + str(self.uiConfigRB) +"." )
+        else:
+            logging.info(" Using " + str(self.resourceBroker) + " as RB for edg.")
+        if os.path.exists( self.uiConfigRBVO ):
+            logging.info(" Using for edg configuration in: " + str(self.uiConfigRBVO) +"." )
+        if  os.path.exists( self.uiConfigWMS ):
+            logging.info(" Using for glite(coll) configuration in: " + str(self.uiConfigWMS) +"." )
+        else:
+            logging.info(" Using " + str(self.resourceBroker) + " as RB for glite(coll).")
+        ######################
+
 
     def __call__(self, event, payload):
         """
@@ -159,6 +192,11 @@ class ProxyTarballAssociatorComponent:
         self.ms.subscribeTo("ProxyTarballAssociatorComponent:EndDebug")
 
         while True :
+            # Session.set_database(dbConfig)
+            # Session.connect('PTar_session')
+            # Session.set_session('PTar_session')
+            # Session.start_transaction('PTar_session')
+
             # Events listening and translation
             self.associated = ""
             type, payload = self.ms.get()
@@ -173,6 +211,11 @@ class ProxyTarballAssociatorComponent:
 
             # Prepared project ticket
             logging.info(self.associated)# for Debug only #Fabio
+
+            # close the session
+            # Session.commit('PTar_session')
+            # Session.close('PTar_session')
+        pass    
 
 ### ## Matching Procedure
     def matchingProxy(self, uuid=None, taskDir = None):
@@ -325,7 +368,10 @@ class ProxyTarballAssociatorComponent:
        cfgData = []
        cfgData = f.readlines()
        f.close()
-       foundItems = ['server_mode', 'dont_check_proxy', 'use_central_bossDB', 'boss_clads']
+       ## mcinquil ##
+       scheduler = None
+       foundItems = ['scheduler','server_mode', 'dont_check_proxy', 'use_central_bossDB', 'boss_clads']
+       ######################
        idxCrab = 0
        idxUser = 0
        for i in xrange(len(cfgData)):
@@ -335,6 +381,13 @@ class ProxyTarballAssociatorComponent:
                   idxCrab = i+1
               elif '[USER]' in l:
                   idxUser = i+1
+              ## mcinquil ##
+              elif 'scheduler' in l: 
+                  scheduler = l.split("scheduler",1)[1].split("=",1)[1].replace(" ","").replace("\n","").replace("\t","")
+                  #logging.info(" scheduler = " + str(scheduler) )
+                  if 'scheduler' in foundItems: 
+                       foundItems.remove('scheduler')
+              ######################
               elif 'server_mode' in l: 
                   cfgData[i] = 'server_mode = 9999\n'
                   if 'server_mode' in foundItems: 
@@ -374,6 +427,78 @@ class ProxyTarballAssociatorComponent:
             f = open(sched,'r')
             readedData = f.readlines()
             f.close()
+            ## mcinquil ##
+            for m in xrange(len(readedData)):
+                n = readedData[m]
+                if not('RBconfigVO' in n) and not('RBconfig' in n) and not('WMSconfig' in n):
+                    readedData[m] = readedData[m]
+                else:
+                    readedData[m] = ""
+
+            ### check the schduler ###
+            if scheduler == "edg":
+                appended1 = 0
+                appended2 = 0
+                ### if specified by admin ###
+                if os.path.exists( self.uiConfigRB ):
+                    appended1 = 1
+                    readedData.append("RBconfig = \""+self.uiConfigRB+"\";\n")
+                ### if not ###
+                else:
+                    for configFile in self.listGet:
+                        if configFile.find("edg") != -1 and configFile.find(self.args['resourceBroker']) != -1 and configFile.find("cmd_var") != -1 :
+                             appended1 = 1
+                             ### append the RBconfig requirement with downloaded file ###
+                             #logging.info( "appending RBconfig")
+                             readedData.append("RBconfig = \""+os.path.join(self.dropBoxPath,configFile)+"\";\n")
+                ### if specified by admin ###
+                if os.path.exists( self.uiConfigRBVO ):
+                    appended2 = 1
+                    readedData.append("RBconfigVO = \""+self.uiConfigRBVO+"\";\n")
+                ### if not ###
+                else:
+                    for configFile in self.listGet:
+                        if configFile.find("edg") != -1 and configFile.find(self.args['resourceBroker']) != -1 and configFile.find("cmd_var") == -1:
+                             appended2 = 1
+                             ### append the RBconfigVO requirement with downloaded file ###
+                             #logging.info( "appending RBconfigVO")
+                             readedData.append("RBconfigVO = "+os.path.join(self.dropBoxPath,configFile)+";") 
+                appended = appended1 and appended2
+            ### check the schduler ###
+            elif scheduler == "glite" or scheduler == "glitecoll":
+                appended = 0
+                ### if specified by admin ###
+                if os.path.exists( self.uiConfigWMS ):
+                    appended = 1
+                    readedData.append("RBconfig = \""+self.uiConfigWMS+"\";\n")
+                ### if not ###
+                else:
+                    for configFile in self.listGet:
+                        if configFile.find("glite") != -1 and configFile.find(self.args['resourceBroker']) != -1:
+                            appended = 1
+                             ### append the WMSconfig requirement with downloaded file ###
+                            readedData.append("WMSconfig = \""+os.path.join(self.dropBoxPath,configFile)+"\";\n")
+            ### check if appended ###
+            if appended != 1:
+                for configFile in self.listGet:
+                    if configFile.find("edg") != -1 and configFile.find(self.args['resourceBroker']) != -1 and configFile.find("cmd_var") != -1:
+                        readedData.append("RBconfig = \""+os.path.join(self.dropBoxPath,configFile)+"\";\n")
+                    elif configFile.find("edg") != -1 and configFile.find(self.args['resourceBroker']) != -1 and configFile.find("cmd_var") == -1:
+                        readedData.append("RBconfigVO = "+os.path.join(self.dropBoxPath,configFile)+";")
+                    elif configFile.find("glite") != -1 and configFile.find(self.args['resourceBroker']) != -1:
+                        readedData.append("WMSconfig = \""+os.path.join(self.dropBoxPath,configFile)+"\";\n")
+            ######################
+
+            #logging.info(str(readedData))
+            f = open(sched,'w')
+            f.writelines(readedData)
+            f.close()
+ 
+            """
+            os.system( 'cp %s %s.orig'%(sched,sched) )
+            f = open(sched,'r')
+            readedData = f.readlines()
+            f.close()
             for m in xrange(len(readedData)):
                  n = readedData[m]
                  if 'RBconfigVO' in n:
@@ -387,7 +512,52 @@ class ProxyTarballAssociatorComponent:
             f = open(sched,'w')
             f.writelines(readedData)
             f.close()
+            """
        pass
 
+    ## mcinquil ##
+    def _getConfig_(self):
+       """
+       _getConfig_
 
+       get the RB/WMS files in to the dropBox
+       """
+       rbList = ["CERN", "CNAF"] ## possibility to add more
+       schedList = ["edg", "glite"] ## as well as above
+       basicUrl = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
+       configFileName = '.conf.CMS_'
+       additionalStrEdg = '_wl_ui'
+
+       dropBox = self.args['dropBoxPath']
+ 
+       self.listGet = []
+
+       for sched in schedList:
+           #for rb in self.resourceBroker:#rbList:
+           if sched == "edg":
+               getPath = sched + additionalStrEdg + configFileName + self.resourceBroker
+               self.listGet.append( sched + additionalStrEdg + "_cmd_var" + configFileName + self.resourceBroker )
+           else:
+               getPath = sched + configFileName + self.resourceBroker
+##           logging.info(" echo: " +str(getPath))
+           if getPath != None and getPath != "":
+               self.listGet.append(getPath)
+       ## flag to return: if every download will be ok => return True else return False
+       flag = True
+       import urllib
+       for fileName in self.listGet: 
+           try:
+               logging.info("Trying to download: " + basicUrl + fileName + " - into: " + os.path.join( dropBox, fileName ) )
+               f = urllib.urlopen( basicUrl + fileName )
+               ff = open( os.path.join( dropBox, fileName ), 'w')
+               ff.write(f.read())
+               ff.close()
+           finally:
+               if not os.path.exists( os.path.join( dropBox, fileName ) ):
+                   flag = False
+                   logging.error('Cannot download config file '+ os.path.join( dropBox, fileName ) +' from ' +  basicUrl + fileName )
+               else:
+                   logging.info("          download finished.")
+       return flag
+    ######################
 

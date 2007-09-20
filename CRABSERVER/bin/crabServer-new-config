@@ -87,6 +87,10 @@ componentFields = {
     
     "ProxyTarballAssociator" : {
     'ComponentDir':None,
+    'resourceBroker':'CERN',
+    'uiConfigRB':'',
+    'uiConfigRBVO':'',
+    'uiConfigWMS':'',
     },
 
     "DropBoxGuardian" : {

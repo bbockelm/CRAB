@@ -14,6 +14,8 @@ import getopt
 from ProdAgentCore.Configuration import loadProdAgentConfiguration
 from ProdAgentCore.CreateDaemon import createDaemon
 from ProxyTarballAssociator.ProxyTarballAssociatorComponent import ProxyTarballAssociatorComponent
+from ProdAgentCore.PostMortem import runWithPostMortem
+
 
 
 #  //
@@ -37,4 +39,6 @@ compCfg['ComponentDir'] = os.path.expandvars(compCfg['ComponentDir'])
 
 createDaemon(compCfg['ComponentDir'])
 component = ProxyTarballAssociatorComponent(**dict(compCfg))
-component.startComponent()
+#component.startComponent()
+runWithPostMortem(component, compCfg['ComponentDir'])
+
