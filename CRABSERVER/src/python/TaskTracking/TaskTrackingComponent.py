@@ -330,7 +330,7 @@ class TaskTrackingComponent:
                 OK += "  Task ["+taskName+"] submitted to the grid.\n"
                 OK += "    -> WARNING: couldn't submit jobs "+str(eval(payload.split("::")[2]))+".\n"
                 ## end dbg info ##
-                self.preUpdatePartialTask(taskName, self.taskState[7])
+                self.preUpdatePartialTask(payload, self.taskState[7])
 
 #                semvar.acquire()
 #                newstate[payload]="fail"
@@ -375,7 +375,7 @@ class TaskTrackingComponent:
                 OK += "  Task ["+taskName+"] submitted to the grid.\n"
                 OK += "    -> submitted range of jobs: "+str(eval(payload.split("::")[2]))+".\n"
                 ## end dbg info ##
-                self.preUpdatePartialTask(payload, self.taskState[7])
+                self.preUpdatePartialTask(payload, self.taskState[9])
             else:
                 logBuf = self.__logToBuf__(logBuf," ")
                 logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -570,9 +570,11 @@ class TaskTrackingComponent:
         fields = payload.split("::")
         taskName = fields[0]
         totJobs = int(fields[1])
-        jobList = eval( fields[2] )
         pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
-        self.addJobsToFile( pathToWrite, jobList )#, totJobs)
+        jobList = []
+        if status == self.taskState[7]:
+            jobList = eval( fields[2] )
+            self.addJobsToFile( pathToWrite, jobList )#, totJobs)
 
         ## call function that updates DB
         self.updateTaskStatus(taskName, status)
@@ -1132,7 +1134,7 @@ class TaskTrackingComponent:
 			        jobPartList = self.getJobFromFile(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir)
 
 			        if stato == "SE" or stato == "E":
-				    if runInfoJob['EXE_EXIT_CODE'] == "0": #and runInfoJob['JOB_EXIT_STATUS'] == "0":
+				    if runInfoJob['EXE_EXIT_CODE'] == "0" and runInfoJob['JOB_EXIT_STATUS'] == "0":
 				        dictReportTot['JobSuccess'] += 1
 				        dictStateTot[job][3] = 1
                                         dictFinishedJobs.setdefault(job, 1)
@@ -1621,7 +1623,7 @@ class MsgQueueExecuterThread(Thread):
         while True:
             try:
                 self.msgExecuterMethod()
-                time.sleep(10)
+                time.sleep(5)
             except Exception, ex:
                 # log error message
                 # new exception(detailed) logging
