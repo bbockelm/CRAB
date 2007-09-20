@@ -94,11 +94,14 @@ class SubmitterServer(Actor):
         start = time.time()
         flagSubmit = 1
         common.jobDB.load()
-        
+
+        list_nJ = []
+
         if self.submitRange == 'all':
            list_nJ = range(common.jobDB.nJobs())
         else:
-           list_nJ = self.submitRange
+           for x in self.submitRange:
+               list_nJ.append(int(x)-1)
         #   
         for nj in list_nJ:
             if (common.jobDB.status(nj)=='C') or (common.jobDB.status(nj)=='RC'):
@@ -196,7 +199,8 @@ class SubmitterServer(Actor):
                 if self.submitRange == 'all':
                     list_nJ = range(common.jobDB.nJobs())
                 else:
-                    list_nJ = self.submitRange
+                    for x in self.submitRange:
+                        list_nJ.append(int(x)-1)
                 #   
                 for nj in list_nJ:
                     common.jobDB.setStatus(nj, 'S')
@@ -276,7 +280,8 @@ class SubmitterServer(Actor):
             else: 
                 common.logger.message("Submission command succesfully shipped to server")
                 for nj in delta_subm:
-                    common.jobDB.setStatus(nj, 'S')
+                    print "Setting job " +str(nj-1)
+                    common.jobDB.setStatus((nj-1), 'S')
                     common.jobDB.save()
         except RuntimeError,e:
             msg +="Project "+str(WorkDirName)+" not submitted: \n"      
