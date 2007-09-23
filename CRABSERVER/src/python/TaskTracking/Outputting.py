@@ -128,10 +128,15 @@ class Outputting:
                 jobs2Write.append(job)
         logging.info("  Ended jobs: " + str(jobs2Write))
         self.add2List( path, self.jobEndedCache, jobs2Write )
+        logging.info("path = " +str(path)+ " - taskName: " +str(taskName)+ " - nJob: " +str(nJob)+ " - jobs2Write: " +str(jobs2Write) )
         fileList = self.prepareTempDir( path, taskName, nJob, jobs2Write )
         if fileList != None:
+            logging.info("Adding to tar file...")
             self.add2Tar( path, fileList )
+            logging.info("Gunzipping tar file...")
             self.prepareGunzip( path )
+        else:
+            logging.error("problems manipulating job-id")
 
         os.chdir( work_dir )
 

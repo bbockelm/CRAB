@@ -1398,6 +1398,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkFailed")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformedPartial")
         self.ms.subscribeTo("CrabServerWorkerComponent:FastKill")
+        self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkRangeSubmitPerformed")
 	self.ms.subscribeTo("DropBoxGuardianComponent:NewFile")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:WorkDone")
 	self.ms.subscribeTo("ProxyTarballAssociatorComponent:UnableToManage")
@@ -1629,7 +1630,7 @@ class MsgQueueExecuterThread(Thread):
         while True:
             try:
                 self.msgExecuterMethod()
-                time.sleep(5)
+                time.sleep(3)
             except Exception, ex:
                 # log error message
                 # new exception(detailed) logging
