@@ -368,7 +368,7 @@ class TaskTrackingComponent:
         if event == "CrabServerWorkerComponent:CrabWorkRangeSubmitPerformed":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, event + ": %s ", payload )
+                logBuf = self.__logToBuf__(logBuf, event + ": %s " % payload )
                 logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
                 taskName = str(payload.split("::")[0])
                 ## start dbg info ##
@@ -1100,6 +1100,7 @@ class TaskTrackingComponent:
                             dictFinishedJobs = {}
 			    v = taskDict.values()[0]
 			    statusJobsTask = v.jobStates()
+#                            logBuf = self.__logToBuf__(logBuf," --> %s <--> %s <--"%(taskName, str(len(statusJobsTask))) )
 
 			    for job,stato in statusJobsTask.iteritems():
                                 jobInfo = v.Job(job)
@@ -1131,7 +1132,7 @@ class TaskTrackingComponent:
                                     vect = [self.convertStatus(stato), runInfoJob['EXE_EXIT_CODE'], runInfoJob['JOB_EXIT_STATUS'], 0, Resub, site]
                                 dictStateTot.setdefault(job, vect)
  
-			        jobPartList = self.getJobFromFile(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir)
+                                jobPartList = self.getJobFromFile(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir)
 
 			        if stato == "SE" or stato == "E":
 				    if runInfoJob['EXE_EXIT_CODE'] == "0" and runInfoJob['JOB_EXIT_STATUS'] == "0":
@@ -1168,15 +1169,20 @@ class TaskTrackingComponent:
                                         countNotSubmitted += 1
                                         dictReportTot['JobFailed'] += 1
                                         dictFinishedJobs.setdefault(job, 0)
-                                        if status == self.taskState[9]:
-                                            dictStateTot[job][0] = "Created"
-                                        else:
-                                            dictStateTot[job][0] = "NotSubmitted"
+#                                        if status == self.taskState[9]:
+#                                            dictStateTot[job][0] = "Created"
+                                        #else:
+                                        dictStateTot[job][0] = "NotSubmitted"
                                     elif status == self.taskState[4]:
                                         #countNotSubmitted += 1   
                                         dictReportTot['JobFailed'] += 1
                                         dictFinishedJobs.setdefault(job, 0)
                                         dictStateTot[job][0] = "Killed"
+                                    elif status == self.taskState[9]:
+                                        dictStateTot[job][0] = "Created"
+                                        countNotSubmitted += 1
+                                        dictFinishedJobs.setdefault(job, 0)
+                                        dictReportTot['JobInProgress'] += 1
                                     else:
                                         countNotSubmitted += 1
                                         dictReportTot['JobInProgress'] += 1
