@@ -1282,16 +1282,16 @@ class TaskTrackingComponent:
                                                 ##hassen added and commented
                                                 obj = Outputting( self.xmlReportFileName, self.tempxmlReportFile )
                                                 logBuf = self.__logToBuf__(logBuf, "**** ** **** ** ****")
-                                                logBuf = self.__lotToBuf__(logBuf, "  preparing OUTPUT FAILED")
+                                                logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT FAILED")
                                                 #obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
                                                 obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs,"Failed" )
                                                 #obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
-                                                logBuf = self.__lotToBuf__(logBuf, str(dictFinishedJobs))
+                                                logBuf = self.__logToBuf__(logBuf, str(dictFinishedJobs))
                                                 if os.path.exists( pathToWrite+"/failed.tar.gz" ):
-                                                    logBuf = self.__lotToBuf__(logBuf, "  preparing OUTPUT failed finished")
+                                                    logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT failed finished")
 
                                                 else:
-                                                    logBuf = self.__lotToBuf__(logBuf, "  preparing OUTPUT FAILED")
+                                                    logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT FAILED")
 
 
                                                 #self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
