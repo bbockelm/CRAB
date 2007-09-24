@@ -253,7 +253,7 @@ class CommandManagerComponent:
         if len(taskDict) > 0:
              
              # Killable status  
-             if stat[0] in ["partially submitted", "submitted", "ended", "partially killed"]:
+             if stat[0] in ["partially submitted", "submitted", "ended", "partially killed", "range submitted"]:
                   taskSpecId = taskName
 
              # No killable status
