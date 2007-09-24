@@ -477,16 +477,24 @@ class Crab:
                 # modified to support server mode
                 if (self.UseServer== 1):
                     from SubmitterServer import SubmitterServer
-                    self.actions[opt] = SubmitterServer(self.cfg_params, val)
+                    self.actions[opt] = SubmitterServer(self.cfg_params, self.parseRange_(val), val)
                 else:
                 # modified to support server mode
                     # get user request
                     nsjobs = -1
                     if val:
-                        if ( isInt(val) ):
-                            nsjobs = int(val)
-                        elif (val=='all'):
+                        if val=='all': 
                             pass
+                        elif (type(eval(val)) is int) and eval(val) > 0:
+                            # positive number
+                            nsjobs = eval(val)
+                        # NEW PART # Fabio
+                        # put here code for LIST MANAGEMEN
+                        elif (type(eval(val)) is tuple)or( type(eval(val)) is int and eval(val)<0 ) :
+                            chosenJobsList = self.parseRange_(val)
+                            chosenJobsList = [i-1 for i in chosenJobsList ]
+                            nsjobs = len(chosenJobsList) 
+                        #
                         else:
                             msg = 'Bad submission option <'+str(val)+'>\n'
                             msg += '      Must be an integer or "all"'
@@ -502,17 +510,30 @@ class Crab:
                     jobSetForSubmission = 0
                     jobSkippedInSubmission = []
                     datasetpath=self.cfg_params['CMSSW.datasetpath']
-                    for nj in range(common.jobDB.nJobs()):
-                        if (self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(nj)) != '') or (datasetpath == None ):
+
+                    # NEW PART # Fabio
+                    # modified to handle list of jobs by the users # Fabio
+                    tmp_jList = range(common.jobDB.nJobs())
+                    if chosenJobsList != None:
+                        tmp_jList = chosenJobsList
+                    # build job list
+                    for nj in tmp_jList:
+                        cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(nj)) # More readable # Fabio
+                        if (cleanedBlackWhiteList != '') or (datasetpath == None ):
                             if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
                                 jobSetForSubmission +=1
                                 nj_list.append(nj)
-                            else: continue
+                            else: 
+                                continue
                         else :
                             jobSkippedInSubmission.append(nj+1)
+                        #
                         if nsjobs >0 and nsjobs == jobSetForSubmission:
                             break
                         pass
+                    del tmp_jList
+                    #
+
                     if nsjobs>jobSetForSubmission:
                         common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
                     if len(jobSkippedInSubmission) > 0 :

@@ -19,54 +19,11 @@ import xml.dom.minidom
 import xml.dom.ext
 
 class SubmitterServer(Actor):
-    def __init__(self, cfg_params, val='all'):
+    def __init__(self, cfg_params, parsedRange, nominalRange):
 
         self.cfg_params = cfg_params
-
-        # submission by range # Fabio
-        if val == '' or val == None:
-            val = 'all'
-
-        # check that the requested range is well-formed and create the submission directive #Fabio
-        self.submitRange = val
-        try:
-            msg = 'Not well formed definition for the submission range. '
-            msg += 'Please use a proper range format\n'
- 
-            if val != 'all' and ( type(eval(val)) is not int or int(eval(val)) < 0 ):
-                # it must be a composite range: a list, an interval or both...
-                self.submitRange = []
-
-                for i in str(val).split(','):
-                    # manage ranges: a-b
-                    parts = str(i).split('-')
-                    if len(parts) == 2:
-                        # if not int exception raised
-                        fst = int(parts[0])
-                        snd = int(parts[1])
-                        # if not monotonic
-                        if not (fst < snd):
-                            raise CrabException(msg)
-                        self.submitRange += range(fst, snd+1)
-                    # manage simple list items: a,b,c 
-                    elif len(parts) == 1:
-                        # it must be a positive integer
-                        fst = int(parts[0])
-                        if fst <= 0:
-                            raise CrabException(msg)
-                        self.submitRange += [fst]
-                    else:
-                        raise CrabException(msg)
-
-                # cleanup submission list
-                tmp_sR = []
-                tmp_sR += [i for i in self.submitRange if i not in tmp_sR]
-                self.submitRange = [] + tmp_sR 
-                del tmp_sR
-        except Exception, e:
-            msg += ' '+str(e)
-            raise CrabException(msg)
-        #
+        self.submitRange = parsedRange
+        self.nominalRange = nominalRange # unparsed version of the range # useful to distinguish 'all'
         
         try:  
             self.server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
@@ -97,8 +54,8 @@ class SubmitterServer(Actor):
 
         list_nJ = []
 
-        if self.submitRange == 'all':
-           list_nJ = range(common.jobDB.nJobs())
+        if self.nominalRange == 'all':
+           list_nJ = self.submitRange
         else:
            for x in self.submitRange:
                list_nJ.append(int(x)-1)
@@ -143,7 +100,10 @@ class SubmitterServer(Actor):
 
         ### Create submission range directive file # Fabio
         submDirectiveFile = open(common.work_space.shareDir()+'/submit_directive','w')
-        submDirectiveFile.write(str(self.submitRange))
+        if self.nominalRange == 'all':
+             submDirectiveFile.write('all\n')
+        else:
+             submDirectiveFile.write(str(self.submitRange))
         submDirectiveFile.close()
         # 
     
@@ -196,8 +156,8 @@ class SubmitterServer(Actor):
             else:
                 msg='Project '+str(WorkDirName)+' succesfuly submitted to the server \n'      
                 common.logger.message(msg)
-                if self.submitRange == 'all':
-                    list_nJ = range(common.jobDB.nJobs())
+                if self.nominalRange == 'all':
+                    list_nJ = self.submitRange
                 else:
                     for x in self.submitRange:
                         list_nJ.append(int(x)-1)
@@ -242,13 +202,10 @@ class SubmitterServer(Actor):
             return
 
         prev_subms = eval(prev_subms)
-
-        if self.submitRange == 'all': 
-            delta_subm = [i for i in range(1, common.jobDB.nJobs()+1) if i not in prev_subms]
+        delta_subm = [i for i in self.submitRange if i not in prev_subms]
+        new_subms = prev_subms + delta_subm
+        if self.nominalRange == 'all': 
             new_subms = 'all'
-        else:
-            delta_subm = [i for i in self.submitRange if i not in prev_subms]
-            new_subms = prev_subms + delta_subm
 
         if len(delta_subm) == 0:
             common.logger.message("Impossible to submit jobs that are already submitted")
