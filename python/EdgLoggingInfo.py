@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import sys
+import sys , re #DS
+EXIT_CODE_RE = re.compile('^\s*-\s*[Ee]xit.[Cc]ode\s*=\s*(.*?)\s*$')
 
 class EdgLoggingInfo:
     def __init__(self) :
@@ -73,8 +74,11 @@ class EdgLoggingInfo:
                 final_done = 1
             if line.count('reason') >= 1 :
                 reason = self.parse_reason(line.split('=')[1].strip())
-            if line.count('exit_code') >= 1 :
-                exit_code = line.split('=')[1].strip()
+            match = EXIT_CODE_RE.match(line) #DS
+            if match:                       #DS                         
+                exit_code = match.groups()[0] #DS
+            #if line.count('exit_code') >= 1 :
+            #    exit_code = line.split('=')[1].strip()
             # if line.count('time') >= 1 :
             #     time = line.split('=')[1].strip()
             
