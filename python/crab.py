@@ -482,6 +482,7 @@ class Crab:
                 # modified to support server mode
                     # get user request
                     nsjobs = -1
+                    chosenJobsList = None
                     if val:
                         if val=='all': 
                             pass
