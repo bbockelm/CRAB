@@ -1196,9 +1196,10 @@ class Cmssw(JobType):
             txt += '    exit_status=60302\n'
             txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
             ############# FEDE ADDED CHECK FOR OUTPUT #############
+            ## MATTY's FIX: the exit option was interrupting the execution
             if fileWithSuffix in self.output_file:
                 txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
-                txt += '    exit $exit_status\n'
+                txt += '    # exit $exit_status\n'
             #######################################################    
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
