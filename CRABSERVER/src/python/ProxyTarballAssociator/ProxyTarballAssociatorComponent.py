@@ -4,8 +4,8 @@ _ProxyTarballAssociatorComponent_
 
 """
 
-__version__ = "$Revision: 1.9 $"
-__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.9 2007/06/28 23:17:13 spiga Exp $"
+__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.11 2007/09/20 10:16:11 farinafa Exp $"
 
 import os
 import socket
@@ -37,7 +37,7 @@ class ProxyTarballAssociatorComponent:
         self.args['resourceBroker'] = "CNAF"
         self.args['uiConfigRB'] = None
         self.args['uiConfigRBVO'] = None
-        self.args['uiConfigWMS'] = "/home/crab/src_dir/CRABSERVER/src/python/ProxyTarballAssociator/glite.conf.CMS_CERN"#None
+        self.args['uiConfigWMS'] = None
         ######################
         self.args.update(args)
            
@@ -462,7 +462,7 @@ class ProxyTarballAssociatorComponent:
                              appended2 = 1
                              ### append the RBconfigVO requirement with downloaded file ###
                              #logging.info( "appending RBconfigVO")
-                             readedData.append("RBconfigVO = "+os.path.join(self.dropBoxPath,configFile)+";") 
+                             readedData.append("RBconfigVO = \""+os.path.join(self.dropBoxPath,configFile)+"\";") 
                 appended = appended1 and appended2
             ### check the schduler ###
             elif scheduler == "glite" or scheduler == "glitecoll":
@@ -470,7 +470,7 @@ class ProxyTarballAssociatorComponent:
                 ### if specified by admin ###
                 if os.path.exists( self.uiConfigWMS ):
                     appended = 1
-                    readedData.append("RBconfig = \""+self.uiConfigWMS+"\";\n")
+                    readedData.append("WMSconfig = \""+self.uiConfigWMS+"\";\n")
                 ### if not ###
                 else:
                     for configFile in self.listGet:
@@ -484,7 +484,7 @@ class ProxyTarballAssociatorComponent:
                     if configFile.find("edg") != -1 and configFile.find(self.args['resourceBroker']) != -1 and configFile.find("cmd_var") != -1:
                         readedData.append("RBconfig = \""+os.path.join(self.dropBoxPath,configFile)+"\";\n")
                     elif configFile.find("edg") != -1 and configFile.find(self.args['resourceBroker']) != -1 and configFile.find("cmd_var") == -1:
-                        readedData.append("RBconfigVO = "+os.path.join(self.dropBoxPath,configFile)+";")
+                        readedData.append("RBconfigVO = \""+os.path.join(self.dropBoxPath,configFile)+"\";")
                     elif configFile.find("glite") != -1 and configFile.find(self.args['resourceBroker']) != -1:
                         readedData.append("WMSconfig = \""+os.path.join(self.dropBoxPath,configFile)+"\";\n")
             ######################
