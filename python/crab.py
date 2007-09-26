@@ -520,7 +520,7 @@ class Crab:
                     # build job list
                     for nj in tmp_jList:
                         cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(nj)) # More readable # Fabio
-                        if (cleanedBlackWhiteList != '') or (datasetpath == None ):
+                        if (cleanedBlackWhiteList != '') or (datasetpath == "None" ) or (datasetpath == None): ## Matty's fix
                             if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
                                 jobSetForSubmission +=1
                                 nj_list.append(nj)
