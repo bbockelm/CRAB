@@ -299,6 +299,14 @@ The type of the job to be executed: I<cmssw> jobtypes are supported
 
 The scheduler to be used: I<edg> is the standard grid one. Other choice are I<glite> or I<glitecoll> for bulk submission or I<condor_g> (see specific paragraph)
 
+=item B<server_mode>
+
+To use the CRAB-server mode put 1 in this field. If the server_mode key is equal to 0 crab works, as usual, in standalone way.
+
+=item B<server_name>
+
+The name of the server that you want to use plus the path of the server storage (eg: hostname/data/cms/). For the server names that are dedicated to the user analysis you have to contact the CRAB\' developers (use hyper-news mailing list).
+
 =back
 
 B<[CMSSW]>
@@ -385,15 +393,23 @@ B<[USER]>
 
 =item B<additional_input_files>
 
-Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. You don't need to specify the I<ParameterSet> you are using, which will be included automatically. Wildcards are allowed.
+Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. You don\'t need to specify the I<ParameterSet> you are using, which will be included automatically. Wildcards are allowed.
 
 =item B<script_exe>
 
-A user script that will be run on WN (instead of default cmsrun). It's up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (eg scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The script itself will be added automatically to the input sandbox.
+A user script that will be run on WN (instead of default cmsrun). It\'s up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (eg scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The script itself will be added automatically to the input sandbox.
 
 =item B<ui_working_dir>
 
 Name of the working directory for the current task. By default, a name I<crab_0_(date)_(time)> will be used. If this card is set, any CRAB command which require I<-continue> need to specify also the name of the working directory. A special syntax is also possible, to reuse the name of the dataset provided before: I<ui_working_dir : %(dataset)s> . In this case, if eg the dataset is SingleMuon, the ui_working_dir will be set to SingleMuon as well.
+
+=item B<thresholdLevel>
+
+This has to be a value between 0 and 100, that indicates the percentage of task completeness (jobs in a ended state are complete, even if failed). The server will notify the user by e-mail (look at the field: B<eMail>) when the task will reach the specified threshold. Works just with the server_mode = 1.
+
+=item B<eMail>
+
+The server will notify the specified e-mail when the task will reaches the specified B<thresholdLevel>. A notification is also sended when the task will reach the 100\% of completeness. This field can also be a list of e-mail: "B<eMail = user1@cern.ch, user2@cern.ch>". Works just with the server_mode = 1. 
 
 =item B<return_data *>
 
@@ -474,7 +490,8 @@ Any other requirements to be add to JDL. Must be written in compliance with JDL 
 =item B<additional_jdl_parameters:>
 
 Any other parameters you want to add to jdl file: comma separated list, each
-item B<must> be complete, including the closing ";"
+item B<must> be complete, including the closing ";". 
+With this field it\'s also possible to specify which WMS you want to use, adding the parameter "additional_jdl_parameters = WMProxyEndpoints ={"https://hostname:port/pathcode"};" where "hostname" is WMS\' name, the "port" generally is 7443 and the "pathcode" should be something like "glite_wms_wmproxy_server".
 
 =item B<max_cpu_time>
 
@@ -502,7 +519,7 @@ Only the SE (Storage Element) whose name contains the following strings (comma s
 
 =item B<virtual_organization>
 
-You don't want to change this: it's cms!
+You don\'t want to change this: it\'s cms!
 
 =item B<retry_count>
 
