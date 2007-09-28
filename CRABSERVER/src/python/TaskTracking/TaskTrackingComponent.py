@@ -625,6 +625,16 @@ class TaskTrackingComponent:
             return eval( file(taskPath + fileName, 'r').read() )#.split("::")
         return []
 
+    def addFailedJobToFile (self, taskPath, jobList):
+        fileName = "/.failedResubmitting.TT"
+        outfile = file(taskPath + fileName, 'w').write(str(jobList))
+
+    def getFailedJobFromFile(self, taskPath):
+        fileName = "/.failedResubmitting.TT"
+        if os.path.exists( taskPath + fileName ):
+            return eval( file(taskPath + fileName, 'r').read() )#.split("::")
+        return []
+
     
     def updateTaskStatus(self, payload, status):
         """
@@ -855,14 +865,17 @@ class TaskTrackingComponent:
         os.chdir( work_dir )
 
 
-    def prepareTarballFailed( self, path, taskName, nJob ):
+    def prepareTarballFailed( self, path, taskName, nJob, flag, listaFailed ):
         """
         _prepareTarballFailed_
         """
         work_dir = os.getcwd()
         os.chdir( path )
         cmd = 'mkdir .tmpFailed;'
-        for i in range(1, nJob+1):
+        lista =  range(1, nJob+1)
+        if flag != 0:
+            lista = listaFailed
+        for i in lista:
             ## Add parametric indexes for failed and successful jobs 
             jtResDir = 'job'+str(i)+'/JobTracking'
             ## Get the most recent failure and copy that to tmp 
@@ -880,19 +893,25 @@ class TaskTrackingComponent:
                 cmd += 'cp '+self.tempxmlReportFile+' .tmpDone/'+self.xmlReportFileName+' ;'
                 cmd += 'cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;'
                 #logging.info('cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;')
-        """
-                cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/* .tmpFailed;' 
-                                                                                          ## I didn' correct anything, but the failed must be preparesd 
-                                                                                          ## only for the kill and the abort logginginfo file whose are in 
-                                                                                          ## job1/JobTracking/Failed/Submission_*/log/   DS. 
-        cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/* --exclude failed.tgz --exclude done.tgz --exclude *BossChainer.log --exclude *BossProgram_1.log --exclude *edg_getoutput.log;';
-        """
-        cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/edgLoggingInfo_*.log;' 
-        cmd += 'rm -drf .tmpFailed;'
-        cmd += 'mv '+path+'/.temp_failed.tgz '+path+'/failed.tgz;'
-        os.system( cmd )
-        os.chdir( work_dir )
- 
+                if flag != 0:
+                     cmd += 'cp '+ jtResDir +'/Failed/Submission_1/std*/* .tmpFailed/;'
+                     cmd += 'cp '+ jtResDir +'/Failed/Submission_1/root/* .tmpFailed/;'
+        if flag == 0:
+            cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/edgLoggingInfo_*.log;' 
+            cmd += 'rm -drf .tmpFailed;'
+            cmd += 'mv '+path+'/.temp_failed.tgz '+path+'/failed.tgz;'
+            os.system( cmd )
+            os.chdir( work_dir )
+            pass
+        else:
+            cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/*;'
+            logging.info('tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/*;')
+            cmd += 'mv '+path+'/.temp_failed.tgz '+path+'/IntermedFailed.tgz;'
+            cmd += 'rm -drf .tmpFailed;'
+            os.system( cmd )
+            os.chdir( work_dir )
+            pass
+
 
     def undiscoverXmlFile (self, path, taskName, fromFileName, toFileName):
         if os.path.exists(path + fromFileName):
@@ -1101,7 +1120,9 @@ class TaskTrackingComponent:
 			    v = taskDict.values()[0]
 			    statusJobsTask = v.jobStates()
 #                            logBuf = self.__logToBuf__(logBuf," --> %s <--> %s <--"%(taskName, str(len(statusJobsTask))) )
-
+                            listFailedJobs = self.getFailedJobFromFile( os.path.join(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir))
+                            #logBuf = self.__logToBuf__(logBuf, " -"+str(listFailedJobs)+"- ")
+                            listFailed2Prepare = []
 			    for job,stato in statusJobsTask.iteritems():
                                 jobInfo = v.Job(job)
 
@@ -1148,6 +1169,10 @@ class TaskTrackingComponent:
 				        dictReportTot['JobInProgress'] += 1
                                         dictStateTot[job][0] = "Resubmitting by server"#"Managing by server"
                                         dictFinishedJobs.setdefault(job, 0)
+                                        if resubmitting:
+                                            if job not in listFailedJobs:
+                                   #             logBuf = self.__logToBuf__(logBuf, " -adding JOB: "+str(job))
+                                                listFailed2Prepare.append( job )
 			        elif stato == "SA" or stato == "SK" or stato == "K":
 				    if not resubmitting:
 				        dictReportTot['JobFailed'] += 1
@@ -1156,6 +1181,9 @@ class TaskTrackingComponent:
 				        dictReportTot['JobInProgress'] += 1
                                         dictStateTot[job][0] = "Resubmitting by server"#"Managing by server"
                                         dictFinishedJobs.setdefault(job, 0)
+                                        if job not in listFailedJobs:
+                                   #         logBuf = self.__logToBuf__(logBuf, " -adding JOB: "+str(job))
+                                            listFailed2Prepare.append( job )
 			        elif stato == "W":
                                     if not resubmitting:
    				        countNotSubmitted += 1 
@@ -1206,6 +1234,13 @@ class TaskTrackingComponent:
                                 else:
                                     dictReportTot['JobInProgress'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
+                            ### prototype: preparing intermediate output 4 failed jobs ###
+                            """
+                            logBuf = self.__logToBuf__(logBuf, " adding: "+str(listFailed2Prepare) )
+                            if len (listFailed2Prepare) > 0:
+                                self.prepareTarballFailed( os.path.join(str(self.args['dropBoxPath']), taskName, self.resSubDir), taskName, len(statusJobsTask), 1, listFailed2Prepare)
+                            self.addFailedJobToFile(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir, listFailed2Prepare)*/
+                            """
 
 			    rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
 			    rev_items.sort()
@@ -1293,8 +1328,7 @@ class TaskTrackingComponent:
                                                 else:
                                                     logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT FAILED")
 
-
-                                                #self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
+                                                self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask),0 )
 
 					    if percentage == 100:
 					        self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
