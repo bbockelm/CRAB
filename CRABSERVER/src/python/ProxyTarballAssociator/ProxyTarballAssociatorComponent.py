@@ -4,8 +4,8 @@ _ProxyTarballAssociatorComponent_
 
 """
 
-__version__ = "$Revision: 1.11 $"
-__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.11 2007/09/20 10:16:11 farinafa Exp $"
+__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.12 2007/09/26 16:25:00 mcinquil Exp $"
 
 import os
 import socket
@@ -442,7 +442,7 @@ class ProxyTarballAssociatorComponent:
                 ### if specified by admin ###
                 if os.path.exists( self.uiConfigRB ):
                     appended1 = 1
-                    readedData.append("RBconfig = \""+self.uiConfigRB+"\";\n")
+                    readedData.append("RBconfig = "+self.uiConfigRB+";\n")
                 ### if not ###
                 else:
                     for configFile in self.listGet:
@@ -450,11 +450,11 @@ class ProxyTarballAssociatorComponent:
                              appended1 = 1
                              ### append the RBconfig requirement with downloaded file ###
                              #logging.info( "appending RBconfig")
-                             readedData.append("RBconfig = \""+os.path.join(self.dropBoxPath,configFile)+"\";\n")
+                             readedData.append("RBconfig = "+os.path.join(self.dropBoxPath,configFile)+";\n")
                 ### if specified by admin ###
                 if os.path.exists( self.uiConfigRBVO ):
                     appended2 = 1
-                    readedData.append("RBconfigVO = \""+self.uiConfigRBVO+"\";\n")
+                    readedData.append("RBconfigVO ="+self.uiConfigRBVO+";\n")
                 ### if not ###
                 else:
                     for configFile in self.listGet:
@@ -462,7 +462,7 @@ class ProxyTarballAssociatorComponent:
                              appended2 = 1
                              ### append the RBconfigVO requirement with downloaded file ###
                              #logging.info( "appending RBconfigVO")
-                             readedData.append("RBconfigVO = \""+os.path.join(self.dropBoxPath,configFile)+"\";") 
+                             readedData.append("RBconfigVO = "+os.path.join(self.dropBoxPath,configFile)+";") 
                 appended = appended1 and appended2
             ### check the schduler ###
             elif scheduler == "glite" or scheduler == "glitecoll":
@@ -470,23 +470,23 @@ class ProxyTarballAssociatorComponent:
                 ### if specified by admin ###
                 if os.path.exists( self.uiConfigWMS ):
                     appended = 1
-                    readedData.append("WMSconfig = \""+self.uiConfigWMS+"\";\n")
+                    readedData.append("WMSconfig = "+self.uiConfigWMS+";\n")
                 ### if not ###
                 else:
                     for configFile in self.listGet:
                         if configFile.find("glite") != -1 and configFile.find(self.args['resourceBroker']) != -1:
                             appended = 1
                              ### append the WMSconfig requirement with downloaded file ###
-                            readedData.append("WMSconfig = \""+os.path.join(self.dropBoxPath,configFile)+"\";\n")
+                            readedData.append("WMSconfig = "+os.path.join(self.dropBoxPath,configFile)+";\n")
             ### check if appended ###
             if appended != 1:
                 for configFile in self.listGet:
                     if configFile.find("edg") != -1 and configFile.find(self.args['resourceBroker']) != -1 and configFile.find("cmd_var") != -1:
-                        readedData.append("RBconfig = \""+os.path.join(self.dropBoxPath,configFile)+"\";\n")
+                        readedData.append("RBconfig = "+os.path.join(self.dropBoxPath,configFile)+";\n")
                     elif configFile.find("edg") != -1 and configFile.find(self.args['resourceBroker']) != -1 and configFile.find("cmd_var") == -1:
-                        readedData.append("RBconfigVO = \""+os.path.join(self.dropBoxPath,configFile)+"\";")
+                        readedData.append("RBconfigVO = "+os.path.join(self.dropBoxPath,configFile)+";")
                     elif configFile.find("glite") != -1 and configFile.find(self.args['resourceBroker']) != -1:
-                        readedData.append("WMSconfig = \""+os.path.join(self.dropBoxPath,configFile)+"\";\n")
+                        readedData.append("WMSconfig = "+os.path.join(self.dropBoxPath,configFile)+";\n")
             ######################
 
             #logging.info(str(readedData))
