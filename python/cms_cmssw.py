@@ -91,6 +91,7 @@ class Cmssw(JobType):
             try:
                 datasetpath_split = self.datasetPath.split("/")
                 # standard style
+                self.setParam_('datasetFull', self.datasetPath)
                 if self.use_dbs_1 == 1 :
                     self.setParam_('dataset', datasetpath_split[1])
                     self.setParam_('owner', datasetpath_split[-1])
