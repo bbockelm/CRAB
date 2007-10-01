@@ -116,7 +116,9 @@ class StatusBoss(Actor):
             else :
                 try: jobStatus = jobAttributes[bossid]['STATUS']
                 except: jobStatus = 'Unknown'
-
+            #print "RB = " + str(jobAttributes[bossid]['RB'])
+            try: RB = jobAttributes[bossid]['RB']
+            except: RB = None
             # debug
             msg = 'jobStatus' + jobStatus
             common.logger.debug(4,msg)
@@ -192,13 +194,25 @@ class StatusBoss(Actor):
 
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
                     common.logger.debug(7,"sending info to ML")
-                    params = {'taskId': self.cfg_params['taskId'], \
-                    'jobId': jobId,\
-                    'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
-                    'StatusValueReason': job_status_reason, \
-                    'StatusValue': jobStatus, \
-                    'StatusEnterTime': job_last_time, \
-                    'StatusDestination': dest}
+                    params = {}
+                    if RB != None:
+                        params = {'taskId': self.cfg_params['taskId'], \
+                        'jobId': jobId,\
+                        'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
+                        'StatusValueReason': job_status_reason, \
+                        'StatusValue': jobStatus, \
+                        'StatusEnterTime': job_last_time, \
+                        'StatusDestination': dest, \
+                        'RBname': RB }
+                    else:
+                        params = {'taskId': self.cfg_params['taskId'], \
+                        'jobId': jobId,\
+                        'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
+                        'StatusValueReason': job_status_reason, \
+                        'StatusValue': jobStatus, \
+                        'StatusEnterTime': job_last_time, \
+                        'StatusDestination': dest }
+
                     self.cfg_params['apmon'].sendToML(params)
 #            if printline != '': 
 #                print printline
