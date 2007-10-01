@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.35 2007/07/25 15:42:44 mcinquil Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.47 2007/09/28 10:39:17 mcinquil Exp $"
+__version__ = "$Revision: 1.47 $"
 
 import os
 import time
@@ -1319,7 +1319,7 @@ class TaskTrackingComponent:
                                                 logBuf = self.__logToBuf__(logBuf, "**** ** **** ** ****")
                                                 logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT FAILED")
                                                 #obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
-                                                obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs,"Failed" )
+                                               # obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs,"Failed" )
                                                 #obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
                                                 logBuf = self.__logToBuf__(logBuf, str(dictFinishedJobs))
                                                 if os.path.exists( pathToWrite+"/failed.tar.gz" ):
@@ -1328,7 +1328,7 @@ class TaskTrackingComponent:
                                                 else:
                                                     logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT FAILED")
 
-                                                self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask),0 )
+                                                self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask),0, None )
 
 					    if percentage == 100:
 					        self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
