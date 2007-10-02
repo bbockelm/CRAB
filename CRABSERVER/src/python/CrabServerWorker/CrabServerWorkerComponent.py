@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.12 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.12 2007/09/07 09:47:31 farinafa Exp $"
+__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.14 2007/09/20 10:16:10 farinafa Exp $"
 
 import pdb
 import os
@@ -338,7 +338,8 @@ class CrabServerWorkerComponent:
                          "Operation failed",
                          "Total of 0 jobs submitted",
                          "Stack dump raised by SOAP-ENV",
-                         "14: unable to open database file"]
+                         "14: unable to open database file",
+                         "only 0 left: submitting those"]
 			 
        # Range submit management
        cmdRangeSubmit = str(rangeSubmit).replace('[','').replace(']','').replace(' ','')
