@@ -319,7 +319,7 @@ class SchedulerCondor_g(Scheduler):
         txt += 'echo "middleware discovery " \n'
         txt += 'if [ $GRID3_APP_DIR ]; then\n'
         txt += '    middleware=OSG \n'
-        txt += '    echo "SyncCE=`echo $GLOBUS_GRAM_JOB_CONTACT | cut -d/ -f3 | cut -d: -f1`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "SyncCE=`echo $OSG_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $OSG_APP ]; then \n'
