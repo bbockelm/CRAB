@@ -356,7 +356,7 @@ class Crab:
         'n1,n2-n3'  -> [n1, n2, n2+1, n2+2, ..., n3-1, n3]
         """
         result = []
- 
+
         common.logger.debug(5,"parseRange_ "+str(aRange))
         if aRange=='all' or aRange==None or aRange=='':
             result=range(1,common.jobDB.nJobs()+1)
@@ -364,7 +364,7 @@ class Crab:
         elif aRange=='0':
             return result
 
-        subRanges = string.split(aRange, ',')
+        subRanges = str(aRange).split(',') # DEPRECATED # Fabio #string.split(aRange, ',')
         for subRange in subRanges:
             result = result+self.parseSimpleRange_(subRange)
 
@@ -401,9 +401,9 @@ class Crab:
         (start, end) = (None, None)
         
         result = []
-        minus = string.find(aRange, '-')
+        minus = str(aRange).find('-') #DEPRECATED #Fabio #string.find(aRange, '-')
         if ( minus < 0 ):
-            if isInt(aRange) and int(aRange)>0:
+            if int(aRange)>0:
                 # FEDE
                 #result.append(int(aRange)-1)
                 ###
@@ -415,7 +415,7 @@ class Crab:
   
             pass
         else:
-            (start, end) = string.split(aRange, '-')
+            (start, end) = str(aRange).split('-')
             if isInt(start) and isInt(end) and int(start)>0 and int(start)<int(end):
                 #result=range(int(start)-1, int(end))
                 result=range(int(start), int(end)+1) #Daniele  
@@ -611,17 +611,7 @@ class Crab:
 
                 if (self.UseServer== 1):
                     from KillerServer import KillerServer
-
-                    # Matteo for server kill by range
-                    if val:
-                        if val !='all':
-                            val = self.parseRange_(val)
-                    else:
-                        val='all'
-
-                    self.actions[opt] = KillerServer(self.cfg_params,val)
-
-                    #self.actions[opt] = KillerServer(self.cfg_params)
+                    self.actions[opt] = KillerServer(self.cfg_params,val, self.parseRange_(val)) #Fabio
                 else:
                     if val:
                         if val =='all':
@@ -640,7 +630,6 @@ class Crab:
                     from GetOutputServer import GetOutputServer
                     self.actions[opt] = GetOutputServer(self.cfg_params)
                 else:
-
                     if val=='all' or val==None or val=='':
                         jobs = common.scheduler.listBoss()
                     else:
