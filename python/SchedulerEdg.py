@@ -519,7 +519,6 @@ class SchedulerEdg(Scheduler):
             txt += '   if [ $copy_exit_status -ne 0 ]; then\n'
             txt += '       echo "Problem copying $out_file to $SE $SE_PATH"\n'
             txt += '       echo "StageOutExitStatus = $copy_exit_status " | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '       echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '       copy_exit_status=60307\n'
             
             txt += '   else\n'

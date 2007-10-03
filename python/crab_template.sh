@@ -19,17 +19,15 @@ function cmscp {
 ##      return 1 if srmcp failed
 ##      return 2 if copy sucessful but size mismatch
 ###########################
-  max_retry_num=0
-  sleep_time=10
-
   if [ $# -le 4 ]; then
     echo -e "\t$0 usage:"
     echo -e "\t$0 source <remote SE> <remote SE PATH> <remote output file name> <grid env: LCG(default)|OSG>"
     exit 1
   fi 
-  file=$1
+  out_file=$1
+  echo "out_file = $out_file"
   SE=$2
-  SEPath=$3
+  SE_PATH=$3
   remoteFile=$4
   middleware='LCG'
   if [ $# == 5 ]; then
@@ -46,50 +44,100 @@ function cmscp {
   opt=" -report ./srmcp.report "
   opt="${opt} -retry_timeout 480000"
 
-  exit_status=0
-  retry_num=0
-  max_retry_num=0
-  while [ $retry_num -le $max_retry_num ]
-  do
-    let retry_num=retry_num+1
-    echo "Attempt #$retry_num"
-    source=file:///`pwd`/$file
-    destination=srm://${SE}:8443${SE_PATH}$out_file
+  copy_exit_status=1
+  destination=srm://${SE}:8443${SE_PATH}$out_file
+  echo "destination = $destination"
 
-    cmd="srmcp $opt $source $destination"
-    echo $cmd
-    exitstring=`$cmd 2>&1`
-    copy_exit_status=$?
-    if [ $copy_exit_status -ne 0 ]; then
-      echo "Problem copying $source to $destination"
-      echo "StageOutExitStatus = $copy_exit_status"
-      echo "StageOutExitStatusReason = $exitstring"
-      echo "StageOutReport = `cat ./srmcp.report`"
-      exit_status=1
-      continue
-    fi
+  echo "--> Check if the file already exists in the storage element $SE"
+  srm-get-metadata -retry_num 0 $destination
+  if [ $? -eq 0 ]; then
+      copy_exit_status=2
+      StageOutExitStatusReason='file already exists'
+  else
+      echo "start the copy the output to the $SE"
+      cmd="srmcp $opt file:///`pwd`/$out_file $destination"
+      echo $cmd
+      exitstring=`$cmd 2>&1`
+      copy_exit_status=$?
+      if [ $copy_exit_status -eq 0 ]; then
+          ## Put into an array the remote file metadata
+          remoteMetadata=(`srm-get-metadata -retry_num 0 $destination | grep -v WARNING`)
+          remoteSize=`echo ${remoteMetadata[5]}| tr -d :`
+          echo "--> remoteSize = $remoteSize"
+          ## for local file
+          localFileSize=(`ls -l $out_file`)
+          localSize=${localFileSize[4]}
+          echo "-->  localSize = $localSize"
+          if [ $localSize != $remoteSize ]; then
+              echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
+              echo "Copy failed: removing remote file $destination"
+              srm-advisory-delete $destination
+              copy_exit_status=1
+              echo "Problem copying $source to $destination with srmcp command"
+              StageOutExitStatusReason='remote and local file dimension not match'
+              echo "StageOutReport = `cat ./srmcp.report`"
+          fi  
+          StageOutExitStatusReason='copy ok with srm utils'
+      else
+          copy_exit_status=1
+          echo "Problem copying $source to $destination with srmcp command"
+          StageOutExitStatusReason=$exitstring
+          echo "StageOutReport = `cat ./srmcp.report`"
+      fi
+  fi  
 
-## Put into an array the remote file metadata
-    remoteMetadata=(`srm-get-metadata $destination | grep -v WARNING`)
-    remoteSize=`echo ${remoteMetadata[5]}| tr -d :`
-    echo "--> remote Size = $remoteSize"
-## ditto for local file
-    localFileSize=(`ls -l $file`)
-    localSize=${localFileSize[4]}
-    echo "-->  local Size = $localSize"
+  if [ $copy_exit_status -eq 1 ]; then
+      cmd="lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file $destination"
+      echo $cmd
+      exitstring=`$cmd 2>&1`
+      copy_exit_status=$?
+      if [ $copy_exit_status -ne 0 ]; then
+          echo "Problem copying $source to $destination with lcg-cp command"
+          StageOutExitStatusReason=$exitstring
+          cmd="echo $StageOutExitStatusReason | grep exists"
+          tmpstring=`$cmd 2>&1`
+          exit_status=$?
+          if [ $exit_status -eq 0 ]; then
+              copy_exit_status=2
+              StageOutExitStatusReason='file already exists'
+          fi
+      else
+         StageOutExitStatusReason='copy ok with lcg utils'
+                                                                    
+      fi 
 
-    if [ $localSize != $remoteSize ]; then
-    echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
-      echo "Copy failed: removing remote file $destiantion"
-      srm-advisory-delete $destination
-      exit_status=2
-      continue
-    fi
+  fi
+  
+  ########## to use when new lcg-utils will be available and to improve ###########
+  #if [ $copy_exit_status -eq 1 ]; then
+  #    echo "Try the output copy using lcg-utils"
+  #    #/afs/cern.ch/project/gd/egee/glite/ui_PPS_testing/bin/lcg-ls -b -D srmv1 ${destination}${nome_file}
+  #    cmd="lcg-ls -b -D srmv1 $destination"
+  #    echo $cmd
+  #    exitstring=`$cmd 2>&1`
+  #    if [ $? -eq 0 ]; then
+  #        echo "--> file already exists!!"
+  #        copy_exit_status=2
+  #    else    
+  #        cmd="lcg-cp -b -D srmv1 --vo cms file:$out_file $destination"
+  #        echo $cmd
+  #        exitstring=`$cmd 2>&1`
+  #        copy_exit_status=$?
+  #        if [ $copy_exit_status -eq 0 ]; then
+  #            lcg-ls -b -D srmv1 $destination
+  #            if [ $? -eq 0 ]; then
+  #                copy_exit_status=0    
+  #            else
+  #                copy_exit_status=1
+  #            fi     
+  #        fi
+  #    fi
+  #fi   
+  ##################################################################
 
-    sleep $sleep_time
-  done
-
-  return $exit_status
+  echo "StageOutExitStatus = $copy_exit_status"
+  echo "StageOutExitStatusReason = $StageOutExitStatusReason"
+  return $copy_exit_status
 }
 
 RUNTIME_AREA=`pwd`
