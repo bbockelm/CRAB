@@ -1214,7 +1214,6 @@ class Cmssw(JobType):
              
         txt += 'file_list="'+string.join(file_list,' ')+'"\n'
         txt += 'cd $RUNTIME_AREA\n'
-
         return txt
 
     def numberFile_(self, file, txt):
@@ -1361,26 +1360,31 @@ class Cmssw(JobType):
         """
 
         txt = '' 
-        txt += 'echo "Modify Job Report" \n'
-        #txt += 'chmod a+x $RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
-        ################ FEDE FOR DBS2 #############################################
-        txt += 'chmod a+x $SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
-        #############################################################################
         try:
             publish_data = int(self.cfg_params['USER.publish_data'])           
         except KeyError:
             publish_data = 0
-
-        txt += 'if [ -z "$SE" ]; then\n'
-        txt += '    SE="" \n'
-        txt += 'fi \n' 
-        txt += 'if [ -z "$SE_PATH" ]; then\n'
-        txt += '    SE_PATH="" \n'
-        txt += 'fi \n' 
-        txt += 'echo "SE = $SE"\n' 
-        txt += 'echo "SE_PATH = $SE_PATH"\n'
-
         if (publish_data == 1):  
+            txt += 'echo "Modify Job Report" \n'
+            #txt += 'chmod a+x $RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
+            ################ FEDE FOR DBS2 #############################################
+            txt += 'chmod a+x $SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
+            #############################################################################
+            #try:
+            #    publish_data = int(self.cfg_params['USER.publish_data'])           
+            #except KeyError:
+            #    publish_data = 0
+
+            txt += 'if [ -z "$SE" ]; then\n'
+            txt += '    SE="" \n'
+            txt += 'fi \n' 
+            txt += 'if [ -z "$SE_PATH" ]; then\n'
+            txt += '    SE_PATH="" \n'
+            txt += 'fi \n' 
+            txt += 'echo "SE = $SE"\n' 
+            txt += 'echo "SE_PATH = $SE_PATH"\n'
+
+        #if (publish_data == 1):  
             #processedDataset = self.cfg_params['USER.processed_datasetname']
             processedDataset = self.cfg_params['USER.publish_data_name']
             txt += 'ProcessedDataset='+processedDataset+'\n'
@@ -1410,11 +1414,12 @@ class Cmssw(JobType):
             txt += '    mv NewFrameworkJobReport.xml crab_fjr_$NJob.xml\n'
             txt += 'fi\n'
         else:
-            txt += 'ProcessedDataset=no_data_to_publish \n' 
+            txt += 'echo "no data publication required"\n'
+            #txt += 'ProcessedDataset=no_data_to_publish \n' 
             #### FEDE: added slash in LFN ##############
-            txt += 'FOR_LFN=/local/ \n'
-            txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
-            txt += 'echo "FOR_LFN = $FOR_LFN" \n'
+            #txt += 'FOR_LFN=/local/ \n'
+            #txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
+            #txt += 'echo "FOR_LFN = $FOR_LFN" \n'
         return txt
 
     def cleanEnv(self):
