@@ -156,6 +156,7 @@ echo "Working directory `pwd`"
 ls -Al
 echo "current user is `id`"
 echo "voms-proxy-info"
+which voms-proxy-info
 voms-proxy-info -all
 
 repo=jobreport.txt
