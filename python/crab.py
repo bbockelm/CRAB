@@ -762,7 +762,7 @@ class Crab:
                 nj_list = []
                 for nj in jobs:
                     st = common.jobDB.status(nj-1)
-                    if st == 'C': nj_list.append(nj-1)
+                    if st != 'X': nj_list.append(nj-1)
                     pass
 
                 if len(nj_list) != 0:
