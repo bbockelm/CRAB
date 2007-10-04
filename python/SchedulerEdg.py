@@ -510,10 +510,10 @@ class SchedulerEdg(Scheduler):
             txt += 'echo "####################################################"\n'
             
             txt += 'for out_file in $file_list ; do\n'
-            txt += '   echo "Trying to copy output file to $SE using srmcp"\n'
+            txt += '   echo "Trying to copy output file to $SE"\n'
             txt += '   cmscp $out_file ${SE} ${SE_PATH} $out_file $middleware\n'
             txt += '   copy_exit_status=$?\n'
-            txt += '   echo "COPY_EXIT_STATUS for srmcp = $copy_exit_status"\n'
+            txt += '   echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
             txt += '   echo "STAGE_OUT = $copy_exit_status"\n'
             
             txt += '   if [ $copy_exit_status -ne 0 ]; then\n'
