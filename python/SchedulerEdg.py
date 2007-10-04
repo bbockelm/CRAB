@@ -52,8 +52,8 @@ class SchedulerEdg(Scheduler):
         except KeyError:
             self.role = None
             
-        try: self.LCG_version = cfg_params["EDG.lcg_version"]
-        except KeyError: self.LCG_version = '2'
+        #try: self.LCG_version = cfg_params["EDG.lcg_version"]
+        #except KeyError: self.LCG_version = '2'
 
         try: 
             self.EDG_ce_black_list = cfg_params['EDG.ce_black_list']

@@ -457,10 +457,6 @@ B<[EDG]>
 
 =over 4
 
-=item B<lcg_version>
-
-Version of LCG middleware to be used.
-
 =item B<RB>
 
 Which RB you want to use instead of the default one, as defined in the configuration of your UI. The ones available for CMS are I<CERN> and I<CNAF>: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used. If the files are already present on the working directory they will be used.
