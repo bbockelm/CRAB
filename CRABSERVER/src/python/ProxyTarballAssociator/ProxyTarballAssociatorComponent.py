@@ -341,10 +341,15 @@ class ProxyTarballAssociatorComponent:
          idInit = buf.find("task name=")+ len("task name=") + 1 # position on the first char of the name
          idEnd = buf.find("\"", idInit)
          name = buf[idInit:idEnd]
-         
+
+         ## MATTY: get real path before taskName replace will change it
+         sub_pathInit = buf.find("sub_path=")+ len("sub_path=") + 1
+         sub_pathEnd = buf.find("\"", sub_pathInit)
+         pathSub = buf[sub_pathInit:sub_pathEnd].replace(name, taskDir.split('/')[-1] )
+
          for l in xrange(len(lines)):
               lines[l]=lines[l].replace(name, taskDir.split('/')[-1] )
-
+         
          ## MATTY: *start* changing proxy field
          try:
               proxyInit = buf.find("task_info=")+ len("task_info=") + 1
@@ -356,15 +361,13 @@ class ProxyTarballAssociatorComponent:
               logging.error("Exception changing proxy on cmssw.xml: ["+str(ex)+"]")
               # logging.error("If you are using an old version of SchedulerEdg.py in your client forget this problem!")
          ## MATTY: *end* changing proxy field
-
+         
          ## MATTY: *start* changing sub_path field
          try:
-              sub_pathInit = buf.find("sub_path=")+ len("sub_path=") + 1
-              sub_pathEnd = buf.find("\"", sub_pathInit)
-              pathSub = buf[sub_pathInit:sub_pathEnd]
-#              logging.info("sub_apth field: " +str(pathSub) )
-              pathTotal, pathSubCorrect = pathSub.split(name,1)
-#              logging.info("sub_apth field: " + taskDir.split('/')[-1] + "/" + pathSubCorrect )
+              #logging.info("sub_apth field: " +str(pathSub) )
+              pathTotal, pathSubCorrect = pathSub.rsplit(taskDir.split('/')[-1],1)
+              #logging.info("pathTOTAL: "+str(pathTotal))
+              #logging.info("sub_apth field: " + taskDir.split('/')[-1] + "/" + pathSubCorrect )
               for ll in xrange(len(lines)):
                    lines[ll]=lines[ll].replace( pathSub, taskDir.split('/')[-1] + "/" + pathSubCorrect )
          except Exception, ex:
