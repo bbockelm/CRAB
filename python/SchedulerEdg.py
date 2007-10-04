@@ -526,7 +526,6 @@ class SchedulerEdg(Scheduler):
             txt += '       echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
             txt += '       echo "output copied into $SE/$SE_PATH directory"\n'
             txt += '       echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '       echo "srmcp succeeded"\n'
             txt += '    fi\n'
             txt += 'done\n'
             txt += 'if [ $copy_exit_status -ne 0 ]; then\n'
