@@ -4,8 +4,8 @@ _ProxyTarballAssociatorComponent_
 
 """
 
-__version__ = "$Revision: 1.12 $"
-__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.12 2007/09/26 16:25:00 mcinquil Exp $"
+__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.13 2007/09/28 10:54:28 mcinquil Exp $"
 
 import os
 import socket
@@ -349,13 +349,35 @@ class ProxyTarballAssociatorComponent:
          try:
               proxyInit = buf.find("task_info=")+ len("task_info=") + 1
               proxyEnd = buf.find("\"", proxyInit)
-              name = buf[proxyInit:proxyEnd]
+              pro = buf[proxyInit:proxyEnd]
               for ll in xrange(len(lines)):
-                   lines[ll]=lines[ll].replace(name, proxy)
+                   lines[ll]=lines[ll].replace(pro, proxy)
          except Exception, ex:
               logging.error("Exception changing proxy on cmssw.xml: ["+str(ex)+"]")
               # logging.error("If you are using an old version of SchedulerEdg.py in your client forget this problem!")
          ## MATTY: *end* changing proxy field
+
+         ## MATTY: *start* changing sub_path field
+         try:
+              sub_pathInit = buf.find("sub_path=")+ len("sub_path=") + 1
+              sub_pathEnd = buf.find("\"", sub_pathInit)
+              pathSub = buf[sub_pathInit:sub_pathEnd]
+#              logging.info("sub_apth field: " +str(pathSub) )
+              pathTotal, pathSubCorrect = pathSub.split(name,1)
+#              logging.info("sub_apth field: " + taskDir.split('/')[-1] + "/" + pathSubCorrect )
+              for ll in xrange(len(lines)):
+                   lines[ll]=lines[ll].replace( pathSub, taskDir.split('/')[-1] + "/" + pathSubCorrect )
+         except Exception, ex:
+              logging.error("Exception changing sub_path on cmssw.xml: ["+str(ex)+"]")
+         ## MATTY: *end* changing sub_path field
+
+         ## MATTY: *start* changing the absolute path everywhere
+         try:
+              for ll in xrange(len(lines)):
+                   lines[ll]=lines[ll].replace( pathTotal, "" )
+         except Exception, ex:
+              logging.error("Exception changing absolute path everywhere on cmssw.xml: ["+str(ex)+"]")
+         ## MATTY: *end* changing the absolute path everywhere
 
          f = open(taskDir+'/share/cmssw.xml', 'w')
          f.writelines(lines)
