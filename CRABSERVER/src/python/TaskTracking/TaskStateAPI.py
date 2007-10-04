@@ -511,19 +511,9 @@ def getNLockFirstNotFinished():
       a row if one exist
     - work: take first task not locked and not finished is one exist and lock it
     """
-    queryString = "SELECT ID "+\
-        "FROM js_taskInstance "+\
-        "WHERE (work_status = 0) "+\
-        "AND (status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2)) OR  (status = 'not submitted' AND notificationSent < 2);"+\
-        "ORDER BY ID "+\
-        "LIMIT 1;"
-
-        #"WHERE (work_status = 0) "+\
-        #"AND (status <> 'not submitted' AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2)) OR  (status = 'not submitted' AND notificationSent < 2) " +\
-    conn, dbCur = openConnPA()
-
     ok = 0
     row = None
+    conn, dbCur = openConnPA()
     try:
         semWorkStatus.acquire()
         try:
@@ -574,11 +564,18 @@ def __getFirstNotFinished__(conn, dbCur):
    - work: take first task not locked and not finished
    """
    sql = "SELECT ID, taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid "+\
+         "FROM js_taskInstance "+\
+         "WHERE (work_status = 0) "+\
+         "AND ( (endedLevel < 100 AND status <> 'ended' AND status = 'not submitted' ) OR notificationSent < 2 ) "+\
+         "ORDER BY ID "+\
+         "LIMIT 1;"
+   """
       "FROM js_taskInstance "+\
       "WHERE (work_status = 0) "+\
       "AND (status <> 'not submitted' AND notificationSent < 2) AND ((endedLevel < 100 AND status <> 'ended') OR notificationSent < 2)"+\
       "ORDER BY ID "\
       "LIMIT 1;"
+   """
 
    #try:
    dbCur.execute(sql)
