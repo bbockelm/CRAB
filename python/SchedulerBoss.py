@@ -592,10 +592,15 @@ class SchedulerBoss(Scheduler):
                         self.bossTask.getOutput (str(boss_id), str(dir), Tout)
                         if logDir != dir:
                             try:
-                                toMove = str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/*.log '+str(dir)+'/.BrokerInfo ' 
-                                shutil.move(toMove, str(logDir))
-                                msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
+                                ######
+                                cmd = 'mv '+str(dir)+'/*'+str(i_id)+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*.log '+str(logDir)
+                                cmd_out =os.system(cmd)
+                                msg = 'Results of Job # '+str(i_id)+' are in '+dir+' (log files are in '+logDir+')' 
                                 common.logger.message(msg)
+                                #####
+                                #toMove = str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/*.log '+str(dir)+'/.BrokerInfo '
+                                #shutil.move(toMove, str(logDir))
+                                #####
                             except:
                                 msg = 'Problem with copy of job results' 
                                 common.logger.message(msg)
