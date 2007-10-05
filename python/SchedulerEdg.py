@@ -122,45 +122,45 @@ class SchedulerEdg(Scheduler):
            raise CrabException(msg)
         #################################################
 
-        try:
-            self.lfc_host = cfg_params['EDG.lfc_host']
-        except KeyError:
-            msg = "Error. The [EDG] section does not have 'lfc_host' value"
-            msg = msg + " it's necessary to know the LFC host name"
-            common.logger.message(msg)
-            raise CrabException(msg)
-        try:
-            self.lcg_catalog_type = cfg_params['EDG.lcg_catalog_type']
-        except KeyError:
-            msg = "Error. The [EDG] section does not have 'lcg_catalog_type' value"
-            msg = msg + " it's necessary to know the catalog type"
-            common.logger.message(msg)
-            raise CrabException(msg)
-        try:
-            self.lfc_home = cfg_params['EDG.lfc_home']
-        except KeyError:
-            msg = "Error. The [EDG] section does not have 'lfc_home' value"
-            msg = msg + " it's necessary to know the home catalog dir"
-            common.logger.message(msg)
-            raise CrabException(msg)
+        #try:
+        #    self.lfc_host = cfg_params['EDG.lfc_host']
+        #except KeyError:
+        #    msg = "Error. The [EDG] section does not have 'lfc_host' value"
+        #    msg = msg + " it's necessary to know the LFC host name"
+        #    common.logger.message(msg)
+        #    raise CrabException(msg)
+        #try:
+        #    self.lcg_catalog_type = cfg_params['EDG.lcg_catalog_type']
+        #except KeyError:
+        #    msg = "Error. The [EDG] section does not have 'lcg_catalog_type' value"
+        #    msg = msg + " it's necessary to know the catalog type"
+        #    common.logger.message(msg)
+        #    raise CrabException(msg)
+        #try:
+        #    self.lfc_home = cfg_params['EDG.lfc_home']
+        #except KeyError:
+        #    msg = "Error. The [EDG] section does not have 'lfc_home' value"
+        #    msg = msg + " it's necessary to know the home catalog dir"
+        #    common.logger.message(msg)
+        #    raise CrabException(msg)
       
-        try: 
-            self.register_data = cfg_params["USER.register_data"]
-            if int(self.register_data) == 1:
-                try:
-                    self.LFN = cfg_params['USER.lfn_dir']
-                except KeyError:
-                    msg = "Error. The [USER] section does not have 'lfn_dir' value"
-                    msg = msg + " it's necessary for LCF registration"
-                    common.logger.message(msg)
-                    raise CrabException(msg)
-        except KeyError: self.register_data = 0
+        #try: 
+        #    self.register_data = cfg_params["USER.register_data"]
+        #    if int(self.register_data) == 1:
+        #        try:
+        #            self.LFN = cfg_params['USER.lfn_dir']
+        #        except KeyError:
+        #            msg = "Error. The [USER] section does not have 'lfn_dir' value"
+        #            msg = msg + " it's necessary for LCF registration"
+        #            common.logger.message(msg)
+        #            raise CrabException(msg)
+        #except KeyError: self.register_data = 0
 
-        if ( int(self.copy_data) == 0 and int(self.register_data) == 1 ):
-           msg = 'Warning: register_data = 1 must be used with copy_data = 1\n' 
-           msg = msg + 'Please modify copy_data value in your crab.cfg file\n' 
-           common.logger.message(msg)
-           raise CrabException(msg)
+        #if ( int(self.copy_data) == 0 and int(self.register_data) == 1 ):
+        #   msg = 'Warning: register_data = 1 must be used with copy_data = 1\n' 
+        #   msg = msg + 'Please modify copy_data value in your crab.cfg file\n' 
+        #   common.logger.message(msg)
+        #   raise CrabException(msg)
 
         try: self.EDG_requirements = cfg_params['EDG.requirements']
         except KeyError: self.EDG_requirements = ''
@@ -369,44 +369,43 @@ class SchedulerEdg(Scheduler):
 
         txt += 'export VO='+self.VO+'\n'
         ### add some line for LFC catalog setting 
-        txt += 'if [ $middleware == LCG ]; then \n'
-        txt += '    if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
-        txt += '        export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
-        txt += '    fi\n'
-        txt += '    if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
-        txt += '        export LFC_HOST='+self.lfc_host+'\n'
-        txt += '    fi\n'
-        txt += '    if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
-        txt += '        export LFC_HOME='+self.lfc_home+'\n'
-        txt += '    fi\n'
-        txt += 'elif [ $middleware == OSG ]; then\n'
-        txt += '    echo "LFC catalog setting to be implemented for OSG"\n'
-        txt += 'fi\n'
+        #txt += 'if [ $middleware == LCG ]; then \n'
+        #txt += '    if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
+        #txt += '        export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
+        #txt += '    fi\n'
+        #txt += '    if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
+        #txt += '        export LFC_HOST='+self.lfc_host+'\n'
+        #txt += '    fi\n'
+        #txt += '    if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
+        #txt += '        export LFC_HOME='+self.lfc_home+'\n'
+        #txt += '    fi\n'
+        #txt += 'elif [ $middleware == OSG ]; then\n'
+        #txt += '    echo "LFC catalog setting to be implemented for OSG"\n'
+        #txt += 'fi\n'
         #####
-        if int(self.register_data) == 1:
-           txt += 'if [ $middleware == LCG ]; then \n'
-           txt += '    export LFN='+self.LFN+'\n'
-           txt += '    lfc-ls $LFN\n' 
-           txt += '    result=$?\n' 
-           txt += '    echo $result\n' 
-           ### creation of LFN dir in LFC catalog, under /grid/cms dir  
-           txt += '    if [ $result != 0 ]; then\n'
-           txt += '       lfc-mkdir $LFN\n'
-           txt += '       result=$?\n' 
-           txt += '       echo $result\n' 
-           txt += '    fi\n'
-           txt += 'elif [ $middleware == OSG ]; then\n'
-           txt += '    echo " Files registration to be implemented for OSG"\n'
-           txt += 'fi\n'
-           txt += '\n'
-
-           if self.VO:
-              txt += 'export VO='+self.VO+'\n'
-           if self.LFN:
-              txt += 'if [ $middleware == LCG ]; then \n'
-              txt += '    export LFN='+self.LFN+'\n'
-              txt += 'fi\n'
-              txt += '\n'
+        #if int(self.register_data) == 1:
+        #   txt += 'if [ $middleware == LCG ]; then \n'
+        #   txt += '    export LFN='+self.LFN+'\n'
+        #   txt += '    lfc-ls $LFN\n' 
+        #   txt += '    result=$?\n' 
+        #   txt += '    echo $result\n' 
+        #   ### creation of LFN dir in LFC catalog, under /grid/cms dir  
+        #   txt += '    if [ $result != 0 ]; then\n'
+        #   txt += '       lfc-mkdir $LFN\n'
+        #   txt += '       result=$?\n' 
+        #   txt += '       echo $result\n' 
+        #   txt += '    fi\n'
+        #   txt += 'elif [ $middleware == OSG ]; then\n'
+        #   txt += '    echo " Files registration to be implemented for OSG"\n'
+        #   txt += 'fi\n'
+        #   txt += '\n'
+        #   if self.VO:
+        #      txt += 'export VO='+self.VO+'\n'
+        #   if self.LFN:
+        #      txt += 'if [ $middleware == LCG ]; then \n'
+        #      txt += '    export LFN='+self.LFN+'\n'
+        #      txt += 'fi\n'
+        #      txt += '\n'
 
         txt += 'if [ $middleware == LCG ]; then\n' 
     #    txt += '    CloseCEs=`edg-brokerinfo getCE`\n'
