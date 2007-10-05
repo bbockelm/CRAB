@@ -56,7 +56,25 @@ class SchedulerGlite(SchedulerEdg):
             concString = '&&'
             for ce in ce_white_list:
                 tmpCe.append('RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId)')
-            if len(tmpCe): req = req + " && (" + concString.join(tmpCe) + ") "
+            ### MATTY' FIX: if more then one CE: && -> ||
+            #print "list CE: " + str(tmpCe)
+            if len(tmpCe) == 1:
+                req +=  " && (" + concString.join(tmpCe) + ") "
+            elif len(tmpCe) > 1:
+                firstCE = 0
+                for reqTemp in tmpCe:
+                    #print reqTemp
+                    if firstCE == 0:
+                        #print "adding: "+str(" && ( (" + reqTemp + ") ")
+                        req += " && ( (" + reqTemp + ") "
+                        firstCE = 1
+                    elif firstCE > 0:
+                        #print "adding: "+str(" || (" + reqTemp + ") ")
+                        req += " || (" + reqTemp + ") "
+                if firstCE > 0:
+                    req += ") "
+            ## old code
+#            if len(tmpCe): req = req + " && (" + concString.join(tmpCe) + ") "
         
         if self.EDG_ce_black_list:
             ce_black_list = string.split(self.EDG_ce_black_list,',')
@@ -268,4 +286,3 @@ class SchedulerGlite(SchedulerEdg):
 
     def submitTout(self, list):
         return 180
-

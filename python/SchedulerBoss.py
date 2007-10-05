@@ -389,7 +389,7 @@ class SchedulerBoss(Scheduler):
         return self.boss_scheduler.loggingInfo(nj) 
 
     ##########################################   ---- OK for Boss4 ds
-    def listMatch(self, nj, Block):
+    def listMatch(self, nj, Block, whiteL, blackL): ##  whiteL, blackL added by MATTY as patch
         """
         Check the compatibility of available resources
         """
@@ -413,14 +413,53 @@ class SchedulerBoss(Scheduler):
         stop = time.time()
         common.logger.debug(1,"listMatch time :"+str(stop-start))
         common.logger.write("listMatch time :"+str(stop-start))
-        # print something about CEs
+
+        #### MATTY's patch 4 CE white-black lists ####
         sites = []
-        if (len(CEs)!=0):
+        for it in CEs :
+            it = it.split(':')[0]
+            if not sites.count(it) :
+                sites.append(it)
+        ### white-black list on CE ###
+        CE_whited = []
+        if len(whiteL) > 0:
+            common.logger.message("Using ce white list functionality...")
+            for ce2check in sites:
+                for ceW in whiteL:
+                    if ce2check.find(ceW.strip()) != -1:
+                        CE_whited.append(ce2check)
+                        common.logger.debug(5,"CEWhiteList: adding from matched site: " + str(ce2check))
+        CE_blacked = []
+        if len(blackL) > 0:
+            for ce2check in sites:
+                for ceB in blackL:
+                    if ce2check.find(ceB.strip()) != -1:
+                        CE_blacked.append(ce2check)
+        if len(CE_whited) > 0:
+            sites = CE_whited
+        toRemove = []
+        if len(CE_blacked) > 0:
+            common.logger.message("Using ce black list functionality...")
+            for ce2check in sites:
+                for ceB in CE_blacked:
+                    if ce2check.find(ceB.strip()) != -1:
+                        toRemove.append(ce2check)
+
+            for rem in toRemove:
+                if rem in sites:
+                    sites.remove(rem)
+                    common.logger.debug(5,"CEBlackList: removing from matched site " + str(rem))
+        ##############################
+
+
+        # print something about CEs
+#        sites = []
+        if (len(sites)!=0): : ## it was CEs
             #sites = []
-            for it in CEs :
-                it = it.split(':')[0]
-                if not sites.count(it) :
-                    sites.append(it)
+#            for it in CEs :
+#                it = it.split(':')[0]
+#                if not sites.count(it) :
+#                    sites.append(it)
             common.logger.debug(5,"All Sites :"+str(sites))
             common.logger.message("Matched Sites :"+str(sites))
         if len(sites) == 0:
