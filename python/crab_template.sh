@@ -6,7 +6,6 @@
 #
 
 function cmscp {
-## SL 17-Aug-2007 Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
 ## safe copy of local file in current directory to remote SE via srmcp, including success checking
 ## input:
 ##    $1 local file (with respect to current working directory)
@@ -17,7 +16,7 @@ function cmscp {
 ## output:
 ##      return 0 if all ok
 ##      return 1 if srmcp failed
-##      return 2 if copy sucessful but size mismatch
+##      return 2 if file already exists in the SE 
 ###########################
   if [ $# -le 4 ]; then
     echo -e "\t$0 usage:"
