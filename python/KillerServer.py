@@ -58,11 +58,13 @@ class KillerServer(Actor):
         file.close()
         if self.range=='all':
             subms = []
-        elif len(self.range)!=0:
-            subms = eval(subms)
-            for i in self.parsedRange:
-                if i in subms:
-                     subms.remove(i)
+        elif self.range != None and self.range != "": 
+            if len(self.range)!=0:
+                subms = eval(subms)
+                for i in self.parsedRange:
+                    if i in subms:
+                        subms.remove(i)
+        
         file = open(common.work_space.shareDir()+'/submit_directive','w')
         file.write(str(subms))
         file.close()

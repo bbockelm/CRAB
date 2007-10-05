@@ -610,8 +610,15 @@ class Crab:
             elif ( opt == '-kill' ):
 
                 if (self.UseServer== 1):
-                    from KillerServer import KillerServer
-                    self.actions[opt] = KillerServer(self.cfg_params,val, self.parseRange_(val)) #Fabio
+                    if val:
+                        if val =='all':
+                            jobs = common.scheduler.listBoss()
+                        else:
+                            jobs = self.parseRange_(val)
+                        from KillerServer import KillerServer
+                        self.actions[opt] = KillerServer(self.cfg_params,val, self.parseRange_(val)) #Fabio
+                    else:
+                        common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
                 else:
                     if val:
                         if val =='all':
@@ -621,7 +628,6 @@ class Crab:
                         common.scheduler.cancel(jobs)
                     else:
                         common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
-
 
 
             elif ( opt == '-getoutput' or opt == '-get'):
