@@ -424,6 +424,7 @@ class SchedulerBoss(Scheduler):
         CE_whited = []
         if len(whiteL) > 0:
             common.logger.message("Using ce white list functionality...")
+            common.logger.debug(1,str(whiteL))
             for ce2check in sites:
                 for ceW in whiteL:
                     if ce2check.find(ceW.strip()) != -1:
@@ -440,6 +441,7 @@ class SchedulerBoss(Scheduler):
         toRemove = []
         if len(CE_blacked) > 0:
             common.logger.message("Using ce black list functionality...")
+            common.logger.debug(1,str(blackL))
             for ce2check in sites:
                 for ceB in CE_blacked:
                     if ce2check.find(ceB.strip()) != -1:
@@ -454,7 +456,7 @@ class SchedulerBoss(Scheduler):
 
         # print something about CEs
 #        sites = []
-        if (len(sites)!=0): : ## it was CEs
+        if (len(sites)!=0): ## it was CEs
             #sites = []
 #            for it in CEs :
 #                it = it.split(':')[0]

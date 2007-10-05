@@ -94,22 +94,23 @@ class Submitter(Actor):
                         ### MATTY:  patch for white-black list with the list-mathc in glite ###
                         whiteL = []
                         blackL = []
-                        if 'EDG.ce_white_list' in self.cfg_params.keys():
-                            print self.cfg_params['EDG.ce_white_list'].strip().split(",")
-                            if self.cfg_params['EDG.ce_white_list'].strip() != "" and self.cfg_params['EDG.ce_white_list'] != None:
-                                for ceW in self.cfg_params['EDG.ce_white_list'].strip().split(","):
-                                    if len(ceW.strip()) > 0 and ceW.strip() != None:
-                                        whiteL.append(ceW.strip())
-                                    #print "ADDING white ce = "+str(ceW.strip())
-                        if 'EDG.ce_black_list' in self.cfg_params.keys():
-                            print self.cfg_params['EDG.ce_black_list'].strip().split(",")
-                            if self.cfg_params['EDG.ce_black_list'].strip() != "" and self.cfg_params['EDG.ce_black_list'] != None:
-                                for ceB in self.cfg_params['EDG.ce_black_list'].strip().split(","):
-                                    if len(ceB.strip()) > 0 and ceB.strip() != None:
-                                        blackL.append(ceB.strip())
-                                    #print "ADDING ce = "+str(ceB.strip())
-                        #######################################################################
+                        if self.cfg_params['CRAB.scheduler'].find("glite") != -1:
+                            if 'EDG.ce_white_list' in self.cfg_params.keys():
+                                #print self.cfg_params['EDG.ce_white_list'].strip().split(",")
+                                if self.cfg_params['EDG.ce_white_list'].strip() != "" and self.cfg_params['EDG.ce_white_list'] != None:
+                                    for ceW in self.cfg_params['EDG.ce_white_list'].strip().split(","):
+                                        if len(ceW.strip()) > 0 and ceW.strip() != None:
+                                            whiteL.append(ceW.strip())
+                                        #print "ADDING white ce = "+str(ceW.strip())
+                            if 'EDG.ce_black_list' in self.cfg_params.keys():
+                                #print self.cfg_params['EDG.ce_black_list'].strip().split(",")
+                                if self.cfg_params['EDG.ce_black_list'].strip() != "" and self.cfg_params['EDG.ce_black_list'] != None:
+                                    for ceB in self.cfg_params['EDG.ce_black_list'].strip().split(","):
+                                        if len(ceB.strip()) > 0 and ceB.strip() != None:
+                                            blackL.append(ceB.strip())
+                                        #print "ADDING ce = "+str(ceB.strip())
                         match = common.scheduler.listMatch(nj, currBlock, whiteL, blackL)
+                        #######################################################################
                     else :
                         match = "1"
                     lastBlock = currBlock
