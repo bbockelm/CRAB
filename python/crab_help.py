@@ -57,7 +57,7 @@ B<CRAB>:  B<C>ms B<R>emote B<A>nalysis B<B>uilder
 """+common.prog_name+""" version: """+common.prog_version_str+"""
 
 This tool B<must> be used from an User Interface and the user is supposed to
-have a valid GRID certificate.
+have a valid Grid certificate.
 
 =head1 SYNOPSIS
 
@@ -65,11 +65,11 @@ B<"""+common.prog_name+"""> [I<options>] [I<command>]
 
 =head1 DESCRIPTION
 
-CRAB is a Python program intended to simplify the process of creation and submission into grid environment of CMS analysis jobs.
+CRAB is a Python program intended to simplify the process of creation and submission into Grid environment of CMS analysis jobs.
 
 Parameters for CRAB usage and configuration are provided by the user changing the configuration file B<crab.cfg>.
 
-CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BOSS to interface to the grid scheduler, as well as for logging and bookkeeping and eventually real time monitoring.
+CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BOSS to interface to the Grid scheduler, as well as for logging and bookkeeping and eventually real time monitoring.
 
 CRAB support any CMSSW based executable, with any modules/libraries, including the user provided one, and deals with the output produced by the executable. Up to version 1_2_1, also ORCA (and FAMOS) based executable were supported.  CRAB provides an interface with CMS data discovery services (DBS and DLS), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.
 
@@ -126,7 +126,7 @@ The most important parameters are the following (see below for complete descript
 
 =item B<Run it!>
 
-You must have a valid voms-enabled grid proxy. See CRAB web page for details.
+You must have a valid voms-enabled Grid proxy. See CRAB web page for details.
 
 =back
 
@@ -134,7 +134,7 @@ You must have a valid voms-enabled grid proxy. See CRAB web page for details.
 
 The B<Condor-G> mode for B<CRAB> is a special submission mode next to the standard Resource Broker submission. It is designed to submit jobs directly to a site and not using the Resource Broker.
 
-Due to the nature of this submission possibility, the B<Condor-G> mode is restricted to OSG sites within the CMS grid, currently the 7 US T2: Florida(ufl.edu), Nebraska(unl.edu), San Diego(ucsd.edu), Purdue(purdue.edu), Wisconsin(wisc.edu), Caltech(ultralight.org), MIT(mit.edu). 
+Due to the nature of this submission possibility, the B<Condor-G> mode is restricted to OSG sites within the CMS Grid, currently the 7 US T2: Florida(ufl.edu), Nebraska(unl.edu), San Diego(ucsd.edu), Purdue(purdue.edu), Wisconsin(wisc.edu), Caltech(ultralight.org), MIT(mit.edu). 
 
 =head2 B<Requirements:>
 
@@ -146,7 +146,7 @@ Due to the nature of this submission possibility, the B<Condor-G> mode is restri
 
 =item locally available LCG or OSG UI installation
 
-for authentication via grid certificate proxies ("voms-proxy-init -voms cms" should result in valid proxy) 
+for authentication via Grid certificate proxies ("voms-proxy-init -voms cms" should result in valid proxy) 
 
 =item set of the environment variable EDG_WL_LOCATION to the edg directory of the local LCG or OSG UI installation 
 
@@ -174,7 +174,7 @@ the requested dataset has to be published correctly by the site in the local and
 
 =item submit jobs to a LCG site
 
-=item support grid certificate proxy renewal via the myproxy service
+=item support Grid certificate proxy renewal via the myproxy service
 
 =back
 
@@ -226,7 +226,8 @@ Retrieve the output declared by the user via the output sandbox. By default the 
 
 =item B<-resubmit [range]>
 
-Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax. 
+Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax.
+The resubmit option can be used only with CRAB without server. For the server this option will be implemented as soon as possible
 
 =item B<-kill [range]>
 
@@ -238,11 +239,11 @@ Check if the job can find compatible resources. It's equivalent of doing I<edg-j
 
 =item B<-printId [range]>
 
-Just print the SID (grid job identifier) of the job(s).
+Just print the SID (Grid job identifier) of the job(s) or the taskId if you are using CRAB with the server
 
 =item B<-postMortem [range]>
 
-Produce a file (via I<edg-job-logging-info -v 2>) which might help in understanding grid related problem for a job.
+Produce a file (via I<edg-job-logging-info -v 2>) which might help in understanding Grid related problem for a job.
 
 =item B<-list [range]>
 
@@ -297,7 +298,7 @@ The type of the job to be executed: I<cmssw> jobtypes are supported
 
 =item B<scheduler *>
 
-The scheduler to be used: I<edg> is the standard grid one. Other choice are I<glite> or I<glitecoll> for bulk submission or I<condor_g> (see specific paragraph)
+The scheduler to be used: I<edg> is the standard Grid one. Other choice are I<glite> or I<glitecoll> for bulk submission or I<condor_g> (see specific paragraph)
 
 =item B<server_mode>
 
@@ -437,11 +438,7 @@ To be used together with I<copy_data>. Path where to put output files on Storage
 
 =item B<register_data>
 
-To be used together with I<copy_data>. Register output files to RLS catalog: for advanced LCG users.
-
-=item B<lfn_dir>
-
-To be used together with I<register_data>. Path for the Logical File Name.
+Not more supported.
 
 =item B<use_central_bossDB>
 
@@ -507,11 +504,11 @@ Only the CE (Computing Element) whose name contains the following strings (comma
 
 =item B<SE_black_list>
 
-All the SE (Storage Element) whose name contains the following strings (comma separated list) will not be considered for submission.
+All the SE (Storage Element) whose name contains the following strings (comma separated list) will not be considered for submission.It works only if a datasetpath is specified.
 
 =item B<SE_white_list>
 
-Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.
+Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.It works only if a datasetpath is specified
 
 =item B<virtual_organization>
 
@@ -519,11 +516,11 @@ You don\'t want to change this: it\'s cms!
 
 =item B<retry_count>
 
-Number of time the grid will try to resubmit your job in case of grid related problem.
+Number of time the Grid will try to resubmit your job in case of Grid related problem.
 
 =item B<shallow_retry_count>
 
-Number of time shallow resubmission the grid will try: resubmissions are tried B<only> if the job aborted B<before> start. So you are guaranteed that your jobs run strictly once.
+Number of time shallow resubmission the Grid will try: resubmissions are tried B<only> if the job aborted B<before> start. So you are guaranteed that your jobs run strictly once.
 
 =item B<maxtarballsize>
 
@@ -541,7 +538,7 @@ I<crab> saves all command lines in the file I<crab.history>.
 
 =head1 HISTORY
 
-B<CRAB> is a tool for the CMS analysis on the grid environment. It is based on the ideas from CMSprod, a production tools implemented originally by Nikolai Smirnov.
+B<CRAB> is a tool for the CMS analysis on the Grid environment. It is based on the ideas from CMSprod, a production tools implemented originally by Nikolai Smirnov.
 
 =head1 AUTHORS
 
