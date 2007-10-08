@@ -21,12 +21,16 @@ class Mailer:
         notifCfg = cfgObject.getConfig("Notification")
         
         senderName = notifCfg.get("Notification_SenderName")
-
+        senderPwd  = notifCfg.get("Notification_SenderPwd")
+        
         if senderName == None :
             raise RuntimeError, "missing Notification_SenderName property in " + config + " configuration file"
+
+        if senderPwd == None:
+            raise RuntimeError, "missing Notification_SenderPwd property in " + config + " configuration file"
         
         self.senderName = senderName
-
+        self.senderPwd  = senderPwd
         
         self.smtpServer = notifCfg.get("Notification_SMTPServer")
 
@@ -49,15 +53,22 @@ class Mailer:
     def SendMail(self, toList, message):
         
         try:
+##             server = smtplib.SMTP( self.smtpServer )
+##             server.set_debuglevel( self.smtpDbgLvl )
+            
+##             server.sendmail( self.senderName, toList, message)
+##             server.quit()
+
             server = smtplib.SMTP( self.smtpServer )
             server.set_debuglevel( self.smtpDbgLvl )
-            
-            #msg = "Notification.Mailer: Going to call server.SendMail(" + self.senderName + ", "+",".join(toList)+")"
-            #logging.info( msg )
-            
-            
+            server.ehlo()
+            server.starttls()
+            server.ehlo() 
+            server.login(self.senderName, self.senderPwd);
+ 
             server.sendmail( self.senderName, toList, message)
             server.quit()
+
             
         except SMTPException, ex:
             errmsg = "SMTP ERROR! " + str(ex)
