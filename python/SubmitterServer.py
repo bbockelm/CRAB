@@ -15,9 +15,15 @@ PIPE = subprocess.PIPE
 import select
 import fcntl
 
+import xml.dom.minidom
+import xml.dom.ext
+
 class SubmitterServer(Actor):
-    def __init__(self, cfg_params,):
+    def __init__(self, cfg_params, parsedRange, nominalRange):
+
         self.cfg_params = cfg_params
+        self.submitRange = parsedRange
+        self.nominalRange = nominalRange # unparsed version of the range # useful to distinguish 'all'
         
         try:  
             self.server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
@@ -31,13 +37,30 @@ class SubmitterServer(Actor):
         """
         The main method of the class: submit jobs in range self.nj_list
         """
+
+        # partial submission code ## Fabio
+        if os.path.exists(common.work_space.shareDir()+'/submit_directive') == True:
+            common.logger.debug(5, "SubmitterServer::run() called for subsequent submission")
+            self.subseqSubmission()
+            return
+        # standard submission to the server
+        
         common.logger.debug(5, "SubmitterServer::run() called")
 
         totalCreatedJobs= 0
         start = time.time()
         flagSubmit = 1
         common.jobDB.load()
-        for nj in range(common.jobDB.nJobs()):
+
+        list_nJ = []
+
+        if self.nominalRange == 'all':
+           list_nJ = self.submitRange
+        else:
+           for x in self.submitRange:
+               list_nJ.append(int(x)-1)
+        #   
+        for nj in list_nJ:
             if (common.jobDB.status(nj)=='C') or (common.jobDB.status(nj)=='RC'):
                 totalCreatedJobs +=1
             else:
@@ -48,7 +71,7 @@ class SubmitterServer(Actor):
                 common.logger.message("Not all jobs are created: before submit create all of them")
                 return
             else:
-                common.logger.message("Impossible to sumbit jobs that are already submitted")
+                common.logger.message("Impossible to submit jobs that are already submitted")
                 return
         elif (totalCreatedJobs==0):
             common.logger.message("No jobs to be submitted: first create them")
@@ -68,12 +91,21 @@ class SubmitterServer(Actor):
         self.cfg_params['apmon'].sendToML(params)
 
         ### Here start the server submission 
-        pSubj = os.popen3('openssl x509 -in $X509_USER_PROXY  -subject -noout')[1].readlines()[0]
+        pSubj = os.popen3('openssl x509 -in /tmp/x509up_u`id -u` -subject -noout')[1].readlines()[0]
        
         userSubj='userSubj'
         userSubjFile = open(common.work_space.shareDir()+'/'+userSubj,'w')
         userSubjFile.write(str(pSubj))   
-        userSubjFile.close()   
+        userSubjFile.close()  
+
+        ### Create submission range directive file # Fabio
+        submDirectiveFile = open(common.work_space.shareDir()+'/submit_directive','w')
+        if self.nominalRange == 'all':
+             submDirectiveFile.write('all\n')
+        else:
+             submDirectiveFile.write(str(self.submitRange))
+        submDirectiveFile.close()
+        # 
     
         WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
         common.scheduler.checkProxy()
@@ -124,7 +156,13 @@ class SubmitterServer(Actor):
             else:
                 msg='Project '+str(WorkDirName)+' succesfuly submitted to the server \n'      
                 common.logger.message(msg)
-                for nj in range(common.jobDB.nJobs()):
+                if self.nominalRange == 'all':
+                    list_nJ = self.submitRange
+                else:
+                    for x in self.submitRange:
+                        list_nJ.append(int(x)-1)
+                #   
+                for nj in list_nJ:
                     common.jobDB.setStatus(nj, 'S')
                     common.jobDB.save()
         except Exception, ex:  
@@ -134,9 +172,81 @@ class SubmitterServer(Actor):
             msg = "ERROR : Unable to ship the project to the server \n"
             msg +="Project "+str(WorkDirName)+" not Submitted \n"      
             raise CrabException(msg)
-
         return
-                
+
+###################################
+    #Partial submission code # Fabio
+###################################
+    def subseqSubmission(self):
+        # prepare standard xml messages data
+        common.jobDB.load()
+        server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
+        WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
+        projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict('TasKUUID')
+        
+        pSubj = os.popen3('openssl x509 -in  /tmp/x509up_u`id -u` -subject -noout')[1].readlines()[0]
+
+        # cross check the specified range w.r.t. the previously submitted jobs
+        # build the difference set between the directives and finally materialize
+        # the hystory of the submissions
+        prev_subms = 'None'
+        delta_subm = []
+        new_subms = ''
+
+        file = open(common.work_space.shareDir()+'/submit_directive','r')
+        prev_subms = str(file.readlines()[0]).split('\n')[0]
+        file.close()
+        
+        if prev_subms == 'all':
+            common.logger.message("Impossible to submit jobs that are already submitted")
+            return
+
+        prev_subms = eval(prev_subms)
+        delta_subm = [i for i in self.submitRange if i not in prev_subms]
+        new_subms = prev_subms + delta_subm
+        if self.nominalRange == 'all': 
+            new_subms = 'all'
+
+        if len(delta_subm) == 0:
+            common.logger.message("Impossible to submit jobs that are already submitted")
+            return
+            
+        file = open(common.work_space.shareDir()+'/submit_directive','w')
+        file.write(str(new_subms))
+        file.close()
+        
+        # submit the xml message with delta_subm range
+        try: 
+            self.cfile = xml.dom.minidom.Document()
+            root = self.cfile.createElement("TaskCommand")
+            node = self.cfile.createElement("TaskAttributes")
+            node.setAttribute("Task", projectUniqName)
+            node.setAttribute("Subject", string.strip(pSubj))
+            node.setAttribute("Command", "submit_range")
+            node.setAttribute("Range", str(delta_subm))
+            root.appendChild(node)
+            self.cfile.appendChild(root)
+            file = open(WorkDirName + '/share/command.xml', 'w')
+            xml.dom.ext.PrettyPrint(self.cfile, file)
+            file.close()
+            
+            cmd = 'lcg-cp --vo cms file://'+os.getcwd()+'/'+str(WorkDirName)+'/share/command.xml gsiftp://' + str(server_name) + str(projectUniqName)+'.xml'
+            retcode = os.system(cmd)
+            if retcode: 
+                raise CrabException("Failed to ship submission command to server")
+            else: 
+                common.logger.message("Submission command succesfully shipped to server")
+                for nj in delta_subm:
+                    print "Setting job " +str(nj-1)
+                    common.jobDB.setStatus((nj-1), 'S')
+                    common.jobDB.save()
+        except RuntimeError,e:
+            msg +="Project "+str(WorkDirName)+" not submitted: \n"      
+            raise CrabException(msg + e.__str__())
+        return
+
+####################################################
+             
 class Popen(subprocess.Popen):
     def recv(self, maxsize=None):
         return self._recv('stdout', maxsize)

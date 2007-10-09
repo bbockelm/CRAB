@@ -8,7 +8,7 @@ import common
 import string,os
 
 class ScriptWriter:
-    def __init__(self, template):
+    def __init__(self, template, output_troncate_flag): ## added by Matty
         # pattern -> action
         ### FEDE added modify_report FOR DBS OUTPUT PUBLICATION
         self.actions = {
@@ -20,9 +20,10 @@ class ScriptWriter:
             'run_executable'              : self.runExe_,
             'rename_output'               : self.renameOutput_,
             'copy_output'                 : self.copyOutput_,
-            'register_output'             : self.registerOutput_,
+            #'register_output'             : self.registerOutput_,
             'modify_report'               : self.modifyReport_,
-            'clean_env'                   : self.cleanEnv_
+            'clean_env'                   : self.cleanEnv_,
+            'check_output_limit'          : self.checkOut_
             }
         
         if os.path.isfile("./"+template):
@@ -32,6 +33,9 @@ class ScriptWriter:
         else:
             raise CrabException("No crab_template.sh found!")
         self.nj = -1     # current job number
+
+        self.output_troncate_flag = output_troncate_flag
+
         return
 
     def setAction(self, pattern, action):
@@ -135,12 +139,12 @@ class ScriptWriter:
         txt = common.scheduler.wsCopyOutput()
         return txt
 
-    def registerOutput_(self):
-        """
-        Returns part of a job script which registers output files to RLS catalog.
-        """
-        txt = common.scheduler.wsRegisterOutput()
-        return txt
+    #def registerOutput_(self):
+    #    """
+    #    Returns part of a job script which registers output files to RLS catalog.
+    #    """
+    #    txt = ''
+    #    return txt
 
     ### FEDE FOR DBS OUTPUT PUBLICATION 
     def modifyReport_(self):
@@ -158,4 +162,15 @@ class ScriptWriter:
         """
         jbt = common.job_list.type()
         txt = jbt.cleanEnv()
+        return txt
+
+    def checkOut_(self):
+        """
+        With glite check if the output is too big
+        """
+        txt = "\n"
+        if self.output_troncate_flag == 1:
+            limit = 110000000 ##105 MB
+            jbt = common.job_list.type()
+            txt = jbt.checkOut(limit)
         return txt

@@ -5,9 +5,16 @@ import xml.dom.minidom
 import xml.dom.ext
 
 class KillerServer(Actor):
-    def __init__(self, cfg_params):
+    # Matteo for kill by range
+    def __init__(self, cfg_params, range, parsedRange=[]):
         self.cfg_params = cfg_params
+        self.range = range
+        self.parsedRange = parsedRange 
         return
+
+#    def __init__(self, cfg_params):
+#        self.cfg_params = cfg_params
+#        return
 
     def run(self):
         """
@@ -24,7 +31,7 @@ class KillerServer(Actor):
         #common.taskDB.save()
 
         ### Here start the kill operation  
-        pSubj = os.popen3('openssl x509 -in $X509_USER_PROXY  -subject -noout')[1].readlines()[0]
+        pSubj = os.popen3('openssl x509 -in /tmp/x509up_u`id -u` -subject -noout')[1].readlines()[0]
        
         try: 
             self.cfile = xml.dom.minidom.Document()
@@ -33,6 +40,7 @@ class KillerServer(Actor):
             node.setAttribute("Task", projectUniqName)
             node.setAttribute("Subject", string.strip(pSubj))
             node.setAttribute("Command", "kill")
+            node.setAttribute("Range", str(self.parsedRange)) # Matteo for kill by range
             root.appendChild(node)
             self.cfile.appendChild(root)
             self.toFile(WorkDirName + '/share/command.xml')
@@ -44,6 +52,23 @@ class KillerServer(Actor):
             msg +="Project "+str(WorkDirName)+" not killed: \n"      
             raise CrabException(msg + e.__str__())
 
+        # synch the range of submitted jobs to server (otherwise You wont be able to submit them again) # Fabio
+        file = open(common.work_space.shareDir()+'/submit_directive','r')
+        subms = str(file.readlines()[0]).split('\n')[0]
+        file.close()
+        if self.range=='all':
+            subms = []
+        elif self.range != None and self.range != "": 
+            if len(self.range)!=0:
+                subms = eval(subms)
+                for i in self.parsedRange:
+                    if i in subms:
+                        subms.remove(i)
+        
+        file = open(common.work_space.shareDir()+'/submit_directive','w')
+        file.write(str(subms))
+        file.close()
+        #  
         return
                 
     def toFile(self, filename):

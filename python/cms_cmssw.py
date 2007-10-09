@@ -91,6 +91,7 @@ class Cmssw(JobType):
             try:
                 datasetpath_split = self.datasetPath.split("/")
                 # standard style
+                self.setParam_('datasetFull', self.datasetPath)
                 if self.use_dbs_1 == 1 :
                     self.setParam_('dataset', datasetpath_split[1])
                     self.setParam_('owner', datasetpath_split[-1])
@@ -318,9 +319,9 @@ class Cmssw(JobType):
                         if (self.sourceSeedVtx) :
                             PsetEdit.vtxSeed("INPUTVTX")
                         if (self.sourceSeedG4) :
-                            self.PsetEdit.g4Seed("INPUTG4")
+                            PsetEdit.g4Seed("INPUTG4")
                         if (self.sourceSeedMix) :
-                            self.PsetEdit.mixSeed("INPUTMIX")
+                            PsetEdit.mixSeed("INPUTMIX")
                 # add FrameworkJobReport to parameter-set
                 PsetEdit.addCrabFJR(self.fjrFileName)
                 PsetEdit.psetWriter(self.configFilename())
@@ -1188,13 +1189,19 @@ class Cmssw(JobType):
             # txt += 'ls '+fileWithSuffix+'\n'
             # txt += 'ls_result=$?\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-            ###### FEDE 14444 - 08 - 2007 ########
-            txt += '   mv '+fileWithSuffix+' $RUNTIME_AREA\n'
-            txt += '   cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            ###################################
+            ###### FEDE FOR OUTPUT DATA PUBLICATION ########
+            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
+            txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            ################################################
             txt += 'else\n'
-            txt += '   exit_status=60302\n'
-            txt += '   echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
+            txt += '    exit_status=60302\n'
+            txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
+            ############# FEDE ADDED CHECK FOR OUTPUT #############
+            ## MATTY's FIX: the exit option was interrupting the execution
+            if fileWithSuffix in self.output_file:
+                txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
+                txt += '    # exit $exit_status\n'
+            #######################################################    
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
                 txt += '        echo "prepare dummy output file"\n'
@@ -1204,28 +1211,9 @@ class Cmssw(JobType):
         file_list = []
         for fileWithSuffix in (self.output_file):
              file_list.append(self.numberFile_(fileWithSuffix, '$NJob'))
+             
         txt += 'file_list="'+string.join(file_list,' ')+'"\n'
-       
         txt += 'cd $RUNTIME_AREA\n'
-        #### FEDE this is the cleanEnv function
-        ### OLI_DANIELE
-        #txt += 'if [ $middleware == OSG ]; then\n'  
-        #txt += '    cd $RUNTIME_AREA\n'
-        #txt += '    echo "Remove working directory: $WORKING_DIR"\n'
-        #txt += '    /bin/rm -rf $WORKING_DIR\n'
-        #txt += '    if [ -d $WORKING_DIR ] ;then\n'
-        #txt += '        echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
-        #txt += '        echo "JOB_EXIT_STATUS = 60999"\n'
-        #txt += '        echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
-        #txt += '        rm -f $RUNTIME_AREA/$repo \n'
-        #txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '    fi\n'
-        #txt += 'fi\n'
-        #txt += '\n'
-
-
         return txt
 
     def numberFile_(self, file, txt):
@@ -1372,26 +1360,31 @@ class Cmssw(JobType):
         """
 
         txt = '' 
-        txt += 'echo "Modify Job Report" \n'
-        #txt += 'chmod a+x $RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
-        ################ FEDE FOR DBS2 #############################################
-        txt += 'chmod a+x $SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
-        #############################################################################
         try:
             publish_data = int(self.cfg_params['USER.publish_data'])           
         except KeyError:
             publish_data = 0
-
-        txt += 'if [ -z "$SE" ]; then\n'
-        txt += '    SE="" \n'
-        txt += 'fi \n' 
-        txt += 'if [ -z "$SE_PATH" ]; then\n'
-        txt += '    SE_PATH="" \n'
-        txt += 'fi \n' 
-        txt += 'echo "SE = $SE"\n' 
-        txt += 'echo "SE_PATH = $SE_PATH"\n'
-
         if (publish_data == 1):  
+            txt += 'echo "Modify Job Report" \n'
+            #txt += 'chmod a+x $RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
+            ################ FEDE FOR DBS2 #############################################
+            txt += 'chmod a+x $SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
+            #############################################################################
+            #try:
+            #    publish_data = int(self.cfg_params['USER.publish_data'])           
+            #except KeyError:
+            #    publish_data = 0
+
+            txt += 'if [ -z "$SE" ]; then\n'
+            txt += '    SE="" \n'
+            txt += 'fi \n' 
+            txt += 'if [ -z "$SE_PATH" ]; then\n'
+            txt += '    SE_PATH="" \n'
+            txt += 'fi \n' 
+            txt += 'echo "SE = $SE"\n' 
+            txt += 'echo "SE_PATH = $SE_PATH"\n'
+
+        #if (publish_data == 1):  
             #processedDataset = self.cfg_params['USER.processed_datasetname']
             processedDataset = self.cfg_params['USER.publish_data_name']
             txt += 'ProcessedDataset='+processedDataset+'\n'
@@ -1421,11 +1414,12 @@ class Cmssw(JobType):
             txt += '    mv NewFrameworkJobReport.xml crab_fjr_$NJob.xml\n'
             txt += 'fi\n'
         else:
-            txt += 'ProcessedDataset=no_data_to_publish \n' 
+            txt += 'echo "no data publication required"\n'
+            #txt += 'ProcessedDataset=no_data_to_publish \n' 
             #### FEDE: added slash in LFN ##############
-            txt += 'FOR_LFN=/local/ \n'
-            txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
-            txt += 'echo "FOR_LFN = $FOR_LFN" \n'
+            #txt += 'FOR_LFN=/local/ \n'
+            #txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
+            #txt += 'echo "FOR_LFN = $FOR_LFN" \n'
         return txt
 
     def cleanEnv(self):
@@ -1468,3 +1462,86 @@ class Cmssw(JobType):
         for e in old:
             nd[e]=0
         return nd.keys()
+
+
+    def checkOut(self, limit):
+        """
+        check the dimension of the output files
+        """
+        txt = 'echo "*****************************************"\n'
+        txt += 'echo "** Starting output sandbox limit check **"\n'
+        txt += 'echo "*****************************************"\n'
+        allOutFiles = ""
+        listOutFiles = []
+        for fileOut in (self.output_file+self.output_file_sandbox):
+             if fileOut.find('crab_fjr') == -1:
+                 allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob')
+                 listOutFiles.append(self.numberFile_(fileOut, '$NJob'))
+        txt += 'echo "OUTPUT files: '+str(allOutFiles)+'";\n'
+        txt += 'ls -gGhrta;\n'
+        txt += 'sum=0;\n'
+        txt += 'for file in '+str(allOutFiles)+' ; do\n'
+        txt += '    if [ -e $file ]; then\n'
+        txt += '        tt=`ls -gGrta $file | awk \'{ print $3 }\'`\n'
+        txt += '        sum=`expr $sum + $tt`\n'
+        txt += '    else\n'
+        txt += '        echo "WARNING: output file $file not found!"\n'
+        txt += '    fi\n'
+        txt += 'done\n'
+        txt += 'echo "Total Output dimension: $sum";\n'
+        txt += 'limit='+str(limit)+';\n'
+        txt += 'echo "OUTPUT FILES LIMIT SET TO: $limit";\n'
+        txt += 'if [ $limit -lt $sum ]; then\n'
+        txt += '    echo "WARNING: output files have to big size - something will be lost;"\n'
+        txt += '    echo "         checking the output file sizes..."\n'
+        """
+        txt += '    dim=0;\n'
+        txt += '    exclude=0;\n'
+        txt += '    for files in '+str(allOutFiles)+' ; do\n'
+        txt += '        sumTemp=0;\n'
+        txt += '        for file2 in '+str(allOutFiles)+' ; do\n'
+        txt += '            if [ $file != $file2 ]; then\n'
+        txt += '                tt=`ls -gGrta $file2 | awk \'{ print $3 }\';`\n'
+        txt += '                sumTemp=`expr $sumTemp + $tt`;\n'
+        txt += '            fi\n'
+        txt += '        done\n'
+        txt += '        if [ $sumTemp -lt $limit ]; then\n'
+        txt += '            if [ $dim -lt $sumTemp ]; then\n'
+        txt += '                dim=$sumTemp;\n'
+        txt += '                exclude=$file;\n'
+        txt += '            fi\n'
+        txt += '        fi\n'
+        txt += '    done\n'
+        txt += '    echo "Dimension calculated: $dim"; echo "File to exclude: $exclude";\n'
+        """
+        txt += '    tot=0;\n'
+        txt += '    for file2 in '+str(allOutFiles)+' ; do\n'
+        txt += '        tt=`ls -gGrta $file2 | awk \'{ print $3 }\';`\n'
+        txt += '        tot=`expr $tot + $tt`;\n'
+        txt += '        if [ $limit -lt $tot ]; then\n'
+        txt += '            tot=`expr $tot - $tt`;\n'
+        txt += '            fileLast=$file;\n'
+        txt += '            break;\n'
+        txt += '        fi\n'
+        txt += '    done\n'
+        txt += '    echo "Dimension calculated: $tot"; echo "First file to exclude: $file";\n'
+        txt += '    flag=0;\n'     
+        txt += '    for filess in '+str(allOutFiles)+' ; do\n'
+        txt += '        if [ $fileLast = $filess ]; then\n'
+        txt += '            flag=1;\n'
+        txt += '        fi\n'
+        txt += '        if [ $flag -eq 1 ]; then\n'
+        txt += '            rm -f $filess;\n'
+        txt += '        fi\n'
+        txt += '    done\n'
+        txt += '    ls -agGhrt;\n'
+        txt += '    echo "WARNING: output files are too big in dimension: can not put in the output_sandbox.";\n'
+        txt += '    echo "JOB_EXIT_STATUS = 70000";\n'
+        txt += '    exit_status=70000;\n'
+        txt += 'else'
+        txt += '    echo "Total Output dimension $sum is fine.";\n'
+        txt += 'fi\n'
+        txt += 'echo "*****************************************"\n'
+        txt += 'echo "*** Ending output sandbox limit check ***"\n'
+        txt += 'echo "*****************************************"\n'
+        return txt

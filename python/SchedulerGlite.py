@@ -56,7 +56,25 @@ class SchedulerGlite(SchedulerEdg):
             concString = '&&'
             for ce in ce_white_list:
                 tmpCe.append('RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId)')
-            if len(tmpCe): req = req + " && (" + concString.join(tmpCe) + ") "
+            ### MATTY' FIX: if more then one CE: && -> ||
+            #print "list CE: " + str(tmpCe)
+            if len(tmpCe) == 1:
+                req +=  " && (" + concString.join(tmpCe) + ") "
+            elif len(tmpCe) > 1:
+                firstCE = 0
+                for reqTemp in tmpCe:
+                    #print reqTemp
+                    if firstCE == 0:
+                        #print "adding: "+str(" && ( (" + reqTemp + ") ")
+                        req += " && ( (" + reqTemp + ") "
+                        firstCE = 1
+                    elif firstCE > 0:
+                        #print "adding: "+str(" || (" + reqTemp + ") ")
+                        req += " || (" + reqTemp + ") "
+                if firstCE > 0:
+                    req += ") "
+            ## old code
+#            if len(tmpCe): req = req + " && (" + concString.join(tmpCe) + ") "
         
         if self.EDG_ce_black_list:
             ce_black_list = string.split(self.EDG_ce_black_list,',')
@@ -134,12 +152,22 @@ class SchedulerGlite(SchedulerEdg):
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $GRID3_APP_DIR ]; then\n'
         txt += '    middleware=OSG \n'
-        txt += '    echo "SyncCE=`echo $EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    if [ $GLOBUS_GRAM_JOB_CONTACT ]; then \n'
+        txt += '        SyncCE=`echo "echo $GLOBUS_GRAM_JOB_CONTACT" | cut -d: -f2 | sed \'s/\/\///\'`;\n'
+        txt += '        echo "SyncCE=$SyncCE"  | tee -a $RUNTIME_AREA/$repo ;\n'
+        txt += '    else\n'
+        txt += '        echo "not reporting SyncCE";\n'
+        txt += '    fi\n';
         txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $OSG_APP ]; then \n'
         txt += '    middleware=OSG \n'
-        txt += '    echo "SyncCE=`echo $EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    if [ $GLOBUS_GRAM_JOB_CONTACT ]; then \n'
+        txt += '        SyncCE=`echo "echo $GLOBUS_GRAM_JOB_CONTACT" | cut -d: -f2 | sed \'s/\/\///\'`;\n'
+        txt += '        echo "SyncCE=$SyncCE"  | tee -a $RUNTIME_AREA/$repo ;\n'
+        txt += '    else\n'
+        txt += '        echo "not reporting SyncCE";\n'
+        txt += '    fi\n';
         txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'else \n'
@@ -172,44 +200,43 @@ class SchedulerGlite(SchedulerEdg):
 
         txt += 'export VO='+self.VO+'\n'
         ### some line for LFC catalog setting 
-        txt += 'if [ $middleware == LCG ]; then \n'
-        txt += '    if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
-        txt += '        export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
-        txt += '    fi\n'
-        txt += '    if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
-        txt += '        export LFC_HOST='+self.lfc_host+'\n'
-        txt += '    fi\n'
-        txt += '    if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
-        txt += '        export LFC_HOME='+self.lfc_home+'\n'
-        txt += '    fi\n'
-        txt += 'elif [ $middleware == OSG ]; then\n'
-        txt += '    echo "LFC catalog setting to be implemented for OSG"\n'
-        txt += 'fi\n'
+        #txt += 'if [ $middleware == LCG ]; then \n'
+        #txt += '    if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
+        #txt += '        export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
+        #txt += '    fi\n'
+        #txt += '    if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
+        #txt += '        export LFC_HOST='+self.lfc_host+'\n'
+        #txt += '    fi\n'
+        #txt += '    if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
+        #txt += '        export LFC_HOME='+self.lfc_home+'\n'
+        #txt += '    fi\n'
+        #txt += 'elif [ $middleware == OSG ]; then\n'
+        #txt += '    echo "LFC catalog setting to be implemented for OSG"\n'
+        #txt += 'fi\n'
         #####
-        if int(self.register_data) == 1:
-           txt += 'if [ $middleware == LCG ]; then \n'
-           txt += '    export LFN='+self.LFN+'\n'
-           txt += '    lfc-ls $LFN\n' 
-           txt += '    result=$?\n' 
-           txt += '    echo $result\n' 
-           ### creation of LFN dir in LFC catalog, under /grid/cms dir  
-           txt += '    if [ $result != 0 ]; then\n'
-           txt += '       lfc-mkdir $LFN\n'
-           txt += '       result=$?\n' 
-           txt += '       echo $result\n' 
-           txt += '    fi\n'
-           txt += 'elif [ $middleware == OSG ]; then\n'
-           txt += '    echo " Files registration to be implemented for OSG"\n'
-           txt += 'fi\n'
-           txt += '\n'
-
-           if self.VO:
-              txt += 'export VO='+self.VO+'\n'
-           if self.LFN:
-              txt += 'if [ $middleware == LCG ]; then \n'
-              txt += '    export LFN='+self.LFN+'\n'
-              txt += 'fi\n'
-              txt += '\n'
+        #if int(self.register_data) == 1:
+        #   txt += 'if [ $middleware == LCG ]; then \n'
+        #   txt += '    export LFN='+self.LFN+'\n'
+        #   txt += '    lfc-ls $LFN\n' 
+        #   txt += '    result=$?\n' 
+        #   txt += '    echo $result\n' 
+        #   ### creation of LFN dir in LFC catalog, under /grid/cms dir  
+        #   txt += '    if [ $result != 0 ]; then\n'
+        #   txt += '       lfc-mkdir $LFN\n'
+        #   txt += '       result=$?\n' 
+        #   txt += '       echo $result\n' 
+        #   txt += '    fi\n'
+        #   txt += 'elif [ $middleware == OSG ]; then\n'
+        #   txt += '    echo " Files registration to be implemented for OSG"\n'
+        #   txt += 'fi\n'
+        #   txt += '\n'
+        #   if self.VO:
+        #      txt += 'export VO='+self.VO+'\n'
+        #   if self.LFN:
+        #      txt += 'if [ $middleware == LCG ]; then \n'
+        #      txt += '    export LFN='+self.LFN+'\n'
+        #      txt += 'fi\n'
+        #      txt += '\n'
 
         txt += 'if [ $middleware == LCG ]; then\n' 
         txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
@@ -267,5 +294,4 @@ class SchedulerGlite(SchedulerEdg):
         return itr4
 
     def submitTout(self, list):
-        return 120
-
+        return 180

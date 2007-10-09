@@ -45,14 +45,12 @@ class WorkSpace:
             msg += 'please change direcotry\n'
             raise CrabException(msg)
 
-      #  if (string.split(self._top_dir,'/')[-2]=='data'):
-      #      msg = 'Cannot run CRAB from "data" directory.\n'
-      #      msg += 'please change direcotry\n'
-      #      raise CrabException(msg)
-
-        
         if not os.path.exists(self._top_dir):
-            os.mkdir(self._top_dir)
+            try:
+                os.mkdir(self._top_dir)
+            except OSError:
+                msg = 'Cannot create '+str(self._top_dir) +' directory.\n'
+                raise CrabException(msg)
             pass
         if not os.listdir(self._top_dir):
             os.mkdir(self._log_dir)

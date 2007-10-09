@@ -42,10 +42,8 @@ class GetOutputServer(Actor):
             common.logger.message("Retrieving the project from the server...\n")
 
             copyHere = common.work_space.resDir() # MATT
-        #    print copyHere
-        #    print self.cfg_params["USER.outputdir"]
-        #    if os.path.isdir(self.cfg_params["USER.outputdir"]): # MATT
-        #        copyHere = self.cfg_params["USER.outputdir"] + "/" # MATT
+            if "USER.outputdir" in self.cfg_params.keys() and os.path.isdir(self.cfg_params["USER.outputdir"]):
+                  copyHere = self.cfg_params["USER.outputdir"] + "/" # MATT
              
             cmd = 'lcg-cp --vo cms --verbose gsiftp://' + str(self.server_name) + str(projectUniqName)+'/res/done.tar.gz file://'+copyHere+'done.tar.gz'# MATT
             common.logger.debug(5, cmd)

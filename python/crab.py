@@ -18,16 +18,17 @@ from Cleaner import Cleaner
 import common
 import Statistic
 import commands
+from BlackWhiteListParser import BlackWhiteListParser
 
 from BossSession import *
 
 #modified to support server mode
-from SubmitterServer import SubmitterServer
-from GetOutputServer import GetOutputServer
-from StatusServer import StatusServer
-from PostMortemServer import PostMortemServer
-from KillerServer import KillerServer
-from CleanerServer import CleanerServer
+#from SubmitterServer import SubmitterServer
+#from GetOutputServer import GetOutputServer
+#from StatusServer import StatusServer
+#from PostMortemServer import PostMortemServer
+#from KillerServer import KillerServer
+#from CleanerServer import CleanerServer
 
 import sys, os, time, string
 
@@ -124,6 +125,9 @@ class Crab:
 
         common.jobDB = JobDB()
         
+        # init BlackWhiteListParser
+        self.blackWhiteListParser = BlackWhiteListParser(self.cfg_params)
+
         self.UseServer=0
         try:
             self.UseServer=int(self.cfg_params['CRAB.server_mode'])
@@ -352,7 +356,7 @@ class Crab:
         'n1,n2-n3'  -> [n1, n2, n2+1, n2+2, ..., n3-1, n3]
         """
         result = []
- 
+
         common.logger.debug(5,"parseRange_ "+str(aRange))
         if aRange=='all' or aRange==None or aRange=='':
             result=range(1,common.jobDB.nJobs()+1)
@@ -360,7 +364,7 @@ class Crab:
         elif aRange=='0':
             return result
 
-        subRanges = string.split(aRange, ',')
+        subRanges = str(aRange).split(',') # DEPRECATED # Fabio #string.split(aRange, ',')
         for subRange in subRanges:
             result = result+self.parseSimpleRange_(subRange)
 
@@ -397,9 +401,9 @@ class Crab:
         (start, end) = (None, None)
         
         result = []
-        minus = string.find(aRange, '-')
+        minus = str(aRange).find('-') #DEPRECATED #Fabio #string.find(aRange, '-')
         if ( minus < 0 ):
-            if isInt(aRange) and int(aRange)>0:
+            if int(aRange)>0:
                 # FEDE
                 #result.append(int(aRange)-1)
                 ###
@@ -411,7 +415,7 @@ class Crab:
   
             pass
         else:
-            (start, end) = string.split(aRange, '-')
+            (start, end) = str(aRange).split('-')
             if isInt(start) and isInt(end) and int(start)>0 and int(start)<int(end):
                 #result=range(int(start)-1, int(end))
                 result=range(int(start), int(end)+1) #Daniele  
@@ -472,16 +476,26 @@ class Crab:
             elif ( opt == '-submit' ):
                 # modified to support server mode
                 if (self.UseServer== 1):
-                    self.actions[opt] = SubmitterServer(self.cfg_params)
+                    from SubmitterServer import SubmitterServer
+                    self.actions[opt] = SubmitterServer(self.cfg_params, self.parseRange_(val), val)
                 else:
                 # modified to support server mode
                     # get user request
                     nsjobs = -1
+                    chosenJobsList = None
                     if val:
-                        if ( isInt(val) ):
-                            nsjobs = int(val)
-                        elif (val=='all'):
+                        if val=='all': 
                             pass
+                        elif (type(eval(val)) is int) and eval(val) > 0:
+                            # positive number
+                            nsjobs = eval(val)
+                        # NEW PART # Fabio
+                        # put here code for LIST MANAGEMEN
+                        elif (type(eval(val)) is tuple)or( type(eval(val)) is int and eval(val)<0 ) :
+                            chosenJobsList = self.parseRange_(val)
+                            chosenJobsList = [i-1 for i in chosenJobsList ]
+                            nsjobs = len(chosenJobsList) 
+                        #
                         else:
                             msg = 'Bad submission option <'+str(val)+'>\n'
                             msg += '      Must be an integer or "all"'
@@ -497,17 +511,30 @@ class Crab:
                     jobSetForSubmission = 0
                     jobSkippedInSubmission = []
                     datasetpath=self.cfg_params['CMSSW.datasetpath']
-                    for nj in range(common.jobDB.nJobs()):
-                        if (len(common.jobDB.destination(nj)) != 0) or (datasetpath != None ):
+
+                    # NEW PART # Fabio
+                    # modified to handle list of jobs by the users # Fabio
+                    tmp_jList = range(common.jobDB.nJobs())
+                    if chosenJobsList != None:
+                        tmp_jList = chosenJobsList
+                    # build job list
+                    for nj in tmp_jList:
+                        cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(nj)) # More readable # Fabio
+                        if (cleanedBlackWhiteList != '') or (datasetpath == "None" ) or (datasetpath == None): ## Matty's fix
                             if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
                                 jobSetForSubmission +=1
                                 nj_list.append(nj)
-                            else: continue
+                            else: 
+                                continue
                         else :
                             jobSkippedInSubmission.append(nj+1)
+                        #
                         if nsjobs >0 and nsjobs == jobSetForSubmission:
                             break
                         pass
+                    del tmp_jList
+                    #
+
                     if nsjobs>jobSetForSubmission:
                         common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
                     if len(jobSkippedInSubmission) > 0 :
@@ -571,6 +598,7 @@ class Crab:
             elif ( opt == '-status' ):
                 # modified to support server mode 
                 if (self.UseServer== 1):
+                    from StatusServer import StatusServer
                     self.actions[opt] = StatusServer(self.cfg_params)
                 else:
                     jobs = self.parseRange_(val)
@@ -582,9 +610,17 @@ class Crab:
             elif ( opt == '-kill' ):
 
                 if (self.UseServer== 1):
-                    self.actions[opt] = KillerServer(self.cfg_params)
+                    if val:
+                        if val =='all':
+                            jobs = common.scheduler.listBoss()
+                        else:
+                            jobs = self.parseRange_(val)
+                        from KillerServer import KillerServer
+                        self.actions[opt] = KillerServer(self.cfg_params,val, self.parseRange_(val)) #Fabio
+                    else:
+                        common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
                 else:
-                    if val: 
+                    if val:
                         if val =='all':
                             jobs = common.scheduler.listBoss()
                         else:
@@ -593,12 +629,13 @@ class Crab:
                     else:
                         common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
 
+
             elif ( opt == '-getoutput' or opt == '-get'):
                 # modified to support server mode
                 if (self.UseServer== 1):
+                    from GetOutputServer import GetOutputServer
                     self.actions[opt] = GetOutputServer(self.cfg_params)
                 else:
-
                     if val=='all' or val==None or val=='':
                         jobs = common.scheduler.listBoss()
                     else:
@@ -731,7 +768,7 @@ class Crab:
                 nj_list = []
                 for nj in jobs:
                     st = common.jobDB.status(nj-1)
-                    if st == 'C': nj_list.append(nj-1)
+                    if st != 'X': nj_list.append(nj-1)
                     pass
 
                 if len(nj_list) != 0:
@@ -750,6 +787,7 @@ class Crab:
 
                 # modified to support server mode
                 if (self.UseServer== 1):
+                    from PostMortemServer import PostMortemServer
                     self.actions[opt] = PostMortemServer(self.cfg_params)
                 else:            
                     if val:
@@ -790,6 +828,7 @@ class Crab:
                 if val != None:
                     raise CrabException("No range allowed for '-clean'")
                 if (self.UseServer== 1):
+                    from CleanerServer import CleanerServer
                     self.actions[opt] = CleanerServer(self.cfg_params)
                 else:
                     self.actions[opt] = Cleaner(self.cfg_params)
@@ -817,14 +856,14 @@ class Crab:
         try:
             new_dir = self.cfg_params['USER.ui_working_dir']
             self.cfg_params['taskId'] = self.cfg_params['user'] + '_' + string.split(new_dir, '/')[len(string.split(new_dir, '/')) - 1] + '_' + self.current_time
-            if os.path.exists(new_dir):
-                if os.listdir(new_dir):
-                    msg = new_dir + ' already exists and is not empty. Please remove it before create new task'
-                    raise CrabException(msg)
             if  len(string.split(new_dir, '/')) == 1:
                 new_dir = self.cwd + new_dir
             else:
                 new_dir = new_dir
+            if os.path.exists(new_dir):
+                if os.listdir(new_dir):
+                    msg = new_dir + ' already exists and is not empty. Please remove it before create new task'
+                    raise CrabException(msg)
         except KeyError:
             new_dir = common.prog_name + '_' + self.name + '_' + self.current_time
             self.cfg_params['taskId'] = self.cfg_params['user'] + '_' + new_dir 
@@ -942,6 +981,10 @@ if __name__ == '__main__':
         warnings.simplefilter("ignore", RuntimeWarning)
     except:
         pass # too bad, you'll get the warning
+        
+    #### FEDE da verificare #####
+    ### os.putenv("PATH", definePath("new") )
+    ############################# 
 
     # Parse command-line options and create a dictionary with
     # key-value pairs.

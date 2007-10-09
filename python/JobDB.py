@@ -86,7 +86,10 @@ class JobDB:
         return
 
     def save(self):
-        db_file = open(self._dir+self._db_fname, 'w')
+        try:
+            db_file = open(self._dir+self._db_fname, 'w')
+        except IOError:
+            raise CrabException("Cannot open "+self._dir+self._db_fname+"\n")
         for i in range(len(self._jobs)):
             db_file.write(str(i)+'|')
             db_file.write(self._jobs[i].status+'|')

@@ -52,8 +52,8 @@ class SchedulerEdg(Scheduler):
         except KeyError:
             self.role = None
             
-        try: self.LCG_version = cfg_params["EDG.lcg_version"]
-        except KeyError: self.LCG_version = '2'
+        #try: self.LCG_version = cfg_params["EDG.lcg_version"]
+        #except KeyError: self.LCG_version = '2'
 
         try: 
             self.EDG_ce_black_list = cfg_params['EDG.ce_black_list']
@@ -122,45 +122,45 @@ class SchedulerEdg(Scheduler):
            raise CrabException(msg)
         #################################################
 
-        try:
-            self.lfc_host = cfg_params['EDG.lfc_host']
-        except KeyError:
-            msg = "Error. The [EDG] section does not have 'lfc_host' value"
-            msg = msg + " it's necessary to know the LFC host name"
-            common.logger.message(msg)
-            raise CrabException(msg)
-        try:
-            self.lcg_catalog_type = cfg_params['EDG.lcg_catalog_type']
-        except KeyError:
-            msg = "Error. The [EDG] section does not have 'lcg_catalog_type' value"
-            msg = msg + " it's necessary to know the catalog type"
-            common.logger.message(msg)
-            raise CrabException(msg)
-        try:
-            self.lfc_home = cfg_params['EDG.lfc_home']
-        except KeyError:
-            msg = "Error. The [EDG] section does not have 'lfc_home' value"
-            msg = msg + " it's necessary to know the home catalog dir"
-            common.logger.message(msg)
-            raise CrabException(msg)
+        #try:
+        #    self.lfc_host = cfg_params['EDG.lfc_host']
+        #except KeyError:
+        #    msg = "Error. The [EDG] section does not have 'lfc_host' value"
+        #    msg = msg + " it's necessary to know the LFC host name"
+        #    common.logger.message(msg)
+        #    raise CrabException(msg)
+        #try:
+        #    self.lcg_catalog_type = cfg_params['EDG.lcg_catalog_type']
+        #except KeyError:
+        #    msg = "Error. The [EDG] section does not have 'lcg_catalog_type' value"
+        #    msg = msg + " it's necessary to know the catalog type"
+        #    common.logger.message(msg)
+        #    raise CrabException(msg)
+        #try:
+        #    self.lfc_home = cfg_params['EDG.lfc_home']
+        #except KeyError:
+        #    msg = "Error. The [EDG] section does not have 'lfc_home' value"
+        #    msg = msg + " it's necessary to know the home catalog dir"
+        #    common.logger.message(msg)
+        #    raise CrabException(msg)
       
-        try: 
-            self.register_data = cfg_params["USER.register_data"]
-            if int(self.register_data) == 1:
-                try:
-                    self.LFN = cfg_params['USER.lfn_dir']
-                except KeyError:
-                    msg = "Error. The [USER] section does not have 'lfn_dir' value"
-                    msg = msg + " it's necessary for LCF registration"
-                    common.logger.message(msg)
-                    raise CrabException(msg)
-        except KeyError: self.register_data = 0
+        #try: 
+        #    self.register_data = cfg_params["USER.register_data"]
+        #    if int(self.register_data) == 1:
+        #        try:
+        #            self.LFN = cfg_params['USER.lfn_dir']
+        #        except KeyError:
+        #            msg = "Error. The [USER] section does not have 'lfn_dir' value"
+        #            msg = msg + " it's necessary for LCF registration"
+        #            common.logger.message(msg)
+        #            raise CrabException(msg)
+        #except KeyError: self.register_data = 0
 
-        if ( int(self.copy_data) == 0 and int(self.register_data) == 1 ):
-           msg = 'Warning: register_data = 1 must be used with copy_data = 1\n' 
-           msg = msg + 'Please modify copy_data value in your crab.cfg file\n' 
-           common.logger.message(msg)
-           raise CrabException(msg)
+        #if ( int(self.copy_data) == 0 and int(self.register_data) == 1 ):
+        #   msg = 'Warning: register_data = 1 must be used with copy_data = 1\n' 
+        #   msg = msg + 'Please modify copy_data value in your crab.cfg file\n' 
+        #   common.logger.message(msg)
+        #   raise CrabException(msg)
 
         try: self.EDG_requirements = cfg_params['EDG.requirements']
         except KeyError: self.EDG_requirements = ''
@@ -325,12 +325,22 @@ class SchedulerEdg(Scheduler):
         txt += 'echo "middleware discovery " \n'
         txt += 'if [ $GRID3_APP_DIR ]; then\n'
         txt += '    middleware=OSG \n'
-        txt += '    echo "SyncCE=`echo $EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    if [ $GLOBUS_GRAM_JOB_CONTACT ]; then \n'
+        txt += '        SyncCE=`echo "echo $GLOBUS_GRAM_JOB_CONTACT" | cut -d: -f2 | sed \'s/\/\///\'`;\n'
+        txt += '        echo "SyncCE=$SyncCE"  | tee -a $RUNTIME_AREA/$repo ;\n'
+        txt += '    else\n'
+        txt += '        echo "not reporting SyncCE";\n'
+        txt += '    fi\n';
         txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $OSG_APP ]; then \n'
         txt += '    middleware=OSG \n'
-        txt += '    echo "SyncCE=`echo $EDG_WL_LOG_DESTINATION`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    if [ $GLOBUS_GRAM_JOB_CONTACT ]; then \n'
+        txt += '        SyncCE=`echo "echo $GLOBUS_GRAM_JOB_CONTACT" | cut -d: -f2 | sed \'s/\/\///\'`;\n'
+        txt += '        echo "SyncCE=$SyncCE"  | tee -a $RUNTIME_AREA/$repo ;\n'
+        txt += '    else\n'
+        txt += '        echo "not reporting SyncCE";\n'
+        txt += '    fi\n';
         txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $VO_CMS_SW_DIR ]; then \n'
@@ -369,44 +379,43 @@ class SchedulerEdg(Scheduler):
 
         txt += 'export VO='+self.VO+'\n'
         ### add some line for LFC catalog setting 
-        txt += 'if [ $middleware == LCG ]; then \n'
-        txt += '    if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
-        txt += '        export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
-        txt += '    fi\n'
-        txt += '    if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
-        txt += '        export LFC_HOST='+self.lfc_host+'\n'
-        txt += '    fi\n'
-        txt += '    if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
-        txt += '        export LFC_HOME='+self.lfc_home+'\n'
-        txt += '    fi\n'
-        txt += 'elif [ $middleware == OSG ]; then\n'
-        txt += '    echo "LFC catalog setting to be implemented for OSG"\n'
-        txt += 'fi\n'
+        #txt += 'if [ $middleware == LCG ]; then \n'
+        #txt += '    if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
+        #txt += '        export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
+        #txt += '    fi\n'
+        #txt += '    if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
+        #txt += '        export LFC_HOST='+self.lfc_host+'\n'
+        #txt += '    fi\n'
+        #txt += '    if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
+        #txt += '        export LFC_HOME='+self.lfc_home+'\n'
+        #txt += '    fi\n'
+        #txt += 'elif [ $middleware == OSG ]; then\n'
+        #txt += '    echo "LFC catalog setting to be implemented for OSG"\n'
+        #txt += 'fi\n'
         #####
-        if int(self.register_data) == 1:
-           txt += 'if [ $middleware == LCG ]; then \n'
-           txt += '    export LFN='+self.LFN+'\n'
-           txt += '    lfc-ls $LFN\n' 
-           txt += '    result=$?\n' 
-           txt += '    echo $result\n' 
-           ### creation of LFN dir in LFC catalog, under /grid/cms dir  
-           txt += '    if [ $result != 0 ]; then\n'
-           txt += '       lfc-mkdir $LFN\n'
-           txt += '       result=$?\n' 
-           txt += '       echo $result\n' 
-           txt += '    fi\n'
-           txt += 'elif [ $middleware == OSG ]; then\n'
-           txt += '    echo " Files registration to be implemented for OSG"\n'
-           txt += 'fi\n'
-           txt += '\n'
-
-           if self.VO:
-              txt += 'export VO='+self.VO+'\n'
-           if self.LFN:
-              txt += 'if [ $middleware == LCG ]; then \n'
-              txt += '    export LFN='+self.LFN+'\n'
-              txt += 'fi\n'
-              txt += '\n'
+        #if int(self.register_data) == 1:
+        #   txt += 'if [ $middleware == LCG ]; then \n'
+        #   txt += '    export LFN='+self.LFN+'\n'
+        #   txt += '    lfc-ls $LFN\n' 
+        #   txt += '    result=$?\n' 
+        #   txt += '    echo $result\n' 
+        #   ### creation of LFN dir in LFC catalog, under /grid/cms dir  
+        #   txt += '    if [ $result != 0 ]; then\n'
+        #   txt += '       lfc-mkdir $LFN\n'
+        #   txt += '       result=$?\n' 
+        #   txt += '       echo $result\n' 
+        #   txt += '    fi\n'
+        #   txt += 'elif [ $middleware == OSG ]; then\n'
+        #   txt += '    echo " Files registration to be implemented for OSG"\n'
+        #   txt += 'fi\n'
+        #   txt += '\n'
+        #   if self.VO:
+        #      txt += 'export VO='+self.VO+'\n'
+        #   if self.LFN:
+        #      txt += 'if [ $middleware == LCG ]; then \n'
+        #      txt += '    export LFN='+self.LFN+'\n'
+        #      txt += 'fi\n'
+        #      txt += '\n'
 
         txt += 'if [ $middleware == LCG ]; then\n' 
     #    txt += '    CloseCEs=`edg-brokerinfo getCE`\n'
@@ -484,176 +493,58 @@ class SchedulerEdg(Scheduler):
         Write a CopyResults part of a job script, e.g.
         to copy produced output into a storage element.
         """
-        txt = ''
+        txt = '\n'
 
-        ##### FEDE MOVED FROM SET_ENVIRONMENT ##############
-        
+        txt += '#\n'
+        txt += '# COPY OUTPUT FILE TO SE\n'
+        txt += '#\n\n'
+
         SE_PATH=''
         if int(self.copy_data) == 1:
-           if self.SE:
-              txt += 'export SE='+self.SE+'\n'
-              txt += 'echo "SE = $SE"\n'
-           if self.SE_PATH:
-              if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
-              SE_PATH=self.SE_PATH
-              ####### FEDE FOR DBS2
-              if int(self.publish_data) == 1:
-                  txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
-                  #txt += 'subject=`voms-proxy-info -subject | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'` \n'
-                  #txt += 'echo "subject = $subject" \n'
-                  #path_add = '${subject}/'+ self.publish_data_name +'_${PSETHASH}/'
-                  path_add = self.UserGridName + '/' + self.publish_data_name +'_${PSETHASH}/'
-                  SE_PATH = SE_PATH + path_add
-
-              txt += 'export SE_PATH='+SE_PATH+'\n'
-              txt += 'echo "SE_PATH = $SE_PATH"\n'
-
-        ##########################################################  
-
-        #if int(self.copy_data) == 1:
-           txt += '#\n'
-           txt += '#   Copy output to SE = $SE\n'
-           txt += '#\n'
-           txt += '    if [ $middleware == OSG ]; then\n'
-           txt += '        echo "X509_USER_PROXY = $X509_USER_PROXY"\n'
-           txt += '        echo "source $OSG_APP/glite/setup_glite_ui.sh"\n'
-           txt += '        source $OSG_APP/glite/setup_glite_ui.sh\n'
-           txt += '        export X509_CERT_DIR=$OSG_APP/glite/etc/grid-security/certificates\n'
-           txt += '        echo "export X509_CERT_DIR=$X509_CERT_DIR"\n'
-           txt += '    fi \n'
-
-           txt += '    for out_file in $file_list ; do\n'
-           txt += '        echo "Trying to copy output file to $SE using srmcp"\n'
-           # txt += '        echo "mkdir -p $HOME/.srmconfig"\n'
-           # txt += '        mkdir -p $HOME/.srmconfig\n'
-           txt += '        if [ $middleware == LCG ]; then\n'
-           txt += '           echo "srmcp -retry_num 3 -retry_timeout 480000 file:///`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
-           txt += '           exitstring=`srmcp -retry_num 3 -retry_timeout 480000 file:///\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
-           txt += '        elif [ $middleware == OSG ]; then\n'
-           txt += '           echo "srmcp -retry_num 3 -retry_timeout 240000 -x509_user_trusted_certificates $X509_CERT_DIR file:///`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
-           txt += '           exitstring=`srmcp -retry_num 3 -retry_timeout 240000 -x509_user_trusted_certificates $X509_CERT_DIR file:///\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
-           txt += '        fi \n'
-           txt += '        copy_exit_status=$?\n'
-           txt += '        echo "COPY_EXIT_STATUS for srmcp = $copy_exit_status"\n'
-           txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
-
-           txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
-           txt += '            echo "Possible problem with SE = $SE"\n'
-           txt += '            echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '            echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '            echo "srmcp failed, attempting lcg-cp."\n'
-           if common.logger.debugLevel() >= 5:
-               txt += '            echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-               txt += '            exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
-               #txt += '            echo "lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
-               #txt += '            exitstring=`lcg-cp --vo $VO -t 2400 --verbose file://\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
-           else:               
-               txt += '            echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-               txt += '            exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
-               #txt += '            echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
-               #txt += '            exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
-           txt += '            copy_exit_status=$?\n'
-           txt += '            echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
-           txt += '            echo "STAGE_OUT = $copy_exit_status"\n'
-
-           txt += '            if [ $copy_exit_status -ne 0 ]; then\n'
-           txt += '               echo "Problems with SE = $SE"\n'
-           txt += '               echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '               echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '               echo "srmcp and lcg-cp and failed!"\n'
-           ################### FEDE moved out of for ##############
-           #txt += '               SE=""\n'
-           #txt += '               echo "SE = $SE"\n'
-           #txt += '               SE_PATH=""\n'
-           #txt += '               echo "SE_PATH = $SE_PATH"\n'
-           ########################################################
-           txt += '            else\n'
-           txt += '               echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '               echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '               echo "output copied into $SE/$SE_PATH directory"\n'
-           txt += '               echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '               echo "lcg-cp succeeded"\n'
-           txt += '            fi\n'
-           txt += '        else\n'
-           txt += '            echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '            echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
-           txt += '            echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '            echo "srmcp succeeded"\n'
-           txt += '         fi\n'
-           txt += '     done\n'
-           txt += '     if [ $copy_exit_status -ne 0 ]; then\n'
-           txt += '           SE=""\n'
-           txt += '           echo "SE = $SE"\n'
-           txt += '           SE_PATH=""\n'
-           txt += '           echo "SE_PATH = $SE_PATH"\n'
-           txt += '     fi\n'
-           txt += '     exit_status=$copy_exit_status\n'
-        return txt
-
-    def wsRegisterOutput(self):
-        """
-        Returns part of a job script which does scheduler-specific work.
-        """
-
-        txt = ''
-        if int(self.register_data) == 1:
-        ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
-           txt += 'if [ $middleware == OSG ]; then\n' 
-           txt += '   #\n'
-           txt += '   #   Register output to LFC deactivated in OSG mode\n'
-           txt += '   #\n'
-           txt += '   echo "Register output to LFC deactivated in OSG mode"\n'
-           txt += 'elif [ $middleware == LCG ]; then \n'
-           txt += '#\n'
-           txt += '#  Register output to LFC\n'
-           txt += '#\n'
-           txt += '   if [ $copy_exit_status -eq 0 ]; then\n'
-           txt += '      for out_file in $file_list ; do\n'
-           txt += '         echo "Trying to register the output file into LFC"\n'
-           txt += '         echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file 2>&1"\n'
-           txt += '         lcg-rf -l $LFN/$out_file --vo $VO -t 1200 sfn://$SE$SE_PATH/$out_file 2>&1 \n'
-           txt += '         register_exit_status=$?\n'
-           txt += '         echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
-           txt += '         echo "STAGE_OUT = $register_exit_status"\n'
-           txt += '         if [ $register_exit_status -ne 0 ]; then \n'
-           txt += '            echo "Problems with the registration to LFC" \n'
-           txt += '            echo "Try with srm protocol" \n'
-           txt += '            echo "lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file 2>&1"\n'
-           txt += '            lcg-rf -l $LFN/$out_file --vo $VO -t 1200 srm://$SE$SE_PATH/$out_file 2>&1 \n'
-           txt += '            register_exit_status=$?\n'
-           txt += '            echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
-           txt += '            echo "STAGE_OUT = $register_exit_status"\n'
-           txt += '            if [ $register_exit_status -ne 0 ]; then \n'
-           txt += '               echo "Problems with the registration into LFC" \n'
-           txt += '            fi \n'
-           txt += '         else \n'
-           txt += '            echo "output registered to LFC"\n'
-           txt += '         fi \n'
-           txt += '         echo "StageOutExitStatus = $register_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '      done\n'
-           txt += '   else \n'
-           txt += '      echo "Trying to copy output file to CloseSE"\n'
- #          txt += '      CLOSE_SE=`edg-brokerinfo getCloseSEs | head -1`\n'
-           txt += '      CLOSE_SE=`glite-brokerinfo getCloseSEs | head -1`\n'
-           txt += '      for out_file in $file_list ; do\n'
-           txt += '         echo "lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1" \n'
-           txt += '         lcg-cr -v -l lfn:${LFN}/$out_file -d $CLOSE_SE -P $LFN/$out_file --vo $VO file://$RUNTIME_AREA/$out_file 2>&1 \n'
-           txt += '         register_exit_status=$?\n'
-           txt += '         echo "REGISTER_EXIT_STATUS = $register_exit_status"\n'
-           txt += '         echo "STAGE_OUT = $register_exit_status"\n'
-           txt += '         if [ $register_exit_status -ne 0 ]; then \n'
-           txt += '            echo "Problems with CloseSE or Catalog" \n'
-           txt += '         else \n'
-           txt += '            echo "The program was successfully executed"\n'
-           txt += '            echo "SE = $CLOSE_SE"\n'
-           txt += '            echo "LFN for the file is LFN=${LFN}/$out_file"\n'
-           txt += '         fi \n'
-           txt += '         echo "StageOutExitStatus = $register_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '      done\n'
-           txt += '   fi \n'
-           txt += '   exit_status=$register_exit_status\n'
-           txt += 'fi \n'
+            if self.SE:
+                txt += 'export SE='+self.SE+'\n'
+                txt += 'echo "SE = $SE"\n'
+            if self.SE_PATH:
+                if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
+                SE_PATH=self.SE_PATH
+            if int(self.publish_data) == 1:
+                txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
+                path_add = self.UserGridName + '/' + self.publish_data_name +'_${PSETHASH}/'
+                SE_PATH = SE_PATH + path_add
+            txt += 'export SE_PATH='+SE_PATH+'\n'
+            txt += 'echo "SE_PATH = $SE_PATH"\n'
+            
+            txt += 'echo "####################################################"\n'
+            txt += 'echo "# Copy output files from WN = `hostname` to SE = $SE"\n'
+            txt += 'echo "####################################################"\n'
+            
+            txt += 'for out_file in $file_list ; do\n'
+            txt += '   echo "Trying to copy output file to $SE"\n'
+            txt += '   cmscp $out_file ${SE} ${SE_PATH} $out_file $middleware\n'
+            txt += '   copy_exit_status=$?\n'
+            txt += '   echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
+            txt += '   echo "STAGE_OUT = $copy_exit_status"\n'
+            
+            txt += '   if [ $copy_exit_status -ne 0 ]; then\n'
+            txt += '       echo "Problem copying $out_file to $SE $SE_PATH"\n'
+            txt += '       echo "StageOutExitStatus = $copy_exit_status " | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '       copy_exit_status=60307\n'
+            
+            txt += '   else\n'
+            txt += '       echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '       echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '       echo "output copied into $SE/$SE_PATH directory"\n'
+            txt += '       echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    fi\n'
+            txt += 'done\n'
+            txt += 'if [ $copy_exit_status -ne 0 ]; then\n'
+            txt += '      SE=""\n'
+            txt += '      echo "SE = $SE"\n'
+            txt += '      SE_PATH=""\n'
+            txt += '      echo "SE_PATH = $SE_PATH"\n'
+            txt += 'fi\n'
+            txt += 'exit_status=$copy_exit_status\n'
+            pass
         return txt
 
     def loggingInfo(self, id):
@@ -792,7 +683,9 @@ class SchedulerEdg(Scheduler):
         #xml.write('<task name="' +str(taskName)+'" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache">\n') 
 
         #xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + '" task_info="' + os.path.expandvars('X509_USER_PROXY') + '">\n')
-        xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + os.environ["X509_USER_PROXY"] + '">\n')
+        x509_cmd = 'ls /tmp/x509up_u`id -u`'
+        x509=runCommand(x509_cmd).strip()
+        xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + str(x509) + '">\n')
         xml.write(jt_string)
         
         if (to_write != ''):

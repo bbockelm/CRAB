@@ -185,32 +185,13 @@ class SchedulerCondor_g(Scheduler):
                     raise CrabException(msg)
         except KeyError: self.copy_data = 0 
 
+        # switch off publication per default for condor_g for now
+        self.publish_data = 0
+
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
            msg = 'Warning: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n' 
            msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n' 
            raise CrabException(msg)
-
-        try:
-            self.lfc_host = cfg_params['EDG.lfc_host']
-        except KeyError:
-            msg = "Error. The [EDG] section does not have 'lfc_host' value"
-            msg = msg + " it's necessary to know the LFC host name"
-            common.logger.debug(2,msg)
-            raise CrabException(msg)
-        try:
-            self.lcg_catalog_type = cfg_params['EDG.lcg_catalog_type']
-        except KeyError:
-            msg = "Error. The [EDG] section does not have 'lcg_catalog_type' value"
-            msg = msg + " it's necessary to know the catalog type"
-            common.logger.debug(2,msg)
-            raise CrabException(msg)
-        try:
-            self.lfc_home = cfg_params['EDG.lfc_home']
-        except KeyError:
-            msg = "Error. The [EDG] section does not have 'lfc_home' value"
-            msg = msg + " it's necessary to know the home catalog dir"
-            common.logger.debug(2,msg)
-            raise CrabException(msg)
 
         try: self.VO = cfg_params['EDG.virtual_organization']
         except KeyError: self.VO = 'cms'
@@ -279,14 +260,6 @@ class SchedulerCondor_g(Scheduler):
             raise CrabException(msg)
         return
 
-    def cleanForBlackWhiteList(self,destinations):
-        """
-        clean for black/white lists using parser
-        """
-
-        return [','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(destinations,''),''))]
-
-
     def sched_parameter(self):
         """
         Returns file with scheduler-specific parameters
@@ -295,7 +268,7 @@ class SchedulerCondor_g(Scheduler):
         first = []
         last  = []
         for n in range(common.jobDB.nJobs()):
-            currDest=self.cleanForBlackWhiteList(common.jobDB.destination(n))
+            currDest=self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(n))
             if (currDest!=lastDest):
                 lastDest = currDest
                 first.append(n)
@@ -346,7 +319,7 @@ class SchedulerCondor_g(Scheduler):
         txt += 'echo "middleware discovery " \n'
         txt += 'if [ $GRID3_APP_DIR ]; then\n'
         txt += '    middleware=OSG \n'
-        txt += '    echo "SyncCE=`echo $GLOBUS_GRAM_JOB_CONTACT | cut -d/ -f3 | cut -d: -f1`" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "SyncCE=`echo $OSG_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "middleware =$middleware" \n'
         txt += 'elif [ $OSG_APP ]; then \n'
@@ -405,85 +378,60 @@ class SchedulerCondor_g(Scheduler):
         Write a CopyResults part of a job script, e.g.
         to copy produced output into a storage element.
         """
-        txt = ''
+        txt = '\n'
+
+        txt += '#\n'
+        txt += '# COPY OUTPUT FILE TO SE\n'
+        txt += '#\n\n'
+
+        SE_PATH=''
         if int(self.copy_data) == 1:
-           txt += '#\n'
-           txt += '#   Copy output to SE = $SE\n'
-           txt += '#\n'
-           txt += '\n'
-           txt += 'which lcg-cp\n'
-           txt += 'lcgcp_location_exit_code=$?\n'
-           txt += '\n'
-           txt += 'if [ $lcgcp_location_exit_code -eq 1 ]; then\n'
-           txt += ''
-           txt += '    echo "X509_USER_PROXY = $X509_USER_PROXY"\n'
-           txt += '    echo "source $OSG_APP/glite/setup_glite_ui.sh"\n'
-           txt += '    source $OSG_APP/glite/setup_glite_ui.sh\n'
-           txt += '    export X509_CERT_DIR=$OSG_APP/glite/etc/grid-security/certificates\n'
-           txt += '    echo "export X509_CERT_DIR=$X509_CERT_DIR"\n'
-           txt += 'else\n'
-           txt += '    echo "X509_USER_PROXY = $X509_USER_PROXY"\n'
-           txt += '    export X509_CERT_DIR=/etc/grid-security/certificates\n'
-           txt += '    echo "export X509_CERT_DIR=$X509_CERT_DIR"\n'
-           txt += 'fi\n'
-           txt += '    for out_file in $file_list ; do\n'
-           txt += '        echo "Trying to copy output file to $SE using srmcp"\n'
-           # txt += '        echo "mkdir -p $HOME/.srmconfig"\n'
-           # txt += '        mkdir -p $HOME/.srmconfig\n'
-           txt += '        echo "srmcp -retry_num 3 -retry_timeout 480000 -x509_user_trusted_certificates $X509_CERT_DIR file:////`pwd`/$out_file srm://${SE}:8443${SE_PATH}$out_file"\n'
-           txt += '        exitstring=`srmcp -retry_num 3 -retry_timeout 480000 -x509_user_trusted_certificates $X509_CERT_DIR file:////\`pwd\`/$out_file srm://${SE}:8443${SE_PATH}$out_file 2>&1`\n'
-           txt += '        copy_exit_status=$?\n'
-           txt += '        echo "COPY_EXIT_STATUS for srm = $copy_exit_status"\n'
-           txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
-           txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
-           txt += '           echo "Possible problems with SE = $SE"\n'
-           txt += '           echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '           echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '           echo "srmcp failed, attempting lcg-cp"\n'
-           txt += '           echo "Trying to copy output file to $SE using lcg-cp"\n'
-           if common.logger.debugLevel() >= 5:
-               txt += '           echo "lcg-cp --vo $VO --verbose -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-               txt += '           exitstring=`lcg-cp --vo $VO --verbose -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n'
-           else:              
-               txt += '           echo "lcg-cp --vo $VO -t 2400 file://`pwd`/$out_file gsiftp://${SE}${SE_PATH}$out_file"\n'
-               txt += '           exitstring=`lcg-cp --vo $VO -t 2400 file://\`pwd\`/$out_file gsiftp://${SE}${SE_PATH}$out_file 2>&1`\n' 
-           txt += '           copy_exit_status=$?\n'
-           txt += '           echo "COPY_EXIT_STATUS for lcg-cp = $copy_exit_status"\n'
-           txt += '           echo "STAGE_OUT = $copy_exit_status"\n'
-           txt += '           if [ $copy_exit_status -ne 0 ]; then\n'
-           txt += '              echo "Problems with SE = $SE"\n'
-           txt += '              echo "StageOutExitStatus = 198" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '              echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '              echo "lcg-cp and srmcp failed!"\n'
-           txt += '              SE=""\n'
-           txt += '              echo "SE = $SE"\n'
-           txt += '              SE_PATH=""\n'
-           txt += '              echo "SE_PATH = $SE_PATH"\n'
-           txt += '           else\n'
-           txt += '              echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '              echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '              echo "output copied into $SE/$SE_PATH directory"\n'
-           txt += '              echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '              echo "lcg-cp succeeded"\n'
-           txt += '           fi\n'
-           txt += '        else\n'
-           txt += '           echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '           echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '           echo "output copied into $SE/$SE_PATH directory"\n'
-           txt += '           echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-           txt += '           echo "srmcp succeeded"\n'
-           txt += '        fi\n'
-           txt += '     done\n'
-           txt += '     exit_status=$copy_exit_status\n'
-
-        return txt
-
-    def wsRegisterOutput(self):
-        """
-        Returns part of a job script which does scheduler-specific work.
-        """
-
-        txt = ''
+            if self.SE:
+                txt += 'export SE='+self.SE+'\n'
+                txt += 'echo "SE = $SE"\n'
+            if self.SE_PATH:
+                if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
+                SE_PATH=self.SE_PATH
+            if int(self.publish_data) == 1:
+                txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
+                path_add = self.UserGridName + '/' + self.publish_data_name +'_${PSETHASH}/'
+                SE_PATH = SE_PATH + path_add
+            txt += 'export SE_PATH='+SE_PATH+'\n'
+            txt += 'echo "SE_PATH = $SE_PATH"\n'
+            
+            txt += 'echo "####################################################"\n'
+            txt += 'echo "# Copy output files from WN = `hostname` to SE = $SE"\n'
+            txt += 'echo "####################################################"\n'
+            
+            txt += 'for out_file in $file_list ; do\n'
+            txt += '   echo "Trying to copy output file to $SE using srmcp"\n'
+            txt += '   cmscp $out_file ${SE} ${SE_PATH} $out_file $middleware\n'
+            txt += '   copy_exit_status=$?\n'
+            txt += '   echo "COPY_EXIT_STATUS for srmcp = $copy_exit_status"\n'
+            txt += '   echo "STAGE_OUT = $copy_exit_status"\n'
+            
+            txt += '   if [ $copy_exit_status -ne 0 ]; then\n'
+            txt += '       echo "Problem copying $out_file to $SE $SE_PATH"\n'
+            txt += '       echo "StageOutExitStatus = $copy_exit_status " | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '       echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '       copy_exit_status=60307\n'
+            
+            txt += '   else\n'
+            txt += '       echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '       echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '       echo "output copied into $SE/$SE_PATH directory"\n'
+            txt += '       echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '       echo "srmcp succeeded"\n'
+            txt += '    fi\n'
+            txt += 'done\n'
+            txt += 'if [ $copy_exit_status -ne 0 ]; then\n'
+            txt += '      SE=""\n'
+            txt += '      echo "SE = $SE"\n'
+            txt += '      SE_PATH=""\n'
+            txt += '      echo "SE_PATH = $SE_PATH"\n'
+            txt += 'fi\n'
+            txt += 'exit_status=$copy_exit_status\n'
+            pass
         return txt
 
     def loggingInfo(self, id):
@@ -595,10 +543,10 @@ class SchedulerCondor_g(Scheduler):
             else :
                 result = 'Done'
         elif ( attr == 'destination' ) :
-            seSite = self.cleanForBlackWhiteList(common.jobDB.destination(int(id)-1))[0]
+            seSite = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(int(id)-1))
             # if no site was selected during job splitting (datasetPath=None)
             # set to self.cfg_params['EDG.se_white_list']
-            if seSite == '' :
+            if self.datasetPath == 'None':
                 seSite = self.cfg_params['EDG.se_white_list']
             oneSite = self.getCEfromSE(seSite).split(':')[0].strip()
             result = oneSite
@@ -710,19 +658,19 @@ class SchedulerCondor_g(Scheduler):
                 pass
             pass
 
-        inp_box = inp_box + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + ',' +\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + ','+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + ','+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + ','+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') + ','+\
-                  os.path.abspath(os.environ['CRABDIR']+'/python/'+'parseCrabFjr.py')
+        #inp_box = inp_box + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + ',' +\
+        #          os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + ','+\
+        #          os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + ','+\
+        #          os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + ','+\
+        #          os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') + ','+\
+        #          os.path.abspath(os.environ['CRABDIR']+'/python/'+'parseCrabFjr.py')
 
-        if (not jbt.additional_inbox_files == []):
-            inp_box = inp_box + ', '
-            for addFile in jbt.additional_inbox_files:
-                addFile = os.path.abspath(addFile)
-                inp_box = inp_box+''+addFile+','
-                pass
+        #if (not jbt.additional_inbox_files == []):
+        #    inp_box = inp_box + ', '
+        #    for addFile in jbt.additional_inbox_files:
+        #        addFile = os.path.abspath(addFile)
+        #        inp_box = inp_box+''+addFile+','
+        #        pass
 
         if inp_box[-1] == ',' : inp_box = inp_box[:-1]
         inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
@@ -768,14 +716,19 @@ class SchedulerCondor_g(Scheduler):
         # extraTag globusscheduler
 
         # use bdii to query ce including jobmanager from site
-        seSite = self.cleanForBlackWhiteList(common.jobDB.destination(nj-1))[0]
+        # use first job with non-empty
+        seSite = ''
+        for i in range(nj) :
+            seSite = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(i-1))
+            if seSite != '' :
+                break;
         # if no site was selected during job splitting (datasetPath=None)
         # set to self.cfg_params['EDG.se_white_list']
         if seSite == '' :
             if self.datasetPath == None :
                 seSite = self.cfg_params['EDG.se_white_list']
             else :
-                msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + self.cfg_params['EDG.se_white_list'] + 'because the dataset ' + self.datasetPath + ' is not available at this site.\n'
+                msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + self.cfg_params['EDG.se_white_list'] + ' because the dataset ' + self.datasetPath + ' is not available at this site.\n'
             common.logger.debug(2,msg)
             raise CrabException(msg)
                 

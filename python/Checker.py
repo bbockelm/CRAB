@@ -20,7 +20,7 @@ class Checker(Actor):
         # run a list-match on first job
         for nj in self.nj_list:
             block = common.jobDB.block(nj)
-            match = common.scheduler.listMatch(nj, block)
+            match = common.scheduler.listMatch(nj, block, [], [])
             flag = ''
             if not match: 
                 flag=' NOT '

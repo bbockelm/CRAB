@@ -389,7 +389,7 @@ class SchedulerBoss(Scheduler):
         return self.boss_scheduler.loggingInfo(nj) 
 
     ##########################################   ---- OK for Boss4 ds
-    def listMatch(self, nj, Block):
+    def listMatch(self, nj, Block, whiteL, blackL): ##  whiteL, blackL added by MATTY as patch
         """
         Check the compatibility of available resources
         """
@@ -413,14 +413,55 @@ class SchedulerBoss(Scheduler):
         stop = time.time()
         common.logger.debug(1,"listMatch time :"+str(stop-start))
         common.logger.write("listMatch time :"+str(stop-start))
-        # print something about CEs
+
+        #### MATTY's patch 4 CE white-black lists ####
         sites = []
-        if (len(CEs)!=0):
+        for it in CEs :
+            it = it.split(':')[0]
+            if not sites.count(it) :
+                sites.append(it)
+        ### white-black list on CE ###
+        CE_whited = []
+        if len(whiteL) > 0:
+            common.logger.message("Using ce white list functionality...")
+            common.logger.debug(1,str(whiteL))
+            for ce2check in sites:
+                for ceW in whiteL:
+                    if ce2check.find(ceW.strip()) != -1:
+                        CE_whited.append(ce2check)
+                        common.logger.debug(5,"CEWhiteList: adding from matched site: " + str(ce2check))
+        CE_blacked = []
+        if len(blackL) > 0:
+            for ce2check in sites:
+                for ceB in blackL:
+                    if ce2check.find(ceB.strip()) != -1:
+                        CE_blacked.append(ce2check)
+        if len(CE_whited) > 0:
+            sites = CE_whited
+        toRemove = []
+        if len(CE_blacked) > 0:
+            common.logger.message("Using ce black list functionality...")
+            common.logger.debug(1,str(blackL))
+            for ce2check in sites:
+                for ceB in CE_blacked:
+                    if ce2check.find(ceB.strip()) != -1:
+                        toRemove.append(ce2check)
+
+            for rem in toRemove:
+                if rem in sites:
+                    sites.remove(rem)
+                    common.logger.debug(5,"CEBlackList: removing from matched site " + str(rem))
+        ##############################
+
+
+        # print something about CEs
+#        sites = []
+        if (len(sites)!=0): ## it was CEs
             #sites = []
-            for it in CEs :
-                it = it.split(':')[0]
-                if not sites.count(it) :
-                    sites.append(it)
+#            for it in CEs :
+#                it = it.split(':')[0]
+#                if not sites.count(it) :
+#                    sites.append(it)
             common.logger.debug(5,"All Sites :"+str(sites))
             common.logger.message("Matched Sites :"+str(sites))
         if len(sites) == 0:
@@ -484,7 +525,7 @@ class SchedulerBoss(Scheduler):
             pass
         except BossError,e:
             common.logger.message("Error : BOSS command failed with message:")
-            common.logger.debug(1, e.__str__())
+            common.logger.message(e.__str__())
         
         jid=[]
         bjid = []
@@ -498,7 +539,7 @@ class SchedulerBoss(Scheduler):
             pass
         except BossError,e:
             common.logger.message("Error : BOSS command failed with message:")
-            common.logger.debug(1, e.__str__())
+            common.logger.message(e.__str__())
         task = self.bossTask.jobsDict()
         for k, v in task.iteritems():
             if (v["STATUS"] != 'W'):
@@ -568,6 +609,11 @@ class SchedulerBoss(Scheduler):
         run= []
         clear=[]
         abort=[]
+        canc=[]
+        read=[]
+        wait=[]
+        sched=[]
+        kill=[]
         other=[]
 
         for i_id in int_id :
@@ -587,10 +633,15 @@ class SchedulerBoss(Scheduler):
                         self.bossTask.getOutput (str(boss_id), str(dir), Tout)
                         if logDir != dir:
                             try:
-                                toMove = str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/*.log '+str(dir)+'/.BrokerInfo ' 
-                                shutil.move(toMove, str(logDir))
-                                msg = 'Results of Job # '+`int(i_id)`+' are in '+dir+' (log files are in '+logDir+')' 
+                                ######
+                                cmd = 'mv '+str(dir)+'/*'+str(i_id)+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*.log '+str(logDir)
+                                cmd_out =os.system(cmd)
+                                msg = 'Results of Job # '+str(i_id)+' are in '+dir+' (log files are in '+logDir+')' 
                                 common.logger.message(msg)
+                                #####
+                                #toMove = str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/*.log '+str(dir)+'/.BrokerInfo '
+                                #shutil.move(toMove, str(logDir))
+                                #####
                             except:
                                 msg = 'Problem with copy of job results' 
                                 common.logger.message(msg)
@@ -627,8 +678,18 @@ class SchedulerBoss(Scheduler):
                      abort.append(i_id)
             #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible to retrieve the output.'
             #        common.logger.message(msg)
-                elif bossTaskIdStatus == 'Created' :
-                     create.append(i_id)  
+                elif bossTaskIdStatus == 'Cleared' :
+                     create.append(i_id)
+                elif bossTaskIdStatus == 'Cancelled' :
+                     canc.append(i_id)  
+                elif bossTaskIdStatus == 'Ready' :
+                     read.append(i_id)
+                elif bossTaskIdStatus == 'Scheduled' :
+                     sched.append(i_id)
+                elif bossTaskIdStatus == 'Waiting' :
+                     wait.append(i_id)
+                elif bossTaskIdStatus == 'Killed' :
+                     kill.append(i_id)
                 else:
                      other.append(i_id)  
             #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is currently not possible to retrieve the output.'
@@ -640,11 +701,18 @@ class SchedulerBoss(Scheduler):
         if check == 0: 
             msg = '\n\n*********No job in Done status. It is not possible yet to retrieve the output.\n'
             common.logger.message(msg)
-        if len(create)!=0: print str(len(create))+' jobs not yet submitted'     
-        if len(run)!=0: print str(len(run))+' jobs still running'     
-        if len(other)!=0: print str(len(other))+' jobs submitted'     
+
         if len(clear)!=0: print str(len(clear))+' jobs already cleared'     
         if len(abort)!=0: print str(len(abort))+' jobs aborted'   
+        if len(canc)!=0: print str(len(canc))+' jobs cancelled'
+        if len(kill)!=0: print str(len(kill))+' jobs killed'
+        if len(run)!=0: print str(len(run))+' jobs still running'
+        if len(sched)!=0: print str(len(sched))+' jobs scheduled'
+        if len(wait)!=0: print str(len(wait))+' jobs waiting'
+        if len(read)!=0: print str(len(read))+' jobs ready'
+        if len(other)!=0: print str(len(other))+' jobs submitted'
+        if len(create)!=0: print str(len(create))+' jobs not yet submitted'
+
         print ' ' 
         return
 
@@ -668,49 +736,31 @@ class SchedulerBoss(Scheduler):
         ## first get the status of all job in the list
         # bossTaskId = common.taskDB.dict('BossTaskId')
         # statusList = self.queryStatusList(bossTaskId, subm_id)
-        
-        if len(subm_id)==common.jobDB.nSubmittedJobs() and common.jobDB.nSubmittedJobs()>0:
-            
+        common.jobDB.load() 
+        if len( subm_id ) > 0:
             try:
-                common.logger.message("Killing jobs # "+str(subm_id[0])+':'+str(subm_id[-1]))
+                subm_id.sort()
+                range = self.prepString( subm_id )
+                common.logger.message("Killing job # " + str(subm_id).replace("[","",1).replace("]","",1) )
                 Tout =len(subm_id)*60
-                self.bossTask.kill(str(subm_id[0])+':'+str(subm_id[-1]), Tout)
+                self.bossTask.kill( range, Tout )
+                self.bossTask.load(ALL, range)
+                task = self.bossTask.jobsDict()
+                for k, v in task.iteritems():
+                    k = int(k)
+                    status = v['STATUS']
+                    if k in subm_id and status == 'K':
+                        common.jobDB.setStatus(k - 1, 'K')
             except SchedulerError,e:
-                common.logger.message("Warning : Scheduler interaction in kill operation failed for jobs:"+e.__str__())
+                common.logger.message("Warning : Scheduler interaction on kill operation failed for jobs:"+ e.__str__())
                 pass
             except BossError,e:
                 common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id)+" . See log for details")
-                
-            for i in subm_id: common.jobDB.setStatus(i-1, 'K')
-
-        else:
-
-            common.jobDB.load() 
-            if len( subm_id ) > 0:
-                try:
-                    subm_id.sort()
-                    range = self.prepString( subm_id )
-                    common.logger.message("Killing job # " + str(subm_id).replace("[","",1).replace("]","",1) )
-                    Tout =len(subm_id)*60
-                    self.bossTask.kill( range, Tout )
-                    self.bossTask.load(ALL, range)
-                    task = self.bossTask.jobsDict()
-                    for k, v in task.iteritems():
-                        k = int(k)
-                        status = v['STATUS']
-                        if k in subm_id and status == 'K':
-                            common.jobDB.setStatus(k - 1, 'K')
-                except SchedulerError,e:
-                    common.logger.message("Warning : Scheduler interaction on kill operation failed for jobs:"+ e.__str__())
-                    pass
-                except BossError,e:
-                    common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id)+" . See log for details")
-                common.jobDB.save()
-                pass
-            else:
-                common.logger.message("\nError killing jobs # "+str(int_id).replace("[","",1).replace("]","",1)+" . See log for details")
             common.jobDB.save()
             pass
+        else:
+            common.logger.message("\nError killing jobs # "+str(int_id).replace("[","",1).replace("]","",1)+" . See log for details")
+        common.jobDB.save()
         return
 
     def setFlag( self, list, index ):

@@ -91,7 +91,26 @@ class Submitter(Actor):
                 # SL perform listmatch only if block has changed
                 if (currBlock!=lastBlock):
                     if common.scheduler.boss_scheduler_name != "condor_g" :
-                        match = common.scheduler.listMatch(nj, currBlock)
+                        ### MATTY:  patch for white-black list with the list-mathc in glite ###
+                        whiteL = []
+                        blackL = []
+                        if self.cfg_params['CRAB.scheduler'].find("glite") != -1:
+                            if 'EDG.ce_white_list' in self.cfg_params.keys():
+                                #print self.cfg_params['EDG.ce_white_list'].strip().split(",")
+                                if self.cfg_params['EDG.ce_white_list'].strip() != "" and self.cfg_params['EDG.ce_white_list'] != None:
+                                    for ceW in self.cfg_params['EDG.ce_white_list'].strip().split(","):
+                                        if len(ceW.strip()) > 0 and ceW.strip() != None:
+                                            whiteL.append(ceW.strip())
+                                        #print "ADDING white ce = "+str(ceW.strip())
+                            if 'EDG.ce_black_list' in self.cfg_params.keys():
+                                #print self.cfg_params['EDG.ce_black_list'].strip().split(",")
+                                if self.cfg_params['EDG.ce_black_list'].strip() != "" and self.cfg_params['EDG.ce_black_list'] != None:
+                                    for ceB in self.cfg_params['EDG.ce_black_list'].strip().split(","):
+                                        if len(ceB.strip()) > 0 and ceB.strip() != None:
+                                            blackL.append(ceB.strip())
+                                        #print "ADDING ce = "+str(ceB.strip())
+                        match = common.scheduler.listMatch(nj, currBlock, whiteL, blackL)
+                        #######################################################################
                     else :
                         match = "1"
                     lastBlock = currBlock
@@ -146,6 +165,12 @@ class Submitter(Actor):
                     njs += 1
                
                     ##### DashBoard report #####################   
+                    ## To distinguish if job is direct or through the server   
+                    if (self.UseServer == 0):
+                        Sub_Type = 'Direct'
+                    else:   
+                        Sub_Type = 'Server'
+               
                     try:
                         resFlag = 0
                         if st == 'RC': resFlag = 2
@@ -167,12 +192,18 @@ class Submitter(Actor):
                         rb = rb.replace('//', '')
                     else :
                         rb = 'OSG'
-               
+
+                    if len(common.jobDB.destination(tmpNj)) <= 2 :
+                        T_SE=string.join((common.jobDB.destination(tmpNj)),",")    
+                    else :
+                        T_SE=str(len(common.jobDB.destination(tmpNj)))+'_Selected_SE'
                     params = {'jobId': jobId, \
                               'sid': jid, \
                               'broker': rb, \
                               'bossId': jj, \
-                              'TargetSE': string.join((common.jobDB.destination(tmpNj)),",")}
+                              'SubmissionType': Sub_Type, \
+                              'TargetSE': T_SE,}
+                    common.logger.debug(5,str(params))
                
                     fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
                     for i in fl.readlines():

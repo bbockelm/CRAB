@@ -136,10 +136,12 @@ class Creator(Actor):
 
         common.logger.debug(5, "Creator::run() called")
         start = time.time()
-
         # Instantiate ScriptWriter
-
-        script_writer = ScriptWriter('crab_template.sh')
+        script_writer = None
+        if self.cfg_params['CRAB.scheduler'].find("glit") != -1: ## checking scheduler: if glite(coll) output_sandbox will be limited
+            script_writer = ScriptWriter('crab_template.sh', 1) ## flag that indicates if limit or not
+        else:
+            script_writer = ScriptWriter('crab_template.sh', 0)
 
         # Loop over jobs
         argsList = []
