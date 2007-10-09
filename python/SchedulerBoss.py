@@ -399,7 +399,7 @@ class SchedulerBoss(Scheduler):
         if os.path.isfile(self.schclassad):  
             schcladstring=self.schclassad
 
-        Tout = 120
+        Tout = 180
         CEs=[]
         try:
             CEs=self.bossUser.schedListMatch( str(self.schedulerName), schcladstring, self.bossTask.id(), "", Tout)
