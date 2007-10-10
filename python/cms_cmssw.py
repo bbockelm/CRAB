@@ -597,7 +597,7 @@ class Cmssw(JobType):
                     bloskNoSite.append( blockCounter )
         
         common.logger.message(screenOutput)
-        if len(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)) == 0:
+        if len(noSiteBlock) > 0 and len(bloskNoSite) > 0:
             msg = 'WARNING: No sites are hosting any part of data for block:\n                '
             virgola = ""
             if len(bloskNoSite) > 1:
