@@ -86,15 +86,15 @@ class GetOutputServer(Actor):
                         addTree += 1
                     common.jobDB.save()
             except Exception, ex:
-                msg = ("problems reading report file: " + str(ex))
+                msg = ("Problems accessing the report file: " + str(ex))
                 raise CrabException(msg)
 
             common.logger.message('Task Completed at '+str(ended)+' %\n')
-	    msg='Results of project '+str(WorkDirName)+' succesfuly retrieved from the server \n'      
+	    msg='Data for project '+str(WorkDirName)+' successfully retrieved from server \n'      
 	    msg+='and copied in '+copyHere+' \n'
             common.logger.message(msg)
         else:
-            common.logger.message(" Output is not yet ready untill job is not finished (check it with the [status] option).\n")
+            common.logger.message("Problems have been encoutered during project transfer. Please check with [status] option if jobs have finished .\n")
 
         return
 
