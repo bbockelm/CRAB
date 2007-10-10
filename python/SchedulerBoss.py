@@ -399,7 +399,7 @@ class SchedulerBoss(Scheduler):
         if os.path.isfile(self.schclassad):  
             schcladstring=self.schclassad
 
-        Tout = 180
+        Tout = 120
         CEs=[]
         try:
             CEs=self.bossUser.schedListMatch( str(self.schedulerName), schcladstring, self.bossTask.id(), "", Tout)
@@ -678,7 +678,7 @@ class SchedulerBoss(Scheduler):
                      abort.append(i_id)
             #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible to retrieve the output.'
             #        common.logger.message(msg)
-                elif bossTaskIdStatus == 'Cleared' :
+                elif bossTaskIdStatus == 'Created' :
                      create.append(i_id)
                 elif bossTaskIdStatus == 'Cancelled' :
                      canc.append(i_id)  
