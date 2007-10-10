@@ -123,14 +123,14 @@ class InputSource:
         if  modName in seedSvc.keys():
             for i in range(len(seedSvc[modName])): 
                 if string.find(str(seedSvc[modName][i]), 'g4SimHits') != -1: 
-                    seedSvc[modName][i]["g4SimHits"] =  ('uint32', 'untracked', vtxSeed )
+                    seedSvc[modName][i]["g4SimHits"] =  ('uint32', 'untracked', g4Seed )
                     check = 1
             if not check: print 'no g4SimHits in ',modName
         else:
             print 'no ',modName,' in Pset '
             pass        
 
-    def setMixSeed(self,cfg, g4Seed):
+    def setMixSeed(self,cfg, mixSeed):
         """set Mixing seed"""
 
         modName = 'moduleSeeds'
@@ -140,7 +140,7 @@ class InputSource:
         if  modName in seedSvc.keys():
             for i in range(len(seedSvc[modName])): 
                 if string.find(str(seedSvc[modName][i]), 'mix') != -1: 
-                    seedSvc[modName][i]["mix"] =  ('uint32', 'untracked', vtxSeed )
+                    seedSvc[modName][i]["mix"] =  ('uint32', 'untracked', mixSeed )
                     check = 1
             if not check: print 'no mix in ',modName
         else:
