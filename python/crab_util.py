@@ -383,7 +383,8 @@ def spanRanges(jobArray):
     """
 
     output = ""
-
+    jobArray.sort()
+        
     previous = jobArray[0]-1
     for job in jobArray:
         if previous+1 == job:
@@ -395,6 +396,7 @@ def spanRanges(jobArray):
                 output += str(previous)
         else:
             output += str(previous) + "," + str(job)
+            #output += "," + str(job)
             previous = job
     if len(jobArray) > 1 :
         output += str(previous)

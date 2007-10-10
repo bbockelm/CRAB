@@ -582,8 +582,9 @@ class SchedulerEdg(Scheduler):
                 replicas = self.blackWhiteListParser.checkWhiteList(replicas,n)
               
             if len(replicas)==0:
-                msg = 'No sites remaining that host any part of the requested data! Exiting... '
-                raise CrabException(msg)
+                itr = itr + 'target.GlueSEUniqueID=="NONE" '
+                #msg = 'No sites remaining that host any part of the requested data! Exiting... '
+                #raise CrabException(msg)
             #####         
            # for site in sites: 
             for site in replicas: 

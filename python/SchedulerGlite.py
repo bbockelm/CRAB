@@ -286,9 +286,9 @@ class SchedulerGlite(SchedulerEdg):
             if len(replicas)!=0:
                 replicas = self.blackWhiteListParser.checkWhiteList(replicas,n)
               
-            if len(replicas)==0:
-                msg = 'No sites remaining that host any part of the requested data! Exiting... '
-                raise CrabException(msg)
+            #if len(replicas)==0:
+                #msg = 'No sites remaining that host any part of the requested data! Exiting... '
+                #raise CrabException(msg)
             itr4 = replicas 
             #####         
         return itr4

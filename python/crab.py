@@ -538,7 +538,12 @@ class Crab:
                     if nsjobs>jobSetForSubmission:
                         common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
                     if len(jobSkippedInSubmission) > 0 :
-                        common.logger.message("Jobs: " + spanRanges(jobSkippedInSubmission) + " skipped because no sites are hosting this data")
+                        #print jobSkippedInSubmission
+                        #print spanRanges(jobSkippedInSubmission)
+                        mess =""
+                        for jobs in jobSkippedInSubmission:
+                            mess += str(jobs) + ","
+                        common.logger.message("Jobs:  " +str(mess) + "\n      skipped because no sites are hosting this data\n")
                     # submit N from last submitted job
                     common.logger.debug(5,'nj_list '+str(nj_list))
                  

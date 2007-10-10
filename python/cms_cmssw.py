@@ -583,13 +583,37 @@ class Cmssw(JobType):
         # screen output
         screenOutput = "List of jobs and available destination sites:\n\n"
 
+        # keep trace of block with no sites to print a warning at the end
+        noSiteBlock = []
+        bloskNoSite = []
+
         blockCounter = 0
         for block in blocks:
             if block in jobsOfBlock.keys() :
                 blockCounter += 1
                 screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)))
-
+                if len(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)) == 0:
+                    noSiteBlock.append( spanRanges(jobsOfBlock[block]) ) 
+                    bloskNoSite.append( blockCounter )
+        
         common.logger.message(screenOutput)
+
+        msg = 'WARNING: No sites are hosting any part of data for block:\n                '
+        virgola = ""
+        if len(bloskNoSite) > 1:
+            virgola = ","
+        for block in bloskNoSite:
+            msg += ' ' + str(block) + virgola
+ 
+        msg += '\n               Related jobs:\n                 '
+        virgola = ""
+        if len(noSiteBlock) > 1:
+            virgola = ","
+        for range_jobs in noSiteBlock:
+            msg += str(range_jobs) + virgola
+        msg += '\n               will not be submitted and this block of data can not be analyzed!\n'
+
+        common.logger.message(msg)
 
         self.list_of_args = list_of_lists
         return
@@ -1200,7 +1224,6 @@ class Cmssw(JobType):
             ## MATTY's FIX: the exit option was interrupting the execution
             if fileWithSuffix in self.output_file:
                 txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
-                txt += '    output_exit_status=$exit_status\n'
                 txt += '    # exit $exit_status\n'
             #######################################################    
             if common.scheduler.boss_scheduler_name == 'condor_g':
