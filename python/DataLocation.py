@@ -130,10 +130,10 @@ class DataLocation:
         if countblock == failCount:
             msg = "All data blocks encountered a DLS error.  Quitting."
             raise DataLocationError(msg)
-
-        if len(blockSites)==0:
-            msg = 'No sites remaining that host any part of the requested data! Exiting... '
-            raise CrabException(msg)
+        #if len(blockSites)==0:
+            #print "blockSites: " +str(blockSites)
+            #msg = 'No sites remaining that host any part of the requested data! Exiting... '
+            #raise CrabException(msg)
 
         self.SelectedSites = blockSites
 
