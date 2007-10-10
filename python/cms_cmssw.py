@@ -1224,6 +1224,7 @@ class Cmssw(JobType):
             ## MATTY's FIX: the exit option was interrupting the execution
             if fileWithSuffix in self.output_file:
                 txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
+                txt += '    output_exit_status=$exit_status\n'
                 txt += '    # exit $exit_status\n'
             #######################################################    
             if common.scheduler.boss_scheduler_name == 'condor_g':
