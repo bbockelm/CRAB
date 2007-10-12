@@ -868,14 +868,22 @@ class SchedulerEdg(Scheduler):
             common.logger.message('No credential delegated to myproxy server '+self.proxyServer+' will do now')
             renewProxy = 1
         else:
-            # if myproxy exist but not long enough, renew
-            reTime = re.compile( r'timeleft: (\d+)' )
-            #print "<"+str(reTime.search( cmd_out ).group(1))+">"
-            if reTime.match( cmd_out ):
-                time = reTime.search( cmd_out ).group(1)
-                if time < minTimeLeftServer:
-                    renewProxy = 1
-                    common.logger.message('No credential delegation will expire in '+time+' hours: renew it')
+            ## minimum time: 5 days
+            minTime = 4 * 24 * 3600
+            ## regex to extract the right information
+            myproxyRE = re.compile("timeleft: (?P<hours>[\\d]*):(?P<minutes>[\\d]*):(?P<seconds>[\\d]*)")
+            for row in cmd_out.split("\n"):
+                g = myproxyRE.search(row)
+                if g:
+                    hours = g.group("hours")
+                    minutes = g.group("minutes")
+                    seconds = g.group("seconds")
+                    timeleft = int(hours)*3600 + int(minutes)*60 + int(seconds)
+                    if timeleft < minTime:
+                        renewProxy = 1
+                        common.logger.message('Your proxy will expire in:\n\t'+hours+' hours '+minutes+' minutes '+seconds+' seconds\n')
+                        common.logger.message('Need to renew it:')
+                    pass
                 pass
             pass
         
