@@ -847,6 +847,8 @@ class SchedulerBoss(Scheduler):
                     results[k]['DEST_CE'] = v['DEST_CE']
                 if v.has_key('LB_TIMESTAMP') :
                     results[k]['LB_TIMESTAMP'] = v['LB_TIMESTAMP']
+                if v.has_key('RB') :
+                    results[k]['RB'] = v['RB']
                 program = self.bossTask.specific(c, '1')
                 results[k]['EXE_EXIT_CODE'] = program['EXE_EXIT_CODE']
                 results[k]['JOB_EXIT_STATUS'] = program['JOB_EXIT_STATUS']

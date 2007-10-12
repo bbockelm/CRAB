@@ -116,9 +116,11 @@ class StatusBoss(Actor):
             else :
                 try: jobStatus = jobAttributes[bossid]['STATUS']
                 except: jobStatus = 'Unknown'
-            #print "RB = " + str(jobAttributes[bossid]['RB'])
-            try: RB = jobAttributes[bossid]['RB']
-            except: RB = None
+            RB = None
+            try:
+                RB = str(jobAttributes[bossid]['RB'])
+            except:
+                RB = None
             # debug
             msg = 'jobStatus' + jobStatus
             common.logger.debug(4,msg)
