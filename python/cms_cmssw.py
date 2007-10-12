@@ -1204,27 +1204,37 @@ class Cmssw(JobType):
         txt += '# directory content\n'
         txt += 'ls \n'
 
-        for fileWithSuffix in (self.output_file+self.output_file_sandbox):
+        txt += 'output_exit_status=0\n'
+        
+        for fileWithSuffix in (self.output_file_sandbox):
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
             txt += '\n'
             txt += '# check output file\n'
-            # txt += 'ls '+fileWithSuffix+'\n'
-            # txt += 'ls_result=$?\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-            ###### FEDE FOR OUTPUT DATA PUBLICATION ########
             txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
             txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            ################################################
             txt += 'else\n'
             txt += '    exit_status=60302\n'
             txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
-            ############# FEDE ADDED CHECK FOR OUTPUT #############
-            ## MATTY's FIX: the exit option was interrupting the execution
-            if fileWithSuffix in self.output_file:
-                txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
-                txt += '    output_exit_status=$exit_status\n'
-                txt += '    # exit $exit_status\n'
-            #######################################################    
+            if common.scheduler.boss_scheduler_name == 'condor_g':
+                txt += '    if [ $middleware == OSG ]; then \n'
+                txt += '        echo "prepare dummy output file"\n'
+                txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
+                txt += '    fi \n'
+            txt += 'fi\n'
+        
+        for fileWithSuffix in (self.output_file):
+            output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
+            txt += '\n'
+            txt += '# check output file\n'
+            txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
+            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
+            txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            txt += 'else\n'
+            txt += '    exit_status=60302\n'
+            txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
+            txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
+            txt += '    output_exit_status=$exit_status\n'
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
                 txt += '        echo "prepare dummy output file"\n'
