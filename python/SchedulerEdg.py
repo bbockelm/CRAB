@@ -87,8 +87,13 @@ class SchedulerEdg(Scheduler):
         except KeyError: self.copy_data = 0 
 
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
-           msg = 'Warning: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n' 
+           msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n' 
            msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n' 
+           raise CrabException(msg)
+
+        if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
+           msg = 'Error: return_data and copy_data cannot be set both to 1\n'
+           msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n' 
            raise CrabException(msg)
 
         ########### FEDE FOR DBS2 ##############################
@@ -863,14 +868,22 @@ class SchedulerEdg(Scheduler):
             common.logger.message('No credential delegated to myproxy server '+self.proxyServer+' will do now')
             renewProxy = 1
         else:
-            # if myproxy exist but not long enough, renew
-            reTime = re.compile( r'timeleft: (\d+)' )
-            #print "<"+str(reTime.search( cmd_out ).group(1))+">"
-            if reTime.match( cmd_out ):
-                time = reTime.search( cmd_out ).group(1)
-                if time < minTimeLeftServer:
-                    renewProxy = 1
-                    common.logger.message('No credential delegation will expire in '+time+' hours: renew it')
+            ## minimum time: 5 days
+            minTime = 4 * 24 * 3600
+            ## regex to extract the right information
+            myproxyRE = re.compile("timeleft: (?P<hours>[\\d]*):(?P<minutes>[\\d]*):(?P<seconds>[\\d]*)")
+            for row in cmd_out.split("\n"):
+                g = myproxyRE.search(row)
+                if g:
+                    hours = g.group("hours")
+                    minutes = g.group("minutes")
+                    seconds = g.group("seconds")
+                    timeleft = int(hours)*3600 + int(minutes)*60 + int(seconds)
+                    if timeleft < minTime:
+                        renewProxy = 1
+                        common.logger.message('Your proxy will expire in:\n\t'+hours+' hours '+minutes+' minutes '+seconds+' seconds\n')
+                        common.logger.message('Need to renew it:')
+                    pass
                 pass
             pass
         
