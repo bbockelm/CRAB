@@ -21,7 +21,7 @@ class TaskDB:
         try:
             fl = open(common.work_space.shareDir() + '/db/' + self.fName, 'r')
         except IOError:
-            raise CrabException("TaskDB: not found. Task was not craeted successfully.\nPlease remove task manually\nrm -fr"+str(common.work_space.topDir()))
+            raise CrabException("TaskDB: not found. Task was not craeted successfully.\nPlease remove task manually\nrm -fr "+str(common.work_space.topDir()))
             
         for i in fl.readlines():
             (key,val) = i.split('|')
