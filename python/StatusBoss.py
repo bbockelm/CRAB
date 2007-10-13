@@ -215,6 +215,7 @@ class StatusBoss(Actor):
                         'StatusValue': jobStatus, \
                         'StatusEnterTime': job_last_time, \
                         'StatusDestination': dest }
+                    common.logger.debug(5,str(params))
 
                     self.cfg_params['apmon'].sendToML(params)
 #            if printline != '': 
