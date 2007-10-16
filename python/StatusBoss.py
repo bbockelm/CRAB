@@ -116,6 +116,7 @@ class StatusBoss(Actor):
             else :
                 try: jobStatus = jobAttributes[bossid]['STATUS']
                 except: jobStatus = 'Unknown'
+            #print "RB = " + str(jobAttributes[bossid]['RB'])
             RB = None
             try:
                 RB = str(jobAttributes[bossid]['RB'])
@@ -214,6 +215,7 @@ class StatusBoss(Actor):
                         'StatusValue': jobStatus, \
                         'StatusEnterTime': job_last_time, \
                         'StatusDestination': dest }
+                    common.logger.debug(5,str(params))
 
                     self.cfg_params['apmon'].sendToML(params)
 #            if printline != '': 
