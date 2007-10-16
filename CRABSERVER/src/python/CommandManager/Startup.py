@@ -13,6 +13,7 @@ import getopt
 
 from ProdAgentCore.Configuration import loadProdAgentConfiguration
 from ProdAgentCore.CreateDaemon import createDaemon
+from ProdAgentCore.PostMortem import runWithPostMortem
 from CommandManager.CommandManagerComponent import CommandManagerComponent
 
 #  //
@@ -36,4 +37,5 @@ compCfg['ComponentDir'] = os.path.expandvars(compCfg['ComponentDir'])
 
 createDaemon(compCfg['ComponentDir'])
 component = CommandManagerComponent(**dict(compCfg))
-component.startComponent()
+runWithPostMortem(component, compCfg['ComponentDir'])
+

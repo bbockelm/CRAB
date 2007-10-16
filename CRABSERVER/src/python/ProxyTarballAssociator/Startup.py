@@ -16,8 +16,6 @@ from ProdAgentCore.CreateDaemon import createDaemon
 from ProxyTarballAssociator.ProxyTarballAssociatorComponent import ProxyTarballAssociatorComponent
 from ProdAgentCore.PostMortem import runWithPostMortem
 
-
-
 #  //
 # // Find and load the Configuration
 #//
