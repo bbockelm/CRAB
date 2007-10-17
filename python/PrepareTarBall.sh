@@ -11,8 +11,8 @@ boss_version=$2
 echo "tag = $tag"
 
 #CRABdir="${tag}_dbsdls"
-CRABdir="$tag"
-echo "CRABDIR = $CRABDIR"
+CRABdir=$tag
+echo "CRABDIR = $CRABdir"
 CRABtag=$tag
 DBSAPItag="DBS_1_0_5"
 DLSAPItag="DLS_1_0_0"
@@ -27,8 +27,8 @@ export CVSROOT=${CVSrepo}"/CMSSW"
 ## download CRAB from CVS and cleanup the code a bit
 echo ">> downloading CRAB tag $CRABtag from CVS CRAB"
 #echo ">> downloading CRAB HEAD from CVS CRAB"
-#cvs co -r $CRABtag -d $CRABdir CRAB
-cvs co -d $CRABdir CRAB
+cvs co -r $CRABtag -d $CRABdir CRAB
+#cvs co -d $CRABdir CRAB
 cd $CRABdir
 cvs up -P python/BossScript 
 chmod -x python/crab.py
