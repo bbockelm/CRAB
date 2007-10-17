@@ -621,9 +621,13 @@ class Cmssw(JobType):
         Perform job splitting based on number of event per job
         """
         common.logger.debug(5,'Splitting per events')
-        common.logger.message('Required '+str(self.eventsPerJob)+' events per job ')
-        common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
-        common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
+
+        if (self.selectEventsPerJob): 
+            common.logger.message('Required '+str(self.eventsPerJob)+' events per job ')
+        if (self.selectNumberOfJobs):
+            common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
+        if (self.selectTotalNumberEvents):
+            common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
 
         if (self.total_number_of_events < 0):
             msg='Cannot split jobs per Events with "-1" as total number of events'
