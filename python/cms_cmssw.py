@@ -790,7 +790,7 @@ class Cmssw(JobType):
                     # distinguish case when script is in user project area or given by full path somewhere else
                     if exeWithPath.find(path) >= 0 :
                         exe = string.replace(exeWithPath, path,'')
-                        tar.add(path+exe,os.path.basename(executable))
+                        tar.add(path+exe,exe)
                     else :
                         tar.add(exeWithPath,os.path.basename(executable))
                     pass
