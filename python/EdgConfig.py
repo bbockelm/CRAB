@@ -39,8 +39,8 @@ class EdgConfig:
             self.downloadFile( url, self.configFileName)
         else:
             statinfo = os.stat(self.configFileName)
-            ## if the file is older then half an hour it is re-downloaded to update the configuration
-            oldness = 3600/2
+            ## if the file is older then 12 hours it is re-downloaded to update the configuration
+            oldness = 12*3600
             if (time.time() - statinfo.st_ctime) > oldness:
                 url = self.url+self.configFileName
                 common.logger.message('Downloading config files for RB: '+url)
