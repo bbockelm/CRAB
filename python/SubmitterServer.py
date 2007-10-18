@@ -58,10 +58,13 @@ class SubmitterServer(Actor):
            list_nJ = self.submitRange
         else:
            for x in self.submitRange:
-               list_nJ.append(int(x)-1)
-        #   
+               ### FEDE removed -1 ####
+               list_nJ.append(int(x))
+               ########################
         for nj in list_nJ:
-            if (common.jobDB.status(nj)=='C') or (common.jobDB.status(nj)=='RC'):
+            #### FEDE added -1 #####
+            if (common.jobDB.status(nj -1)=='C') or (common.jobDB.status(nj -1)=='RC'):
+            #################
                 totalCreatedJobs +=1
             else:
                 flagSubmit = 0
@@ -160,10 +163,14 @@ class SubmitterServer(Actor):
                     list_nJ = self.submitRange
                 else:
                     for x in self.submitRange:
-                        list_nJ.append(int(x)-1)
+                        ### FEDE removed -1 ###
+                        list_nJ.append(int(x))
+                        #######################
                 #   
                 for nj in list_nJ:
-                    common.jobDB.setStatus(nj, 'S')
+                    ### FEDE added -1 ####
+                    common.jobDB.setStatus(nj -1, 'S')
+                    #####################
                     common.jobDB.save()
         except Exception, ex:  
             print str(ex)
