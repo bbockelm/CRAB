@@ -79,7 +79,7 @@ class SchedulerCondor_g(Scheduler):
 
     def getCEfromSE(self, seSite):
         # returns the ce including jobmanager
-        ces = jm_from_se_bdii(seSite)        
+        ces = jm_from_se_bdii(seSite)
 
         # mapping ce_hostname to full ce name including jobmanager
         ce_hostnames = {}
@@ -172,7 +172,7 @@ class SchedulerCondor_g(Scheduler):
         try: self.return_data = cfg_params['USER.return_data']
         except KeyError: self.return_data = 1
 
-        try: 
+        try:
             self.copy_data = cfg_params["USER.copy_data"]
             if int(self.copy_data) == 1:
                 try:
@@ -183,19 +183,19 @@ class SchedulerCondor_g(Scheduler):
                     msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
                     common.logger.debug(2,msg)
                     raise CrabException(msg)
-        except KeyError: self.copy_data = 0 
+        except KeyError: self.copy_data = 0
 
         # switch off publication per default for condor_g for now
         self.publish_data = 0
 
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
-           msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n' 
-           msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n' 
+           msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
+           msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n'
            raise CrabException(msg)
 
         if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
            msg = 'Error: return_data and copy_data cannot be set both to 1\n'
-           msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n' 
+           msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
            raise CrabException(msg)
 
         try: self.VO = cfg_params['EDG.virtual_organization']
@@ -210,11 +210,11 @@ class SchedulerCondor_g(Scheduler):
         # Provide an override for the batchsystem that condor_g specifies as a grid resource.
         # this is to handle the case where the site supports several batchsystem but bdii
         # only allows a site to public one.
-	try: 
+	try:
            self.batchsystem = cfg_params['CONDORG.batchsystem']
            msg = '[Condor-G Scheduler]: batchsystem overide specified in your crab.cfg'
            common.logger.debug(2,msg)
-	except KeyError: self.batchsystem = ''                                                                                                                                                     
+	except KeyError: self.batchsystem = ''
         self.register_data = 0
 
         # check if one and only one entry is in $CE_WHITELIST
@@ -250,7 +250,7 @@ class SchedulerCondor_g(Scheduler):
         try: self.schedulerName = cfg_params['CRAB.scheduler']
         except KeyError: self.scheduler = ''
 
-        
+
         self.datasetPath = ''
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
@@ -261,7 +261,7 @@ class SchedulerCondor_g(Scheduler):
                 self.datasetPath = tmp
                 self.selectNoInput = 0
         except KeyError:
-            msg = "Error: datasetpath not defined "  
+            msg = "Error: datasetpath not defined "
             raise CrabException(msg)
         return
 
@@ -277,14 +277,14 @@ class SchedulerCondor_g(Scheduler):
             if (currDest!=lastDest):
                 lastDest = currDest
                 first.append(n)
-                if n != 0:last.append(n-1) 
+                if n != 0:last.append(n-1)
         if len(first)>len(last) :last.append(common.jobDB.nJobs())
 
         for i in range(len(first)): # Add loop DS
             self.param='sched_param_'+str(i)+'.clad'
             param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
 
-            param_file.write('globusrsl = ')   
+            param_file.write('globusrsl = ')
 
             # extraTag maxWallTime
             if ( self.EDG_clock_time != '' ) :
@@ -296,7 +296,7 @@ class SchedulerCondor_g(Scheduler):
 
             param_file.write(';')
 
-            param_file.close()   
+            param_file.close()
 
 
     def wsSetupEnvironment(self):
@@ -373,7 +373,7 @@ class SchedulerCondor_g(Scheduler):
 
     def wsCopyInput(self):
         """
-        Copy input data from SE to WN     
+        Copy input data from SE to WN
         """
         txt = '\n'
         return txt
@@ -403,24 +403,24 @@ class SchedulerCondor_g(Scheduler):
                 SE_PATH = SE_PATH + path_add
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
-            
+
             txt += 'echo "####################################################"\n'
             txt += 'echo "# Copy output files from WN = `hostname` to SE = $SE"\n'
             txt += 'echo "####################################################"\n'
-            
+
             txt += 'for out_file in $file_list ; do\n'
             txt += '   echo "Trying to copy output file to $SE using srmcp"\n'
             txt += '   cmscp $out_file ${SE} ${SE_PATH} $out_file $middleware\n'
             txt += '   copy_exit_status=$?\n'
             txt += '   echo "COPY_EXIT_STATUS for srmcp = $copy_exit_status"\n'
             txt += '   echo "STAGE_OUT = $copy_exit_status"\n'
-            
+
             txt += '   if [ $copy_exit_status -ne 0 ]; then\n'
             txt += '       echo "Problem copying $out_file to $SE $SE_PATH"\n'
             txt += '       echo "StageOutExitStatus = $copy_exit_status " | tee -a $RUNTIME_AREA/$repo\n'
             txt += '       echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '       copy_exit_status=60307\n'
-            
+
             txt += '   else\n'
             txt += '       echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '       echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
@@ -467,7 +467,7 @@ class SchedulerCondor_g(Scheduler):
         jid = None
         jdl = common.job_list[nj].jdlFilename()
 
-        cmd = 'condor_submit ' + jdl 
+        cmd = 'condor_submit ' + jdl
         cmd_out = runCommand(cmd)
         if cmd_out != None:
             tmp = cmd_out.find('submitted to cluster') + 21
@@ -488,7 +488,7 @@ class SchedulerCondor_g(Scheduler):
     def queryStatus(self, id):
         return self.getStatusAttribute_(id, 'status')
 
-    def queryDest(self, id):  
+    def queryDest(self, id):
         return self.getStatusAttribute_(id, 'destination')
 
 
@@ -617,13 +617,13 @@ class SchedulerCondor_g(Scheduler):
         xml_fname = str(self.jobtypeName)+'.xml'
         xml       = open(common.work_space.shareDir()+'/'+xml_fname, 'a')
 
-        # TaskName   
+        # TaskName
         dir      = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
 
         xml.write(str(title))
         #xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + os.environ["X509_USER_PROXY"] + '">\n')
-       # xml.write('<task name="' +str(taskName)+'" sub_path="' + common.work_space.bossCache() + '">\n') 
+       # xml.write('<task name="' +str(taskName)+'" sub_path="' + common.work_space.bossCache() + '">\n')
         x509_cmd = 'ls /tmp/x509up_u`id -u`'
         x509=runCommand(x509_cmd).strip()
         xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + str(x509) + '">\n')
@@ -642,7 +642,7 @@ class SchedulerCondor_g(Scheduler):
         xml.write('\t\t<ruleElement> 1:'+ str(nj) + ':1:6 </ruleElement>\n')
         xml.write('\t</iteratorRule>\n')
 
-        xml.write('<chain name="' +str(taskName)+'__ITR1_" scheduler="'+str(self.schedulerName)+'">\n') 
+        xml.write('<chain name="' +str(taskName)+'__ITR1_" scheduler="'+str(self.schedulerName)+'">\n')
     #   xmliwrite('<chain scheduler="'+str(self.schedulerName)+'">\n')
         xml.write(jt_string)
 
@@ -693,7 +693,7 @@ class SchedulerCondor_g(Scheduler):
         xml.write('<stdout> ' + stdout + '</stdout>\n')
 
         # output sanbox
-        out_box = stdout + ',' + stderr + ',' 
+        out_box = stdout + ',' + stderr + ','
 
         # Stuff to be returned _always_ via sandbox
         for fl in jbt.output_file_sandbox:
@@ -737,9 +737,9 @@ class SchedulerCondor_g(Scheduler):
                 seSite = self.cfg_params['EDG.se_white_list']
             else :
                 msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + self.cfg_params['EDG.se_white_list'] + ' because the dataset ' + self.datasetPath + ' is not available at this site.\n'
-            common.logger.debug(2,msg)
-            raise CrabException(msg)
-                
+                common.logger.debug(2,msg)
+                raise CrabException(msg)
+
         oneSite = self.getCEfromSE(seSite)
         # do not check the site status check for FNAL (OSG not in BDII)
         #if oneSite.find('fnal.gov') < 0 :
@@ -753,7 +753,7 @@ class SchedulerCondor_g(Scheduler):
 
         if self.batchsystem != '' :
             oneSite = oneSite.split('/')[0].strip() + '/' + self.batchsystem
-        
+
         to_write += 'globusscheduler = "&quot;' + str(oneSite) + '&quot;"\n'
 
         # extraTag condor transfer file flag

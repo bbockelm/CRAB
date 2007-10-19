@@ -28,7 +28,7 @@ class Cmssw(JobType):
         self.ncjobs = ncjobs
 
         log = common.logger
-        
+
         self.scram = Scram.Scram(cfg_params)
         self.additional_inbox_files = []
         self.scriptExe = ''
@@ -37,14 +37,14 @@ class Cmssw(JobType):
         self.tgz_name = 'default.tgz'
         self.additional_tgz_name = 'additional.tgz'
         self.scriptName = 'CMSSW.sh'
-        self.pset = ''      #scrip use case Da   
+        self.pset = ''      #scrip use case Da
         self.datasetPath = '' #scrip use case Da
 
         # set FJR file name
         self.fjrFileName = 'crab_fjr.xml'
 
         self.version = self.scram.getSWVersion()
-        
+
         #
         # Try to block creation in case of arch/version mismatch
         #
@@ -57,7 +57,7 @@ class Cmssw(JobType):
         if int(a[1]) == 1 and (int(a[2]) >= 5 and self.executable_arch.find('slc3') == 0):
             msg = "Error: CMS does not support %s with %s architecture"%(self.version, self.executable_arch)
             raise CrabException(msg)
-        
+
         common.taskDB.setDict('codeVersion',self.version)
         self.setParam_('application', self.version)
 
@@ -68,7 +68,7 @@ class Cmssw(JobType):
             self.use_dbs_1 = int(self.cfg_params['CMSSW.use_dbs_1'])
         except KeyError:
             self.use_dbs_1 = 0
-            
+
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
             log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
@@ -79,7 +79,7 @@ class Cmssw(JobType):
                 self.datasetPath = tmp
                 self.selectNoInput = 0
         except KeyError:
-            msg = "Error: datasetpath not defined "  
+            msg = "Error: datasetpath not defined "
             raise CrabException(msg)
 
         # ML monitoring
@@ -101,7 +101,7 @@ class Cmssw(JobType):
             except:
                 self.setParam_('dataset', self.datasetPath)
                 self.setParam_('owner', self.datasetPath)
-                
+
         self.setTaskid_()
         self.setParam_('taskId', self.cfg_params['taskId'])
 
@@ -124,7 +124,7 @@ class Cmssw(JobType):
         try:
             self.pset = cfg_params['CMSSW.pset']
             log.debug(6, "Cmssw::Cmssw(): PSet file = "+self.pset)
-            if self.pset.lower() != 'none' : 
+            if self.pset.lower() != 'none' :
                 if (not os.path.exists(self.pset)):
                     raise CrabException("User defined PSet file "+self.pset+" does not exist")
             else:
@@ -216,7 +216,7 @@ class Cmssw(JobType):
         except KeyError:
             self.eventsPerJob = -1
             self.selectEventsPerJob = 0
-    
+
         ## number of jobs
         try:
             self.theNumberOfJobs =int( cfg_params['CMSSW.number_of_jobs'])
@@ -232,7 +232,7 @@ class Cmssw(JobType):
             self.total_number_of_events = 0
             self.selectTotalNumberEvents = 0
 
-        if self.pset != None: #CarlosDaniele 
+        if self.pset != None: #CarlosDaniele
              if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
                  msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
                  raise CrabException(msg)
@@ -272,15 +272,11 @@ class Cmssw(JobType):
             self.firstRun = None
             common.logger.debug(5,"No first run given")
         if self.pset != None: #CarlosDaniele
-            ver = string.split(self.version,"_")
-            if (int(ver[1])>=1 and int(ver[2])>=5):
-                import PsetManipulator150 as pp
-            else:
-                import PsetManipulator as pp
+            import PsetManipulator as pp
             PsetEdit = pp.PsetManipulator(self.pset) #Daniele Pset
 
         #DBSDLS-start
-        ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code 
+        ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code
         self.maxEvents=0  # max events available   ( --> check the requested nb. of evts in Creator.py)
         self.DBSPaths={}  # all dbs paths requested ( --> input to the site local discovery script)
         self.jobDestination=[]  # Site destination(s) for each job (list of lists)
@@ -289,12 +285,12 @@ class Cmssw(JobType):
         blockSites = {}
         if self.datasetPath:
             blockSites = self.DataDiscoveryAndLocation(cfg_params)
-        #DBSDLS-end          
+        #DBSDLS-end
 
         self.tgzNameWithPath = self.getTarBall(self.executable)
-    
+
         ## Select Splitting
-        if self.selectNoInput: 
+        if self.selectNoInput:
             if self.pset == None: #CarlosDaniele
                 self.jobSplittingForScript()
             else:
@@ -307,21 +303,21 @@ class Cmssw(JobType):
             try:
                 if (self.datasetPath): # standard job
                     # allow to processa a fraction of events in a file
-                    PsetEdit.inputModule("INPUT")
-                    PsetEdit.maxEvent("INPUTMAXEVENTS")
-                    PsetEdit.skipEvent("INPUTSKIPEVENTS")
+                    PsetEdit.inputModule("INPUTFILE")
+                    PsetEdit.maxEvent(0)
+                    PsetEdit.skipEvent(0)
                 else:  # pythia like job
                     PsetEdit.maxEvent(self.eventsPerJob)
                     if (self.firstRun):
-                        PsetEdit.pythiaFirstRun("INPUTFIRSTRUN")  #First Run
+                        PsetEdit.pythiaFirstRun(0)  #First Run
                     if (self.sourceSeed) :
-                        PsetEdit.pythiaSeed("INPUT")
+                        PsetEdit.pythiaSeed(0)
                         if (self.sourceSeedVtx) :
-                            PsetEdit.vtxSeed("INPUTVTX")
+                            PsetEdit.vtxSeed(0)
                         if (self.sourceSeedG4) :
-                            PsetEdit.g4Seed("INPUTG4")
+                            PsetEdit.g4Seed(0)
                         if (self.sourceSeedMix) :
-                            PsetEdit.mixSeed("INPUTMIX")
+                            PsetEdit.mixSeed(0)
                 # add FrameworkJobReport to parameter-set
                 PsetEdit.addCrabFJR(self.fjrFileName)
                 PsetEdit.psetWriter(self.configFilename())
@@ -372,7 +368,7 @@ class Cmssw(JobType):
         self.eventsbyfile=self.pubdata.getEventsPerFile()
 
         ## get max number of events
-        self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py 
+        self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py
 
         ## Contact the DLS and build a list of sites hosting the fileblocks
         try:
@@ -381,7 +377,7 @@ class Cmssw(JobType):
         except DataLocation.DataLocationError , ex:
             msg = 'ERROR ***: failed Data Location in DLS \n %s '%ex.getErrorMessage()
             raise CrabException(msg)
-        
+
 
         sites = dataloc.getSites()
         allSites = []
@@ -395,7 +391,7 @@ class Cmssw(JobType):
         common.logger.message("Requested dataset: " + datasetPath + " has " + str(self.maxEvents) + " events in " + str(len(self.filesbyblock.keys())) + " blocks.\n")
 
         return sites
-    
+
     def jobSplittingByBlocks(self, blockSites):
         """
         Perform job splitting. Jobs run over an integer number of files
@@ -445,7 +441,7 @@ class Cmssw(JobType):
             totalNumberOfJobs = 999999999
         else :
             totalNumberOfJobs = self.ncjobs
-            
+
 
         blocks = blockSites.keys()
         blockCount = 0
@@ -465,11 +461,11 @@ class Cmssw(JobType):
             blockCount += 1
             if block not in jobsOfBlock.keys() :
                 jobsOfBlock[block] = []
-            
+
             if self.eventsbyblock.has_key(block) :
                 numEventsInBlock = self.eventsbyblock[block]
                 common.logger.debug(5,'Events in Block File '+str(numEventsInBlock))
-            
+
                 files = self.filesbyblock[block]
                 numFilesInBlock = len(files)
                 if (numFilesInBlock <= 0):
@@ -477,14 +473,14 @@ class Cmssw(JobType):
                 fileCount = 0
 
                 # ---- New block => New job ---- #
-                parString = "\\{"
+                parString = ""
                 # counter for number of events in files currently worked on
                 filesEventCount = 0
                 # flag if next while loop should touch new file
                 newFile = 1
                 # job event counter
                 jobSkipEventCount = 0
-            
+
                 # ---- Iterate over the files in the block until we've met the requested ---- #
                 # ---- total # of events or we've gone over all the files in this block  ---- #
                 while ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) and (jobCount < totalNumberOfJobs) ):
@@ -500,7 +496,7 @@ class Cmssw(JobType):
                             newFile = 0
                         except KeyError:
                             common.logger.message("File "+str(file)+" has unknown number of events: skipping")
-                        
+
 
                     # if less events in file remain than eventsPerJobRequested
                     if ( filesEventCount - jobSkipEventCount < eventsPerJobRequested ) :
@@ -509,7 +505,6 @@ class Cmssw(JobType):
                             # end job using last file, use remaining events in block
                             # close job and touch new file
                             fullString = parString[:-2]
-                            fullString += '\\}'
                             list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
                             common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
                             self.jobDestination.append(blockSites[block])
@@ -522,7 +517,7 @@ class Cmssw(JobType):
                             eventsRemaining = eventsRemaining - filesEventCount + jobSkipEventCount
                             jobSkipEventCount = 0
                             # reset file
-                            parString = "\\{"
+                            parString = ""
                             filesEventCount = 0
                             newFile = 1
                             fileCount += 1
@@ -534,7 +529,6 @@ class Cmssw(JobType):
                     elif ( filesEventCount - jobSkipEventCount == eventsPerJobRequested ) :
                         # close job and touch new file
                         fullString = parString[:-2]
-                        fullString += '\\}'
                         list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         self.jobDestination.append(blockSites[block])
@@ -546,16 +540,15 @@ class Cmssw(JobType):
                         eventsRemaining = eventsRemaining - eventsPerJobRequested
                         jobSkipEventCount = 0
                         # reset file
-                        parString = "\\{"
+                        parString = ""
                         filesEventCount = 0
                         newFile = 1
                         fileCount += 1
-                        
+
                     # if more events in file remain than eventsPerJobRequested
                     else :
                         # close job but don't touch new file
                         fullString = parString[:-2]
-                        fullString += '\\}'
                         list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         self.jobDestination.append(blockSites[block])
@@ -570,7 +563,7 @@ class Cmssw(JobType):
                         jobSkipEventCount = eventsPerJobRequested - (filesEventCount - jobSkipEventCount - self.eventsbyfile[file])
                         # remove all but the last file
                         filesEventCount = self.eventsbyfile[file]
-                        parString = "\\{"
+                        parString = ""
                         parString += '\\\"' + file + '\\\"\,'
                     pass # END if
                 pass # END while (iterate over files in the block)
@@ -579,7 +572,7 @@ class Cmssw(JobType):
         if (eventsRemaining > 0 and jobCount < totalNumberOfJobs ):
             common.logger.message("Could not run on all requested events because some blocks not hosted at allowed sites.")
         common.logger.message(str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
-        
+
         # screen output
         screenOutput = "List of jobs and available destination sites:\n\n"
 
@@ -593,9 +586,9 @@ class Cmssw(JobType):
                 blockCounter += 1
                 screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)))
                 if len(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)) == 0:
-                    noSiteBlock.append( spanRanges(jobsOfBlock[block]) ) 
+                    noSiteBlock.append( spanRanges(jobsOfBlock[block]) )
                     bloskNoSite.append( blockCounter )
-        
+
         common.logger.message(screenOutput)
         if len(noSiteBlock) > 0 and len(bloskNoSite) > 0:
             msg = 'WARNING: No sites are hosting any part of data for block:\n                '
@@ -622,7 +615,7 @@ class Cmssw(JobType):
         """
         common.logger.debug(5,'Splitting per events')
 
-        if (self.selectEventsPerJob): 
+        if (self.selectEventsPerJob):
             common.logger.message('Required '+str(self.eventsPerJob)+' events per job ')
         if (self.selectNumberOfJobs):
             common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
@@ -636,14 +629,14 @@ class Cmssw(JobType):
         if (self.selectEventsPerJob):
             if (self.selectTotalNumberEvents):
                 self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
-            elif(self.selectNumberOfJobs) :  
+            elif(self.selectNumberOfJobs) :
                 self.total_number_of_jobs =self.theNumberOfJobs
-                self.total_number_of_events =int(self.theNumberOfJobs*self.eventsPerJob) 
+                self.total_number_of_events =int(self.theNumberOfJobs*self.eventsPerJob)
 
         elif (self.selectNumberOfJobs) :
             self.total_number_of_jobs = self.theNumberOfJobs
             self.eventsPerJob = int(self.total_number_of_events/self.total_number_of_jobs)
- 
+
         common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
 
         # is there any remainder?
@@ -660,7 +653,7 @@ class Cmssw(JobType):
         for i in range(self.total_number_of_jobs):
             ## Since there is no input, any site is good
            # self.jobDestination.append(["Any"])
-            self.jobDestination.append([""]) #must be empty to write correctly the xml 
+            self.jobDestination.append([""]) #must be empty to write correctly the xml
             args=[]
             if (self.firstRun):
                     ## pythia first run
@@ -678,14 +671,14 @@ class Cmssw(JobType):
                 if (self.sourceSeedG4):
                     ## + G4 random seed
                     args.append(str(self.sourceSeedG4)+str(i))
-                if (self.sourceSeedMix):    
+                if (self.sourceSeedMix):
                     ## + Mix random seed
                     args.append(str(self.sourceSeedMix)+str(i))
                 pass
             pass
             self.list_of_args.append(args)
         pass
-            
+
         # print self.list_of_args
 
         return
@@ -715,7 +708,7 @@ class Cmssw(JobType):
         return
 
     def split(self, jobParams):
- 
+
         common.jobDB.load()
         #### Fabio
         njobs = self.total_number_of_jobs
@@ -723,7 +716,7 @@ class Cmssw(JobType):
         # create the empty structure
         for i in range(njobs):
             jobParams.append("")
-        
+
         for job in range(njobs):
             jobParams[job] = arglist[job]
             # print str(arglist[job])
@@ -734,13 +727,13 @@ class Cmssw(JobType):
 
         common.jobDB.save()
         return
-    
+
     def getJobTypeArguments(self, nj, sched):
         result = ''
         for i in common.jobDB.arguments(nj):
             result=result+str(i)+" "
         return result
-  
+
     def numberOfJobs(self):
         # Fabio
         return self.total_number_of_jobs
@@ -749,7 +742,7 @@ class Cmssw(JobType):
         """
         Return the TarBall with lib and exe
         """
-        
+
         # if it exist, just return it
         #
         # Marco. Let's start to use relative path for Boss XML files
@@ -772,7 +765,7 @@ class Cmssw(JobType):
         # print "swVersion = ", swVersion
         swReleaseTop = self.scram.getReleaseTop_()
         #print "swReleaseTop = ", swReleaseTop
-        
+
         ## check if working area is release top
         if swReleaseTop == '' or swArea == swReleaseTop:
             return
@@ -785,7 +778,7 @@ class Cmssw(JobType):
                 exeWithPath = self.scram.findFile_(executable)
                 if ( not exeWithPath ):
                     raise CrabException('User executable '+executable+' not found')
-     
+
                 ## then check if it's private or not
                 if exeWithPath.find(swReleaseTop) == -1:
                     # the exe is private, so we must ship
@@ -801,14 +794,14 @@ class Cmssw(JobType):
                 else:
                     # the exe is from release, we'll find it on WN
                     pass
-     
+
             ## Now get the libraries: only those in local working area
             libDir = 'lib'
             lib = swArea+'/' +libDir
             common.logger.debug(5,"lib "+lib+" to be tarred")
             if os.path.exists(lib):
                 tar.add(lib,libDir)
-     
+
             ## Now check if module dir is present
             moduleDir = 'module'
             module = swArea + '/' + moduleDir
@@ -834,8 +827,8 @@ class Cmssw(JobType):
             prodcommonPath = os.environ['CRABDIR'] + '/' + 'ProdCommon'
             if os.path.isdir(prodcommonPath):
                 tar.add(prodcommonPath,prodcommonDir)
-            #############################    
-        
+            #############################
+
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
             tar.close()
         except :
@@ -847,7 +840,7 @@ class Cmssw(JobType):
             raise CrabException('Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + str(self.MaxTarBallSize) + ' MB input sandbox limit and not supported by the used GRID submission system. Please make sure that no unnecessary files are in all data directories in your local CMSSW project area as they are automatically packed into the input sandbox.')
 
         ## create tar-ball with ML stuff
-        self.MLtgzfile =  common.work_space.pathForTgz()+'share/MLfiles.tgz' 
+        self.MLtgzfile =  common.work_space.pathForTgz()+'share/MLfiles.tgz'
         try:
             tar = tarfile.open(self.MLtgzfile, "w:gz")
             path=os.environ['CRABDIR'] + '/python/'
@@ -857,9 +850,9 @@ class Cmssw(JobType):
             tar.close()
         except :
             raise CrabException('Could not create ML files tar-ball')
-        
+
         return
-        
+
     def additionalInputFileTgz(self):
         """
         Put all additional files into a tar ball and return its name
@@ -879,11 +872,11 @@ class Cmssw(JobType):
         the execution environment for the job 'nj'.
         """
         # Prepare JobType-independent part
-        txt = '' 
-   
+        txt = ''
+
         ## OLI_Daniele at this level  middleware already known
 
-        txt += 'if [ $middleware == LCG ]; then \n' 
+        txt += 'if [ $middleware == LCG ]; then \n'
         txt += '    echo "### First set SCRAM ARCH and BUILD_ARCH to ' + self.executable_arch + ' ###"\n'
         txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += '    export BUILD_ARCH='+self.executable_arch+'\n'
@@ -904,7 +897,7 @@ class Cmssw(JobType):
         txt += '\n'
         txt += '    echo "Change to working directory: $WORKING_DIR"\n'
         txt += '    cd $WORKING_DIR\n'
-        txt += self.wsSetupCMSOSGEnvironment_() 
+        txt += self.wsSetupCMSOSGEnvironment_()
         txt += '    echo "### Set SCRAM ARCH to ' + self.executable_arch + ' ###"\n'
         txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += 'fi\n'
@@ -987,12 +980,12 @@ class Cmssw(JobType):
         # Prepare job-specific part
         job = common.job_list[nj]
         ### FEDE FOR DBS OUTPUT PUBLICATION
-        if (self.datasetPath): 
+        if (self.datasetPath):
             txt += '\n'
             txt += 'DatasetPath='+self.datasetPath+'\n'
 
             datasetpath_split = self.datasetPath.split("/")
-            
+
             txt += 'PrimaryDataset='+datasetpath_split[1]+'\n'
             txt += 'DataTier='+datasetpath_split[2]+'\n'
             #txt += 'ProcessedDataset='+datasetpath_split[3]+'\n'
@@ -1014,38 +1007,38 @@ class Cmssw(JobType):
                 txt += 'MaxEvents=${args[2]}\n'
                 txt += 'SkipEvents=${args[3]}\n'
                 txt += 'echo "Inputfiles:<$InputFiles>"\n'
-                txt += 'sed "s#{\'INPUT\'}#$InputFiles#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                txt += 'sed "s#\'INPUTFILE\'#$InputFiles#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                 txt += 'echo "MaxEvents:<$MaxEvents>"\n'
-                txt += 'sed "s#INPUTMAXEVENTS#$MaxEvents#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                txt += 'sed "s#int32 input = 0#int32 input = $MaxEvents#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
-                txt += 'sed "s#INPUTSKIPEVENTS#$SkipEvents#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                txt += 'sed "s#uint32 skipEvents = 0#uint32 skipEvents = $SkipEvents#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
             else:  # pythia like job
                 seedIndex=1
                 if (self.firstRun):
                     txt += 'FirstRun=${args['+str(seedIndex)+']}\n'
                     txt += 'echo "FirstRun: <$FirstRun>"\n'
-                    txt += 'sed "s#\<INPUTFIRSTRUN\>#$FirstRun#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                    txt += 'sed "s#uint32 firstRun = 0#uint32 firstRun = $FirstRun#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                     seedIndex=seedIndex+1
 
                 if (self.sourceSeed):
                     txt += 'Seed=${args['+str(seedIndex)+']}\n'
-                    txt += 'sed "s#\<INPUT\>#$Seed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                    txt += 'sed "s#uint32 sourceSeed = 0#uint32 sourceSeed = $Seed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                     seedIndex=seedIndex+1
                     ## the following seeds are not always present
                     if (self.sourceSeedVtx):
                         txt += 'VtxSeed=${args['+str(seedIndex)+']}\n'
                         txt += 'echo "VtxSeed: <$VtxSeed>"\n'
-                        txt += 'sed "s#\<INPUTVTX\>#$VtxSeed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                        txt += 'sed "s#uint32 VtxSmeared = 0#uint32 VtxSmeared = $VtxSeed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                         seedIndex += 1
                     if (self.sourceSeedG4):
                         txt += 'G4Seed=${args['+str(seedIndex)+']}\n'
                         txt += 'echo "G4Seed: <$G4Seed>"\n'
-                        txt += 'sed "s#\<INPUTG4\>#$G4Seed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                        txt += 'sed "s#uint32 g4SimHits = 0#uint32 g4SimHits = $G4Seed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                         seedIndex += 1
                     if (self.sourceSeedMix):
                         txt += 'mixSeed=${args['+str(seedIndex)+']}\n'
                         txt += 'echo "MixSeed: <$mixSeed>"\n'
-                        txt += 'sed "s#\<INPUTMIX\>#$mixSeed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
+                        txt += 'sed "s#uint32 mix = 0#uint32 mix = $mixSeed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                         seedIndex += 1
                     pass
                 pass
@@ -1055,11 +1048,11 @@ class Cmssw(JobType):
             txt += 'if [ -e $RUNTIME_AREA/'+self.additional_tgz_name+' ] ; then\n'
             txt += '  tar xzvf $RUNTIME_AREA/'+self.additional_tgz_name+'\n'
             txt += 'fi\n'
-            pass 
+            pass
 
         if self.pset != None: #CarlosDaniele
             txt += 'echo "### END JOB SETUP ENVIRONMENT ###"\n\n'
-        
+
             txt += '\n'
             txt += 'echo "***** cat pset.cfg *********"\n'
             txt += 'cat pset.cfg\n'
@@ -1068,7 +1061,7 @@ class Cmssw(JobType):
             ### FEDE FOR DBS OUTPUT PUBLICATION
             txt += 'PSETHASH=`EdmConfigHash < pset.cfg` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
-            ############## 
+            ##############
             txt += '\n'
             # txt += 'echo "***** cat pset1.cfg *********"\n'
             # txt += 'cat pset1.cfg\n'
@@ -1122,20 +1115,20 @@ class Cmssw(JobType):
             #txt += '   export PYTHONPATH=`pwd`/ProdAgentApi:`pwd`/ProdCommon:${PYTHONPATH}\n'
             #txt += '   export PYTHONPATH=ProdAgentApi:${PYTHONPATH}\n'
             txt += 'echo "PYTHONPATH=$PYTHONPATH"\n'
-            ###################  
+            ###################
             txt += 'fi\n'
             txt += '\n'
 
             pass
-        
+
         return txt
 
     def modifySteeringCards(self, nj):
         """
-        modify the card provided by the user, 
+        modify the card provided by the user,
         writing a new card into share dir
         """
-        
+
     def executableName(self):
         if self.scriptExe: #CarlosDaniele
             return "sh "
@@ -1154,7 +1147,7 @@ class Cmssw(JobType):
                 major = int(version_array[1])
                 minor = int(version_array[2])
             except:
-                msg = "Cannot parse CMSSW version string: " + "_".join(version_array) + " for major and minor release number!"   
+                msg = "Cannot parse CMSSW version string: " + "_".join(version_array) + " for major and minor release number!"
                 raise CrabException(msg)
             if major >= 1 and minor >= 5 :
                 return " -e -p pset.cfg"
@@ -1189,7 +1182,7 @@ class Cmssw(JobType):
 
         ## User Declared output files
         for out in (self.output_file+self.output_file_sandbox):
-            n_out = nj + 1 
+            n_out = nj + 1
             out_box.append(self.numberFile_(out,str(n_out)))
         return out_box
 
@@ -1209,7 +1202,7 @@ class Cmssw(JobType):
         txt += 'ls \n'
 
         txt += 'output_exit_status=0\n'
-        
+
         for fileWithSuffix in (self.output_file_sandbox):
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
             txt += '\n'
@@ -1226,7 +1219,7 @@ class Cmssw(JobType):
                 txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
                 txt += '    fi \n'
             txt += 'fi\n'
-        
+
         for fileWithSuffix in (self.output_file):
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
             txt += '\n'
@@ -1248,7 +1241,7 @@ class Cmssw(JobType):
         file_list = []
         for fileWithSuffix in (self.output_file):
              file_list.append(self.numberFile_(fileWithSuffix, '$NJob'))
-             
+
         txt += 'file_list="'+string.join(file_list,' ')+'"\n'
         txt += 'cd $RUNTIME_AREA\n'
         return txt
@@ -1268,12 +1261,12 @@ class Cmssw(JobType):
             result = name + '_' + txt + "." + ext
         else:
             result = name + '_' + txt
-        
+
         return result
 
     def getRequirements(self, nj=[]):
         """
-        return job requirements to add to jdl files 
+        return job requirements to add to jdl files
         """
         req = ''
         if self.version:
@@ -1325,9 +1318,9 @@ class Cmssw(JobType):
         txt += '       cd $RUNTIME_AREA\n'
         txt += '       /bin/rm -rf $WORKING_DIR\n'
         txt += '       if [ -d $WORKING_DIR ] ;then\n'
-        txt += '           echo "SET_CMS_ENV 10017 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n' 
-        txt += '           echo "JOB_EXIT_STATUS = 10017"\n' 
-        txt += '           echo "JobExitCode=10017" | tee -a $RUNTIME_AREA/$repo\n' 
+        txt += '           echo "SET_CMS_ENV 10017 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $GRID3_APP_DIR/cmssoft/cmsset_default.sh and $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'
+        txt += '           echo "JOB_EXIT_STATUS = 10017"\n'
+        txt += '           echo "JobExitCode=10017" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '           rm -f $RUNTIME_AREA/$repo \n'
         txt += '           echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
@@ -1341,7 +1334,7 @@ class Cmssw(JobType):
         txt += '   echo " END SETUP CMS OSG  ENVIRONMENT "\n'
 
         return txt
- 
+
     ### OLI_DANIELE
     def wsSetupCMSLCGEnvironment_(self):
         """
@@ -1390,38 +1383,38 @@ class Cmssw(JobType):
         txt += '   echo "### END SETUP CMS LCG ENVIRONMENT ###"\n'
         return txt
 
-    ### FEDE FOR DBS OUTPUT PUBLICATION 
+    ### FEDE FOR DBS OUTPUT PUBLICATION
     def modifyReport(self, nj):
         """
-        insert the part of the script that modifies the FrameworkJob Report 
+        insert the part of the script that modifies the FrameworkJob Report
         """
 
-        txt = '' 
+        txt = ''
         try:
-            publish_data = int(self.cfg_params['USER.publish_data'])           
+            publish_data = int(self.cfg_params['USER.publish_data'])
         except KeyError:
             publish_data = 0
-        if (publish_data == 1):  
+        if (publish_data == 1):
             txt += 'echo "Modify Job Report" \n'
             #txt += 'chmod a+x $RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
             ################ FEDE FOR DBS2 #############################################
             txt += 'chmod a+x $SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
             #############################################################################
             #try:
-            #    publish_data = int(self.cfg_params['USER.publish_data'])           
+            #    publish_data = int(self.cfg_params['USER.publish_data'])
             #except KeyError:
             #    publish_data = 0
 
             txt += 'if [ -z "$SE" ]; then\n'
             txt += '    SE="" \n'
-            txt += 'fi \n' 
+            txt += 'fi \n'
             txt += 'if [ -z "$SE_PATH" ]; then\n'
             txt += '    SE_PATH="" \n'
-            txt += 'fi \n' 
-            txt += 'echo "SE = $SE"\n' 
+            txt += 'fi \n'
+            txt += 'echo "SE = $SE"\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
 
-        #if (publish_data == 1):  
+        #if (publish_data == 1):
             #processedDataset = self.cfg_params['USER.processed_datasetname']
             processedDataset = self.cfg_params['USER.publish_data_name']
             txt += 'ProcessedDataset='+processedDataset+'\n'
@@ -1429,19 +1422,19 @@ class Cmssw(JobType):
             txt += 'if [ "$SE_PATH" == "" ]; then\n'
             #### FEDE: added slash in LFN ##############
             txt += '    FOR_LFN=/copy_problems/ \n'
-            txt += 'else \n' 
+            txt += 'else \n'
             txt += '    tmp=`echo $SE_PATH | awk -F \'store\' \'{print$2}\'` \n'
             #####  FEDE TO BE CHANGED, BECAUSE STORE IS HARDCODED!!!! ########
             txt += '    FOR_LFN=/store$tmp \n'
-            txt += 'fi \n' 
+            txt += 'fi \n'
             txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-            #txt += 'echo "$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n' 
-            txt += 'echo "$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n' 
+            #txt += 'echo "$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
+            txt += 'echo "$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
             txt += '$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
             #txt += '$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
-      
+
             txt += 'modifyReport_result=$?\n'
             txt += 'echo modifyReport_result = $modifyReport_result\n'
             txt += 'if [ $modifyReport_result -ne 0 ]; then\n'
@@ -1452,7 +1445,7 @@ class Cmssw(JobType):
             txt += 'fi\n'
         else:
             txt += 'echo "no data publication required"\n'
-            #txt += 'ProcessedDataset=no_data_to_publish \n' 
+            #txt += 'ProcessedDataset=no_data_to_publish \n'
             #### FEDE: added slash in LFN ##############
             #txt += 'FOR_LFN=/local/ \n'
             #txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
@@ -1461,16 +1454,16 @@ class Cmssw(JobType):
 
     def cleanEnv(self):
         ### OLI_DANIELE
-        txt = '' 
-        txt += 'if [ $middleware == OSG ]; then\n'  
+        txt = ''
+        txt += 'if [ $middleware == OSG ]; then\n'
         txt += '    cd $RUNTIME_AREA\n'
         txt += '    echo "Remove working directory: $WORKING_DIR"\n'
         txt += '    /bin/rm -rf $WORKING_DIR\n'
         txt += '    if [ -d $WORKING_DIR ] ;then\n'
-        txt += '	      echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
-        txt += '	      echo "JOB_EXIT_STATUS = 60999"\n'
-        txt += '	      echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '	      dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '              echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
+        txt += '              echo "JOB_EXIT_STATUS = 60999"\n'
+        txt += '              echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '              dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '        rm -f $RUNTIME_AREA/$repo \n'
         txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
@@ -1487,7 +1480,7 @@ class Cmssw(JobType):
 
     def setTaskid_(self):
         self._taskId = self.cfg_params['taskId']
-        
+
     def getTaskid(self):
         return self._taskId
 
@@ -1562,7 +1555,7 @@ class Cmssw(JobType):
         txt += '        fi\n'
         txt += '    done\n'
         txt += '    echo "Dimension calculated: $tot"; echo "First file to exclude: $file";\n'
-        txt += '    flag=0;\n'     
+        txt += '    flag=0;\n'
         txt += '    for filess in '+str(allOutFiles)+' ; do\n'
         txt += '        if [ $fileLast = $filess ]; then\n'
         txt += '            flag=1;\n'

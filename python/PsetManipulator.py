@@ -1,105 +1,99 @@
 #!/usr/bin/env python
-                                                                                                                                                             
+
 import os
 import common
 from crab_util import *
 from crab_exceptions import *
+from crab_logger import Logger
 
-from cmsconfig import cmsconfig
-from CfgInterface import CfgInterface
+from ProdCommon.CMSConfigTools.ConfigAPI.CfgInterface import CfgInterface
+from FWCore.ParameterSet.DictTypes import SortedKeysDict
+from FWCore.ParameterSet.Modules   import Service
+from FWCore.ParameterSet.Types     import *
+
+import FWCore.ParameterSet.Types   as CfgTypes
+import FWCore.ParameterSet.Modules as CfgModules
 
 class PsetManipulator:
     def __init__(self, pset):
-        """ 
-        Convert Pset in Python format  
-        and initialize   
+        """
+        Read in Pset object and initialize
         """
 
         self.pset = pset
         #convert Pset
-        self.pyPset = os.path.basename(pset)  
-        cmd = 'EdmConfigToPython > '+common.work_space.shareDir()+self.pyPset+'py < '+ self.pset
-        exit_code = os.system(cmd)
-        if exit_code != 0 : 
-            msg = 'Could not convert '+self.pset+' into a python Dictionary \n'
-            msg += 'Failed to execute \n'+cmd+'\n'
-            msg += 'Exit code : '+str(exit_code)
-
-            raise CrabException(msg)
-            pass
-        
-        self.par = file(common.work_space.shareDir()+self.pyPset+'py').read()
-
-        # get PSet
-        self.cfg = CfgInterface(self.par,True)
+        from FWCore.ParameterSet.Config import include
+        common.logger.debug(3,"PsetManipulator::__init__: PSet file = "+self.pset)
+        self.cfo = include(self.pset)
+        self.cfg = CfgInterface(self.cfo)
 
     def inputModule(self, source):
-        """ Clean  String FileName if there
-            and add  vString Filenames key
+        """
+        Set  vString Filenames key
         """
         # set input module
         inModule = self.cfg.inputSource
-        inModule.cleanStringFileNames() ## Add Daniele
         inModule.setFileNames(source)
         return
-  
+
     def pythiaSeed(self,seed):
-        """ 
+        """
         Set pythia seed key
         """
-        # set seed
-        inModule = self.cfg.inputSource
-        inModule.setPythiaSeed(self.cfg,seed)
-        return 
+        ranGenerator = self.cfg.data.services['RandomNumberGeneratorService']
+        ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(seed))
+        return
 
     def vtxSeed(self,vtxSeed):
-        """ 
+        """
         Set vtx seed key
         """
+        ranGenerator = self.cfg.data.services['RandomNumberGeneratorService']
+        ranModules   = ranGenerator.moduleSeeds
         # set seed
-        inModule = self.cfg.inputSource
-        inModule.setVtxSeed(self.cfg,vtxSeed)
-        return 
+        ranModules.VtxSmeared = CfgTypes.untracked(CfgTypes.uint32(vtxSeed))
+        return
 
     def g4Seed(self,g4Seed):
-        """ 
+        """
         Set g4 seed key
         """
+        ranGenerator = self.cfg.data.services['RandomNumberGeneratorService']
+        ranModules   = ranGenerator.moduleSeeds
         # set seed
-        inModule = self.cfg.inputSource
-        inModule.setG4Seed(self.cfg, g4Seed)
-        return 
+        ranModules.g4SimHits = CfgTypes.untracked(CfgTypes.uint32(g4Seed))
+        return
 
     def mixSeed(self,mixSeed):
-        """ 
+        """
         Set mix seed key
         """
-        # set seed
-        inModule = self.cfg.inputSource
-        inModule.setMixSeed(self.cfg, mixSeed)
-        return 
+        ranGenerator = self.cfg.data.services['RandomNumberGeneratorService']
+        ranModules   = ranGenerator.moduleSeeds
+        ranModules.mix = CfgTypes.untracked(CfgTypes.uint32(mixSeed))
+        return
 
     def pythiaFirstRun(self, firstrun):
-        """ """ 
-        # set input module
+        """
+        Set firstRun
+        """
         inModule = self.cfg.inputSource
-        inModule.setFirstRun(firstrun)   ## Add Daniele 
+        inModule.setFirstRun(firstrun)   ## Add Daniele
         return
 
     def maxEvent(self, maxEv):
-        """ """ 
-        # set input module
-        inModule = self.cfg.inputSource
-        inModule.cleanMaxEvent()   
-        inModule.setMaxEvents(maxEv)   ## Add Daniele 
+        """
+        Set max event in the standalone untracked module
+        """
+        self.cfg.maxEvents.setMaxEventsInput(maxEv)
         return
 
     def skipEvent(self, skipEv):
-        """ """ 
-        # set input module
+        """
+        Set skipEvents
+        """
         inModule = self.cfg.inputSource
-        inModule.cleanSkipEvent()
-        inModule.setSkipEvents(skipEv)   ## Add Daniele 
+        inModule.setSkipEvents(skipEv)   ## Add Daniele
         return
 
     def outputModule(self, output):
@@ -111,43 +105,37 @@ class PsetManipulator:
         return
 
     def psetWriter(self, name):
-
-        configObject = cmsconfig(str(self.cfg))
+        """
+        Write out modified CMSSW.cfg
+        """
 
         file1 = open(common.work_space.jobDir()+name,"w")
-        file1.write(str(configObject.asConfigurationString()))
+        file1.write(str(self.cfg))
         file1.close()
 
         return
 
     def addCrabFJR(self,name):
         """
-
         _addCrabFJR_
-
         add CRAB specific FrameworkJobReport (FJR)
-
-        if already a FJR exist in input CMSSW parameter-set, add a second one
-
+        if a FJR already exists in input CMSSW parameter-set, add a second one
         """
 
-        # check if MessageLogger service already exist in configuration, if not, add it
-        if not "MessageLogger" in self.cfg.cmsConfig.serviceNames() :
-            self.cfg.cmsConfig.psdata['services']['MessageLogger'] = {
-                '@classname': ('string', 'tracked', 'MessageLogger'),
-                }
-            
-        # get MessageLogger service
-        loggerSvc = self.cfg.cmsConfig.service("MessageLogger")
+        # Check if MessageLogger service already exists in configuration. If not, add it
+        svcs = self.cfg.data.services
+        if not svcs.has_key('MessageLogger'):
+            self.cfg.data.add_(CfgModules.Service("MessageLogger"))
 
-        # check if FJR is in MessageLogger service configuration, if not, add it
-        if not loggerSvc.has_key("fwkJobReports"):
-            loggerSvc['fwkJobReports'] = ("vstring", "untracked", [])
+        messageLogger = self.cfg.data.services['MessageLogger']
 
-        # check if crab FJR configuration is in MessageLogger configuration, if not, add it
-        if not '\"'+name+'\"' in loggerSvc['fwkJobReports'][2] :
-            loggerSvc['fwkJobReports'][2].append('\"'+name+'\"')
+        # Add fwkJobReports to Message logger if it doesn't exist
+        if "fwkJobReports" not in messageLogger.parameterNames_():
+            messageLogger.fwkJobReports = CfgTypes.untracked(CfgTypes.vstring())
 
-        # check that default is taken for CRAB FJR configuration and any user specific is removed
-        if loggerSvc.has_key(name):
-            del loggerSvc[name]
+        # should figure out how to remove "name" if it is there.
+
+        if name not in messageLogger.fwkJobReports:
+            messageLogger.fwkJobReports.append(name)
+
+        return
