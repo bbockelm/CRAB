@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.47 2007/09/28 10:39:17 mcinquil Exp $"
-__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.48 2007/10/01 15:31:55 mcinquil Exp $"
+__version__ = "$Revision: 1.48 $"
 
 import os
 import time
@@ -52,11 +52,11 @@ import cPickle
 ##############################################################################
 
 maxnum = 1
-newstate={} #communication between thread
+newstate = {} #communication between thread
 semvar = BoundedSemaphore(maxnum) #for synchronisation between thread 
 semfile = BoundedSemaphore(maxnum) #for synchronisation between thread 
 semMsgQueue = BoundedSemaphore(maxnum) #for synchronisation between thread for the msgQueue 
-####hassen will move all var to init for avoiding changement of var value by instance of this class  
+#### will move all var to init for avoiding changement of var value by instance of this class  
 
 class TaskTrackingComponent:
     """
@@ -190,34 +190,34 @@ class TaskTrackingComponent:
         # new task to insert
 	if event == "DropBoxGuardianComponent:NewFile":
 	    if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf,"NewTask: %s" % payload)
-		logBuf = self.__logToBuf__(logBuf,taskName)
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "NewTask: %s" % payload)
+		logBuf = self.__logToBuf__(logBuf, taskName)
 		self.insertNewTask( taskName )
-                logBuf = self.__logToBuf__(logBuf,"               new task inserted.")
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "               new task inserted.")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
             logging.info(logBuf)
             return None
 	    
 	if event == "ProxyTarballAssociatorComponent:WorkDone":
 	    if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf,"Task Ready to be submitted: %s" % payload)
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "Task Ready to be submitted: %s" % payload)
                 taskName = str(payload.split(":")[1])
                 ## start dbg info ##
                 OK += "  Task ["+taskName+"] succesfully unpacked and associated with the right proxy.\n"
                 ## end dbg info ##
 		self.updateInfoTask( payload )
-                logBuf = self.__logToBuf__(logBuf,"              task updated.")
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "              task updated.")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -226,27 +226,27 @@ class TaskTrackingComponent:
 
 	if event == "ProxyTarballAssociatorComponent:UnableToManage":
 	    if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf,"Problem with the project: %s" % payload)
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "Problem with the project: %s" % payload)
                 ## start dbg info ##
                 OK += "  Problems unpacking (or associating to a proxy) the task ["+payload+"].\n"
                 ## end dbg info ##
 		try:
 		    TaskStateAPI.updateNotSubmitted( payload, "", "", "", "", self.taskState[2] )
 		except Exception, ex:
-		    logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
-		    logBuf = self.__logToBuf__(logBuf,"ERROR while updating the task " + str(payload) )
-		    logBuf = self.__logToBuf__(logBuf,"      "+str(ex))
-		    logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf,"              task updated.")
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+		    logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+		    logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(payload) )
+		    logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
+		    logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "              task updated.")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 ## start dbg info ##
                 OK += "  The task ["+payload+"] has been archived on the server db.\n"
                 ## end dbg info ##
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -255,21 +255,21 @@ class TaskTrackingComponent:
 
 	if event == "CrabServerWorkerComponent:TaskArrival":
 	    if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 ## start dbg info ##
                 OK += "  Task ["+payload.split(":", 1)[0]+"] ready to be submitted and already in queue.\n"
                 ## end dbg info ##
                 taskName = str(payload.split(":", 1)[0])
-                logBuf = self.__logToBuf__(logBuf,"Submitting Task: %s" % str(taskName) )
+                logBuf = self.__logToBuf__(logBuf, "Submitting Task: %s" % str(taskName) )
 		self.updateTaskStatus( taskName, self.taskState[1] )
-                logBuf = self.__logToBuf__(logBuf,"              task updated.")
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "              task updated.")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
                 ## start dbg info ##
-                ERROR += "  ERROR: problems managing task ["+tName+"] for the event [" +event+ "]!\n"
+                ERROR += "  ERROR: problems managing task ["+taskName+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
             logging.info(logBuf)
             return taskName, str(OK + "\n" + ERROR)
@@ -277,18 +277,18 @@ class TaskTrackingComponent:
 
         if event == "CrabServerWorkerComponent:CrabWorkPerformed":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf,"CrabWorkPerformed: %s" % payload)
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "CrabWorkPerformed: %s" % payload)
                 ## start dbg info ##
                 OK += "  Task ["+payload+"] succesfully submitted to the grid.\n"
                 ## end dbg info ##
 		self.updateTaskStatus(payload, self.taskState[3])
-                logBuf = self.__logToBuf__(logBuf,"               task updated.")
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "               task updated.")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -297,9 +297,9 @@ class TaskTrackingComponent:
 
         if event == "CrabServerWorkerComponent:CrabWorkFailed":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf,"CrabWorkFailed: %s" % payload)
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "CrabWorkFailed: %s" % payload)
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 ## start dbg info ##
                 OK += "  Task ["+payload+"] not submitted to the grid (devel-note: be more verbose).\n"
                 ## end dbg info ##
@@ -307,13 +307,13 @@ class TaskTrackingComponent:
 
                 try:
 		    semvar.acquire()
-                    newstate[payload]="fail"
+                    newstate[payload] = "fail"
                 finally:
                     semvar.release()
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -322,9 +322,9 @@ class TaskTrackingComponent:
 
         if event == "CrabServerWorkerComponent:CrabWorkPerformedPartial":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__logToBuf__(logBuf, event + ": %s" % payload)
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 taskName = str(payload.split("::", 1)[0])
                 ## start dbg info ##
                 OK += "  Task ["+taskName+"] submitted to the grid.\n"
@@ -336,9 +336,9 @@ class TaskTrackingComponent:
 #                newstate[payload]="fail"
 #                semvar.release()
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -347,18 +347,18 @@ class TaskTrackingComponent:
 
         if event == "CrabServerWorkerComponent:FastKill":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__logToBuf__(logBuf, event + ": " + str(payload) )
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 ## start dbg info ##
                 OK += "  FastKill: task ["+payload+"] killed before the submission to the grid.\n"
                 ## end dbg info ##
                 self.updateTaskStatus(payload, self.taskState[4])
 #                self.updateTaskStatus(payload, self.taskState[5])
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -367,9 +367,9 @@ class TaskTrackingComponent:
 
         if event == "CrabServerWorkerComponent:CrabWorkRangeSubmitPerformed":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__logToBuf__(logBuf, event + ": %s " % payload )
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 taskName = str(payload.split("::")[0])
                 ## start dbg info ##
                 OK += "  Task ["+taskName+"] submitted to the grid.\n"
@@ -377,9 +377,9 @@ class TaskTrackingComponent:
                 ## end dbg info ##
                 self.preUpdatePartialTask(payload, self.taskState[9])
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -388,11 +388,11 @@ class TaskTrackingComponent:
 
         if event == "TaskKilled":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 rangeKillJobs = "all"
                 if payload.find("::") != -1:
                     taskName, rangeKillJobs = payload.split("::")
-                logBuf = self.__logToBuf__(logBuf,"   Killed task: %s" % taskName)
+                logBuf = self.__logToBuf__(logBuf, "   Killed task: %s" % taskName)
                 if rangeKillJobs == "all":
                     self.updateTaskKilled( taskName, self.taskState[4] )
                 else:
@@ -400,11 +400,11 @@ class TaskTrackingComponent:
                 ## start dbg info ##
                 OK += "  Task ["+str(payload.split("::")[0])+"] killed (jobs killed: "+str(rangeKillJobs)+").\n"
                 ## end dbg info ##
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -413,11 +413,11 @@ class TaskTrackingComponent:
 
         if event == "TaskKilledFailed":
             if payload != None or payload != "" or len(payload) > 0: 
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 rangeKillJobs = "all"
                 if payload.find("::") != -1:
                     taskName, rangeKillJobs = payload.split("::")
-                logBuf = self.__logToBuf__(logBuf,"   Error killing task: %s" % taskName)
+                logBuf = self.__logToBuf__(logBuf, "   Error killing task: %s" % taskName)
                 if rangeKillJobs == "all":
                     self.killTaskFailed( taskName )
                 else:
@@ -425,11 +425,11 @@ class TaskTrackingComponent:
                 ## start dbg info ##
                 OK += "  WARNING: task ["+str(payload.split("::")[0])+"] failed to kill (jobs to be killed: "+str(rangeKillJobs)+").\n"
                 ## end dbg info ##
-                logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             else:
-                logBuf = self.__logToBuf__(logBuf," ")
-                logBuf = self.__logToBuf__(logBuf,"ERROR: empty payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf," ")
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -448,11 +448,11 @@ class TaskTrackingComponent:
             return None
 
         # wrong event
-        logBuf = self.__logToBuf__(logBuf," ")
-        logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
-        logBuf = self.__logToBuf__(logBuf,"Unexpected event %s, ignored" % event)
-        logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
-        logBuf = self.__logToBuf__(logBuf," ")
+        logBuf = self.__logToBuf__(logBuf, " ")
+        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+        logBuf = self.__logToBuf__(logBuf, "Unexpected event %s, ignored" % event)
+        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+        logBuf = self.__logToBuf__(logBuf, " ")
         logging.info(logBuf)
 
         return None
@@ -514,10 +514,10 @@ class TaskTrackingComponent:
         try:
             TaskStateAPI.insertTaskPA( payload, self.taskState[0] )
         except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "ERROR while inserting the task " + str(payload) )
             logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
         logging.info(logBuf)
 
 
@@ -532,15 +532,15 @@ class TaskTrackingComponent:
 	
         eMail, thresholdLevel = self.readInfoCfg( self.args['dropBoxPath'] + "/" + taskName )
         if eMail == None:
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "ERROR: missing 'eMail' from " + self.crabcfg + " for task: " + str(taskName) )
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             eMail = "mattia.cinquilli@pg.infn.it"  #### TEMPORARY SOLUTION!
         if thresholdLevel == None:
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "WARNING: missing 'thresholdLevel' from " + self.crabcfg + " for task: " + str(taskName) )
             logBuf = self.__logToBuf__(logBuf, "         using default value 'thresholdLevel = 100'")
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             thresholdLevel = 100
         elif int(thresholdLevel) < 0:
             thresholdLevel = 0
@@ -552,10 +552,10 @@ class TaskTrackingComponent:
         try:
             TaskStateAPI.updateNotSubmitted( taskName, eMail, thresholdLevel, proxy, uuid, self.taskState[6] )
         except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(taskName) )
             logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
         logging.info(logBuf)
 
 
@@ -590,7 +590,7 @@ class TaskTrackingComponent:
                     eMail = valuess[2]
             ## XML report file
             dictionaryReport =  {}
-            for jobId in range(1,totJobs+1):
+            for jobId in range( 1, totJobs + 1 ):
                 vect = ["Submitted", "", "", 0]
                 dictionaryReport.setdefault(jobId, vect)
             try:
@@ -600,8 +600,8 @@ class TaskTrackingComponent:
             except Exception, ex:
                 logBuf = self.__logToBuf__(logBuf, str(ex) )
                 logBuf = self.__logToBuf__(logBuf, str(ex.args) )
-            #            logBuf = self.__logToBuf__(logBuf,str(dictionaryReport))
-            self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
+            #            logBuf = self.__logToBuf__(logBuf, str(dictionaryReport))
+            self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
             """
             ## MAIL report user
             self.prepareTaskFailed( payload, uuid, eMail, status )
@@ -614,7 +614,7 @@ class TaskTrackingComponent:
         _addJobToFile_
         """
         fileName = "/.notSubmitted.TT"
-        outfile = file(taskPath + fileName, 'w').write(str(jobList))#+"::"+str(totJobs))
+        file(taskPath + fileName, 'w').write(str(jobList))#+"::"+str(totJobs))
 
     def getJobFromFile(self, taskPath):
         """
@@ -627,7 +627,7 @@ class TaskTrackingComponent:
 
     def addFailedJobToFile (self, taskPath, jobList):
         fileName = "/.failedResubmitting.TT"
-        outfile = file(taskPath + fileName, 'w').write(str(jobList))
+        file(taskPath + fileName, 'w').write(str(jobList))
 
     def getFailedJobFromFile(self, taskPath):
         fileName = "/.failedResubmitting.TT"
@@ -646,10 +646,10 @@ class TaskTrackingComponent:
         try:
             TaskStateAPI.updateStatus( payload, status )
         except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(payload) )
             logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logging.info(logBuf)
             logBuf = ""
 
@@ -668,7 +668,7 @@ class TaskTrackingComponent:
                     if status == self.taskState[2]:
 	                ## XML report file
                         dictionaryReport =  {"all": ["NotSubmitted", "", "", 0]}
-                        self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
+                        self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
                         ## DONE tgz file
                         pathToWrite = str(self.args['dropBoxPath']) + "/" + payload + "/" + self.resSubDir
                         self.prepareTarball( pathToWrite, payload )
@@ -677,14 +677,14 @@ class TaskTrackingComponent:
                     else:
                         ## XML report file
                         dictionaryReport =  {"all": ["Killed", "", "", 0]}
-                        self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0,0 )
+                        self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
 		        ## MAIL report user
                         #self.taskFastKill( self.args['dropBoxPath'] + "/" + payload  + "/res/" + self.xmlReportFileName, payload )
         except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "ERROR while reporting info about the task " + str(payload) )
             logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logging.info(logBuf)
 
 
@@ -717,10 +717,10 @@ class TaskTrackingComponent:
         try:
             TaskStateAPI.updateStatus( taskName, status )
         except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(taskName) )
             logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-            logBuf = self.__logToBuf__(logBuf,"  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logging.info(logBuf)
 
         """
@@ -752,7 +752,7 @@ class TaskTrackingComponent:
         _killTaskFailed_
         """
         logBuf = ""
-        logBuf = self.__logToBuf__(logBuf,"Error killing task: " + taskName )
+        logBuf = self.__logToBuf__(logBuf, "Error killing task: " + taskName )
         logging.info(logBuf)
 
         ### DO SOMETHING LIKE FLAG THE TASK ###
@@ -766,7 +766,7 @@ class TaskTrackingComponent:
         """
         _convertStatus_
         """
-        stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'Submitting','K': 'Killed', 'S': 'Submitted', 'DA': 'Done (Failed)', 'NotSubmitted': 'NotSubmitted'}
+        stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'Submitting', 'K': 'Killed', 'S': 'Submitted', 'DA': 'Done (Failed)', 'NotSubmitted': 'NotSubmitted'}
         if status in stateConverting:
             return stateConverting[status]
         return 'Unknown'
@@ -779,11 +779,11 @@ class TaskTrackingComponent:
         pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
 
         if os.path.exists( pathToWrite ):
-           ###  get user name & original task name  ###
+            ###  get user name & original task name  ###
             obj = UtilSubject(self.args['dropBoxPath'], taskName, uuid)
             origTaskName, userName = obj.getInfos()
             del obj
-           ###  preparing xml report  ###
+            ###  preparing xml report  ###
             c = CreateXmlJobReport()
             eMaiList = self.getMoreMails( eMail )
             if len(eMaiList) < 1:
@@ -797,9 +797,9 @@ class TaskTrackingComponent:
 
             for singleJob in dictReportTot:
                 J = Job()   ##    id             status                        eec
-                J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][2],\
+                J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][2], \
                             ##         jes                       clear                       Resub
-                              dictReportTot[singleJob][1], dictReportTot[singleJob][3], self.getListEl(dictReportTot[singleJob], 4),\
+                              dictReportTot[singleJob][1], dictReportTot[singleJob][3], self.getListEl(dictReportTot[singleJob], 4), \
                             ##         site
                               self.getListEl(dictReportTot[singleJob], 5) )
                 c.addJob( J )
@@ -808,9 +808,9 @@ class TaskTrackingComponent:
             if not flag:
                 self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
 
-    def getListEl(self, list, el):
+    def getListEl(self, lista, el):
         try:
-            return list[el]
+            return lista[el]
         except Exception, ex:
             logging.debug(" problems reading destination site info.")
             return None
@@ -840,7 +840,7 @@ class TaskTrackingComponent:
         check the eMail with a regular expression
         """
 
-        reg = re.compile('^[\w\.-_]+@(?:[\w-]+\.)+[\w]{2,4}$',re.IGNORECASE)
+        reg = re.compile('^[\w\.-_]+@(?:[\w-]+\.)+[\w]{2,4}$', re.IGNORECASE)
         if not reg.match( eMail ):
             errmsg = "Error parsing e-mail address; address ["+eMail+"] has "
             errmsg += "an invalid format;"
@@ -886,7 +886,7 @@ class TaskTrackingComponent:
                         failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
                     except Exception, ex:
                         logBuf = ""
-                        logBuf = self.__logToBuf__(logBuf,str(ex) + " " + str(failIndex))
+                        logBuf = self.__logToBuf__(logBuf, str(ex) + " " + str(failIndex))
                         logging.info(logBuf)
                         #for s in os.listdir('./'+jtResDir+'/Failed/'):
                         #    logging.error( str(int(s.split('Submission_')[-1])) )
@@ -894,8 +894,8 @@ class TaskTrackingComponent:
                 cmd += 'cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;'
                 #logging.info('cp '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpFailed/edgLoggingInfo_'+str(i)+'.log;')
                 if flag != 0:
-                     cmd += 'cp '+ jtResDir +'/Failed/Submission_1/std*/* .tmpFailed/;'
-                     cmd += 'cp '+ jtResDir +'/Failed/Submission_1/root/* .tmpFailed/;'
+                    cmd += 'cp '+ jtResDir +'/Failed/Submission_1/std*/* .tmpFailed/;'
+                    cmd += 'cp '+ jtResDir +'/Failed/Submission_1/root/* .tmpFailed/;'
         if flag == 0:
             cmd += 'tar --create -z --file='+path+'/.temp_failed.tgz .tmpFailed/edgLoggingInfo_*.log;' 
             cmd += 'rm -drf .tmpFailed;'
@@ -916,7 +916,7 @@ class TaskTrackingComponent:
     def undiscoverXmlFile (self, path, taskName, fromFileName, toFileName):
         if os.path.exists(path + fromFileName):
             infile = file(path + fromFileName , 'r').read()
-            outfile = file(path + toFileName , 'w').write(infile)
+            file(path + toFileName , 'w').write(infile)
             #infile.close()
             #outfile.close()
  
@@ -938,7 +938,7 @@ class TaskTrackingComponent:
 #            origTaskName, userName = obj.getInfos()
 #            del obj
             self.msThread.publish("TaskTracking:TaskEnded", taskName)
-            logBuf = self.__logToBuf__(logBuf,"-------> Published 'TaskEnded' message with payload: %s" % taskName)
+            logBuf = self.__logToBuf__(logBuf, "-------> Published 'TaskEnded' message with payload: %s" % taskName)
             self.msThread.commit()
         logging.info(logBuf)
 
@@ -954,9 +954,9 @@ class TaskTrackingComponent:
         self.msThread.publish("TaskSuccess", taskPath)
         self.msThread.commit()
 
-        logBuf = self.__logToBuf__(logBuf,"         *-*-*-*-*")
-        logBuf = self.__logToBuf__(logBuf,"-------> Published 'TaskSuccess' message with payload: %s" % taskPath)
-        logBuf = self.__logToBuf__(logBuf,"         *-*-*-*-*")
+        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-*")
+        logBuf = self.__logToBuf__(logBuf, "-------> Published 'TaskSuccess' message with payload: %s" % taskPath)
+        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-*")
         logging.info(logBuf)
 
 
@@ -974,10 +974,10 @@ class TaskTrackingComponent:
         self.msThread.publish("TaskFailed", payload)
         self.msThread.commit()
 
-        logBuf = self.__logToBuf__(logBuf,"         *-*-*-*-* ")
-        logBuf = self.__logToBuf__(logBuf,"Published 'TaskFailed' message with payload: %s" % payload)
+        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
+        logBuf = self.__logToBuf__(logBuf, "Published 'TaskFailed' message with payload: %s" % payload)
 #        self.taskEnded(taskName)
-        logBuf = self.__logToBuf__(logBuf,"         *-*-*-*-* ")
+        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
 
 
@@ -992,10 +992,10 @@ class TaskTrackingComponent:
         self.msThread.publish("TaskNotSubmitted", taskPath) # payload)
         self.msThread.commit()
 
-        logBuf = self.__logToBuf__(logBuf,"         *-*-*-*-* ")
-        logBuf = self.__logToBuf__(logBuf,"Published 'TaskNotSubmitted' message with payload: %s" % taskPath) #payload)
+        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
+        logBuf = self.__logToBuf__(logBuf, "Published 'TaskNotSubmitted' message with payload: %s" % taskPath) #payload)
 #        self.taskEnded(taskName)
-        logBuf = self.__logToBuf__(logBuf,"         *-*-*-*-* ")
+        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
 
 
@@ -1007,10 +1007,10 @@ class TaskTrackingComponent:
         self.msThread.publish("TaskFastKill", taskPath) # payload) 
         self.msThread.commit()
 
-        logBuf = self.__logToBuf__(logBuf,"         *-*-*-*-* ")
-        logBuf = self.__logToBuf__(logBuf,"Published 'TaskFastKill' message with payload: %s" % taskPath) #payload)
+        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
+        logBuf = self.__logToBuf__(logBuf, "Published 'TaskFastKill' message with payload: %s" % taskPath) #payload)
 #        self.taskEnded(taskName)
-        logBuf = self.__logToBuf__(logBuf,"         *-*-*-*-* ")
+        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
   
 
@@ -1025,9 +1025,9 @@ class TaskTrackingComponent:
         self.msThread.publish("TaskIncompleteSubmission", payload)
         self.msThread.commit()
 
-        logBuf = self.__logToBuf__(logBuf,"         *-*-*-*-* ")
-        logBuf = self.__logToBuf__(logBuf,"Published 'TaskIncompleteSubmission' message with payload: %s" % payload)
-        logBuf = self.__logToBuf__(logBuf,"         *-*-*-*-* ")
+        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
+        logBuf = self.__logToBuf__(logBuf, "Published 'TaskIncompleteSubmission' message with payload: %s" % payload)
+        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
 
 
@@ -1119,19 +1119,20 @@ class TaskTrackingComponent:
                             dictFinishedJobs = {}
 			    v = taskDict.values()[0]
 			    statusJobsTask = v.jobStates()
-#                            logBuf = self.__logToBuf__(logBuf," --> %s <--> %s <--"%(taskName, str(len(statusJobsTask))) )
+#                            logBuf = self.__logToBuf__(logBuf, " --> %s <--> %s <--"%(taskName, str(len(statusJobsTask))) )
                             listFailedJobs = self.getFailedJobFromFile( os.path.join(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir))
                             #logBuf = self.__logToBuf__(logBuf, " -"+str(listFailedJobs)+"- ")
                             listFailed2Prepare = []
-			    for job,stato in statusJobsTask.iteritems():
+                            file("JobStupidi", 'a').write("task name: " + str(taskName) + "\n")
+			    for job, stato in statusJobsTask.iteritems():
                                 jobInfo = v.Job(job)
 
                                 try:
-                                   self.mutex.acquire()
-                                   resubmitting, MaxResub, Resub = TaskStateAPI.checkNSubmit( taskName, job )
+                                    self.mutex.acquire()
+                                    resubmitting, MaxResub, Resub = TaskStateAPI.checkNSubmit( taskName, job )
                                 finally:
-                                   self.mutex.notifyAll()
-                                   self.mutex.release()
+                                    self.mutex.notifyAll()
+                                    self.mutex.release()
 
                                 runInfoJob =  jobInfo.specific("1")
                                 site = "None"
@@ -1152,9 +1153,11 @@ class TaskTrackingComponent:
 			        else:
                                     vect = [self.convertStatus(stato), runInfoJob['EXE_EXIT_CODE'], runInfoJob['JOB_EXIT_STATUS'], 0, Resub, site]
                                 dictStateTot.setdefault(job, vect)
+
+                                if taskName == "crab_QCD_470_600_32871300-3ff8-4457-b2ec-5fe608257398" and str(job) == "4":
+                                    logging.info( "\n\n\nGOT STRANGE JOB: "+str(stato)+" - " + str(runInfoJob['EXE_EXIT_CODE']) + " - " +str(runInfoJob['JOB_EXIT_STATUS']) + "\n\n\n")
  
                                 jobPartList = self.getJobFromFile(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir)
-
 			        if stato == "SE" or stato == "E":
 				    if runInfoJob['EXE_EXIT_CODE'] == "0" and runInfoJob['JOB_EXIT_STATUS'] == "0":
 				        dictReportTot['JobSuccess'] += 1
@@ -1181,6 +1184,7 @@ class TaskTrackingComponent:
 				        dictReportTot['JobInProgress'] += 1
                                         dictStateTot[job][0] = "Resubmitting by server"#"Managing by server"
                                         dictFinishedJobs.setdefault(job, 0)
+                                        file("JobStupidi", 'a').write( str(job) + ",")
                                         if job not in listFailedJobs:
                                    #         logBuf = self.__logToBuf__(logBuf, " -adding JOB: "+str(job))
                                             listFailed2Prepare.append( job )
@@ -1219,12 +1223,14 @@ class TaskTrackingComponent:
                                     if status == self.taskState[4]:
                                         dictReportTot['JobInProgress'] += 1
                                         dictFinishedJobs.setdefault(job, 0)
+                                    """
                                     else:
                                        file("JobStupidi", 'a').write("\ntask name: " + str(taskName) +\
                                                                      " - resubm: " + str(resubmitting) +\
                                                                      " - stato: " + str(stato) +\
                                                                     " - status: " + str(status) )
                                        logging.debug("resubm: " +str(resubmitting)+ " - stato: " +str(stato)+ " - status: " +str(status))
+                                    """
                                #elif stato != "K": ## ridondante
                                     #dictReportTot['JobFailed'] += 1
                                     #dictFinishedJobs.setdefault(job, 0)
@@ -1234,6 +1240,7 @@ class TaskTrackingComponent:
                                 else:
                                     dictReportTot['JobInProgress'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
+                            file("JobStupidi", 'a').write("\n\n\n")
                             ### prototype: preparing intermediate output 4 failed jobs ###
                             """
                             logBuf = self.__logToBuf__(logBuf, " adding: "+str(listFailed2Prepare) )
@@ -1271,11 +1278,11 @@ class TaskTrackingComponent:
                                             ## avoiding simultaneous access ##
                                             try:
                                                 semfile.acquire()
-                                                self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+                                                self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask), 1 )
                                             finally:
                                                 semfile.release()
                                     else:
-                                        self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask),1 )
+                                        self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask), 1 )
                                 else:
                                     logBuf = self.__logToBuf__(logBuf, "Error: the path " + pathToWrite + " does not exist!\n")
                                 #self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
@@ -1308,27 +1315,27 @@ class TaskTrackingComponent:
                                             if os.path.exists( pathToWrite+"/done.tar.gz" ):
                                                 logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT finished")
                                             else:
+                                                obj.cleanjobEndedCache(pathToWrite)
                                                 logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT FAILED")
                                             #obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
                                             logBuf = self.__logToBuf__(logBuf, "**** ** **** ** ****")
                                             #obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
                                         if percentage >= thresholdLevel:
                                             if dictReportTot['JobFailed'] > 0:
-                                                ##hassen added and commented
-                                                obj = Outputting( self.xmlReportFileName, self.tempxmlReportFile )
+                                                ##added and commented
+                                                #obj = Outputting( self.xmlReportFileName, self.tempxmlReportFile )
                                                 logBuf = self.__logToBuf__(logBuf, "**** ** **** ** ****")
-                                                logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT FAILED")
+                                                logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT")
+                                                self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask), 0, None )
                                                 #obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
-                                               # obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs,"Failed" )
+                                                #obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs,"Failed" )
                                                 #obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs )
-                                                logBuf = self.__logToBuf__(logBuf, str(dictFinishedJobs))
-                                                if os.path.exists( pathToWrite+"/failed.tar.gz" ):
+                                                #logBuf = self.__logToBuf__(logBuf, str(dictFinishedJobs))
+                                                if os.path.exists( pathToWrite+"/failed.tgz" ):
                                                     logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT failed finished")
 
                                                 else:
                                                     logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT FAILED")
-
-                                                self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask),0, None )
 
 					    if percentage == 100:
 					        self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
@@ -1369,7 +1376,7 @@ class TaskTrackingComponent:
                 #case with a task taken
                 if task != None and len(task)>0:
                     TaskStateAPI.setTaskControlled(taskId)
-                    logBuf = self.__logToBuf__(logBuf, "Task(id, name): (" + str(taskId) + ", " + str(taskName) + ") set to Controlled.")
+                    #logBuf = self.__logToBuf__(logBuf, "Task(id, name): (" + str(taskId) + ", " + str(taskName) + ") set to Controlled.")
 
         except Exception, ex:
             #logging.error("ERROR: " + str(traceback.format_exc()))
@@ -1381,13 +1388,13 @@ class TaskTrackingComponent:
         time.sleep(float(self.args['PollInterval']))
 
 
-    def printDictKey( self, dict, value ):
+    def printDictKey( self, diction, value ):
         """
         _printDictKey_
         """
         msg = "Ended jobs: * "
         try:
-            for valu3, k3y in dict.iteritems():
+            for valu3, k3y in diction.iteritems():
 #                logging.info( str(valu3) + " " + str(k3y) )
                 if str(valu3) == int(value) or\
                    int(valu3) == int(value) or\
@@ -1444,9 +1451,9 @@ class TaskTrackingComponent:
 
         nMaxThreads = int(self.args['Thread']) + 1
         # start polling threads
-	for i in range(1,nMaxThreads):
-	   pollingThread = PollThread(self.pollTasks, "pollingThread_" + str(i))
-           pollingThread.start()
+	for i in range(1, nMaxThreads):
+	    pollingThread = PollThread(self.pollTasks, "pollingThread_" + str(i))
+            pollingThread.start()
 
         # start message thread
         msgThread = MsgQueueExecuterThread(self.__executeQueuedMessages__)
@@ -1456,9 +1463,9 @@ class TaskTrackingComponent:
         while True:
             messageType, payload = self.ms.get()
             logBuf = ""
-            logBuf = self.__logToBuf__(logBuf,"\n")
-            logBuf = self.__logToBuf__(logBuf,"GOT MESSAGE: " + str(messageType))
-            logBuf = self.__logToBuf__(logBuf,"\n")
+            logBuf = self.__logToBuf__(logBuf, "\n")
+            logBuf = self.__logToBuf__(logBuf, "GOT MESSAGE: " + str(messageType))
+            logBuf = self.__logToBuf__(logBuf, "\n")
             logging.info(logBuf)
             logBuf = ""
 
@@ -1611,7 +1618,7 @@ class PollThread(Thread):
 ##########################################
 class PersistentQueue(Queue.Queue):
     def __init__(self, maxsize=0):
-        Queue.Queue.__init__(self,maxsize)
+        Queue.Queue.__init__(self, maxsize)
       
     def saveState(self, filePath):
         f = open(filePath, 'w')
@@ -1664,7 +1671,7 @@ class MsgQueueExecuterThread(Thread):
         while True:
             try:
                 self.msgExecuterMethod()
-                time.sleep(3)
+                time.sleep(8)
             except Exception, ex:
                 # log error message
                 # new exception(detailed) logging
