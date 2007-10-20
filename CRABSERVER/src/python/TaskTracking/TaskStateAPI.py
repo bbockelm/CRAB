@@ -309,7 +309,6 @@ def queryMethod(strQuery, taskName):
 def unlockTask(taskId):
     """
     unlockTask
-    - created by lepri 25/07/07
     - input:
     - output:
       number of rows affected, 0 or 1.
@@ -373,13 +372,12 @@ def resetAllWorkStatus():
 def unlockTaskByTaskName(taskName):
     """
     unlockTask
-    - created by lepri 25/07/07
     - input: taskName
     - output: record affected
       number of rows affected, 0 or 1.
     - work: unlock the task
     """
-    #lepri: take first task not locked and lock it.
+    #take first task not locked and lock it.
     sql = "UPDATE js_taskInstance "+\
           "SET work_status=0 "\
           "WHERE work_status = 1 AND TaskName = '" + taskName + "';"
@@ -448,13 +446,12 @@ def resetControlledTasks():
 def lockUnlockedTaskByTaskName(taskName):
     """
     lockTask
-    - created by lepri 25/07/07
     - input: task name
     - output: record affected
       number of rows affected, 0 or 1, -1 id task dont exist.
     - work: try to lock the task if it wasnt (work_status = 0 or = 2) , if the task was just locked, return 0 of course
     """
-    #lepri: take first task not locked and lock it.
+    #take first task not locked and lock it.
 
     conn, dbCur = openConnPA()
     rowsAffected = 0
@@ -505,7 +502,6 @@ def lockUnlockedTaskByTaskName(taskName):
 def getNLockFirstNotFinished():
     """
     getNLockFirstNotFinished
-    - created by lepri 24/07/07
     - input:
     - output:
       a row if one exist
@@ -554,7 +550,6 @@ def getNLockFirstNotFinished():
 def __getFirstNotFinished__(conn, dbCur):
    """
    __getFirstNotFinished__
-   - created by lepri 24/07/07
    - *private function*
    - input:
      #1 conn
@@ -566,9 +561,12 @@ def __getFirstNotFinished__(conn, dbCur):
    sql = "SELECT ID, taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid "+\
          "FROM js_taskInstance "+\
          "WHERE (work_status = 0) "+\
-         "AND ( (endedLevel < 100 AND status <> 'ended' AND status = 'not submitted' ) OR notificationSent < 2 ) "+\
+         "AND (notificationSent < 2 ) "+\
          "ORDER BY ID "+\
          "LIMIT 1;"
+#         "AND ( (endedLevel < 100 AND status <> 'ended' AND status = 'not submitted' ) OR notificationSent < 2 ) "+\
+#         "ORDER BY ID "+\
+#         "LIMIT 1;"
    """
       "FROM js_taskInstance "+\
       "WHERE (work_status = 0) "+\
@@ -590,7 +588,6 @@ def __getFirstNotFinished__(conn, dbCur):
 def __lockTask__(taskId, conn, dbCur):
     """
     __lockTask__
-    - created by lepri 24/07/07
     - *private function*
     - input:
        #1 taskId
@@ -620,7 +617,6 @@ def __lockTask__(taskId, conn, dbCur):
 def __getTaskWorkStatusByTaskId__(taskId, conn, dbCur):
     """
     __resetControlledTasks__
-    - created by lepri 23/08/07
     - *private function*
     - input: taskId, conn & dbCur
     - output: none
@@ -639,7 +635,6 @@ def __getTaskWorkStatusByTaskId__(taskId, conn, dbCur):
 def __resetControlledTasks__(conn, dbCur):
     """
     __resetControlledTasks__
-    - created by lepri 23/08/07
     - *private function*
     - input: conn & dbCur
     - output: none
@@ -654,7 +649,6 @@ def __resetControlledTasks__(conn, dbCur):
 def __setTaskControlled__(taskId, conn, dbCur):
     """
     __resetControlledTasks__
-    - created by lepri 23/08/07
     - *private function*
     - input: conn & dbCur
     - output: none
