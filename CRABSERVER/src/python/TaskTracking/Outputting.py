@@ -19,7 +19,7 @@ class Outputting:
 
 
     def add2Tar( self, path, fileList ):
-        import tarfile
+        import TaskTracking.itarfile as tarfile
         flag = 0
         if not os.path.exists( path + self.tempTar ):
             fout = open( path + self.tempTar, "w" )
@@ -36,46 +36,90 @@ class Outputting:
             raise
         try:
             for name in fileList:
+                import traceback
                 try:
                     tar.add(name)
-                except ValueError:
-                    logging.error ('Warning: Unable to store: ')
-                    logging.error (str(name))
-                    logging.error ('\n')
+                    logging.info("   -> " +str(name))
+                except ValueError, ex:
+                    logging.error ('Warning: Unable to store: '+ str(name) + ' - ' + str(ex) )
+                    logging.error ( str(traceback.format_exc()) + '\n')
+                    pass
+                except OSError, ex:
+                    logging.error ('Warning: Unable to store: ' + str(name) )
+                    logging.error ( str(traceback.format_exc()) + '\n')
+                except IOError, ex:
+                    try:
+                        tar.add(name)
+                    except:
+                        logging.error ('Warning: Unable to store: ' + str(name) )
+                        logging.error ( str(traceback.format_exc()) + '\n')
+                        raise 
         finally:
             tar.close()
             self.cleanTmpDir( path )
+        """
+        try:
+            if flag:
+                tar = tarfile.open( path + self.tempTar, "w" )
+            else:
+                tar = tarfile.open( path + self.tempTar, "a" )
+        except:
+            logging.error ("Error: Unable to open tar file.")
+            raise
+        """
 
-    def prepareTempDir( self, path, taskName, nJob, jobs2Add ):
-        cmd = 'mkdir .tmpDone;'
-        os.system( cmd )
-        if os.path.exists('.tmpDone'):
+    def prepareTempDir( self, path, jobs2Add ):
+        
+        cmdMkCache = 'mkdir .tmpDone;'
+        os.popen( cmdMkCache )
+        ## if note created try once more the cache dir
+        if not os.path.exists('.tmpDone'):
+            cmd = 'mkdir .tmpDone;'
+            os.system( cmd )
+
+        ## if exists copy in cache
+        if os.path.exists(path + ".tmpDone"):
+            logging.info("Working on jobs....")
             for i in jobs2Add: #range(1, nJob+1):
+                logging.info(" JOB [ "+str(i)+" ]: ")
                 ## Add parametric indexes for failed and successful jobs # Fabio
                 jtResDir = 'job'+str(i)+'/JobTracking'
-                cmd = 'cp '+self.tempxmlReportFile+' .tmpDone/'+self.xmlReportFileName+' ;' ## SP
-                ## Get the most recent failure and copy that to tmp # Fabio
-                failIndex = 4
-                if os.path.exists('./'+jtResDir+'/Failed/'):
-                    if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
-                        failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
-                    cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/log/edgLoggingInfo.log .tmpDone/edgLoggingInfo_'+str(i)+'.log ;'
-                    cmd += 'cp -r '+ jtResDir +'/Failed/Submission_'+str(failIndex)+'/std*/* .tmpDone/;'
-                cmd += 'cp -r '+jtResDir+'/Success/Submission_*/*/* .tmpDone;'
-                cmd += 'cp -r '+jtResDir+'/Success/Submission_*/log/edgLoggingInfo.log .tmpDone/edgLoggingInfo_'+str(i)+'.log ;'
-                cmd += 'rm .tmpDone/BossChainer.log .tmpDone/BossProgram_1.log .tmpDone/edg_getoutput.log .tmpDone/edgLoggingInfo.log;'
-                logging.debug(  cmd )
-                os.system( cmd )
+
+                cmdCopyXml = 'cp '+self.tempxmlReportFile+' .tmpDone/'+self.xmlReportFileName+' ;'
+                xmlCopied = os.popen(cmdCopyXml).readlines()
+                if not os.path.exists( os.path.join ( '.tmpDone/', self.xmlReportFileName ) ):
+                    logging.info("   Impossible to copy the file " +self.tempxmlReportFile+ ": "+str(xmlCopied))
+
+                cmdListAll = "ls -Rd "+jtResDir+"/Success/Submission_*/*/*"
+                logging.info ("   Adding files to cache...")
+                for file2Copy in os.popen(cmdListAll).readlines():
+                    logging.info ("      -> " +str( os.path.join(path, file2Copy[:-1]) ))
+                    cmdCopy = "cp " +str( os.path.join(path, file2Copy[:-1]) ) + " " + str( os.path.join(path, ".tmpDone/") ) +";"
+                    #logging.info("\n\n\nCopying: "+ str( cmdCopy ) )
+                    os.popen(cmdCopy).readlines()
+
             listFileTemp = []
-            for file in os.listdir(path+ '.tmpDone'):
-                listFileTemp.append( '.tmpDone/' + str(file) )
+            try:
+                for file2Add in os.listdir(path+ '.tmpDone'):
+                    listFileTemp.append( str( os.path.join( '.tmpDone', str(file2Add) ) ) )
+            except OSError:
+                import traceback
+                logging.info("problema listing the dir: " + str(traceback.format_exc()) )
+                raise
+
             return listFileTemp
 
     def cleanTmpDir( self, path ):
         if os.path.exists(path+'/.tmpDone/'):
+            #pass
             cmd = 'rm -drf '+path+'/.tmpDone/;'
             os.system( cmd )
 
+    def cleanjobEndedCache( self, path ):
+        if os.path.exists( os.path.join(path, self.jobEndedCache) ):
+            cmd = 'rm -f ' + str( os.path.join(path, self.jobEndedCache) )
+            os.system( cmd )
+         
     def deleteTempTar( self, path ):
         if os.path.exists(path+self.tempTar):
             cmd = 'rm -f '+path+self.tempTar
@@ -106,13 +150,13 @@ class Outputting:
                 stringa += ':' + str(job)
             infile = file( path + fileName , 'r').readline()
             infile = infile.split("\n")[0]
-            outfile = file( path + fileName , 'w').write(infile+stringa)
+            file( path + fileName , 'w').write(infile+stringa)
         else:
             stringa = ''
             for job in jobList:
                 stringa += str(job) + ':'
             stringa = stringa[0:len(stringa)-1]
-            outfile = file(path + fileName , 'w').write(stringa)
+            file(path + fileName , 'w').write(stringa)
 
     def prepare( self, path, taskName, nJob, jobs2Add ):
         work_dir = os.getcwd()
@@ -127,9 +171,14 @@ class Outputting:
             if flag == 1 :
                 jobs2Write.append(job)
         logging.info("  Ended jobs: " + str(jobs2Write))
+
         self.add2List( path, self.jobEndedCache, jobs2Write )
         logging.info("path = " +str(path)+ " - taskName: " +str(taskName)+ " - nJob: " +str(nJob)+ " - jobs2Write: " +str(jobs2Write) )
-        fileList = self.prepareTempDir( path, taskName, nJob, jobs2Write )
+#        writingPatch = []
+#        for jobber in range(1, nJob+1):
+#            writingPatch.append(jobber)
+        fileList = self.prepareTempDir( path, jobs2Write ) #writingPatch) #jobs2Write )
+
         if fileList != None:
             logging.info("Adding to tar file...")
             self.add2Tar( path, fileList )
