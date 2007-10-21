@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.48 2007/10/01 15:31:55 mcinquil Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.49 2007/10/20 22:48:24 mcinquil Exp $"
+__version__ = "$Revision: 1.49 $"
 
 import os
 import time
@@ -1221,6 +1221,9 @@ class TaskTrackingComponent:
                                         dictFinishedJobs.setdefault(job, 0)
                                 elif not resubmitting:
                                     if status == self.taskState[4]:
+                                        dictReportTot['JobInProgress'] += 1
+                                        dictFinishedJobs.setdefault(job, 0)
+                                    else:
                                         dictReportTot['JobInProgress'] += 1
                                         dictFinishedJobs.setdefault(job, 0)
                                     """
