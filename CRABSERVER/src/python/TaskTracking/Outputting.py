@@ -92,11 +92,26 @@ class Outputting:
 
                 cmdListAll = "ls -Rd "+jtResDir+"/Success/Submission_*/*/*"
                 logging.info ("   Adding files to cache...")
+                flagFailed = 1
                 for file2Copy in os.popen(cmdListAll).readlines():
                     logging.info ("      -> " +str( os.path.join(path, file2Copy[:-1]) ))
                     cmdCopy = "cp " +str( os.path.join(path, file2Copy[:-1]) ) + " " + str( os.path.join(path, ".tmpDone/") ) +";"
                     #logging.info("\n\n\nCopying: "+ str( cmdCopy ) )
                     os.popen(cmdCopy).readlines()
+                    flag = 0
+                if flagFailed:
+                    if os.path.exists('./'+jtResDir+'/Failed/'):
+                        if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
+                            try:
+                                failIndex = max( [ int(s.split('Submission_')[-1]) for s in os.listdir('./'+jtResDir+'/Failed/') ] )
+                            except Exception, ex:
+                                logging.info( str(ex) )
+                            file2Copy = None
+                            cmdListAll = "ls -Rd "+jtResDir+"/Failed/Submission_"+str(failIndex)+"/*/*"
+                            for file2Copy in os.popen(cmdListAll).readlines():
+                                logging.info ("      -> " +str( os.path.join(path, file2Copy[:-1]) ))
+                                cmdCopy = "cp " +str( os.path.join(path, file2Copy[:-1]) ) + " " + str( os.path.join(path, ".tmpDone/") ) +";"
+                                os.popen(cmdCopy).readlines()
 
             listFileTemp = []
             try:
