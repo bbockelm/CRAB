@@ -991,7 +991,6 @@ if __name__ == '__main__':
     ### os.putenv("PATH", definePath("new") )
     ######################################### 
 
-    os.putenv("PATH", definePath("new") )
  
     # Parse command-line options and create a dictionary with
     # key-value pairs.
