@@ -371,7 +371,7 @@ class Crab:
         if self.checkUniqueness_(result):
             return result
         else:
-            common.logger.message("Error "+result)
+            common.logger.message( "Error " +str(result) )
             return []
 
     def checkUniqueness_(self, list):
