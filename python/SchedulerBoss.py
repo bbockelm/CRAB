@@ -430,14 +430,15 @@ class SchedulerBoss(Scheduler):
                     if ce2check.find(ceW.strip()) != -1:
                         CE_whited.append(ce2check)
                         common.logger.debug(5,"CEWhiteList: adding from matched site: " + str(ce2check))
+            sites = CE_whited
+
         CE_blacked = []
         if len(blackL) > 0:
             for ce2check in sites:
                 for ceB in blackL:
                     if ce2check.find(ceB.strip()) != -1:
                         CE_blacked.append(ce2check)
-        if len(CE_whited) > 0:
-            sites = CE_whited
+
         toRemove = []
         if len(CE_blacked) > 0:
             common.logger.message("Using ce black list functionality...")
@@ -462,7 +463,7 @@ class SchedulerBoss(Scheduler):
 #                it = it.split(':')[0]
 #                if not sites.count(it) :
 #                    sites.append(it)
-            common.logger.debug(5,"All Sites :"+str(sites))
+            common.logger.debug(5,"All Sites :"+str(CEs))
             common.logger.message("Matched Sites :"+str(sites))
         if len(sites) == 0:
             common.logger.message("No matched Sites :"+str(sites))
