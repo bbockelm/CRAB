@@ -26,5 +26,10 @@ if [ -z "$CMSSW_VERSION" ]; then
   echo '      2) eval `scram runtime -c|sh` ' 
   echo '      3) source crab.c|sh' 
 else
-  /usr/bin/env python $CRABPYTHON/crab.py $*
+# prepare the environment # Fabio
+  eval `python $CRABPYTHON/unfoldEnv.py $*`
+#  
+  #/usr/bin/env python $CRABPYTHON/crab.py $*
+  python $CRABPYTHON/crab.py $*
 fi
+

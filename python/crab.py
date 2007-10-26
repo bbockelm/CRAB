@@ -1,4 +1,18 @@
 #!/usr/bin/env python
+import sys, os, time, string, commands
+
+## pre-import env configuratin steps
+def dropOutPy23dynLoads():
+    if '-create' not in sys.argv:
+        return
+    for p in sys.path:
+        if p.find( "python2.3/lib-dynload" ) != -1 :
+            sys.path.pop( sys.path.index(p) )
+
+# this is needed to remove interferences between LCG and CMSSW envs  
+dropOutPy23dynLoads()
+
+## actual import session 
 from crab_help import *
 from crab_util import *
 from crab_exceptions import *
@@ -17,10 +31,9 @@ from ApmonIf import ApmonIf
 from Cleaner import Cleaner
 import common
 import Statistic
-import commands
 from BlackWhiteListParser import BlackWhiteListParser
 
-from BossSession import *
+# from BossSession import *
 
 #modified to support server mode
 #from SubmitterServer import SubmitterServer
@@ -29,8 +42,6 @@ from BossSession import *
 #from PostMortemServer import PostMortemServer
 #from KillerServer import KillerServer
 #from CleanerServer import CleanerServer
-
-import sys, os, time, string
 
 ###########################################################################
 class Crab:
@@ -991,15 +1002,12 @@ if __name__ == '__main__':
  
     # Parse command-line options and create a dictionary with
     # key-value pairs.
-
     options = parseOptions(sys.argv[1:])
 
     # Process "help" options, such as '-help', '-version'
-
     if processHelpOptions(options) : sys.exit(0)
 
     # Create, initialize, and run a Crab object
-
     try:
         crab = Crab(options)
         crab.run()
