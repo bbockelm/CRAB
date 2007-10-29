@@ -883,8 +883,7 @@ class Cmssw(JobType):
         txt += self.wsSetupCMSLCGEnvironment_()
         txt += 'elif [ $middleware == OSG ]; then\n'
         txt += '    WORKING_DIR=`/bin/mktemp  -d $OSG_WN_TMP/cms_XXXXXXXXXXXX`\n'
-        txt += '    echo "Created working directory: $WORKING_DIR"\n'
-        txt += '    if [ ! -d $WORKING_DIR ] ;then\n'
+        txt += '    if [ ! $? == 0 ] ;then\n'
         txt += '        echo "SET_CMS_ENV 10016 ==> OSG $WORKING_DIR could not be created on WN `hostname`"\n'
         txt += '    echo "JOB_EXIT_STATUS = 10016"\n'
         txt += '    echo "JobExitCode=10016" | tee -a $RUNTIME_AREA/$repo\n'
@@ -894,6 +893,7 @@ class Cmssw(JobType):
         txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '        exit 1\n'
         txt += '    fi\n'
+        txt += '    echo "Created working directory: $WORKING_DIR"\n'
         txt += '\n'
         txt += '    echo "Change to working directory: $WORKING_DIR"\n'
         txt += '    cd $WORKING_DIR\n'
