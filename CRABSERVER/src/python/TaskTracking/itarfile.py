@@ -1083,11 +1083,18 @@ class TarFile(object):
 
         # Use os.stat or os.lstat, depending on platform
         # and if symlinks shall be resolved.
+        statres = None
         if fileobj is None:
             if hasattr(os, "lstat") and not self.dereference:
-                statres = os.lstat(name)
+                try:
+                    statres = os.lstat(name)
+                except:
+                    pass
             else:
-                statres = os.stat(name)
+                try:
+                    statres = os.stat(name)
+                except:
+                    pass
         else:
             statres = os.fstat(fileobj.fileno())
         linkname = ""
@@ -1209,7 +1216,11 @@ class TarFile(object):
         self._dbg(1, name)
 
         # Create a TarInfo object from the file.
-        tarinfo = self.gettarinfo(name, arcname)
+        tarinfo = None
+        try:
+            tarinfo = self.gettarinfo(name, arcname)
+        except:
+            pass
 
         if tarinfo is None:
             self._dbg(1, "tarfile: Unsupported type %r" % name)
