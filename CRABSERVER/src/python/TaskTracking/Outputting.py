@@ -19,6 +19,14 @@ class Outputting:
 
 
     def add2Tar( self, path, fileList ):
+        flag = 0
+        if not os.path.exists( self.tempTar ):
+            ## adding files to the archive ##
+            for file2Add in fileList:
+                os.popen("tar --append --file="+os.path.join(path,self.tempTar)+" "+str(file2Add))
+                #logging.info ("\nOUT "+str(out))
+                #logging.info ("\nOUT "+str(err))
+        """
         import TaskTracking.itarfile as tarfile
         flag = 0
         if not os.path.exists( path + self.tempTar ):
@@ -54,18 +62,13 @@ class Outputting:
                         logging.error ('Warning: Unable to store: ' + str(name) )
                         logging.error ( str(traceback.format_exc()) + '\n')
                         raise 
+                except:
+                    logging.error ('Warning: Unable to store: '+ str(name) + ' - ' + str(ex) )
+                    logging.error ( str(traceback.format_exc()) + '\n')
+
         finally:
             tar.close()
             self.cleanTmpDir( path )
-        """
-        try:
-            if flag:
-                tar = tarfile.open( path + self.tempTar, "w" )
-            else:
-                tar = tarfile.open( path + self.tempTar, "a" )
-        except:
-            logging.error ("Error: Unable to open tar file.")
-            raise
         """
 
     def prepareTempDir( self, path, jobs2Add ):
