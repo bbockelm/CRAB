@@ -15,8 +15,8 @@ if 'CMSSW_BASE' not in os.environ:
      print 'echo "CMSSW_BASE not set"' 
      sys.exit(-1)
 
-shKind = 'csh'
-if 'bash' in os.environ['SHELL']:
+shKind = 'sh' # fix for wrapper shell, temporary #'csh' #Fabio
+if 'BASH' in os.environ:
     shKind = 'sh'
 
 # extract the env setting introduced by scram
