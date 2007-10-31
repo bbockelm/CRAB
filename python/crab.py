@@ -559,6 +559,17 @@ class Crab:
                     common.logger.debug(5,'nj_list '+str(nj_list))
                  
                     if len(nj_list) != 0:
+                        # set the environmet to avoid problems with -create -submit 
+                        # due to LCG-CMSSW env incompatibilities # Fabio
+                        if '-create' in opts:
+                            reverse_list = eval(os.environ['AUX_SCRAMPATH'])
+                            entry_list = os.environ['PATH'].split(':')
+                            purgedList = [ i for i in entry_list if i not in reverse_list ] 
+                            purgedList = purgedList + reverse_list
+                            entry = str(purgedList).replace('[','').replace(']','')
+                            os.environ['PATH'] = entry.replace('\'','').replace(', ',':')
+                        # go on with the usual flow transparently...
+                        
                         # Instantiate Submitter object
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
                         # Create and initialize JobList

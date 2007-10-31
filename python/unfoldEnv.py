@@ -64,6 +64,12 @@ if '-create' in sys.argv[1:]:
              print 'export %s="%s";\n'%(ek, entry)
          else:
              print 'setenv %s "%s";\n'%(ek, entry)
+     # auxiliary export for the -create -submit option
+     if '-submit' in sys.argv[1:]:
+         if shKind == 'sh':
+             print 'export AUX_SCRAMPATH="%s";\n'%str(pre_env['PATH'])
+         else:
+             print 'setenv AUX_SCRAMPATH "%s";\n'%str(pre_env['PATH'])
      sys.exit(0)
 
 for v in os.environ:
