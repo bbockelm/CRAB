@@ -6,6 +6,6 @@ class SchedulerGlitecoll(SchedulerGlite):
         SchedulerGlite.__init__(self)
 
     def submitTout(self, list):
-        return len(list[1])*20
+        return len(list[1])*60
 
 
