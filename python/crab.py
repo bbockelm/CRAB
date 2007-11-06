@@ -8,9 +8,8 @@ def dropOutPy23dynLoads():
     for p in sys.path:
         if p.find( "python2.3/lib-dynload" ) != -1 :
             sys.path.pop( sys.path.index(p) )
-
 # this is needed to remove interferences between LCG and CMSSW envs  
-dropOutPy23dynLoads()
+#dropOutPy23dynLoads()
 
 ## actual import session 
 from crab_help import *
@@ -453,7 +452,16 @@ class Crab:
                     msg  = 'Submission will still take into account the number of jobs specified on the command line!\n'
                     common.logger.message(msg)
                 ncjobs = 'all'
-
+#################### DS
+                reverse_list = eval(os.environ['AUX_SCRAMPATH'])
+                entry_list = os.environ['PATH'].split(':')
+                purgedList = [ i for i in entry_list if i not in reverse_list ] 
+                purgedList =reverse_list+purgedList 
+                entry = str(purgedList).replace('[','').replace(']','')
+                entry11 = entry.replace('\'','').replace(', ',':')
+                os.environ['PATH'] = entry.replace('\'','').replace(', ',':')
+                os.putenv('PATH',entry11)
+####################
                 # Instantiate Creator object
                 self.creator = Creator(self.job_type_name,
                                        self.cfg_params,
@@ -561,13 +569,13 @@ class Crab:
                     if len(nj_list) != 0:
                         # set the environmet to avoid problems with -create -submit 
                         # due to LCG-CMSSW env incompatibilities # Fabio
-                        if '-create' in opts:
-                            reverse_list = eval(os.environ['AUX_SCRAMPATH'])
-                            entry_list = os.environ['PATH'].split(':')
-                            purgedList = [ i for i in entry_list if i not in reverse_list ] 
-                            purgedList = purgedList + reverse_list
-                            entry = str(purgedList).replace('[','').replace(']','')
-                            os.environ['PATH'] = entry.replace('\'','').replace(', ',':')
+         #               if '-create' in opts:
+         #                   reverse_list = eval(os.environ['AUX_SCRAMPATH'])
+         #                   entry_list = os.environ['PATH'].split(':')
+         #                   purgedList = [ i for i in entry_list if i not in reverse_list ] 
+         #                   purgedList = purgedList + reverse_list
+         #                   entry = str(purgedList).replace('[','').replace(']','')
+         #                   os.environ['PATH'] = entry.replace('\'','').replace(', ',':')
                         # go on with the usual flow transparently...
                         
                         # Instantiate Submitter object
@@ -1008,7 +1016,7 @@ if __name__ == '__main__':
         warnings.simplefilter("ignore", RuntimeWarning)
     except:
         pass # too bad, you'll get the warning
-
+ 
     # Parse command-line options and create a dictionary with
     # key-value pairs.
     options = parseOptions(sys.argv[1:])

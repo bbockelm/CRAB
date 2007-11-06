@@ -53,24 +53,15 @@ unfold_cmd = 'setenv CRAB_UNFOLD_ENV "1";\n'
 if shKind == 'sh':
      unfold_cmd = 'export CRAB_UNFOLD_ENV="1";\n'
 
-if '-create' in sys.argv[1:]:
-     for ek in ['PATH', 'PYTHONPATH']:
-         entry = ''+str(os.environ[ek])
-         purgedList = [ i for i in entry.split(':') if i not in pre_env[ek] ]
-         purgedList = pre_env[ek] + purgedList
-         entry = str(purgedList).replace('[','').replace(']','')
-         entry = entry.replace('\'','').replace(', ',':')
-         if shKind == 'sh':
-             print 'export %s="%s";\n'%(ek, entry)
-         else:
-             print 'setenv %s "%s";\n'%(ek, entry)
-     # auxiliary export for the -create -submit option
-     if '-submit' in sys.argv[1:]:
-         if shKind == 'sh':
-             print 'export AUX_SCRAMPATH="%s";\n'%str(pre_env['PATH'])
-         else:
-             print 'setenv AUX_SCRAMPATH "%s";\n'%str(pre_env['PATH'])
-     sys.exit(0)
+## cache to reuse   at creation Level .DS 
+if shKind == 'sh':
+    print 'export AUX_SCRAMPATH="%s";\n'%str(pre_env['PATH'])
+    print 'export AUX_SCRAMPATH_LD="%s";\n'%str(os.environ['LD_LIBRARY_PATH'])
+    print 'export AUX_SCRAMPATH_py="%s";\n'%str(pre_env['PYTHONPATH'])
+else:
+    print 'setenv AUX_SCRAMPATH "%s";\n'%str(pre_env['PATH'])
+    print 'export AUX_SCRAMPATH_LD "%s";\n'%str(os.environ['LD_LIBRARY_PATH'])
+    print 'setenv AUX_SCRAMPATH_py "%s";\n'%str(pre_env['PYTHONPATH'])
 
 for v in os.environ:
      if v in preserveList:
