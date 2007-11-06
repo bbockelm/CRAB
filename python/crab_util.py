@@ -46,29 +46,6 @@ def parseOptions(argv):
         pass
     return options
 
-def definePath(isOriginal):
-    """
-    read and cache path
-    remove cmssw stuff from path
-    return original/modified path   
-    """
-    bpath_original = os.getenv("PATH", None)
-    try:
-        cmssw = os.getenv("CMS_PATH", None)
-        paths = bpath_original.split(':')
-        bpath = ''
-        for p in paths:
-            if p.find( cmssw ) != -1 and p.find( 'python') != -1 and p.find( 'Crab') == -1:continue
-            bpath+= p + ':'
-    except:
-        import traceback
-        print traceback.format_exc()
-        print "No CMSSW"
-    if isOriginal == 'original':
-        return bpath_original 
-    else:
-        return bpath[:-1]                                                                                                                                                
-###########################################################################
 def loadConfig(file):
     """
     returns a dictionary with keys of the form
