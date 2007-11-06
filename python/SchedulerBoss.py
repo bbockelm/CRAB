@@ -492,8 +492,8 @@ class SchedulerBoss(Scheduler):
                     common.logger.write("Software Tag %s available "%version)
                     print "\033[0m"
                 except IndexError:
-                    print "\033[1;35m Software Tag %s not found on CloseCE %s"%(version, ce)
-                    common.logger.write("Software Tag %s not found on CloseCE"%version)
+                    print "\033[1;35m Software Tag %s not found on CloseCE %s or the CloseCE is temporarely not available."%(version, ce)
+                    common.logger.write("Software Tag %s not found on CloseCE %s or the CloseCE is temporarely not available."%version, %ce)
                     print "\033[0m"
                     pass
             common.logger.write("\n")
