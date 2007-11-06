@@ -8,9 +8,6 @@
 import common
 
 import sys, os, string
-#for p in sys.path:
-#    if p.find( "python2.3/lib-dynload" ) != -1 :
-#        sys.path.pop( sys.path.index(p) )
 
 import tempfile
 
