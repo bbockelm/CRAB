@@ -19,6 +19,16 @@ shKind = 'sh' # fix for wrapper shell, temporary #'csh' #Fabio
 if 'BASH' in os.environ:
     shKind = 'sh'
 
+# -create -submit special case: first part # Fabio
+cachedPath = os.environ['PATH']
+cachedPyPath = os.environ['PYTHONPATH']
+if '-create' in sys.argv:
+    reverseList.remove('PATH')
+    reverseList.remove('PYTHONPATH')
+    preserveList = preserveList + ['PATH', 'PYTHONPATH']  
+#
+#
+
 # extract the env setting introduced by scram
 curDir = os.getcwd() 
 os.chdir(str(os.environ['CMSSW_BASE'])+'/src')
@@ -54,15 +64,6 @@ if shKind == 'sh':
      unfold_cmd = 'export CRAB_UNFOLD_ENV="1";\n'
 
 ## cache to reuse   at creation Level .DS 
-if shKind == 'sh':
-    print 'export AUX_SCRAMPATH="%s";\n'%str(pre_env['PATH'])
-    print 'export AUX_SCRAMPATH_LD="%s";\n'%str(os.environ['LD_LIBRARY_PATH'])
-    print 'export AUX_SCRAMPATH_py="%s";\n'%str(pre_env['PYTHONPATH'])
-else:
-    print 'setenv AUX_SCRAMPATH "%s";\n'%str(pre_env['PATH'])
-    print 'export AUX_SCRAMPATH_LD "%s";\n'%str(os.environ['LD_LIBRARY_PATH'])
-    print 'setenv AUX_SCRAMPATH_py "%s";\n'%str(pre_env['PYTHONPATH'])
-
 for v in os.environ:
      if v in preserveList:
           continue
@@ -91,6 +92,32 @@ for v in os.environ:
 
 # export the environment
 print drop_out_cmd + unfold_cmd
+
+#
+# -create special case: second part 
+# reverse and export as AUXs both the PATH and the PYTHONPATH
+# this value will be used by crab.py whenever both -create and -submit are used 
+#
+if '-create' in sys.argv:
+     # PATH
+     purgedList = [ i for i in cachedPath.split(':') if i not in pre_env['PATH'] ]
+     purgedList = purgedList + pre_env['PATH'] 
+     entry = str(purgedList).replace('[','').replace(']','').replace('\'','').replace(', ',':')
+     if shKind == 'sh':
+          print 'export AUX_SUBM_PATH="%s";\n'%entry
+     else:
+          print 'setenv AUX_SUBM_PATH "%s";\n'%entry
+     # PYTHONPATH
+     purgedList = [ i for i in cachedPyPath.split(':') if i not in pre_env['PYTHONPATH'] ]
+     purgedList = purgedList + pre_env['PYTHONPATH']
+     entry = str(purgedList).replace('[','').replace(']','').replace('\'','').replace(', ',':')
+     if shKind == 'sh':
+          print 'export AUX_SUBM_PY="%s";\n'%entry
+     else:
+          print 'setenv AUX_SUBM_PY "%s";\n'%entry
+     
+#
+#
 sys.exit(0)
 
  

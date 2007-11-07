@@ -9,7 +9,7 @@ def dropOutPy23dynLoads():
         if p.find( "python2.3/lib-dynload" ) != -1 :
             sys.path.pop( sys.path.index(p) )
 # this is needed to remove interferences between LCG and CMSSW envs  
-#dropOutPy23dynLoads()
+dropOutPy23dynLoads()
 
 ## actual import session 
 from crab_help import *
@@ -452,21 +452,25 @@ class Crab:
                     msg  = 'Submission will still take into account the number of jobs specified on the command line!\n'
                     common.logger.message(msg)
                 ncjobs = 'all'
-#################### DS
-                reverse_list = eval(os.environ['AUX_SCRAMPATH'])
-                entry_list = os.environ['PATH'].split(':')
-                purgedList = [ i for i in entry_list if i not in reverse_list ] 
-                purgedList =reverse_list+purgedList 
-                entry = str(purgedList).replace('[','').replace(']','')
-                entry11 = entry.replace('\'','').replace(', ',':')
-                os.environ['PATH'] = entry.replace('\'','').replace(', ',':')
-                os.putenv('PATH',entry11)
-####################
+
                 # Instantiate Creator object
                 self.creator = Creator(self.job_type_name,
                                        self.cfg_params,
                                        ncjobs)
                 self.actions[opt] = self.creator
+
+###########################################
+#               environmet swapping # Fabio
+###########################################
+                if '-submit' in opts:
+                     os.putenv('PATH', os.environ['AUX_SUBM_PATH'])
+                     os.putenv('PYTHONPATH', os.environ['AUX_SUBM_PY'])
+                     #
+                     os.environ['PATH'] = os.environ['AUX_SUBM_PATH']
+                     os.environ['PYTHONPATH'] = os.environ['AUX_SUBM_PY']
+                     #
+                     dropOutPy23dynLoads()
+                     pass 
 
                 # Initialize the JobDB object if needed
                 if not self.flag_continue:
@@ -474,7 +478,6 @@ class Crab:
                     pass
 
                 # Create and initialize JobList
-
                 common.job_list = JobList(common.jobDB.nJobs(),
                                           self.creator.jobType())
 
@@ -567,19 +570,9 @@ class Crab:
                     common.logger.debug(5,'nj_list '+str(nj_list))
                  
                     if len(nj_list) != 0:
-                        # set the environmet to avoid problems with -create -submit 
-                        # due to LCG-CMSSW env incompatibilities # Fabio
-         #               if '-create' in opts:
-         #                   reverse_list = eval(os.environ['AUX_SCRAMPATH'])
-         #                   entry_list = os.environ['PATH'].split(':')
-         #                   purgedList = [ i for i in entry_list if i not in reverse_list ] 
-         #                   purgedList = purgedList + reverse_list
-         #                   entry = str(purgedList).replace('[','').replace(']','')
-         #                   os.environ['PATH'] = entry.replace('\'','').replace(', ',':')
-                        # go on with the usual flow transparently...
-                        
                         # Instantiate Submitter object
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
+ 
                         # Create and initialize JobList
                         if len(common.job_list) == 0 :
                             common.job_list = JobList(common.jobDB.nJobs(),
