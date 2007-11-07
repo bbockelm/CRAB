@@ -289,5 +289,5 @@ class SchedulerGlite(SchedulerEdg):
             #####         
         return itr4
 
-    def submitTout(self, list):
+    def tOut(self, list):
         return 180

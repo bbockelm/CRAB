@@ -846,7 +846,7 @@ class SchedulerEdg(Scheduler):
             edg_ui_cfg_opt += ' --config-vo ' + self.edg_config_vo + ' '
         return edg_ui_cfg_opt
 
-    def submitTout(self, list):
+    def tOut(self, list):
         return 120
  
 

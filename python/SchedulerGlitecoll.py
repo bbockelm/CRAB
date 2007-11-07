@@ -5,7 +5,9 @@ class SchedulerGlitecoll(SchedulerGlite):
     def __init__(self):
         SchedulerGlite.__init__(self)
 
-    def submitTout(self, list):
-        return len(list[1])*60
-
+    def tOut(self, list):
+        if list != None:
+            return len(list[1])*60
+        else:
+            return 180
 

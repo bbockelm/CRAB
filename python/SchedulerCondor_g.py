@@ -831,6 +831,6 @@ class SchedulerCondor_g(Scheduler):
         self.proxyValid=1
         return
 
-    def submitTout(self, list):
+    def tOut(self, list):
         return 120
 

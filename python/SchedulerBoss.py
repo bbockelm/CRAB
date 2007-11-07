@@ -517,7 +517,7 @@ class SchedulerBoss(Scheduler):
             schcladstring=self.schclassad
         try:
 #            Tout = len(list[1])*120
-            Tout = int(self.boss_scheduler.submitTout(list))
+            Tout = int(self.boss_scheduler.tOut(list))
             self.bossTask.submit(string.join(jobsList,','), schcladstring, "", "" , "", Tout)
         except SchedulerError,e:
             common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
@@ -615,6 +615,7 @@ class SchedulerBoss(Scheduler):
         sched=[]
         kill=[]
         other=[]
+        Tout=180
 
         for i_id in int_id :
             if i_id not in allBoss_id:
@@ -629,7 +630,7 @@ class SchedulerBoss(Scheduler):
                 if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':   
                     check = 1
                     try:
-                        Tout =120 
+                        Tout = int(self.boss_scheduler.tOut(None)) * 3
                         self.bossTask.getOutput (str(boss_id), str(dir), Tout)
                         if logDir != dir:
                             try:
