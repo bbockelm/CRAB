@@ -459,9 +459,16 @@ class Crab:
                                        ncjobs)
                 self.actions[opt] = self.creator
 
-###########################################
-#               environmet swapping # Fabio
-###########################################
+               # ############################
+               #  environmet swapping 
+               #  N.B. CRAB is expected to works coherently with python version and lib
+               #  used by the UI, and it is able to manage the user env. re-organizing 
+               #  the paths according to its needed.    
+               #  Since the job creation require the CMSSW python API usage 
+               #  which need the  python2.4 (shipped with CMSSW), at the moment, 
+               #  and just for this functionality, if creation and submition are required together
+               #  CRAB prioritarize the CMSSW stuff first and then  re-set the environment.  DS.
+               # ############################
                 if '-submit' in opts:
                      os.putenv('PATH', os.environ['AUX_SUBM_PATH'])
                      os.putenv('PYTHONPATH', os.environ['AUX_SUBM_PY'])
@@ -471,6 +478,7 @@ class Crab:
                      #
                      dropOutPy23dynLoads()
                      pass 
+               # ############################
 
                 # Initialize the JobDB object if needed
                 if not self.flag_continue:
