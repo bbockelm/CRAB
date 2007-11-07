@@ -13,7 +13,6 @@ class JobType:
         self._params={}
         return
 
-    # ### Fabio
     def split(self, jobList):
         """
         Returns the list of jobtype specific attriute for each job
@@ -31,7 +30,6 @@ class JobType:
         Write the JobType specific Entres into JobDB
         """
         return
-    # ###
     
     def name(self):
         return self._name
@@ -60,16 +58,16 @@ class JobType:
         the execution environment and which is common for all CMS jobs.
         """
         txt = '\n'
-        txt += 'echo "### SETUP CMS ENVIRONMENT ###"\n'
+        txt += 'echo ">>> setup CMS environment:"\n'
         txt += '   echo "JOB_EXIT_STATUS = 0"\n'
         txt += 'if [ ! $VO_CMS_SW_DIR ] ;then\n'
         txt += '   echo "SET_CMS_ENV 10031 ==> ERROR CMS software dir not found on WN `hostname`"\n'
         txt += '   echo "JOB_EXIT_STATUS = 10031" \n'
         txt += '   echo "JobExitCode=10031" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '   dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '   rm -f $RUNTIME_AREA/$repo \n'
-        txt += '   echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '   echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        #txt += '   rm -f $RUNTIME_AREA/$repo \n'
+        #txt += '   echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        #txt += '   echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '   exit 1\n'
         txt += 'else\n'
         txt += '   echo "Sourcing environment... "\n'
@@ -78,9 +76,9 @@ class JobType:
         txt += '       echo "JOB_EXIT_STATUS = 10020"\n'
         txt += '       echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       rm -f $RUNTIME_AREA/$repo \n'
-        txt += '       echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '       echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        #txt += '       rm -f $RUNTIME_AREA/$repo \n'
+        #txt += '       echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        #txt += '       echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '       exit 1\n'
         txt += '   fi\n'
         txt += '   echo "sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
@@ -91,15 +89,14 @@ class JobType:
         txt += '       echo "JOB_EXIT_STATUS = 10032"\n'
         txt += '       echo "JobExitCode=10032" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '       dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '       rm -f $RUNTIME_AREA/$repo \n'
-        txt += '       echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '       echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        #txt += '       rm -f $RUNTIME_AREA/$repo \n'
+        #txt += '       echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+        #txt += '       echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '       exit 1\n'
         txt += '   fi\n'
         txt += 'fi\n'
         txt += '\n'
         txt += 'echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
-        txt += 'echo "### END SETUP CMS ENVIRONMENT ###"\n'
         return txt
     
     def wsSetupEnvironment(self, nj):

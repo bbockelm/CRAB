@@ -146,7 +146,6 @@ class ScriptWriter:
     #    txt = ''
     #    return txt
 
-    ### FEDE FOR DBS OUTPUT PUBLICATION 
     def modifyReport_(self):
         """
         Returns part of a job script which modifies the FrameworkJobReport.
@@ -155,7 +154,6 @@ class ScriptWriter:
         txt = jbt.modifyReport(self.nj)
         return txt
 
-    ### FEDE FOR DBS OUTPUT PUBLICATION 
     def cleanEnv_(self):
         """
         In OSG environment this function removes the WORKING_DIR
