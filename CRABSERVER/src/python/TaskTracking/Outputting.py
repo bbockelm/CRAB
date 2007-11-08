@@ -20,12 +20,11 @@ class Outputting:
 
     def add2Tar( self, path, fileList ):
         flag = 0
-        if not os.path.exists( self.tempTar ):
+#        if not os.path.exists( self.tempTar ):
             ## adding files to the archive ##
-            for file2Add in fileList:
-                os.popen("tar --append --file="+os.path.join(path,self.tempTar)+" "+str(file2Add))
-                #logging.info ("\nOUT "+str(out))
-                #logging.info ("\nOUT "+str(err))
+            #for file2Add in fileList:
+        os.popen("cd "+str(path)+" ; tar --append .tmpDone/* --file="+os.path.join(path,self.tempTar) ) 
+#            os.popen("tar --append "+str( os.path.join(path,".tmpDone") )+"/* --file="+os.path.join(path,self.tempTar))
         """
         import TaskTracking.itarfile as tarfile
         flag = 0
@@ -78,7 +77,7 @@ class Outputting:
         ## if note created try once more the cache dir
         if not os.path.exists('.tmpDone'):
             cmd = 'mkdir .tmpDone;'
-            os.system( cmd )
+            os.popen( cmd )
 
         ## if exists copy in cache
         if os.path.exists(path + ".tmpDone"):
@@ -93,15 +92,25 @@ class Outputting:
                 if not os.path.exists( os.path.join ( '.tmpDone/', self.xmlReportFileName ) ):
                     logging.info("   Impossible to copy the file " +self.tempxmlReportFile+ ": "+str(xmlCopied))
 
-                cmdListAll = "ls -Rd "+jtResDir+"/Success/Submission_*/*/*"
+                cmdListAll = "ls -Rd "+str( os.path.join(path,jtResDir) )+"/Success/Submission_*/*/*"
                 logging.info ("   Adding files to cache...")
+                allFiles = os.popen(cmdListAll).readlines()
+                import time
+                for tries in range(1, 3):
+                    if len(allFiles) == 0:
+                        time.sleep(3)
+                        allFiles = os.popen(cmdListAll).readlines()
+                    else:
+                        pass
                 flagFailed = 1
-                for file2Copy in os.popen(cmdListAll).readlines():
-                    logging.info ("      -> " +str( os.path.join(path, file2Copy[:-1]) ))
+                #logging.info ("Files found with: " +str(cmdListAll) )
+                #logging.info( str(allFiles) )
+                flag = 1
+                for file2Copy in allFiles:
                     cmdCopy = "cp " +str( os.path.join(path, file2Copy[:-1]) ) + " " + str( os.path.join(path, ".tmpDone/") ) +";"
-                    #logging.info("\n\n\nCopying: "+ str( cmdCopy ) )
                     os.popen(cmdCopy).readlines()
                     flag = 0
+
                 if flagFailed:
                     if os.path.exists('./'+jtResDir+'/Failed/'):
                         if len(os.listdir('./'+jtResDir+'/Failed/')) > 0:
@@ -110,9 +119,9 @@ class Outputting:
                             except Exception, ex:
                                 logging.info( str(ex) )
                             file2Copy = None
-                            cmdListAll = "ls -Rd "+jtResDir+"/Failed/Submission_"+str(failIndex)+"/*/*"
+                            cmdListAll = "ls -Rd "+str( os.path.join(path,jtResDir) )+"/Failed/Submission_"+str(failIndex)+"/*/*"
                             for file2Copy in os.popen(cmdListAll).readlines():
-                                logging.info ("      -> " +str( os.path.join(path, file2Copy[:-1]) ))
+                                #logging.info ("      -> " +str( os.path.join(path, file2Copy[:-1]) ))
                                 cmdCopy = "cp " +str( os.path.join(path, file2Copy[:-1]) ) + " " + str( os.path.join(path, ".tmpDone/") ) +";"
                                 os.popen(cmdCopy).readlines()
 
@@ -131,22 +140,22 @@ class Outputting:
         if os.path.exists(path+'/.tmpDone/'):
             #pass
             cmd = 'rm -drf '+path+'/.tmpDone/;'
-            os.system( cmd )
+            os.popen( cmd )
 
     def cleanjobEndedCache( self, path ):
         if os.path.exists( os.path.join(path, self.jobEndedCache) ):
             cmd = 'rm -f ' + str( os.path.join(path, self.jobEndedCache) )
-            os.system( cmd )
+            os.popen( cmd )
          
     def deleteTempTar( self, path ):
         if os.path.exists(path+self.tempTar):
             cmd = 'rm -f '+path+self.tempTar
-            os.system( cmd )
+            os.popen( cmd )
 
     def prepareGunzip( self, path ):
         cmd = 'gzip -c ' + path + '/' + self.tempTar + ' > ' + path + self.tempTarball + '; '
         cmd += 'mv ' + path + self.tempTarball + ' ' + path + self.tarball + ' ;'
-        os.system( cmd )
+        os.popen( cmd )
 
     def getList ( self, path, fileName ):
         if os.path.exists( path + fileName ):
@@ -192,10 +201,10 @@ class Outputting:
 
         self.add2List( path, self.jobEndedCache, jobs2Write )
         logging.info("path = " +str(path)+ " - taskName: " +str(taskName)+ " - nJob: " +str(nJob)+ " - jobs2Write: " +str(jobs2Write) )
-#        writingPatch = []
-#        for jobber in range(1, nJob+1):
-#            writingPatch.append(jobber)
-        fileList = self.prepareTempDir( path, jobs2Write ) #writingPatch) #jobs2Write )
+        #writingPatch = []
+        #for jobber in range(1, nJob+1):
+        #    writingPatch.append(jobber)
+        fileList = self.prepareTempDir( path, jobs2Write )
 
         if fileList != None:
             logging.info("Adding to tar file...")
