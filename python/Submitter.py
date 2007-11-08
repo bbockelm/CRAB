@@ -219,8 +219,7 @@ class Submitter(Actor):
 
         except:
             exctype, value = sys.exc_info()[:2]
-            print "Type: %s Value: %s"%(exctype, value)
-            common.logger.message("Submitter::run Exception raised: %s %s"%(exctype, value))
+            common.logger.message("Submission problem: %s %s"%(exctype, value))
             common.jobDB.save()
         
         stop = time.time()
