@@ -387,7 +387,9 @@ class CreateXmlJobReport:
 	file = open(filename_tmp, 'w')
 	xml.dom.ext.PrettyPrint(self.doc, file)
 	file.close()
-	os.rename(filename_tmp, filename) # this should be an atomic operation thread-safe and multiprocess-safe
+        command_rename = "mv "+str(filename_tmp)+" "+str(filename)+";"
+        os.popen( command_rename )  # this should be an atomic operation thread-safe and multiprocess-safe
+#	os.rename(filename_tmp, filename) # this should be an atomic operation thread-safe and multiprocess-safe
 
     #------------------------------------------------------------------------
     def fromFile(self, filename):
