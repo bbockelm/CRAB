@@ -22,7 +22,7 @@ if [ -z "$CMSSW_VERSION" ]; then
   echo ''
   echo 'crab Error: Could not find CMSSW environment' 
   echo '      Please before use crab setup:' 
-  echo '      eval `scram runtime -c|sh` ' 
+  echo '      eval `scramv1 runtime -c|sh` ' 
 else
 # prepare the environment # Fabio
   eval `python $CRABPYTHON/unfoldEnv.py $*`
