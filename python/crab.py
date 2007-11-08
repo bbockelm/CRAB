@@ -32,7 +32,7 @@ import common
 import Statistic
 from BlackWhiteListParser import BlackWhiteListParser
 
-# from BossSession import *
+from BossSession import *
 
 #modified to support server mode
 #from SubmitterServer import SubmitterServer
