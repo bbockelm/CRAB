@@ -16,10 +16,10 @@ prog_version = (1, 5, 4)
 prog_version_str=`prog_version[0]`+'.'+`prog_version[1]`+'.'+`prog_version[2]`
 prog_authors = [
     ['Stefano Lacaprara', 'Stefano.Lacaprara@pd.infn.it', 'INFN/LNL'],
-    ['Federica Fanzago' , 'Federica.Fanzago@pd.infn.it' , 'INFN/Padova'],
+    ['Federica Fanzago' , 'Federica.Fanzago@cern.ch' , 'CERN/CNAF'],
     ['Daniele Spiga'  , 'Daniele.Spiga@pg.infn.it'  , 'INFN/Perugia'],
     ['Alessandra Fanfani'  , 'Alessandra.Fanfani@bo.infn.it'  , 'INFN/Bologna'],
-    ['Marco Corvo'      , 'Marco.Corvo@pd.infn.it'      , 'INFN/Padova'],
+    ['Marco Corvo'      , 'Marco.Corvo@cern.ch'      , 'CERN/CNAF'],
     ['Oliver Gutsche'  , 'Oliver.Gutsche@fnal.gov'  , 'FNAL'],
     ]
 
