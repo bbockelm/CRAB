@@ -52,8 +52,8 @@ class Cmssw(JobType):
         a = string.split(self.version, "_")
 
         if int(a[1]) == 1 and (int(a[2]) < 5 and self.executable_arch.find('slc4') == 0):
-            msg = "Error: CMS does not support %s with %s architecture"%(self.version, self.executable_arch)
-            raise CrabException(msg)
+            msg = "Warning: You are using %s version of CMSSW  with %s architecture. \n--> Did you compile your libraries with SLC3? Otherwise you can find some problems running on SLC4 Grid nodes.\n"%(self.version, self.executable_arch)
+            common.logger.message(msg)
         if int(a[1]) == 1 and (int(a[2]) >= 5 and self.executable_arch.find('slc3') == 0):
             msg = "Error: CMS does not support %s with %s architecture"%(self.version, self.executable_arch)
             raise CrabException(msg)
