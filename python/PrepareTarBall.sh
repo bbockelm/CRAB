@@ -3,7 +3,7 @@
 ### $1 is the tag value CRAB_X_X_X ###
 ### the second argument is the BOSS version: 4_3_4-sl3-sl4 (for DBS2 publication)###
 if [ $# -lt 1 ]; then
-  echo "Usage: `basename $0` <CRAB_X_Y_Z> <BOSS X_Y_Z>"
+  echo "Usage: `basename $0` <CRAB_X_Y_Z> <X_Y_Z (number of BOSS version)>"
   exit 1
 fi
 tag=$1
@@ -11,8 +11,8 @@ boss_version=$2
 echo "tag = $tag"
 
 #CRABdir="${tag}_dbsdls"
-CRABdir="$tag"
-echo "CRABDIR = $CRABDIR"
+CRABdir=$tag
+echo "CRABDIR = $CRABdir"
 CRABtag=$tag
 DBSAPItag="DBS_1_0_7"
 DLSAPItag="DLS_1_0_0"
@@ -26,9 +26,9 @@ export CVSROOT=${CVSrepo}"/CMSSW"
 #configure_dbsdls=configure_dbsdls
 ## download CRAB from CVS and cleanup the code a bit
 echo ">> downloading CRAB tag $CRABtag from CVS CRAB"
+cvs co -r $CRABtag -d $CRABdir CRAB
 #echo ">> downloading CRAB HEAD from CVS CRAB"
-#cvs co -r $CRABtag -d $CRABdir CRAB
-cvs co -d $CRABdir CRAB
+#cvs co -d $CRABdir CRAB
 cd $CRABdir
 cvs up -P python/BossScript 
 chmod -x python/crab.py
