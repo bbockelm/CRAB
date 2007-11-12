@@ -620,9 +620,12 @@ class SchedulerCondor_g(Scheduler):
         xml.write(str(title))
 
         #First check the X509_USER_PROXY. In not there use the default
-        try:     
-            x509=os.path.expandvars('X509_USER_PROXY')
-        except: 
+        try:
+            x509=os.environ['X509_USER_PROXY']
+        except Exception, ex:
+            import traceback
+            common.logger.debug( 6, str(ex) )
+            common.logger.debug( 6, traceback.format_exc() )
             x509_cmd = 'ls /tmp/x509up_u`id -u`'
             x509=runCommand(x509_cmd).strip()
         xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + str(x509) + '">\n')

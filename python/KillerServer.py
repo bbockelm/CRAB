@@ -31,10 +31,12 @@ class KillerServer(Actor):
         #common.taskDB.save()
 
         ### Here start the kill operation  
-
-        try:     
-            x509=os.path.expandvars('X509_USER_PROXY')
-        except: 
+        try:
+            x509=os.environ['X509_USER_PROXY']
+        except Exception, ex:
+            import traceback
+            common.logger.debug( 6, str(ex) )
+            common.logger.debug( 6, traceback.format_exc() )
             x509_cmd = 'ls /tmp/x509up_u`id -u`'
             x509=runCommand(x509_cmd).strip()
         pSubj = os.popen3('openssl x509 -in '+str(x509)+' -subject -noout')[1].readlines()[0]
