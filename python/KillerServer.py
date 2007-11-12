@@ -31,7 +31,13 @@ class KillerServer(Actor):
         #common.taskDB.save()
 
         ### Here start the kill operation  
-        pSubj = os.popen3('openssl x509 -in /tmp/x509up_u`id -u` -subject -noout')[1].readlines()[0]
+
+        try:     
+            x509=os.path.expandvars('X509_USER_PROXY')
+        except: 
+            x509_cmd = 'ls /tmp/x509up_u`id -u`'
+            x509=runCommand(x509_cmd).strip()
+        pSubj = os.popen3('openssl x509 -in '+str(x509)+' -subject -noout')[1].readlines()[0]
        
         try: 
             self.cfile = xml.dom.minidom.Document()

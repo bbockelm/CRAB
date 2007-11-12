@@ -618,10 +618,13 @@ class SchedulerCondor_g(Scheduler):
         taskName = dir[len(dir)-2]
 
         xml.write(str(title))
-        #xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + os.environ["X509_USER_PROXY"] + '">\n')
-       # xml.write('<task name="' +str(taskName)+'" sub_path="' + common.work_space.bossCache() + '">\n')
-        x509_cmd = 'ls /tmp/x509up_u`id -u`'
-        x509=runCommand(x509_cmd).strip()
+
+        #First check the X509_USER_PROXY. In not there use the default
+        try:     
+            x509=os.path.expandvars('X509_USER_PROXY')
+        except: 
+            x509_cmd = 'ls /tmp/x509up_u`id -u`'
+            x509=runCommand(x509_cmd).strip()
         xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + str(x509) + '">\n')
         xml.write(jt_string)
 

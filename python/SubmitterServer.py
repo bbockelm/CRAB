@@ -96,7 +96,13 @@ class SubmitterServer(Actor):
         self.cfg_params['apmon'].sendToML(params)
 
         ### Here start the server submission 
-        pSubj = os.popen3('openssl x509 -in /tmp/x509up_u`id -u` -subject -noout')[1].readlines()[0]
+
+        try:     
+            x509=os.path.expandvars('X509_USER_PROXY')
+        except: 
+            x509_cmd = 'ls /tmp/x509up_u`id -u`'
+            x509=runCommand(x509_cmd).strip()
+        pSubj = os.popen3('openssl x509 -in '+str(x509)+' -subject -noout')[1].readlines()[0]
        
         userSubj='userSubj'
         userSubjFile = open(common.work_space.shareDir()+'/'+userSubj,'w')
