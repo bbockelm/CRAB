@@ -16,11 +16,16 @@ prog_version = (2, 0, 2)
 prog_version_str=`prog_version[0]`+'.'+`prog_version[1]`+'.'+`prog_version[2]`
 prog_authors = [
     ['Stefano Lacaprara', 'Stefano.Lacaprara@pd.infn.it', 'INFN/LNL'],
-    ['Federica Fanzago' , 'Federica.Fanzago@pd.infn.it' , 'INFN/Padova'],
-    ['Daniele Spiga'  , 'Daniele.Spiga@pg.infn.it'  , 'INFN/Perugia'],
-    ['Alessandra Fanfani'  , 'Alessandra.Fanfani@bo.infn.it'  , 'INFN/Bologna'],
-    ['Marco Corvo'      , 'Marco.Corvo@pd.infn.it'      , 'INFN/Padova'],
-    ['Oliver Gutsche'  , 'Oliver.Gutsche@fnal.gov'  , 'FNAL'],
+    ['Daniele Spiga', 'Daniele.Spiga@pg.infn.it', 'INFN/Perugia'],
+    ['Alvise Dorigo', 'Alvise.Dorigo@pd.infn.it', 'INFN/Padova'],
+    ['Mattia Cinquilli', 'Mattia.Cinquilli@cern.ch', 'INFN/Perugia'],
+    ['Marco Corvo', 'Marco.Corvo@cern.ch', 'CERN/CNAF'],
+    ['Alessandra Fanfani', 'Alessandra.Fanfani@bo.infn.it', 'INFN/Bologna'],
+    ['Federica Fanzago', 'Federica.Fanzago@cern.ch' , 'CERN/CNAF'],
+    ['Fabio Farina', 'fabio.farina@cern.ch', 'INFN/Milano Bicocca'],
+    ['Carlos Kafka', 'Carlos.Kavka@ts.infn.it', 'INFN/Trieste'],
+    ['Matteo Merlo'  , 'merloma@gmail.com', 'INFN/Milano Bicocca'],
+    ['Eric Vaandering', 'ewv@fnal.gov', 'FNAL'],
     ]
 
 ###########################################################################
