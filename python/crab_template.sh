@@ -40,7 +40,7 @@ function cmscp {
   fi
 
 ## do the actual copy
-  opt=" -report ./srmcp.report "
+  opt=" -report ./srmcp.report -streams_num=1 "
   opt="${opt} -retry_timeout 480000"
 
   copy_exit_status=1
