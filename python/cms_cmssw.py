@@ -1264,6 +1264,7 @@ class Cmssw(JobType):
         txt = '    echo ">>> setup CMS OSG environment:"\n'
         txt += '    echo "set SCRAM ARCH to ' + self.executable_arch + '"\n'
         txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
+        txt += '    echo "SCRAM_ARCH = $SCRAM_ARCH"\n'
         txt += '    if [ -f $OSG_APP/cmssoft/cms/cmsset_default.sh ] ;then\n'
         txt += '      # Use $OSG_APP/cmssoft/cms/cmsset_default.sh to setup cms software\n'
         txt += '        source $OSG_APP/cmssoft/cms/cmsset_default.sh '+self.version+'\n'
@@ -1288,6 +1289,7 @@ class Cmssw(JobType):
         txt += '    fi\n'
         txt += '\n'
         txt += '    echo "SET_CMS_ENV 0 ==> setup cms environment ok"\n'
+        txt += '    echo "SCRAM_ARCH = $SCRAM_ARCH"\n'
 
         return txt
 
