@@ -210,11 +210,11 @@ class SchedulerCondor_g(Scheduler):
         # Provide an override for the batchsystem that condor_g specifies as a grid resource.
         # this is to handle the case where the site supports several batchsystem but bdii
         # only allows a site to public one.
-	try:
+        try:
            self.batchsystem = cfg_params['CONDORG.batchsystem']
            msg = '[Condor-G Scheduler]: batchsystem overide specified in your crab.cfg'
            common.logger.debug(2,msg)
-	except KeyError: self.batchsystem = ''
+        except KeyError: self.batchsystem = ''
         self.register_data = 0
 
         # check if one and only one entry is in $CE_WHITELIST
@@ -322,12 +322,7 @@ class SchedulerCondor_g(Scheduler):
         txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
         txt += 'echo "middleware discovery: " \n'
-        txt += 'if [ $GRID3_APP_DIR ]; then\n'
-        txt += '    middleware=OSG \n'
-        txt += '    echo "SyncCE=`echo $OSG_JOB_CONTACT`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '    echo ">>> middleware =$middleware" \n'
-        txt += 'elif [ $OSG_APP ]; then \n'
+        txt += 'if [ $OSG_APP ]; then \n'
         txt += '    middleware=OSG \n'
         txt += '    echo "SyncCE=`echo $GLOBUS_GRAM_JOB_CONTACT | cut -d/ -f3 | cut -d: -f1`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'

@@ -46,21 +46,21 @@ class SchedulerEdg(Scheduler):
             self.group = cfg_params["EDG.group"]
         except KeyError:
             self.group = None
-            
+
         try:
             self.role = cfg_params["EDG.role"]
         except KeyError:
             self.role = None
-            
+
         #try: self.LCG_version = cfg_params["EDG.lcg_version"]
         #except KeyError: self.LCG_version = '2'
 
-        try: 
+        try:
             self.EDG_ce_black_list = cfg_params['EDG.ce_black_list']
-        except KeyError: 
+        except KeyError:
             self.EDG_ce_black_list  = ''
 
-        try: 
+        try:
             self.EDG_ce_white_list = cfg_params['EDG.ce_white_list']
         except KeyError: self.EDG_ce_white_list = ''
 
@@ -73,7 +73,7 @@ class SchedulerEdg(Scheduler):
         try: self.return_data = cfg_params['USER.return_data']
         except KeyError: self.return_data = 0
 
-        try: 
+        try:
             self.copy_data = cfg_params["USER.copy_data"]
             if int(self.copy_data) == 1:
                 try:
@@ -84,20 +84,20 @@ class SchedulerEdg(Scheduler):
                     msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
                     common.logger.message(msg)
                     raise CrabException(msg)
-        except KeyError: self.copy_data = 0 
+        except KeyError: self.copy_data = 0
 
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
-           msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n' 
-           msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n' 
+           msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
+           msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n'
            raise CrabException(msg)
 
         if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
            msg = 'Error: return_data and copy_data cannot be set both to 1\n'
-           msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n' 
+           msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
            raise CrabException(msg)
 
         ########### FEDE FOR DBS2 ##############################
-        try: 
+        try:
             self.publish_data = cfg_params["USER.publish_data"]
             self.checkProxy()
             if int(self.publish_data) == 1:
@@ -113,16 +113,16 @@ class SchedulerEdg(Scheduler):
                     for t in tmp:
                         if reCN.match(t):
                             self.UserGridName=string.strip((t.replace('CN=','')).replace(' ',''))
-                        
+
                     #self.UserGridName = string.strip(runCommand("voms-proxy-info -identity | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'"))
                 except:
                     msg = "Error. Problem with voms-proxy-info -identity command"
                     raise CrabException(msg)
-        except KeyError: self.publish_data = 0 
+        except KeyError: self.publish_data = 0
 
         if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
-           msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n' 
-           msg = msg + 'Please modify copy_data value in your crab.cfg file\n' 
+           msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
+           msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
            common.logger.message(msg)
            raise CrabException(msg)
         #################################################
@@ -148,8 +148,8 @@ class SchedulerEdg(Scheduler):
         #    msg = msg + " it's necessary to know the home catalog dir"
         #    common.logger.message(msg)
         #    raise CrabException(msg)
-      
-        #try: 
+
+        #try:
         #    self.register_data = cfg_params["USER.register_data"]
         #    if int(self.register_data) == 1:
         #        try:
@@ -162,8 +162,8 @@ class SchedulerEdg(Scheduler):
         #except KeyError: self.register_data = 0
 
         #if ( int(self.copy_data) == 0 and int(self.register_data) == 1 ):
-        #   msg = 'Warning: register_data = 1 must be used with copy_data = 1\n' 
-        #   msg = msg + 'Please modify copy_data value in your crab.cfg file\n' 
+        #   msg = 'Warning: register_data = 1 must be used with copy_data = 1\n'
+        #   msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
         #   common.logger.message(msg)
         #   raise CrabException(msg)
 
@@ -205,12 +205,12 @@ class SchedulerEdg(Scheduler):
 
         try: self.jobtypeName = cfg_params['CRAB.jobtype']
         except KeyError: self.jobtypeName = ''
- 
+
         try: self.schedulerName = cfg_params['CRAB.scheduler']
         except KeyError: self.scheduler = ''
 
         return
-    
+
 
     def rb_configure(self, RB):
         self.edg_config = ''
@@ -225,7 +225,7 @@ class SchedulerEdg(Scheduler):
             self.rb_param_file = 'RBconfig = "'+self.edg_config+'";\nRBconfigVO = "'+self.edg_config_vo+'";\n'
             #print "rb_param_file = ", self.rb_param_file
         return self.rb_param_file
-       
+
 
     def sched_parameter(self):
         """
@@ -234,7 +234,7 @@ class SchedulerEdg(Scheduler):
         index = int(common.jobDB.nJobs()) - 1
         job = common.job_list[index]
         jbt = job.type()
-        
+
         lastBlock=-1
         first = []
         for n in range(common.jobDB.nJobs()):
@@ -242,10 +242,10 @@ class SchedulerEdg(Scheduler):
             if (currBlock!=lastBlock):
                 lastBlock = currBlock
                 first.append(n)
-  
+
         req = ''
         req = req + jbt.getRequirements()
-    
+
         if self.EDG_requirements:
             if (req == ' '):
                 req = req + self.EDG_requirements
@@ -264,7 +264,7 @@ class SchedulerEdg(Scheduler):
                 else:
                     req = req +  ' || (RegExp("' +  string.strip(ce_white_list[i]) + '", other.GlueCEUniqueId))'
             req = req + ')'
-        
+
         if self.EDG_ce_black_list:
             ce_black_list = string.split(self.EDG_ce_black_list,',')
             for ce in ce_black_list:
@@ -284,7 +284,7 @@ class SchedulerEdg(Scheduler):
                 req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
             else:
                 req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
-                 
+
         for i in range(len(first)): # Add loop DS
             groupReq = req
             self.param='sched_param_'+str(i)+'.clad'
@@ -293,16 +293,16 @@ class SchedulerEdg(Scheduler):
             itr4=self.findSites_(first[i])
             for arg in itr4:
                 groupReq = groupReq + ' && anyMatch(other.storage.CloseSEs, ('+str(arg)+'))'
-            param_file.write('Requirements = '+groupReq +';\n')   
-   
+            param_file.write('Requirements = '+groupReq +';\n')
+
             if (self.rb_param_file != ''):
-                param_file.write(self.rb_param_file)   
+                param_file.write(self.rb_param_file)
 
             if len(self.EDG_addJdlParam):
                 for p in self.EDG_addJdlParam:
                     param_file.write(p)
 
-            param_file.close()   
+            param_file.close()
 
 
     def wsSetupEnvironment(self):
@@ -328,17 +328,7 @@ class SchedulerEdg(Scheduler):
         txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
         txt += 'echo "middleware discovery: " \n'
-        txt += 'if [ $GRID3_APP_DIR ]; then\n'
-        txt += '    middleware=OSG \n'
-        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
-        txt += '        SyncCE="$OSG_JOB_CONTACT"; \n'
-        txt += '        echo "SyncCE=$SyncCE" | tee -a $RUNTIME_AREA/$repo ;\n'
-        txt += '    else\n'
-        txt += '        echo "not reporting SyncCE";\n'
-        txt += '    fi\n';
-        txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '    echo ">>> middleware =$middleware" \n'
-        txt += 'elif [ $OSG_APP ]; then \n'
+        txt += 'if [ $OSG_APP ]; then \n'
         txt += '    middleware=OSG \n'
         txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
         txt += '        SyncCE="$OSG_JOB_CONTACT"; \n'
@@ -363,11 +353,11 @@ class SchedulerEdg(Scheduler):
         txt += 'fi \n'
 
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
-        
+
         txt += '\n\n'
 
         txt += 'export VO='+self.VO+'\n'
-        txt += 'if [ $middleware == LCG ]; then\n' 
+        txt += 'if [ $middleware == LCG ]; then\n'
         txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
         txt += '    echo "CloseCEs = $CloseCEs"\n'
         txt += '    CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
@@ -382,19 +372,19 @@ class SchedulerEdg(Scheduler):
         txt += '        dumpStatus $RUNTIME_AREA/$repo \n'
         txt += '        exit 1 \n'
         txt += '    fi \n'
-        txt += 'fi \n' 
+        txt += 'fi \n'
 
         return txt
 
     def wsCopyInput(self):
         """
-        Copy input data from SE to WN     
+        Copy input data from SE to WN
         """
         txt = ''
         if not self.copy_input_data: return txt
 
         ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
-        txt += 'if [ $middleware == OSG ]; then\n' 
+        txt += 'if [ $middleware == OSG ]; then\n'
         txt += '   #\n'
         txt += '   #   Copy Input Data from SE to this WN deactivated in OSG mode\n'
         txt += '   #\n'
@@ -403,7 +393,7 @@ class SchedulerEdg(Scheduler):
         txt += '   #\n'
         txt += '   #   Copy Input Data from SE to this WN\n'
         txt += '   #\n'
-        ### changed by georgia (put a loop copying more than one input files per jobs)           
+        ### changed by georgia (put a loop copying more than one input files per jobs)
         txt += '   for input_file in $cur_file_list \n'
         txt += '   do \n'
         txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
@@ -430,8 +420,8 @@ class SchedulerEdg(Scheduler):
         txt += '   \n'
         txt += '   ### Check SCRATCH space available on WN : \n'
         txt += '   df -h \n'
-        txt += 'fi \n' 
-           
+        txt += 'fi \n'
+
         return txt
 
     def wsCopyOutput(self):
@@ -459,9 +449,9 @@ class SchedulerEdg(Scheduler):
                 SE_PATH = SE_PATH + path_add
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
-            
+
             txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
-            
+
             txt += 'if [ $output_exit_status -eq 60302 ]; then\n'
             txt += '    echo "--> No output file to copy to $SE"\n'
             txt += '    copy_exit_status=$output_exit_status\n'
@@ -511,7 +501,7 @@ class SchedulerEdg(Scheduler):
         return cmd_out
 
     def findSites_(self, n):
-        itr4 =[] 
+        itr4 =[]
 
         sites = common.jobDB.destination(n)
 
@@ -519,19 +509,19 @@ class SchedulerEdg(Scheduler):
             return itr4
 
         itr = ''
-        if sites != [""]:#CarlosDaniele 
+        if sites != [""]:#CarlosDaniele
             ##Addedd Daniele
             replicas = self.blackWhiteListParser.checkBlackList(sites,n)
             if len(replicas)!=0:
                 replicas = self.blackWhiteListParser.checkWhiteList(replicas,n)
-              
+
             if len(replicas)==0:
                 itr = itr + 'target.GlueSEUniqueID=="NONE" '
                 #msg = 'No sites remaining that host any part of the requested data! Exiting... '
                 #raise CrabException(msg)
-            #####         
-           # for site in sites: 
-            for site in replicas: 
+            #####
+           # for site in sites:
+            for site in replicas:
                 #itr = itr + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
                 itr = itr + 'target.GlueSEUniqueID=="'+site+'" || '
             itr = itr[0:-4]
@@ -539,7 +529,7 @@ class SchedulerEdg(Scheduler):
         return itr4
 
     def createXMLSchScript(self, nj, argsList):
-       
+
         """
         Create a XML-file for BOSS4.
         """
@@ -558,17 +548,17 @@ class SchedulerEdg(Scheduler):
         [end] FIX-ME
         """
 
-        
+
         title = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
         jt_string = ''
-        
+
         xml_fname = str(self.jobtypeName)+'.xml'
         xml = open(common.work_space.shareDir()+'/'+xml_fname, 'a')
 
-        #TaskName   
+        #TaskName
         dir = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
-  
+
         to_write = ''
 
         req=' '
@@ -591,7 +581,7 @@ class SchedulerEdg(Scheduler):
                 else:
                     req = req +  ' || (RegExp("' + ce_white_list[i] + '", other.GlueCEUniqueId))'
             req = req + ')'
-        
+
         if self.EDG_ce_black_list:
             ce_black_list = string.split(self.EDG_ce_black_list,',')
             for ce in ce_black_list:
@@ -611,28 +601,28 @@ class SchedulerEdg(Scheduler):
                 req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
             else:
                 req = req + ' && other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
-                                                                                           
-        if ( self.EDG_retry_count ):               
+
+        if ( self.EDG_retry_count ):
             to_write = to_write + 'RetryCount = "'+self.EDG_retry_count+'"\n'
             pass
 
-        if ( self.EDG_shallow_retry_count ):               
+        if ( self.EDG_shallow_retry_count ):
             to_write = to_write + 'ShallowRetryCount = "'+self.EDG_shallow_retry_count+'"\n'
             pass
 
         to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
         to_write = to_write + 'VirtualOrganisation = "&quot;' + self.VO + '&quot;"\n'
 
-        #TaskName   
+        #TaskName
         dir = string.split(common.work_space.topDir(), '/')
         taskName = dir[len(dir)-2]
 
         xml.write(str(title))
 
         #First check the X509_USER_PROXY. In not there use the default
-        try:     
+        try:
             x509=os.environ['X509_USER_PROXY']
-        except Exception, ex: 
+        except Exception, ex:
             import traceback
             common.logger.debug( 6, str(ex) )
             common.logger.debug( 6, traceback.format_exc() )
@@ -640,7 +630,7 @@ class SchedulerEdg(Scheduler):
             x509=runCommand(x509_cmd).strip()
         xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + str(x509) + '">\n')
         xml.write(jt_string)
-        
+
         if (to_write != ''):
             xml.write('<extraTags\n')
             xml.write(to_write)
@@ -664,8 +654,8 @@ class SchedulerEdg(Scheduler):
         '''
         indy: here itr4
         '''
-        
-        xml.write('<chain name="' +str(taskName)+'__ITR1_" scheduler="'+str(self.schedulerName)+'">\n') 
+
+        xml.write('<chain name="' +str(taskName)+'__ITR1_" scheduler="'+str(self.schedulerName)+'">\n')
        # xml.write('<chain scheduler="'+str(self.schedulerName)+'">\n')
         xml.write(jt_string)
 
@@ -674,7 +664,7 @@ class SchedulerEdg(Scheduler):
         """
         INDY
         script depends on jobType: it should be probably get in a different way
-        """        
+        """
         script = job.scriptFilename()
         xml.write('<program>\n')
         xml.write('<exec> ' + os.path.basename(script) +' </exec>\n')
@@ -700,14 +690,14 @@ class SchedulerEdg(Scheduler):
         if inp_box[-1] == ',' : inp_box = inp_box[:-1]
         inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
         xml.write(inp_box)
-        
+
         base = jbt.name()
         stdout = base + '__ITR3_.stdout'
         stderr = base + '__ITR3_.stderr'
-        
+
         xml.write('<stderr> ' + stderr + '</stderr>\n')
         xml.write('<stdout> ' + stdout + '</stdout>\n')
-        
+
 
         out_box = stdout + ',' + \
                   stderr + ',.BrokerInfo,'
@@ -742,7 +732,7 @@ class SchedulerEdg(Scheduler):
         if out_box[-1] == ',' : out_box = out_box[:-1]
         out_box = '<outfiles> <![CDATA[\n' + out_box + '\n]]></outfiles>\n'
         xml.write(out_box)
- 
+
         xml.write('<BossAttr> crabjob.INTERNAL_ID=_ITR1_ </BossAttr>\n')
 
         xml.write('</program>\n')
@@ -752,7 +742,7 @@ class SchedulerEdg(Scheduler):
         xml.write('</task>\n')
 
         xml.close()
-       
+
 
         return
 
@@ -829,7 +819,7 @@ class SchedulerEdg(Scheduler):
                     pass
                 pass
             pass
-        
+
         # if not, create one.
         if renewProxy:
             cmd = 'myproxy-init -d -n -s '+self.proxyServer
@@ -846,11 +836,11 @@ class SchedulerEdg(Scheduler):
         edg_ui_cfg_opt = ' '
         if self.edg_config:
             edg_ui_cfg_opt = ' -c ' + self.edg_config + ' '
-        if self.edg_config_vo: 
+        if self.edg_config_vo:
             edg_ui_cfg_opt += ' --config-vo ' + self.edg_config_vo + ' '
         return edg_ui_cfg_opt
 
     def tOut(self, list):
         return 120
- 
+
 
