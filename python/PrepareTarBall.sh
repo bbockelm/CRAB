@@ -10,13 +10,11 @@ tag=$1
 boss_version=$2
 echo "tag = $tag"
 
-#CRABdir="${tag}_dbsdls"
 CRABdir=$tag
 echo "CRABDIR = $CRABdir"
 CRABtag=$tag
 DBSAPItag="DBS_1_0_7"
 DLSAPItag="DLS_1_0_0"
-#PAAPItag="HEAD"
 PAAPItag="PRODAGENT_0_2_1"
 PRODCOMMONtag="PRODCOMMON_0_3_0"
 

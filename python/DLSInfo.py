@@ -9,15 +9,15 @@ import dlsApi
 import dlsClient
 from dlsDataObjects import DlsLocation, DlsFileBlock, DlsEntry
                                                                                             
-## for python 2.2 add the pyexpat.so to PYTHONPATH
-pythonV=sys.version.split(' ')[0]
-if pythonV.find('2.2') >= 0 :
-    Crabpydir=commands.getoutput('which crab')
-    Topdir=string.replace(Crabpydir,'/python/crab','')
-    extradir=Topdir+'/DLSAPI/extra'
-    if sys.path.count(extradir) <= 0:
-         if os.path.exists(extradir):
-            sys.path.insert(0, extradir)
+# ## for python 2.2 add the pyexpat.so to PYTHONPATH
+# pythonV=sys.version.split(' ')[0]
+# if pythonV.find('2.2') >= 0 :
+#     Crabpydir=commands.getoutput('which crab')
+#     Topdir=string.replace(Crabpydir,'/python/crab','')
+#     extradir=Topdir+'/DLSAPI/extra'
+#     if sys.path.count(extradir) <= 0:
+#          if os.path.exists(extradir):
+#             sys.path.insert(0, extradir)
 
 
 class DLSError:
@@ -48,31 +48,7 @@ class DLSNoReplicas(exceptions.Exception):
 class DLSInfo:
     def __init__(self, type, cfg_params):
         self.cfg_params = cfg_params
-        if type=="DLS_TYPE_DLI":
-            try:
-                endpoint=self.cfg_params['CMSSW.dls_endpoint']
-            except KeyError:
-                endpoint="prod-lfc-cms-central.cern.ch/grid/cms/DLS/LFC"
-
-            try:
-                import xml.dom.ext.reader
-            except:
-                crabdir=os.getenv('CRABDIR')
-## Let the  user set up PyXML by hand
-                msg="There is no setup of PyXML python module required by DLS (DLI). Do the following:\n"
-                msg+=" - check that in  %s/configure  the function configureDLSAPI is not commented \n"%crabdir
-                msg+=" - uncomment it and re-run the configuration :"
-                msg+="\n    cd %s\n"%crabdir
-                msg+="     ./configure\n"
-                msg+="     source crab.(c)sh\n"
-                raise CrabException(msg)
-
-        elif type=="DLS_TYPE_MYSQL":
-            try:
-                endpoint=self.cfg_params['CMSSW.dls_endpoint']
-            except KeyError:
-                endpoint="lxgate10.cern.ch:18081"
-        elif type=="DLS_TYPE_DBS":
+        if type=="DLS_TYPE_DBS":
             #
             # use dbs_url as dls_endpoint if dls_type is dbs
             #

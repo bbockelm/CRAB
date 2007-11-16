@@ -363,25 +363,9 @@ The name of the executable to be run on remote WN. The default is cmsrun. The ex
 
 =item I<DBS and DLS parameters:>
 
-=item B<use_dbs_1>
-
-To use DBS1 instead of default DBS2
-
 =item B<dbs_url>
 
-The URL of the DBS query page. For expert only. (both DBS1 and DBS2)
-
-=item B<dbs_instance>
-
-The instance of DBS to be accessed at a given URL. For expert only. For DBS1 only.
-
-=item B<dls_type>
-
-Type of DLS: can be DLI or mysql. For expert only. For DBS1 only
-
-=item B<dls_endpoint>
-
-Access point for DLS. For expert only. For DBS1 only
+The URL of the DBS query page. For expert only.
 
 =back
 

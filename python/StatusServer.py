@@ -4,8 +4,8 @@ import common
 from ApmonIf import ApmonIf
 import Statistic
 import time
-from ProgressBar import ProgressBar
-from TerminalController import TerminalController
+# from ProgressBar import ProgressBar
+# from TerminalController import TerminalController
 
 import xml.dom.minidom
 import xml.dom.ext

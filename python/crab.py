@@ -871,18 +871,9 @@ class Crab:
                
             ### FEDE DBS/DLS OUTPUT PUBLICATION 
             elif ( opt == '-publish' ):
-                from DBS2Publisher import Publisher
+                from Publisher import Publisher
                 self.actions[opt] = Publisher(self.cfg_params)
 
-                #precessedData=self.cfg_params['USER.publish_data_name']
-                #self.cfg_params['USER.processed_datasetname']
-                #thePublisher = Publisher(self.cfg_params)
-                # publish_exit_status = thePublisher.publish()
-                # if (publish_exit_status == '1'):
-                #     common.logger.message("user data publication --> problems")
-                # else:
-                #     common.logger.message("user data publication --> ok ")
-                #########################################
             pass
         return
 

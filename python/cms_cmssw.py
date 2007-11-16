@@ -63,12 +63,6 @@ class Cmssw(JobType):
 
         ### collect Data cards
 
-        ## get DBS mode
-        try:
-            self.use_dbs_1 = int(self.cfg_params['CMSSW.use_dbs_1'])
-        except KeyError:
-            self.use_dbs_1 = 0
-
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
             log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
@@ -92,12 +86,8 @@ class Cmssw(JobType):
                 datasetpath_split = self.datasetPath.split("/")
                 # standard style
                 self.setParam_('datasetFull', self.datasetPath)
-                if self.use_dbs_1 == 1 :
-                    self.setParam_('dataset', datasetpath_split[1])
-                    self.setParam_('owner', datasetpath_split[-1])
-                else:
-                    self.setParam_('dataset', datasetpath_split[1])
-                    self.setParam_('owner', datasetpath_split[2])
+                self.setParam_('dataset', datasetpath_split[1])
+                self.setParam_('owner', datasetpath_split[2])
             except:
                 self.setParam_('dataset', self.datasetPath)
                 self.setParam_('owner', self.datasetPath)
@@ -328,7 +318,6 @@ class Cmssw(JobType):
     def DataDiscoveryAndLocation(self, cfg_params):
 
         import DataDiscovery
-        import DataDiscovery_DBS2
         import DataLocation
         common.logger.debug(10,"CMSSW::DataDiscoveryAndLocation()")
 
@@ -338,10 +327,7 @@ class Cmssw(JobType):
         common.logger.message("Contacting Data Discovery Services ...")
         try:
 
-            if self.use_dbs_1 == 1 :
-                self.pubdata=DataDiscovery.DataDiscovery(datasetPath, cfg_params)
-            else :
-                self.pubdata=DataDiscovery_DBS2.DataDiscovery_DBS2(datasetPath, cfg_params)
+            self.pubdata=DataDiscovery.DataDiscovery(datasetPath, cfg_params)
             self.pubdata.fetchDBSInfo()
 
         except DataDiscovery.NotExistingDatasetError, ex :
@@ -351,15 +337,6 @@ class Cmssw(JobType):
             msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
             raise CrabException(msg)
         except DataDiscovery.DataDiscoveryError, ex:
-            msg = 'ERROR ***: failed Data Discovery in DBS :  %s'%ex.getErrorMessage()
-            raise CrabException(msg)
-        except DataDiscovery_DBS2.NotExistingDatasetError_DBS2, ex :
-            msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
-            raise CrabException(msg)
-        except DataDiscovery_DBS2.NoDataTierinProvenanceError_DBS2, ex :
-            msg = 'ERROR ***: failed Data Discovery in DBS : %s'%ex.getErrorMessage()
-            raise CrabException(msg)
-        except DataDiscovery_DBS2.DataDiscoveryError_DBS2, ex:
             msg = 'ERROR ***: failed Data Discovery in DBS :  %s'%ex.getErrorMessage()
             raise CrabException(msg)
 
