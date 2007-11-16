@@ -629,17 +629,11 @@ class Cmssw(JobType):
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
             ## Since there is no input, any site is good
-           # self.jobDestination.append(["Any"])
             self.jobDestination.append([""]) #must be empty to write correctly the xml
             args=[]
             if (self.firstRun):
-                    ## pythia first run
-                #self.list_of_args.append([(str(self.firstRun)+str(i))])
+                ## pythia first run
                 args.append(str(self.firstRun)+str(i))
-            else:
-                ## no first run
-                #self.list_of_args.append([str(i)])
-                args.append(str(i))
             if (self.sourceSeed):
                 args.append(str(self.sourceSeed)+str(i))
                 if (self.sourceSeedVtx):
