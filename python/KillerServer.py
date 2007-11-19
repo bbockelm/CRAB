@@ -3,7 +3,6 @@ from Actor import *
 from crab_util import *
 
 import xml.dom.minidom
-import xml.dom.ext
 
 class KillerServer(Actor):
     # Matteo for kill by range
@@ -12,10 +11,6 @@ class KillerServer(Actor):
         self.range = range
         self.parsedRange = parsedRange 
         return
-
-#    def __init__(self, cfg_params):
-#        self.cfg_params = cfg_params
-#        return
 
     def run(self):
         """
@@ -27,9 +22,6 @@ class KillerServer(Actor):
         server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
         WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
         projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict('TasKUUID')
-        #common.taskDB.load()
-        #common.taskDB.setDict('projectName',projectUniqName)
-        #common.taskDB.save()
 
         ### Here start the kill operation  
         try:
@@ -82,6 +74,11 @@ class KillerServer(Actor):
     def toFile(self, filename):
         filename_tmp = filename+".tmp"
         file = open(filename_tmp, 'w')
-        xml.dom.ext.PrettyPrint(self.cfile, file)
+        # Fix for minidom # Fabio
+            # xml.dom.ext.PrettyPrint(self.cfile, file)
+        file.write(self.cfile.toprettyxml())
+        #
         file.close()
         os.rename(filename_tmp, filename) # this should be an atomic operation thread-safe and multiprocess-safe
+
+

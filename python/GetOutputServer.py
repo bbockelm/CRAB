@@ -8,7 +8,6 @@ from ProgressBar import ProgressBar
 from TerminalController import TerminalController
 
 import xml.dom.minidom
-import xml.dom.ext
 
 class GetOutputServer(Actor):
  
@@ -66,10 +65,10 @@ class GetOutputServer(Actor):
 	    cmd_out = runCommand(cmd)
 
             try:
-                file = open(common.work_space.resDir()+"xmlReportFile.xml", "r")
+                # file = open(common.work_space.resDir()+"xmlReportFile.xml", "r")
                 doc = xml.dom.minidom.parse(common.work_space.resDir()+ "xmlReportFile.xml" )
 
-                task     = doc.childNodes[0].childNodes[1].getAttribute("taskName")
+                task = doc.childNodes[0].childNodes[1].getAttribute("taskName")
                 self.countToTjob = int(doc.childNodes[0].childNodes[1].getAttribute("totJob") )
 
                 ended = doc.childNodes[0].childNodes[1].getAttribute("ended")

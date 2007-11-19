@@ -8,7 +8,6 @@ import time
 # from TerminalController import TerminalController
 
 import xml.dom.minidom
-import xml.dom.ext
 import TaskDB
 
 class StatusServer(Actor):
@@ -92,7 +91,7 @@ class StatusServer(Actor):
             raise CrabException(msg)
 
         try:     
-            file = open(common.work_space.resDir()+"xmlReportFile.xml", "r")
+            # file = open(common.work_space.resDir()+"xmlReportFile.xml", "r")
             doc = xml.dom.minidom.parse(common.work_space.resDir()+ "xmlReportFile.xml" )
         
         except: 
@@ -103,7 +102,7 @@ class StatusServer(Actor):
 
         ###  <Job status='Submitted' job_exit='NULL' id='1' exe_exit='NULL'/>
 
-        task     = doc.childNodes[0].childNodes[1].getAttribute("taskName")
+        task = doc.childNodes[0].childNodes[1].getAttribute("taskName")
         self.countToTjob = int(doc.childNodes[0].childNodes[1].getAttribute("totJob") )
        
         addTree = 3

@@ -7,9 +7,6 @@ import time
 from ProgressBar import ProgressBar
 from TerminalController import TerminalController
 
-import xml.dom.minidom
-import xml.dom.ext
-
 class PostMortemServer(Actor):
  
     def __init__(self, cfg_params,):

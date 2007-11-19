@@ -18,7 +18,6 @@ import select
 import fcntl
 
 import xml.dom.minidom
-import xml.dom.ext
 
 class SubmitterServer(Actor):
     def __init__(self, cfg_params, parsedRange, nominalRange):
@@ -101,10 +100,15 @@ class SubmitterServer(Actor):
         except Exception, ex:
             import traceback
             common.logger.debug( 6, str(ex) )
-         #   to be back ported to python2.3  
-         #   common.logger.debug( 6, traceback.format_exc() )
-            x509_cmd = 'ls /tmp/x509up_u`id -u`'
-            x509=runCommand(x509_cmd).strip()
+            # traceback fix # Fabio
+            t,v,tb = sys.exc_info()
+            tbPrintout = traceback.format_exception(t, v, tb)
+            for l in tbPrintout:
+                 common.logger.debug(6, l)
+            #
+            x509 = runCommand('ls /tmp/x509up_u`id -u`').strip()
+            pass
+
         pSubj = os.popen3('openssl x509 -in '+str(x509)+' -subject -noout')[1].readlines()[0]
        
         userSubj='userSubj'
@@ -251,7 +255,10 @@ class SubmitterServer(Actor):
             root.appendChild(node)
             self.cfile.appendChild(root)
             file = open(WorkDirName + '/share/command.xml', 'w')
-            xml.dom.ext.PrettyPrint(self.cfile, file)
+            # minidom fix # Fabio 
+                    #xml.dom.ext.PrettyPrint(self.cfile, file)
+            file.write(self.cfile.toprettyxml())
+            #
             file.close()
             
             cmd = 'lcg-cp --vo cms file://'+os.getcwd()+'/'+str(WorkDirName)+'/share/command.xml gsiftp://' + str(server_name) + str(projectUniqName)+'.xml'
