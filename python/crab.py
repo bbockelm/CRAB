@@ -3,7 +3,8 @@ import sys, os, time, string, commands
 
 ## pre-import env configuratin steps
 def dropOutPy23dynLoads():
-    if '-create' not in sys.argv:
+    # FEDE added -publish
+    if not ('-create' in sys.argv or '-publish' in sys.argv):
         return
     for p in sys.path:
         if p.find( "python2.3/lib-dynload" ) != -1 :

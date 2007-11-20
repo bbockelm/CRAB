@@ -22,13 +22,13 @@ if 'BASH' in os.environ:
 # -create -submit special case: first part # Fabio
 cachedPath = os.environ['PATH']
 cachedPyPath = os.environ['PYTHONPATH']
-if '-create' in sys.argv:
+### FEDE added -publish 
+if '-create' or '-publish' in sys.argv:
     reverseList.remove('PATH')
     reverseList.remove('PYTHONPATH')
     preserveList = preserveList + ['PATH', 'PYTHONPATH']  
 #
 #
-
 # extract the env setting introduced by scram
 curDir = os.getcwd() 
 os.chdir(str(os.environ['CMSSW_BASE'])+'/src')
@@ -98,7 +98,8 @@ print drop_out_cmd + unfold_cmd
 # reverse and export as AUXs both the PATH and the PYTHONPATH
 # this value will be used by crab.py whenever both -create and -submit are used 
 #
-if '-create' in sys.argv:
+### FEDE added -publish
+if '-create' or '-publish' in sys.argv:
      # PATH
      purgedList = [ i for i in cachedPath.split(':') if i not in pre_env['PATH'] ]
      purgedList = purgedList + pre_env['PATH'] 
