@@ -119,7 +119,9 @@ class PsetManipulator:
         """
         _addCrabFJR_
         add CRAB specific FrameworkJobReport (FJR)
-        if a FJR already exists in input CMSSW parameter-set, add a second one
+        if a FJR already exists in input CMSSW parameter-set, add a second one.
+        This code is not needed for CMSSW >= 1.5.x and is non-functional in CMSSW >= 1.7.x.
+        It should be removed at some point in the future.
         """
 
         # Check if MessageLogger service already exists in configuration. If not, add it

@@ -1076,7 +1076,7 @@ class Cmssw(JobType):
         if self.scriptExe:#CarlosDaniele
             return   self.scriptExe + " $NJob"
         else:
-            # if >= CMSSW_1_5_X, add -e
+            # if >= CMSSW_1_5_X, add -j crab_fjr.xml
             version_array = self.scram.getSWVersion().split('_')
             major = 0
             minor = 0
@@ -1087,7 +1087,7 @@ class Cmssw(JobType):
                 msg = "Cannot parse CMSSW version string: " + "_".join(version_array) + " for major and minor release number!"
                 raise CrabException(msg)
             if major >= 1 and minor >= 5 :
-                return " -e -p pset.cfg"
+                return " -j " + self.fjrFileName + " -p pset.cfg"
             else:
                 return " -p pset.cfg"
 
