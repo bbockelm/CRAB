@@ -13,9 +13,10 @@ class Cmssw(JobType):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
 
+        self.argsList = []
+
         self._params = {}
         self.cfg_params = cfg_params
-
         # init BlackWhiteListParser
         self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
 
@@ -369,6 +370,9 @@ class Cmssw(JobType):
 
         return sites
 
+    def setArgsList(self, argsList):
+        self.argsList = argsList
+
     def jobSplittingByBlocks(self, blockSites):
         """
         Perform job splitting. Jobs run over an integer number of files
@@ -650,8 +654,6 @@ class Cmssw(JobType):
             self.list_of_args.append(args)
         pass
 
-        # print self.list_of_args
-
         return
 
 
@@ -901,12 +903,11 @@ class Cmssw(JobType):
         txt += scram+' runtime -sh\n'
         txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
         txt += 'echo $PATH\n'
-
         # Handle the arguments:
         txt += "\n"
         txt += "## number of arguments (first argument always jobnumber)\n"
         txt += "\n"
-        txt += "if [ $nargs -lt 2 ]\n"
+        txt += "if [ $nargs -lt "+str(len(self.argsList[nj].split()))+" ]\n"
         txt += "then\n"
         txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$nargs+ \n"
         txt += '    echo "JOB_EXIT_STATUS = 50113"\n'

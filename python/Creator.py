@@ -22,7 +22,7 @@ class Creator(Actor):
         self.job_number_of_events = 0
         self.first_event = 0
         self.jobParamsList=[]
-
+     
         self.createJobTypeObject(ncjobs)
         common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
 
@@ -145,7 +145,6 @@ class Creator(Actor):
 
         # Loop over jobs
         argsList = []
-
         njc = 0
         block = -1 # first block is 0
         lastDest=''
@@ -159,12 +158,14 @@ class Creator(Actor):
             # Prepare configuration file
 
             self.job_type.modifySteeringCards(nj)
+
+            # Create XML script and declare related jobs
+            argsList.append( str(nj+1)+' '+ self.job_type.getJobTypeArguments(nj, self.cfg_params['CRAB.scheduler']) )
+            self.job_type.setArgsList(argsList)
+
             # Create script (sh)
             script_writer.modifyTemplateScript()
             os.chmod(common.taskDB.dict("ScriptName"), 0744)
-
-            # Create XML script and declare related jobs 
-            argsList.append( str(nj+1)+' '+ self.job_type.getJobTypeArguments(nj, self.cfg_params['CRAB.scheduler']) )
 
             common.jobDB.setStatus(nj, 'C')
             # common: write input and output sandbox
@@ -183,7 +184,6 @@ class Creator(Actor):
             common.jobDB.setBlock(nj,block)
             njc = njc + 1
             pass
-
         ####
         common.scheduler.createXMLSchScript(self.total_njobs, argsList)
         common.logger.message('Creating '+str(self.total_njobs)+' jobs, please wait...')
