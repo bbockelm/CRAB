@@ -36,8 +36,13 @@ class Publisher(Actor):
         #common.logger.message('processedData = '+self.processedData)
         self.resDir = common.work_space.resDir()
         #common.logger.message('resDir = '+self.resDir)
-        self.DBSURL=cfg_params['USER.dbs_url_for_publication']
-        common.logger.message('dbs url = '+self.DBSURL)
+        try:
+            self.DBSURL=cfg_params['USER.dbs_url_for_publication']
+            common.logger.message('dbs url = '+self.DBSURL)
+        except KeyError:
+            msg = "Error. The [USER] section does not have 'dbs_url_for_publication'"
+            msg = msg + " entry, necessary to publish the data"
+            raise CrabException(msg)
         self.datasetpath=cfg_params['CMSSW.datasetpath']
         #common.logger.message('datasetpath = '+self.datasetpath)
         self.SEName=''
