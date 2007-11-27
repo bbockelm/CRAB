@@ -15,9 +15,17 @@ if 'CMSSW_BASE' not in os.environ:
      print 'echo "CMSSW_BASE not set"' 
      sys.exit(-1)
 
-shKind = 'sh' # fix for wrapper shell, temporary #'csh' #Fabio
-if 'BASH' in os.environ:
+# identify the shell kind
+sout, sin, serr = popen2.popen3('echo $BASH')
+l = sout.readlines()[0]
+sout.close()
+sin.close()
+serr.close()
+
+if len(l)!=0: #'BASH' in os.environ:
     shKind = 'sh'
+else:
+    shKind = 'csh'
 
 # -create -submit special case: first part # Fabio
 cachedPath = os.environ['PATH']
@@ -50,10 +58,16 @@ outl = out.split(';')[:-1]
 
 pre_env = {}
 drop_out_cmd = ''
+fakePath = '' # needed for source ordering in -create # Fabio
+
 for e in outl:
-     v = e.strip()
-     k = str(v.split(' ')[0])
-     v = str(v.split(' ')[1].replace('"','')).split(':')
+     vl = e.strip()
+     k = str(vl.split(' ')[0])
+     v = str(vl.split(' ')[1].replace('"','')).split(':')
+
+     if k == 'PATH':
+         fakePath = vl.split(' ')[1].replace('"','')
+
      if 'SCRAMRT' not in k:
          pre_env[k] = []+v
      else:
@@ -100,6 +114,17 @@ print drop_out_cmd + unfold_cmd
 # this value will be used by crab.py whenever both -create and -submit are used 
 #
 if '-create' in sys.argv or '-publish' in sys.argv:
+     # source order bug # Fabio
+     # reproduce a PATH as lcg->cmssw would produce and compare it with the cachedPath
+     # if they differs then override the cached path with the prepared one (brute force ordering)
+     #
+     fakePath = fakePath[:-len(':$SCRAMRT_PATH')]
+     newPath = fakePath + cachedPath.replace(fakePath,'')
+     if shKind == 'sh':
+         print 'export PATH="%s";\n'%newPath
+     else:
+         print 'setenv PATH "%s";\n'%newPath
+
      # PATH
      purgedList = [ i for i in cachedPath.split(':') if i not in pre_env['PATH'] ]
      purgedList = purgedList + pre_env['PATH'] 
