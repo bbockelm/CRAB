@@ -1409,7 +1409,7 @@ class Cmssw(JobType):
         """
         check the dimension of the output files
         """
-        txt += 'echo ">>> Starting output sandbox limit check :"\n'
+        txt = 'echo ">>> Starting output sandbox limit check :"\n'
         allOutFiles = ""
         listOutFiles = []
         for fileOut in (self.output_file+self.output_file_sandbox):

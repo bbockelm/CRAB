@@ -273,6 +273,8 @@ echo "ExeTime=$TIME_EXE" | tee -a $RUNTIME_AREA/$repo
 
 #CRAB register_output
 
+#CRAB check_output_limit
+
 echo ">>> current dir: `pwd`"
 echo ">>> current dir content:"
 ls -Al
