@@ -168,7 +168,7 @@ class ScriptWriter:
         """
         txt = "\n"
         if self.output_troncate_flag == 1:
-            limit = 110000000 ##105 MB
+            limit = 55000000 ##105 MB
             jbt = common.job_list.type()
             txt = jbt.checkOut(limit)
         return txt
