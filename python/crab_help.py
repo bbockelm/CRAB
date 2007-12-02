@@ -395,19 +395,19 @@ The server will notify the specified e-mail when the task will reaches the speci
 
 =item B<return_data *>
 
-The output produced by the ORCA executable on WN is returned (via output sandbox) to the UI, by issuing the I<-getoutput> command. B<Warning>: this option should be used only for I<small> output, say less than 10MB, since the sandbox cannot accomodate big files. Depending on Resource Broker used, a size limit on output sandbox can be applied: bigger files will be truncated. To be used in alternative to I<copy_data>.
+The output produced by the executable on WN is returned (via output sandbox) to the UI, by issuing the I<-getoutput> command. B<Warning>: this option should be used only for I<small> output, say less than 10MB, since the sandbox cannot accomodate big files. Depending on Resource Broker used, a size limit on output sandbox can be applied: bigger files will be truncated. To be used in alternative to I<copy_data>.
 
 =item B<outputdir>
 
-To be used together with I<return_data>. Directory on user interface where to store the ORCA output. Full path is mandatory, "~/" is not allowed: the defaul location of returned output is ui_working_dir/res .
+To be used together with I<return_data>. Directory on user interface where to store the output. Full path is mandatory, "~/" is not allowed: the defaul location of returned output is ui_working_dir/res .
 
 =item B<logdir>
 
-To be used together with I<return_data>. Directory on user interface where to store the ORCA standard output and error. Full path is mandatory, "~/" is not allowed: the defaul location of returned output is ui_working_dir/res .
+To be used together with I<return_data>. Directory on user interface where to store the standard output and error. Full path is mandatory, "~/" is not allowed: the defaul location of returned output is ui_working_dir/res .
 
 =item B<copy_data *>
 
-The output (only the ORCA one, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recomended in case of large output.
+The output (only the one produced by the executable, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recomended in case of large output.
 
 =item B<storage_element>
 
