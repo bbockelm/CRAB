@@ -41,7 +41,7 @@ function cmscp {
 
 ## do the actual copy
   opt=" -report ./srmcp.report -streams_num=1 "
-  opt="${opt} -retry_timeout 480000"
+  opt="${opt} -retry_timeout 480000 -retry_num 3 "
 
   copy_exit_status=1
   destination=srm://${SE}:8443${SE_PATH}$out_file
