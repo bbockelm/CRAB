@@ -9,12 +9,12 @@ import Scram
 import os, string, glob
 
 class Cmssw(JobType):
-    def __init__(self, cfg_params, ncjobs ):
+    def __init__(self, cfg_params, ncjobs):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
 
         self.argsList = []
-        self.cfg_params = cfg_params
+
         self._params = {}
         self.cfg_params = cfg_params
         # init BlackWhiteListParser
@@ -1147,8 +1147,10 @@ class Cmssw(JobType):
             txt += '\n'
             txt += '# check output file\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
-            txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            #txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
+            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            #txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
             txt += 'else\n'
             txt += '    exit_status=60302\n'
             txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
@@ -1164,8 +1166,10 @@ class Cmssw(JobType):
             txt += '\n'
             txt += '# check output file\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
-            txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            #txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
+            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            #txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+            txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
             txt += 'else\n'
             txt += '    exit_status=60302\n'
             txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
