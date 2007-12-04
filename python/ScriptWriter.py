@@ -35,7 +35,6 @@ class ScriptWriter:
         self.nj = -1     # current job number
 
         self.output_troncate_flag = output_troncate_flag
-
         return
 
     def setAction(self, pattern, action):
@@ -168,7 +167,7 @@ class ScriptWriter:
         """
         txt = "\n"
         if self.output_troncate_flag == 1:
-            limit = 55000000 ##105 MB
+            limit = 55000000 ##52 MB
             jbt = common.job_list.type()
             txt = jbt.checkOut(limit)
         return txt

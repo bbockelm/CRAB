@@ -9,12 +9,12 @@ import Scram
 import os, string, glob
 
 class Cmssw(JobType):
-    def __init__(self, cfg_params, ncjobs):
+    def __init__(self, cfg_params, ncjobs ):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
 
         self.argsList = []
-
+        self.cfg_params = cfg_params
         self._params = {}
         self.cfg_params = cfg_params
         # init BlackWhiteListParser
@@ -1147,10 +1147,8 @@ class Cmssw(JobType):
             txt += '\n'
             txt += '# check output file\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-            #txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
-            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            #txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
+            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
+            txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'else\n'
             txt += '    exit_status=60302\n'
             txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
@@ -1166,10 +1164,8 @@ class Cmssw(JobType):
             txt += '\n'
             txt += '# check output file\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-            #txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
-            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            #txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
+            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
+            txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += 'else\n'
             txt += '    exit_status=60302\n'
             txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
@@ -1412,9 +1408,11 @@ class Cmssw(JobType):
         txt = 'echo ">>> Starting output sandbox limit check :"\n'
         allOutFiles = ""
         listOutFiles = []
+        txt += 'stdoutFile=`ls | grep *stdout` \n'
+        txt += 'stderrFile=`ls | grep *stderr` \n'
         for fileOut in (self.output_file+self.output_file_sandbox):
              if fileOut.find('crab_fjr') == -1:
-                 allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob')
+                 allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob') + " $stdoutFile $stderrFile"
                  listOutFiles.append(self.numberFile_(fileOut, '$NJob'))
         txt += 'echo "OUTPUT files: '+str(allOutFiles)+'";\n'
         txt += 'ls -gGhrta;\n'
@@ -1433,46 +1431,21 @@ class Cmssw(JobType):
         txt += 'if [ $limit -lt $sum ]; then\n'
         txt += '    echo "WARNING: output files have to big size - something will be lost;"\n'
         txt += '    echo "         checking the output file sizes..."\n'
-        """
-        txt += '    dim=0;\n'
-        txt += '    exclude=0;\n'
-        txt += '    for files in '+str(allOutFiles)+' ; do\n'
-        txt += '        sumTemp=0;\n'
-        txt += '        for file2 in '+str(allOutFiles)+' ; do\n'
-        txt += '            if [ $file != $file2 ]; then\n'
-        txt += '                tt=`ls -gGrta $file2 | awk \'{ print $3 }\';`\n'
-        txt += '                sumTemp=`expr $sumTemp + $tt`;\n'
-        txt += '            fi\n'
-        txt += '        done\n'
-        txt += '        if [ $sumTemp -lt $limit ]; then\n'
-        txt += '            if [ $dim -lt $sumTemp ]; then\n'
-        txt += '                dim=$sumTemp;\n'
-        txt += '                exclude=$file;\n'
-        txt += '            fi\n'
-        txt += '        fi\n'
-        txt += '    done\n'
-        txt += '    echo "Dimension calculated: $dim"; echo "File to exclude: $exclude";\n'
-        """
         txt += '    tot=0;\n'
-        txt += '    for file2 in '+str(allOutFiles)+' ; do\n'
-        txt += '        tt=`ls -gGrta $file2 | awk \'{ print $3 }\';`\n'
+        txt += '    for filefile in '+str(allOutFiles)+' ; do\n'
+        txt += '        dimFile=`ls -gGrta $filefile | awk \'{ print $3 }\';`\n'
         txt += '        tot=`expr $tot + $tt`;\n'
-        txt += '        if [ $limit -lt $tot ]; then\n'
-        txt += '            tot=`expr $tot - $tt`;\n'
-        txt += '            fileLast=$file;\n'
-        txt += '            break;\n'
+        txt += '        if [ $limit -lt $dimFile ]; then\n'
+        txt += '            echo "deleting file: $filefile";\n'
+        txt += '            rm -f $filefile\n'
+        txt += '        elif [ $limit -lt $tot ]; then\n'
+        txt += '            echo "deleting file: $filefile";\n'
+        txt += '            rm -f $filefile\n'
+        txt += '        else\n'
+        txt += '            echo "saving file: $filefile"\n'
         txt += '        fi\n'
         txt += '    done\n'
-        txt += '    echo "Dimension calculated: $tot"; echo "First file to exclude: $file";\n'
-        txt += '    flag=0;\n'
-        txt += '    for filess in '+str(allOutFiles)+' ; do\n'
-        txt += '        if [ $fileLast = $filess ]; then\n'
-        txt += '            flag=1;\n'
-        txt += '        fi\n'
-        txt += '        if [ $flag -eq 1 ]; then\n'
-        txt += '            rm -f $filess;\n'
-        txt += '        fi\n'
-        txt += '    done\n'
+
         txt += '    ls -agGhrt;\n'
         txt += '    echo "WARNING: output files are too big in dimension: can not put in the output_sandbox.";\n'
         txt += '    echo "JOB_EXIT_STATUS = 70000";\n'
