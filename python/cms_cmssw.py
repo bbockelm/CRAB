@@ -1138,7 +1138,7 @@ class Cmssw(JobType):
         txt = '\n'
         txt += 'echo" >>> directory content:"\n'
         txt += 'ls \n'
-        txt = '\n'
+        txt += '\n'
 
         txt += 'output_exit_status=0\n'
 
