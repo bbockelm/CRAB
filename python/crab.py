@@ -872,6 +872,8 @@ class Crab:
                
             ### FEDE DBS/DLS OUTPUT PUBLICATION 
             elif ( opt == '-publish' ):
+                if val != None:
+                    self.cfg_params['USER.dbs_url_for_publication'] = val
                 from Publisher import Publisher
                 self.actions[opt] = Publisher(self.cfg_params)
 
