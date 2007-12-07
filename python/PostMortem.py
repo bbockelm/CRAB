@@ -48,7 +48,7 @@ class PostMortem(Actor):
             else :
                 reason = out
 
-            common.logger.message('Logging info for job '+ str(id) +': '+reason+'\n      written to '+fname)
+            common.logger.message('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname) )
             
             # ML reporting
             jobId = ''
