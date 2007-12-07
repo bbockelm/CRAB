@@ -170,7 +170,7 @@ class SchedulerEdg(Scheduler):
         try: self.EDG_requirements = cfg_params['EDG.requirements']
         except KeyError: self.EDG_requirements = ''
 
-        try: self.EDG_addJdlParam = string.split(cfg_params['EDG.additional_jdl_parameters'],',')
+        try: self.EDG_addJdlParam = string.split(cfg_params['EDG.additional_jdl_parameters'],';')
         except KeyError: self.EDG_addJdlParam = []
 
         try: self.EDG_retry_count = cfg_params['EDG.retry_count']
@@ -299,8 +299,9 @@ class SchedulerEdg(Scheduler):
                 param_file.write(self.rb_param_file)
 
             if len(self.EDG_addJdlParam):
+                if self.EDG_addJdlParam[-1] == '': self.EDG_addJdlParam= self.EDG_addJdlParam[:-1] 
                 for p in self.EDG_addJdlParam:
-                    param_file.write(p)
+                    param_file.write(string.strip(p)+';\n')
 
             param_file.close()
 
