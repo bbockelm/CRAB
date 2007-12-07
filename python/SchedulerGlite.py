@@ -118,8 +118,9 @@ class SchedulerGlite(SchedulerEdg):
                 param_file.write(self.rb_param_file)
 
             if len(self.EDG_addJdlParam):
+                if self.EDG_addJdlParam[-1] == '': self.EDG_addJdlParam= self.EDG_addJdlParam[:-1] 
                 for p in self.EDG_addJdlParam:
-                    param_file.write(p)
+                    param_file.write(string.strip(p)+';\n')
 
             param_file.close()
 
