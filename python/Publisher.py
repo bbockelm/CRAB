@@ -58,7 +58,9 @@ class Publisher(Actor):
         self.CMSSW_VERSION=''
         self.exit_status=''
         self.time = time.strftime('%y%m%d_%H%M%S',time.localtime(time.time()))
-        self.emptyLFNs=[]
+        self.problemFiles=[]  
+        self.noEventsFiles=[]
+        self.noLFN=[]
         
     def importParentDataset(self,globalDBS, datasetpath):
         """
@@ -149,13 +151,19 @@ class Publisher(Actor):
         ### skip publication for 0 events files
         filestopublish=[]
         for file in jobReport.files:
-            if int(file['TotalEvents']) != 0 :
-                file.lumisections = {}
-                for ds in file.dataset:
-                    ds['ProcessedDataset']=procdataset
-                filestopublish.append(file)
+            #### added check for problem with copy to SE and empty lfn
+            if (string.find(file['LFN'], 'copy_problems') != -1):
+                self.problemFiles.append(file['LFN'])
+            elif (file['LFN'] == ''):
+                self.noLFN.append(file['PFN'])
             else:
-                self.emptyLFNs.append(file['LFN'])
+                if int(file['TotalEvents']) != 0 :
+                    file.lumisections = {}
+                    for ds in file.dataset:
+                        ds['ProcessedDataset']=procdataset
+                    filestopublish.append(file)
+                else:
+                    self.noEventsFiles.append(file['LFN'])
         jobReport.files = filestopublish
         ### if all files of FJR have number of events = 0
         if (len(filestopublish) == 0):
@@ -211,9 +219,17 @@ class Publisher(Actor):
                     common.logger.message("Close block error %s"%ex)
 
             common.logger.message("--->>> End files publication")
-            if (len(self.emptyLFNs)>0):
-                common.logger.message("--->>> WARNING: files not published because they contain 0 events are:")
-                for lfn in self.emptyLFNs:
+            if (len(self.noEventsFiles)>0):
+                common.logger.message("--->>> WARNING: "+str(len(self.noEventsFiles))+" files not published because they contain 0 events are:")
+                for lfn in self.noEventsFiles:
+                    common.logger.message("------ LFN: %s"%lfn)
+            if (len(self.noLFN)>0):
+                common.logger.message("--->>> WARNING: there are "+str(len(self.noLFN))+" files not published because they have empty LFN")
+                for pfn in self.noLFN:
+                    common.logger.message("------ pfn: %s"%pfn)
+            if (len(self.problemFiles)>0):
+                common.logger.message("--->>> WARNING: "+str(len(self.problemFiles))+" files not published because they had problem with copy to SE")
+                for lfn in self.problemFiles:
                     common.logger.message("------ LFN: %s"%lfn)
             return self.exit_status
 
