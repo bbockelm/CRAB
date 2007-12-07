@@ -1136,7 +1136,7 @@ class Cmssw(JobType):
         """
 
         txt = '\n'
-        txt += 'echo" >>> directory content:"\n'
+        txt += 'echo ">>> directory content:"\n'
         txt += 'ls \n'
         txt += '\n'
 
