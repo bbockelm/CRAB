@@ -6,7 +6,7 @@ Example of how to use the FwkJobRep package to update a job report post processi
 
 
 """
-import os
+import os, string
 import sys
 import popen2
 
@@ -202,17 +202,16 @@ if __name__ == '__main__':
        sys.exit(1)
     else:
         for f in report.files:
-
+            if (string.find(f['PFN'], ':') != -1):
+                tmp_path = string.split(f['PFN'], ':')
+                f['PFN'] = tmp_path[1]
+                #print f['PFN']
             if not os.path.exists(f['PFN']):
                 print "Error: Cannot find file: %s " % f['PFN']
                 sys.exit(1)
                 #continue
             #Generate per file stats
             addFileStats(f)
-
-            #if not os.path.exists(f['PFN']):
-            #    print "Error: Cannot find file: %s " % f['PFN']
-            #    continue
 
             datasetinfo=f.newDataset()
             datasetinfo['PrimaryDataset'] = PrimaryDataset 
@@ -222,7 +221,6 @@ if __name__ == '__main__':
             datasetinfo['ApplicationName'] = ApplicationName 
             datasetinfo['ApplicationVersion'] = CMSSW_VERSION 
             datasetinfo['PSetHash'] = PSETHASH
-            ### to understand and fill.....
             datasetinfo['PSetContent'] = "TOBEADDED"
             #  //
             # // Fake stage out to somese.host.com/path 
