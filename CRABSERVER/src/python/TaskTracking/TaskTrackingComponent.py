@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.49 2007/10/20 22:48:24 mcinquil Exp $"
-__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.50 2007/10/21 18:13:08 mcinquil Exp $"
+__version__ = "$Revision: 1.50 $"
 
 import os
 import time
@@ -1145,21 +1145,16 @@ class TaskTrackingComponent:
                                         sId = infoRunningJobs.get( 'SCHED_ID', None )
                                     del infoRunningJobs
 
-			    #if lower(self.args['jobDetail']) == "yes":
-                                #logging.info("STATUS = " + str(stato) + " - EXE_EXIT_CODE = "+ str(runInfoJob['EXE_EXIT_CODE']) + " - JOB_EXIT_STATUS = " + str(runInfoJob['JOB_EXIT_STATUS']) + " - resubmitting, MaxResub, Resub = " + str(TaskStateAPI.checkNSubmit( taskName, job )))
 			        vect = []
 			        if runInfoJob['EXE_EXIT_CODE'] == "NULL" and runInfoJob['JOB_EXIT_STATUS'] == "NULL":
    			            vect = [self.convertStatus(stato), "", "", 0, Resub, site]
 			        else:
                                     vect = [self.convertStatus(stato), runInfoJob['EXE_EXIT_CODE'], runInfoJob['JOB_EXIT_STATUS'], 0, Resub, site]
                                 dictStateTot.setdefault(job, vect)
-
-                                if taskName == "crab_QCD_470_600_32871300-3ff8-4457-b2ec-5fe608257398" and str(job) == "4":
-                                    logging.info( "\n\n\nGOT STRANGE JOB: "+str(stato)+" - " + str(runInfoJob['EXE_EXIT_CODE']) + " - " +str(runInfoJob['JOB_EXIT_STATUS']) + "\n\n\n")
  
                                 jobPartList = self.getJobFromFile(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir)
 			        if stato == "SE" or stato == "E":
-				    if runInfoJob['EXE_EXIT_CODE'] == "0" and runInfoJob['JOB_EXIT_STATUS'] == "0":
+				    if (runInfoJob['EXE_EXIT_CODE'] == "0" or runInfoJob['EXE_EXIT_CODE'] == "" or runInfoJob['EXE_EXIT_CODE'] == "NULL") and runInfoJob['JOB_EXIT_STATUS'] == "0":
 				        dictReportTot['JobSuccess'] += 1
 				        dictStateTot[job][3] = 1
                                         dictFinishedJobs.setdefault(job, 1)
