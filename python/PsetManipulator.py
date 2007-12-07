@@ -2,6 +2,7 @@
 
 import os
 import common
+import imp
 from crab_util import *
 from crab_exceptions import *
 from crab_logger import Logger
@@ -24,9 +25,26 @@ class PsetManipulator:
         #convert Pset
         from FWCore.ParameterSet.Config import include
         common.logger.debug(3,"PsetManipulator::__init__: PSet file = "+self.pset)
-        self.cfo = include(self.pset)
-        self.cfg = CfgInterface(self.cfo)
-
+        if (self.pset.endswith('py') or self.pset.endswith('pycfg') ):
+          handle = open(self.pset, 'r')
+          try:   # Nested form for Python < 2.5
+            try:
+              self.cfo = imp.load_source("pycfg", self.pset, handle)
+            except Exception, ex:
+              msg = "Your pycfg file is not valid python: %s" % str(ex)
+              raise CrabException(msg)
+          finally:
+              handle.close()
+          self.cfg = CfgInterface(self.cfo.process)
+        else:
+          try:
+            self.cfo = include(self.pset)
+            self.cfg = CfgInterface(self.cfo)
+          except Exception, ex:
+            msg =  "Your cfg file is not valid, %s\n" % str(ex)
+            msg += "  https://twiki.cern.ch/twiki/bin/view/CMS/CrabFaq#Problem_with_ParameterSet_parsin\n"
+            msg += "  may help you understand the problem."
+            raise CrabException(msg)
     def inputModule(self, source):
         """
         Set  vString Filenames key
