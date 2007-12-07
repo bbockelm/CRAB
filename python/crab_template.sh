@@ -16,13 +16,13 @@ function cmscp {
 ## output:
 ##      return 0 if all ok
 ##      return 1 if srmcp failed
-##      return 2 if file already exists in the SE 
+##      return 2 if file already exists in the SE
 ###########################
   if [ $# -le 4 ]; then
     echo -e "\t$0 usage:"
     echo -e "\t$0 source <remote SE> <remote SE PATH> <remote output file name> <grid env: LCG(default)|OSG>"
     exit 1
-  fi 
+  fi
   out_file=$1
   echo "out_file = $out_file"
   SE=$2
@@ -53,8 +53,14 @@ function cmscp {
       copy_exit_status=2
       StageOutExitStatusReason='file already exists'
   else
-      echo "start the copy the output to the $SE"
+      echo "Starting copy of the output to $SE, middleware is $middleware"
       cmd="srmcp $opt file:///`pwd`/$out_file $destination"
+      full_filename="$out_file"
+      if [ $middleware == OSG ]; then
+        echo "Copying directly from OSG worker node"
+        cmd="srmcp $opt file:///$SOFTWARE_DIR/$out_file $destination"
+        full_filename="$SOFTWARE_DIR/$out_file"
+      fi
       echo $cmd
       exitstring=`$cmd 2>&1`
       copy_exit_status=$?
@@ -64,8 +70,7 @@ function cmscp {
           remoteSize=`echo ${remoteMetadata[5]}| tr -d :`
           echo "--> remoteSize = $remoteSize"
           ## for local file
-          localFileSize=(`ls -l $out_file`)
-          localSize=${localFileSize[4]}
+          localSize=$(stat -c%s "$full_filename")
           echo "-->  localSize = $localSize"
           if [ $localSize != $remoteSize ]; then
               echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
@@ -75,7 +80,7 @@ function cmscp {
               echo "Problem copying $source to $destination with srmcp command"
               StageOutExitStatusReason='remote and local file dimension not match'
               echo "StageOutReport = `cat ./srmcp.report`"
-          fi  
+          fi
           StageOutExitStatusReason='copy ok with srm utils'
       else
           copy_exit_status=1
@@ -83,7 +88,7 @@ function cmscp {
           StageOutExitStatusReason=$exitstring
           echo "StageOutReport = `cat ./srmcp.report`"
       fi
-  fi  
+  fi
 
   if [ $copy_exit_status -eq 1 ]; then
       cmd="lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file $destination"
@@ -102,11 +107,11 @@ function cmscp {
           fi
       else
          StageOutExitStatusReason='copy ok with lcg utils'
-                                                                    
-      fi 
+
+      fi
 
   fi
-  
+
   ########## to use when new lcg-utils will be available and to improve ###########
   #if [ $copy_exit_status -eq 1 ]; then
   #    echo "Try the output copy using lcg-utils"
@@ -117,7 +122,7 @@ function cmscp {
   #    if [ $? -eq 0 ]; then
   #        echo "--> file already exists!!"
   #        copy_exit_status=2
-  #    else    
+  #    else
   #        cmd="lcg-cp -b -D srmv1 --vo cms file:$out_file $destination"
   #        echo $cmd
   #        exitstring=`$cmd 2>&1`
@@ -125,13 +130,13 @@ function cmscp {
   #        if [ $copy_exit_status -eq 0 ]; then
   #            lcg-ls -b -D srmv1 $destination
   #            if [ $? -eq 0 ]; then
-  #                copy_exit_status=0    
+  #                copy_exit_status=0
   #            else
   #                copy_exit_status=1
-  #            fi     
+  #            fi
   #        fi
   #    fi
-  #fi   
+  #fi
   ##################################################################
 
   echo "StageOutExitStatus = $copy_exit_status"
@@ -145,7 +150,7 @@ echo ">>> info for dashboard:"
 echo "***** Cat $1 *****"
 cat $1
 echo "***** End Cat jobreport *****"
-chmod a+x $RUNTIME_AREA/report.py 
+chmod a+x $RUNTIME_AREA/report.py
 $RUNTIME_AREA/report.py $(cat $1)
 rm -f $1
 echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $1
@@ -153,7 +158,7 @@ echo "MonitorID=`echo $MonitorID`" | tee -a $1
 }
 
 echo "Today is `date`"
-echo "Job submitted on host `hostname`" 
+echo "Job submitted on host `hostname`"
 uname -a
 echo ">>> current directory (RUNTIME_AREA): `pwd`"
 echo ">>> current directory content:"
@@ -169,7 +174,7 @@ echo ">>> tar zxvf MLfiles.tgz:"
 tar zxvf MLfiles.tgz
 if [ $? -ne 0 ]; then
     echo "Warning: Failed to untar ML files"
-fi    
+fi
 
 #
 # SETUP ENVIRONMENT
@@ -198,17 +203,17 @@ fi
 # COPY INPUT
 #
 
-#CRAB copy_input 
+#CRAB copy_input
 
 echo ">>> Executable $executable"
 which $executable
 res=$?
-if [ $res -ne 0 ];then 
-  echo "SET_EXE 1 ==> ERROR executable not found on WN `hostname`" 
+if [ $res -ne 0 ];then
+  echo "SET_EXE 1 ==> ERROR executable not found on WN `hostname`"
   echo "JOB_EXIT_STATUS = 50110"
   echo "JobExitStatus=50110" | tee -a $RUNTIME_AREA/$repo
   dumpStatus $RUNTIME_AREA/$repo
-  exit 
+  exit
 fi
 
 echo "SET_EXE 0 ==> ok executable found"
@@ -226,17 +231,17 @@ echo ">>> Parse FrameworkJobReport crab_fjr.xml"
 if [ -s crab_fjr.xml ]; then
     # check for ProdAgentApi in pwd
     if [ -d ProdAgentApi ]; then
-	# check for parseCrabFjr.xml in $RUNTIME_AREA
-	if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
-	    cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
-	    echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
-	    executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
-	    echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"
-	else
-	    echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
-	fi
+        # check for parseCrabFjr.xml in $RUNTIME_AREA
+        if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
+            cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
+            echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
+            executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
+            echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"
+        else
+            echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
+        fi
     else
-	echo "ProdAgent api to parse CRAB FrameworkJobreport crab_fjr.xml is not available, using exit code of executable from command line."
+        echo "ProdAgent api to parse CRAB FrameworkJobreport crab_fjr.xml is not available, using exit code of executable from command line."
     fi
 else
     echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
@@ -269,7 +274,7 @@ echo "ExeTime=$TIME_EXE" | tee -a $RUNTIME_AREA/$repo
 
 #CRAB rename_output
 
-#CRAB copy_output 
+#CRAB copy_output
 
 #CRAB register_output
 
@@ -285,7 +290,7 @@ ls -Al
 # END OF PROCESS THE PRODUCED RESULTS
 #
 
-#CRAB clean_env 
+#CRAB clean_env
 
 echo "JobExitCode=$exit_status" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo

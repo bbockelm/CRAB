@@ -266,6 +266,17 @@ class Cmssw(JobType):
             import PsetManipulator as pp
             PsetEdit = pp.PsetManipulator(self.pset) #Daniele Pset
 
+        # Copy/return
+
+        try:
+            self.copy_data = int(cfg_params['USER.copy_data'])
+        except KeyError:
+            self.copy_data = 0
+        try:
+            self.return_data = int(cfg_params['USER.return_data'])
+        except KeyError:
+            self.return_data = 0
+
         #DBSDLS-start
         ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code
         self.maxEvents=0  # max events available   ( --> check the requested nb. of evts in Creator.py)
@@ -1166,10 +1177,14 @@ class Cmssw(JobType):
             txt += '\n'
             txt += '# check output file\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-            #txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
-            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            #txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
+            if (self.copy_data == 1):  # For OSG nodes, file is in $WORKING_DIR, should not be moved to $RUNTIME_AREA
+                txt += '    mv '+fileWithSuffix+' '+output_file_num+'\n'
+                txt += '    ln -s `pwd`/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
+            else:
+                #txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
+                txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+                #txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+                txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
             txt += 'else\n'
             txt += '    exit_status=60302\n'
             txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
