@@ -23,11 +23,13 @@ function cmscp {
     echo -e "\t$0 source <remote SE> <remote SE PATH> <remote output file name> <grid env: LCG(default)|OSG>"
     exit 1
   fi
-  out_file=$1
-  echo "out_file = $out_file"
+  path_out_file=$1
+  #out_file=$1
+  echo "path_out_file = $path_out_file"
   SE=$2
   SE_PATH=$3
-  remoteFile=$4
+  #remoteFile=$4
+  name_out_file=$4
   middleware='LCG'
   if [ $# == 5 ]; then
     middleware=$5
@@ -44,7 +46,8 @@ function cmscp {
   opt="${opt} -retry_timeout 480000 -retry_num 3 "
 
   copy_exit_status=1
-  destination=srm://${SE}:8443${SE_PATH}$out_file
+  #destination=srm://${SE}:8443${SE_PATH}$out_file
+  destination=srm://${SE}:8443${SE_PATH}$name_out_file
   echo "destination = $destination"
 
   echo "--> Check if the file already exists in the storage element $SE"
@@ -54,13 +57,14 @@ function cmscp {
       StageOutExitStatusReason='file already exists'
   else
       echo "Starting copy of the output to $SE, middleware is $middleware"
-      cmd="srmcp $opt file:///`pwd`/$out_file $destination"
-      full_filename="$out_file"
-      if [ $middleware == OSG ]; then
-        echo "Copying directly from OSG worker node"
-        cmd="srmcp $opt file:///$SOFTWARE_DIR/$out_file $destination"
-        full_filename="$SOFTWARE_DIR/$out_file"
-      fi
+      #cmd="srmcp $opt file:///`pwd`/$out_file $destination"
+      cmd="srmcp $opt file:///$path_out_file $destination"
+      #full_filename="$out_file"
+      #if [ $middleware == OSG ]; then
+      #  echo "Copying directly from OSG worker node"
+      #  cmd="srmcp $opt file:///$SOFTWARE_DIR/$out_file $destination"
+      #  full_filename="$SOFTWARE_DIR/$out_file"
+      #fi
       echo $cmd
       exitstring=`$cmd 2>&1`
       copy_exit_status=$?
@@ -70,33 +74,38 @@ function cmscp {
           remoteSize=`echo ${remoteMetadata[5]}| tr -d :`
           echo "--> remoteSize = $remoteSize"
           ## for local file
-          localSize=$(stat -c%s "$full_filename")
+          #localSize=$(stat -c%s "$full_filename")
+          localSize=$(stat -c%s "$path_out_file")
           echo "-->  localSize = $localSize"
           if [ $localSize != $remoteSize ]; then
               echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
               echo "Copy failed: removing remote file $destination"
               srm-advisory-delete $destination
               copy_exit_status=1
-              echo "Problem copying $source to $destination with srmcp command"
+              #echo "Problem copying $source to $destination with srmcp command"
+              echo "Problem copying $path_out_file to $destination with srmcp command"
               StageOutExitStatusReason='remote and local file dimension not match'
               echo "StageOutReport = `cat ./srmcp.report`"
           fi
           StageOutExitStatusReason='copy ok with srm utils'
       else
           copy_exit_status=1
-          echo "Problem copying $source to $destination with srmcp command"
+          #echo "Problem copying $source to $destination with srmcp command"
+          echo "Problem copying $path_out_file to $destination with srmcp command"
           StageOutExitStatusReason=$exitstring
           echo "StageOutReport = `cat ./srmcp.report`"
       fi
   fi
 
   if [ $copy_exit_status -eq 1 ]; then
-      cmd="lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file $destination"
+      #cmd="lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file $destination"
+      cmd="lcg-cp --vo $VO -t 2400 --verbose file://$path_out_file $destination"
       echo $cmd
       exitstring=`$cmd 2>&1`
       copy_exit_status=$?
       if [ $copy_exit_status -ne 0 ]; then
-          echo "Problem copying $source to $destination with lcg-cp command"
+          #echo "Problem copying $source to $destination with lcg-cp command"
+          echo "Problem copying $path_out_file to $destination with lcg-cp command"
           StageOutExitStatusReason=$exitstring
           cmd="echo $StageOutExitStatusReason | grep exists"
           tmpstring=`$cmd 2>&1`

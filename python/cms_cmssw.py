@@ -1147,7 +1147,8 @@ class Cmssw(JobType):
         """
 
         txt = '\n'
-        txt += 'echo ">>> directory content:"\n'
+        txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
+        txt += 'echo ">>> current directory content:"\n'
         txt += 'ls \n'
         txt += '\n'
 
@@ -1158,9 +1159,7 @@ class Cmssw(JobType):
             txt += '\n'
             txt += '# check output file\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-            #txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
             txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            #txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
             txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
             txt += 'else\n'
             txt += '    exit_status=60302\n'
@@ -1181,9 +1180,7 @@ class Cmssw(JobType):
                 txt += '    mv '+fileWithSuffix+' '+output_file_num+'\n'
                 txt += '    ln -s `pwd`/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
             else:
-                #txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA\n'
                 txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-                #txt += '    cp $RUNTIME_AREA/'+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
                 txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
             txt += 'else\n'
             txt += '    exit_status=60302\n'
@@ -1201,6 +1198,11 @@ class Cmssw(JobType):
              file_list.append(self.numberFile_(fileWithSuffix, '$NJob'))
 
         txt += 'file_list="'+string.join(file_list,' ')+'"\n'
+        txt = '\n'
+        txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
+        txt += 'echo ">>> current directory content:"\n'
+        txt += 'ls \n'
+        txt += '\n'
         txt += 'cd $RUNTIME_AREA\n'
         txt += 'echo ">>> current directory (RUNTIME_AREA):  $RUNTIME_AREA"\n'
         return txt
@@ -1429,10 +1431,13 @@ class Cmssw(JobType):
         listOutFiles = []
         txt += 'stdoutFile=`ls | grep *stdout` \n'
         txt += 'stderrFile=`ls | grep *stderr` \n'
-        for fileOut in (self.output_file+self.output_file_sandbox):
-             if fileOut.find('crab_fjr') == -1:
-                 allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob') + " $stdoutFile $stderrFile"
-                 listOutFiles.append(self.numberFile_(fileOut, '$NJob'))
+        if (self.return_data == 1):
+            for fileOut in (self.output_file+self.output_file_sandbox):
+                allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob') + " $stdoutFile $stderrFile"
+        else:             
+            for fileOut in (self.output_file_sandbox):
+                txt += 'echo " '+fileOut+'";\n'
+                allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob') + " $stdoutFile $stderrFile"
         txt += 'echo "OUTPUT files: '+str(allOutFiles)+'";\n'
         txt += 'ls -gGhrta;\n'
         txt += 'sum=0;\n'
