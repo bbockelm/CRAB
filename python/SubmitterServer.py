@@ -28,6 +28,8 @@ class SubmitterServer(Actor):
         
         try:  
             self.server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
+            if not self.server_name.endswith("/"):
+                self.server_name = self.server_name + "/"
         except KeyError:
             msg = 'No server selected ...' 
             msg = msg + 'Please specify a server in the crab cfg file' 
@@ -150,7 +152,7 @@ class SubmitterServer(Actor):
                 else: 
                     attempt = attempt - 1
                 if (attempt == 0): 
-                    raise CrabException("ASAP ERROR: Unable to ship a valid proxy to the server "+str(server_name).split("/")[0]+"\n")
+                    raise CrabException("ASAP ERROR: Unable to ship a valid proxy to the server "+str(self.server_name).split("/")[0]+"\n")
         except:  
             msg = "ASAP ERROR: Unable to ship a valid proxy to the server \n"
             msg +="Project "+str(WorkDirName)+" not Submitted \n"      
@@ -209,6 +211,9 @@ class SubmitterServer(Actor):
         # prepare standard xml messages data
         common.jobDB.load()
         server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
+        if not server_name.endswith("/"):
+            server_name = server_name + "/"
+
         WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
         projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict('TasKUUID')
         
@@ -260,7 +265,6 @@ class SubmitterServer(Actor):
             file.write(self.cfile.toprettyxml())
             #
             file.close()
-            
             cmd = 'lcg-cp --vo cms file://'+os.getcwd()+'/'+str(WorkDirName)+'/share/command.xml gsiftp://' + str(server_name) + str(projectUniqName)+'.xml'
             retcode = os.system(cmd)
             if retcode: 

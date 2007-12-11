@@ -20,6 +20,8 @@ class KillerServer(Actor):
         
         common.jobDB.load()
         server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
+        if not server_name.endswith("/"):
+            server_name = server_name + "/"
         WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
         projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict('TasKUUID')
 

@@ -32,6 +32,8 @@ class StatusServer(Actor):
 
         try:  
             self.server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
+            if not self.server_name.endswith("/"):
+                self.server_name = self.server_name + "/"
         except KeyError:
             msg = 'No server selected ...' 
             msg = msg + 'Please specify a server in the crab cfg file' 
