@@ -41,8 +41,8 @@ class Publisher(Actor):
             self.globalDBS="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
         try:
             self.DBSURL=cfg_params['USER.dbs_url_for_publication']
-            common.logger.message('dbs url = '+self.DBSURL)
-            if (self.DBSURL == "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"):
+            common.logger.message('<dbs_url_for_publication> = '+self.DBSURL)
+            if (self.DBSURL == "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet") or (self.DBSURL == "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"):
                 msg = "You can not publish your data in the globalDBS = " + self.DBSURL + "\n" 
                 msg = msg + "Please write your local one in the [USER] section 'dbs_url_for_publication'"
                 raise CrabException(msg)
@@ -114,12 +114,17 @@ class Publisher(Actor):
         common.logger.debug(6,"FileInfo = " + str(fileinfo))
         common.logger.debug(6,"DatasetInfo = " + str(datasets))
         for dataset in datasets:
+            #### for production data
+            if (dataset['PrimaryDataset'] == 'null'):
+                dataset['PrimaryDataset'] = dataset['ProcessedDataset']
+                
             dataset['PSetContent']=self.content
-            #cfgMeta = {'name' : 'usercfg' , 'Type' : 'user' , 'annotation': 'user cfg', 'version' : 'private version'} # add real name of user cfg
             cfgMeta = {'name' : self.pset , 'Type' : 'user' , 'annotation': 'user cfg', 'version' : 'private version'} # add real name of user cfg
             common.logger.message("PrimaryDataset = %s"%dataset['PrimaryDataset'])
             common.logger.message("ProcessedDataset = %s"%dataset['ProcessedDataset'])
-            common.logger.message("--->>> Inserting primary: %s processed : %s"%(dataset['PrimaryDataset'],dataset['ProcessedDataset']))
+            common.logger.message("<User Dataset Name> = /"+dataset['PrimaryDataset']+"/"+dataset['ProcessedDataset']+"/USER")
+            
+            common.logger.debug(6,"--->>> Inserting primary: %s processed : %s"%(dataset['PrimaryDataset'],dataset['ProcessedDataset']))
             
             primary = DBSWriterObjects.createPrimaryDataset( dataset, dbswriter.dbs)
             common.logger.debug(6,"Primary:  %s "%primary)
@@ -130,7 +135,7 @@ class Publisher(Actor):
             processed = DBSWriterObjects.createProcessedDataset(primary, algo, dataset, dbswriter.dbs)
             common.logger.debug(6,"Processed:  %s "%processed)
             
-            common.logger.message("Inserted primary %s processed %s"%(primary,processed))
+            common.logger.debug(6,"Inserted primary %s processed %s"%(primary,processed))
             
         common.logger.debug(6,"exit_status = %s "%self.exit_status)
         return self.exit_status    
@@ -161,6 +166,9 @@ class Publisher(Actor):
                     file.lumisections = {}
                     for ds in file.dataset:
                         ds['ProcessedDataset']=procdataset
+                        ### Fede for production
+                        if (ds['PrimaryDataset'] == 'null'):
+                            ds['PrimaryDataset']=procdataset
                     filestopublish.append(file)
                 else:
                     self.noEventsFiles.append(file['LFN'])
@@ -206,19 +214,18 @@ class Publisher(Actor):
                     [BlocksList.append(x) for x in Blocks]
                     
             # close the blocks
-            common.logger.message("BlocksList = %s"%BlocksList)
+            common.logger.debug(6, "BlocksList = %s"%BlocksList)
             # dbswriter = DBSWriter(self.DBSURL,level='ERROR')
             dbswriter = DBSWriter(self.DBSURL)
             
             for BlockName in BlocksList:
                 try:   
                     closeBlock=dbswriter.manageFileBlock(BlockName,maxFiles= 1)
-                    common.logger.message("closeBlock %s"%closeBlock)
+                    common.logger.debug(6, "closeBlock %s"%closeBlock)
                     #dbswriter.dbs.closeBlock(BlockName)
                 except DBSWriterError, ex:
                     common.logger.message("Close block error %s"%ex)
 
-            common.logger.message("--->>> End files publication")
             if (len(self.noEventsFiles)>0):
                 common.logger.message("--->>> WARNING: "+str(len(self.noEventsFiles))+" files not published because they contain 0 events are:")
                 for lfn in self.noEventsFiles:
@@ -231,6 +238,8 @@ class Publisher(Actor):
                 common.logger.message("--->>> WARNING: "+str(len(self.problemFiles))+" files not published because they had problem with copy to SE")
                 for lfn in self.problemFiles:
                     common.logger.message("------ LFN: %s"%lfn)
+            common.logger.message("--->>> End files publication")
+            common.logger.message("--->>> To check data publication please use: InspectDBS2.py --DBSURL=<dbs_url_for_publication> --datasetPath=/<User Dataset Name>")
             return self.exit_status
 
         else:
