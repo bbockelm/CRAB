@@ -21,6 +21,7 @@ The most useful general options (use '-h' to get complete help):
   -submit n           -- Submit the first n available jobs. Default is all.
   -status             -- check status of all jobs.
   -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs
+  -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance  
   -kill [range]       -- kill submitted jobs
   -cancelAndResubmit [range]  -- kill and resubmit submitted jobs
   -clean              -- gracefully cleanup the idrectory of a task
@@ -96,6 +97,9 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 
 ~>crab -getoutput
   get back the output of all jobs
+
+~>crab -publish 
+  publish all user outputs in the DBS specified in the crab.cfg (dbs_url_for_publication) or written as argument of this option 
 
 =head1 RUNNING CMSSW WITH CRAB
 
@@ -220,6 +224,10 @@ Check the status of the jobs, in all states. If BOSS real time monitor is enable
 =item B<-getoutput|-get [range]>
 
 Retrieve the output declared by the user via the output sandbox. By default the output will be put in task working dir under I<res> subdirectory. This can be changed via config parameters. B<Be extra sure that you have enough free space>. See I<range> below for syntax.
+
+=item B<-publish [dbs_url]>
+
+Publish user output in a local DBS instance after retrieving of output. By default the publish uses the dbs_url_for_publication specified in the crab.cfg file, otherwise you can write it as argument of this option.
 
 =item B<-resubmit [range]>
 
