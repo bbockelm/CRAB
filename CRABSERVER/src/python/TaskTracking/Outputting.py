@@ -25,6 +25,7 @@ class Outputting:
             #for file2Add in fileList:
         os.popen("cd "+str(path)+" ; tar --append .tmpDone/* --file="+os.path.join(path,self.tempTar) ) 
 #            os.popen("tar --append "+str( os.path.join(path,".tmpDone") )+"/* --file="+os.path.join(path,self.tempTar))
+        self.cleanTmpDir( path )
         """
         import TaskTracking.itarfile as tarfile
         flag = 0
@@ -93,7 +94,7 @@ class Outputting:
                     logging.info("   Impossible to copy the file " +self.tempxmlReportFile+ ": "+str(xmlCopied))
 
                 cmdListAll = "ls -Rd "+str( os.path.join(path,jtResDir) )+"/Success/Submission_*/*/*"
-                logging.info ("   Adding files to cache...")
+                #logging.info ("   Adding files to cache...")
                 allFiles = os.popen(cmdListAll).readlines()
                 import time
                 for tries in range(1, 3):
