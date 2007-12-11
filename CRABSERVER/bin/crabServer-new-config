@@ -82,7 +82,7 @@ crabServerConfiguration = {
 componentFields = {
     "CrabServerWorker" : {
     'ComponentDir':None,
-    'maxThreads':'3',
+    'maxThreads':'10',
     },
     
     "ProxyTarballAssociator" : {
@@ -100,7 +100,7 @@ componentFields = {
 
     "TaskTracking" : {
     'ComponentDir':None,
-    'Thread':'12',
+    'Thread':'8',
     'PollInterval':'4',
     'debugLevel':'9',
     },
@@ -131,7 +131,7 @@ componentFields = {
 
 print "Creating ProdAgent configuration\n"
  
-os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder,JobKiller")
+os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder,JobKiller,GetOutput")
 
 # read configuration
 
