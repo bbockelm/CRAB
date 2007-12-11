@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.50 2007/10/21 18:13:08 mcinquil Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.51 2007/12/07 11:16:01 mcinquil Exp $"
+__version__ = "$Revision: 1.51 $"
 
 import os
 import time
@@ -1123,7 +1123,6 @@ class TaskTrackingComponent:
                             listFailedJobs = self.getFailedJobFromFile( os.path.join(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir))
                             #logBuf = self.__logToBuf__(logBuf, " -"+str(listFailedJobs)+"- ")
                             listFailed2Prepare = []
-                            file("JobStupidi", 'a').write("task name: " + str(taskName) + "\n")
 			    for job, stato in statusJobsTask.iteritems():
                                 jobInfo = v.Job(job)
 
@@ -1179,7 +1178,6 @@ class TaskTrackingComponent:
 				        dictReportTot['JobInProgress'] += 1
                                         dictStateTot[job][0] = "Resubmitting by server"#"Managing by server"
                                         dictFinishedJobs.setdefault(job, 0)
-                                        file("JobStupidi", 'a').write( str(job) + ",")
                                         if job not in listFailedJobs:
                                    #         logBuf = self.__logToBuf__(logBuf, " -adding JOB: "+str(job))
                                             listFailed2Prepare.append( job )
@@ -1221,14 +1219,8 @@ class TaskTrackingComponent:
                                     else:
                                         dictReportTot['JobInProgress'] += 1
                                         dictFinishedJobs.setdefault(job, 0)
-                                    """
                                     else:
-                                       file("JobStupidi", 'a').write("\ntask name: " + str(taskName) +\
-                                                                     " - resubm: " + str(resubmitting) +\
-                                                                     " - stato: " + str(stato) +\
-                                                                    " - status: " + str(status) )
                                        logging.debug("resubm: " +str(resubmitting)+ " - stato: " +str(stato)+ " - status: " +str(status))
-                                    """
                                #elif stato != "K": ## ridondante
                                     #dictReportTot['JobFailed'] += 1
                                     #dictFinishedJobs.setdefault(job, 0)
@@ -1238,7 +1230,6 @@ class TaskTrackingComponent:
                                 else:
                                     dictReportTot['JobInProgress'] += 1
                                     dictFinishedJobs.setdefault(job, 0)
-                            file("JobStupidi", 'a').write("\n\n\n")
                             ### prototype: preparing intermediate output 4 failed jobs ###
                             """
                             logBuf = self.__logToBuf__(logBuf, " adding: "+str(listFailed2Prepare) )
