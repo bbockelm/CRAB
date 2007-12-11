@@ -20,7 +20,7 @@ TopDir=`\pwd`
 #############################################
 ######## BOSS CONFIGURATION #################
 #############################################
-BOSSVER=4_3_9
+BOSSVER=4_3_10-pre1
 BACKEND=SQLite
 
 function configureBoss {
