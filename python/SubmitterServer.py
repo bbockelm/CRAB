@@ -272,7 +272,6 @@ class SubmitterServer(Actor):
             else: 
                 common.logger.message("Submission command succesfully shipped to server")
                 for nj in delta_subm:
-                    print "Setting job " +str(nj-1)
                     common.jobDB.setStatus((nj-1), 'S')
                     common.jobDB.save()
         except RuntimeError,e:
