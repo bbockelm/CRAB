@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.51 2007/12/07 11:16:01 mcinquil Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.52 2007/12/11 18:18:32 mcinquil Exp $"
+__version__ = "$Revision: 1.52 $"
 
 import os
 import time
@@ -976,7 +976,7 @@ class TaskTrackingComponent:
 
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logBuf = self.__logToBuf__(logBuf, "Published 'TaskFailed' message with payload: %s" % payload)
-#        self.taskEnded(taskName)
+        self.taskEnded(taskName)
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
 
@@ -994,7 +994,7 @@ class TaskTrackingComponent:
 
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logBuf = self.__logToBuf__(logBuf, "Published 'TaskNotSubmitted' message with payload: %s" % taskPath) #payload)
-#        self.taskEnded(taskName)
+        self.taskEnded(taskName)
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
 
@@ -1009,7 +1009,7 @@ class TaskTrackingComponent:
 
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logBuf = self.__logToBuf__(logBuf, "Published 'TaskFastKill' message with payload: %s" % taskPath) #payload)
-#        self.taskEnded(taskName)
+        self.taskEnded(taskName)
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
   
@@ -1219,8 +1219,6 @@ class TaskTrackingComponent:
                                     else:
                                         dictReportTot['JobInProgress'] += 1
                                         dictFinishedJobs.setdefault(job, 0)
-                                    else:
-                                       logging.debug("resubm: " +str(resubmitting)+ " - stato: " +str(stato)+ " - status: " +str(status))
                                #elif stato != "K": ## ridondante
                                     #dictReportTot['JobFailed'] += 1
                                     #dictFinishedJobs.setdefault(job, 0)
@@ -1275,6 +1273,7 @@ class TaskTrackingComponent:
                                 else:
                                     logBuf = self.__logToBuf__(logBuf, "Error: the path " + pathToWrite + " does not exist!\n")
                                 #self.prepareTarballFailed(pathToWrite, taskName, len(statusJobsTask) )
+                                succexo = 0
 			        if percentage != endedLevel or \
 			            (percentage == 0 and status == self.taskState[3] ) or \
 			            (percentage == 0 and status == self.taskState[1] ) or \
@@ -1285,10 +1284,11 @@ class TaskTrackingComponent:
                                         msg = TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
                                         logBuf = self.__logToBuf__(logBuf, msg)
                                         if notified != 2:
-                                            self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
-                                        #self.taskEnded(taskName)
+                                            #self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
+                                            self.taskEnded(taskName)
                                             notified = 2
-                                            msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
+                                            #msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
+                                            succexo = 1
                                             logBuf = self.__logToBuf__(logBuf, msg)
 				    elif percentage != endedLevel:
 				        msg = TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
@@ -1298,7 +1298,7 @@ class TaskTrackingComponent:
                                             obj = Outputting( self.xmlReportFileName, self.tempxmlReportFile )
                                             logBuf = self.__logToBuf__(logBuf, "**** ** **** ** ****")
                                             logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT")
-
+                                            
                                             obj.prepare( pathToWrite, taskName, len(statusJobsTask), dictFinishedJobs)# ,"Done")
 
                                             if os.path.exists( pathToWrite+"/done.tar.gz" ):
@@ -1327,16 +1327,18 @@ class TaskTrackingComponent:
                                                     logBuf = self.__logToBuf__(logBuf, "  preparing OUTPUT FAILED")
 
 					    if percentage == 100:
-					        self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
-#                                                self.taskEnded(taskName)
+                                                succexo = 1
+					        #self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
+                                                self.taskEnded(taskName)
 					        notified = 2
-					        msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
+					        #msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
                                                 logBuf = self.__logToBuf__(logBuf, msg)
                                                 obj.deleteTempTar( pathToWrite )
 					    elif notified <= 0:
-					        self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
+                                                succexo = 1
+					        #self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
 					        notified = 1
-					        msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
+					        #msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
                                                 logBuf = self.__logToBuf__(logBuf, msg)
 			        elif status == '':
                                     msg = ""
@@ -1346,17 +1348,19 @@ class TaskTrackingComponent:
 				        msg = TaskStateAPI.updateTaskStatus( taskName, self.taskState[2] )
                                 
                                     logBuf = self.__logToBuf__(logBuf, msg)
+
                                 self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
- 
-			    except ZeroDivisionError, detail:
+                                if succexo:
+                                    self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
+                                    msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
+
+ 			    except ZeroDivisionError, detail:
                                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                                 logBuf = self.__logToBuf__(logBuf, "WARNING: No jobs in the task " + taskName)
                                 logBuf = self.__logToBuf__(logBuf, "         deatil: " + str(detail))
                                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
 		        else:
-			    #logging.debug("-----")
                             logBuf = self.__logToBuf__(logBuf, "-----")
-			    #logging.debug( "Skipping task "+ taskName )
                             logBuf = self.__logToBuf__(logBuf, "Skipping task "+ taskName)
 
                         ##clear tasks from memory
