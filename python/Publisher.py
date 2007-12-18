@@ -239,7 +239,7 @@ class Publisher(Actor):
                 for lfn in self.problemFiles:
                     common.logger.message("------ LFN: %s"%lfn)
             common.logger.message("--->>> End files publication")
-            common.logger.message("--->>> To check data publication please use: InspectDBS2.py --DBSURL=<dbs_url_for_publication> --datasetPath=/<User Dataset Name>")
+            common.logger.message("--->>> To check data publication please use: InspectDBS2.py --DBSURL=<dbs_url_for_publication> --datasetPath=<User Dataset Name>")
             return self.exit_status
 
         else:
