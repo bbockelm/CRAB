@@ -6,7 +6,7 @@ Python packages for CRAB server
 
 """
 
-__revision__ = "$Id: setup.py,v 1.5 2007/06/25 08:46:03 mcinquil Exp $"
+__revision__ = "$Id: setup.py,v 1.6 2007/07/02 20:10:52 spiga Exp $"
 
 from distutils.core import setup
 
@@ -19,6 +19,7 @@ packages = [
     'CommandManager',
     'CW_WatchDog',
     'CrabServer',
+    'TaskLifeManager'
     ]
 
 setup(name='CrabServer',
