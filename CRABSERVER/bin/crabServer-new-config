@@ -125,6 +125,13 @@ componentFields = {
     'ComponentDir':None,
     },
 
+    "TaskLifeManager": {
+    "levelAvailable": 15,
+    "taskLife": "360:00:00",
+    "eMailAdmin": None,
+    "pollingTimeCheck": 10*60,
+    }
+
 }
 
 # call ProdAgent configuration tool
