@@ -64,6 +64,7 @@ def checkNSubmit( taskName, idJob):
 
         jobMaxRetries = int(jobInfo['MaxRetries'])
         jobRetries = int(jobInfo['Retries'])
+        jobState = str(jobInfo['State'])
     except Exception, ex:
         Session.commit_all()
         Session.close_all()
@@ -73,39 +74,9 @@ def checkNSubmit( taskName, idJob):
         logging.error( str(traceback.format_exc()) )
         return 1, None, None
 
-    if jobMaxRetries > jobRetries:
+    if jobMaxRetries > jobRetries and jobState != "finished":
         return 1, jobMaxRetries, jobRetries
     return 0, jobMaxRetries, jobRetries
-
-#    """
-    """
-    ## opening connection with PA's DB
-    conn, dbCur = openConnPA()
-    try:
-        sqlStr='SELECT max_retries, retries from we_Job where id="'+taskName+'_'+idJob+'" ;'
-
-        dbCur.execute("START TRANSACTION")
-        try:
-            dbCur.execute(sqlStr)
-        except Exception,ex:
-            raise ProdAgentException("Error checking the jobs in we_Job. Taskname: '" + str(taskName) +"' - jobId: '" + str(idJob) + "'." )
-	rows = dbCur.fetchall()
-	dbCur.execute("COMMIT")
-        ## closing connection with PA's DB
-        closeConnPA( dbCur, conn )
-	if len(rows) == 1:
-	    if rows[0][0] <= rows[0][1]:
-		return 0, rows[0][0], rows[0][1]#None, None
-            return 1, rows[0][0], rows[0][1]
-    except:
-	dbCur.execute("ROLLBACK")
-        ## closing connection with PA's DB
-        closeConnPA( dbCur, conn )
-	logging.error( "Error quering PA DB! Method: " + checkNSubmit.__name__ )
-	raise
-    return 1, None, None
-    #, rows[0][0], rows[0][1]
-    """
 
 
 def insertTaskPA( taskName, status ):
