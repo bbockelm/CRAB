@@ -38,13 +38,14 @@ class Task:
 
     def getAll(self):
         return {\
-                 "taskName":  self.__taskName,\
-                 "owner":     self.__owner,\
-                 "mail":      self.__mail,\
-                 "size":      self.__size,\
-                 "lifetime":  self.__lifetime,\
-                 "endedtime": self.__endedtime,\
-                 "heretime":  self.__heretime,\
+                 "taskName":  self.__taskName, \
+                 "owner":     self.__owner, \
+                 "mail":      self.__mail, \
+                 "size":      self.__size, \
+                 "lifetime":  self.__lifetime, \
+                 "endedtime": self.__endedtime, \
+                 "heretime":  self.__heretime, \
+                 "notified":  self.__notified, \
                }
 
     def getName(self):
