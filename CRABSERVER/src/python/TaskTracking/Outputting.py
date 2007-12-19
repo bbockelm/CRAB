@@ -26,50 +26,6 @@ class Outputting:
         os.popen("cd "+str(path)+" ; tar --append .tmpDone/* --file="+os.path.join(path,self.tempTar) ) 
 #            os.popen("tar --append "+str( os.path.join(path,".tmpDone") )+"/* --file="+os.path.join(path,self.tempTar))
         self.cleanTmpDir( path )
-        """
-        import TaskTracking.itarfile as tarfile
-        flag = 0
-        if not os.path.exists( path + self.tempTar ):
-            fout = open( path + self.tempTar, "w" )
-            fout.write("")
-            fout.close()
-            flag = 1
-        try:
-            if flag:
-                tar = tarfile.open( path + self.tempTar, "w" )
-            else:
-                tar = tarfile.open( path + self.tempTar, "a" )
-        except:
-            logging.error ("Error: Unable to open tar file.")
-            raise
-        try:
-            for name in fileList:
-                import traceback
-                try:
-                    tar.add(name)
-                    logging.info("   -> " +str(name))
-                except ValueError, ex:
-                    logging.error ('Warning: Unable to store: '+ str(name) + ' - ' + str(ex) )
-                    logging.error ( str(traceback.format_exc()) + '\n')
-                    pass
-                except OSError, ex:
-                    logging.error ('Warning: Unable to store: ' + str(name) )
-                    logging.error ( str(traceback.format_exc()) + '\n')
-                except IOError, ex:
-                    try:
-                        tar.add(name)
-                    except:
-                        logging.error ('Warning: Unable to store: ' + str(name) )
-                        logging.error ( str(traceback.format_exc()) + '\n')
-                        raise 
-                except:
-                    logging.error ('Warning: Unable to store: '+ str(name) + ' - ' + str(ex) )
-                    logging.error ( str(traceback.format_exc()) + '\n')
-
-        finally:
-            tar.close()
-            self.cleanTmpDir( path )
-        """
 
     def prepareTempDir( self, path, jobs2Add ):
         
@@ -191,6 +147,7 @@ class Outputting:
         os.chdir( path )
         
         jobsAdded = self.getList( path, self.jobEndedCache )
+        
         for job in jobsAdded:
             if str(job) in jobs2Add:
                 jobs2Add[str(job)] = 0
