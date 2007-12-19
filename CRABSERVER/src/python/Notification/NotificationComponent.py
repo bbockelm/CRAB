@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.7 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.7 2007/07/04 09:11:23 mcinquil Exp $"
+__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.8 2007/08/20 16:28:54 mcinquil Exp $"
 
 import os
 import socket
@@ -143,6 +143,7 @@ class NotificationComponent:
         self.ms.subscribeTo("TaskFailed")
         self.ms.subscribeTo("TaskNotSubmitted")
         self.ms.subscribeTo("TaskLifeManager:TaskNotifyLife")
+        self.ms.subscribeTo("TaskLifeManager:OverAvailableSpace")
         #self.ms.subscribeTo("NOTIFICATION_SHOWJOBS")
         #self.ms.subscribeTo("NOTIFICATION_RESET")
         #self.ms.subscribeTo("NOTIFICATION_PAUSE")
@@ -396,6 +397,67 @@ class NotificationComponent:
                 logging.info( msg )
 
                 completeMessage = 'Subject:"CRAB Server Notification: Task Cleaning"\n\n' + mailMess
+                try:
+                    self.mailer.SendMail(emaillist, completeMessage)
+                except RuntimeError, mess:
+                    logging.error(mess)
+                except gaierror, mess:
+                    logging.error("gaierror: " + mess )
+                except timeout, mess:
+                    logging.error("timeout error: " + mess )
+                except:
+                    print "Unexpected error: ", sys.exc_info()[0]
+
+                self.ms.commit()
+
+##-------------------------------------------------------------------
+            if type == "TaskLifeManager:OverAvailableSpace":
+                pieces = payload.split("::")
+                if len(pieces) < 2:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload ["
+                    msg += payload + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+                emaillist = pieces[1].split(",")
+                level = pieces[0]
+
+                if not emaillist:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload"
+                    msg += " email's list [" + pieces[2] + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                if len(emaillist) < 1:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload"
+                    msg += " email's list [" + pieces[2] + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                if len(emaillist) == 1:
+                    if emaillist[0] == "":
+                        msg = "Notification.NotificationComponent.MainLoop: empty email address ["
+                        msg += emaillist[0] + "]"
+                        logging.error("%s" % msg)
+                        self.ms.commit()
+                        continue
+
+                infoFile = "/tmp/crabNotifInfoFile." + str(time.time())
+
+                try:
+                    os.remove(infoFile)
+                except OSError:
+                    pass
+                import socket
+                mailMess = "The CRABSERVER " + str(socket.gethostbyaddr(socket.gethostname())) + "\n"
+                mailMess +="has the drop box partition full at " + str(level) + "% that is over the level you requested.\n"
+
+                msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
+                logging.info( msg )
+
+                completeMessage = 'Subject:"CRAB Server Notification: Space Management"\n\n' + mailMess
                 try:
                     self.mailer.SendMail(emaillist, completeMessage)
                 except RuntimeError, mess:
