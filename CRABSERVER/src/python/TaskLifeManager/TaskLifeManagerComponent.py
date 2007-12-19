@@ -160,10 +160,14 @@ class TaskLifeManagerComponent:
         # inserting on task queue
         if event == "DropBoxGuardianComponent:NewFile" or\
                event == "TaskLifeManager::TaskToMange":
-            self.insertTaskWrp( payload )
+            try:
+                if payload.split(".")[1] != "xml" and payload.split(".")[1] != "tgz":
+                    self.insertTaskWrp( payload )
+            except:
+                self.insertTaskWrp( payload )
             return            #
         #######################
-
+         
         #######################
         # Task Finished
         # updating ended time on object
@@ -226,8 +230,6 @@ class TaskLifeManagerComponent:
                     logging.error( str(traceback.format_exc()) )
                     fileXml.close()
             else:
-                #logging.info("File *xmlReportFile.xml* not found")
-                #logging.info("[own,mail not set up]")
                 return None, None
 
         except Exception, ex:
@@ -425,7 +427,6 @@ class TaskLifeManagerComponent:
                                 str( os.stat( taskPath ).st_ctime ), \
                                 self.getDirSpace(taskPath) \
                               )
-                #logging.info("insert")
                 self.taskQueue.insert( taskObj )
                 self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
                 ############################
@@ -512,7 +513,6 @@ class TaskLifeManagerComponent:
                 queueTasks = pickle.load(inputF)
                 inputF.close()
                 logging.info("status loaded from file")
-                #logging.info(str(queueTasks) )
             except IOError, ex:
                 import traceback
                 logging.error( "Exception raised: " + str(ex) )
@@ -522,7 +522,11 @@ class TaskLifeManagerComponent:
 
             for valu3, k3y in queueTasks.iteritems():
                 if not self.taskQueue.exists(k3y['taskName']):
-                     #logging.info("insert")
+                    notif = False
+                    try:
+                        notif = k3y['notified']
+                    except:
+                        pass
                     taskObj = Task(\
                                      k3y['taskName'], \
                                      k3y['owner'], \
@@ -530,7 +534,8 @@ class TaskLifeManagerComponent:
                                      k3y['lifetime'], \
                                      k3y['endedtime'], \
                                      k3y['heretime'], \
-                                     k3y['size'] \
+                                     k3y['size'], \
+                                     notif \
                                  )
                     self.taskQueue.insert( taskObj )
         return None
@@ -545,7 +550,7 @@ class TaskLifeManagerComponent:
         _buildDropBox_
         """
         tasks = os.listdir(self.args['dropBoxPath'])
-        logging.info( "   building the drob_bix directory..." )
+        logging.info( "   building the drop_box directory..." )
         for task in tasks:
             if task.find("crab_") != -1:
                 self.insertTaskWrp( task )
@@ -556,11 +561,14 @@ class TaskLifeManagerComponent:
     ##########################################################################
 
     def checkDelete( self ):
+        sign = 0
         for index in range( self.taskQueue.getHowMany() ):
             task = self.taskQueue.getCurrentSwitch()
             if task.toLive() < (60*60*24): ## twentyfour hours
-                #if not task.getNotified():
-                #    self.notifyCleaning( task )
+                if not task.getNotified():
+                    self.notifyCleaning( task.getName(), task.toLive(), task.getOwner(), task.getOwnerMail() )
+                    task.notify()
+                    sign = 1
                 if task.toLive() < (60*60*10): ## ten hours
                     if task.toLive() >= 0:
                         logging.info ( "task ("+str(index)+") ["+task.getName()+"] " + \
@@ -569,8 +577,8 @@ class TaskLifeManagerComponent:
                         logging.info ( "task ("+str(index)+") ["+task.getName()+"] " + \
                                        "dead from: " + str(task.toLive()) )
                         self.taskDeleteQueue.insert(task)
-        #self.dumPickle( self.taskDeletePKL, self.taskDeleteQueue.getAll() )
-
+        if sign == 1:
+            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
     def deleteTasks( self ):
         toDelete = self.taskDeleteQueue.getHowMany()
         totFreeSpace = 0
@@ -589,6 +597,7 @@ class TaskLifeManagerComponent:
             logging.info( str(toDelete) + " tasks removed" )
             logging.info( str(totFreeSpace/1024) + " KB cleaned")
             logging.info( "" )
+            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
  
     ##########################################################################
     # component publish
@@ -625,7 +634,7 @@ class TaskLifeManagerComponent:
         self.ms.publish( mexage, payload, "00:00:20" )
         self.ms.commit()
 
-    def notifyCleaning( self, task ):
+    def notifyCleaning( self, taskName, toLive, owner, mails ):
         """
         _unpackingTask_
 
@@ -634,22 +643,17 @@ class TaskLifeManagerComponent:
         #taskName lifetime userName email
 
         mexage = "TaskLifeManager:TaskNotifyLife"
-        logging.info("task: " + str(task))
-        logging.info("  name: " + task.getName())
-        taskName = task.getName()
         uuid = ""
-
         valuess = getStatusUUIDEmail( taskName )
         if len(valuess) > 1:
             uuid = valuess[1]
-
         obj = UtilSubject( self.args['dropBoxPath'], taskName, uuid )
         origTaskName, userName = obj.getInfos()
 
-        payload = origTaskName+"::"+ \
-                  self.calcFromSeconds( task.toLive() )+"::"+ \
-                  task.getOwner()+"::"+ \
-                  task.getOwnerMail()
+        if owner is None or mails is None:
+            owner, mails = self.checkInfoUser(taskName)
+
+        payload = origTaskName +"::"+ str(toLive) +"::"+ owner +"::"+ str(mails)
 
         logging.info(" Publishing ['"+ mexage +"']")
         logging.info("   payload = " + payload )
