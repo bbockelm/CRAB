@@ -13,6 +13,7 @@ import getopt
 
 from ProdAgentCore.Configuration import loadProdAgentConfiguration
 from ProdAgentCore.CreateDaemon import createDaemon
+from ProdAgentCore.PostMortem import runWithPostMortem
 from Notification.NotificationComponent import NotificationComponent
 
 #  //
@@ -36,11 +37,8 @@ compCfg['ComponentDir'] = os.path.expandvars(compCfg['ComponentDir'])
 #  //
 # // Initialise and start the component
 #//
-print "Notification.Startup: creating Daemon..."
 createDaemon(compCfg['ComponentDir'])
-print "Notification.Startup: Daemon created..."
-print "Notification.Startup: Creating NotificationComponent object..."
 component = NotificationComponent(**dict(compCfg))
-print "Notification.Startup: Object created"
-print "Notification.Startup: Calling NotificationComponent.startComponent()"
-component.startComponent()
+#component.startComponent()
+runWithPostMortem(component, compCfg['ComponentDir'])
+
