@@ -1163,7 +1163,7 @@ class Cmssw(JobType):
             txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
             txt += 'else\n'
             txt += '    exit_status=60302\n'
-            txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
+            txt += '    echo "ERROR: Output file '+fileWithSuffix+' not found"\n'
             if common.scheduler.boss_scheduler_name == 'condor_g':
                 txt += '    if [ $middleware == OSG ]; then \n'
                 txt += '        echo "prepare dummy output file"\n'
@@ -1184,7 +1184,7 @@ class Cmssw(JobType):
                 txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
             txt += 'else\n'
             txt += '    exit_status=60302\n'
-            txt += '    echo "ERROR: Problem with output file '+fileWithSuffix+'"\n'
+            txt += '    echo "ERROR: Output file '+fileWithSuffix+' not found"\n'
             txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
             txt += '    output_exit_status=$exit_status\n'
             if common.scheduler.boss_scheduler_name == 'condor_g':
