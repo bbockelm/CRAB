@@ -4,16 +4,22 @@ import sys, os, time, string, commands
 ## pre-import env configuratin steps
 def dropOutPy23dynLoads():
     # FEDE added -publish
+    #if not ('-create' in sys.argv or '-publish' in sys.argv):
     if not ('-create' in sys.argv or '-publish' in sys.argv):
         return
+    tmp = []
     for p in sys.path:
-        if p.find( "python2.3/lib-dynload" ) != -1 :
-            sys.path.pop( sys.path.index(p) )
+        if p.find( "python2.3/lib-dynload" ) == -1 :
+            tmp.append(p)
+        pass
+
+    sys.path=tmp
+    pass
+
 # this is needed to remove interferences between LCG and CMSSW envs  
 dropOutPy23dynLoads()
 
 ## actual import session 
-from crab_help import *
 from crab_util import *
 from crab_exceptions import *
 from crab_logger import Logger
@@ -21,27 +27,8 @@ from WorkSpace import WorkSpace
 from JobDB import JobDB
 from TaskDB import TaskDB
 from JobList import JobList
-from Creator import Creator
-from Submitter import Submitter
-from Checker import Checker
-from PostMortem import PostMortem
-from Status import Status
-from StatusBoss import StatusBoss 
 from ApmonIf import ApmonIf
-from Cleaner import Cleaner
 import common
-import Statistic
-from BlackWhiteListParser import BlackWhiteListParser
-
-from BossSession import *
-
-#modified to support server mode
-#from SubmitterServer import SubmitterServer
-#from GetOutputServer import GetOutputServer
-#from StatusServer import StatusServer
-#from PostMortemServer import PostMortemServer
-#from KillerServer import KillerServer
-#from CleanerServer import CleanerServer
 
 ###########################################################################
 class Crab:
@@ -137,21 +124,19 @@ class Crab:
         common.jobDB = JobDB()
         
         # init BlackWhiteListParser
+        from BlackWhiteListParser import BlackWhiteListParser
         self.blackWhiteListParser = BlackWhiteListParser(self.cfg_params)
 
         self.UseServer=0
-        try:
+        if (self.cfg_params.has_key('CRAB.server_mode')):
             self.UseServer=int(self.cfg_params['CRAB.server_mode'])
-        except KeyError:
-            pass
 
-
-        if int(self.cfg_params['USER.activate_monalisa']): self.cfg_params['apmon'] = ApmonIf()
+        common.apmon = ApmonIf()
         
         if self.flag_continue:
             try:
                 common.jobDB.load()
-                self.cfg_params['taskId'] = common.jobDB._jobs[0].taskId 
+                common.taskDB.load()
                 common.logger.debug(6, str(common.jobDB))
             except DBException,e:
                 pass
@@ -202,15 +187,8 @@ class Crab:
 
         # Look for actions which has sense only with '-continue'
 
-        if not self.flag_continue:
-            for opt in opts.keys():
-                if ( opt in (self.aux_actions)):
-                    self.flag_continue = 1
-                    break
-                pass
-            pass
-            if ("-submit" in opts.keys() and "-create" not in opts.keys() ):
-                self.flag_continue = 1
+        if "-create" not in opts.keys() :
+            self.flag_continue = 1
 
         if not self.flag_continue: return
 
@@ -245,7 +223,7 @@ class Crab:
                 if self.flag_continue:
                     raise CrabException('-continue and -cfg cannot coexist.')
                 if opts[opt] : self.cfg_fname = opts[opt]
-                else : usage()
+                else : processHelpOptions()
                 pass
 
             elif ( opt == '-name' ):
@@ -322,7 +300,7 @@ class Crab:
 
             elif ( opt == '-jobtype' ):
                 if val : self.job_type_name = string.upper(val)
-                else : usage()
+                else : processHelpOptions()
                 pass
 
             elif ( opt == '-Q' ):
@@ -339,7 +317,7 @@ class Crab:
 
             elif string.find(opt,'.') == -1:
                 print common.prog_name+'. Unrecognized option '+opt
-                usage()
+                processHelpOptions()
                 pass
 
             # Override config parameters from INI-file with cmd-line params
@@ -421,7 +399,7 @@ class Crab:
                 result.append(int(aRange))
             else:
                 common.logger.message("parseSimpleRange_  ERROR "+aRange)
-                usage()
+                processHelpOptions()
                 pass
   
             pass
@@ -454,6 +432,7 @@ class Crab:
                     common.logger.message(msg)
                 ncjobs = 'all'
 
+                from Creator import Creator
                 # Instantiate Creator object
                 self.creator = Creator(self.job_type_name,
                                        self.cfg_params,
@@ -498,8 +477,8 @@ class Crab:
                 common.job_list.setCfgNames(self.creator.jobType().configFilename())
 
                 self.creator.writeJobsSpecsToDB()
-  		taskUnicId= self.uuidgen()
-		common.taskDB.setDict('TasKUUID',taskUnicId)
+                taskUnicId= self.uuidgen()
+                common.taskDB.setDict('TasKUUID',taskUnicId)
 
                 common.taskDB.save()
                 pass
@@ -579,6 +558,7 @@ class Crab:
                     common.logger.debug(5,'nj_list '+str(nj_list))
                  
                     if len(nj_list) != 0:
+                        from Submitter import Submitter
                         # Instantiate Submitter object
                         self.actions[opt] = Submitter(self.cfg_params, nj_list)
  
@@ -633,6 +613,7 @@ class Crab:
                     pass
 
             elif ( opt == '-status' ):
+                from StatusBoss import StatusBoss 
                 # modified to support server mode 
                 if (self.UseServer== 1):
                     from StatusServer import StatusServer
@@ -810,6 +791,7 @@ class Crab:
 
                 if len(nj_list) != 0:
                     # Instantiate Checker object
+                    from Checker import Checker   
                     self.actions[opt] = Checker(self.cfg_params, nj_list)
 
                     # Create and initialize JobList
@@ -851,6 +833,7 @@ class Crab:
 
                     if len(nj_list) != 0:
                     # Instantiate PostMortem object
+                        from PostMortem import PostMortem
                         self.actions[opt] = PostMortem(self.cfg_params, nj_list)
                     # Create and initialize JobList
                         if len(common.job_list) == 0 :
@@ -868,12 +851,11 @@ class Crab:
                     from CleanerServer import CleanerServer
                     self.actions[opt] = CleanerServer(self.cfg_params)
                 else:
+                    from Cleaner import Cleaner
                     self.actions[opt] = Cleaner(self.cfg_params)
                
             ### FEDE DBS/DLS OUTPUT PUBLICATION 
             elif ( opt == '-publish' ):
-                if val != None:
-                    self.cfg_params['USER.dbs_url_for_publication'] = val
                 from Publisher import Publisher
                 self.actions[opt] = Publisher(self.cfg_params)
 
@@ -883,24 +865,25 @@ class Crab:
     def createWorkingSpace_(self):
         new_dir = ''
 
-        try:
+        if self.cfg_params.has_key('USER.ui_working_dir') :
             new_dir = self.cfg_params['USER.ui_working_dir']
-            self.cfg_params['taskId'] = self.cfg_params['user'] + '_' + string.split(new_dir, '/')[len(string.split(new_dir, '/')) - 1] + '_' + self.current_time
-            if  len(string.split(new_dir, '/')) == 1:
+            if  not new_dir[1] == '/':
                 new_dir = self.cwd + new_dir
-            else:
-                new_dir = new_dir
-            if os.path.exists(new_dir):
-                if os.listdir(new_dir):
-                    msg = new_dir + ' already exists and is not empty. Please remove it before create new task'
-                    raise CrabException(msg)
-        except KeyError:
-            new_dir = common.prog_name + '_' + self.name + '_' + self.current_time
-            self.cfg_params['taskId'] = self.cfg_params['user'] + '_' + new_dir 
-            new_dir = self.cwd + new_dir
             pass
+        else:
+            new_dir = self.cwd + common.prog_name + '_' + self.name + '_' + self.current_time
+            pass
+        if os.path.exists(new_dir):
+            if os.listdir(new_dir):
+                msg = new_dir + ' already exists and is not empty. Please remove it before create new task'
+                raise CrabException(msg)
+
         common.work_space = WorkSpace(new_dir, self.cfg_params)
         common.work_space.create()
+
+        taskId=self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2]
+        if (self.cfg_params.has_key('USER.ui_working_dir')) : taskId+="_"+self.current_time
+        common.taskDB.setDict('taskId', taskId)
         return
 
     def loadConfiguration_(self, opts):
@@ -987,12 +970,13 @@ class Crab:
         return
 
 ###########################################################################
-def processHelpOptions(opts):
+def processHelpOptions(opts={}):
+    from crab_help import usage, help
 
     if len(opts):
         for opt in opts.keys():
             if opt in ('-v', '-version', '--version') :
-                print Crab.version()
+                print 'CRAB version: ',Crab.version()
                 return 1
             if opt in ('-h','-help','--help') :
                 if opts[opt] : help(opts[opt])
@@ -1023,7 +1007,7 @@ if __name__ == '__main__':
     try:
         crab = Crab(options)
         crab.run()
-        crab.cfg_params['apmon'].free()
+        common.apmon.free()
     except CrabException, e:
         print '\n' + common.prog_name + ': ' + str(e) + '\n'
         if common.logger:

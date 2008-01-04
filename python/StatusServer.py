@@ -2,10 +2,7 @@ from Actor import *
 from crab_util import *
 import common
 from ApmonIf import ApmonIf
-import Statistic
 import time
-# from ProgressBar import ProgressBar
-# from TerminalController import TerminalController
 
 import xml.dom.minidom
 import TaskDB

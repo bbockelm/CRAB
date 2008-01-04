@@ -88,18 +88,16 @@ class DataDiscovery:
         """
 
         ## get DBS URL
-        try:
+        dbs_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+        if (self.cfg_params.has_key('CMSSW.dbs_url')):
             dbs_url=self.cfg_params['CMSSW.dbs_url']
-        except KeyError:
-            dbs_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
 
         common.logger.debug(3,"Accessing DBS at: "+dbs_url)
 
         ## check if runs are selected
-        try:
+        runselection = []
+        if (self.cfg_params.has_key('CMSSW.runselection')):
             runselection = parseRange2(self.cfg_params['CMSSW.runselection'])
-        except:
-            runselection = []
 
         ## service API
         args = {}

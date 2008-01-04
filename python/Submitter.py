@@ -2,7 +2,6 @@ from Actor import *
 from crab_util import *
 import common
 from ApmonIf import ApmonIf
-import Statistic
 #from random import random
 import time
 from ProgressBar import ProgressBar
@@ -46,7 +45,7 @@ class Submitter(Actor):
         # submit pre DashBoard information
         params = {'jobId':'TaskMeta'}
                
-        fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
+        fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
         for i in fl.readlines():
             val = i.split(':')
             params[val[0]] = string.strip(val[1])
@@ -54,7 +53,7 @@ class Submitter(Actor):
 
         common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
                         
-        self.cfg_params['apmon'].sendToML(params)
+        common.apmon.sendToML(params)
 
         # modified to support server mode
         # The boss declare step is performed here 
@@ -160,7 +159,7 @@ class Submitter(Actor):
                     common.logger.debug(5,"Submitted job # "+ `(jj)`)
                     common.jobDB.setStatus(tmpNj, 'S')
                     common.jobDB.setJobId(tmpNj, jid)
-                    common.jobDB.setTaskId(tmpNj, self.cfg_params['taskId'])
+                    common.jobDB.setTaskId(tmpNj, common.taskDB.dict('taskId'))
 
                     njs += 1
                
@@ -174,7 +173,6 @@ class Submitter(Actor):
                     try:
                         resFlag = 0
                         if st == 'RC': resFlag = 2
-                        Statistic.Monitor('submit',resFlag,jid,'-----','dest')
                     except:
                         pass
                     
@@ -205,7 +203,7 @@ class Submitter(Actor):
                               'TargetSE': T_SE,}
                     common.logger.debug(5,str(params))
                
-                    fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
+                    fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
                     for i in fl.readlines():
                         val = i.split(':')
                         params[val[0]] = string.strip(val[1])
@@ -213,7 +211,7 @@ class Submitter(Actor):
      
                     common.logger.debug(5,'Submission DashBoard report: '+str(params))
                         
-                    self.cfg_params['apmon'].sendToML(params)
+                    common.apmon.sendToML(params)
                 pass
             pass
 

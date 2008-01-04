@@ -27,6 +27,7 @@ class Publisher(Actor):
             self.processedData = cfg_params['USER.publish_data_name']
         except KeyError:
             raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
+
         try:
             if (int(cfg_params['USER.copy_data']) != 1): raise KeyError
         except KeyError:

@@ -1,7 +1,6 @@
 from Actor import *
 import common
 import string, os, time
-import Statistic
 from SchedulerBoss import *
 
 class StatusBoss(Actor):
@@ -181,12 +180,6 @@ class StatusBoss(Actor):
             if jobStatus != 'Created'  and jobStatus != 'Unknown':
                 jid1 = string.strip(jobAttributes[bossid]['SCHED_ID'])
 
-                # CrabMon  
-                if jobStatus == 'Aborted':
-                    Statistic.Monitor('checkstatus',resFlag,jid1,'abort',dest)
-                else:
-                    Statistic.Monitor('checkstatus',resFlag,jid1,exe_code,dest)   
-
                 jobId = ''
                 if common.scheduler.boss_scheduler_name == 'condor_g':
                     jobId = str(bossid) + '_' + self.hash + '_' + string.strip(jobAttributes[bossid]['SCHED_ID'])
@@ -199,7 +192,7 @@ class StatusBoss(Actor):
                     common.logger.debug(7,"sending info to ML")
                     params = {}
                     if RB != None:
-                        params = {'taskId': self.cfg_params['taskId'], \
+                        params = {'taskId': common.taskDB.dict('taskId'), \
                         'jobId': jobId,\
                         'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
                         'StatusValueReason': job_status_reason, \
@@ -208,7 +201,7 @@ class StatusBoss(Actor):
                         'StatusDestination': dest, \
                         'RBname': RB }
                     else:
-                        params = {'taskId': self.cfg_params['taskId'], \
+                        params = {'taskId': common.taskDB.dict('taskId'), \
                         'jobId': jobId,\
                         'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
                         'StatusValueReason': job_status_reason, \
@@ -217,7 +210,7 @@ class StatusBoss(Actor):
                         'StatusDestination': dest }
                     common.logger.debug(5,str(params))
 
-                    self.cfg_params['apmon'].sendToML(params)
+                    common.apmon.sendToML(params)
 #            if printline != '': 
 #                print printline
 

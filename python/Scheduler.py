@@ -1,4 +1,5 @@
 from crab_exceptions import *
+import string
 
 #
 #  Naming convention:
@@ -18,11 +19,9 @@ class Scheduler :
     getInstance = staticmethod(getInstance)
 
     def __init__(self, name):
-        #if Scheduler._instance:
-        #    raise CrabException('Scheduler already exists.')
         Scheduler._instance = self
 
-        self._name = name
+        self._name = string.lower(name)
         return
 
     def name(self):
@@ -37,6 +36,7 @@ class Scheduler :
         Returns parameter scheduler-specific, to use with BOSS .
         """
         return 
+
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
@@ -47,3 +47,34 @@ class Scheduler :
         """ destroy instance """
         return
 
+    def checkProxy(self):
+        """ check proxy """
+        return
+
+    def userName(self):
+        """ return the user name """
+        return
+
+    def wsCopyInput(self):
+        """
+        Copy input data from SE to WN
+        """
+        return ""
+
+    def wsCopyOutput(self):
+        """
+        Write a CopyResults part of a job script, e.g.
+        to copy produced output into a storage element.
+        """
+        return ""
+
+    def createXMLSchScript(self, nj, argsList):
+
+        """
+        Create a XML-file for BOSS4.
+        """
+
+        return
+
+    def tOut(self, list):
+        return 120

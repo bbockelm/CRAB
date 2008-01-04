@@ -242,7 +242,7 @@ class SchedulerCondor_g(Scheduler):
         # added here because checklistmatch is not used
         self.checkProxy()
 
-        self._taskId = cfg_params['taskId']
+        self._taskId = common.taskDB.dict('taskId')
 
         try: self.jobtypeName = cfg_params['CRAB.jobtype']
         except KeyError: self.jobtypeName = ''
@@ -466,6 +466,11 @@ class SchedulerCondor_g(Scheduler):
             jid = jid.replace('\n','')
             pass
         return jid
+
+    def userName(self):
+        """ return the user name """
+        self.checkProxy()
+        return runCommand("voms-proxy-info -identity")
 
     def resubmit(self, nj_list):
         """

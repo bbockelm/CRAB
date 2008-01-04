@@ -1,9 +1,10 @@
 #!/bin/sh
-#CRAB title
-#
+# CRAB title
+# 
 # HEAD
 #
 #
+echo "Running $0 with $# positional parameters: $*"
 
 function cmscp {
 ## safe copy of local file in current directory to remote SE via srmcp, including success checking
@@ -155,6 +156,17 @@ function cmscp {
 
 RUNTIME_AREA=`pwd`
 dumpStatus() {
+<<<<<<< crab_template.sh
+  echo ">>> info for dashboard:"
+  echo "***** Cat $1 *****"
+  cat $1
+  echo "***** End Cat jobreport *****"
+  chmod a+x $RUNTIME_AREA/report.py
+  $RUNTIME_AREA/report.py $(cat $1)
+  rm -f $1
+  echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $1
+  echo "MonitorID=`echo $MonitorID`" | tee -a $1
+=======
 echo ">>> info for dashboard:"
 echo "***** Cat $1 *****"
 cat $1
@@ -164,6 +176,7 @@ $RUNTIME_AREA/report.py $(cat $1)
 rm -f $1
 echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $1
 echo "MonitorID=`echo $MonitorID`" | tee -a $1
+>>>>>>> 1.44
 }
 
 echo "Today is `date`"
@@ -174,13 +187,13 @@ echo ">>> current directory content:"
 ls -Al
 echo ">>> current user: `id`"
 echo ">>> voms proxy information:"
-which voms-proxy-info
+#which voms-proxy-info
 voms-proxy-info -all
 
 repo=jobreport.txt
 
 echo ">>> tar zxvf MLfiles.tgz:"
-tar zxvf MLfiles.tgz
+tar zxf MLfiles.tgz
 if [ $? -ne 0 ]; then
     echo "Warning: Failed to untar ML files"
 fi
@@ -240,6 +253,17 @@ echo ">>> Parse FrameworkJobReport crab_fjr.xml"
 if [ -s crab_fjr.xml ]; then
     # check for ProdAgentApi in pwd
     if [ -d ProdAgentApi ]; then
+<<<<<<< crab_template.sh
+      # check for parseCrabFjr.xml in $RUNTIME_AREA
+      if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
+          cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
+          echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
+          executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
+          echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"
+      else
+          echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
+      fi
+=======
         # check for parseCrabFjr.xml in $RUNTIME_AREA
         if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
             cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
@@ -249,8 +273,13 @@ if [ -s crab_fjr.xml ]; then
         else
             echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
         fi
+>>>>>>> 1.44
     else
+<<<<<<< crab_template.sh
+      echo "ProdAgent api to parse CRAB FrameworkJobreport crab_fjr.xml is not available, using exit code of executable from command line."
+=======
         echo "ProdAgent api to parse CRAB FrameworkJobreport crab_fjr.xml is not available, using exit code of executable from command line."
+>>>>>>> 1.44
     fi
 else
     echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."

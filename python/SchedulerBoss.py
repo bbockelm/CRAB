@@ -4,7 +4,6 @@ from crab_exceptions import *
 from crab_util import *
 import common
 import os, time, shutil
-import Scram
 
 from BossSession import *
 
@@ -53,19 +52,17 @@ class SchedulerBoss(Scheduler):
         """
         Verify BOSS installation.
         """
-        try:
-            
-            self.bossenv = os.environ["BOSS_ROOT"]
-        except:
+        if (not os.environ.has_key("BOSS_ROOT")):
             msg = "Error: the BOSS_ROOT is not set."
             msg = msg + " Did you source crab.sh/csh or your bossenv.sh/csh from your BOSS area?\n"
             raise CrabException(msg)
-        try:
-            self.boss_dir = os.environ["CRABSCRIPT"]
-        except:
+
+        if (not os.environ.has_key("CRABSCRIPT")):
             msg = "Error: the CRABSCRIPT is not set."
             msg = msg + " Did you source crab.sh/csh?\n"
             raise CrabException(msg)
+
+        self.boss_dir = os.environ["CRABSCRIPT"]
 
 
     ###################### ---- OK for Boss4 ds
@@ -172,10 +169,7 @@ class SchedulerBoss(Scheduler):
         
         self.cfg_params = cfg_params
         
-        try:    
-            self.groupName = cfg_params['taskId']
-        except:
-            self.groupName = ''
+        self.groupName = common.taskDB.dict('taskId')
          
         try:    
             self.outDir = cfg_params["USER.outputdir"] 
@@ -203,7 +197,7 @@ class SchedulerBoss(Scheduler):
             self.configBossDB_()
 
         self.bossUser =BossSession(self.bossConfigDir, "0", common.work_space.logDir()+'/crab.log')       
-       # self.bossUser.showConfigs()
+        # self.bossUser.showConfigs()
         taskid = ""
         try:
             taskid = common.taskDB.dict('BossTaskId')
@@ -381,6 +375,10 @@ class SchedulerBoss(Scheduler):
         """
         return self.boss_scheduler.checkProxy()
 
+    def userName(self):
+        """ return the user name """
+        return self.boss_scheduler.userName()
+
     ###################### ---- OK for Boss4 ds
     def loggingInfo(self, nj):
         """
@@ -409,7 +407,7 @@ class SchedulerBoss(Scheduler):
             common.logger.message( e.__str__())
             pass
         except BossError,e:
-            raise CrabException("ERROR: listMatch failed with message" + e.__str__())
+            raise CrabException("ERROR: listMatch failed with message " + e.__str__())
         stop = time.time()
         common.logger.debug(1,"listMatch time :"+str(stop-start))
         common.logger.write("listMatch time :"+str(stop-start))
@@ -468,7 +466,8 @@ class SchedulerBoss(Scheduler):
         if len(sites) == 0:
             common.logger.message("No matched Sites :"+str(sites))
             common.logger.message("Printing info about CE close to SE storing data to analize")
-            version = Scram.Scram(self.cfg_params).getSWVersion()
+            from Scram import Scram
+            version = Scram(self.cfg_params).getSWVersion()
             SEs = common.jobDB.destination(nj)
             for i in SEs:
                 common.logger.message("\nSE = " + i)
@@ -505,18 +504,13 @@ class SchedulerBoss(Scheduler):
         Submit one job. nj -- job number.
         """
 
-        try:
-            i = list[0]
-        except IndexError:
-            common.logger.message("No sites where to submit jobs")
-            pass 
+        if (not len(list)): common.logger.message("No sites where to submit jobs")
         jobsList = list[1]
         schcladstring = ''
-        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(i)+'.clad'# TODO add a check is file exist
+        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(list[0])+'.clad'# TODO add a check is file exist
         if os.path.isfile(self.schclassad):  
             schcladstring=self.schclassad
         try:
-#            Tout = len(list[1])*120
             Tout = int(self.boss_scheduler.tOut(list))
             self.bossTask.submit(string.join(jobsList,','), schcladstring, "", "" , "", Tout)
         except SchedulerError,e:
@@ -530,7 +524,7 @@ class SchedulerBoss(Scheduler):
         jid=[]
         bjid = []
         self.bossTask.clear()
-        range = str(jobsList[0]) + ":" + str(jobsList[len(jobsList) - 1])
+        range = str(jobsList[0]) + ":" + str(jobsList[-1])
         try:
             self.bossTask.load(ALL, range)
         except SchedulerError,e:
@@ -541,6 +535,7 @@ class SchedulerBoss(Scheduler):
             common.logger.message("Error : BOSS command failed with message:")
             common.logger.message(e.__str__())
         task = self.bossTask.jobsDict()
+    
         for k, v in task.iteritems():
             if (v["STATUS"] != 'W'):
                 jid.append(v["SCHED_ID"])
@@ -650,13 +645,6 @@ class SchedulerBoss(Scheduler):
                         else:   
                             msg = 'Results of Job # '+`int(i_id)`+' are in '+dir
                             common.logger.message(msg)
-                        # resFlag = 0
-                        # jid = common.scheduler.boss_SID(int(i_id)) 
-                        #  try:
-                        #      exCode = common.scheduler.getExitStatus(jid)
-                        #  except:
-                        #      exCode = ' '
-                        # Statistic.Monitor('retrieved',resFlag,jid,exCode,'dest')
                         common.jobDB.setStatus(int(i_id)-1, 'Y') 
                     except SchedulerError,e:
                         common.logger.message("Warning : Scheduler interaction in getOutput operation failed for jobs:")

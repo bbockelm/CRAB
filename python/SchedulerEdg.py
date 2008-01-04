@@ -199,7 +199,7 @@ class SchedulerEdg(Scheduler):
         sys.path.append(libPath)
 
         try:
-            self._taskId = cfg_params['taskId']
+            self._taskId = common.taskDB.dict('taskId')
         except:
             self._taskId = ''
 
@@ -833,6 +833,12 @@ class SchedulerEdg(Scheduler):
         # cache proxy validity
         self.proxyValid=1
         return
+
+    def userName(self):
+        """ return the user name """
+        self.checkProxy()
+        tmp=runCommand("voms-proxy-info -identity")
+        return tmp.strip()
 
     def configOpt_(self):
         edg_ui_cfg_opt = ' '

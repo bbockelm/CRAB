@@ -35,6 +35,7 @@ class ScriptWriter:
         self.nj = -1     # current job number
 
         self.output_troncate_flag = output_troncate_flag
+
         return
 
     def setAction(self, pattern, action):

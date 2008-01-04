@@ -2,10 +2,7 @@ from Actor import *
 from crab_util import *
 import common
 from ApmonIf import ApmonIf
-import Statistic
 import time
-from ProgressBar import ProgressBar
-from TerminalController import TerminalController
 
 import commands
 from TaskDB import TaskDB
@@ -86,7 +83,7 @@ class SubmitterServer(Actor):
         # submit pre DashBoard information
         params = {'jobId':'TaskMeta'}
                
-        fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'r')
+        fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
         for i in fl.readlines():
             val = i.split(':')
             params[val[0]] = string.strip(val[1])
@@ -94,7 +91,7 @@ class SubmitterServer(Actor):
 
         common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
                         
-        self.cfg_params['apmon'].sendToML(params)
+        common.apmon.sendToML(params)
 
         ### Here start the server submission 
         try:
@@ -152,7 +149,7 @@ class SubmitterServer(Actor):
                 else: 
                     attempt = attempt - 1
                 if (attempt == 0): 
-                    raise CrabException("ASAP ERROR: Unable to ship a valid proxy to the server "+str(self.server_name).split("/")[0]+"\n")
+                    raise CrabException("ASAP ERROR: Unable to ship a valid proxy to the server "+str(server_name).split("/")[0]+"\n")
         except:  
             msg = "ASAP ERROR: Unable to ship a valid proxy to the server \n"
             msg +="Project "+str(WorkDirName)+" not Submitted \n"      
@@ -265,6 +262,7 @@ class SubmitterServer(Actor):
             file.write(self.cfile.toprettyxml())
             #
             file.close()
+            
             cmd = 'lcg-cp --vo cms file://'+os.getcwd()+'/'+str(WorkDirName)+'/share/command.xml gsiftp://' + str(server_name) + str(projectUniqName)+'.xml'
             retcode = os.system(cmd)
             if retcode: 

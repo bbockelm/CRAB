@@ -126,12 +126,6 @@ class JobType:
     def executableArgs(self):
         return ''
 
-    # marco
-    def setTaskid_(self):
-        msg = 'Internal ERROR. Pure virtual function called:\n'
-        msg += self.__class__.__name__+'::executableName() from '+__file__
-        raise CrabException(msg)
-                                
     def setParam_(self, param, value):
         """
         Set relevant job type parameters

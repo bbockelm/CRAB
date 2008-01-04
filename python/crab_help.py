@@ -13,6 +13,7 @@ import tempfile
 
 ###########################################################################
 def usage():
+    print 'in usage()'
     usa_string = common.prog_name + """ [options]
 
 The most useful general options (use '-h' to get complete help):
@@ -40,7 +41,7 @@ The most useful general options (use '-h' to get complete help):
 Example:
   crab -create -submit 1
 """
-    print 
+    print usa_string
     sys.exit(2)
 
 ###########################################################################
@@ -415,7 +416,7 @@ To be used together with I<return_data>. Directory on user interface where to st
 
 =item B<copy_data *>
 
-The output (only the one produced by the executable, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recomended in case of large output.
+The output (only that produced by the executable, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recomended in case of large output.
 
 =item B<storage_element>
 

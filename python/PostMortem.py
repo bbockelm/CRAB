@@ -61,7 +61,7 @@ class PostMortem(Actor):
                       'sid': v,
                       'PostMortemCategory': loggingInfo.getCategory(), \
                       'PostMortemReason': loggingInfo.getReason()}
-            self.cfg_params['apmon'].sendToML(params)
+            common.apmon.sendToML(params)
             pass
 
         return

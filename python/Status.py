@@ -1,6 +1,5 @@
 from Actor import *
 import common
-import Statistic
 
 class Status(Actor):
     def __init__(self, cfg_params, nj_list=[]):
@@ -78,10 +77,10 @@ class Status(Actor):
                 if int(self.cfg_params['USER.activate_monalisa']) == 1:
                     params = {'taskId': 'JobStatus', 'jobId': jid, 'StatusValueReason': common.scheduler.getStatusAttribute_(jid, 'reason'), \
                     'StatusValue': st, 'StatusEnterTime': common.scheduler.getStatusAttribute_(jid, 'stateEnterTime'), 'StatusDestination': dest}
-#                    self.cfg_params['apmon'].fillDict({'taskId': 'JobStatus', 'jobId': jid, \
+#                    common.apmon.fillDict({'taskId': 'JobStatus', 'jobId': jid, \
 #                                                   'StatusValueReason': common.scheduler.getStatusAttribute_(jid, 'reason'), \
 #                                                   'StatusValue': st, 'StatusEnterTime': common.scheduler.getStatusAttribute_(jid, 'stateEnterTime'), 'StatusDestination': dest})
-                    self.cfg_params['apmon'].sendToML(params)
+                    common.apmon.sendToML(params)
                 pass
             else:
                 exitStatus = common.jobDB.exitStatus(nj)
@@ -115,29 +114,22 @@ class Status(Actor):
                 jid = common.jobDB.jobId(nj)
                 exitStatus = common.scheduler.getExitStatus(jid)
                 common.jobDB.setExitStatus(nj, exitStatus)
-                Statistic.Monitor('checkstatus',resFlag,jid,exCode,broker)
             elif result == 'Ready':
                 self.countReady = self.countReady + 1
-                Statistic.Monitor('checkstatus',resFlag,jid,'-----',broker)
             elif result == 'Scheduled':
                 self.countSched = self.countSched + 1
-                Statistic.Monitor('checkstatus',resFlag,jid,'-----',broker)
             elif result == 'Running':
                 self.countRun = self.countRun + 1
-                Statistic.Monitor('checkstatus',resFlag,jid,'-----',broker)
             elif result == 'Aborted':
                 common.jobDB.setStatus(nj, 'A')
                 self.countAbort = self.countAbort + 1
-                Statistic.Monitor('checkstatus',resFlag,jid,'abort',broker)
                 pass
             elif result == 'Cancelled':
                 common.jobDB.setStatus(nj, 'K')
                 self.countCancel = self.countCancel + 1
-                Statistic.Monitor('checkstatus',resFlag,jid,'cancel',broker)
                 pass
             elif result == 'Cleared':
                 exCode = common.scheduler.getExitStatus(jid) 
-                Statistic.Monitor('checkstatus',resFlag,jid,exCode,broker) 
                 self.countCleared = self.countCleared + 1
         except UnboundLocalError:
             common.logger.message('ERROR: UnboundLocalError with ')

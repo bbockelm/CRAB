@@ -39,20 +39,6 @@ class Creator(Actor):
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
         
-        # This is code for proto-monitoring
-        code=common.taskDB.dict("CODE")
-        if self.job_type.name() == 'CMSSW':
-            try: 
-                self.primaryDataset = cfg_params['CMSSW.datasetpath'].split("/")[1]
-            except:
-                self.primaryDataset = 'None'
-            try:
-                self.ProcessedDataset = cfg_params['CMSSW.datasetpath'].split("/")[3]
-            except:
-                self.ProcessedDataset = '  '
-            common.taskDB.setDict("CODE",(code+'::'+str(self.job_type.name())+'::'+str(self.ncjobs)+'::'+str(self.primaryDataset)+'::'+str(self.ProcessedDataset)))
-            pass
-
 
         self.UseServer=0
         try:
@@ -64,18 +50,19 @@ class Creator(Actor):
         #First checkProxy
         common.scheduler.checkProxy()
         try:
-            fl = open(common.work_space.shareDir() + '/' + self.cfg_params['apmon'].fName, 'w')
-            self.cfg_params['GridName'] = runCommand("voms-proxy-info -identity")
-            common.logger.debug(5, "GRIDNAME: "+self.cfg_params['GridName'])
+            fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'w')
+            gridName = common.scheduler.userName()
+            common.logger.debug(5, "GRIDNAME: "+gridName)
             taskType = 'analysis'
-            try: VO = cfg_params['EDG.virtual_organization']
-            except KeyError: VO = 'cms'
+            VO = 'cms'
+            if (cfg_params.has_key('EDG.virtual_organization') ):
+                VO = cfg_params['EDG.virtual_organization']
 
             params = {'tool': common.prog_name,\
                       'JSToolVersion': common.prog_version_str, \
                       'tool_ui': os.environ['HOSTNAME'], \
                       'scheduler': self.cfg_params['CRAB.scheduler'], \
-                      'GridName': self.cfg_params['GridName'].strip(), \
+                      'GridName': gridName, \
                       'taskType': taskType, \
                       'vo': VO, \
                       'user': self.cfg_params['user']}
@@ -83,7 +70,6 @@ class Creator(Actor):
             for i in jtParam.iterkeys():
                 params[i] = string.strip(jtParam[i])
             for j, k in params.iteritems():
-#                print "Values: %s %s"%(j, k)
                 fl.write(j + ':' + k + '\n')
             fl.close()
         except:
@@ -174,7 +160,7 @@ class Creator(Actor):
             outputSandbox=self.job_type.outputSandbox(nj)
             # check if out!=err
             common.jobDB.setOutputSandbox(nj, outputSandbox)
-            common.jobDB.setTaskId(nj, self.cfg_params['taskId'])
+            common.jobDB.setTaskId(nj, common.taskDB.dict('taskId'))
 
             currDest=common.jobDB.destination(nj)
             if (currDest!=lastDest):

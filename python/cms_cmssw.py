@@ -93,8 +93,7 @@ class Cmssw(JobType):
                 self.setParam_('dataset', self.datasetPath)
                 self.setParam_('owner', self.datasetPath)
 
-        self.setTaskid_()
-        self.setParam_('taskId', self.cfg_params['taskId'])
+        self.setParam_('taskId', common.taskDB.dict('taskId'))
 
         self.dataTiers = []
 
@@ -911,9 +910,7 @@ class Cmssw(JobType):
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         ###############################################
         ### needed grep for bug in scramv1 ###
-        txt += scram+' runtime -sh\n'
         txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
-        txt += 'echo $PATH\n'
         # Handle the arguments:
         txt += "\n"
         txt += "## number of arguments (first argument always jobnumber)\n"
@@ -1406,12 +1403,6 @@ class Cmssw(JobType):
     def getParams(self):
         return self._params
 
-    def setTaskid_(self):
-        self._taskId = self.cfg_params['taskId']
-
-    def getTaskid(self):
-        return self._taskId
-
     def uniquelist(self, old):
         """
         remove duplicates from a list
@@ -1429,8 +1420,8 @@ class Cmssw(JobType):
         txt = 'echo ">>> Starting output sandbox limit check :"\n'
         allOutFiles = ""
         listOutFiles = []
-        txt += 'stdoutFile=`ls | grep *stdout` \n'
-        txt += 'stderrFile=`ls | grep *stderr` \n'
+        txt += 'stdoutFile=`ls *stdout` \n'
+        txt += 'stderrFile=`ls *stderr` \n'
         if (self.return_data == 1):
             for fileOut in (self.output_file+self.output_file_sandbox):
                 allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob') + " $stdoutFile $stderrFile"
