@@ -412,6 +412,8 @@ class SchedulerBoss(Scheduler):
         common.logger.debug(1,"listMatch time :"+str(stop-start))
         common.logger.write("listMatch time :"+str(stop-start))
 
+
+        ### SL: I'm positive that we should use BlackWhiteListParser here
         #### MATTY's patch 4 CE white-black lists ####
         sites = []
         for it in CEs :
@@ -452,52 +454,50 @@ class SchedulerBoss(Scheduler):
                     common.logger.debug(5,"CEBlackList: removing from matched site " + str(rem))
         ##############################
 
-
-        # print something about CEs
-#        sites = []
         if (len(sites)!=0): ## it was CEs
-            #sites = []
-#            for it in CEs :
-#                it = it.split(':')[0]
-#                if not sites.count(it) :
-#                    sites.append(it)
             common.logger.debug(5,"All Sites :"+str(CEs))
             common.logger.message("Matched Sites :"+str(sites))
-        if len(sites) == 0:
-            common.logger.message("No matched Sites :"+str(sites))
-            common.logger.message("Printing info about CE close to SE storing data to analize")
-            from Scram import Scram
-            version = Scram(self.cfg_params).getSWVersion()
-            SEs = common.jobDB.destination(nj)
-            for i in SEs:
-                common.logger.message("\nSE = " + i)
-                cmd = "lcg-info --vo cms --list-se --attrs CloseCE --query \"SE=*" + i + "*\""
-                fout, fin, ferr = popen2.popen3(cmd)
-                try:
-                    res = string.strip(fout.readlines()[1])
-                    ce = re.match(".*CloseCE(.*):.*", res).group(1).strip()
-                    common.logger.message("CloseCE = " + ce)
-                except IndexError:
-                    common.logger.message("No CloseCE info available") 
-                    continue
-                cmd = "lcg-info --vo cms --list-ce --attrs CEStatus,Tag --query \"CE=*" + ce + "*,Tag=*" + version + "*\""
-                fout, fin, ferr = popen2.popen3(cmd)
-                try:
-                    res = fout.readlines()
-                    b=re.findall(r"\'VO-cms-slc\d_ia\d+_gcc\d+\'",str(map(lambda x: x.strip(), res)))
-                    print "\033[1;35m CloseCE %s status: \n %s "%(ce, str(res[1]))
-                    print "\033[1;35m Software Tag %s available"%version
-                    print "\033[1;35m Software Architecture set to %s"%str(b)
-                    common.logger.write("Software Tag %s available "%version)
-                    print "\033[0m"
-                except IndexError:
-                    print "\033[1;35m Software Tag %s not found on CloseCE %s or the CloseCE is temporarely not available."%(version, ce)
-                    common.logger.write("Software Tag %s not found on CloseCE %s or the CloseCE is temporarely not available."%(version, ce))
-                    pass
-            common.logger.write("\n")
+        else: listMatchFailure(sites)
+
         return len(sites)
 
-    
+
+## SL: This crap is scheduler dependent. It should not be here! WTH
+    def listMatchFailure(self, sites):
+
+        # print something about CEs
+        common.logger.message("No matched Sites :"+str(sites))
+        common.logger.message("Printing info about CE close to SE storing data to analize")
+        from Scram import Scram
+        version = Scram(self.cfg_params).getSWVersion()
+        SEs = common.jobDB.destination(nj)
+        for i in SEs:
+            common.logger.message("\nSE = " + i)
+            cmd = "lcg-info --vo cms --list-se --attrs CloseCE --query \"SE=*" + i + "*\""
+            fout, fin, ferr = popen2.popen3(cmd)
+            try:
+                res = string.strip(fout.readlines()[1])
+                ce = re.match(".*CloseCE(.*):.*", res).group(1).strip()
+                common.logger.message("CloseCE = " + ce)
+            except IndexError:
+                common.logger.message("No CloseCE info available") 
+                continue
+            cmd = "lcg-info --vo cms --list-ce --attrs CEStatus,Tag --query \"CE=*" + ce + "*,Tag=*" + version + "*\""
+            fout, fin, ferr = popen2.popen3(cmd)
+            try:
+                res = fout.readlines()
+                b=re.findall(r"\'VO-cms-slc\d_ia\d+_gcc\d+\'",str(map(lambda x: x.strip(), res)))
+                print "\033[1;35m CloseCE %s status: \n %s "%(ce, str(res[1]))
+                print "\033[1;35m Software Tag %s available"%version
+                print "\033[1;35m Software Architecture set to %s"%str(b)
+                common.logger.write("Software Tag %s available "%version)
+                print "\033[0m"
+            except IndexError:
+                print "\033[1;35m Software Tag %s not found on CloseCE %s or the CloseCE is temporarely not available."%(version, ce)
+                common.logger.write("Software Tag %s not found on CloseCE %s or the CloseCE is temporarely not available."%(version, ce))
+                pass
+        common.logger.write("\n")
+  
     def submit(self,list):
         """
         Submit BOSS function.
