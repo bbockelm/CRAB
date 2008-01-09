@@ -2,7 +2,7 @@
 
 import sys, getopt, string
 
-from FwkJobRep.ReportParser import readJobReport
+from ProdCommon.FwkJobRep.ReportParser import readJobReport
 from DashboardAPI import apmonSend, apmonFree
 
 
