@@ -25,11 +25,9 @@ function cmscp {
     exit 1
   fi
   path_out_file=$1
-  #out_file=$1
   echo "path_out_file = $path_out_file"
   SE=$2
   SE_PATH=$3
-  #remoteFile=$4
   name_out_file=$4
   middleware='LCG'
   if [ $# == 5 ]; then
@@ -47,7 +45,6 @@ function cmscp {
   opt="${opt} -retry_timeout 480000 -retry_num 3 "
 
   copy_exit_status=1
-  #destination=srm://${SE}:8443${SE_PATH}$out_file
   destination=srm://${SE}:8443${SE_PATH}$name_out_file
   echo "destination = $destination"
 
@@ -58,14 +55,7 @@ function cmscp {
       StageOutExitStatusReason='file already exists'
   else
       echo "Starting copy of the output to $SE, middleware is $middleware"
-      #cmd="srmcp $opt file:///`pwd`/$out_file $destination"
       cmd="srmcp $opt file:///$path_out_file $destination"
-      #full_filename="$out_file"
-      #if [ $middleware == OSG ]; then
-      #  echo "Copying directly from OSG worker node"
-      #  cmd="srmcp $opt file:///$SOFTWARE_DIR/$out_file $destination"
-      #  full_filename="$SOFTWARE_DIR/$out_file"
-      #fi
       echo $cmd
       exitstring=`$cmd 2>&1`
       copy_exit_status=$?
@@ -75,7 +65,6 @@ function cmscp {
           remoteSize=`echo ${remoteMetadata[5]}| tr -d :`
           echo "--> remoteSize = $remoteSize"
           ## for local file
-          #localSize=$(stat -c%s "$full_filename")
           localSize=$(stat -c%s "$path_out_file")
           echo "-->  localSize = $localSize"
           if [ $localSize != $remoteSize ]; then
@@ -83,7 +72,6 @@ function cmscp {
               echo "Copy failed: removing remote file $destination"
               srm-advisory-delete $destination
               copy_exit_status=1
-              #echo "Problem copying $source to $destination with srmcp command"
               echo "Problem copying $path_out_file to $destination with srmcp command"
               StageOutExitStatusReason='remote and local file dimension not match'
               echo "StageOutReport = `cat ./srmcp.report`"
@@ -91,7 +79,6 @@ function cmscp {
           StageOutExitStatusReason='copy ok with srm utils'
       else
           copy_exit_status=1
-          #echo "Problem copying $source to $destination with srmcp command"
           echo "Problem copying $path_out_file to $destination with srmcp command"
           StageOutExitStatusReason=$exitstring
           echo "StageOutReport = `cat ./srmcp.report`"
@@ -99,13 +86,11 @@ function cmscp {
   fi
 
   if [ $copy_exit_status -eq 1 ]; then
-      #cmd="lcg-cp --vo $VO -t 2400 --verbose file://`pwd`/$out_file $destination"
       cmd="lcg-cp --vo $VO -t 2400 --verbose file://$path_out_file $destination"
       echo $cmd
       exitstring=`$cmd 2>&1`
       copy_exit_status=$?
       if [ $copy_exit_status -ne 0 ]; then
-          #echo "Problem copying $source to $destination with lcg-cp command"
           echo "Problem copying $path_out_file to $destination with lcg-cp command"
           StageOutExitStatusReason=$exitstring
           cmd="echo $StageOutExitStatusReason | grep exists"
@@ -240,7 +225,7 @@ echo ">>> Parse FrameworkJobReport crab_fjr.xml"
 # check for crab_fjr.xml in pwd
 if [ -s crab_fjr.xml ]; then
     # check for ProdAgentApi in pwd
-    if [ -d ProdAgentApi ]; then
+    #if [ -d ProdAgentApi ]; then
       # check for parseCrabFjr.xml in $RUNTIME_AREA
       if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
           cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
@@ -250,9 +235,9 @@ if [ -s crab_fjr.xml ]; then
       else
           echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
       fi
-    else
-      echo "ProdAgent api to parse CRAB FrameworkJobreport crab_fjr.xml is not available, using exit code of executable from command line."
-    fi
+    #else
+    #  echo "ProdAgent api to parse CRAB FrameworkJobreport crab_fjr.xml is not available, using exit code of executable from command line."
+    #fi
 else
     echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
 fi

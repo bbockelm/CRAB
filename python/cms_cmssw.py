@@ -798,19 +798,18 @@ class Cmssw(JobType):
                     common.logger.debug(5,"data "+root+"/data"+" to be tarred")
                     tar.add(root+"/data",root[swAreaLen:]+"/data")
 
-            ## Add ProdAgent dir to tar
-            paDir = 'ProdAgentApi'
-            pa = os.environ['CRABDIR'] + '/' + 'ProdAgentApi'
-            if os.path.isdir(pa):
-                tar.add(pa,paDir)
+            ### Removed ProdAgent Api dependencies ### 
+            ### Add ProdAgent dir to tar
+            #paDir = 'ProdAgentApi'
+            #pa = os.environ['CRABDIR'] + '/' + 'ProdAgentApi'
+            #if os.path.isdir(pa):
+            #    tar.add(pa,paDir)
 
-            ### FEDE FOR DBS PUBLICATION
-            ## Add PRODCOMMON dir to tar
+            ## Add ProdCommon dir to tar
             prodcommonDir = 'ProdCommon'
             prodcommonPath = os.environ['CRABDIR'] + '/' + 'ProdCommon'
             if os.path.isdir(prodcommonPath):
                 tar.add(prodcommonPath,prodcommonDir)
-            #############################
 
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
             tar.close()
@@ -1054,12 +1053,13 @@ class Cmssw(JobType):
             txt += '   echo "Successful untar" \n'
             txt += 'fi \n'
             txt += '\n'
-            txt += 'echo ">>> Include ProdAgentApi and PRODCOMMON in PYTHONPATH:"\n'
+            #### Removed ProdAgent API dependencies
+            txt += 'echo ">>> Include ProdCommon in PYTHONPATH:"\n'
             txt += 'if [ -z "$PYTHONPATH" ]; then\n'
             #### FEDE FOR DBS OUTPUT PUBLICATION
-            txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdAgentApi:$SOFTWARE_DIR/ProdCommon\n'
+            txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdCommon\n'
             txt += 'else\n'
-            txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdAgentApi:$SOFTWARE_DIR/ProdCommon:${PYTHONPATH}\n'
+            txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdCommon:${PYTHONPATH}\n'
             txt += 'echo "PYTHONPATH=$PYTHONPATH"\n'
             ###################
             txt += 'fi\n'
@@ -1337,7 +1337,8 @@ class Cmssw(JobType):
         if (publish_data == 1):
             txt += 'echo ">>> Modify Job Report:" \n'
             ################ FEDE FOR DBS2 #############################################
-            txt += 'chmod a+x $SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
+            #txt += 'chmod a+x $SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py\n'
+            txt += 'chmod a+x $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
             #############################################################################
 
             txt += 'if [ -z "$SE" ]; then\n'
@@ -1363,10 +1364,10 @@ class Cmssw(JobType):
             txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-            #txt += 'echo "$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
-            txt += 'echo "$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
-            txt += '$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
-            #txt += '$RUNTIME_AREA/'+self.version+'/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
+            #txt += 'echo "$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
+            #txt += '$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
+            txt += 'echo "$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
+            txt += '$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
 
             txt += 'modifyReport_result=$?\n'
             txt += 'echo modifyReport_result = $modifyReport_result\n'

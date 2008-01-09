@@ -10,7 +10,7 @@ import os, string
 import sys
 import popen2
 
-from FwkJobRep.ReportParser import readJobReport
+from ReportParser import readJobReport
 
 
 

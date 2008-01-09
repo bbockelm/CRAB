@@ -15,18 +15,19 @@ echo "CRABDIR = $CRABdir"
 CRABtag=$tag
 DBSAPItag="DBS_1_0_8"
 DLSAPItag="DLS_1_0_0"
-PAAPItag="PRODAGENT_0_6_0"
-PRODCOMMONtag="PRODCOMMON_0_6_0"
+#PAAPItag="PRODAGENT_0_7_0_pre1"
+PRODCOMMONtag="PRODCOMMON_0_7_0_pre1"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
 
-#configure_dbsdls=configure_dbsdls
 ## download CRAB from CVS and cleanup the code a bit
 echo ">> downloading CRAB tag $CRABtag from CVS CRAB"
 cvs co -r $CRABtag -d $CRABdir CRAB
+
 #echo ">> downloading CRAB HEAD from CVS CRAB"
 #cvs co -d $CRABdir CRAB
+
 cd $CRABdir
 cvs up -P python/BossScript 
 chmod -x python/crab.py
@@ -50,6 +51,7 @@ echo ">> downloading DBS API tag ${DBSAPItag} from CVS DBS/Clients/PythonAPI"
 cd ..
 cvs co -r ${DBSAPItag} -d DBSAPI COMP/DBS/Clients/Python
 # add this dirs to the PYTHONPATH
+
 ## download DLS API
 echo ">> downloading DLS CLI tag ${DLSAPItag} from CVS DLS/Client"
 cvs co -r ${DLSAPItag} DLS/Client
@@ -63,27 +65,29 @@ rm -r DLS
 # add this dir to PATH
 
 ## download PA API
-echo ">> downloading PA API tag ${DBSAPItag} from CVS DBS/Clients/PythonAPI"
-mkdir -p ProdAgentApi
-cd ProdAgentApi
-cvs co -r ${PAAPItag} -d IMProv COMP/PRODAGENT/src/python/IMProv
-cvs co -r ${PAAPItag} -d FwkJobRep COMP/PRODAGENT/src/python/FwkJobRep
-cd ..
-
-### FEDE FOR DBS2 PUBLICATION
-### add modify report file
-echo "mv ModifyJobReport.py file from python to ProdAgentApi/FwkJobRep"
-mv python/ModifyJobReport.py ProdAgentApi/FwkJobRep/ModifyJobReport.py
+#echo ">> downloading PA API tag ${DBSAPItag} from CVS DBS/Clients/PythonAPI"
+#mkdir -p ProdAgentApi
+#cd ProdAgentApi
+#cvs co -r ${PAAPItag} -d IMProv COMP/PRODAGENT/src/python/IMProv
+#cvs co -r ${PAAPItag} -d FwkJobRep COMP/PRODAGENT/src/python/FwkJobRep
+#cd ..
 
 ## download PRODCOMMON
 echo ">> downloading PRODCOMMON tag ${PRODCOMMONtag} from CVS PRODCOMMON"
 mkdir -p ProdCommon
 cd ProdCommon
 cvs co -r ${PRODCOMMONtag} -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
+cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
+#cvs co -r ${PRODCOMMONtag} -d FwkJobRep COMP/PRODAGENT/src/python/FwkJobRep
 cd ..
 ##################
 
+### FEDE FOR DBS2 PUBLICATION
+### add modify report file
+echo "mv ModifyJobReport.py file from python to ProdCommon/FwkJobRep"
+mv python/ModifyJobReport.py ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py
 cd ..
+
 tar zcvf $CRABdir.tgz $CRABdir
 echo ""
 echo " tarball prepared : $CRABdir.tgz " 

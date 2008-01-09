@@ -5,7 +5,7 @@ from Actor import *
 from crab_util import *
 from crab_logger import Logger
 from crab_exceptions import *
-from FwkJobRep.ReportParser import readJobReport
+from ProdCommon.FwkJobRep.ReportParser import readJobReport
 from ProdCommon.MCPayloads.WorkflowSpec import WorkflowSpec
 from ProdCommon.DataMgmt.DBS.DBSWriter import DBSWriter
 from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
