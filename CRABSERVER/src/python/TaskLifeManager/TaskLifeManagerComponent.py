@@ -567,7 +567,9 @@ class TaskLifeManagerComponent:
             if task.toLive() < (60*60*24): ## twentyfour hours
                 if not task.getNotified():
                     self.notifyCleaning( task.getName(), task.toLive(), task.getOwner(), task.getOwnerMail() )
+                    logging.info("       - notified: "+str(task.getNotified()))
                     task.notify()
+                    logging.info("       - notified: "+str(task.getNotified()))
                     sign = 1
                 if task.toLive() < (60*60*10): ## ten hours
                     if task.toLive() >= 0:
@@ -653,7 +655,7 @@ class TaskLifeManagerComponent:
         if owner is None or mails is None:
             owner, mails = self.checkInfoUser(taskName)
 
-        payload = origTaskName +"::"+ str(toLive) +"::"+ owner +"::"+ str(mails)
+        payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ owner +"::"+ str(mails)
 
         logging.info(" Publishing ['"+ mexage +"']")
         logging.info("   payload = " + payload )
