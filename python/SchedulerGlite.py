@@ -170,60 +170,11 @@ class SchedulerGlite(SchedulerEdg):
         txt += 'fi \n'
 
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
-        #txt += 'rm -f $RUNTIME_AREA/$repo \n'
-        #txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
         txt += '\n\n'
 
-        #if int(self.copy_data) == 1:
-        #   if self.SE:
-        #      txt += 'export SE='+self.SE+'\n'
-        #      txt += 'echo "SE = $SE"\n'
-        #   if self.SE_PATH:
-        #      if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
-        #      txt += 'export SE_PATH='+self.SE_PATH+'\n'
-        #      txt += 'echo "SE_PATH = $SE_PATH"\n'
 
         txt += 'export VO='+self.VO+'\n'
-        ### some line for LFC catalog setting
-        #txt += 'if [ $middleware == LCG ]; then \n'
-        #txt += '    if [[ $LCG_CATALOG_TYPE != \''+self.lcg_catalog_type+'\' ]]; then\n'
-        #txt += '        export LCG_CATALOG_TYPE='+self.lcg_catalog_type+'\n'
-        #txt += '    fi\n'
-        #txt += '    if [[ $LFC_HOST != \''+self.lfc_host+'\' ]]; then\n'
-        #txt += '        export LFC_HOST='+self.lfc_host+'\n'
-        #txt += '    fi\n'
-        #txt += '    if [[ $LFC_HOME != \''+self.lfc_home+'\' ]]; then\n'
-        #txt += '        export LFC_HOME='+self.lfc_home+'\n'
-        #txt += '    fi\n'
-        #txt += 'elif [ $middleware == OSG ]; then\n'
-        #txt += '    echo "LFC catalog setting to be implemented for OSG"\n'
-        #txt += 'fi\n'
-        #####
-        #if int(self.register_data) == 1:
-        #   txt += 'if [ $middleware == LCG ]; then \n'
-        #   txt += '    export LFN='+self.LFN+'\n'
-        #   txt += '    lfc-ls $LFN\n'
-        #   txt += '    result=$?\n'
-        #   txt += '    echo $result\n'
-        #   ### creation of LFN dir in LFC catalog, under /grid/cms dir
-        #   txt += '    if [ $result != 0 ]; then\n'
-        #   txt += '       lfc-mkdir $LFN\n'
-        #   txt += '       result=$?\n'
-        #   txt += '       echo $result\n'
-        #   txt += '    fi\n'
-        #   txt += 'elif [ $middleware == OSG ]; then\n'
-        #   txt += '    echo " Files registration to be implemented for OSG"\n'
-        #   txt += 'fi\n'
-        #   txt += '\n'
-        #   if self.VO:
-        #      txt += 'export VO='+self.VO+'\n'
-        #   if self.LFN:
-        #      txt += 'if [ $middleware == LCG ]; then \n'
-        #      txt += '    export LFN='+self.LFN+'\n'
-        #      txt += 'fi\n'
-        #      txt += '\n'
 
         txt += 'if [ $middleware == LCG ]; then\n'
         txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
@@ -238,9 +189,6 @@ class SchedulerGlite(SchedulerEdg):
         txt += '        echo "JOB_EXIT_STATUS = 10099" \n'
         txt += '        echo "JobExitCode=10099" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '        dumpStatus $RUNTIME_AREA/$repo \n'
-        #txt += '        rm -f $RUNTIME_AREA/$repo \n'
-        #txt += '        echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '        echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '        exit 1 \n'
         txt += '    fi \n'
         txt += 'fi \n'
@@ -273,9 +221,6 @@ class SchedulerGlite(SchedulerEdg):
             if len(replicas)!=0:
                 replicas = self.blackWhiteListParser.checkWhiteList(replicas,n)
 
-            #if len(replicas)==0:
-                #msg = 'No sites remaining that host any part of the requested data! Exiting... '
-                #raise CrabException(msg)
             itr4 = replicas
             #####
         return itr4
