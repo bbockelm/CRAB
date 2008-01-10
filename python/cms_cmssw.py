@@ -20,10 +20,7 @@ class Cmssw(JobType):
         # init BlackWhiteListParser
         self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
 
-        try:
-            self.MaxTarBallSize = float(self.cfg_params['EDG.maxtarballsize'])
-        except KeyError:
-            self.MaxTarBallSize = 9.5
+        self.MaxTarBallSize = float(self.cfg_params.get('EDG.maxtarballsize',9.5))
 
         # number of jobs requested to be created, limit obj splitting
         self.ncjobs = ncjobs
@@ -64,18 +61,17 @@ class Cmssw(JobType):
 
         ### collect Data cards
 
-        try:
-            tmp =  cfg_params['CMSSW.datasetpath']
-            log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
-            if string.lower(tmp)=='none':
-                self.datasetPath = None
-                self.selectNoInput = 1
-            else:
-                self.datasetPath = tmp
-                self.selectNoInput = 0
-        except KeyError:
+        if not cfg_params.has_key('CMSSW.datasetpath'):
             msg = "Error: datasetpath not defined "
             raise CrabException(msg)
+        tmp =  cfg_params['CMSSW.datasetpath']
+        log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
+        if string.lower(tmp)=='none':
+            self.datasetPath = None
+            self.selectNoInput = 1
+        else:
+            self.datasetPath = tmp
+            self.selectNoInput = 0
 
         # ML monitoring
         # split dataset path style: /PreProdR3Minbias/SIM/GEN-SIM
@@ -83,6 +79,7 @@ class Cmssw(JobType):
             self.setParam_('dataset', 'None')
             self.setParam_('owner', 'None')
         else:
+            ## SL what is supposed to fail here?
             try:
                 datasetpath_split = self.datasetPath.split("/")
                 # standard style
@@ -98,29 +95,19 @@ class Cmssw(JobType):
         self.dataTiers = []
 
         ## now the application
-        try:
-            self.executable = cfg_params['CMSSW.executable']
-            self.setParam_('exe', self.executable)
-            log.debug(6, "CMSSW::CMSSW(): executable = "+self.executable)
-            msg = "Default executable cmsRun overridden. Switch to " + self.executable
-            log.debug(3,msg)
-        except KeyError:
-            self.executable = 'cmsRun'
-            self.setParam_('exe', self.executable)
-            msg = "User executable not defined. Use cmsRun"
-            log.debug(3,msg)
-            pass
+        self.executable = cfg_params.get('CMSSW.executable','cmsRun')
+        self.setParam_('exe', self.executable)
+        log.debug(6, "CMSSW::CMSSW(): executable = "+self.executable)
 
-        try:
-            self.pset = cfg_params['CMSSW.pset']
-            log.debug(6, "Cmssw::Cmssw(): PSet file = "+self.pset)
-            if self.pset.lower() != 'none' :
-                if (not os.path.exists(self.pset)):
-                    raise CrabException("User defined PSet file "+self.pset+" does not exist")
-            else:
-                self.pset = None
-        except KeyError:
+        if not cfg_params.has_key('CMSSW.pset'):
             raise CrabException("PSet file missing. Cannot run cmsRun ")
+        self.pset = cfg_params['CMSSW.pset']
+        log.debug(6, "Cmssw::Cmssw(): PSet file = "+self.pset)
+        if self.pset.lower() != 'none' :
+            if (not os.path.exists(self.pset)):
+                raise CrabException("User defined PSet file "+self.pset+" does not exist")
+        else:
+            self.pset = None
 
         # output files
         ## stuff which must be returned always via sandbox
@@ -130,34 +117,26 @@ class Cmssw(JobType):
         self.output_file_sandbox.append(self.fjrFileName)
 
         # other output files to be returned via sandbox or copied to SE
-        try:
-            self.output_file = []
-            tmp = cfg_params['CMSSW.output_file']
-            if tmp != '':
-                tmpOutFiles = string.split(cfg_params['CMSSW.output_file'],',')
-                log.debug(7, 'cmssw::cmssw(): output files '+str(tmpOutFiles))
-                for tmp in tmpOutFiles:
-                    tmp=string.strip(tmp)
-                    self.output_file.append(tmp)
-                    pass
-            else:
-                log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available\n")
+        self.output_file = []
+        tmp = cfg_params.get('CMSSW.output_file',None)
+        if tmp :
+            tmpOutFiles = string.split(tmp,',')
+            log.debug(7, 'cmssw::cmssw(): output files '+str(tmpOutFiles))
+            for tmp in tmpOutFiles:
+                tmp=string.strip(tmp)
+                self.output_file.append(tmp)
                 pass
-            pass
-        except KeyError:
+        else:
             log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available\n")
-            pass
+        pass
 
         # script_exe file as additional file in inputSandbox
-        try:
-            self.scriptExe = cfg_params['USER.script_exe']
-            if self.scriptExe != '':
-               if not os.path.isfile(self.scriptExe):
-                  msg ="ERROR. file "+self.scriptExe+" not found"
-                  raise CrabException(msg)
-               self.additional_inbox_files.append(string.strip(self.scriptExe))
-        except KeyError:
-            self.scriptExe = ''
+        self.scriptExe = cfg_params.get('USER.script_exe',None)
+        if self.scriptExe :
+           if not os.path.isfile(self.scriptExe):
+              msg ="ERROR. file "+self.scriptExe+" not found"
+              raise CrabException(msg)
+           self.additional_inbox_files.append(string.strip(self.scriptExe))
 
         #CarlosDaniele
         if self.datasetPath == None and self.pset == None and self.scriptExe == '' :
@@ -165,7 +144,7 @@ class Cmssw(JobType):
            raise CrabException(msg)
 
         ## additional input files
-        try:
+        if cfg_params.has_key('USER.additional_input_files'):
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
             for tmp in tmpAddFiles:
                 tmp = string.strip(tmp)
@@ -189,36 +168,28 @@ class Cmssw(JobType):
                 pass
             pass
             common.logger.debug(5,"Additional input files: "+str(self.additional_inbox_files))
-        except KeyError:
-            pass
-
-        # files per job
-        try:
-            if (cfg_params['CMSSW.files_per_jobs']):
-                raise CrabException("files_per_jobs no longer supported.  Quitting.")
-        except KeyError:
-            pass
+        pass
 
         ## Events per job
-        try:
+        if cfg_params.has_key('CMSSW.events_per_job'):
             self.eventsPerJob =int( cfg_params['CMSSW.events_per_job'])
             self.selectEventsPerJob = 1
-        except KeyError:
+        else:
             self.eventsPerJob = -1
             self.selectEventsPerJob = 0
 
         ## number of jobs
-        try:
+        if cfg_params.has_key('CMSSW.number_of_jobs'):
             self.theNumberOfJobs =int( cfg_params['CMSSW.number_of_jobs'])
             self.selectNumberOfJobs = 1
-        except KeyError:
+        else:
             self.theNumberOfJobs = 0
             self.selectNumberOfJobs = 0
 
-        try:
+        if cfg_params.has_key('CMSSW.total_number_of_events'):
             self.total_number_of_events = int(cfg_params['CMSSW.total_number_of_events'])
             self.selectTotalNumberEvents = 1
-        except KeyError:
+        else:
             self.total_number_of_events = 0
             self.selectTotalNumberEvents = 0
 
@@ -232,49 +203,24 @@ class Cmssw(JobType):
                  raise CrabException(msg)
 
         ## source seed for pythia
-        try:
-            self.sourceSeed = int(cfg_params['CMSSW.pythia_seed'])
-        except KeyError:
-            self.sourceSeed = None
-            common.logger.debug(5,"No seed given")
+        self.sourceSeed = cfg_params.get('CMSSW.pythia_seed',None)
 
-        try:
-            self.sourceSeedVtx = int(cfg_params['CMSSW.vtx_seed'])
-        except KeyError:
-            self.sourceSeedVtx = None
-            common.logger.debug(5,"No vertex seed given")
+        self.sourceSeedVtx = cfg_params.get('CMSSW.vtx_seed',None)
 
-        try:
-            self.sourceSeedG4 = int(cfg_params['CMSSW.g4_seed'])
-        except KeyError:
-            self.sourceSeedG4 = None
-            common.logger.debug(5,"No g4 sim hits seed given")
+        self.sourceSeedG4 = cfg_params.get('CMSSW.g4_seed',None)
 
-        try:
-            self.sourceSeedMix = int(cfg_params['CMSSW.mix_seed'])
-        except KeyError:
-            self.sourceSeedMix = None
-            common.logger.debug(5,"No mix seed given")
+        self.sourceSeedMix = cfg_params.get('CMSSW.mix_seed',None)
 
-        try:
-            self.firstRun = int(cfg_params['CMSSW.first_run'])
-        except KeyError:
-            self.firstRun = None
-            common.logger.debug(5,"No first run given")
+        self.firstRun = cfg_params.get('CMSSW.first_run',None)
+
         if self.pset != None: #CarlosDaniele
             import PsetManipulator as pp
             PsetEdit = pp.PsetManipulator(self.pset) #Daniele Pset
 
         # Copy/return
 
-        try:
-            self.copy_data = int(cfg_params['USER.copy_data'])
-        except KeyError:
-            self.copy_data = 0
-        try:
-            self.return_data = int(cfg_params['USER.return_data'])
-        except KeyError:
-            self.return_data = 0
+        self.copy_data = int(cfg_params.get('USER.copy_data',0))
+        self.return_data = int(cfg_params.get('USER.return_data',0))
 
         #DBSDLS-start
         ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code
@@ -337,7 +283,6 @@ class Cmssw(JobType):
         ## Contact the DBS
         common.logger.message("Contacting Data Discovery Services ...")
         try:
-
             self.pubdata=DataDiscovery.DataDiscovery(datasetPath, cfg_params)
             self.pubdata.fetchDBSInfo()
 
