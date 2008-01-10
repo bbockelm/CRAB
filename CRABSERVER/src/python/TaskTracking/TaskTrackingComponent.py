@@ -57,6 +57,7 @@ semvar = BoundedSemaphore(maxnum) #for synchronisation between thread
 semfile = BoundedSemaphore(maxnum) #for synchronisation between thread 
 semMsgQueue = BoundedSemaphore(maxnum) #for synchronisation between thread for the msgQueue 
 #### will move all var to init for avoiding changement of var value by instance of this class  
+ms_sem = BoundedSemaphore(maxnum)
 
 class TaskTrackingComponent:
     """
@@ -937,9 +938,14 @@ class TaskTrackingComponent:
 #            obj = UtilSubject(self.args['dropBoxPath'], taskName, uuid)
 #            origTaskName, userName = obj.getInfos()
 #            del obj
-            self.msThread.publish("TaskTracking:TaskEnded", taskName)
+            try:
+                ms_sem.acquire()
+                self.msThread.publish("TaskTracking:TaskEnded", taskName)
+                self.msThread.commit()
+            finally:
+                ms_sem.release()
+
             logBuf = self.__logToBuf__(logBuf, "-------> Published 'TaskEnded' message with payload: %s" % taskName)
-            self.msThread.commit()
         logging.info(logBuf)
 
 
@@ -951,8 +957,12 @@ class TaskTrackingComponent:
        kEnded
         """
         logBuf = ""
-        self.msThread.publish("TaskSuccess", taskPath)
-        self.msThread.commit()
+        try:
+            ms_sem.acquire()
+            self.msThread.publish("TaskSuccess", taskPath)
+            self.msThread.commit()
+        finally:
+            ms_sem.release()
 
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-*")
         logBuf = self.__logToBuf__(logBuf, "-------> Published 'TaskSuccess' message with payload: %s" % taskPath)
@@ -971,8 +981,12 @@ class TaskTrackingComponent:
 	if userName == "" or userName == None:
 	    userName = "Unknown"
         payload = taskName + ":" + userName + ":" + eMaiList
-        self.msThread.publish("TaskFailed", payload)
-        self.msThread.commit()
+        try:
+            ms_sem.acquire()
+            self.msThread.publish("TaskFailed", payload)
+            self.msThread.commit()
+        finally:
+            ms_sem.release()
 
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logBuf = self.__logToBuf__(logBuf, "Published 'TaskFailed' message with payload: %s" % payload)
@@ -989,8 +1003,12 @@ class TaskTrackingComponent:
 #        if userName == "" or userName == None:
 #            userName = "Unknown"
 #        payload = taskName + ":" + userName + ":" + eMaiList
-        self.msThread.publish("TaskNotSubmitted", taskPath) # payload)
-        self.msThread.commit()
+        try:
+            ms_sem.acquire()
+            self.msThread.publish("TaskNotSubmitted", taskPath) # payload)
+            self.msThread.commit()
+        finally:
+            ms_sem.release()
 
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logBuf = self.__logToBuf__(logBuf, "Published 'TaskNotSubmitted' message with payload: %s" % taskPath) #payload)
@@ -1004,8 +1022,12 @@ class TaskTrackingComponent:
         _taskFastKill_
         """
         logBuf = ""
-        self.msThread.publish("TaskFastKill", taskPath) # payload) 
-        self.msThread.commit()
+        try:
+            ms_sem.acquire()
+            self.msThread.publish("TaskFastKill", taskPath) # payload) 
+            self.msThread.commit()
+        finally:
+            ms_sem.release()
 
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logBuf = self.__logToBuf__(logBuf, "Published 'TaskFastKill' message with payload: %s" % taskPath) #payload)
@@ -1022,8 +1044,12 @@ class TaskTrackingComponent:
         if userName == "" or userName == None:
             userName = "Unknown"
         payload = taskName + ":" + userName + ":" + eMaiList
-        self.msThread.publish("TaskIncompleteSubmission", payload)
-        self.msThread.commit()
+        try:
+            ms_sem.acquire()
+            self.msThread.publish("TaskIncompleteSubmission", payload)
+            self.msThread.commit()
+        finally:
+            ms_sem.release()
 
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logBuf = self.__logToBuf__(logBuf, "Published 'TaskIncompleteSubmission' message with payload: %s" % payload)
