@@ -127,9 +127,7 @@ class Crab:
         from BlackWhiteListParser import BlackWhiteListParser
         self.blackWhiteListParser = BlackWhiteListParser(self.cfg_params)
 
-        self.UseServer=0
-        if (self.cfg_params.has_key('CRAB.server_mode')):
-            self.UseServer=int(self.cfg_params['CRAB.server_mode'])
+        self.UseServer=int(self.cfg_params.get('CRAB.server_mode',0))
 
         common.apmon = ApmonIf()
         
@@ -489,6 +487,7 @@ class Crab:
                     from SubmitterServer import SubmitterServer
                     self.actions[opt] = SubmitterServer(self.cfg_params, self.parseRange_(val), val)
                 else:
+                ## TODO SL: To be moved in Submitter c'tor
                 # modified to support server mode
                     # get user request
                     nsjobs = -1
