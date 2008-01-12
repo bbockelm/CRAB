@@ -35,6 +35,7 @@ rm python/crab.*sh
 rm python/tar*
 rm python/zero
 rm -rf CRABSERVER
+rm -rf PsetCode
 mv python/configure .
 mv python/configureBoss .
 
