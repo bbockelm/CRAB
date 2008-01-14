@@ -185,8 +185,8 @@ class SchedulerCondor_g(Scheduler):
                     raise CrabException(msg)
         except KeyError: self.copy_data = 0
 
-        # switch off publication per default for condor_g for now
-        self.publish_data = 0
+        #### switch off publication per default for condor_g for now
+        #### self.publish_data = 0
 
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
            msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
@@ -263,6 +263,38 @@ class SchedulerCondor_g(Scheduler):
         except KeyError:
             msg = "Error: datasetpath not defined "
             raise CrabException(msg)
+            
+        ########### FEDE FOR DBS2 ##############################
+        try:
+            self.publish_data = cfg_params["USER.publish_data"]
+            self.checkProxy()
+            if int(self.publish_data) == 1:
+                try:
+                    self.publish_data_name = cfg_params['USER.publish_data_name']
+                except KeyError:
+                    msg = "Error. The [USER] section does not have 'publish_data_name'"
+                    raise CrabException(msg)
+                try:
+                    tmp = runCommand("voms-proxy-info -identity")
+                    tmp = string.split(tmp,'/')
+                    reCN=re.compile(r'CN=')
+                    for t in tmp:
+                        if reCN.match(t):
+                            self.UserGridName=string.strip((t.replace('CN=','')).replace(' ',''))
+
+                    #self.UserGridName = string.strip(runCommand("voms-proxy-info -identity | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'"))
+                except:
+                    msg = "Error. Problem with voms-proxy-info -identity command"
+                    raise CrabException(msg)
+        except KeyError: self.publish_data = 0
+
+        if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
+           msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
+           msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
+           common.logger.message(msg)
+           raise CrabException(msg)
+        #################################################
+        
         return
 
     def sched_parameter(self):
@@ -399,33 +431,35 @@ class SchedulerCondor_g(Scheduler):
             txt += 'echo "SE_PATH = $SE_PATH"\n'
 
             txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
-            txt += 'for out_file in $file_list ; do\n'
-            txt += '   echo "Trying to copy output file to $SE using srmcp"\n'
-            txt += '   cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file $middleware\n'
-            txt += '   copy_exit_status=$?\n'
-            txt += '   echo "COPY_EXIT_STATUS for srmcp = $copy_exit_status"\n'
-            txt += '   echo "STAGE_OUT = $copy_exit_status"\n'
 
-            txt += '   if [ $copy_exit_status -ne 0 ]; then\n'
-            txt += '       echo "Problem copying $out_file to $SE $SE_PATH"\n'
-            txt += '       echo "StageOutExitStatus = $copy_exit_status " | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '       echo "StageOutExitStatusReason = $exitstring" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '       copy_exit_status=60307\n'
-
-            txt += '   else\n'
-            txt += '       echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '       echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '       echo "output copied into $SE/$SE_PATH directory"\n'
-            txt += '       echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '       echo "srmcp succeeded"\n'
+            txt += 'if [ $output_exit_status -eq 60302 ]; then\n'
+            txt += '    echo "--> No output file to copy to $SE"\n'
+            txt += '    copy_exit_status=$output_exit_status\n'
+            txt += '    echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
+            txt += 'else\n'
+            txt += '    for out_file in $file_list ; do\n'
+            txt += '        echo "Trying to copy output file to $SE"\n'
+            txt += '        cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file $middleware\n'
+            txt += '        copy_exit_status=$?\n'
+            txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
+            txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
+            txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
+            txt += '            echo "Problem copying $out_file to $SE $SE_PATH"\n'
+            txt += '            echo "StageOutExitStatus = $copy_exit_status " | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '            copy_exit_status=60307\n'
+            txt += '        else\n'
+            txt += '            echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '            echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
+            txt += '            echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '        fi\n'
+            txt += '    done\n'
+            txt += '    if [ $copy_exit_status -ne 0 ]; then\n'
+            txt += '        SE=""\n'
+            txt += '        echo "SE = $SE"\n'
+            txt += '        SE_PATH=""\n'
+            txt += '        echo "SE_PATH = $SE_PATH"\n'
             txt += '    fi\n'
-            txt += 'done\n'
-            txt += 'if [ $copy_exit_status -ne 0 ]; then\n'
-            txt += '      SE=""\n'
-            txt += '      echo "SE = $SE"\n'
-            txt += '      SE_PATH=""\n'
-            txt += '      echo "SE_PATH = $SE_PATH"\n'
-            txt += 'fi\n'
             txt += 'exit_status=$copy_exit_status\n'
             pass
         return txt
