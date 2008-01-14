@@ -8,9 +8,78 @@ from ProgressBar import ProgressBar
 from TerminalController import TerminalController
 
 class Submitter(Actor):
-    def __init__(self, cfg_params, nj_list):
+    def __init__(self, cfg_params, parsed_range, val):
         self.cfg_params = cfg_params
-        self.nj_list = nj_list
+
+        # get user request
+        nsjobs = -1
+        chosenJobsList = None
+        if val:
+            if val=='all': 
+                pass
+            elif (type(eval(val)) is int) and eval(val) > 0:
+                # positive number
+                nsjobs = eval(val)
+            # NEW PART # Fabio
+            # put here code for LIST MANAGEMEN
+            elif (type(eval(val)) is tuple)or( type(eval(val)) is int and eval(val)<0 ) :
+                chosenJobsList = parsed_range
+                chosenJobsList = [i-1 for i in chosenJobsList ]
+                nsjobs = len(chosenJobsList) 
+            #
+            else:
+                msg = 'Bad submission option <'+str(val)+'>\n'
+                msg += '      Must be an integer or "all"'
+                msg += '      Generic range is not allowed"'
+                raise CrabException(msg)
+            pass
+     
+        common.logger.debug(5,'nsjobs '+str(nsjobs))
+        # total jobs
+        nj_list = []
+        # get the first not already submitted
+        common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
+        jobSetForSubmission = 0
+        jobSkippedInSubmission = []
+        datasetpath=self.cfg_params['CMSSW.datasetpath']
+
+        # NEW PART # Fabio
+        # modified to handle list of jobs by the users # Fabio
+        tmp_jList = range(common.jobDB.nJobs())
+        if chosenJobsList != None:
+            tmp_jList = chosenJobsList
+        # build job list
+        from BlackWhiteListParser import BlackWhiteListParser
+        self.blackWhiteListParser = BlackWhiteListParser(self.cfg_params)
+        for nj in tmp_jList:
+            cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(nj)) # More readable # Fabio
+            if (cleanedBlackWhiteList != '') or (datasetpath == "None" ) or (datasetpath == None): ## Matty's fix
+                if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
+                    jobSetForSubmission +=1
+                    nj_list.append(nj)
+                else: 
+                    continue
+            else :
+                jobSkippedInSubmission.append(nj+1)
+            #
+            if nsjobs >0 and nsjobs == jobSetForSubmission:
+                break
+            pass
+        del tmp_jList
+        #
+
+        if nsjobs>jobSetForSubmission:
+            common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
+        if len(jobSkippedInSubmission) > 0 :
+            #print jobSkippedInSubmission
+            #print spanRanges(jobSkippedInSubmission)
+            mess =""
+            for jobs in jobSkippedInSubmission:
+                mess += str(jobs) + ","
+            common.logger.message("Jobs:  " +str(mess) + "\n      skipped because no sites are hosting this data\n")
+        # submit N from last submitted job
+        common.logger.debug(5,'nj_list '+str(nj_list))
+                 
         
         if common.scheduler.boss_scheduler_name == 'condor_g':
             # create hash of cfg file
@@ -18,11 +87,9 @@ class Submitter(Actor):
         else:
             self.hash = ''
 
-        self.UseServer=0
-        try:
-            self.UseServer=int(self.cfg_params['CRAB.server_mode'])
-        except KeyError:
-            pass
+        self.nj_list = nj_list
+
+        self.UseServer=int(self.cfg_params.get('CRAB.server_mode',0))
 
         return
     

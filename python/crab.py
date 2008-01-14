@@ -123,10 +123,6 @@ class Crab:
 
         common.jobDB = JobDB()
         
-        # init BlackWhiteListParser
-        from BlackWhiteListParser import BlackWhiteListParser
-        self.blackWhiteListParser = BlackWhiteListParser(self.cfg_params)
-
         self.UseServer=int(self.cfg_params.get('CRAB.server_mode',0))
 
         common.apmon = ApmonIf()
@@ -487,89 +483,15 @@ class Crab:
                     from SubmitterServer import SubmitterServer
                     self.actions[opt] = SubmitterServer(self.cfg_params, self.parseRange_(val), val)
                 else:
-                ## TODO SL: To be moved in Submitter c'tor
-                # modified to support server mode
-                    # get user request
-                    nsjobs = -1
-                    chosenJobsList = None
-                    if val:
-                        if val=='all': 
-                            pass
-                        elif (type(eval(val)) is int) and eval(val) > 0:
-                            # positive number
-                            nsjobs = eval(val)
-                        # NEW PART # Fabio
-                        # put here code for LIST MANAGEMEN
-                        elif (type(eval(val)) is tuple)or( type(eval(val)) is int and eval(val)<0 ) :
-                            chosenJobsList = self.parseRange_(val)
-                            chosenJobsList = [i-1 for i in chosenJobsList ]
-                            nsjobs = len(chosenJobsList) 
-                        #
-                        else:
-                            msg = 'Bad submission option <'+str(val)+'>\n'
-                            msg += '      Must be an integer or "all"'
-                            msg += '      Generic range is not allowed"'
-                            raise CrabException(msg)
+                    from Submitter import Submitter
+                    # Instantiate Submitter object
+                    self.actions[opt] = Submitter(self.cfg_params, self.parseRange_(val), val)
+                    # Create and initialize JobList
+                    if len(common.job_list) == 0 :
+                        common.job_list = JobList(common.jobDB.nJobs(),
+                                                  None)
+                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
                         pass
-                 
-                    common.logger.debug(5,'nsjobs '+str(nsjobs))
-                    # total jobs
-                    nj_list = []
-                    # get the first not already submitted
-                    common.logger.debug(5,'Total jobs '+str(common.jobDB.nJobs()))
-                    jobSetForSubmission = 0
-                    jobSkippedInSubmission = []
-                    datasetpath=self.cfg_params['CMSSW.datasetpath']
-
-                    # NEW PART # Fabio
-                    # modified to handle list of jobs by the users # Fabio
-                    tmp_jList = range(common.jobDB.nJobs())
-                    if chosenJobsList != None:
-                        tmp_jList = chosenJobsList
-                    # build job list
-                    for nj in tmp_jList:
-                        cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(nj)) # More readable # Fabio
-                        if (cleanedBlackWhiteList != '') or (datasetpath == "None" ) or (datasetpath == None): ## Matty's fix
-                            if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
-                                jobSetForSubmission +=1
-                                nj_list.append(nj)
-                            else: 
-                                continue
-                        else :
-                            jobSkippedInSubmission.append(nj+1)
-                        #
-                        if nsjobs >0 and nsjobs == jobSetForSubmission:
-                            break
-                        pass
-                    del tmp_jList
-                    #
-
-                    if nsjobs>jobSetForSubmission:
-                        common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
-                    if len(jobSkippedInSubmission) > 0 :
-                        #print jobSkippedInSubmission
-                        #print spanRanges(jobSkippedInSubmission)
-                        mess =""
-                        for jobs in jobSkippedInSubmission:
-                            mess += str(jobs) + ","
-                        common.logger.message("Jobs:  " +str(mess) + "\n      skipped because no sites are hosting this data\n")
-                    # submit N from last submitted job
-                    common.logger.debug(5,'nj_list '+str(nj_list))
-                 
-                    if len(nj_list) != 0:
-                        from Submitter import Submitter
-                        # Instantiate Submitter object
-                        self.actions[opt] = Submitter(self.cfg_params, nj_list)
- 
-                        # Create and initialize JobList
-                        if len(common.job_list) == 0 :
-                            common.job_list = JobList(common.jobDB.nJobs(),
-                                                      None)
-                            common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                            pass
-                        pass
-                    else:
-                        common.logger.message('No jobs left to submit: exiting...')
                     pass
 
             elif ( opt == '-list' ):
