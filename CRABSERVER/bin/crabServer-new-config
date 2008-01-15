@@ -127,9 +127,9 @@ componentFields = {
 
     "TaskLifeManager": {
     "levelAvailable": 15,
-    "taskLife": "360:00:00",
+    "taskLife": "168:00:00",
     "eMailAdmin": None,
-    "pollingTimeCheck": 10*60,
+    "pollingTimeCheck": 5*60,
     }
 
 }
