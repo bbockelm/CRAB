@@ -185,9 +185,6 @@ class SchedulerCondor_g(Scheduler):
                     raise CrabException(msg)
         except KeyError: self.copy_data = 0
 
-        #### switch off publication per default for condor_g for now
-        #### self.publish_data = 0
-
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
            msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
            msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n'
@@ -198,8 +195,10 @@ class SchedulerCondor_g(Scheduler):
            msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
            raise CrabException(msg)
 
+
         try: self.VO = cfg_params['EDG.virtual_organization']
         except KeyError: self.VO = 'cms'
+
 
         try: self.EDG_clock_time = cfg_params['EDG.max_wall_clock_time']
         except KeyError: self.EDG_clock_time= ''
@@ -275,7 +274,7 @@ class SchedulerCondor_g(Scheduler):
                     msg = "Error. The [USER] section does not have 'publish_data_name'"
                     raise CrabException(msg)
                 try:
-                    tmp = runCommand("voms-proxy-info -identity")
+                    tmp = runCommand("voms-proxy-info -identity 2>/dev/null")
                     tmp = string.split(tmp,'/')
                     reCN=re.compile(r'CN=')
                     for t in tmp:
@@ -293,8 +292,7 @@ class SchedulerCondor_g(Scheduler):
            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
            common.logger.message(msg)
            raise CrabException(msg)
-        #################################################
-        
+
         return
 
     def sched_parameter(self):
@@ -336,8 +334,6 @@ class SchedulerCondor_g(Scheduler):
         Returns part of a job script which does scheduler-specific work.
         """
         txt = ''
-
-        txt = ''
         txt += '# strip arguments\n'
         txt += 'echo "strip arguments"\n'
         txt += 'args=("$@")\n'
@@ -370,15 +366,10 @@ class SchedulerCondor_g(Scheduler):
         txt += '    echo "JOB_EXIT_STATUS = 10030" \n'
         txt += '    echo "JobExitCode=10030" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
-        #txt += '    rm -f $RUNTIME_AREA/$repo \n'
-        #txt += '    echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    exit 1 \n'
         txt += 'fi\n'
 
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
-        #txt += 'rm -f $RUNTIME_AREA/$repo \n'
-        #txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
         #txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
         txt += '\n\n'
@@ -460,6 +451,7 @@ class SchedulerCondor_g(Scheduler):
             txt += '        SE_PATH=""\n'
             txt += '        echo "SE_PATH = $SE_PATH"\n'
             txt += '    fi\n'
+            txt += 'fi\n'
             txt += 'exit_status=$copy_exit_status\n'
             pass
         return txt
