@@ -1106,7 +1106,7 @@ class Cmssw(JobType):
             txt += 'else\n'
             txt += '    exit_status=60302\n'
             txt += '    echo "ERROR: Output file '+fileWithSuffix+' not found"\n'
-            if common.scheduler.boss_scheduler_name == 'condor_g':
+            if common.scheduler.name() == 'CONDOR_G':
                 txt += '    if [ $middleware == OSG ]; then \n'
                 txt += '        echo "prepare dummy output file"\n'
                 txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
@@ -1129,7 +1129,7 @@ class Cmssw(JobType):
             txt += '    echo "ERROR: Output file '+fileWithSuffix+' not found"\n'
             txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
             txt += '    output_exit_status=$exit_status\n'
-            if common.scheduler.boss_scheduler_name == 'condor_g':
+            if common.scheduler.name() == 'CONDOR_G':
                 txt += '    if [ $middleware == OSG ]; then \n'
                 txt += '        echo "prepare dummy output file"\n'
                 txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
@@ -1309,8 +1309,6 @@ class Cmssw(JobType):
             txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-            #txt += 'echo "$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
-            #txt += '$SOFTWARE_DIR/ProdAgentApi/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
             txt += 'echo "$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
             txt += '$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
 

@@ -1,4 +1,4 @@
-from SchedulerEdg import SchedulerEdg
+from SchedulerGrid import SchedulerGrid
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
@@ -7,21 +7,25 @@ import common
 
 import os, sys, time
 
-class SchedulerGlite(SchedulerEdg):
+class SchedulerGlite(SchedulerGrid):
     def __init__(self):
-        SchedulerEdg.__init__(self)
+        SchedulerGrid.__init__(self,"GLITE")
+
+    def configure(self,cfg_params):
+        SchedulerGrid.configure(self, cfg_params)
+        self.environment_unique_identifier = 'GLITE_WMS_JOBID'
 
     def rb_configure(self, RB):
-        self.glite_config = ''
-        self.rb_param_file = ''
+        if not RB: return None
+        glite_config = None
+        rb_param_file = None
 
         gliteConfig = GliteConfig(RB)
-        self.glite_config = gliteConfig.config()
+        glite_config = gliteConfig.config()
 
-        if (self.glite_config != ''):
-            self.rb_param_file = 'WMSconfig = '+self.glite_config+';\n'
-            #print "rb_param_file = ", self.rb_param_file
-        return self.rb_param_file
+        if (glite_config ):
+            rb_param_file = 'WMSconfig = '+glite_config+';\n'
+        return rb_param_file
 
     def sched_parameter(self):
         """
@@ -114,10 +118,10 @@ class SchedulerGlite(SchedulerEdg):
 
             param_file.write('Requirements = ' + req + reqSites )
 
-            if (self.rb_param_file != ''):
+            if (self.rb_param_file):
                 param_file.write(self.rb_param_file)
 
-            if len(self.EDG_addJdlParam):
+            if self.EDG_addJdlParam:
                 if self.EDG_addJdlParam[-1] == '': self.EDG_addJdlParam= self.EDG_addJdlParam[:-1] 
                 for p in self.EDG_addJdlParam:
                     param_file.write(string.strip(p)+';\n')
@@ -173,9 +177,7 @@ class SchedulerGlite(SchedulerEdg):
 
         txt += '\n\n'
 
-
         txt += 'export VO='+self.VO+'\n'
-
         txt += 'if [ $middleware == LCG ]; then\n'
         txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
         txt += '    echo "CloseCEs = $CloseCEs"\n'
@@ -211,7 +213,7 @@ class SchedulerGlite(SchedulerEdg):
         return cmd_out
 
     def findSites_(self, n):
-        itr4 = []
+        itr4 =[]
         sites = common.jobDB.destination(n)
         if len(sites)>0 and sites[0]=="":
             return itr4

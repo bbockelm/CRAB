@@ -1,4 +1,3 @@
-from Scheduler import Scheduler
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
@@ -7,9 +6,8 @@ import os, time, shutil
 
 from BossSession import *
 
-class SchedulerBoss(Scheduler):
+class Boss:
     def __init__(self):
-        Scheduler.__init__(self,"BOSS")
         self.checkBoss_()
         self.schedRegistered = {}
         self.jobtypeRegistered = {}
@@ -48,6 +46,12 @@ class SchedulerBoss(Scheduler):
             }
         return
 
+    def __del__(self):
+        """ destroy instance """
+        del self.bossAdmin
+        del self.bossUser
+        return
+
     def checkBoss_(self): 
         """
         Verify BOSS installation.
@@ -64,6 +68,72 @@ class SchedulerBoss(Scheduler):
 
         self.boss_dir = os.environ["CRABSCRIPT"]
 
+#### Boss Configuration 
+
+    def configure(self, cfg_params):
+        
+        self.cfg_params = cfg_params
+        
+        self.groupName = common.taskDB.dict('taskId')
+         
+        self.outDir = cfg_params.get("USER.outputdir", common.work_space.resDir() )
+        self.logDir = cfg_params.get("USER.logdir", common.work_space.resDir() )
+            
+        self.bossConfigDir = str("")
+#       central db
+        whichBossDb=0
+        whichBossDb=int(cfg_params.get("USER.use_central_bossdb", 0 ))
+
+        if ( whichBossDb == 1 ):
+            pass
+#       emulate -c option        
+        elif ( whichBossDb == 2 ):
+            self.bossConfigDir = str(cfg_params["USER.boss_clads"])
+        else:
+            self.configBossDB_()
+
+        self.bossUser =BossSession(self.bossConfigDir, "0", common.work_space.logDir()+'/crab.log')       
+        # self.bossUser.showConfigs()
+        taskid = ""
+        try:
+            taskid = common.taskDB.dict('BossTaskId')
+        except :
+            pass
+        self.bossTask = self.bossUser.makeBossTask(taskid)
+
+        try: 
+            self.boss_jobtype = cfg_params["CRAB.jobtype"]
+        except KeyError: 
+            msg = 'Error: jobtype not defined ...'
+            msg = msg + 'Please specify a jobtype in the cfg file'
+            raise CrabException(msg)
+ 
+    #    # create additional classad file
+        self.schclassad = ''
+  
+        self.bossAdmin =  BossAdministratorSession(self.bossConfigDir, "0", common.work_space.logDir()+'/crab.log')
+ 
+        try:
+            self.bossUser.clientID() # BOSS DB already setup
+        except:
+            try:
+                if (int(cfg_params["USER.use_central_bossdb"])==0):
+                    if ( self.bossTask.id() == "" ) :
+                        self.bossAdmin.configureDB()
+            except KeyError:
+                self.bossAdmin.configureDB()
+            pass
+
+        # check scheduler and jobtype registration in BOSS        
+        if (int(cfg_params.get("USER.use_boss_rt",0))==1): self.configRT_()
+
+        #self.checkSchedRegistration_(self.boss_scheduler_name)
+        self.checkJobtypeRegistration_(self.boss_jobtype) 
+        self.checkJobtypeRegistration_('crab')
+        # ONLY SQLITE!!! if DB has changed, the connection needs a reset
+        self.bossUser.resetDB()
+        
+        return
 
     ###################### ---- OK for Boss4 ds
     def configBossDB_(self):
@@ -76,11 +146,11 @@ class SchedulerBoss(Scheduler):
         if ( not os.path.exists(configClad)  ) :
             bossCfg = os.environ["HOME"]+"/.bossrc/BossConfig.clad"
             shutil.copyfile(bossCfg,configClad)
-        self.boss_db_name = 'bossDB'
-        if os.path.isfile(self.bossConfigDir+self.boss_db_name) :
+        boss_db_name = 'bossDB'
+        if os.path.isfile(self.bossConfigDir+boss_db_name) :
             common.logger.debug(6,'BossDB already exist')
         else:
-            common.logger.debug(6,'Creating BossDB in '+self.bossConfigDir+self.boss_db_name)
+            common.logger.debug(6,'Creating BossDB in '+self.bossConfigDir+boss_db_name)
 
             # First I have to create a SQLiteConfig.clad file in the proper directory
             if not os.path.exists(self.bossConfigDir):
@@ -89,7 +159,7 @@ class SchedulerBoss(Scheduler):
             confFile = open(self.bossConfigDir+'/'+confSQLFileName, 'w')
             confFile.write('[\n')
             confFile.write('SQLITE_DB_PATH = "'+self.bossConfigDir+'";\n')
-            confFile.write('DB_NAME = "'+self.boss_db_name+'";\n')
+            confFile.write('DB_NAME = "'+boss_db_name+'";\n')
             confFile.write('DB_TIMEOUT = 300;\n')
             confFile.write(']\n')
             confFile.close()
@@ -100,7 +170,7 @@ class SchedulerBoss(Scheduler):
         return
 
     ###################### ---- OK for Boss4 ds
-    def configRT_(self, bossAdmin): 
+    def configRT_(self): 
         """
         Configure Boss RealTime monitor
         """
@@ -111,7 +181,6 @@ class SchedulerBoss(Scheduler):
             boss_rt_check = self.bossUser.RTMons()
         except:
             pass
-   #     boss_rt_check = self.bossUser.defaultRTmon()
         if 'mysql' not in boss_rt_check:
             common.logger.debug(6,'registering RT monitor')
             # First I have to create a SQLiteConfig.clad file in the proper directory
@@ -149,7 +218,7 @@ class SchedulerBoss(Scheduler):
             register_path = self.boss_dir + '/'
             if os.path.exists(register_path+register_script):
                 try :
-                    bossAdmin.registerPlugins( register_path+register_script )
+                    self.bossAdmin.registerPlugins( register_path+register_script )
                 except BossError,e:
                     common.logger.debug( 4, e.__str__() )
                     msg = 'Problem with RealTime monitor registration\n'
@@ -165,116 +234,8 @@ class SchedulerBoss(Scheduler):
 
         return
 
-    def configure(self, cfg_params):
-        
-        self.cfg_params = cfg_params
-        
-        self.groupName = common.taskDB.dict('taskId')
-         
-        try:    
-            self.outDir = cfg_params["USER.outputdir"] 
-        except:
-            self.outDir = common.work_space.resDir() 
-        try:
-            self.logDir = cfg_params["USER.logdir"]
-        except:
-            self.logDir = common.work_space.resDir()
-            
-        self.bossConfigDir = str("")
-#       central db
-        whichBossDb=0
-        try:
-            whichBossDb=int(cfg_params["USER.use_central_bossdb"])
-        except KeyError:
-            pass
-
-        if ( whichBossDb == 1 ):
-            pass
-#       emulate -c option        
-        elif ( whichBossDb == 2 ):
-            self.bossConfigDir = str(cfg_params["USER.boss_clads"])
-        else:
-            self.configBossDB_()
-
-        self.bossUser =BossSession(self.bossConfigDir, "0", common.work_space.logDir()+'/crab.log')       
-        # self.bossUser.showConfigs()
-        taskid = ""
-        try:
-            taskid = common.taskDB.dict('BossTaskId')
-        except :
-            pass
-        self.bossTask = self.bossUser.makeBossTask(taskid)
-
-        try: 
-            self.boss_scheduler_name = cfg_params["CRAB.scheduler"]
-        except KeyError: 
-            msg = 'No real scheduler selected: edg, lsf ...'
-            msg = msg + 'Please specify a scheduler type in the crab cfg file'
-            raise CrabException(msg)
-
-        try: 
-            self.boss_jobtype = cfg_params["CRAB.jobtype"]
-        except KeyError: 
-            msg = 'Error: jobtype not defined ...'
-            msg = msg + 'Please specify a jobtype in the cfg file'
-            raise CrabException(msg)
- 
-        # create real scheduler (boss_scheduler)
-        klass_name = 'Scheduler' + string.capitalize(self.boss_scheduler_name)
-        file_name = klass_name
-        try:
-            klass = importName(file_name, klass_name)
-        except KeyError:
-            msg = 'No `class '+klass_name+'` found in file `'+file_name+'.py`'
-            raise CrabException(msg)
-        except ImportError, e:
-            msg = 'Cannot create scheduler '+self.boss_scheduler_name
-            msg += ' (file: '+file_name+', class '+klass_name+'):\n'
-            msg += str(e)
-            raise CrabException(msg)
-        self.boss_scheduler = klass()
-        self.boss_scheduler.configure(cfg_params)
-    
-    #    # create additional classad file
-        self.schclassad = ''
- #   #    if (self.boss_scheduler.sched_parameter()):
- #       try:   
- #           self.schclassad = common.work_space.shareDir()+'/'+self.boss_scheduler.param
- #       except:
- #           pass  
-  
-        bossAdmin =  BossAdministratorSession(self.bossConfigDir, "0", common.work_space.logDir()+'/crab.log')
- 
-        try:
-            self.bossUser.clientID() # BOSS DB already setup
-        except:
-            try:
-                if (int(cfg_params["USER.use_central_bossdb"])==0):
-                    if ( self.bossTask.id() == "" ) :
-                        bossAdmin.configureDB()
-            except KeyError:
-                bossAdmin.configureDB()
-            pass
-
-        # check scheduler and jobtype registration in BOSS        
-        try:
-            if (int(cfg_params["USER.use_boss_rt"])==1): self.configRT_(bossAdmin)
-        except KeyError:
-            pass
-
-        self.checkSchedRegistration_(self.boss_scheduler_name, bossAdmin)
-        self.checkJobtypeRegistration_(self.boss_jobtype, bossAdmin) 
-        self.checkJobtypeRegistration_('crab', bossAdmin)
-        # ONLY SQLITE!!! if DB has changed, the connection needs a reset
-        self.bossUser.resetDB()
-        
-        try: self.schedulerName = cfg_params['CRAB.scheduler']
-        except KeyError: self.scheduler = ''
-
-        return
-
     ###################### ---- OK for Boss4 ds
-    def checkSchedRegistration_(self, sched_name, bossAdmin): 
+    def checkSchedRegistration_(self, sched_name): 
         """
         Verify scheduler registration.
         """
@@ -284,7 +245,7 @@ class SchedulerBoss(Scheduler):
         try :
             register_path = self.boss_dir + '/'
             register_boss_scheduler = string.upper(sched_name) + '.xml'
-            bossAdmin.registerPlugins( register_path+register_boss_scheduler )
+            self.bossAdmin.registerPlugins( register_path+register_boss_scheduler )
         except BossError,e:
             msg = e.__str__() + '\nError: Problem with scheduler '+sched_name+' registration\n'
             raise CrabException(msg)
@@ -295,7 +256,7 @@ class SchedulerBoss(Scheduler):
 
 
     ###################### ---- OK for Boss4 ds
-    def checkJobtypeRegistration_(self, jobtype, bossAdmin): 
+    def checkJobtypeRegistration_(self, jobtype): 
         """
         Verify jobtype registration.
         """
@@ -305,7 +266,7 @@ class SchedulerBoss(Scheduler):
         try :
             register_path = self.boss_dir + '/'
             register_boss_jobtype = string.upper(string.upper(jobtype)) + '.xml'
-            bossAdmin.registerPlugins( register_path+register_boss_jobtype )
+            self.bossAdmin.registerPlugins( register_path+register_boss_jobtype )
         except BossError,e:
             msg = e.__str__() + '\nError: Problem with jobtype '+jobtype+' registration\n'
             raise CrabException(msg)
@@ -314,24 +275,7 @@ class SchedulerBoss(Scheduler):
         self.jobtypeRegistered[jobtype] = 1
         return
 
-
-    ###################### ---- OK for Boss4 ds
-    def wsSetupEnvironment(self):
-        """
-        Returns part of a job script which does scheduler-specific work.
-        """
-        return self.boss_scheduler.wsSetupEnvironment() 
-
-    ###################### ---- OK for Boss4 ds
-    def createXMLSchScript(self, nj, argsList):
-        """
-        Create script_scheduler file (JDL for EDG)
-        """
-        # create additional classad file
-        self.boss_scheduler.sched_parameter()
-
-        self.boss_scheduler.createXMLSchScript(nj, argsList)
-        return
+#### End Boss Configuration
 
     ###################### ---- OK for Boss4 ds
     def declareJob_(self):                       #Changed For BOSS4
@@ -369,38 +313,19 @@ class SchedulerBoss(Scheduler):
 
         return 
 
-    def checkProxy(self):
-        """
-        Check the Globus proxy. 
-        """
-        return self.boss_scheduler.checkProxy()
-
-    def userName(self):
-        """ return the user name """
-        return self.boss_scheduler.userName()
-
-    ###################### ---- OK for Boss4 ds
-    def loggingInfo(self, nj):
-        """
-        retrieve the logging info from logging and bookkeeping and return it
-        """
-        return self.boss_scheduler.loggingInfo(nj) 
-
+    def task(self):
+        """ return Boss Task """
+        return self.bossTask
+        
     ##########################################   ---- OK for Boss4 ds
-    def listMatch(self, nj, Block, whiteL, blackL): ##  whiteL, blackL added by MATTY as patch
+    def listMatch(self, schedulerName, schcladstring):
         """
         Check the compatibility of available resources
         """
-        start = time.time()
-        schcladstring = ''
-        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(Block)+'.clad'
-        if os.path.isfile(self.schclassad):  
-            schcladstring=self.schclassad
-
         Tout = 120
         CEs=[]
         try:
-            CEs=self.bossUser.schedListMatch( str(self.schedulerName), schcladstring, self.bossTask.id(), "", Tout)
+            CEs=self.bossUser.schedListMatch( schedulerName, schcladstring, self.bossTask.id(), "", Tout)
             common.logger.debug(1,"CEs :"+str(CEs))
         except SchedulerError,e:
             common.logger.message( "Warning : Scheduler interaction in list-match operation failed for jobs:")
@@ -408,110 +333,15 @@ class SchedulerBoss(Scheduler):
             pass
         except BossError,e:
             raise CrabException("ERROR: listMatch failed with message " + e.__str__())
-        stop = time.time()
-        common.logger.debug(1,"listMatch time :"+str(stop-start))
-        common.logger.write("listMatch time :"+str(stop-start))
-
-
-        ### SL: I'm positive that we should use BlackWhiteListParser here
-        #### MATTY's patch 4 CE white-black lists ####
-        sites = []
-        for it in CEs :
-            it = it.split(':')[0]
-            if not sites.count(it) :
-                sites.append(it)
-        ### white-black list on CE ###
-        CE_whited = []
-        if len(whiteL) > 0:
-            common.logger.message("Using ce white list functionality...")
-            common.logger.debug(1,str(whiteL))
-            for ce2check in sites:
-                for ceW in whiteL:
-                    if ce2check.find(ceW.strip()) != -1:
-                        CE_whited.append(ce2check)
-                        common.logger.debug(5,"CEWhiteList: adding from matched site: " + str(ce2check))
-            sites = CE_whited
-
-        CE_blacked = []
-        if len(blackL) > 0:
-            for ce2check in sites:
-                for ceB in blackL:
-                    if ce2check.find(ceB.strip()) != -1:
-                        CE_blacked.append(ce2check)
-
-        toRemove = []
-        if len(CE_blacked) > 0:
-            common.logger.message("Using ce black list functionality...")
-            common.logger.debug(1,str(blackL))
-            for ce2check in sites:
-                for ceB in CE_blacked:
-                    if ce2check.find(ceB.strip()) != -1:
-                        toRemove.append(ce2check)
-
-            for rem in toRemove:
-                if rem in sites:
-                    sites.remove(rem)
-                    common.logger.debug(5,"CEBlackList: removing from matched site " + str(rem))
-        ##############################
-
-        if (len(sites)!=0): ## it was CEs
-            common.logger.debug(5,"All Sites :"+str(CEs))
-            common.logger.message("Matched Sites :"+str(sites))
-        else: listMatchFailure(sites)
-
-        return len(sites)
-
-
-## SL: This crap is scheduler dependent. It should not be here! WTH
-    def listMatchFailure(self, sites):
-
-        # print something about CEs
-        common.logger.message("No matched Sites :"+str(sites))
-        common.logger.message("Printing info about CE close to SE storing data to analize")
-        from Scram import Scram
-        version = Scram(self.cfg_params).getSWVersion()
-        SEs = common.jobDB.destination(nj)
-        for i in SEs:
-            common.logger.message("\nSE = " + i)
-            cmd = "lcg-info --vo cms --list-se --attrs CloseCE --query \"SE=*" + i + "*\""
-            fout, fin, ferr = popen2.popen3(cmd)
-            try:
-                res = string.strip(fout.readlines()[1])
-                ce = re.match(".*CloseCE(.*):.*", res).group(1).strip()
-                common.logger.message("CloseCE = " + ce)
-            except IndexError:
-                common.logger.message("No CloseCE info available") 
-                continue
-            cmd = "lcg-info --vo cms --list-ce --attrs CEStatus,Tag --query \"CE=*" + ce + "*,Tag=*" + version + "*\""
-            fout, fin, ferr = popen2.popen3(cmd)
-            try:
-                res = fout.readlines()
-                b=re.findall(r"\'VO-cms-slc\d_ia\d+_gcc\d+\'",str(map(lambda x: x.strip(), res)))
-                print "\033[1;35m CloseCE %s status: \n %s "%(ce, str(res[1]))
-                print "\033[1;35m Software Tag %s available"%version
-                print "\033[1;35m Software Architecture set to %s"%str(b)
-                common.logger.write("Software Tag %s available "%version)
-                print "\033[0m"
-            except IndexError:
-                print "\033[1;35m Software Tag %s not found on CloseCE %s or the CloseCE is temporarely not available."%(version, ce)
-                common.logger.write("Software Tag %s not found on CloseCE %s or the CloseCE is temporarely not available."%(version, ce))
-                pass
-        common.logger.write("\n")
+        return CEs
   
-    def submit(self,list):
+    def submit(self, jobsList, schcladstring, Tout):
         """
         Submit BOSS function.
         Submit one job. nj -- job number.
         """
 
-        if (not len(list)): common.logger.message("No sites where to submit jobs")
-        jobsList = list[1]
-        schcladstring = ''
-        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(list[0])+'.clad'# TODO add a check is file exist
-        if os.path.isfile(self.schclassad):  
-            schcladstring=self.schclassad
         try:
-            Tout = int(self.boss_scheduler.tOut(list))
             self.bossTask.submit(string.join(jobsList,','), schcladstring, "", "" , "", Tout)
         except SchedulerError,e:
             common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
@@ -592,8 +422,7 @@ class SchedulerBoss(Scheduler):
             msg =  ' Output or Log dir not found!! check '+self.logDir+' and '+self.outDir
             raise CrabException(msg)
         common.jobDB.load()
-        self.boss_scheduler.checkProxy()
-        allBoss_id = common.scheduler.listBoss()
+        allBoss_id = self.list()
         bossTaskId = common.taskDB.dict('BossTaskId')
         ## first get the status of all job in the list
         statusList = self.queryStatusList(bossTaskId, int_id)
@@ -625,7 +454,6 @@ class SchedulerBoss(Scheduler):
                 if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':   
                     check = 1
                     try:
-                        Tout = int(self.boss_scheduler.tOut(None)) * 3
                         self.bossTask.getOutput (str(boss_id), str(dir), Tout)
                         if logDir != dir:
                             try:
@@ -706,25 +534,13 @@ class SchedulerBoss(Scheduler):
         return
 
     ###################### ---- OK for Boss4 ds
-    def cancel(self,int_id):
+    def cancel(self,subm_id):
         """
         Cancel the EDG job with id: if id == -1, means all jobs.
         """
         #print "CANCEL -------------------------"
         #print "int_id ",int_id," nSubmitted ", common.jobDB.nSubmittedJobs()
         
-        subm_id = []
-
-        nTot = common.jobDB.nJobs()
-        for id in int_id:
-            if nTot >= id: ## TODO check the number of jobs..else: 'IndexError: list index out of range'
-                if ( common.jobDB.status(id-1) in ['S','R','A']) and (id not in subm_id):
-                    subm_id.append(id)
-            else:
-                common.logger.message("Warning: job # "+str(id)+" doesn't exists! Not possible to kill it.")
-        ## first get the status of all job in the list
-        # bossTaskId = common.taskDB.dict('BossTaskId')
-        # statusList = self.queryStatusList(bossTaskId, subm_id)
         common.jobDB.load() 
         if len( subm_id ) > 0:
             try:
@@ -788,15 +604,6 @@ class SchedulerBoss(Scheduler):
         return self.boss_scheduler.getStatusAttribute_(id, 'destination')
     ################################################################   (stop)
 
-    def wsCopyInput(self):
-        return self.boss_scheduler.wsCopyInput()
-
-    def wsCopyOutput(self):
-        return self.boss_scheduler.wsCopyOutput()
-
-    def wsRegisterOutput(self):  
-        return self.boss_scheduler.wsRegisterOutput()
-
     ##############################   OK for BOSS4 ds. 
     ############################# ----> we use the SID for the postMortem... probably this functionality come for free with BOSS4? 
     def boss_SID(self,int_ID):
@@ -815,8 +622,6 @@ class SchedulerBoss(Scheduler):
         """
         Query needed info of all jobs with specified boss taskid
         """
-
-        self.boss_scheduler.checkProxy()
 
         results = {}
         try:
@@ -880,9 +685,7 @@ class SchedulerBoss(Scheduler):
     def queryStatusList(self,taskid,list_id):
         """ Query a status of the job with id """
 
-        self.boss_scheduler.checkProxy()
-
-        allBoss_id = common.scheduler.listBoss()
+        allBoss_id = self.list()
         tmpQ = ''
         if not len(allBoss_id)==len(list_id): tmpQ = string.join(map(str,list_id),",")
 
@@ -904,7 +707,7 @@ class SchedulerBoss(Scheduler):
         return results
 
     ###################### ---- OK for Boss4 ds
-    def listBoss(self):
+    def list(self):
         """
         Return a list of all boss_Id of a task
         """
@@ -918,42 +721,12 @@ class SchedulerBoss(Scheduler):
             if i not in listBoss_Uniq: listBoss_Uniq.append(i)
         return listBoss_Uniq
 
-    ###################### ---- OK for Boss4 ds
-    def setOutLogDir(self,outDir,logDir):
-        if not os.path.isdir(outDir):
-            #Create the directory
-            os.mkdir(outDir)
-            if not os.path.isdir(outDir):
-                common.logger('Cannot mkdir ' + outDir + ' Switching to default ' + common.work_space.resDir())
-                outDir = common.work_space.resDir()
-        if not os.path.isdir(logDir):
-            #Create the directory
-            os.mkdir(logDir)
-            if not os.path.isdir(logDir):
-                common.logger('Cannot mkdir ' + logDir + ' Switching to default ' + common.work_space.resDir())
-                logDir = common.work_space.resDir()
-        return outDir, logDir
-
-    ##################
-    def parseBossOutput(self, out):
-        reError = re.compile( r'status error' )
-        lines = reError.findall(out)
-        return len(lines)
-
     ################## 
     def taskDeclared( self, taskName ):
-        #mySession = BossSession(self.bossConfigDir)
-        #taskDict =mySession.loadByName( common.work_space.shareDir() )
         taskDict = self.bossUser.loadByName( taskName )
-        #common.logger.debug(5, "taskName: " + str(taskName) )
-        #common.logger.debug(5, "\n\n task: " + str(taskDict) + "\n\n")
-        #mySession.clear()
-        if len(taskDict) > 0:
-            return True
-        return False
+        return (len(taskDict) > 0)
 
     def clean(self):
         """ destroy boss instance """
-        #self.bossUser.destroyBossTask(self.bossTask)
         del self.bossUser
         return

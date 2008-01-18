@@ -54,18 +54,16 @@ class Creator(Actor):
             gridName = common.scheduler.userName()
             common.logger.debug(5, "GRIDNAME: "+gridName)
             taskType = 'analysis'
-            VO = 'cms'
-            if (cfg_params.has_key('EDG.virtual_organization') ):
-                VO = cfg_params['EDG.virtual_organization']
+            VO = cfg_params.get('EDG.virtual_organization','cms')
 
             params = {'tool': common.prog_name,\
                       'JSToolVersion': common.prog_version_str, \
                       'tool_ui': os.environ['HOSTNAME'], \
-                      'scheduler': self.cfg_params['CRAB.scheduler'], \
+                      'scheduler': common.scheduler.name(), \
                       'GridName': gridName, \
                       'taskType': taskType, \
                       'vo': VO, \
-                      'user': self.cfg_params['user']}
+                      'user': os.environ['USER']}
             jtParam = self.job_type.getParams()
             for i in jtParam.iterkeys():
                 params[i] = string.strip(jtParam[i])
@@ -171,14 +169,16 @@ class Creator(Actor):
             njc = njc + 1
             pass
         ####
+        common.scheduler.sched_parameter()
         common.scheduler.createXMLSchScript(self.total_njobs, argsList)
         common.logger.message('Creating '+str(self.total_njobs)+' jobs, please wait...')
         # modified to support server mode -  DS
         # if crab is used in server mode the client must skyp 
         # boss declare step. In this case it is performed at server level  
         # just before the submission  step   
+        ## SL TODO: I would do this inside scheduler create...
         if (self.UseServer== 0):
-            common.scheduler.declareJob_()   #Add for BOSS4
+            common.scheduler.declare()   #Add for BOSS4
 
         stop = time.time()
         common.logger.debug(2, "Creation Time: "+str(stop - start))

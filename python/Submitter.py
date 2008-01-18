@@ -81,7 +81,7 @@ class Submitter(Actor):
         common.logger.debug(5,'nj_list '+str(nj_list))
                  
         
-        if common.scheduler.boss_scheduler_name == 'condor_g':
+        if common.scheduler.name() == 'CONDOR_G':
             # create hash of cfg file
             self.hash = makeCksum(common.work_space.cfgFileName())
         else:
@@ -111,12 +111,13 @@ class Submitter(Actor):
 
         # submit pre DashBoard information
         params = {'jobId':'TaskMeta'}
-               
+ 
         fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
+        print fl
         for i in fl.readlines():
             val = i.split(':')
             params[val[0]] = string.strip(val[1])
-            fl.close()
+        fl.close()
 
         common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
                         
@@ -128,7 +129,7 @@ class Submitter(Actor):
         if (self.UseServer== 9999):
             if not common.scheduler.taskDeclared( common.taskDB.dict('projectName') ): #os.path.basename(os.path.split(common.work_space.topDir())[0]) ):
                 common.logger.debug(5,'Declaring jobs to BOSS')
-                common.scheduler.declareJob_()   #Add for BOSS4
+                common.scheduler.declare()   #Add for BOSS4
             else:
                 common.logger.debug(5,'Jobs already declared into BOSS')
             common.jobDB.save()
@@ -156,7 +157,8 @@ class Submitter(Actor):
                 currBlock = common.jobDB.block(nj)
                 # SL perform listmatch only if block has changed
                 if (currBlock!=lastBlock):
-                    if common.scheduler.boss_scheduler_name != "condor_g" :
+                    if common.scheduler.name() != "CONDOR_G" :
+                        ### SL TODO to be moved in blackWhiteListParser 
                         ### MATTY:  patch for white-black list with the list-mathc in glite ###
                         whiteL = []
                         blackL = []
@@ -245,7 +247,7 @@ class Submitter(Actor):
                     
                     # OLI: JobID treatment, special for Condor-G scheduler
                     jobId = ''
-                    if common.scheduler.boss_scheduler_name == 'condor_g':
+                    if common.scheduler.name() == 'CONDOR_G':
                         jobId = str(jj) + '_' + self.hash + '_' + jid
                         common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
                     else:
@@ -305,14 +307,14 @@ class Submitter(Actor):
         if (njs < len(self.nj_list)):
             msg =  'Submission performed using the Requirements: \n'
             msg += common.taskDB.dict("jobtype")+' version: '+common.taskDB.dict("codeVersion")+'\n'
-            try: msg += 'SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
-            except KeyError: pass
-            try: msg += 'SE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
-            except KeyError: pass
-            try: msg += 'CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
-            except KeyError: pass
-            try: msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
-            except KeyError: pass
+            if self.cfg_params.has_key('EDG.se_white_list'):
+                msg += 'SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
+            if self.cfg_params.has_key('EDG.se_black_list'):
+                msg += 'SE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
+            if self.cfg_params.has_key('EDG.ce_white_list'):
+                msg += 'CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
+            if self.cfg_params.has_key('EDG.ce_black_list'):
+                msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
             msg += '(Hint: please check if '+common.taskDB.dict("jobtype")+' is available at the Sites)\n'
             
         common.logger.message(msg)

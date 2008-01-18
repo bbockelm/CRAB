@@ -511,16 +511,17 @@ class Crab:
                      except:
                          common.logger.message("Warning :Interaction in query task unique ID failed")
                          pass 
-                else:         
-                    try:      
-                        common.scheduler.bossTask.load(ALL)
+                else:
+                    try:
+                        from BossSession import ALL
+                        boss=common.scheduler.boss().task().load(ALL)
                     except RuntimeError,e:
                         common.logger.message( e.__str__() )
                     except ValueError,e:
                         common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
                         common.logger.message(e.what())
                         pass
-                    task = common.scheduler.bossTask.jobsDict()
+                    task = common.scheduler.boss().task().jobsDict()
                
                     for c, v in task.iteritems():
                         k = int(c)
@@ -551,7 +552,7 @@ class Crab:
                 if (self.UseServer== 1):
                     if val:
                         if val =='all':
-                            jobs = common.scheduler.listBoss()
+                            jobs = common.scheduler.list()
                         else:
                             jobs = self.parseRange_(val)
                         from KillerServer import KillerServer
@@ -561,7 +562,7 @@ class Crab:
                 else:
                     if val:
                         if val =='all':
-                            jobs = common.scheduler.listBoss()
+                            jobs = common.scheduler.list()
                         else:
                             jobs = self.parseRange_(val)
                         common.scheduler.cancel(jobs)
@@ -576,7 +577,7 @@ class Crab:
                     self.actions[opt] = GetOutputServer(self.cfg_params)
                 else:
                     if val=='all' or val==None or val=='':
-                        jobs = common.scheduler.listBoss()
+                        jobs = common.scheduler.list()
                     else:
                         jobs = self.parseRange_(val)
                 
@@ -588,7 +589,7 @@ class Crab:
 
             elif ( opt == '-resubmit' ):
                 if val=='all' or val==None or val=='':
-                    jobs = common.scheduler.listBoss()
+                    jobs = common.scheduler.list()
                 else:
                     jobs = self.parseRange_(val)
 
@@ -597,12 +598,13 @@ class Crab:
                     val = string.replace(val,'-',':')
 
                     ### as before, create a Resubmittter Class
-                    maxIndex = common.scheduler.listBoss()
+                    maxIndex = common.scheduler.list()
                     ##
                     # Marco. Vediamo se va meglio cosi'...
                     ##
                     try: 
-                        common.scheduler.bossTask.query(ALL, val)
+                        from BossSession import ALL
+                        common.scheduler.boss().task().query(ALL, val)
                     except RuntimeError,e:
                         common.logger.message( e.__str__() )
                     except ValueError,e:
@@ -657,7 +659,7 @@ class Crab:
 
                 if val:
                     if val =='all':
-                        jobs = common.scheduler.listBoss()
+                        jobs = common.scheduler.list()
                     else:
                         jobs = self.parseRange_(val)
                     # kill submitted jobs
@@ -736,7 +738,8 @@ class Crab:
                     nj_list = {} 
 
                     try:
-                        common.scheduler.bossTask.query(ALL, val)
+                        from BossSession import ALL
+                        common.scheduler.boss().task().query(ALL, val)
                     except RuntimeError,e:
                         common.logger.message( e.__str__() )
                     except ValueError,e:
@@ -802,7 +805,7 @@ class Crab:
         common.work_space = WorkSpace(new_dir, self.cfg_params)
         common.work_space.create()
 
-        taskId=self.cfg_params['user'] + '_' + string.split(common.work_space.topDir(),'/')[-2]
+        taskId=os.environ['USER'] + '_' + string.split(common.work_space.topDir(),'/')[-2]
         if (self.cfg_params.has_key('USER.ui_working_dir')) : taskId+="_"+self.current_time
         common.taskDB.setDict('taskId', taskId)
         return
@@ -859,7 +862,13 @@ class Crab:
         """
         Creates a scheduler object instantiated by its name.
         """
-        klass_name = 'SchedulerBoss'
+        if not self.cfg_params.has_key("CRAB.scheduler"):
+            msg = 'No real scheduler selected: edg, lsf ...'
+            msg = msg + 'Please specify a scheduler type in the crab cfg file'
+            raise CrabException(msg)
+        self.scheduler_name = self.cfg_params["CRAB.scheduler"]
+
+        klass_name = 'Scheduler' + string.capitalize(self.scheduler_name)
         file_name = klass_name
         try:
             klass = importName(file_name, klass_name)

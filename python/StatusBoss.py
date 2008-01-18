@@ -1,7 +1,6 @@
 from Actor import *
 import common
 import string, os, time
-from SchedulerBoss import *
 
 class StatusBoss(Actor):
     def __init__(self, *args):
@@ -17,7 +16,7 @@ class StatusBoss(Actor):
         self.countCorrupt = []
         self.countCleared = {}
 
-        if common.scheduler.boss_scheduler_name == 'condor_g':
+        if common.scheduler.name() == 'CONDOR_G':
             # create hash of cfg file
             self.hash = makeCksum(common.work_space.cfgFileName())
         else:
@@ -131,7 +130,7 @@ class StatusBoss(Actor):
             job_exit_status = jobAttributes[bossid]['JOB_EXIT_STATUS']   ##BOSS4 JOB_EXIT_STATUS
 
             ##SL For condor_g need to get some info from scheduler
-            if common.scheduler.boss_scheduler_name == "condor_g" :
+            if common.scheduler.name() == "CONDOR_G" :
                 try:
                     ldest = common.scheduler.queryDest(bossid) ##BOSS4 CHAIN_ID
                     if ( ldest.find(":") != -1 ) :
@@ -181,7 +180,7 @@ class StatusBoss(Actor):
                 jid1 = string.strip(jobAttributes[bossid]['SCHED_ID'])
 
                 jobId = ''
-                if common.scheduler.boss_scheduler_name == 'condor_g':
+                if common.scheduler.name() == 'CONDOR_G':
                     jobId = str(bossid) + '_' + self.hash + '_' + string.strip(jobAttributes[bossid]['SCHED_ID'])
                     common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
                 else:

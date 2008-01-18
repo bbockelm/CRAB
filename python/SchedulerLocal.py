@@ -5,15 +5,12 @@ import common
 
 import os,string
 
-#
-#  Naming convention:
-#  methods starting with 'ws' are responsible to provide
-#  corresponding part of the job script ('ws' stands for 'write script').
-#
+# Base class for all local scheduler
 
 class SchedulerLocal(Scheduler) :
 
     def configure(self, cfg_params):
+        Scheduler.configure(self,cfg_params)
 
         self.jobtypeName = cfg_params['CRAB.jobtype']
 
@@ -43,42 +40,6 @@ class SchedulerLocal(Scheduler) :
         common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
 
         return
-
-
-    def sched_parameter(self):
-        """
-        Returns parameter scheduler-specific, to use with BOSS .
-        """
-        index = int(common.jobDB.nJobs()) - 1
-        job = common.job_list[index]
-        jbt = job.type()
-
-        lastBlock=-1
-        first = []
-        for n in range(common.jobDB.nJobs()):
-            currBlock=common.jobDB.block(n)
-            if (currBlock!=lastBlock):
-                lastBlock = currBlock
-                first.append(n)
-
-        req = ''
-        req = req + jbt.getRequirements()
-
-        for i in range(len(first)): # Add loop DS
-            groupReq = req
-            self.param='sched_param_'+str(i)+'.clad'
-            param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
-
-            param_file.write('foo = bar;\n') ## Boss complain for empty clad
-            if (self.queue):
-                param_file.write('queue = '+self.queue +';\n')
-                if (self.res): param_file.write('requirement = '+self.res +';\n')
-            pass
-
-            param_file.close()
-        pass
-
-        return 
 
     def userName(self):
         """ return the user name """
