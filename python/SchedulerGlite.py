@@ -55,7 +55,7 @@ class SchedulerGlite(SchedulerGrid):
             req = req + self.EDG_requirements
 
         if self.EDG_ce_white_list:
-            ce_white_list = string.split(self.EDG_ce_white_list,',')
+            ce_white_list = self.EDG_ce_white_list
             tmpCe=[]
             concString = '&&'
             for ce in ce_white_list:
@@ -81,7 +81,7 @@ class SchedulerGlite(SchedulerGrid):
 #            if len(tmpCe): req = req + " && (" + concString.join(tmpCe) + ") "
 
         if self.EDG_ce_black_list:
-            ce_black_list = string.split(self.EDG_ce_black_list,',')
+            ce_black_list = self.EDG_ce_black_list
             tmpCe=[]
             concString = '&&'
             for ce in ce_black_list:
