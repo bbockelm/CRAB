@@ -58,7 +58,14 @@ class GetOutputServer(Actor):
             os.chdir( copyHere )
             common.logger.debug( 5, 'tar -zxvf ' + zipOut )
   	    cmd = 'tar -zxvf ' + zipOut 
-            cmd += '; mv .tmpDone/* .; rm -drf .tmpDone/'
+            cmd_out = runCommand(cmd)
+            toMove = os.listdir(".tmpDone/")
+            common.logger.debug( 5, "file returned: \n" +str(toMove)+ "\n")
+            for fileToMove in toMove:
+                common.logger.debug( 6, "moving file: "+str(fileToMove) )
+                cmd_out = runCommand("mv .tmpDone/"+str(fileToMove)+" .")
+            common.logger.debug( 6, "deleting all temporary files...")
+            cmd = 'rm -drf .tmpDone/'
 	    cmd_out = runCommand(cmd)
 	    os.chdir(cwd)
             common.logger.debug( 5, 'rm -f '+copyHere+zipOut )
