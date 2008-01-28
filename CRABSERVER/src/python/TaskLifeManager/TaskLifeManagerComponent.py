@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id$"
-__version__ = "$Revision$"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.3 2008/01/10 09:12:25 mcinquil Exp $"
+__version__ = "$Revision: 1.3 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -161,7 +161,7 @@ class TaskLifeManagerComponent:
         if event == "DropBoxGuardianComponent:NewFile" or\
                event == "TaskLifeManager::TaskToMange":
             try:
-                if payload.split(".")[1] != "xml" and payload.split(".")[1] != "tgz":
+                if payload.split(".")[-1] != "xml" and payload.split(".")[1] != "tgz":
                     self.insertTaskWrp( payload )
             except:
                 self.insertTaskWrp( payload )
@@ -180,8 +180,8 @@ class TaskLifeManagerComponent:
             self.printTaskInfo( payload )
             return
 
-        if event == "TaskLifeManager:OverAvailableSpace":
-            return
+        #if event == "TaskLifeManager:OverAvailableSpace":
+        #    return
 
 	# start debug event
         if event == "TaskLifeManager:StartDebug":
