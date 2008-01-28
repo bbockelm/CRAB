@@ -1,0 +1,264 @@
+#!/usr/bin/env python
+
+from ProdAgentCore.Configuration import loadProdAgentConfiguration
+from ProdCommon.Database import Session
+
+import getopt
+import sys
+
+# initialize database access
+try:
+    config = loadProdAgentConfiguration()
+    dbConfig= config.getConfig("ProdAgentDB")
+    dbConfig['dbType']='mysql'
+    Session.set_database(dbConfig)
+except StandardError, ex:
+    msg = "Error reading configuration:\n"
+    msg += str(ex)
+
+# generic usage message
+def usage():
+    """print usage info"""
+    strg = "Usage: crabServer-viewer <command> <options>\n\n"
+    strg += "crabServer-viewer --lsTasks --start=0 --max=0 --status=status\n"
+    strg += "Lists the tasks managed by the server with the status\n"
+    strg += "containing the string \"status\"\n\n"
+    strg += "crabServer-viewer --lsJobs --start=0 --max=0\n"
+    strg += "Lists the jobs managed by the server\n\n"
+    strg += "crabServer-viewer --lsTaskList --start=0 --max=0 --task=taskName\n"
+    strg += "Lists the task managed by the server with the name taskName and\n"
+    strg += "all the jobs that are part of the task taskName\n\n"
+
+    print strg
+
+
+class DBWrapperCS:
+    """
+    __DBWrapperCS__
+
+    database wrapper (returns unformatted data)
+
+    """
+    def __init__(self):
+       pass
+       self.count=0
+
+    def listCrabServerTasks(self,start=0,max=10,short=False,status=""):
+       # count the entries
+       sqlStr="""SELECT count(*) FROM js_taskInstance;"""
+       Session.execute(sqlStr)
+       rows=Session.fetchall()
+       self.count=rows[0][0]
+       # list the entries 
+       sqlStr="""SELECT taskName, status, notificationSent, eMail, \
+                        endedLevel, work_status \
+                 FROM js_taskInstance \
+                 WHERE status like '%%%s%%' \
+                 LIMIT %s,%s;"""%(status,start,max)
+       Session.execute(sqlStr)
+       rows=Session.fetchall()
+       return rows
+
+    def listCrabServerTaskName(self,taskName=""):
+       # count the entries
+       sqlStr="""SELECT count(*) FROM js_taskInstance"""
+       Session.execute(sqlStr)
+       rows=Session.fetchall()
+       self.count=rows[0][0]
+       # list the entries 
+       sqlStr="""SELECT taskName, status, notificationSent, eMail, \
+                        endedLevel, work_status \
+                 FROM js_taskInstance \
+                 WHERE taskName = \"%s\";"""%(taskName)
+       Session.execute(sqlStr)
+       rows=Session.fetchall()
+       return rows
+
+    def listCrabServerJobs(self,start=0,max=50,short=False):
+       # count the entries
+       sqlStr="""SELECT count(*) FROM we_Job;"""
+       Session.execute(sqlStr)
+       rows=Session.fetchall()
+       self.count=rows[0][0]
+       # list the entries 
+       sqlStr="""SELECT id, max_retries, max_racers, \
+                        retries, racers, status \
+                 FROM we_Job \
+                 LIMIT %s,%s;"""%(start,max)
+       Session.execute(sqlStr)
+       rows=Session.fetchall()
+       return rows
+
+    def listCrabServerTaskList(self,owner=""):
+       # count the entries
+       sqlStr="""SELECT count(*) FROM we_Job;"""
+       Session.execute(sqlStr)
+       rows=Session.fetchall()
+       self.count=rows[0][0]
+       # list the entries 
+       sqlStr="""SELECT id, max_retries, max_racers, \
+                        retries, racers, status \
+                 FROM we_Job \
+                 WHERE owner = \"%s\" \
+                 ORDER BY status;"""%(owner)
+       Session.execute(sqlStr)
+       rows=Session.fetchall()
+       return rows
+
+
+class CLWrapperCS:
+    """
+    __CLWrapperCS__
+ 
+    Command line wrapper. formats unformatted data
+    for command line interface.
+    """
+
+    def __init__(self):
+       self.dbWrapper=DBWrapperCS()
+       self.heading=[]
+
+    def __columnSpacing(self,rows):
+       # determine the space for every column
+       self.column=[]
+       for column in xrange(0,len(self.heading)):
+           self.column.append(len(self.heading[column]))
+       for row in rows:
+           for column in xrange(0,len(row)):
+               if len(str(row[column]))>self.column[column]:
+                   self.column[column]=len(str(row[column]))
+           for column in xrange(0,len(self.heading)):
+               if len(str(self.heading[column]))>self.column[column]:
+                   self.column[column]=len(str(self.heading[column]))
+       # cumulate it 
+       for column in xrange(0,len(self.column)):
+           if column!=0:
+               self.column[column]=self.column[column-1]+self.column[column]+1       
+           else:
+               self.column[column]+=1
+
+    def __display(self,rows):
+       print('')
+       self.__displaySeperator()
+       self.__displayRow(self.heading)
+       self.__displaySeperator()
+       for row in rows:
+           self.__displayRow(row)
+       self.__displaySeperator()
+       sys.stdout.write('***Displayed '+str(len(rows))+' entries\n')
+       sys.stdout.write('***There are '+str(self.dbWrapper.count)+' entries in the database at the moment***\n')
+       print('')
+
+    def __displaySeperator(self):
+       position=1
+       sys.stdout.write('+') 
+       for entry in xrange(0,len(self.heading)):
+            while position<self.column[entry]:
+                sys.stdout.write('-')
+                position+=1
+            sys.stdout.write('+')
+       sys.stdout.write('\n')
+
+    def __displayRow(self,row):
+       position=1
+       sys.stdout.write('|') 
+       for entry in xrange(0,len(row)):
+            sys.stdout.write(str(row[entry]))
+            position=position+len(str(row[entry]))
+            while position<self.column[entry]:
+                sys.stdout.write(' ')
+                position+=1
+            sys.stdout.write('|')
+       sys.stdout.write('\n')
+
+    def listCrabServerTasks(self,start=0,max=10,short=False,status=""):
+       rows=self.dbWrapper.listCrabServerTasks(start,max,short,status)   
+       self.heading=['taskName', 'status', 'notificationSent', 'eMail',\
+                     'endedLevel', 'work_status']
+       self.__columnSpacing(rows)
+       sys.stdout.write('\nTasks managed by the server:\n\n')
+       self.__display(rows)
+
+    def listCrabServerJobs(self,start=0,max=50,short=False):
+       rows=self.dbWrapper.listCrabServerJobs(start,max,short)
+       self.heading=["id","max_retries","max_racers", \
+                     "retries","racers","status"]
+       self.__columnSpacing(rows)
+       sys.stdout.write('\nJobs managed by the server:\n\n')
+       self.__display(rows)
+
+    def listCrabServerTaskName(self,taskName=""):
+       rows=self.dbWrapper.listCrabServerTaskName(taskName)
+       self.heading=['taskName', 'status', 'notificationSent', 'eMail',\
+                     'endedLevel', 'work_status']
+       self.__columnSpacing(rows)
+       sys.stdout.write('\nTask managed by the server:\n\n')
+       self.__display(rows)
+
+    def listCrabServerTaskList(self,taskName="",status=""):
+       self.listCrabServerTaskName(taskName)
+       rows=self.dbWrapper.listCrabServerTaskList(taskName)
+       self.heading=["id","max_retries","max_racers", \
+                     "retries","racers","status"]
+       self.__columnSpacing(rows)
+       sys.stdout.write('\nJobs managed by the server:\n\n')
+       self.__display(rows)
+
+
+
+
+# parse input
+valid = ["lsTasks","lsJobs","lsTaskList","short","start=","max=","status=","task=","lsAll"]
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "", valid)
+except getopt.GetoptError, ex:
+    usage()
+    print('***Wrong input: '+str(ex))
+    sys.exit(1)
+
+if len(opts)==0:
+    usage()
+    sys.exit(1)
+
+#prepare CLWrapperCS class
+clWrapper=CLWrapperCS()
+
+# set specific values (if supplied)
+start=0
+max=10
+short=False
+status=""
+taskName=""
+for opt in opts:
+   if opt[0]=='--start':
+       start=int(opt[1])
+   elif opt[0]=='--max':
+       max=int(opt[1])
+   elif opt[0]=='--short':
+       short=True
+   elif opt[0]=='--status':
+       status=str(opt[1])
+   elif opt[0]=='--task':
+       taskName=str(opt[1])
+   elif opt[0] in ["--lsTasks","--lsJobs","--lsTaskList"]:
+       pass
+   else:
+       usage()
+       print("Supplied the wrong settings")
+       sys.exit(1)
+
+# call requested method
+if opts[0][0]=='--lsTasks':
+  clWrapper.listCrabServerTasks(start,max,short,status)
+
+elif opts[0][0]=='--lsJobs':
+  clWrapper.listCrabServerJobs(start,max,short)
+
+elif opts[0][0]=='--lsTaskList':
+  clWrapper.listCrabServerTaskList(taskName,status)
+
+else:
+  usage()
+  print('Could not find your option')
+  sys.exit(1)
+
