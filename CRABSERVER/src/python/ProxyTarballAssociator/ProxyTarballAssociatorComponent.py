@@ -4,8 +4,8 @@ _ProxyTarballAssociatorComponent_
 
 """
 
-__version__ = "$Revision: 1.13 $"
-__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.13 2007/09/28 10:54:28 mcinquil Exp $"
+__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: ProxyTarballAssociatorComponent.py,v 1.15 2007/10/04 17:24:19 mcinquil Exp $"
 
 import os
 import socket
@@ -461,6 +461,7 @@ class ProxyTarballAssociatorComponent:
                     readedData[m] = ""
 
             ### check the schduler ###
+            appended = 0
             if scheduler == "edg":
                 appended1 = 0
                 appended2 = 0
