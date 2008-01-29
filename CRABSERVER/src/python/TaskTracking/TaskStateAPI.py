@@ -50,6 +50,7 @@ def checkNSubmit( taskName, idJob):
     jobMaxRetries = 0
     jobRetries = 0
     jobSpecId = taskName + "_" + str(idJob)
+    jobState = ""
     try:
         Session.set_database(dbConfig)
         Session.connect(jobSpecId)
@@ -64,7 +65,8 @@ def checkNSubmit( taskName, idJob):
 
         jobMaxRetries = int(jobInfo['MaxRetries'])
         jobRetries = int(jobInfo['Retries'])
-        jobState = str(jobInfo['State'])
+        if 'State' in jobInfo:
+            jobState = str(jobInfo['State'])
     except Exception, ex:
         Session.commit_all()
         Session.close_all()
