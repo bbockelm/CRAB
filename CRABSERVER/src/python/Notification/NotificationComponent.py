@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.8 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.8 2007/08/20 16:28:54 mcinquil Exp $"
+__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.9 2007/12/19 09:17:18 mcinquil Exp $"
 
 import os
 import socket
@@ -368,11 +368,17 @@ class NotificationComponent:
                     os.remove(infoFile)
                 except OSError:
                     pass
-
-                hours, mins, secs = lifetime.split(":")
-                hours = int(hours)
-                mins = int(mins)
-                secs = int(secs)
+                #logging.info("lifetime: "+str(lifetime))
+                hours = 0
+                mins = 0
+                secs = 0
+                if lifetime.find(":") != -1:
+                    hours, mins, secs = lifetime.split(":")
+                    hours = int(hours)
+                    mins = int(mins)
+                    secs = int(secs)
+                else:
+                    secs = int(lifetime)
                 days = 0
                 if hours > 24:
                     days = int(hours/24)
