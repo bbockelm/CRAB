@@ -16,8 +16,8 @@ function cmscp {
 ##    $5 grid environment: LCG (default) | OSG
 ## output:
 ##      return 0 if all ok
-##      return 1 if srmcp failed
-##      return 2 if file already exists in the SE
+##      return 60307 if srmcp failed
+##      return 60303 if file already exists in the SE
 ###########################
   if [ $# -le 4 ]; then
     echo -e "\t$0 usage:"
@@ -44,14 +44,13 @@ function cmscp {
   opt=" -debug=true -report ./srmcp.report -streams_num=1 "
   opt="${opt} -retry_timeout 480000 -retry_num 3 "
 
-  copy_exit_status=1
   destination=srm://${SE}:8443${SE_PATH}$name_out_file
   echo "destination = $destination"
 
   echo "--> Check if the file already exists in the storage element $SE"
   srm-get-metadata -retry_num 0 $destination
   if [ $? -eq 0 ]; then
-      copy_exit_status=2
+      copy_exit_status=60303
       StageOutExitStatusReason='file already exists'
   else
       echo "Starting copy of the output to $SE, middleware is $middleware"
@@ -71,33 +70,34 @@ function cmscp {
               echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
               echo "Copy failed: removing remote file $destination"
               srm-advisory-delete $destination
-              copy_exit_status=1
+              copy_exit_status=60307
               echo "Problem copying $path_out_file to $destination with srmcp command"
               StageOutExitStatusReason='remote and local file dimension not match'
               echo "StageOutReport = `cat ./srmcp.report`"
           fi
           StageOutExitStatusReason='copy ok with srm utils'
       else
-          copy_exit_status=1
+          copy_exit_status=60307
           echo "Problem copying $path_out_file to $destination with srmcp command"
           StageOutExitStatusReason=$exitstring
           echo "StageOutReport = `cat ./srmcp.report`"
       fi
   fi
 
-  if [ $copy_exit_status -eq 1 ]; then
+  if [ $copy_exit_status -eq 60307 ]; then
       cmd="lcg-cp --vo $VO -t 2400 --verbose file://$path_out_file $destination"
       echo $cmd
       exitstring=`$cmd 2>&1`
       copy_exit_status=$?
       if [ $copy_exit_status -ne 0 ]; then
+          copy_exit_status=60307
           echo "Problem copying $path_out_file to $destination with lcg-cp command"
           StageOutExitStatusReason=$exitstring
           cmd="echo $StageOutExitStatusReason | grep exists"
           tmpstring=`$cmd 2>&1`
           exit_status=$?
           if [ $exit_status -eq 0 ]; then
-              copy_exit_status=2
+              copy_exit_status=60303
               StageOutExitStatusReason='file already exists'
           fi
       else
