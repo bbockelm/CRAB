@@ -130,7 +130,15 @@ componentFields = {
     "taskLife": "168:00:00",
     "eMailAdmin": None,
     "pollingTimeCheck": 5*60,
-    }
+    },
+
+    ## impored from PA
+    'AdminControl' : {
+    "ComponentDir" : None,
+    "Bots" : "RestartBot",
+    "BotPeriod" : "12:00:00",
+    },
+
 
 }
 
