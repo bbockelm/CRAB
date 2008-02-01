@@ -12,6 +12,8 @@ class Boss:
         self.schedRegistered = {}
         self.jobtypeRegistered = {}
         self.bossLogFile = "boss.log"
+        self.bossAdmin = None
+        self.bossUser = None
 
         # Map for Boss Status to Human Readable Status
         self.status={
