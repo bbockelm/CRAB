@@ -255,3 +255,7 @@ class Scheduler :
 
     def list(self):
         return self.boss().list()
+
+    def moveOutput(self, nj):
+        self.boss().moveOutput(nj)
+

@@ -1,6 +1,7 @@
 from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
 from crab_exceptions import *
+from crab_util import *
 from crab_logger import Logger
 import common
 
@@ -22,5 +23,13 @@ class SchedulerLsf(SchedulerLocal) :
     def configure(self, cfg_params):
         SchedulerLocal.configure(self, cfg_params)
         self.environment_unique_identifier = 'LSB_BATCH_JID'
+
+        return
+
+    def loggingInfo(self, id):
+        """ return logging info about job nj """
+        cmd = 'bjobs -l ' + id
+        cmd_out = runCommand(cmd)
+        return cmd_out
 
         return

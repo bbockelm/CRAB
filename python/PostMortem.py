@@ -10,7 +10,7 @@ class PostMortem(Actor):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
 
-        if common.scheduler.boss_scheduler_name == 'condor_g':
+        if common.scheduler.name() == 'condor_g':
             # create hash of cfg file
             self.hash = makeCksum(common.work_space.cfgFileName())
         else:
@@ -39,28 +39,33 @@ class PostMortem(Actor):
 
             reason = ''
             ## SL this if-elif is the negation of OO! Mus disappear ASAP
-            if common.scheduler.boss_scheduler_name == "edg" or common.scheduler.boss_scheduler_name == "glite" or common.scheduler.boss_scheduler_name == "glitecoll":
+            if common.scheduler.name() == "edg" or common.scheduler.name() == "glite" or common.scheduler.name() == "glitecoll":
                 loggingInfo = EdgLoggingInfo.EdgLoggingInfo()
                 reason = loggingInfo.decodeReason(out)
-            elif common.scheduler.boss_scheduler_name == "condor_g" :
+            elif common.scheduler.name() == "condor_g" :
                 loggingInfo = CondorGLoggingInfo.CondorGLoggingInfo()
                 reason = loggingInfo.decodeReason(out)
             else :
+                loggingInfo = None
                 reason = out
 
             common.logger.message('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname) )
             
             # ML reporting
             jobId = ''
-            if common.scheduler.boss_scheduler_name == 'condor_g':
+            if common.scheduler.name() == 'condor_g':
                 jobId = str(id) + '_' + self.hash + '_' + v
             else:
                 jobId = str(id) + '_' + v
 
-            params = {'taskId': self.cfg_params['taskId'], 'jobId':  jobId, \
-                      'sid': v,
-                      'PostMortemCategory': loggingInfo.getCategory(), \
-                      'PostMortemReason': loggingInfo.getReason()}
+            if loggingInfo:
+                params = {'taskId': common.taskDB.dict('taskId'), 'jobId':  jobId, \
+                          'sid': v,
+                          'PostMortemCategory': loggingInfo.getCategory(), \
+                          'PostMortemReason': loggingInfo.getReason()}
+            else:
+                params = {'taskId': common.taskDB.dict('taskId'), 'jobId':  jobId, \
+                          'sid': v}
             common.apmon.sendToML(params)
             pass
 
