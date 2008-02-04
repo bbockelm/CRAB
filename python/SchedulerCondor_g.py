@@ -151,6 +151,7 @@ class SchedulerCondor_g(Scheduler):
         return cmd_out
 
     def configure(self, cfg_params):
+        Scheduler.configure(self,cfg_params)
 
         self.cfg_params = cfg_params
 

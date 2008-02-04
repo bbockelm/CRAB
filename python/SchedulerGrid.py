@@ -24,6 +24,7 @@ class SchedulerGrid(Scheduler):
                       "stateEnterTime","stateEnterTimes","subjob_failed", \
                       "user tags" , "status" , "status_code","hierarchy"]
         return
+
     def configure(self, cfg_params):
         Scheduler.configure(self,cfg_params)
 
