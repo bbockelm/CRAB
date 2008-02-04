@@ -231,7 +231,13 @@ if [ -s crab_fjr.xml ]; then
           cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
           echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
           executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
-          echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"
+          if [ $executable_exit_status -eq 50115 ];then
+              echo ">>> crab_fjr.xml contents: "
+              cat crab_fjr.xml 
+              echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"
+          else    
+              echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"
+          fi    
       else
           echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
       fi

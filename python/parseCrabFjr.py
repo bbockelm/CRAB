@@ -60,11 +60,18 @@ def main(argv) :
 
     exit_status = ''
     
-    # get ExitStatus of last error
-    if len(jobReport.errors) != 0 :
-        exit_status = str(jobReport.errors[-1]['ExitStatus'])
-    else :
-        exit_status = str(0)
+    ##### temporary fix for FJR incomplete ####
+    fjr = open (input)
+    len_fjr = len(fjr.readlines())
+    if (len_fjr <= 6):
+       ### 50115 - cmsRun did not produce a valid/readable job report at runtime
+       exit_status = str(50115)
+    else: 
+        # get ExitStatus of last error
+        if len(jobReport.errors) != 0 :
+            exit_status = str(jobReport.errors[-1]['ExitStatus'])
+        else :
+            exit_status = str(0)
 
     # get i/o statistics
     storageStatistics = str(jobReport.storageStatistics)
