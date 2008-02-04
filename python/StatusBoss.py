@@ -185,31 +185,34 @@ class StatusBoss(Actor):
                     common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
                 else:
                     jobId = str(bossid) + '_' + string.strip(jobAttributes[bossid]['SCHED_ID'])
-                    common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
+                    if common.scheduler.name() == 'lsf' or common.scheduler.name() == 'caf':
+                        jobId="https://"+common.scheduler.name()+":/"+string.strip(jobAttributes[bossid]['SCHED_ID'])+"-"+common.taskDB.dict('taskId')+"-"+str(bossid)
+                        common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
+                    pass
+                pass
 
-                if int(self.cfg_params['USER.activate_monalisa']) == 1:
-                    common.logger.debug(7,"sending info to ML")
-                    params = {}
-                    if RB != None:
-                        params = {'taskId': common.taskDB.dict('taskId'), \
-                        'jobId': jobId,\
-                        'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
-                        'StatusValueReason': job_status_reason, \
-                        'StatusValue': jobStatus, \
-                        'StatusEnterTime': job_last_time, \
-                        'StatusDestination': dest, \
-                        'RBname': RB }
-                    else:
-                        params = {'taskId': common.taskDB.dict('taskId'), \
-                        'jobId': jobId,\
-                        'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
-                        'StatusValueReason': job_status_reason, \
-                        'StatusValue': jobStatus, \
-                        'StatusEnterTime': job_last_time, \
-                        'StatusDestination': dest }
-                    common.logger.debug(5,str(params))
+                common.logger.debug(5,"sending info to ML")
+                params = {}
+                if RB != None:
+                    params = {'taskId': common.taskDB.dict('taskId'), \
+                    'jobId': jobId,\
+                    'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
+                    'StatusValueReason': job_status_reason, \
+                    'StatusValue': jobStatus, \
+                    'StatusEnterTime': job_last_time, \
+                    'StatusDestination': dest, \
+                    'RBname': RB }
+                else:
+                    params = {'taskId': common.taskDB.dict('taskId'), \
+                    'jobId': jobId,\
+                    'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
+                    'StatusValueReason': job_status_reason, \
+                    'StatusValue': jobStatus, \
+                    'StatusEnterTime': job_last_time, \
+                    'StatusDestination': dest }
+                common.logger.debug(5,str(params))
 
-                    common.apmon.sendToML(params)
+                common.apmon.sendToML(params)
 #            if printline != '': 
 #                print printline
 

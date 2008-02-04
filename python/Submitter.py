@@ -247,29 +247,34 @@ class Submitter(Actor):
                     
                     # OLI: JobID treatment, special for Condor-G scheduler
                     jobId = ''
+                    localId = ''
                     if common.scheduler.name() == 'CONDOR_G':
+                        rb = 'OSG'
                         jobId = str(jj) + '_' + self.hash + '_' + jid
                         common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+                    elif common.scheduler.name() == 'lsf' or common.scheduler.name() == 'caf':
+                        jobId="https://"+common.scheduler.name()+":/"+jid+"-"+common.taskDB.dict('taskId')+"-"+str(jj)
+                        common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
+                        rb = common.scheduler.name()
+                        localId = jid
                     else:
                         jobId = str(jj) + '_' + jid
                         common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
-               
-                    if ( jid.find(":") != -1 ) :
                         rb = jid.split(':')[1]
                         rb = rb.replace('//', '')
-                    else :
-                        rb = 'OSG'
 
                     if len(common.jobDB.destination(tmpNj)) <= 2 :
                         T_SE=string.join((common.jobDB.destination(tmpNj)),",")    
                     else :
                         T_SE=str(len(common.jobDB.destination(tmpNj)))+'_Selected_SE'
+
                     params = {'jobId': jobId, \
                               'sid': jid, \
                               'broker': rb, \
                               'bossId': jj, \
                               'SubmissionType': Sub_Type, \
-                              'TargetSE': T_SE,}
+                              'TargetSE': T_SE, \
+                              'localId' : localId}
                     common.logger.debug(5,str(params))
                
                     fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')

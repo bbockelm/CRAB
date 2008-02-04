@@ -19,8 +19,6 @@ class SchedulerLocal(Scheduler) :
 
         self.res = cfg_params.get(name+'.resource',None)
 
-        self.user = cfg_params.get(name+'.user',None)
-
         if (cfg_params.has_key(self.name()+'.env_id')): self.environment_unique_identifier = cfg_params[self.name()+'.env_id']
 
         self._taskId = common.taskDB.dict('taskId')
@@ -67,12 +65,9 @@ class SchedulerLocal(Scheduler) :
 
     def userName(self):
         """ return the user name """
-        if self.user:
-            return self.user
-        else:
-            import pwd,getpass
-            tmp=pwd.getpwnam(getpass.getuser())[4]
-            return tmp.strip()
+        import pwd,getpass
+        tmp=pwd.getpwnam(getpass.getuser())[4]
+        return "/CN="+tmp.strip()
 
     def wsSetupEnvironment(self):
         """
