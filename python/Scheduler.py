@@ -205,6 +205,8 @@ class Scheduler :
             if nTot >= id: ## TODO check the number of jobs..else: 'IndexError: list index out of range'
                 if ( common.jobDB.status(id-1) in ['S','R','A']) and (id not in subm_id):
                     subm_id.append(id)
+                else:
+                    common.logger.message("Not possible to kill Job #"+str(id))
             else:
                 common.logger.message("Warning: job # "+str(id)+" doesn't exists! Not possible to kill it.")
         self._boss.cancel(subm_id)

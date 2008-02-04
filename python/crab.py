@@ -549,25 +549,21 @@ class Crab:
 
             elif ( opt == '-kill' ):
 
-                if (self.UseServer== 1):
-                    if val:
-                        if val =='all':
-                            jobs = common.scheduler.list()
-                        else:
-                            jobs = self.parseRange_(val)
-                        from KillerServer import KillerServer
-                        self.actions[opt] = KillerServer(self.cfg_params,val, self.parseRange_(val)) #Fabio
+                if val:
+                    if val =='all':
+                        jobs = common.scheduler.list()
                     else:
-                        common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
+                        jobs = self.parseRange_(val)
+                    pass
                 else:
-                    if val:
-                        if val =='all':
-                            jobs = common.scheduler.list()
-                        else:
-                            jobs = self.parseRange_(val)
-                        common.scheduler.cancel(jobs)
-                    else:
-                        common.logger.message("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
+                    raise CrabException("Warning: with '-kill' you _MUST_ specify a job range or 'all'")
+                    pass
+
+                if (self.UseServer== 1):
+                    from KillerServer import KillerServer
+                    self.actions[opt] = KillerServer(self.cfg_params,val, self.parseRange_(val)) #Fabio
+                else:
+                    common.scheduler.cancel(jobs)
 
 
             elif ( opt == '-getoutput' or opt == '-get'):
@@ -611,7 +607,7 @@ class Crab:
                         common.logger.message( "Warning : Scheduler interaction in query operation failed for jobs:")
                         common.logger.message(e.what())
                         pass
-                    task = common.scheduler.bossTask.jobsDict()
+                    task = common.scheduler.boss().task().jobsDict()
                         
                     nj_list = []
                     for c, v in task.iteritems():
@@ -644,7 +640,8 @@ class Crab:
                     if len(nj_list) != 0:
                         nj_list.sort()
                         # Instantiate Submitter object
-                        self.actions[opt] = Submitter(self.cfg_params, nj_list)
+                        from Submitter import Submitter
+                        self.actions[opt] = Submitter(self.cfg_params, nj_list, val)
 
                         pass
                     pass
@@ -747,7 +744,7 @@ class Crab:
                         common.logger.message( e.what())
                         pass
 
-                    task = common.scheduler.bossTask.jobsDict()
+                    task = common.scheduler.boss().task().jobsDict()
    
                     for c, v in task.iteritems():
                         k = int(c)

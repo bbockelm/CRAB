@@ -566,7 +566,7 @@ class Boss:
             common.jobDB.save()
             pass
         else:
-            common.logger.message("\nError killing jobs # "+str(int_id).replace("[","",1).replace("]","",1)+" . See log for details")
+            common.logger.message("\nNo job to be killed")
         common.jobDB.save()
         return
 
