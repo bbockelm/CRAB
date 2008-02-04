@@ -252,7 +252,7 @@ class Submitter(Actor):
                         jobId = str(jj) + '_' + self.hash + '_' + jid
                         common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
                     elif common.scheduler.name() == 'lsf' or common.scheduler.name() == 'caf':
-                        jobId="https://"+common.scheduler.name()+":/"+jid+"-"+common.taskDB.dict('taskId')+"-"+str(jj)
+                        jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(common.taskDB.dict('taskId'),"_","-")+"-"+str(jj)
                         common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
                         rb = common.scheduler.name()
                         localId = jid

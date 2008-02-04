@@ -186,7 +186,7 @@ class StatusBoss(Actor):
                 else:
                     jobId = str(bossid) + '_' + string.strip(jobAttributes[bossid]['SCHED_ID'])
                     if common.scheduler.name() == 'lsf' or common.scheduler.name() == 'caf':
-                        jobId="https://"+common.scheduler.name()+":/"+string.strip(jobAttributes[bossid]['SCHED_ID'])+"-"+common.taskDB.dict('taskId')+"-"+str(bossid)
+                        jobId=str(bossid)+"_https://"+common.scheduler.name()+":/"+string.strip(jobAttributes[bossid]['SCHED_ID'])+"-"+string.replace(common.taskDB.dict('taskId'),"_","-")
                         common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
                     pass
                 pass

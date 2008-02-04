@@ -85,8 +85,8 @@ class SchedulerLocal(Scheduler) :
         txt += "# job number (first parameter for job wrapper)\n"
         txt += "NJob=${args[0]}\n"
 
-        txt += 'MonitorJobID=`echo ${NJob}_$'+self.environment_unique_identifier+'`\n'
-        txt += 'SyncGridJobId=`echo $'+self.environment_unique_identifier+'`\n'
+        txt += 'SyncGridJobId=`echo '+self.environment_unique_identifier+'`\n'
+        txt += 'MonitorJobID=`echo ${NJob}_${SyncGridJobId}`\n'
         txt += 'MonitorID=`echo ' + self._taskId + '`\n'
 
         txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
