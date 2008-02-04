@@ -113,10 +113,9 @@ class Submitter(Actor):
         params = {'jobId':'TaskMeta'}
  
         fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
-        print fl
         for i in fl.readlines():
-            val = i.split(':')
-            params[val[0]] = string.strip(val[1])
+            key, val = i.split(':')
+            params[key] = string.strip(val)
         fl.close()
 
         common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
@@ -279,8 +278,8 @@ class Submitter(Actor):
                
                     fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
                     for i in fl.readlines():
-                        val = i.split(':')
-                        params[val[0]] = string.strip(val[1])
+                        key, val = i.split(':')
+                        params[key] = string.strip(val)
                     fl.close()
      
                     common.logger.debug(5,'Submission DashBoard report: '+str(params))

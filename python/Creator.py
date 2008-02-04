@@ -50,7 +50,6 @@ class Creator(Actor):
         #First checkProxy
         common.scheduler.checkProxy()
         try:
-            fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'w')
             gridName = common.scheduler.userName()
             common.logger.debug(5, "GRIDNAME: "+gridName)
             taskType = 'analysis'
@@ -67,6 +66,7 @@ class Creator(Actor):
             jtParam = self.job_type.getParams()
             for i in jtParam.iterkeys():
                 params[i] = string.strip(jtParam[i])
+            fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'w')
             for j, k in params.iteritems():
                 fl.write(j + ':' + k + '\n')
             fl.close()
