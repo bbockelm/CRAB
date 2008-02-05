@@ -639,6 +639,22 @@ class Crab:
 
                     if len(nj_list) != 0:
                         nj_list.sort()
+
+                        # remove job ids from the submission history file (for the server) # Fabio
+                        if (self.UseServer == 1):
+                            file = open(common.work_space.shareDir()+'/submit_directive','r')
+                            prev_subms = str(file.readlines()[0]).split('\n')[0]
+                            file.close()
+
+                            new_subms = []
+                            if prev_subms != 'all':
+                                # remove the jobs in nj_list from the history
+                                new_subms = [ j for j in eval(prev_subms) not in nj_list ]
+
+                            file = open(common.work_space.shareDir()+'/submit_directive','w')
+                            file.write(str(new_subms))
+                            file.close()
+
                         # Instantiate Submitter object
                         from Submitter import Submitter
                         self.actions[opt] = Submitter(self.cfg_params, nj_list, val)
