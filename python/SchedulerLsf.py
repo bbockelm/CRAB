@@ -22,8 +22,8 @@ class SchedulerLsf(SchedulerLocal) :
 
     def configure(self, cfg_params):
         SchedulerLocal.configure(self, cfg_params)
-        self.environment_unique_identifier = "https://"+common.scheduler.name()+":/"+ \
-            string.replace(common.taskDB.dict('taskId'),"_","-")+"-${LSB_BATCH_JID}"
+        self.environment_unique_identifier = "https://"+common.scheduler.name()+":/${LSB_BATCH_JID}-"+ \
+            string.replace(common.taskDB.dict('taskId'),"_","-")
 
         return
 

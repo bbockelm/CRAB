@@ -57,6 +57,7 @@ class SchedulerLocal(Scheduler) :
             msg='Unkown domain name. Cannot use local scheduler'
             raise CrabException(msg)
         localDomainName = string.split(tmp,'.',1)[-1]
+        common.taskDB.setDict('localSite',localDomainName)
         ## is this ok?
         cfg_params['EDG.se_white_list']=localDomainName
         common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
@@ -92,6 +93,7 @@ class SchedulerLocal(Scheduler) :
         txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "SyncCE='+self.name()+'.`hostname -d`" | tee -a $RUNTIME_AREA/$repo \n'
 
         txt += 'middleware='+self.name()+' \n'
 

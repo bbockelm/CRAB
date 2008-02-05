@@ -114,12 +114,12 @@ class StatusBoss(Actor):
             else :
                 try: jobStatus = jobAttributes[bossid]['STATUS']
                 except: jobStatus = 'Unknown'
-            #print "RB = " + str(jobAttributes[bossid]['RB'])
+            #print "RB = " + str(jobAttributes[bossid])
             RB = None
             try:
                 RB = str(jobAttributes[bossid]['RB'])
             except:
-                RB = None
+                RB = common.scheduler.name()
             # debug
             msg = 'jobStatus' + jobStatus
             common.logger.debug(4,msg)
@@ -144,6 +144,16 @@ class StatusBoss(Actor):
                     job_status_reason = common.scheduler.getAttribute(bossid, 'reason')
                     job_last_time = common.scheduler.getAttribute(bossid, 'stateEnterTime')
                     pass
+                pass
+            elif common.scheduler.name() == "lsf" or common.scheduler.name()=="caf":
+                if jobAttributes[bossid].has_key('DEST_CE') :
+                    dest = jobAttributes[bossid]['DEST_CE']
+                else:
+                    dest=common.scheduler.name()
+                dest+='.'+common.taskDB.dict('localSite')
+                job_status_reason = ''
+                job_last_time = ''
+
             else :
                 dest = ''
                 job_status_reason = ''
