@@ -35,7 +35,7 @@ class SchedulerGrid(Scheduler):
         self.dontCheckProxy=int(cfg_params.get("EDG.dont_check_proxy",0))
 
         self.rb_param_file=None
-        if (cfg_params.has_key['EDG.rb']):
+        if (cfg_params.has_key('EDG.rb')):
             self.rb_param_file=self.rb_configure(cfg_params.get("EDG.rb"))
 
         self.proxyServer = cfg_params.get("EDG.proxy_server",'myproxy.cern.ch')
