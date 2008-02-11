@@ -22,7 +22,7 @@ The most useful general options (use '-h' to get complete help):
   -submit n           -- Submit the first n available jobs. Default is all.
   -status             -- check status of all jobs.
   -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs
-  -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance  
+  -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance
   -kill [range]       -- kill submitted jobs
   -cancelAndResubmit [range]  -- kill and resubmit submitted jobs
   -clean              -- gracefully cleanup the idrectory of a task
@@ -84,7 +84,7 @@ Source B<crab.(c)sh> from the CRAB installation area, which have been setup eith
 
 Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list: in particular set your jobtype (orca or famos) and fill the corresponding section. A template and commented B<crab.cfg> can be found on B<$CRABDIR/python/crab.cfg>
 
-~>crab -create 
+~>crab -create
   create all jobs (no submission!)
 
 ~>crab -submit 2 -continue [ui_working_dir]
@@ -99,8 +99,8 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 ~>crab -getoutput
   get back the output of all jobs
 
-~>crab -publish 
-  publish all user outputs in the DBS specified in the crab.cfg (dbs_url_for_publication) or written as argument of this option 
+~>crab -publish
+  publish all user outputs in the DBS specified in the crab.cfg (dbs_url_for_publication) or written as argument of this option
 
 =head1 RUNNING CMSSW WITH CRAB
 
@@ -110,7 +110,7 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 
 Develop your code in your CMSSW working area.  Do anything which is needed to run interactively your executable, including the setup of run time environment (I<eval `scramv1 runtime -sh|csh`>), a suitable I<ParameterSet>, etc. It seems silly, but B<be extra sure that you actaully did compile your code> I<scramv1 b>.
 
-=item B<B)> 
+=item B<B)>
 
 Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.  Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list.
 
@@ -136,7 +136,7 @@ You must have a valid voms-enabled Grid proxy. See CRAB web page for details.
 
 The B<Condor-G> mode for B<CRAB> is a special submission mode next to the standard Resource Broker submission. It is designed to submit jobs directly to a site and not using the Resource Broker.
 
-Due to the nature of this submission possibility, the B<Condor-G> mode is restricted to OSG sites within the CMS Grid, currently the 7 US T2: Florida(ufl.edu), Nebraska(unl.edu), San Diego(ucsd.edu), Purdue(purdue.edu), Wisconsin(wisc.edu), Caltech(ultralight.org), MIT(mit.edu). 
+Due to the nature of this submission possibility, the B<Condor-G> mode is restricted to OSG sites within the CMS Grid, currently the 7 US T2: Florida(ufl.edu), Nebraska(unl.edu), San Diego(ucsd.edu), Purdue(purdue.edu), Wisconsin(wisc.edu), Caltech(ultralight.org), MIT(mit.edu).
 
 =head2 B<Requirements:>
 
@@ -148,9 +148,9 @@ Due to the nature of this submission possibility, the B<Condor-G> mode is restri
 
 =item locally available LCG or OSG UI installation
 
-for authentication via Grid certificate proxies ("voms-proxy-init -voms cms" should result in valid proxy) 
+for authentication via Grid certificate proxies ("voms-proxy-init -voms cms" should result in valid proxy)
 
-=item set of the environment variable EDG_WL_LOCATION to the edg directory of the local LCG or OSG UI installation 
+=item set of the environment variable EDG_WL_LOCATION to the edg directory of the local LCG or OSG UI installation
 
 =back
 
@@ -160,7 +160,7 @@ for authentication via Grid certificate proxies ("voms-proxy-init -voms cms" sho
 
 =item submission directly to a single OSG site,
 
-the requested dataset has to be published correctly by the site in the local and global services 
+the requested dataset has to be published correctly by the site in the local and global services
 
 =back
 
@@ -190,7 +190,7 @@ The CRAB configuration for the Condor-G mode only requires changes in crab.cfg:
 
 scheduler = condor_g
 
-=item select the domain for a single OSG site: 
+=item select the domain for a single OSG site:
 
 CE_white_list = "one of unl.edu,ufl.edu,ucsd.edu,wisc.edu,purdue.edu,ultralight.org,mit.edu"
 
@@ -272,7 +272,7 @@ Print the version and exit.
 The range to be used in many of the above commands has the following syntax. It is a comma separated list of jobs ranges, each of which may be a job number, or a job range of the form first-last.
 Example: 1,3-5,8 = {1,3,4,5,8}
 
-=back 
+=back
 
 =head1 OPTION
 
@@ -286,7 +286,7 @@ Configuration file name. Default is B<crab.cfg>.
 
 Set the debug level: high number for high verbosity.
 
-=back 
+=back
 
 =head1 CONFIGURATION PARAMETERS
 
@@ -388,7 +388,7 @@ Any additional input file you want to ship to WN: comma separated list. These ar
 
 =item B<script_exe>
 
-A user script that will be run on WN (instead of default cmsrun). It\'s up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (eg scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The script itself will be added automatically to the input sandbox.
+A user script that will be run on WN (instead of default cmsrun). It\'s up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (eg scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The user must ensure that a job report named crab_fjr.xml will be written. This can be guaranteed by passing the arguments "-j crab_fjr.xml" to cmsRun in the script. The script itself will be added automatically to the input sandbox.
 
 =item B<ui_working_dir>
 
@@ -400,7 +400,7 @@ This has to be a value between 0 and 100, that indicates the percentage of task 
 
 =item B<eMail>
 
-The server will notify the specified e-mail when the task will reaches the specified B<thresholdLevel>. A notification is also sended when the task will reach the 100\% of completeness. This field can also be a list of e-mail: "B<eMail = user1@cern.ch, user2@cern.ch>". Works just with the server_mode = 1. 
+The server will notify the specified e-mail when the task will reaches the specified B<thresholdLevel>. A notification is also sended when the task will reach the 100\% of completeness. This field can also be a list of e-mail: "B<eMail = user1@cern.ch, user2@cern.ch>". Works just with the server_mode = 1.
 
 =item B<return_data *>
 
@@ -473,7 +473,7 @@ Any other requirements to be add to JDL. Must be written in compliance with JDL 
 =item B<additional_jdl_parameters:>
 
 Any other parameters you want to add to jdl file: comma separated list, each
-item B<must> be complete, including the closing ";". 
+item B<must> be complete, including the closing ";".
 With this field it\'s also possible to specify which WMS you want to use, adding the parameter "additional_jdl_parameters = WMProxyEndpoints ={"https://hostname:port/pathcode"};" where "hostname" is WMS\' name, the "port" generally is 7443 and the "pathcode" should be something like "glite_wms_wmproxy_server".
 
 =item B<max_cpu_time>
