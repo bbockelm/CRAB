@@ -55,7 +55,7 @@ class SchedulerEdg(SchedulerGrid):
                 req = req +  ' && ' + self.EDG_requirements
 
         if self.EDG_ce_white_list:
-            ce_white_list = string.split(self.EDG_ce_white_list,',')
+            ce_white_list = self.EDG_ce_white_list
             for i in range(len(ce_white_list)):
                 if i == 0:
                     if (req == ' '):
@@ -68,7 +68,7 @@ class SchedulerEdg(SchedulerGrid):
             req = req + ')'
 
         if self.EDG_ce_black_list:
-            ce_black_list = string.split(self.EDG_ce_black_list,',')
+            ce_black_list = self.EDG_ce_black_list
             for ce in ce_black_list:
                 if (req == ' '):
                     req = req + '(!RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId))'
