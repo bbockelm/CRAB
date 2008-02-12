@@ -77,6 +77,8 @@ class Submitter(Actor):
             for jobs in jobSkippedInSubmission:
                 mess += str(jobs) + ","
             common.logger.message("Jobs:  " +str(mess) + "\n      skipped because no sites are hosting this data\n")
+            self.submissionError()
+            pass
         # submit N from last submitted job
         common.logger.debug(5,'nj_list '+str(nj_list))
                  
@@ -201,6 +203,7 @@ class Submitter(Actor):
                             list=[]
                 else:
                     common.logger.message("No compatible site found, will not submit job "+str(nj+1))
+                    self.submissionError()
                     continue
                 count += 1
             ### Progress Bar indicator, deactivate for debug
@@ -307,20 +310,26 @@ class Submitter(Actor):
             msg += '.'
             pass
         common.logger.message(msg)
+
+        if (njs < len(self.nj_list) or len(self.nj_list)==0):
+            self.submissionError()
+        return
+
+    def submissionError(self):
         ## add some more verbose message in case submission is not complete
-        if (njs < len(self.nj_list)):
-            msg =  'Submission performed using the Requirements: \n'
-            msg += common.taskDB.dict("jobtype")+' version: '+common.taskDB.dict("codeVersion")+'\n'
-            if self.cfg_params.has_key('EDG.se_white_list'):
-                msg += 'SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
-            if self.cfg_params.has_key('EDG.se_black_list'):
-                msg += 'SE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
-            if self.cfg_params.has_key('EDG.ce_white_list'):
-                msg += 'CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
-            if self.cfg_params.has_key('EDG.ce_black_list'):
-                msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
-            msg += '(Hint: please check if '+common.taskDB.dict("jobtype")+' is available at the Sites)\n'
-            
+        msg =  'Submission performed using the Requirements: \n'
+        msg += common.taskDB.dict("jobtype")+' version: '+common.taskDB.dict("codeVersion")+'\n'
+        if self.cfg_params.has_key('EDG.se_white_list'):
+            msg += 'SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
+        if self.cfg_params.has_key('EDG.se_black_list'):
+            msg += 'SE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
+        if self.cfg_params.has_key('EDG.ce_white_list'):
+            msg += 'CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
+        if self.cfg_params.has_key('EDG.ce_black_list'):
+            msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
+        msg += '(Hint: please check if '+common.taskDB.dict("jobtype")+' is available at the Sites)\n'
+
         common.logger.message(msg)
+            
             
         return
