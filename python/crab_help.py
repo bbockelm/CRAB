@@ -490,7 +490,7 @@ All the CE (Computing Element) whose name contains the following strings (comma 
 
 =item B<CE_white_list>
 
-Only the CE (Computing Element) whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (eg fnal, cern, ifae, fzk, cnaf, lnl,....)
+Only the CE (Computing Element) whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (eg fnal, cern, ifae, fzk, cnaf, lnl,....). Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place.
 
 =item B<SE_black_list>
 
@@ -498,7 +498,7 @@ All the SE (Storage Element) whose name contains the following strings (comma se
 
 =item B<SE_white_list>
 
-Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.It works only if a datasetpath is specified
+Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.It works only if a datasetpath is specified. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place.
 
 =item B<virtual_organization>
 
