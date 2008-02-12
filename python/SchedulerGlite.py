@@ -8,8 +8,8 @@ import common
 import os, sys, time
 
 class SchedulerGlite(SchedulerGrid):
-    def __init__(self):
-        SchedulerGrid.__init__(self,"GLITE")
+    def __init__(self, name="GLITE"):
+        SchedulerGrid.__init__(self,name)
 
     def configure(self,cfg_params):
         SchedulerGrid.configure(self, cfg_params)

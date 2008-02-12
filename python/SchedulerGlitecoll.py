@@ -3,7 +3,7 @@ from SchedulerGlite import SchedulerGlite
 
 class SchedulerGlitecoll(SchedulerGlite):
     def __init__(self):
-        SchedulerGlite.__init__(self)
+        SchedulerGlite.__init__(self,"GLITECOLL")
 
     def tOut(self, list):
         if list != None:

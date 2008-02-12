@@ -59,9 +59,6 @@ def loadConfig(file):
         for opt in cp.options(sec):
             #print 'config['+sec+'.'+opt+'] = '+string.strip(cp.get(sec,opt))
             config[sec+'.'+opt] = string.strip(cp.get(sec,opt))
-    # marco. Try to prevent user from switching off Monalisa reporting
-    config['USER.activate_monalisa'] = 1
-    # marco
     return config
 
 ###########################################################################
