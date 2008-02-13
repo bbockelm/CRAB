@@ -50,7 +50,7 @@ class Creator(Actor):
         #First checkProxy
         common.scheduler.checkProxy()
         try:
-            gridName = common.scheduler.userName()
+            gridName = string.strip(common.scheduler.userName())
             common.logger.debug(5, "GRIDNAME: "+gridName)
             taskType = 'analysis'
             VO = cfg_params.get('EDG.virtual_organization','cms')
