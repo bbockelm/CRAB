@@ -15,7 +15,9 @@ class Submitter(Actor):
         nsjobs = -1
         chosenJobsList = None
         if val:
-            if val=='all': 
+            if val=='range':  # for Resubmitter
+                chosenJobsList = parsed_range
+            elif val=='all': 
                 pass
             elif (type(eval(val)) is int) and eval(val) > 0:
                 # positive number

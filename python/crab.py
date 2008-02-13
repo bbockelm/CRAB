@@ -478,6 +478,7 @@ class Crab:
                 pass
 
             elif ( opt == '-submit' ):
+                ## Dealt with val == int so that -submit N means submit N jobs and not job # N
                 # modified to support server mode
                 if (self.UseServer== 1):
                     from SubmitterServer import SubmitterServer
@@ -584,82 +585,20 @@ class Crab:
                     pass
 
             elif ( opt == '-resubmit' ):
-                if val=='all' or val==None or val=='':
-                    jobs = common.scheduler.list()
-                else:
-                    jobs = self.parseRange_(val)
-
                 if val:
-                    # create a list of jobs to be resubmitted.
-                    val = string.replace(val,'-',':')
+                    if val=='all':
+                        jobs = common.scheduler.list()
+                    else:
+                        jobs = self.parseRange_(val)
 
-                    ### as before, create a Resubmittter Class
-                    maxIndex = common.scheduler.list()
-                    ##
-                    # Marco. Vediamo se va meglio cosi'...
-                    ##
-                    try: 
-                        from BossSession import ALL
-                        common.scheduler.boss().task().query(ALL, val)
-                    except RuntimeError,e:
-                        common.logger.message( e.__str__() )
-                    except ValueError,e:
-                        common.logger.message( "Warning : Scheduler interaction in query operation failed for jobs:")
-                        common.logger.message(e.what())
-                        pass
-                    task = common.scheduler.boss().task().jobsDict()
-                        
-                    nj_list = []
-                    for c, v in task.iteritems():
-                        k = int(c)
-                        nj=k
-                        st = v['STATUS']
+                    # Instantiate Submitter object
+                    from Resubmitter import Resubmitter
+                    self.actions[opt] = Resubmitter(self.cfg_params, jobs, self.UseServer)
 
-                        if int(nj) <= int(len(maxIndex)) :
-                            if st in ['K','SA','Z','DA']:
-                                nj_list.append(int(nj)-1)
-                                common.jobDB.setStatus(int(nj)-1,'C')
-                            elif st in ['E','SE']:
-                                common.scheduler.moveOutput(nj)
-                                nj_list.append(int(nj)-1)
-                                st = common.jobDB.setStatus(int(nj)-1,'RC')
-                            elif st in ['W']:
-                                common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!')
-                                pass
-                            elif st in ['SD', 'OR']:
-                                common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
-                            else:
-                                common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
-                        else:
-                            common.logger.message('Job #'+`int(nj)`+' no possible to resubmit!! out of range')
-                    if len(common.job_list) == 0 :
-                         common.job_list = JobList(common.jobDB.nJobs(),None)
-                         common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                         pass
-
-                    if len(nj_list) != 0:
-                        nj_list.sort()
-
-                        # remove job ids from the submission history file (for the server) # Fabio
-                        if (self.UseServer == 1):
-                            file = open(common.work_space.shareDir()+'/submit_directive','r')
-                            prev_subms = str(file.readlines()[0]).split('\n')[0]
-                            file.close()
-
-                            new_subms = []
-                            if prev_subms != 'all':
-                                # remove the jobs in nj_list from the history
-                                new_subms = [ j for j in eval(prev_subms) not in nj_list ]
-
-                            file = open(common.work_space.shareDir()+'/submit_directive','w')
-                            file.write(str(new_subms))
-                            file.close()
-
-                        # Instantiate Submitter object
-                        from Submitter import Submitter
-                        self.actions[opt] = Submitter(self.cfg_params, nj_list, val)
-
-                        pass
+                    # if len(common.job_list) == 0 :
+                    #      common.job_list = JobList(common.jobDB.nJobs(),None)
+                    #      common.job_list.setJDLNames(self.job_type_name+'.jdl')
+                    #      pass
                     pass
                 else:
                     common.logger.message("Warning: with '-resubmit' you _MUST_ specify a job range or 'all'")

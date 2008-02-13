@@ -142,6 +142,8 @@ def crabJobStatusToString(crab_status):
     Convert one-letter crab job status into more readable string.
     """
     status={
+           'C':'Created',
+           'D':'Done',
            'H':'Hold',
            'U':'Ready',
            'I':'Scheduled',
