@@ -61,6 +61,7 @@ class SchedulerGrid(Scheduler):
         if int(self.copy_data) == 1:
             self.SE = cfg_params.get('USER.storage_element',None)
             self.SE_PATH = cfg_params.get('USER.storage_path',None)
+            self.srm_ver  = cfg_params.get('USER.srm_version',0) ## DS for srmv2
             if not self.SE or not self.SE_PATH:
                 msg = "Error. The [USER] section does not have 'storage_element'"
                 msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
@@ -301,6 +302,9 @@ class SchedulerGrid(Scheduler):
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
 
+            txt += 'export SRM_VER='+str(self.srm_ver)+'\n' ## DS for srmVer
+            txt += 'echo "SRM_VER = $SRM_VER"\n' ## DS for srmVer
+
             txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
 
             txt += 'if [ $output_exit_status -eq 60302 ]; then\n'
@@ -310,7 +314,8 @@ class SchedulerGrid(Scheduler):
             txt += 'else\n'
             txt += '    for out_file in $file_list ; do\n'
             txt += '        echo "Trying to copy output file to $SE"\n'
-            txt += '        cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file $middleware\n'
+            txt += '        cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file ${SRM_VER} $middleware\n'
+            #txt += '        cmscp $out_file ${SE} ${SE_PATH} $out_file $middleware\n'
             txt += '        copy_exit_status=$?\n'
             txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
             txt += '        echo "STAGE_OUT = $copy_exit_status"\n'

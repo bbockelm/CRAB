@@ -175,6 +175,7 @@ class SchedulerCondor_g(Scheduler):
 
         try:
             self.copy_data = cfg_params["USER.copy_data"]
+            self.srm_ver  = cfg_params.get('USER.srm_version',0) ## DS for srmv2
             if int(self.copy_data) == 1:
                 try:
                     self.SE = cfg_params['USER.storage_element']
@@ -421,6 +422,10 @@ class SchedulerCondor_g(Scheduler):
                 SE_PATH = SE_PATH + path_add
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
+           
+            txt += 'export SRM_VER='+str(self.srm_ver)+'\n' ## DS for srmVer
+            txt += 'echo "SRM_VER = $SRM_VER"\n' ## DS for srmVer
+
 
             txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
 
@@ -431,7 +436,8 @@ class SchedulerCondor_g(Scheduler):
             txt += 'else\n'
             txt += '    for out_file in $file_list ; do\n'
             txt += '        echo "Trying to copy output file to $SE"\n'
-            txt += '        cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file $middleware\n'
+            txt += '        cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file ${SRM_VER} $middleware\n'
+           # txt += '        cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file $middleware\n'
             txt += '        copy_exit_status=$?\n'
             txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
             txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
