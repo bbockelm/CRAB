@@ -422,7 +422,7 @@ class SchedulerCondor_g(Scheduler):
                 SE_PATH = SE_PATH + path_add
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
-           
+
             txt += 'export SRM_VER='+str(self.srm_ver)+'\n' ## DS for srmVer
             txt += 'echo "SRM_VER = $SRM_VER"\n' ## DS for srmVer
 
@@ -507,11 +507,14 @@ class SchedulerCondor_g(Scheduler):
         self.checkProxy()
         return runCommand("voms-proxy-info -identity")
 
-    def resubmit(self, nj_list):
-        """
-        Prepare jobs to be submit
-        """
-        return
+#    def resubmit(self, nj_list):
+#        """
+#        Prepare jobs to be submit
+#        """
+#        return
+
+    def getAttribute(self, id, attr):
+        return self.getStatusAttribute_(id, attr)
 
     def getAttribute(self, id, attr):
         return self.getStatusAttribute_(id, attr)
@@ -602,33 +605,33 @@ class SchedulerCondor_g(Scheduler):
         cmd_out = runCommand(cmd)
         return cmd_out
 
-    def getOutput(self, id):
-        """
-        Get output for a finished job with id.
-        Returns the name of directory with results.
-        not needed for condor-g
-        """
-        #self.checkProxy()
-        return ''
+#    def getOutput(self, id):
+#        """
+#        Get output for a finished job with id.
+#        Returns the name of directory with results.
+#        not needed for condor-g
+#        """
+#        #self.checkProxy()
+#        return ''
 
-    def cancel(self, id):
-        """ Cancel the condor job with id """
-        self.checkProxy()
-        # query for schedd
-        user = os.environ['USER']
-        cmd = 'condor_q -submitter ' + user
-        cmd_out = runCommand(cmd)
-        schedd=''
-        if cmd_out != None:
-            for line in cmd_out.splitlines() :
-                if line.strip().startswith('--') :
-                    schedd = line.strip().split()[6]
-                if line.strip().startswith(id.strip()) :
-                    # status = line.strip().split()[5]
-                    break
-        cmd = 'condor_rm -name ' + schedd + ' ' + id
-        cmd_out = runCommand(cmd)
-        return cmd_out
+#    def cancel(self, id):
+#        """ Cancel the condor job with id """
+#        self.checkProxy()
+#        # query for schedd
+#        user = os.environ['USER']
+#        cmd = 'condor_q -submitter ' + user
+#        cmd_out = runCommand(cmd)
+#        schedd=''
+#        if cmd_out != None:
+#            for line in cmd_out.splitlines() :
+#                if line.strip().startswith('--') :
+#                    schedd = line.strip().split()[6]
+#                if line.strip().startswith(id.strip()) :
+#                    # status = line.strip().split()[5]
+#                    break
+#        cmd = 'condor_rm -name ' + schedd + ' ' + id
+#        cmd_out = runCommand(cmd)
+#        return cmd_out
 
     def createXMLSchScript(self, nj, argsList):
         """
