@@ -17,7 +17,7 @@ class Submitter(Actor):
         if val:
             if val=='range':  # for Resubmitter
                 chosenJobsList = parsed_range
-            elif val=='all': 
+            elif val=='all':
                 pass
             elif (type(eval(val)) is int) and eval(val) > 0:
                 # positive number
@@ -27,7 +27,7 @@ class Submitter(Actor):
             elif (type(eval(val)) is tuple)or( type(eval(val)) is int and eval(val)<0 ) :
                 chosenJobsList = parsed_range
                 chosenJobsList = [i-1 for i in chosenJobsList ]
-                nsjobs = len(chosenJobsList) 
+                nsjobs = len(chosenJobsList)
             #
             else:
                 msg = 'Bad submission option <'+str(val)+'>\n'
@@ -35,7 +35,7 @@ class Submitter(Actor):
                 msg += '      Generic range is not allowed"'
                 raise CrabException(msg)
             pass
-     
+
         common.logger.debug(5,'nsjobs '+str(nsjobs))
         # total jobs
         nj_list = []
@@ -59,7 +59,7 @@ class Submitter(Actor):
                 if (common.jobDB.status(nj) not in ['R','S','K','Y','A','D','Z']):
                     jobSetForSubmission +=1
                     nj_list.append(nj)
-                else: 
+                else:
                     continue
             else :
                 jobSkippedInSubmission.append(nj+1)
@@ -83,8 +83,8 @@ class Submitter(Actor):
             pass
         # submit N from last submitted job
         common.logger.debug(5,'nj_list '+str(nj_list))
-                 
-        
+
+
         if common.scheduler.name() == 'CONDOR_G':
             # create hash of cfg file
             self.hash = makeCksum(common.work_space.cfgFileName())
@@ -96,7 +96,7 @@ class Submitter(Actor):
         self.UseServer=int(self.cfg_params.get('CRAB.server_mode',0))
 
         return
-    
+
     def run(self):
         """
         The main method of the class: submit jobs in range self.nj_list
@@ -115,20 +115,23 @@ class Submitter(Actor):
 
         # submit pre DashBoard information
         params = {'jobId':'TaskMeta'}
- 
+
         fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
         for i in fl.readlines():
-            key, val = i.split(':')
-            params[key] = string.strip(val)
+            try:
+                key, val = i.split(':')
+                params[key] = string.strip(val)
+            except ValueError: # Not in the right format
+                pass
         fl.close()
 
         common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
-                        
+
         common.apmon.sendToML(params)
 
         # modified to support server mode
-        # The boss declare step is performed here 
-        # only if  crab is used server mode 
+        # The boss declare step is performed here
+        # only if  crab is used server mode
         if (self.UseServer== 9999):
             if not common.scheduler.taskDeclared( common.taskDB.dict('projectName') ): #os.path.basename(os.path.split(common.work_space.topDir())[0]) ):
                 common.logger.debug(5,'Declaring jobs to BOSS')
@@ -137,14 +140,14 @@ class Submitter(Actor):
                 common.logger.debug(5,'Jobs already declared into BOSS')
             common.jobDB.save()
             common.taskDB.save()
-                                                                                                                                               
+
         #########
         #########
         # Loop over jobs
         njs = 0
         try:
             list=[]
-            list_of_list = []   
+            list_of_list = []
             lastBlock=-1
             count = 0
             for nj in self.nj_list:
@@ -156,12 +159,12 @@ class Submitter(Actor):
                     msg = "Job # %d not submitted: status %s"%(nj+1, long_st)
                     common.logger.message(msg)
                     continue
-     
+
                 currBlock = common.jobDB.block(nj)
                 # SL perform listmatch only if block has changed
                 if (currBlock!=lastBlock):
-                    if common.scheduler.name() != "CONDOR_G" :
-                        ### SL TODO to be moved in blackWhiteListParser 
+                    if common.scheduler.name().upper() != "CONDOR_G" :
+                        ### SL TODO to be moved in blackWhiteListParser
                         ### MATTY:  patch for white-black list with the list-mathc in glite ###
                         whiteL = []
                         blackL = []
@@ -188,14 +191,14 @@ class Submitter(Actor):
                 else:
                     common.logger.debug(1,"Sites for job "+str(nj+1)+" the same as previous job")
                     same=1
-     
+
                 if match:
                     if not same:
                         common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(nj+1))
                     else:
                         common.logger.debug(1,"Found "+str(match)+" compatible site(s) for job "+str(nj+1))
                     list.append(common.jobDB.bossId(nj))
-     
+
                     if nj == self.nj_list[-1]: # check that is not the last job in the list
                         list_of_list.append([currBlock,list])
                     else: # check if next job has same group
@@ -211,7 +214,7 @@ class Submitter(Actor):
             ### Progress Bar indicator, deactivate for debug
             if not common.logger.debugLevel() :
                 term = TerminalController()
-     
+
             for ii in range(len(list_of_list)): # Add loop DS
                 common.logger.debug(1,'Submitting jobs '+str(list_of_list[ii][1]))
                 if not common.logger.debugLevel() :
@@ -224,7 +227,7 @@ class Submitter(Actor):
                 if not common.logger.debugLevel():
                     if pbar :
                         pbar.update(float(ii+1)/float(len(list_of_list)),'please wait')
-     
+
                 for jj in bjidLista: # Add loop over SID returned from group submission  DS
                     tmpNj = jj - 1
 
@@ -235,20 +238,20 @@ class Submitter(Actor):
                     common.jobDB.setTaskId(tmpNj, common.taskDB.dict('taskId'))
 
                     njs += 1
-               
-                    ##### DashBoard report #####################   
-                    ## To distinguish if job is direct or through the server   
+
+                    ##### DashBoard report #####################
+                    ## To distinguish if job is direct or through the server
                     if (self.UseServer == 0):
                         Sub_Type = 'Direct'
-                    else:   
+                    else:
                         Sub_Type = 'Server'
-               
+
                     try:
                         resFlag = 0
                         if st == 'RC': resFlag = 2
                     except:
                         pass
-                    
+
                     # OLI: JobID treatment, special for Condor-G scheduler
                     jobId = ''
                     localId = ''
@@ -268,7 +271,7 @@ class Submitter(Actor):
                         rb = rb.replace('//', '')
 
                     if len(common.jobDB.destination(tmpNj)) <= 2 :
-                        T_SE=string.join((common.jobDB.destination(tmpNj)),",")    
+                        T_SE=string.join((common.jobDB.destination(tmpNj)),",")
                     else :
                         T_SE=str(len(common.jobDB.destination(tmpNj)))+'_Selected_SE'
 
@@ -280,15 +283,15 @@ class Submitter(Actor):
                               'TargetSE': T_SE, \
                               'localId' : localId}
                     common.logger.debug(5,str(params))
-               
+
                     fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
                     for i in fl.readlines():
                         key, val = i.split(':')
                         params[key] = string.strip(val)
                     fl.close()
-     
+
                     common.logger.debug(5,'Submission DashBoard report: '+str(params))
-                        
+
                     common.apmon.sendToML(params)
                 pass
             pass
@@ -298,12 +301,12 @@ class Submitter(Actor):
             print "Type: %s Value: %s"%(exctype, value)
             common.logger.message("Submitter::run Exception raised: %s %s"%(exctype, value))
             common.jobDB.save()
-        
+
         stop = time.time()
         common.logger.debug(1, "Submission Time: "+str(stop - start))
         common.logger.write("Submission time :"+str(stop - start))
         common.jobDB.save()
-            
+
         msg = '\nTotal of %d jobs submitted'%njs
         if njs != len(self.nj_list) :
             msg += ' (from %d requested).'%(len(self.nj_list))
@@ -333,6 +336,6 @@ class Submitter(Actor):
         msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\nPlease check if the dataset is available at this site!)\n'
 
         common.logger.message(msg)
-            
-            
+
+
         return

@@ -264,7 +264,7 @@ class SchedulerCondor_g(Scheduler):
         except KeyError:
             msg = "Error: datasetpath not defined "
             raise CrabException(msg)
-            
+
         ########### FEDE FOR DBS2 ##############################
         try:
             self.publish_data = cfg_params["USER.publish_data"]
@@ -482,23 +482,25 @@ class SchedulerCondor_g(Scheduler):
         #self.checkProxy()
         return 1
 
-    def submit(self, nj):
-        """
-        Submit one OSG job.
-        """
-        self.checkProxy()
+# This function is obsolete and clashes in the inheritance tree now. Leave it out
 
-        jid = None
-        jdl = common.job_list[nj].jdlFilename()
-
-        cmd = 'condor_submit ' + jdl
-        cmd_out = runCommand(cmd)
-        if cmd_out != None:
-            tmp = cmd_out.find('submitted to cluster') + 21
-            jid = cmd_out[tmp:].replace('.','')
-            jid = jid.replace('\n','')
-            pass
-        return jid
+#    def submit(self, nj):
+#        """
+#        Submit one OSG job.
+#        """
+#        self.checkProxy()
+#        print "Condor submit",nj
+#        jid = None
+#        jdl = common.job_list[nj].jdlFilename()
+#
+#        cmd = 'condor_submit ' + jdl
+#        cmd_out = runCommand(cmd)
+#        if cmd_out != None:
+#            tmp = cmd_out.find('submitted to cluster') + 21
+#            jid = cmd_out[tmp:].replace('.','')
+#            jid = jid.replace('\n','')
+#            pass
+#        return jid
 
     def userName(self):
         """ return the user name """
