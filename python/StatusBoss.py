@@ -16,7 +16,7 @@ class StatusBoss(Actor):
         self.countCorrupt = []
         self.countCleared = {}
 
-        if common.scheduler.name() == 'CONDOR_G':
+        if common.scheduler.name().upper() == 'CONDOR_G':
             # create hash of cfg file
             self.hash = makeCksum(common.work_space.cfgFileName())
         else:
@@ -73,7 +73,7 @@ class StatusBoss(Actor):
                 common.scheduler.bossUser.RTupdate(bossTaskId)
             except:
                 common.logger.message("Problem in contacting RealTime server")
-        
+
         # update status in Boss database
         jobAttributes = common.scheduler.queryEverything(bossTaskId)
 
@@ -126,11 +126,11 @@ class StatusBoss(Actor):
             ###
             exe_code =jobAttributes[bossid]['EXE_EXIT_CODE']   ##BOSS4 EXE_EXIT_CODE
             for_summary[int(bossid)] = jobStatus + '_' + str(exe_code)
-   
+
             job_exit_status = jobAttributes[bossid]['JOB_EXIT_STATUS']   ##BOSS4 JOB_EXIT_STATUS
 
             ##SL For condor_g need to get some info from scheduler
-            if common.scheduler.name() == "CONDOR_G" :
+            if common.scheduler.name().upper() == "CONDOR_G" :
                 try:
                     ldest = common.scheduler.queryDest(bossid) ##BOSS4 CHAIN_ID
                     if ( ldest.find(":") != -1 ) :
@@ -139,8 +139,8 @@ class StatusBoss(Actor):
                         dest = ldest
                     job_status_reason = common.scheduler.getAttribute(bossid, 'reason')
                     job_last_time = common.scheduler.getAttribute(bossid, 'stateEnterTime')
-                except: 
-                    dest = ''  
+                except:
+                    dest = ''
                     job_status_reason = common.scheduler.getAttribute(bossid, 'reason')
                     job_last_time = common.scheduler.getAttribute(bossid, 'stateEnterTime')
                     pass
@@ -167,7 +167,7 @@ class StatusBoss(Actor):
                 if jobAttributes[bossid].has_key('LB_TIMESTAMP') :
                     job_last_time = jobAttributes[bossid]['LB_TIMESTAMP']   ##BOSS4 LAST_T
 
-                    
+
             if jobStatus == 'Done (Success)' or jobStatus == 'Cleared' or jobStatus == 'Done (Aborted)':
                 if exe_code.find('NULL') != -1 :
                     exe_code_string = ''
@@ -190,7 +190,7 @@ class StatusBoss(Actor):
                 jid1 = string.strip(jobAttributes[bossid]['SCHED_ID'])
 
                 jobId = ''
-                if common.scheduler.name() == 'CONDOR_G':
+                if common.scheduler.name().upper() == 'CONDOR_G':
                     jobId = str(bossid) + '_' + self.hash + '_' + string.strip(jobAttributes[bossid]['SCHED_ID'])
                     common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
                 else:
@@ -223,7 +223,7 @@ class StatusBoss(Actor):
                 common.logger.debug(5,str(params))
 
                 common.apmon.sendToML(params)
-#            if printline != '': 
+#            if printline != '':
 #                print printline
 
         self.detailedReport(toPrint)
@@ -245,7 +245,7 @@ class StatusBoss(Actor):
                 print '---------------------------------------------------------------------------------------------------'
             print lines[i]
             counter += 1
-    
+
     def status(self) :
         """ Return #jobs for each status as a tuple """
         return (self.countToTjob,self.countCreated,self.countReady,self.countSched,self.countRun,self.countCleared,self.countAbort,self.countCancel,self.countDone)
@@ -282,13 +282,13 @@ class StatusBoss(Actor):
                     self.countCleared[statusList[iid].split('_')[-1]].append(iid)
                 else :
                     self.countCleared[statusList[iid].split('_')[-1]] = [iid]
-                pass 
+                pass
 	        common.jobDB.setStatus(int(iid)-1, 'Y')
 
         common.jobDB.save()
         common.logger.debug(5,'done loop StatusBoss::report')
- 
-        self.countToTjob = (len(statusList.keys())) 
+
+        self.countToTjob = (len(statusList.keys()))
         return
 
     def PrintReport_(self):
@@ -315,13 +315,13 @@ class StatusBoss(Actor):
             print ''
             print ">>>>>>>>> %i Jobs canceled/killed" % len(self.countCancel)
             print "          List of jobs: %s" % self.joinIntArray_(self.countCancel)
-            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>" 
+            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
         if (len(self.countAbort) != 0):
             self.countAbort.sort()
             print ''
             print ">>>>>>>>> %i Jobs aborted" % len(self.countAbort)
             print "          List of jobs: %s" % self.joinIntArray_(self.countAbort)
-            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>" 
+            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
         if (len(self.countDone) != 0):
             self.countDone.sort()
             print ''
@@ -333,7 +333,7 @@ class StatusBoss(Actor):
             print ''
             print ">>>>>>>>> %i Jobs cleared with corrupt output" % len(self.countCorrupt)
             print "          List of jobs: %s" % self.joinIntArray_(self.countCorrupt)
-            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>" 
+            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
         if (len(self.countCleared.keys()) != 0):
             total_size = 0
             for key in self.countCleared.keys() :
@@ -344,7 +344,7 @@ class StatusBoss(Actor):
                 print "          %i Jobs with EXE_EXIT_CODE: %s" % (len(self.countCleared[key]),key)
                 print "          List of jobs: %s" % self.joinIntArray_(self.countCleared[key])
 
-         
+
 
     def joinIntArray_(self,array) :
         output = ''

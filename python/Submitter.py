@@ -85,7 +85,7 @@ class Submitter(Actor):
         common.logger.debug(5,'nj_list '+str(nj_list))
 
 
-        if common.scheduler.name() == 'CONDOR_G':
+        if common.scheduler.name().upper() == 'CONDOR_G':
             # create hash of cfg file
             self.hash = makeCksum(common.work_space.cfgFileName())
         else:
@@ -255,7 +255,7 @@ class Submitter(Actor):
                     # OLI: JobID treatment, special for Condor-G scheduler
                     jobId = ''
                     localId = ''
-                    if common.scheduler.name() == 'CONDOR_G':
+                    if common.scheduler.name().upper() == 'CONDOR_G':
                         rb = 'OSG'
                         jobId = str(jj) + '_' + self.hash + '_' + jid
                         common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)

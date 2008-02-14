@@ -752,7 +752,7 @@ class Cmssw(JobType):
                     common.logger.debug(5,"data "+root+"/data"+" to be tarred")
                     tar.add(root+"/data",root[swAreaLen:]+"/data")
 
-            ### Removed ProdAgent Api dependencies ### 
+            ### Removed ProdAgent Api dependencies ###
             ### Add ProdAgent dir to tar
             #paDir = 'ProdAgentApi'
             #pa = os.environ['CRABDIR'] + '/' + 'ProdAgentApi'
@@ -1115,7 +1115,7 @@ class Cmssw(JobType):
             txt += 'else\n'
             txt += '    exit_status=60302\n'
             txt += '    echo "ERROR: Output file '+fileWithSuffix+' not found"\n'
-            if common.scheduler.name() == 'CONDOR_G':
+            if common.scheduler.name().upper() == 'CONDOR_G':
                 txt += '    if [ $middleware == OSG ]; then \n'
                 txt += '        echo "prepare dummy output file"\n'
                 txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
@@ -1138,7 +1138,7 @@ class Cmssw(JobType):
             txt += '    echo "ERROR: Output file '+fileWithSuffix+' not found"\n'
             txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
             txt += '    output_exit_status=$exit_status\n'
-            if common.scheduler.name() == 'CONDOR_G':
+            if common.scheduler.name().upper() == 'CONDOR_G':
                 txt += '    if [ $middleware == OSG ]; then \n'
                 txt += '        echo "prepare dummy output file"\n'
                 txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
@@ -1378,7 +1378,7 @@ class Cmssw(JobType):
         if (self.return_data == 1):
             for fileOut in (self.output_file+self.output_file_sandbox):
                 allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob') + " $stdoutFile $stderrFile"
-        else:             
+        else:
             for fileOut in (self.output_file_sandbox):
                 txt += 'echo " '+fileOut+'";\n'
                 allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob') + " $stdoutFile $stderrFile"
