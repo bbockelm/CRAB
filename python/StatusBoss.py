@@ -1,6 +1,7 @@
 from Actor import *
 import common
 import string, os, time
+from crab_util import makeCksum
 
 class StatusBoss(Actor):
     def __init__(self, *args):
