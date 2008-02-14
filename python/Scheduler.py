@@ -259,3 +259,6 @@ class Scheduler :
     def moveOutput(self, nj):
         self.boss().moveOutput(nj)
 
+    def getAttribute(self, id, attr):
+        return 
+

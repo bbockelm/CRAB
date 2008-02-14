@@ -513,6 +513,9 @@ class SchedulerCondor_g(Scheduler):
         """
         return
 
+    def getAttribute(self, id, attr):
+        return self.getStatusAttribute_(id, attr)
+
     def getExitStatus(self, id):
         return self.getStatusAttribute_(id, 'exit_code')
 
