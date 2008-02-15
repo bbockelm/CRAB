@@ -85,8 +85,8 @@ class SubmitterServer(Actor):
                
         fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
         for i in fl.readlines():
-            key, val = i.split(':')
-            params[key] = string.strip(val)
+            val = i.split(':')
+            params[val[0]] = string.strip(val[1])
         fl.close()
 
         common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
@@ -161,8 +161,13 @@ class SubmitterServer(Actor):
         common.taskDB.save()
 
         ### create a tar ball
-        common.logger.debug( 5, 'tar -zcvf '+str(WorkDirName)+'.tgz '+str(WorkDirName) )
-        cmd = 'tar -zcvf '+str(WorkDirName)+'.tgz '+str(WorkDirName)
+        TarDirName = os.path.dirname(os.path.split(common.work_space.topDir())[0])
+        cmd = ""
+        if TarDirName:
+            cmd = 'tar -zcvf '+str(WorkDirName)+'.tgz -C '+str(TarDirName)+' '+str(WorkDirName)
+        else:
+            cmd = 'tar -zcvf '+str(WorkDirName)+'.tgz '+str(WorkDirName)
+        common.logger.debug( 5, cmd )
         cmd_out = runCommand(cmd)
     
         try: 
