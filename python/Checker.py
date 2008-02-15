@@ -6,7 +6,7 @@ class Checker(Actor):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
         return
-    
+
     def run(self):
         """
         The main method of the class.
@@ -20,9 +20,12 @@ class Checker(Actor):
         # run a list-match on first job
         for nj in self.nj_list:
             block = common.jobDB.block(nj)
-            match = common.scheduler.listMatch(nj, block, [], [])
+            if common.scheduler.name().upper() != "CONDOR_G" :
+              match = common.scheduler.listMatch(nj, block, [], [])
+            else:
+              match = "1"
             flag = ''
-            if not match: 
+            if not match:
                 flag=' NOT '
                 number=' '
             if match : number= str(match)
