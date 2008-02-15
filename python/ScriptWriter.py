@@ -20,7 +20,6 @@ class ScriptWriter:
             'run_executable'              : self.runExe_,
             'rename_output'               : self.renameOutput_,
             'copy_output'                 : self.copyOutput_,
-            #'register_output'             : self.registerOutput_,
             'modify_report'               : self.modifyReport_,
             'clean_env'                   : self.cleanEnv_,
             'check_output_limit'          : self.checkOut_
@@ -138,13 +137,6 @@ class ScriptWriter:
         """
         txt = common.scheduler.wsCopyOutput()
         return txt
-
-    #def registerOutput_(self):
-    #    """
-    #    Returns part of a job script which registers output files to RLS catalog.
-    #    """
-    #    txt = ''
-    #    return txt
 
     def modifyReport_(self):
         """

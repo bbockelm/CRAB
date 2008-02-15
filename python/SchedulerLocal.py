@@ -108,9 +108,9 @@ class SchedulerLocal(Scheduler) :
         Write a CopyResults part of a job script, e.g.
         to copy produced output into a storage element.
         """
-        if not self.copy_data: return
-
         txt = '\n'
+        if not self.copy_data: return txt
+
 
         txt += '#\n'
         txt += '# COPY OUTPUT FILE TO '+self.SE_path
