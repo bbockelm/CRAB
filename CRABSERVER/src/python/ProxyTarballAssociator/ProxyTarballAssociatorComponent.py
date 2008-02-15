@@ -460,7 +460,7 @@ class ProxyTarballAssociatorComponent:
                 else:
                     readedData[m] = ""
 
-            ### check the schduler ###
+            ### check the scheduler ###
             appended = 0
             if scheduler == "edg":
                 appended1 = 0
@@ -488,9 +488,9 @@ class ProxyTarballAssociatorComponent:
                              appended2 = 1
                              ### append the RBconfigVO requirement with downloaded file ###
                              #logging.info( "appending RBconfigVO")
-                             readedData.append("RBconfigVO = "+os.path.join(self.dropBoxPath,configFile)+";") 
+                             readedData.append("RBconfigVO = "+os.path.join(self.dropBoxPath,configFile)+";\n") 
                 appended = appended1 and appended2
-            ### check the schduler ###
+            ### check the scheduler ###
             elif scheduler == "glite" or scheduler == "glitecoll":
                 appended = 0
                 ### if specified by admin ###
@@ -502,17 +502,22 @@ class ProxyTarballAssociatorComponent:
                     for configFile in self.listGet:
                         if configFile.find("glite") != -1 and configFile.find(self.args['resourceBroker']) != -1:
                             appended = 1
-                             ### append the WMSconfig requirement with downloaded file ###
+                            ### append the WMSconfig requirement with downloaded file ###
                             readedData.append("WMSconfig = "+os.path.join(self.dropBoxPath,configFile)+";\n")
             ### check if appended ###
+            logging.info(str(appended))
             if appended != 1:
                 for configFile in self.listGet:
+                    app_temp = 0
                     if configFile.find("edg") != -1 and configFile.find(self.args['resourceBroker']) != -1 and configFile.find("cmd_var") != -1:
                         readedData.append("RBconfig = "+os.path.join(self.dropBoxPath,configFile)+";\n")
+                        app_temp = 1
                     elif configFile.find("edg") != -1 and configFile.find(self.args['resourceBroker']) != -1 and configFile.find("cmd_var") == -1:
                         readedData.append("RBconfigVO = "+os.path.join(self.dropBoxPath,configFile)+";")
                     elif configFile.find("glite") != -1 and configFile.find(self.args['resourceBroker']) != -1:
-                        readedData.append("WMSconfig = "+os.path.join(self.dropBoxPath,configFile)+";\n")
+                        if app_temp == 0:
+                            readedData.append("WMSconfig = "+os.path.join(self.dropBoxPath,configFile)+";\n")
+                    app_temp = 0
             ######################
 
             #logging.info(str(readedData))
