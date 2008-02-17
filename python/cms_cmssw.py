@@ -1371,21 +1371,26 @@ class Cmssw(JobType):
         check the dimension of the output files
         """
         txt = 'echo ">>> Starting output sandbox limit check :"\n'
-        allOutFiles = ""
         listOutFiles = []
         txt += 'stdoutFile=`ls *stdout` \n'
         txt += 'stderrFile=`ls *stderr` \n'
         if (self.return_data == 1):
-            for fileOut in (self.output_file+self.output_file_sandbox):
-                allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob') + " $stdoutFile $stderrFile"
+            for file in (self.output_file+self.output_file_sandbox):
+                listOutFiles.append(self.numberFile_(file, '$NJob'))
+            listOutFiles.append('$stdoutFile')
+            listOutFiles.append('$stderrFile')
         else:
-            for fileOut in (self.output_file_sandbox):
-                txt += 'echo " '+fileOut+'";\n'
-                allOutFiles = allOutFiles + " " + self.numberFile_(fileOut, '$NJob') + " $stdoutFile $stderrFile"
-        txt += 'echo "OUTPUT files: '+str(allOutFiles)+'";\n'
+            for file in (self.output_file_sandbox):
+                listOutFiles.append(self.numberFile_(file, '$NJob'))
+            listOutFiles.append('$stdoutFile')
+            listOutFiles.append('$stderrFile')
+  
+        txt += 'echo "OUTPUT files: '+string.join(listOutFiles,' ')+'"\n'
+        txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
+       # txt += 'echo "OUTPUT files: '+str(allOutFiles)+'";\n'
         txt += 'ls -gGhrta;\n'
         txt += 'sum=0;\n'
-        txt += 'for file in '+str(allOutFiles)+' ; do\n'
+        txt += 'for file in $filesToCheck ; do\n'
         txt += '    if [ -e $file ]; then\n'
         txt += '        tt=`ls -gGrta $file | awk \'{ print $3 }\'`\n'
         txt += '        sum=`expr $sum + $tt`\n'
@@ -1400,7 +1405,7 @@ class Cmssw(JobType):
         txt += '    echo "WARNING: output files have to big size - something will be lost;"\n'
         txt += '    echo "         checking the output file sizes..."\n'
         txt += '    tot=0;\n'
-        txt += '    for filefile in '+str(allOutFiles)+' ; do\n'
+        txt += '    for filefile in $filesToCheck ; do\n'
         txt += '        dimFile=`ls -gGrta $filefile | awk \'{ print $3 }\';`\n'
         txt += '        tot=`expr $tot + $tt`;\n'
         txt += '        if [ $limit -lt $dimFile ]; then\n'
