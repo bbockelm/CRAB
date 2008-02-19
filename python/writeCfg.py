@@ -3,6 +3,9 @@
 import sys, getopt, string
 import imp
 import os
+import random
+from random import SystemRandom
+_inst  = SystemRandom()
 
 from ProdCommon.CMSConfigTools.ConfigAPI.CfgInterface import CfgInterface
 from FWCore.ParameterSet.DictTypes import SortedKeysDict
@@ -31,10 +34,15 @@ def main(argv) :
   """
 
   # defaults
-  maxEvents = 0
-  skipEvents = 0
+  maxEvents      = 0
+  skipEvents     = 0
   inputFileNames = None
-  debug = False
+  firstRun       = 0
+  sourceSeed     = 0
+  vtxSeed        = 0
+  g4Seed         = 0
+  mixSeed        = 0
+  debug          = False
 
   try:
     opts, args = getopt.getopt(argv, "", ["debug", "help","inputFiles=","maxEvents=","skipEvents="])
@@ -58,6 +66,16 @@ def main(argv) :
       inputFiles = inputFiles.replace('\\','')
       inputFiles = inputFiles.replace('"','')
       inputFileNames = inputFiles.split(',')
+    elif opt == "--firstRun":
+      firstRun = int(arg)
+    elif opt == "--sourceSeed":
+      sourceSeed = int(arg)
+    elif opt == "--vtxSeed":
+      vtxSeed = int(arg)
+    elif opt == "--g4Seed":
+      g4Seed = int(arg)
+    elif opt == "--mixSeed":
+      mixSeed = int(arg)
 
   # Parse remaining parameters
 
@@ -94,6 +112,30 @@ def main(argv) :
   inModule.setSkipEvents(skipEvents)
   if (inputFileNames):
     inModule.setFileNames(*inputFileNames)
+
+  # Pythia parameters
+  if (firstRun):
+    inModule.setFirstRun(firstRun)
+  if (sourceSeed) :
+    ranGenerator = cfg.data.services['RandomNumberGeneratorService']
+    ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(sourceSeed))
+    if (vtxSeed) :
+      ranModules   = ranGenerator.moduleSeeds
+      ranModules.VtxSmeared = CfgTypes.untracked(CfgTypes.uint32(vtxSeed))
+    if (g4Seed) :
+      ranModules   = ranGenerator.moduleSeeds
+      ranModules.g4SimHits = CfgTypes.untracked(CfgTypes.uint32(g4Seed))
+    if (mixSeed) :
+      ranModules   = ranGenerator.moduleSeeds
+      ranModules.mix = CfgTypes.untracked(CfgTypes.uint32(mixSeed))
+
+  # Randomize all seeds
+
+  print "There are ",cfg.seedCount()," seeds"
+  seedList = [random.randint(100,200) for i in range(cfg.seedCount)]
+  seedTuple = seedList.tuple()
+
+  cfg.insertSeeds(*seedTuple)
 
   # Write out new config file
 

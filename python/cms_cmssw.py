@@ -780,6 +780,7 @@ class Cmssw(JobType):
         try:
             tar = tarfile.open(self.MLtgzfile, "w:gz")
             path=os.environ['CRABDIR'] + '/python/'
+#            for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py','writeCfg.py']:
             for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py']:
                 tar.add(path+file,file)
             common.logger.debug(5,"Files added to "+self.MLtgzfile+" : "+str(tar.getnames()))
@@ -1386,7 +1387,7 @@ class Cmssw(JobType):
                 listOutFiles.append(self.numberFile_(file, '$NJob'))
             listOutFiles.append('$stdoutFile')
             listOutFiles.append('$stderrFile')
-  
+
         txt += 'echo "OUTPUT files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
        # txt += 'echo "OUTPUT files: '+str(allOutFiles)+'";\n'

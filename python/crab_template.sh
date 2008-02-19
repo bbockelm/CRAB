@@ -1,6 +1,6 @@
 #!/bin/sh
 # CRAB title
-# 
+#
 # HEAD
 #
 #
@@ -87,7 +87,7 @@ function cmscp {
       fi
   fi
 
- ################ srmv2 ########################## 
+ ################ srmv2 ##########################
  if [ $copy_exit_status -eq 60307 ]  || [ $srm_ver -eq  2 ] && [ $srm_ver -ne 1 ] ; then
       echo "--> Check if the file already exists in the storage element $SE"
       srmls -retry_num 0 $destination | grep 'does not exist' >/dev/null
@@ -125,7 +125,7 @@ function cmscp {
           StageOutExitStatusReason='file already exists'
       fi
   fi
- ################ lcg-utils ########################## 
+ ################ lcg-utils ##########################
   if [ $copy_exit_status -eq 60307 ]; then
       cmd="lcg-cp --vo $VO -t 2400 --verbose file://$path_out_file $destination"
       echo $cmd
@@ -224,7 +224,6 @@ fi
 #
 # END OF SETUP ENVIRONMENT
 #
-
 #
 # PREPARE AND RUN EXECUTABLE
 #
@@ -242,6 +241,8 @@ fi
 
 #CRAB copy_input
 
+#echo  $RUNTIME_AREA/writeCfg.py --debug --maxEvents=$MaxEvents --skipEvents=$SkipEvents --inputFiles=$InputFiles pset.cfg pset.py
+#python $RUNTIME_AREA/writeCfg.py --debug --maxEvents=$MaxEvents --skipEvents=$SkipEvents --inputFiles=$InputFiles pset.cfg pset.py
 echo ">>> Executable $executable"
 which $executable
 res=$?
@@ -257,6 +258,7 @@ echo "SET_EXE 0 ==> ok executable found"
 
 echo "ExeStart=$executable" | tee -a $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
+#cat  pset.py
 echo ">>> $executable started at `date`"
 start_exe_time=`date +%s`
 #CRAB run_executable
@@ -275,11 +277,11 @@ if [ -s crab_fjr.xml ]; then
           executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
           if [ $executable_exit_status -eq 50115 ];then
               echo ">>> crab_fjr.xml contents: "
-              cat crab_fjr.xml 
+              cat crab_fjr.xml
               echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"
-          else    
+          else
               echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"
-          fi    
+          fi
       else
           echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
       fi
