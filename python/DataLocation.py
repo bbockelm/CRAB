@@ -35,8 +35,6 @@ class DataLocation:
         countblock=0
 
         dlstype='dbs'
-        if (self.cfg_params.has_key('CMSSW.dls_type')):
-            dlstype=self.cfg_params['CMSSW.dls_type']
 
         DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
