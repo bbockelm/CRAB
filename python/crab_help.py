@@ -20,11 +20,10 @@ The most useful general options (use '-h' to get complete help):
 
   -create             -- Create all the jobs.
   -submit n           -- Submit the first n available jobs. Default is all.
-  -status             -- check status of all jobs.
+  -status [range]     -- check status of all jobs.
   -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs
   -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance
   -kill [range]       -- kill submitted jobs
-  -cancelAndResubmit [range]  -- kill and resubmit submitted jobs
   -clean              -- gracefully cleanup the idrectory of a task
   -testJdl [range]    -- check if resources exist which are compatible with jdl
   -list [range]       -- show technical job details
@@ -71,6 +70,11 @@ Parameters for CRAB usage and configuration are provided by the user changing th
 CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BOSS to interface to the Grid scheduler, as well as for logging and bookkeeping and eventually real time monitoring.
 
 CRAB support any CMSSW based executable, with any modules/libraries, including the user provided one, and deals with the output produced by the executable. Up to version 1_2_1, also ORCA (and FAMOS) based executable were supported.  CRAB provides an interface with CMS data discovery services (DBS and DLS), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.
+
+CRAB can be used in two ways: StandAlone and with a Server.
+The StandAlone mode is suited for small task, of the order of O(100) jobs: it submits the jobs directly to the scheduler, and these jobs are under user responsibility.
+Instead, in the Server mode, suited for larger task, the jobs are prepared locally and then passed to a dedicated CRAB server, which then interact with the scheduler on behalf of the user, including additional services, such as automatic resubmission, status caching, output retrival, and more.
+The CRAB commands are exactly the same in both cases.
 
 CRAB web page is available at
 
@@ -207,16 +211,16 @@ The maximum number of jobs depens on dataset and splittig directives. This set o
 This command create a directory with default name is I<crab_0_date_time> (can be changed via ui_working_dir parameter, see below). Inside this directory it is placed whatever is needed to submit your jobs. Also the output of your jobs (once finished) will be place there (see after). Do not cancel by hand this directory: rather use -clean (see).
 See also I<-continue>.
 
-=item B<-submit n>
+=item B<-submit [range]>
 
-Submit n jobs: 'n' is either a positive integer or 'all'. Default is all.
-The first 'n' suitable jobs will be submitted. This option must be used in conjunction with -create (to create and submit immediately) or with -continue, to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.
-See also I<-continue>.
+Submit n jobs: 'n' is either a positive integer or 'all' or a [range]. Default is all.
+If 'n' is passed as argument, the first 'n' suitable jobs will be submitted. Please note that this is behaviour is different from other commenads, where -command N means act the command to the job N, and not to the first N jobs. If a [range] is passed, the selected jobs will be submitted. 
+This option must be used in conjunction with -create (to create and submit immediately) or with -continue (which is assumed by default), to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.  See also I<-continue>.
 
 =item B<-continue [dir] | -c [dir]>
 
 Apply the action on the task stored on directory [dir]. If the task directory is the standard one (crab_0_date_time), the more recent in time is taken. Any other directory must be specified.
-Basically all commands (but -create) need -continue, so it is automatically assumed, with exception of -submit, where it must be explicitly used. Of course, the standard task directory is used in this case.
+Basically all commands (but -create) need -continue, so it is automatically assumed. Of course, the standard task directory is used in this case.
 
 =item B<-status>
 
@@ -245,11 +249,11 @@ Check if the job can find compatible resources. It's equivalent of doing I<edg-j
 
 =item B<-printId [range]>
 
-Just print the SID (Grid job identifier) of the job(s) or the taskId if you are using CRAB with the server
+Just print the job identifier, which can be the SID (Grid job identifier) of the job(s) or the taskId if you are using CRAB with the server or local scheduler Id.
 
 =item B<-postMortem [range]>
 
-Produce a file (via I<edg-job-logging-info -v 2>) which might help in understanding Grid related problem for a job.
+Try to collect more information of the job from the scheduler point of view.
 
 =item B<-list [range]>
 
@@ -304,7 +308,8 @@ The type of the job to be executed: I<cmssw> jobtypes are supported
 
 =item B<scheduler *>
 
-The scheduler to be used: I<edg> is the standard Grid one. Other choice are I<glite> or I<glitecoll> for bulk submission or I<condor_g> (see specific paragraph)
+The scheduler to be used: I<glitecoll> is the more efficient grid scheduler and should be used. Other choice are I<glite>, same as I<glitecoll> but without bulk sumbission (and so slower) or I<condor_g> (see specific paragraph) or I<edg> which is the former Grid scheduler, which will be dismissed in some future 
+From version 210, also local scheduler are supported, for the tim being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities.
 
 =item B<server_mode>
 
@@ -312,7 +317,7 @@ To use the CRAB-server mode put 1 in this field. If the server_mode key is equal
 
 =item B<server_name>
 
-The name of the server that you want to use plus the path of the server storage (eg: hostname/data/cms/). For the server names that are dedicated to the user analysis you have to contact the CRAB\' developers (use hyper-news mailing list).
+The name of the server that you want to use plus the path of the server storage (eg: hostname/data/cms/). The server available to users can be found from CRAB web page.
 
 =back
 
@@ -426,6 +431,10 @@ To be used together with I<copy_data>. Storage Element name.
 
 To be used together with I<copy_data>. Path where to put output files on Storage Element. Full path is needed, and the directory must be writeable by all.
 
+=item B<copyCommand>
+
+Only for LSF scheduer: allow to define the command to be used to copy the output to final location. Default is rfcp
+
 =item B<register_data>
 
 Not more supported.
@@ -446,7 +455,7 @@ B<[EDG]>
 
 =item B<RB>
 
-Which RB you want to use instead of the default one, as defined in the configuration of your UI. The ones available for CMS are I<CERN> and I<CNAF>: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used. If the files are already present on the working directory they will be used.
+Which RB you want to use instead of the default one, as defined in the configuration of your UI. The ones available for CMS are I<CERN> and I<CNAF>. They are actaully identical, being a colelction of all RB/WMS available for CMS: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used.
 You can use any other RB which is available, if you provide the proper configuration files. Eg, for RB XYZ, you should provide I<edg_wl_ui.conf.CMS_XYZ> and I<edg_wl_ui_cmd_var.conf.CMS_XYZ> for EDG RB, or I<glite.conf.CMS_XYZ> for glite WMS. These files are searched for in the current working directory, and, if not found, on crab web page. So, if you put your private configuration files in the working directory, they will be used, even if they are not available on crab web page.
 Please get in contact with crab team if you wish to provide your RB or WMS as a service to the CMS community.
 
@@ -515,6 +524,21 @@ Number of time shallow resubmission the Grid will try: resubmissions are tried B
 =item B<maxtarballsize>
 
 Maximum size of tar-ball in Mb. If bigger, an error will be generated. The actual limit is that on the RB input sandbox. Default is 9.5 Mb (sandbox limit is 10 Mb)
+
+=back
+
+B<[LSF]>
+
+=over 4
+
+=item B<queue>
+
+The LSF queue you want to use: if none, the default one will be used. For CAF, the proper queue will be autoamtically selected.
+
+=item B<resource>
+
+The resources to be used within a LSF queue. Again, for CAF, the right one is selected.
+
 
 =back
 
