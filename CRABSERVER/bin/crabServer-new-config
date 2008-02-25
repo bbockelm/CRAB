@@ -63,16 +63,12 @@ if  homeDir == None:
     sys.exit(1)
 
 
-BOSSDIR=os.environ.get("BOSSDIR")
-if  BOSSDIR == None:
-    print "WARNING: BOSSDIR variable not found"
-    BOSSDIR=""
-
 # core fields not associated to components
   
 crabServerConfiguration = {
     'dropBoxPath':'',
-    'bossClads':'',
+#    'bossClads':'',
+    'crabServerschemaLocation' : "$CRABSERVER_ROOT/share/CrabServerDB.sql",
     'ProxiesDir':'/tmp/del_proxies/',
     'debugLevel':'9',
 }
@@ -172,7 +168,7 @@ for parameter, value in crabServerConfiguration.items():
 
 ## set default fields
 try:
-    config['CrabServerConfigurations']['bossClads'] = os.path.join(prodAgentBlock['ProdAgentWorkDir'], "BOSS/config/")
+#    config['CrabServerConfigurations']['bossClads'] = os.path.join(prodAgentBlock['ProdAgentWorkDir'], "BOSS/config/")
 
     config['JobSubmitter']['SubmitterName'] = "RESubmitter"
     config['JobKiller']['KillerName'] = "BOSSKiller"
