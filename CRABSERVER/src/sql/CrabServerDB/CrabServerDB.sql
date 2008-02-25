@@ -1,4 +1,3 @@
-use CrabServerDB;
 CREATE TABLE js_taskInstance (
      id int NOT NULL auto_increment,
      taskName varchar(255) NOT NULL default '',
