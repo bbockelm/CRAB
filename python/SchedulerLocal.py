@@ -84,7 +84,7 @@ class SchedulerLocal(Scheduler) :
         txt += 'nargs=$#\n'
         txt += 'shift $nargs\n'
         txt += "# job number (first parameter for job wrapper)\n"
-        txt += "NJob=${args[0]}\n"
+        txt += "NJob=${args[0]}; export NJob\n"
 
         txt += 'SyncGridJobId=`echo '+self.environment_unique_identifier+'`\n'
         txt += 'MonitorJobID=`echo ${NJob}_${SyncGridJobId}`\n'

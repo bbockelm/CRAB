@@ -241,8 +241,12 @@ fi
 
 #CRAB copy_input
 
-#echo  $RUNTIME_AREA/writeCfg.py --debug --maxEvents=$MaxEvents --skipEvents=$SkipEvents --inputFiles=$InputFiles pset.cfg pset.py
-#python $RUNTIME_AREA/writeCfg.py --debug --maxEvents=$MaxEvents --skipEvents=$SkipEvents --inputFiles=$InputFiles pset.cfg pset.py
+#
+# Rewrite cfg or cfgpy file
+#
+
+#CRAB rewrite_cmssw_cfg
+
 echo ">>> Executable $executable"
 which $executable
 res=$?

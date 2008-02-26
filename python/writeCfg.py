@@ -11,11 +11,19 @@ from ProdCommon.CMSConfigTools.ConfigAPI.CfgInterface import CfgInterface
 from FWCore.ParameterSet.DictTypes import SortedKeysDict
 from FWCore.ParameterSet.Modules   import Service
 from FWCore.ParameterSet.Types     import *
-from FWCore.ParameterSet.Config import include
+from FWCore.ParameterSet.Config    import include
 
 import FWCore.ParameterSet.Types   as CfgTypes
 import FWCore.ParameterSet.Modules as CfgModules
 
+class ConfigException(Exception):
+    def __init__(self, msg):
+        Exception.__init__(self, msg)
+        self._msg = msg
+        return
+
+    def __str__(self):
+        return self._msg
 
 def main(argv) :
   """
@@ -34,8 +42,6 @@ def main(argv) :
   """
 
   # defaults
-  maxEvents      = 0
-  skipEvents     = 0
   inputFileNames = None
   firstRun       = 0
   sourceSeed     = 0
@@ -45,44 +51,49 @@ def main(argv) :
   debug          = False
 
   try:
-    opts, args = getopt.getopt(argv, "", ["debug", "help","inputFiles=","maxEvents=","skipEvents="])
+    opts, args = getopt.getopt(argv, "", ["debug", "help"])
   except getopt.GetoptError:
     print main.__doc__
     sys.exit(2)
 
-  # Parse command line parameters
+  try:
+    CMSSW  = os.environ['CMSSW_VERSION']
+    parts = CMSSW.split('_')
+    CMSSW_major = int(parts[1])
+    CMSSW_minor = int(parts[2])
+    CMSSW_patch = int(parts[3])
+  except KeyError, ValueError:
+    msg = "Your environment doesn't specify the CMSSW version or specifies it incorrectly"
+    raise ConfigException(msg)
+
+  # Parse command line options
   for opt, arg in opts :
     if opt  == "--help" :
       print main.__doc__
       sys.exit()
     elif opt == "--debug" :
       debug = True
-    elif opt == "--maxEvents":
-      maxEvents = int(arg)
-    elif opt == "--skipEvents":
-      skipEvents = int(arg)
-    elif opt == "--inputFiles":
-      inputFiles = arg
-      inputFiles = inputFiles.replace('\\','')
-      inputFiles = inputFiles.replace('"','')
-      inputFileNames = inputFiles.split(',')
-    elif opt == "--firstRun":
-      firstRun = int(arg)
-    elif opt == "--sourceSeed":
-      sourceSeed = int(arg)
-    elif opt == "--vtxSeed":
-      vtxSeed = int(arg)
-    elif opt == "--g4Seed":
-      g4Seed = int(arg)
-    elif opt == "--mixSeed":
-      mixSeed = int(arg)
 
   # Parse remaining parameters
 
-  fileName    = args[0];
-  outFileName = args[1];
+  try:
+    fileName    = args[0];
+    outFileName = args[1];
+  except IndexError:
+      print main.__doc__
+      sys.exit()
 
-  # Input cfg or python cfg file
+# Optional Parameters
+
+  maxEvents  = int(os.environ.get('MaxEvents','0'))
+  skipEvents = int(os.environ.get('SkipEvents','0'))
+  inputFiles = os.environ.get('InputFiles','')
+  firstRun   = int(os.environ.get('FirstRun','0'))
+  nJob       = int(os.environ.get('NJob','0'))
+  preserveSeeds = os.environ.get('PreserveSeeds','')
+  incrementSeeds = os.environ.get('IncrementSeeds','')
+
+# Read Input cfg or python cfg file
 
   if (fileName.endswith('py') or fileName.endswith('pycfg') ):
     handle = open(fileName, 'r')
@@ -102,52 +113,103 @@ def main(argv) :
     except Exception, ex:
       msg =  "The cfg file is not valid, %s\n" % str(ex)
       raise "Error: ",msg
-
-  # Set parameters for job
-
   inModule = cfg.inputSource
 
-  cfg.maxEvents.setMaxEventsInput(maxEvents)
+  # Set parameters for job
+  if maxEvents:
+    cfg.maxEvents.setMaxEventsInput(maxEvents)
 
-  inModule.setSkipEvents(skipEvents)
-  if (inputFileNames):
+  if skipEvents:
+    inModule.setSkipEvents(skipEvents)
+
+  if inputFiles:
+    inputFiles = inputFiles.replace('\\','')
+    inputFiles = inputFiles.replace('"','')
+    inputFileNames = inputFiles.split(',')
     inModule.setFileNames(*inputFileNames)
 
+  # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
   # Pythia parameters
   if (firstRun):
     inModule.setFirstRun(firstRun)
-  if (sourceSeed) :
-    ranGenerator = cfg.data.services['RandomNumberGeneratorService']
-    ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(sourceSeed))
-    if (vtxSeed) :
+
+  incrementSeedList = []
+  preserveSeedList  = []
+
+  if incrementSeeds:
+    incrementSeedList = incrementSeeds.split(',')
+  if preserveSeeds:
+    preserveSeedList  = preserveSeeds.split(',')
+
+  if CMSSW_major < 3: # True for now, should be < 2 when really ready
+  # Treatment for seeds, CMSSW < 2_0_x
+    if cfg.data.services.has_key('RandomNumberGeneratorService'):
+      ranGenerator = cfg.data.services['RandomNumberGeneratorService']
       ranModules   = ranGenerator.moduleSeeds
-      ranModules.VtxSmeared = CfgTypes.untracked(CfgTypes.uint32(vtxSeed))
-    if (g4Seed) :
+
+      _MAXINT = 900000000
+
+      sourceSeed = int(ranGenerator.sourceSeed.value())
+      if 'sourceSeed' in preserveSeedList:
+        pass
+      elif 'sourceSeed' in incrementSeedList:
+        ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(sourceSeed+nJob))
+      else:
+        ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(_inst.randint(1,_MAXINT)))
+
+      for seed in incrementSeedList:
+        curSeed = getattr(ranGenerator.moduleSeeds,seed,None)
+        if curSeed:
+          curValue = int(curSeed.value())
+          setattr(ranGenerator.moduleSeeds,seed,CfgTypes.untracked(CfgTypes.uint32(curValue+nJob)))
+          preserveSeedList.append(seed)
+
+      for seed in  ranGenerator.moduleSeeds.parameters().keys():
+        if seed not in preserveSeedList:
+          curSeed = getattr(ranGenerator.moduleSeeds,seed,None)
+          if curSeed:
+            curValue = int(curSeed.value())
+            setattr(ranGenerator.moduleSeeds,seed,CfgTypes.untracked(CfgTypes.uint32(_inst.randint(1,_MAXINT))))
+  else:
+    # Treatment for  seeds, CMSSW => 2_0_x
+#from RandomService import RandomSeedService
+
+
+    # This code not currently working because randSvc is not part of the actual configuration file
+
+    # Translate old format to new format first
+    randSvc = RandomSeedService()
+    try:
+      ranGenerator = cfg.data.services['RandomNumberGeneratorService']
       ranModules   = ranGenerator.moduleSeeds
-      ranModules.g4SimHits = CfgTypes.untracked(CfgTypes.uint32(g4Seed))
-    if (mixSeed) :
-      ranModules   = ranGenerator.moduleSeeds
-      ranModules.mix = CfgTypes.untracked(CfgTypes.uint32(mixSeed))
+      for seed in ranGenerator.moduleSeeds.parameters().keys():
+        curSeed = getattr(ranGenerator.moduleSeeds,seed,None)
+        curValue = int(curSeed.value())
+        setattr(randSvc,seed,CfgTypes.PSet())
+        curPSet = getattr(randSvc,seed,None)
+        curPSet.initialSeed = CfgTypes.untracked(CfgTypes.uint32(curValue))
+      del ranGenerator.moduleSeeds # Get rid of seeds in old format
+# Doesn't work, filter is false      randSvc.populate()
 
-  # Randomize all seeds
+    except:
+      print "Problems converting old seeds to new format"
 
-  print "There are ",cfg.seedCount()," seeds"
-  seedList = [random.randint(100,200) for i in range(cfg.seedCount)]
-  seedTuple = seedList.tuple()
-
-  cfg.insertSeeds(*seedTuple)
-
-  # Write out new config file
+  # Write out new config file in one format or the other
 
   outFile = open(outFileName,"w")
-  outFile.write("import FWCore.ParameterSet.Config as cms\n")
-  outFile.write(cfo.dumpPython())
+  if (outFileName.endswith('py') or outFileName.endswith('pycfg') ):
+    outFile.write("import FWCore.ParameterSet.Config as cms\n")
+    outFile.write(cfo.dumpPython())
+    if (debug):
+      print "writeCfg output:"
+      print "import FWCore.ParameterSet.Config as cms"
+      print cfo.dumpPython()
+  else:
+    outFile.write(str(cfg))
+    if (debug):
+      print "writeCfg output:"
+      print str(cfg)
   outFile.close()
-
-  if (debug):
-    print "writeCfg output:"
-    print "import FWCore.ParameterSet.Config as cms"
-    print cfo.dumpPython()
 
 
 if __name__ == '__main__' :

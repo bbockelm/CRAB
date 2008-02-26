@@ -202,14 +202,42 @@ class Cmssw(JobType):
                  msg = 'Must specify  number_of_jobs.'
                  raise CrabException(msg)
 
-        ## source seed for pythia
+        ## New method of dealing with seeds
+        self.incrementSeeds = []
+        self.preserveSeeds = []
+        if cfg_params.has_key('CMSSW.preserve_seeds'):
+            tmpList = cfg_params['CMSSW.preserve_seeds'].split(',')
+            for tmp in tmpList:
+                tmp.strip()
+                self.preserveSeeds.append(tmp)
+        if cfg_params.has_key('CMSSW.increment_seeds'):
+            tmpList = cfg_params['CMSSW.increment_seeds'].split(',')
+            for tmp in tmpList:
+                tmp.strip()
+                self.incrementSeeds.append(tmp)
+
+        ## Old method of dealing with seeds
+        ## FUTURE: This is for old CMSSW and old CRAB. Can throw exceptions after a couple of CRAB releases and then
+        ## remove
         self.sourceSeed = cfg_params.get('CMSSW.pythia_seed',None)
+        if self.sourceSeed:
+          print "pythia_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
+          self.incrementSeeds.append('sourceSeed')
 
         self.sourceSeedVtx = cfg_params.get('CMSSW.vtx_seed',None)
+        if self.sourceSeedVtx:
+          print "vtx_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
+          self.incrementSeeds.append('VtxSmeared')
 
         self.sourceSeedG4 = cfg_params.get('CMSSW.g4_seed',None)
+        if self.sourceSeedG4:
+          print "g4_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
+          self.incrementSeeds.append('g4SimHits')
 
         self.sourceSeedMix = cfg_params.get('CMSSW.mix_seed',None)
+        if self.sourceSeedMix:
+          print "mix_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
+          self.incrementSeeds.append('mix')
 
         self.firstRun = cfg_params.get('CMSSW.first_run',None)
 
@@ -248,25 +276,10 @@ class Cmssw(JobType):
         # modify Pset
         if self.pset != None: #CarlosDaniele
             try:
-                if (self.datasetPath): # standard job
-                    # allow to processa a fraction of events in a file
-                    PsetEdit.inputModule("INPUTFILE")
-                    PsetEdit.maxEvent(0)
-                    PsetEdit.skipEvent(0)
-                else:  # pythia like job
-                    PsetEdit.maxEvent(self.eventsPerJob)
-                    if (self.firstRun):
-                        PsetEdit.pythiaFirstRun(0)  #First Run
-                    if (self.sourceSeed) :
-                        PsetEdit.pythiaSeed(0)
-                        if (self.sourceSeedVtx) :
-                            PsetEdit.vtxSeed(0)
-                        if (self.sourceSeedG4) :
-                            PsetEdit.g4Seed(0)
-                        if (self.sourceSeedMix) :
-                            PsetEdit.mixSeed(0)
-                # add FrameworkJobReport to parameter-set
+                # Add FrameworkJobReport to parameter-set, set max events.
+                # Reset later for data jobs by writeCFG which does all modifications
                 PsetEdit.addCrabFJR(self.fjrFileName)
+                PsetEdit.maxEvent(self.eventsPerJob)
                 PsetEdit.psetWriter(self.configFilename())
             except:
                 msg='Error while manipuliating ParameterSet: exiting...'
@@ -499,8 +512,7 @@ class Cmssw(JobType):
                         jobSkipEventCount = eventsPerJobRequested - (filesEventCount - jobSkipEventCount - self.eventsbyfile[file])
                         # remove all but the last file
                         filesEventCount = self.eventsbyfile[file]
-                        parString = ""
-                        parString += '\\\"' + file + '\\\"\,'
+                        parString = '\\\"' + file + '\\\"\,'
                     pass # END if
                 pass # END while (iterate over files in the block)
         pass # END while (iterate over blocks in the dataset)
@@ -602,21 +614,7 @@ class Cmssw(JobType):
             if (self.firstRun):
                 ## pythia first run
                 args.append(str(self.firstRun)+str(i))
-            if (self.sourceSeed):
-                args.append(str(self.sourceSeed)+str(i))
-                if (self.sourceSeedVtx):
-                    ## + vtx random seed
-                    args.append(str(self.sourceSeedVtx)+str(i))
-                if (self.sourceSeedG4):
-                    ## + G4 random seed
-                    args.append(str(self.sourceSeedG4)+str(i))
-                if (self.sourceSeedMix):
-                    ## + Mix random seed
-                    args.append(str(self.sourceSeedMix)+str(i))
-                pass
-            pass
             self.list_of_args.append(args)
-        pass
 
         return
 
@@ -780,8 +778,7 @@ class Cmssw(JobType):
         try:
             tar = tarfile.open(self.MLtgzfile, "w:gz")
             path=os.environ['CRABDIR'] + '/python/'
-#            for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py','writeCfg.py']:
-            for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py']:
+            for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py','writeCfg.py']:
                 tar.add(path+file,file)
             common.logger.debug(5,"Files added to "+self.MLtgzfile+" : "+str(tar.getnames()))
             tar.close()
@@ -809,7 +806,7 @@ class Cmssw(JobType):
         the execution environment for the job 'nj'.
         """
         # Prepare JobType-independent part
-        txt = ''
+        txt = '\n#Written by cms_cmssw::wsSetupEnvironment\n'
         txt += 'echo ">>> setup environment"\n'
         txt += 'if [ $middleware == LCG ]; then \n'
         txt += self.wsSetupCMSLCGEnvironment_()
@@ -914,45 +911,21 @@ class Cmssw(JobType):
             txt += '\n'
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
             if (self.datasetPath): # standard job
-                txt += 'InputFiles=${args[1]}\n'
-                txt += 'MaxEvents=${args[2]}\n'
-                txt += 'SkipEvents=${args[3]}\n'
+                txt += 'InputFiles=${args[1]}; export InputFiles\n'
+                txt += 'MaxEvents=${args[2]}; export MaxEvents\n'
+                txt += 'SkipEvents=${args[3]}; export SkipEvents\n'
                 txt += 'echo "Inputfiles:<$InputFiles>"\n'
-                txt += 'sed "s#\'INPUTFILE\'#$InputFiles#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                 txt += 'echo "MaxEvents:<$MaxEvents>"\n'
-                txt += 'sed "s#int32 input = 0#int32 input = $MaxEvents#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
-                txt += 'sed "s#uint32 skipEvents = 0#uint32 skipEvents = $SkipEvents#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
             else:  # pythia like job
-                seedIndex=1
+                txt += 'PreserveSeeds='  + ','.join(self.preserveSeeds)  + '; export PreserveSeeds\n'
+                txt += 'IncrementSeeds=' + ','.join(self.incrementSeeds) + '; export IncrementSeeds\n'
+                txt += 'echo "PreserveSeeds: <$PreserveSeeds>"\n'
+                txt += 'echo "IncrementSeeds:<$IncrementSeeds>"\n'
                 if (self.firstRun):
-                    txt += 'FirstRun=${args['+str(seedIndex)+']}\n'
+                    txt += 'FirstRun=${args[1]}; export FirstRun\n'
                     txt += 'echo "FirstRun: <$FirstRun>"\n'
-                    txt += 'sed "s#uint32 firstRun = 0#uint32 firstRun = $FirstRun#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
-                    seedIndex=seedIndex+1
 
-                if (self.sourceSeed):
-                    txt += 'Seed=${args['+str(seedIndex)+']}\n'
-                    txt += 'sed "s#uint32 sourceSeed = 0#uint32 sourceSeed = $Seed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
-                    seedIndex=seedIndex+1
-                    ## the following seeds are not always present
-                    if (self.sourceSeedVtx):
-                        txt += 'VtxSeed=${args['+str(seedIndex)+']}\n'
-                        txt += 'echo "VtxSeed: <$VtxSeed>"\n'
-                        txt += 'sed "s#uint32 VtxSmeared = 0#uint32 VtxSmeared = $VtxSeed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
-                        seedIndex += 1
-                    if (self.sourceSeedG4):
-                        txt += 'G4Seed=${args['+str(seedIndex)+']}\n'
-                        txt += 'echo "G4Seed: <$G4Seed>"\n'
-                        txt += 'sed "s#uint32 g4SimHits = 0#uint32 g4SimHits = $G4Seed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
-                        seedIndex += 1
-                    if (self.sourceSeedMix):
-                        txt += 'mixSeed=${args['+str(seedIndex)+']}\n'
-                        txt += 'echo "MixSeed: <$mixSeed>"\n'
-                        txt += 'sed "s#uint32 mix = 0#uint32 mix = $mixSeed#" '+pset+' > tmp && mv -f tmp '+pset+'\n'
-                        seedIndex += 1
-                    pass
-                pass
             txt += 'mv -f '+pset+' pset.cfg\n'
 
         if len(self.additional_inbox_files) > 0:
@@ -980,7 +953,7 @@ class Cmssw(JobType):
         or a library.
         """
 
-        txt = ""
+        txt = '\n#Written by cms_cmssw::wsBuildExe\n'
 
         if os.path.isfile(self.tgzNameWithPath):
             txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
@@ -1037,10 +1010,10 @@ class Cmssw(JobType):
             return self.executable
 
     def executableArgs(self):
+        # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
         if self.scriptExe:#CarlosDaniele
             return   self.scriptExe + " $NJob"
         else:
-            # if >= CMSSW_1_5_X, add -j crab_fjr.xml
             version_array = self.scram.getSWVersion().split('_')
             major = 0
             minor = 0
@@ -1050,10 +1023,19 @@ class Cmssw(JobType):
             except:
                 msg = "Cannot parse CMSSW version string: " + "_".join(version_array) + " for major and minor release number!"
                 raise CrabException(msg)
+
+            ex_args = ""
+
+            # Framework job report
             if major >= 1 and minor >= 5 :
-                return " -j " + self.fjrFileName + " -p pset.cfg"
+                ex_args += " -j " + self.fjrFileName
+
+            # Type of cfg file
+            if major >= 2 :
+                ex_args += " -p pset.pycfg"
             else:
-                return " -p pset.cfg"
+                ex_args += " -p pset.cfg"
+            return ex_args
 
     def inputSandbox(self, nj):
         """
@@ -1098,7 +1080,7 @@ class Cmssw(JobType):
         Returns part of a job script which renames the produced files.
         """
 
-        txt = '\n'
+        txt = '\n#Written by cms_cmssw::wsRenameOutput\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
         txt += 'ls \n'
@@ -1208,7 +1190,8 @@ class Cmssw(JobType):
         Returns part of a job script which is prepares
         the execution environment and which is common for all CMS jobs.
         """
-        txt = '    echo ">>> setup CMS OSG environment:"\n'
+        txt = '\n#Written by cms_cmssw::wsSetupCMSOSGEnvironment_\n'
+        txt += '    echo ">>> setup CMS OSG environment:"\n'
         txt += '    echo "set SCRAM ARCH to ' + self.executable_arch + '"\n'
         txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += '    echo "SCRAM_ARCH = $SCRAM_ARCH"\n'
@@ -1246,7 +1229,8 @@ class Cmssw(JobType):
         Returns part of a job script which is prepares
         the execution environment and which is common for all CMS jobs.
         """
-        txt = '    echo ">>> setup CMS LCG environment:"\n'
+        txt = '\n#Written by cms_cmssw::wsSetupCMSLCGEnvironment_\n'
+        txt += '    echo ">>> setup CMS LCG environment:"\n'
         txt += '    echo "set SCRAM ARCH and BUILD_ARCH to ' + self.executable_arch + ' ###"\n'
         txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += '    export BUILD_ARCH='+self.executable_arch+'\n'
@@ -1286,7 +1270,7 @@ class Cmssw(JobType):
         insert the part of the script that modifies the FrameworkJob Report
         """
 
-        txt = ''
+        txt = '\n#Written by cms_cmssw::modifyReport\n'
         try:
             publish_data = int(self.cfg_params['USER.publish_data'])
         except KeyError:
@@ -1337,7 +1321,7 @@ class Cmssw(JobType):
         return txt
 
     def cleanEnv(self):
-        txt = ''
+        txt = '\n#Written by cms_cmssw::cleanEnv\n'
         txt += 'if [ $middleware == OSG ]; then\n'
         txt += '    cd $RUNTIME_AREA\n'
         txt += '    echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
@@ -1373,7 +1357,8 @@ class Cmssw(JobType):
         """
         check the dimension of the output files
         """
-        txt = 'echo ">>> Starting output sandbox limit check :"\n'
+        txt = '\n#Written by cms_cmssw::checkOut\n'
+        txt += 'echo ">>> Starting output sandbox limit check :"\n'
         listOutFiles = []
         txt += 'stdoutFile=`ls *stdout` \n'
         txt += 'stderrFile=`ls *stderr` \n'

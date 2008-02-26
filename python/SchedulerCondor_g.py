@@ -361,7 +361,7 @@ class SchedulerCondor_g(Scheduler):
         txt += 'nargs=$#\n'
         txt += 'shift $nargs\n'
         txt += "# job number (first parameter for job wrapper)\n"
-        txt += "NJob=${args[0]}\n"
+        txt += "NJob=${args[0]}; export NJob\n"
 
         txt += 'MonitorJobID=`echo ${NJob}_'+self.hash+'_$GLOBUS_GRAM_JOB_CONTACT`\n'
         txt += 'SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`\n'

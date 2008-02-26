@@ -351,21 +351,36 @@ Define the number of job to be run for the task. The number of event for each jo
 
 the output files produced by your application (comma separated list).
 
+=item B<increment_seeds>
+
+Specifies a comma separated list of seeds to increment from job to job. The initial value is taken
+from the CMSSW config file. I<increment_seeds=sourceSeed,g4SimHits> will set sourceSeed=11,12,13 and g4SimHits=21,22,23 on
+subsequent jobs if the values of the two seeds are 10 and 20 in the CMSSW config file.
+
+See also I<preserve_seeds>. Seeds not listed in I<increment_seeds> or I<preserve_seeds> are randomly set for each job.
+
+=item B<preserve_seeds>
+
+Specifies a comma separated list of seeds to which CRAB will not change from their values in the user's
+CMSSW config file. I<preserve_seeds=sourceSeed,g4SimHits> will leave the Pythia and GEANT seeds the same for every job.
+
+See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserve_seeds> are randomly set for each job.
+
 =item B<pythia_seed>
 
-If the job is pythia based, and has I<untracked uint32 sourceSeed = x> in the ParameterSet, the seed value can be changed using this parameter. Each job will have a different seed, of the type I<pythia_seed>I<$job_number> .
+This parameter is deprecated. See the documentation for I<increment_seeds> and I<preserve_seeds>.
 
 =item B<vtx_seed>
 
-Seed for random number generation used for vertex smearing: to be used only if PSet has I<untracked uint32 VtxSmeared = x>. It is modified if and only if also I<pythia_seed> is set. As for I<pythia_seed> the actual seed will be of the type I<vtx_seed>I<$job_number>.
+This parameter is deprecated. See the documentation for I<increment_seeds> and I<preserve_seeds>.
 
 =item B<g4_seed>
 
-Seed for randome generation of Geant4 SimHits I<untracked uint32 g4SimHits = x>. The treatment is that of I<vtx_seed> above
+This parameter is deprecated. See the documentation for I<increment_seeds> and I<preserve_seeds>.
 
 =item B<mix_seed>
 
-Seed for randome generation of mixing module I<untracked uint32 mix = x>. The treatment is that of I<vtx_seed> above
+This parameter is deprecated. See the documentation for I<increment_seeds> and I<preserve_seeds>.
 
 =item B<first_run>
 

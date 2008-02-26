@@ -122,7 +122,7 @@ class SchedulerGlite(SchedulerGrid):
                 param_file.write(self.rb_param_file)
 
             if self.EDG_addJdlParam:
-                if self.EDG_addJdlParam[-1] == '': self.EDG_addJdlParam= self.EDG_addJdlParam[:-1] 
+                if self.EDG_addJdlParam[-1] == '': self.EDG_addJdlParam= self.EDG_addJdlParam[:-1]
                 for p in self.EDG_addJdlParam:
                     param_file.write(string.strip(p)+';\n')
 
@@ -139,7 +139,7 @@ class SchedulerGlite(SchedulerGrid):
         txt += 'nargs=$#\n'
         txt += 'shift $nargs\n'
         txt += "# job number (first parameter for job wrapper)\n"
-        txt += "NJob=${args[0]}\n"
+        txt += "NJob=${args[0]}; export NJob\n"
 
         txt += '# job identification to DashBoard \n'
         txt += 'MonitorJobID=`echo ${NJob}_$GLITE_WMS_JOBID`\n'

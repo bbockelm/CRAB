@@ -162,7 +162,7 @@ class SchedulerGrid(Scheduler):
 
     def rb_configure(self, RB):
         """
-        Return a requirement to be add to Jdl to select a specific RB/WMS: 
+        Return a requirement to be add to Jdl to select a specific RB/WMS:
         return None if RB=None
         To be re-implemented in concrete scheduler
         """
@@ -189,7 +189,7 @@ class SchedulerGrid(Scheduler):
         txt += 'nargs=$#\n'
         txt += 'shift $nargs\n'
         txt += "# job number (first parameter for job wrapper)\n"
-        txt += "NJob=${args[0]}\n"
+        txt += "NJob=${args[0]}; export NJob\n"
 
         txt += 'MonitorJobID=`echo ${NJob}_$'+self.environment_unique_identifier+'`\n'
         txt += 'SyncGridJobId=`echo $'+self.environment_unique_identifier+'`\n'
