@@ -4,75 +4,119 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.14 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.14 2007/09/20 10:16:10 farinafa Exp $"
+__version__ = "$Revision: 1.0 $"
+__revision__ = "$Id: CrabServerWorkerComponentV2.py,v 1.0 2007/12/17 06:33:00 farinafa Exp $"
 
-import pdb
 import os
-import socket
 import pickle
-import logging
-import time
 import popen2
-import random
+
+# logging
+import logging
 from logging.handlers import RotatingFileHandler
-from threading import Thread
-import commands
+
+import xml.dom.minidom
 
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 from MessageService.MessageService import MessageService
-from CrabServerWorker.PoolThread import PoolThread, Notifier
 
-from ProdAgentDB.Config import defaultConfig as dbConfig
-from ProdCommon.Database import Session
-from threading import Condition
+from CrabServerWorker.FatWorker import FatWorker
+
+# from CrabServer.DashboardAPI import apmonSend, apmonFree    
 
 class CrabServerWorkerComponent:
     """
-    _CrabServerWorkerComponent_
-
+    _CrabServerWorkerComponentV2_
+    
     """
+
+################################
+#   Standard Component Core Methods      
+################################
+
     def __init__(self, **args):
+        logging.info(" [CrabServerWorker Ver2 starting...]")
 
-        # threading safeness fix
-        self.mutex = Condition()
-
-        self.args = {}        
-        self.args['Logfile'] = None
-        self.args['dropBoxPath'] = None
-        self.args['bossClads'] = None
-        self.args['maxThreads'] = 5
-        self.args['debugLevel'] = 0
+        self.args = {}
+        self.args.setdefault("Logfile", None)
+        self.args.setdefault("dropBoxPath", None)
+        self.args.setdefault('ProxiesDir', None)
+        self.args.setdefault('maxThreads', 5)
+        self.args.setdefault('maxCmdAttempts', 5)
+        self.args.setdefault('allow_anonymous', 0)
         self.args.update(args)
-           
+
+        # define log file
         if self.args['Logfile'] == None:
             self.args['Logfile'] = os.path.join(self.args['ComponentDir'],
                                                 "ComponentLog")
-
-        #  //
-        # // Log Handler is a rotating file that rolls over when the
-        #//  file hits 1MB size, 3 most recent files are kept
+        # create log handler
         logHandler = RotatingFileHandler(self.args['Logfile'],
-                                         "a", 1000000, 3)
-        #  //
-        # // Set up formatting for the logger and set the 
-        #//  logging level to info level
+                                         "a", 1000000, 7)
+        # define log format
         logFormatter = logging.Formatter("%(asctime)s:%(message)s")
         logHandler.setFormatter(logFormatter)
         logging.getLogger().addHandler(logHandler)
         logging.getLogger().setLevel(logging.DEBUG)
-        logging.info("CrabServerWorkerComponent Started...")
 
-        self.dropBoxPath = str(args['dropBoxPath'])
-        self.bossClads = str(self.args['bossClads'])
-        self.killSet = {}
+        # component resources
+        ## persistent properties
+        self.taskPool = {}  # for data persistency
+        self.proxyMap = {}  # a cache for the available user tasks
+        self.subTimes = []  # moving average for submission delays
+        self.subStats = {'succ':0, 'retry':0, 'fail':0}
+ 
+        ## volatile properties
+        self.wdir = self.args['ComponentDir']
+        if self.args['dropBoxPath']:
+            self.wdir = self.args['dropBoxPath']
+        
+        self.maxAttempts = self.args['maxCmdAttempts']    
+        self.availWorkers = self.args['maxThreads']
+        self.workerSet = {} # thread collection
+        self.outcomeCounter = 0
+        
+        # allocate the scheduling logic (out of order submission)
+        # TODO, not now. Smarter scheduling policy
+        # needs to know the number of events or an analogous quantity (e.g. number of sites)
+        #
+        # HOWTO IMPLEMENT: a loopback message on the sorted tasks.
+        # This implies a fake message between the Crab-WS and the submission handler
+        # (delay to schedule msgs <-> prioritized FCFS fair scheduler w/o queues OR DLT-aware scheduler
 
-        if int(self.args['debugLevel']) < 9:
-             logging.info('Too low crab debug level for the server: debug 9 will be assumed.')
-             self.args['debugLevel'] = 9
-
-        self.debug = ' -debug ' + str(self.args['debugLevel'])
+        logging.info("CrabServerWorkerComponent ver2 Started...")
+        logging.info("Component dropbox working directory: %s"%self.wdir)        
         pass
+    
+    def startComponent(self):
+        """
+        _startComponent_
+
+        Start up the component
+        """
+        self.ms = MessageService()
+        self.ms.registerAs("CrabServerWorkerComponent")
+        self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
+        self.ms.subscribeTo("CRAB_Cmd_Mgr:NewCommand")
+
+        self.ms.subscribeTo("CrabServerWorkerComponent:FatWorkerResult")
+        #
+        # TODO # Fabio
+        # It should register to ErrorHandler messages.
+        # So that it can decide whether to retry submissions
+        #
+        self.ms.subscribeTo("CrabServerWorkerComponent:StartDebug")
+        self.ms.subscribeTo("CrabServerWorkerComponent:EndDebug")
+
+        self.dematerializeStatus()   
+        while True:
+            type, payload = self.ms.get()
+            self.ms.commit()
+            logging.debug("CrabServerWorkerComponent: %s %s" % ( type, payload))
+            self.__call__(type, payload)
+        #
+        apmonFree()
+        return
 
     def __call__(self, event, payload):
         """
@@ -82,365 +126,347 @@ class CrabServerWorkerComponent:
         """
         logging.debug("Event: %s %s" % (event, payload))
 
-        if event == "ProxyTarballAssociatorComponent:CrabWork":
-            # logging.info("ProxyTarballAssociatorComponent:CrabWork Arrived!Payload = "+str(payload))
-            self.pool.insertRequest( (payload, False) )
+        if event == "CRAB_Cmd_Mgr:NewTask":
+            self.updateProxyMap()
+            self.newSubmission(payload)
+            self.materializeStatus()
+            
+        elif event == "CRAB_Cmd_Mgr:NewCommand":
+            self.updateProxyMap()
+            self.handleCommands(payload)
+            self.materializeStatus()
 
-            #Matteo add: Message to TaskTracking for New Task in Queue 
-            taskWorkDir = payload.split('::')[1]
-            taskName = str(taskWorkDir.split('/')[-1])
-            self.ms.publish("CrabServerWorkerComponent:TaskArrival", taskName)
-            self.ms.commit()
-            return
-
-        if event == "CrabServerWorkerNotifyThread:Retry":
-            logging.info("Resubmission :"+ str(payload))
-            self.pool.insertRequest( (payload, True) )
-            return
-
-        if event == "WatchDogComponent:scheduledKill":
-            taskName = str(payload.split(':')[0])
-            ## Note, RAW race condition? Investigate on it formally (LTA) # Fabio
-            self.killSet[taskName] = payload
-            for k in self.killSet.keys(): 
-                if self.killSet[k] == -1:
-                    del self.killSet[k]
-            return
+        elif event == "CrabServerWorkerComponent:FatWorkerResult":
+            self.handleWorkerResults(payload)
+            self.materializeStatus()
 
         if event == "CrabServerWorkerComponent:StartDebug":
             logging.getLogger().setLevel(logging.DEBUG)
-            return
+
         if event == "CrabServerWorkerComponent:EndDebug":
             logging.getLogger().setLevel(logging.INFO)
-            return
+
         return 
-        
-    def startComponent(self):
+
+################################
+#   CWver2 business-logic Methods      
+################################
+    def newSubmission(self, payload):
         """
-        _startComponent_
-
-        Start up the component
+        Submission Driver. Prepares the datastructures needed by the server-side to enact
+        the real tasks submissions and triggers the FatWorker threads that perform the
+        interactions with the Grid.
+        
         """
-        # create message service instances
-        self.ms = MessageService()
-        self.msNotify = MessageService()
-                                                                                
-        # register
-        self.ms.registerAs("CrabServerWorkerComponent")
-        self.msNotify.registerAs("CrabServerWorkerNotifyThread")
-        
-        # subscribe to messages
-        self.ms.subscribeTo("ProxyTarballAssociatorComponent:CrabWork")
-        self.ms.subscribeTo("CrabServerWorkerNotifyThread:Retry")
-        self.ms.subscribeTo("CrabServerWorkerComponent:StartDebug")
-        self.ms.subscribeTo("CrabServerWorkerComponent:EndDebug")
-        self.ms.subscribeTo("WatchDogComponent:scheduledKill")
 
-        # drive the CW_WatchDog to send pending crashed tasks
-        self.msNotify.publish("CW_WatchDogComponent:synchronize","")
-        self.msNotify.commit()
+        taskDescriptor, cmdDescriptor, taskUniqName = payload.split('::')
         
-        # create a pool of threads that will execute a performCrabWork action
-        self.pool = PoolThread(int(self.args['maxThreads']), self, logging)
-        # create notifier thread
-        notifier = Notifier(self.pool, self.msNotify, logging)
-
-        Session.set_database(dbConfig)
-        while True:
-            #Session.connect('CSW_session')
-            #Session.start_transaction('CSW_session')
-            #Session.set_session('CSW_session')
- 
-            type, payload = self.ms.get()
+        # no workers availabe (delay submission)
+        if self.availWorkers <= 0:
+            # calculate resub delay by using average completion time
+            dT = sum(self.subTimes)/(len(self.subTimes) + 1.0)
+            dT = int(dT)
+            comp_time = '%s:%s:%s'%(str(dT/3600).zfill(2), str((dT/60)%60).zfill(2), str(dT%60).zfill(2))
+            self.ms.publish("CRAB_Cmd_Mgr:NewTask", payload, comp_time)
             self.ms.commit()
-            logging.debug("CrabServerWorkerComponent: %s %s" % ( type, payload))
-            self.__call__(type, payload)
-
-            #Session.commit('CSW_session')
-            #Session.close('CSW_session')
-
-    def performCrabWork(self, payload, performRetry = False):
-        proxy = payload.split('::')[0]
-        CrabworkDir = payload.split('::')[1]
-        retry = int(payload.split('::')[3])
-        try:        
-             direct = eval(payload.split('::')[2]) # Submission range directive
-        except Exception, e:
-             direct = 'all'
-             pass
-
-        retMsg = CrabworkDir.split('/')[-1]
-        # Fast-kill feature
-        try:
-             tmpKillSet = []
-             tmpKillSet += self.killSet.keys()
-             # {}.keys() should attenuate RAW thread treat # Fabio
-             if retMsg in tmpKillSet:
-                  retCode = -4
-                  self.killSet[retMsg] = -1
-                  return (retMsg, retCode)
-        except Exception, e:
-             logging.info("RAW concurrency race condition encountered."+str(e))
-             return (-4, retCode) 
+            return
         
-        # Prepare the project and submit
-        os.chdir(self.dropBoxPath)
-        # BOSS registration
-        try:
-             if performRetry == False:
-                  self.registerTask(CrabworkDir, direct)
-                  # logging.info("Registered Task")
-             else:
-                  logging.info("Resubmission for "+str(CrabworkDir) )
-        except Exception, e:
-             logging.info("Error during BOSS Registration: "+ str(e) )
-             pass
+        status, reason = self.taskIsSubmittable(cmdDescriptor, taskUniqName)
+        if (status != 0):
+            self.ms.publish("CrabServerWorkerComponent:TaskNotSubmitted", taskUniqName + "::" + str(status) + "::" + reason)
+            self.ms.commit()  
+            return
 
-        # Submit the task
-        logging.info("Put CRAB at work on "+ CrabworkDir + " with proxy " + proxy + " PerformRETRY " + str(performRetry))
-        retCode = -2
-        try:
-             retCode = self.crab_submit(proxy, CrabworkDir, performRetry, direct)
-        except Exception, e:
-             logging.info("Error in submission: "+str(e))
-             logging.info("RetCode = %s"%str(retCode))
-             retCode = -1
-             retMsg = CrabworkDir.split('/')[-1]
-             return (retMsg, retCode)
+        # prepare the task working directories
+        taskDir = self.prepareTaskDir(taskDescriptor, cmdDescriptor, reason, taskUniqName)
+        if (taskDir is None):
+            status = 8
+            reason = "Problem while creating the task base directory"
+            self.ms.publish("CrabServerWorkerComponent:TaskNotSubmitted", taskUniqName + "::" + str(status) + "::" + reason)
+            self.ms.commit()
+            return
 
-        # Prepare the proper payload to be managed by the notifier queue
-        # 
-        # partial submission
-        if type(retCode) is tuple:
-             retMsg = str(CrabworkDir.split('/')[-1])+'::'+str(retCode[0])+'::'+str(retCode[1])
-             retCode = -3
-             return (retMsg, retCode)
-        # success
-        if retCode == 0:
-             retMsg = CrabworkDir.split('/')[-1]
-             retCode = 0
-             return (retMsg, retCode)
-        # retCode in [1, 2] by default
-        if retry > 0:
-             # failure with retry hope 
-             retCode = -1
-             retMsg = proxy + "::" + CrabworkDir + "::" + str(direct) + "::" + str(retry-1)
-             logging.info("Task " + CrabworkDir + " will be tried " + str(retry-1) + " more times.")
-             return (retMsg, retCode)
-       
-        # failure without retry left
-        retCode = -2
-        retMsg = CrabworkDir.split('/')[-1]
-        logging.info("WARNING: CRAB submission failed too many times. The task will not be submitted.")
-        return (retMsg, retCode)
+        ## DashBoard information preparation
+        # dashParams = {'jobId':'TaskMeta', 'taskId':'unknown', 'jobId':'unknown'}
+        # dashParams.update( dashB_mlCommonInfo )
 
-    def registerTask(self, cwDir, rangeSubmit='all'):
-        from ProdAgent.WorkflowEntities import Job
-        from ProdCommon.MCPayloads.JobSpec import JobSpec
-
-        jNameBase = cwDir.split('/')[-1]
-        cmd = "cat "+cwDir+"/share/cmssw.xml | grep ruleElement"
-        fout, fin = popen2.popen4(cmd)
-        ruleList = fout.readlines()
-        jobNumber = int(ruleList[0].split(' ')[1].split(':')[1])
-        fout.close()
-        fin.close()
+        # submit pre DashBoard information
+        # apmonSend(dashParams['taskId'], dashParams['jobId'], dashParams)
+        # logging.debug('Submission DashBoard Pre-Submission report: '+str(dashParams))
         
-        if type(rangeSubmit) is list:
-            idRange = rangeSubmit
-        elif type(rangeSubmit) is int:
-            if rangeSubmit > jobNumber:
-                 rangeSubmit = jobNumber
-            idRange = range(1, rangeSubmit + 1)
-        else: # rangeSubmit  == 'all':
-            idRange = range(1, jobNumber + 1)
+        ## real submission stuff
+        thrName = "worker_"+(self.args['maxThreads'] - availWorkers)+"_"+taskUniqName            
+        self.workerSet[taskUniqName] = FatWorker(logging, thrName, self.args['resourceBroker'], \
+                                                taskDescriptor, cmdDescriptor, taskUniqName, \
+                                                reason, taskDir, resubCount) # , dashParams, [])
+        self.taskPool[taskUniqName] = ("CRAB_Cmd_Mgr:NewTask", payload)
+        self.availWorkers -= 1
+        return
 
-        # Fix suggested by Carlos for non thread safe Sessions. # Fabio
-        Session.connect(jNameBase)
-  
-        for jid in idRange:
-            jobName = jNameBase + "_" + str(jid)
-            cacheArea = cwDir+"/res/job%s"%jid
-            jobDetails={'id':jobName,'job_type':'Processing','max_retries':4,'max_racers':1, 'owner':jNameBase}
+    def handleCommands(self, payload):
+        cmdDescriptor, taskUniqName, resubCount = payload.split('::')
+        node = xml.dom.minidom.parseString(cmdDescriptor).getElementsByTagName("TaskAttributes")
+        cmdType = '' + str(node.getAttribute('Command'))
+        del node
 
-            # check if the job is already registered
-            self.mutex.acquire()
-            Session.start_transaction(jNameBase)
-            Session.set_session(jNameBase)
-            
-            if Job.exists(jobName) == True:
-                Session.commit(jNameBase)
-                self.mutex.notifyAll()
-                self.mutex.release()
-                continue
-
-            Session.commit(jNameBase)
-            # self.mutex.notifyAll()
-            self.mutex.release()
-
-            # insert job in db
-            try:
-                self.mutex.acquire()
-                Session.start_transaction(jNameBase)
-                Session.set_session(jNameBase)
-
-                Job.register(jNameBase, None, jobDetails)
-                Job.setState(jobName,'create')
-                Job.setCacheDir(jobName,cacheArea)
-                Job.setState(jobName,'inProgress')
-                Job.setState(jobName,'submit')
-
-                Session.commit(jNameBase)
-
-                # self.mutex.notifyAll()
-                self.mutex.release()
-            except Exception, e:
-                logging.info("BOSS Registration error %s. DB insertion."%cacheArea + str(e))
-                Session.rollback(jNameBase)
-                # self.mutex.notifyAll()
-                self.mutex.release()
-
-            # create cache area 
-            try:
-                os.mkdir(cacheArea)
-                # WB: NEEDED FOR RESUBMISSION WITH CVS JobSubmitterComponent
-                fakeJobSpec = JobSpec()
-                # Mattia troubleshooting: missing SubmitterCount # Fabio
-                # ugly attribute visibility violation, but its Python and it works
-                fakeJobSpec.parameters['SubmissionCount'] = 0  
-                #
-                fakeJobSpec.setJobName(jobName)
-                fakeJobSpec.save("%s/%s-JobSpec.xml"%(cacheArea,jobName))
-                del fakeJobSpec
-                # create id-file 
-                idfile = open("%s/%sid"%(cacheArea,jobName),'w')
-                idfile.write("JobId=%s"%jid)
-                idfile.close()
-            except Exception, e:
-                logging.info("BOSS Registration error %s. Cache area creation."%cacheArea + str(e))
-
-            pass # End of task registration cycle
-        Session.close(jNameBase)
-        pass
-
-    def crab_submit(self, proxy, uniqDir, retry=False, rangeSubmit='all'):
-       # RETURN SEMANTICS
-       # 0 - no errors
-       # 1 - command error
-       # 2 - crab silent error catched by parsing output
-       # tuple - part of the task not submitted
-
-       # Preparation phase
-       catchErrorList = ["No compatible site found, will not submit",
-                         "TaskDB: key projectName not found",
-                         "wrong format: submission failed",
-                         "Failed to declare task Boss infile not found",
-                         "Operation failed",
-                         "Total of 0 jobs submitted",
-                         "Stack dump raised by SOAP-ENV",
-                         "14: unable to open database file",
-                         "only 0 left: submitting those"]
-			 
-       # Range submit management
-       cmdRangeSubmit = str(rangeSubmit).replace('[','').replace(']','').replace(' ','')
-
-       # Command composition
-       cmd = 'export X509_USER_PROXY='+proxy+' && '
-       cmd = cmd + 'crab -submit %s -c %s %s'%(cmdRangeSubmit, uniqDir, self.debug)
-
-       # logging.info('\n DEBUG: %s\n'%cmd)
-       errcode, outlog = commands.getstatusoutput(cmd)
-       if errcode != 0: 
-            logging.info("Submission failed for %s. Return Code = %d. Resubmission will be tried."%(uniqDir, errcode))
-            ret = 2 #1
-            return ret
-
-       # Catch silent errors from crab
-       jobList = []
-       outlist = outlog.split('\n')
-       for l in outlist:
-            # silent errors
-            for e in catchErrorList:
-                 if e in l:
-                      ret = 2
-                      logging.info("Submission delayed for " + str(uniqDir) )
-                      return ret
-            # partial submission list
-            if "nj_list" in l:
-                 jobList = eval( l.split("nj_list")[1] )
-            # no work to be submitted
-            if "No jobs left to submit: exiting..." in l:
-                 ret = 0
-                 logging.info("Submission completed for "+ str(uniqDir))
-                 return ret
-            pass
-
-       # logging.info('\n DEBUG: %s\n'%str(jobList) )       
-       # logging.info('\n DEBUG: %s\n'%str(rangeSubmit) )
-
-       # correct jobList w.r.t. the submission directives
-       if rangeSubmit != 'all':
-            if type(rangeSubmit) is int: 
-                 jobList = range(0, rangeSubmit)
-            else:
-                 jobList = [i-1 for i in rangeSubmit]
-
-       # logging.info('\n DEBUG: %s\n'%str(jobList) )
+        # no more TTL. Send failure and give up
+        if resubCount < 0:
+            logging.info("Command for task %s has no more attempts. Give up."%taskUniqName)
+            self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason) 
+            self.ms.commit()
+            return 
  
-       # get list of actually submitted jobs
-       errcode, outlog = commands.getstatusoutput("export X509_USER_PROXY=%s && crab -list -c %s | grep Status "%(proxy, uniqDir) )
-       if errcode != 0:
-            logging.info("Process ID listing failed for %s. Return Code = %d. "%(uniqDir, errcode))
-            ret = 1 # not recoverable error
-            return ret
+        # skip non-interesting messages
+        if cmdType not in ['kill', 'submit']:
+            return
 
-       nTotalJobs = len(jobList)
-       crabSubmCounter = 0
-       outlist = outlog.split('\n')
-       for l in outlist:
-            if ('Status <S>' in l) or ('Status <R>' in l) or ('Status <D>' in l): # add here more constraints if needed # Fabio
-                 jid = int(l.split(':')[0].split('Job ')[1]) - 1
-                 if jid in jobList:
-                      jobList.remove(jid)
-                      crabSubmCounter += 1
+        ## FAST-KILL handler
+        if cmdType == 'kill':
+            if taskUniqName in self.workerSet:
+                del self.workerSet[taskUniqName]
 
-       # check if the number of successful submission is equal to the number of expected jobs
-       if len(jobList) == 0: #or nTotalJobs == crabSubmCounter:
-            ret = 0
-            logging.info("Submission completed for "+ str(uniqDir))
-            return ret
+            self.ms.publish("KillTask", taskUniqName)
+            self.ms.commit()
+
+            if taskUniqName in self.taskPool:
+                del self.taskPool[taskUniqName]
+            return
+
+        ## SUBSEQUENT SUBMISSIONS for a task
+        if self.availWorkers <= 0:
+            self.ms.publish("CRAB_Cmd_Mgr:NewCommand", payload, "00:01:00")
+            self.ms.commit()
+            return
+        
+        status = -1
+        status, reason = self.taskIsSubmittable(cmdDescriptor, taskUniqName)
+        if (status == 4):
+            # CAVEAT in this case it means that everything is ok
+            status = 0
+            reason = self.proxyMap[ node.getAttribute('Subject') ]
+
+        if (status != 0):
+            self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason)
+            self.ms.commit()  
+            return
+
+        taskDir = self.wdir + '/' + taskUniqName
+        if not os.path.exists(taskDir):
+            status = 8
+            reason = "Task working directory %s does not exist. The task did not submit here."%taskDir
+            self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason)
+            self.ms.commit()
+            return
+        
+        # Dashboard parameters    
+        # dashParams = {'jobId':'TaskMeta', 'taskId':'unknown', 'jobId':'unknown'}
+        # dashParams.update( dashB_mlCommonInfo )
+ 
+        # run FatWorker
+        thrName = "worker_"+(self.args['maxThreads'] - availWorkers)+"_"+taskUniqName
+        self.workerSet[thrName] = FatWorker(logging, thrName, self.args['resourceBroker'], \
+                                                         None, cmdDescriptor, taskUniqName, \
+                                                         reason, taskDir, resubCount) #, dashParams, [])
+        self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewCommand", payload)
+        self.availWorkers -= 1
+        return
+
+################################
+#   Ret-code handler Method
+################################
+
+    def handleWorkerResults(self, payload):
+        workerName, taskUniqName, status, reason, timing = payload.split('::')
+        status = int(status)
+        self.outcomeCounter += 1
+
+        ## Free submission resources
+        availWorkers += 1
+        if availWorkers > self.args['maxThreads']:
+            availWorkers = self.args['maxThreads']
+        del self.workerSet[workerName]
+        del self.taskPool[workerName]
+
+        ## Track workers outcomes
+        successfulCodes = [0, -2] # full and partial submissions
+        retryItCodes = [20, 21, 30, 31, -1] # temporary failure conditions mainly
+        giveUpCodes = [10, 11] # severe failure conditions
+ 
+        if status in successfulCodes:
+            self.subStats['succ'] += 1 
+            if status == -2:
+                self.subStats['retry'] += 1
+            # moving average with fixed window (adapt if needed but not parametric) 
+            self.subTimes.append(float(timing))
+            if len(self.subTimes) > 64:
+                self.subTimes.pop(0)
+            
+        elif status in retryItCodes: 
+            self.subStats['retry'] += 1
+
+        elif status in giveUpCodes:
+            self.subStats['fail'] += 1
+
+        else: 
+            logging.info('Unknown status for worker message %s'%payload)
+
+        # print statistics at fixed periods
+        if self.outcomeCounter > 64:
+            self.outcomeCounter = 0
+            logging.info('Worker activity summary:\n%s'%str(self.subStats) )
+        return
+
+################################
+#   Auxiliary Methods      
+################################
+    
+    def updateProxyMap(self):
+        pfList = []
+        proxyDir = self.args['ProxiesDir']
+        
+        # old gridsite version
+        for root, dirs, files in os.walk(proxyDir):
+            for f in files:
+                if f == 'userproxy.pem':
+                    pfList.append(os.path.join(root, f))
+
+        # new gridsite version
+        if len(pfList)==0:
+            pfList = [ proxyDir + '/'+q  for q in os.listdir(proxyDir) if q[0]!="." ]
+
+        # Get an associative map between each proxy file and its subject
+        for pf in pfList:
+            if pf in self.proxyMap.values():
+                continue
+            
+            ps = str(os.popen3('openssl x509 -in '+pf+' -subject -noout')[1].readlines()[0]).strip()
+            if len(ps) > 0:
+                self.proxyMap[ps] = pf
+        #     
+        return
+
+    def taskIsSubmittable(self, cmdDescriptor, taskUniqName):
+        """
+        Check whether there are macroscopic conditions that prevent the task to be submitted.
+        At the same time performs the proxy <--> task association.
+        """
+        reason = ""
+
+        # has it a proper proxy?
+        try:
+            doc = xml.dom.minidom.parseString(cmdDescriptor)
+        except Exception, e:
+            reason = "Error while parsing command XML for task %s. It won't be processed."%taskUniqName
+            logging.info(reason)
+            return 6, reason
+        
+        node = doc.getElementsByTagName("TaskAttributes")
        
-       # Try to resubmit the missing jobs (heuristic approach)
-       #
-       #
-       logging.info("Resubmission phase: %d jobs over %d submitted in %s."%(crabSubmCounter, nTotalJobs, uniqDir))
-       errcode, outlog = commands.getstatusoutput(cmd + ' && crab -list -c %s'%uniqDir)
-       if errcode != 0:
-            logging.info("Errors during partial resubmission of %s: exitCode %d. The submission will be retried."%(uniqDir, errcode) )
-            ret = 2
-            return ret
+        if (self.args['allow_anonymous']!=0) and (node.getAttribute('Subject')=='anonymous'):
+            return 0, 'anonymous'
+ 
+        if node.getAttribute('Subject') not in self.proxyMap:
+            reason = "Unable to locate a proper proxy for the task %s"%taskUniqName
+            return 2, reason
+        
+        # is it an unwanted clone?
+        if taskUniqName in self.workerSet:
+            reason = "Already submitting task %s. It won't be processed"%taskUniqName
+            logging.info(reason)
+            return 4, reason
+        
+        reason = self.proxyMap[ node.getAttribute('Subject') ]
+        self.log.info("Project -> Task association: %s -> %s"%(taskUniqName, reason) )
 
-       # parse output and check enhancement on the pending job list
-       outlist = outlog.split('\n')
-       for l in outlist:
-            if ('Status <S>' in l) or ('Status <R>' in l) or ('Status <D>' in l): # add here more constraints if needed # Fabio
-                 jid = int(l.split(':')[0].split('Job ')[1]) - 1
-                 if jid in jobList:
-                      jobList.remove(jid)
-                      crabSubmCounter += 1
+        # get mlCommonInfo
+        # dashB_mlCommon = {} 
+        # if node.hasAttribute('mlCommonInfo'):
+        #    for i in str( node.getAttribute('mlCommonInfo') ).split('\n'):
+        #        val = i.split(':')
+        #        dashB_mlCommon[val[0]] = str(val[1]).strip()
 
-       # everything is submitted
-       if len(jobList) == 0: # or nTotalJobs == crabSubmCounter:
-            ret = 0
-            logging.info("Submission completed for "+ str(uniqDir))
-            return ret
-       
-       # Still missing jobs
-       logging.info("Still missing %d jobs for %s."%(len(jobList), uniqDir))
-       # allign back crab and boss job numbers
-       for idx in xrange(len(jobList)):
-            jobList[idx] += 1
-       #
-       ret = (nTotalJobs, jobList)
-       return ret
+        return 0, reason # , dashB_mlCommon
+
+    def prepareTaskDir(self, taskDescriptor, cmdDescriptor, proxyFile, taskUniqName):
+        """
+        create the task directory storing the commodity files for the task
+        
+        """
+        taskDir = self.wdir + '/' + taskUniqName
+        
+        # create folders if needed
+        if os.path.exists(taskDir):
+            self.log.info("Already existing folder for task %s. The user proxy is already linked there."%taskUniqName)
+            return None
+
+        try:    
+            os.mkdirs(taskDir + '/res')
+            os.mkdir(taskDir + '/log')
+        except Exception, e:
+            self.log.info("Error crating directories for task %s"%taskUniqName)
+            return None
+
+        # materialize files for safety 
+        try:
+            f = open(taskDir + '/task_' + taskUniqName + '.xml', 'w')
+            f.write(taskDescriptor)
+            f.close()
+            del f 
+            f = open(taskDir + '/cmd_' + taskUniqName + '.xml', 'w')
+            f.write(cmdDescriptor)
+            f.close()
+        except Exception, e:
+            self.log.info("Error saving xml files for task %s"%taskUniqName)
+            return None
+        
+        # link the proxy (if required) 
+        if proxyFile != 'anonymous':
+            try:
+                cmd = 'ln -s %s %s'%(proxyFile, taskDir + '/userProxy')
+                cmd = cmd + ' && chmod 600 %s'%proxyFile
+                os.system(cmd)
+            except Exception, e:
+                self.log.info("Error creating the link to proxy for %s"%taskUniqName)
+                return None
+        return taskDir
+
+    def materializeStatus(self):
+        ldump = []
+        ldump.append(self.taskPool)
+        ldump.append(self.proxyMap)
+        ldump.append(self.subTimes)
+        ldump.append(self.subStats)
+        try:
+            f = open(self.wdir+"/cw_status.set", 'w')
+            pickle.dump(ldump, f)
+            f.close()
+        except Exception, e:
+            logging.info("Error while materializing component status\n"+e)
+        return
+
+    def dematerializeStatus(self):
+        try:
+            f = open(self.wdir+"/cw_status.set", 'r')
+            ldump = pickle.load(f)
+            f.close()
+            self.taskPool, self.proxyMap, self.subTimes = ldump
+        except Exception, e:
+            logging.info("Failed to open cw_status.set. Building a new status\n" + str(e) )
+            self.taskPool = {}
+            self.proxyMap = {}
+            self.subTimes = []
+            self.subStats = {'succ':0, 'retry':0, 'fail':0}
+            self.materializeStatus()
+            return
+
+        # cold restart for crashes
+        delay = -1
+        for t in self.taskPool:
+            type, payload = self.taskPool[t]
+            delay += 1
+            dT = delay/self.args['maxThreads']
+            waitTime = '%s:%s:%s'%(str(dT/3600).zfill(2), str((dT/60)%60).zfill(2), str(dT%60).zfill(2))
+            self.ms.publish(type, payload, waitTime)
+            self.ms.commit()
+        return
 
