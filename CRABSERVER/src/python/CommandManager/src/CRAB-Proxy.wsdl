@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" 
+	xmlns:tns="http://www.example.org/CRAB-Proxy/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="CRAB-Proxy" 
+	targetNamespace="http://www.example.org/CRAB-Proxy/">
+
+<!-- Web Service definition for the CRAB-Proxy Interface devoted to the Crab-AS CMS tool -->
+
+  <!-- composite type definition -->
+    <wsdl:types>
+    	<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    		targetNamespace="http://www.example.org/CRAB-Proxy/">
+    	
+            <xsd:complexType name="transferTaskType">
+            	<xsd:attribute name="taskDescriptor" type="xsd:string"></xsd:attribute>
+            	<xsd:attribute name="cmdDescriptor" type="xsd:string"></xsd:attribute>
+            	<xsd:attribute name="uuid" type="xsd:string"></xsd:attribute>
+            </xsd:complexType>
+    	
+            <xsd:complexType name="sendCommandType">
+            	<xsd:attribute name="cmdDescriptor" type="xsd:string"></xsd:attribute>
+            	<xsd:attribute name="uuid" type="xsd:string"></xsd:attribute>
+            </xsd:complexType>
+    	</xsd:schema></wsdl:types>
+  
+  <!-- Message section definition -->  	
+  <wsdl:message name="transferTaskAndSubmitRequest">
+    <wsdl:part name="transferTaskAndSubmitRequest" type="tns:transferTaskType"/>
+  </wsdl:message>
+  <wsdl:message name="transferTaskAndSubmitResponse">
+    <wsdl:part name="transferTaskAndSubmitResponse" type="xsd:integer"/>
+  </wsdl:message>
+  <wsdl:message name="transferTaskAndSubmit_faultMsg">
+  	<wsdl:part name="fault" type="xsd:string"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="sendCommandRequest">
+  	<wsdl:part name="sendCommandRequest" type="tns:sendCommandType"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="sendCommandResponse">
+  	<wsdl:part name="sendCommandResponse" type="xsd:integer"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="sendCommand_faultMsg">
+  	<wsdl:part name="fault" type="xsd:string"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getTaskStatusRequest">
+  	<wsdl:part name="getTaskStatusRequest" type="xsd:string"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getTaskStatusResponse">
+  	<wsdl:part name="getTaskStatusResponse" type="xsd:string"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getTaskStatus_faultMsg">
+  	<wsdl:part name="fault" type="xsd:string"></wsdl:part>
+  </wsdl:message>
+  
+  <!-- Interface descriptor -->
+  <wsdl:portType name="CRAB-Proxy">
+    <wsdl:operation name="transferTaskAndSubmit">
+      <wsdl:input message="tns:transferTaskAndSubmitRequest"/>
+      <wsdl:output message="tns:transferTaskAndSubmitResponse"/>
+            <wsdl:fault name="fault" message="tns:transferTaskAndSubmit_faultMsg"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="sendCommand">
+    	<wsdl:input message="tns:sendCommandRequest"></wsdl:input>
+    	<wsdl:output message="tns:sendCommandResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:sendCommand_faultMsg"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="getTaskStatus">
+    	<wsdl:input message="tns:getTaskStatusRequest"></wsdl:input>
+    	<wsdl:output message="tns:getTaskStatusResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:getTaskStatus_faultMsg"></wsdl:fault>
+        </wsdl:operation>
+  </wsdl:portType>
+  
+  <!-- Binding -->
+  <wsdl:binding name="CRAB-ProxySOAP" type="tns:CRAB-Proxy">
+
+  	<soap:binding style="rpc"
+  		transport="http://schemas.xmlsoap.org/soap/http" />
+  	<wsdl:operation name="transferTaskAndSubmit">
+
+  		<soap:operation
+  			soapAction="http://www.example.org/CRAB-Proxy/transferTaskAndSubmit" />
+  		<wsdl:input>
+
+  			<soap:body use="literal"
+  				namespace="http://www.example.org/CRAB-Proxy/" />
+  		</wsdl:input>
+  		<wsdl:output>
+
+  			<soap:body use="literal"
+  				namespace="http://www.example.org/CRAB-Proxy/" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="sendCommand">
+
+  		<soap:operation
+  			soapAction="http://www.example.org/CRAB-Proxy/sendCommand" />
+  		<wsdl:input>
+
+  			<soap:body use="literal"
+  				namespace="http://www.example.org/CRAB-Proxy/" />
+  		</wsdl:input>
+  		<wsdl:output>
+
+  			<soap:body use="literal"
+  				namespace="http://www.example.org/CRAB-Proxy/" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="getTaskStatus">
+
+  		<soap:operation
+  			soapAction="http://www.example.org/CRAB-Proxy/getTaskStatus" />
+  		<wsdl:input>
+
+  			<soap:body use="literal"
+  				namespace="http://www.example.org/CRAB-Proxy/" />
+  		</wsdl:input>
+  		<wsdl:output>
+
+  			<soap:body use="literal"
+  				namespace="http://www.example.org/CRAB-Proxy/" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  </wsdl:binding>
+
+  <!-- Service definition -->
+  <wsdl:service name="CRAB-Proxy">
+    <wsdl:port binding="tns:CRAB-ProxySOAP" name="CRAB-ProxySOAP">
+      <soap:address location="http://www.example.org/"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
