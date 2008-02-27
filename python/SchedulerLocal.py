@@ -29,7 +29,6 @@ class SchedulerLocal(Scheduler) :
         if self.copy_data == 1:
             self._copyCommand = cfg_params.get('USER.copyCommand','rfcp')
             self.SE_path= cfg_params.get('USER.storage_path',None)
-            self.SE_path+='/'
             if not self.SE_path:
                 if os.environ.has_key('CASTOR_HOME'):
                     self.SE_path=os.environ['CASTOR_HOME']
@@ -38,6 +37,7 @@ class SchedulerLocal(Scheduler) :
                     raise CrabException(msg)
                 pass
             pass
+            self.SE_path+='/'
 
         if ( self.return_data == 0 and self.copy_data == 0 ):
            msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
