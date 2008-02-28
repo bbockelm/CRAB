@@ -54,10 +54,7 @@ class SchedulerCondor_g(Scheduler):
 
         self.checkCondorVariablePointsToFile('GRIDMANAGER')
 
-        if version_master >= 6 and version_major >= 7 and version_minor >= 11 :
-            self.checkCondorVariablePointsToFile('GT2_GAHP')
-        elif version_master >=6 and version_major < 8 :
-            self.checkCondorVariablePointsToFile('GAHP')
+        self.checkCondorVariablePointsToFile('GT2_GAHP',alternate_name='GAHP')
 
         self.checkCondorVariablePointsToFile('GRID_MONITOR')
 
@@ -117,13 +114,18 @@ class SchedulerCondor_g(Scheduler):
             common.logger.debug(2,msg)
             raise CrabException(msg)
 
-    def checkCondorVariablePointsToFile(self, name):
+    def checkCondorVariablePointsToFile(self, name, alternate_name=None):
         ## check for condor variable
         cmd = 'condor_config_val '+name
         cmd_out = runCommand(cmd)
-        if os.path.isfile(cmd_out) > 0 :
+        if alternate_name and not cmd_out:
+            cmd = 'condor_config_val '+alternate_name
+            cmd_out = runCommand(cmd)
+        if cmd_out:
+            cmd_out = string.strip(cmd_out)
+        if not cmd_out or not os.path.isfile(cmd_out) :
             msg  = '[Condor-G Scheduler]: the variable '+name+' is not properly set for the condor installation on this machine.\n'
-            msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation to set the variable '+name+' properly,',
+            msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation to set the variable '+name+' properly, ' + \
             'use another machine with properly installed condor or change the Scheduler in your crab.cfg.'
             common.logger.debug(2,msg)
             raise CrabException(msg)
