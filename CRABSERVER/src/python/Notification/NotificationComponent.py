@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.9 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.9 2007/12/19 09:17:18 mcinquil Exp $"
+__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.10 2008/01/30 13:19:09 mcinquil Exp $"
 
 import os
 import socket
@@ -376,7 +376,10 @@ class NotificationComponent:
                     hours, mins, secs = lifetime.split(":")
                     hours = int(hours)
                     mins = int(mins)
-                    secs = int(secs)
+                    try:
+                        secs = int(secs)
+                    except Exception:
+                        pass
                 else:
                     secs = int(lifetime)
                 days = 0
