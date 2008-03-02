@@ -12,7 +12,7 @@
 ###########################################################################
 
 prog_name = 'crab'
-prog_version = (2, 1, 0)
+prog_version = (2, 1, 1)
 prog_version_str=`prog_version[0]`+'.'+`prog_version[1]`+'.'+`prog_version[2]`
 prog_authors = [
     ['Stefano Lacaprara', 'Stefano.Lacaprara@pd.infn.it', 'INFN/LNL'],
@@ -23,7 +23,7 @@ prog_authors = [
     ['Alessandra Fanfani', 'Alessandra.Fanfani@bo.infn.it', 'INFN/Bologna'],
     ['Federica Fanzago', 'Federica.Fanzago@cern.ch' , 'CERN/CNAF'],
     ['Fabio Farina', 'fabio.farina@cern.ch', 'INFN/Milano Bicocca'],
-    ['Carlos Kafka', 'Carlos.Kavka@ts.infn.it', 'INFN/Trieste'],
+    ['Carlos Kavka', 'Carlos.Kavka@ts.infn.it', 'INFN/Trieste'],
     ['Matteo Merlo'  , 'merloma@gmail.com', 'INFN/Milano Bicocca'],
     ['Eric Vaandering', 'ewv@fnal.gov', 'FNAL'],
     ]
