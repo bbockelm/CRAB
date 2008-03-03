@@ -47,16 +47,16 @@ class Cmssw(JobType):
         # Try to block creation in case of arch/version mismatch
         #
 
-        a = string.split(self.version, "_")
-
-        if int(a[1]) == 1 and (int(a[2]) < 5 and self.executable_arch.find('slc4') == 0):
-            msg = "Warning: You are using %s version of CMSSW  with %s architecture. \n--> Did you compile your libraries with SLC3? Otherwise you can find some problems running on SLC4 Grid nodes.\n"%(self.version, self.executable_arch)
-            common.logger.message(msg)
-        if int(a[1]) == 1 and (int(a[2]) >= 5 and self.executable_arch.find('slc3') == 0):
-            msg = "Error: CMS does not support %s with %s architecture"%(self.version, self.executable_arch)
-            raise CrabException(msg)
-
-        common.taskDB.setDict('codeVersion',self.version)
+#        a = string.split(self.version, "_")
+#
+#        if int(a[1]) == 1 and (int(a[2]) < 5 and self.executable_arch.find('slc4') == 0):
+#            msg = "Warning: You are using %s version of CMSSW  with %s architecture. \n--> Did you compile your libraries with SLC3? Otherwise you can find some problems running on SLC4 Grid nodes.\n"%(self.version, self.executable_arch)
+#            common.logger.message(msg)
+#        if int(a[1]) == 1 and (int(a[2]) >= 5 and self.executable_arch.find('slc3') == 0):
+#            msg = "Error: CMS does not support %s with %s architecture"%(self.version, self.executable_arch)
+#            raise CrabException(msg)
+#
+ 
         self.setParam_('application', self.version)
 
         ### collect Data cards
@@ -90,7 +90,7 @@ class Cmssw(JobType):
                 self.setParam_('dataset', self.datasetPath)
                 self.setParam_('owner', self.datasetPath)
 
-        self.setParam_('taskId', common.taskDB.dict('taskId'))
+        self.setParam_('taskId', common._db.queryTask('name')) ## new BL--DS
 
         self.dataTiers = []
 
@@ -644,7 +644,6 @@ class Cmssw(JobType):
 
     def split(self, jobParams):
 
-        common.jobDB.load()
         #### Fabio
         njobs = self.total_number_of_jobs
         arglist = self.list_of_args
@@ -654,18 +653,19 @@ class Cmssw(JobType):
 
         for job in range(njobs):
             jobParams[job] = arglist[job]
-            # print str(arglist[job])
-            # print jobParams[job]
-            common.jobDB.setArguments(job, jobParams[job])
+            job_ToSave ={}
+            job_ToSave['arguments']= str(jobParams[job])## new BL--DS
+            job_ToSave['dlsDestination']= self.jobDestination[job]## new BL--DS
+            common._db.updateJob_(job,job_ToSave)## new BL--DS
             common.logger.debug(5,"Job "+str(job)+" Destination: "+str(self.jobDestination[job]))
-            common.jobDB.setDestination(job, self.jobDestination[job])
 
-        common.jobDB.save()
         return
 
     def getJobTypeArguments(self, nj, sched):
         result = ''
-        for i in common.jobDB.arguments(nj):
+        jobs=[]
+        jobs.append(nj) 
+        for i in common._db.queryJob('arguments',jobs):##  BL--DS
             result=result+str(i)+" "
         return result
 
@@ -750,12 +750,6 @@ class Cmssw(JobType):
                     common.logger.debug(5,"data "+root+"/data"+" to be tarred")
                     tar.add(root+"/data",root[swAreaLen:]+"/data")
 
-            ### Removed ProdAgent Api dependencies ###
-            ### Add ProdAgent dir to tar
-            #paDir = 'ProdAgentApi'
-            #pa = os.environ['CRABDIR'] + '/' + 'ProdAgentApi'
-            #if os.path.isdir(pa):
-            #    tar.add(pa,paDir)
 
             ## Add ProdCommon dir to tar
             prodcommonDir = 'ProdCommon'
@@ -857,11 +851,11 @@ class Cmssw(JobType):
         #txt += '            echo "JobExitCode=10018" | tee -a $RUNTIME_AREA/$repo\n'
         #txt += '            dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
-        txt += '            job_exit_code=10018\n'
+        txt += '        if [ -d $WORKING_DIR ] ;then\n'
         txt += '        fi\n'
         txt += '    fi \n'
         #txt += '    exit 1 \n'
-        txt += '    func_exit\n'
+        txt += '    fi \n'
         txt += 'fi \n'
         txt += 'cd '+self.version+'\n'
         ########## FEDE FOR DBS2 ######################
@@ -919,7 +913,7 @@ class Cmssw(JobType):
             txt += 'PrimaryDataset=null\n'
             txt += 'DataTier=null\n'
             txt += 'ApplicationFamily=MCDataTier\n'
-        if self.pset != None: 
+        if self.pset != None: #CarlosDaniele
             pset = os.path.basename(job.configFilename())
             txt += '\n'
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
@@ -947,14 +941,16 @@ class Cmssw(JobType):
             txt += 'fi\n'
             pass
 
-        if self.pset != None:
+        if self.pset != None: #CarlosDaniele
             txt += '\n'
             txt += 'echo "***** cat pset.cfg *********"\n'
             txt += 'cat pset.cfg\n'
             txt += 'echo "****** end pset.cfg ********"\n'
             txt += '\n'
+            ### FEDE FOR DBS OUTPUT PUBLICATION
             txt += 'PSETHASH=`EdmConfigHash < pset.cfg` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
+            ##############
             txt += '\n'
         return txt
 
