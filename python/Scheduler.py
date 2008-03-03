@@ -37,7 +37,6 @@ class Scheduler :
 
     def configure(self, cfg_params):
         self._boss.configure(cfg_params)
-        self._boss.checkSchedRegistration_(self.name())
         #print 'Configured Scheduler ',self.name(),' with BOSS',self.boss()
         return
 
@@ -238,11 +237,11 @@ class Scheduler :
         """
         return
 
-    def declare(self):
+    def declare(self,jobs):
         """
         BOSS declaration of jobs
         """
-        self._boss.declareJob_()
+        self._boss.declareJob_(jobs)
 
     def taskDeclared(self, taskName ):
         taskDict = self.boss().taskDeclared( taskName )
