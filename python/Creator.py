@@ -1,7 +1,6 @@
 from Actor import Actor
 from WorkSpace import WorkSpace
 from JobList import JobList
-from JobDB import JobDB
 from ScriptWriter import ScriptWriter
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -32,19 +31,10 @@ class Creator(Actor):
         self.total_njobs = self.job_type.numberOfJobs();
         common.logger.debug(5, __name__+": total # of jobs = "+`self.total_njobs`)
 
-        # Set number of jobs to be created
-        # --------------------------------->  Boss4: changed, "all" by default 
-
         self.ncjobs = ncjobs
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
         
-
-        self.UseServer=0
-        try:
-            self.UseServer=int(self.cfg_params['CRAB.server_mode'])
-        except KeyError:
-            pass
 
         # This is code for dashboard
         #First checkProxy
@@ -76,7 +66,7 @@ class Creator(Actor):
             pass
 
         # Set/Save Job Type name
-        self.job_type_name = common.taskDB.dict("jobtype")
+        self.job_type_name = common._db.queryTask("jobType") ## New BL--DS
 
         common.logger.debug(5, "Creator constructor finished")
         return
@@ -130,12 +120,10 @@ class Creator(Actor):
         # Loop over jobs
         argsList = []
         njc = 0
-        block = -1 # first block is 0
-        lastDest=''
+#        block = -1 # first block is 0  BL--DS
+#        lastDest=''
         for nj in range(self.total_njobs):
             if njc == self.ncjobs : break
-            st = common.jobDB.status(nj)
-            if st != 'X': continue
 
             common.logger.debug(1,"Creating job # "+`(nj+1)`)
 
@@ -147,45 +135,46 @@ class Creator(Actor):
             argsList.append( str(nj+1)+' '+ self.job_type.getJobTypeArguments(nj, self.cfg_params['CRAB.scheduler']) )
             self.job_type.setArgsList(argsList)
 
-            # Create script (sh)
-            script_writer.modifyTemplateScript()
-            os.chmod(common.taskDB.dict("ScriptName"), 0744)
-
-            common.jobDB.setStatus(nj, 'C')
-            # common: write input and output sandbox
-            common.jobDB.setInputSandbox(nj, self.job_type.inputSandbox(nj))
+            run_jobToSave = {'status' :'C'}
+#            common._db.updateRunJob_(nj, run_jobToSave ) ## New BL--DS
 
             outputSandbox=self.job_type.outputSandbox(nj)
             # check if out!=err
-            common.jobDB.setOutputSandbox(nj, outputSandbox)
-            common.jobDB.setTaskId(nj, common.taskDB.dict('taskId'))
+## New BL--DS
+#            common.jobDB.setOutputSandbox(nj, outputSandbox)
+#            common.jobDB.setTaskId(nj, common.taskDB.dict('taskId'))
 
-            currDest=common.jobDB.destination(nj)
-            if (currDest!=lastDest):
-                block+=1
-                lastDest = currDest
-                pass
-            common.jobDB.setBlock(nj,block)
+            job_ToSave={'outputFiles': outputSandbox}
+
+            common._db.updateJob_(nj, job_ToSave ) ## Nes BL--DS
+
+#            currDest=common.jobDB.destination(nj)
+#            if (currDest!=lastDest):
+#                block+=1
+#                lastDest = currDest
+#                pass
+#            common.jobDB.setBlock(nj,block)
             njc = njc + 1
             pass
+
+        # Create script (sh)
+        script_writer.modifyTemplateScript()
+        os.chmod(common._db.queryTask('scriptName'), 0744) ## Modified BL--DS
+       # common: write input sandbox --- This is now a task attribute... not per job ## BL--DS
+        isb = {'globalSandbox': self.job_type.inputSandbox(1)}
+        common._db.updateTask_(isb) 
         ####
-        common.scheduler.sched_parameter()
-        common.scheduler.createXMLSchScript(self.total_njobs, argsList)
+        common.scheduler.declare(self.total_njobs ) 
+
+### This is temporary commented since there is a bosslite bug
+    #    common.scheduler.sched_parameter()
+
         common.logger.message('Creating '+str(self.total_njobs)+' jobs, please wait...')
-        # modified to support server mode -  DS
-        # if crab is used in server mode the client must skyp 
-        # boss declare step. In this case it is performed at server level  
-        # just before the submission  step   
-        ## SL TODO: I would do this inside scheduler create...
-        if (self.UseServer== 0):
-            common.scheduler.declare()   #Add for BOSS4
 
         stop = time.time()
         common.logger.debug(2, "Creation Time: "+str(stop - start))
         common.logger.write("Creation Time: "+str(stop - start))
 
-        common.jobDB.save()
-        common.taskDB.save()
         msg = '\nTotal of %d jobs created'%njc
         if njc != self.ncjobs: msg = msg + ' from %d requested'%self.ncjobs
         msg = msg + '.\n'
