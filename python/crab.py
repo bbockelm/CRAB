@@ -1,31 +1,31 @@
 #!/usr/bin/env python
-import sys, os, time, string, commands
+import sys, os, time, string
 
+### Hopefully will be removed soon!!! DS
 ## pre-import env configuratin steps
-def dropOutPy23dynLoads():
-    # FEDE added -publish
-    #if not ('-create' in sys.argv or '-publish' in sys.argv):
-    if not ('-create' in sys.argv or '-publish' in sys.argv):
-        return
-    tmp = []
-    for p in sys.path:
-        if p.find( "python2.3/lib-dynload" ) == -1 :
-            tmp.append(p)
-        pass
-
-    sys.path=tmp
-    pass
+#def dropOutPy23dynLoads():
+#    # FEDE added -publish
+#    #if not ('-create' in sys.argv or '-publish' in sys.argv):
+#    if not ('-create' in sys.argv or '-publish' in sys.argv):
+#        return
+#    tmp = []
+#    for p in sys.path:
+#        if p.find( "python2.3/lib-dynload" ) == -1 :
+#            tmp.append(p)
+#        pass
+#
+#    sys.path=tmp
+#    pass
 
 # this is needed to remove interferences between LCG and CMSSW envs  
-dropOutPy23dynLoads()
+#dropOutPy23dynLoads()
 
 ## actual import session 
 from crab_util import *
 from crab_exceptions import *
 from crab_logger import Logger
 from WorkSpace import WorkSpace
-from JobDB import JobDB
-from TaskDB import TaskDB
+from DBinterface import DBinterface ## added to interface with DB BL--DS
 from JobList import JobList
 from ApmonIf import ApmonIf
 import common
@@ -95,23 +95,24 @@ class Crab:
         
         self.processOptions_(opts)
 
-        common.taskDB = TaskDB()
+        common._db = DBinterface() #BL--DS
 
 
         if not self.flag_continue:
             self.createWorkingSpace_()
+            common._db.configureDB(self.cfg_params)
             optsToBeSaved={}
+            optsToBeSavedDB={}
             for it in opts.keys():
                 if (it in self.main_actions) or (it in self.aux_actions) or (it == '-debug'):
                     pass
                 else:
+                    optsToBeSavedDB[it[1:]]=opts[it]
                     optsToBeSaved[it]=opts[it]
                     # store in taskDB the opts
-                    common.taskDB.setDict(it[1:], optsToBeSaved[it])
+            common._db.createTask_(optsToBeSavedDB) #BL--DS
             common.work_space.saveConfiguration(optsToBeSaved, self.cfg_fname)
             pass
-        else:
-            common.taskDB.load()
 
         # At this point all configuration options have been read.
         
@@ -121,20 +122,19 @@ class Crab:
 
         self.createLogger_(args)
 
-        common.jobDB = JobDB()
         
         self.UseServer=int(self.cfg_params.get('CRAB.server_mode',0))
 
         common.apmon = ApmonIf()
-        
-        if self.flag_continue:
-            try:
-                common.jobDB.load()
-                common.taskDB.load()
-                common.logger.debug(6, str(common.jobDB))
-            except DBException,e:
-                pass
-            pass
+### BL--DS        
+#        if self.flag_continue:
+#            try:
+#                common.jobDB.load()
+#                common.taskDB.load()
+#                common.logger.debug(6, str(common.jobDB))
+#            except DBException,e:
+#                pass
+#            pass
 
         self.createScheduler_()
 
@@ -342,7 +342,7 @@ class Crab:
 
         common.logger.debug(5,"parseRange_ "+str(aRange))
         if aRange=='all' or aRange==None or aRange=='':
-            result=range(1,common.jobDB.nJobs()+1)
+            result=range(1,common._db.nJobs()+1)## new funct. BL--DS
             return result
         elif aRange=='0':
             return result
@@ -368,10 +368,6 @@ class Crab:
         [uniqueList.append(it) for it in list if not uniqueList.count(it)]
 
         return (len(list)==len(uniqueList))
-
-    def uuidgen(self):
-        """Generate a UUID"""
-        return commands.getoutput('uuidgen')
 
 
     def parseSimpleRange_(self, aRange):
@@ -433,48 +429,56 @@ class Crab:
                                        ncjobs)
                 self.actions[opt] = self.creator
 
-               # ############################
-               #  environmet swapping 
-               #  N.B. CRAB is expected to works coherently with python version and lib
-               #  used by the UI, and it is able to manage the user env. re-organizing 
-               #  the paths according to its needed.    
-               #  Since the job creation require the CMSSW python API usage 
-               #  which need the  python2.4 (shipped with CMSSW), at the moment, 
-               #  and just for this functionality, if creation and submition are required together
-               #  CRAB prioritarize the CMSSW stuff first and then  re-set the environment.  DS.
-               # ############################
-                if '-submit' in opts:
-                     os.putenv('PATH', os.environ['AUX_SUBM_PATH'])
-                     os.putenv('PYTHONPATH', os.environ['AUX_SUBM_PY'])
-                     #
-                     os.environ['PATH'] = os.environ['AUX_SUBM_PATH']
-                     os.environ['PYTHONPATH'] = os.environ['AUX_SUBM_PY']
-                     #
-                     dropOutPy23dynLoads()
-                     pass 
+### ToBeRempoved BL--DS
+#               # ############################
+#               #  environmet swapping 
+#               #  N.B. CRAB is expected to works coherently with python version and lib
+#               #  used by the UI, and it is able to manage the user env. re-organizing 
+#               #  the paths according to its needed.    
+#
+#               #  Since the job creation require the CMSSW python API usage 
+#               #  which need the  python2.4 (shipped with CMSSW), at the moment, 
+#               #  and just for this functionality, if creation and submition are required together
+#               #  CRAB prioritarize the CMSSW stuff first and then  re-set the environment.  DS.
+#               # ############################
+#                if '-submit' in opts:
+#                     os.putenv('PATH', os.environ['AUX_SUBM_PATH'])
+#                     os.putenv('PYTHONPATH', os.environ['AUX_SUBM_PY'])
+#                     #
+#                     os.environ['PATH'] = os.environ['AUX_SUBM_PATH']
+#                     os.environ['PYTHONPATH'] = os.environ['AUX_SUBM_PY']
+#                     #
+#                     dropOutPy23dynLoads()
+#                     pass 
                # ############################
 
                 # Initialize the JobDB object if needed
                 if not self.flag_continue:
-                    common.jobDB.create(self.creator.nJobs())
+                    common._db.createJobs_(self.creator.nJobs()) ## new  BL--DS
                     pass
 
                 # Create and initialize JobList
-                common.job_list = JobList(common.jobDB.nJobs(),
+                common.job_list = JobList(common._db.nJobs(), ## new BL--DS
                                           self.creator.jobType())
+### ToBeRemoved BL--DS
+#                common.taskDB.setDict('ScriptName',common.work_space.jobDir()+"/"+self.job_type_name+'.sh')
+#                common.taskDB.setDict('JdlName',common.work_space.jobDir()+"/"+self.job_type_name+'.jdl')
+#                common.taskDB.setDict('CfgName',common.work_space.jobDir()+"/"+self.creator.jobType().configFilename())
 
-                common.taskDB.setDict('ScriptName',common.work_space.jobDir()+"/"+self.job_type_name+'.sh')
-                common.taskDB.setDict('JdlName',common.work_space.jobDir()+"/"+self.job_type_name+'.jdl')
-                common.taskDB.setDict('CfgName',common.work_space.jobDir()+"/"+self.creator.jobType().configFilename())
+                taskinfo={} ## new BL--DS  
+                taskinfo['scriptName'] = common.work_space.jobDir()+"/"+self.job_type_name+'.sh' ## new BL--DS 
+                taskinfo['cfgName'] = common.work_space.jobDir()+"/"+self.creator.jobType().configFilename() ## new BL--DS 
+
+                
+                	     
+    
                 common.job_list.setScriptNames(self.job_type_name+'.sh')
-                common.job_list.setJDLNames(self.job_type_name+'.jdl')
+## Obsolete
+##                common.job_list.setJDLNames(self.job_type_name+'.jdl')
                 common.job_list.setCfgNames(self.creator.jobType().configFilename())
 
                 self.creator.writeJobsSpecsToDB()
-                taskUnicId= self.uuidgen()
-                common.taskDB.setDict('TasKUUID',taskUnicId)
-
-                common.taskDB.save()
+                common._db.updateTask_(taskinfo) ## New BL--DS	
                 pass
 
             elif ( opt == '-submit' ):
@@ -489,51 +493,28 @@ class Crab:
                     self.actions[opt] = Submitter(self.cfg_params, self.parseRange_(val), val)
                     # Create and initialize JobList
                     if len(common.job_list) == 0 :
-                        common.job_list = JobList(common.jobDB.nJobs(),
+                        common.job_list = JobList(common._db.nJobs(), ## New BL--DS
                                                   None)
-                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
+           #             common.job_list.setJDLNames(self.job_type_name+'.jdl')
                         pass
                     pass
 
             elif ( opt == '-list' ):
+                '''
+                Print the relevant infos of a range-all jobs/task  
+                ''' 
                 jobs = self.parseRange_(val)
 
-                common.jobDB.dump(jobs)
+                common._db.dump(jobs) ## New BL--DS
                 pass
 
             elif ( opt == '-printId' ):
+                '''
+                Print the unique name of the task if crab is used as client
+                Print the SID list of all the jobs      
+                ''' 
                 # modified to support server mode 
-                if (self.UseServer== 1):
-                     try: 
-                         common.taskDB.load()
-                         WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
-                         projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict('TasKUUID')
-                         print "Task Id = %-40s " %(projectUniqName)   
-                     except:
-                         common.logger.message("Warning :Interaction in query task unique ID failed")
-                         pass 
-                else:
-                    try:
-                        from BossSession import ALL
-                        boss=common.scheduler.boss().task().load(ALL)
-                    except RuntimeError,e:
-                        common.logger.message( e.__str__() )
-                    except ValueError,e:
-                        common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
-                        common.logger.message(e.what())
-                        pass
-                    task = common.scheduler.boss().task().jobsDict()
-               
-                    for c, v in task.iteritems():
-                        k = int(c)
-                        nj=k
-                        id = v['CHAIN_ID']
-                        jid = v['SCHED_ID']
-                        if jid:
-                            print "Job: %-5s Id = %-40s " %(id,jid)
-                        #else:
-                        #    print "Job: ",id," No ID yet"
-                    pass
+                common._db.printId(self.UseServer) ## New BL--DS
 
             elif ( opt == '-status' ):
                 from StatusBoss import StatusBoss 
@@ -552,6 +533,7 @@ class Crab:
 
                 if val:
                     if val =='all':
+                         ## this should be NOT scheduler dependent... to move from Scheduler to _db BL--DS 
                         jobs = common.scheduler.list()
                     else:
                         jobs = self.parseRange_(val)
@@ -574,6 +556,7 @@ class Crab:
                     self.actions[opt] = GetOutputServer(self.cfg_params)
                 else:
                     if val=='all' or val==None or val=='':
+                         ## this should be NOT scheduler dependent... to move from Scheduler to _db BL--DS 
                         jobs = common.scheduler.list()
                     else:
                         jobs = self.parseRange_(val)
@@ -604,7 +587,6 @@ class Crab:
                     common.logger.message("Warning: with '-resubmit' you _MUST_ specify a job range or 'all'")
                     common.logger.message("WARNING: _all_ job specified in the range will be resubmitted!!!")
                     pass
-                common.jobDB.save()
                 pass
 
             elif ( opt == '-cancelAndResubmit' ):
@@ -655,7 +637,6 @@ class Crab:
                     pass
                 common.jobDB.save()
                 pass
-
             elif ( opt == '-testJdl' ):
                 jobs = self.parseRange_(val)
                 nj_list = []
@@ -757,9 +738,6 @@ class Crab:
         common.work_space = WorkSpace(new_dir, self.cfg_params)
         common.work_space.create()
 
-        taskId=os.environ['USER'] + '_' + string.split(common.work_space.topDir(),'/')[-2]
-        if (self.cfg_params.has_key('USER.ui_working_dir')) : taskId+="_"+self.current_time
-        common.taskDB.setDict('taskId', taskId)
         return
 
     def loadConfiguration_(self, opts):

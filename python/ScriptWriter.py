@@ -57,7 +57,7 @@ class ScriptWriter:
         """
 
         tpl = open(self.template, 'r')
-        script = open(common.taskDB.dict('ScriptName'),'w')
+        script = open(common._db.queryTask('scriptName'),'w')
 
         for line in tpl:
             if len(line) > 6 and line[:6] == '#CRAB ':
@@ -174,6 +174,7 @@ class ScriptWriter:
             jbt = common.job_list.type()
             txt = jbt.checkOut(limit)
         return txt
+
     def rewriteCMSSWcfg_(self):
         """
         Returns part of the script that runs writeCfg.py on the WN
