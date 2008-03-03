@@ -379,6 +379,22 @@ def spanRanges(jobArray):
 
     return output
 
+def displayReport(self, header, lines):
+ 
+    counter = 0
+    printline = ''
+    printline+= header 
+    print printline
+    print '---------------------------------------------------------------------------------------------------'
+   
+    for i in range(len(lines)):
+        if counter != 0 and counter%10 == 0 :
+            print '---------------------------------------------------------------------------------------------------'
+        print lines[i]
+        counter += 1
+
+
+
 ####################################
 if __name__ == '__main__':
     print 'sys.argv[1] =',sys.argv[1]
