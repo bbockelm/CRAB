@@ -52,15 +52,18 @@ function cmscp {
       echo "--> Check if the file already exists in the storage element $SE"
       srm-get-metadata -retry_num 0 $destination
       if [ $? -eq 0 ]; then
-          copy_exit_status=60303
+          #copy_exit_status=60303
+          cmscp_exit_status=60303
           StageOutExitStatusReason='file already exists'
       else
           echo "Starting copy of the output to $SE, middleware is $middleware"
           cmd="srmcp $opt -streams_num=1 file:///$path_out_file $destination"
           echo $cmd
           exitstring=`$cmd 2>&1`
-          copy_exit_status=$?
-          if [ $copy_exit_status -eq 0 ]; then
+          #copy_exit_status=$?
+          #if [ $copy_exit_status -eq 0 ]; then
+          cmscp_exit_status=$?
+          if [ $cmscp_exit_status -eq 0 ]; then
               ## Put into an array the remote file metadata
               remoteMetadata=(`srm-get-metadata -retry_num 0 $destination | grep -v WARNING`)
               remoteSize=`echo ${remoteMetadata[5]}| tr -d :`
@@ -72,14 +75,16 @@ function cmscp {
                   echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
                   echo "Copy failed: removing remote file $destination"
                   srm-advisory-delete $destination
-                  copy_exit_status=60307
+                  #copy_exit_status=60307
+                  cmscp_exit_status=60307
                   echo "Problem copying $path_out_file to $destination with srmcp command"
                   StageOutExitStatusReason='remote and local file dimension not match'
                   echo "StageOutReport = `cat ./srmcp.report`"
               fi
               StageOutExitStatusReason='copy ok with srm utils'
           else
-              copy_exit_status=60307
+              #copy_exit_status=60307
+              cmscp_exit_status=60307
               echo "Problem copying $path_out_file to $destination with srmcp command"
               StageOutExitStatusReason=$exitstring
               echo "StageOutReport = `cat ./srmcp.report`"
@@ -88,7 +93,8 @@ function cmscp {
   fi
 
  ################ srmv2 ##########################
- if [ $copy_exit_status -eq 60307 ]  || [ $srm_ver -eq  2 ] && [ $srm_ver -ne 1 ] ; then
+ #if [ $copy_exit_status -eq 60307 ]  || [ $srm_ver -eq  2 ] && [ $srm_ver -ne 1 ] ; then
+ if [ $cmscp_exit_status -eq 60307 ]  || [ $srm_ver -eq  2 ] && [ $srm_ver -ne 1 ] ; then
       echo "--> Check if the file already exists in the storage element $SE"
       srmls -retry_num 0 $destination | grep 'does not exist' >/dev/null
       if [ $? -eq  0 ]; then
@@ -96,8 +102,10 @@ function cmscp {
           cmd="srmcp -2 $opt file:///$path_out_file $destination"
           echo $cmd
           exitstring=`$cmd 2>&1`
-          copy_exit_status=$?
-          if [ $copy_exit_status -eq 0 ]; then
+          #copy_exit_status=$?
+          #if [ $copy_exit_status -eq 0 ]; then
+          cmscp_exit_status=$?
+          if [ $cmscp_exit_status -eq 0 ]; then
               remoteMetadata=(`srmls -retry_num=0 $destination 2>/dev/null`)
               remoteSize=`echo ${remoteMetadata}`
               echo "--> remoteSize = $remoteSize"
@@ -108,38 +116,46 @@ function cmscp {
                   echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
                   echo "Copy failed: removing remote file $destination"
                       srmrm $destination
-                      copy_exit_status=60307
+                      #copy_exit_status=60307
+                      cmscp_exit_status=60307
                       echo "Problem copying $path_out_file to $destination with srmcp command"
                       StageOutExitStatusReason='remote and local file dimension not match'
                       echo "StageOutReport = `cat ./srmcp.report`"
               fi
               StageOutExitStatusReason='copy ok with srm utils'
           else
-              copy_exit_status=60307
+              #copy_exit_status=60307
+              cmscp_exit_status=60307
               echo "Problem copying $path_out_file to $destination with srmcp command"
               StageOutExitStatusReason=$exitstring
               echo "StageOutReport = `cat ./srmcp.report`"
           fi
       else
-          copy_exit_status=60303
+          #copy_exit_status=60303
+          cmscp_exit_status=60303
           StageOutExitStatusReason='file already exists'
       fi
   fi
  ################ lcg-utils ##########################
-  if [ $copy_exit_status -eq 60307 ]; then
+  #if [ $copy_exit_status -eq 60307 ]; then
+  if [ $cmscp_exit_status -eq 60307 ]; then
       cmd="lcg-cp --vo $VO -t 2400 --verbose file://$path_out_file $destination"
       echo $cmd
       exitstring=`$cmd 2>&1`
-      copy_exit_status=$?
-      if [ $copy_exit_status -ne 0 ]; then
-          copy_exit_status=60307
+      #copy_exit_status=$?
+      #if [ $copy_exit_status -ne 0 ]; then
+      #    copy_exit_status=60307
+      cmscp_exit_status=$?
+      if [ $cmscp_exit_status -ne 0 ]; then
+          cmscp_exit_status=60307
           echo "Problem copying $path_out_file to $destination with lcg-cp command"
           StageOutExitStatusReason=$exitstring
           cmd="echo $StageOutExitStatusReason | grep exists"
           tmpstring=`$cmd 2>&1`
           exit_status=$?
           if [ $exit_status -eq 0 ]; then
-              copy_exit_status=60303
+              #copy_exit_status=60303
+              cmscp_exit_status=60303
               StageOutExitStatusReason='file already exists'
           fi
       else
@@ -176,23 +192,36 @@ function cmscp {
   #fi
   ##################################################################
 
-  echo "StageOutExitStatus = $copy_exit_status"
-  echo "StageOutExitStatusReason = $StageOutExitStatusReason"
-  return $copy_exit_status
+  #echo "StageOutExitStatus = $copy_exit_status"
+  #echo "StageOutExitStatusReason = $StageOutExitStatusReason"
+  #return $copy_exit_status
+  echo "StageOutExitStatus = $cmscp_exit_status" | tee -a $RUNTIME_AREA/$repo
+  echo "StageOutExitStatusReason = $StageOutExitStatusReason" | tee -a $RUNTIME_AREA/$repo
+  echo "StageOutSE = $SE" >> $RUNTIME_AREA/$repo\n
+  return $cmscp_exit_status
+}
+
+dumpStatus() {
+    echo ">>> info for dashboard:"
+    echo "***** Cat $1 *****"
+    cat $1
+    echo "***** End Cat jobreport *****"
+    chmod a+x $RUNTIME_AREA/report.py
+    $RUNTIME_AREA/report.py $(cat $1)
+    rm -f $1
+    echo "MonitorJobID=`echo $MonitorJobID`" > $1
+    echo "MonitorID=`echo $MonitorID`" >> $1
+}
+
+### CRAB EXIT FUNCTION
+func_exit() {
+    echo "JOB_EXIT_STATUS = $job_exit_code"
+    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo
+    dumpStatus $RUNTIME_AREA/$repo
+    exit $job_exit_code
 }
 
 RUNTIME_AREA=`pwd`
-dumpStatus() {
-  echo ">>> info for dashboard:"
-  echo "***** Cat $1 *****"
-  cat $1
-  echo "***** End Cat jobreport *****"
-  chmod a+x $RUNTIME_AREA/report.py
-  $RUNTIME_AREA/report.py $(cat $1)
-  rm -f $1
-  echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $1
-  echo "MonitorID=`echo $MonitorID`" | tee -a $1
-}
 
 echo "Today is `date`"
 echo "Job submitted on host `hostname`"
@@ -202,7 +231,6 @@ echo ">>> current directory content:"
 ls -Al
 echo ">>> current user: `id`"
 echo ">>> voms proxy information:"
-#which voms-proxy-info
 voms-proxy-info -all
 
 repo=jobreport.txt
@@ -251,16 +279,22 @@ echo ">>> Executable $executable"
 which $executable
 res=$?
 if [ $res -ne 0 ];then
-  echo "SET_EXE 1 ==> ERROR executable not found on WN `hostname`"
-  echo "JOB_EXIT_STATUS = 50110"
-  echo "JobExitStatus=50110" | tee -a $RUNTIME_AREA/$repo
-  dumpStatus $RUNTIME_AREA/$repo
-  exit
+#  echo "SET_EXE 1 ==> ERROR executable not found on WN `hostname`"
+#  echo "JOB_EXIT_STATUS = 50110"
+#  echo "JobExitStatus=50110" | tee -a $RUNTIME_AREA/$repo
+#  dumpStatus $RUNTIME_AREA/$repo
+#  exit
+
+  echo "ERROR ==> executable not found on WN `hostname`"
+  job_exit_code=50110
+  func_exit 
+else
+  echo "ok executable found"
 fi
 
-echo "SET_EXE 0 ==> ok executable found"
+#echo "SET_EXE 0 ==> ok executable found"
 
-echo "ExeStart=$executable" | tee -a $RUNTIME_AREA/$repo
+echo "ExeStart=$executable" >>  $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 #cat  pset.py
 echo ">>> $executable started at `date`"
@@ -268,13 +302,18 @@ start_exe_time=`date +%s`
 #CRAB run_executable
 executable_exit_status=$?
 stop_exe_time=`date +%s`
+echo ">>> $executable ended at `date`"
+
+#### dashboard add timestamp!
+echo "ExeEnd=$executable" >> $RUNTIME_AREA/$repo
+dumpStatus $RUNTIME_AREA/$repo
+
+let "TIME_EXE = stop_exe_time - start_exe_time"
+echo "TIME_EXE = $TIME_EXE sec"
+echo "ExeTime=$TIME_EXE" >> $RUNTIME_AREA/$repo
 
 echo ">>> Parse FrameworkJobReport crab_fjr.xml"
-# check for crab_fjr.xml in pwd
 if [ -s crab_fjr.xml ]; then
-    # check for ProdAgentApi in pwd
-    #if [ -d ProdAgentApi ]; then
-      # check for parseCrabFjr.xml in $RUNTIME_AREA
       if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
           cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
           echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
@@ -289,32 +328,21 @@ if [ -s crab_fjr.xml ]; then
       else
           echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
       fi
-    #else
-    #  echo "ProdAgent api to parse CRAB FrameworkJobreport crab_fjr.xml is not available, using exit code of executable from command line."
-    #fi
 else
     echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
 fi
 
-let "TIME_EXE = stop_exe_time - start_exe_time"
-echo "TIME_EXE = $TIME_EXE sec"
+echo "ExeExitCode=$executable_exit_status" | tee -a $RUNTIME_AREA/$repo
 echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"
-echo "ExeEnd=$executable" | tee -a $RUNTIME_AREA/$repo
-dumpStatus $RUNTIME_AREA/$repo
-echo ">>> $executable ended at `date`"
+#echo "ExeEnd=$executable" | tee -a $RUNTIME_AREA/$repo
+#dumpStatus $RUNTIME_AREA/$repo
+#echo ">>> $executable ended at `date`"
+job_exit_code=$executable_exit_status
 
 if [ $executable_exit_status -ne 0 ]; then
-   echo "Warning: Processing of job failed with exit code $executable_exit_status"
-   echo "ExeExitCode=$executable_exit_status" | tee -a $RUNTIME_AREA/$repo
-   echo "ExeTime=$TIME_EXE" | tee -a $RUNTIME_AREA/$repo
-   echo "JOB_EXIT_STATUS = $executable_exit_status"
-   echo "JobExitCode=$executable_exit_status" | tee -a $RUNTIME_AREA/$repo
-   dumpStatus $RUNTIME_AREA/$repo
-   exit $executable_exit_status
+   echo "ERROR ==> Processing of job failed with exit code $executable_exit_status"
+   func_exit
 fi
-exit_status=$executable_exit_status
-echo "ExeExitCode=$exit_status" | tee -a $RUNTIME_AREA/$repo
-echo "ExeTime=$TIME_EXE" | tee -a $RUNTIME_AREA/$repo
 
 
 #
@@ -339,7 +367,4 @@ ls -Al
 
 #CRAB clean_env
 
-echo "JobExitCode=$exit_status" | tee -a $RUNTIME_AREA/$repo
-dumpStatus $RUNTIME_AREA/$repo
-echo "JOB_EXIT_STATUS = $exit_status"
-exit $exit_status
+func_exit
