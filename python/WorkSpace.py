@@ -1,7 +1,7 @@
 from crab_exceptions import *
 #from threading import RLock
 import common
-import os, shutil, string, time
+import os, shutil, string, time, commands 
 #from crab_logger import Logger
 
 class WorkSpace:
@@ -24,8 +24,8 @@ class WorkSpace:
         if 'USER.ui_working_dir' not in cfg_params.keys():    
             self._pathForTgz = string.split(top_dir, '/')[-1]
 
-        self._boss_cache = self._share_dir + '/.boss_cache'
 
+        self.uuid = commands.getoutput('uuidgen')
         try:    
             self.outDir = cfg_params["USER.outputdir"]
         except:
@@ -57,9 +57,6 @@ class WorkSpace:
             os.mkdir(self._job_dir)
             os.mkdir(self._res_dir)
             os.mkdir(self._share_dir)
-            os.mkdir(self._boss_cache)
-
-            common.taskDB.setDict("CODE",(str(time.time())))
             pass
 
         # fede
@@ -120,9 +117,10 @@ class WorkSpace:
     def pathForTgz(self):
         return self._pathForTgz + '/'
         
-    def bossCache(self):
-        return self._boss_cache + '/'
+    def taskName(self):
 
+        self.taskName_=os.environ['USER'] + '_' + string.split(common.work_space.topDir(),'/')[-2]+'_'+self.uuid
+        return self.taskName_
 
     def setResDir(self, dir):
         self._res_dir = dir
