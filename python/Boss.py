@@ -4,48 +4,18 @@ from crab_util import *
 import common
 import os, time, shutil
 
-from BossSession import *
+from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
+
+
+from ProdCommon.BossLite.DbObjects.Job import Job
+from ProdCommon.BossLite.DbObjects.Task import Task
+from ProdCommon.BossLite.DbObjects.RunningJob import RunningJob
+
+from ProdCommon.BossLite.API.BossLiteAPISched import  BossLiteAPISched
 
 class Boss:
     def __init__(self):
-        self.checkBoss_()
-        self.schedRegistered = {}
-        self.jobtypeRegistered = {}
-        self.bossLogFile = "boss.log"
-        self.bossAdmin = None
-        self.bossUser = None
 
-        # Map for Boss Status to Human Readable Status
-        self.status={
-            'H':'Hold',
-            'U':'Ready',
-            'I':'Scheduled',
-            'X':'Canceled',
-            'W':'Created',
-            'R':'Running',
-            'SC':'Checkpointed',
-            'SS':'Scheduled',
-            'SR':'Ready',
-            'RE':'Ready',
-            'SW':'Waiting',
-            'SU':'Submitted',
-            'S' :'Submitted (Boss)',
-            'UN':'Undefined',
-            'SK':'Cancelled',
-            'SD':'Done (Success)',
-            'SA':'Aborted',
-            'DA':'Done (Aborted)',
-            'SE':'Cleared',
-            'OR':'Done (Success)',
-            'A?':'Aborted',
-            'K':'Killed',
-            'E':'Cleared',
-            'Z':'Cleared (Corrupt)',
-            'NA':'Unknown',
-            'I?':'Idle',
-            'O?':'Done',
-            'R?':'Running'             
-            }
         return
 
     def __del__(self):
@@ -54,264 +24,55 @@ class Boss:
         del self.bossUser
         return
 
-    def checkBoss_(self): 
-        """
-        Verify BOSS installation.
-        """
-        if (not os.environ.has_key("BOSS_ROOT")):
-            msg = "Error: the BOSS_ROOT is not set."
-            msg = msg + " Did you source crab.sh/csh or your bossenv.sh/csh from your BOSS area?\n"
-            raise CrabException(msg)
-
-        if (not os.environ.has_key("CRABSCRIPT")):
-            msg = "Error: the CRABSCRIPT is not set."
-            msg = msg + " Did you source crab.sh/csh?\n"
-            raise CrabException(msg)
-
-        self.boss_dir = os.environ["CRABSCRIPT"]
 
 #### Boss Configuration 
 
     def configure(self, cfg_params):
-        
+
         self.cfg_params = cfg_params
-        
-        self.groupName = common.taskDB.dict('taskId')
-         
+        self.schedulerName =  cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
+
+        #schedulerConfig = { 'name' : self.schedulerName}  ## ToDo BL-DS
+        schedulerConfig = { 'name' : 'SchedulerGLiteAPI' }
+        self.schedSession = BossLiteAPISched( common.bossSession, schedulerConfig)
+
         self.outDir = cfg_params.get("USER.outputdir", common.work_space.resDir() )
         self.logDir = cfg_params.get("USER.logdir", common.work_space.resDir() )
-            
-        self.bossConfigDir = str("")
-#       central db
-        whichBossDb=0
-        whichBossDb=int(cfg_params.get("USER.use_central_bossdb", 0 ))
 
-        if ( whichBossDb == 1 ):
-            pass
-#       emulate -c option        
-        elif ( whichBossDb == 2 ):
-            self.bossConfigDir = str(cfg_params["USER.boss_clads"])
-        else:
-            self.configBossDB_()
-
-        self.bossUser =BossSession(self.bossConfigDir, "0", common.work_space.logDir()+'/crab.log')       
-        # self.bossUser.showConfigs()
-        taskid = ""
-        try:
-            taskid = common.taskDB.dict('BossTaskId')
-        except :
-            pass
-        self.bossTask = self.bossUser.makeBossTask(taskid)
-
-        try: 
-            self.boss_jobtype = cfg_params["CRAB.jobtype"]
-        except KeyError: 
-            msg = 'Error: jobtype not defined ...'
-            msg = msg + 'Please specify a jobtype in the cfg file'
-            raise CrabException(msg)
- 
-    #    # create additional classad file
-        self.schclassad = ''
-  
-        self.bossAdmin =  BossAdministratorSession(self.bossConfigDir, "0", common.work_space.logDir()+'/crab.log')
- 
-        try:
-            self.bossUser.clientID() # BOSS DB already setup
-        except:
-            try:
-                if (int(cfg_params["USER.use_central_bossdb"])==0):
-                    if ( self.bossTask.id() == "" ) :
-                        self.bossAdmin.configureDB()
-            except KeyError:
-                self.bossAdmin.configureDB()
-            pass
-
-        # check scheduler and jobtype registration in BOSS        
-        if (int(cfg_params.get("USER.use_boss_rt",0))==1): self.configRT_()
-
-        #self.checkSchedRegistration_(self.boss_scheduler_name)
-        self.checkJobtypeRegistration_(self.boss_jobtype) 
-        self.checkJobtypeRegistration_('crab')
-        # ONLY SQLITE!!! if DB has changed, the connection needs a reset
-        self.bossUser.resetDB()
+        self.return_data = cfg_params.get('USER.return_data',0)
         
-        return
-
-    ###################### ---- OK for Boss4 ds
-    def configBossDB_(self):
-        """
-        Configure Boss DB
-        """
-        # first I have to check if the db already esist
-        configClad = common.work_space.shareDir()+"/BossConfig.clad"
-        self.bossConfigDir = str(common.work_space.shareDir())
-        if ( not os.path.exists(configClad)  ) :
-            bossCfg = os.environ["HOME"]+"/.bossrc/BossConfig.clad"
-            shutil.copyfile(bossCfg,configClad)
-        boss_db_name = 'bossDB'
-        if os.path.isfile(self.bossConfigDir+boss_db_name) :
-            common.logger.debug(6,'BossDB already exist')
-        else:
-            common.logger.debug(6,'Creating BossDB in '+self.bossConfigDir+boss_db_name)
-
-            # First I have to create a SQLiteConfig.clad file in the proper directory
-            if not os.path.exists(self.bossConfigDir):
-                os.mkdir(self.bossConfigDir)
-            confSQLFileName = 'SQLiteConfig.clad'
-            confFile = open(self.bossConfigDir+'/'+confSQLFileName, 'w')
-            confFile.write('[\n')
-            confFile.write('SQLITE_DB_PATH = "'+self.bossConfigDir+'";\n')
-            confFile.write('DB_NAME = "'+boss_db_name+'";\n')
-            confFile.write('DB_TIMEOUT = 300;\n')
-            confFile.write(']\n')
-            confFile.close()
-
-            # then I have to run "bossAdmin configureDB"
-#            out = runBossCommand('bossAdmin configureDB',0)
-     
-        return
-
-    ###################### ---- OK for Boss4 ds
-    def configRT_(self): 
-        """
-        Configure Boss RealTime monitor
-        """
-
-        # check if RT is already configured
-        boss_rt_check = []
-        try:
-            boss_rt_check = self.bossUser.RTMons()
-        except:
-            pass
-        if 'mysql' not in boss_rt_check:
-            common.logger.debug(6,'registering RT monitor')
-            # First I have to create a SQLiteConfig.clad file in the proper directory
-            cwd = os.getcwd()
-            os.chdir(common.work_space.shareDir())
-            confSQLFileName = os.environ["HOME"]+'/.bossrc/MySQLRTConfig.clad'
-            confFile = open(confSQLFileName, 'w')
-
-            confFile.write('[\n')
-            # BOSS MySQL database file
-            confFile.write('DB_NAME = "boss_rt_v4_2";')
-            # Host where the MySQL server is running
-            confFile.write('DB_HOST = "boss.bo.infn.it";\n')
-            confFile.write('DB_DOMAIN = "bo.infn.it";\n')
-            # Default BOSS MySQL user and password
-            confFile.write('DB_USER = "BOSSv4_2manager";')
-            confFile.write('DB_USER_PW = "BossMySQL";\n')
-            # Guest BOSS MySQL user and password
-            confFile.write('DB_GUEST = "BOSSv4_2monitor";')
-            confFile.write('DB_GUEST_PW = "BossMySQL";\n')
-            # MySQL table type
-            confFile.write('TABLE_TYPE = "";\n')
-            # MySQL port
-            confFile.write('DB_PORT = 0;\n')
-            # MySQL socket
-            confFile.write('DB_SOCKET = "";\n')
-            # MySQL client flag
-            confFile.write('DB_CLIENT_FLAG = 0;\n')
-            confFile.write('DB_CONNECT_TIMEOUT = 30;\n')
-            confFile.write(']\n')
-            confFile.close()
-
-            # Registration of RealTime monitor
-            register_script = "MySQLRTMon.xml"
-            register_path = self.boss_dir + '/'
-            if os.path.exists(register_path+register_script):
-                try :
-                    self.bossAdmin.registerPlugins( register_path+register_script )
-                except BossError,e:
-                    common.logger.debug( 4, e.__str__() )
-                    msg = 'Problem with RealTime monitor registration\n'
-                    raise CrabException(msg)           
-            else:
-                msg = 'Warning: file '+ register_script + ' does not exist!\n'
-                raise CrabException(msg)
-            
-            os.chdir(cwd)
-        else:
-            common.logger.debug(6,'RT monitor already registered')
-            pass # RT already registered
-
-        return
-
-    ###################### ---- OK for Boss4 ds
-    def checkSchedRegistration_(self, sched_name): 
-        """
-        Verify scheduler registration.
-        """
-        ## we don't need to test this at every call:
-        if (self.schedRegistered.has_key(sched_name)): return
-
-        try :
-            register_path = self.boss_dir + '/'
-            register_boss_scheduler = string.upper(sched_name) + '.xml'
-            self.bossAdmin.registerPlugins( register_path+register_boss_scheduler )
-        except BossError,e:
-            msg = e.__str__() + '\nError: Problem with scheduler '+sched_name+' registration\n'
-            raise CrabException(msg)
-        
-        # sched registered
-        self.schedRegistered[sched_name] = 1
-        return
-
-
-    ###################### ---- OK for Boss4 ds
-    def checkJobtypeRegistration_(self, jobtype): 
-        """
-        Verify jobtype registration.
-        """
-        ## we don't need to test this at every call:
-        if (self.jobtypeRegistered.has_key(jobtype)): return
-
-        try :
-            register_path = self.boss_dir + '/'
-            register_boss_jobtype = string.upper(string.upper(jobtype)) + '.xml'
-            self.bossAdmin.registerPlugins( register_path+register_boss_jobtype )
-        except BossError,e:
-            msg = e.__str__() + '\nError: Problem with jobtype '+jobtype+' registration\n'
-            raise CrabException(msg)
-        
-        # jobtype registered
-        self.jobtypeRegistered[jobtype] = 1
         return
 
 #### End Boss Configuration
 
-    ###################### ---- OK for Boss4 ds
-    def declareJob_(self):                       #Changed For BOSS4
+    def declareJob_(self, nj):       
         """
         BOSS declaration of jobs
         """
-        try:
-            start = time.time()
-            self.bossTask.declare(common.work_space.shareDir()+'/'+self.boss_jobtype+'.xml')
-            stop = time.time()
-            # debug
-            msg = 'BOSS declaration:' + common.work_space.shareDir()+self.boss_jobtype+'.xml'
-            common.logger.debug(4,msg)
-            common.logger.write(msg)
-            msg = 'BOSS declaration took ' +str(stop-start)
-            common.logger.debug(1,msg)
-            common.logger.write(msg)
-        ###
-            self.Task_id = self.bossTask.id()
-            common.taskDB.setDict('BossTaskId',self.Task_id)
-            common.logger.debug(4,"TASK ID =  "+self.Task_id)
-            common.logger.write("TASK ID =  "+self.Task_id)
-     
-            # job counter, jobs in JobDB run from 0 - n-1
-            num_job = 0
-            task = self.bossTask.jobsDict()
-#            for k, v in task.iteritems():
-            for k in range(len(task)):
-                common.jobDB.setBossId(num_job, str(k + 1))
-                common.logger.debug(4,"CHAIN ID =  "+ str(k + 1) +" of job: "+str(num_job))
-                num_job += 1
-        except BossError,e:
-            common.logger.message(e.__str__())
-            raise CrabException(e.__str__())
+        index = nj - 1
+        job = common.job_list[index]
+        jbt = job.type()
+        base = jbt.name()
+
+        for id in range(nj):
+            parameters={}
+            jobs=[]
+            out=[] 
+            stdout = base +'_'+ str(id)+'.stdout'
+            stderr = base +'_'+ str(id)+'.stderr'
+            jobs.append(id)
+            out=common._db.queryJob('outputFiles',jobs)[0]
+            out.append(stdout)
+            out.append(stderr)
+            out.append('.BrokerInfo')
+            parameters['outputFiles']=out 
+            parameters['executable']=common._db.queryTask('scriptName') ## Should disappear... 
+                                                                        ## we'll have ONLY 'executable'  
+                                                                        ## as task field and not job field
+            parameters['standardOutput'] = stdout
+            parameters['standardError'] = stderr
+
+            common._db.updateJob_(id,parameters)
 
         return 
 
