@@ -166,8 +166,7 @@ class Creator(Actor):
         ####
         common.scheduler.declare(self.total_njobs ) 
 
-### This is temporary commented since there is a bosslite bug
-    #    common.scheduler.sched_parameter()
+        common.scheduler.sched_parameter()
 
         common.logger.message('Creating '+str(self.total_njobs)+' jobs, please wait...')
 
