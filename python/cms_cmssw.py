@@ -851,11 +851,11 @@ class Cmssw(JobType):
         #txt += '            echo "JobExitCode=10018" | tee -a $RUNTIME_AREA/$repo\n'
         #txt += '            dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
-        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        txt += '            job_exit_code=10018\n'
         txt += '        fi\n'
         txt += '    fi \n'
         #txt += '    exit 1 \n'
-        txt += '    fi \n'
+        txt += '    func_exit\n'
         txt += 'fi \n'
         txt += 'cd '+self.version+'\n'
         ########## FEDE FOR DBS2 ######################
@@ -913,7 +913,7 @@ class Cmssw(JobType):
             txt += 'PrimaryDataset=null\n'
             txt += 'DataTier=null\n'
             txt += 'ApplicationFamily=MCDataTier\n'
-        if self.pset != None: #CarlosDaniele
+        if self.pset != None: 
             pset = os.path.basename(job.configFilename())
             txt += '\n'
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
@@ -941,16 +941,14 @@ class Cmssw(JobType):
             txt += 'fi\n'
             pass
 
-        if self.pset != None: #CarlosDaniele
+        if self.pset != None:
             txt += '\n'
             txt += 'echo "***** cat pset.cfg *********"\n'
             txt += 'cat pset.cfg\n'
             txt += 'echo "****** end pset.cfg ********"\n'
             txt += '\n'
-            ### FEDE FOR DBS OUTPUT PUBLICATION
             txt += 'PSETHASH=`EdmConfigHash < pset.cfg` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
-            ##############
             txt += '\n'
         return txt
 
