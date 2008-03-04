@@ -133,16 +133,12 @@ class SchedulerGlite(SchedulerGrid):
         if self.EDG_requirements:
             if (not req == ' '): req = req +  ' && '
             req = req + self.EDG_requirements
-        sched_param=''
-        sched_param='""pippo""'
-
-        ### Temporary Problem with quote and py2sqlite.... under investigation..         
         for i in range(index):
-           # sched_param+='Requirements = ' + req +self.specific_req() + self.se_list(i) +\
-           #                                 self.ce_list() +';\n' ## BL--DS
-           # if self.EDG_addJdlParam: sched_param+=self.jdlParam() ## BL--DS
-           # if (self.rb_param_file): sched_param+=self.rb_param_file ## BL--DS
-           # print sched_param
+            sched_param=''
+            sched_param+='Requirements = ' + req +self.specific_req() + self.se_list(i) +\
+                                            self.ce_list() +';\n' ## BL--DS
+            if self.EDG_addJdlParam: sched_param+=self.jdlParam() ## BL--DS
+            if (self.rb_param_file): sched_param+=self.rb_param_file ## BL--DS
             run_jobReq={'schedulerAttributes':sched_param}## DS--BL
             common._db.updateRunJob_(i,run_jobReq)        
 
