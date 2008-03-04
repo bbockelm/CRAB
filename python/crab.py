@@ -95,12 +95,12 @@ class Crab:
         
         self.processOptions_(opts)
 
-        common._db = DBinterface() #BL--DS
 
+        common._db = DBinterface(self.cfg_params) #BL--DS
 
         if not self.flag_continue:
             self.createWorkingSpace_()
-            common._db.configureDB(self.cfg_params)
+            common._db.configureDB()
             optsToBeSaved={}
             optsToBeSavedDB={}
             for it in opts.keys():
@@ -112,7 +112,8 @@ class Crab:
                     # store in taskDB the opts
             common._db.createTask_(optsToBeSavedDB) #BL--DS
             common.work_space.saveConfiguration(optsToBeSaved, self.cfg_fname)
-            pass
+        else:  
+            common._db.loadDB()
 
         # At this point all configuration options have been read.
         
