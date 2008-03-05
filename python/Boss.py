@@ -32,8 +32,10 @@ class Boss:
         self.cfg_params = cfg_params
         self.schedulerName =  cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
 
-        #schedulerConfig = { 'name' : self.schedulerName}  ## ToDo BL-DS
-        schedulerConfig = { 'name' : 'SchedulerGLiteAPI' }
+        SchedMap = {'glitecoll':'SchedulerGLiteAPI'}         
+ 
+        schedulerConfig = { 'name' : SchedMap[self.schedulerName]}  ## To improve DS
+
         self.schedSession = BossLiteAPISched( common.bossSession, schedulerConfig)
 
         self.outDir = cfg_params.get("USER.outputdir", common.work_space.resDir() )
@@ -103,42 +105,43 @@ class Boss:
         Submit BOSS function.
         Submit one job. nj -- job number.
         """
-
-        try:
-            self.bossTask.submit(string.join(jobsList,','), schcladstring, "", "" , "", Tout)
-        except SchedulerError,e:
-            common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
-            common.logger.message(e.__str__())
-            pass
-        except BossError,e:
-            common.logger.message("Error : BOSS command failed with message:")
-            common.logger.message(e.__str__())
+        task = common._db.getTask()
+        #self.schedSession.submit( task, string.join(jobsList,','))
+        self.schedSession.submit( task)
+      #  try:
+      #  except SchedulerError,e:
+      #      common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
+      #      common.logger.message(e.__str__())
+      #      pass
+      #  except BossError,e:
+      #      common.logger.message("Error : BOSS command failed with message:")
+      #      common.logger.message(e.__str__())
         
-        jid=[]
-        bjid = []
-        self.bossTask.clear()
-        range = str(jobsList[0]) + ":" + str(jobsList[-1])
-        try:
-            self.bossTask.load(ALL, range)
-        except SchedulerError,e:
-            common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
-            common.logger.message(e.__str__())
-            pass
-        except BossError,e:
-            common.logger.message("Error : BOSS command failed with message:")
-            common.logger.message(e.__str__())
-        task = self.bossTask.jobsDict()
+      #  jid=[]
+      #  bjid = []
+      #  self.bossTask.clear()
+      #  range = str(jobsList[0]) + ":" + str(jobsList[-1])
+      #  try:
+      #      self.bossTask.load(ALL, range)
+      #  except SchedulerError,e:
+      #      common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
+      #      common.logger.message(e.__str__())
+      #      pass
+      #  except BossError,e:
+      #      common.logger.message("Error : BOSS command failed with message:")
+      #      common.logger.message(e.__str__())
+      #  task = self.bossTask.jobsDict()
     
-        for k, v in task.iteritems():
-            if (v["STATUS"] != 'W'):
-                jid.append(v["SCHED_ID"])
-                bjid.append(k)
-            pass
+      #  for k, v in task.iteritems():
+      #      if (v["STATUS"] != 'W'):
+      #          jid.append(v["SCHED_ID"])
+      #          bjid.append(k)
+      #      pass
           #  if (v["STATUS"] == 'S'):
           #      jid.append(v["SCHED_ID"])
           #      bjid.append(k)
           #  pass
-        return jid, bjid
+        return #jid, bjid
 
     ###################### ---- OK for Boss4 ds
     def moveOutput(self, int_id):
