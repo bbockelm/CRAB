@@ -196,3 +196,23 @@ class DBinterface:
             common.bossSession.getRunningInstance(task.jobs[i])
             lines.append(task.jobs[i].runningJob[attr])
         return lines
+
+    def queryDistJob(self, attr):
+        '''
+        Returns the list of distinct value for a given job attributes 
+        '''
+        distAttr=[]
+        task = common.bossSession.loadJobDistAttr( 1, attr ) 
+        for i in task: distAttr.append(i[attr])   
+        return  distAttr
+
+    def queryAttrJob(self, attr, field):
+        '''
+        Returns the list of jobs matching the given attribute
+        '''
+        matched=[]
+        task = common.bossSession.loadJobsByAttr(attr ) 
+        for i in task:
+            matched.append(i[field])
+        return  matched
+
