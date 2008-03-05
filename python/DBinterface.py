@@ -40,6 +40,11 @@ class DBinterface:
         common.bossSession = BossLiteAPI( self.db_type, dbConfig)
         
         return
+ 
+    def getTask(self): 
+
+        self.task = common.bossSession.loadTaskByID(1)
+        return self.task
 
 
 
@@ -206,6 +211,14 @@ class DBinterface:
         for i in task: distAttr.append(i[attr])   
         return  distAttr
 
+    def queryDistJobHadr(self, attr_1, attr_2, list):
+        '''
+        Returns the list of distinct value for a given job attributes 
+        '''
+        distAttr=[]
+        task = common.bossSession.loadJobDistAttrHadr( 1, attr_1, attr_2, list ) 
+        for i in task: distAttr.append(i[attr_1])   
+        return  distAttr
     def queryAttrJob(self, attr, field):
         '''
         Returns the list of jobs matching the given attribute
