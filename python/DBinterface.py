@@ -111,9 +111,9 @@ class DBinterface:
         """
         task = common.bossSession.loadTaskByID(1)
         #task = common.bossSession.loadTaskByName( common.work_space.taskName())
-        common.bossSession.getRunningInstance(task.jobs[nj])
+        common.bossSession.getRunningInstance(task.jobs[nj-1])
         for key in optsToSave.keys():
-            task.jobs[nj].runningJob[key] = optsToSave[key]
+            task.jobs[nj-1].runningJob[key] = optsToSave[key]
         common.bossSession.updateDB( task )
         return 
 
@@ -198,8 +198,8 @@ class DBinterface:
         task = common.bossSession.loadTaskByID(1)
        # task = common.bossSession.loadTaskByName( common.work_space.taskName() )
         for i in jobs:
-            common.bossSession.getRunningInstance(task.jobs[i])
-            lines.append(task.jobs[i].runningJob[attr])
+            common.bossSession.getRunningInstance(task.jobs[i-1])
+            lines.append(task.jobs[i-1].runningJob[attr])
         return lines
 
     def queryDistJob(self, attr):
@@ -207,16 +207,16 @@ class DBinterface:
         Returns the list of distinct value for a given job attributes 
         '''
         distAttr=[]
-        task = common.bossSession.loadJobDistAttr( 1, attr ) 
+        task = common.bossSession.loadJobDist( 1, attr ) 
         for i in task: distAttr.append(i[attr])   
         return  distAttr
 
-    def queryDistJobHadr(self, attr_1, attr_2, list):
+    def queryDistJob_Attr(self, attr_1, attr_2, list):
         '''
         Returns the list of distinct value for a given job attributes 
         '''
         distAttr=[]
-        task = common.bossSession.loadJobDistAttrHadr( 1, attr_1, attr_2, list ) 
+        task = common.bossSession.loadJobDistAttr_Attr( 1, attr_1, attr_2, list ) 
         for i in task: distAttr.append(i[attr_1])   
         return  distAttr
     def queryAttrJob(self, attr, field):

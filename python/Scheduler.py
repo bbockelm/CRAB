@@ -163,13 +163,14 @@ class Scheduler :
     def submit(self,list):
         """ submit to scheduler a list of jobs """
         if (not len(list)): common.logger.message("No sites where to submit jobs")
-        Tout = int(self.tOut(list))
-        jobsList = list[1]
-        schcladstring = ''
-        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(list[0])+'.clad'# TODO add a check is file exist
-        if os.path.isfile(self.schclassad):  
-            schcladstring=self.schclassad
-        jid, bjid = self.boss().submit(jobsList, schcladstring, Tout)
+       # Tout = int(self.tOut(list))
+        Tout =10
+     #   jobsList = list[1]
+     #   schcladstring = ''
+     #   self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(list[0])+'.clad'# TODO add a check is file exist
+     #   if os.path.isfile(self.schclassad):  
+     #      schcladstring=self.schclassad
+        self.boss().submit(list)
         
         return jid, bjid
 

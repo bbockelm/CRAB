@@ -34,7 +34,13 @@ class Boss:
 
         SchedMap = {'glitecoll':'SchedulerGLiteAPI'}         
  
-        schedulerConfig = { 'name' : SchedMap[self.schedulerName]}  ## To improve DS
+     #   schedulerConfig = { 'name' : SchedMap[self.schedulerName]}  ## To improve DS
+        ### Just temporary DS--BL
+        schedulerConfig = {
+              'name' : 'SchedulerGLiteAPI',
+              'service' :'https://wms104.cern.ch:7443/glite_wms_wmproxy_server',
+              'config' : '/afs/cern.ch/user/s/spiga/scratch0/WorkingDir/glite.conf.CMS_CNAF'
+              }
 
         self.schedSession = BossLiteAPISched( common.bossSession, schedulerConfig)
 
@@ -100,14 +106,14 @@ class Boss:
             raise CrabException("ERROR: listMatch failed with message " + e.__str__())
         return CEs
   
-    def submit(self, jobsList, schcladstring, Tout):
+    def submit(self, jobsList):
         """
         Submit BOSS function.
         Submit one job. nj -- job number.
         """
         task = common._db.getTask()
         #self.schedSession.submit( task, string.join(jobsList,','))
-        self.schedSession.submit( task)
+        self.schedSession.submit( task, jobsList)
       #  try:
       #  except SchedulerError,e:
       #      common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
