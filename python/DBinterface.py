@@ -46,17 +46,21 @@ class DBinterface:
         self.task = common.bossSession.loadTaskByID(1)
         return self.task
 
+    def getJob(self, n): 
+
+        self.job = common.bossSession.loadJobByID(1,n)
+        return self.job
 
 
     def createTask_(self, optsToSave):       
         """
         Task declaration
         with the first coniguration stuff 
- 	 {'server_name': 'crabas.lnl.infn.it/data1/cms/', '-scheduler': 'glite', '-jobtype': 'cmssw', '-server_mode': '0'}
+        {'server_name': 'crabas.lnl.infn.it/data1/cms/', '-scheduler': 'glite', '-jobtype': 'cmssw', '-server_mode': '0'}
 
         """
         opt={}
-        if optsToSave['server_mode'] == 1: opt['serverName']=optsToSave['server_name'] 
+        opt['serverName']=optsToSave.get('server_name',0)
         opt['jobType']=optsToSave['jobtype']  
         opt[ 'name']=common.work_space.taskName()  
      	task = Task( opt )
@@ -86,7 +90,7 @@ class DBinterface:
         jobs = [] 
         for id in range(nj):
             parameters = {}
-            parameters['name'] = 'job' + str(id)
+            parameters['name'] = id
             job = Job(parameters)
             jobs.append(job)    
         task.addJobs(jobs)
@@ -216,9 +220,10 @@ class DBinterface:
         Returns the list of distinct value for a given job attributes 
         '''
         distAttr=[]
-        task = common.bossSession.loadJobDistAttr_Attr( 1, attr_1, attr_2, list ) 
+        task = common.bossSession.loadJobDistAttr( 1, attr_1, attr_2, list ) 
         for i in task: distAttr.append(i[attr_1])   
         return  distAttr
+
     def queryAttrJob(self, attr, field):
         '''
         Returns the list of jobs matching the given attribute

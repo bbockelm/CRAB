@@ -32,17 +32,24 @@ class Boss:
         self.cfg_params = cfg_params
         self.schedulerName =  cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
 
-        SchedMap = {'glitecoll':'SchedulerGLiteAPI'}         
- 
      #   schedulerConfig = { 'name' : SchedMap[self.schedulerName]}  ## To improve DS
         ### Just temporary DS--BL
-        schedulerConfig = {
+        schedulerConfigGlite = {
               'name' : 'SchedulerGLiteAPI',
               'service' :'https://wms104.cern.ch:7443/glite_wms_wmproxy_server',
               'config' : '/afs/cern.ch/user/s/spiga/scratch0/WorkingDir/glite.conf.CMS_CNAF'
               }
 
-        self.schedSession = BossLiteAPISched( common.bossSession, schedulerConfig)
+        schedulerConfigLsf = {
+              'name' : 'SchedulerLsf',
+              'service' :'',
+              'config' : ''
+              }
+
+        SchedMap = {'glitecoll': schedulerConfigGlite,
+                    'lsf': schedulerConfigLsf}
+
+        self.schedSession = BossLiteAPISched( common.bossSession, SchedMap[self.schedulerName])
 
         self.outDir = cfg_params.get("USER.outputdir", common.work_space.resDir() )
         self.logDir = cfg_params.get("USER.logdir", common.work_space.resDir() )
@@ -111,9 +118,14 @@ class Boss:
         Submit BOSS function.
         Submit one job. nj -- job number.
         """
+        # job = common._db.getJob(jobsList)
+        # #self.schedSession.submit( task, string.join(jobsList,','))
+        # self.schedSession.submit( job, jobsList)
+
         task = common._db.getTask()
         #self.schedSession.submit( task, string.join(jobsList,','))
         self.schedSession.submit( task, jobsList)
+
       #  try:
       #  except SchedulerError,e:
       #      common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")

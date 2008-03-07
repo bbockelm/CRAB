@@ -431,7 +431,6 @@ class SchedulerGrid(Scheduler):
         """
         # for job in task.jobs :
         #    bossSession.getRunningInstance( job, req )
-        #     ove req è del tipo
         #     {'requirements' : str_req }
         #     { 'fileBlock' : ..., 'dlsDestination' : ..., 'schedulerAttributes': str_req  }
 

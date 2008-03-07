@@ -21,7 +21,7 @@ class SchedulerLocal(Scheduler) :
 
         if (cfg_params.has_key(self.name()+'.env_id')): self.environment_unique_identifier = cfg_params[self.name()+'.env_id']
 
-        self._taskId = common.taskDB.dict('taskId')
+        self._taskId = common._db.queryTask('name')  ## DS--BL 
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
 
@@ -57,7 +57,7 @@ class SchedulerLocal(Scheduler) :
             msg='Unkown domain name. Cannot use local scheduler'
             raise CrabException(msg)
         localDomainName = string.split(tmp,'.',1)[-1]
-        common.taskDB.setDict('localSite',localDomainName)
+        #common.taskDB.setDict('localSite',localDomainName)
         ## is this ok?
         cfg_params['EDG.se_white_list']=localDomainName
         common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")

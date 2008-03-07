@@ -23,9 +23,25 @@ class SchedulerLsf(SchedulerLocal) :
     def configure(self, cfg_params):
         SchedulerLocal.configure(self, cfg_params)
         self.environment_unique_identifier = "https://"+common.scheduler.name()+":/${LSB_BATCH_JID}-"+ \
-            string.replace(common.taskDB.dict('taskId'),"_","-")
+            string.replace(common._db.queryTask('name'),"_","-")
 
         return
+
+    def sched_parameter(self):
+        """
+        Returns parameter scheduler-specific, to use with BOSS .
+        """
+        index = int(common._db.nJobs()) - 1
+
+        for i in range(index): # Add loop DS
+
+            sched_param= ''
+            if (self.queue):
+                sched_param += '-q '+self.queue +' '
+                if (self.res): sched_param += ' -R '+self.res +' '
+            pass
+            run_jobReq={'schedulerAttributes':sched_param}## DS--BL
+            common._db.updateRunJob_(i,run_jobReq)        
 
     def loggingInfo(self, id):
         """ return logging info about job nj """

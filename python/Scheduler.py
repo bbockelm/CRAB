@@ -47,35 +47,7 @@ class Scheduler :
         """
         Returns parameter scheduler-specific, to use with BOSS .
         """
-        index = int(common.jobDB.nJobs()) - 1
-        job = common.job_list[index]
-        jbt = job.type()
-
-        lastBlock=-1
-        first = []
-        for n in range(common.jobDB.nJobs()):
-            currBlock=common.jobDB.block(n)
-            if (currBlock!=lastBlock):
-                lastBlock = currBlock
-                first.append(n)
-
-        req = ''
-        req = req + jbt.getRequirements()
-
-        for i in range(len(first)): # Add loop DS
-            groupReq = req
-            self.param='sched_param_'+str(i)+'.clad'
-            param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
-
-            param_file.write('foo = bar;\n') ## Boss complain for empty clad
-            if (self.queue):
-                param_file.write('queue = '+self.queue +';\n')
-                if (self.res): param_file.write('requirement = '+self.res +';\n')
-            pass
-
-            param_file.close()
-        pass
-        return 
+        return ''
 
     def wsSetupEnvironment(self):
         """
@@ -172,7 +144,7 @@ class Scheduler :
      #      schcladstring=self.schclassad
         self.boss().submit(list)
         
-        return jid, bjid
+        return
 
     def queryDetailedStatus(self, id):
         """ Query a detailed status of the job with id """

@@ -136,7 +136,7 @@ class Creator(Actor):
             self.job_type.setArgsList(argsList)
 
             run_jobToSave = {'status' :'C'}
-#            common._db.updateRunJob_(nj, run_jobToSave ) ## New BL--DS
+            common._db.updateRunJob_(nj, run_jobToSave ) ## New BL--DS
 
             outputSandbox=self.job_type.outputSandbox(nj)
             # check if out!=err
