@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.3 2008/01/10 09:12:25 mcinquil Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.4 2008/01/28 15:14:30 mcinquil Exp $"
+__version__ = "$Revision: 1.4 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -21,6 +21,10 @@ from TaskQueue import *
 # module from TaskTracking component
 from TaskTracking.UtilSubject import UtilSubject
 from TaskTracking.TaskStateAPI import getStatusUUIDEmail
+
+# SE_API
+from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
+from ProdCommon.Storage.SEAPI.SElement import SElement
 
 import os
 import time
@@ -62,6 +66,9 @@ class TaskLifeManagerComponent:
         self.args.setdefault("taskLife", "360:00:00")
 	self.args.setdefault("eMailAdmin", os.environ['USER'])
         self.args.setdefault("pollingTimeCheck", 10*60)
+        self.args.setdefault("Protocol", "local")
+        self.args.setdefault("SEHostname", "localhost")
+        self.args.setdefault("SEPort", None)
         # update parameters
         self.args.update(args)
 
@@ -82,6 +89,14 @@ class TaskLifeManagerComponent:
         # message service instances
         self.ms = None
 
+        # initializing SBinterface
+        storage = SElement( \
+                            self.args["SEHostname"],
+                            self.args["Protocol"], \
+                            self.args["SEPort"] \
+                          )
+        self.SeSbI = SBinterface(storage)
+
         #######################
         ## args constraints ##
         #####################
@@ -89,15 +104,14 @@ class TaskLifeManagerComponent:
         if self.args['dropBoxPath'] == None:
             self.args['dropBoxPath'] = self.args['ComponentDir']
         logging.info("Using " +str(self.args['dropBoxPath']))
+
         # minimum space available
-        if int(self.args['levelAvailable']) < 6 :
+        if int(self.args['levelAvailable']) < 5:
 	    logging.info("Configuration porblem")
             logging.info("  Too high value for [levelAvailable];")
-            logging.info("  setting to default (85%).")
-            self.args['levelAvailable'] = 6
-        # minimum task life length
-        #if int(self.args['taskLife'].split(":", 1)[0]) < 48:
-        #    self.args['taskLife'] = "48:00:00"
+            logging.info("  setting to default (15%).")
+            self.args['levelAvailable'] = 15
+
         logging.info(" Setting task life time at: "\
                           + self.args['taskLife'].split(":", 1)[0] + "hours "\
                           + self.args['taskLife'].split(":", 2)[1] + "mins "\
@@ -158,7 +172,7 @@ class TaskLifeManagerComponent:
         #######################
         # New Task Arrival
         # inserting on task queue
-        if event == "DropBoxGuardianComponent:NewFile" or\
+        if event == "CRAB_Cmd_Mgr:NewTask" or \
                event == "TaskLifeManager::TaskToMange":
             try:
                 if payload.split(".")[-1] != "xml" and payload.split(".")[1] != "tgz":
@@ -208,18 +222,18 @@ class TaskLifeManagerComponent:
         """
         own = " "
         mail = " " 
-        taskPath = self.args['dropBoxPath'] + "/" + taskName + "/res/"
+        taskPath = self.args['dropBoxPath'] + "/" + taskName + "_spec"
         try:
             import xml.dom.minidom
             import xml.dom.ext
-            if os.path.exists(taskPath + "xmlReportFile.xml"):
+            from os.path import join
+            if self.SeSbI.checkExists( join(taskPath, "xmlReportFile.xml")):
                 fileXml = None
                 try:
-                    from os.path import join
-                    fileXml = open(taskPath + "xmlReportFile.xml", "r")
+                    fileXml = open( join(taskPath, "xmlReportFile.xml"), "r")
                     doc  = xml.dom.minidom.parse( \
-                                        join(taskPath, "xmlReportFile.xml")\
-                                                   )
+                                        join(taskPath, "xmlReportFile.xml") \
+                                                 )
                     own  = doc.childNodes[0].childNodes[1].getAttribute("owner")
                     mail = doc.childNodes[0].childNodes[1].getAttribute("email")
                     fileXml.close()
@@ -278,21 +292,7 @@ class TaskLifeManagerComponent:
         _getDirSpace_
         """
         try:
-            summ = 0
-            from os.path import join, getsize
-            for path, dirs, files in os.walk( taskPath, topdown=False):
-                for name in files:
-                    try:
-                        summ += getsize ( join( path, name) )
-                    except OSError:
-                        continue
-                for name in dirs:
-                    try:
-                        summ += getsize ( join( path, name) )
-                    except OSError:
-                        continue
-            summ += getsize(taskPath)
-            return summ
+            return self.SeSbI.getDirSpace(taskPath)
         except Exception, ex:
             import traceback
             logging.error( "Exception raised: " +str(ex) )
@@ -304,35 +304,28 @@ class TaskLifeManagerComponent:
         """
         _checkGlobalSpace_
         """
-        cmd = "df " + self.args['dropBoxPath'] + " | awk '{ print $5,$4,$3 }'"
-        stdin, stdout, stderr = os.popen3( cmd )
-        if stderr.read()=='':
+        out = self.SeSbI.getGlobalSpace(self.args['dropBoxPath'])
+        logging.info ( str(out) )
+        numberUsed = int(out[0].split("%")[0])
+        spaceAvail = int(out[1])
+        spaceUsed = int(out[2])
+        tmpAvail = 100-numberUsed
+        logging.info (" [Used Space is " + str(numberUsed) + "%]")
+        logging.info (" [Avail Space is " + str(tmpAvail) + "%]")
 
-            import string
-            output = string.lower(stdout.read())
-            numberUsed = int(output.split("\n")[1].split("%")[0])
-            spaceAvail = int(output.split("\n")[1].split("%")[1].split(" ")[1])
-            spaceUsed = int(output.split("\n")[1].split("%")[1].split(" ")[2])
+        lev = int(self.args['levelAvailable'])
 
-            tmpAvail = 100-numberUsed
-            logging.info (" [Used Space is " + str(numberUsed) + "%]")
-            logging.info (" [Avail Space is " + str(tmpAvail) + "%]")
+        toliberate = 0
+        if  tmpAvail <= lev:
+            percentagetoliber = lev - tmpAvail
+            toliberate = (spaceAvail+spaceUsed)*percentagetoliber/100
 
-            lev = int(self.args['levelAvailable'])
-
-            toliberate = 0
-
-            if  tmpAvail <= lev:
-                percentagetoliber = lev - tmpAvail
-                toliberate = (spaceAvail+spaceUsed)*percentagetoliber/100
-
-                logging.info(" [Need to clean " + str(toliberate) + "]")
-                logging.info("   [" + str(percentagetoliber) + "%]")
-             
-
-                return 1, numberUsed, toliberate
-            else:
-                return 0, numberUsed, toliberate
+            logging.info(" [Need to clean " + str(toliberate) + "]")
+            logging.info("   [" + str(percentagetoliber) + "%]")
+         
+            return 1, numberUsed, toliberate
+        else:
+            return 0, numberUsed, toliberate
 
 
     def deleteTask( self, taskPath ):
@@ -344,16 +337,8 @@ class TaskLifeManagerComponent:
         summ = 0
         if taskPath != "/" and taskPath != self.args['dropBoxPath']:
             try:
-                from os.path import join, getsize
-                for path, dirs, files in os.walk( taskPath, topdown=False):
-                    for name in files:
-                        summ += getsize ( join( path, name) )
-                        os.remove( join( path, name) )
-                    for name in dirs:
-                        summ += getsize ( join( path, name) )
-                        os.rmdir( join( path, name) )
-                summ += getsize(taskPath)
-                os.rmdir( taskPath )
+                summ = self.SeSbI.getDirSpace(taskPath)
+                self.SeSbI.delete( taskPath )
             except Exception, ex: ### 2 IMPROVE!!!! ##
                 import traceback
                 logging.error( str(traceback.format_exc()) )
@@ -374,13 +359,15 @@ class TaskLifeManagerComponent:
         dBox = self.args['dropBoxPath']
         from os.path import join
         pathTask = join(dBox, taskName)
-        if os.path.exists( pathTask ):
+        if self.SeSbI.checkExists( pathTask ):
             logging.debug("removing task '" + pathTask + "' ...")
             try:
                 summ = self.deleteTask( pathTask )
-                if not os.path.exists( pathTask ):
+                if not self.SeSbI.checkExists( pathTask ):
                     logging.debug( "removed " + str(summ) + " bytes.")
                     return summ
+                else:
+                    logging.error( "could not remove task ["+taskName+"]!")
             except Exception, ex:
                 import traceback
                 logging.error( "Exception rasied: " +str(ex) )
@@ -406,15 +393,16 @@ class TaskLifeManagerComponent:
             from os.path import isdir, join
             taskPath = join( self.args['dropBoxPath'], taskName )
             ## checks if is already unpacked
-            if isdir( taskPath ):
+            if isdir( taskPath + "_spec" ):
                 ## getting user info
                 owner, mail = self.checkInfoUser( taskName )
                 if owner is None and mail is None:
                     ############################
                     ### auto-registering msg ###
                     ##  to wait task unpack.  ##
-                    self.unpackingTask( taskName )
+                    #  self.unpackingTask( taskName )
                     ############################
+                    pass
                 ############################
                 ### creating Task object ###
                 ##  & inserting on queue  ##
@@ -449,9 +437,9 @@ class TaskLifeManagerComponent:
             self.insertTaskWrp( taskName, time.time() )
         else:
             from os.path import isdir, join
-            taskPath = join( self.args['dropBoxPath'], taskName )
+            taskPath = join( self.args['dropBoxPath'], taskName + "_spec" )
             ## checks if is already unpacked
-            if isdir( taskPath ):
+            if isdir( taskPath + "_spec" ):
                 ## retrieving the object from the queue
                 task = self.taskQueue.getbyName( taskName )
                 ## updating the endedtime for the object
@@ -549,12 +537,13 @@ class TaskLifeManagerComponent:
         """
         _buildDropBox_
         """
-        tasks = os.listdir(self.args['dropBoxPath'])
+        tasks = self.SeSbI.getList(self.args['dropBoxPath'])
         logging.info( "   building the drop_box directory..." )
-        for task in tasks:
-            if task.find("crab_") != -1:
-                self.insertTaskWrp( task )
-        self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
+        if tasks != None and tasks != []:
+            for task in tasks:
+                if task.find("crab_") != -1:
+                    self.insertTaskWrp( task )
+            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
 
     ##########################################################################
     # checks over the queues
@@ -638,7 +627,7 @@ class TaskLifeManagerComponent:
 
     def notifyCleaning( self, taskName, toLive, owner, mails ):
         """
-        _unpackingTask_
+        __
 
         Trasmit the event "TaskLifeManager:TaskNotifyLife"
         """
@@ -654,8 +643,8 @@ class TaskLifeManagerComponent:
 
         if owner is None or mails is None:
             owner, mails = self.checkInfoUser(taskName)
-
-        payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ owner +"::"+ str(mails)
+        
+        payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ str(owner) +"::"+ str(mails)
 
         logging.info(" Publishing ['"+ mexage +"']")
         logging.info("   payload = " + payload )
@@ -709,7 +698,7 @@ class TaskLifeManagerComponent:
         self.ms.subscribeTo("TaskLifeManager:EndDebug")
         self.ms.subscribeTo("TaskLifeManager::poll")
 	self.ms.subscribeTo("TaskTracking:TaskEnded")
-        self.ms.subscribeTo("DropBoxGuardianComponent:NewFile")
+        self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
         self.ms.subscribeTo("TaskLifeManager::TaskToMange")
         self.ms.subscribeTo("TaskLifeManager::PrintTaskInfo")
 
