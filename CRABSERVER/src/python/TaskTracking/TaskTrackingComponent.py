@@ -15,7 +15,7 @@ import re
 
 # Blite API import
 from ProdCommon.BossLite.API.BossLiteAPI import  BossLiteAPI
-from ProdCommon.BossLite.Common.Exceptions import TaskError
+from ProdCommon.BossLite.Common.Exceptions import TaskError, JobError
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -118,7 +118,8 @@ class TaskTrackingComponent:
  
         # init crab.cfg name
         self.crabcfg = "crab.cfg"
-	self.resSubDir = "res/"
+	self.resSubDir = "" #"res/"
+        self.workAdd = "_spec/"
         self.xmlReportFileName = "xmlReportFile.xml"
         self.tempxmlReportFile = ".tempxmlReportFileName"
         self.mutex = Condition()
@@ -158,7 +159,7 @@ class TaskTrackingComponent:
         from InternalLoggingInfo import InternalLoggingInfo
 
         dbgInfo = InternalLoggingInfo()
-        path2Wr = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
+        path2Wr = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
         #logging.info("Appending: \n\n" + message + "\n\n")
         dbgInfo.appendLoggingInfo( path2Wr, "***"+str(time.asctime())+"***\n" + message )
         del dbgInfo
@@ -194,8 +195,10 @@ class TaskTrackingComponent:
         # new task to insert
 	#if event == "DropBoxGuardianComponent:NewFile":
         if event == "CRAB_Cmd_Mgr:NewTask":
+            logging.info( event )
+            logging.info( payload )
 	    if payload != None or payload != "" or len(payload) > 0:
-                taskName = payload.split("::")[2]
+                #taskName = payload.split("::")[2]
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__logToBuf__(logBuf, "NewTask: %s" % taskName)
 		logBuf = self.__logToBuf__(logBuf, taskName)
@@ -409,30 +412,6 @@ class TaskTrackingComponent:
     # read task config file
     ##########################################################################
 
-    def parseCrabCfg( self, text, section, var ):
-        """
-        _parseCrabCfg_
-        """
-        sectionFound = False
-        for line in text.split("\n"):
-            line = line.strip()
-            comment = line.find("#")
-            if comment > -1:
-                line = line[:comment]
-            if line:
-                if not sectionFound:
-                    if line == "["+section+"]":
-                        sectionFound = True
-                        continue
-                else:
-                    if line[0] == "[" and line[-1] == "]":
-                        sectionFound = False # Found a new section. Current correct section finished.
-                    else:
-                        line = line.split("=") # Splitting variable name from its value.
-                        if len(line) == 2 and line[0].strip() == var:
-                            return line[1].strip()
-        return None
-
 
     def readInfoCfg(self, path):
         """
@@ -440,12 +419,12 @@ class TaskTrackingComponent:
 
         read informations from the config files
         """
-        pathFile = path + "/share/" + self.crabcfg
+        #pathFile = path + "/share/" + self.crabcfg
         eMail = None
         thresholdLevel = None
-        if os.path.exists( pathFile ):
-            eMail = self.parseCrabCfg(open(pathFile).read(), "USER", "eMail")
-            thresholdLevel = self.parseCrabCfg(open(pathFile).read(), "USER", "thresholdLevel")
+        #if os.path.exists( pathFile ):
+        #    eMail = self.parseCrabCfg(open(pathFile).read(), "USER", "eMail")
+        #    thresholdLevel = self.parseCrabCfg(open(pathFile).read(), "USER", "thresholdLevel")
         return eMail, thresholdLevel
 
 
@@ -518,7 +497,7 @@ class TaskTrackingComponent:
         fields = payload.split("::")
         taskName = fields[0]
         totJobs = int(fields[1])
-        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
+        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
         jobList = []
         if status == self.taskState[7]:
             jobList = eval( fields[2] )
@@ -637,7 +616,7 @@ class TaskTrackingComponent:
 	    strEmail += str(mail) + ","
 	TaskStateAPI.updatingNotifiedPA( taskName, 2 )
         if status == self.taskState[2]:
-            self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + taskName  + "/res/" + self.xmlReportFileName, taskName )
+            self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + taskName + self.workAdd + self.resSubDir + self.xmlReportFileName, taskName )
         elif status == self.taskState[7]:
             self.taskIncompleteSubmission(origTaskName, strEmail[0:len(strEmail)-1], userName)
         else:
@@ -685,7 +664,7 @@ class TaskTrackingComponent:
         """
         _prepareReport_
         """
-        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
+        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
 
         if os.path.exists( pathToWrite ):
             ###  get user name & original task name  ###
@@ -964,27 +943,34 @@ class TaskTrackingComponent:
                             taskObj = mySession.loadTaskByName( taskName )
                         except TaskError, te:
                             taskObj = None
-                            pass #logBuf = self.__logToBuf__(logBuf, str(te))
+                            pass 
                         if taskObj is None:
                             logBuf = self.__logToBuf__(logBuf, "Unable to retrieve task [%s]. Causes: loadTaskByName"%(taskName))
                             logBuf = self.__logToBuf__(logBuf,"  Requested task [%s] does not exist."%(taskName) )
                         else:
                             logBuf = self.__logToBuf__(logBuf, " - - - - - - - ")
-                            logBuf = self.__logToBuf__(logBuf, taskName + " ["+str(status)+"] - num.: " + str(len(taskDict)))
+                            logBuf = self.__logToBuf__(logBuf, " *" + taskName + "*:")
 
 			    pathToWrite = ""
 			    dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
 			    countNotSubmitted = 0 
 			    dictStateTot = {}
+                            numJobs = len(taskObj.jobs)
                             
                             for jobbe in taskObj.jobs:
-                                mySession.getRunningInstance(jobbe)
-                                job = jobbe.runningJob['jobId']
+                                try:
+                                    mySession.getRunningInstance(jobbe)
+                                except JobError, ex:
+                                    logging.error('Problem loading job running info')
+                                    break
+                                job   = jobbe.runningJob['jobId']
                                 stato = jobbe.runningJob['status']
-                                sId = jobbe.runningJob['schedulerId']
-                                jec = jobbe.runningJob['wrapperReturnCode']
-                                eec = jobbe.runningJob['applicationReturnCode']
-                                site = jobbe.runningJob['destination'].split("://")[1].split("/")[0]
+                                sId   = jobbe.runningJob['schedulerId']
+                                jec   = jobbe.runningJob['wrapperReturnCode']
+                                eec   = jobbe.runningJob['applicationReturnCode']
+                                site  = ""
+                                if jobbe.runningJob['destination'] != None:
+                                    site  = jobbe.runningJob['destination'].split("://")[1].split("/")[0]
  
                                 try:
                                     self.mutex.acquire()
@@ -1072,11 +1058,11 @@ class TaskTrackingComponent:
 			    endedJob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed']
 
 			    try:
-			        percentage = (100 * endedJob) / len(statusJobsTask)
-			        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir
+			        percentage = (100 * endedJob) / numJobs
+			        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
 
                                 if os.path.exists( pathToWrite ):
-                                    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, len(statusJobsTask), 1 )
+                                    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, numJobs, 1 )
                                 else:
                                     logBuf = self.__logToBuf__(logBuf, "Error: the path " + pathToWrite + " does not exist!\n")
                                 succexo = 0
