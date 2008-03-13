@@ -8,9 +8,11 @@ import time
 import getopt
 import urllib
 import pickle
+import zlib
 
 import logging
 from logging.handlers import RotatingFileHandler
+import traceback
 
 from ProdAgentCore.Configuration import loadProdAgentConfiguration
 from MessageService.MessageService import MessageService
@@ -25,15 +27,17 @@ class CRAB_AS_beckend:
     """    
     def __init__(self):
         # load balancing feature. Use an integer, useful for future developments
-        self.go_on_accepting_load = 1 # True 
+        self.go_on_accepting = 1 # True
         #
         self.args = {}
         self.args["maxCmdAttempts"] = '5'
         self.cmdAttempts = int(self.args["maxCmdAttempts"])
+        self.args['resourceBroker'] = 'CERN'
+
         self.ms = None
         self.jabber = None
         self.log = None
-        self.args.update( self.initArgs() )
+        self.initArgs()
 
         self.args['ComponentDir'] = os.path.expandvars(self.args['ComponentDir'])
         self.wdir = self.args['ComponentDir']
@@ -44,12 +48,17 @@ class CRAB_AS_beckend:
         self.initLogging()
         self.log.debug("wdir: %s, attempts: %s commands"%(self.wdir, self.cmdAttempts))
 
-        self.initMessaging()
+        self.ms = MessageService()
+        self.ms.registerAs("CRAB_CmdMgr")
+        self.log.info("Front-end message service created")
+
         self.initWLoadJabber()
         self.initUiConfigs()
 
         self.log.info("Python gateway loaded ...")
         self.log.info("CRAB Server gateway service working directory: %s"%self.wdir)
+
+        self.log.info("Waiting for RPC...")
         pass
 
 ################################
@@ -61,19 +70,18 @@ class CRAB_AS_beckend:
         Read the XML configuration of the server and parse the required data        
         """
 
-        tmp_args = {}
         try:
             config = loadProdAgentConfiguration()
-            tmp_args.update( config.getConfig("CRAB_CmdMgr") )
-            tmp_args.update( config.getConfig("CrabServerConfigurations") )            
+            self.args.update( config.getConfig("CommandManager") )
+            self.args.update( config.getConfig("CrabServerConfigurations") )            
         except StandardError, ex:
             msg = "Error reading configuration:\n"
             msg += str(ex)
             raise RuntimeError, msg
             sys.exit(-1)
 
-        tmp_args['ComponentDir'] = os.path.expandvars(tmp_args['ComponentDir'])
-        return tmp_args
+        self.args['ComponentDir'] = os.path.expandvars(self.args['ComponentDir'])
+        return
 
     def initLogging(self):
         """
@@ -96,16 +104,6 @@ class CRAB_AS_beckend:
         logging.info("Logging system initialized")     
         pass
     
-    def initMessaging(self):
-        """
-        Message Service initialization
-        """
-        self.ms = MessageService()
-        self.ms.registerAs("CRAB_CmdMgr")
-
-        logging.info("Front-end message service created")
-        pass
-
     def initWLoadJabber(self):
         """
         This method creates a thread that monitors the front-end load with respect to the
@@ -181,20 +179,24 @@ class CRAB_AS_beckend:
             10  task refused for exceeding overload
             11  error during MessageService sending
         """
-        if self.go_on_accepting_tasks != 1:
+        
+        if self.go_on_accepting != 1:
             self.log.info("Task refused for overloading: "+ taskUniqName)
             return 10
 
         try:
-            payload = taskDescriptor+"::"+cmdDescriptor+"::"+taskUniqName #+"::"+str(self.submAttempts)
-            self.ms.publish("CRAB_Cmd_Mgr:NewTask", payload)
+            dirName = self.prepareTaskDir(taskDescriptor, cmdDescriptor, taskUniqName) 
+            if dirName is None:
+                self.log.info('Unable to create directory tree for task %s'%taskUniqName) 
+                return 11
+              
+            self.ms.publish("CRAB_Cmd_Mgr:NewTask", taskUniqName)
             self.ms.commit()
         except Exception, e:
-            self.log.info("Error forwarding message :\n"+e+"\n-->"+ payload)
+            self.log.info( traceback.format_exc() )
             return 11
 
         self.log.info("NewTask "+taskUniqName)
-        self.log.debug(payload)
         return 0
 
     def gway_sendCommand(self, cmdDescriptor="", taskUniqName=""):
@@ -210,15 +212,20 @@ class CRAB_AS_beckend:
         # Postponed
 
         try:
-            msg = cmdDescriptor + "::" + taskUniqName + "::" + str(self.cmdAttempts)
+            cmdName = self.wdir + '/' + taskUniqName + '_spec/cmd.xml'
+            if os.path.exists(cmdName):
+                os.rename(cmdName, cmdName+'.%s'%time.time())
+            f = open(cmdName, 'w')
+            f.write(cmdDescriptor)
+            f.close()
+             
+            msg = taskUniqName + "::" + str(self.cmdAttempts)
             self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
             self.ms.commit()
         except Exception, e:
-            self.log.info("Error forwarding message :\n"+e+"\n-->"+ msg)
+            self.log.info( traceback.format_exc() )
             return 20
-        
         self.log.info("NewCommand "+taskUniqName)
-        self.log.debug(msg)
         return 0
     
     def gway_getTaskStatus(self, taskUniqName=""):
@@ -235,17 +242,52 @@ class CRAB_AS_beckend:
         # NAME CONVENSION IDENTICAL TO THE ONE USED BY CURRENT SERVER CLIENT (see StatusServer.py, line 79)
         retStatus = ""
 
-        # Read the requested task status from the TaskTracking files
-        prjUName_fRep = self.wdir + "/" + taskUniqName + "/res/xmlReportFile.xml"
+        prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/xmlReportFile.xml"
         try:
             f = open(prjUName_fRep, 'r')
             retStatus = f.readlines()
             f.close()
         except Exception, e:
-            self.log.info("Error reading status file:\n"+e+"\n-->"+prjUName_fRep)
-            return str("Error: " + e)
+            errLog = traceback.format_exc()  
+            self.log.info( errLog )
+            return str("Error: " + errLog)
         
         # return the document
         return retStatus
+
+
+###############################
+#   Auxiliary Methods
+###############################
+
+    def prepareTaskDir(self, taskDescriptor, cmdDescriptor, taskUniqName):
+        """
+        create the task directory storing the commodity files for the task
+
+        """
+        taskDir = self.wdir + '/' + taskUniqName + '_spec' 
+
+        if not os.path.exists(taskDir):
+            try:
+                os.mkdir(taskDir)
+            except Exception, e:
+                self.log.info("Error crating directories %s"%taskDir)
+                self.log.info( traceback.format_exc() )
+                return None
+
+        try:
+            f = open(taskDir + '/task.xml', 'w')
+            f.write( zlib.decompress(taskDescriptor) )
+            f.close()
+            del f
+            f = open(taskDir + '/cmd.xml', 'w')
+            f.write(cmdDescriptor)
+            f.close()
+        except Exception, e:
+            self.log.info("Error saving xml files for task %s"%taskUniqName)
+            self.log.info( traceback.format_exc() )  
+            return None
+
+        return taskDir
 
 

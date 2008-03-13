@@ -61,10 +61,22 @@ public:
 	        PyObject *pResult;
         	int res;
 
-	        pResult = PyObject_CallMethod(pInstance, "gway_transferTaskAndSubmit", "(sss)", taskDescriptor, cmdDescriptor, UUID);
+                PyObject *td = PyString_FromString(taskDescriptor);
+                PyObject *cd = PyString_FromString(cmdDescriptor);
+                PyObject *ud = PyString_FromString(UUID);
+
+                if ((td==NULL)or(cd==NULL)or(ud==NULL))
+		{
+                     PyErr_Print();
+                     std::cout << "Error while parsing gway_transferTaskAndSubmit arguments" << std::endl;
+                     res = -2;
+		}
+
+	        pResult = PyObject_CallMethod(pInstance, "gway_transferTaskAndSubmit", "(OOO)", td, cd, ud);
+
         	if (pResult == NULL)
 	        {
-        	        PyErr_Print();
+			PyErr_Print();
                 	std::cout << "Error while calling gway_transferTaskAndSubmit " << std::endl;
 			res = -1;
         	} else {
@@ -183,6 +195,8 @@ protected:
         	        std::cout << "Error while allocating backend" << std::endl;
                 	return;
 	        }
+
+                std::cout << "Frontend and backend ready and waiting for RPCs..." << std::endl;
         	Py_DECREF(pClass);
 	}
 

@@ -69,14 +69,14 @@ class ServerCommunicator:
             raise CrabException('Error while serializing task object to XML')
             return -2
 
-        taskUniqName = None
-        taskUniqName = self._extractTaskUniqName(blTaskId)
+        taskUniqName = blTaskId
+        #taskUniqName = self._extractTaskUniqName(blTaskId)
         if not taskUniqName:
             raise CrabException('Error while extracting the Task Unique Name string')
             return -3
 
         cmdXML = None
-        cmdXML = self._createXMLcommand('submit', rng, newTaskAddIns=True)
+        cmdXML = self._createXMLcommand(taskUniqName, 'submit', rng, newTaskAddIns=True)
         if not cmdXML:
             raise CrabException('Error while creating the Command XML')
             return -4
@@ -90,9 +90,9 @@ class ServerCommunicator:
         elif ret == 10:
              # overlaod
              logMsg = 'The server %s refused to accept the task %s because it is overloaded'%(self.serverName, blTaskName)
-        elif ret == 11
+        elif ret == 11:
              # failed to push message in PA
-             logMsg = 'Backend unable to release messages to trigger the computation of task'%blTaskName
+             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%blTaskName
         elif ret == 12:
              # failed SOAP communication
              logMsg = 'Error during SOAP communication with server %s.\n'%self.serverName
@@ -104,7 +104,7 @@ class ServerCommunicator:
         common.logger.message(logMsg)
         return ret
          
-    def subsequentJobSubmit(self, blTaskId, blTaskName, blXml, rng):
+    def subsequentJobSubmit(self, blTaskId, blTaskName, rng):
         """
         _subsequentJobSubmit_
         Let the submission of other jobs of a task that has been already sent to a server.
@@ -116,7 +116,7 @@ class ServerCommunicator:
         """
         return self._genericCommand('submit', blTaskId, blTaskName, rng)
 
-    def killJobs(self, blTaskId, blTaskName, blXml, rng):
+    def killJobs(self, blTaskId, blTaskName, rng):
         """
         _killJobs_
         Send a kill command to one or more jobs running on the server.
@@ -138,7 +138,7 @@ class ServerCommunicator:
         """
         return self._genericCommand('clean', blTaskId, blTaskName, rng)
 
-    def getStatus(self, blTaskId, blTaskName, rng):
+    def getStatus(self, blTaskId, blTaskName, statusFile):
         """
         _getStatus_
         Retrieve the task status from the server.
@@ -148,10 +148,10 @@ class ServerCommunicator:
              - the range of the submission as specified by the user at the command line
         """
         # fill the filename
-        filename = None
+        filename = str(statusFile)
 
-        taskUniqName = None
-        taskUniqName = self._extractTaskUniqName(blTaskId)
+        taskUniqName = blTaskId
+        # taskUniqName = self._extractTaskUniqName(blTaskId)
         if not taskUniqName:
             # raise exception
             raise CrabException('Exception while getting the task unique name')
@@ -201,44 +201,51 @@ class ServerCommunicator:
     def _createXMLcommand(self, taskUName, cmdSpec='status', rng='all', newTaskAddIns=False):
         xmlString = ''
         cfile = minidom.Document()
-        root = self.cfile.createElement("TaskCommand")
             
-        node = self.cfile.createElement("TaskAttributes")
-        node.setAttribute("Task", taskUName)
-        node.setAttribute("Subject", self.userSubj)
-        node.setAttribute("Command", cmdSpec)
-        node.setAttribute("Range", rng)
+        node = cfile.createElement("TaskCommand")
+        node.setAttribute("Task", str(taskUName) )
+        node.setAttribute("Subject", str(self.userSubj) )
+        node.setAttribute("Command", str(cmdSpec) )
+        node.setAttribute("Range", str(rng) )
         
         # first submission specific attributes: not available or not considered for the other kind of messages
         if (newTaskAddIns == True):
-            node.setAttribute("Scheduler", self.cfg_params['CRAB.scheduler'])
+            node.setAttribute("Scheduler", str(self.cfg_params['CRAB.scheduler']) )
             # TODO not clear what it means # Fabio
             # node.setAttribute("Service", self.cfg_params[''])
         
         # create a mini-cfg to be transfered to the server
         miniCfg = {}
-        miniCfg['EDG.ce_white_list'] = str( self.cfg_params['EDG.ce_white_list'] )
-        miniCfg['EDG.ce_black_list'] = str( self.cfg_params['EDG.ce_black_list'] )
-        self.cfg_params['cfgFileNameCkSum'] = makeCksum(common.work_space.cfgFileName())
+
+        miniCfg['EDG.ce_white_list'] = ""
+        if 'EDG.ce_white_list' in self.cfg_params:
+            miniCfg['EDG.ce_white_list'] = str( self.cfg_params['EDG.ce_white_list'] )
+
+        miniCfg['EDG.ce_black_list'] = ""
+        if 'EDG.ce_black_list' in self.cfg_params:
+            miniCfg['EDG.ce_black_list'] = str( self.cfg_params['EDG.ce_black_list'] )
+
+        miniCfg['cfgFileNameCkSum'] = '' #TODO check makeCksum(common.work_space.cfgFileName()) # Fabio
+        if 'cfgFileNameCkSum' in self.cfg_params:
+            miniCfg['cfgFileNameCkSum'] = str(self.cfg_params['cfgFileNameCkSum'])
         ## put here other fields if needed
 
         node.setAttribute("CfgParamDict", str(miniCfg) )
 
-        root.appendChild(node)
-        self.cfile.appendChild(root)
-        xmlString += str(cfile.toxml())
+        cfile.appendChild(node)
+        xmlString += str(cfile.toprettyxml())
         #
         return xmlString
 
     def _genericCommand(self, cmd, blTaskId, blTaskName, rng):
-        taskUniqName = None
-        taskUniqName = self._extractTaskUniqName(blTaskId)
+        taskUniqName = blTaskId
+        # taskUniqName = self._extractTaskUniqName(blTaskId)
         if not taskUniqName:
             raise CrabException('Error while extracting the Task Unique Name string')
             return -2
 
         cmdXML = None
-        cmdXML = self._createXMLcommand(cmd)
+        cmdXML = self._createXMLcommand(taskUniqName, cmd, rng)
         if not cmdXML:
             raise CrabException('Error while creating the Command XML')
             return -3

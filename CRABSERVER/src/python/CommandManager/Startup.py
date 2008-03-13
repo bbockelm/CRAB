@@ -22,8 +22,9 @@ from CommandManager.CmdMgrComponent import CmdMgrComponent
 
 try:
     config = loadProdAgentConfiguration()
-    compCfg = config.getConfig("CommandManager")
-    compCfg.update( config.getConfig("CrabServerConfigurations") )
+    compCfg = config.getConfig("CrabServerConfigurations") 
+    compCfg1 = config.getConfig("CommandManager")
+    compCfg.update( compCfg1 )
 except StandardError, ex:
     msg = "Error reading configuration:\n"
     msg += str(ex)

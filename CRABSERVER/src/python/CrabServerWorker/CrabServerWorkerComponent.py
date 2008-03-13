@@ -14,15 +14,13 @@ import popen2
 # logging
 import logging
 from logging.handlers import RotatingFileHandler
-
+import traceback
 import xml.dom.minidom
 
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 from MessageService.MessageService import MessageService
 
 from CrabServerWorker.FatWorker import FatWorker
-
-# from CrabServer.DashboardAPI import apmonSend, apmonFree    
 
 class CrabServerWorkerComponent:
     """
@@ -41,10 +39,21 @@ class CrabServerWorkerComponent:
         self.args.setdefault("Logfile", None)
         self.args.setdefault("dropBoxPath", None)
         self.args.setdefault('ProxiesDir', None)
+
         self.args.setdefault('maxThreads', 5)
         self.args.setdefault('maxCmdAttempts', 5)
+
         self.args.setdefault('allow_anonymous', 0)
+        self.args.setdefault('resourceBroker', 'CERN')
+
+        self.args.setdefault('Protocol', 'local')
+        self.args.setdefault('SEHostname', 'localhost')
+        self.args.setdefault('SEPort', '')
+        self.args.setdefault('SEBaseDir', self.args["dropBoxPath"])
         self.args.update(args)
+        
+        if self.args['SEBaseDir'] == None and self.args['Protocol'] == 'local': 
+            self.args['SEBaseDir'] = self.args["dropBoxPath"]
 
         # define log file
         if self.args['Logfile'] == None:
@@ -71,8 +80,8 @@ class CrabServerWorkerComponent:
         if self.args['dropBoxPath']:
             self.wdir = self.args['dropBoxPath']
         
-        self.maxAttempts = self.args['maxCmdAttempts']    
-        self.availWorkers = self.args['maxThreads']
+        self.maxAttempts = int(self.args['maxCmdAttempts'])    
+        self.availWorkers = int(self.args['maxThreads'])
         self.workerSet = {} # thread collection
         self.outcomeCounter = 0
         
@@ -115,7 +124,6 @@ class CrabServerWorkerComponent:
             logging.debug("CrabServerWorkerComponent: %s %s" % ( type, payload))
             self.__call__(type, payload)
         #
-        apmonFree()
         return
 
     def __call__(self, event, payload):
@@ -125,26 +133,22 @@ class CrabServerWorkerComponent:
         Define response to events
         """
         logging.debug("Event: %s %s" % (event, payload))
+        self.materializeStatus()
 
         if event == "CRAB_Cmd_Mgr:NewTask":
             self.updateProxyMap()
             self.newSubmission(payload)
-            self.materializeStatus()
-            
         elif event == "CRAB_Cmd_Mgr:NewCommand":
             self.updateProxyMap()
             self.handleCommands(payload)
-            self.materializeStatus()
-
         elif event == "CrabServerWorkerComponent:FatWorkerResult":
             self.handleWorkerResults(payload)
-            self.materializeStatus()
-
-        if event == "CrabServerWorkerComponent:StartDebug":
+        elif event == "CrabServerWorkerComponent:StartDebug":
             logging.getLogger().setLevel(logging.DEBUG)
-
-        if event == "CrabServerWorkerComponent:EndDebug":
+        elif event == "CrabServerWorkerComponent:EndDebug":
             logging.getLogger().setLevel(logging.INFO)
+        else:
+            logging.info('Unknown message received %s'%event)
 
         return 
 
@@ -159,7 +163,7 @@ class CrabServerWorkerComponent:
         
         """
 
-        taskDescriptor, cmdDescriptor, taskUniqName = payload.split('::')
+        taskUniqName = ''+payload
         
         # no workers availabe (delay submission)
         if self.availWorkers <= 0:
@@ -170,53 +174,78 @@ class CrabServerWorkerComponent:
             self.ms.publish("CRAB_Cmd_Mgr:NewTask", payload, comp_time)
             self.ms.commit()
             return
+
+        node = None
+        doc = None
+        try:
+            cmdSpecFile = self.wdir + '/' + taskUniqName + '_spec/cmd.xml'
+            doc = xml.dom.minidom.parse(cmdSpecFile)
+            node = doc.getElementsByTagName("TaskCommand")[0]
+        except Exception, e:
+            logging.info( traceback.format_exc() )
+            status = 6
+            reason = "Error while parsing command XML for task %s, it won't be processed"%taskUniqName
+            self.ms.publish("CrabServerWorkerComponent:TaskNotSubmitted", taskUniqName + "::" + str(status) + "::" + reason)
+            self.ms.commit()
+            return 
         
-        status, reason = self.taskIsSubmittable(cmdDescriptor, taskUniqName)
+        status, reason = self.taskIsSubmittable(taskUniqName, node)
         if (status != 0):
             self.ms.publish("CrabServerWorkerComponent:TaskNotSubmitted", taskUniqName + "::" + str(status) + "::" + reason)
             self.ms.commit()  
             return
 
-        # prepare the task working directories
-        taskDir = self.prepareTaskDir(taskDescriptor, cmdDescriptor, reason, taskUniqName)
-        if (taskDir is None):
-            status = 8
-            reason = "Problem while creating the task base directory"
-            self.ms.publish("CrabServerWorkerComponent:TaskNotSubmitted", taskUniqName + "::" + str(status) + "::" + reason)
-            self.ms.commit()
-            return
-
-        ## DashBoard information preparation
-        # dashParams = {'jobId':'TaskMeta', 'taskId':'unknown', 'jobId':'unknown'}
-        # dashParams.update( dashB_mlCommonInfo )
-
-        # submit pre DashBoard information
-        # apmonSend(dashParams['taskId'], dashParams['jobId'], dashParams)
-        # logging.debug('Submission DashBoard Pre-Submission report: '+str(dashParams))
-        
         ## real submission stuff
-        thrName = "worker_"+(self.args['maxThreads'] - availWorkers)+"_"+taskUniqName            
-        self.workerSet[taskUniqName] = FatWorker(logging, thrName, self.args['resourceBroker'], \
-                                                taskDescriptor, cmdDescriptor, taskUniqName, \
-                                                reason, taskDir, resubCount) # , dashParams, [])
-        self.taskPool[taskUniqName] = ("CRAB_Cmd_Mgr:NewTask", payload)
+        thrName = "worker_"+str(int(self.args['maxThreads']) - self.availWorkers)+"_"+taskUniqName           
+        # Implicit default params resubCount = 1 and dynamicBlackList = []
+        self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewTask", payload)
+
+        workerCfg = {}
+        workerCfg['rb'] = '' + self.args['resourceBroker']
+        workerCfg['wdir'] = '' + self.wdir
+        workerCfg['taskname'] = taskUniqName
+        workerCfg['proxy'] = reason
+        workerCfg['firstSubmit'] = True 
+        workerCfg['resubCount'] = 1
+        workerCfg['SEproto'] = self.args['Protocol']
+        workerCfg['SEurl'] = self.args['SEHostname']
+        workerCfg['SEport'] = self.args['SEPort']
+        workerCfg['dynBList'] = []
+
+        self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         self.availWorkers -= 1
+        doc.unlink()
         return
 
     def handleCommands(self, payload):
-        cmdDescriptor, taskUniqName, resubCount = payload.split('::')
-        node = xml.dom.minidom.parseString(cmdDescriptor).getElementsByTagName("TaskAttributes")
-        cmdType = '' + str(node.getAttribute('Command'))
-        del node
+        taskUniqName, resubCount = payload.split('::')
 
         # no more TTL. Send failure and give up
-        if resubCount < 0:
-            logging.info("Command for task %s has no more attempts. Give up."%taskUniqName)
+        if int(resubCount) < 0:
+            status = 10
+            reason = "Command for task %s has no more attempts. Give up."%taskUniqName
+            logging.info(reason)
             self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason) 
             self.ms.commit()
             return 
+
+        # parse XML data
+        doc = None
+        node = None
+        try:
+            cmdSpecFile = self.wdir + '/' + taskUniqName + '_spec/cmd.xml'
+            doc = xml.dom.minidom.parse(cmdSpecFile)
+            node = doc.getElementsByTagName("TaskCommand")[0]
+        except Exception, e:
+            logging.info( traceback.format_exc() ) 
+            status = 6
+            reason = "Error while parsing command XML for task %s, It won't be processed"%taskUniqName
+            self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason)
+            self.ms.commit()
+            return
  
         # skip non-interesting messages
+        cmdType = str(node.getAttribute('Command'))
         if cmdType not in ['kill', 'submit']:
             return
 
@@ -224,10 +253,8 @@ class CrabServerWorkerComponent:
         if cmdType == 'kill':
             if taskUniqName in self.workerSet:
                 del self.workerSet[taskUniqName]
-
             self.ms.publish("KillTask", taskUniqName)
             self.ms.commit()
-
             if taskUniqName in self.taskPool:
                 del self.taskPool[taskUniqName]
             return
@@ -239,36 +266,38 @@ class CrabServerWorkerComponent:
             return
         
         status = -1
-        status, reason = self.taskIsSubmittable(cmdDescriptor, taskUniqName)
+        status, reason = self.taskIsSubmittable(taskUniqName, node)
         if (status == 4):
             # CAVEAT in this case it means that everything is ok
             status = 0
-            reason = self.proxyMap[ node.getAttribute('Subject') ]
+            reason = self.proxyMap[ str(node.getAttribute('Subject')) ]
 
         if (status != 0):
             self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason)
             self.ms.commit()  
             return
 
-        taskDir = self.wdir + '/' + taskUniqName
-        if not os.path.exists(taskDir):
-            status = 8
-            reason = "Task working directory %s does not exist. The task did not submit here."%taskDir
-            self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason)
-            self.ms.commit()
-            return
-        
-        # Dashboard parameters    
-        # dashParams = {'jobId':'TaskMeta', 'taskId':'unknown', 'jobId':'unknown'}
-        # dashParams.update( dashB_mlCommonInfo )
- 
         # run FatWorker
-        thrName = "worker_"+(self.args['maxThreads'] - availWorkers)+"_"+taskUniqName
-        self.workerSet[thrName] = FatWorker(logging, thrName, self.args['resourceBroker'], \
-                                                         None, cmdDescriptor, taskUniqName, \
-                                                         reason, taskDir, resubCount) #, dashParams, [])
+        thrName = "worker_"+str(int(self.args['maxThreads']) - self.availWorkers)+"_"+taskUniqName
+
+        # Implicit default param dynamicBlackList
         self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewCommand", payload)
+
+        workerCfg = {}
+        workerCfg['rb'] = '' + self.args['resourceBroker']
+        workerCfg['wdir'] = '' + self.wdir
+        workerCfg['taskname'] = taskUniqName
+        workerCfg['proxy'] = reason
+        workerCfg['firstSubmit'] = False
+        workerCfg['resubCount'] = resubCount
+        workerCfg['SEproto'] = self.args['Protocol']
+        workerCfg['SEurl'] = self.args['SEHostname']
+        workerCfg['SEport'] = self.args['SEPort']
+        workerCfg['dynBList'] = []
+
+        self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)        
         self.availWorkers -= 1
+        doc.unlink()
         return
 
 ################################
@@ -281,9 +310,9 @@ class CrabServerWorkerComponent:
         self.outcomeCounter += 1
 
         ## Free submission resources
-        availWorkers += 1
-        if availWorkers > self.args['maxThreads']:
-            availWorkers = self.args['maxThreads']
+        self.availWorkers += 1
+        if self.availWorkers > int(self.args['maxThreads']):
+            self.availWorkers = int(self.args['maxThreads'])
         del self.workerSet[workerName]
         del self.taskPool[workerName]
 
@@ -331,7 +360,7 @@ class CrabServerWorkerComponent:
                     pfList.append(os.path.join(root, f))
 
         # new gridsite version
-        if len(pfList)==0:
+        if len(pfList) == 0:
             pfList = [ proxyDir + '/'+q  for q in os.listdir(proxyDir) if q[0]!="." ]
 
         # Get an associative map between each proxy file and its subject
@@ -345,90 +374,46 @@ class CrabServerWorkerComponent:
         #     
         return
 
-    def taskIsSubmittable(self, cmdDescriptor, taskUniqName):
+    def taskIsSubmittable(self, taskUniqName, node):
         """
         Check whether there are macroscopic conditions that prevent the task to be submitted.
         At the same time performs the proxy <--> task association.
         """
         reason = ""
+        subj = str(node.getAttribute('Subject'))
 
-        # has it a proper proxy?
-        try:
-            doc = xml.dom.minidom.parseString(cmdDescriptor)
-        except Exception, e:
-            reason = "Error while parsing command XML for task %s. It won't be processed."%taskUniqName
-            logging.info(reason)
-            return 6, reason
-        
-        node = doc.getElementsByTagName("TaskAttributes")
-       
-        if (self.args['allow_anonymous']!=0) and (node.getAttribute('Subject')=='anonymous'):
-            return 0, 'anonymous'
- 
-        if node.getAttribute('Subject') not in self.proxyMap:
-            reason = "Unable to locate a proper proxy for the task %s"%taskUniqName
-            return 2, reason
-        
         # is it an unwanted clone?
         if taskUniqName in self.workerSet:
             reason = "Already submitting task %s. It won't be processed"%taskUniqName
             logging.info(reason)
             return 4, reason
-        
-        reason = self.proxyMap[ node.getAttribute('Subject') ]
-        self.log.info("Project -> Task association: %s -> %s"%(taskUniqName, reason) )
 
-        # get mlCommonInfo
-        # dashB_mlCommon = {} 
-        # if node.hasAttribute('mlCommonInfo'):
-        #    for i in str( node.getAttribute('mlCommonInfo') ).split('\n'):
-        #        val = i.split(':')
-        #        dashB_mlCommon[val[0]] = str(val[1]).strip()
-
-        return 0, reason # , dashB_mlCommon
-
-    def prepareTaskDir(self, taskDescriptor, cmdDescriptor, proxyFile, taskUniqName):
-        """
-        create the task directory storing the commodity files for the task
-        
-        """
-        taskDir = self.wdir + '/' + taskUniqName
-        
-        # create folders if needed
-        if os.path.exists(taskDir):
-            self.log.info("Already existing folder for task %s. The user proxy is already linked there."%taskUniqName)
-            return None
-
-        try:    
-            os.mkdirs(taskDir + '/res')
-            os.mkdir(taskDir + '/log')
-        except Exception, e:
-            self.log.info("Error crating directories for task %s"%taskUniqName)
-            return None
-
-        # materialize files for safety 
-        try:
-            f = open(taskDir + '/task_' + taskUniqName + '.xml', 'w')
-            f.write(taskDescriptor)
-            f.close()
-            del f 
-            f = open(taskDir + '/cmd_' + taskUniqName + '.xml', 'w')
-            f.write(cmdDescriptor)
-            f.close()
-        except Exception, e:
-            self.log.info("Error saving xml files for task %s"%taskUniqName)
-            return None
-        
-        # link the proxy (if required) 
-        if proxyFile != 'anonymous':
-            try:
-                cmd = 'ln -s %s %s'%(proxyFile, taskDir + '/userProxy')
-                cmd = cmd + ' && chmod 600 %s'%proxyFile
-                os.system(cmd)
-            except Exception, e:
-                self.log.info("Error creating the link to proxy for %s"%taskUniqName)
-                return None
-        return taskDir
+        if (self.args['allow_anonymous']!=0) and (subj=='anonymous'):
+            return 0, 'anonymous'
+ 
+        for psubj in self.proxyMap:
+            if subj in psubj: 
+                assocFile = self.proxyMap[psubj]
+                logging.info("Project -> Task association: %s -> %s"%(taskUniqName, assocFile) )
+                try:
+                    proxyLink = self.wdir + '/' + taskUniqName + '_spec/userProxy'
+                    if not os.path.exists(proxyLink):
+                        cmd = 'ln -s %s %s'%(assocFile, proxyLink)
+                        cmd = cmd + ' && chmod 600 %s'%assocFile
+                        os.system(cmd)
+                        assocFile = proxyLink
+                except Exception, e:
+                    reason = "Warning: error while linking the proxy file for task %s."%taskUniqName 
+                    reason += "Original filename will be used."
+                    logging.info(reason)
+                    logging.info( traceback.format_exc() ) 
+                    assocFile = self.proxyMap[psubj]
+                return 0, assocFile
+            
+        reason = "Unable to locate a proper proxy for the task %s with subjcet %s"%(taskUniqName, subj)
+        logging.info(reason)
+        logging.debug(self.proxyMap)
+        return 2, reason
 
     def materializeStatus(self):
         ldump = []
