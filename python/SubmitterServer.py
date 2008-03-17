@@ -24,7 +24,7 @@ class SubmitterServer(Actor):
             #print self.cfg_params['CRAB.server_name'].split(':')
 	    #self.server_name, self.server_port = self.cfg_params['CRAB.server_name'].split(':')
 	    #self.server_port = int(self.server_port)
-            ## BRUTAL SERVER-SE HARDCODED - MATTY
+            ## BRTUAL SERVER-SE HARDCODED - MATTY
             ## the API (wget or siteDB) can be callet here
             self.server_name, self.server_path = self.cfg_params['CRAB.server_name'].split('/',1)
             self.server_path = os.path.join('/',self.server_path)
@@ -46,7 +46,7 @@ class SubmitterServer(Actor):
         # check proxy and send to the crab-server  
         self.proxyPath = self.moveProxy()
  
-	# subsequent submission   
+	# partial submission code # TODO is that file the right way? 
 	if os.path.exists(common.work_space.shareDir()+'/first_submission') == False:
 	    self.moveISB()
 	    isFirstSubmission = True
@@ -187,17 +187,17 @@ class SubmitterServer(Actor):
                 task = common.bossSession.loadTaskByName(common.work_space.taskName())
 
                 # set the paths refered to SE remotedir
-                surlpreamble = self.server_name # TODO: parametric 'gsiftp://' + self.server_name
+                surlpreamble = '' # TODO: parametric 'gsiftp://' + self.server_name
                 remoteSBlist = [surlpreamble + os.path.join(self.remotedir, os.path.basename(f)) \
                         for f in common._db.queryTask('globalSandbox').split(',') ]
-                task['globalSandbox'] = ', '.join(remoteSBlist)
-                task['scriptName'] = self.server_name + os.path.join( self.remotedir, \
+                task['globalSandbox'] = ','.join(remoteSBlist)
+                task['scriptName'] = surlpreamble + os.path.join( self.remotedir, \
                         os.path.basename(common._db.queryTask('scriptName')) )
-                task['cfgName'] = self.server_name + os.path.join( self.remotedir, \
+                task['cfgName'] = surlpreamble + os.path.join( self.remotedir, \
                         os.path.basename(common._db.queryTask('cfgName')) )
 
                 for j in task.jobs:
-                    j['executable'] = self.server_name + os.path.join( self.remotedir, os.path.basename(j['executable']) )
+                    j['executable'] = surlpreamble + os.path.join( self.remotedir, os.path.basename(j['executable']) )
                 #
 
                 taskXML += common.bossSession.serialize(task)
