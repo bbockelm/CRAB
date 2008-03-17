@@ -191,7 +191,10 @@ class TaskLifeManagerComponent:
         #######################
 
         if event == "TaskLifeManager::PrintTaskInfo":
-            self.printTaskInfo( payload )
+            if payload != "" and payload != None:
+                self.printTaskInfo( payload )
+            else:
+                logging.error("No task specified for " + str(event) )
             return
 
         #if event == "TaskLifeManager:OverAvailableSpace":
@@ -452,8 +455,8 @@ class TaskLifeManagerComponent:
         _printTaskInfo_
         """
         taskObj = self.taskQueue.getbyName( taskName )
-        logging.info("\n Task:    " + taskObj.getName() + \
-                     "\n user:    " + taskObj.getOwner() + \
+        logging.info("\n Task:    " + str(taskObj.getName()) + \
+                     "\n user:    " + str(taskObj.getOwner()) + \
                      "\n size:    " + str(taskObj.getSize()) + \
                      "\n to live: " + str(taskObj.toLive()) + \
                      "\n e-mail:  " + str(taskObj.getOwnerMail()) \
