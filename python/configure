@@ -60,6 +60,10 @@ return
 function configureCrab {
 ## prapare the crab env
 cd $TopDir
+tar zxvf sqlite.tgz
+rm sqlite.tgz
+tar zxvf py2-pysqlite.tgz
+rm py2-pysqlite.tgz
 
 # sh style
 cat > crab.sh <<EOF
