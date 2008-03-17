@@ -905,15 +905,15 @@ class TaskTrackingComponent:
         logBuf = ""
 
         task = None
-        try:
-            ## bossLite session
-            mySession = None
-            try:
-                mySession = BossLiteAPI("MySQL", self.bossCfgDB)
-            except ProdException, ex:
-                logging.info(str(ex))
-                return 0
+        mySession = None
 
+        ## bossLite session
+        try:
+            mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+        except ProdException, ex:
+            logging.info(str(ex))
+            return 0
+        try:
             #logging.info("connected...")
             ## task from DB
             task = TaskStateAPI.getNLockFirstNotFinished()
@@ -1065,6 +1065,7 @@ class TaskTrackingComponent:
                                     self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, numJobs, 1 )
                                 else:
                                     logBuf = self.__logToBuf__(logBuf, "Error: the path " + pathToWrite + " does not exist!\n")
+
                                 succexo = 0
 			        if percentage != endedLevel or \
 			            (percentage == 0 and status == self.taskState[3] ) or \
@@ -1113,13 +1114,13 @@ class TaskTrackingComponent:
                                 logBuf = self.__logToBuf__(logBuf, "         deatil: " + str(detail))
                                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                            
-                        ##clear tasks from memory
-                        del mySession
             finally:
                 #case with a task taken
                 if task != None and len(task)>0:
                     TaskStateAPI.setTaskControlled(taskId)
-                    #logBuf = self.__logToBuf__(logBuf, "Task(id, name): (" + str(taskId) + ", " + str(taskName) + ") set to Controlled.")
+
+                ## clean task from memory
+                del task
 
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "ERROR: " + str(traceback.format_exc()))
