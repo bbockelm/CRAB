@@ -65,9 +65,8 @@ class Creator(Actor):
             common.logger.message("Creator::run Exception raised in collection params for dashboard: %s %s"%(exctype, value))
             pass
 
-        # Set/Save Job Type name
-        self.job_type_name = common._db.queryTask("jobType") ## New BL--DS
-
+        self.job_type_name = self.job_type.name()
+ 
         common.logger.debug(5, "Creator constructor finished")
         return
 
@@ -122,6 +121,8 @@ class Creator(Actor):
         njc = 0
 #        block = -1 # first block is 0  BL--DS
 #        lastDest=''
+        listID=[]
+        listField=[]
         for nj in range(self.total_njobs):
             if njc == self.ncjobs : break
 
@@ -131,43 +132,41 @@ class Creator(Actor):
 
             self.job_type.modifySteeringCards(nj)
 
-            # Create XML script and declare related jobs
-            argsList.append( str(nj+1)+' '+ self.job_type.getJobTypeArguments(nj, self.cfg_params['CRAB.scheduler']) )
-            self.job_type.setArgsList(argsList)
-
-            run_jobToSave = {'status' :'C'}
-            common._db.updateRunJob_(nj, run_jobToSave ) ## New BL--DS
-
             outputSandbox=self.job_type.outputSandbox(nj)
-            # check if out!=err
-## New BL--DS
-#            common.jobDB.setOutputSandbox(nj, outputSandbox)
-#            common.jobDB.setTaskId(nj, common.taskDB.dict('taskId'))
-
             job_ToSave={'outputFiles': outputSandbox}
+            listField.append(job_ToSave)             
 
-            common._db.updateJob_(nj, job_ToSave ) ## Nes BL--DS
-
-#            currDest=common.jobDB.destination(nj)
-#            if (currDest!=lastDest):
-#                block+=1
-#                lastDest = currDest
-#                pass
-#            common.jobDB.setBlock(nj,block)
+            listID.append(nj)
             njc = njc + 1
             pass
+ 
+       # ## Not clear why here.. DS
+       # self.job_type.setArgsList()
+
+        run_jobToSave = {'status' :'C'}
+        common._db.updateRunJob_(listID , run_jobToSave ) ## New BL--DS
+
+        common._db.updateJob_(listID, listField ) ## Nes BL--DS
 
         # Create script (sh)
         script_writer.modifyTemplateScript()
         os.chmod(common._db.queryTask('scriptName'), 0744) ## Modified BL--DS
        # common: write input sandbox --- This is now a task attribute... not per job ## BL--DS
-        isb = {'globalSandbox': self.job_type.inputSandbox(1)}
+
+        concString = ','
+        inSand=''
+        if len(self.job_type.inputSandbox(1)): 
+            inSand +=   concString.join(self.job_type.inputSandbox(1)) 
+        isb = {'globalSandbox': inSand}
         common._db.updateTask_(isb) 
+
+
         ####
         common.scheduler.declare(self.total_njobs ) 
-
-        common.scheduler.sched_parameter()
-
+        common.scheduler.sched_fix_parameter()
+       # common.scheduler.sched_parameter()
+       
+        stop = time.time()
         common.logger.message('Creating '+str(self.total_njobs)+' jobs, please wait...')
 
         stop = time.time()

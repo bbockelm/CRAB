@@ -43,6 +43,9 @@ class Scheduler :
     def boss(self):
         return self._boss
 
+    def sched_fix_parameter(self):
+        return     
+
     def sched_parameter(self):
         """
         Returns parameter scheduler-specific, to use with BOSS .
@@ -132,18 +135,13 @@ class Scheduler :
         """ Do whatever appropriate to notify the user about possible reason why no sites were matched """
         return
     
-    def submit(self,list):
+    def submit(self,list,req):
         """ submit to scheduler a list of jobs """
         if (not len(list)): common.logger.message("No sites where to submit jobs")
        # Tout = int(self.tOut(list))
         Tout =10
-     #   jobsList = list[1]
-     #   schcladstring = ''
-     #   self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(list[0])+'.clad'# TODO add a check is file exist
-     #   if os.path.isfile(self.schclassad):  
-     #      schcladstring=self.schclassad
-        self.boss().submit(list)
         
+        self.boss().submit(list,req) 
         return
 
     def queryDetailedStatus(self, id):
@@ -203,18 +201,11 @@ class Scheduler :
         """
         return ""
 
-    def createXMLSchScript(self, nj, argsList):
-
-        """
-        Create a XML-file for BOSS4.
-        """
-        return
-
     def declare(self,jobs):
         """
-        BOSS declaration of jobs
+        Declaration of jobs
         """
-        self._boss.declareJob_(jobs)
+        self._boss.declare(jobs)
 
     def taskDeclared(self, taskName ):
         taskDict = self.boss().taskDeclared( taskName )

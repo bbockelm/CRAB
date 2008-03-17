@@ -338,8 +338,9 @@ class Cmssw(JobType):
 
         return sites
 
-    def setArgsList(self, argsList):
-        self.argsList = argsList
+  # to Be Removed  DS -- BL 
+  #  def setArgsList(self, argsList):
+  #      self.argsList = argsList
 
     def jobSplittingByBlocks(self, blockSites):
         """
@@ -651,23 +652,37 @@ class Cmssw(JobType):
         for i in range(njobs):
             jobParams.append("")
 
+        listID=[]
+        listField=[]
         for job in range(njobs):
             jobParams[job] = arglist[job]
+            listID.append(job)
             job_ToSave ={}
-            job_ToSave['arguments']= str(jobParams[job])## new BL--DS
+            concString = ','
+            argu=''
+            if len(jobParams[job]):
+                argu +=   concString.join(jobParams[job] )
+            job_ToSave['arguments']= str(job+1)+','+argu## new BL--DS
             job_ToSave['dlsDestination']= self.jobDestination[job]## new BL--DS
-            common._db.updateJob_(job,job_ToSave)## new BL--DS
-            common.logger.debug(5,"Job "+str(job)+" Destination: "+str(self.jobDestination[job]))
+            #common._db.updateJob_(job,job_ToSave)## new BL--DS
+            listField.append(job_ToSave)
+            msg="Job "+str(job)+" Arguments:   "+str(job+1)+","+argu+"\n"  \
+            +"                     Destination: "+str(self.jobDestination[job])
+            common.logger.debug(5,msg)
+            #common.logger.debug(5,"Job "+str(job)+" Destination: "+str(self.jobDestination[job]))
+        common._db.updateJob_(listID,listField)## new BL--DS
+        ## Pay Attention Here....DS--BL
+        self.argsList = (len(jobParams[1])+1) 
 
         return
-
-    def getJobTypeArguments(self, nj, sched):
-        result = ''
-        jobs=[]
-        jobs.append(nj) 
-        for i in common._db.queryJob('arguments',jobs):##  BL--DS
-            result=result+str(i)+" "
-        return result
+#
+#    def getJobTypeArguments(self, nj, sched):
+#        result = ''
+#        jobs=[]
+#        jobs.append(nj) 
+#        for i in common._db.queryJob('arguments',jobs):##  BL--DS
+#            result=result+str(i)+" "
+#        return result
 
     def numberOfJobs(self):
         # Fabio
@@ -794,7 +809,7 @@ class Cmssw(JobType):
         tar.close()
         return tarName
 
-    def wsSetupEnvironment(self, nj):
+    def wsSetupEnvironment(self, nj=0):
         """
         Returns part of a job script which prepares
         the execution environment for the job 'nj'.
@@ -868,7 +883,8 @@ class Cmssw(JobType):
         txt += "\n"
         txt += "## number of arguments (first argument always jobnumber)\n"
         txt += "\n"
-        txt += "if [ $nargs -lt "+str(len(self.argsList[nj].split()))+" ]\n"
+       # txt += "if [ $nargs -lt "+str(len(self.argsList[nj].split()))+" ]\n"
+        txt += "if [ $nargs -lt "+str(self.argsList)+" ]\n"
         txt += "then\n"
         #txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$nargs+ \n"
         #txt += '    echo "JOB_EXIT_STATUS = 50113"\n'

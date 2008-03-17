@@ -1,168 +1,178 @@
 from Actor import *
 import common
+import string, os, time
+from crab_util import makeCksum
 
 class Status(Actor):
-    def __init__(self, cfg_params, nj_list=[]):
-        if nj_list==[]:
-            self.nj_list = range(len(common.job_list))
+    def __init__(self, *args):
+        self.cfg_params = args[0]
+
+        if common.scheduler.name().upper() == 'CONDOR_G':
+            # create hash of cfg file
+            self.hash = makeCksum(common.work_space.cfgFileName())
         else:
-            self.nj_list = nj_list
-        self.countDone = 0
-        self.countReady = 0
-        self.countSched = 0
-        self.countRun = 0
-        self.countAbort = 0
-        self.countCancel = 0
-        self.countCleared = 0
-        self.countToTjob = 0
-        self.cfg_params = cfg_params
-        
-
-        #Status = crab_util.importName('edg_wl_userinterface_common_LbWrapper', 'Status')
-        # Bypass edg-job-status interfacing directly to C++ API
-        # Job attribute vector to retrieve status without edg-job-status
-        self.level = 0
-        # Instance of the Status class provided by LB API
-        #self.jobStat = Status()
-
-        self.states = [ "Acl", "cancelReason", "cancelling","ce_node","children", \
-          "children_hist","children_num","children_states","condorId","condor_jdl", \
-          "cpuTime","destination", "done_code","exit_code","expectFrom", \
-          "expectUpdate","globusId","jdl","jobId","jobtype", \
-          "lastUpdateTime","localId","location", "matched_jdl","network_server", \
-          "owner","parent_job", "reason","resubmitted","rsl","seed",\
-          "stateEnterTime","stateEnterTimes","subjob_failed", \
-          "user tags" , "status" , "status_code","hierarchy"]
-        self.hstates = {}
-        for key in self.states:
-            self.hstates[key]=''
+            self.hash = ''
 
         return
 
     def run(self):
         """
-        The main method of the class.
+        The main method of the class: compute the status and print a report
         """
         common.logger.debug(5, "Status::run() called")
 
+        start = time.time()
         self.compute()
         self.PrintReport_()
+        stop = time.time()
+        common.logger.debug(1, "Status Time: "+str(stop - start))
+        common.logger.write("Status Time: "+str(stop - start))
         pass
-
-    def status(self) :
-        """ Return #jobs for each status as a tuple"""
-        return (self.countToTjob,self.countReady,self.countSched,self.countRun,self.countCleared,self.countAbort,self.countCancel,self.countDone)
 
     def compute(self):
         """
-        Update the status to DB
+        compute the status
         """
-        bossTaskId = common.taskDB.dict('BossTaskId')
-        statusList = common.scheduler.queryStatusList(bossTaskId, self.nj_list)
 
-        common.jobDB.load()
-        for nj in self.nj_list:
-            st = common.jobDB.status(nj)
-            self.countToTjob = self.countToTjob + 1
-            jid = common.jobDB.jobId(nj)
-            if st == 'S' or st == 'A' or st == 'D' or st == 'K':
-                #result = common.scheduler.queryStatus(jid)
-                result = statusList[jid]
-                self.processResult_(nj, result, jid)
-                exitStatus = common.jobDB.exitStatus(nj)
-                print 'Job %03d:'%(nj+1),jid,result,exitStatus
-                dest = common.scheduler.queryDest(jid)
-                if ( dest.find(":") != -1 ) :
-                    dest = dest.split(":")[0]
-                params = {'taskId': 'JobStatus', 'jobId': jid, 'StatusValueReason': common.scheduler.getStatusAttribute_(jid, 'reason'), \
-                'StatusValue': st, 'StatusEnterTime': common.scheduler.getStatusAttribute_(jid, 'stateEnterTime'), 'StatusDestination': dest}
-                common.apmon.sendToML(params)
-                pass
-            else:
-                exitStatus = common.jobDB.exitStatus(nj)
-                #print 'Job %03d:'%(nj+1),jid,crab_util.crabJobStatusToString(st),exitStatus
-                pass
+        common.logger.message("Checking the status of all jobs: please wait")
+        task = common._db.getTask()
+        jobAttributes = common.scheduler.queryEverything(task['id']) ## NeW BL--DS
+        task = common._db.getTask()
+        toPrint=[]
+        for job in task.jobs :
+            id = str(job.runningJob['id'])
+            jobStatus =  str(job.runningJob['statusScheduler'])
+            dest = str(job.runningJob['destination']).split(':')[0]
+            exe_exit_code = str(job.runningJob['applicationReturnCode'])
+            job_exit_code = str(job.runningJob['wrapperReturnCode']) 
+            printline=''
+        
+#            if jobStatus == 'Done (Success)' or jobStatus == 'Cleared' or jobStatus == 'Done (Aborted)':
+            if dest == 'None' :  dest = ''
+            if exe_exit_code == 'None' :  exe_exit_code = ''
+            if job_exit_code == 'None' :  job_exit_code = ''
+            printline+="%-8s %-18s %-40s %-13s %-15s" % (id,jobStatus,dest,exe_exit_code,job_exit_code)
+            toPrint.append(printline)
+#           elif jobStatus == 'Created':
+#               printline+="%-8s %-18s %-40s %-13s %-15s" % (bossid,'Created',dest,'','')
+#               pass
+#           else:
+#               printline+="%-8s %-18s %-40s %-13s %-15s" % (bossid,jobStatus,dest,'','')
+#               toPrint.append(printline)
+            resFlag = 0
 
-        common.jobDB.save()
-        pass
+## Here to be implemented.. maybe putting stuff in a dedicated funcion.... better if not needed
+#"""     
+#            if jobStatus != 'Created'  and jobStatus != 'Unknown':
+#                jid1 = string.strip(jobAttributes[bossid]['SCHED_ID'])
+#
+#                jobId = ''
+#                if common.scheduler.name().upper() == 'CONDOR_G':
+#                    jobId = str(bossid) + '_' + self.hash + '_' + string.strip(jobAttributes[bossid]['SCHED_ID'])
+#                    common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+#                else:
+#                    jobId = str(bossid) + '_' + string.strip(jobAttributes[bossid]['SCHED_ID'])
+#                    if common.scheduler.name() == 'lsf' or common.scheduler.name() == 'caf':
+#                        jobId=str(bossid)+"_https://"+common.scheduler.name()+":/"+string.strip(jobAttributes[bossid]['SCHED_ID'])+"-"+string.replace(common.taskDB.dict('taskId'),"_","-")
+#                        common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
+#                    pass
+#                pass
+#
+#                common.logger.debug(5,"sending info to ML")
+#                params = {}
+#                if RB != None:
+#                    params = {'taskId': common.taskDB.dict('taskId'), \
+#                    'jobId': jobId,\
+#                    'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
+#                    'StatusValueReason': job_status_reason, \
+#                    'StatusValue': jobStatus, \
+#                    'StatusEnterTime': job_last_time, \
+#                    'StatusDestination': dest, \
+#                    'RBname': RB }
+#                else:
+#                    params = {'taskId': common.taskDB.dict('taskId'), \
+#                    'jobId': jobId,\
+#                    'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
+#                    'StatusValueReason': job_status_reason, \
+#                    'StatusValue': jobStatus, \
+#                    'StatusEnterTime': job_last_time, \
+#                    'StatusDestination': dest }
+#                common.logger.debug(5,str(params))
+#
+#                common.apmon.sendToML(params)
+##            if printline != '':
+##                print printline
 
-    def processResult_(self, nj, result,jid):
+        self.detailedReport(toPrint)
+  #      self.update_(for_summary)
+        return
 
-        destination = common.scheduler.queryDest(jid)
-        if ( destination.find(":") != -1 ) :
-            destination = destination.split(":")[0]
-            
-        if ( jid.find(":") != -1 ) :
-            #ID3 =  jid.split("/")[3]
-            broker = jid.split("/")[2].split(":")[0]
-        else :
-            #ID3 = jid
-            broker = 'OSG'
-            
-        resFlag = 0
-        ### TODO: set relevant status also to DB
+    def detailedReport(self, lines):
 
-        try: 
-            if result == 'Done': 
-                self.countDone = self.countDone + 1
-                exCode = common.scheduler.getExitStatus(jid)
-                common.jobDB.setStatus(nj, 'D')
-                jid = common.jobDB.jobId(nj)
-                exitStatus = common.scheduler.getExitStatus(jid)
-                common.jobDB.setExitStatus(nj, exitStatus)
-            elif result == 'Ready':
-                self.countReady = self.countReady + 1
-            elif result == 'Scheduled':
-                self.countSched = self.countSched + 1
-            elif result == 'Running':
-                self.countRun = self.countRun + 1
-            elif result == 'Aborted':
-                common.jobDB.setStatus(nj, 'A')
-                self.countAbort = self.countAbort + 1
-                pass
-            elif result == 'Cancelled':
-                common.jobDB.setStatus(nj, 'K')
-                self.countCancel = self.countCancel + 1
-                pass
-            elif result == 'Cleared':
-                exCode = common.scheduler.getExitStatus(jid) 
-                self.countCleared = self.countCleared + 1
-        except UnboundLocalError:
-            common.logger.message('ERROR: UnboundLocalError with ')
+        counter = 0
+        printline = ''
+        printline+= "%-8s %-18s %-40s %-13s %-15s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
+        print printline
+        print '---------------------------------------------------------------------------------------------------'
 
-    def PrintReport_(self) :
+        for i in range(len(lines)):
+            if counter != 0 and counter%10 == 0 :
+                print '---------------------------------------------------------------------------------------------------'
+            print lines[i]
+            counter += 1
 
-        """ Report #jobs for each status  """  
+    def PrintReport_(self):
 
-        #job_stat = common.job_list.loadStatus()
+        # query sui distinct statusScheduler
+        #distinct_status =  common._db.queryDistJob('dlsDestination')
+        possible_status = [
+                         'Undefined', 
+                         'Submitted',
+                         'Waiting',
+                         'Ready', 
+                         'Scheduled',
+                         'Running',
+                         'Done',
+                         'Cancelled',
+                         'Aborted',
+                         'Unknown',
+                         'Done(failed)'
+                         'Cleared'
+                          ]
 
         print ''
-        print ">>>>>>>>> %i Total Jobs " % (self.countToTjob)
+        print ">>>>>>>>> %i Total Jobs " % (common._db.nJobs())
+        print ''
+        list_ID=[] 
+        for st in possible_status:
+            list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
+            if len(list_ID)>0:
+                print ">>>>>>>>> %i Jobs  %s " % (len(list_ID), str(st))#,len(list_ID)
+                if st == 'killed' or st == 'Aborted': print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
+                if st == 'Done'   : print "          Retrieve them with: crab -getoutput <Jobs list>"
+		if st == 'Cleared': print "          %i Jobs with EXE_EXIT_CODE: %s" % (len(common._db.queryDistJob('wrapperReturnCode')))
+                print "          List of jobs: %s" % str(common._db.queryAttrRunJob({'statusScheduler':st},'jobId'))
+                print " "
 
-        if (self.countReady != 0):
-            print ''
-            print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
-        if (self.countSched != 0):
-            print ''
-            print ">>>>>>>>> %i Jobs Scheduled" % (self.countSched)
-        if (self.countRun != 0):
-            print ''
-            print ">>>>>>>>> %i Jobs Running" % (self.countRun)
-        if (self.countCleared != 0):
-            print ''
-            print ">>>>>>>>> %i Jobs Retrieved (=Cleared)" % (self.countCleared)
-            print "          You can resubmit them specifying JOB numbers: crab.py -resubmit JOB_number (or range of JOB) -continue" 
-            print "          (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
-        # if job_stat[6] or job_stat[7]:
-        #     print ''
-        #     print ">>>>>>>>> %i Jobs aborted or killed(=cancelled by user)" % (job_stat[6] + job_stat[7])
-        #     print "          Resubmit them with: crab.py -resubmit -continue to resubmit all" 
-        #     print "          or specifying JOB numbers (i.e -resubmit 1-3 => 1 and 2 and 3 or -resubmit 1,3 => 1 and 3)"       
-        #     print "           "       
-        if (self.countDone != 0):
-            print ">>>>>>>>> %i Jobs Done" % (self.countDone)
-            print "          Retrieve them with: crab.py -getoutput -continue to retrieve all" 
-            print "          or specifying JOB numbers (i.e -getoutput 1-3 => 1 and 2 and 3 or -getoutput 1,3 => 1 and 3)"
-            print('\n')  
-        pass
+#        if (len(self.countCorrupt) != 0):
+#            self.countCorrupt.sort()
+#            print ''
+#            print ">>>>>>>>> %i Jobs cleared with corrupt output" % len(self.countCorrupt)
+#            print "          List of jobs: %s" % self.joinIntArray_(self.countCorrupt)
+#            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
+#        if (len(self.countCleared.keys()) != 0):
+#            total_size = 0
+#            for key in self.countCleared.keys() :
+#                total_size += len(self.countCleared[key])
+#            print ''
+
+
+
+    def joinIntArray_(self,array) :
+        output = ''
+        for item in array :
+            output += str(item)+','
+        if output[-1] == ',' :
+            output = output[:-1]
+        return output
 

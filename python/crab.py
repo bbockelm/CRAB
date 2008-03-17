@@ -518,7 +518,7 @@ class Crab:
                 common._db.printId(self.UseServer) ## New BL--DS
 
             elif ( opt == '-status' ):
-                from StatusBoss import StatusBoss 
+                from Status import Status 
                 # modified to support server mode 
                 if (self.UseServer== 1):
                     from StatusServer import StatusServer
@@ -527,7 +527,7 @@ class Crab:
                     jobs = self.parseRange_(val)
                 
                     if len(jobs) != 0:
-                        self.actions[opt] = StatusBoss(self.cfg_params)
+                        self.actions[opt] = Status(self.cfg_params)
                     pass
 
             elif ( opt == '-kill' ):

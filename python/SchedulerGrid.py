@@ -121,9 +121,9 @@ class SchedulerGrid(Scheduler):
         self.EDG_addJdlParam = cfg_params.get('EDG.additional_jdl_parameters',None)
         if (self.EDG_addJdlParam): self.EDG_addJdlParam = string.split(self.EDG_addJdlParam,';')
 
-        self.EDG_retry_count = cfg_params.get('EDG.retry_count',None)
+        self.EDG_retry_count = cfg_params.get('EDG.retry_count',0)
 
-        self.EDG_shallow_retry_count= cfg_params.get('EDG.shallow_retry_count',None)
+        self.EDG_shallow_retry_count= cfg_params.get('EDG.shallow_retry_count',-1)
 
         self.EDG_clock_time = cfg_params.get('EDG.max_wall_clock_time',None)
 
@@ -156,7 +156,9 @@ class SchedulerGrid(Scheduler):
         To be re-implemented in concrete scheduler
         """
         return None
-
+    
+    def sched_fix_parameter(self): 
+        return
 
     def sched_parameter(self):
         """
@@ -393,63 +395,6 @@ class SchedulerGrid(Scheduler):
         cmd = 'edg-job-status '+id
         cmd_out = runCommand(cmd)
         return cmd_out
-
-    def findSites_(self, n):
-        itr4 =[]
-        jobs=[]
-        jobs.append(n)
-        sites = eval(common._db.queryJob('dlsDestination',jobs)[0]) ## DS--BL
-
-        if len(sites)>0 and sites[0]=="":
-            return itr4
-
-        itr = ''
-        if sites != [""]:#CarlosDaniele
-            ##Addedd Daniele
-            replicas = self.blackWhiteListParser.checkBlackList(sites,n)
-            if len(replicas)!=0:
-                replicas = self.blackWhiteListParser.checkWhiteList(replicas,n)
-
-            if len(replicas)==0:
-                itr = itr + 'target.GlueSEUniqueID=="NONE" '
-                #msg = 'No sites remaining that host any part of the requested data! Exiting... '
-                #raise CrabException(msg)
-            #####
-           # for site in sites:
-            for site in replicas:
-                #itr = itr + 'target.GlueSEUniqueID==&quot;'+site+'&quot; || '
-                itr = itr + 'target.GlueSEUniqueID=="'+site+'" || '
-            itr = itr[0:-4]
-            itr4.append( itr )
-        return itr4
- 
-    ## Deprecated... BL--SD
-    def createXMLSchScript(self, nj, argsList):
-
-        """
-        Create a XML-file for BOSS4.
-        """
-        # for job in task.jobs :
-        #    bossSession.getRunningInstance( job, req )
-        #     {'requirements' : str_req }
-        #     { 'fileBlock' : ..., 'dlsDestination' : ..., 'schedulerAttributes': str_req  }
-
-
-       
-       #   if ( self.EDG_retry_count ):
-       #       to_write = to_write + 'RetryCount = "'+self.EDG_retry_count+'"\n'
-       #       pass
-       # 
-       #   if ( self.EDG_shallow_retry_count ):
-       #       to_write = to_write + 'ShallowRetryCount = "'+self.EDG_shallow_retry_count+'"\n'
-       #       pass
-       # 
-       #   to_write = to_write + 'MyProxyServer = "&quot;' + self.proxyServer + '&quot;"\n'
-       #   to_write = to_write + 'VirtualOrganisation = "&quot;' + self.VO + '&quot;"\n'
-
-
-
-        return
 
     def checkProxy(self):
         """

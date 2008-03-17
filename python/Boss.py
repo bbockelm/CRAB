@@ -32,24 +32,19 @@ class Boss:
         self.cfg_params = cfg_params
         self.schedulerName =  cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
 
-     #   schedulerConfig = { 'name' : SchedMap[self.schedulerName]}  ## To improve DS
-        ### Just temporary DS--BL
-        schedulerConfigGlite = {
+        ## Add here the map for others Schedulers (LSF/CAF/CondorG)
+        SchedMap = {'glite':'SchedulerGLiteAPI'}         
+          
+       # schedulerConfig = { 'name' : SchedMap[self.schedulerName]} 
+
+        schedulerConfig = {
               'name' : 'SchedulerGLiteAPI',
-              'service' :'https://wms104.cern.ch:7443/glite_wms_wmproxy_server',
-              'config' : '/afs/cern.ch/user/s/spiga/scratch0/WorkingDir/glite.conf.CMS_CNAF'
+#              'service' :'https://wms006.cnaf.infn.it:7443/glite_wms_wmproxy_server'
+          #    'config' : '/afs/cern.ch/user/s/spiga/scratch0/WorkingDir/glite.conf.CMS_CNAF'
               }
 
-        schedulerConfigLsf = {
-              'name' : 'SchedulerLsf',
-              'service' :'',
-              'config' : ''
-              }
 
-        SchedMap = {'glitecoll': schedulerConfigGlite,
-                    'lsf': schedulerConfigLsf}
-
-        self.schedSession = BossLiteAPISched( common.bossSession, SchedMap[self.schedulerName])
+        self.schedSession = BossLiteAPISched( common.bossSession, schedulerConfig)
 
         self.outDir = cfg_params.get("USER.outputdir", common.work_space.resDir() )
         self.logDir = cfg_params.get("USER.logdir", common.work_space.resDir() )
@@ -60,7 +55,7 @@ class Boss:
 
 #### End Boss Configuration
 
-    def declareJob_(self, nj):       
+    def declare(self, nj):       
         """
         BOSS declaration of jobs
         """
@@ -69,25 +64,30 @@ class Boss:
         jbt = job.type()
         base = jbt.name()
 
+        wrapper = common._db.queryTask('scriptName') ## Should disappear... 
+                                                     ## we'll have ONLY 'executable'  
+                                                     ## as task field and not job field
+        listField=[]
+        listID=[]  
+        task=common._db.getTask()
         for id in range(nj):
             parameters={}
             jobs=[]
             out=[] 
-            stdout = base +'_'+ str(id)+'.stdout'
-            stderr = base +'_'+ str(id)+'.stderr'
+            stdout = base +'_'+ str(id+1)+'.stdout'
+            stderr = base +'_'+ str(id+1)+'.stderr'
             jobs.append(id)
-            out=common._db.queryJob('outputFiles',jobs)[0]
+            out=task.jobs[id]['outputFiles']
             out.append(stdout)
             out.append(stderr)
             out.append('.BrokerInfo')
             parameters['outputFiles']=out 
-            parameters['executable']=common._db.queryTask('scriptName') ## Should disappear... 
-                                                                        ## we'll have ONLY 'executable'  
-                                                                        ## as task field and not job field
+            parameters['executable']=wrapper
             parameters['standardOutput'] = stdout
             parameters['standardError'] = stderr
-
-            common._db.updateJob_(id,parameters)
+            listField.append(parameters)
+            listID.append(id)     
+        common._db.updateJob_( listID, listField)
 
         return 
 
@@ -113,19 +113,17 @@ class Boss:
             raise CrabException("ERROR: listMatch failed with message " + e.__str__())
         return CEs
   
-    def submit(self, jobsList):
+    def submit(self, jobsList,req):
         """
         Submit BOSS function.
         Submit one job. nj -- job number.
         """
-        # job = common._db.getJob(jobsList)
-        # #self.schedSession.submit( task, string.join(jobsList,','))
-        # self.schedSession.submit( job, jobsList)
-
         task = common._db.getTask()
         #self.schedSession.submit( task, string.join(jobsList,','))
-        self.schedSession.submit( task, jobsList)
-
+        #print jobsList
+        pippo =[]
+        pippo.append(0) 
+        self.schedSession.submit( task,jobsList,req )
       #  try:
       #  except SchedulerError,e:
       #      common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
@@ -377,7 +375,6 @@ class Boss:
             s = s + ":" + str( list[i] )
         return s
 
-    ################################################################ To remove when Boss4 store this info  DS. (start)
     def getAttribute(self, id, attr):
         return self.boss_scheduler.getStatusAttribute_(id, attr)
 
@@ -386,10 +383,7 @@ class Boss:
 
     def queryDest(self, id):  
         return self.boss_scheduler.getStatusAttribute_(id, 'destination')
-    ################################################################   (stop)
 
-    ##############################   OK for BOSS4 ds. 
-    ############################# ----> we use the SID for the postMortem... probably this functionality come for free with BOSS4? 
     def boss_SID(self,int_ID):
         """ Return Sid of job """
         SID = ''
@@ -407,41 +401,10 @@ class Boss:
         Query needed info of all jobs with specified boss taskid
         """
 
-        results = {}
-        try:
-            # fill dictionary { 'bossid' : 'status' , ... }
-            nTot = common.jobDB.nJobs()
-            Tout = nTot*20 
-            self.bossTask.query( ALL, timeout = Tout )
-            task = self.bossTask.jobsDict()
-            for c, v in task.iteritems():
-                k = int(c)
-                results[k] = { 'SCHED_ID' : v['SCHED_ID'], 'STATUS' : self.status[v['STATUS']], 'EXEC_HOST' : ['EXEC_HOST'] }
-                if v.has_key('STATUS_REASON') :
-                    results[k]['STATUS_REASON'] = v['STATUS_REASON']
-                if v.has_key('LAST_T') :
-                    results[k]['LAST_T'] = v['LAST_T']
-                if v.has_key('DEST_CE') :
-                    results[k]['DEST_CE'] = v['DEST_CE']
-                if v.has_key('LB_TIMESTAMP') :
-                    results[k]['LB_TIMESTAMP'] = v['LB_TIMESTAMP']
-                if v.has_key('RB') :
-                    results[k]['RB'] = v['RB']
-                program = self.bossTask.specific(c, '1')
-                results[k]['EXE_EXIT_CODE'] = program['EXE_EXIT_CODE']
-                results[k]['JOB_EXIT_STATUS'] = program['JOB_EXIT_STATUS']
-        except SchedulerError,e:
-            common.logger.message("Warning : Scheduler interaction failed for jobs:")
-            common.logger.message(e.__str__())
-            pass
-        except BossError,e:
-            common.logger.message( e.__str__() )
-            pass
+        self.schedSession.query( str(taskid))
                 
-        return results
+        return 
 
-    ##################################################
-    ################################################## To change "much" when Boss4 store also this infos  DS.
     def queryEveryStatus(self,taskid):
         """ Query a status of all jobs with specified boss taskid """
 

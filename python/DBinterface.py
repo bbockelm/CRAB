@@ -38,11 +38,16 @@ class DBinterface:
         dbConfig = {'dbName':dbname
             }
         common.bossSession = BossLiteAPI( self.db_type, dbConfig)
-        
+        self.task = common.bossSession.loadTaskByID(1)
         return
  
-    def getTask(self): 
+    def getTask(self, jobsList='all'): #, cfg_params):
 
+        #if jobsList == 'all':
+        #    self.task = common.bossSession.loadTaskByID(1)
+        #else: 
+        #self.task = common.bossSession.load('1','5')  
+        #return self.task[0]
         self.task = common.bossSession.loadTaskByID(1)
         return self.task
 
@@ -60,13 +65,11 @@ class DBinterface:
 
         """
         opt={}
-        opt['serverName']=optsToSave.get('server_name',0)
-        opt['jobType']=optsToSave['jobtype']  
+        if optsToSave['server_mode'] == 1: opt['serverName']=optsToSave['server_name'] 
         opt[ 'name']=common.work_space.taskName()  
      	task = Task( opt )
       
         common.bossSession.saveTask( task )
-        #common.bossSession.updateDB( task )
         return 
 
     def updateTask_(self,optsToSave):       
@@ -90,7 +93,7 @@ class DBinterface:
         jobs = [] 
         for id in range(nj):
             parameters = {}
-            parameters['name'] = id
+            parameters['name'] = 'job' + str(id)
             job = Job(parameters)
             jobs.append(job)    
         task.addJobs(jobs)
@@ -103,10 +106,11 @@ class DBinterface:
         """
         task = common.bossSession.loadTaskByID(1)
         #task = common.bossSession.loadTaskByName( common.work_space.taskName())
-        jobs = common.bossSession.loadJob(task['id'],nj+1)
-        for key in optsToSave.keys():
-            jobs[key] = optsToSave[key]
-            common.bossSession.updateDB( jobs )
+        for i in range(len(nj)):
+           # jobs = common.bossSession.loadJob(task['id'],i)
+            for key in optsToSave[i].keys():
+                task.jobs[i][key] = optsToSave[i][key]
+        common.bossSession.updateDB( task )
         return 
 
     def updateRunJob_(self, nj, optsToSave):       
@@ -115,9 +119,10 @@ class DBinterface:
         """
         task = common.bossSession.loadTaskByID(1)
         #task = common.bossSession.loadTaskByName( common.work_space.taskName())
-        common.bossSession.getRunningInstance(task.jobs[nj-1])
-        for key in optsToSave.keys():
-            task.jobs[nj-1].runningJob[key] = optsToSave[key]
+        for i in nj:
+            common.bossSession.getRunningInstance(task.jobs[i])
+            for key in optsToSave.keys():
+                task.jobs[i].runningJob[key] = optsToSave[key]
         common.bossSession.updateDB( task )
         return 
 
@@ -234,3 +239,13 @@ class DBinterface:
             matched.append(i[field])
         return  matched
 
+
+    def queryAttrRunJob(self, attr,field):
+        '''
+        Returns the list of jobs matching the given attribute
+        '''
+        matched=[]
+        task = common.bossSession.loadJobsByRunningAttr(attr)
+        for i in task:
+            matched.append(i[field])
+        return matched 

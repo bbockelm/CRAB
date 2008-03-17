@@ -142,7 +142,7 @@ class Submitter(Actor):
 
         ### define here the list of jobs Id for each distinct list of sites
         sub_jobs =[] # list of jobs Id list to submit
-        match_jobs =[] # list of jobs Id to match
+        jobs_to_match =[] # list of jobs Id to match
         all_jobs=[] 
         count=0
         for distDest in distinct_dests: 
@@ -152,11 +152,16 @@ class Submitter(Actor):
                  if i in all_jobs[0]: sub_jobs_temp.append(i) 
              if len(sub_jobs_temp)>0:
                  sub_jobs.append(sub_jobs_temp)   
-                 match_jobs.append(sub_jobs[count][0])
+                 jobs_to_match.append(sub_jobs[count][0])
                  count +=1
         sel=0
         matched=[] 
-        for id_job in match_jobs:
+        Requi=[]
+
+        task=common._db.getTask()
+
+        for id_job in jobs_to_match :
+            Requi.append(common.scheduler.sched_parameter(id_job,task))
             if common.scheduler.name().upper() != "CONDOR_G" :
                 #match = common.scheduler.listMatch(id_job)
                 match = "1"
@@ -182,10 +187,10 @@ class Submitter(Actor):
                     try: pbar = ProgressBar(term, 'Submitting '+str(len(sub_jobs[ii]))+' jobs')
                     except: pbar = None
                 print sub_jobs[ii]
+                print Requi[ii]
+                req=str(common._db.queryTask('jobType')) 
+                common.scheduler.submit(sub_jobs[ii],Requi[ii])
 
-                common.scheduler.submit(sub_jobs[ii])
-
-                ### Ask To StefanoL  
                 if not common.logger.debugLevel():
                     if pbar :
                         pbar.update(float(ii+1)/float(len(sub_jobs)),'please wait')
@@ -204,15 +209,18 @@ class Submitter(Actor):
 
                 ### check the if the submission succeded Maybe not needed or at least simplified 
                 njs=0 
-                jid = common._db.queryRunJob('schedulerId',sub_jobs[ii])
-                st = common._db.queryRunJob('status',sub_jobs[ii])
+                task=common._db.getTask()
+             #   jid = common._db.queryRunJob('schedulerId',sub_jobs[ii])
+             #   st = common._db.queryRunJob('status',sub_jobs[ii])
+                listId=[]
                 run_jobToSave = {'status' :'S'}
-                for j in range(len(sub_jobs[ii])): # Add loop over SID returned from group submission  DS
-                    if jid[j] != '': 
+                for j in sub_jobs[ii]: # Add loop over SID returned from group submission  DS
+                    if task.jobs[j-1].runningJob['schedulerId'] != '': 
                     #if (st[j]=='S'):
-                        common._db.updateRunJob_(nj+1, run_jobToSave ) ## New BL--DS
-                        common.logger.debug(5,"Submitted job # "+ str(sub_jobs[ii][j]))
+                        listId.append(j-1) 
+                        common.logger.debug(5,"Submitted job # "+ str(j))
                         njs += 1
+                common._db.updateRunJob_(listId, run_jobToSave ) ## New BL--DS
 #
 #                    ##### DashBoard report #####################
 #                        Sub_Type = 'Direct'

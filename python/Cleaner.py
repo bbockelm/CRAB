@@ -1,7 +1,6 @@
 from Actor import *
 from crab_exceptions import *
 from crab_logger import Logger
-from StatusBoss import StatusBoss
 from Status import Status
 import common
 import string
@@ -11,7 +10,7 @@ class Cleaner(Actor):
         """
         constructor
         """
-        self.status = StatusBoss(cfg_params)
+        self.status = Status(cfg_params)
 
     def check(self):
         """

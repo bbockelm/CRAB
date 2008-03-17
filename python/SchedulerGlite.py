@@ -64,11 +64,11 @@ class SchedulerGlite(SchedulerGrid):
 
         return req
 
-    def se_list(self, id):
+    def se_list(self, id, dest):
         """
         Returns string with requirement SE related    
         """  
-        hostList=self.findSites_(id)
+        hostList=self.findSites_(id,dest)
         req=''
         reqtmp=[]
         concString = '||'
@@ -107,41 +107,43 @@ class SchedulerGlite(SchedulerGrid):
         
         return req
 
-    def sched_parameter(self):
+    def sched_fix_parameter(self):
         """
         Returns string with requirements and scheduler-specific parameters
         """
-        index = int(common._db.nJobs()) - 1
-        job = common.job_list[index]
+        index = int(common._db.nJobs()) 
+        job = common.job_list[index-1]
         jbt = job.type()
- 
-      ### To Be Removed BL--DS
-      #  lastDest=''
-      #  first = []
-      #  last  = []
-      #  for n in range(common.jobDB.nJobs()):
-      #      currDest=common.jobDB.destination(n)
-      #      if (currDest!=lastDest):
-      #          lastDest = currDest
-      #          first.append(n)
-      #          if n != 0:last.append(n-1)
-      #  if len(first)>len(last) :last.append(common.jobDB.nJobs())
-
         req = ''
         req = req + jbt.getRequirements()
 
         if self.EDG_requirements:
             if (not req == ' '): req = req +  ' && '
             req = req + self.EDG_requirements
-        for i in range(index):
-            sched_param=''
-            sched_param+='Requirements = ' + req +self.specific_req() + self.se_list(i) +\
-                                            self.ce_list() +';\n' ## BL--DS
-            if self.EDG_addJdlParam: sched_param+=self.jdlParam() ## BL--DS
-            if (self.rb_param_file): sched_param+=self.rb_param_file ## BL--DS
-            run_jobReq={'schedulerAttributes':sched_param}## DS--BL
-            common._db.updateRunJob_(i,run_jobReq)        
 
+        Task_Req={'jobType':req}## DS--BL
+        common._db.updateTask_(Task_Req)        
+
+    def sched_parameter(self,i,task):
+        """
+        Returns string with requirements and scheduler-specific parameters
+        """
+        dest=  eval(task.jobs[i]['dlsDestination']) ## DS--BL
+
+        req=''
+        req +=task['jobType']
+
+        sched_param=''
+        sched_param+='Requirements = ' + req +self.specific_req() + self.se_list(i,dest) +\
+                                        self.ce_list() +';\n' ## BL--DS
+        if self.EDG_addJdlParam: sched_param+=self.jdlParam() ## BL--DS
+        sched_param+='MyProxyServer = "' + self.proxyServer + '";\n'
+        sched_param+='VirtualOrganisation = "' + self.VO + '";\n'
+        sched_param+='RetryCount = '+str(self.EDG_retry_count)+';\n'
+        sched_param+='ShallowRetryCount = '+str(self.EDG_shallow_retry_count)+';\n'
+
+        return sched_param
+   
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
@@ -241,6 +243,22 @@ class SchedulerGlite(SchedulerGrid):
         cmd = 'glite-job-status '+id
         cmd_out = runCommand(cmd)
         return cmd_out
+
+    def findSites_(self, n, sites):
+        itr4 =[]
+        if len(sites)>0 and sites[0]=="":
+            return itr4
+        if sites != [""]:
+            ##Addedd Daniele
+            replicas = self.blackWhiteListParser.checkBlackList(sites,n)
+            if len(replicas)!=0:
+                replicas = self.blackWhiteListParser.checkWhiteList(replicas,n)
+        
+            itr4 = replicas
+            #####
+        return itr4
+
+
 
 
     def tOut(self, list):
