@@ -945,7 +945,7 @@ class TaskTrackingComponent:
                             taskObj = None
                             pass 
                         if taskObj is None:
-                            logBuf = self.__logToBuf__(logBuf, "Unable to retrieve task [%s]. Causes: loadTaskByName"%(taskName))
+                            logBuf = self.__logToBuf__(logBuf, "Unable to load task [%s]."%(taskName))
                             logBuf = self.__logToBuf__(logBuf,"  Requested task [%s] does not exist."%(taskName) )
                         else:
                             logBuf = self.__logToBuf__(logBuf, " - - - - - - - ")
