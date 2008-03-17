@@ -248,19 +248,19 @@ class NotificationComponent:
     	if not os.path.exists(pathfile):
 		logging.error("Cannot process TaskSuccess event: " 
 	                        + "xml task report %s does not exist." % pathfile)
-	        return None
+	        return
 		
 	if not os.path.isfile( pathfile ):
 		logging.error("Cannot process TaskSuccess event: " 
 	                        + "xml task report %s is not a regular file." % pathfile)
-	        return None
+	        return
 		
 	C = CreateXmlJobReport()#.CreateXmlJobReport()
 	try:
 		C.fromFile( pathfile )
 	except RuntimeError, r:
 		logging.error("Cannot parse file %s: %s" % (pathfile, r)) 
-		return None
+		return
 		
 	return C
 	
@@ -302,9 +302,6 @@ class NotificationComponent:
 		
 		if not C:
 			logging.error("Notification.NotificationComponent.MainLoop: MessageTaskParser returned a null object. Continuing to next iteration...")
-                        self.tasks.pushTask( C )
-                        self.tasks.unlock()
-                        self.ms.commit()
 			continue
 			
 		self.tasks.lock()
@@ -379,7 +376,10 @@ class NotificationComponent:
                     hours, mins, secs = lifetime.split(":")
                     hours = int(hours)
                     mins = int(mins)
-                    secs = int(secs)
+                    try:
+                        secs = int(secs)
+                    except Exception:
+                        pass
                 else:
                     secs = int(lifetime)
                 days = 0
