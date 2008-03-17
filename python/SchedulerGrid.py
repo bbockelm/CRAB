@@ -96,7 +96,7 @@ class SchedulerGrid(Scheduler):
                 msg = "Error. Problem with voms-proxy-info -identity command"
                 raise CrabException(msg)
             try:
-                sitedburl="https://cmsweb.cern.ch/sitedb_test/sitedb/json/dnUserName"
+                sitedburl="https://cmsweb.cern.ch/sitedb/sitedb/json/index/dnUserName"
                 params = urllib.urlencode({'dn': self.userdn })
                 f = urllib.urlopen(sitedburl,params)
                 udata = f.read()
