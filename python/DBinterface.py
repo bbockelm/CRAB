@@ -157,6 +157,11 @@ class DBinterface:
 
      #   displayReport(header, lines):
         return      
+
+    def serializeTask(self, tmp_task = None):
+        if tmp_task is None:
+            tmp_task = common.bossSession.loadTaskByID(1)
+        return common.bossSession.serialize(tmp_task)   
  
     def queryID(self,server_mode=0):
         '''

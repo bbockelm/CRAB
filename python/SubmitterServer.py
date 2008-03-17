@@ -184,7 +184,7 @@ class SubmitterServer(Actor):
         if firstSubmission==True:
             # first time submit
             try:
-                task = common.bossSession.loadTaskByName(common.work_space.taskName())
+                task = common._db.getTask() 
 
                 # set the paths refered to SE remotedir
                 surlpreamble = '' # TODO: parametric 'gsiftp://' + self.server_name
@@ -200,7 +200,7 @@ class SubmitterServer(Actor):
                     j['executable'] = surlpreamble + os.path.join( self.remotedir, os.path.basename(j['executable']) )
                 #
 
-                taskXML += common.bossSession.serialize(task)
+                taskXML += common._db.serializeTask(task)
                 common.logger.debug(5, taskXML)
             except Exception, e:
                 msg = "BossLite ERROR: Unable to serialize task object\n"
