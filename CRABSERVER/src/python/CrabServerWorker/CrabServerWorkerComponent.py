@@ -401,13 +401,11 @@ class CrabServerWorkerComponent:
                         cmd = 'ln -s %s %s'%(assocFile, proxyLink)
                         cmd = cmd + ' && chmod 600 %s'%assocFile
                         os.system(cmd)
-                        assocFile = proxyLink
                 except Exception, e:
                     reason = "Warning: error while linking the proxy file for task %s."%taskUniqName 
-                    reason += "Original filename will be used."
                     logging.info(reason)
-                    logging.info( traceback.format_exc() ) 
-                    assocFile = self.proxyMap[psubj]
+                    logging.info( traceback.format_exc() )
+                    return 0, assocFile 
                 return 0, assocFile
             
         reason = "Unable to locate a proper proxy for the task %s with subjcet %s"%(taskUniqName, subj)

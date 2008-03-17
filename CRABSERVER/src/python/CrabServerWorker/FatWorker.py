@@ -78,15 +78,7 @@ class FatWorker(Thread):
             cmdSpecFile = taskDir + 'cmd.xml'
             doc = minidom.parse(cmdSpecFile)
             self.cmdXML = doc.getElementsByTagName("TaskCommand")[0]
-
-            #taskSpecFile = taskDir + 'task.xml'
-            #f = open(taskSpecFile, 'r')
-            #self.taskXML = f.readlines()
-            #f.close()
-
-            # TODO fix for BL deserialization blocking bug
             self.taskXML =  taskDir + 'task.xml'
-
         except Exception, e:
             status = 6
             reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
@@ -242,50 +234,43 @@ class FatWorker(Thread):
         skippedSubmissions = []
 
         ## check if the input sandbox is already on the right SE  
-        taskFileList = list( task['globalSandbox'] )
-
-        # TODO fix the problem of abs paths on client-side # Fabio
-        return newRange, skippedSubmissions
-        ##
-        #############################
+        taskFileList = task['globalSandbox'].split(',')
+        remotePath = str(self.cfg_params['CRAB.se_remote_dir'])
+        
+        print '--------------\n', taskFileList, remotePath
+        print self.SEurl, self.SEproto, self.SEport  
+        # return newRange, skippedSubmissions
          
-        # TODO fix the problem of abs paths on client-side and add proxy path infos # Fabio
-        ###
         try:
-            seEl = SElement(self.seCfg['url'], self.seCfg['proto']) 
+            seEl = SElement(self.SEurl, self.SEproto, self.SEport) 
             sbi = SBinterface( seEl )
             for f in taskFileList:
                 if sbi.checkExists(f, self.proxy) == False:
                     return [], newRange
-
         except Exception, e:
             self.log.info( traceback.format_exc() )
             return [], newRange
         
-        # TODO how to get information about the current running objects of the task?
-        ### 
         for j in task.jobs:
             if (j['jobId'] in newRange):
                 try:
-                    rj = j.runningJob
+                    # do not submit already running or scheduled jobs
+                    if j.runningJob['status'] in doNotSubmitStatusMask:
+                        self.log.info("FatWorker %s.\n Task %s job %s status %s. Won't be submitted"%(self.myName, \
+                            self.taskName, j['name'], j['status']) )
+                        newRange.remove(j['jobId'])
+                        continue
+
+                    # trace unknown state jobs and skip them from submission
+                    if j.runningJob['status'] not in tryToSubmitMask:
+                        newRange.remove(j['jobId'])
+                        skippedSubmissions.append(j['jobId'])
                 except Exception, e:
-                    self.log.info("FatWorker %s.\n Task %s job %s not a RunningJob object. Won't be submitted"%(self.myName, \
-                             self.taskName, j['name']) )
-                    newRange.remove(j['jobId'])
-                    continue 
-
-                # do not submit already running or scheduled jobs
-                if rj['status'] in doNotSubmitStatusMask:
-                    self.log.info("FatWorker %s.\n Task %s job %s status %s. Won't be submitted"%(self.myName, \
-                        self.taskName, j['name'], j['status']) )
-                    newRange.remove(j['jobId'])
-                    continue
-
-                # trace unknown state jobs and skip them from submission
-                if rj['status'] not in tryToSubmitMask:
+                    self.log.info("FatWorker %s.\n problem inspecting task %s job %s. Won't be submitted"%(self.myName, \
+                                self.taskName, j['name']) )
                     newRange.remove(j['jobId'])
                     skippedSubmissions.append(j['jobId'])
-        ## 
+
         return newRange, skippedSubmissions
 
     def submitTaskBlocks(self, taskObj, blockMap, rng):
@@ -300,8 +285,12 @@ class FatWorker(Thread):
                 # reqSubmJobs += bulkRng
 
         # TODO bad counting of submitted jobs # Fabio
-        submittedJobs = [ j['jobId'] for j in self.blDBsession.loadSubmitted(taskObj) ]
-        submittedJobs += [ j['jobId'] for j in self.blDBsession.loadEnded(taskObj) if j['jobId'] not in submittedJobs ]
+        selAttribs = {'taskId':taskObj['id'], 'closed':None}  
+        submittedJobs = [ j['jobId'] for j in self.blDBsession.loadJobsByRunningAttr(selAttribs)]
+        selAttribs = {'taskId':taskObj['id'], 'status' : 'SD' }
+        submittedJobs += [ j['jobId'] for j in self.blDBsession.loadJobsByRunningAttr(selAttribs)]
+        submittedJobs = list(set(submittedJobs))
+
         # get the really not submitted jobs
         nonSubmittedJobs = [ jId for jId in rng if jId not in (submittedJobs + unmatchedJobs) ]        
         return submittedJobs, unmatchedJobs, nonSubmittedJobs
@@ -376,8 +365,6 @@ class FatWorker(Thread):
         return
 
     def registerTask(self, taskArg):
-        # TODO DB Problems here, bypassed for now # Fabio
-        #return 0
 
         try:
             dbCfg = copy.deepcopy(dbConfig)
