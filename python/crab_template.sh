@@ -213,8 +213,39 @@ dumpStatus() {
     echo "MonitorID=`echo $MonitorID`" >> $1
 }
 
-### CRAB EXIT FUNCTION
+
+### CRAB UPDATE THE FJR WITH WRAPPER_EXIT_CODE ###
+update_fjr() {
+    if [ ! -s $RUNTIME_AREA/JobReportErrorCode.py ]; then
+        echo "WARNING: it is not possible to create crab_fjr.xml to final report"
+    else
+        echo "PYTHONPATH = $PYTHONPATH"
+        chmod a+x $RUNTIME_AREA/JobReportErrorCode.py
+        python $RUNTIME_AREA/JobReportErrorCode.py crab_fjr_$NJob.xml $job_exit_code $executable_exit_status
+    fi
+}
+                                            
+### REMOVE THE WORKING_DIR IN OSG SITES ###
+remove_working_dir() {
+    cd $RUNTIME_AREA
+    echo "############### WORKING_DIR = $WORKING_DIR #####################"
+    echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"
+    echo ">>> Remove working directory: $WORKING_DIR"
+    /bin/rm -rf $WORKING_DIR
+    if [ -d $WORKING_DIR ] ;then
+        echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname`"
+        job_exit_code=10017
+    fi
+}
+                                            
+### CRAB EXIT FUNCTION ###
 func_exit() {
+    if [ $PYTHONPATH ]; then
+        update_fjr
+    fi
+    if [ $middleware == OSG ] && [ $WORKING_DIR]; then
+        remove_working_dir
+    fi
     echo "JOB_EXIT_STATUS = $job_exit_code"
     echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo
     dumpStatus $RUNTIME_AREA/$repo
@@ -240,6 +271,8 @@ tar zxf MLfiles.tgz
 if [ $? -ne 0 ]; then
     echo "Warning: Failed to untar ML files"
 fi
+
+#CRAB untar_software 
 
 #
 # SETUP ENVIRONMENT
@@ -313,14 +346,23 @@ echo "TIME_EXE = $TIME_EXE sec"
 echo "ExeTime=$TIME_EXE" >> $RUNTIME_AREA/$repo
 
 echo ">>> Parse FrameworkJobReport crab_fjr.xml"
-if [ -s crab_fjr.xml ]; then
+#if [ -s crab_fjr.xml ]; then
+### FEDE ###
+if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then
+#########################
       if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
-          cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
+          #cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
+          ### FEDE ###
+          cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
+          ####################
           echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
           executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
           if [ $executable_exit_status -eq 50115 ];then
               echo ">>> crab_fjr.xml contents: "
-              cat crab_fjr.xml
+              #cat crab_fjr.xml
+              #### FEDE ###### 
+              cat $RUNTIME_AREA/crab_fjr_NJob.xml
+              ################
               echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"
           else
               echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"

@@ -787,7 +787,10 @@ class Cmssw(JobType):
         try:
             tar = tarfile.open(self.MLtgzfile, "w:gz")
             path=os.environ['CRABDIR'] + '/python/'
-            for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py','writeCfg.py']:
+            #for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py','writeCfg.py']:
+            ### FEDE ####
+            for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py','writeCfg.py', 'JobReportErrorCode.py']:
+            ###############
                 tar.add(path+file,file)
             common.logger.debug(5,"Files added to "+self.MLtgzfile+" : "+str(tar.getnames()))
             tar.close()
@@ -855,20 +858,20 @@ class Cmssw(JobType):
         #txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '    echo "ERROR ==> CMSSW '+self.version+' not found on `hostname`" \n'
         txt += '    job_exit_code=10034\n'
-        txt += '    if [ $middleware == OSG ]; then \n'
-        txt += '        cd $RUNTIME_AREA\n'
-        txt += '        echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
-        txt += '        echo ">>> Remove working directory: $WORKING_DIR"\n'
-        txt += '        /bin/rm -rf $WORKING_DIR\n'
-        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        #txt += '    if [ $middleware == OSG ]; then \n'
+        #txt += '        cd $RUNTIME_AREA\n'
+        #txt += '        echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
+        #txt += '        echo ">>> Remove working directory: $WORKING_DIR"\n'
+        #txt += '        /bin/rm -rf $WORKING_DIR\n'
+        #txt += '        if [ -d $WORKING_DIR ] ;then\n'
         #txt += '            echo "SET_CMS_ENV 10018 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
         #txt += '            echo "JOB_EXIT_STATUS = 10018"\n'
         #txt += '            echo "JobExitCode=10018" | tee -a $RUNTIME_AREA/$repo\n'
         #txt += '            dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
-        txt += '            job_exit_code=10017\n'
-        txt += '        fi\n'
-        txt += '    fi \n'
+        #txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
+        #txt += '            job_exit_code=10017\n'
+        #txt += '        fi\n'
+        #txt += '    fi \n'
         #txt += '    exit 1 \n'
         txt += '    func_exit\n'
         txt += 'fi \n'
@@ -892,20 +895,20 @@ class Cmssw(JobType):
         #txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += "    echo 'ERROR ==> Too few arguments' +$nargs+ \n"
         txt += '    job_exit_code=50113\n'
-        txt += '    if [ $middleware == OSG ]; then \n'
-        txt += '        cd $RUNTIME_AREA\n'
-        txt += '        echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
-        txt += '        echo ">>> Remove working directory: $WORKING_DIR"\n'
-        txt += '        /bin/rm -rf $WORKING_DIR\n'
-        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        #txt += '    if [ $middleware == OSG ]; then \n'
+        #txt += '        cd $RUNTIME_AREA\n'
+        #txt += '        echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
+        #txt += '        echo ">>> Remove working directory: $WORKING_DIR"\n'
+        #txt += '        /bin/rm -rf $WORKING_DIR\n'
+        #txt += '        if [ -d $WORKING_DIR ] ;then\n'
         #txt += '            echo "SET_EXE_ENV 50114 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Too few arguments for CRAB job wrapper"\n'
         #txt += '            echo "JOB_EXIT_STATUS = 50114"\n'
         #txt += '            echo "JobExitCode=50114" | tee -a $RUNTIME_AREA/$repo\n'
         #txt += '            dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Too few arguments for CRAB job wrapper"\n'
-        txt += '            job_exit_code=10017\n'
-        txt += '        fi\n'
-        txt += '    fi\n'
+        #txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Too few arguments for CRAB job wrapper"\n'
+        #txt += '            job_exit_code=10017\n'
+        #txt += '        fi\n'
+        #txt += '    fi\n'
         #txt += "    exit 1\n"
         txt += "    func_exit\n"
         txt += "fi\n"
@@ -967,7 +970,40 @@ class Cmssw(JobType):
             txt += 'echo "PSETHASH = $PSETHASH" \n'
             txt += '\n'
         return txt
+    #### FEDE #####
+    def wsUntarSoftware(self, nj=0):
+        """
+        Put in the script the commands to build an executable
+        or a library.
+        """
 
+        txt = '\n#Written by cms_cmssw::wsUntarSoftware\n'
+
+        if os.path.isfile(self.tgzNameWithPath):
+            txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
+            txt += 'tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'untar_status=$? \n'
+            txt += 'if [ $untar_status -ne 0 ]; then \n'
+            txt += '   echo "ERROR ==> Untarring .tgz file failed"\n'
+            txt += '   job_exit_code=$untar_status\n'
+            txt += '   func_exit\n'
+            txt += 'else \n'
+            txt += '   echo "Successful untar" \n'
+            txt += 'fi \n'
+            txt += '\n'
+            txt += 'echo ">>> Include ProdCommon in PYTHONPATH:"\n'
+            txt += 'if [ -z "$PYTHONPATH" ]; then\n'
+            txt += '   export PYTHONPATH=$RUNTIME_AREA/ProdCommon\n'
+            txt += 'else\n'
+            txt += '   export PYTHONPATH=$RUNTIME_AREA/ProdCommon:${PYTHONPATH}\n'
+            txt += 'echo "PYTHONPATH=$PYTHONPATH"\n'
+            txt += 'fi\n'
+            txt += '\n'
+
+            pass
+
+        return txt
+        
     def wsBuildExe(self, nj=0):
         """
         Put in the script the commands to build an executable
@@ -975,54 +1011,36 @@ class Cmssw(JobType):
         """
 
         txt = '\n#Written by cms_cmssw::wsBuildExe\n'
+        txt += 'echo ">>> moving CMSSW software directories in `pwd`" \n'
 
-        if os.path.isfile(self.tgzNameWithPath):
-            txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
-            txt += 'tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
-            txt += 'untar_status=$? \n'
-            txt += 'if [ $untar_status -ne 0 ]; then \n'
-            #txt += '   echo "SET_EXE 1 ==> ERROR Untarring .tgz file failed"\n'
-            #txt += '   echo "JOB_EXIT_STATUS = $untar_status" \n'
-            #txt += '   echo "JobExitCode=$untar_status" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '   echo "ERROR ==> Untarring .tgz file failed"\n'
-            txt += '   job_exit_code=$untar_status\n'
-            txt += '   echo "JobExitCode=$untar_status" >> $RUNTIME_AREA/$repo\n'
-            txt += '   if [ $middleware == OSG ]; then \n'
-            txt += '       cd $RUNTIME_AREA\n'
-            txt += '        echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
-            txt += '        echo ">>> Remove working directory: $WORKING_DIR"\n'
-            txt += '       /bin/rm -rf $WORKING_DIR\n'
-            txt += '       if [ -d $WORKING_DIR ] ;then\n'
-            #txt += '           echo "SET_EXE 50999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Untarring .tgz file failed"\n'
-            #txt += '           echo "JOB_EXIT_STATUS = 50999"\n'
-            #txt += '           echo "JobExitCode=50999" | tee -a $RUNTIME_AREA/$repo\n'
-            #txt += '           dumpStatus $RUNTIME_AREA/$repo\n'
-            txt += '           echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Untarring .tgz file failed"\n'
-            txt += '           job_exit_code=10017\n'
-            txt += '       fi\n'
-            txt += '   fi \n'
-            txt += '   \n'
-            #txt += '   exit 1 \n'
-            txt += '   func_exit\n'
-            txt += 'else \n'
-            txt += '   echo "Successful untar" \n'
-            txt += 'fi \n'
-            txt += '\n'
-            #### Removed ProdAgent API dependencies
-            txt += 'echo ">>> Include ProdCommon in PYTHONPATH:"\n'
-            txt += 'if [ -z "$PYTHONPATH" ]; then\n'
-            #### FEDE FOR DBS OUTPUT PUBLICATION
-            txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdCommon\n'
-            txt += 'else\n'
-            txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdCommon:${PYTHONPATH}\n'
-            txt += 'echo "PYTHONPATH=$PYTHONPATH"\n'
-            ###################
-            txt += 'fi\n'
-            txt += '\n'
+        txt += 'mv $RUNTIME_AREA/lib . \n'
+        txt += 'mv $RUNTIME_AREA/module . \n'
+        txt += 'mv $RUNTIME_AREA/ProdCommon . \n'
+        
 
-            pass
+        #if os.path.isfile(self.tgzNameWithPath):
+        #    txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
+        #    txt += 'tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+        #    txt += 'untar_status=$? \n'
+        #    txt += 'if [ $untar_status -ne 0 ]; then \n'
+        #    txt += '   echo "ERROR ==> Untarring .tgz file failed"\n'
+        #    txt += '   job_exit_code=$untar_status\n'
+        #    txt += '   func_exit\n'
+        #    txt += 'else \n'
+        #    txt += '   echo "Successful untar" \n'
+        #    txt += 'fi \n'
+        #    txt += '\n'
+        #    txt += 'echo ">>> Include ProdCommon in PYTHONPATH:"\n'
+        txt += 'if [ -z "$PYTHONPATH" ]; then\n'
+        txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdCommon\n'
+        txt += 'else\n'
+        txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdCommon:${PYTHONPATH}\n'
+        txt += 'echo "PYTHONPATH=$PYTHONPATH"\n'
+        txt += 'fi\n'
+        txt += '\n'
 
         return txt
+    ############################################################################
 
     def modifySteeringCards(self, nj):
         """
@@ -1055,8 +1073,10 @@ class Cmssw(JobType):
 
             # Framework job report
             if major >= 1 and minor >= 5 :
-                ex_args += " -j " + self.fjrFileName
-
+                #ex_args += " -j " + self.fjrFileName
+            ### FEDE it could be improved!!! ####    
+                ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
+            #######################################
             # Type of cfg file
             if major >= 2 :
                 ex_args += " -p pset.pycfg"
@@ -1115,24 +1135,23 @@ class Cmssw(JobType):
 
         #txt += 'output_exit_status=0\n'
 
-        for fileWithSuffix in (self.output_file_sandbox):
-            output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
-            txt += '\n'
-            txt += '# check output file\n'
-            txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-            txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-            txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
-            txt += 'else\n'
-            #txt += '    exit_status=60302\n'
-            #txt += '    echo "ERROR: Output file '+fileWithSuffix+' not found"\n'
-            txt += '    echo "WARNING: Output file '+fileWithSuffix+' not found"\n'
-            txt += '    job_exit_code=60302\n'
-            if common.scheduler.name().upper() == 'CONDOR_G':
-                txt += '    if [ $middleware == OSG ]; then \n'
-                txt += '        echo "prepare dummy output file"\n'
-                txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
-                txt += '    fi \n'
-            txt += 'fi\n'
+        ### FEDE #######
+        #for fileWithSuffix in (self.output_file_sandbox):
+        #    output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
+        #    txt += '\n'
+        #    txt += '# check output file\n'
+        #    txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
+        #    txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
+        #    txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
+        #    txt += 'else\n'
+        #    txt += '    echo "WARNING: Output file '+fileWithSuffix+' not found"\n'
+        #    txt += '    job_exit_code=60302\n'
+        #    if common.scheduler.name().upper() == 'CONDOR_G':
+        #        txt += '    if [ $middleware == OSG ]; then \n'
+        #        txt += '        echo "prepare dummy output file"\n'
+        #        txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
+        #        txt += '    fi \n'
+        #    txt += 'fi\n'
 
         for fileWithSuffix in (self.output_file):
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
@@ -1236,18 +1255,18 @@ class Cmssw(JobType):
         #txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '        echo "ERROR ==> $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'
         txt += '        job_exit_code=10020\n'
-        txt += '        cd $RUNTIME_AREA\n'
-        txt += '        echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
-        txt += '        echo ">>> Remove working directory: $WORKING_DIR"\n'
-        txt += '        /bin/rm -rf $WORKING_DIR\n'
-        txt += '        if [ -d $WORKING_DIR ] ;then\n'
+        #txt += '        cd $RUNTIME_AREA\n'
+        #txt += '        echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
+        #txt += '        echo ">>> Remove working directory: $WORKING_DIR"\n'
+        #txt += '        /bin/rm -rf $WORKING_DIR\n'
+        #txt += '        if [ -d $WORKING_DIR ] ;then\n'
         #txt += '            echo "SET_CMS_ENV 10017 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'
         #txt += '            echo "JOB_EXIT_STATUS = 10017"\n'
         #txt += '            echo "JobExitCode=10017" | tee -a $RUNTIME_AREA/$repo\n'
         #txt += '            dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'
-        txt += '            job_exit_code=10017\n'
-        txt += '        fi\n'
+        #txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'
+        #txt += '            job_exit_code=10017\n'
+        #txt += '        fi\n'
         txt += '\n'
         #txt += '        exit 1\n'
         txt += '        func_exit\n'
@@ -1346,9 +1365,12 @@ class Cmssw(JobType):
             txt += '    echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += '    echo "FOR_LFN = $FOR_LFN" \n'
             txt += '    echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-            txt += '    echo "$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
-            txt += '    $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
-
+            #txt += '    echo "$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
+            #txt += '    $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
+            ### FEDE ####
+            txt += '    echo "$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
+            txt += '    $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
+            ####################################
             txt += '    modifyReport_result=$?\n'
             txt += '    if [ $modifyReport_result -ne 0 ]; then\n'
             txt += '        modifyReport_result=70500\n'
@@ -1356,7 +1378,10 @@ class Cmssw(JobType):
             txt += '        echo "ModifyReportResult=$modifyReport_result" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '        echo "WARNING: Problem with ModifyJobReport"\n'
             txt += '    else\n'
-            txt += '        mv NewFrameworkJobReport.xml crab_fjr_$NJob.xml\n'
+            ### FEDE #####
+            #txt += '        mv NewFrameworkJobReport.xml crab_fjr_$NJob.xml\n'
+            #######################
+            txt += '        mv NewFrameworkJobReport.xml $RUNTIME_AREA/crab_fjr_$NJob.xml\n'
             txt += '    fi\n'
             txt += 'fi\n'
         return txt
@@ -1369,10 +1394,6 @@ class Cmssw(JobType):
         txt += '    echo ">>> Remove working directory: $WORKING_DIR"\n'
         txt += '    /bin/rm -rf $WORKING_DIR\n'
         txt += '    if [ -d $WORKING_DIR ] ;then\n'
-        #txt += '        echo "SET_EXE 60999 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
-        #txt += '        echo "JOB_EXIT_STATUS = 60999"\n'
-        #txt += '        echo "JobExitCode=60999" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '        echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
         txt += '        job_exit_code=10017\n'
         txt += '        func_exit\n'
