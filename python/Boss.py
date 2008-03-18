@@ -17,43 +17,37 @@ class Boss:
     def __init__(self):
 
         return
-
-    def __del__(self):
-        """ destroy instance """
-        del self.bossAdmin
-        del self.bossUser
-        return
-
-
-#### Boss Configuration 
-
-    def configure(self, cfg_params):
-
+ 
+    def configure(self,cfg_params):  
         self.cfg_params = cfg_params
-        self.schedulerName =  cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
-
-        ## Add here the map for others Schedulers (LSF/CAF/CondorG)
-        SchedMap = {'glite':'SchedulerGLiteAPI'}         
-          
-       # schedulerConfig = { 'name' : SchedMap[self.schedulerName]} 
-
-        schedulerConfig = {
-              'name' : 'SchedulerGLiteAPI',
-#              'service' :'https://wms006.cnaf.infn.it:7443/glite_wms_wmproxy_server'
-          #    'config' : '/afs/cern.ch/user/s/spiga/scratch0/WorkingDir/glite.conf.CMS_CNAF'
-              }
-
-
-        self.schedSession = BossLiteAPISched( common.bossSession, schedulerConfig)
-
+        self.schedulerName =  self.cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
+        self.rb_param_file=''
+        if (cfg_params.has_key('EDG.rb')):
+            self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
+        self.wms_service=cfg_params.get("EDG.wms_service",'')        
+ 
         self.outDir = cfg_params.get("USER.outputdir", common.work_space.resDir() )
         self.logDir = cfg_params.get("USER.logdir", common.work_space.resDir() )
 
         self.return_data = cfg_params.get('USER.return_data',0)
+
+        ## Add here the map for others Schedulers (LSF/CAF/CondorG)
+        SchedMap = {'glite':'SchedulerGLiteAPI',          
+                    'glitecoll':'SchedulerGLiteAPI',\
+                    'condor_g':'',\
+                    'lsf':'',\
+                    'caf':''   
+                    }         
+                 
+        schedulerConfig = {
+              'name' : SchedMap[self.schedulerName], \
+              'service' : self.wms_service, \
+              'config' : self.rb_param_file  
+              }
+
+        self.schedSession = BossLiteAPISched( common.bossSession, schedulerConfig)
         
         return
-
-#### End Boss Configuration
 
     def declare(self, nj):       
         """
@@ -100,18 +94,19 @@ class Boss:
         """
         Check the compatibility of available resources
         """
-        Tout = 120
-        CEs=[]
-        try:
-            CEs=self.bossUser.schedListMatch( schedulerName, schcladstring, self.bossTask.id(), "", Tout)
-            common.logger.debug(1,"CEs :"+str(CEs))
-        except SchedulerError,e:
-            common.logger.message( "Warning : Scheduler interaction in list-match operation failed for jobs:")
-            common.logger.message( e.__str__())
-            pass
-        except BossError,e:
-            raise CrabException("ERROR: listMatch failed with message " + e.__str__())
-        return CEs
+#        Tout = 120
+#        CEs=[]
+#        try:
+#            CEs=self.bossUser.schedListMatch( schedulerName, schcladstring, self.bossTask.id(), "", Tout)
+#            common.logger.debug(1,"CEs :"+str(CEs))
+#        except SchedulerError,e:
+#            common.logger.message( "Warning : Scheduler interaction in list-match operation failed for jobs:")
+#            common.logger.message( e.__str__())
+#            pass
+#        except BossError,e:
+#            raise CrabException("ERROR: listMatch failed with message " + e.__str__())
+#        return CEs
+        return 
   
     def submit(self, jobsList,req):
         """
@@ -119,10 +114,6 @@ class Boss:
         Submit one job. nj -- job number.
         """
         task = common._db.getTask()
-        #self.schedSession.submit( task, string.join(jobsList,','))
-        #print jobsList
-        pippo =[]
-        pippo.append(0) 
         self.schedSession.submit( task,jobsList,req )
       #  try:
       #  except SchedulerError,e:

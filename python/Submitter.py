@@ -163,9 +163,9 @@ class Submitter(Actor):
         for id_job in jobs_to_match :
             Requi.append(common.scheduler.sched_parameter(id_job,task))
             if common.scheduler.name().upper() != "CONDOR_G" :
-                #match = common.scheduler.listMatch(id_job)
                 match = "1"
             else :
+                #match = common.scheduler.listMatch(id_job)
                 match = "1"
             if match:
                common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(id_job))
@@ -186,8 +186,6 @@ class Submitter(Actor):
                 if not common.logger.debugLevel() :
                     try: pbar = ProgressBar(term, 'Submitting '+str(len(sub_jobs[ii]))+' jobs')
                     except: pbar = None
-                print sub_jobs[ii]
-                print Requi[ii]
                 req=str(common._db.queryTask('jobType')) 
                 common.scheduler.submit(sub_jobs[ii],Requi[ii])
 
@@ -210,8 +208,6 @@ class Submitter(Actor):
                 ### check the if the submission succeded Maybe not needed or at least simplified 
                 njs=0 
                 task=common._db.getTask()
-             #   jid = common._db.queryRunJob('schedulerId',sub_jobs[ii])
-             #   st = common._db.queryRunJob('status',sub_jobs[ii])
                 listId=[]
                 run_jobToSave = {'status' :'S'}
                 for j in sub_jobs[ii]: # Add loop over SID returned from group submission  DS
@@ -279,19 +275,17 @@ class Submitter(Actor):
         msg = '\nTotal of %d jobs submitted'%njs
         if njs != len(self.nj_list) :
             msg += ' (from %d requested).\n'%(len(self.nj_list))
-            pass
+            if self.cfg_params.has_key('EDG.se_white_list'):
+                msg += 'SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
+            if self.cfg_params.has_key('EDG.se_black_list'):
+                msg += 'SE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
+            if self.cfg_params.has_key('EDG.ce_white_list'):
+                msg += 'CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
+            if self.cfg_params.has_key('EDG.ce_black_list'):
+                msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
+            msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\nPlease check if the dataset is available at this site!)\n'
         else:
             msg += '.\n'
-        if self.cfg_params.has_key('EDG.se_white_list'):
-            msg += 'SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
-        if self.cfg_params.has_key('EDG.se_black_list'):
-            msg += 'SE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
-        if self.cfg_params.has_key('EDG.ce_white_list'):
-            msg += 'CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
-        if self.cfg_params.has_key('EDG.ce_black_list'):
-            msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
-        msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\nPlease check if the dataset is available at this site!)\n'
-
         common.logger.message(msg)
 
 

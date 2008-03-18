@@ -24,7 +24,7 @@ class SchedulerGlite(SchedulerGrid):
         glite_config = gliteConfig.config()
 
         if (glite_config ):
-            rb_param_file = 'WMSconfig = '+glite_config+';\n'
+            rb_param_file = glite_config
         return rb_param_file
 
     def ce_list(self):
