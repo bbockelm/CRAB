@@ -4,247 +4,92 @@ import common
 from ApmonIf import ApmonIf
 import time
 
-import xml.dom.minidom
-import TaskDB
+import traceback
+from xml.dom import minidom
+from ServerCommunicator import ServerCommunicator
+from Status import Status
 
-class StatusServer(Actor):
- 
-    def __init__(self, cfg_params,):
-        self.cfg_params = cfg_params
+class StatusServer(Status):
 
-        self.countNotSubmit = 0
-        self.countSubmit = 0
-        self.countSubmitting = 0
-        self.countWait = 0
-        self.countDone = 0
-        self.countReady = 0
-        self.countSched = 0
-        self.countRun = 0
-        self.countAbort = 0
-        self.countCancel = 0
-        self.countRet = 0
-        self.countKilled = 0
-        self.countCleared = 0
-        self.countToTjob = 0
+    def __init__(self, *args):
+        self.cfg_params = args[0]
+        self.server_name = None
+        self.server_path = None
 
-        try:  
-            self.server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
-            if not self.server_name.endswith("/"):
-                self.server_name = self.server_name + "/"
+        print self.cfg_params['CRAB.server_name']
+        try:
+            ## SERVER HARDCODED - MATTY
+            ## the API (wget or siteDB) can be callet here
+            self.server_name, self.server_path = self.cfg_params['CRAB.server_name'].split('/',1)
+            self.server_path = os.path.join('/',self.server_path)
+            self.server_port = int("20081")
         except KeyError:
-            msg = 'No server selected ...' 
-            msg = msg + 'Please specify a server in the crab cfg file' 
-            raise CrabException(msg) 
-
+            msg = 'No server selected or port specified.'
+            msg = msg + 'Please specify a server in the crab cfg file'
+            raise CrabException(msg)
         return
 
-    def translateStatus(self, status):
-        """
-        simmetric as server
-        """
-
-        stateConverting = {'Running': 'R', 'Aborted': 'A', 'Done': 'D', 'Done (Failed)': 'D',\
-                           'Cleared': 'D', 'Cancelled': 'K', 'Killed': 'K', 'NotSubmitted': 'C',\
-                           'Retrieving by the server': 'R' }
-
-        if status in stateConverting:
-            return stateConverting[status]
-        return None
-
-
-    def run(self):
-        """
-        The main method of the class: check the status of the task
-        """
-        common.logger.debug(5, "status server::run() called")
-        start = time.time()
-
-        totalCreatedJobs = 0
-        flagSubmit = 0
-        for nj in range(common.jobDB.nJobs()):
-            if (common.jobDB.status(nj) != 'C'):
-                totalCreatedJobs +=1
-                flagSubmit = 1
-
-        if not flagSubmit:
-            common.logger.message("Your jobs are not yet submitted!")
-            common.logger.message("Before checking the status submit your jobs with the command:  crab -submit all -c\n")
-            return
-
+    # all the behaviors are inherited from the direct status. Only some mimimal modifications
+    # are needed in order to extract data from status XML and to align back DB information   
+    # Fabio
+  
+    def compute(self):
+        # proxy management
+        proxy = None # common._db.queryTask('proxy')
+        if 'X509_USER_PROXY' in os.environ:
+            proxy = os.environ['X509_USER_PROXY']
+        else:
+            status, proxy = commands.getstatusoutput('ls /tmp/x509up_u`id -u`')
+            proxy = proxy.strip()
         common.scheduler.checkProxy()
 
-        common.taskDB.load()
-        WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
-        projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict('TasKUUID')     
-        try: 
-            common.logger.message ("Checking the status...\n")
-            cmd = 'lcg-cp --vo cms  gsiftp://' + str(self.server_name) + str(projectUniqName)+\
-                  '/res/xmlReportFile.xml file://'+common.work_space.resDir()+'xmlReportFile.xml'
-            common.logger.debug(6, cmd)
-            os.system(cmd +' >& /dev/null')  
+        task = common._db.getTask()
 
-        except: 
-            #msg = ("task status not yet available")
-            msg = "The server is managing your task."
-            msg += "\n      A detailed report will be ready soon.\n"
-            raise CrabException(msg)
+        # communicator allocation
+        common.logger.message("Checking the status of all jobs: please wait")
+        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, proxy)
+        reportXML = csCommunicator.getStatus( str(task['name']) )
+        del csCommunicator
 
-        try:     
-            # file = open(common.work_space.resDir()+"xmlReportFile.xml", "r")
-            doc = xml.dom.minidom.parse(common.work_space.resDir()+ "xmlReportFile.xml" )
-        
-        except: 
-            #msg = ("problems reading report file")
-            msg = "The server is managing your task."
-            msg += "\n      A detailed report will be ready soon.\n"
-            raise CrabException(msg)
+        # align back data and print
+        reportList = minidom.parseString(reportXML).getElementsByTagName('Job')
+        toPrint=[]
+        for job in task.jobs:
+            id = str(job.runningJob['id'])
+            # TODO sub-linear search, probably it can be optized with binary search
+            rForJ = None
+            for r in reportList:
+                if id == r.getAttribute('id'):
+                    rForJ = r
+                    break
 
-        ###  <Job status='Submitted' job_exit='NULL' id='1' exe_exit='NULL'/>
+            # Data alignment  
+            job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
+            jobStatus = str(job.runningJob['statusScheduler'])
+            
+            job.runningJob['destination'] = str( rForJ.getAttribute('site') )            
+            dest = str(job.runningJob['destination']).split(':')[0]
 
-        task = doc.childNodes[0].childNodes[1].getAttribute("taskName")
-        self.countToTjob = int(doc.childNodes[0].childNodes[1].getAttribute("totJob") )
-       
-        addTree = 3
+            job.runningJob['applicationReturnCode'] = str( rForJ.getAttribute('exe_exit') )
+            exe_exit_code = str(job.runningJob['applicationReturnCode'])
 
-        common.jobDB.load()
+            job.runningJob['wrapperReturnCode'] = str( rForJ.getAttribute('job_exit') )
+            job_exit_code = str(job.runningJob['wrapperReturnCode'])
+              
+            job['submissionNumber'] =  int(rForJ.getAttribute('resubmit'))
+            # TODO cleared='0' field, how should it be handled/mapped in BL? #Fabio
+            common.bossSession.updateDB( task )
 
-        if doc.childNodes[0].childNodes[3].getAttribute("id") == "all":
-            if doc.childNodes[0].childNodes[3].getAttribute("status") == "Submitted":
-                self.countSubmitting = common.jobDB.nJobs()
-                for nj in range(common.jobDB.nJobs()):
-                    common.jobDB.setStatus(nj, 'S')
-            elif doc.childNodes[0].childNodes[3].getAttribute("status") == "Killed":
-                self.countKilled = common.jobDB.nJobs()
-                for nj in range(common.jobDB.nJobs()):
-                    common.jobDB.setStatus(nj, 'K')
-                    self.countKilled = common.jobDB.nJobs()
-            elif doc.childNodes[0].childNodes[3].getAttribute("status") == "NotSubmitted":
-                self.countNotSubmit = common.jobDB.nJobs()
-                for nj in range(common.jobDB.nJobs()):
-                    common.jobDB.setStatus(nj, 'C')
-            self.countToTjob = common.jobDB.nJobs()
-        else:
-            printline = ''
-            printline+= "%-10s %-24s %-20s %-20s %-18s %-20s" % ('JOBID','STATUS','SITE','JOB_EXIT_STATUS','EXE_EXIT_CODE','RESUBMIT')
-            print printline
-            print '---------------------------------------------------------------------------------------------------------'
+            printline=''
+            if dest == 'None' :  dest = ''
+            if exe_exit_code == 'None' :  exe_exit_code = ''
+            if job_exit_code == 'None' :  job_exit_code = ''
+            printline+="%-8s %-18s %-40s %-13s %-15s" % (id,jobStatus,dest,exe_exit_code,job_exit_code)
+            toPrint.append(printline)
 
-            for job in range( self.countToTjob ):
-                idJob = doc.childNodes[0].childNodes[job+addTree].getAttribute("id")
-                stato = doc.childNodes[0].childNodes[job+addTree].getAttribute("status")
-                exe_exit_code = doc.childNodes[0].childNodes[job+addTree].getAttribute("job_exit")
-                job_exit_status = doc.childNodes[0].childNodes[job+addTree].getAttribute("exe_exit")
-                cleared = doc.childNodes[0].childNodes[job+addTree].getAttribute("cleared")
-
-                try:
-                    site = doc.childNodes[0].childNodes[job+addTree].getAttribute("site")
-                    resub = doc.childNodes[0].childNodes[job+addTree].getAttribute("resubmit")
-                    if site == "NULL" or site=="None":
-                        site=''
-                    if resub == "NULL" or resub =="None" or resub == "0":
-                        resub=''
-                    if stato == "Killed":
-                        resub=''
-                except Excpetion, ex:
-                    common.logger.message ("Problem reading report file!")
-                    common.logger.debug( 1 , str(ex) )
-
-                jobDbStatus = self.translateStatus(stato)
-                if jobDbStatus != None:
-                    common.logger.debug(5, '*** Updating jobdb for job %s ***' %idJob)
-                    if common.jobDB.status( str(int(idJob)-1) ) != "Y":
-                        if jobDbStatus == 'D' and int(cleared) != 1:#exe_exit_code =='' and job_exit_status=='':
-                            ## 'Done' but not yet cleared (server side) still showing 'Running'
-                            ##stato = 'Running'
-                            stato = 'Retrieving by the server'  ## changed - is this user friendly? 
-                            jobDbStatus = 'R'
-                        common.jobDB.setStatus( str(int(idJob)-1), self.translateStatus(stato) )
-                    else:
-                        stato = "Cleared"
-                    common.jobDB.setExitStatus(  str(int(idJob)-1), job_exit_status )
-                if stato != "Done" and stato != "Cleared" and stato != "Aborted" and stato != "Done (Failed)":
-                    sitotemp = site
-                    if stato == "Resubmitting by the server":
-                        sitotemp = ""
-                    print "%-10s %-24s %-20s %-20s %-18s %-20s" % (idJob,stato,sitotemp,'','',resub)
-                else:
-                    print "%-10s %-24s %-20s %-20s %-18s %-20s" % (idJob,stato,site,exe_exit_code,job_exit_status,resub)
-
-                if stato == 'Running':
-                    self.countRun += 1
-                elif stato == 'Aborted':
-                    self.countAbort += 1
-                elif stato == 'Done' or stato == 'Done (Failed)':
-                    self.countDone += 1
-                elif stato == 'Cancelled':
-                    self.countCancel += 1
-                elif stato == 'Submitted':
-                    self.countSubmit += 1
-                elif stato == 'Submitting':
-                    self.countSubmitting += 1
-                elif stato == 'Ready':
-                    self.countReady += 1
-                elif stato == 'Scheduled':
-                    self.countSched += 1
-                elif stato == 'Cleared':
-                    self.countCleared += 1
-                elif stato == 'NotSubmitted':
-                    self.countNotSubmit += 1
-                elif stato == 'Waiting':
-                    self.countWait += 1
-                elif stato == 'Retrieving by the server':
-                    self.countRet += 1
-                elif stato == 'Killed':
-                    self.countKilled += 1
-
-                addTree += 1
-        common.jobDB.save()
-
-        self.PrintReport_()
-
-
-    def PrintReport_(self) :
-
-        """ Report #jobs for each status  """
-
-
-        print ''
-        print ">>>>>>>>> %i Total Jobs " % (self.countToTjob)
-        print ''
-
-        if (self.countSubmitting != 0) :
-            print ">>>>>>>>> %i Jobs Submitting by the server" % (self.countSubmitting)
-        if (self.countNotSubmit != 0):
-            print ">>>>>>>>> %i Jobs Not Submitted to the grid" % (self.countNotSubmit)
-        if (self.countSubmit != 0):
-            print ">>>>>>>>> %i Jobs Submitted" % (self.countSubmit)
-        if (self.countWait != 0):
-            print ">>>>>>>>> %i Jobs Waiting" % (self.countWait)
-        if (self.countReady != 0):
-            print ">>>>>>>>> %i Jobs Ready" % (self.countReady)
-        if (self.countSched != 0):
-            print ">>>>>>>>> %i Jobs Scheduled" % (self.countSched)
-        if (self.countRun != 0):
-            print ">>>>>>>>> %i Jobs Running" % (self.countRun)
-        if (self.countRet != 0):
-            print ">>>>>>>>> %i Jobs Retrieving by the server" % (self.countRet)
-        if (self.countDone != 0):
-            print ">>>>>>>>> %i Jobs Done" % (self.countDone)
-            print "          Retrieve them with: crab -getoutput -continue"
-        if (self.countKilled != 0):
-            print ">>>>>>>>> %i Jobs Killed" % (self.countKilled)
-#            print "          Retrieve more information with: crab -postMortem -continue"
-        if (self.countAbort != 0):
-            print ">>>>>>>>> %i Jobs Aborted" % (self.countAbort)
-        if (self.countCleared != 0):
-            print ">>>>>>>>> %i Jobs Cleared" % (self.countCleared)
-
-        countUnderMngmt = self.countToTjob - (self.countSubmitting+ self.countNotSubmit + self.countSubmit)
-        countUnderMngmt -= (self.countReady + self.countSched + self.countRun + self.countDone + self.countRet) 
-        countUnderMngmt -= (self.countKilled + self.countAbort + self.countCleared + self.countWait)
-        if (countUnderMngmt != 0):
-            print ">>>>>>>>> %i Jobs Waiting or Under Server Management" % (countUnderMngmt)
-
-        print ''
+        self.detailedReport(toPrint)
         pass
+
+
+
 

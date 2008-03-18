@@ -16,32 +16,32 @@ from CRAB_Server_API import CRAB_Server_Session as C_AS_Session
 # from CRAB_Server_fastAPI import CRAB_Server_https as C_AS_Session
 from xml.dom import minidom
 import os
+import commands
 
 class ServerCommunicator:
     """
     Common interface for the interaction between the Crab client and the server Web Service    
     """
-    def __init__(self, serverName, serverPort, cfg_params, proxyPath):
+    def __init__(self, serverName, serverPort, cfg_params, proxyPath=None):
         """
         Open the communication with an Analysis Server by passing the server URL and the port
         """
   
         self.asSession = C_AS_Session(serverName, serverPort)
         self.cfg_params = cfg_params
-        # self.blSession = bossSession
         self.userSubj = ''
         self.serverName = serverName
         
         # get the user subject from the proxy
-        import commands
-        x509 = None
-        if 'X509_USER_PROXY' in os.environ:
-            x509 = os.environ['X509_USER_PROXY']
-        else:
-            exitCode, x509 = commands.getstatusoutput('ls /tmp/x509up_u`id -u`').strip()
-            if exitCode != 0:
-                raise CrabException("Error while locating the user proxy file")
-                return
+        x509 = proxyPath
+        if x509 is None: 
+            if 'X509_USER_PROXY' in os.environ:
+                x509 = os.environ['X509_USER_PROXY']
+            else:
+                exitCode, x509 = commands.getstatusoutput('ls /tmp/x509up_u`id -u`').strip()
+                if exitCode != 0:
+                    raise CrabException("Error while locating the user proxy file")
+                    return
 
         exitCode, self.userSubj = commands.getstatusoutput('openssl x509 -in %s -subject -noout'%x509)
         if exitCode != 0:
@@ -55,7 +55,7 @@ class ServerCommunicator:
     # Interactions with the server
 ###################################################
 
-    def submitNewTask(self, blTaskId, blTaskName, blXml, rng):
+    def submitNewTask(self, blTaskName, blXml, rng):
         """
         _submitNewTask_
         Send a new task to the server to be submitted. 
@@ -69,20 +69,18 @@ class ServerCommunicator:
             raise CrabException('Error while serializing task object to XML')
             return -2
 
-        taskUniqName = blTaskId
-        #taskUniqName = self._extractTaskUniqName(blTaskId)
-        if not taskUniqName:
+        if not blTaskName:
             raise CrabException('Error while extracting the Task Unique Name string')
             return -3
 
         cmdXML = None
-        cmdXML = self._createXMLcommand(taskUniqName, 'submit', rng, newTaskAddIns=True)
+        cmdXML = self._createXMLcommand(blTaskName, 'submit', rng, newTaskAddIns=True)
         if not cmdXML:
             raise CrabException('Error while creating the Command XML')
             return -4
 
         ret = -1  
-        ret = self.asSession.transferTaskAndSubmit(blXml, cmdXML, taskUniqName)
+        ret = self.asSession.transferTaskAndSubmit(blXml, cmdXML, blTaskName)
         logMsg = ''
         if ret == 0:
              # success
@@ -104,7 +102,7 @@ class ServerCommunicator:
         common.logger.message(logMsg)
         return ret
          
-    def subsequentJobSubmit(self, blTaskId, blTaskName, rng):
+    def subsequentJobSubmit(self, blTaskName, rng):
         """
         _subsequentJobSubmit_
         Let the submission of other jobs of a task that has been already sent to a server.
@@ -114,9 +112,9 @@ class ServerCommunicator:
              - the bossLite object representing the task (jobs are assumed to be RunningJobs)
              - the range of the submission as specified by the user at the command line
         """
-        return self._genericCommand('submit', blTaskId, blTaskName, rng)
+        return self._genericCommand('submit', blTaskName, rng)
 
-    def killJobs(self, blTaskId, blTaskName, rng):
+    def killJobs(self, blTaskName, rng):
         """
         _killJobs_
         Send a kill command to one or more jobs running on the server.
@@ -125,9 +123,9 @@ class ServerCommunicator:
              - the bossLite object representing the task (jobs are assumed to be RunningJobs)
              - the range of the submission as specified by the user at the command line
         """
-        return self._genericCommand('kill', blTaskId, blTaskName, rng)
+        return self._genericCommand('kill', blTaskName, rng)
 
-    def cleanJobs(self, blTaskId, blTaskName, rng):
+    def cleanJobs(self, blTaskName, rng):
         """
         _cleanJobs_
         Force the server to clean the jobs on the server.
@@ -136,9 +134,9 @@ class ServerCommunicator:
              - the bossLite object representing the task (jobs are assumed to be RunningJobs)
              - the range of the submission as specified by the user at the command line
         """
-        return self._genericCommand('clean', blTaskId, blTaskName, rng)
+        return self._genericCommand('clean', blTaskName, rng)
 
-    def getStatus(self, blTaskId, blTaskName, statusFile):
+    def getStatus(self, blTaskName, statusFile=None):
         """
         _getStatus_
         Retrieve the task status from the server.
@@ -150,25 +148,24 @@ class ServerCommunicator:
         # fill the filename
         filename = str(statusFile)
 
-        taskUniqName = blTaskId
-        # taskUniqName = self._extractTaskUniqName(blTaskId)
-        if not taskUniqName:
-            # raise exception
+        if not blTaskName:
             raise CrabException('Exception while getting the task unique name')
             return ''
 
         # get the data and fill the file content
-        statusMsg = self.asSession.getTaskStatus(taskUniqName)
-        f = open(filename, 'w')
-        f.write(statusMsg)
-        f.close()
-        
-        # check if foreseen errors occurred
-        if 'Error:' in  statusMsg[:6]:
-             common.logger.message('Error occurred while retrieving task %s status from server %s'%(blTaskName, self.serverName))
-        return filename
+        statusMsg = self.asSession.getTaskStatus(blTaskName)
+        if 'Error:' in  statusMsg[:6] or len(statusMsg)==0:
+             raise CrabException('Error occurred while retrieving task %s status from server %s'%(blTaskName, self.serverName) )
+             return
 
-    def getJobsOutput(self, blTaskId, blTaskName, rng):
+        if statusFile is not None:
+            f = open(statusFile, 'w')
+            f.write(statusMsg)
+            f.close()
+            return statusFile 
+        return statusMsg
+
+    def getJobsOutput(self, blTaskName, rng):
         """
         _getJobsOutput_
         Get from the server the output file locations to be transfered back.
@@ -181,7 +178,7 @@ class ServerCommunicator:
         raise NotImplementedError
         return None
 
-    def postMortemInfos(self, blTaskId, blTaskName, rng):
+    def postMortemInfos(self, blTaskName, rng):
         """
         _postMortemInfos_
         Retrieve the job postmortem information from the server.
@@ -216,7 +213,6 @@ class ServerCommunicator:
         
         # create a mini-cfg to be transfered to the server
         miniCfg = {}
-
         miniCfg['EDG.ce_white_list'] = ""
         if 'EDG.ce_white_list' in self.cfg_params:
             miniCfg['EDG.ce_white_list'] = str( self.cfg_params['EDG.ce_white_list'] )
@@ -228,8 +224,12 @@ class ServerCommunicator:
         miniCfg['cfgFileNameCkSum'] = '' #TODO check makeCksum(common.work_space.cfgFileName()) # Fabio
         if 'cfgFileNameCkSum' in self.cfg_params:
             miniCfg['cfgFileNameCkSum'] = str(self.cfg_params['cfgFileNameCkSum'])
-        ## put here other fields if needed
 
+        miniCfg['CRAB.se_remote_dir'] = ''
+        if 'CRAB.se_remote_dir' in self.cfg_params:
+            miniCfg['CRAB.se_remote_dir'] = str(self.cfg_params['CRAB.se_remote_dir']) 
+
+        ## put here other fields if needed
         node.setAttribute("CfgParamDict", str(miniCfg) )
 
         cfile.appendChild(node)
@@ -237,21 +237,19 @@ class ServerCommunicator:
         #
         return xmlString
 
-    def _genericCommand(self, cmd, blTaskId, blTaskName, rng):
-        taskUniqName = blTaskId
-        # taskUniqName = self._extractTaskUniqName(blTaskId)
-        if not taskUniqName:
+    def _genericCommand(self, cmd, blTaskName, rng):
+        if not blTaskName:
             raise CrabException('Error while extracting the Task Unique Name string')
             return -2
 
         cmdXML = None
-        cmdXML = self._createXMLcommand(taskUniqName, cmd, rng)
+        cmdXML = self._createXMLcommand(blTaskName, cmd, rng)
         if not cmdXML:
             raise CrabException('Error while creating the Command XML')
             return -3
 
         ret = -1
-        ret = self.asSession.sendCommand(cmdXML, taskUniqName)
+        ret = self.asSession.sendCommand(cmdXML, blTaskName)
         logMsg = ''
         if ret == 0:
              # success
@@ -269,12 +267,3 @@ class ServerCommunicator:
         common.logger.message(logMsg)  
         return ret
     
-    def _extractTaskUniqName(self, taskId):
-        tskUniqName = '' 
-        workDir = str( os.path.basename(os.path.split(common.work_space.topDir())[0]) )
-        tskUniqName = 'crab_'+ workDir + '_' + taskId
-        return tskUniqName
-
-
-
-

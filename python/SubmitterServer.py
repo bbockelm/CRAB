@@ -2,16 +2,11 @@ from Actor import *
 from crab_util import *
 import common
 from ApmonIf import ApmonIf
-import time
 
+import os, errno, time, sys, re 
 import commands
-import os, errno, time, sys, re
-
-import select
-import fcntl
 import zlib
-import traceback
-import xml.dom.minidom
+
 from ServerCommunicator import ServerCommunicator 
 	 
 class SubmitterServer(Actor):
@@ -170,11 +165,7 @@ class SubmitterServer(Actor):
     def performSubmission(self, firstSubmission=True):
         # create the communication session with the server frontend
         csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxyPath)
- 
-        # TODO to be fixed
-        # taskname is equal to taskuuid
-        taskname = common._db.queryTask('name')
-        taskuuid = ''+str(taskname)
+        taskname = str(common._db.queryTask('name'))
         taskXML = ''
         subOutcome = 0
 
@@ -206,12 +197,13 @@ class SubmitterServer(Actor):
                 msg = "BossLite ERROR: Unable to serialize task object\n"
                 msg +="Project "+str(taskname)+" not Submitted \n"
                 msg += str(e)
-                msg += traceback.format_exc()
                 raise CrabException(msg)
-            subOutcome = csCommunicator.submitNewTask(taskuuid, taskname, taskXML, self.submitRange)
+
+            # TODO fix not needed first field 
+            subOutcome = csCommunicator.submitNewTask(taskname, taskXML, self.submitRange)
         else:
             # subsequent submissions and resubmit
-            subOutcome = csCommunicator.subsequentJobSubmit(taskuuid, taskname, self.submitRange)
+            subOutcome = csCommunicator.subsequentJobSubmit(taskname, self.submitRange)
 
         if subOutcome != 0:
             msg = "ClientServer ERROR: %d raised during the communication.\n"%subOutcome

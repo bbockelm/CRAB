@@ -253,6 +253,7 @@ class CRAB_AS_beckend:
             return str("Error: " + errLog)
         
         # return the document
+        retStatus = "".join(retStatus)
         return retStatus
 
 
@@ -277,7 +278,7 @@ class CRAB_AS_beckend:
 
         try:
             f = open(taskDir + '/task.xml', 'w')
-            f.write( zlib.decompress(taskDescriptor) )
+            f.write( taskDescriptor )
             f.close()
             del f
             f = open(taskDir + '/cmd.xml', 'w')
