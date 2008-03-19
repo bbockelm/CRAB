@@ -44,6 +44,8 @@ class Submitter(Actor):
         jobSetForSubmission = 0
         jobSkippedInSubmission = []
         datasetpath=self.cfg_params['CMSSW.datasetpath']
+        if string.lower(datasetpath)=='none':
+            datasetPath = None
 
         # NEW PART # Fabio
         # modified to handle list of jobs by the users # Fabio
@@ -57,7 +59,7 @@ class Submitter(Actor):
             jobs=[]
             jobs.append(nj)  
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(common._db.queryJob('dlsDestination',jobs)) # More readable # Fabio
-            if (cleanedBlackWhiteList != '') or (datasetpath == "None" ) or (datasetpath == None): ## Matty's fix
+            if (cleanedBlackWhiteList != '') or (datasetpath == None): ## Matty's fix
                 if (common._db.queryRunJob('status',jobs) not in ['R','S','K','Y','A','D','Z']):
                     jobSetForSubmission +=1
                     nj_list.append(nj+1)## Warning added +1 for jobId BL--DS 
