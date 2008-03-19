@@ -237,10 +237,6 @@ class FatWorker(Thread):
         taskFileList = task['globalSandbox'].split(',')
         remotePath = str(self.cfg_params['CRAB.se_remote_dir'])
         
-        print '--------------\n', taskFileList, remotePath
-        print self.SEurl, self.SEproto, self.SEport  
-        # return newRange, skippedSubmissions
-         
         try:
             seEl = SElement(self.SEurl, self.SEproto, self.SEport) 
             sbi = SBinterface( seEl )
@@ -281,10 +277,13 @@ class FatWorker(Thread):
         # loop and submit blocks
         for bulkRng in blockMap.values():
             if len(bulkRng) > 0:
-                self.blSchedSession.submit(taskObj, bulkRng)
-                # reqSubmJobs += bulkRng
+                # TODO common.scheduler.sched_parameter(id_job,task)
+                requirements = {}  
+                # range expressed as a list of ids: '2,3,4,5'
+                subRange = ','.join(bulkRng)
+                #
+                self.blSchedSession.submit(taskObj, subRange, requirements)
 
-        # TODO bad counting of submitted jobs # Fabio
         selAttribs = {'taskId':taskObj['id'], 'closed':None}  
         submittedJobs = [ j['jobId'] for j in self.blDBsession.loadJobsByRunningAttr(selAttribs)]
         selAttribs = {'taskId':taskObj['id'], 'status' : 'SD' }
@@ -419,73 +418,46 @@ class FatWorker(Thread):
         return 1
 
     def submissionListsCreation(self, taskObj, jobRng):
-        bulkMap = {'[]':[]}
-        
-        ### define here the list of distinct destinations sites list
-        distinct_dests = self.queryDistJob_Attr(taskObj['id'], 'dlsDestination', 'jobId' ,jobRng)
- 
-        ### fill the per-site maps
-        for dest in distinct_dests:
+        bulkMap = {'[]':[]} # jobs ordered per dls
+        matchingMap = {}    # jobs used for the matchmacking
+
+        ### constuct bulkMap pruning bL and forcing wL
+        for j in taskObj.jobs:
+            dest = str(j['dlsDestination'])
+            jId = j['jobId'] 
+
+            # submission range
+            if jId not in jobRng:
+                continue
             # prune blacklist
             if dest in self.blackL:
-                bulkMap['[]'].append( self.queryAttrJob({'dlsDestination':dest},'jobId') )
+                bulkMap['[]'].append( jId )
                 continue
-
             # prune not whitelist
             if len(self.whiteL) > 0 and dest not in self.whiteL:
-                bulkMap['[]'].append( self.queryAttrJob({'dlsDestination':dest},'jobId') )
+                bulkMap['[]'].append( jId )
                 continue
 
-            # submission range 
-            bulkMap[str(dest)] = []
-            for jid in self.queryAttrJob({'dlsDestination':dest},'jobId'):
-                if jid in jobRng:
-                     bulkMap[str(dest)].append(jid)
+            # add the entry in the inverted map
+            if dest in bulkMap:
+                bulkMap[dest].append( jId )
+            else:
+                bulkMap[dest] = [ jId ]
+                matchingMap[dest] = jId 
 
         ### prune lists according listmatches
-        for dest in bulkMap:
-            # already unmatching jobs
-            if dest == '[]':
-                continue
+        schedName = str( self.cmdXML.getAttribute('Scheduler') ).upper()
+        if schedName == "CONDOR_G" :
+            # Condor always matches, as in SA. Thus return the whole list
+            return bulkMap  
 
-            list_match_jobs = [] + bulkMap[dest] 
-            for id_job in list_match_jobs:
-                # TODO extract scheduler info from running job instead of XML message 
-                schedName = str( self.cmdXML.getAttribute('Scheduler') ).upper()
+        for dest in matchingMap:
+            matchingJidCandidate = matchingMap[dest]
+            ## TODO correct here 
+            match = "1" #match = common.scheduler.listMatch( matchingJidCandidate )
+            if not match:
+                del bulkMap[dest]
 
-                if schedName != "CONDOR_G" :
-                    ## TODO correct here 
-                    match = "1" #match = common.scheduler.listMatch(id_job)
-                else :
-                    match = "1"
-
-                if not match:
-                    bulkMap[dest].remove(id_job)
-                    bulkMap['[]'].append(id_job)
         ### all done
         return bulkMap
-
-# Taken from the CRAB-SA submitter
-    def queryDistJob_Attr(self, taskId, attr_1, attr_2, list):
-        '''
-        Returns the list of distinct value for a given job attributes
-        '''
-        distAttr=[]
-        task = self.blDBsession.loadJobDistAttr( taskId, attr_1, attr_2, list )
-        for i in task: 
-            distAttr.append(i[attr_1])
-        return  distAttr
-
-    def queryAttrJob(self, attr, field):
-        '''
-        Returns the list of jobs matching the given attribute
-        '''
-        matched=[]
-        task = self.blDBsession.loadJobsByAttr(attr)
-        for i in task:
-            matched.append(i[field])
-        return  matched
-
-
-
 
