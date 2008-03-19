@@ -96,6 +96,16 @@ class Crab:
         self.processOptions_(opts)
 
 
+        # self.UseServer=int(self.cfg_params.get('CRAB.server_mode',0))
+        #
+        ### Modified to support ServerConfig dowload feature # Fabio
+        srvName = opts.get('-server_name', None)
+        if srvName == 'None':
+            srvName = None
+        self.UseServer = int( srvName is not None ) # cast bool to int
+        self.cfg_params['CRAB.server_mode'] = str(self.UseServer)
+        #
+
         common._db = DBinterface(self.cfg_params) #BL--DS
 
         if not self.flag_continue:
@@ -110,22 +120,22 @@ class Crab:
                     optsToBeSavedDB[it[1:]]=opts[it]
                     optsToBeSaved[it]=opts[it]
                     # store in taskDB the opts
+
+            # moved here for ServerConfig clash # Fabio
+            optsToBeSavedDB['server_mode'] = self.UseServer 
+            
             common._db.createTask_(optsToBeSavedDB) #BL--DS
             common.work_space.saveConfiguration(optsToBeSaved, self.cfg_fname)
         else:  
             common._db.loadDB()
 
         # At this point all configuration options have been read.
-        
         args = string.join(sys.argv,' ')
 
         self.updateHistory_(args)
 
         self.createLogger_(args)
-
         
-        self.UseServer=int(self.cfg_params.get('CRAB.server_mode',0))
-
         common.apmon = ApmonIf()
 ### BL--DS        
 #        if self.flag_continue:
@@ -281,9 +291,8 @@ class Crab:
                 self.cfg_params['CRAB.'+opt[1:]] = val
                 continue
             
-            elif ( opt == '-server_mode' ):  #Add for server mode usage
-                pass
             elif ( opt == '-server_name' ):
+                # TODO
                 pass
 
             elif ( opt == '-cfg' ):

@@ -8,26 +8,24 @@ import traceback
 from xml.dom import minidom
 from ServerCommunicator import ServerCommunicator
 from Status import Status
+from ServerConfig import *
 
 class StatusServer(Status):
 
     def __init__(self, *args):
         self.cfg_params = args[0]
         self.server_name = None
-        self.server_path = None
-
-        print self.cfg_params['CRAB.server_name']
+        self.server_port = None
+        self.srvCfg = {}
         try:
-            ## SERVER HARDCODED - MATTY
-            ## the API (wget or siteDB) can be callet here
-            self.server_name, self.server_path = self.cfg_params['CRAB.server_name'].split('/',1)
-            self.server_path = os.path.join('/',self.server_path)
-            self.server_port = int("20081")
+            self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
+
+            self.server_name = str(self.srvCfg['serverName'])
+            self.server_port = int(self.srvCfg['serverPort'])
         except KeyError:
             msg = 'No server selected or port specified.'
             msg = msg + 'Please specify a server in the crab cfg file'
             raise CrabException(msg)
-        return
 
     # all the behaviors are inherited from the direct status. Only some mimimal modifications
     # are needed in order to extract data from status XML and to align back DB information   
@@ -56,7 +54,7 @@ class StatusServer(Status):
         toPrint=[]
         for job in task.jobs:
             id = str(job.runningJob['id'])
-            # TODO sub-linear search, probably it can be optized with binary search
+            # TODO linear search, probably it can be optized with binary search
             rForJ = None
             for r in reportList:
                 if id == r.getAttribute('id'):
