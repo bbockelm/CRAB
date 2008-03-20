@@ -127,7 +127,8 @@ class SchedulerGrid(Scheduler):
 
         self.EDG_clock_time = cfg_params.get('EDG.max_wall_clock_time',None)
 
-        self.EDG_cpu_time = cfg_params.get('EDG.max_cpu_time',None)
+        # Default minimum CPU time to >= 130 minutes
+        self.EDG_cpu_time = cfg_params.get('EDG.max_cpu_time', '130')
 
         # Add EDG_WL_LOCATION to the python path
 
