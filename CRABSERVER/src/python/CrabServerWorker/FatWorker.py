@@ -440,10 +440,10 @@ class FatWorker(Thread):
 
             # add the entry in the inverted map
             if dest in bulkMap:
-                bulkMap[dest].append( jId )
+                bulkMap[dest].append( str(jId) )
             else:
-                bulkMap[dest] = [ jId ]
-                matchingMap[dest] = jId 
+                bulkMap[dest] = [ str(jId) ]
+                matchingMap[dest] = str(jId) 
 
         ### prune lists according listmatches
         schedName = str( self.cmdXML.getAttribute('Scheduler') ).upper()
