@@ -9,6 +9,7 @@ import common
 import popen2
 import os
 from BlackWhiteListParser import BlackWhiteListParser
+from LFNBaseName import *
 
 class SchedulerCondor_g(Scheduler):
     def __init__(self):
@@ -285,27 +286,27 @@ class SchedulerCondor_g(Scheduler):
                 #except:
                 #    msg = "Error. Problem with voms-proxy-info -identity command"
                 #    raise CrabException(msg)
-                import urllib
-                try:
-                    userdn = runCommand("voms-proxy-info -identity")
-                    self.userdn = string.strip(self.userdn)
-                except:
-                    msg = "Error. Problem with voms-proxy-info -identity command"
-                    raise CrabException(msg)
-                try:
-                    sitedburl="https://cmsweb.cern.ch/sitedb_test/sitedb/json/dnUserName"
-                    params = urllib.urlencode({'dn': self.userdn })
-                    f = urllib.urlopen(sitedburl,params)
-                    udata = f.read()
-                    userinfo= eval(udata)
-                    self.hnUserName = userinfo['user']
-                except:
-                    msg = "Error. Problem extracting user name from %s"%sitedburl
-                    raise CrabException(msg)
+                #import urllib
+                #try:
+                #    userdn = runCommand("voms-proxy-info -identity")
+                #    self.userdn = string.strip(self.userdn)
+                #except:
+                #    msg = "Error. Problem with voms-proxy-info -identity command"
+                #    raise CrabException(msg)
+                #try:
+                #    sitedburl="https://cmsweb.cern.ch/sitedb_test/sitedb/json/dnUserName"
+                #    params = urllib.urlencode({'dn': self.userdn })
+                #    f = urllib.urlopen(sitedburl,params)
+                #    udata = f.read()
+                #    userinfo= eval(udata)
+                #    self.hnUserName = userinfo['user']
+                #except:
+                #    msg = "Error. Problem extracting user name from %s"%sitedburl
+                #    raise CrabException(msg)
             
-                if not self.hnUserName:
-                    msg = "Error. There is no user name associated to DN %s in %s.You need to register in SiteDB"%(userdn,sitedburl)
-                    raise CrabException(msg)
+                #if not self.hnUserName:
+                #    msg = "Error. There is no user name associated to DN %s in %s.You need to register in SiteDB"%(userdn,sitedburl)
+                #    raise CrabException(msg)
         except KeyError: self.publish_data = 0
 
         if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
@@ -437,8 +438,9 @@ class SchedulerCondor_g(Scheduler):
                 SE_PATH=self.SE_PATH
             if int(self.publish_data) == 1:
                 txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
+                path_add = PFNportion(self.publish_data_name) +'_${PSETHASH}/'               
                 #path_add = self.UserGridName + '/' + self.publish_data_name +'_${PSETHASH}/'
-                path_add = self.hnUserName + '/' + self.publish_data_name +'_${PSETHASH}/'
+                #path_add = self.hnUserName + '/' + self.publish_data_name +'_${PSETHASH}/'
                 SE_PATH = SE_PATH + path_add
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'

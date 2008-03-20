@@ -5,6 +5,7 @@ from crab_util import *
 from BlackWhiteListParser import BlackWhiteListParser
 import common
 import Scram
+from LFNBaseName import *
 
 import os, string, glob
 
@@ -1298,9 +1299,11 @@ class Cmssw(JobType):
             #### FEDE: added slash in LFN ##############
             txt += '    FOR_LFN=/copy_problems/ \n'
             txt += 'else \n'
-            txt += '    tmp=`echo $SE_PATH | awk -F \'store\' \'{print$2}\'` \n'
+            #### LFN is <LFNBaseName>_PSETHASH
+            txt += '    FOR_LFN=%s_${PSETHASH}/\n'%(LFNBaseName)
+            #txt += '    tmp=`echo $SE_PATH | awk -F \'store\' \'{print$2}\'` \n'
             #####  FEDE TO BE CHANGED, BECAUSE STORE IS HARDCODED!!!! ########
-            txt += '    FOR_LFN=/store$tmp \n'
+            #txt += '    FOR_LFN=/store$tmp \n'
             txt += 'fi \n'
             txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
