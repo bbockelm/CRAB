@@ -6,7 +6,6 @@ from BlackWhiteListParser import BlackWhiteListParser
 import common
 import Scram
 from LFNBaseName import *
-
 import os, string, glob
 
 class Cmssw(JobType):
@@ -1293,6 +1292,7 @@ class Cmssw(JobType):
             txt += 'echo "SE_PATH = $SE_PATH"\n'
 
             processedDataset = self.cfg_params['USER.publish_data_name']
+            LFNBaseName = LFNBase(processedDataset)
             txt += 'ProcessedDataset='+processedDataset+'\n'
             #### LFN=/store/user/<user>/processedDataset_PSETHASH
             txt += 'if [ "$SE_PATH" == "" ]; then\n'
@@ -1301,9 +1301,6 @@ class Cmssw(JobType):
             txt += 'else \n'
             #### LFN is <LFNBaseName>_PSETHASH
             txt += '    FOR_LFN=%s_${PSETHASH}/\n'%(LFNBaseName)
-            #txt += '    tmp=`echo $SE_PATH | awk -F \'store\' \'{print$2}\'` \n'
-            #####  FEDE TO BE CHANGED, BECAUSE STORE IS HARDCODED!!!! ########
-            #txt += '    FOR_LFN=/store$tmp \n'
             txt += 'fi \n'
             txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
