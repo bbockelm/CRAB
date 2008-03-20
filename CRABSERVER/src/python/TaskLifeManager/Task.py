@@ -23,6 +23,12 @@ class Task:
         self.__mail      = mail
         ## advice e-mail sent or not
         self.__notified = notified
+        ### NEW ###
+        ## proxy
+        import os
+        self.__proxy = os.path.join(self.__taskName + '_spec', 'userProxy')
+        ## list of files to delete
+        self.__sandboxes = []
 
     #########################
     ##  utility functions  ##
@@ -46,6 +52,8 @@ class Task:
                  "endedtime": self.__endedtime, \
                  "heretime":  self.__heretime, \
                  "notified":  self.__notified, \
+                 "proxy":     self.__proxy,\
+                 "sandboxes": self.__sandboxes,\
                }
 
     def getName(self):
@@ -77,6 +85,12 @@ class Task:
     def getNotified(self):
         return self.__notified
 
+    def getProxy(self):
+        return self.__proxy
+
+    def getSBList(self):
+        return self.__sandboxes
+
     ##########################
     ## read-write functions ##
     ##########################
@@ -95,3 +109,20 @@ class Task:
 
     def notify(self, booleo = True):
         self.__notified = booleo
+
+    def addSBFile(self, path):
+        self.__sandboxes.append(str(path))
+
+    def flushSBFile(self, path):
+        if str(path) in self.__sandboxes:
+            self.__sandboxes.remove(str(path))
+    
+    def addSB(self, listsb):
+        for sb in listsb:
+            if sb not in self.__sandboxes:
+                self.__sandboxes.append(sb)
+
+    def delSB(self, listsb):
+        for sb in listsb:
+            if sb in self.__sandboxes:
+                self.__sandboxes.remove(sb)

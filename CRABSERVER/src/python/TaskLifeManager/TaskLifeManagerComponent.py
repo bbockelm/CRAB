@@ -331,7 +331,7 @@ class TaskLifeManagerComponent:
             return 0, numberUsed, toliberate
 
 
-    def deleteTask( self, taskPath ):
+    def deleteTask( self, taskPath, proxy ):
         """
         _deleteTask_
 
@@ -340,8 +340,8 @@ class TaskLifeManagerComponent:
         summ = 0
         if taskPath != "/" and taskPath != self.args['dropBoxPath']:
             try:
-                summ = self.SeSbI.getDirSpace(taskPath)
-                self.SeSbI.delete( taskPath )
+                summ = self.SeSbI.getDirSpace(taskPath, proxy)
+                self.SeSbI.delete( taskPath, proxy )
             except Exception, ex: ### 2 IMPROVE!!!! ##
                 import traceback
                 logging.error( str(traceback.format_exc()) )
@@ -355,18 +355,18 @@ class TaskLifeManagerComponent:
         return summ
 
 
-    def cleanTask( self, taskName ):
+    def cleanTask( self, taskName, proxy ):
         """
         _cleanTask_
         """
         dBox = self.args['dropBoxPath']
         from os.path import join
         pathTask = join(dBox, taskName)
-        if self.SeSbI.checkExists( pathTask ):
+        if self.SeSbI.checkExists( pathTask, proxy ):
             logging.debug("removing task '" + pathTask + "' ...")
             try:
-                summ = self.deleteTask( pathTask )
-                if not self.SeSbI.checkExists( pathTask ):
+                summ = self.deleteTask( pathTask, proxy )
+                if not self.SeSbI.checkExists( pathTask, proxy ):
                     logging.debug( "removed " + str(summ) + " bytes.")
                     return summ
                 else:
@@ -409,6 +409,7 @@ class TaskLifeManagerComponent:
                 ############################
                 ### creating Task object ###
                 ##  & inserting on queue  ##
+                ### proxy!!!
                 taskObj = Task(\
                                 taskName, \
                                 owner, \
@@ -518,6 +519,7 @@ class TaskLifeManagerComponent:
                         notif = k3y['notified']
                     except:
                         pass
+                    ##k3y['proxy']
                     taskObj = Task(\
                                      k3y['taskName'], \
                                      k3y['owner'], \
@@ -573,13 +575,15 @@ class TaskLifeManagerComponent:
                         self.taskDeleteQueue.insert(task)
         if sign == 1:
             self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
+
     def deleteTasks( self ):
         toDelete = self.taskDeleteQueue.getHowMany()
         totFreeSpace = 0
         for index in range( toDelete ):
             task = self.taskDeleteQueue.getCurrentSwitch()
+            proxy = self.task.getProxy()
             logging.info ( "task life expired " + task.getName() )
-            summ = self.cleanTask( task.getName() )
+            summ = self.cleanTask( task.getName(), proxy )
             if summ > 0:
                 logging.debug( "  -- deleted " + str(summ) + " bytes --" )
             self.taskDeleteQueue.remove( task )
