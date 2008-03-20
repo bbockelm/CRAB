@@ -79,6 +79,7 @@ class SchedulerGrid(Scheduler):
            msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
            raise CrabException(msg)
 
+        ########### FEDE FOR DBS2 ##############################
         self.publish_data = cfg_params.get("USER.publish_data",0)
         self.checkProxy()
         if int(self.publish_data) == 1:
@@ -87,45 +88,12 @@ class SchedulerGrid(Scheduler):
                 msg = "Error. The [USER] section does not have 'publish_data_name'"
                 raise CrabException(msg)
 
-            ## SL I don't like a direct call to voms-proxy here
-            #try:
-            #    tmp = runCommand("voms-proxy-info -identity")
-            #    tmp = string.split(tmp,'/')
-            #    reCN=re.compile(r'CN=')
-            #    for t in tmp:
-            #        if reCN.match(t):
-            #            self.UserGridName=string.strip((t.replace('CN=','')).replace(' ',''))
-            #except:
-            #    msg = "Error. Problem with voms-proxy-info -identity command"
-            #    raise CrabException(msg)
-
-            #import urllib
-            #try:
-            #    userdn = runCommand("voms-proxy-info -identity")
-            #    self.userdn = string.strip(userdn)
-            #except:
-            #    msg = "Error. Problem with voms-proxy-info -identity command"
-            #    raise CrabException(msg)
-            #try:
-            #    sitedburl="https://cmsweb.cern.ch/sitedb_test/sitedb/json/dnUserName"
-            #    params = urllib.urlencode({'dn': self.userdn })
-            #    f = urllib.urlopen(sitedburl,params)
-            #    udata = f.read()
-            #    userinfo= eval(udata)
-            #    self.hnUserName = userinfo['user']
-            #except:
-            #    msg = "Error. Problem extracting user name from %s"%sitedburl
-            #    raise CrabException(msg)
-           # 
-           # if not self.hnUserName:
-           #     msg = "Error. There is no user name associated to DN %s in %s.You need to register in SiteDB"%(userdn,sitedburl)
-           #     raise CrabException(msg)
-
         if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
            msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
            common.logger.message(msg)
            raise CrabException(msg)
+        #################################################
 
         self.EDG_requirements = cfg_params.get('EDG.requirements',None)
 
@@ -163,7 +131,7 @@ class SchedulerGrid(Scheduler):
 
     def rb_configure(self, RB):
         """
-        Return a requirement to be add to Jdl to select a specific RB/WMS:
+        Return a requirement to be add to Jdl to select a specific RB/WMS: 
         return None if RB=None
         To be re-implemented in concrete scheduler
         """
@@ -318,8 +286,6 @@ class SchedulerGrid(Scheduler):
             if int(self.publish_data) == 1:
                 txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
                 path_add = PFNportion(self.publish_data_name) +'_${PSETHASH}/'
-                #path_add = self.UserGridName + '/' + self.publish_data_name +'_${PSETHASH}/'
-                #path_add = self.hnUserName + '/' + self.publish_data_name +'_${PSETHASH}/'
                 SE_PATH = SE_PATH + path_add
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
