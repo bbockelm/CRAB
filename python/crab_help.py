@@ -67,7 +67,7 @@ CRAB is a Python program intended to simplify the process of creation and submis
 
 Parameters for CRAB usage and configuration are provided by the user changing the configuration file B<crab.cfg>.
 
-CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BOSS to interface to the Grid scheduler, as well as for logging and bookkeeping and eventually real time monitoring.
+CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BossLite to interface to the Grid scheduler, as well as for logging and bookkeeping.
 
 CRAB support any CMSSW based executable, with any modules/libraries, including the user provided one, and deals with the output produced by the executable. Up to version 1_2_1, also ORCA (and FAMOS) based executable were supported.  CRAB provides an interface with CMS data discovery services (DBS and DLS), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.
 
@@ -224,7 +224,7 @@ Basically all commands (but -create) need -continue, so it is automatically assu
 
 =item B<-status>
 
-Check the status of the jobs, in all states. If BOSS real time monitor is enabled, also some real time information are available, otherwise all the info will be available only after the output retrieval.
+Check the status of the jobs, in all states. All the info (e.g. application and wrapper exit codes)  will be available only after the output retrieval.
 
 =item B<-getoutput|-get [range]>
 
@@ -311,13 +311,10 @@ The type of the job to be executed: I<cmssw> jobtypes are supported
 The scheduler to be used: I<glitecoll> is the more efficient grid scheduler and should be used. Other choice are I<glite>, same as I<glitecoll> but without bulk sumbission (and so slower) or I<condor_g> (see specific paragraph) or I<edg> which is the former Grid scheduler, which will be dismissed in some future 
 From version 210, also local scheduler are supported, for the tim being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities.
 
-=item B<server_mode>
-
-To use the CRAB-server mode put 1 in this field. If the server_mode key is equal to 0 crab works, as usual, in standalone way.
-
 =item B<server_name>
 
-The name of the server that you want to use plus the path of the server storage (eg: hostname/data/cms/). The server available to users can be found from CRAB web page.
+To use the CRAB-server support it is needed to fill this key with server name as server_<Server_DOMAIN> (e.g. server_cnaf). If I<server_name=None> crab works in standalone way.
+The server available to users can be found from CRAB web page.
 
 =back
 
@@ -452,16 +449,6 @@ Only for LSF scheduer: allow to define the command to be used to copy the output
 
 =item B<register_data>
 
-Not more supported.
-
-=item B<use_central_bossDB>
-
-Use central BOSS DB instead of one for each task: the DB must be already been setup. See installation istruction for more details.
-
-=item B<use_boss_rt>
-
-Use BOSS real time monitoring.
-
 =back
 
 B<[EDG]>
@@ -496,9 +483,12 @@ Any other requirements to be add to JDL. Must be written in compliance with JDL 
 
 =item B<additional_jdl_parameters:>
 
-Any other parameters you want to add to jdl file: comma separated list, each
+Any other parameters you want to add to jdl file:semicolon separated list, each
 item B<must> be complete, including the closing ";".
-With this field it\'s also possible to specify which WMS you want to use, adding the parameter "additional_jdl_parameters = WMProxyEndpoints ={"https://hostname:port/pathcode"};" where "hostname" is WMS\' name, the "port" generally is 7443 and the "pathcode" should be something like "glite_wms_wmproxy_server".
+
+=item B<wms_service>
+
+With this field it\'s also possible to specify which WMS you want to use (https://hostname:port/pathcode) where "hostname" is WMS\' name, the "port" generally is 7443 and the "pathcode" should be something like "glite_wms_wmproxy_server".
 
 =item B<max_cpu_time>
 
