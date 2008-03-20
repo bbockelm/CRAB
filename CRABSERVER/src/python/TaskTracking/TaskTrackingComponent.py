@@ -574,7 +574,29 @@ class TaskTrackingComponent:
 	uuid = ""
 
         try:
-	    if status == self.taskState[2] or status == self.taskState[4]:
+            if status == self.taskState[3] or status == self.taskState[7]:
+                mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+                taskObj = None
+		try:
+		    taskObj = mySession.loadTaskByName( payload )
+		except TaskError, te:
+		    taskObj = None
+		    pass
+		if taskObj is None:
+		    logBuf = self.__logToBuf__(logBuf,"  Requested task [%s] does not exist."%(payload) )
+		else:
+                    proxy = taskObj['user_proxy']
+	            logBuf = self.__logToBuf__(logBuf, "using proxy: [%s] "%(str(proxy)) )
+                    try:
+                        TaskStateAPI.updateProxy(payload, proxy) 
+		    except Exception, ex:
+		        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+	     	        logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(payload) )
+		        logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
+		        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+		        logging.info(logBuf)
+		        logBuf = ""
+	    elif status == self.taskState[2] or status == self.taskState[4]:
 	        valuess = TaskStateAPI.getStatusUUIDEmail( payload )
 		if valuess != None:
 		    status = valuess[0]

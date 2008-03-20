@@ -8,6 +8,7 @@ from ProdAgentCore.ProdAgentException import ProdAgentException
 from ProdAgentDB.Connect import connect
 
 from ProdCommon.Database import Session
+
 from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdAgent.WorkflowEntities import JobState
 from ProdAgent.WorkflowEntities import Job
@@ -147,6 +148,34 @@ def updateNotSubmitted( taskName, eMail, tresholdLevel, proxy, uuid, status ):
 	#logging.error( "Error updating PA DB! Method: " + updateNotSumbitted.__name__ )
 	raise
 
+def updateProxy( taskName, proxy):
+    """
+    """
+    logging.info( "   -> updating the task table for task: " + taskName )
+
+    ## opening connection with PA's DB
+    conn, dbCur = openConnPA()
+    try:
+        dbCur.execute("START TRANSACTION")
+        if checkExistPA(conn, dbCur, taskName):
+            sqlStr='UPDATE js_taskInstance SET proxy="'+proxy+'"\
+                    WHERE taskName="'+taskName+'";'
+            #logging.info(sqlStr)
+            #try:
+            dbCur.execute(sqlStr)
+            #except Exception,ex:
+            #raise ProdAgentException("Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+        else:
+            logging.error( "Error updating 'proxy' to '"+proxy+"' in js_taskInstance. TaskName: '" + str(taskName) + "': task not found.")
+        dbCur.execute("COMMIT")
+        ## closing connection with PA's DB
+        closeConnPA( dbCur, conn )
+    except:
+        dbCur.execute("ROLLBACK")
+        ## closing connection with PA's DB
+        closeConnPA( dbCur, conn )
+        #logging.error( "Error updating PA DB! Method: " + updatingEndedPA.__name__ )
+        raise
 
 def updateStatus( taskName, status ):
     """
