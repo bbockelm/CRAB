@@ -98,13 +98,10 @@ class Crab:
 
         # self.UseServer=int(self.cfg_params.get('CRAB.server_mode',0))
         #
-        ### Modified to support ServerConfig dowload feature # Fabio
         srvName = opts.get('-server_name', None)
         if srvName == 'None':
             srvName = None
         self.UseServer = int( srvName is not None ) # cast bool to int
-        self.cfg_params['CRAB.server_mode'] = str(self.UseServer)
-        #
 
         common._db = DBinterface(self.cfg_params) #BL--DS
 
@@ -121,8 +118,6 @@ class Crab:
                     optsToBeSaved[it]=opts[it]
                     # store in taskDB the opts
 
-            # moved here for ServerConfig clash # Fabio
-            optsToBeSavedDB['server_mode'] = self.UseServer 
             
             common._db.createTask_(optsToBeSavedDB) #BL--DS
             common.work_space.saveConfiguration(optsToBeSaved, self.cfg_fname)
@@ -137,15 +132,6 @@ class Crab:
         self.createLogger_(args)
         
         common.apmon = ApmonIf()
-### BL--DS        
-#        if self.flag_continue:
-#            try:
-#                common.jobDB.load()
-#                common.taskDB.load()
-#                common.logger.debug(6, str(common.jobDB))
-#            except DBException,e:
-#                pass
-#            pass
 
         self.createScheduler_()
 
