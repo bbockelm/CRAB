@@ -84,10 +84,11 @@ class BlackWhiteListParser:
        
         return goodSites 
     
-    def cleanForBlackWhiteList(self,destinations):
+    def cleanForBlackWhiteList(self,destinations,list=''):
         """
         clean for black/white lists using parser
         """
-
-        return ','.join(self.checkWhiteList(self.checkBlackList(destinations,''),''))
-
+	if list=='list':
+            return self.checkWhiteList(self.checkBlackList(destinations,''),'')
+        else:
+            return ','.join(self.checkWhiteList(self.checkBlackList(destinations,''),''))

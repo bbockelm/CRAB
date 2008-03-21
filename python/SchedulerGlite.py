@@ -62,7 +62,7 @@ class SchedulerGlite(SchedulerGrid):
         # requirement added to skip gliteCE
         req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
 
-        return req
+        return req,self.EDG_ce_white_list,self.EDG_ce_black_list
 
     def se_list(self, id, dest):
         """
@@ -135,7 +135,7 @@ class SchedulerGlite(SchedulerGrid):
 
         sched_param=''
         sched_param+='Requirements = ' + req +self.specific_req() + self.se_list(i,dest) +\
-                                        self.ce_list() +';\n' ## BL--DS
+                                        self.ce_list()[0] +';\n' ## BL--DS
         if self.EDG_addJdlParam: sched_param+=self.jdlParam() ## BL--DS
         sched_param+='MyProxyServer = "' + self.proxyServer + '";\n'
         sched_param+='VirtualOrganisation = "' + self.VO + '";\n'

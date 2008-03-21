@@ -24,12 +24,6 @@ class Scheduler :
         Scheduler._instance = self
         self._name = string.lower(name)
         self._boss = Boss()
-        #print 'Created Scheduler ',self.name(),' with BOSS',self.boss()
-        return
-
-    def clean(self):
-        """ destroy instance """
-        del self._boss
         return
 
     def name(self):
@@ -37,7 +31,6 @@ class Scheduler :
 
     def configure(self, cfg_params):
         self._boss.configure(cfg_params)
-        #print 'Configured Scheduler ',self.name(),' with BOSS',self.boss()
         return
 
     def boss(self):
@@ -70,82 +63,18 @@ class Scheduler :
         """ return logging info about job nj """
         return
 
-    def listMatch(self, nj, Block, whiteL, blackL): ##  whiteL, blackL added by MATTY as patch
+    def listMatch(self,tags, dest , whiteL, blackL): ##  whiteL, blackL added by MATTY as patch
         """ Return the number of differente sites matching the actual requirements """
         start = time.time()
-        schcladstring = ''
-        self.schclassad = common.work_space.shareDir()+'/'+'sched_param_'+str(Block)+'.clad'
-        if os.path.isfile(self.schclassad):  
-            schcladstring=self.schclassad
-
-        CEs=self.boss().listMatch( self.name(), schcladstring)
+        nsites= self.boss().listMatch(tags, dest , whiteL, blackL) 
         stop = time.time()
-        common.logger.debug(1,"listMatch time :"+str(stop-start))
-        common.logger.write("listMatch time :"+str(stop-start))
 
-        ### SL: I'm positive that we should use BlackWhiteListParser here
-        #### MATTY's patch 4 CE white-black lists ####
-        sites = []
-        for it in CEs :
-            it = it.split(':')[0]
-            if not sites.count(it) :
-                sites.append(it)
-        ### white-black list on CE ###
-        CE_whited = []
-        if len(whiteL) > 0:
-            common.logger.message("Using ce white list functionality...")
-            common.logger.debug(1,str(whiteL))
-            for ce2check in sites:
-                for ceW in whiteL:
-                    if ce2check.find(ceW.strip()) != -1:
-                        CE_whited.append(ce2check)
-                        common.logger.debug(5,"CEWhiteList: adding from matched site: " + str(ce2check))
-            sites = CE_whited
-
-        CE_blacked = []
-        if len(blackL) > 0:
-            for ce2check in sites:
-                for ceB in blackL:
-                    if ce2check.find(ceB.strip()) != -1:
-                        CE_blacked.append(ce2check)
-
-        toRemove = []
-        if len(CE_blacked) > 0:
-            common.logger.message("Using ce black list functionality...")
-            common.logger.debug(1,str(blackL))
-            for ce2check in sites:
-                for ceB in CE_blacked:
-                    if ce2check.find(ceB.strip()) != -1:
-                        toRemove.append(ce2check)
-
-            for rem in toRemove:
-                if rem in sites:
-                    sites.remove(rem)
-                    common.logger.debug(5,"CEBlackList: removing from matched site " + str(rem))
-        ##############################
-
-        if (len(sites)!=0): ## it was CEs
-            common.logger.debug(5,"All Sites :"+str(CEs))
-            common.logger.message("Matched Sites :"+str(sites))
-        else: self.listMatchFailure(sites)
-
-        return len(sites)
-
-    def listMatchFailure(self, sites):
-        """ Do whatever appropriate to notify the user about possible reason why no sites were matched """
-        return
+        return nsites 
     
     def submit(self,list,req):
         """ submit to scheduler a list of jobs """
         if (not len(list)): common.logger.message("No sites where to submit jobs")
-       # Tout = int(self.tOut(list))
-        Tout =10
-        
         self.boss().submit(list,req) 
-        return
-
-    def queryDetailedStatus(self, id):
-        """ Query a detailed status of the job with id """
         return
 
     def queryEverything(self,taskid):
@@ -207,21 +136,9 @@ class Scheduler :
         """
         self._boss.declare(jobs)
 
-    def taskDeclared(self, taskName ):
-        taskDict = self.boss().taskDeclared( taskName )
-        if len(taskDict) > 0:
-            return True
-        return False
-
     def tOut(self, list):
         return 120
 
-    def list(self):
-        return self.boss().list()
-
     def moveOutput(self, nj):
         self.boss().moveOutput(nj)
-
-    def getAttribute(self, id, attr):
-        return 
 

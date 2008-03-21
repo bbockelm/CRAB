@@ -47,20 +47,18 @@ class Submitter(Actor):
         if string.lower(datasetpath)=='none':
             datasetPath = None
 
-        # NEW PART # Fabio
-        # modified to handle list of jobs by the users # Fabio
-        tmp_jList = range(common._db.nJobs())
+        tmp_jList = common._db.nJobs('list')
         if chosenJobsList != None:
             tmp_jList = chosenJobsList
         # build job list
         from BlackWhiteListParser import BlackWhiteListParser
         self.blackWhiteListParser = BlackWhiteListParser(self.cfg_params)
-        for nj in tmp_jList:
-            jobs=[]
-            jobs.append(nj)  
-            cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(common._db.queryJob('dlsDestination',jobs)) # More readable # Fabio
+        dlsDest=common._db.queryJob('dlsDestination',tmp_jList)
+        jStatus=common._db.queryRunJob('status',tmp_jList)
+        for nj in range(len(tmp_jList)):
+            cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(dlsDest[nj]) 
             if (cleanedBlackWhiteList != '') or (datasetpath == None): ## Matty's fix
-                if (common._db.queryRunJob('status',jobs) not in ['R','S','K','Y','A','D','Z']):
+                if ( jStatus[nj] not in ['R','S','K','Y','A','D','Z']):
                     jobSetForSubmission +=1
                     nj_list.append(nj+1)## Warning added +1 for jobId BL--DS 
                 else:
@@ -78,8 +76,6 @@ class Submitter(Actor):
         if nsjobs>jobSetForSubmission:
             common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
         if len(jobSkippedInSubmission) > 0 :
-            #print jobSkippedInSubmission
-            #print spanRanges(jobSkippedInSubmission)
             mess =""
             for jobs in jobSkippedInSubmission:
                 mess += str(jobs) + ","
@@ -110,11 +106,10 @@ class Submitter(Actor):
 
         totalCreatedJobs = 0
         start = time.time()
-        for nj in range(common._db.nJobs()):
-            jobs=[]
-            jobs.append(nj)
-            st = common._db.queryRunJob('status',jobs)[0]
-            if ( st in ['C','RC']):totalCreatedJobs +=1
+        jList=common._db.nJobs('list')
+        st = common._db.queryRunJob('status',jList)
+        for nj in range(len(jList)):
+            if ( st[nj] in ['C','RC']):totalCreatedJobs +=1
             pass
 
         if (totalCreatedJobs==0):
@@ -161,13 +156,18 @@ class Submitter(Actor):
         Requi=[]
 
         task=common._db.getTask()
+        ce_white_list=common.scheduler.ce_list()[1]
+        ce_black_list=common.scheduler.ce_list()[2]
+        tags_tmp=string.split(task['jobType'],'"') 
+        tags=[str(tags_tmp[1]),str(tags_tmp[3])]
 
         for id_job in jobs_to_match :
             Requi.append(common.scheduler.sched_parameter(id_job,task))
             if common.scheduler.name().upper() != "CONDOR_G" :
-                match = "1"
+                cleanedList=None 
+                if len(distinct_dests[sel])!=0:cleanedList = self.blackWhiteListParser.cleanForBlackWhiteList(distinct_dests[sel],'list') 
+                match = common.scheduler.listMatch(tags,cleanedList,ce_white_list,ce_black_list)  
             else :
-                #match = common.scheduler.listMatch(id_job)
                 match = "1"
             if match:
                common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(id_job))

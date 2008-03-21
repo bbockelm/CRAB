@@ -85,15 +85,12 @@ class Boss:
 
         return 
 
-    def task(self):
-        """ return Boss Task """
-        return self.bossTask
-        
-    ##########################################   ---- OK for Boss4 ds
-    def listMatch(self, schedulerName, schcladstring):
+    def listMatch(self, tags, dest, whiteL, blackL ):
         """
         Check the compatibility of available resources
         """
+        sites = self.schedSession.lcgInfo(tags, dest, whiteL, blackL )
+       
 #        Tout = 120
 #        CEs=[]
 #        try:
@@ -106,7 +103,7 @@ class Boss:
 #        except BossError,e:
 #            raise CrabException("ERROR: listMatch failed with message " + e.__str__())
 #        return CEs
-        return 
+        return len(sites)
   
     def submit(self, jobsList,req):
         """
@@ -124,33 +121,17 @@ class Boss:
       #      common.logger.message("Error : BOSS command failed with message:")
       #      common.logger.message(e.__str__())
         
-      #  jid=[]
-      #  bjid = []
-      #  self.bossTask.clear()
-      #  range = str(jobsList[0]) + ":" + str(jobsList[-1])
-      #  try:
-      #      self.bossTask.load(ALL, range)
-      #  except SchedulerError,e:
-      #      common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
-      #      common.logger.message(e.__str__())
-      #      pass
-      #  except BossError,e:
-      #      common.logger.message("Error : BOSS command failed with message:")
-      #      common.logger.message(e.__str__())
-      #  task = self.bossTask.jobsDict()
-    
-      #  for k, v in task.iteritems():
-      #      if (v["STATUS"] != 'W'):
-      #          jid.append(v["SCHED_ID"])
-      #          bjid.append(k)
-      #      pass
-          #  if (v["STATUS"] == 'S'):
-          #      jid.append(v["SCHED_ID"])
-          #      bjid.append(k)
-          #  pass
-        return #jid, bjid
+        return 
 
-    ###################### ---- OK for Boss4 ds
+    def queryEverything(self,taskid):
+        """
+        Query needed info of all jobs with specified boss taskid
+        """
+
+        self.schedSession.query( str(taskid))
+                
+        return 
+
     def moveOutput(self, int_id):
         """
         Move output of job already retrieved 
@@ -178,12 +159,6 @@ class Boss:
                 shutil.move(self.logDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
                 common.logger.message('Output file '+i+' moved to '+resDirSave)
         return
-
-
-    def queryDetailedStatus(self, id):
-        """ Query a detailed status of the job with id """
-
-        return self.boss_scheduler.queryDetailedStatus(id)
 
     ###################### ---- OK for Boss4 ds
     def getOutput(self, int_id):
@@ -366,105 +341,6 @@ class Boss:
             s = s + ":" + str( list[i] )
         return s
 
-    def getAttribute(self, id, attr):
-        return self.boss_scheduler.getStatusAttribute_(id, attr)
 
-    def getExitStatus(self, id):
-        return self.boss_scheduler.getStatusAttribute_(id, 'exit_code')
 
-    def queryDest(self, id):  
-        return self.boss_scheduler.getStatusAttribute_(id, 'destination')
 
-    def boss_SID(self,int_ID):
-        """ Return Sid of job """
-        SID = ''
-
-        if common.jobDB.nSubmittedJobs() == 0:
-            common.jobDB.load()
-
-        SID = common.jobDB.jobId(int_ID-1)
-    
-        return SID
-
-    ##################################################
-    def queryEverything(self,taskid):
-        """
-        Query needed info of all jobs with specified boss taskid
-        """
-
-        self.schedSession.query( str(taskid))
-                
-        return 
-
-    def queryEveryStatus(self,taskid):
-        """ Query a status of all jobs with specified boss taskid """
-
-        self.boss_scheduler.checkProxy()
-
-        results = {}
-        try:
-            nTot = common.jobDB.nJobs()
-            Tout = nTot*20 
-            # fill dictionary { 'bossid' : 'status' , ... }
-            self.bossTask.query( ALL, timeout = Tout )
-            task = self.bossTask.jobsDict()
-            for k, v in task.iteritems():
-                results[k] = self.status[v['STATUS']]
-        except SchedulerError,e:
-            common.logger.message("Warning : Scheduler interaction on query operation failed for jobs:")
-            common.logger.message(e.__str__())
-            pass
-        except BossError,e:
-            common.logger.message( e.__str__() )
-                
-        return results
-
-    ##################################################
-    def queryStatusList(self,taskid,list_id):
-        """ Query a status of the job with id """
-
-        allBoss_id = self.list()
-        tmpQ = ''
-        if not len(allBoss_id)==len(list_id): tmpQ = string.join(map(str,list_id),",")
-
-        results = {}
-        try:
-            Tout = len(list_id)*20 
-            # fill dictionary { 'bossid' : 'status' , ... }
-            self.bossTask.query( ALL, tmpQ,  timeout = Tout )
-            task = self.bossTask.jobsDict()
-            for k, v in task.iteritems():
-                results[int(k)] = self.status[v['STATUS']]
-        except SchedulerError,e:
-            common.logger.message("Warning : Scheduler interaction on query operation failed for jobs:")
-            common.logger.message( e.__str__() )
-            pass
-        except BossError,e:
-            common.logger.message( e.__str__() )
-                
-        return results
-
-    ###################### ---- OK for Boss4 ds
-    def list(self):
-        """
-        Return a list of all boss_Id of a task
-        """
-        ListBoss_ID = []
-        task = self.bossTask.jobsDict()
-        for k, v in task.iteritems():
-            ListBoss_ID.append(int(k))
-        ListBoss_ID.sort()
-        listBoss_Uniq = []
-        for i in ListBoss_ID:  # check if there double index
-            if i not in listBoss_Uniq: listBoss_Uniq.append(i)
-        return listBoss_Uniq
-
-    ################## 
-    def taskDeclared( self, taskName ):
-        taskDict = self.bossUser.loadByName( taskName )
-        return (len(taskDict) > 0)
-
-    def clean(self):
-        """ destroy boss instance """
-        del self.bossUser
-        return
