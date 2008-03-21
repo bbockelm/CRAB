@@ -13,7 +13,7 @@ class Task:
         ## time to stay after ended
         self.__lifetime  = lifetime
         ## time when ended
-        self.__endedtime = endedtime
+        self.__endedtime = int(endedtime)
         ## time when arrived
         if heretime == None:
             self.__heretime  = self.__getTime()
