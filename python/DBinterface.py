@@ -38,34 +38,37 @@ class DBinterface:
         dbConfig = {'dbName':dbname
             }
         common.bossSession = BossLiteAPI( self.db_type, dbConfig)
-        self.task = common.bossSession.loadTaskByID(1)
+        self.task = common.bossSession.load(1)[0]
         return
  
     def getTask(self, jobsList='all'): #, cfg_params):
+        """
+        Return task with all/list of jobs 
+        """
 
-        #if jobsList == 'all':
-        #    self.task = common.bossSession.loadTaskByID(1)
-        #else: 
-        #self.task = common.bossSession.load('1','5')  
-        #return self.task[0]
-        self.task = common.bossSession.loadTaskByID(1)
-        return self.task
+        if jobsList == 'all':
+            task = common.bossSession.load(1)[0]
+        else: 
+            if len(jobsList)>1: str_jobs=string.join(map(str,jobsList),",") 
+            else: str_jobs=str(jobsList)  
+            task = common.bossSession.load(1,jobsList)[0]
+        return task
 
     def getJob(self, n): 
-
-        self.job = common.bossSession.loadJobByID(1,n)
-        return self.job
+        """
+        Return a task with a single job 
+        """ 
+        task = common.bossSession.load(1,str(n))[0]
+        return task
 
 
     def createTask_(self, optsToSave):       
         """
         Task declaration
         with the first coniguration stuff 
-        {'server_name': 'crabas.lnl.infn.it/data1/cms/', '-scheduler': 'glite', '-jobtype': 'cmssw', '-server_mode': '0'}
-
         """
         opt={}
-        if optsToSave['server_mode'] == 1: opt['serverName']=optsToSave['server_name'] 
+        opt['serverName']=optsToSave['server_name'] 
         opt[ 'name']=common.work_space.taskName()  
      	task = Task( opt )
       
@@ -76,68 +79,67 @@ class DBinterface:
         """
         Update task fields   
         """
-        #task = common.bossSession.loadTaskByName(common.work_space.taskName() )
-        task = common.bossSession.loadTaskByID(1)
+        task = common.bossSession.load(1)[0]
          
         for key in optsToSave.keys():
             task[key] = optsToSave[key]
-            common.bossSession.updateDB( task )
+        common.bossSession.updateDB( task )
         return 
 
-    def createJobs_(self, nj):
+    def createJobs_(self, jobsL):
         """  
         Fill crab DB with  the jobs filed 
         """
-        #task = common.bossSession.loadTaskByName(common.work_space.taskName())
-        task = common.bossSession.loadTaskByID(1)
+        task = common.bossSession.loadTask(1) 
         jobs = [] 
-        for id in range(nj):
+        for id in jobsL:
             parameters = {}
+            parameters['jobId'] =  str(id)
             parameters['name'] = 'job' + str(id)
             job = Job(parameters)
-            jobs.append(job)    
+            jobs.append(job)  
         task.addJobs(jobs)
         common.bossSession.updateDB( task )
         return
 
-    def updateJob_(self, nj, optsToSave):       
+    def updateJob_(self, jobsL, optsToSave):       
         """
         Update Job fields   
         """
-        task = common.bossSession.loadTaskByID(1)
-        #task = common.bossSession.loadTaskByName( common.work_space.taskName())
-        for i in range(len(nj)):
-           # jobs = common.bossSession.loadJob(task['id'],i)
-            for key in optsToSave[i].keys():
-                task.jobs[i][key] = optsToSave[i][key]
+        task = common.bossSession.load(1)[0]
+        for id in jobsL:
+            for key in optsToSave[id].keys():
+                task.jobs[id][key] = optsToSave[id][key]
         common.bossSession.updateDB( task )
         return 
 
-    def updateRunJob_(self, nj, optsToSave):       
+    def updateRunJob_(self, jobsL, optsToSave):       
         """
         Update Running Job fields   
         """
-        task = common.bossSession.loadTaskByID(1)
-        #task = common.bossSession.loadTaskByName( common.work_space.taskName())
-        for i in nj:
-            common.bossSession.getRunningInstance(task.jobs[i])
+        task = common.bossSession.load(1)[0]
+        for id in jobsL:
+            common.bossSession.getRunningInstance(task.jobs[id])
             for key in optsToSave.keys():
-                task.jobs[i].runningJob[key] = optsToSave[key]
+                task.jobs[id].runningJob[key] = optsToSave[key]
         common.bossSession.updateDB( task )
         return 
 
-    def nJobs(self):
+    def nJobs(self,list=''):
         
-        task = common.bossSession.loadTaskByID(1)
-        #task = common.bossSession.loadTaskByName( common.work_space.taskName())
-        return len(task.jobs) 
+        task = common.bossSession.load(1)[0]
+        listId=[]
+        if list == 'list':
+            for job in task.jobs:listId.append(int(job['jobId']))  
+            return listId
+        else:
+            return len(task.jobs) 
 
     def dump(self,jobs):
         """
          List a complete set of infos for a job/range of jobs   
         """
-        task = common.bossSession.loadTaskByID(1)
-        #task = common.bossSession.loadTaskByName( common.work_space.taskName())
+        task = common.bossSession.load(1)[0]
 
         njobs = len(jobs)
         lines=[] 
@@ -160,7 +162,8 @@ class DBinterface:
 
     def serializeTask(self, tmp_task = None):
         if tmp_task is None:
-            tmp_task = common.bossSession.loadTaskByID(1)
+            #tmp_task = common.bossSession.loadTaskByID(1)
+            tmp_task = common.bossSession.load(1)[0]
         return common.bossSession.serialize(tmp_task)   
  
     def queryID(self,server_mode=0):
@@ -170,11 +173,10 @@ class DBinterface:
         '''     
         header=''
         lines=[]
-        task = common.bossSession.loadTaskByID(1)
+        task = common.bossSession.load(1)[0]
         if server_mode == 1:
             header= "Task Id = %-40s " %(task['name'])
         else:
-         #   task = common.bossSession.loadTaskByName(common.work_space.taskName() )
             for i in range(len(task.job)): 
                 common.bossSession.getRunningInstance(task.jobs[i])
                 lines.append(task.jobs[i].runningJob['schedulerId'])
@@ -187,20 +189,19 @@ class DBinterface:
         '''
         Perform a query over a generic task attribute
         '''
-        task = common.bossSession.loadTaskByID(1)
+        task = common.bossSession.loadTask(1)
         return task[attr]
 
-    def queryJob(self, attr, njobs):
+    def queryJob(self, attr, jobs):
         '''
         Perform a query for a range/all/single job 
         over a generic job attribute 
         '''
         lines=[]
-        task = common.bossSession.loadTaskByID(1)
-        #task = common.bossSession.loadTaskByName( common.work_space.taskName())
-        for i in njobs:
-            jobs = common.bossSession.loadJob(task['id'],i+1)
-            lines.append(task.jobs[i][attr])
+        str_jobs=string.join(map(str,jobs),",") 
+        task = common.bossSession.load(1,str_jobs)[0]
+        for job in task.jobs:
+            lines.append(eval(job[attr]))
         return lines
 
     def queryRunJob(self, attr, jobs):
@@ -209,11 +210,11 @@ class DBinterface:
         over a generic job attribute 
         '''
         lines=[]
-        task = common.bossSession.loadTaskByID(1)
-       # task = common.bossSession.loadTaskByName( common.work_space.taskName() )
-        for i in jobs:
-            common.bossSession.getRunningInstance(task.jobs[i-1])
-            lines.append(task.jobs[i-1].runningJob[attr])
+        str_jobs=string.join(map(str,jobs),",") 
+        task = common.bossSession.load(1,str_jobs)[0]
+        for job in task.jobs:
+            common.bossSession.getRunningInstance(job)
+            lines.append(job.runningJob[attr])
         return lines
 
     def queryDistJob(self, attr):
@@ -222,16 +223,16 @@ class DBinterface:
         '''
         distAttr=[]
         task = common.bossSession.loadJobDist( 1, attr ) 
-        for i in task: distAttr.append(i[attr])   
+        for i in task: distAttr.append(eval(i[attr]))   
         return  distAttr
 
     def queryDistJob_Attr(self, attr_1, attr_2, list):
         '''
-        Returns the list of distinct value for a given job attributes 
+        Returns the list of distinct value for a given job attribute 
         '''
         distAttr=[]
         task = common.bossSession.loadJobDistAttr( 1, attr_1, attr_2, list ) 
-        for i in task: distAttr.append(i[attr_1])   
+        for i in task: distAttr.append(eval(i[attr_1]))   
         return  distAttr
 
     def queryAttrJob(self, attr, field):

@@ -450,16 +450,12 @@ class Crab:
 
                 # Initialize the JobDB object if needed
                 if not self.flag_continue:
-                    common._db.createJobs_(self.creator.nJobs()) ## new  BL--DS
+                    common._db.createJobs_(self.creator.nJobsL()) ## new  BL--DS
                     pass
 
                 # Create and initialize JobList
                 common.job_list = JobList(common._db.nJobs(), ## new BL--DS
                                           self.creator.jobType())
-### ToBeRemoved BL--DS
-#                common.taskDB.setDict('ScriptName',common.work_space.jobDir()+"/"+self.job_type_name+'.sh')
-#                common.taskDB.setDict('JdlName',common.work_space.jobDir()+"/"+self.job_type_name+'.jdl')
-#                common.taskDB.setDict('CfgName',common.work_space.jobDir()+"/"+self.creator.jobType().configFilename())
 
                 taskinfo={} ## new BL--DS  
                 taskinfo['scriptName'] = common.work_space.jobDir()+"/"+self.job_type_name+'.sh' ## new BL--DS 
@@ -469,8 +465,6 @@ class Crab:
                 	     
     
                 common.job_list.setScriptNames(self.job_type_name+'.sh')
-## Obsolete
-##                common.job_list.setJDLNames(self.job_type_name+'.jdl')
                 common.job_list.setCfgNames(self.creator.jobType().configFilename())
 
                 self.creator.writeJobsSpecsToDB()

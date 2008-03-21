@@ -81,6 +81,13 @@ class Creator(Actor):
     def nJobs(self):
         return self.total_njobs
     
+
+    def nJobsL(self):
+        jobsL=[]
+        for i in range(self.total_njobs):
+            jobsL.append(i+1)   
+        return jobsL
+
     def createJobTypeObject(self,ncjobs):
         file_name = 'cms_'+ string.lower(self.job_type_name)
         klass_name = string.capitalize(self.job_type_name)
