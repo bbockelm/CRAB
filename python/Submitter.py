@@ -276,18 +276,31 @@ class Submitter(Actor):
 
         msg = '\nTotal of %d jobs submitted'%njs
         if njs != len(self.nj_list) :
-            msg += ' (from %d requested).\n'%(len(self.nj_list))
-            if self.cfg_params.has_key('EDG.se_white_list'):
-                msg += 'SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
-            if self.cfg_params.has_key('EDG.se_black_list'):
-                msg += 'SE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
-            if self.cfg_params.has_key('EDG.ce_white_list'):
-                msg += 'CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
-            if self.cfg_params.has_key('EDG.ce_black_list'):
-                msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
-            msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\nPlease check if the dataset is available at this site!)\n'
+            msg += ' (from %d requested).'%(len(self.nj_list))
         else:
-            msg += '.\n'
+            msg += '.'
+        common.logger.message(msg)
+
+        if (njs < len(self.nj_list) or len(self.nj_list)==0):
+            self.submissionError()
+        return
+
+    def submissionError(self):
+        ## add some more verbose message in case submission is not complete
+        msg =  'Submission performed using the Requirements: \n'
+        ### TODO_ DS--BL
+        #msg += common.taskDB.dict("jobtype")+' version: '+common.taskDB.dict("codeVersion")+'\n'
+        #msg += '(Hint: please check if '+common.taskDB.dict("jobtype")+' is available at the Sites)\n'
+        if self.cfg_params.has_key('EDG.se_white_list'):
+            msg += 'SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
+        if self.cfg_params.has_key('EDG.se_black_list'):
+            msg += 'SE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
+        if self.cfg_params.has_key('EDG.ce_white_list'):
+            msg += 'CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
+        if self.cfg_params.has_key('EDG.ce_black_list'):
+            msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
+        msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\nPlease check if the dataset is available at this site!)\n'
+
         common.logger.message(msg)
 
 
