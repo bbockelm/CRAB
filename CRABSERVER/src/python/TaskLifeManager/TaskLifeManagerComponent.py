@@ -20,11 +20,12 @@ from TaskQueue import *
 
 # module from TaskTracking component
 from TaskTracking.UtilSubject import UtilSubject
-from TaskTracking.TaskStateAPI import getStatusUUIDEmail
+from TaskTracking.TaskStateAPI import findTaskPA, getStatusUUIDEmail
 
 # SE_API
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 from ProdCommon.Storage.SEAPI.SElement import SElement
+from ProdCommon.Storage.SEAPI.Exceptions import OperationException
 
 import os
 import time
@@ -308,7 +309,6 @@ class TaskLifeManagerComponent:
         _checkGlobalSpace_
         """
         out = self.SeSbI.getGlobalSpace(self.args['dropBoxPath'])
-        logging.info ( str(out) )
         numberUsed = int(out[0].split("%")[0])
         spaceAvail = int(out[1])
         spaceUsed = int(out[2])
@@ -338,10 +338,14 @@ class TaskLifeManagerComponent:
         recurisvely delete all the files and dirs in [taskPath]
         """
         summ = 0
-        if taskPath != "/" and taskPath != self.args['dropBoxPath']:
+        if taskPath != "/" and taskPath != self.args['dropBoxPath'] \
+           and self.SeSbI.checkExists( taskPath, proxy ):
             try:
                 summ = self.SeSbI.getDirSpace(taskPath, proxy)
                 self.SeSbI.delete( taskPath, proxy )
+            except OperationException, ex:
+                logging.info(str(ex))
+                return 0
             except Exception, ex: ### 2 IMPROVE!!!! ##
                 import traceback
                 logging.error( str(traceback.format_exc()) )
@@ -363,7 +367,7 @@ class TaskLifeManagerComponent:
         from os.path import join
         pathTask = join(dBox, taskName)
         if self.SeSbI.checkExists( pathTask, proxy ):
-            logging.debug("removing task '" + pathTask + "' ...")
+            logging.info("removing task '" + pathTask + "' ...")
             try:
                 summ = self.deleteTask( pathTask, proxy )
                 if not self.SeSbI.checkExists( pathTask, proxy ):
@@ -378,7 +382,7 @@ class TaskLifeManagerComponent:
                 logging.error("Not able to delete the task [" + taskName +\
                               "] in the path [" + dBox +"]")
         else:
-            logging.error("The pasth [" + pathTask +"] does not exists!")
+            logging.error("The path [" + pathTask +"] does not exists!")
         return 0
 
     ##########################################################################
@@ -558,6 +562,7 @@ class TaskLifeManagerComponent:
         sign = 0
         for index in range( self.taskQueue.getHowMany() ):
             task = self.taskQueue.getCurrentSwitch()
+            #logging.info(str(task.getAll()))
             if task.toLive() < (60*60*24): ## twentyfour hours
                 if not task.getNotified():
                     self.notifyCleaning( task.getName(), task.toLive(), task.getOwner(), task.getOwnerMail() )
@@ -581,7 +586,7 @@ class TaskLifeManagerComponent:
         totFreeSpace = 0
         for index in range( toDelete ):
             task = self.taskDeleteQueue.getCurrentSwitch()
-            proxy = self.task.getProxy()
+            proxy = task.getProxy()
             logging.info ( "task life expired " + task.getName() )
             summ = self.cleanTask( task.getName(), proxy )
             if summ > 0:
@@ -642,20 +647,23 @@ class TaskLifeManagerComponent:
 
         mexage = "TaskLifeManager:TaskNotifyLife"
         uuid = ""
-        valuess = getStatusUUIDEmail( taskName )
-        if len(valuess) > 1:
-            uuid = valuess[1]
-        obj = UtilSubject( self.args['dropBoxPath'], taskName, uuid )
-        origTaskName, userName = obj.getInfos()
+        if findTaskPA(taskName) != None:
+            valuess = getStatusUUIDEmail( taskName )
+            if len(valuess) > 1:
+                uuid = valuess[1]
+            obj = UtilSubject( self.args['dropBoxPath'], taskName, uuid )
+            origTaskName, userName = obj.getInfos()
 
-        if owner is None or mails is None:
-            owner, mails = self.checkInfoUser(taskName)
+            if owner is None or mails is None:
+                owner, mails = self.checkInfoUser(taskName)
         
-        payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ str(owner) +"::"+ str(mails)
+            payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ str(owner) +"::"+ str(mails)
 
-        logging.info(" Publishing ['"+ mexage +"']")
-        logging.info("   payload = " + payload )
-        self.ms.publish( mexage, payload )
+            logging.info(" Publishing ['"+ mexage +"']")
+            logging.info("   payload = " + payload )
+            self.ms.publish( mexage, payload )
+        else:
+            logging.error(" Task not existsing: %s... Can not send %s message."%(taskName,mexage) )
 
 
     ##########################################################################
