@@ -656,7 +656,7 @@ class Cmssw(JobType):
         listField=[]
         for job in range(njobs):
             jobParams[job] = arglist[job]
-            listID.append(job)
+            listID.append(job+1)
             job_ToSave ={}
             concString = ','
             argu=''

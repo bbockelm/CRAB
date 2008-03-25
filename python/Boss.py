@@ -80,7 +80,7 @@ class Boss:
             parameters['standardOutput'] = stdout
             parameters['standardError'] = stderr
             listField.append(parameters)
-            listID.append(id)     
+            listID.append(id+1)     
         common._db.updateJob_( listID, listField)
 
         return 

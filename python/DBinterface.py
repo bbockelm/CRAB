@@ -106,10 +106,14 @@ class DBinterface:
         """
         Update Job fields   
         """
-        task = common.bossSession.load(1)[0]
-        for id in jobsL:
+        if len(jobsL)>1: str_jobs=string.join(map(str,jobsL),",")
+        else: str_jobs=str(jobsL)
+        task = common.bossSession.load(1,jobsL)[0]
+        id =0 
+        for job in task.jobs:
             for key in optsToSave[id].keys():
-                task.jobs[id][key] = optsToSave[id][key]
+                job[key] = optsToSave[id][key]
+            id+=1
         common.bossSession.updateDB( task )
         return 
 
@@ -117,11 +121,13 @@ class DBinterface:
         """
         Update Running Job fields   
         """
-        task = common.bossSession.load(1)[0]
-        for id in jobsL:
-            common.bossSession.getRunningInstance(task.jobs[id])
+        if len(jobsL)>1: str_jobs=string.join(map(str,jobsL),",")
+        else: str_jobs=str(jobsL)
+        task = common.bossSession.load(1,jobsL)[0]
+        for job in task.jobs:
+            common.bossSession.getRunningInstance(job)
             for key in optsToSave.keys():
-                task.jobs[id].runningJob[key] = optsToSave[key]
+                job.runningJob[key] = optsToSave[key]
         common.bossSession.updateDB( task )
         return 
 

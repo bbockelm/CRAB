@@ -55,10 +55,9 @@ class Submitter(Actor):
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(dlsDest[nj]) 
             if (cleanedBlackWhiteList != '') or (datasetpath == None): ## Matty's fix
                 ##if ( jStatus[nj] not in ['R','S','K','Y','A','D','Z']): ## here the old flags
-                if ( jStatus[nj] not in ['SU','SR','R','S','K','Y','A','D','Z']):
-                    print jStatus[nj] 
-                    jobSetForSubmission +=1
+                if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z']):
                     #nj_list.append(nj+1)## Warning added +1 for jobId BL--DS 
+                    jobSetForSubmission +=1
                     nj_list.append(tmp_jList[nj])## Warning added +1 for jobId BL--DS 
                 else:
                     continue
@@ -202,7 +201,7 @@ class Submitter(Actor):
                 listId=[]
                 run_jobToSave = {'status' :'S'}
                 for j in sub_jobs[ii]: # Add loop over SID returned from group submission  DS
-                    if task.jobs[j].runningJob['schedulerId'] != '': 
+                    if str(task.jobs[j].runningJob['schedulerId']) != '': 
                     #if (st[j]=='S'):
                         listId.append(j) 
                         common.logger.debug(5,"Submitted job # "+ str(j))
