@@ -197,14 +197,14 @@ class Submitter(Actor):
 
                 ### check the if the submission succeded Maybe not needed or at least simplified 
                 njs=0 
-                task=common._db.getTask()
+                sched_Id = common._db.queryRunJob('schedulerId', sub_jobs[ii])
                 listId=[]
                 run_jobToSave = {'status' :'S'}
-                for j in sub_jobs[ii]: # Add loop over SID returned from group submission  DS
-                    if str(task.jobs[j].runningJob['schedulerId']) != '': 
+                for j in range(len(sub_jobs[ii])): # Add loop over SID returned from group submission  DS
+                    if str(sched_Id[j]) != '': 
                     #if (st[j]=='S'):
-                        listId.append(j) 
-                        common.logger.debug(5,"Submitted job # "+ str(j))
+                        listId.append(sub_jobs[ii][j]) 
+                        common.logger.debug(5,"Submitted job # "+ str(sub_jobs[ii][j]))
                         njs += 1
                 common._db.updateRunJob_(listId, run_jobToSave ) ## New BL--DS
 #
