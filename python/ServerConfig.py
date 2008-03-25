@@ -10,7 +10,7 @@ class ServerConfig:
     def __init__(self, serverName):
         common.logger.debug(5,'Calling ServerConfig')
         self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/Server_conf/'
-        self.configFileName = '%s.conf'%string.lower(serverName)
+        self.configFileName = 'server_%s.conf'%string.lower(serverName)
         localCfg = self.getConfig_()
 
         # parse the localCfg file

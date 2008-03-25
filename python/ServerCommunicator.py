@@ -213,6 +213,8 @@ class ServerCommunicator:
         
         # create a mini-cfg to be transfered to the server
         miniCfg = {}
+
+        ## migrate CE/SE infos
         miniCfg['EDG.ce_white_list'] = ""
         if 'EDG.ce_white_list' in self.cfg_params:
             miniCfg['EDG.ce_white_list'] = str( self.cfg_params['EDG.ce_white_list'] )
@@ -221,7 +223,15 @@ class ServerCommunicator:
         if 'EDG.ce_black_list' in self.cfg_params:
             miniCfg['EDG.ce_black_list'] = str( self.cfg_params['EDG.ce_black_list'] )
 
-        miniCfg['cfgFileNameCkSum'] = '' #TODO check makeCksum(common.work_space.cfgFileName()) # Fabio
+        miniCfg['EDG.se_white_list'] = ""
+        if 'EDG.se_white_list' in self.cfg_params:
+            miniCfg['EDG.se_white_list'] = str( self.cfg_params['EDG.se_white_list'] )
+
+        miniCfg['EDG.se_black_list'] = ""
+        if 'EDG.se_black_list' in self.cfg_params:
+            miniCfg['EDG.se_black_list'] = str( self.cfg_params['EDG.se_black_list'] )
+
+        miniCfg['cfgFileNameCkSum'] = '' 
         if 'cfgFileNameCkSum' in self.cfg_params:
             miniCfg['cfgFileNameCkSum'] = str(self.cfg_params['cfgFileNameCkSum'])
 
@@ -229,12 +239,20 @@ class ServerCommunicator:
         if 'CRAB.se_remote_dir' in self.cfg_params:
             miniCfg['CRAB.se_remote_dir'] = str(self.cfg_params['CRAB.se_remote_dir']) 
 
+        ## JDL requirements specific data. Scheduler dependant
+        if 'glite' in str(self.cfg_params['CRAB.scheduler']):
+            miniCfg['EDG.max_wall_time'] = self.cfg_params.get('EDG.max_wall_clock_time',None)
+            miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('EDG.max_cpu_time', '130')
+            miniCfg['proxyServer'] = str(self.cfg_params['EDG.proxy_server'] )
+            miniCfg['VO'] = str(self.cfg_params['EDG.virtual_organization'] )
+        else:
+            # TODO fill here with proper data
+            pass
+
         ## put here other fields if needed
         node.setAttribute("CfgParamDict", str(miniCfg) )
-
         cfile.appendChild(node)
         xmlString += str(cfile.toprettyxml())
-        #
         return xmlString
 
     def _genericCommand(self, cmd, blTaskName, rng):
