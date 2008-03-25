@@ -22,13 +22,9 @@ class Submitter(Actor):
             elif (type(eval(val)) is int) and eval(val) > 0:
                 # positive number
                 nsjobs = eval(val)
-            # NEW PART # Fabio
-            # put here code for LIST MANAGEMEN
             elif (type(eval(val)) is tuple)or( type(eval(val)) is int and eval(val)<0 ) :
                 chosenJobsList = parsed_range
-                chosenJobsList = [i-1 for i in chosenJobsList ]
                 nsjobs = len(chosenJobsList)
-            #
             else:
                 msg = 'Bad submission option <'+str(val)+'>\n'
                 msg += '      Must be an integer or "all"'
@@ -58,20 +54,19 @@ class Submitter(Actor):
         for nj in range(len(tmp_jList)):
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(dlsDest[nj]) 
             if (cleanedBlackWhiteList != '') or (datasetpath == None): ## Matty's fix
-                if ( jStatus[nj] not in ['R','S','K','Y','A','D','Z']):
+                ##if ( jStatus[nj] not in ['R','S','K','Y','A','D','Z']): ## here the old flags
+                if ( jStatus[nj] not in ['SU','SR','R','S','K','Y','A','D','Z']):
+                    print jStatus[nj] 
                     jobSetForSubmission +=1
-                    nj_list.append(nj+1)## Warning added +1 for jobId BL--DS 
+                    #nj_list.append(nj+1)## Warning added +1 for jobId BL--DS 
+                    nj_list.append(tmp_jList[nj])## Warning added +1 for jobId BL--DS 
                 else:
                     continue
             else :
-                jobSkippedInSubmission.append(nj+1)
-            #
+                jobSkippedInSubmission.append(tmp_jList[nj])
             if nsjobs >0 and nsjobs == jobSetForSubmission:
                 break
             pass
-        del tmp_jList
-        #
-
 
         if nsjobs>jobSetForSubmission:
             common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
@@ -85,7 +80,6 @@ class Submitter(Actor):
         # submit N from last submitted job
         common.logger.debug(5,'nj_list '+str(nj_list))
 
-
         if common.scheduler.name().upper() == 'CONDOR_G':
             # create hash of cfg file
             self.hash = makeCksum(common.work_space.cfgFileName())
@@ -93,9 +87,6 @@ class Submitter(Actor):
             self.hash = ''
 
         self.nj_list = nj_list
-
-        self.UseServer=int(self.cfg_params.get('CRAB.server_mode',0))
-
         return
 
     def run(self):
@@ -185,12 +176,10 @@ class Submitter(Actor):
             common.logger.message(str(len(matched))+" blocks of jobs will be submitted")
             for ii in matched: 
                 common.logger.debug(1,'Submitting jobs '+str(sub_jobs[ii]))
+                common.scheduler.submit(sub_jobs[ii],Requi[ii])
                 if not common.logger.debugLevel() :
                     try: pbar = ProgressBar(term, 'Submitting '+str(len(sub_jobs[ii]))+' jobs')
                     except: pbar = None
-                req=str(common._db.queryTask('jobType')) 
-                common.scheduler.submit(sub_jobs[ii],Requi[ii])
-
                 if not common.logger.debugLevel():
                     if pbar :
                         pbar.update(float(ii+1)/float(len(sub_jobs)),'please wait')
@@ -213,9 +202,9 @@ class Submitter(Actor):
                 listId=[]
                 run_jobToSave = {'status' :'S'}
                 for j in sub_jobs[ii]: # Add loop over SID returned from group submission  DS
-                    if task.jobs[j-1].runningJob['schedulerId'] != '': 
+                    if task.jobs[j].runningJob['schedulerId'] != '': 
                     #if (st[j]=='S'):
-                        listId.append(j-1) 
+                        listId.append(j) 
                         common.logger.debug(5,"Submitted job # "+ str(j))
                         njs += 1
                 common._db.updateRunJob_(listId, run_jobToSave ) ## New BL--DS

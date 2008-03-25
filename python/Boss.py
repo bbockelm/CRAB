@@ -110,7 +110,7 @@ class Boss:
         Submit BOSS function.
         Submit one job. nj -- job number.
         """
-        task = common._db.getTask()
+        task = common._db.getTask(jobsList)
         self.schedSession.submit( task,jobsList,req )
       #  try:
       #  except SchedulerError,e:
