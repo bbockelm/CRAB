@@ -16,6 +16,7 @@ from MessageService.MessageService import MessageService
 from xml.dom import minidom
 import traceback
 import copy
+import re
 
 # BossLite import
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
@@ -54,7 +55,13 @@ class FatWorker(Thread):
             self.SEproto = configs['SEproto']
             self.SEurl = configs['SEurl']
             self.SEport = configs['SEport']
-            self.blackL = [] + configs['dynBList']
+
+            self.wmsEndpoint = configs['wmsEndpoint']
+            self.se_blackL = [] + configs['se_dynBList']
+            self.ce_blackL = [] + configs['ce_dynBList']
+
+            self.EDG_retry_count = int(configs['EDG_retry_count'])
+            self.EDG_shallow_retry_count = int(configs['EDG_shallow_retry_count'])
         except Exception, e:
             self.log.info('Missing parameters in the Worker configuration')
             self.log.info( traceback.format_exc() ) 
@@ -70,7 +77,8 @@ class FatWorker(Thread):
         self.cmdXML = None
         self.taskXML = None
 
-        self.whiteL = []
+        self.se_whiteL = []
+        self.ce_whiteL = []
 
         # Parse the XML files
         taskDir = self.wdir + '/' + self.taskName + '_spec/'
@@ -101,35 +109,45 @@ class FatWorker(Thread):
     def run(self):
         ## Warm up phase
         self.blDBsession = BossLiteAPI('MySQL', dbConfig)
- 
         self.schedulerConfig.update( {'user_proxy' : self.proxy} )
-        schedName = str( self.cmdXML.getAttribute('Scheduler') )
+        self.schedName = str( self.cmdXML.getAttribute('Scheduler') )
 
-        if schedName in ['glite', 'glitecoll']:
-            self.schedulerConfig['name'] = 'SchedulerGLiteAPI' #'SchedulerGLite'
+        if self.schedName in ['glite', 'glitecoll']:
+            self.schedulerConfig['name'] = 'SchedulerGLiteAPI' 
             self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
-            self.schedulerConfig['service'] = 'https://wms006.cnaf.infn.it:7443/glite_wms_wmproxy_server'
-        elif schedName == 'edg':
-            self.schedulerConfig['name'] = 'SchedulerEDG'
-            self.schedulerConfig['config'] = self.wdir + '/edg_wl_ui_cmd_var.conf.CMS_' + + self.brokerName
-            self.schedulerConfig['service'] = ''
-        elif schedName == 'condor_g':
+            self.schedulerConfig['service'] = "https://wms102.cern.ch:7443/glite_wms_wmproxy_server" # self.wmsEndpoint
+        elif self.schedName == 'condor_g':
+            self.schedulerConfig['name'] = 'SchedulerCondorGAPI' 
+            self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
+            self.schedulerConfig['service'] = "https://wms102.cern.ch:7443/glite_wms_wmproxy_server"
+        elif self.schedName == 'arc':
             pass
-        elif schedName == 'arc':
-            pass
-        elif schedName == 'lsf':
+        elif self.schedName == 'lsf':
             pass
 
         # Prepare filter lists for matching sites
-        if 'glite' in schedName:
+        if 'glite' in self.schedName:
+            # ce related
             if ('EDG.ce_white_list' in self.cfg_params) and (self.cfg_params['EDG.ce_white_list']):
                 for ceW in self.cfg_params['EDG.ce_white_list'].strip().split(","):
                     if ceW:
-                        self.whiteL.append(ceW.strip())
+                        self.ce_whiteL.append(ceW.strip())
+
             if ('EDG.ce_black_list' in self.cfg_params) and (self.cfg_params['EDG.ce_black_list']):
                 for ceB in self.cfg_params['EDG.ce_black_list'].strip().split(","):
                     if ceB:
-                        self.blackL.append(ceB.strip())
+                        self.ce_blackL.append(ceB.strip())
+
+            # se related
+            if ('EDG.se_white_list' in self.cfg_params) and (self.cfg_params['EDG.se_white_list']):
+                for seW in self.cfg_params['EDG.se_white_list'].strip().split(","):
+                    if seW:
+                        self.se_whiteL.append( re.compile(seW.strip().lower()) )
+
+            if ('EDG.se_black_list' in self.cfg_params) and (self.cfg_params['EDG.se_black_list']):
+                for seB in self.cfg_params['EDG.se_black_list'].strip().split(","):
+                    if seB:
+                         self.se_blackL.append( re.compile(seB.strip().lower()) )
 
         # actual submission
         self.log.info("Worker %s warmed up and ready to submit"%self.myName)
@@ -137,7 +155,8 @@ class FatWorker(Thread):
             self.submissionDriver()
         except Exception, e:
             self.log.info( traceback.format_exc() )
-
+            self.sendResult(66, "Worker exception. Free-resource message", \
+                    "FatWorkerError %s. Task %s."%(self.myName, self.taskName) )
         return
 
 ####################################
@@ -170,7 +189,6 @@ class FatWorker(Thread):
             self.local_ms.commit()
 
             taskObj = self.blDBsession.loadTaskByName(self.cmdXML.getAttribute('Task') )
-
             if taskObj is None:
                 self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), \
                     "FatWorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) )
@@ -181,21 +199,19 @@ class FatWorker(Thread):
             self.log.info('Worker %s submitting a new command on a task'%self.myName)
 
         ## Go on with the submission
+        self.blSchedSession = BossLiteAPISched(self.blDBsession, self.schedulerConfig)
         newRange, skippedJobs = self.preSubmissionCheck(taskObj, str(self.cmdXML.getAttribute('Range')) )
+        self.log.info('Worker %s passed pre-submission checks passed'%self.myName)
+
         if (newRange is not None) and (len(newRange) > 0):
-            submissionMaps = {'[]':[]}
-            submissionMaps.update( self.submissionListsCreation(taskObj, newRange) )
-            self.log.info('Worker %s passed pre-submission checks passed'%self.myName)
+            sub_jobs, reqs_jobs, matched = self.submissionListCreation(taskObj, newRange) 
 
-            # ----- call the submitter -----
-            # self.schedulerConfig['service'] = taskObj['serverName'] # TODO check if correct, ask DS-GC #Fabio
-            self.blSchedSession = BossLiteAPISched(self.blDBsession, self.schedulerConfig)
-            self.log.info('Worker %s scheduler interaction set'%self.myName)
+            self.log.info('Worker %s listmatched jobs'%self.myName)
+            submittedJobs, unmatchedJobs, nonSubmittedJobs = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
 
-            submittedJobs, unmatchedJobs, nonSubmittedJobs = self.submitTaskBlocks(taskObj, submissionMaps, newRange)
+
             self.log.info('Worker %s submitted jobs. Ready to evaluate outcomes'%self.myName)
             self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatchedJobs, nonSubmittedJobs, skippedJobs)
-            # ----- ----- ----- ----- ------
             return 
 
         ## Manage the empty range case due to incompatibilities
@@ -228,7 +244,7 @@ class FatWorker(Thread):
         return 
 
     def preSubmissionCheck(self, task, rng):
-        newRange = eval(rng)  # TODO a-la-CRAB range expansion and Boss ranges (0 starting)
+        newRange = eval(rng)  # a-la-CRAB range expansion and Boss ranges (1 starting)
         doNotSubmitStatusMask = ['R','S'] # ,'K','Y','D'] # to avoid resubmission of final state jobs
         tryToSubmitMask = ['C', 'A', 'RC', 'Z'] + ['K','Y','D']
         skippedSubmissions = []
@@ -269,21 +285,20 @@ class FatWorker(Thread):
 
         return newRange, skippedSubmissions
 
-    def submitTaskBlocks(self, taskObj, blockMap, rng):
-        # skip unmatched jobs
-        unmatchedJobs = [] + blockMap['[]']
-        del blockMap['[]']
-
+    def submitTaskBlocks(self, taskObj, sub_jobs, reqs_jobs, matched):
         # loop and submit blocks
-        for bulkRng in blockMap.values():
-            if len(bulkRng) > 0:
-                # TODO common.scheduler.sched_parameter(id_job,task)
-                requirements = {}  
-                # range expressed as a list of ids: '2,3,4,5'
-                subRange = ','.join(bulkRng)
-                #
-                self.blSchedSession.submit(taskObj, subRange, requirements)
-
+        if len(matched)>0:
+            for ii in matched:
+                self.blSchedSession.submit(sub_jobs[ii], reqs_jobs[ii])
+                listId=[]
+                run_jobToSave = {'status' :'S'}
+                for j in sub_jobs[ii]: 
+                    if task.jobs[j].runningJob['schedulerId'] != '':
+                        listId.append(j)
+                        common.logger.debug(5,"Submitted job # "+ str(j))
+                self.blDBsession.updateRunJob_(listId, run_jobToSave ) 
+                
+        # query for submission success
         selAttribs = {'taskId':taskObj['id'], 'closed':None}  
         submittedJobs = [ j['jobId'] for j in self.blDBsession.loadJobsByRunningAttr(selAttribs)]
         selAttribs = {'taskId':taskObj['id'], 'status' : 'SD' }
@@ -417,47 +432,207 @@ class FatWorker(Thread):
         '''
         return 1
 
-    def submissionListsCreation(self, taskObj, jobRng):
-        bulkMap = {'[]':[]} # jobs ordered per dls
-        matchingMap = {}    # jobs used for the matchmacking
+    def submissionListCreation(self, taskObj, jobRng):
+        '''
+           Matchmaking process. Inherited from CRAB-SA
+        ''' 
+        sub_jobs = []      # list of jobs Id list to submit
+        requirements = []  # list of requirements for the submitting jobs
 
-        ### constuct bulkMap pruning bL and forcing wL
-        for j in taskObj.jobs:
-            dest = str(j['dlsDestination'])
-            jId = j['jobId'] 
+        # group jobs by destination
+        distinct_dests = self.queryDistJob_Attr(taskObj['id'], 'dlsDestination', 'jobId' ,self.nj_list)
+        jobs_to_match = [] 
+        all_jobs = []
+        count = 0
+        for distDest in distinct_dests:
+             all_jobs.append( self.queryAttrJob(taskObj['id'], {'dlsDestination':distDest},'jobId') )
+             sub_jobs_temp = []
 
-            # submission range
-            if jId not in jobRng:
-                continue
-            # prune blacklist
-            if dest in self.blackL:
-                bulkMap['[]'].append( jId )
-                continue
-            # prune not whitelist
-            if len(self.whiteL) > 0 and dest not in self.whiteL:
-                bulkMap['[]'].append( jId )
-                continue
+             for i in jobRng:
+                 if i in all_jobs[0]: 
+                     sub_jobs_temp.append(i)
 
-            # add the entry in the inverted map
-            if dest in bulkMap:
-                bulkMap[dest].append( str(jId) )
+             if len(sub_jobs_temp)>0:
+                 sub_jobs.append(sub_jobs_temp)
+                 jobs_to_match.append(sub_jobs[count][0])
+                 count += 1
+             pass
+
+        # ListMatch 
+        sel = 0
+        matched = []
+        tags_tmp = str(taskObj['jobType']).split('"')
+        tags = [str(tags_tmp[1]),str(tags_tmp[3])]
+
+        for id_job in jobs_to_match:
+            # Get JDL requirements
+            if "GLITE" in self.schedName.upper(): 
+                requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
+            elif self.schedName.upper()== "CONDOR_G":
+                requirements.append( self.sched_parameter_Condor() )
+            elif self.schedName.upper()== "LSF":
+                requirements.append( self.sched_parameter_Lsf() )
             else:
-                bulkMap[dest] = [ str(jId) ]
-                matchingMap[dest] = str(jId) 
+                continue
 
-        ### prune lists according listmatches
-        schedName = str( self.cmdXML.getAttribute('Scheduler') ).upper()
-        if schedName == "CONDOR_G" :
-            # Condor always matches, as in SA. Thus return the whole list
-            return bulkMap  
+            # Perform listMatching
+            if self.schedName.upper() != "CONDOR_G" :
+                cleanedList = None
+                if len(distinct_dests[sel])!=0:
+                    cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
+                match = len( self.blSchedSession.lcgInfo(tags, cleanedList, self.ce_whiteL, self.ce_blackL ) ) 
+            else :
+                match = "1"
+            if match:
+               matched.append(sel)
+            sel += 1
 
-        for dest in matchingMap:
-            matchingJidCandidate = matchingMap[dest]
-            ## TODO correct here 
-            match = "1" #match = common.scheduler.listMatch( matchingJidCandidate )
-            if not match:
-                del bulkMap[dest]
+        # all done and matched, go on with the submission 
+        return sub_jobs, requirements, matched
 
-        ### all done
-        return bulkMap
+#########################################################
+### Matching auxiliary methods
+#########################################################
+
+    def queryDistJob(self, tid, attr):
+        '''
+        Returns the list of distinct value for a given job attributes
+        '''
+        distAttr = []
+        task = self.blDBsession.loadJobDist(int(tid) , attr )
+        for i in task: distAttr.append(eval(i[attr]))
+        return  distAttr
+
+    def queryDistJob_Attr(self, tid, attr_1, attr_2, list):
+        '''
+        Returns the list of distinct value for a given job attribute
+        '''
+        distAttr = []
+        task = self.blDBsession.loadJobDistAttr(int(tid), attr_1, attr_2, list )
+        for i in task: distAttr.append(eval(i[attr_1]))
+        return  distAttr
+
+    def checkWhiteList(self, Sites, fileblocks):
+        """
+        select sites that are defined by the user (via SE white list)
+        """
+        if len(self.se_whiteL)==0: return Sites
+        goodSites = []
+        for aSite in Sites:
+            good=0
+            for re in self.se_whiteL:
+                if re.search(string.lower(aSite)):
+                    good=1
+                pass
+            if good: goodSites.append(aSite)
+
+        return goodSites
+
+    def checkBlackList(self, Sites, fileblocks):
+        """
+        select sites that are not excluded by the user (via SE black list)
+        """
+        goodSites = []
+        for aSite in Sites:
+            good=1
+            for re in self.se_blackL:
+                if re.search(string.lower(aSite)):
+                    good=0
+                pass
+            if good: goodSites.append(aSite)
+        return goodSites
+
+#########################################################
+### Specific Scheduler requirements parameters
+#########################################################
+    def sched_parameter_Condor(self):
+        return
+
+    def sched_parameter_Lsf(self):
+        return
+
+    def sched_parameter_Glite(self, i, task):
+        dest = eval(task.jobs[i]['dlsDestination']) ## DS--BL
+        sched_param = 'Requirements = ' + task['jobType'] 
+
+        req=''
+        if self.cfg_params['EDG.clock_time']:
+            req += 'other.GlueCEPolicyMaxWallClockTime>=' + self.cfg_params['EDG.max_wall_time']
+        if self.cfg_params['EDG.cpu_time']:
+            if (not req == ' '): req = req + ' && '
+            req += ' other.GlueCEPolicyMaxCPUTime>=' + self.cfg_params['EDG.max_cpu_time']
+
+        sched_param += req + self.se_list(i, dest) + self.ce_list() +';\n' ## BL--DS
+        #if self.EDG_addJdlParam: 
+        #    sched_param+=self.jdlParam() ## BL--DS
+        sched_param+='MyProxyServer = "' + self.cfg_params['proxyServer'] + '";\n'
+        sched_param+='VirtualOrganisation = "' + self.cfg_params['VO'] + '";\n'
+        sched_param+='RetryCount = '+str(self.EDG_retry_count)+';\n'
+        sched_param+='ShallowRetryCount = '+str(self.EDG_shallow_retry_count)+';\n'
+        return sched_param
+
+#########################################################
+    def findSites_(self, n, sites):
+        itr4 =[]
+        if len(sites)>0 and sites[0]=="":
+            return itr4
+
+        if sites != [""]:
+            ##Addedd Daniele
+            replicas = self.checkBlackList(sites,n)
+            if len(replicas)!=0:
+                replicas = self.checkWhiteList(replicas,n)
+
+            itr4 = replicas
+            #####
+        return itr4
+
+    def se_list(self, id, dest):
+        """
+        Returns string with requirement SE related
+        """
+        hostList = self.findSites_(id, dest)
+        req=''
+        reqtmp=[]
+        concString = '||'
+
+        for arg in hostList:
+            reqtmp.append(' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ')
+
+        if len(reqtmp): req += " && (" + concString.join(reqtmp) + ") "
+        return req
+
+    def ce_list(self):
+        """
+        Returns string with requirement CE related
+        """
+        req = ''
+        if self.ce_whiteL:
+            tmpCe=[]
+            concString = '&&'
+            for ce in self.ce_whiteL:
+                tmpCe.append('RegExp("' + str(ce).strip() + '", other.GlueCEUniqueId)')
+            if len(tmpCe) == 1:
+                req +=  " && (" + concString.join(tmpCe) + ") "
+            elif len(tmpCe) > 1:
+                firstCE = 0
+                for reqTemp in tmpCe:
+                    if firstCE == 0:
+                        req += " && ( (" + reqTemp + ") "
+                        firstCE = 1
+                    elif firstCE > 0:
+                        req += " || (" + reqTemp + ") "
+                if firstCE > 0:
+                    req += ") "
+
+        if self.ce_blackL:
+            tmpCe=[]
+            concString = '&&'
+            for ce in self.ce_blackL:
+                tmpCe.append('(!RegExp("' + str(ce).strip() + '", other.GlueCEUniqueId))')
+            if len(tmpCe): req += " && (" + concString.join(tmpCe) + ") "
+
+        # requirement added to skip gliteCE
+        req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
+        return req
 

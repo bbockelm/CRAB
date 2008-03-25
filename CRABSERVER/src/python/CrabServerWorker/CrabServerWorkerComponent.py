@@ -45,6 +45,9 @@ class CrabServerWorkerComponent:
 
         self.args.setdefault('allow_anonymous', 0)
         self.args.setdefault('resourceBroker', 'CERN')
+        self.args.setdefault('WMSserviceList', 'https://wms102.cern.ch:7443/glite_wms_wmproxy_server')
+        self.args.setdefault('EDG_retry_count', 3)
+        self.args.setdefault('EDG_shallow_retry_count', 3)
 
         self.args.setdefault('Protocol', 'local')
         self.args.setdefault('SEHostname', 'localhost')
@@ -54,6 +57,8 @@ class CrabServerWorkerComponent:
         
         if self.args['SEBaseDir'] == None and self.args['Protocol'] == 'local': 
             self.args['SEBaseDir'] = self.args["dropBoxPath"]
+
+        self.args['WMSserviceList'] = str(self.args['WMSserviceList']).split(',')        
 
         # define log file
         if self.args['Logfile'] == None:
@@ -210,7 +215,12 @@ class CrabServerWorkerComponent:
         workerCfg['SEproto'] = self.args['Protocol']
         workerCfg['SEurl'] = self.args['SEHostname']
         workerCfg['SEport'] = self.args['SEPort']
-        workerCfg['dynBList'] = []
+
+        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter]
+        workerCfg['se_dynBList'] = []
+        workerCfg['ce_dynBList'] = []
+        workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
+        workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         self.availWorkers -= 1
@@ -293,7 +303,12 @@ class CrabServerWorkerComponent:
         workerCfg['SEproto'] = self.args['Protocol']
         workerCfg['SEurl'] = self.args['SEHostname']
         workerCfg['SEport'] = self.args['SEPort']
-        workerCfg['dynBList'] = []
+
+        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter]
+        workerCfg['se_dynBList'] = []
+        workerCfg['ce_dynBList'] = []
+        workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
+        workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)        
         self.availWorkers -= 1
@@ -313,13 +328,16 @@ class CrabServerWorkerComponent:
         self.availWorkers += 1
         if self.availWorkers > int(self.args['maxThreads']):
             self.availWorkers = int(self.args['maxThreads'])
-        del self.workerSet[workerName]
-        del self.taskPool[workerName]
+
+        if workerName in self.workerSet:
+            del self.workerSet[workerName]
+        if workerName in self.taskPool: 
+            del self.taskPool[workerName]
 
         ## Track workers outcomes
         successfulCodes = [0, -2] # full and partial submissions
         retryItCodes = [20, 21, 30, 31, -1] # temporary failure conditions mainly
-        giveUpCodes = [10, 11] # severe failure conditions
+        giveUpCodes = [10, 11, 66] # severe failure conditions
  
         if status in successfulCodes:
             self.subStats['succ'] += 1 
@@ -335,7 +353,6 @@ class CrabServerWorkerComponent:
 
         elif status in giveUpCodes:
             self.subStats['fail'] += 1
-
         else: 
             logging.info('Unknown status for worker message %s'%payload)
 
@@ -432,7 +449,7 @@ class CrabServerWorkerComponent:
             f = open(self.wdir+"/cw_status.set", 'r')
             ldump = pickle.load(f)
             f.close()
-            self.taskPool, self.proxyMap, self.subTimes = ldump
+            self.taskPool, self.proxyMap, self.subTimes, self.subStats = ldump
         except Exception, e:
             logging.info("Failed to open cw_status.set. Building a new status\n" + str(e) )
             self.taskPool = {}
@@ -447,7 +464,7 @@ class CrabServerWorkerComponent:
         for t in self.taskPool:
             type, payload = self.taskPool[t]
             delay += 1
-            dT = delay/self.args['maxThreads']
+            dT = delay/float(self.args['maxThreads'])
             waitTime = '%s:%s:%s'%(str(dT/3600).zfill(2), str((dT/60)%60).zfill(2), str(dT%60).zfill(2))
             self.ms.publish(type, payload, waitTime)
             self.ms.commit()
