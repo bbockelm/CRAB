@@ -28,12 +28,12 @@ The most useful general options (use '-h' to get complete help):
   -testJdl [range]    -- check if resources exist which are compatible with jdl
   -list [range]       -- show technical job details
   -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
-  -printId [range]    -- print the job SID
+  -printId [range]    -- print the job SID or Task Unique ID while using the server 
   -continue|-c [dir]  -- Apply command to task stored in [dir].
-  -h [format]         -- Detailed help. Formats: man (default), tex, html, txt.
-  -cfg fname          -- Configuration file name. Default is 'crab.cfg'.
+  -h [format]         -- Detailed help. Formats: man (default), tex, html, txt
+  -cfg fname          -- Configuration file name. Default is 'crab.cfg'
   -debug N            -- set the verbosity level to N
-  -v                  -- Print version and exit.
+  -v                  -- Print version and exit
 
   "range" has syntax "n,m,l-p" which correspond to [n,m,l,l+1,...,p-1,p] and all possible combination
 
@@ -313,7 +313,7 @@ From version 210, also local scheduler are supported, for the tim being only at 
 
 =item B<server_name>
 
-To use the CRAB-server support it is needed to fill this key with server name as server_<Server_DOMAIN> (e.g. server_cnaf). If I<server_name=None> crab works in standalone way.
+To use the CRAB-server support it is needed to fill this key with server name as <Server_DOMAIN> (e.g. cnaf,fnal). If I<server_name=None> crab works in standalone way.
 The server available to users can be found from CRAB web page.
 
 =back
