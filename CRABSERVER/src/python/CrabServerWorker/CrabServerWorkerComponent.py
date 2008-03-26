@@ -212,7 +212,7 @@ class CrabServerWorkerComponent:
         workerCfg['taskname'] = taskUniqName
         workerCfg['proxy'] = reason
         workerCfg['firstSubmit'] = True 
-        workerCfg['resubCount'] = 1
+        workerCfg['resubCount'] = self.args['maxCmdAttempts']
         workerCfg['SEproto'] = self.args['Protocol']
         workerCfg['SEurl'] = self.args['SEHostname']
         workerCfg['SEport'] = self.args['SEPort']
@@ -305,7 +305,7 @@ class CrabServerWorkerComponent:
         workerCfg['SEurl'] = self.args['SEHostname']
         workerCfg['SEport'] = self.args['SEPort']
 
-        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter]
+        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
         workerCfg['se_dynBList'] = []
         workerCfg['ce_dynBList'] = []
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']

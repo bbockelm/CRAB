@@ -299,8 +299,10 @@ class FatWorker(Thread):
             unsubmitted += sub_jobs[ii]
 
             # check if submitted
+            task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
             for j in task.jobs: 
-                if j.runningJob['schedulerId'] != '':
+                if j.runningJob['schedulerId']:
+                    self.log.debug(j.runningJob['schedulerId'])
                     submitted.append(j['jobId'])
                     unsubmitted.remove(j['jobId'])
                     self.blDBsession.getRunningInstance(j)
@@ -337,15 +339,10 @@ class FatWorker(Thread):
         ## some jobs need to be resubmitted later
         else:
             # get the list of missing jobs # discriminate on the lists? in future maybe
-            setMap = [] 
-            for j in list( set(submittableRange).difference(set(submittedJobs)) ):
-                setMap.append(j)
-            resubmissionList = [] + list(set(setMap))
-            del setMap
+            resubmissionList = list( set(submittableRange).difference(set(submittedJobs)) )
 
             # prepare a new message for the missing jobs
-            ## resubmissionList = [ i+1 for i in resubmissionList ]
-            newRange = ','.join(resubmissionList)
+            newRange = ','.join(map(str, resubmissionList))
             self.cmdXML.setAttribute('Range', newRange)
             #### replaceChild(newChild, oldChild)? # Check if ok # Fabio
 
