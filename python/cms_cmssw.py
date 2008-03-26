@@ -1102,6 +1102,9 @@ class Cmssw(JobType):
         ## additional input files
         tgz = self.additionalInputFileTgz()
         inp_box.append(tgz)
+        ## executable
+        wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
+        inp_box.append(common.work_space.pathForTgz() +'job/'+ wrapper)
         return inp_box
 
     def outputSandbox(self, nj):

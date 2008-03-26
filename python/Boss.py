@@ -58,9 +58,7 @@ class Boss:
         jbt = job.type()
         base = jbt.name()
 
-        wrapper = common._db.queryTask('scriptName') ## Should disappear... 
-                                                     ## we'll have ONLY 'executable'  
-                                                     ## as task field and not job field
+        wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
         listField=[]
         listID=[]  
         task=common._db.getTask()
