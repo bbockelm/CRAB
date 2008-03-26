@@ -1,4 +1,4 @@
-from Scheduler import Scheduler
+from SchedulerGrid import SchedulerGrid
 from JobList import JobList
 from crab_logger import Logger
 from crab_exceptions import *
@@ -10,17 +10,9 @@ import popen2
 import os
 from BlackWhiteListParser import BlackWhiteListParser
 
-class SchedulerCondor_g(Scheduler):
+class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
-        Scheduler.__init__(self,"CONDOR_G")
-        self.states = [ "Acl", "cancelReason", "cancelling","ce_node","children", \
-                      "children_hist","children_num","children_states","condorId","condor_jdl", \
-                      "cpuTime","destination", "done_code","exit_code","expectFrom", \
-                      "expectUpdate","globusId","jdl","jobId","jobtype", \
-                      "lastUpdateTime","localId","location", "matched_jdl","network_server", \
-                      "owner","parent_job", "reason","resubmitted","rsl","seed",\
-                      "stateEnterTime","stateEnterTimes","subjob_failed", \
-                      "user tags" , "status" , "status_code","hierarchy"]
+        SchedulerGrid.__init__(self,"CONDOR_G")
 
         # check for locally running condor scheduler
         cmd = 'ps xau | grep -i condor_schedd | grep -v grep'
@@ -153,74 +145,31 @@ class SchedulerCondor_g(Scheduler):
         return cmd_out
 
     def configure(self, cfg_params):
-        Scheduler.configure(self,cfg_params)
+        SchedulerGrid.configure(self,cfg_params)
 
-        self.cfg_params = cfg_params
+#        self.cfg_params = cfg_params
 
         # init BlackWhiteListParser
-        self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
+#        self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
 
         try:
-            self.group = cfg_params["EDG.group"]
+          self.GLOBUS_RSL = cfg_params['CONDORG.globus_rsl']
         except KeyError:
-            self.group = None
-
-        try:
-            self.role = cfg_params["EDG.role"]
-        except KeyError:
-            self.role = None
-
-        self.copy_input_data = 0
-
-        try: self.return_data = cfg_params['USER.return_data']
-        except KeyError: self.return_data = 1
-
-        try:
-            self.copy_data = cfg_params["USER.copy_data"]
-            self.srm_ver  = cfg_params.get('USER.srm_version',0) ## DS for srmv2
-            if int(self.copy_data) == 1:
-                try:
-                    self.SE = cfg_params['USER.storage_element']
-                    self.SE_PATH = cfg_params['USER.storage_path']
-                except KeyError:
-                    msg = "Error. The [USER] section does not have 'storage_element'"
-                    msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
-                    common.logger.debug(2,msg)
-                    raise CrabException(msg)
-        except KeyError: self.copy_data = 0
-
-        if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
-           msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
-           msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n'
-           raise CrabException(msg)
-
-        if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
-           msg = 'Error: return_data and copy_data cannot be set both to 1\n'
-           msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
-           raise CrabException(msg)
-
-
-        try: self.VO = cfg_params['EDG.virtual_organization']
-        except KeyError: self.VO = 'cms'
-
-
-        try: self.EDG_clock_time = cfg_params['EDG.max_wall_clock_time']
-        except KeyError: self.EDG_clock_time= ''
-
-        try: self.GLOBUS_RSL = cfg_params['CONDORG.globus_rsl']
-        except KeyError: self.GLOBUS_RSL = ''
+          self.GLOBUS_RSL = ''
 
         # Provide an override for the batchsystem that condor_g specifies as a grid resource.
         # this is to handle the case where the site supports several batchsystem but bdii
         # only allows a site to public one.
         try:
-           self.batchsystem = cfg_params['CONDORG.batchsystem']
-           msg = '[Condor-G Scheduler]: batchsystem overide specified in your crab.cfg'
-           common.logger.debug(2,msg)
-        except KeyError: self.batchsystem = ''
-        self.register_data = 0
+          self.batchsystem = cfg_params['CONDORG.batchsystem']
+          msg = '[Condor-G Scheduler]: batchsystem overide specified in your crab.cfg'
+          common.logger.debug(2,msg)
+        except KeyError:
+          self.batchsystem = ''
 
         # check if one and only one entry is in $CE_WHITELIST
+
+        # redo this with SchedulerGrid SE list
 
         try:
             tmpGood = string.split(cfg_params['EDG.se_white_list'],',')
@@ -241,18 +190,8 @@ class SchedulerCondor_g(Scheduler):
         except KeyError:
             self.UseGT4 = 0;
 
-        self.proxyValid=0
         # added here because checklistmatch is not used
         self.checkProxy()
-
-        self._taskId = common.taskDB.dict('taskId')
-
-        try: self.jobtypeName = cfg_params['CRAB.jobtype']
-        except KeyError: self.jobtypeName = ''
-
-        try: self.schedulerName = cfg_params['CRAB.scheduler']
-        except KeyError: self.scheduler = ''
-
 
         self.datasetPath = ''
         try:
@@ -266,55 +205,6 @@ class SchedulerCondor_g(Scheduler):
         except KeyError:
             msg = "Error: datasetpath not defined "
             raise CrabException(msg)
-
-        try:
-            self.publish_data = cfg_params["USER.publish_data"]
-            self.checkProxy()
-            if int(self.publish_data) == 1:
-                try:
-                    self.publish_data_name = cfg_params['USER.publish_data_name']
-                except KeyError:
-                    msg = "Error. The [USER] section does not have 'publish_data_name'"
-                    raise CrabException(msg)
-                #try:
-                #    tmp = runCommand("voms-proxy-info -identity 2>/dev/null")
-                #    tmp = string.split(tmp,'/')
-                #    reCN=re.compile(r'CN=')
-                #    for t in tmp:
-                #        if reCN.match(t):
-                #            self.UserGridName=string.strip((t.replace('CN=','')).replace(' ',''))
-                #    #self.UserGridName = string.strip(runCommand("voms-proxy-info -identity | awk -F\'CN\' \'{print $2$3$4}\' | tr -d \'=/ \'"))
-                #except:
-                #    msg = "Error. Problem with voms-proxy-info -identity command"
-                #    raise CrabException(msg)
-                import urllib
-                try:
-                    userdn = runCommand("voms-proxy-info -identity")
-                    self.userdn = string.strip(self.userdn)
-                except:
-                    msg = "Error. Problem with voms-proxy-info -identity command"
-                    raise CrabException(msg)
-                try:
-                    sitedburl="https://cmsweb.cern.ch/sitedb/sitedb/json/index/dnUserName"
-                    params = urllib.urlencode({'dn': self.userdn })
-                    f = urllib.urlopen(sitedburl,params)
-                    udata = f.read()
-                    userinfo= eval(udata)
-                    self.hnUserName = userinfo['user']
-                except:
-                    msg = "Error. Problem extracting user name from %s"%sitedburl
-                    raise CrabException(msg)
-            
-                if not self.hnUserName:
-                    msg = "Error. There is no user name associated to DN %s in %s.You need to register in SiteDB"%(userdn,sitedburl)
-                    raise CrabException(msg)
-        except KeyError: self.publish_data = 0
-
-        if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
-           msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
-           msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
-           common.logger.message(msg)
-           raise CrabException(msg)
 
         return
 
@@ -372,42 +262,24 @@ class SchedulerCondor_g(Scheduler):
         txt += 'echo "MonitorJobID=$MonitorJobID" > $RUNTIME_AREA/$repo \n'
         txt += 'echo "SyncGridJobId=$SyncGridJobId" >> $RUNTIME_AREA/$repo \n'
         txt += 'echo "MonitorID=$MonitorID" >> $RUNTIME_AREA/$repo\n'
-        #txt += 'MonitorJobID=`echo ${NJob}_'+self.hash+'_$GLOBUS_GRAM_JOB_CONTACT`\n'
-        #txt += 'SyncGridJobId=`echo $GLOBUS_GRAM_JOB_CONTACT`\n'
-        #txt += 'MonitorID=`echo ' + self._taskId + '`\n'
-        #txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
-        #txt += 'echo "middleware discovery: " \n'
         txt += 'echo ">>> GridFlavour discovery: " \n'
         txt += 'if [ $OSG_APP ]; then \n'
         txt += '    middleware=OSG \n'
-        #txt += '    echo "SyncCE=`echo $GLOBUS_GRAM_JOB_CONTACT | cut -d/ -f3 | cut -d: -f1`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "SyncCE=`echo $GLOBUS_GRAM_JOB_CONTACT | cut -d/ -f3 | cut -d: -f1`" >> $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo ">>> middleware =$middleware" \n'
         txt += 'elif [ $VO_CMS_SW_DIR ]; then\n'
         txt += '    middleware=LCG \n'
-        #txt += '    echo "SyncCE=`glite-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    echo ">>> middleware =$middleware" \n'
         txt += 'else \n'
-        #txt += '    echo "ERROR ==> middleware not identified" \n'
         txt += '    echo "ERROR ==> GridFlavour not identified" \n'
         txt += '    job_exit_code=10030 \n'
         txt += '    func_exit \n'
-        #txt += '    echo "SET_CMS_ENV 10030 ==> middleware not identified" \n'
-        #txt += '    echo "JOB_EXIT_STATUS = 10030" \n'
-        #txt += '    echo "JobExitCode=10030" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
-        #txt += '    exit 1 \n'
         txt += 'fi\n'
 
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
-
         txt += '\n\n'
 
         if int(self.copy_data) == 1:
@@ -431,61 +303,7 @@ class SchedulerCondor_g(Scheduler):
         txt = '\n'
         return txt
 
-    def wsCopyOutput(self):
-        """
-        Write a CopyResults part of a job script, e.g.
-        to copy produced output into a storage element.
-        """
-        txt = '\n'
-
-        txt += '#\n'
-        txt += '# COPY OUTPUT FILE TO SE\n'
-        txt += '#\n\n'
-
-        SE_PATH=''
-        if int(self.copy_data) == 1:
-            if self.SE:
-                txt += 'export SE='+self.SE+'\n'
-                txt += 'echo "SE = $SE"\n'
-            if self.SE_PATH:
-                if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
-                SE_PATH=self.SE_PATH
-            if int(self.publish_data) == 1:
-                txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
-                #path_add = self.UserGridName + '/' + self.publish_data_name +'_${PSETHASH}/'
-                path_add = self.hnUserName + '/' + self.publish_data_name +'_${PSETHASH}/'
-                SE_PATH = SE_PATH + path_add
-            txt += 'export SE_PATH='+SE_PATH+'\n'
-            txt += 'echo "SE_PATH = $SE_PATH"\n'
-
-            txt += 'export SRM_VER='+str(self.srm_ver)+'\n' ## DS for srmVer
-            txt += 'echo "SRM_VER = $SRM_VER"\n' ## DS for srmVer
-
-            txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
-            txt += 'copy_exit_status=0\n'
-            txt += 'for out_file in $file_list ; do\n'
-            txt += '    if [ -e $SOFTWARE_DIR/$out_file ] ; then\n'
-            txt += '        echo "Trying to copy output file $SOFTWARE_DIR/$out_file to $SE"\n'
-            txt += '        cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file ${SRM_VER} $middleware\n'
-            txt += '        if [ $cmscp_exit_status -ne 0 ]; then\n'
-            txt += '            echo "Problem copying $out_file to $SE $SE_PATH"\n'
-            txt += '            copy_exit_status=$cmscp_exit_status\n'
-            txt += '        else\n'
-            txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
-            txt += '        fi\n'
-            txt += '    else\n'
-            txt += '        copy_exit_status=60302\n'
-            txt += '        echo "StageOutExitStatus = $copy_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '        echo "StageOutExitStatusReason = file to copy not found" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    fi\n'
-            txt += 'done\n'
-            txt += 'if [ $copy_exit_status -ne 0 ]; then\n'
-            txt += '    SE=""\n'
-            txt += '    SE_PATH=""\n'
-            txt += '    job_exit_code=$copy_exit_status\n'
-            txt += 'fi\n'
-            pass
-        return txt
+    # def wsCopyOutput(self): # Indentical to SchedulerGrid
 
     def loggingInfo(self, id):
         """
@@ -506,36 +324,10 @@ class SchedulerCondor_g(Scheduler):
         #self.checkProxy()
         return 1
 
-# This function is obsolete and clashes in the inheritance tree now. Leave it out
-
-#    def submit(self, nj):
-#        """
-#        Submit one OSG job.
-#        """
-#        self.checkProxy()
-#        print "Condor submit",nj
-#        jid = None
-#        jdl = common.job_list[nj].jdlFilename()
-#
-#        cmd = 'condor_submit ' + jdl
-#        cmd_out = runCommand(cmd)
-#        if cmd_out != None:
-#            tmp = cmd_out.find('submitted to cluster') + 21
-#            jid = cmd_out[tmp:].replace('.','')
-#            jid = jid.replace('\n','')
-#            pass
-#        return jid
-
     def userName(self):
         """ return the user name """
         self.checkProxy()
         return runCommand("voms-proxy-info -identity")
-
-#    def resubmit(self, nj_list):
-#        """
-#        Prepare jobs to be submit
-#        """
-#        return
 
     def getAttribute(self, id, attr):
         return self.getStatusAttribute_(id, attr)
@@ -628,34 +420,6 @@ class SchedulerCondor_g(Scheduler):
         cmd = 'condor_q -submitter ' + user
         cmd_out = runCommand(cmd)
         return cmd_out
-
-#    def getOutput(self, id):
-#        """
-#        Get output for a finished job with id.
-#        Returns the name of directory with results.
-#        not needed for condor-g
-#        """
-#        #self.checkProxy()
-#        return ''
-
-#    def cancel(self, id):
-#        """ Cancel the condor job with id """
-#        self.checkProxy()
-#        # query for schedd
-#        user = os.environ['USER']
-#        cmd = 'condor_q -submitter ' + user
-#        cmd_out = runCommand(cmd)
-#        schedd=''
-#        if cmd_out != None:
-#            for line in cmd_out.splitlines() :
-#                if line.strip().startswith('--') :
-#                    schedd = line.strip().split()[6]
-#                if line.strip().startswith(id.strip()) :
-#                    # status = line.strip().split()[5]
-#                    break
-#        cmd = 'condor_rm -name ' + schedd + ' ' + id
-#        cmd_out = runCommand(cmd)
-#        return cmd_out
 
     def createXMLSchScript(self, nj, argsList):
         """
@@ -901,7 +665,3 @@ class SchedulerCondor_g(Scheduler):
 
         self.proxyValid=1
         return
-
-    def tOut(self, list):
-        return 120
-

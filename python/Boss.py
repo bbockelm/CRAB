@@ -17,39 +17,39 @@ class Boss:
     def __init__(self):
 
         return
- 
-    def configure(self,cfg_params):  
+
+    def configure(self,cfg_params):
         self.cfg_params = cfg_params
         self.schedulerName =  self.cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
         self.rb_param_file=''
         if (cfg_params.has_key('EDG.rb')):
             self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
-        self.wms_service=cfg_params.get("EDG.wms_service",'')        
- 
+        self.wms_service=cfg_params.get("EDG.wms_service",'')
+
         self.outDir = cfg_params.get("USER.outputdir", common.work_space.resDir() )
         self.logDir = cfg_params.get("USER.logdir", common.work_space.resDir() )
 
         self.return_data = cfg_params.get('USER.return_data',0)
 
         ## Add here the map for others Schedulers (LSF/CAF/CondorG)
-        SchedMap = {'glite':'SchedulerGLiteAPI',          
+        SchedMap = {'glite':'SchedulerGLiteAPI',
                     'glitecoll':'SchedulerGLiteAPI',\
-                    'condor_g':'',\
+                    'condor_g':'SchedulerCondorGAPI',\
                     'lsf':'',\
-                    'caf':''   
-                    }         
-                 
+                    'caf':''
+                    }
+
         schedulerConfig = {
               'name' : SchedMap[self.schedulerName], \
               'service' : self.wms_service, \
-              'config' : self.rb_param_file  
+              'config' : self.rb_param_file
               }
 
         self.schedSession = BossLiteAPISched( common.bossSession, schedulerConfig)
-        
+
         return
 
-    def declare(self, nj):       
+    def declare(self, nj):
         """
         BOSS declaration of jobs
         """
@@ -60,12 +60,12 @@ class Boss:
 
         wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
         listField=[]
-        listID=[]  
+        listID=[]
         task=common._db.getTask()
         for id in range(nj):
             parameters={}
             jobs=[]
-            out=[] 
+            out=[]
             stdout = base +'_'+ str(id+1)+'.stdout'
             stderr = base +'_'+ str(id+1)+'.stderr'
             jobs.append(id)
@@ -73,22 +73,22 @@ class Boss:
             out.append(stdout)
             out.append(stderr)
             out.append('.BrokerInfo')
-            parameters['outputFiles']=out 
+            parameters['outputFiles']=out
             parameters['executable']=wrapper
             parameters['standardOutput'] = stdout
             parameters['standardError'] = stderr
             listField.append(parameters)
-            listID.append(id+1)     
+            listID.append(id+1)
         common._db.updateJob_( listID, listField)
 
-        return 
+        return
 
     def listMatch(self, tags, dest, whiteL, blackL ):
         """
         Check the compatibility of available resources
         """
         sites = self.schedSession.lcgInfo(tags, dest, whiteL, blackL )
-       
+
 #        Tout = 120
 #        CEs=[]
 #        try:
@@ -102,7 +102,7 @@ class Boss:
 #            raise CrabException("ERROR: listMatch failed with message " + e.__str__())
 #        return CEs
         return len(sites)
-  
+
     def submit(self, jobsList,req):
         """
         Submit BOSS function.
@@ -118,8 +118,8 @@ class Boss:
       #  except BossError,e:
       #      common.logger.message("Error : BOSS command failed with message:")
       #      common.logger.message(e.__str__())
-        
-        return 
+
+        return
 
     def queryEverything(self,taskid):
         """
@@ -127,12 +127,12 @@ class Boss:
         """
 
         self.schedSession.query( str(taskid))
-                
-        return 
+
+        return
 
     def moveOutput(self, int_id):
         """
-        Move output of job already retrieved 
+        Move output of job already retrieved
         """
         self.current_time = time.strftime('%y%m%d_%H%M%S',time.localtime(time.time()))
         resDir = common.work_space.resDir()
@@ -146,7 +146,7 @@ class Boss:
             cmd_out = self.bossTask.program(boss_id, '1')['OUTFILES']
         except BossError,e:
             common.logger.message( e.__str__() )
-        
+
         files = cmd_out.split(',')
         for i in files:
             if os.path.exists(self.outDir+'/'+i):
@@ -190,14 +190,14 @@ class Boss:
         for i_id in int_id :
             if i_id not in allBoss_id:
                 msg = 'Job # '+`int(i_id)`+' out of range for task '+ self.groupName
-                common.logger.message(msg) 
+                common.logger.message(msg)
             else:
-                dir = self.outDir 
+                dir = self.outDir
                 logDir = self.logDir
-                boss_id = i_id 
+                boss_id = i_id
                 #bossTaskIdStatus = common.scheduler.queryStatus(bossTaskId, boss_id)
                 bossTaskIdStatus = statusList[boss_id]
-                if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':   
+                if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':
                     check = 1
                     try:
                         self.bossTask.getOutput (str(boss_id), str(dir), Tout)
@@ -206,20 +206,20 @@ class Boss:
                                 ######
                                 cmd = 'mv '+str(dir)+'/*'+str(i_id)+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*.log '+str(logDir)
                                 cmd_out =os.system(cmd)
-                                msg = 'Results of Job # '+str(i_id)+' are in '+dir+' (log files are in '+logDir+')' 
+                                msg = 'Results of Job # '+str(i_id)+' are in '+dir+' (log files are in '+logDir+')'
                                 common.logger.message(msg)
                                 #####
                                 #toMove = str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/*.log '+str(dir)+'/.BrokerInfo '
                                 #shutil.move(toMove, str(logDir))
                                 #####
                             except:
-                                msg = 'Problem with copy of job results' 
+                                msg = 'Problem with copy of job results'
                                 common.logger.message(msg)
-                                pass  
-                        else:   
+                                pass
+                        else:
                             msg = 'Results of Job # '+`int(i_id)`+' are in '+dir
                             common.logger.message(msg)
-                        common.jobDB.setStatus(int(i_id)-1, 'Y') 
+                        common.jobDB.setStatus(int(i_id)-1, 'Y')
                     except SchedulerError,e:
                         common.logger.message("Warning : Scheduler interaction in getOutput operation failed for jobs:")
                         common.logger.message(e.__str__())
@@ -228,7 +228,7 @@ class Boss:
                         common.logger.message(e.__str__())
                         msg = 'Results of Job # '+`int(i_id)`+' have been corrupted and could not be retrieved.'
                         common.logger.message(msg)
-                        common.jobDB.setStatus(int(i_id)-1, 'Z') 
+                        common.jobDB.setStatus(int(i_id)-1, 'Z')
                 elif bossTaskIdStatus == 'Running' :
                      run.append(i_id)
             #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible yet to retrieve the output.'
@@ -244,7 +244,7 @@ class Boss:
                 elif bossTaskIdStatus == 'Created' :
                      create.append(i_id)
                 elif bossTaskIdStatus == 'Cancelled' :
-                     canc.append(i_id)  
+                     canc.append(i_id)
                 elif bossTaskIdStatus == 'Ready' :
                      read.append(i_id)
                 elif bossTaskIdStatus == 'Scheduled' :
@@ -254,19 +254,19 @@ class Boss:
                 elif bossTaskIdStatus == 'Killed' :
                      kill.append(i_id)
                 else:
-                     other.append(i_id)  
+                     other.append(i_id)
             #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is currently not possible to retrieve the output.'
             #        common.logger.message(msg)
                 dir += os.environ['USER']
                 dir += '_' + os.path.basename(str(boss_id))
             pass
-        common.jobDB.save() 
-        if check == 0: 
+        common.jobDB.save()
+        if check == 0:
             msg = '\n\n*********No job in Done status. It is not possible yet to retrieve the output.\n'
             common.logger.message(msg)
 
-        if len(clear)!=0: print str(len(clear))+' jobs already cleared'     
-        if len(abort)!=0: print str(len(abort))+' jobs aborted'   
+        if len(clear)!=0: print str(len(clear))+' jobs already cleared'
+        if len(abort)!=0: print str(len(abort))+' jobs aborted'
         if len(canc)!=0: print str(len(canc))+' jobs cancelled'
         if len(kill)!=0: print str(len(kill))+' jobs killed'
         if len(run)!=0: print str(len(run))+' jobs still running'
@@ -276,7 +276,7 @@ class Boss:
         if len(other)!=0: print str(len(other))+' jobs submitted'
         if len(create)!=0: print str(len(create))+' jobs not yet submitted'
 
-        print ' ' 
+        print ' '
         return
 
     ###################### ---- OK for Boss4 ds
@@ -286,8 +286,8 @@ class Boss:
         """
         #print "CANCEL -------------------------"
         #print "int_id ",int_id," nSubmitted ", common.jobDB.nSubmittedJobs()
-        
-        common.jobDB.load() 
+
+        common.jobDB.load()
         if len( subm_id ) > 0:
             try:
                 subm_id.sort()
