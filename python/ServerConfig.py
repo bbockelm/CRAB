@@ -10,7 +10,11 @@ class ServerConfig:
     def __init__(self, serverName):
         common.logger.debug(5,'Calling ServerConfig')
         self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/Server_conf/'
-        self.configFileName = 'server_%s.conf'%string.lower(serverName)
+        if 'server_' in string.lower(serverName):
+            self.configFileName = '%s.conf'%string.lower(serverName)
+        else: 
+            self.configFileName = 'server_%s.conf'%string.lower(serverName)
+
         localCfg = self.getConfig_()
 
         # parse the localCfg file
@@ -29,8 +33,12 @@ class ServerConfig:
     def downloadFile(self, url, destination):
         try:
             f = urllib.urlopen(url)
+            data = f.read()
+            if '<!' in data[:2]:
+                raise IOError
+
             ff = open(destination, 'w')
-            ff.write(f.read())
+            ff.write(data)
             ff.close()
         except IOError:
             raise CrabException('Cannot download config file '+destination+' from '+self.url)
