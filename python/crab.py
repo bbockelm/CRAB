@@ -116,6 +116,7 @@ class Crab:
                 else:
                     optsToBeSavedDB[it[1:]]=opts[it]
                     optsToBeSaved[it]=opts[it]
+                    if self.UseServer==0: optsToBeSavedDB['server_name']= srvName  
                     # store in taskDB the opts
 
             
