@@ -58,7 +58,7 @@ class CrabServerWorkerComponent:
         if self.args['SEBaseDir'] == None and self.args['Protocol'] == 'local': 
             self.args['SEBaseDir'] = self.args["dropBoxPath"]
 
-        self.args['WMSserviceList'] = str(self.args['WMSserviceList']).split(',')        
+        self.args['WMSserviceList'] = [] + str(self.args['WMSserviceList']).split(',')        
 
         # define log file
         if self.args['Logfile'] == None:
@@ -138,7 +138,6 @@ class CrabServerWorkerComponent:
         Define response to events
         """
         logging.debug("Event: %s %s" % (event, payload))
-        self.materializeStatus()
 
         if event == "CRAB_Cmd_Mgr:NewTask":
             self.updateProxyMap()
@@ -154,6 +153,8 @@ class CrabServerWorkerComponent:
             logging.getLogger().setLevel(logging.INFO)
         else:
             logging.info('Unknown message received %s'%event)
+
+        self.materializeStatus()
 
         return 
 
@@ -216,7 +217,7 @@ class CrabServerWorkerComponent:
         workerCfg['SEurl'] = self.args['SEHostname']
         workerCfg['SEport'] = self.args['SEPort']
 
-        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter]
+        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
         workerCfg['se_dynBList'] = []
         workerCfg['ce_dynBList'] = []
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']

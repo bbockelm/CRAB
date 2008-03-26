@@ -27,7 +27,6 @@ except StandardError, ex:
     raise RuntimeError, msg
 
 # Initialise and start the component
-
 createDaemon(compCfg['ComponentDir'])
 component = CrabServerWorkerComponent(**dict(compCfg))
 runWithPostMortem(component, compCfg['ComponentDir'])
