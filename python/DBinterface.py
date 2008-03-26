@@ -183,12 +183,13 @@ class DBinterface:
         if server_mode == 1:
             header= "Task Id = %-40s " %(task['name'])
         else:
-            for i in range(len(task.job)): 
-                common.bossSession.getRunningInstance(task.jobs[i])
-                lines.append(task.jobs[i].runningJob['schedulerId'])
-           
-            header+= "Job: %-5s Id = %-40s: \n" 
-        displayReport(header,lines)
+            for job in task.jobs: 
+                toPrint=''
+                common.bossSession.getRunningInstance(job)
+                toPrint = "%-5s %-50s " % (job['id'],job.runningJob['schedulerId'])
+                lines.append(toPrint)
+            header+= "%-5s %-50s " % ('Job:','ID' ) 
+        displayReport(self,header,lines)
         return   
 
     def queryTask(self,attr):

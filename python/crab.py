@@ -504,7 +504,7 @@ class Crab:
                 Print the SID list of all the jobs      
                 ''' 
                 # modified to support server mode 
-                common._db.printId(self.UseServer) ## New BL--DS
+                common._db.queryID(self.UseServer) ## New BL--DS
 
             elif ( opt == '-status' ):
                 from Status import Status 
