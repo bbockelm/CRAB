@@ -303,8 +303,6 @@ class SchedulerCondor_g(SchedulerGrid):
         txt = '\n'
         return txt
 
-    # def wsCopyOutput(self): # Indentical to SchedulerGrid
-
     def loggingInfo(self, id):
         """
         retrieve the logging info from logging and bookkeeping and return it
@@ -433,7 +431,6 @@ class SchedulerCondor_g(SchedulerGrid):
 
         # input and output sandboxes
         inp_sandbox = jbt.inputSandbox(index)
-        #out_sandbox = jbt.outputSandbox(index)
 
         # title
         title     = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
@@ -497,20 +494,6 @@ class SchedulerCondor_g(SchedulerGrid):
                 pass
             pass
 
-        #inp_box = inp_box + os.path.abspath(os.environ['CRABDIR']+'/python/'+'report.py') + ',' +\
-        #          os.path.abspath(os.environ['CRABDIR']+'/python/'+'DashboardAPI.py') + ','+\
-        #          os.path.abspath(os.environ['CRABDIR']+'/python/'+'Logger.py') + ','+\
-        #          os.path.abspath(os.environ['CRABDIR']+'/python/'+'ProcInfo.py') + ','+\
-        #          os.path.abspath(os.environ['CRABDIR']+'/python/'+'apmon.py') + ','+\
-        #          os.path.abspath(os.environ['CRABDIR']+'/python/'+'parseCrabFjr.py')
-
-        #if (not jbt.additional_inbox_files == []):
-        #    inp_box = inp_box + ', '
-        #    for addFile in jbt.additional_inbox_files:
-        #        addFile = os.path.abspath(addFile)
-        #        inp_box = inp_box+''+addFile+','
-        #        pass
-
         if inp_box[-1] == ',' : inp_box = inp_box[:-1]
         inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
         xml.write(inp_box)
@@ -572,8 +555,7 @@ class SchedulerCondor_g(SchedulerGrid):
                 raise CrabException(msg)
 
         oneSite = self.getCEfromSE(seSite)
-        # do not check the site status check for FNAL (OSG not in BDII)
-        #if oneSite.find('fnal.gov') < 0 :
+
         # query if site is in production
         status = cestate_from_ce_bdii(oneSite.split(':')[0].strip())
         if status != 'Production' :
