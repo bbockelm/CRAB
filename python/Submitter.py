@@ -65,10 +65,6 @@ class Submitter(Actor):
             if nsjobs >0 and nsjobs == jobSetForSubmission:
                 break
             pass
-        ##### FEDE #####
-        print "nsjobs = ", nsjobs
-        print "jobSkippedInSubmission = ", jobSkippedInSubmission
-        ################
         
         if nsjobs>jobSetForSubmission:
             common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
