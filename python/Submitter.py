@@ -41,8 +41,7 @@ class Submitter(Actor):
         jobSkippedInSubmission = []
         datasetpath=self.cfg_params['CMSSW.datasetpath']
         if string.lower(datasetpath)=='none':
-            datasetPath = None
-
+            datasetpath = None
         tmp_jList = common._db.nJobs('list')
         if chosenJobsList != None:
             tmp_jList = chosenJobsList
@@ -66,7 +65,11 @@ class Submitter(Actor):
             if nsjobs >0 and nsjobs == jobSetForSubmission:
                 break
             pass
-
+        ##### FEDE #####
+        print "nsjobs = ", nsjobs
+        print "jobSkippedInSubmission = ", jobSkippedInSubmission
+        ################
+        
         if nsjobs>jobSetForSubmission:
             common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
         if len(jobSkippedInSubmission) > 0 :
@@ -132,6 +135,7 @@ class Submitter(Actor):
         jobs_to_match =[] # list of jobs Id to match
         all_jobs=[] 
         count=0
+        njs=0 
         for distDest in distinct_dests: 
              all_jobs.append(common._db.queryAttrJob({'dlsDestination':distDest},'jobId'))
              sub_jobs_temp=[]
@@ -196,7 +200,7 @@ class Submitter(Actor):
                         pbar.update(float(ii+1)/float(len(sub_jobs)),'please wait')
 
                 ### check the if the submission succeded Maybe not needed or at least simplified 
-                njs=0 
+                #njs=0 
                 sched_Id = common._db.queryRunJob('schedulerId', sub_jobs[ii])
                 listId=[]
                 run_jobToSave = {'status' :'S'}
@@ -207,54 +211,6 @@ class Submitter(Actor):
                         common.logger.debug(5,"Submitted job # "+ str(sub_jobs[ii][j]))
                         njs += 1
                 common._db.updateRunJob_(listId, run_jobToSave ) ## New BL--DS
-#
-#                    ##### DashBoard report #####################
-#                        Sub_Type = 'Direct'
-#
-#                    # OLI: JobID treatment, special for Condor-G scheduler
-#                    jobId = ''
-#                    localId = ''
-#                    if common.scheduler.name().upper() == 'CONDOR_G':
-#                        rb = 'OSG'
-#                        jobId = str(jj) + '_' + self.hash + '_' + jid
-#                        common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
-#                    elif common.scheduler.name() == 'lsf' or common.scheduler.name() == 'caf':
-#                        jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(common.taskDB.dict('taskId'),"_","-")+"-"+str(jj)
-#                        common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
-#                        rb = common.scheduler.name()
-#                        localId = jid
-#                    else:
-#                        jobId = str(jj) + '_' + jid
-#                        common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
-#                        rb = jid.split(':')[1]
-#                        rb = rb.replace('//', '')
-#
-#                    if len(common.jobDB.destination(tmpNj)) <= 2 :
-#                        T_SE=string.join((common.jobDB.destination(tmpNj)),",")
-#                    else :
-#                        T_SE=str(len(common.jobDB.destination(tmpNj)))+'_Selected_SE'
-#
-#                    params = {'jobId': jobId, \
-#                              'sid': jid, \
-#                              'broker': rb, \
-#                              'bossId': jj, \
-#                              'SubmissionType': Sub_Type, \
-#                              'TargetSE': T_SE, \
-#                              'localId' : localId}
-#                    common.logger.debug(5,str(params))
-#
-#                    fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
-#                    for i in fl.readlines():
-#                        key, val = i.split(':')
-#                        params[key] = string.strip(val)
-#                    fl.close()
-#
-#                    common.logger.debug(5,'Submission DashBoard report: '+str(params))
-#
-#                    common.apmon.sendToML(params)
-#                pass
-#            pass
-#
         else:
             common.logger.message("The whole task doesn't found compatible site ")
 
