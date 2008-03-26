@@ -136,11 +136,11 @@ class Submitter(Actor):
              all_jobs.append(common._db.queryAttrJob({'dlsDestination':distDest},'jobId'))
              sub_jobs_temp=[]
              for i in self.nj_list:
-                 if i in all_jobs[0]: sub_jobs_temp.append(i) 
+                 if i in all_jobs[count]: sub_jobs_temp.append(i) 
              if len(sub_jobs_temp)>0:
                  sub_jobs.append(sub_jobs_temp)   
                  jobs_to_match.append(sub_jobs[count][0])
-                 count +=1
+             count +=1
         sel=0
         matched=[] 
         Requi=[]
