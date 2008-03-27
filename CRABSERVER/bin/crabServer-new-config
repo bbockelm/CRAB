@@ -66,11 +66,15 @@ if  homeDir == None:
 # core fields not associated to components
   
 crabServerConfiguration = {
+    'resourceBroker':'CERN',
+    'WMSserviceList':'', 
+    'maxCmdAttempts':'5',
     'dropBoxPath':'',
-#    'bossClads':'',
-    'crabServerschemaLocation' : "$CRABSERVER_ROOT/share/CrabServerDB.sql",
     'ProxiesDir':'/tmp/del_proxies/',
-    'debugLevel':'9',
+    'crabServerschemaLocation' : "$CRABSERVER_ROOT/share/CrabServerDB.sql",
+    'SEHostname':'localhost',
+    'SEPort':'',
+    'Protocol':'local',
 }
 
 # component fields
@@ -79,19 +83,16 @@ componentFields = {
     "CrabServerWorker" : {
     'ComponentDir':None,
     'maxThreads':'10',
+    'allow_anonymous':'0',
     },
-    
-    "ProxyTarballAssociator" : {
+  
+    "CommandManager": {
     'ComponentDir':None,
-    'resourceBroker':'CERN',
     'uiConfigRB':'',
     'uiConfigRBVO':'',
     'uiConfigWMS':'',
-    },
-
-    "DropBoxGuardian" : {
-    'ComponentDir':None,
-    'sleepTime':'5',
+    'acceptableThroughput':'-1',
+    'Port':'20081',
     },
 
     "TaskTracking" : {
@@ -111,14 +112,6 @@ componentFields = {
     'Notification_SMTPServer': None,
     'Notification_SMTPServerDBGLVL': '3',
     'debugLevel':'9',
-    },
-
-    "CommandManager": {
-    'ComponentDir':None,
-    },
-
-    "CW_WatchDog": {
-    'ComponentDir':None,
     },
 
     "TaskLifeManager": {
