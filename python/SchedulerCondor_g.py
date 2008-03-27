@@ -208,20 +208,26 @@ class SchedulerCondor_g(SchedulerGrid):
 
         return
 
-    def sched_parameter(self):
+    def sched_parameter(self,i,task):
         """
         Returns file with scheduler-specific parameters
         """
         lastDest=''
         first = []
         last  = []
-        for n in range(common.jobDB.nJobs()):
-            currDest=self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(n))
+
+        print "sched_parameter called with i=",i
+        print "  task =",task
+
+        for n in range(common._db.nJobs()):
+            import pdb
+            pdb.set_trace()
+            currDest=self.blackWhiteListParser.cleanForBlackWhiteList(common._db.destination(n))
             if (currDest!=lastDest):
                 lastDest = currDest
                 first.append(n)
                 if n != 0:last.append(n-1)
-        if len(first)>len(last) :last.append(common.jobDB.nJobs())
+        if len(first)>len(last) :last.append(common._db.nJobs())
 
         for i in range(len(first)): # Add loop DS
             self.param='sched_param_'+str(i)+'.clad'
