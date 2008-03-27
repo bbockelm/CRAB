@@ -201,7 +201,7 @@ class FatWorker(Thread):
         ## Go on with the submission
         self.blSchedSession = BossLiteAPISched(self.blDBsession, self.schedulerConfig)
         newRange, skippedJobs = self.preSubmissionCheck(taskObj, str(self.cmdXML.getAttribute('Range')) )
-        self.log.info('Worker %s passed pre-submission checks passed'%self.myName)
+        self.log.info('Worker %s pre-submission checks passed'%self.myName)
 
         if (newRange is not None) and (len(newRange) > 0):
             submittedJobs = []
@@ -495,8 +495,7 @@ class FatWorker(Thread):
                     cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
 
                 sites = self.blSchedSession.lcgInfo(tags, cleanedList, self.ce_whiteL, self.ce_blackL )
-                self.log.info( '----------------------%s'%str(sites)) 
-                match = "1" #len( sites )
+                match = len( sites )
             else :
                 match = "1"
             if match:
