@@ -131,19 +131,15 @@ class SchedulerGrid(Scheduler):
 
         # Add EDG_WL_LOCATION to the python path
 
-        # This code is needed this way for CondorG to inherit from here, at least now.
-        # To restore, uncomment "raise" and remove else: statement and unindent. --EWV
-
         if not os.environ.has_key('EDG_WL_LOCATION'):
             msg = "Error: the EDG_WL_LOCATION variable is not set."
-            #raise CrabException(msg)
-        else:
-            path = os.environ['EDG_WL_LOCATION']
+            raise CrabException(msg)
+        path = os.environ['EDG_WL_LOCATION']
 
-            libPath=os.path.join(path, "lib")
-            sys.path.append(libPath)
-            libPath=os.path.join(path, "lib", "python")
-            sys.path.append(libPath)
+        libPath=os.path.join(path, "lib")
+        sys.path.append(libPath)
+        libPath=os.path.join(path, "lib", "python")
+        sys.path.append(libPath)
 
         self._taskId = common._db.queryTask('name')  ## DS--BL
         self.jobtypeName = cfg_params.get('CRAB.jobtype','')
