@@ -238,6 +238,13 @@ class CrabServerWorkerComponent:
             logging.info(reason)
             self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason) 
             self.ms.commit()
+
+            # clean up structures if needed
+            for wName in self.workerSet:
+                if taskUniqName in wName:
+                    del self.workerSet[wName]
+                if wName in self.taskPool:
+                    del self.taskPool[wName]
             return 
 
         # parse XML data
