@@ -204,16 +204,18 @@ class FatWorker(Thread):
         self.log.info('Worker %s passed pre-submission checks passed'%self.myName)
 
         if (newRange is not None) and (len(newRange) > 0):
+            submittedJobs = []
+            nonSubmittedJobs = [] + newRange
+
             sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange) 
-            self.log.info('Worker %s listmatched jobs'%self.myName)
+            self.log.info('Worker %s listmatched jobs, now submitting'%self.myName)
 
             if len(matched) > 0:
                 submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
-                self.log.info('Worker %s submitted jobs. Ready to evaluate outcomes'%self.myName)
-                self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
             else:
                 self.log.info('Worker %s unable to submit jobs. No sites matched'%self.myName)
 
+            self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
             return 
 
         ## Manage the empty range case due to incompatibilities
@@ -287,19 +289,19 @@ class FatWorker(Thread):
 
         return newRange, skippedSubmissions
 
-    def submitTaskBlocks(self, taskObj, sub_jobs, reqs_jobs, matched):
+    def submitTaskBlocks(self, task, sub_jobs, reqs_jobs, matched):
         unsubmitted = [] # list of all the jId hadled. Used to check the number of successful jubmissions
         submitted = [] 
 
         # loop and submit blocks
         for ii in matched:
             # extract task for the range and submit
-            task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
-            self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
+            # task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
+            task = self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
             unsubmitted += sub_jobs[ii]
 
             # check if submitted
-            task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
+            #task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
             for j in task.jobs: 
                 if j.runningJob['schedulerId']:
                     self.log.debug(j.runningJob['schedulerId'])
@@ -440,8 +442,8 @@ class FatWorker(Thread):
         # distinct_dests = self.queryDistJob_Attr(taskObj['id'], 'dlsDestination', 'jobId', jobRng)
         distinct_dests = []
         for j in taskObj.jobs:
-           distinct_dests.append( str(j['dlsDestination']) )
-        distinct_dests = list(set(distinct_dests))
+           if  j['dlsDestination'] not in distinct_dests:
+               distinct_dests.append( j['dlsDestination'] )
         ##
  
         jobs_to_match = []
@@ -451,7 +453,7 @@ class FatWorker(Thread):
              # get job_ids for a specific destination 
              jobs_per_dest = []
              for j in taskObj.jobs:
-                 if distDest == str(j['dlsDestination']):
+                 if str(distDest) == str(j['dlsDestination']):
                      jobs_per_dest.append(j['jobId'])
              all_jobs.append( [] + jobs_per_dest )
              
@@ -491,8 +493,10 @@ class FatWorker(Thread):
                 cleanedList = None
                 if len(distinct_dests[sel])!=0:
                     cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
-                
-                match = '1' #len( self.blSchedSession.lcgInfo(tags, cleanedList, self.ce_whiteL, self.ce_blackL ) )
+
+                sites = self.blSchedSession.lcgInfo(tags, cleanedList, self.ce_whiteL, self.ce_blackL )
+                self.log.info( '----------------------%s'%str(sites)) 
+                match = "1" #len( sites )
             else :
                 match = "1"
             if match:
