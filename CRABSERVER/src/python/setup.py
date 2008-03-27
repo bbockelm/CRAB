@@ -6,18 +6,15 @@ Python packages for CRAB server
 
 """
 
-__revision__ = "$Id: setup.py,v 1.6 2007/07/02 20:10:52 spiga Exp $"
+__revision__ = "$Id: setup.py,v 1.7 2007/12/18 19:08:22 mcinquil Exp $"
 
 from distutils.core import setup
 
 packages = [
     'CrabServerWorker',
-    'DropBoxGuardian',
     'Notification',
-    'ProxyTarballAssociator',
     'TaskTracking',
     'CommandManager',
-    'CW_WatchDog',
     'CrabServer',
     'TaskLifeManager'
     ]
