@@ -145,6 +145,15 @@ class TaskTrackingComponent:
                            'socketFileLocation': self.args['socketFileLocation'] \
                          }
 
+        #self.mySession = None
+        ## bossLite session
+        #try:
+        #    self.mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+        #except Exception, ex:
+        #    logging.info(str(ex))
+        #    logging.info(str(traceback.format_exc()))
+        #    return 0
+
     ##########################################################################
     # handle events
     ##########################################################################
@@ -572,11 +581,10 @@ class TaskTrackingComponent:
 
 	eMail = ""
 	uuid = ""
-
+        taskObj = None
         try:
             if status == self.taskState[3] or status == self.taskState[7]:
                 mySession = BossLiteAPI("MySQL", self.bossCfgDB)
-                taskObj = None
 		try:
 		    taskObj = mySession.loadTaskByName( payload )
 		except TaskError, te:
@@ -927,6 +935,7 @@ class TaskTrackingComponent:
         logBuf = ""
 
         task = None
+        taskObj = None
         mySession = None
 
         ## bossLite session
@@ -960,7 +969,6 @@ class TaskTrackingComponent:
                         self.prepareTaskFailed( taskName, uuid, eMail, status)
 		    else:
                         ## lite task load in memory
-                        taskObj = None
                         try:
                             taskObj = mySession.loadTaskByName( taskName )
                         except TaskError, te:
@@ -991,7 +999,7 @@ class TaskTrackingComponent:
                                 jec   = jobbe.runningJob['wrapperReturnCode']
                                 eec   = jobbe.runningJob['applicationReturnCode']
                                 site  = ""
-                                if jobbe.runningJob['destination'] != None:
+                                if jobbe.runningJob['destination'] != None and jobbe.runningJob['destination'] != '':
                                     site  = jobbe.runningJob['destination'].split("://")[1].split("/")[0]
  
                                 try:
@@ -1143,6 +1151,7 @@ class TaskTrackingComponent:
 
                 ## clean task from memory
                 del task
+                del taskObj
 
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "ERROR: " + str(traceback.format_exc()))
