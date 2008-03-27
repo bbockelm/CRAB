@@ -13,6 +13,7 @@ class SchedulerGlite(SchedulerGrid):
 
     def configure(self,cfg_params):
         SchedulerGrid.configure(self, cfg_params)
+        self.checkProxy()
         self.environment_unique_identifier = 'GLITE_WMS_JOBID'
 
     def rb_configure(self, RB):
@@ -29,9 +30,9 @@ class SchedulerGlite(SchedulerGrid):
 
     def ce_list(self):
         """
-        Returns string with requirement CE related    
+        Returns string with requirement CE related
         """
-        req = ''  
+        req = ''
         if self.EDG_ce_white_list:
             ce_white_list = self.EDG_ce_white_list
             tmpCe=[]
@@ -66,8 +67,8 @@ class SchedulerGlite(SchedulerGrid):
 
     def se_list(self, id, dest):
         """
-        Returns string with requirement SE related    
-        """  
+        Returns string with requirement SE related
+        """
         hostList=self.findSites_(id,dest)
         req=''
         reqtmp=[]
@@ -82,11 +83,11 @@ class SchedulerGlite(SchedulerGrid):
 
     def jdlParam(self):
         """
-        Returns 
-        """ 
+        Returns
+        """
         req=''
         if self.EDG_addJdlParam:
-            if self.EDG_addJdlParam[-1] == '': self.EDG_addJdlParam= self.EDG_addJdlParam[:-1] 
+            if self.EDG_addJdlParam[-1] == '': self.EDG_addJdlParam= self.EDG_addJdlParam[:-1]
             for p in self.EDG_addJdlParam:
              #   param_file.write(string.strip(p)+';\n')
                 req+=string.strip(p)+';\n' ## BL--DS
@@ -95,7 +96,7 @@ class SchedulerGlite(SchedulerGrid):
     def specific_req(self):
         """
         Returns string with specific requirements
-        """ 
+        """
         req=''
         if self.EDG_clock_time:
             if (not req == ' '): req = req + ' && '
@@ -104,14 +105,14 @@ class SchedulerGlite(SchedulerGrid):
         if self.EDG_cpu_time:
             if (not req == ' '): req = req + ' && '
             req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
-        
+
         return req
 
     def sched_fix_parameter(self):
         """
         Returns string with requirements and scheduler-specific parameters
         """
-        index = int(common._db.nJobs()) 
+        index = int(common._db.nJobs())
         job = common.job_list[index-1]
         jbt = job.type()
         req = ''
@@ -122,7 +123,7 @@ class SchedulerGlite(SchedulerGrid):
             req = req + self.EDG_requirements
 
         Task_Req={'jobType':req}## DS--BL
-        common._db.updateTask_(Task_Req)        
+        common._db.updateTask_(Task_Req)
 
     def sched_parameter(self,i,task):
         """
@@ -143,7 +144,7 @@ class SchedulerGlite(SchedulerGrid):
         sched_param+='ShallowRetryCount = '+str(self.EDG_shallow_retry_count)+';\n'
 
         return sched_param
-   
+
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
@@ -253,7 +254,7 @@ class SchedulerGlite(SchedulerGrid):
             replicas = self.blackWhiteListParser.checkBlackList(sites,n)
             if len(replicas)!=0:
                 replicas = self.blackWhiteListParser.checkWhiteList(replicas,n)
-        
+
             itr4 = replicas
             #####
         return itr4

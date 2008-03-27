@@ -419,6 +419,14 @@ class SchedulerCondor_g(SchedulerGrid):
         cmd_out = runCommand(cmd)
         return cmd_out
 
+    def ce_list(self):
+      """
+      Returns string with requirement CE related, dummy for now
+      """
+      req = ''
+
+      return req,self.EDG_ce_white_list,self.EDG_ce_black_list
+
     def createXMLSchScript(self, nj, argsList):
         """
         Create a XML-file for BOSS4.

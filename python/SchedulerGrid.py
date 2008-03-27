@@ -79,7 +79,6 @@ class SchedulerGrid(Scheduler):
            raise CrabException(msg)
 
         self.publish_data = cfg_params.get("USER.publish_data",0)
-        self.checkProxy()
         if int(self.publish_data) == 1:
             self.publish_data_name = cfg_params.get('USER.publish_data_name',None)
             if not self.publish_data_name:
@@ -105,7 +104,7 @@ class SchedulerGrid(Scheduler):
             except:
                 msg = "Error. Problem extracting user name from %s"%sitedburl
                 raise CrabException(msg)
-            
+
             if not self.hnUserName:
                 msg = "Error. There is no user name associated to DN %s in %s.You need to register in SiteDB"%(userdn,sitedburl)
                 raise CrabException(msg)
@@ -134,15 +133,16 @@ class SchedulerGrid(Scheduler):
 
         if not os.environ.has_key('EDG_WL_LOCATION'):
             msg = "Error: the EDG_WL_LOCATION variable is not set."
-            raise CrabException(msg)
-        path = os.environ['EDG_WL_LOCATION']
+            #raise CrabException(msg)
+        else:
+            path = os.environ['EDG_WL_LOCATION']
 
-        libPath=os.path.join(path, "lib")
-        sys.path.append(libPath)
-        libPath=os.path.join(path, "lib", "python")
-        sys.path.append(libPath)
- 
-        self._taskId = common._db.queryTask('name')  ## DS--BL 
+            libPath=os.path.join(path, "lib")
+            sys.path.append(libPath)
+            libPath=os.path.join(path, "lib", "python")
+            sys.path.append(libPath)
+
+        self._taskId = common._db.queryTask('name')  ## DS--BL
         self.jobtypeName = cfg_params.get('CRAB.jobtype','')
 
         self.schedulerName = cfg_params.get('CRAB.scheduler','')
@@ -157,8 +157,8 @@ class SchedulerGrid(Scheduler):
         To be re-implemented in concrete scheduler
         """
         return None
-    
-    def sched_fix_parameter(self): 
+
+    def sched_fix_parameter(self):
         return
 
     def sched_parameter(self):
@@ -338,39 +338,17 @@ class SchedulerGrid(Scheduler):
             txt += 'for out_file in $file_list ; do\n'
             txt += '    if [ -e $SOFTWARE_DIR/$out_file ] ; then\n'
             txt += '        echo "Trying to copy output file $SOFTWARE_DIR/$out_file to $SE"\n'
-            #txt += 'if [ $output_exit_status -eq 60302 ]; then\n'
-            #txt += '    echo "--> No output file to copy to $SE"\n'
-            #txt += '    copy_exit_status=$output_exit_status\n'
-            #txt += '    echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
-            #txt += 'else\n'
-            #txt += '    for out_file in $file_list ; do\n'
-            #txt += '        echo "Trying to copy output file to $SE"\n'
             txt += '        cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file ${SRM_VER} $middleware\n'
             txt += '        if [ $cmscp_exit_status -ne 0 ]; then\n'
-            #txt += '        copy_exit_status=$?\n'
-            #txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
-            #txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
-            #txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
             txt += '            echo "Problem copying $out_file to $SE $SE_PATH"\n'
             txt += '            copy_exit_status=$cmscp_exit_status\n'
-            #txt += '            echo "StageOutExitStatus = $copy_exit_status " | tee -a $RUNTIME_AREA/$repo\n'
-            #txt += '            copy_exit_status=60307\n'
             txt += '        else\n'
-            #txt += '            echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
-            #txt += '            echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
             txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
-            #txt += '            echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '        fi\n'
             txt += '    else\n'
             txt += '        copy_exit_status=60302\n'
             txt += '        echo "StageOutExitStatus = $copy_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '        echo "StageOutExitStatusReason = file to copy not found" | tee -a $RUNTIME_AREA/$repo\n'
-            #txt += '    done\n'
-            #txt += '    if [ $copy_exit_status -ne 0 ]; then\n'
-            #txt += '        SE=""\n'
-            #txt += '        echo "SE = $SE"\n'
-            #txt += '        SE_PATH=""\n'
-            #txt += '        echo "SE_PATH = $SE_PATH"\n'
             txt += '    fi\n'
             txt += 'done\n'
             txt += 'if [ $copy_exit_status -ne 0 ]; then\n'
@@ -378,7 +356,6 @@ class SchedulerGrid(Scheduler):
             txt += '    SE_PATH=""\n'
             txt += '    job_exit_code=$copy_exit_status\n'
             txt += 'fi\n'
-            #txt += 'exit_status=$copy_exit_status\n'
             pass
         return txt
 
