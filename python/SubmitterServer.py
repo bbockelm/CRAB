@@ -25,8 +25,8 @@ class SubmitterServer(Actor):
 
             self.storage_name = str(self.srvCfg['storageName'])
             self.storage_path = str(self.srvCfg['storagePath'])
-
             self.storage_proto = str(self.srvCfg['storageProtocol'])
+            self.storage_port = str(self.srvCfg['storagePort'])
 	except KeyError:
 	    msg = 'No server selected or port specified.' 
 	    msg = msg + 'Please specify a server in the crab cfg file' 
@@ -179,7 +179,8 @@ class SubmitterServer(Actor):
                 task = common._db.getTask() 
 
                 # set the paths refered to SE remotedir
-                surlpreamble = '' # TODO: parametric 'protocol://' + self.server_name
+                # NOTE WMS/JDL supports only gsiftp protocol for base ISB/OSB 
+                surlpreamble = 'gsiftp://%s:%s'%(self.storage_name, str(self.storage_port) )
 
                 remoteSBlist = [surlpreamble + os.path.join(self.remotedir, os.path.basename(f)) \
                         for f in common._db.queryTask('globalSandbox').split(',') ]
@@ -190,7 +191,8 @@ class SubmitterServer(Actor):
                         os.path.basename(common._db.queryTask('cfgName')) )
 
                 for j in task.jobs:
-                    j['executable'] = surlpreamble + os.path.join( self.remotedir, os.path.basename(j['executable']) )
+                    j['executable'] = os.path.basename(j['executable'])
+                    # buggy, only the local file needed #surlpreamble + os.path.join( self.remotedir, os.path.basename(j['executable']) )
                 #
 
                 taskXML += common._db.serializeTask(task)
