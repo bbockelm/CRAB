@@ -146,10 +146,14 @@ class Submitter(Actor):
         Requi=[]
 
         task=common._db.getTask()
-        ce_white_list=common.scheduler.ce_list()[1]
-        ce_black_list=common.scheduler.ce_list()[2]
-        tags_tmp=string.split(task['jobType'],'"') 
-        tags=[str(tags_tmp[1]),str(tags_tmp[3])]
+        ce_white_list=[]      
+        ce_black_list=[]
+        tags=''
+        if common.scheduler.name().upper() != "CONDOR_G" :
+             ce_white_list=common.scheduler.ce_list()[1]
+             ce_black_list=common.scheduler.ce_list()[2]
+             tags_tmp=string.split(task['jobType'],'"') 
+             tags=[str(tags_tmp[1]),str(tags_tmp[3])]
 
         for id_job in jobs_to_match :
             Requi.append(common.scheduler.sched_parameter(id_job,task))

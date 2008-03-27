@@ -129,7 +129,7 @@ class SchedulerGlite(SchedulerGrid):
         """
         Returns string with requirements and scheduler-specific parameters
         """
-        dest=  eval(task.jobs[i]['dlsDestination']) ## DS--BL
+        dest=  eval(task.jobs[i-1]['dlsDestination']) ## DS--BL
 
         req=''
         req +=task['jobType']
