@@ -10,6 +10,9 @@ import popen2
 import os
 from BlackWhiteListParser import BlackWhiteListParser
 
+import pdb # Use while debugging
+
+
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
         SchedulerGrid.__init__(self,"CONDOR_G")
@@ -220,32 +223,31 @@ class SchedulerCondor_g(SchedulerGrid):
         print "  task =",task
 
         for n in range(common._db.nJobs()):
-            import pdb
-            pdb.set_trace()
-            currDest=self.blackWhiteListParser.cleanForBlackWhiteList(common._db.destination(n))
-            if (currDest!=lastDest):
-                lastDest = currDest
-                first.append(n)
-                if n != 0:last.append(n-1)
+          currDest=self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']))
+          print "currDest =",currDest
+          if (currDest!=lastDest):
+            lastDest = currDest
+            first.append(n)
+            if n != 0:last.append(n-1)
         if len(first)>len(last) :last.append(common._db.nJobs())
 
         for i in range(len(first)): # Add loop DS
-            self.param='sched_param_'+str(i)+'.clad'
-            param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
+          self.param='sched_param_'+str(i)+'.clad'
+          param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
 
-            param_file.write('globusrsl = ')
+          param_file.write('globusrsl = ')
 
-            # extraTag maxWallTime
-            if ( self.EDG_clock_time != '' ) :
-                param_file.write('(maxWalltime='+self.EDG_clock_time+')')
+          # extraTag maxWallTime
+          if (self.EDG_clock_time):
+            param_file.write('(maxWalltime='+self.EDG_clock_time+')')
 
-            # extraTag additional GLOBUS_RSL
-            if ( self.GLOBUS_RSL != '' ) :
-                param_file.write(self.GLOBUS_RSL)
+          # extraTag additional GLOBUS_RSL
+          if ( self.GLOBUS_RSL != '' ) :
+            param_file.write(self.GLOBUS_RSL)
 
-            param_file.write(';')
+          param_file.write(';')
 
-            param_file.close()
+          param_file.close()
 
 
     def wsSetupEnvironment(self):
