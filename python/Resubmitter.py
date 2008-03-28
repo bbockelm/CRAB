@@ -11,7 +11,7 @@ class Resubmitter(Submitter):
                 nj_list.append(int(nj)-1)
                 common.jobDB.setStatus(int(nj)-1,'C')
             elif st == 'Y':
-                common.scheduler.moveOutput(nj)
+ #               common.scheduler.moveOutput(nj)
                 nj_list.append(int(nj)-1)
                 st = common.jobDB.setStatus(int(nj)-1,'RC')
             elif st in ['C','X']:

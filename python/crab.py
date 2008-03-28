@@ -541,6 +541,7 @@ class Crab:
 
 
             elif ( opt == '-getoutput' or opt == '-get'):
+                from GetOutput import GetOutput
                 # modified to support server mode
                 if (self.UseServer== 1):
                     from GetOutputServer import GetOutputServer
@@ -548,15 +549,16 @@ class Crab:
                 else:
                     if val=='all' or val==None or val=='':
                          ## this should be NOT scheduler dependent... to move from Scheduler to _db BL--DS 
-                        jobs = common.scheduler.list()
+                        jobs = 'all' # common.scheduler.list()
                     else:
                         jobs = self.parseRange_(val)
                 
-                    jobs_done = []
-                    for nj in jobs:
-                        jobs_done.append(nj)
-                    common.scheduler.getOutput(jobs_done)
-                    pass
+                  #  jobs_done = []
+                  #  for nj in jobs:
+                  #      jobs_done.append(nj)
+                    self.actions[opt] = GetOutput(self.cfg_params,jobs)
+#                    common.scheduler.getOutput(jobs_done)
+
 
             elif ( opt == '-resubmit' ):
                 if val:
@@ -601,7 +603,7 @@ class Crab:
                             nj_list.append(int(nj)-1)
                             common.jobDB.setStatus(int(nj)-1,'C')
                         elif st == 'Y':
-                            common.scheduler.moveOutput(nj)
+#                            common.scheduler.moveOutput(nj)
                             nj_list.append(int(nj)-1)
                             st = common.jobDB.setStatus(int(nj)-1,'RC')
                         elif st in ['C','X']:

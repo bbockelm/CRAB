@@ -26,10 +26,6 @@ class Boss:
             self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
         self.wms_service=cfg_params.get("EDG.wms_service",'')
 
-        self.outDir = cfg_params.get("USER.outputdir", common.work_space.resDir() )
-        self.logDir = cfg_params.get("USER.logdir", common.work_space.resDir() )
-
-        self.return_data = cfg_params.get('USER.return_data',0)
 
         ## Add here the map for others Schedulers (LSF/CAF/CondorG)
         SchedMap = {'glite':'SchedulerGLiteAPI',
@@ -123,163 +119,20 @@ class Boss:
 
     def queryEverything(self,taskid):
         """
-        Query needed info of all jobs with specified boss taskid
+        Query needed info of all jobs with specified taskid
         """
 
-        self.schedSession.query( str(taskid))
+        statusRes =  self.schedSession.query( str(taskid))
+        return statusRes
 
+    def getOutput(self,taskId,jobRange, outdir):
+        """
+        Retrieve output of all jobs with specified taskid
+        """
+        self.schedSession.getOutput( taskId, jobRange, outdir )
+ 
         return
 
-    def moveOutput(self, int_id):
-        """
-        Move output of job already retrieved
-        """
-        self.current_time = time.strftime('%y%m%d_%H%M%S',time.localtime(time.time()))
-        resDir = common.work_space.resDir()
-        resDirSave = resDir+'res_backup'
-        if not os.path.exists(resDirSave):
-            os.mkdir(resDirSave)
-
-        boss_id = str(int_id)
-        try:
-            self.bossTask.load (ALL, boss_id )
-            cmd_out = self.bossTask.program(boss_id, '1')['OUTFILES']
-        except BossError,e:
-            common.logger.message( e.__str__() )
-
-        files = cmd_out.split(',')
-        for i in files:
-            if os.path.exists(self.outDir+'/'+i):
-                shutil.move(self.outDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
-                common.logger.message('Output file '+i+' moved to '+resDirSave)
-
-            if os.path.exists(self.logDir+'/'+i):
-                shutil.move(self.logDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
-                common.logger.message('Output file '+i+' moved to '+resDirSave)
-        return
-
-    ###################### ---- OK for Boss4 ds
-    def getOutput(self, int_id):
-        """
-        Get output for a finished job with id.
-        Returns the name of directory with results.
-        """
-        if not os.path.isdir(self.logDir) or not os.path.isdir(self.outDir):
-            msg =  ' Output or Log dir not found!! check '+self.logDir+' and '+self.outDir
-            raise CrabException(msg)
-        common.jobDB.load()
-        allBoss_id = self.list()
-        bossTaskId = common.taskDB.dict('BossTaskId')
-        ## first get the status of all job in the list
-        statusList = self.queryStatusList(bossTaskId, int_id)
-        check = 0
-
-        ## then loop over jobs and retrieve it if it's the case
-        create= []
-        run= []
-        clear=[]
-        abort=[]
-        canc=[]
-        read=[]
-        wait=[]
-        sched=[]
-        kill=[]
-        other=[]
-        Tout=180
-
-        for i_id in int_id :
-            if i_id not in allBoss_id:
-                msg = 'Job # '+`int(i_id)`+' out of range for task '+ self.groupName
-                common.logger.message(msg)
-            else:
-                dir = self.outDir
-                logDir = self.logDir
-                boss_id = i_id
-                #bossTaskIdStatus = common.scheduler.queryStatus(bossTaskId, boss_id)
-                bossTaskIdStatus = statusList[boss_id]
-                if bossTaskIdStatus == 'Done (Success)' or bossTaskIdStatus == 'Done (Abort)':
-                    check = 1
-                    try:
-                        self.bossTask.getOutput (str(boss_id), str(dir), Tout)
-                        if logDir != dir:
-                            try:
-                                ######
-                                cmd = 'mv '+str(dir)+'/*'+str(i_id)+'.std* '+str(dir)+'/.BrokerInfo '+str(dir)+'/*.log '+str(logDir)
-                                cmd_out =os.system(cmd)
-                                msg = 'Results of Job # '+str(i_id)+' are in '+dir+' (log files are in '+logDir+')'
-                                common.logger.message(msg)
-                                #####
-                                #toMove = str(dir)+'/*'+`int(i_id)`+'.std* '+str(dir)+'/*.log '+str(dir)+'/.BrokerInfo '
-                                #shutil.move(toMove, str(logDir))
-                                #####
-                            except:
-                                msg = 'Problem with copy of job results'
-                                common.logger.message(msg)
-                                pass
-                        else:
-                            msg = 'Results of Job # '+`int(i_id)`+' are in '+dir
-                            common.logger.message(msg)
-                        common.jobDB.setStatus(int(i_id)-1, 'Y')
-                    except SchedulerError,e:
-                        common.logger.message("Warning : Scheduler interaction in getOutput operation failed for jobs:")
-                        common.logger.message(e.__str__())
-                        pass
-                    except BossError,e:
-                        common.logger.message(e.__str__())
-                        msg = 'Results of Job # '+`int(i_id)`+' have been corrupted and could not be retrieved.'
-                        common.logger.message(msg)
-                        common.jobDB.setStatus(int(i_id)-1, 'Z')
-                elif bossTaskIdStatus == 'Running' :
-                     run.append(i_id)
-            #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible yet to retrieve the output.'
-            #        common.logger.message(msg)
-                elif bossTaskIdStatus == 'Cleared' :
-                     clear.append(i_id)
-            #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. The output was already retrieved.'
-            #        common.logger.message(msg)
-                elif bossTaskIdStatus == 'Aborted' :
-                     abort.append(i_id)
-            #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is not possible to retrieve the output.'
-            #        common.logger.message(msg)
-                elif bossTaskIdStatus == 'Created' :
-                     create.append(i_id)
-                elif bossTaskIdStatus == 'Cancelled' :
-                     canc.append(i_id)
-                elif bossTaskIdStatus == 'Ready' :
-                     read.append(i_id)
-                elif bossTaskIdStatus == 'Scheduled' :
-                     sched.append(i_id)
-                elif bossTaskIdStatus == 'Waiting' :
-                     wait.append(i_id)
-                elif bossTaskIdStatus == 'Killed' :
-                     kill.append(i_id)
-                else:
-                     other.append(i_id)
-            #        msg = 'Job # '+`int(i_id)`+' has status '+bossTaskIdStatus+'. It is currently not possible to retrieve the output.'
-            #        common.logger.message(msg)
-                dir += os.environ['USER']
-                dir += '_' + os.path.basename(str(boss_id))
-            pass
-        common.jobDB.save()
-        if check == 0:
-            msg = '\n\n*********No job in Done status. It is not possible yet to retrieve the output.\n'
-            common.logger.message(msg)
-
-        if len(clear)!=0: print str(len(clear))+' jobs already cleared'
-        if len(abort)!=0: print str(len(abort))+' jobs aborted'
-        if len(canc)!=0: print str(len(canc))+' jobs cancelled'
-        if len(kill)!=0: print str(len(kill))+' jobs killed'
-        if len(run)!=0: print str(len(run))+' jobs still running'
-        if len(sched)!=0: print str(len(sched))+' jobs scheduled'
-        if len(wait)!=0: print str(len(wait))+' jobs waiting'
-        if len(read)!=0: print str(len(read))+' jobs ready'
-        if len(other)!=0: print str(len(other))+' jobs submitted'
-        if len(create)!=0: print str(len(create))+' jobs not yet submitted'
-
-        print ' '
-        return
-
-    ###################### ---- OK for Boss4 ds
     def cancel(self,subm_id):
         """
         Cancel the EDG job with id: if id == -1, means all jobs.

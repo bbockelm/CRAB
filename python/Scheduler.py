@@ -85,12 +85,12 @@ class Scheduler :
         self.checkProxy()
         return self.boss().queryEverything(taskid)
 
-    def getOutput(self, int_id):
+    def getOutput(self, taskId, jobRange, outdir):
         """
         Get output for a finished job with id.
         """
         self.checkProxy()
-        self.boss().getOutput(int_id)
+        self.boss().getOutput(taskId, jobRange, outdir)
         return
 
     def cancel(self,int_id):
@@ -138,7 +138,3 @@ class Scheduler :
 
     def tOut(self, list):
         return 120
-
-    def moveOutput(self, nj):
-        self.boss().moveOutput(nj)
-
