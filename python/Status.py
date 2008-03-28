@@ -36,10 +36,9 @@ class Status(Actor):
 
         common.logger.message("Checking the status of all jobs: please wait")
         task = common._db.getTask()
-        jobAttributes = common.scheduler.queryEverything(task['id']) ## NeW BL--DS
-        task = common._db.getTask()
+        up_task = common.scheduler.queryEverything(task['id']) ## NeW BL--DS
         toPrint=[]
-        for job in task.jobs :
+        for job in up_task.jobs :
             id = str(job.runningJob['id'])
             jobStatus =  str(job.runningJob['statusScheduler'])
             dest = str(job.runningJob['destination']).split(':')[0]
