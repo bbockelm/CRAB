@@ -1000,7 +1000,7 @@ class TaskTrackingComponent:
                                 eec   = jobbe.runningJob['applicationReturnCode']
                                 site  = ""
                                 if jobbe.runningJob['destination'] != None and jobbe.runningJob['destination'] != '':
-                                    site  = jobbe.runningJob['destination'].split("://")[1].split("/")[0]
+                                    site  = jobbe.runningJob['destination'].split(":")[0]
  
                                 try:
                                     self.mutex.acquire()
