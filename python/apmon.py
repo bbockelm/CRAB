@@ -177,7 +177,7 @@ class ApMon:
 		self.configRecheck = True           # enabled by default
 		self.performBgMonitoring = True     # by default, perform background monitoring
 		self.monitoredJobs = {}	            # Monitored jobs; key = pid; value = hash with
-		self.maxMsgRate = 10		    # Maximum number of messages allowed to be sent per second
+		self.maxMsgRate = 100		    # Maximum number of messages allowed to be sent per second
 		self.__defaultSenderRef = {'INSTANCE_ID': random.randint(0,0x7FFFFFFE), 'SEQ_NR': 0};
 		self.__defaultUserCluster = "ApMon_UserSend";
 		self.__defaultUserNode = socket.getfqdn();
@@ -199,23 +199,23 @@ class ApMon:
 		self.__prvDrop = 0;
 		self.__crtSent = 0;
 		self.__crtDrop = 0;
-		self.__hWeight = 0.92;
+		self.__hWeight = 0.95;              # in (0,1) increase to wait more time before maxMsgRate kicks-in
 		self.logger = Logger.Logger(defaultLogLevel)
 		self.setDestinations(initValue)
 		self.__udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#		if len(self.configAddresses) > 0:
-			# if there are addresses that need to be monitored,
-			# start config checking and reloading thread
-#			th = threading.Thread(target=self.__configLoader)
-#			th.setDaemon(True)  # this is a daemon thread
-#			th.start()
+		#if len(self.configAddresses) > 0:
+		#	# if there are addresses that need to be monitored,
+		#	# start config checking and reloading thread
+		#	th = threading.Thread(target=self.__configLoader)
+		#	th.setDaemon(True)  # this is a daemon thread
+		#	th.start()
 		# create the ProcInfo instance
 		self.procInfo = ProcInfo.ProcInfo(self.logger);
 		# self.procInfo.update();
 		# start the background monitoring thread
-#		th = threading.Thread(target=self.__bgMonitor);
-#		th.setDaemon(True);
-#		th.start();
+		#th = threading.Thread(target=self.__bgMonitor);
+		#th.setDaemon(True);
+		#th.start();
 
 	def sendParams (self, params):
 		"""
@@ -430,11 +430,11 @@ class ApMon:
 		Stop background threands, close opened sockets. You have to use this function if you want to
 		free all the resources that ApMon takes, and allow it to be garbage-collected.
 		"""
-#		if len(self.configAddresses) > 0:
-#			self.__configUpdateEvent.set()
-#			self.__configUpdateFinished.wait()
-#		self.__bgMonitorEvent.set()
-#		self.__bgMonitorFinished.wait()
+		#if len(self.configAddresses) > 0:
+		#	self.__configUpdateEvent.set()
+		#	self.__configUpdateFinished.wait()
+		#self.__bgMonitorEvent.set()
+		#self.__bgMonitorFinished.wait()
 		
 		if self.__udpSocket != None:
 			self.logger.log(Logger.DEBUG, "Closing UDP socket on ApMon object destroy.");
@@ -693,8 +693,10 @@ class ApMon:
 	def __directSendParams (self, destination, clusterName, nodeName, timeStamp, params):
 		
 		if self.__shouldSend() == False:
-			self.logger.log(Logger.DEBUG, "Dropping packet since rate is too fast!");
-			return;
+#			self.logger.log(Logger.ERROR, "Dropping packet since rate is too fast!");
+			self.logger.log(Logger.INFO, "Pausing 1sec since rate is too fast!");
+			time.sleep(1.0)
+#			return;
 		
 		if destination == None:
 			self.logger.log(Logger.WARNING, "Destination is None");

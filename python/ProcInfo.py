@@ -311,7 +311,7 @@ class ProcInfo:
 	# run nestat and collect sockets info (tcp, udp, unix) and connection states for tcp sockets from netstat
 	def readNetStat(this):
 	    try:
-		output = os.popen('netstat -an');
+		output = os.popen('netstat -an 2>/dev/null');
 		sockets = { 'sockets_tcp':0, 'sockets_udp':0, 'sockets_unix':0, 'sockets_icm':0 };
 		tcp_details = { 'sockets_tcp_ESTABLISHED':0, 'sockets_tcp_SYN_SENT':0, 
 		    'sockets_tcp_SYN_RECV':0, 'sockets_tcp_FIN_WAIT1':0, 'sockets_tcp_FIN_WAIT2':0,
