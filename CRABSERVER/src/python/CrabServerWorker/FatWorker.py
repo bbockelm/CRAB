@@ -262,6 +262,7 @@ class FatWorker(Thread):
             sbi = SBinterface( seEl )
             for f in taskFileList:
                 if sbi.checkExists(f, self.proxy) == False:
+                    self.log.info("FatWorker %s. Missing file %s"%(self.myName, f)) 
                     return [], newRange
         except Exception, e:
             self.log.info( traceback.format_exc() )
@@ -272,7 +273,7 @@ class FatWorker(Thread):
                 try:
                     # do not submit already running or scheduled jobs
                     if j.runningJob['status'] in doNotSubmitStatusMask:
-                        self.log.info("FatWorker %s.\n Task %s job %s status %s. Won't be submitted"%(self.myName, \
+                        self.log.info("FatWorker %s.Task %s job %s status %s. Won't be submitted"%(self.myName, \
                             self.taskName, j['name'], j['status']) )
                         newRange.remove(j['jobId'])
                         continue
@@ -292,6 +293,13 @@ class FatWorker(Thread):
     def submitTaskBlocks(self, task, sub_jobs, reqs_jobs, matched):
         unsubmitted = [] # list of all the jId hadled. Used to check the number of successful jubmissions
         submitted = [] 
+
+        # modify sandbox and other paths for WMS bypass
+        turlpreamble = 'gsiftp://%s:%s'%(self.SEurl, self.SEport)
+        remoteSBlist = [turlpreamble + f for f in str(task['globalSandbox']).split(',') ]
+        task['globalSandbox'] = ','.join(remoteSBlist)
+        task['scriptName'] = turlpreamble + task['scriptName']
+        task['cfgName'] = turlpreamble + task['cfgName']
 
         # loop and submit blocks
         for ii in matched:
