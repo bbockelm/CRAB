@@ -10,6 +10,12 @@ fi
 CRAB_HOME="/home/crab"
 CRAB_USER="crab"
 
+if [ $# -eq 0 ]; then
+    echo " At least one option is needed. For usage see :"
+    echo " $0 -help"
+    exit 1
+fi
+
 while [ $# -gt 0 ]; do
 case $1 in
         install )
@@ -74,8 +80,9 @@ mkdir -p $myarea
 export MYTESTAREA=`readlink -f $myarea`;
 mkdir -p $MYTESTAREA/RPMs
 
-wget -nv -O CA_RPM_list.html http://glitesoft.cern.ch/LCG-CAs/current/
-CA_RPM_list=`grep RPMS.production CA_RPM_list.html | cut -c 27- | grep -Eo .*\.rpm\> | rev | cut -c 2- | rev `;
+wget -nv -O ${MYTESTAREA}/CA_RPM_list.html http://glitesoft.cern.ch/LCG-CAs/current/
+CA_RPM_list=`grep RPMS.production ${MYTESTAREA}/CA_RPM_list.html | cut -c 27- | grep -Eo .*\.rpm\> | rev | cut -c 2- | rev `;
+rm -f ${MYTESTAREA}/CA_RPM_list.html
 
 LCG_RPM_list="lcg-vomscerts-4.8.0-1.noarch.rpm"
 VDT_RPM_list="vdt_globus_essentials-VDT1.6.0x86_rhas_4-1.i386.rpm myproxy-VDT1.6.0x86_rhas_4-1.i386.rpm"
@@ -121,17 +128,30 @@ done
 
 List="$CA_RPM_list $LCG_RPM_list $VDT_RPM_list $API_RPM_list $ASAP_RPM_list $PROXY_RPM_list $GRIDSITEDEV_RPM_list"
 RPMList="";
+echo "*** Checking already installed RPMs (it may takes some time...)";
+rpm -qa > ${MYTESTAREA}/PresentRPM.list
+echo -n > ${MYTESTAREA}/WantedRPM.list
 for arpm in $List; do
-    RPMList="$RPMList $MYTESTAREA/RPMs/$arpm "
+    echo $arpm >> ${MYTESTAREA}/WantedRPM.list
+#    RPMList="$RPMList $MYTESTAREA/RPMs/$arpm "
 done
 
-echo "*** Installing "
-rpm -ivh $RPMList
-rpmresult=$?
-echo "rpm -ivh $RPMList"
-if [ $rpmresult -ne 0 ];then
-   echo "===> RPM installation failed. Exiting..."
-   exit 1
+RPMList=$(echo `cat ${MYTESTAREA}/WantedRPM.list | grep -vFf ${MYTESTAREA}/PresentRPM.list | awk '{print PATH $1}' PATH=$MYTESTAREA\/RPMs\/`);
+
+rm -f ${MYTESTAREA}/PresentRPM.list
+rm -f ${MYTESTAREA}/WantedRPM.list
+
+if [ -n "$RPMList" ]; then
+    echo "*** Installing "
+    rpm -Uvh $RPMList
+    rpmresult=$?
+    echo "rpm -Uvh $RPMList"
+    if [[ $rpmresult -ne 0 ]];then
+        echo "===> RPM installation failed, exit code $rpmresult. Exiting..."
+        exit 1
+    fi
+else
+    echo "*** No packages to be installed. "
 fi
 
 ### Configuration 
@@ -225,7 +245,7 @@ echo "*** UnInstalling "
 rpm -ev $UnInstallList
 unresult=$?
 echo "rpm -ev $UnInstallList"
-if [ $unresult -ne 0 ];then
+if [[ $unresult -ne 0 ]]; then
    echo "===> RPM uninstall failed. Exiting..."
    exit 1
 fi
