@@ -6,8 +6,8 @@ Start the component, reading its configuration from
 the common configuration file, which is accessed by environment variable
 
 """
-__revision__ = "$Id: Startup.py,v 1.3 2007/04/13 10:25:53 mcinquil Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Startup.py,v 1.4 2007/07/04 15:12:24 mcinquil Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 
@@ -26,6 +26,7 @@ try:
     compCfg = config.getConfig("TaskTracking")
     compCfg['ComponentDir'] = os.path.expandvars(compCfg['ComponentDir'])
     compCfg.update( config.getConfig("CrabServerConfigurations") )
+    compCfg.update( config.getConfig("ProdAgentDB") ) 
 except StandardError, ex:
     msg = "Error reading configuration:\n"
     msg += str(ex)
