@@ -130,10 +130,13 @@ class Creator(Actor):
 #        lastDest=''
         listID=[]
         listField=[]
+        listRunField=[]
+        run_jobToSave = {'status' :'C'}
         for nj in range(self.total_njobs):
             if njc == self.ncjobs : break
 
             common.logger.debug(1,"Creating job # "+`(nj+1)`)
+            listRunField.append(run_jobToSave)
 
             # Prepare configuration file
 
@@ -150,9 +153,7 @@ class Creator(Actor):
        # ## Not clear why here.. DS
        # self.job_type.setArgsList()
 
-        run_jobToSave = {'status' :'C'}
-        common._db.updateRunJob_(listID , run_jobToSave ) ## New BL--DS
-
+        common._db.updateRunJob_(listID , listRunField ) ## New BL--DS
         common._db.updateJob_(listID, listField ) ## Nes BL--DS
 
         # Create script (sh)

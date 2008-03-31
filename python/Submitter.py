@@ -204,13 +204,15 @@ class Submitter(Actor):
                 sched_Id = common._db.queryRunJob('schedulerId', sub_jobs[ii])
                 listId=[]
                 run_jobToSave = {'status' :'S'}
+                listRunField = []
                 for j in range(len(sub_jobs[ii])): # Add loop over SID returned from group submission  DS
                     if str(sched_Id[j]) != '': 
                     #if (st[j]=='S'):
                         listId.append(sub_jobs[ii][j]) 
+                        listRunField.append(run_jobToSave) 
                         common.logger.debug(5,"Submitted job # "+ str(sub_jobs[ii][j]))
                         njs += 1
-                common._db.updateRunJob_(listId, run_jobToSave ) ## New BL--DS
+                common._db.updateRunJob_(listId, listRunField) ## New BL--DS
 #
 #                    ##### DashBoard report #####################
 #                        Sub_Type = 'Direct'

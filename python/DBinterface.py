@@ -46,12 +46,7 @@ class DBinterface:
         Return task with all/list of jobs 
         """
 
-        if jobsList == 'all':
-            task = common.bossSession.load(1)[0]
-        else: 
-            if len(jobsList)>1: str_jobs=string.join(map(str,jobsList),",") 
-            else: str_jobs=str(jobsList)  
-            task = common.bossSession.load(1,jobsList)[0]
+        task = common.bossSession.load(1,jobsList)[0]
         return task
 
     def getJob(self, n): 
@@ -106,8 +101,6 @@ class DBinterface:
         """
         Update Job fields   
         """
-        if len(jobsL)>1: str_jobs=string.join(map(str,jobsL),",")
-        else: str_jobs=str(jobsL)
         task = common.bossSession.load(1,jobsL)[0]
         id =0 
         for job in task.jobs:
@@ -121,13 +114,13 @@ class DBinterface:
         """
         Update Running Job fields   
         """
-        if len(jobsL)>1: str_jobs=string.join(map(str,jobsL),",")
-        else: str_jobs=str(jobsL)
         task = common.bossSession.load(1,jobsL)[0]
+        id=0
         for job in task.jobs:
             common.bossSession.getRunningInstance(job)
-            for key in optsToSave.keys():
-                job.runningJob[key] = optsToSave[key]
+            for key in optsToSave[id].keys():
+                job.runningJob[key] = optsToSave[id][key]
+            id+=1
         common.bossSession.updateDB( task )
         return 
 
@@ -168,7 +161,6 @@ class DBinterface:
 
     def serializeTask(self, tmp_task = None):
         if tmp_task is None:
-            #tmp_task = common.bossSession.loadTaskByID(1)
             tmp_task = common.bossSession.load(1)[0]
         return common.bossSession.serialize(tmp_task)   
  
@@ -199,26 +191,24 @@ class DBinterface:
         task = common.bossSession.loadTask(1)
         return task[attr]
 
-    def queryJob(self, attr, jobs):
+    def queryJob(self, attr, jobsL):
         '''
         Perform a query for a range/all/single job 
         over a generic job attribute 
         '''
         lines=[]
-        str_jobs=string.join(map(str,jobs),",") 
-        task = common.bossSession.load(1,str_jobs)[0]
+        task = common.bossSession.load(1,jobsL)[0]
         for job in task.jobs:
             lines.append(eval(job[attr]))
         return lines
 
-    def queryRunJob(self, attr, jobs):
+    def queryRunJob(self, attr, jobsL):
         '''
         Perform a query for a range/all/single job 
         over a generic job attribute 
         '''
         lines=[]
-        str_jobs=string.join(map(str,jobs),",") 
-        task = common.bossSession.load(1,str_jobs)[0]
+        task = common.bossSession.load(1,jobsL)[0]
         for job in task.jobs:
             common.bossSession.getRunningInstance(job)
             lines.append(job.runningJob[attr])
