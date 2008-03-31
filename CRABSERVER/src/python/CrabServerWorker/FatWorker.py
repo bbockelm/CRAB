@@ -33,7 +33,6 @@ from ProdCommon.Database import Session
 from ProdCommon.Database.MysqlInstance import MysqlInstance
 
 # CRAB dependencies
-from CrabServer.crab_util import *
 
 class FatWorker(Thread):
     def __init__(self, logger, FWname, configs):
