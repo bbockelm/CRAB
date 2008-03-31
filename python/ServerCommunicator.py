@@ -88,6 +88,9 @@ class ServerCommunicator:
         elif ret == 10:
              # overlaod
              logMsg = 'The server %s refused to accept the task %s because it is overloaded'%(self.serverName, blTaskName)
+        elif ret == 101:
+             # overlaod
+             logMsg = 'The server %s refused the submission %s because you asked a too large task. Please submit by range'%(self.serverName, blTaskName)
         elif ret == 11:
              # failed to push message in PA
              logMsg = 'Backend unable to release messages to trigger the computation of task %s'%blTaskName
@@ -272,6 +275,9 @@ class ServerCommunicator:
         if ret == 0:
              # success
              logMsg = 'Task %s successfully submitted to server %s'%(blTaskName, self.serverName)
+        elif ret == 101:
+             # overlaod
+             logMsg = 'The server %s refused the submission %s because you asked to handle a too large task. Please submit by range'%(self.serverName, blTaskName)
         elif ret == 20:
              # failed to push message in PA
              logMsg = 'Backend unable to release messages to trigger the computation of task'%blTaskName
