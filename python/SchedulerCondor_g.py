@@ -70,34 +70,34 @@ class SchedulerCondor_g(SchedulerGrid):
         return
 
     def getCEfromSE(self, seSite):
-        # returns the ce including jobmanager
-        ces = jm_from_se_bdii(seSite)
+      # returns the ce including jobmanager
+      ces = jm_from_se_bdii(seSite)
 
-        # mapping ce_hostname to full ce name including jobmanager
-        ce_hostnames = {}
-        for ce in ces :
-            ce_hostnames[ce.split(':')[0].strip()] = ce
+      # mapping ce_hostname to full ce name including jobmanager
+      ce_hostnames = {}
+      for ce in ces :
+        ce_hostnames[ce.split(':')[0].strip()] = ce
 
-        oneSite=''
-        if ( len(ce_hostnames.keys()) == 1 ) :
-           oneSite=ce_hostnames[ce_hostnames.keys()[0]]
-        elif ( len(ce_hostnames.keys()) > 1 ) :
-            if 'EDG.ce_white_list' in self.cfg_params.keys() and len(self.cfg_params['EDG.ce_white_list'].split(',')) == 1 and self.cfg_params['EDG.ce_white_list'].strip() in ce_hostnames.keys() :
-                oneSite = ce_hostnames[self.cfg_params['EDG.ce_white_list']]
-            else :
-                msg  = '[Condor-G Scheduler]: More than one Compute Element (CE) is available for job submission.\n'
-                msg += '[Condor-G Scheduler]: Please select one of the following CE:\n'
-                msg += '[Condor-G Scheduler]:'
-                for host in ce_hostnames.keys() :
-                    msg += ' ' + host
-                msg += '\n'
-                msg += '[Condor-G Scheduler]: and enter this CE in the CE_white_list variable of the [EDG] section in your crab.cfg.\n'
-                common.logger.debug(2,msg)
-                raise CrabException(msg)
+      oneSite=''
+      if len(ce_hostnames.keys()) == 1:
+        oneSite=ce_hostnames[ce_hostnames.keys()[0]]
+      elif len(ce_hostnames.keys()) > 1:
+        if self.EDG_ce_white_list and len(self.EDG_ce_white_list) == 1 and self.EDG_ce_white_list[0] in ce_hostnames.keys():
+          oneSite = self.EDG_ce_white_list[0]
         else :
-           raise CrabException('[Condor-G Scheduler]: CE hostname(s) for SE '+seSite+' could not be determined from BDII.')
+          msg  = '[Condor-G Scheduler]: More than one Compute Element (CE) is available for job submission.\n'
+          msg += '[Condor-G Scheduler]: Please select one of the following CEs:\n'
+          msg += '[Condor-G Scheduler]:'
+          for host in ce_hostnames.keys() :
+            msg += ' ' + host
+          msg += '\n'
+          msg += '[Condor-G Scheduler]: and enter this CE in the ce_white_list variable of the [EDG] section in your crab.cfg.\n'
+          common.logger.debug(2,msg)
+          raise CrabException(msg)
+      else :
+        raise CrabException('[Condor-G Scheduler]: CE hostname(s) for SE '+seSite+' could not be determined from BDII.')
 
-        return oneSite
+      return oneSite
 
     def checkExecutableInPath(self, name):
         # check if executable is in PATH
@@ -212,43 +212,48 @@ class SchedulerCondor_g(SchedulerGrid):
         return
 
     def sched_parameter(self,i,task):
-        """
-        Returns file with scheduler-specific parameters
-        """
-        lastDest=''
-        first = []
-        last  = []
+      """
+      Returns file with scheduler-specific parameters
+      """
+      lastDest=''
+      first = []
+      last  = []
 
-        print "sched_parameter called with i=",i
-        print "  task =",task
+      print "sched_parameter called with i=",i
+      print "  task =",task
 
-        for n in range(common._db.nJobs()):
-          currDest=self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']))
-          print "currDest =",currDest
-          if (currDest!=lastDest):
-            lastDest = currDest
-            first.append(n)
-            if n != 0:last.append(n-1)
-        if len(first)>len(last) :last.append(common._db.nJobs())
+      #for n in range(common._db.nJobs()):
+      seDest=self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']))
+      ceDest = self.getCEfromSE(seDest)
+      print "currDest =",seDest,"and",ceDest
+        #if (currDest!=lastDest):
+          #lastDest = currDest
+          #first.append(n)
+          #if n != 0:last.append(n-1)
+      #if len(first)>len(last) :last.append(common._db.nJobs())
 
-        for i in range(len(first)): # Add loop DS
-          self.param='sched_param_'+str(i)+'.clad'
-          param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
+      #for i in range(len(first)): # Add loop DS
+        #self.param='sched_param_'+str(i)+'.clad'
+        #param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
 
-          param_file.write('globusrsl = ')
+        #param_file.write('globusrsl = ')
+        ## probably use jobType instead
+        ## extraTag maxWallTime
+        #if (self.EDG_clock_time):
+          #param_file.write('(maxWalltime='+self.EDG_clock_time+')')
 
-          # extraTag maxWallTime
-          if (self.EDG_clock_time):
-            param_file.write('(maxWalltime='+self.EDG_clock_time+')')
+        ## extraTag additional GLOBUS_RSL
+        #if ( self.GLOBUS_RSL != '' ) :
+          #param_file.write(self.GLOBUS_RSL)
 
-          # extraTag additional GLOBUS_RSL
-          if ( self.GLOBUS_RSL != '' ) :
-            param_file.write(self.GLOBUS_RSL)
+        #param_file.write(';')
 
-          param_file.write(';')
+        #param_file.close()
 
-          param_file.close()
-
+      jobParams = "globusscheduler = "+ceDest+":2119/jobmanager-condor;"
+      common._db.updateTask_({'jobType':jobParams})
+      print "Updating task"
+      return jobParams # Not sure I even need to return anything
 
     def wsSetupEnvironment(self):
         """
