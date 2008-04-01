@@ -1,11 +1,5 @@
 #!/bin/sh
 
-if [ `whoami` != 'root' ]; then
-    echo "You must to be root in order to do rpm install."
-    echo "Exiting. "
-    exit 1;
-fi
-
 #defaults
 CRAB_HOME="/home/crab"
 CRAB_USER="crab"
@@ -40,7 +34,7 @@ case $1 in
           cat << \EOF_HELP
 
 DelegationRPMs.sh 
-A script to install/uninstall and configure the Delegation service.
+A script to install/uninstall and configure the Delegation service ("root" permissions are required)
 
 * Installation Syntax:
 DelegationRPMs.sh install -path </your/dir> [-user <crabuser>] [-homeuser <crabuser Home dir>]
@@ -63,11 +57,17 @@ EOF_HELP
     esac
 done
 
+if [ `whoami` != 'root' ]; then
+    echo "You must to be root in order to do rpm install."
+    echo "Exiting. "
+    exit 1;
+fi
 
 ##################
 ### Installation & Configuration
 ##################
 install(){
+
 
 if ! [ $myarea ]; then
  echo ""
