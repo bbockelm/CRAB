@@ -12,6 +12,8 @@ from BlackWhiteListParser import BlackWhiteListParser
 
 import pdb # Use while debugging
 
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.9 2008/04/01 10:16:13 ewv Exp $"
+__version__ = "$Revision: 1.9 $"
 
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
