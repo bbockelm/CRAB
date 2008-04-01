@@ -43,8 +43,9 @@ class GetOutput(Actor):
         pass
 
     def checkBeforeGet(self):
-     
-        self.up_task = common.scheduler.queryEverything(1) 
+        # should be in this way... but a core dump appear... waiting for solution  
+        #self.up_task = common.scheduler.queryEverything(1) 
+        self.up_task = common._db.getTask() 
         list_id_done=[]
         self.list_id=[]
         self.all_id =[]    
@@ -82,6 +83,7 @@ class GetOutput(Actor):
         if not os.path.isdir(self.logDir) or not os.path.isdir(self.outDir):
             msg =  ' Output or Log dir not found!! check '+self.logDir+' and '+self.outDir
             raise CrabException(msg)
+        ##TODO
    #     else:
         ## here check the resubmission number and backup existing files calling moveOutput()    
 
@@ -99,7 +101,10 @@ class GetOutput(Actor):
         ## TO DO 
         ### here the logic must be improved...
         ### 1) enable the getoutput check
-        ### 2) now crab must take care to manage the tar/untar 
+
+        for id in self.list_id:
+            cmd = 'tar zxvf '+str(self.outDir) + '/out_files_'+ str(id)+'.tgz ; rm '+ '/out_files_'+ str(id)+'.tgz'
+            cmd = runCommand(cmd_untar)
 
         if self.logDir != self.outDir:
             for i_id in self.list_id:  

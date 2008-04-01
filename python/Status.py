@@ -39,9 +39,7 @@ class Status(Actor):
         up_task = common.scheduler.queryEverything(task['id']) ## NeW BL--DS
         toPrint=[]
         for job in up_task.jobs :
-            #print job['id']
-            #id = str(job.runningJob['id'])
-            id = str(job['id'])
+            id = str(job.runningJob['id'])
             jobStatus =  str(job.runningJob['statusScheduler'])
             dest = str(job.runningJob['destination']).split(':')[0]
             exe_exit_code = str(job.runningJob['applicationReturnCode'])

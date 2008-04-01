@@ -186,11 +186,10 @@ class SchedulerGrid(Scheduler):
         txt += "# job number (first parameter for job wrapper)\n"
         txt += "NJob=${args[0]}; export NJob\n"
 
-        txt += 'echo "Create output dir"\n'
-        txt += "outDir=out_dir_${NJob}; export outDir\n"
-        txt += "echo $outDir\n"
-        txt += "mkdir $outDir\n"
+        txt += "out_files=out_files_${NJob}; export out_files\n"
+        txt += "echo $out_files\n"
         txt += jbt.outList()
+
         #txt += 'MonitorJobID=`echo ${NJob}_$'+self.environment_unique_identifier+'`\n'
         #txt += 'SyncGridJobId=`echo $'+self.environment_unique_identifier+'`\n'
         #txt += 'MonitorID=`echo ' + self._taskId + '`\n'
