@@ -76,6 +76,14 @@ if ! [ $myarea ]; then
  exit 1
 fi
 
+if ! [ -d $CRAB_HOME ];then
+ echo ""
+ echo " $CRAB_HOME dir do not exist"
+ echo " Specify the real $CRAB_USER home directory with -homeuser option."
+ echo " $0 -help"
+ exit 1
+fi
+
 mkdir -p $myarea
 export MYTESTAREA=`readlink -f $myarea`;
 mkdir -p $MYTESTAREA/RPMs
