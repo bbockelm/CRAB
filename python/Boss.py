@@ -35,14 +35,11 @@ class Boss:
                     'caf':''
                     }
 
-        schedulerConfig = {
+        self.schedulerConfig = {
               'name' : SchedMap[self.schedulerName], \
               'service' : self.wms_service, \
               'config' : self.rb_param_file
               }
-
-        self.schedSession = BossLiteAPISched( common.bossSession, schedulerConfig)
-
         return
 
     def declare(self, nj):
@@ -66,8 +63,8 @@ class Boss:
             stderr = base +'_'+ str(id+1)+'.stderr'
             jobs.append(id)
             out=task.jobs[id]['outputFiles']
-            out.append(stdout)
-            out.append(stderr)
+         #   out.append(stdout)
+         #   out.append(stderr)
             out.append('.BrokerInfo')
             parameters['outputFiles']=out
             parameters['executable']=wrapper
@@ -83,7 +80,8 @@ class Boss:
         """
         Check the compatibility of available resources
         """
-        sites = self.schedSession.lcgInfo(tags, dest, whiteL, blackL )
+        schedSession = BossLiteAPISched( common.bossSession, self.schedulerConfig)
+        sites = schedSession.lcgInfo(tags, dest, whiteL, blackL )
 
 #        Tout = 120
 #        CEs=[]
@@ -104,8 +102,9 @@ class Boss:
         Submit BOSS function.
         Submit one job. nj -- job number.
         """
+        schedSession = BossLiteAPISched( common.bossSession, self.schedulerConfig)
         task = common._db.getTask(jobsList)
-        self.schedSession.submit( task,jobsList,req )
+        schedSession.submit( task,jobsList,req )
       #  try:
       #  except SchedulerError,e:
       #      common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
@@ -122,14 +121,16 @@ class Boss:
         Query needed info of all jobs with specified taskid
         """
 
-        statusRes =  self.schedSession.query( str(taskid))
+        schedSession = BossLiteAPISched( common.bossSession, self.schedulerConfig)
+        statusRes =  schedSession.query( str(taskid))
         return statusRes
 
     def getOutput(self,taskId,jobRange, outdir):
         """
         Retrieve output of all jobs with specified taskid
         """
-        self.schedSession.getOutput( taskId, jobRange, outdir )
+        schedSession = BossLiteAPISched( common.bossSession, self.schedulerConfig)
+        schedSession.getOutput( taskId, jobRange, outdir )
  
         return
 

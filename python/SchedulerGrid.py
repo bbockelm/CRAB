@@ -4,6 +4,7 @@ from crab_exceptions import *
 from crab_util import *
 from BlackWhiteListParser import BlackWhiteListParser
 import common
+from JobList import JobList
 
 import os, sys, time
 
@@ -170,6 +171,9 @@ class SchedulerGrid(Scheduler):
         """
         Returns part of a job script which does scheduler-specific work.
         """
+        index = int(common._db.nJobs())
+        job = common.job_list[index-1]
+        jbt = job.type()
         if not self.environment_unique_identifier:
             raise CrabException('environment_unique_identifier not set')
 
@@ -182,6 +186,11 @@ class SchedulerGrid(Scheduler):
         txt += "# job number (first parameter for job wrapper)\n"
         txt += "NJob=${args[0]}; export NJob\n"
 
+        txt += 'echo "Create output dir"\n'
+        txt += "outDir=out_dir_${NJob}; export outDir\n"
+        txt += "echo $outDir\n"
+        txt += "mkdir $outDir\n"
+        txt += jbt.outList()
         #txt += 'MonitorJobID=`echo ${NJob}_$'+self.environment_unique_identifier+'`\n'
         #txt += 'SyncGridJobId=`echo $'+self.environment_unique_identifier+'`\n'
         #txt += 'MonitorID=`echo ' + self._taskId + '`\n'
@@ -358,20 +367,6 @@ class SchedulerGrid(Scheduler):
             pass
         return txt
 
-    def loggingInfo(self, id):
-        """
-        retrieve the logging info from logging and bookkeeping and return it
-        """
-        self.checkProxy()
-        cmd = 'edg-job-get-logging-info -v 2 ' + id
-        cmd_out = runCommand(cmd)
-        return cmd_out
-
-    def queryDetailedStatus(self, id):
-        """ Query a detailed status of the job with id """
-        cmd = 'edg-job-status '+id
-        cmd_out = runCommand(cmd)
-        return cmd_out
 
     def checkProxy(self):
         """

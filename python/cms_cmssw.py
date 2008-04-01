@@ -658,15 +658,15 @@ class Cmssw(JobType):
             jobParams[job] = arglist[job]
             listID.append(job+1)
             job_ToSave ={}
-            concString = ','
+            concString = ' '
             argu=''
             if len(jobParams[job]):
                 argu +=   concString.join(jobParams[job] )
-            job_ToSave['arguments']= str(job+1)+','+argu## new BL--DS
+            job_ToSave['arguments']= str(job+1)+' '+argu## new BL--DS
             job_ToSave['dlsDestination']= self.jobDestination[job]## new BL--DS
             #common._db.updateJob_(job,job_ToSave)## new BL--DS
             listField.append(job_ToSave)
-            msg="Job "+str(job)+" Arguments:   "+str(job+1)+","+argu+"\n"  \
+            msg="Job "+str(job)+" Arguments:   "+str(job+1)+" "+argu+"\n"  \
             +"                     Destination: "+str(self.jobDestination[job])
             common.logger.debug(5,msg)
             #common.logger.debug(5,"Job "+str(job)+" Destination: "+str(self.jobDestination[job]))
@@ -1420,67 +1420,26 @@ class Cmssw(JobType):
             nd[e]=0
         return nd.keys()
 
-
-    def checkOut(self, limit):
+    def outList(self):
         """
         check the dimension of the output files
         """
-        txt = '\n#Written by cms_cmssw::checkOut\n'
-        txt += 'echo ">>> Starting output sandbox limit check :"\n'
+        txt = ''
+        txt += 'echo ">>> list of expected files on output sandbox"\n'
         listOutFiles = []
-        txt += 'stdoutFile=`ls *stdout` \n'
-        txt += 'stderrFile=`ls *stderr` \n'
+        stdout = 'CMSSW_$NJob.stdout' 
+        stderr = 'CMSSW_$NJob.stderr'
         if (self.return_data == 1):
             for file in (self.output_file+self.output_file_sandbox):
                 listOutFiles.append(self.numberFile_(file, '$NJob'))
-            listOutFiles.append('$stdoutFile')
-            listOutFiles.append('$stderrFile')
+            listOutFiles.append(stdout)
+            listOutFiles.append(stderr)
         else:
             for file in (self.output_file_sandbox):
                 listOutFiles.append(self.numberFile_(file, '$NJob'))
-            listOutFiles.append('$stdoutFile')
-            listOutFiles.append('$stderrFile')
-
+            listOutFiles.append(stdout)
+            listOutFiles.append(stderr)
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
-        txt += 'ls -gGhrta;\n'
-        txt += 'sum=0;\n'
-        txt += 'for file in $filesToCheck ; do\n'
-        txt += '    if [ -e $file ]; then\n'
-        txt += '        tt=`ls -gGrta $file | awk \'{ print $3 }\'`\n'
-        txt += '        sum=`expr $sum + $tt`\n'
-        txt += '    else\n'
-        txt += '        echo "WARNING: output file $file not found!"\n'
-        txt += '    fi\n'
-        txt += 'done\n'
-        txt += 'echo "Total Output dimension: $sum";\n'
-        txt += 'limit='+str(limit)+';\n'
-        txt += 'echo "WARNING: output files size limit is set to: $limit";\n'
-        txt += 'if [ $limit -lt $sum ]; then\n'
-        txt += '    echo "WARNING: output files have to big size - something will be lost;"\n'
-        txt += '    echo "         checking the output file sizes..."\n'
-        txt += '    tot=0;\n'
-        txt += '    for filefile in $filesToCheck ; do\n'
-        txt += '        dimFile=`ls -gGrta $filefile | awk \'{ print $3 }\';`\n'
-        txt += '        tot=`expr $tot + $tt`;\n'
-        txt += '        if [ $limit -lt $dimFile ]; then\n'
-        txt += '            echo "deleting file: $filefile";\n'
-        txt += '            rm -f $filefile\n'
-        txt += '        elif [ $limit -lt $tot ]; then\n'
-        txt += '            echo "deleting file: $filefile";\n'
-        txt += '            rm -f $filefile\n'
-        txt += '        else\n'
-        txt += '            echo "saving file: $filefile"\n'
-        txt += '        fi\n'
-        txt += '    done\n'
-
-        txt += '    ls -agGhrt\n'
-        txt += '    echo "WARNING: output files are too big in dimension: can not put in the output_sandbox."\n'
-        #txt += '    echo "JOB_EXIT_STATUS = 70000"\n'
-        #txt += '    exit_status=70000\n'
-        txt += '    job_exit_code=70000\n'
-        txt += 'else\n'
-        txt += '    echo "Total Output dimension $sum is fine."\n'
-        txt += 'fi\n'
-        txt += 'echo "Ending output sandbox limit check"\n'
-        return txt
+        txt += 'export filesToCheck\n'
+        return txt 

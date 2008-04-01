@@ -243,7 +243,31 @@ func_exit() {
     if [ $PYTHONPATH ]; then
         update_fjr
     fi
-    if [ $middleware == OSG ] && [ $WORKING_DIR]; then
+##################
+    cd $RUNTIME_AREA    
+    for file in $filesToCheck ; do
+        if [ -e $file ]; then
+            echo tarring file $file in  $out_files
+        else
+            echo "WARNING: output file $file not found!"
+        fi
+    done
+    tar zcvf ${out_files}.tgz $filesToCheck
+
+#    tmp_size=`ls -gGrta ${outDir}.tgz | awk \'{ print $3 }\'`
+#    size=`expr $tmp_size`
+#    echo "Total Output dimension: $size";
+#    limit=550000   
+#    echo "WARNING: output files size limit is set to: $limit";
+#    if [ $limit -lt $sum ]; then
+#        job_exit_code=70000
+#    else
+#        echo "Total Output dimension $sum is fine."
+#    fi
+#    echo "Ending output sandbox limit check"
+#################
+
+    if [ $middleware == 'OSG' ] && [ $WORKING_DIR]; then
         remove_working_dir
     fi
     echo "JOB_EXIT_STATUS = $job_exit_code"
@@ -400,8 +424,6 @@ echo ">>> current dir content:"
 ls -Al
 
 #CRAB modify_report
-
-#CRAB check_output_limit
 
 #
 # END OF PROCESS THE PRODUCED RESULTS

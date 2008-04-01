@@ -145,91 +145,91 @@ class SchedulerGlite(SchedulerGrid):
 
         return sched_param
 
-    def wsSetupEnvironment(self):
-        """
-        Returns part of a job script which does scheduler-specific work.
-        """
-        txt = ''
-        txt += '# strip arguments\n'
-        txt += 'echo "strip arguments"\n'
-        txt += 'args=("$@")\n'
-        txt += 'nargs=$#\n'
-        txt += 'shift $nargs\n'
-        txt += "# job number (first parameter for job wrapper)\n"
-        txt += "NJob=${args[0]}; export NJob\n"
-
-        txt += '# job identification to DashBoard \n'
-        #txt += 'MonitorJobID=`echo ${NJob}_$GLITE_WMS_JOBID`\n'
-        #txt += 'SyncGridJobId=`echo $GLITE_WMS_JOBID`\n'
-        #txt += 'MonitorID=`echo ' + self._taskId + '`\n'
-        txt += 'MonitorJobID=${NJob}_$GLITE_WMS_JOBID \n'
-        txt += 'SyncGridJobId=$GLITE_WMS_JOBID \n'
-        txt += 'MonitorID='+self._taskId+' \n'
-        txt += 'echo "MonitorJobID=$MonitorJobID" > $RUNTIME_AREA/$repo \n'
-        txt += 'echo "SyncGridJobId=$SyncGridJobId" >> $RUNTIME_AREA/$repo \n'
-        txt += 'echo "MonitorID=$MonitorID" >> $RUNTIME_AREA/$repo\n'
-        #txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
-
-        #txt += 'echo "middleware discovery: " \n'
-        txt += 'echo ">>> GridFlavour discovery: " \n'
-        txt += 'if [ $VO_CMS_SW_DIR ]; then \n'
-        txt += '    middleware=LCG\n'
-        #txt += '    echo "SyncCE=`glite-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '    echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
-        #txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    echo ">>> middleware =$middleware" \n'
-        txt += 'elif [ $OSG_APP ]; then \n'
-        txt += '    middleware=OSG \n'
-        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
-        txt += '        SyncCE="$OSG_JOB_CONTACT"; \n'
-        #txt += '        echo "SyncCE=$SyncCE" | tee -a $RUNTIME_AREA/$repo ;\n'
-        txt += '        echo "SyncCE=$SyncCE" >> $RUNTIME_AREA/$repo ;\n'
-        txt += '    else\n'
-        txt += '        echo "not reporting SyncCE";\n'
-        txt += '    fi\n';
-        txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    echo ">>> middleware =$middleware" \n'
-        txt += 'else \n'
-        txt += '    echo "ERROR ==> GridFlavour not identified" \n'
-        txt += '    job_exit_code=10030\n'
-        txt += '    func_exit \n'
-        #txt += '    echo "SET_CMS_ENV 10030 ==> middleware not identified" \n'
-        #txt += '    echo "JOB_EXIT_STATUS = 10030" \n'
-        #txt += '    echo "JobExitCode=10030" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
-        #txt += '    exit 1 \n'
-        txt += 'fi \n'
-
-        txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
-
-        txt += '\n\n'
-
-        txt += 'export VO='+self.VO+'\n'
-        txt += 'if [ $middleware == LCG ]; then\n'
-        txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
-        txt += '    echo "CloseCEs = $CloseCEs"\n'
-        txt += '    CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
-        txt += '    echo "CE = $CE"\n'
-        txt += 'elif [ $middleware == OSG ]; then \n'
-        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
-        txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
-        txt += '    else \n'
-        txt += '        echo "ERROR ==> OSG mode in setting CE name from OSG_JOB_CONTACT" \n'
-        txt += '        job_exit_code=10099\n'
-        txt += '        func_exit \n'
-        #txt += '        echo "SET_CMS_ENV 10099 ==> OSG mode: ERROR in setting CE name from OSG_JOB_CONTACT" \n'
-        #txt += '        echo "JOB_EXIT_STATUS = 10099" \n'
-        #txt += '        echo "JobExitCode=10099" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '        dumpStatus $RUNTIME_AREA/$repo \n'
-        #txt += '        exit 1 \n'
-        txt += '    fi \n'
-        txt += 'fi \n'
-
-        return txt
-
+#    def wsSetupEnvironment(self):
+#        """
+#        Returns part of a job script which does scheduler-specific work.
+#        """
+#        txt = ''
+#        txt += '# strip arguments\n'
+#        txt += 'echo "strip arguments"\n'
+#        txt += 'args=("$@")\n'
+#        txt += 'nargs=$#\n'
+#        txt += 'shift $nargs\n'
+#        txt += "# job number (first parameter for job wrapper)\n"
+#        txt += "NJob=${args[0]}; export NJob\n"
+#
+#        txt += '# job identification to DashBoard \n'
+#        #txt += 'MonitorJobID=`echo ${NJob}_$GLITE_WMS_JOBID`\n'
+#        #txt += 'SyncGridJobId=`echo $GLITE_WMS_JOBID`\n'
+#        #txt += 'MonitorID=`echo ' + self._taskId + '`\n'
+#        txt += 'MonitorJobID=${NJob}_$GLITE_WMS_JOBID \n'
+#        txt += 'SyncGridJobId=$GLITE_WMS_JOBID \n'
+#        SetupEnvironmentxt += 'MonitorID='+self._taskId+' \n'
+#        txt += 'echo "MonitorJobID=$MonitorJobID" > $RUNTIME_AREA/$repo \n'
+#        txt += 'echo "SyncGridJobId=$SyncGridJobId" >> $RUNTIME_AREA/$repo \n'
+#        txt += 'echo "MonitorID=$MonitorID" >> $RUNTIME_AREA/$repo\n'
+#        #txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
+#        #txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
+#        #txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
+#
+#        #txt += 'echo "middleware discovery: " \n'
+#        txt += 'echo ">>> GridFlavour discovery: " \n'
+#        txt += 'if [ $VO_CMS_SW_DIR ]; then \n'
+#        txt += '    middleware=LCG\n'
+#        #txt += '    echo "SyncCE=`glite-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
+#        txt += '    echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
+#        #txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
+#        txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
+#        #txt += '    echo ">>> middleware =$middleware" \n'
+#        txt += 'elif [ $OSG_APP ]; then \n'
+#        txt += '    middleware=OSG \n'
+#        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
+#        txt += '        SyncCE="$OSG_JOB_CONTACT"; \n'
+#        #txt += '        echo "SyncCE=$SyncCE" | tee -a $RUNTIME_AREA/$repo ;\n'
+#        txt += '        echo "SyncCE=$SyncCE" >> $RUNTIME_AREA/$repo ;\n'
+#        txt += '    else\n'
+#        txt += '        echo "not reporting SyncCE";\n'
+#        txt += '    fi\n';
+#        txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
+#        #txt += '    echo ">>> middleware =$middleware" \n'
+#        txt += 'else \n'
+#        txt += '    echo "ERROR ==> GridFlavour not identified" \n'
+#        txt += '    job_exit_code=10030\n'
+#        txt += '    func_exit \n'
+#        #txt += '    echo "SET_CMS_ENV 10030 ==> middleware not identified" \n'
+#        #txt += '    echo "JOB_EXIT_STATUS = 10030" \n'
+#        #txt += '    echo "JobExitCode=10030" | tee -a $RUNTIME_AREA/$repo \n'
+#        #txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
+#        #txt += '    exit 1 \n'
+#        txt += 'fi \n'
+#
+#        txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
+#
+#        txt += '\n\n'
+#
+#        txt += 'export VO='+self.VO+'\n'
+#        txt += 'if [ $middleware == LCG ]; then\n'
+#        txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
+#        txt += '    echo "CloseCEs = $CloseCEs"\n'
+#        txt += '    CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
+#        txt += '    echo "CE = $CE"\n'
+#        txt += 'elif [ $middleware == OSG ]; then \n'
+#        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
+#        txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
+#        txt += '    else \n'
+#        txt += '        echo "ERROR ==> OSG mode in setting CE name from OSG_JOB_CONTACT" \n'
+#        txt += '        job_exit_code=10099\n'
+#        txt += '        func_exit \n'
+#        #txt += '        echo "SET_CMS_ENV 10099 ==> OSG mode: ERROR in setting CE name from OSG_JOB_CONTACT" \n'
+#        #txt += '        echo "JOB_EXIT_STATUS = 10099" \n'
+#        #txt += '        echo "JobExitCode=10099" | tee -a $RUNTIME_AREA/$repo \n'
+#        #txt += '        dumpStatus $RUNTIME_AREA/$repo \n'
+#        #txt += '        exit 1 \n'
+#        txt += '    fi \n'
+#        txt += 'fi \n'
+#
+#        return txt
+#
     def loggingInfo(self, id):
         """
         retrieve the logging info from logging and bookkeeping and return it

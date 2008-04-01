@@ -126,13 +126,12 @@ class Creator(Actor):
         # Loop over jobs
         argsList = []
         njc = 0
-#        block = -1 # first block is 0  BL--DS
-#        lastDest=''
         listID=[]
         listField=[]
         listRunField=[]
         run_jobToSave = {'status' :'C'}
         for nj in range(self.total_njobs):
+            output=[]
             if njc == self.ncjobs : break
 
             common.logger.debug(1,"Creating job # "+`(nj+1)`)
@@ -141,9 +140,12 @@ class Creator(Actor):
             # Prepare configuration file
 
             self.job_type.modifySteeringCards(nj)
-
-            outputSandbox=self.job_type.outputSandbox(nj)
-            job_ToSave={'outputFiles': outputSandbox}
+           # outputSandbox=[]
+          #  outputSandbox=self.job_type.outputSandbox(nj)
+          #  outputSandbox.append('out_files_'+str(nj+1)+'.tgz')
+            output.append('out_files_'+str(nj+1)+'.tgz')
+           # job_ToSave={'outputFiles': outputSandbox}
+            job_ToSave={'outputFiles': output}
             listField.append(job_ToSave)             
 
             listID.append(nj+1)
@@ -152,7 +154,6 @@ class Creator(Actor):
  
        # ## Not clear why here.. DS
        # self.job_type.setArgsList()
-
         common._db.updateRunJob_(listID , listRunField ) ## New BL--DS
         common._db.updateJob_(listID, listField ) ## Nes BL--DS
 
