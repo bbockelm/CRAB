@@ -95,16 +95,22 @@ class GetOutput(Actor):
         Returns the name of directory with results.
 
         """
-        self.checkBeforeGet()
+       # self.checkBeforeGet()
 
-        common.scheduler.getOutput(1,self.list_id,self.outDir) ## NeW BL--DS
+       # common.scheduler.getOutput(1,self.list_id,self.outDir) ## NeW BL--DS
         ## TO DO 
         ### here the logic must be improved...
         ### 1) enable the getoutput check
 
+        self.list_id=[3]
+        cwd = os.getcwd()
+        os.chdir( self.outDir )
         for id in self.list_id:
-            cmd = 'tar zxvf '+str(self.outDir) + '/out_files_'+ str(id)+'.tgz ; rm '+ '/out_files_'+ str(id)+'.tgz'
-            cmd = runCommand(cmd_untar)
+            cmd = 'tar zxvf out_files_'+ str(id)+'.tgz' 
+            cmd_out = runCommand(cmd)
+            cmd_2 ='rm out_files_'+ str(id)+'.tgz'
+            cmd_out2 = runCommand(cmd_2)
+        os.chdir( cwd )
 
         if self.logDir != self.outDir:
             for i_id in self.list_id:  
