@@ -95,9 +95,9 @@ class GetOutput(Actor):
         Returns the name of directory with results.
 
         """
-       # self.checkBeforeGet()
+        self.checkBeforeGet()
 
-       # common.scheduler.getOutput(1,self.list_id,self.outDir) ## NeW BL--DS
+        common.scheduler.getOutput(1,self.list_id,self.outDir) ## NeW BL--DS
         ## TO DO 
         ### here the logic must be improved...
         ### 1) enable the getoutput check
