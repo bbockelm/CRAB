@@ -53,11 +53,14 @@ class StatusServer(Status):
         reportList = minidom.parseString(reportXML).getElementsByTagName('Job')
         toPrint=[]
         for job in task.jobs:
+            if not job.runningJob:
+                raise CrabException( "Missing running object for job %s"%str(job['id']) )
+ 
             id = str(job.runningJob['id'])
             # TODO linear search, probably it can be optized with binary search
             rForJ = None
             for r in reportList:
-                if id == r.getAttribute('id'):
+                if r.getAttribute('id') in [ id, 'all']:
                     rForJ = r
                     break
 
@@ -74,7 +77,8 @@ class StatusServer(Status):
             job.runningJob['wrapperReturnCode'] = str( rForJ.getAttribute('job_exit') )
             job_exit_code = str(job.runningJob['wrapperReturnCode'])
               
-            job['submissionNumber'] =  int(rForJ.getAttribute('resubmit'))
+            if str( rForJ.getAttribute('resubmit') ).isdigit(): 
+                job['submissionNumber'] = int(rForJ.getAttribute('resubmit'))
             # TODO cleared='0' field, how should it be handled/mapped in BL? #Fabio
             common.bossSession.updateDB( task )
 
