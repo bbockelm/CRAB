@@ -244,10 +244,10 @@ class ServerCommunicator:
 
         ## JDL requirements specific data. Scheduler dependant
         if 'glite' in str(self.cfg_params['CRAB.scheduler']):
-            miniCfg['EDG.max_wall_time'] = self.cfg_params.get('EDG.max_wall_clock_time',None)
+            miniCfg['EDG.max_wall_time'] = self.cfg_params.get('EDG.max_wall_clock_time', None)
             miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('EDG.max_cpu_time', '130')
-            miniCfg['proxyServer'] = str(self.cfg_params['EDG.proxy_server'] )
-            miniCfg['VO'] = str(self.cfg_params['EDG.virtual_organization'] )
+            miniCfg['proxyServer'] = str(self.cfg_params['EDG.proxy_server'], 'myproxy.cern.ch')
+            miniCfg['VO'] = str(self.cfg_params['EDG.virtual_organization'], 'cms')
         else:
             # TODO fill here with proper data
             pass

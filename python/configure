@@ -27,15 +27,15 @@ function configureSqlite {
 echo " SQLITE Installation: begin at `date`"
 cd $TopDir/sqlite
 echo "untar.. "
-tar zxvf sqlite-$sqlite_ver.tar.gz > \dev\null 2>&1 
+tar zxvf sqlite-$sqlite_ver.tar.gz > /dev/null 2>&1 
 cd sqlite-$sqlite_ver
 mkdir .libs
 ln -s /usr/lib/libreadline.so.4.3 .libs/libreadline.so
 echo "configure... "
-./configure --prefix=$SQLITE_ROOT --disable-tcl >\dev\null 2>&1
+./configure --prefix=$SQLITE_ROOT --disable-tcl >/dev/null 2>&1
 echo "compile and install.... "
-make >\dev\null 2>&1
-make install >\dev\null 2>&1
+make >/dev/null 2>&1
+make install >/dev/null 2>&1
 cd ../..
 echo "SQLITE Installation: end at `date`"
 return
@@ -45,13 +45,13 @@ function configurePysqlite {
 echo "Py2-pysqlite Installation: begin at `date`"
 cd $TopDir/py2-pysqlite
 echo "untar.. "
-tar zxvf pysqlite-$pysql_ver.tar.gz  >\dev\null 2>&1
+tar zxvf pysqlite-$pysql_ver.tar.gz  >/dev/null 2>&1
 cd pysqlite-$pysql_ver
 perl -p -i -e "s!include_dirs=.*!include_dirs=$SQLITE_ROOT/include!" setup.cfg
 perl -p -i -e "s!library_dirs=.*!library_dirs=$SQLITE_ROOT/lib!" setup.cfg
 echo "build and install... "
-python setup.py build  >\dev\null 2>&1
-python setup.py install --prefix=$PYSQLITE_ROOT  >\dev\null 2>&1
+python setup.py build  >/dev/null 2>&1
+python setup.py install --prefix=$PYSQLITE_ROOT  >/dev/null 2>&1
 cd ../..
 echo "Py2-pysqlite  Installation: end at `date`"
 return
@@ -60,9 +60,9 @@ return
 function configureCrab {
 ## prapare the crab env
 cd $TopDir
-tar zxvf sqlite.tgz > \dev\null 2>&1
+tar zxvf sqlite.tgz > /dev/null 2>&1
 rm sqlite.tgz
-tar zxvf py2-pysqlite.tgz > \dev\null 2>&1
+tar zxvf py2-pysqlite.tgz > /dev/null 2>&1
 rm py2-pysqlite.tgz
 
 # sh style
