@@ -314,8 +314,7 @@ class FatWorker(Thread):
             try:
                 task = self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
             except Exception, e:
-                self.log.info("FatWorker %s. Problem submitting task %s jobs %s. %s"%(self.myName, \
-                                self.taskName, str(sub_jobs[ii]), str(e) )
+                self.log.info("FatWorker %s. Problem submitting task %s jobs %s. %s"%(self.myName, self.taskName, str(sub_jobs[ii]), str(e)))
                 continue
 
             # check if submitted
