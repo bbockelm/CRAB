@@ -102,14 +102,15 @@ class GetOutput(Actor):
         ### here the logic must be improved...
         ### 1) enable the getoutput check
 
-        self.list_id=[3]
+        #self.list_id=[3]
         cwd = os.getcwd()
         os.chdir( self.outDir )
         for id in self.list_id:
             cmd = 'tar zxvf out_files_'+ str(id)+'.tgz' 
             cmd_out = runCommand(cmd)
-            cmd_2 ='rm out_files_'+ str(id)+'.tgz'
-            cmd_out2 = runCommand(cmd_2)
+            if os.path.isfile('out_files_'+ str(id)+'.tgz'): 
+                cmd_2 ='rm out_files_'+ str(id)+'.tgz'
+                cmd_out2 = runCommand(cmd_2)
         os.chdir( cwd )
 
         if self.logDir != self.outDir:
@@ -125,8 +126,64 @@ class GetOutput(Actor):
         else:
             msg = 'Results of Jobs # '+str(self.list_id)+' are in '+self.outDir
             common.logger.message(msg)
+        #### FEDE ####
+        listCode = []
+        job_id = []
+        for jobid in self.list_id:
+           input = self.outDir + '/crab_fjr_' + str(jobid) + '.xml'
+           if os.path.isfile(input):
+               #codeValue = self.parseFinalReport(jobid)
+               codeValue = self.parseFinalReport(input)
+               job_id.append(jobid)
+               listCode.append(codeValue)
+
+        #print "listCode = ", listCode 
+        #common._db.updateRunJob_(self.list_id , listCode)
+        common._db.updateRunJob_(job_id , listCode)
         return
 
+    #def parseFinalReport(self, jobid):
+    def parseFinalReport(self, input):
+        """
+        Parses the FJR produced by job in order to retrieve 
+        the WrapperExitCode and ExeExitCode.
+        Updates the BossDB with these values.
+
+        """
+        from ProdCommon.FwkJobRep.ReportParser import readJobReport
+        
+        #input = self.outDir + '/crab_fjr_' + str(jobid) + '.xml'  
+        codeValue = {} 
+
+        jobReport = readJobReport(input)[0]
+
+        exit_status = ''
+    
+        ##### temporary fix for FJR incomplete ####
+        fjr = open (input)
+        len_fjr = len(fjr.readlines())
+        if (len_fjr <= 6):
+            ### 50115 - cmsRun did not produce a valid/readable job report at runtime
+            codeValue["applicationReturnCode"] = str(50115)
+            codeValue["wrapperReturnCode"] = str(50115)
+       
+        if len(jobReport.errors) != 0 :
+            for error in jobReport.errors:
+                if error['Type'] == 'WrapperExitCode':
+                    codeValue["wrapperReturnCode"] = error['ExitStatus']
+                    #print "wrapperReturnCode = ", error['ExitStatus']
+                elif error['Type'] == 'ExeExitCode':     
+                    codeValue["applicationReturnCode"] = error['ExitStatus']
+                    #print "applicationReturnCode = ", error['ExitStatus']
+                else:
+                    continue
+
+        if not codeValue.has_key('wrapperReturnCode'):
+            codeValue["wrapperReturnCode"] = ''
+        if not codeValue.has_key('applicationReturnCode'):
+            codeValue["applicationReturnCode"] = ''
+            
+        return codeValue
 
   #  def moveOutput(self):
   #      """
