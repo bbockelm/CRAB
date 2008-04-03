@@ -27,25 +27,35 @@ class StatusServer(Status):
             msg = msg + 'Please specify a server in the crab cfg file'
             raise CrabException(msg)
 
+        # proxy management
+        self.proxy = None # common._db.queryTask('proxy')
+        if 'X509_USER_PROXY' in os.environ:
+            self.proxy = os.environ['X509_USER_PROXY']
+        else:
+            status, self.proxy = commands.getstatusoutput('ls /tmp/x509up_u`id -u`')
+            self.proxy = proxy.strip()
+        return
+
     # all the behaviors are inherited from the direct status. Only some mimimal modifications
     # are needed in order to extract data from status XML and to align back DB information   
     # Fabio
   
     def compute(self):
-        # proxy management
-        proxy = None # common._db.queryTask('proxy')
-        if 'X509_USER_PROXY' in os.environ:
-            proxy = os.environ['X509_USER_PROXY']
-        else:
-            status, proxy = commands.getstatusoutput('ls /tmp/x509up_u`id -u`')
-            proxy = proxy.strip()
         common.scheduler.checkProxy()
+        printOutList = self.resynchClientSide()
+        if 'machine_readable_status' in self.cfg_params:  
+            self.machineReadableReport(self.cfg_params['machine_readable_status'])
+        else:
+            self.detailedReport(printOutList)
+        pass
 
+    # aling back data on client
+    def resynchClientSide(self):
         task = common._db.getTask()
 
         # communicator allocation
         common.logger.message("Checking the status of all jobs: please wait")
-        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, proxy)
+        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxy)
         reportXML = csCommunicator.getStatus( str(task['name']) )
         del csCommunicator
 
@@ -55,7 +65,7 @@ class StatusServer(Status):
         for job in task.jobs:
             if not job.runningJob:
                 raise CrabException( "Missing running object for job %s"%str(job['id']) )
- 
+
             id = str(job.runningJob['id'])
             # TODO linear search, probably it can be optized with binary search
             rForJ = None
@@ -64,11 +74,11 @@ class StatusServer(Status):
                     rForJ = r
                     break
 
-            # Data alignment  
+            # Data alignment
             job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
             jobStatus = str(job.runningJob['statusScheduler'])
-            
-            job.runningJob['destination'] = str( rForJ.getAttribute('site') )            
+
+            job.runningJob['destination'] = str( rForJ.getAttribute('site') )
             dest = str(job.runningJob['destination']).split(':')[0]
 
             job.runningJob['applicationReturnCode'] = str( rForJ.getAttribute('exe_exit') )
@@ -76,8 +86,8 @@ class StatusServer(Status):
 
             job.runningJob['wrapperReturnCode'] = str( rForJ.getAttribute('job_exit') )
             job_exit_code = str(job.runningJob['wrapperReturnCode'])
-              
-            if str( rForJ.getAttribute('resubmit') ).isdigit(): 
+
+            if str( rForJ.getAttribute('resubmit') ).isdigit():
                 job['submissionNumber'] = int(rForJ.getAttribute('resubmit'))
             # TODO cleared='0' field, how should it be handled/mapped in BL? #Fabio
             common.bossSession.updateDB( task )
@@ -89,9 +99,18 @@ class StatusServer(Status):
             printline+="%-8s %-18s %-40s %-13s %-15s" % (id,jobStatus,dest,exe_exit_code,job_exit_code)
             toPrint.append(printline)
 
-        self.detailedReport(toPrint)
+        return toPrint
+
+    # Print status to file.
+    # To support automatic stress tests a-la JobRobot or similar tools
+    #
+    def machineReadableReport(self, fileName):
+        task = common._db.getTask()
+        taskXML = common._db.serializeTask(task)
+        common.logger.debug(5, taskXML)
+        f = open(fileName, 'w')
+        f.write(taskXML)
+        f.close()
         pass
-
-
 
 

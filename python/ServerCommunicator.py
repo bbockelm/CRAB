@@ -168,7 +168,7 @@ class ServerCommunicator:
             return statusFile 
         return statusMsg
 
-    def getJobsOutput(self, blTaskName, rng):
+    def outputRetrieved(self, blTaskName, rng):
         """
         _getJobsOutput_
         Get from the server the output file locations to be transfered back.
@@ -177,9 +177,7 @@ class ServerCommunicator:
              - the bossLite object representing the task (jobs are assumed to be RunningJobs)
              - the range of the submission as specified by the user at the command line
         """
-        # Handle data transfers here
-        raise NotImplementedError
-        return None
+        return self._genericCommand('outputRetrieved', blTaskName, rng)
 
     def postMortemInfos(self, blTaskName, rng):
         """
@@ -248,6 +246,8 @@ class ServerCommunicator:
             miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('EDG.max_cpu_time', '130')
             miniCfg['proxyServer'] = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
             miniCfg['VO'] = self.cfg_params.get('EDG.virtual_organization', 'cms')
+            miniCfg['EDG_retry_count'] = self.cfg_params.get('EDG.retry_count',0)
+            miniCfg['EDG_shallow_retry_count'] = self.cfg_params.get('EDG.shallow_retry_count',-1)
         else:
             # TODO fill here with proper data
             pass

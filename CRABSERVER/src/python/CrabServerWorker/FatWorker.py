@@ -60,8 +60,6 @@ class FatWorker(Thread):
             self.se_blackL = [] + configs['se_dynBList']
             self.ce_blackL = [] + configs['ce_dynBList']
 
-            self.EDG_retry_count = int(configs['EDG_retry_count'])
-            self.EDG_shallow_retry_count = int(configs['EDG_shallow_retry_count'])
         except Exception, e:
             self.log.info('Missing parameters in the Worker configuration')
             self.log.info( traceback.format_exc() ) 
@@ -100,6 +98,8 @@ class FatWorker(Thread):
 
         # simple container to move _small_ portions of the cfg to server
         self.cfg_params = eval( self.cmdXML.getAttribute("CfgParamDict") )
+        self.EDG_retry_count = int(self.cfg_params['EDG_retry_count'])
+        self.EDG_shallow_retry_count = int(self.cfg_params['EDG_shallow_retry_count'])
  
         ## Perform the submission
         self.log.info("Worker %s initialized"%self.myName)

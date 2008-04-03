@@ -1,107 +1,83 @@
-from Actor import *
 from crab_util import *
 import common
-from ApmonIf import ApmonIf
 import time
-from ProgressBar import ProgressBar
-from TerminalController import TerminalController
 
-import xml.dom.minidom
+import traceback
+from xml.dom import minidom
+from ServerCommunicator import ServerCommunicator
+from ServerConfig import *
 
-class GetOutputServer(Actor):
+from StatusServer import *
+from GetOutput import * 
+
+class GetOutputServer(StatusServer, GetOutput):
+
+    def __init__(self, *args):
+        self.cfg_params = args[0]
+        self.jobs = args[1]
  
-    def __init__(self, cfg_params,):
-        self.cfg_params = cfg_params
-        try:  
-            self.server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
-            if not self.server_name.endswith("/"):
-                self.server_name = self.server_name + "/"
-        except KeyError:
-            msg = 'No server selected ...' 
-            msg = msg + 'Please specify a server in the crab cfg file' 
-            raise CrabException(msg) 
-        return
-    
-    def run(self):
-        """
-        The main method of the class: retrieve the output from server
-        """
-        common.logger.debug(5, "GetOutput server::run() called")
+        self.server_name = None
+        self.server_port = None
 
-        start = time.time()
+        self.storage_name = None
+        self.storage_path = None
+        self.storage_proto = None
+        self.storage_port = None
 
-        common.scheduler.checkProxy()
+        self.srvCfg = {}
 
-        common.taskDB.load()
-        WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
-        projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict("TasKUUID")     
-        #Need to add a check on the treashold level 
-        # and on the task readness  TODO  
         try:
-            ### retrieving project from the server
-            common.logger.message("Retrieving the project from the server...\n")
-
-            copyHere = common.work_space.resDir() # MATT
-            if "USER.outputdir" in self.cfg_params.keys() and os.path.isdir(self.cfg_params["USER.outputdir"]):
-                  copyHere = self.cfg_params["USER.outputdir"] + "/" # MATT
-             
-            cmd = 'lcg-cp --vo cms --verbose gsiftp://' + str(self.server_name) + str(projectUniqName)+'/res/done.tar.gz file://'+copyHere+'done.tar.gz'# MATT
-            common.logger.debug(5, cmd)
-            copyOut = os.system(cmd +' >& /dev/null')
-        except:
-            msg = ("Output not yet available")
+            self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
+            self.server_name = str(self.srvCfg['serverName'])
+            self.server_port = int(self.srvCfg['serverPort'])
+            self.storage_name = str(self.srvCfg['storageName'])
+            self.storage_path = str(self.srvCfg['storagePath'])
+            self.storage_proto = str(self.srvCfg['storageProtocol'])
+            self.storage_port = str(self.srvCfg['storagePort'])
+        except KeyError:
+            msg = 'No server selected or port specified.'
+            msg = msg + 'Please specify a server in the crab cfg file'
             raise CrabException(msg)
 
-        zipOut = "done.tar.gz"
-        if os.path.exists( copyHere + zipOut ): 
-            cwd = os.getcwd()
-            os.chdir( copyHere )
-            common.logger.debug( 5, 'tar -zxvf ' + zipOut )
-  	    cmd = 'tar -zxvf ' + zipOut 
-            cmd_out = runCommand(cmd)
-            toMove = os.listdir(".tmpDone/")
-            common.logger.debug( 5, "file returned: \n" +str(toMove)+ "\n")
-            for fileToMove in toMove:
-                common.logger.debug( 6, "moving file: "+str(fileToMove) )
-                cmd_out = runCommand("mv .tmpDone/"+str(fileToMove)+" .")
-            common.logger.debug( 6, "deleting all temporary files...")
-            cmd = 'rm -drf .tmpDone/'
-	    cmd_out = runCommand(cmd)
-	    os.chdir(cwd)
-            common.logger.debug( 5, 'rm -f '+copyHere+zipOut )
-	    cmd = 'rm -f '+copyHere+zipOut
-	    cmd_out = runCommand(cmd)
+        if self.storage_path[0]!='/':
+            self.storage_path = '/'+self.storage_path
+        return
 
-            try:
-                # file = open(common.work_space.resDir()+"xmlReportFile.xml", "r")
-                doc = xml.dom.minidom.parse(common.work_space.resDir()+ "xmlReportFile.xml" )
+    def run(self):
+        common.logger.debug(5, "GetOutput server::run() called")
+        start = time.time()
+        common.scheduler.checkProxy()
 
-                task = doc.childNodes[0].childNodes[1].getAttribute("taskName")
-                self.countToTjob = int(doc.childNodes[0].childNodes[1].getAttribute("totJob") )
+        # get updated status from server #inherited from StatusServer
+        self.resynchClientSide()
 
-                ended = doc.childNodes[0].childNodes[1].getAttribute("ended")
+        # understand whether the required output are available
+        self.checkBeforeGet()
+        filesToRetrieve = self.list_id
 
-                addTree = 3
-                if doc.childNodes[0].childNodes[3].getAttribute("id") != "all":
-                    common.jobDB.load()
-                    for job in range( self.countToTjob ):
-                        idJob = doc.childNodes[0].childNodes[job+addTree].getAttribute("id")
-                        status = doc.childNodes[0].childNodes[job+addTree].getAttribute("status")
-                        cleared = doc.childNodes[0].childNodes[job+addTree].getAttribute("cleared")
-                        if int(cleared) == 1 and (status == "Done" or status  == "Done (Failed)"):
-                            common.jobDB.setStatus( str(int(idJob)-1), "Y" )
-                        addTree += 1
-                    common.jobDB.save()
-            except Exception, ex:
-                msg = ("Problems accessing the report file: " + str(ex))
-                raise CrabException(msg)
+        # create the list with the actual filenames 
+        taskuuid = str(common._db.queryTask('name'))
+        remotedir = os.path.join(self.storage_path, taskuuid)
 
-            common.logger.message('Task Completed at '+str(ended)+' %\n')
-	    msg='Data for project '+str(WorkDirName)+' successfully retrieved from server \n'      
-	    msg+='and copied in '+copyHere+' \n'
-            common.logger.message(msg)
-        else:
-            common.logger.message("Problems have been encoutered during project transfer. Please check with [status] option if jobs have finished .\n")
+        osbTemplate = self.storage_proto + '://'+ self.storage_name +\
+            ':' + self.storage_port + remotedir + '/out_%s.tgz'  
+        osbFiles = [ osbTemplate%str(jid) for jid in filesToRetrieve ]
+
+        copyHere = common.work_space.resDir() # MATT
+        if "USER.outputdir" in self.cfg_params.keys() and os.path.isdir(self.cfg_params["USER.outputdir"]):
+            copyHere = self.cfg_params["USER.outputdir"] + "/"
+        destTemplate = 'file://'+copyHere+'/out_%s.tgz'  
+        destFiles = [ destTemplate%str(jid) for jid in filesToRetrieve ]
+
+        # retrieve them from SE #TODO replace this with SE-API
+        for i in xrange(len(filesToRetrieve)):
+            cmd = 'lcg-cp --vo cms %s %s'%(osbFiles[i], destFiles[i])
+            os.system(cmd +' >& /dev/null')
+
+        # notify to the server that output have been retrieved successfully. proxy from StatusServer
+        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxy)
+        csCommunicator.outputRetrieved(taskuuid, filesToRetrieve)
 
         return
+
 
