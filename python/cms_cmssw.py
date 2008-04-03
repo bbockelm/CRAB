@@ -56,7 +56,7 @@ class Cmssw(JobType):
 #            msg = "Error: CMS does not support %s with %s architecture"%(self.version, self.executable_arch)
 #            raise CrabException(msg)
 #
- 
+
         self.setParam_('application', self.version)
 
         ### collect Data cards
@@ -338,7 +338,7 @@ class Cmssw(JobType):
 
         return sites
 
-  # to Be Removed  DS -- BL 
+  # to Be Removed  DS -- BL
   #  def setArgsList(self, argsList):
   #      self.argsList = argsList
 
@@ -672,14 +672,14 @@ class Cmssw(JobType):
             #common.logger.debug(5,"Job "+str(job)+" Destination: "+str(self.jobDestination[job]))
         common._db.updateJob_(listID,listField)## new BL--DS
         ## Pay Attention Here....DS--BL
-        self.argsList = (len(jobParams[1])+1) 
+        self.argsList = (len(jobParams[1])+1)
 
         return
 #
 #    def getJobTypeArguments(self, nj, sched):
 #        result = ''
 #        jobs=[]
-#        jobs.append(nj) 
+#        jobs.append(nj)
 #        for i in common._db.queryJob('arguments',jobs):##  BL--DS
 #            result=result+str(i)+" "
 #        return result
@@ -932,7 +932,7 @@ class Cmssw(JobType):
             txt += 'PrimaryDataset=null\n'
             txt += 'DataTier=null\n'
             txt += 'ApplicationFamily=MCDataTier\n'
-        if self.pset != None: 
+        if self.pset != None:
             pset = os.path.basename(job.configFilename())
             txt += '\n'
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
@@ -1003,7 +1003,7 @@ class Cmssw(JobType):
             pass
 
         return txt
-        
+
     def wsBuildExe(self, nj=0):
         """
         Put in the script the commands to build an executable
@@ -1013,10 +1013,11 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsBuildExe\n'
         txt += 'echo ">>> moving CMSSW software directories in `pwd`" \n'
 
-        txt += 'mv $RUNTIME_AREA/lib . \n'
-        txt += 'mv $RUNTIME_AREA/module . \n'
-        txt += 'mv $RUNTIME_AREA/ProdCommon . \n'
-        
+        txt += 'rm -r lib/ module/ \n'
+        txt += 'mv $RUNTIME_AREA/lib/ . \n'
+        txt += 'mv $RUNTIME_AREA/module/ . \n'
+        txt += 'mv $RUNTIME_AREA/ProdCommon/ . \n'
+
 
         #if os.path.isfile(self.tgzNameWithPath):
         #    txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
@@ -1074,7 +1075,7 @@ class Cmssw(JobType):
             # Framework job report
             if major >= 1 and minor >= 5 :
                 #ex_args += " -j " + self.fjrFileName
-            ### FEDE it could be improved!!! ####    
+            ### FEDE it could be improved!!! ####
                 ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
             #######################################
             # Type of cfg file
@@ -1342,7 +1343,7 @@ class Cmssw(JobType):
         except KeyError:
             publish_data = 0
         if (publish_data == 1):
-            
+
             txt += 'if [ $copy_exit_status -eq 0 ]; then\n'
             txt += '    echo ">>> Modify Job Report:" \n'
             txt += '    chmod a+x $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
@@ -1427,7 +1428,7 @@ class Cmssw(JobType):
         txt = ''
         txt += 'echo ">>> list of expected files on output sandbox"\n'
         listOutFiles = []
-        stdout = 'CMSSW_$NJob.stdout' 
+        stdout = 'CMSSW_$NJob.stdout'
         stderr = 'CMSSW_$NJob.stderr'
         if (self.return_data == 1):
             for file in (self.output_file+self.output_file_sandbox):
@@ -1442,4 +1443,4 @@ class Cmssw(JobType):
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
         txt += 'export filesToCheck\n'
-        return txt 
+        return txt
