@@ -9,7 +9,7 @@ Implements thread logic used to perform the actual Crab task submissions.
 __revision__ = "$Id: FatWorker.py,v 1.12 2007/09/20 10:16:10 farinafa Exp $"
 __version__ = "$Revision: 1.12 $"
 
-import sys
+import sys, os
 import time
 from threading import Thread
 from MessageService.MessageService import MessageService
@@ -33,6 +33,7 @@ from ProdCommon.Database import Session
 from ProdCommon.Database.MysqlInstance import MysqlInstance
 
 # CRAB dependencies
+#from CrabServer.ApmonIf import ApmonIf
 
 class FatWorker(Thread):
     def __init__(self, logger, FWname, configs):
@@ -78,6 +79,9 @@ class FatWorker(Thread):
 
         self.se_whiteL = []
         self.ce_whiteL = []
+
+        self.dashParams = {}
+        #self.apmon = ApmonIf()
 
         # Parse the XML files
         taskDir = self.wdir + '/' + self.taskName + '_spec/'
@@ -295,10 +299,12 @@ class FatWorker(Thread):
 
         # modify sandbox and other paths for WMS bypass
         turlpreamble = 'gsiftp://%s:%s'%(self.SEurl, self.SEport)
-        remoteSBlist = [turlpreamble + f for f in str(task['globalSandbox']).split(',') ]
-        task['globalSandbox'] = ','.join(remoteSBlist)
+        task['startDirectory'] = turlpreamble
+        #remoteSBlist = [turlpreamble + f for f in str(task['globalSandbox']).split(',') ]
+        #task['globalSandbox'] = ','.join(remoteSBlist)
         task['scriptName'] = turlpreamble + task['scriptName']
         task['cfgName'] = turlpreamble + task['cfgName']
+        self.blDBsession.updateDB(task) 
 
         # loop and submit blocks
         for ii in matched:
@@ -385,7 +391,7 @@ class FatWorker(Thread):
         return
 
     def registerTask(self, taskArg):
-
+        # register in workflow  
         try:
             dbCfg = copy.deepcopy(dbConfig)
             dbCfg['dbType'] = 'mysql'
@@ -404,39 +410,42 @@ class FatWorker(Thread):
                 wfJob.setCacheDir(jobName, cacheArea)
                 wfJob.setState(jobName, 'inProgress')
                 wfJob.setState(jobName, 'submit')
-
+ 
             Session.commit(self.taskName)
             Session.close(self.taskName)
-            return 0
-
         except Exception, e:
             self.log.info('Error while registering job for JT: %s'%self.taskName)
             self.log.info( traceback.format_exc() )
             Session.rollback(self.taskName)
             Session.close(self.taskName)
             return 1
- 
-        return 1    
-        '''
-            # create cache area # WB: NEEDED FOR RESUBMISSION WITH CVS JobSubmitterComponent
-            # WARNING: is still needed for the new arch ?? # Fabio
 
-            from ProdCommon.MCPayloads.JobSpec import JobSpec
-            try:
-                os.mkdir(cacheArea)
-                fakeJobSpec = JobSpec()
-                fakeJobSpec.parameters['SubmissionCount'] = 0  
-                fakeJobSpec.setJobName(jobName)
-                fakeJobSpec.save("%s/%s-JobSpec.xml"%(cacheArea,jobName))
-                idfile = open("%s/%sid"%(cacheArea,jobName),'w')
-                idfile.write("JobId=%s"%job['jobId'])
-                idfile.close()
-            except Exception, e:
-                logging.info("BOSS Registration error %s. Cache area creation."%cacheArea + str(e))
-                session.rollback()
-                return 1
-        '''
-        return 1
+        # register DashBoard information
+        try:
+            gridName = str(self.cmdXML.getAttribute('Subject')).split('subject=')[1].strip()
+            gridName = gridName[:gridName.rindex('/CN')]
+ 
+            # TODO fix JSTool ver
+            self.dashParams = {'jobId':'TaskMeta', \
+                      'tool': 'crab',\
+                      'JSToolVersion': '', \
+                      'tool_ui': os.environ['HOSTNAME'], \
+                      'scheduler': self.schedName, \
+                      'GridName': gridName, \
+                      'taskType': 'analysis', \
+                      'vo': self.cfg_params['VO'], \
+                      'user': os.environ['USER'],  \
+                      'exe': 'cmsRun', \
+                      'SubmissionType': 'Server'} 
+
+            #self.apmon.sendToML(self.dashParams)
+        except Exception, e:
+            self.log.info('Error while registering job for Dashboard: %s'%self.taskName)
+            self.log.info( traceback.format_exc() )
+            Session.rollback(self.taskName)
+            Session.close(self.taskName)
+            return 1
+        return 0    
 
     def submissionListCreation(self, taskObj, jobRng):
         '''
