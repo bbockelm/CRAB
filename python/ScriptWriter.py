@@ -23,7 +23,7 @@ class ScriptWriter:
             'rename_output'               : self.renameOutput_,
             'copy_output'                 : self.copyOutput_,
             'modify_report'               : self.modifyReport_,
-            'clean_env'                   : self.cleanEnv_,
+            #'clean_env'                   : self.cleanEnv_,
             'check_output_limit'          : self.checkOut_
             }
 
