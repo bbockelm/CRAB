@@ -310,8 +310,13 @@ class FatWorker(Thread):
         for ii in matched:
             # extract task for the range and submit
             # task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
-            task = self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
             unsubmitted += sub_jobs[ii]
+            try:
+                task = self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
+            except Exception, e:
+                self.log.info("FatWorker %s. Problem submitting task %s jobs %s. %s"%(self.myName, \
+                                self.taskName, str(sub_jobs[ii]), str(e) )
+                continue
 
             # check if submitted
             #task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
