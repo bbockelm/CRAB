@@ -1071,16 +1071,13 @@ class Cmssw(JobType):
                 raise CrabException(msg)
 
             ex_args = ""
-
+            # FUTURE: This tests the CMSSW version. Can remove code as versions deprecated
             # Framework job report
             if major >= 1 and minor >= 5 :
-                #ex_args += " -j " + self.fjrFileName
-            ### FEDE it could be improved!!! ####
                 ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
-            #######################################
             # Type of cfg file
             if major >= 2 :
-                ex_args += " -p pset.pycfg"
+                ex_args += " -p pset.py"
             else:
                 ex_args += " -p pset.cfg"
             return ex_args
