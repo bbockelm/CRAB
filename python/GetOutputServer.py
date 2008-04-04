@@ -71,12 +71,37 @@ class GetOutputServer(StatusServer, GetOutput):
 
         # retrieve them from SE #TODO replace this with SE-API
         for i in xrange(len(filesToRetrieve)):
-            cmd = 'lcg-cp --vo cms %s %s'%(osbFiles[i], destFiles[i])
-            os.system(cmd +' >& /dev/null')
+            try:
+                cmd = 'lcg-cp --vo cms %s %s'%(osbFiles[i], destFiles[i])
+                out = os.system(cmd +' >& /dev/null')
+                common.logger.debug(5, cmd)
+                if out != 0:
+                    print "Unable to retrieve output file %s"%osbFiles[i]
+                    del filesToRetrieve[i]
+                    continue
+
+                ##    
+                ## TODO check if sizes are ok/the transfer was safe. Simpler with the API
+                ## 
+ 
+                ## clean-up SE
+                cmd = 'lcg-del --vo cms %s'%osbFiles[i]
+                out = os.system(cmd +' >& /dev/null')
+                common.logger.debug(5, cmd)
+                if out != 0:
+                    print "Unable to clean up SE for output file %s. The deletion will be performed by the server"%osbFiles[i]
+                    continue
+
+            except Exception, e:
+                print "Unable to retrieve output file %s"%osbFiles[i] 
+                del filesToRetrieve[i]
+                continue
 
         # notify to the server that output have been retrieved successfully. proxy from StatusServer
-        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxy)
-        csCommunicator.outputRetrieved(taskuuid, filesToRetrieve)
+        if len(filesToRetrieve) > 0:
+            common.logger.debug(5, "List of retrieved files notified to server: %s"%str(filesToRetrieve) ) 
+            csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxy)
+            csCommunicator.outputRetrieved(taskuuid, filesToRetrieve)
 
         return
 
