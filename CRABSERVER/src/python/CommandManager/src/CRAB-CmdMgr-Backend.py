@@ -9,6 +9,7 @@ import getopt
 import urllib
 import pickle
 import zlib
+from xml.dom import minidom
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -120,7 +121,7 @@ class CRAB_AS_beckend:
         ## DISABLED FOR DEBUG
         self.args['acceptableThroughput'] = -1
         ## DISABLED FOR DEBUG
-        self.log.debug("Create Jabber: thrLevel %d"%self.args['acceptableThroughput'])
+        self.log.debug("Create Jabber: thsLevel %d"%self.args['acceptableThroughput'])
         self.jabber = JabberThread(self, self.log, self.args['acceptableThroughput'], jabber_ms)
         pass
 
@@ -185,6 +186,12 @@ class CRAB_AS_beckend:
             return 10
 
         try:
+            # check for too large submissions
+            xmlCmd = minidom.parseString(cmdDescriptor).getElementsByTagName("TaskCommand")[0]
+            if len(eval(xmlCmd.getAttribute('Range'))) > 5000:
+                self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
+                return 101
+
             dirName = self.prepareTaskDir(taskDescriptor, cmdDescriptor, taskUniqName) 
             if dirName is None:
                 self.log.info('Unable to create directory tree for task %s'%taskUniqName) 
@@ -218,15 +225,40 @@ class CRAB_AS_beckend:
             f = open(cmdName, 'w')
             f.write(cmdDescriptor)
             f.close()
-             
-            msg = taskUniqName + "::" + str(self.cmdAttempts)
-            self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
-            self.ms.commit()
+
+            xmlCmd = minidom.parseString(cmdDescriptor).getElementsByTagName("TaskCommand")[0]
+            cmdKind = str(xmlCmd.getAttribute('Command'))
+            cmdRng = xmlCmd.getAttribute('Range') 
+
+            # submission part
+            if cmdKind in ['submit', 'resubmit']:
+                # check for too large submissions
+                if len(eval(cmdRng)) > 5000:
+                    self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
+                    return 101
+                # send submission directive 
+                msg = taskUniqName + "::" + str(self.cmdAttempts)
+                self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
+                self.ms.commit()
+                self.log.info("NewCommand Submit "+taskUniqName)
+                return 0
+
+            # getoutput
+            if cmdKind == 'outputRetrieved':
+                msg = taskUniqName + "::" + str(cmdRng)
+                self.ms.publish("CRAB_Cmd_Mgr:GetOutputNotification", msg)
+                self.ms.commit()
+                self.log.info("NewCommand GetOutput "+taskUniqName)
+                return 0
+
+            # TODO kill
+            # complete here            
+
         except Exception, e:
             self.log.info( traceback.format_exc() )
-            return 20
-        self.log.info("NewCommand "+taskUniqName)
-        return 0
+
+        # unknown message
+        return 20
     
     def gway_getTaskStatus(self, taskUniqName=""):
         """

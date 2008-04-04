@@ -225,22 +225,40 @@ class CRAB_AS_beckend:
             f = open(cmdName, 'w')
             f.write(cmdDescriptor)
             f.close()
-            
-            # check for too large submissions
+
             xmlCmd = minidom.parseString(cmdDescriptor).getElementsByTagName("TaskCommand")[0]
-            if len(eval(xmlCmd.getAttribute('Range'))) > 5000 and \
-                    str(xmlCmd.getAttribute('Command')) in ['submit', 'resubmit']:
-                self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
-                return 101
- 
-            msg = taskUniqName + "::" + str(self.cmdAttempts)
-            self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
-            self.ms.commit()
+            cmdKind = str(xmlCmd.getAttribute('Command'))
+            cmdRng = xmlCmd.getAttribute('Range') 
+
+            # submission part
+            if cmdKind in ['submit', 'resubmit']:
+                # check for too large submissions
+                if len(eval(cmdRng)) > 5000:
+                    self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
+                    return 101
+                # send submission directive 
+                msg = taskUniqName + "::" + str(self.cmdAttempts)
+                self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
+                self.ms.commit()
+                self.log.info("NewCommand Submit "+taskUniqName)
+                return 0
+
+            # getoutput
+            if cmdKind == 'outputRetrieved':
+                msg = taskUniqName + "::" + str(cmdRng)
+                self.ms.publish("CRAB_Cmd_Mgr:GetOutputNotification", msg)
+                self.ms.commit()
+                self.log.info("NewCommand GetOutput "+taskUniqName)
+                return 0
+
+            # TODO kill
+            # complete here            
+
         except Exception, e:
             self.log.info( traceback.format_exc() )
-            return 20
-        self.log.info("NewCommand "+taskUniqName)
-        return 0
+
+        # unknown message
+        return 20
     
     def gway_getTaskStatus(self, taskUniqName=""):
         """
