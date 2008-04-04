@@ -3,6 +3,7 @@ from crab_exceptions import *
 from crab_util import *
 import common
 import os, time, shutil
+import traceback
 
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 
@@ -11,6 +12,7 @@ from ProdCommon.BossLite.DbObjects.Job import Job
 from ProdCommon.BossLite.DbObjects.Task import Task
 from ProdCommon.BossLite.DbObjects.RunningJob import RunningJob
 
+from ProdCommon.BossLite.Common.Exceptions import  SchedulerError
 from ProdCommon.BossLite.API.BossLiteAPISched import  BossLiteAPISched
 
 class Boss:
@@ -41,6 +43,17 @@ class Boss:
               'config' : self.rb_param_file
               }
         return
+
+    def schedSession(self): 
+        ''' 
+        Istantiate BossLiteApi session
+        '''  
+        try: 
+            session =  BossLiteAPISched( common.bossSession, self.schedulerConfig)
+        except Exception, e :
+            common.logger.debug(3, "Istantiate SchedSession: " +str(traceback.format_exc()))
+            raise CrabException('Scheduler Session: '+str(e))
+        return session
 
     def declare(self, nj):
         """
@@ -80,8 +93,13 @@ class Boss:
         """
         Check the compatibility of available resources
         """
-        schedSession = BossLiteAPISched( common.bossSession, self.schedulerConfig)
-        sites = schedSession.lcgInfo(tags, dest, whiteL, blackL )
+        schedSession = self.schedSession() 
+        try:
+            sites = schedSession.lcgInfo(tags, dest, whiteL, blackL )
+        except SchedulerError, err :
+            common.logger.message("Warning: List Match operation failed with message: " +str(err))
+            common.logger.debug(3, "List Match failed: " +str(traceback.format_exc()))
+
 
 #        Tout = 120
 #        CEs=[]
@@ -102,17 +120,15 @@ class Boss:
         Submit BOSS function.
         Submit one job. nj -- job number.
         """
-        schedSession = BossLiteAPISched( common.bossSession, self.schedulerConfig)
+        schedSession = self.schedSession() 
+       # schedSession = BossLiteAPISched( common.bossSession, self.schedulerConfig)
         task = common._db.getTask(jobsList)
-        schedSession.submit( task,jobsList,req )
-      #  try:
-      #  except SchedulerError,e:
-      #      common.logger.message("Warning : Scheduler interaction in submit operation failed for jobs:")
-      #      common.logger.message(e.__str__())
-      #      pass
-      #  except BossError,e:
-      #      common.logger.message("Error : BOSS command failed with message:")
-      #      common.logger.message(e.__str__())
+        try: 
+            schedSession.submit( task,jobsList,req )
+        except SchedulerError, err :
+            common.logger.message("List Match: " +str(err))
+            common.logger.debug(3, "List Match: " +str(traceback.format_exc()))
+            raise CrabException('List Match: '+str(err))
 
         return
 
@@ -121,16 +137,27 @@ class Boss:
         Query needed info of all jobs with specified taskid
         """
 
-        schedSession = BossLiteAPISched( common.bossSession, self.schedulerConfig)
-        statusRes =  schedSession.query( str(taskid))
+        schedSession = self.schedSession() 
+        try:
+            statusRes =  schedSession.query( str(taskid))
+        except SchedulerError, err :
+            common.logger.message("Status Query : " +str(err))
+            common.logger.debug(3, "Status Query : " +str(traceback.format_exc()))
+            raise CrabException('Status Query : '+str(err))
+
         return statusRes
 
     def getOutput(self,taskId,jobRange, outdir):
         """
         Retrieve output of all jobs with specified taskid
         """
-        schedSession = BossLiteAPISched( common.bossSession, self.schedulerConfig)
-        schedSession.getOutput( taskId, jobRange, outdir )
+        schedSession = self.schedSession() 
+        try: 
+            schedSession.getOutput( taskId, jobRange, outdir )
+        except SchedulerError, err :
+            common.logger.message("GetOutput : " +str(err))
+            common.logger.debug(3, "GetOutput : " +str(traceback.format_exc()))
+            raise CrabException('GetOutput : '+str(err))
  
         return
 

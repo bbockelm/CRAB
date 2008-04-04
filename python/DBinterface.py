@@ -3,9 +3,11 @@ from crab_exceptions import *
 from crab_util import *
 import common
 import os, time, shutil
+import traceback
 
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
-
+from ProdCommon.BossLite.Common.Exceptions import DbError
+from ProdCommon.BossLite.Common.Exceptions import TaskError
 
 from ProdCommon.BossLite.DbObjects.Job import Job
 from ProdCommon.BossLite.DbObjects.Task import Task
@@ -26,34 +28,49 @@ class DBinterface:
         dbname = common.work_space.shareDir()+'crabDB'
         dbConfig = {'dbName':dbname
             }
- 
-        common.bossSession = BossLiteAPI( self.db_type, dbConfig)
-        common.bossSession.installDB('$CRABPRODCOMMONPYTHON/ProdCommon/BossLite/DbObjects/setupDatabase-sqlite.sql')     
-        
-        return
+        try: 
+            common.bossSession = BossLiteAPI( self.db_type, dbConfig)
+        except Exception, e :
+            raise CrabException('Istantiate DB Session : '+str(e))
 
+        try:
+            common.bossSession.installDB('$CRABPRODCOMMONPYTHON/ProdCommon/BossLite/DbObjects/setupDatabase-sqlite.sql')     
+        except Exception, e :
+            raise CrabException('DB Installation error : '+str(e))
+        return 
+ 
     def loadDB(self):
 
         dbname = common.work_space.shareDir()+'crabDB'
         dbConfig = {'dbName':dbname
             }
-        common.bossSession = BossLiteAPI( self.db_type, dbConfig)
-        self.task = common.bossSession.load(1)[0]
+        try:
+            common.bossSession = BossLiteAPI( self.db_type, dbConfig)
+        except Exception, e :
+            raise CrabException('Istantiate DB Session : '+str(e))
+
         return
  
-    def getTask(self, jobsList='all'): #, cfg_params):
+    def getTask(self, jobsList='all'): 
         """
         Return task with all/list of jobs 
         """
-
-        task = common.bossSession.load(1,jobsList)[0]
+        try:
+            task = common.bossSession.load(1,jobsList)[0]
+        except Exception, e :
+            common.logger.debug(3, "Error while getting task : " +str(traceback.format_exc()))
+            raise CrabException('Error while getting task '+str(e))
         return task
 
     def getJob(self, n): 
         """
         Return a task with a single job 
         """ 
-        task = common.bossSession.load(1,str(n))[0]
+        try:
+            task = common.bossSession.load(1,str(n))[0]
+        except Exception, e :
+            common.logger.debug(3, "Error while getting job : " +str(traceback.format_exc()))
+            raise CrabException('Error while getting job '+str(e))
         return task
 
 
@@ -66,26 +83,36 @@ class DBinterface:
         opt['serverName']=optsToSave['server_name'] 
         opt[ 'name']=common.work_space.taskName()  
      	task = Task( opt )
-      
-        common.bossSession.saveTask( task )
+        try:
+            common.bossSession.saveTask( task )
+        except Exception, e :
+           # common.logger.debug(3, "Error creating task : " +str(traceback.format_exc()))
+           # raise CrabException('Error creating task '+str(e))
+            raise CrabException('Error creating task '+str(traceback.format_exc()))
+            
         return 
 
     def updateTask_(self,optsToSave):       
         """
         Update task fields   
         """
-        task = common.bossSession.load(1)[0]
-         
+        task = self.getTask()
+   
         for key in optsToSave.keys():
             task[key] = optsToSave[key]
-        common.bossSession.updateDB( task )
+        try:
+            common.bossSession.updateDB( task )
+        except Exception, e :
+            raise CrabException('Error updating task '+str(traceback.format_exc()))
+
         return 
 
     def createJobs_(self, jobsL):
         """  
         Fill crab DB with  the jobs filed 
         """
-        task = common.bossSession.loadTask(1) 
+        task = self.getTask()
+
         jobs = [] 
         for id in jobsL:
             parameters = {}
@@ -94,27 +121,35 @@ class DBinterface:
             job = Job(parameters)
             jobs.append(job)  
         task.addJobs(jobs)
-        common.bossSession.updateDB( task )
+        try:
+            common.bossSession.updateDB( task )
+        except Exception, e :
+            raise CrabException('Error updating task '+str(traceback.format_exc()))
+
         return
 
     def updateJob_(self, jobsL, optsToSave):       
         """
         Update Job fields   
         """
-        task = common.bossSession.load(1,jobsL)[0]
+        task = self.getTask(jobsL)
         id =0 
         for job in task.jobs:
             for key in optsToSave[id].keys():
                 job[key] = optsToSave[id][key]
             id+=1
-        common.bossSession.updateDB( task )
+        try:
+            common.bossSession.updateDB( task )
+        except Exception, e :
+            raise CrabException('Error updating task '+str(traceback.format_exc()))
         return 
 
     def updateRunJob_(self, jobsL, optsToSave):       
         """
         Update Running Job fields   
         """
-        task = common.bossSession.load(1,jobsL)[0]
+        task = self.getTask(jobsL)
+
         id=0
         for job in task.jobs:
             common.bossSession.getRunningInstance(job)
@@ -126,7 +161,7 @@ class DBinterface:
 
     def nJobs(self,list=''):
         
-        task = common.bossSession.load(1)[0]
+        task = self.getTask()
         listId=[]
         if list == 'list':
             for job in task.jobs:listId.append(int(job['jobId']))  
@@ -138,7 +173,7 @@ class DBinterface:
         """
          List a complete set of infos for a job/range of jobs   
         """
-        task = common.bossSession.load(1)[0]
+        task = self.getTask()
 
         njobs = len(jobs)
         lines=[] 
@@ -161,7 +196,7 @@ class DBinterface:
 
     def serializeTask(self, tmp_task = None):
         if tmp_task is None:
-            tmp_task = common.bossSession.load(1)[0]
+            tmp_task = self.getTask()
         return common.bossSession.serialize(tmp_task)   
  
     def queryID(self,server_mode=0):
@@ -171,7 +206,7 @@ class DBinterface:
         '''     
         header=''
         lines=[]
-        task = common.bossSession.load(1)[0]
+        task = self.getTask()
         if server_mode == 1:
             header= "Task Id = %-40s " %(task['name'])
         else:
@@ -188,7 +223,7 @@ class DBinterface:
         '''
         Perform a query over a generic task attribute
         '''
-        task = common.bossSession.loadTask(1)
+        task = self.getTask()
         return task[attr]
 
     def queryJob(self, attr, jobsL):
@@ -197,7 +232,7 @@ class DBinterface:
         over a generic job attribute 
         '''
         lines=[]
-        task = common.bossSession.load(1,jobsL)[0]
+        task = self.getTask(jobsL)
         for job in task.jobs:
             lines.append(eval(job[attr]))
         return lines
@@ -208,7 +243,7 @@ class DBinterface:
         over a generic job attribute 
         '''
         lines=[]
-        task = common.bossSession.load(1,jobsL)[0]
+        task = self.getTask(jobsL)
         for job in task.jobs:
             common.bossSession.getRunningInstance(job)
             lines.append(job.runningJob[attr])
@@ -219,7 +254,12 @@ class DBinterface:
         Returns the list of distinct value for a given job attributes 
         '''
         distAttr=[]
-        task = common.bossSession.loadJobDist( 1, attr ) 
+        try:
+            task = common.bossSession.loadJobDist( 1, attr ) 
+        except Exception, e :
+            common.logger.debug(3, "Error loading Jobs By distinct Attr : " +str(traceback.format_exc()))
+            raise CrabException('Error loading Jobs By distinct Attr '+str(e))
+
         for i in task: distAttr.append(eval(i[attr]))   
         return  distAttr
 
@@ -228,7 +268,12 @@ class DBinterface:
         Returns the list of distinct value for a given job attribute 
         '''
         distAttr=[]
-        task = common.bossSession.loadJobDistAttr( 1, attr_1, attr_2, list ) 
+        try:
+            task = common.bossSession.loadJobDistAttr( 1, attr_1, attr_2, list ) 
+        except Exception, e :
+            common.logger.debug(3, "Error loading Jobs By distinct Attr : " +str(traceback.format_exc()))
+            raise CrabException('Error loading Jobs By distinct Attr '+str(e))
+
         for i in task: distAttr.append(eval(i[attr_1]))   
         return  distAttr
 
@@ -237,7 +282,11 @@ class DBinterface:
         Returns the list of jobs matching the given attribute
         '''
         matched=[]
-        task = common.bossSession.loadJobsByAttr(attr ) 
+        try:
+            task = common.bossSession.loadJobsByAttr(attr ) 
+        except Exception, e :
+            common.logger.debug(3, "Error loading Jobs By Attr : " +str(traceback.format_exc()))
+            raise CrabException('Error loading Jobs By Attr '+str(e))
         for i in task:
             matched.append(i[field])
         return  matched
@@ -248,7 +297,11 @@ class DBinterface:
         Returns the list of jobs matching the given attribute
         '''
         matched=[]
-        task = common.bossSession.loadJobsByRunningAttr(attr)
+        try:
+            task = common.bossSession.loadJobsByRunningAttr(attr)
+        except Exception, e :
+            common.logger.debug(3, "Error loading Jobs By Running Attr : " +str(traceback.format_exc()))
+            raise CrabException('Error loading Jobs By Running Attr '+str(e))
         for i in task:
             matched.append(i[field])
         return matched 
