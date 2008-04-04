@@ -181,10 +181,10 @@ class SubmitterServer(Actor):
                 # set the paths refered to SE remotedir
                 # NOTE WMS/JDL supports only gsiftp protocol for base ISB/OSB 
                 surlpreamble = '' #'gsiftp://%s:%s'%(self.storage_name, str(self.storage_port) )
-
                 remoteSBlist = [surlpreamble + os.path.join(self.remotedir, os.path.basename(f)) \
                         for f in common._db.queryTask('globalSandbox').split(',') ]
                 task['globalSandbox'] = ','.join(remoteSBlist)
+                task['outputDirectory'] = self.remotedir
                 task['scriptName'] = surlpreamble + os.path.join( self.remotedir, \
                         os.path.basename(common._db.queryTask('scriptName')) )
                 task['cfgName'] = surlpreamble + os.path.join( self.remotedir, \
