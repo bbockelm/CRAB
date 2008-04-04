@@ -12,8 +12,8 @@ from BlackWhiteListParser import BlackWhiteListParser
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.9 2008/04/01 10:16:13 ewv Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.85 2008/04/01 15:35:01 ewv Exp $"
+__version__ = "$Revision: 1.85 $"
 
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
@@ -261,6 +261,13 @@ class SchedulerCondor_g(SchedulerGrid):
         """
         Returns part of a job script which does scheduler-specific work.
         """
+
+        # Should look at the commonalities here and use SchedulerGrid and move some stuff to SchedulerGLite
+
+        index = int(common._db.nJobs())
+        job = common.job_list[index-1]
+        jbt = job.type()
+
         txt = ''
         txt += '# strip arguments\n'
         txt += 'echo "strip arguments"\n'
@@ -269,6 +276,10 @@ class SchedulerCondor_g(SchedulerGrid):
         txt += 'shift $nargs\n'
         txt += "# job number (first parameter for job wrapper)\n"
         txt += "NJob=${args[0]}; export NJob\n"
+
+        txt += "out_files=out_files_${NJob}; export out_files\n"
+        txt += "echo $out_files\n"
+        txt += jbt.outList()
 
         txt += '# job identification to DashBoard \n'
         txt += 'MonitorJobID=${NJob}_'+self.hash+'_$GLOBUS_GRAM_JOB_CONTACT \n'
