@@ -396,6 +396,11 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return taskName, str(OK + "\n" + ERROR)
 
+        if event == "CRAB_Cmd_Mgr:GetOutputNotification":
+            taskName, jobsStr = payload.split('::')
+            logging.debug('output retrieved ')
+            return
+
         
         # start debug event
         if event == "TaskTracking:StartDebug":
@@ -1001,6 +1006,7 @@ class TaskTrackingComponent:
                                 site  = ""
                                 if jobbe.runningJob['destination'] != None and jobbe.runningJob['destination'] != '':
                                     site  = jobbe.runningJob['destination'].split(":")[0]
+                                del jobbe
  
                                 try:
                                     self.mutex.acquire()
@@ -1217,6 +1223,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:SubmitNotSucceeded")
         self.ms.subscribeTo("CrabServerWorkerComponent:TaskNotSubmitted")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
+        self.ms.subscribeTo("CRAB_Cmd_Mgr:GetOutputNotification")
 
         #reset all work_status
         TaskStateAPI.resetAllWorkStatus()

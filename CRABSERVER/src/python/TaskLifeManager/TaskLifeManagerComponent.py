@@ -198,6 +198,14 @@ class TaskLifeManagerComponent:
                 logging.error("No task specified for " + str(event) )
             return
 
+        if event == "CRAB_Cmd_Mgr:GetOutputNotification":
+            if payload != "" and payload != None:
+                taskname, jobstr = payload.split('::')
+                logging.info("Deleting osb of task: " + str(taskname) + \
+                             " for jobs " + str(jobstr) )
+            else:
+                logging.error("No task specified for " + str(event) )
+            return
         #if event == "TaskLifeManager:OverAvailableSpace":
         #    return
 
@@ -714,6 +722,7 @@ class TaskLifeManagerComponent:
         self.ms.subscribeTo("TaskLifeManager::poll")
 	self.ms.subscribeTo("TaskTracking:TaskEnded")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
+        self.ms.subscribeTo("CRAB_Cmd_Mgr:GetOutputNotification")
         self.ms.subscribeTo("TaskLifeManager::TaskToMange")
         self.ms.subscribeTo("TaskLifeManager::PrintTaskInfo")
 
