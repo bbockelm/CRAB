@@ -164,7 +164,12 @@ def main(argv) :
           setattr(ranGenerator.moduleSeeds,seed,CfgTypes.untracked(CfgTypes.uint32(curValue+nJob)))
           preserveSeedList.append(seed)
 
-      for seed in  ranGenerator.moduleSeeds.parameters().keys():
+      try:
+        seedList = ranGenerator.moduleSeeds.parameters().keys()
+      except: # Needed for 1_6_7. Above line is good for 1_6_10
+        seedList = ranGenerator.moduleSeeds.parameterNames_()
+
+      for seed in seedList:
         if seed not in preserveSeedList:
           curSeed = getattr(ranGenerator.moduleSeeds,seed,None)
           if curSeed:

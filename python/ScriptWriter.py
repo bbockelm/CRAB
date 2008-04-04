@@ -182,8 +182,8 @@ class ScriptWriter:
         txt = "# Rewrite cfg for this job\n"
 
         if self.CMSSW_major > 1: # Use py files for CMSSW 2_0_x and up
-          txt += "echo  $RUNTIME_AREA/writeCfg.py --debug pset.cfg pset.pycfg\n"
-          txt += "python $RUNTIME_AREA/writeCfg.py --debug pset.cfg pset.pycfg\n"
+          txt += "echo  $RUNTIME_AREA/writeCfg.py --debug pset.cfg pset.py\n"
+          txt += "python $RUNTIME_AREA/writeCfg.py --debug pset.cfg pset.py\n"
         else:
           txt += "echo  $RUNTIME_AREA/writeCfg.py --debug pset.cfg pset.cfg\n"
           txt += "python $RUNTIME_AREA/writeCfg.py --debug pset.cfg pset.cfg\n"

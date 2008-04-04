@@ -49,6 +49,8 @@ class Cmssw(JobType):
 
         a = string.split(self.version, "_")
 
+        # FUTURE: Tests CMSSW and OS version. Can remove in time
+
         if int(a[1]) == 1 and (int(a[2]) < 5 and self.executable_arch.find('slc4') == 0):
             msg = "Warning: You are using %s version of CMSSW  with %s architecture. \n--> Did you compile your libraries with SLC3? Otherwise you can find some problems running on SLC4 Grid nodes.\n"%(self.version, self.executable_arch)
             common.logger.message(msg)
@@ -1025,14 +1027,14 @@ class Cmssw(JobType):
                 raise CrabException(msg)
 
             ex_args = ""
-
+            # FUTURE: This tests the CMSSW version. Can remove code as versions deprecated
             # Framework job report
-            if major >= 1 and minor >= 5 :
+            if (major >= 1 and minor >= 5) or (major >=2):
                 ex_args += " -j " + self.fjrFileName
 
             # Type of cfg file
             if major >= 2 :
-                ex_args += " -p pset.pycfg"
+                ex_args += " -p pset.py"
             else:
                 ex_args += " -p pset.cfg"
             return ex_args
