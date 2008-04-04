@@ -300,6 +300,7 @@ class FatWorker(Thread):
         # modify sandbox and other paths for WMS bypass
         turlpreamble = 'gsiftp://%s:%s'%(self.SEurl, self.SEport)
         task['startDirectory'] = turlpreamble
+        task['outputDirectory'] = turlpreamble+task['outputDirectory']
         #remoteSBlist = [turlpreamble + f for f in str(task['globalSandbox']).split(',') ]
         #task['globalSandbox'] = ','.join(remoteSBlist)
         task['scriptName'] = turlpreamble + task['scriptName']
