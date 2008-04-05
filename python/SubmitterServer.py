@@ -50,6 +50,7 @@ class SubmitterServer(Actor):
         self.proxyPath = self.moveProxy()
 
 	# partial submission code # TODO is that file the right way? 
+        ## NO! to be changed... query DB... 
 	if os.path.exists(common.work_space.shareDir()+'/first_submission') == False:
 	    self.moveISB()
 	    isFirstSubmission = True
@@ -125,7 +126,7 @@ class SubmitterServer(Actor):
 
 	## if here then project submitted ##
 	msg = 'Project '+ self.taskuuid +' files successfully submitted to the supporting storage element.\n'
-	common.logger.message(msg)
+	common.logger.debug(3,msg)
 	return
 
     def moveProxy(self):
