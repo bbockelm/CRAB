@@ -27,13 +27,6 @@ class StatusServer(Status):
             msg = msg + 'Please specify a server in the crab cfg file'
             raise CrabException(msg)
 
-        # proxy management
-        self.proxy = None # common._db.queryTask('proxy')
-        if 'X509_USER_PROXY' in os.environ:
-            self.proxy = os.environ['X509_USER_PROXY']
-        else:
-            status, self.proxy = commands.getstatusoutput('ls /tmp/x509up_u`id -u`')
-            self.proxy = proxy.strip()
         return
 
     # all the behaviors are inherited from the direct status. Only some mimimal modifications
@@ -52,6 +45,14 @@ class StatusServer(Status):
     # aling back data on client
     def resynchClientSide(self):
         task = common._db.getTask()
+
+        # proxy management
+        self.proxy = None # common._db.queryTask('proxy')
+        if 'X509_USER_PROXY' in os.environ:
+            self.proxy = os.environ['X509_USER_PROXY']
+        else:
+            status, self.proxy = commands.getstatusoutput('ls /tmp/x509up_u`id -u`')
+            self.proxy = proxy.strip()
 
         # communicator allocation
         common.logger.message("Checking the status of all jobs: please wait")

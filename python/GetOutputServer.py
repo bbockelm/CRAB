@@ -1,3 +1,5 @@
+from GetOutput import GetOutput
+from StatusServer import StatusServer
 from crab_util import *
 import common
 import time
@@ -7,8 +9,6 @@ from xml.dom import minidom
 from ServerCommunicator import ServerCommunicator
 from ServerConfig import *
 
-from StatusServer import *
-from GetOutput import * 
 
 class GetOutputServer(StatusServer, GetOutput):
 
@@ -41,6 +41,25 @@ class GetOutputServer(StatusServer, GetOutput):
 
         if self.storage_path[0]!='/':
             self.storage_path = '/'+self.storage_path
+
+        self.outDir = self.cfg_params.get("USER.outputdir", common.work_space.resDir() )
+        self.logDir = self.cfg_params.get("USER.logdir", common.work_space.resDir() )
+        self.return_data = self.cfg_params.get('USER.return_data',0)
+
+        self.possible_status = [
+                         'Undefined',
+                         'Submitted',
+                         'Waiting',
+                         'Ready',
+                         'Scheduled',
+                         'Running',
+                         'Done',
+                         'Cancelled',
+                         'Aborted',
+                         'Unknown',
+                         'Done(failed)'
+                         'Cleared'
+                          ]
         return
 
     def run(self):
