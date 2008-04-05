@@ -92,7 +92,7 @@ class ServerCommunicator:
              # overlaod
              logMsg = 'The server %s refused the submission %s because you asked a too large task. Please submit by range'%(self.serverName, blTaskName)
         elif ret == 11:
-             # failed to push message in PA
+             # failed to push message in DB
              logMsg = 'Backend unable to release messages to trigger the computation of task %s'%blTaskName
         elif ret == 12:
              # failed SOAP communication
