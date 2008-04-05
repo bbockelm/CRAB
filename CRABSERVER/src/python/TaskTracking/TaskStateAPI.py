@@ -50,7 +50,7 @@ def checkNSubmit( taskName, idJob):
 #    """
     jobMaxRetries = 0
     jobRetries = 0
-    jobSpecId = taskName + "_" + str(idJob)
+    jobSpecId = taskName + "_job" + str(idJob)
     jobState = ""
     try:
         Session.set_database(dbConfig)
