@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.12 2007/09/20 10:16:10 farinafa Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: FatWorker.py,v 1.17 2008/04/04 13:39:29 farinafa Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import sys, os
 import time
@@ -408,7 +408,7 @@ class FatWorker(Thread):
             for job in taskArg.jobs:
                 jobName = self.taskName + '_' + job['name'] 
                 cacheArea = self.wdir + '/' + self.taskName + '_spec/%s'%job['name']
-                jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':4, 'max_racers':1, 'owner':self.taskName}
+                jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':0, 'max_racers':1, 'owner':self.taskName}
 
                 wfJob.register(jobName, None, jobDetails)
                 wfJob.setState(jobName, 'create')
