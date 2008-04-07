@@ -10,9 +10,12 @@ class Scram:
         self.tgz_name = 'default.tgz'
         self.tgzNameWithPath = None
 
+        self.scramArch = ''
         self.scramVersion = ''
         scramArea = ''
 
+        if os.environ.has_key("SCRAM_ARCH"):
+           self.scramArch = os.environ["SCRAM_ARCH"]
         if os.environ.has_key("SCRAMRT_LOCALRT"):
             # try scram v1
             self.scramArea = os.environ["SCRAMRT_LOCALRT"]
@@ -92,7 +95,12 @@ class Scram:
        """ get release top """
 
        result = ''
-       envFileName = self.scramArea+"/.SCRAM/Environment"
+       archenvFile = "%s/.SCRAM/%s/Environment"%(self.scramArea,self.scramArch)
+       if (os.path.exists(archenvFile)):
+         envFileName = archenvFile
+       else:
+         envFileName = self.scramArea+"/.SCRAM/Environment"
+
        try:
            envFile = open(envFileName, 'r')
            for line in envFile:

@@ -718,6 +718,7 @@ class Cmssw(JobType):
 
         ## check if working area is release top
         if swReleaseTop == '' or swArea == swReleaseTop:
+            common.logger.debug(3,"swArea = "+swArea+" swReleaseTop ="+swReleaseTop)
             return
 
         import tarfile
