@@ -54,9 +54,8 @@ class GetOutput(Actor):
                 list_id_done.append(job['id'])  
             self.all_id.append(job['id'])  
         check = -1 
-        if self.jobs != 'all': check = len( set(self.jobs).intersect(set(list_id_done)) )  
+        if self.jobs != 'all': check = len( set(self.jobs).intersection(set(list_id_done)) )  
         if len(list_id_done)==0 or ( check == 0 ) :
-            #common.logger.message(msg)
             msg='\n'    
             list_ID=[] 
             for st in self.possible_status:
@@ -75,7 +74,7 @@ class GetOutput(Actor):
             else:
                 for id in self.jobs:
                     if id in list_id_done: self.list_id.append(id)   
-                if len(self.jobs) > len(list_id):
+                if len(self.jobs) > len(self.list_id):
                     msg = '\nOnly %d jobs will be retrieved '% (len(self.list_id))
                     msg += ' from %d requested.\n'%(len(self.jobs))
                     msg += ' (for details: crab -status)' 
@@ -83,9 +82,11 @@ class GetOutput(Actor):
         if not os.path.isdir(self.logDir) or not os.path.isdir(self.outDir):
             msg =  ' Output or Log dir not found!! check '+self.logDir+' and '+self.outDir
             raise CrabException(msg)
-        ##TODO
-   #     else:
-        ## here check the resubmission number and backup existing files calling moveOutput()    
+        else:
+            submission_id = common._db.queryRunJob('submission',self.list_id)
+            submission_id.sort()
+            max_id=submission_id[0]
+            if max_id > 1: self.moveOutput()
 
         return 
 
@@ -96,22 +97,33 @@ class GetOutput(Actor):
 
         """
         self.checkBeforeGet()
-
         common.scheduler.getOutput(1,self.list_id,self.outDir) ## NeW BL--DS
-        ## TO DO 
-        ### here the logic must be improved...
-        ### 1) enable the getoutput check
 
-        #self.list_id=[3]
+        listCode = []
+        job_id = []
+
         cwd = os.getcwd()
         os.chdir( self.outDir )
         for id in self.list_id:
-            cmd = 'tar zxvf out_files_'+ str(id)+'.tgz' 
-            cmd_out = runCommand(cmd)
-            if os.path.isfile('out_files_'+ str(id)+'.tgz'): 
+            file = 'out_files_'+ str(id)+'.tgz'
+            if os.path.exists(file):
+                cmd = 'tar zxvf '+file 
+                cmd_out = runCommand(cmd)
                 cmd_2 ='rm out_files_'+ str(id)+'.tgz'
                 cmd_out2 = runCommand(cmd_2)
+            else:  
+                msg ="Output files for job "+ str(id) +"not available.\n"
+                common.logger.message(msg) 
+            input = 'crab_fjr_' + str(id) + '.xml'
+            if os.path.exists(input):
+                codeValue = self.parseFinalReport(input)
+                job_id.append(jobid)
+                listCode.append(codeValue)
+            else:
+                msg = "Problems with "+str(input)+". File not available.\n"
+                common.logger.message(msg) 
         os.chdir( cwd )
+        common._db.updateRunJob_(job_id , listCode)
 
         if self.logDir != self.outDir:
             for i_id in self.list_id:  
@@ -126,23 +138,9 @@ class GetOutput(Actor):
         else:
             msg = 'Results of Jobs # '+str(self.list_id)+' are in '+self.outDir
             common.logger.message(msg)
-        #### FEDE ####
-        listCode = []
-        job_id = []
-        for jobid in self.list_id:
-           input = self.outDir + '/crab_fjr_' + str(jobid) + '.xml'
-           if os.path.isfile(input):
-               #codeValue = self.parseFinalReport(jobid)
-               codeValue = self.parseFinalReport(input)
-               job_id.append(jobid)
-               listCode.append(codeValue)
 
-        #print "listCode = ", listCode 
-        #common._db.updateRunJob_(self.list_id , listCode)
-        common._db.updateRunJob_(job_id , listCode)
         return
 
-    #def parseFinalReport(self, jobid):
     def parseFinalReport(self, input):
         """
         Parses the FJR produced by job in order to retrieve 
@@ -185,13 +183,30 @@ class GetOutput(Actor):
             
         return codeValue
 
-  #  def moveOutput(self):
-  #      """
-  #      Move output of job already retrieved
-  #      """
-  #      
-  #      listFile 
-  #          if os.exists(self.logDir+'/'+i):
-  #              shutil.move(self.logDir+'/'+i, resDirSave+'/'+i+'_'+self.current_time)
-  #              common.logger.message('Output file '+i+' moved to '+resDirSave)
-  #      return
+    def moveOutput(self):
+        """
+        Move output of job already retrieved
+        into the correct backup directory
+        """
+        sub_id = common._db.queryRunJob('submission',self.list_id)
+        Dist_sub_id = list(set(sub_id))
+
+        OutDir_Base=self.outDir+'Submission_' 
+        
+        for i in Dist_sub_id:
+            if not os.path.isdir(OutDir_Base+str(i)):
+                cmd=('mkdir '+OutDir_Base+str(i))
+                cmd_out = runCommand(cmd)   
+                common.logger.debug(3,cmd_out)
+        i = 0
+        for id in self.list_id:
+            try:
+                cmd='mv '+self.outDir+'*_'+str(id)+'.* '+OutDir_Base+str(sub_id[i])  
+                cmd_out = runCommand(cmd) 
+                common.logger.debug(3,cmd_out)
+            except:
+                msg = 'no output to move for job '+str(id)
+                common.logger.debig(3,msg)
+                pass
+            i+=1 
+        return
