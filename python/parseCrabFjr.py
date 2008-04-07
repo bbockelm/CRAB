@@ -87,6 +87,8 @@ def main(argv) :
         data_fields = data.split(';')
         for data_field in data_fields:
             # parse: format protocol/action = attepted/succedeed/total-size/total-time/min-time/max-time
+            if data_field == ' ' or not data_field or data_field == '':
+               continue
             key = data_field.split('=')[0].strip()
             item = data_field.split('=')[1].strip()
             protocol = str(key.split('/')[0].strip())
