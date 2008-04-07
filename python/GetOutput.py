@@ -107,13 +107,15 @@ class GetOutput(Actor):
         for id in self.list_id:
             file = 'out_files_'+ str(id)+'.tgz'
             if os.path.exists(file):
+                print 'ecco'
                 cmd = 'tar zxvf '+file 
                 cmd_out = runCommand(cmd)
                 cmd_2 ='rm out_files_'+ str(id)+'.tgz'
-                cmd_out2 = runCommand(cmd_2)
+               # cmd_out2 = runCommand(cmd_2)
             else:  
-                msg ="Output files for job "+ str(id) +"not available.\n"
-                common.logger.message(msg) 
+                msg ="Output files for job "+ str(id) +" not available.\n"
+                common.logger.message(msg)
+                continue   
             input = 'crab_fjr_' + str(id) + '.xml'
             if os.path.exists(input):
                 codeValue = self.parseFinalReport(input)
