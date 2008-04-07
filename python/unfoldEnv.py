@@ -63,8 +63,10 @@ fakePath = '' # needed for source ordering in -create # Fabio
 for e in outl:
      vl = e.strip()
      k = str(vl.split(' ')[0])
-     v = str(vl.split(' ')[1].replace('"','')).split(':')
-
+     try:
+         v = str(vl.split(' ')[1].replace('"','')).split(':')
+     except:
+         pass
      if k == 'PATH':
          fakePath = vl.split(' ')[1].replace('"','')
 
