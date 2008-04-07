@@ -252,7 +252,11 @@ func_exit() {
             echo "WARNING: output file $file not found!"
         fi
     done
-    tar zcvf ${out_files}.tgz $filesToCheck
+    if [ $middleware == 'OSG' ]; then
+        tar zcvf ${out_files}.tgz $filesToCheck
+    else
+        tar zcvf ${out_files}.tgz $filesToCheck .BrokerInfo
+    fi
 
 #    tmp_size=`ls -gGrta ${outDir}.tgz | awk \'{ print $3 }\'`
 #    size=`expr $tmp_size`

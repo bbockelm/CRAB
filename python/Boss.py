@@ -78,7 +78,7 @@ class Boss:
             out=task.jobs[id]['outputFiles']
          #   out.append(stdout)
          #   out.append(stderr)
-            out.append('.BrokerInfo')
+         #   out.append('.BrokerInfo')
             parameters['outputFiles']=out
             parameters['executable']=wrapper
             parameters['standardOutput'] = stdout
