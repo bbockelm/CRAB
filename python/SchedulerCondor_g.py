@@ -12,8 +12,8 @@ from BlackWhiteListParser import BlackWhiteListParser
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.85 2008/04/01 15:35:01 ewv Exp $"
-__version__ = "$Revision: 1.85 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.86 2008/04/04 12:59:25 ewv Exp $"
+__version__ = "$Revision: 1.86 $"
 
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
@@ -221,40 +221,17 @@ class SchedulerCondor_g(SchedulerGrid):
       first = []
       last  = []
 
-      print "sched_parameter called with i=",i
-      print "  task =",task
-
-      #for n in range(common._db.nJobs()):
       seDest=self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']))
       ceDest = self.getCEfromSE(seDest)
-      print "currDest =",seDest,"and",ceDest
-        #if (currDest!=lastDest):
-          #lastDest = currDest
-          #first.append(n)
-          #if n != 0:last.append(n-1)
-      #if len(first)>len(last) :last.append(common._db.nJobs())
 
-      #for i in range(len(first)): # Add loop DS
-        #self.param='sched_param_'+str(i)+'.clad'
-        #param_file = open(common.work_space.shareDir()+'/'+self.param, 'w')
+      jobParams = "globusscheduler = "+ceDest+":2119/jobmanager-condor; "
+      globusRSL = self.GLOBUS_RSL
+      if (self.EDG_clock_time):
+        globusRSL += '(maxWalltime='+self.EDG_clock_time+')'
+      if (globusRSL != ''):
+        jobParams +=  'globusrsl = ' + globusRSL + '; '
 
-        #param_file.write('globusrsl = ')
-        ## probably use jobType instead
-        ## extraTag maxWallTime
-        #if (self.EDG_clock_time):
-          #param_file.write('(maxWalltime='+self.EDG_clock_time+')')
-
-        ## extraTag additional GLOBUS_RSL
-        #if ( self.GLOBUS_RSL != '' ) :
-          #param_file.write(self.GLOBUS_RSL)
-
-        #param_file.write(';')
-
-        #param_file.close()
-
-      jobParams = "globusscheduler = "+ceDest+":2119/jobmanager-condor;"
       common._db.updateTask_({'jobType':jobParams})
-      print "Updating task"
       return jobParams # Not sure I even need to return anything
 
     def wsSetupEnvironment(self):
