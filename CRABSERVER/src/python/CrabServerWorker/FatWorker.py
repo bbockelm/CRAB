@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.17 2008/04/04 13:39:29 farinafa Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: FatWorker.py,v 1.12 2007/09/20 10:16:10 farinafa Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import sys, os
 import time
@@ -114,7 +114,7 @@ class FatWorker(Thread):
         self.blDBsession = BossLiteAPI('MySQL', dbConfig)
         self.schedulerConfig.update( {'user_proxy' : self.proxy} )
         self.schedName = str( self.cmdXML.getAttribute('Scheduler') )
-
+        
         if self.schedName in ['glite', 'glitecoll']:
             self.schedulerConfig['name'] = 'SchedulerGLiteAPI' 
             self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
@@ -286,8 +286,9 @@ class FatWorker(Thread):
                         newRange.remove(j['jobId'])
                         skippedSubmissions.append(j['jobId'])
                 except Exception, e:
-                    self.log.info("FatWorker %s.\n problem inspecting task %s job %s. Won't be submitted"%(self.myName, \
+                    self.log.info("FatWorker %s. Problem inspecting task %s job %s. Won't be submitted"%(self.myName, \
                                 self.taskName, j['name']) )
+                    self.log.debug( traceback.format_exc() )
                     newRange.remove(j['jobId'])
                     skippedSubmissions.append(j['jobId'])
 
@@ -300,9 +301,16 @@ class FatWorker(Thread):
         # modify sandbox and other paths for WMS bypass
         turlpreamble = 'gsiftp://%s:%s'%(self.SEurl, self.SEport)
         task['startDirectory'] = turlpreamble
-        task['outputDirectory'] = turlpreamble+task['outputDirectory']
-        #remoteSBlist = [turlpreamble + f for f in str(task['globalSandbox']).split(',') ]
-        #task['globalSandbox'] = ','.join(remoteSBlist)
+
+        # add fjr XML file to the retrieved files and WMS OSB bypass
+        destDir = task['outputDirectory']
+        ## task['outputDirectory'] = '' 
+
+        for jid in xrange(len(task.jobs)):
+            gsiOSB = [ turlpreamble + destDir + '/' + of for of in  task.jobs[jid]['outputFiles']  ]
+            task.jobs[jid]['outputFiles'] = gsiOSB[:-1]
+            task.jobs[jid]['outputFiles'].append( 'crab_fjr_%d.xml'%(jid+1) ) #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
+
         task['scriptName'] = turlpreamble + task['scriptName']
         task['cfgName'] = turlpreamble + task['cfgName']
         self.blDBsession.updateDB(task) 
