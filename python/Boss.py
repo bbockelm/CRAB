@@ -79,6 +79,8 @@ class Boss:
          #   out.append(stdout)
          #   out.append(stderr)
          #   out.append('.BrokerInfo')
+            ## To be better understood if it is needed
+            out.append('crab_fjr_'+str(id+1)+'.xml')
             parameters['outputFiles']=out
             parameters['executable']=wrapper
             parameters['standardOutput'] = stdout
