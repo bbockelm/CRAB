@@ -164,12 +164,7 @@ def main(argv) :
           setattr(ranGenerator.moduleSeeds,seed,CfgTypes.untracked(CfgTypes.uint32(curValue+nJob)))
           preserveSeedList.append(seed)
 
-      try:
-        seedList = ranGenerator.moduleSeeds.parameters().keys()
-      except: # Needed for 1_6_7. Above line is good for 1_6_10
-        seedList = ranGenerator.moduleSeeds.parameterNames_()
-
-      for seed in seedList:
+      for seed in ranGenerator.moduleSeeds.parameterNames_():
         if seed not in preserveSeedList:
           curSeed = getattr(ranGenerator.moduleSeeds,seed,None)
           if curSeed:
@@ -177,7 +172,7 @@ def main(argv) :
             setattr(ranGenerator.moduleSeeds,seed,CfgTypes.untracked(CfgTypes.uint32(_inst.randint(1,_MAXINT))))
   else:
     # Treatment for  seeds, CMSSW => 2_0_x
-#from RandomService import RandomSeedService
+    #from RandomService import RandomSeedService
 
 
     # This code not currently working because randSvc is not part of the actual configuration file
