@@ -1222,30 +1222,35 @@ class Cmssw(JobType):
         except KeyError:
             publish_data = 0
         if (publish_data == 1):
-            txt += 'if [ $copy_exit_status -eq 0 ]; then\n'
-            txt += '    echo ">>> Modify Job Report:" \n'
-            txt += '    chmod a+x $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
-            txt += '    echo "SE = $SE"\n'
-            txt += '    echo "SE_PATH = $SE_PATH"\n'
-
             processedDataset = self.cfg_params['USER.publish_data_name']
             LFNBaseName = LFNBase(processedDataset)
-            txt += '    ProcessedDataset='+processedDataset+'\n'
+
+            txt += 'if [ $copy_exit_status -eq 0 ]; then\n'
             txt += '    FOR_LFN=%s_${PSETHASH}/\n'%(LFNBaseName)
-            txt += '    echo "ProcessedDataset = $ProcessedDataset"\n'
-            txt += '    echo "FOR_LFN = $FOR_LFN" \n'
-            txt += '    echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-            txt += '    echo "$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
-            txt += '    $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
-            txt += '    modifyReport_result=$?\n'
-            txt += '    if [ $modifyReport_result -ne 0 ]; then\n'
-            txt += '        modifyReport_result=70500\n'
-            txt += '        job_exit_code=$modifyReport_result\n'
-            txt += '        echo "ModifyReportResult=$modifyReport_result" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '        echo "WARNING: Problem with ModifyJobReport"\n'
-            txt += '    else\n'
-            txt += '        mv NewFrameworkJobReport.xml $RUNTIME_AREA/crab_fjr_$NJob.xml\n'
-            txt += '    fi\n'
+            txt += 'else\n'
+            txt += '    FOR_LFN=/copy_problems/ \n'
+            txt += '    SE=""\n'
+            txt += '    SE_PATH=""\n'
+            txt += 'fi\n'
+            
+            txt += 'echo ">>> Modify Job Report:" \n'
+            txt += 'chmod a+x $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
+            txt += 'ProcessedDataset='+processedDataset+'\n'
+            txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
+            txt += 'echo "SE = $SE"\n'
+            txt += 'echo "SE_PATH = $SE_PATH"\n'
+            txt += 'echo "FOR_LFN = $FOR_LFN" \n'
+            txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
+            txt += 'echo "$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
+            txt += '$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
+            txt += 'modifyReport_result=$?\n'
+            txt += 'if [ $modifyReport_result -ne 0 ]; then\n'
+            txt += '    modifyReport_result=70500\n'
+            txt += '    job_exit_code=$modifyReport_result\n'
+            txt += '    echo "ModifyReportResult=$modifyReport_result" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += '    echo "WARNING: Problem with ModifyJobReport"\n'
+            txt += 'else\n'
+            txt += '    mv NewFrameworkJobReport.xml $RUNTIME_AREA/crab_fjr_$NJob.xml\n'
             txt += 'fi\n'
         return txt
 
