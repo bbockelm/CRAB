@@ -107,7 +107,6 @@ class GetOutput(Actor):
         for id in self.list_id:
             file = 'out_files_'+ str(id)+'.tgz'
             if os.path.exists(file):
-                print 'ecco'
                 cmd = 'tar zxvf '+file 
                 cmd_out = runCommand(cmd)
                 cmd_2 ='rm out_files_'+ str(id)+'.tgz'
@@ -119,7 +118,7 @@ class GetOutput(Actor):
             input = 'crab_fjr_' + str(id) + '.xml'
             if os.path.exists(input):
                 codeValue = self.parseFinalReport(input)
-                job_id.append(jobid)
+                job_id.append(id)
                 listCode.append(codeValue)
             else:
                 msg = "Problems with "+str(input)+". File not available.\n"
