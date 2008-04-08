@@ -5,6 +5,7 @@ from crab_util import *
 from BlackWhiteListParser import BlackWhiteListParser
 import common
 import Scram
+from LFNBaseName import *
 
 import os, string, glob
 
@@ -788,10 +789,7 @@ class Cmssw(JobType):
         try:
             tar = tarfile.open(self.MLtgzfile, "w:gz")
             path=os.environ['CRABDIR'] + '/python/'
-            #for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py','writeCfg.py']:
-            ### FEDE ####
             for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py','writeCfg.py', 'JobReportErrorCode.py']:
-            ###############
                 tar.add(path+file,file)
             common.logger.debug(5,"Files added to "+self.MLtgzfile+" : "+str(tar.getnames()))
             tar.close()
@@ -826,11 +824,6 @@ class Cmssw(JobType):
         txt += 'elif [ $middleware == OSG ]; then\n'
         txt += '    WORKING_DIR=`/bin/mktemp  -d $OSG_WN_TMP/cms_XXXXXXXXXXXX`\n'
         txt += '    if [ ! $? == 0 ] ;then\n'
-        #txt += '        echo "SET_CMS_ENV 10016 ==> OSG $WORKING_DIR could not be created on WN `hostname`"\n'
-        #txt += '        echo "JOB_EXIT_STATUS = 10016"\n'
-        #txt += '        echo "JobExitCode=10016" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
-        #txt += '        exit 1\n'
         txt += '        echo "ERROR ==> OSG $WORKING_DIR could not be created on WN `hostname`"\n'
         txt += '        job_exit_code=10016\n'
         txt += '        func_exit\n'
@@ -853,27 +846,8 @@ class Cmssw(JobType):
         txt += scram+' project CMSSW '+self.version+'\n'
         txt += 'status=$?\n'
         txt += 'if [ $status != 0 ] ; then\n'
-        #txt += '    echo "SET_EXE_ENV 10034 ==>ERROR CMSSW '+self.version+' not found on `hostname`" \n'
-        #txt += '    echo "JOB_EXIT_STATUS = 10034"\n'
-        #txt += '    echo "JobExitCode=10034" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '    echo "ERROR ==> CMSSW '+self.version+' not found on `hostname`" \n'
         txt += '    job_exit_code=10034\n'
-        #txt += '    if [ $middleware == OSG ]; then \n'
-        #txt += '        cd $RUNTIME_AREA\n'
-        #txt += '        echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
-        #txt += '        echo ">>> Remove working directory: $WORKING_DIR"\n'
-        #txt += '        /bin/rm -rf $WORKING_DIR\n'
-        #txt += '        if [ -d $WORKING_DIR ] ;then\n'
-        #txt += '            echo "SET_CMS_ENV 10018 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
-        #txt += '            echo "JOB_EXIT_STATUS = 10018"\n'
-        #txt += '            echo "JobExitCode=10018" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '            dumpStatus $RUNTIME_AREA/$repo\n'
-        #txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after CMSSW CMSSW_0_6_1 not found on `hostname`"\n'
-        #txt += '            job_exit_code=10017\n'
-        #txt += '        fi\n'
-        #txt += '    fi \n'
-        #txt += '    exit 1 \n'
         txt += '    func_exit\n'
         txt += 'fi \n'
         txt += 'cd '+self.version+'\n'
@@ -887,30 +861,10 @@ class Cmssw(JobType):
         txt += "\n"
         txt += "## number of arguments (first argument always jobnumber)\n"
         txt += "\n"
-       # txt += "if [ $nargs -lt "+str(len(self.argsList[nj].split()))+" ]\n"
         txt += "if [ $nargs -lt "+str(self.argsList)+" ]\n"
         txt += "then\n"
-        #txt += "    echo 'SET_EXE_ENV 1 ==> ERROR Too few arguments' +$nargs+ \n"
-        #txt += '    echo "JOB_EXIT_STATUS = 50113"\n'
-        #txt += '    echo "JobExitCode=50113" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += "    echo 'ERROR ==> Too few arguments' +$nargs+ \n"
         txt += '    job_exit_code=50113\n'
-        #txt += '    if [ $middleware == OSG ]; then \n'
-        #txt += '        cd $RUNTIME_AREA\n'
-        #txt += '        echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
-        #txt += '        echo ">>> Remove working directory: $WORKING_DIR"\n'
-        #txt += '        /bin/rm -rf $WORKING_DIR\n'
-        #txt += '        if [ -d $WORKING_DIR ] ;then\n'
-        #txt += '            echo "SET_EXE_ENV 50114 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Too few arguments for CRAB job wrapper"\n'
-        #txt += '            echo "JOB_EXIT_STATUS = 50114"\n'
-        #txt += '            echo "JobExitCode=50114" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '            dumpStatus $RUNTIME_AREA/$repo\n'
-        #txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after Too few arguments for CRAB job wrapper"\n'
-        #txt += '            job_exit_code=10017\n'
-        #txt += '        fi\n'
-        #txt += '    fi\n'
-        #txt += "    exit 1\n"
         txt += "    func_exit\n"
         txt += "fi\n"
         txt += "\n"
@@ -971,7 +925,6 @@ class Cmssw(JobType):
             txt += 'echo "PSETHASH = $PSETHASH" \n'
             txt += '\n'
         return txt
-    #### FEDE #####
     def wsUntarSoftware(self, nj=0):
         """
         Put in the script the commands to build an executable
@@ -1014,6 +967,11 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsBuildExe\n'
         txt += 'echo ">>> moving CMSSW software directories in `pwd`" \n'
 
+<<<<<<< cms_cmssw.py
+        txt += 'mv $RUNTIME_AREA/lib . \n'
+        txt += 'mv $RUNTIME_AREA/module . \n'
+        txt += 'mv $RUNTIME_AREA/ProdCommon . \n'
+=======
         txt += 'rm -r lib/ module/ \n'
         txt += 'mv $RUNTIME_AREA/lib/ . \n'
         txt += 'mv $RUNTIME_AREA/module/ . \n'
@@ -1033,6 +991,7 @@ class Cmssw(JobType):
         #    txt += 'fi \n'
         #    txt += '\n'
         #    txt += 'echo ">>> Include ProdCommon in PYTHONPATH:"\n'
+>>>>>>> 1.170
         txt += 'if [ -z "$PYTHONPATH" ]; then\n'
         txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdCommon\n'
         txt += 'else\n'
@@ -1042,7 +1001,6 @@ class Cmssw(JobType):
         txt += '\n'
 
         return txt
-    ############################################################################
 
     def modifySteeringCards(self, nj):
         """
@@ -1167,10 +1125,6 @@ class Cmssw(JobType):
                 txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
                 txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
             txt += 'else\n'
-            #txt += '    exit_status=60302\n'
-            #txt += '    echo "ERROR: Output file '+fileWithSuffix+' not found"\n'
-            #txt += '    echo "JOB_EXIT_STATUS = $exit_status"\n'
-            #txt += '    output_exit_status=$exit_status\n'
             txt += '    job_exit_code=60302\n'
             txt += '    echo "WARNING: Output file '+fileWithSuffix+' not found"\n'
             if common.scheduler.name().upper() == 'CONDOR_G':
@@ -1251,26 +1205,8 @@ class Cmssw(JobType):
         txt += '      # Use $OSG_APP/cmssoft/cms/cmsset_default.sh to setup cms software\n'
         txt += '        source $OSG_APP/cmssoft/cms/cmsset_default.sh '+self.version+'\n'
         txt += '    else\n'
-        #txt += '        echo "SET_CMS_ENV 10020 ==> ERROR $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'
-        #txt += '        echo "JOB_EXIT_STATUS = 10020"\n'
-        #txt += '        echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '        echo "ERROR ==> $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'
         txt += '        job_exit_code=10020\n'
-        #txt += '        cd $RUNTIME_AREA\n'
-        #txt += '        echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
-        #txt += '        echo ">>> Remove working directory: $WORKING_DIR"\n'
-        #txt += '        /bin/rm -rf $WORKING_DIR\n'
-        #txt += '        if [ -d $WORKING_DIR ] ;then\n'
-        #txt += '            echo "SET_CMS_ENV 10017 ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'
-        #txt += '            echo "JOB_EXIT_STATUS = 10017"\n'
-        #txt += '            echo "JobExitCode=10017" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '            dumpStatus $RUNTIME_AREA/$repo\n'
-        #txt += '            echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'
-        #txt += '            job_exit_code=10017\n'
-        #txt += '        fi\n'
-        txt += '\n'
-        #txt += '        exit 1\n'
         txt += '        func_exit\n'
         txt += '    fi\n'
         txt += '\n'
@@ -1291,22 +1227,12 @@ class Cmssw(JobType):
         txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += '    export BUILD_ARCH='+self.executable_arch+'\n'
         txt += '    if [ ! $VO_CMS_SW_DIR ] ;then\n'
-        #txt += '        echo "SET_CMS_ENV 10031 ==> ERROR CMS software dir not found on WN `hostname`"\n'
-        #txt += '        echo "JOB_EXIT_STATUS = 10031" \n'
-        #txt += '        echo "JobExitCode=10031" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '        dumpStatus $RUNTIME_AREA/$repo\n'
-        #txt += '        exit 1\n'
         txt += '        echo "ERROR ==> CMS software dir not found on WN `hostname`"\n'
         txt += '        job_exit_code=10031\n'
         txt += '        func_exit\n'
         txt += '    else\n'
         txt += '        echo "Sourcing environment... "\n'
         txt += '        if [ ! -s $VO_CMS_SW_DIR/cmsset_default.sh ] ;then\n'
-        #txt += '            echo "SET_CMS_ENV 10020 ==> ERROR cmsset_default.sh file not found into dir $VO_CMS_SW_DIR"\n'
-        #txt += '            echo "JOB_EXIT_STATUS = 10020"\n'
-        #txt += '            echo "JobExitCode=10020" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '            dumpStatus $RUNTIME_AREA/$repo\n'
-        #txt += '            exit 1\n'
         txt += '            echo "ERROR ==> cmsset_default.sh file not found into dir $VO_CMS_SW_DIR"\n'
         txt += '            job_exit_code=10020\n'
         txt += '            func_exit\n'
@@ -1315,11 +1241,6 @@ class Cmssw(JobType):
         txt += '        source $VO_CMS_SW_DIR/cmsset_default.sh\n'
         txt += '        result=$?\n'
         txt += '        if [ $result -ne 0 ]; then\n'
-        #txt += '            echo "SET_CMS_ENV 10032 ==> ERROR problem sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
-        #txt += '            echo "JOB_EXIT_STATUS = 10032"\n'
-        #txt += '            echo "JobExitCode=10032" | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '            dumpStatus $RUNTIME_AREA/$repo\n'
-        #txt += '            exit 1\n'
         txt += '            echo "ERROR ==> problem sourcing $VO_CMS_SW_DIR/cmsset_default.sh"\n'
         txt += '            job_exit_code=10032\n'
         txt += '            func_exit\n'
@@ -1341,38 +1262,21 @@ class Cmssw(JobType):
         except KeyError:
             publish_data = 0
         if (publish_data == 1):
-
             txt += 'if [ $copy_exit_status -eq 0 ]; then\n'
             txt += '    echo ">>> Modify Job Report:" \n'
             txt += '    chmod a+x $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
-            #txt += '    if [ -z "$SE" ]; then\n'
-            #txt += '        SE="" \n'
-            #txt += '    fi \n'
-            #txt += '    if [ -z "$SE_PATH" ]; then\n'
-            #txt += '        SE_PATH="" \n'
-            #txt += '    fi \n'
             txt += '    echo "SE = $SE"\n'
             txt += '    echo "SE_PATH = $SE_PATH"\n'
 
             processedDataset = self.cfg_params['USER.publish_data_name']
+            LFNBaseName = LFNBase(processedDataset)
             txt += '    ProcessedDataset='+processedDataset+'\n'
-            #txt += '    if [ "$SE_PATH" == "" ]; then\n'
-            #txt += '        FOR_LFN=/copy_problems/ \n'
-            #txt += '    else \n'
-            #txt += '        tmp=`echo $SE_PATH | awk -F \'store\' \'{print$2}\'` \n'
-            #txt += '        FOR_LFN=/store$tmp \n'
-            #txt += '    fi \n'
-            txt += '    tmp=`echo $SE_PATH | awk -F \'store\' \'{print$2}\'` \n'
-            txt += '    FOR_LFN=/store$tmp \n'
+            txt += '    FOR_LFN=%s_${PSETHASH}/\n'%(LFNBaseName)
             txt += '    echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += '    echo "FOR_LFN = $FOR_LFN" \n'
             txt += '    echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-            #txt += '    echo "$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
-            #txt += '    $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
-            ### FEDE ####
             txt += '    echo "$SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
             txt += '    $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
-            ####################################
             txt += '    modifyReport_result=$?\n'
             txt += '    if [ $modifyReport_result -ne 0 ]; then\n'
             txt += '        modifyReport_result=70500\n'
@@ -1380,28 +1284,9 @@ class Cmssw(JobType):
             txt += '        echo "ModifyReportResult=$modifyReport_result" | tee -a $RUNTIME_AREA/$repo\n'
             txt += '        echo "WARNING: Problem with ModifyJobReport"\n'
             txt += '    else\n'
-            ### FEDE #####
-            #txt += '        mv NewFrameworkJobReport.xml crab_fjr_$NJob.xml\n'
-            #######################
             txt += '        mv NewFrameworkJobReport.xml $RUNTIME_AREA/crab_fjr_$NJob.xml\n'
             txt += '    fi\n'
             txt += 'fi\n'
-        return txt
-
-    def cleanEnv(self):
-        txt = '\n#Written by cms_cmssw::cleanEnv\n'
-        txt += 'if [ $middleware == OSG ]; then\n'
-        txt += '    cd $RUNTIME_AREA\n'
-        txt += '    echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"\n'
-        txt += '    echo ">>> Remove working directory: $WORKING_DIR"\n'
-        txt += '    /bin/rm -rf $WORKING_DIR\n'
-        txt += '    if [ -d $WORKING_DIR ] ;then\n'
-        txt += '        echo "ERROR ==> OSG $WORKING_DIR could not be deleted on WN `hostname` after cleanup of WN"\n'
-        txt += '        job_exit_code=10017\n'
-        txt += '        func_exit\n'
-        txt += '    fi\n'
-        txt += 'fi\n'
-        txt += '\n'
         return txt
 
     def setParam_(self, param, value):
@@ -1440,5 +1325,51 @@ class Cmssw(JobType):
             listOutFiles.append(stderr)
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
-        txt += 'export filesToCheck\n'
+<<<<<<< cms_cmssw.py
+        txt += 'ls -gGhrta;\n'
+        txt += 'sum=0;\n'
+        txt += 'for file in $filesToCheck ; do\n'
+        txt += '    if [ -e $file ]; then\n'
+        txt += '        tt=`ls -gGrta $file | awk \'{ print $3 }\'`\n'
+        txt += '        sum=`expr $sum + $tt`\n'
+        txt += '    else\n'
+        txt += '        echo "WARNING: output file $file not found!"\n'
+        txt += '    fi\n'
+        txt += 'done\n'
+        txt += 'echo "Total Output dimension: $sum";\n'
+        txt += 'limit='+str(limit)+';\n'
+        txt += 'echo "WARNING: output files size limit is set to: $limit";\n'
+        txt += 'if [ $limit -lt $sum ]; then\n'
+        txt += '    echo "WARNING: output files have to big size - something will be lost;"\n'
+        txt += '    echo "         checking the output file sizes..."\n'
+        txt += '    tot=0;\n'
+        txt += '    for filefile in $filesToCheck ; do\n'
+        txt += '        dimFile=`ls -gGrta $filefile | awk \'{ print $3 }\';`\n'
+        txt += '        tot=`expr $tot + $tt`;\n'
+        txt += '        if [ $limit -lt $dimFile ]; then\n'
+        txt += '            echo "deleting file: $filefile";\n'
+        txt += '            rm -f $filefile\n'
+        txt += '        elif [ $limit -lt $tot ]; then\n'
+        txt += '            echo "deleting file: $filefile";\n'
+        txt += '            rm -f $filefile\n'
+        txt += '        else\n'
+        txt += '            echo "saving file: $filefile"\n'
+        txt += '        fi\n'
+        txt += '    done\n'
+
+        txt += '    ls -agGhrt\n'
+        txt += '    echo "WARNING: output files are too big in dimension: can not put in the output_sandbox."\n'
+        txt += '    job_exit_code=70000\n'
+        txt += 'else\n'
+        txt += '    echo "Total Output dimension $sum is fine."\n'
+        txt += 'fi\n'
+        txt += 'echo "Ending output sandbox limit check"\n'
         return txt
+=======
+        txt += 'export filesToCheck\n'
+<<<<<<< cms_cmssw.py
+        return txt 
+>>>>>>> 1.169
+=======
+        return txt
+>>>>>>> 1.170

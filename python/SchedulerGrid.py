@@ -4,6 +4,7 @@ from crab_exceptions import *
 from crab_util import *
 from BlackWhiteListParser import BlackWhiteListParser
 import common
+from LFNBaseName import *
 from JobList import JobList
 
 import os, sys, time
@@ -190,49 +191,31 @@ class SchedulerGrid(Scheduler):
         txt += "echo $out_files\n"
         txt += jbt.outList()
 
-        #txt += 'MonitorJobID=`echo ${NJob}_$'+self.environment_unique_identifier+'`\n'
-        #txt += 'SyncGridJobId=`echo $'+self.environment_unique_identifier+'`\n'
-        #txt += 'MonitorID=`echo ' + self._taskId + '`\n'
         txt += 'MonitorJobID=${NJob}_$'+self.environment_unique_identifier+'\n'
         txt += 'SyncGridJobId=$'+self.environment_unique_identifier+'\n'
         txt += 'MonitorID='+self._taskId+'\n'
         txt += 'echo "MonitorJobID=$MonitorJobID" > $RUNTIME_AREA/$repo \n'
         txt += 'echo "SyncGridJobId=$SyncGridJobId" >> $RUNTIME_AREA/$repo \n'
         txt += 'echo "MonitorID=$MonitorID" >> $RUNTIME_AREA/$repo\n'
-        #txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
 
-        #txt += 'echo "middleware discovery: " \n'
         txt += 'echo ">>> GridFlavour discovery: " \n'
         txt += 'if [ $OSG_APP ]; then \n'
         txt += '    middleware=OSG \n'
         txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
         txt += '        SyncCE="$OSG_JOB_CONTACT"; \n'
-        #txt += '        echo "SyncCE=$SyncCE" | tee -a $RUNTIME_AREA/$repo ;\n'
         txt += '        echo "SyncCE=$SyncCE" >> $RUNTIME_AREA/$repo ;\n'
         txt += '    else\n'
         txt += '        echo "not reporting SyncCE";\n'
         txt += '    fi\n';
-        #txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    echo ">>> middleware =$middleware" \n'
         txt += 'elif [ $VO_CMS_SW_DIR ]; then \n'
         txt += '    middleware=LCG \n'
-        #txt += '    echo "SyncCE=`edg-brokerinfo getCE`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
-        #txt += '    echo "GridFlavour=`echo $middleware`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    echo ">>> middleware =$middleware" \n'
         txt += 'else \n'
         txt += '    echo "ERROR ==> GridFlavour not identified" \n'
         txt += '    job_exit_code=10030 \n'
         txt += '    func_exit \n'
-        #txt += '    echo "SET_CMS_ENV 10030 ==> middleware not identified" \n'
-        #txt += '    echo "JOB_EXIT_STATUS = 10030" \n'
-        #txt += '    echo "JobExitCode=10030" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    dumpStatus $RUNTIME_AREA/$repo \n'
-        #txt += '    exit 1 \n'
         txt += 'fi \n'
 
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
@@ -252,11 +235,6 @@ class SchedulerGrid(Scheduler):
         txt += '        echo "ERROR ==> OSG mode in setting CE name from OSG_JOB_CONTACT" \n'
         txt += '        job_exit_code=10099\n'
         txt += '        func_exit\n'
-        #txt += '        echo "SET_CMS_ENV 10099 ==> OSG mode: ERROR in setting CE name from OSG_JOB_CONTACT" \n'
-        #txt += '        echo "JOB_EXIT_STATUS = 10099" \n'
-        #txt += '        echo "JobExitCode=10099" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '        dumpStatus $RUNTIME_AREA/$repo \n'
-        #txt += '        exit 1 \n'
         txt += '    fi \n'
         txt += 'fi \n'
 
@@ -331,8 +309,8 @@ class SchedulerGrid(Scheduler):
                 SE_PATH=self.SE_PATH
             if int(self.publish_data) == 1:
                 txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
-                #path_add = self.UserGridName + '/' + self.publish_data_name +'_${PSETHASH}/'
-                path_add = self.hnUserName + '/' + self.publish_data_name +'_${PSETHASH}/'
+                #path_add = self.hnUserName + '/' + self.publish_data_name +'_${PSETHASH}/'
+                path_add = PFNportion(self.publish_data_name) +'_${PSETHASH}/'
                 SE_PATH = SE_PATH + path_add
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
