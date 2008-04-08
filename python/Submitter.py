@@ -149,6 +149,8 @@ class Submitter(Actor):
         ce_white_list=[]      
         ce_black_list=[]
         tags=''
+
+
         if common.scheduler.name().upper() != "CONDOR_G" :
              ce_white_list=common.scheduler.ce_list()[1]
              ce_black_list=common.scheduler.ce_list()[2]
@@ -160,7 +162,7 @@ class Submitter(Actor):
             if common.scheduler.name().upper() != "CONDOR_G" :
                 cleanedList=None 
                 if len(distinct_dests[sel])!=0:cleanedList = self.blackWhiteListParser.cleanForBlackWhiteList(distinct_dests[sel],'list') 
-                match = common.scheduler.listMatch(tags,cleanedList,ce_white_list,ce_black_list)  
+                match = common.scheduler.listMatch(tags,cleanedList,ce_black_list,ce_white_list)  
             else :
                 match = "1"
             if match:
