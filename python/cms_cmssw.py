@@ -967,31 +967,11 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsBuildExe\n'
         txt += 'echo ">>> moving CMSSW software directories in `pwd`" \n'
 
-<<<<<<< cms_cmssw.py
-        txt += 'mv $RUNTIME_AREA/lib . \n'
-        txt += 'mv $RUNTIME_AREA/module . \n'
-        txt += 'mv $RUNTIME_AREA/ProdCommon . \n'
-=======
         txt += 'rm -r lib/ module/ \n'
         txt += 'mv $RUNTIME_AREA/lib/ . \n'
         txt += 'mv $RUNTIME_AREA/module/ . \n'
         txt += 'mv $RUNTIME_AREA/ProdCommon/ . \n'
 
-
-        #if os.path.isfile(self.tgzNameWithPath):
-        #    txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
-        #    txt += 'tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
-        #    txt += 'untar_status=$? \n'
-        #    txt += 'if [ $untar_status -ne 0 ]; then \n'
-        #    txt += '   echo "ERROR ==> Untarring .tgz file failed"\n'
-        #    txt += '   job_exit_code=$untar_status\n'
-        #    txt += '   func_exit\n'
-        #    txt += 'else \n'
-        #    txt += '   echo "Successful untar" \n'
-        #    txt += 'fi \n'
-        #    txt += '\n'
-        #    txt += 'echo ">>> Include ProdCommon in PYTHONPATH:"\n'
->>>>>>> 1.170
         txt += 'if [ -z "$PYTHONPATH" ]; then\n'
         txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdCommon\n'
         txt += 'else\n'
@@ -1092,26 +1072,6 @@ class Cmssw(JobType):
         txt += 'echo ">>> current directory content:"\n'
         txt += 'ls \n'
         txt += '\n'
-
-        #txt += 'output_exit_status=0\n'
-
-        ### FEDE #######
-        #for fileWithSuffix in (self.output_file_sandbox):
-        #    output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
-        #    txt += '\n'
-        #    txt += '# check output file\n'
-        #    txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
-        #    txt += '    mv '+fileWithSuffix+' $RUNTIME_AREA/'+output_file_num+'\n'
-        #    txt += '    ln -s $RUNTIME_AREA/'+output_file_num+' $RUNTIME_AREA/'+fileWithSuffix+'\n'
-        #    txt += 'else\n'
-        #    txt += '    echo "WARNING: Output file '+fileWithSuffix+' not found"\n'
-        #    txt += '    job_exit_code=60302\n'
-        #    if common.scheduler.name().upper() == 'CONDOR_G':
-        #        txt += '    if [ $middleware == OSG ]; then \n'
-        #        txt += '        echo "prepare dummy output file"\n'
-        #        txt += '        echo "Processing of job output failed" > $RUNTIME_AREA/'+output_file_num+'\n'
-        #        txt += '    fi \n'
-        #    txt += 'fi\n'
 
         for fileWithSuffix in (self.output_file):
             output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
@@ -1325,51 +1285,5 @@ class Cmssw(JobType):
             listOutFiles.append(stderr)
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
-<<<<<<< cms_cmssw.py
-        txt += 'ls -gGhrta;\n'
-        txt += 'sum=0;\n'
-        txt += 'for file in $filesToCheck ; do\n'
-        txt += '    if [ -e $file ]; then\n'
-        txt += '        tt=`ls -gGrta $file | awk \'{ print $3 }\'`\n'
-        txt += '        sum=`expr $sum + $tt`\n'
-        txt += '    else\n'
-        txt += '        echo "WARNING: output file $file not found!"\n'
-        txt += '    fi\n'
-        txt += 'done\n'
-        txt += 'echo "Total Output dimension: $sum";\n'
-        txt += 'limit='+str(limit)+';\n'
-        txt += 'echo "WARNING: output files size limit is set to: $limit";\n'
-        txt += 'if [ $limit -lt $sum ]; then\n'
-        txt += '    echo "WARNING: output files have to big size - something will be lost;"\n'
-        txt += '    echo "         checking the output file sizes..."\n'
-        txt += '    tot=0;\n'
-        txt += '    for filefile in $filesToCheck ; do\n'
-        txt += '        dimFile=`ls -gGrta $filefile | awk \'{ print $3 }\';`\n'
-        txt += '        tot=`expr $tot + $tt`;\n'
-        txt += '        if [ $limit -lt $dimFile ]; then\n'
-        txt += '            echo "deleting file: $filefile";\n'
-        txt += '            rm -f $filefile\n'
-        txt += '        elif [ $limit -lt $tot ]; then\n'
-        txt += '            echo "deleting file: $filefile";\n'
-        txt += '            rm -f $filefile\n'
-        txt += '        else\n'
-        txt += '            echo "saving file: $filefile"\n'
-        txt += '        fi\n'
-        txt += '    done\n'
-
-        txt += '    ls -agGhrt\n'
-        txt += '    echo "WARNING: output files are too big in dimension: can not put in the output_sandbox."\n'
-        txt += '    job_exit_code=70000\n'
-        txt += 'else\n'
-        txt += '    echo "Total Output dimension $sum is fine."\n'
-        txt += 'fi\n'
-        txt += 'echo "Ending output sandbox limit check"\n'
-        return txt
-=======
         txt += 'export filesToCheck\n'
-<<<<<<< cms_cmssw.py
-        return txt 
->>>>>>> 1.169
-=======
         return txt
->>>>>>> 1.170
