@@ -326,6 +326,10 @@ B<[CMSSW]>
 
 the path of processed dataset as defined on the DBS. It comes with the format I</PrimaryDataset/DataTier/Process> . In case no input is needed I<None> must be specified.
 
+=item B<runselection *>
+                                                                                                                        
+within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 .
+
 =item B<pset *>
 
 the ParameterSet to be used
