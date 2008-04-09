@@ -487,7 +487,7 @@ class TaskTrackingComponent:
             thresholdLevel = 0
         elif int(thresholdLevel) > 100:
             thresholdLevel = 100
-        dictionaryReport =  {"all": ["Submitting", "", "", 0]} 
+        dictionaryReport =  {"all": ["", "", "", 0, '', 'C']} 
         self.prepareReport( taskName, uuid, eMail, thresholdLevel, 0, dictionaryReport, 0, 0 )
 
         try:
@@ -532,7 +532,7 @@ class TaskTrackingComponent:
             ## XML report file
             dictionaryReport =  {}
             for jobId in range( 1, totJobs + 1 ):
-                vect = ["Submitted", "", "", 0]
+                vect = ["Submitted", "", "", 0, '', 'C']
                 dictionaryReport.setdefault(jobId, vect)
             try:
                 for jobId in jobList:
@@ -619,13 +619,13 @@ class TaskTrackingComponent:
 		    	    eMail = valuess[2]
                     if status == self.taskState[2]:
 	                ## XML report file
-                        dictionaryReport =  {"all": ["NotSubmitted", "", "", 0]}
+                        dictionaryReport =  {"all": ["NotSubmitted", "", "", 0, '', 'C']}
                         self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
                         ## MAIL report user
                         #self.prepareTaskFailed( payload, uuid, eMail, status )
                     else:
                         ## XML report file
-                        dictionaryReport =  {"all": ["Killed", "", "", 0]}
+                        dictionaryReport =  {"all": ["Killed", "", "", 0, '', 'C']}
                         self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
 		        ## MAIL report user
                         #self.taskFastKill( self.args['dropBoxPath'] + "/" + payload  + "/res/" + self.xmlReportFileName, payload )
@@ -689,7 +689,13 @@ class TaskTrackingComponent:
         """
         _convertStatus_
         """
-        stateConverting = {'R': 'Running','SA': 'Aborted','SD': 'Done','SE': 'Done','E': 'Done','SK': 'Cancelled','SR': 'Ready','SU': 'Submitted','SS': 'Scheduled','UN': 'Unknown','SW': 'Waiting','W': 'Submitting', 'K': 'Killed', 'S': 'Submitted', 'DA': 'Done (Failed)', 'NotSubmitted': 'NotSubmitted', 'C': 'Submitting'}
+        stateConverting = { \
+                    'R': 'Running', 'SA': 'Aborted', 'SD': 'Done', 'SE': 'Done', \
+                    'E': 'Done', 'SK': 'Cancelled', 'SR': 'Ready', 'SU': 'Submitted', \
+                    'SS': 'Scheduled', 'UN': 'Unknown', 'SW': 'Waiting', 'W': 'Created', \
+                    'K': 'Killed', 'S': 'Submitted', 'DA': 'Done (Failed)', \
+                    'NotSubmitted': 'NotSubmitted', 'C': 'Created'
+                          }
         if status in stateConverting:
             return stateConverting[status]
         return 'Unknown'
@@ -723,8 +729,8 @@ class TaskTrackingComponent:
                 J.initialize( singleJob, dictReportTot[singleJob][0], dictReportTot[singleJob][2], \
                             ##         jes                       clear                       Resub
                               dictReportTot[singleJob][1], dictReportTot[singleJob][3], self.getListEl(dictReportTot[singleJob], 4), \
-                            ##         site
-                              self.getListEl(dictReportTot[singleJob], 5) )
+                            ##         site                                               sched_status
+                              self.getListEl(dictReportTot[singleJob], 5),  self.getListEl(dictReportTot[singleJob], 6) )
                 c.addJob( J )
             c.toXml()
             c.toFile ( pathToWrite + self.tempxmlReportFile )
@@ -972,7 +978,7 @@ class TaskTrackingComponent:
                     if status == self.taskState[2] and notified < 2:
                         ######### Taskfailed is prepared now
                         self.prepareTaskFailed( taskName, uuid, eMail, status)
-		    else:
+                    else:
                         ## lite task load in memory
                         try:
                             taskObj = mySession.loadTaskByName( taskName )
@@ -1017,9 +1023,9 @@ class TaskTrackingComponent:
 
 			        vect = []
 			        if eec == "NULL" and jec == "NULL":
-   			            vect = [self.convertStatus(stato), "", "", 0, Resub, site]
+   			            vect = [self.convertStatus(stato), "", "", 0, Resub, site, stato]
 			        else:
-                                    vect = [self.convertStatus(stato), eec, jec, 0, Resub, site]
+                                    vect = [self.convertStatus(stato), eec, jec, 0, Resub, site, stato]
                                 dictStateTot.setdefault(job, vect)
  
 #                                jobPartList = self.getJobFromFile(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir)
