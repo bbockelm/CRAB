@@ -308,7 +308,7 @@ class FatWorker(Thread):
 
         for jid in xrange(len(task.jobs)):
             gsiOSB = [ turlpreamble + destDir + '/' + of for of in  task.jobs[jid]['outputFiles']  ]
-            task.jobs[jid]['outputFiles'] = gsiOSB[:-1]
+            task.jobs[jid]['outputFiles'] = gsiOSB # [:-1]
             task.jobs[jid]['outputFiles'].append( 'crab_fjr_%d.xml'%(jid+1) ) #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
             task.jobs[jid]['outputFiles'].append( '.BrokerInfo' )
 

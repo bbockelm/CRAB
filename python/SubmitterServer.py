@@ -97,7 +97,10 @@ class SubmitterServer(Actor):
 	"""
 	The main method of the class: submit jobs in range self.nj_list
 	"""
-	start = time.time()
+
+        if len(self.submitRange) == 0:
+            return
+
 	isFirstSubmission = False
 
         self.taskuuid = str(common._db.queryTask('name'))
@@ -271,10 +274,9 @@ class SubmitterServer(Actor):
 
         del csCommunicator
 
-        # update runningjobs status 
-        ## TODO common._db.updateRunJob_(self.submitRange, {'statusScheduler':'Submitted', 'status':'S'})
-        return     
-
-
+        # update runningjobs status
+        updList = [{'statusScheduler':'Submitted', 'status':'S'}] * len(self.submitRange) 
+        common._db.updateRunJob_(self.submitRange, updList)
+        return
 
 
