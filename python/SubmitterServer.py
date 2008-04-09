@@ -11,12 +11,68 @@ from ServerCommunicator import ServerCommunicator
 from ServerConfig import *
  
 class SubmitterServer(Actor):
-    def __init__(self, cfg_params, parsedRange, nominalRange):
+    def __init__(self, cfg_params, parsed_range, val):
 	self.srvCfg = {}
         self.cfg_params = cfg_params
-        self.submitRange = parsedRange
-	self.nominalRange = nominalRange 
-        
+        self.submitRange = []
+
+        # range parse
+        nsjobs = -1
+        chosenJobsList = None
+        if val:
+            if val=='range':  # for Resubmitter
+                chosenJobsList = parsed_range
+            elif val=='all':
+                pass
+            elif (type(eval(val)) is int) and eval(val) > 0:
+                # positive number
+                nsjobs = eval(val)
+            elif (type(eval(val)) is tuple)or( type(eval(val)) is int and eval(val)<0 ) :
+                chosenJobsList = parsed_range
+                nsjobs = len(chosenJobsList)
+            else:
+                msg = 'Bad submission option <'+str(val)+'>\n'
+                msg += '      Must be an integer or "all"'
+                msg += '      Generic range is not allowed"'
+                raise CrabException(msg)
+            pass
+        common.logger.debug(5,'nsjobs '+str(nsjobs))
+
+        # total jobs
+        nj_list = []
+        common.logger.debug(5,'Total jobs '+str(common._db.nJobs()))
+        jobSetForSubmission = 0
+        jobSkippedInSubmission = []
+
+        tmp_jList = common._db.nJobs('list')
+        if chosenJobsList != None:
+            tmp_jList = chosenJobsList
+
+        # build job list
+        dlsDest=common._db.queryJob('dlsDestination',tmp_jList)
+        jStatus=common._db.queryRunJob('status',tmp_jList)
+        for nj in range(len(tmp_jList)):
+            if nsjobs >0 and nsjobs == jobSetForSubmission:
+                break
+            if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z']):
+                jobSetForSubmission +=1
+                nj_list.append(tmp_jList[nj])## Warning added +1 for jobId BL--DS
+            else :
+                jobSkippedInSubmission.append(tmp_jList[nj])
+            pass
+
+        if nsjobs>jobSetForSubmission:
+            common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
+        if len(jobSkippedInSubmission) > 0 :
+            mess =""
+            for jobs in jobSkippedInSubmission:
+                mess += str(jobs) + ","
+            common.logger.message("Jobs:  " +str(mess) + "\n      skipped because no sites are hosting this data\n")
+            pass
+        common.logger.debug(5,'nj_list '+str(nj_list))
+        self.submitRange = nj_list 
+
+        # init client-server interactions 
 	try:
             self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
 
@@ -35,7 +91,6 @@ class SubmitterServer(Actor):
         # path fix
         if self.storage_path[0]!='/':
             self.storage_path = '/'+self.storage_path
- 
 	return
 
     def run(self):
