@@ -31,7 +31,9 @@ class ServerCommunicator:
         self.cfg_params = cfg_params
         self.userSubj = ''
         self.serverName = serverName
-        
+
+        self.crab_task_name = common.work_space.topDir().split('/')[-2] # nice task name "crab_0_..."
+
         # get the user subject from the proxy
         x509 = proxyPath
         if x509 is None: 
@@ -84,16 +86,16 @@ class ServerCommunicator:
         logMsg = ''
         if ret == 0:
              # success
-             logMsg = 'Task %s successfully submitted to server %s'%(blTaskName, self.serverName)
+             logMsg = 'Task %s successfully submitted to server %s'%(self.crab_task_name, self.serverName)
         elif ret == 10:
              # overlaod
-             logMsg = 'The server %s refused to accept the task %s because it is overloaded'%(self.serverName, blTaskName)
+             logMsg = 'The server %s refused to accept the task %s because it is overloaded'%(self.serverName, self.crab_task_name)
         elif ret == 101:
              # overlaod
-             logMsg = 'The server %s refused the submission %s because you asked a too large task. Please submit by range'%(self.serverName, blTaskName)
+             logMsg = 'The server %s refused the submission %s because you asked a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
         elif ret == 11:
              # failed to push message in DB
-             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%blTaskName
+             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
         elif ret == 12:
              # failed SOAP communication
              logMsg = 'Error during SOAP communication with server %s.\n'%self.serverName
@@ -102,7 +104,7 @@ class ServerCommunicator:
              logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret)
 
         # print loggings
-        common.logger.message(logMsg)
+        common.logger.message(logMsg+'\n')
         return ret
          
     def subsequentJobSubmit(self, blTaskName, rng):
@@ -158,7 +160,7 @@ class ServerCommunicator:
         # get the data and fill the file content
         statusMsg = self.asSession.getTaskStatus(blTaskName)
         if 'Error:' in  statusMsg[:6] or len(statusMsg)==0:
-             raise CrabException('Error occurred while retrieving task %s status from server %s'%(blTaskName, self.serverName) )
+             raise CrabException('Error occurred while retrieving task %s status from server %s'%(self.crab_task_name, self.serverName) )
              return
 
         if statusFile is not None:
@@ -275,13 +277,13 @@ class ServerCommunicator:
         logMsg = ''
         if ret == 0:
              # success
-             logMsg = 'Task %s successfully submitted to server %s'%(blTaskName, self.serverName)
+             logMsg = 'Task %s successfully submitted to server %s'%(self.crab_task_name, self.serverName)
         elif ret == 101:
              # overlaod
-             logMsg = 'The server %s refused the submission %s because you asked to handle a too large task. Please submit by range'%(self.serverName, blTaskName)
+             logMsg = 'The server %s refused the submission %s because you asked to handle a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
         elif ret == 20:
              # failed to push message in PA
-             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%blTaskName
+             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
         elif ret == 22:
              # failed SOAP communication
              logMsg = 'Error during SOAP communication with server %s'%self.serverName
@@ -289,6 +291,6 @@ class ServerCommunicator:
              logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret) 
 
         # print loggings
-        common.logger.message(logMsg)  
+        common.logger.message(logMsg+'\n')  
         return ret
     
