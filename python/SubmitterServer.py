@@ -52,7 +52,7 @@ class SubmitterServer(Actor):
         dlsDest=common._db.queryJob('dlsDestination',tmp_jList)
         jStatus=common._db.queryRunJob('status',tmp_jList)
         for nj in range(len(tmp_jList)):
-            if nsjobs >0 and nsjobs == jobSetForSubmission:
+            if nsjobs>0 and nsjobs == jobSetForSubmission:
                 break
             if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z']):
                 jobSetForSubmission +=1
@@ -269,8 +269,12 @@ class SubmitterServer(Actor):
             msg = "ClientServer ERROR: %d raised during the communication.\n"%subOutcome
             raise CrabException(msg)
 
-        del csCommunicator  
+        del csCommunicator
+
+        # update runningjobs status 
+        ## TODO common._db.updateRunJob_(self.submitRange, {'statusScheduler':'Submitted', 'status':'S'})
         return     
+
 
 
 

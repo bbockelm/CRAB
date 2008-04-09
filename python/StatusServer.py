@@ -76,9 +76,14 @@ class StatusServer(Status):
                     break
 
             # Data alignment
-            job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
-            jobStatus = str(job.runningJob['statusScheduler'])
+            if rForJ.getAttribute('status'):
+                job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
+                jobStatus = str(job.runningJob['statusScheduler'])
 
+            if rForJ.getAttribute('sched_status'):
+                job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
+ 
+ 
             job.runningJob['destination'] = str( rForJ.getAttribute('site') )
             dest = str(job.runningJob['destination']).split(':')[0]
 
