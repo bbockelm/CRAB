@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.0 $"
-__revision__ = "$Id: CrabServerWorkerComponentV2.py,v 1.0 2007/12/17 06:33:00 farinafa Exp $"
+__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.24 2008/03/27 11:55:17 farinafa Exp $"
 
 import os
 import pickle
@@ -449,7 +449,7 @@ class CrabServerWorkerComponent:
             pickle.dump(ldump, f)
             f.close()
         except Exception, e:
-            logging.info("Error while materializing component status\n"+e)
+            logging.info("Error while materializing component status %s\n"%e)
         return
 
     def dematerializeStatus(self):
