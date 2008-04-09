@@ -221,7 +221,7 @@ update_fjr() {
     else
         echo "PYTHONPATH = $PYTHONPATH"
         chmod a+x $RUNTIME_AREA/JobReportErrorCode.py
-        python $RUNTIME_AREA/JobReportErrorCode.py crab_fjr_$NJob.xml $job_exit_code $executable_exit_status
+        python $RUNTIME_AREA/JobReportErrorCode.py $RUNTIME_AREA/crab_fjr_$NJob.xml $job_exit_code $executable_exit_status
     fi
 }
                                             
