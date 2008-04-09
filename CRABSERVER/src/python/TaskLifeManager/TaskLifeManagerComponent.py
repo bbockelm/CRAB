@@ -32,7 +32,6 @@ import time
 import pickle
 
 
-
 ##############################################################################
 # TaskLifeManagerComponent class
 ##############################################################################
@@ -62,7 +61,7 @@ class TaskLifeManagerComponent:
         # initialize the server
         self.args = {}
         self.args.setdefault("Logfile", None)
-        self.args.setdefault("dropBoxPath", None)
+        self.args.setdefault("SEBaseDir", None)
 	self.args.setdefault("levelAvailable", 15)
         self.args.setdefault("taskLife", "360:00:00")
 	self.args.setdefault("eMailAdmin", os.environ['USER'])
@@ -102,9 +101,9 @@ class TaskLifeManagerComponent:
         ## args constraints ##
         #####################
         # which dbox ?!?
-        if self.args['dropBoxPath'] == None:
-            self.args['dropBoxPath'] = self.args['ComponentDir']
-        logging.info("Using " +str(self.args['dropBoxPath']))
+        if self.args['SEBaseDir'] == None:
+            self.args['SEBaseDir'] = self.args['ComponentDir']
+        logging.info("Using " +str(self.args['SEBaseDir']))
 
         # minimum space available
         if int(self.args['levelAvailable']) < 5:
@@ -142,7 +141,6 @@ class TaskLifeManagerComponent:
         #################################
         self.loadFromPickle()
         #self.buildDropBox()
-
 
     ##########################################################################
     # handle events
@@ -203,6 +201,13 @@ class TaskLifeManagerComponent:
                 taskname, jobstr = payload.split('::')
                 logging.info("Deleting osb of task: " + str(taskname) + \
                              " for jobs " + str(jobstr) )
+                try:
+                    self.deleteRetrievedOSB( taskName, jobstr )
+                except Exception, ex:
+                    import traceback
+                    logging.error( "Exception raised: " + str(ex) )
+                    logging.error( str(traceback.format_exc()) )
+                    logging.info( "problems deleting osb for job " + str(jobstr) )
             else:
                 logging.error("No task specified for " + str(event) )
             return
@@ -234,7 +239,7 @@ class TaskLifeManagerComponent:
         """
         own = " "
         mail = " " 
-        taskPath = self.args['dropBoxPath'] + "/" + taskName + "_spec"
+        taskPath = self.args['SEBaseDir'] + "/" + taskName + "_spec"
         try:
             import xml.dom.minidom
             import xml.dom.ext
@@ -316,7 +321,7 @@ class TaskLifeManagerComponent:
         """
         _checkGlobalSpace_
         """
-        out = self.SeSbI.getGlobalSpace(self.args['dropBoxPath'])
+        out = self.SeSbI.getGlobalSpace(self.args['SEBaseDir'])
         numberUsed = int(out[0].split("%")[0])
         spaceAvail = int(out[1])
         spaceUsed = int(out[2])
@@ -346,7 +351,7 @@ class TaskLifeManagerComponent:
         recurisvely delete all the files and dirs in [taskPath]
         """
         summ = 0
-        if taskPath != "/" and taskPath != self.args['dropBoxPath'] \
+        if taskPath != "/" and taskPath != self.args['SEBaseDir'] \
            and self.SeSbI.checkExists( taskPath, proxy ):
             try:
                 summ = self.SeSbI.getDirSpace(taskPath, proxy)
@@ -371,7 +376,7 @@ class TaskLifeManagerComponent:
         """
         _cleanTask_
         """
-        dBox = self.args['dropBoxPath']
+        dBox = self.args['SEBaseDir']
         from os.path import join
         pathTask = join(dBox, taskName)
         if self.SeSbI.checkExists( pathTask, proxy ):
@@ -393,6 +398,30 @@ class TaskLifeManagerComponent:
             logging.error("The path [" + pathTask +"] does not exists!")
         return 0
 
+    def deleteRetrievedOSB( self, taskName, strJobs ):
+        """
+        deleting OSB
+        """
+        task = self.taskQueue.getbyName( taskName )
+        proxy = task.getProxy() 
+        from os.path import join
+        taskPath = join(self.args['SEBaseDir'] , taskName)
+        jobList = eval(strJobs)
+        for idjob in jobList:
+            baseToDelete = [ \
+                             "out_files_"+str(idjob)+".tgz", \
+                             "crab_fjr_"+str(idjob)+".xml" \
+                           ]
+            for file in baseToDelete:
+                try:
+                    self.SeSbI.delete( join(taskPath, file), proxy )
+                except Exception, ex: 
+                    import traceback
+                    logging.error( "Exception raised: " + str(ex) )
+                    logging.error( str(traceback.format_exc()) )
+                    logging.info( "problems deleting osb for job " + str(idjob) )
+      
+
     ##########################################################################
     # task queue functionalities
     ##########################################################################
@@ -405,41 +434,39 @@ class TaskLifeManagerComponent:
         """
         ## checks if already is in the queue
         if not self.taskQueue.exists( taskName ):
-            from os.path import isdir, join
-            taskPath = join( self.args['dropBoxPath'], taskName )
-            ## checks if is already unpacked
-            if isdir( taskPath + "_spec" ):
-                ## getting user info
-                owner, mail = self.checkInfoUser( taskName )
-                if owner is None and mail is None:
-                    ############################
-                    ### auto-registering msg ###
-                    ##  to wait task unpack.  ##
-                    #  self.unpackingTask( taskName )
-                    ############################
-                    pass
-                ############################
-                ### creating Task object ###
-                ##  & inserting on queue  ##
-                ### proxy!!!
-                taskObj = Task(\
-                                taskName, \
-                                owner, \
-                                mail, \
-                                self.totSeconds(self.args['taskLife']), \
-                                endedTime, \
-                                str( os.stat( taskPath ).st_ctime ), \
-                                self.getDirSpace(taskPath) \
-                              )
-                self.taskQueue.insert( taskObj )
-                self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
-                ############################
-            else:
+            from os.path import join
+            taskPath = join( self.args['SEBaseDir'], taskName )
+            ## getting user info
+            owner, mail = self.checkInfoUser( taskName )
+            if owner is None and mail is None:
                 ############################
                 ### auto-registering msg ###
                 ##  to wait task unpack.  ##
-                self.unpackingTask( taskName )
+                #  self.unpackingTask( taskName )
                 ############################
+                pass
+            ############################
+            ### creating Task object ###
+            ##  & inserting on queue  ##
+            ### proxy!!!
+            taskObj = Task(\
+                            taskName, \
+                            owner, \
+                            mail, \
+                            self.totSeconds(self.args['taskLife']), \
+                            endedTime, \
+                            str( os.stat( taskPath ).st_ctime ), \
+                            self.getDirSpace(taskPath) \
+                          )
+            self.taskQueue.insert( taskObj )
+            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
+            ############################
+        else:
+            ############################
+            ### auto-registering msg ###
+            ##  to wait task unpack.  ##
+            self.unpackingTask( taskName )
+            ############################
 
     def insertEndedWrp( self, taskName ):
         """
@@ -452,16 +479,14 @@ class TaskLifeManagerComponent:
             ## inserting with the ended time updated
             self.insertTaskWrp( taskName, time.time() )
         else:
-            from os.path import isdir, join
-            taskPath = join( self.args['dropBoxPath'], taskName + "_spec" )
-            ## checks if is already unpacked
-            if isdir( taskPath + "_spec" ):
-                ## retrieving the object from the queue
-                task = self.taskQueue.getbyName( taskName )
-                ## updating the endedtime for the object
-                task.updateEndedTime()
-                ## updating pickle
-                self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
+            from os.path import join
+            taskPath = join( self.args['SEBaseDir'], taskName)# + "_spec" )
+            ## retrieving the object from the queue
+            task = self.taskQueue.getbyName( taskName )
+            ## updating the endedtime for the object
+            task.updateEndedTime()
+            ## updating pickle
+            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
 
     def printTaskInfo( self, taskName ):
         """
@@ -554,7 +579,7 @@ class TaskLifeManagerComponent:
         """
         _buildDropBox_
         """
-        tasks = self.SeSbI.getList(self.args['dropBoxPath'])
+        tasks = self.SeSbI.getList(self.args['SEBaseDir'])
         logging.info( "   building the drop_box directory..." )
         if tasks != None and tasks != []:
             for task in tasks:
@@ -659,7 +684,7 @@ class TaskLifeManagerComponent:
             valuess = getStatusUUIDEmail( taskName )
             if len(valuess) > 1:
                 uuid = valuess[1]
-            obj = UtilSubject( self.args['dropBoxPath'], taskName, uuid )
+            obj = UtilSubject( self.args['SEBaseDir'], taskName, uuid )
             origTaskName, userName = obj.getInfos()
 
             if owner is None or mails is None:
