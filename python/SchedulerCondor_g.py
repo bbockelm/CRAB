@@ -12,8 +12,8 @@ from BlackWhiteListParser import BlackWhiteListParser
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.86 2008/04/04 12:59:25 ewv Exp $"
-__version__ = "$Revision: 1.86 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.87 2008/04/08 19:45:33 ewv Exp $"
+__version__ = "$Revision: 1.87 $"
 
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
@@ -152,10 +152,8 @@ class SchedulerCondor_g(SchedulerGrid):
     def configure(self, cfg_params):
         SchedulerGrid.configure(self,cfg_params)
 
-#        self.cfg_params = cfg_params
-
         # init BlackWhiteListParser
-#        self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
+        #self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
 
         try:
           self.GLOBUS_RSL = cfg_params['CONDORG.globus_rsl']
@@ -330,97 +328,97 @@ class SchedulerCondor_g(SchedulerGrid):
         self.checkProxy()
         return runCommand("voms-proxy-info -identity")
 
-    def getAttribute(self, id, attr):
-        return self.getStatusAttribute_(id, attr)
+    #def getAttribute(self, id, attr):
+        #return self.getStatusAttribute_(id, attr)
 
-    def getAttribute(self, id, attr):
-        return self.getStatusAttribute_(id, attr)
+    #def getAttribute(self, id, attr):
+        #return self.getStatusAttribute_(id, attr)
 
-    def getExitStatus(self, id):
-        return self.getStatusAttribute_(id, 'exit_code')
+    #def getExitStatus(self, id):
+        #return self.getStatusAttribute_(id, 'exit_code')
 
-    def queryStatus(self, id):
-        return self.getStatusAttribute_(id, 'status')
+    #def queryStatus(self, id):
+        #return self.getStatusAttribute_(id, 'status')
 
-    def queryDest(self, id):
-        return self.getStatusAttribute_(id, 'destination')
+    #def queryDest(self, id):
+        #return self.getStatusAttribute_(id, 'destination')
 
 
-    def getStatusAttribute_(self, id, attr):
-        """ Query a status of the job with id """
+    #def getStatusAttribute_(self, id, attr):
+        #""" Query a status of the job with id """
 
-        result = ''
+        #result = ''
 
-        if ( attr == 'exit_code' ) :
-            jobnum_str = '%06d' % (int(id))
-            # opts = common.work_space.loadSavedOptions()
-            base = string.upper(common.taskDB.dict("jobtype"))
-            log_file = common.work_space.resDir() + base + '_' + jobnum_str + '.stdout'
-            logfile = open(log_file)
-            log_line = logfile.readline()
-            while log_line :
-                log_line = log_line.strip()
-                if log_line.startswith('JOB_EXIT_STATUS') :
-                    log_line_split = log_line.split()
-                    result = log_line_split[2]
-                    pass
-                log_line = logfile.readline()
-            result = ''
-        elif ( attr == 'status' ) :
-            schedd    = id.split('//')[0]
-            condor_id = id.split('//')[1]
-            cmd = 'condor_q -name ' + schedd + ' ' + condor_id
-            cmd_out = runCommand(cmd)
-            if cmd_out != None:
-                status_flag = 0
-                for line in cmd_out.splitlines() :
-                    if line.strip().startswith(condor_id.strip()) :
-                        status = line.strip().split()[5]
-                        if ( status == 'I' ):
-                            result = 'Scheduled'
-                            break
-                        elif ( status == 'U' ) :
-                            result = 'Ready'
-                            break
-                        elif ( status == 'H' ) :
-                            result = 'Hold'
-                            break
-                        elif ( status == 'R' ) :
-                            result = 'Running'
-                            break
-                        elif ( status == 'X' ) :
-                            result = 'Cancelled'
-                            break
-                        elif ( status == 'C' ) :
-                            result = 'Done'
-                            break
-                        else :
-                            result = 'Done'
-                            break
-                    else :
-                        result = 'Done'
-            else :
-                result = 'Done'
-        elif ( attr == 'destination' ) :
-            seSite = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(int(id)-1))
-            # if no site was selected during job splitting (datasetPath=None)
-            # set to self.cfg_params['EDG.se_white_list']
-            if self.datasetPath == 'None':
-                seSite = self.cfg_params['EDG.se_white_list']
-            oneSite = self.getCEfromSE(seSite).split(':')[0].strip()
-            result = oneSite
-        elif ( attr == 'reason' ) :
-            result = 'status query'
-        elif ( attr == 'stateEnterTime' ) :
-            result = time.asctime(time.gmtime())
-        return result
+        #if ( attr == 'exit_code' ) :
+            #jobnum_str = '%06d' % (int(id))
+            ## opts = common.work_space.loadSavedOptions()
+            #base = string.upper(common.taskDB.dict("jobtype"))
+            #log_file = common.work_space.resDir() + base + '_' + jobnum_str + '.stdout'
+            #logfile = open(log_file)
+            #log_line = logfile.readline()
+            #while log_line :
+                #log_line = log_line.strip()
+                #if log_line.startswith('JOB_EXIT_STATUS') :
+                    #log_line_split = log_line.split()
+                    #result = log_line_split[2]
+                    #pass
+                #log_line = logfile.readline()
+            #result = ''
+        #elif ( attr == 'status' ) :
+            #schedd    = id.split('//')[0]
+            #condor_id = id.split('//')[1]
+            #cmd = 'condor_q -name ' + schedd + ' ' + condor_id
+            #cmd_out = runCommand(cmd)
+            #if cmd_out != None:
+                #status_flag = 0
+                #for line in cmd_out.splitlines() :
+                    #if line.strip().startswith(condor_id.strip()) :
+                        #status = line.strip().split()[5]
+                        #if ( status == 'I' ):
+                            #result = 'Scheduled'
+                            #break
+                        #elif ( status == 'U' ) :
+                            #result = 'Ready'
+                            #break
+                        #elif ( status == 'H' ) :
+                            #result = 'Hold'
+                            #break
+                        #elif ( status == 'R' ) :
+                            #result = 'Running'
+                            #break
+                        #elif ( status == 'X' ) :
+                            #result = 'Cancelled'
+                            #break
+                        #elif ( status == 'C' ) :
+                            #result = 'Done'
+                            #break
+                        #else :
+                            #result = 'Done'
+                            #break
+                    #else :
+                        #result = 'Done'
+            #else :
+                #result = 'Done'
+        #elif ( attr == 'destination' ) :
+            #seSite = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(int(id)-1))
+            ## if no site was selected during job splitting (datasetPath=None)
+            ## set to self.cfg_params['EDG.se_white_list']
+            #if self.datasetPath == 'None':
+                #seSite = self.cfg_params['EDG.se_white_list']
+            #oneSite = self.getCEfromSE(seSite).split(':')[0].strip()
+            #result = oneSite
+        #elif ( attr == 'reason' ) :
+            #result = 'status query'
+        #elif ( attr == 'stateEnterTime' ) :
+            #result = time.asctime(time.gmtime())
+        #return result
 
-    def queryDetailedStatus(self, id):
-        """ Query a detailed status of the job with id """
-        user = os.environ['USER']
-        cmd = 'condor_q -submitter ' + user
-        cmd_out = runCommand(cmd)
-        return cmd_out
+    #def queryDetailedStatus(self, id):
+        #""" Query a detailed status of the job with id """
+        #user = os.environ['USER']
+        #cmd = 'condor_q -submitter ' + user
+        #cmd_out = runCommand(cmd)
+        #return cmd_out
 
     def ce_list(self):
       """
@@ -430,192 +428,192 @@ class SchedulerCondor_g(SchedulerGrid):
 
       return req,self.EDG_ce_white_list,self.EDG_ce_black_list
 
-    def createXMLSchScript(self, nj, argsList):
-        """
-        Create a XML-file for BOSS4.
-        """
+    #def createXMLSchScript(self, nj, argsList):
+        #"""
+        #Create a XML-file for BOSS4.
+        #"""
 
-        # job steering
-        index = nj - 1
-        job = common.job_list[index]
-        jbt = job.type()
+        ## job steering
+        #index = nj - 1
+        #job = common.job_list[index]
+        #jbt = job.type()
 
-        # input and output sandboxes
-        inp_sandbox = jbt.inputSandbox(index)
+        ## input and output sandboxes
+        #inp_sandbox = jbt.inputSandbox(index)
 
-        # title
-        title     = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
-        jt_string = ''
+        ## title
+        #title     = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+        #jt_string = ''
 
-        xml_fname = str(self.jobtypeName)+'.xml'
-        xml       = open(common.work_space.shareDir()+'/'+xml_fname, 'a')
+        #xml_fname = str(self.jobtypeName)+'.xml'
+        #xml       = open(common.work_space.shareDir()+'/'+xml_fname, 'a')
 
-        # TaskName
-        dir      = string.split(common.work_space.topDir(), '/')
-        taskName = dir[len(dir)-2]
+        ## TaskName
+        #dir      = string.split(common.work_space.topDir(), '/')
+        #taskName = dir[len(dir)-2]
 
-        xml.write(str(title))
+        #xml.write(str(title))
 
-        #First check the X509_USER_PROXY. In not there use the default
-        try:
-            x509=os.environ['X509_USER_PROXY']
-        except Exception, ex:
-            import traceback
-            common.logger.debug( 6, str(ex) )
-            common.logger.debug( 6, traceback.format_exc() )
-            x509_cmd = 'ls /tmp/x509up_u`id -u`'
-            x509=runCommand(x509_cmd).strip()
-        xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + str(x509) + '">\n')
-        xml.write(jt_string)
+        ##First check the X509_USER_PROXY. In not there use the default
+        #try:
+            #x509=os.environ['X509_USER_PROXY']
+        #except Exception, ex:
+            #import traceback
+            #common.logger.debug( 6, str(ex) )
+            #common.logger.debug( 6, traceback.format_exc() )
+            #x509_cmd = 'ls /tmp/x509up_u`id -u`'
+            #x509=runCommand(x509_cmd).strip()
+        #xml.write('<task name="' +str(taskName)+ '" sub_path="' +common.work_space.pathForTgz() + 'share/.boss_cache"' + ' task_info="' + str(x509) + '">\n')
+        #xml.write(jt_string)
 
-        xml.write('<iterator>\n')
-        xml.write('\t<iteratorRule name="ITR1">\n')
-        xml.write('\t\t<ruleElement> 1:'+ str(nj) + ' </ruleElement>\n')
-        xml.write('\t</iteratorRule>\n')
-        xml.write('\t<iteratorRule name="ITR2">\n')
-        for arg in argsList:
-            xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
-            pass
-        xml.write('\t</iteratorRule>\n')
-        xml.write('\t<iteratorRule name="ITR3">\n')
-        xml.write('\t\t<ruleElement> 1:'+ str(nj) + ':1:6 </ruleElement>\n')
-        xml.write('\t</iteratorRule>\n')
+        #xml.write('<iterator>\n')
+        #xml.write('\t<iteratorRule name="ITR1">\n')
+        #xml.write('\t\t<ruleElement> 1:'+ str(nj) + ' </ruleElement>\n')
+        #xml.write('\t</iteratorRule>\n')
+        #xml.write('\t<iteratorRule name="ITR2">\n')
+        #for arg in argsList:
+            #xml.write('\t\t<ruleElement> <![CDATA[\n'+ arg + '\n\t\t]]> </ruleElement>\n')
+            #pass
+        #xml.write('\t</iteratorRule>\n')
+        #xml.write('\t<iteratorRule name="ITR3">\n')
+        #xml.write('\t\t<ruleElement> 1:'+ str(nj) + ':1:6 </ruleElement>\n')
+        #xml.write('\t</iteratorRule>\n')
 
-        xml.write('<chain name="' +str(taskName)+'__ITR1_" scheduler="'+str(self.schedulerName)+'">\n')
-    #   xmliwrite('<chain scheduler="'+str(self.schedulerName)+'">\n')
-        xml.write(jt_string)
+        #xml.write('<chain name="' +str(taskName)+'__ITR1_" scheduler="'+str(self.schedulerName)+'">\n')
+    ##   xmliwrite('<chain scheduler="'+str(self.schedulerName)+'">\n')
+        #xml.write(jt_string)
 
 
-        #executable
+        ##executable
 
-        script = job.scriptFilename()
-        xml.write('<program>\n')
-        xml.write('<exec> ' + os.path.basename(script) +' </exec>\n')
-        xml.write(jt_string)
+        #script = job.scriptFilename()
+        #xml.write('<program>\n')
+        #xml.write('<exec> ' + os.path.basename(script) +' </exec>\n')
+        #xml.write(jt_string)
 
-        xml.write('<args> <![CDATA[\n _ITR2_ \n]]> </args>\n')
-        xml.write('<program_types> crabjob </program_types>\n')
+        #xml.write('<args> <![CDATA[\n _ITR2_ \n]]> </args>\n')
+        #xml.write('<program_types> crabjob </program_types>\n')
 
-        # input sanbox
-        inp_box = script + ','
+        ## input sanbox
+        #inp_box = script + ','
 
-        if inp_sandbox != None:
-            for fl in inp_sandbox:
-                inp_box = inp_box + '' + fl + ','
-                pass
-            pass
+        #if inp_sandbox != None:
+            #for fl in inp_sandbox:
+                #inp_box = inp_box + '' + fl + ','
+                #pass
+            #pass
 
-        if inp_box[-1] == ',' : inp_box = inp_box[:-1]
-        inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
-        xml.write(inp_box)
+        #if inp_box[-1] == ',' : inp_box = inp_box[:-1]
+        #inp_box = '<infiles> <![CDATA[\n' + inp_box + '\n]]> </infiles>\n'
+        #xml.write(inp_box)
 
-        # stdout and stderr
-        base = jbt.name()
-        stdout = base + '__ITR3_.stdout'
-        stderr = base + '__ITR3_.stderr'
+        ## stdout and stderr
+        #base = jbt.name()
+        #stdout = base + '__ITR3_.stdout'
+        #stderr = base + '__ITR3_.stderr'
 
-        xml.write('<stderr> ' + stderr + '</stderr>\n')
-        xml.write('<stdout> ' + stdout + '</stdout>\n')
+        #xml.write('<stderr> ' + stderr + '</stderr>\n')
+        #xml.write('<stdout> ' + stdout + '</stdout>\n')
 
-        # output sanbox
-        out_box = stdout + ',' + stderr + ','
+        ## output sanbox
+        #out_box = stdout + ',' + stderr + ','
 
-        # Stuff to be returned _always_ via sandbox
-        for fl in jbt.output_file_sandbox:
-            out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
-            pass
-        pass
+        ## Stuff to be returned _always_ via sandbox
+        #for fl in jbt.output_file_sandbox:
+            #out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
+            #pass
+        #pass
 
-        if int(self.return_data) == 1:
-            for fl in jbt.output_file:
-                out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
-                pass
-            pass
+        #if int(self.return_data) == 1:
+            #for fl in jbt.output_file:
+                #out_box = out_box + '' + jbt.numberFile_(fl, '_ITR1_') + ','
+                #pass
+            #pass
 
-        if out_box[-1] == ',' : out_box = out_box[:-1]
-        out_box = '<outfiles> <![CDATA[\n' + out_box + '\n]]></outfiles>\n'
-        xml.write(out_box)
+        #if out_box[-1] == ',' : out_box = out_box[:-1]
+        #out_box = '<outfiles> <![CDATA[\n' + out_box + '\n]]></outfiles>\n'
+        #xml.write(out_box)
 
-        xml.write('<BossAttr> crabjob.INTERNAL_ID=_ITR1_ </BossAttr>\n')
+        #xml.write('<BossAttr> crabjob.INTERNAL_ID=_ITR1_ </BossAttr>\n')
 
-        xml.write('</program>\n')
+        #xml.write('</program>\n')
 
-        # start writing of extraTags
-        to_write = ''
+        ## start writing of extraTags
+        #to_write = ''
 
-        # extraTag universe
-        to_write += 'universe = "&quot;globus&quot;"\n'
+        ## extraTag universe
+        #to_write += 'universe = "&quot;globus&quot;"\n'
 
-        # extraTag globusscheduler
+        ## extraTag globusscheduler
 
-        # use bdii to query ce including jobmanager from site
-        # use first job with non-empty
-        seSite = ''
-        for i in range(nj) :
-            seSite = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(i-1))
-            if seSite != '' :
-                break;
-        # if no site was selected during job splitting (datasetPath=None)
-        # set to self.cfg_params['EDG.se_white_list']
-        if seSite == '' :
-            if self.datasetPath == None :
-                seSite = self.cfg_params['EDG.se_white_list']
-            else :
-                msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + self.cfg_params['EDG.se_white_list'] + ' because the dataset ' + self.datasetPath + ' is not available at this site.\n'
-                common.logger.debug(2,msg)
-                raise CrabException(msg)
+        ## use bdii to query ce including jobmanager from site
+        ## use first job with non-empty
+        #seSite = ''
+        #for i in range(nj) :
+            #seSite = self.blackWhiteListParser.cleanForBlackWhiteList(common.jobDB.destination(i-1))
+            #if seSite != '' :
+                #break;
+        ## if no site was selected during job splitting (datasetPath=None)
+        ## set to self.cfg_params['EDG.se_white_list']
+        #if seSite == '' :
+            #if self.datasetPath == None :
+                #seSite = self.cfg_params['EDG.se_white_list']
+            #else :
+                #msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + self.cfg_params['EDG.se_white_list'] + ' because the dataset ' + self.datasetPath + ' is not available at this site.\n'
+                #common.logger.debug(2,msg)
+                #raise CrabException(msg)
 
-        oneSite = self.getCEfromSE(seSite)
+        #oneSite = self.getCEfromSE(seSite)
 
-        # query if site is in production
-        status = cestate_from_ce_bdii(oneSite.split(':')[0].strip())
-        if status != 'Production' :
-            msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + oneSite.split(':')[0].strip() + ' because the site has status ' + status + ' and is currently not operational.\n'
-            msg += '[Condor-G Scheduler]: Please choose another site for your jobs.'
-            common.logger.debug(2,msg)
-            raise CrabException(msg)
+        ## query if site is in production
+        #status = cestate_from_ce_bdii(oneSite.split(':')[0].strip())
+        #if status != 'Production' :
+            #msg  = '[Condor-G Scheduler]: Jobs cannot be submitted to site ' + oneSite.split(':')[0].strip() + ' because the site has status ' + status + ' and is currently not operational.\n'
+            #msg += '[Condor-G Scheduler]: Please choose another site for your jobs.'
+            #common.logger.debug(2,msg)
+            #raise CrabException(msg)
 
-        if self.batchsystem != '' :
-            oneSite = oneSite.split('/')[0].strip() + '/' + self.batchsystem
+        #if self.batchsystem != '' :
+            #oneSite = oneSite.split('/')[0].strip() + '/' + self.batchsystem
 
-        to_write += 'globusscheduler = "&quot;' + str(oneSite) + '&quot;"\n'
+        #to_write += 'globusscheduler = "&quot;' + str(oneSite) + '&quot;"\n'
 
-        # extraTag condor transfer file flag
-        to_write += 'should_transfer_files = "&quot;YES&quot;"\n'
+        ## extraTag condor transfer file flag
+        #to_write += 'should_transfer_files = "&quot;YES&quot;"\n'
 
-        # extraTag when to write output
-        to_write += 'when_to_transfer_output = "&quot;ON_EXIT&quot;"\n'
+        ## extraTag when to write output
+        #to_write += 'when_to_transfer_output = "&quot;ON_EXIT&quot;"\n'
 
-        # extraTag switch off streaming of stdout
-        to_write += 'stream_output = "&quot;false&quot;"\n'
+        ## extraTag switch off streaming of stdout
+        #to_write += 'stream_output = "&quot;false&quot;"\n'
 
-        # extraTag switch off streaming of stderr
-        to_write += 'stream_error = "&quot;false&quot;"\n'
+        ## extraTag switch off streaming of stderr
+        #to_write += 'stream_error = "&quot;false&quot;"\n'
 
-        # extraTag condor logfile
-        condor_log = jbt.name() + '__ITR3_.log'
-        to_write += 'Log    = "&quot;' + condor_log + '&quot;"\n'
+        ## extraTag condor logfile
+        #condor_log = jbt.name() + '__ITR3_.log'
+        #to_write += 'Log    = "&quot;' + condor_log + '&quot;"\n'
 
-        # extraTag condor notification
-        to_write += 'notification="&quot;never&quot;"\n'
+        ## extraTag condor notification
+        #to_write += 'notification="&quot;never&quot;"\n'
 
-        # extraTag condor queue statement
-        to_write += 'QUEUE = "&quot;1&quot;"\n'
+        ## extraTag condor queue statement
+        #to_write += 'QUEUE = "&quot;1&quot;"\n'
 
-        if (to_write != ''):
-            xml.write('<extraTags\n')
-            xml.write(to_write)
-            xml.write('/>\n')
-            pass
+        #if (to_write != ''):
+            #xml.write('<extraTags\n')
+            #xml.write(to_write)
+            #xml.write('/>\n')
+            #pass
 
-        xml.write('</chain>\n')
+        #xml.write('</chain>\n')
 
-        xml.write('</iterator>\n')
-        xml.write('</task>\n')
+        #xml.write('</iterator>\n')
+        #xml.write('</task>\n')
 
-        xml.close()
+        #xml.close()
 
-        return
+        #return
 
     def checkProxy(self):
         """
