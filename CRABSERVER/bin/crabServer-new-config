@@ -74,6 +74,7 @@ crabServerConfiguration = {
     'crabServerschemaLocation' : "$CRABSERVER_ROOT/share/CrabServerDB.sql",
     'SEHostname':'localhost',
     'SEPort':'',
+    'SEBaseDir':None,
     'Protocol':'local',
 }
 
