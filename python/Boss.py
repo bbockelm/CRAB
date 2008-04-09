@@ -128,9 +128,9 @@ class Boss:
         try: 
             schedSession.submit( task,jobsList,req )
         except SchedulerError, err :
-            common.logger.message("List Match: " +str(err))
-            common.logger.debug(3, "List Match: " +str(traceback.format_exc()))
-            raise CrabException('List Match: '+str(err))
+            common.logger.message("Submit: " +str(err))
+            common.logger.debug(3, "Submit: " +str(traceback.format_exc()))
+            raise CrabException('Submit: '+str(err))
 
         return
 

@@ -110,7 +110,7 @@ class GetOutput(Actor):
                 cmd = 'tar zxvf '+file 
                 cmd_out = runCommand(cmd)
                 cmd_2 ='rm out_files_'+ str(id)+'.tgz'
-               # cmd_out2 = runCommand(cmd_2)
+                cmd_out2 = runCommand(cmd_2)
             else:  
                 msg ="Output files for job "+ str(id) +" not available.\n"
                 common.logger.message(msg)
