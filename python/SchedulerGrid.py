@@ -55,8 +55,6 @@ class SchedulerGrid(Scheduler):
 
         self.VO = cfg_params.get('EDG.virtual_organization','cms')
 
-        self.copy_input_data = cfg_params.get("USER.copy_input_data",0)
-
         self.return_data = cfg_params.get('USER.return_data',0)
 
         self.copy_data = cfg_params.get("USER.copy_data",0)
