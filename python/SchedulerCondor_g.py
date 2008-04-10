@@ -12,8 +12,8 @@ from BlackWhiteListParser import BlackWhiteListParser
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.88 2008/04/09 13:52:04 ewv Exp $"
-__version__ = "$Revision: 1.88 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.89 2008/04/10 13:13:59 ewv Exp $"
+__version__ = "$Revision: 1.89 $"
 
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
@@ -453,7 +453,7 @@ class SchedulerCondor_g(SchedulerGrid):
         #xml.write('\t</iteratorRule>\n')
 
         #xml.write('<chain name="' +str(taskName)+'__ITR1_" scheduler="'+str(self.schedulerName)+'">\n')
-    ##   xmliwrite('<chain scheduler="'+str(self.schedulerName)+'">\n')
+        ##xmliwrite('<chain scheduler="'+str(self.schedulerName)+'">\n')
         #xml.write(jt_string)
 
 
@@ -588,44 +588,44 @@ class SchedulerCondor_g(SchedulerGrid):
 
         #return
 
-    def checkProxy(self):
-        """
-        Function to check the Globus proxy.
-        """
-        if (self.proxyValid): return
-        #timeleft = -999
-        minTimeLeft=10*3600 # in seconds
+    #def checkProxy(self):
+        #"""
+        #Function to check the Globus proxy.
+        #"""
+        #if (self.proxyValid): return
+        ##timeleft = -999
+        #minTimeLeft=10*3600 # in seconds
 
-        mustRenew = 0
-        timeLeftLocal = runCommand('voms-proxy-info -timeleft 2>/dev/null')
-        timeLeftServer = -999
-        if not timeLeftLocal or int(timeLeftLocal) <= 0 or not isInt(timeLeftLocal):
-            mustRenew = 1
-        else:
-            timeLeftServer = runCommand('voms-proxy-info -actimeleft 2>/dev/null | head -1')
-            if not timeLeftServer or not isInt(timeLeftServer):
-                mustRenew = 1
-            elif timeLeftLocal<minTimeLeft or timeLeftServer<minTimeLeft:
-                mustRenew = 1
-            pass
-        pass
+        #mustRenew = 0
+        #timeLeftLocal = runCommand('voms-proxy-info -timeleft 2>/dev/null')
+        #timeLeftServer = -999
+        #if not timeLeftLocal or int(timeLeftLocal) <= 0 or not isInt(timeLeftLocal):
+            #mustRenew = 1
+        #else:
+            #timeLeftServer = runCommand('voms-proxy-info -actimeleft 2>/dev/null | head -1')
+            #if not timeLeftServer or not isInt(timeLeftServer):
+                #mustRenew = 1
+            #elif timeLeftLocal<minTimeLeft or timeLeftServer<minTimeLeft:
+                #mustRenew = 1
+            #pass
+        #pass
 
-        if mustRenew:
-            common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 192h\n")
-            cmd = 'voms-proxy-init -voms '+self.VO
-            if self.group:
-                cmd += ':/'+self.VO+'/'+self.group
-            if self.role:
-                cmd += '/role='+self.role
-            cmd += ' -valid 192:00'
-            try:
-                # SL as above: damn it!
-                out = os.system(cmd)
-                if (out>0): raise CrabException("Unable to create a valid proxy!\n")
-            except:
-                msg = "Unable to create a valid proxy!\n"
-                raise CrabException(msg)
-            pass
+        #if mustRenew:
+            #common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 192h\n")
+            #cmd = 'voms-proxy-init -voms '+self.VO
+            #if self.group:
+                #cmd += ':/'+self.VO+'/'+self.group
+            #if self.role:
+                #cmd += '/role='+self.role
+            #cmd += ' -valid 192:00'
+            #try:
+                ## SL as above: damn it!
+                #out = os.system(cmd)
+                #if (out>0): raise CrabException("Unable to create a valid proxy!\n")
+            #except:
+                #msg = "Unable to create a valid proxy!\n"
+                #raise CrabException(msg)
+            #pass
 
-        self.proxyValid=1
-        return
+        #self.proxyValid=1
+        #return
