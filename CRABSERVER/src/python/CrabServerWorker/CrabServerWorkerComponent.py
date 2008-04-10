@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.24 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.24 2008/03/27 11:55:17 farinafa Exp $"
+__version__ = "$Revision: 1.0 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.0 2007/12/17 06:33:00 farinafa Exp $"
 
 import os
 import pickle
@@ -50,13 +50,13 @@ class CrabServerWorkerComponent:
         self.args.setdefault('EDG_shallow_retry_count', 3)
 
         self.args.setdefault('Protocol', 'local')
-        self.args.setdefault('SEHostname', 'localhost')
-        self.args.setdefault('SEPort', '')
-        self.args.setdefault('SEBaseDir', self.args["dropBoxPath"])
+        self.args.setdefault('storageName', 'localhost')
+        self.args.setdefault('storagePort', '')
+        self.args.setdefault('storagePath', self.args["dropBoxPath"])
         self.args.update(args)
         
-        if self.args['SEBaseDir'] == None and self.args['Protocol'] == 'local': 
-            self.args['SEBaseDir'] = self.args["dropBoxPath"]
+        if self.args['storagePath'] == None and self.args['Protocol'] == 'local': 
+            self.args['storagePath'] = self.args["dropBoxPath"]
 
         self.args['WMSserviceList'] = [] + str(self.args['WMSserviceList']).split(',')        
 
@@ -214,8 +214,8 @@ class CrabServerWorkerComponent:
         workerCfg['firstSubmit'] = True 
         workerCfg['resubCount'] = self.args['maxCmdAttempts']
         workerCfg['SEproto'] = self.args['Protocol']
-        workerCfg['SEurl'] = self.args['SEHostname']
-        workerCfg['SEport'] = self.args['SEPort']
+        workerCfg['SEurl'] = self.args['storageName']
+        workerCfg['SEport'] = self.args['storagePort']
 
         workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
         workerCfg['se_dynBList'] = []
@@ -309,8 +309,8 @@ class CrabServerWorkerComponent:
         workerCfg['firstSubmit'] = False
         workerCfg['resubCount'] = resubCount
         workerCfg['SEproto'] = self.args['Protocol']
-        workerCfg['SEurl'] = self.args['SEHostname']
-        workerCfg['SEport'] = self.args['SEPort']
+        workerCfg['SEurl'] = self.args['storageName']
+        workerCfg['SEport'] = self.args['storagePort']
 
         workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
         workerCfg['se_dynBList'] = []
