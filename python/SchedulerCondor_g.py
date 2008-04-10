@@ -12,8 +12,8 @@ from BlackWhiteListParser import BlackWhiteListParser
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.87 2008/04/08 19:45:33 ewv Exp $"
-__version__ = "$Revision: 1.87 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.88 2008/04/09 13:52:04 ewv Exp $"
+__version__ = "$Revision: 1.88 $"
 
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
@@ -195,6 +195,7 @@ class SchedulerCondor_g(SchedulerGrid):
 
         # added here because checklistmatch is not used
         self.checkProxy()
+        self.environment_unique_identifier = 'GLOBUS_GRAM_JOB_CONTACT'
 
         self.datasetPath = ''
         try:
@@ -236,52 +237,24 @@ class SchedulerCondor_g(SchedulerGrid):
         """
         Returns part of a job script which does scheduler-specific work.
         """
+        txt = SchedulerGrid.wsSetupEnvironment(self)
 
-        # Should look at the commonalities here and use SchedulerGrid and move some stuff to SchedulerGLite
-
-        index = int(common._db.nJobs())
-        job = common.job_list[index-1]
-        jbt = job.type()
-
-        txt = ''
-        txt += '# strip arguments\n'
-        txt += 'echo "strip arguments"\n'
-        txt += 'args=("$@")\n'
-        txt += 'nargs=$#\n'
-        txt += 'shift $nargs\n'
-        txt += "# job number (first parameter for job wrapper)\n"
-        txt += "NJob=${args[0]}; export NJob\n"
-
-        txt += "out_files=out_files_${NJob}; export out_files\n"
-        txt += "echo $out_files\n"
-        txt += jbt.outList()
-
-        txt += '# job identification to DashBoard \n'
-        txt += 'MonitorJobID=${NJob}_'+self.hash+'_$GLOBUS_GRAM_JOB_CONTACT \n'
-        txt += 'SyncGridJobId=$GLOBUS_GRAM_JOB_CONTACT \n'
-        txt += 'MonitorID='+self._taskId+' \n'
-        txt += 'echo "MonitorJobID=$MonitorJobID" > $RUNTIME_AREA/$repo \n'
-        txt += 'echo "SyncGridJobId=$SyncGridJobId" >> $RUNTIME_AREA/$repo \n'
-        txt += 'echo "MonitorID=$MonitorID" >> $RUNTIME_AREA/$repo\n'
-
-        txt += 'echo ">>> GridFlavour discovery: " \n'
-        txt += 'if [ $OSG_APP ]; then \n'
-        txt += '    middleware=OSG \n'
-        txt += '    echo "SyncCE=`echo $GLOBUS_GRAM_JOB_CONTACT | cut -d/ -f3 | cut -d: -f1`" >> $RUNTIME_AREA/$repo \n'
-        txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += '    echo ">>> middleware =$middleware" \n'
-        txt += 'elif [ $VO_CMS_SW_DIR ]; then\n'
-        txt += '    middleware=LCG \n'
-        txt += '    echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
-        txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
-        txt += 'else \n'
-        txt += '    echo "ERROR ==> GridFlavour not identified" \n'
-        txt += '    job_exit_code=10030 \n'
-        txt += '    func_exit \n'
-        txt += 'fi\n'
-
-        txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
-        txt += '\n\n'
+        # This is a bit different than what's in SchedulerGrid, but hopefully the same effect
+        #txt += 'echo ">>> GridFlavour discovery: " \n'
+        #txt += 'if [ $OSG_APP ]; then \n'
+        #txt += '    middleware=OSG \n'
+        #txt += '    echo "SyncCE=`echo $GLOBUS_GRAM_JOB_CONTACT | cut -d/ -f3 | cut -d: -f1`" >> $RUNTIME_AREA/$repo \n'
+        #txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
+        #txt += '    echo ">>> middleware =$middleware" \n'
+        #txt += 'elif [ $VO_CMS_SW_DIR ]; then\n'
+        #txt += '    middleware=LCG \n'
+        #txt += '    echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
+        #txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
+        #txt += 'else \n'
+        #txt += '    echo "ERROR ==> GridFlavour not identified" \n'
+        #txt += '    job_exit_code=10030 \n'
+        #txt += '    func_exit \n'
+        #txt += 'fi\n'
 
         if int(self.copy_data) == 1:
            if self.SE:
