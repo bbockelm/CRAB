@@ -36,14 +36,22 @@ if __name__ == '__main__':
     else:
         jobReport = readJobReport(reportFileName)[0]
         if (len(jobReport.errors) > 0):
+            error = 0
             for err in jobReport.errors:
                 if err['Type'] == "WrapperExitCode" :
                     err['ExitStatus'] = wrapperExitCode 
                     jobReport.write(reportFileName)
+                    error = 1
                 if (exeExitCode != ""):
                     if err['Type'] == "ExeExitCode" :
                         err['ExitStatus'] = exeExitCode 
                         jobReport.write(reportFileName)
+                        error = 1
+            if (error == 0):
+                jobReport.addError(wrapperExitCode, "WrapperExitCode")
+                if (exeExitCode != ""):
+                    jobReport.addError(exeExitCode, "ExeExitCode")
+                jobReport.write(reportFileName) 
         else:
             jobReport.addError(wrapperExitCode, "WrapperExitCode")
             if (exeExitCode != ""):
