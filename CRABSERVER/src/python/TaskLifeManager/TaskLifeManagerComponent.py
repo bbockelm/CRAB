@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.4 2008/01/28 15:14:30 mcinquil Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.11 2008/04/10 16:24:19 farinafa Exp $"
+__version__ = "$Revision: 1.11 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -463,7 +463,7 @@ class TaskLifeManagerComponent:
                             mail, \
                             self.totSeconds(self.args['taskLife']), \
                             endedTime, \
-                            str( os.stat( taskPath ).st_ctime ), \
+                            0, \
                             self.getDirSpace(taskPath) \
                           )
             self.taskQueue.insert( taskObj )
