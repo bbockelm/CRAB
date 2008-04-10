@@ -32,6 +32,7 @@ import time
 import pickle
 
 
+
 ##############################################################################
 # TaskLifeManagerComponent class
 ##############################################################################
@@ -61,14 +62,14 @@ class TaskLifeManagerComponent:
         # initialize the server
         self.args = {}
         self.args.setdefault("Logfile", None)
-        self.args.setdefault("SEBaseDir", None)
+        self.args.setdefault("storagePath", None)
 	self.args.setdefault("levelAvailable", 15)
         self.args.setdefault("taskLife", "360:00:00")
 	self.args.setdefault("eMailAdmin", os.environ['USER'])
         self.args.setdefault("pollingTimeCheck", 10*60)
         self.args.setdefault("Protocol", "local")
-        self.args.setdefault("SEHostname", "localhost")
-        self.args.setdefault("SEPort", None)
+        self.args.setdefault("storageName", "localhost")
+        self.args.setdefault("storagePort", None)
         # update parameters
         self.args.update(args)
 
@@ -89,11 +90,14 @@ class TaskLifeManagerComponent:
         # message service instances
         self.ms = None
 
+        #self.args["SEHostname"] = 'srm.cern.ch'
+        #self.args["Protocol"]   = 'srmv1'
+        #self.args["SEPort"]     = '8443'
         # initializing SBinterface
         storage = SElement( \
-                            self.args["SEHostname"],
+                            self.args["storageName"],
                             self.args["Protocol"], \
-                            self.args["SEPort"] \
+                            self.args["storagePort"] \
                           )
         self.SeSbI = SBinterface(storage)
 
@@ -101,9 +105,10 @@ class TaskLifeManagerComponent:
         ## args constraints ##
         #####################
         # which dbox ?!?
-        if self.args['SEBaseDir'] == None:
-            self.args['SEBaseDir'] = self.args['ComponentDir']
-        logging.info("Using " +str(self.args['SEBaseDir']))
+        #self.args['SEBaseDir'] = '/castor/cern.ch/user/m/mcinquil/'
+        if self.args['storagePath'] == None:
+            self.args['storagePath'] = self.args['ComponentDir']
+        logging.info("Using " +str(self.args['storagePath']))
 
         # minimum space available
         if int(self.args['levelAvailable']) < 5:
@@ -164,6 +169,9 @@ class TaskLifeManagerComponent:
         #######################
         # Automessage 4 polling
         if event == "TaskLifeManager::poll":
+            #logging.info('\nProva....')
+            #self.deleteRetrievedOSB('farinafa_crab_0_080409_171840_700db5f7-8c91-4f43-8180-dc1731ce5f05', '1, 2')
+            #logging.info('\n Done\n')
             self.pollDropBox()
             return            #
         #######################
@@ -239,7 +247,7 @@ class TaskLifeManagerComponent:
         """
         own = " "
         mail = " " 
-        taskPath = self.args['SEBaseDir'] + "/" + taskName + "_spec"
+        taskPath = self.args['storagePath'] + "/" + taskName + "_spec"
         try:
             import xml.dom.minidom
             import xml.dom.ext
@@ -321,7 +329,7 @@ class TaskLifeManagerComponent:
         """
         _checkGlobalSpace_
         """
-        out = self.SeSbI.getGlobalSpace(self.args['SEBaseDir'])
+        out = self.SeSbI.getGlobalSpace(self.args['storagePath'])
         numberUsed = int(out[0].split("%")[0])
         spaceAvail = int(out[1])
         spaceUsed = int(out[2])
@@ -351,7 +359,7 @@ class TaskLifeManagerComponent:
         recurisvely delete all the files and dirs in [taskPath]
         """
         summ = 0
-        if taskPath != "/" and taskPath != self.args['SEBaseDir'] \
+        if taskPath != "/" and taskPath != self.args['storagePath'] \
            and self.SeSbI.checkExists( taskPath, proxy ):
             try:
                 summ = self.SeSbI.getDirSpace(taskPath, proxy)
@@ -376,7 +384,7 @@ class TaskLifeManagerComponent:
         """
         _cleanTask_
         """
-        dBox = self.args['SEBaseDir']
+        dBox = self.args['storagePath']
         from os.path import join
         pathTask = join(dBox, taskName)
         if self.SeSbI.checkExists( pathTask, proxy ):
@@ -405,7 +413,7 @@ class TaskLifeManagerComponent:
         task = self.taskQueue.getbyName( taskName )
         proxy = task.getProxy() 
         from os.path import join
-        taskPath = join(self.args['SEBaseDir'] , taskName)
+        taskPath = join(self.args['storagePath'] , taskName)
         jobList = eval(strJobs)
         for idjob in jobList:
             baseToDelete = [ \
@@ -435,7 +443,7 @@ class TaskLifeManagerComponent:
         ## checks if already is in the queue
         if not self.taskQueue.exists( taskName ):
             from os.path import join
-            taskPath = join( self.args['SEBaseDir'], taskName )
+            taskPath = join( self.args['storagePath'], taskName )
             ## getting user info
             owner, mail = self.checkInfoUser( taskName )
             if owner is None and mail is None:
@@ -480,7 +488,7 @@ class TaskLifeManagerComponent:
             self.insertTaskWrp( taskName, time.time() )
         else:
             from os.path import join
-            taskPath = join( self.args['SEBaseDir'], taskName)# + "_spec" )
+            taskPath = join( self.args['storagePath'], taskName)# + "_spec" )
             ## retrieving the object from the queue
             task = self.taskQueue.getbyName( taskName )
             ## updating the endedtime for the object
@@ -579,7 +587,7 @@ class TaskLifeManagerComponent:
         """
         _buildDropBox_
         """
-        tasks = self.SeSbI.getList(self.args['SEBaseDir'])
+        tasks = self.SeSbI.getList(self.args['storagePath'])
         logging.info( "   building the drop_box directory..." )
         if tasks != None and tasks != []:
             for task in tasks:
@@ -684,7 +692,7 @@ class TaskLifeManagerComponent:
             valuess = getStatusUUIDEmail( taskName )
             if len(valuess) > 1:
                 uuid = valuess[1]
-            obj = UtilSubject( self.args['SEBaseDir'], taskName, uuid )
+            obj = UtilSubject( self.args['storagePath'], taskName, uuid )
             origTaskName, userName = obj.getInfos()
 
             if owner is None or mails is None:

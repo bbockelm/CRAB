@@ -72,9 +72,9 @@ crabServerConfiguration = {
     'dropBoxPath':'',
     'ProxiesDir':'/tmp/del_proxies/',
     'crabServerschemaLocation' : "$CRABSERVER_ROOT/share/CrabServerDB.sql",
-    'SEHostname':'localhost',
-    'SEPort':'',
-    'SEBaseDir':None,
+    'storageName':'localhost',
+    'storagePort':'',
+    'storagePath':None,
     'Protocol':'local',
 }
 
