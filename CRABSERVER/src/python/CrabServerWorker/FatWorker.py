@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.12 2007/09/20 10:16:10 farinafa Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: FatWorker.py,v 1.21 2008/04/09 13:48:09 farinafa Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import sys, os
 import time
@@ -473,7 +473,7 @@ class FatWorker(Thread):
         distinct_dests = []
         for j in taskObj.jobs:
            if  j['dlsDestination'] not in distinct_dests:
-               distinct_dests.append( j['dlsDestination'] )
+               distinct_dests.append( eval(j['dlsDestination']) )
         ##
  
         jobs_to_match = []
