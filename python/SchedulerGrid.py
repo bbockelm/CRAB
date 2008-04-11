@@ -350,7 +350,7 @@ class SchedulerGrid(Scheduler):
             timeLeftServer = runCommand('voms-proxy-info -actimeleft 2>/dev/null | head -1')
             if not timeLeftServer or not isInt(timeLeftServer):
                 mustRenew = 1
-            elif timeLeftLocal<minTimeLeft or timeLeftServer<minTimeLeft:
+            elif int(timeLeftLocal)<minTimeLeft or int(timeLeftServer)<minTimeLeft:
                 mustRenew = 1
             pass
         pass
