@@ -12,8 +12,8 @@ from BlackWhiteListParser import BlackWhiteListParser
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.89 2008/04/10 13:13:59 ewv Exp $"
-__version__ = "$Revision: 1.89 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.90 2008/04/10 13:50:41 ewv Exp $"
+__version__ = "$Revision: 1.90 $"
 
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
@@ -234,41 +234,25 @@ class SchedulerCondor_g(SchedulerGrid):
       return jobParams # Not sure I even need to return anything
 
     def wsSetupEnvironment(self):
-        """
-        Returns part of a job script which does scheduler-specific work.
-        """
-        txt = SchedulerGrid.wsSetupEnvironment(self)
+      """
+      Returns part of a job script which does scheduler-specific work.
+      """
+      txt = SchedulerGrid.wsSetupEnvironment(self)
 
-        # This is a bit different than what's in SchedulerGrid, but hopefully the same effect
-        #txt += 'echo ">>> GridFlavour discovery: " \n'
-        #txt += 'if [ $OSG_APP ]; then \n'
-        #txt += '    middleware=OSG \n'
-        #txt += '    echo "SyncCE=`echo $GLOBUS_GRAM_JOB_CONTACT | cut -d/ -f3 | cut -d: -f1`" >> $RUNTIME_AREA/$repo \n'
-        #txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += '    echo ">>> middleware =$middleware" \n'
-        #txt += 'elif [ $VO_CMS_SW_DIR ]; then\n'
-        #txt += '    middleware=LCG \n'
-        #txt += '    echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
-        #txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
-        #txt += 'else \n'
-        #txt += '    echo "ERROR ==> GridFlavour not identified" \n'
-        #txt += '    job_exit_code=10030 \n'
-        #txt += '    func_exit \n'
-        #txt += 'fi\n'
+      if int(self.copy_data) == 1:
+        if self.SE:
+          txt += 'export SE='+self.SE+'\n'
+          txt += 'echo "SE = $SE"\n'
+        if self.SE_PATH:
+          if self.SE_PATH[-1] != '/':
+            self.SE_PATH = self.SE_PATH + '/'
+          txt += 'export SE_PATH='+self.SE_PATH+'\n'
+          txt += 'echo "SE_PATH = $SE_PATH"\n'
 
-        if int(self.copy_data) == 1:
-           if self.SE:
-              txt += 'export SE='+self.SE+'\n'
-              txt += 'echo "SE = $SE"\n'
-           if self.SE_PATH:
-              if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
-              txt += 'export SE_PATH='+self.SE_PATH+'\n'
-              txt += 'echo "SE_PATH = $SE_PATH"\n'
-
-        txt += 'export VO='+self.VO+'\n'
-        txt += 'CE=${args[3]}\n'
-        txt += 'echo "CE = $CE"\n'
-        return txt
+      txt += 'export VO='+self.VO+'\n'
+      txt += 'CE=${args[3]}\n'
+      txt += 'echo "CE = $CE"\n'
+      return txt
 
     def wsCopyInput(self):
         """
