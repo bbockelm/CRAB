@@ -143,56 +143,36 @@ class Submitter(Actor):
              count +=1
         sel=0
         matched=[] 
-        Requi=[]
 
         task=common._db.getTask()
-        ce_white_list=[]      
-        ce_black_list=[]
-        tags=''
-
-
-        if common.scheduler.name().upper() != "CONDOR_G" :
-             ce_white_list=common.scheduler.ce_list()[1]
-             ce_black_list=common.scheduler.ce_list()[2]
-             tags_tmp=string.split(task['jobType'],'"') 
-             tags=[str(tags_tmp[1]),str(tags_tmp[3])]
 
         for id_job in jobs_to_match :
-            Requi.append(common.scheduler.sched_parameter(id_job,task))
-            if common.scheduler.name().upper() != "CONDOR_G" :
-                cleanedList=None 
-                if len(distinct_dests[sel])!=0:cleanedList = self.blackWhiteListParser.cleanForBlackWhiteList(distinct_dests[sel],'list') 
-                match = common.scheduler.listMatch(tags,cleanedList,ce_black_list,ce_white_list)  
-            else :
-                match = "1"
+            match = common.scheduler.listMatch(distinct_dests[sel])
             if match:
-               common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(id_job))
-               matched.append(sel)
+                common.logger.message("Found "+str(match)+" compatible site(s) for job "+str(id_job))
+                matched.append(sel)
             else:
-               common.logger.message("No compatible site found, will not submit jobs "+str(sub_jobs[sel]))
-               self.submissionError()
+                common.logger.message("No compatible site found, will not submit jobs "+str(sub_jobs[sel]))
+                self.submissionError()
             sel += 1
 
         ### Progress Bar indicator, deactivate for debug
         if not common.logger.debugLevel() :
-                term = TerminalController()
+            term = TerminalController()
   
         if len(matched)>0: 
             common.logger.message(str(len(matched))+" blocks of jobs will be submitted")
             for ii in matched: 
                 common.logger.debug(1,'Submitting jobs '+str(sub_jobs[ii]))
-                common.scheduler.submit(sub_jobs[ii],Requi[ii])
+                
+                try:
+                    common.scheduler.submit(sub_jobs[ii],task)
+                except CrabException:
+                    raise CrabException("Job not submitted")
+
                 if not common.logger.debugLevel() :
                     try: pbar = ProgressBar(term, 'Submitting '+str(len(sub_jobs[ii]))+' jobs')
                     except: pbar = None
-                if not common.logger.debugLevel():
-                    if pbar :
-                        pbar.update(float(ii+1)/float(len(sub_jobs)),'please wait')
-                ### check the if the submission succeded Maybe not neede 
-                if not common.logger.debugLevel():
-                    if pbar :
-                        pbar.update(float(ii+1)/float(len(sub_jobs)),'please wait')
-                ### check the if the submission succeded Maybe not neede 
                 if not common.logger.debugLevel():
                     if pbar :
                         pbar.update(float(ii+1)/float(len(sub_jobs)),'please wait')

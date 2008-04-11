@@ -27,11 +27,12 @@ class SchedulerLsf(SchedulerLocal) :
 
         return
 
-    def sched_parameter(self):
+    def sched_parameter(self,i,task):
         """
         Returns parameter scheduler-specific, to use with BOSS .
         """
         index = int(common._db.nJobs()) - 1
+        sched_param= ''
 
         for i in range(index): # Add loop DS
 
@@ -40,8 +41,9 @@ class SchedulerLsf(SchedulerLocal) :
                 sched_param += '-q '+self.queue +' '
                 if (self.res): sched_param += ' -R '+self.res +' '
             pass
-            run_jobReq={'schedulerAttributes':sched_param}## DS--BL
-            common._db.updateRunJob_(i,run_jobReq)        
+
+        sched_param+='-cwd '+common.work_space.resDir() + ' '
+        return sched_param
 
     def loggingInfo(self, id):
         """ return logging info about job nj """

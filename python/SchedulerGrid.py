@@ -148,7 +148,6 @@ class SchedulerGrid(Scheduler):
 
         return
 
-
     def rb_configure(self, RB):
         """
         Return a requirement to be add to Jdl to select a specific RB/WMS:
@@ -158,12 +157,6 @@ class SchedulerGrid(Scheduler):
         return None
 
     def sched_fix_parameter(self):
-        return
-
-    def sched_parameter(self):
-        """
-        Returns file with requirements and scheduler-specific parameters
-        """
         return
 
     def wsSetupEnvironment(self):
@@ -221,53 +214,53 @@ class SchedulerGrid(Scheduler):
 
         return txt
 
-    def wsCopyInput(self):
-        """
-        Copy input data from SE to WN
-        """
-        txt = ''
-        if not self.copy_input_data: return txt
+    # def wsCopyInput(self):
+    #     """
+    #     Copy input data from SE to WN
+    #     """
+    #     txt = ''
+    #     if not self.copy_input_data: return txt
 
-        ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
-        txt += 'if [ $middleware == OSG ]; then\n'
-        txt += '   #\n'
-        txt += '   #   Copy Input Data from SE to this WN deactivated in OSG mode\n'
-        txt += '   #\n'
-        txt += '   echo "Copy Input Data from SE to this WN deactivated in OSG mode"\n'
-        txt += 'elif [ $middleware == LCG ]; then \n'
-        txt += '   #\n'
-        txt += '   #   Copy Input Data from SE to this WN\n'
-        txt += '   #\n'
-        ### changed by georgia (put a loop copying more than one input files per jobs)
-        txt += '   for input_file in $cur_file_list \n'
-        txt += '   do \n'
-        txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
-        txt += '      copy_input_exit_status=$?\n'
-        txt += '      echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
-        txt += '      if [ $copy_input_exit_status -ne 0 ]; then \n'
-        txt += '         echo "Problems with copying to WN" \n'
-        txt += '      else \n'
-        txt += '         echo "input copied into WN" \n'
-        txt += '      fi \n'
-        txt += '   done \n'
-        ### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
-        txt += '   for file in $cur_pu_list \n'
-        txt += '   do \n'
-        txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
-        txt += '      copy_input_pu_exit_status=$?\n'
-        txt += '      echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
-        txt += '      if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
-        txt += '         echo "Problems with copying pu to WN" \n'
-        txt += '      else \n'
-        txt += '         echo "input pu files copied into WN" \n'
-        txt += '      fi \n'
-        txt += '   done \n'
-        txt += '   \n'
-        txt += '   ### Check SCRATCH space available on WN : \n'
-        txt += '   df -h \n'
-        txt += 'fi \n'
+    #     ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
+    #     txt += 'if [ $middleware == OSG ]; then\n'
+    #     txt += '   #\n'
+    #     txt += '   #   Copy Input Data from SE to this WN deactivated in OSG mode\n'
+    #     txt += '   #\n'
+    #     txt += '   echo "Copy Input Data from SE to this WN deactivated in OSG mode"\n'
+    #     txt += 'elif [ $middleware == LCG ]; then \n'
+    #     txt += '   #\n'
+    #     txt += '   #   Copy Input Data from SE to this WN\n'
+    #     txt += '   #\n'
+    #     ### changed by georgia (put a loop copying more than one input files per jobs)
+    #     txt += '   for input_file in $cur_file_list \n'
+    #     txt += '   do \n'
+    #     txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
+    #     txt += '      copy_input_exit_status=$?\n'
+    #     txt += '      echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
+    #     txt += '      if [ $copy_input_exit_status -ne 0 ]; then \n'
+    #     txt += '         echo "Problems with copying to WN" \n'
+    #     txt += '      else \n'
+    #     txt += '         echo "input copied into WN" \n'
+    #     txt += '      fi \n'
+    #     txt += '   done \n'
+    #     ### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
+    #     txt += '   for file in $cur_pu_list \n'
+    #     txt += '   do \n'
+    #     txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
+    #     txt += '      copy_input_pu_exit_status=$?\n'
+    #     txt += '      echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
+    #     txt += '      if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
+    #     txt += '         echo "Problems with copying pu to WN" \n'
+    #     txt += '      else \n'
+    #     txt += '         echo "input pu files copied into WN" \n'
+    #     txt += '      fi \n'
+    #     txt += '   done \n'
+    #     txt += '   \n'
+    #     txt += '   ### Check SCRATCH space available on WN : \n'
+    #     txt += '   df -h \n'
+    #     txt += 'fi \n'
 
-        return txt
+    #     return txt
 
     def wsCopyOutput(self):
         """
@@ -430,3 +423,9 @@ class SchedulerGrid(Scheduler):
         return 120
 
 
+    def tags(self):
+        task=common._db.getTask()
+        tags_tmp=string.split(task['jobType'],'"') 
+        tags=[str(tags_tmp[1]),str(tags_tmp[3])]
+        return tags
+        

@@ -157,17 +157,22 @@ class Creator(Actor):
         common._db.updateRunJob_(listID , listRunField ) ## New BL--DS
         common._db.updateJob_(listID, listField ) ## Nes BL--DS
 
+
         # Create script (sh)
         script_writer.modifyTemplateScript()
         os.chmod(common._db.queryTask('scriptName'), 0744) ## Modified BL--DS
        # common: write input sandbox --- This is now a task attribute... not per job ## BL--DS
 
+        # SL This should be a list, rather than a string!
         concString = ','
         inSand=''
         if len(self.job_type.inputSandbox(1)): 
             inSand +=   concString.join(self.job_type.inputSandbox(1)) 
-        isb = {'globalSandbox': inSand}
-        common._db.updateTask_(isb) 
+        # Sandbox, Start Dir , outputDir
+        param = {'globalSandbox': inSand , 'startDirectory': common.work_space.cwdDir() , 'outputDirectory': common.work_space.resDir() }
+        common._db.updateTask_(param) 
+
+        # set start Directory
 
 
         ####

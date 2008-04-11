@@ -14,7 +14,7 @@ def LFNBase(ProcessedDataset,merged=True):
     """
     lfnbase = "/store" 
     if not merged:
-     lfnbase = os.path.join(lfnbase,"tmp")
+        lfnbase = os.path.join(lfnbase,"tmp")
     
     lfnbase = os.path.join(lfnbase, "user", gethnUserName(), ProcessedDataset )
     return lfnbase

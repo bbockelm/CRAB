@@ -42,8 +42,8 @@ class GetOutputServer(StatusServer, GetOutput):
         if self.storage_path[0]!='/':
             self.storage_path = '/'+self.storage_path
 
-        self.outDir = self.cfg_params.get("USER.outputdir", common.work_space.resDir() )
-        self.logDir = self.cfg_params.get("USER.logdir", common.work_space.resDir() )
+        self.outDir = common.work_space.resDir()
+        self.logDir = common.work_space.resDir()
         self.return_data = self.cfg_params.get('USER.return_data',0)
 
         self.possible_status = [
@@ -82,9 +82,7 @@ class GetOutputServer(StatusServer, GetOutput):
             ':' + self.storage_port + remotedir + '/out_%s.tgz'  
         osbFiles = [ osbTemplate%str(jid) for jid in filesToRetrieve ]
 
-        copyHere = common.work_space.resDir() # MATT
-        if "USER.outputdir" in self.cfg_params.keys() and os.path.isdir(self.cfg_params["USER.outputdir"]):
-            copyHere = self.cfg_params["USER.outputdir"] + "/"
+        copyHere = common.work_space.resDir()
         destTemplate = 'file://'+copyHere+'/out_%s.tgz'  
         destFiles = [ destTemplate%str(jid) for jid in filesToRetrieve ]
 

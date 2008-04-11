@@ -19,15 +19,14 @@ class Cleaner(Actor):
 
         self.status.compute() # compute the status
 
-        ## SL: What a ugly interface (I use here). I should try a dictionary or something similar...
-        (ToTjob,countCreated,countReady,countSche,countRun,countCleared,countAbort,countCancel,countDone) = self.status.status()
+        countSub=common.bossSession.loadJobsByRunningAttr( { 'status' : 'S' })
+        countDone=common.bossSession.loadJobsByRunningAttr( { 'status' : 'SD' })
 
-        JobsOnGrid = countRun+countSche+countReady # job still on the grid
-        if JobsOnGrid or countDone:
+        if countSub or countDone:
             msg = "There are still "
-            if JobsOnGrid:
-                msg= msg+str(JobsOnGrid)+" jobs submitted. Kill them '-kill' before '-clean'"
-            if (JobsOnGrid and countDone):
+            if countSub:
+                msg= msg+str(countSub)+" jobs submitted. Kill them '-kill' before '-clean'"
+            if (countSub and countDone):
                 msg = msg + "and \nalso"
             if countDone:
                 msg= msg+str(countDone)+" jobs Done. Get their outputs '-getoutput' before '-clean'"
@@ -39,7 +38,7 @@ class Cleaner(Actor):
         """
         remove all
         """
-        if common.jobDB.nJobs()>0:
+        if common._db.nJobs()>0:
             self.check()
 
         # here I should first purge boss DB if central

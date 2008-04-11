@@ -18,7 +18,12 @@ from ProdCommon.BossLite.API.BossLiteAPISched import  BossLiteAPISched
 class Boss:
     def __init__(self):
 
+        self.session=None
         return
+
+    def __del__(self):
+        """ destroy instance """
+        del self.session
 
     def configure(self,cfg_params):
         self.cfg_params = cfg_params
@@ -33,27 +38,30 @@ class Boss:
         SchedMap = {'glite':'SchedulerGLiteAPI',
                     'glitecoll':'SchedulerGLiteAPI',\
                     'condor_g':'SchedulerCondorGAPI',\
-                    'lsf':'',\
-                    'caf':''
-                    }
-
+                    'lsf':'SchedulerLsf',\
+                    'caf':'SchedulerLsf'
+                    }         
+                 
         self.schedulerConfig = {
               'name' : SchedMap[self.schedulerName], \
               'service' : self.wms_service, \
               'config' : self.rb_param_file
               }
+
+        self.session=None
         return
 
     def schedSession(self): 
         ''' 
         Istantiate BossLiteApi session
         '''  
-        try: 
-            session =  BossLiteAPISched( common.bossSession, self.schedulerConfig)
-        except Exception, e :
-            common.logger.debug(3, "Istantiate SchedSession: " +str(traceback.format_exc()))
-            raise CrabException('Scheduler Session: '+str(e))
-        return session
+        if not self.session:
+            try: 
+                self.session =  BossLiteAPISched( common.bossSession, self.schedulerConfig)
+            except Exception, e :
+                common.logger.debug(3, "Istantiate SchedSession: " +str(traceback.format_exc()))
+                raise CrabException('Scheduler Session: '+str(e))
+        return self.session
 
     def declare(self, nj):
         """
@@ -64,7 +72,8 @@ class Boss:
         jbt = job.type()
         base = jbt.name()
 
-        wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
+        #wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
+        wrapper = str(common._db.queryTask('scriptName'))
         listField=[]
         listID=[]
         task=common._db.getTask()
@@ -95,26 +104,12 @@ class Boss:
         """
         Check the compatibility of available resources
         """
-        schedSession = self.schedSession() 
         try:
-            sites = schedSession.lcgInfo(tags, dest, whiteL, blackL )
+            sites = self.schedSession().lcgInfo(tags, dest, whiteL, blackL )
         except SchedulerError, err :
             common.logger.message("Warning: List Match operation failed with message: " +str(err))
             common.logger.debug(3, "List Match failed: " +str(traceback.format_exc()))
 
-
-#        Tout = 120
-#        CEs=[]
-#        try:
-#            CEs=self.bossUser.schedListMatch( schedulerName, schcladstring, self.bossTask.id(), "", Tout)
-#            common.logger.debug(1,"CEs :"+str(CEs))
-#        except SchedulerError,e:
-#            common.logger.message( "Warning : Scheduler interaction in list-match operation failed for jobs:")
-#            common.logger.message( e.__str__())
-#            pass
-#        except BossError,e:
-#            raise CrabException("ERROR: listMatch failed with message " + e.__str__())
-#        return CEs
         return len(sites)
 
     def submit(self, jobsList,req):
@@ -122,11 +117,9 @@ class Boss:
         Submit BOSS function.
         Submit one job. nj -- job number.
         """
-        schedSession = self.schedSession() 
-       # schedSession = BossLiteAPISched( common.bossSession, self.schedulerConfig)
         task = common._db.getTask(jobsList)
         try: 
-            schedSession.submit( task,jobsList,req )
+            self.schedSession().submit( task,jobsList,req )
         except SchedulerError, err :
             common.logger.message("Submit: " +str(err))
             common.logger.debug(3, "Submit: " +str(traceback.format_exc()))
@@ -139,9 +132,8 @@ class Boss:
         Query needed info of all jobs with specified taskid
         """
 
-        schedSession = self.schedSession() 
         try:
-            statusRes =  schedSession.query( str(taskid))
+            statusRes =  self.schedSession().query( str(taskid))
         except SchedulerError, err :
             common.logger.message("Status Query : " +str(err))
             common.logger.debug(3, "Status Query : " +str(traceback.format_exc()))
@@ -153,9 +145,8 @@ class Boss:
         """
         Retrieve output of all jobs with specified taskid
         """
-        schedSession = self.schedSession() 
         try: 
-            schedSession.getOutput( taskId, jobRange, outdir )
+            self.schedSession().getOutput( taskId, jobRange, outdir )
         except SchedulerError, err :
             common.logger.message("GetOutput : " +str(err))
             common.logger.debug(3, "GetOutput : " +str(traceback.format_exc()))
@@ -163,38 +154,17 @@ class Boss:
  
         return
 
-    def cancel(self,subm_id):
+    def cancel(self,list):
         """
-        Cancel the EDG job with id: if id == -1, means all jobs.
+        Cancel the job with id from a list
         """
-        #print "CANCEL -------------------------"
-        #print "int_id ",int_id," nSubmitted ", common.jobDB.nSubmittedJobs()
-
-        common.jobDB.load()
-        if len( subm_id ) > 0:
-            try:
-                subm_id.sort()
-                range = self.prepString( subm_id )
-                common.logger.message("Killing job # " + str(subm_id).replace("[","",1).replace("]","",1) )
-                Tout =len(subm_id)*60
-                self.bossTask.kill( range, Tout )
-                self.bossTask.load(ALL, range)
-                task = self.bossTask.jobsDict()
-                for k, v in task.iteritems():
-                    k = int(k)
-                    status = v['STATUS']
-                    if k in subm_id and status == 'K':
-                        common.jobDB.setStatus(k - 1, 'K')
-            except SchedulerError,e:
-                common.logger.message("Warning : Scheduler interaction on kill operation failed for jobs:"+ e.__str__())
-                pass
-            except BossError,e:
-                common.logger.message( e.__str__() + "\nError killing jobs # "+str(subm_id)+" . See log for details")
-            common.jobDB.save()
-            pass
-        else:
-            common.logger.message("\nNo job to be killed")
-        common.jobDB.save()
+        task = common._db.getTask(list)
+        try: 
+            self.schedSession().kill( task, list)
+        except SchedulerError, err :
+            common.logger.message("Kill: " +str(err))
+            common.logger.debug(3, "Kill: " +str(traceback.format_exc()))
+            raise CrabException('Kill: '+str(err))
         return
 
     def setFlag( self, list, index ):
@@ -221,7 +191,3 @@ class Boss:
         if flag > 0:
             s = s + ":" + str( list[i] )
         return s
-
-
-
-

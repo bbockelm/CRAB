@@ -525,7 +525,8 @@ class Crab:
                 if val:
                     if val =='all':
                          ## this should be NOT scheduler dependent... to move from Scheduler to _db BL--DS 
-                        jobs = common.scheduler.list()
+                        jobs = common._db.nJobs("list")
+                        #common.scheduler.list()
                     else:
                         jobs = self.parseRange_(val)
                     pass
@@ -537,7 +538,8 @@ class Crab:
                     from KillerServer import KillerServer
                     self.actions[opt] = KillerServer(self.cfg_params,val, self.parseRange_(val)) #Fabio
                 else:
-                    common.scheduler.cancel(jobs)
+                    from Killer import Killer
+                    self.actions[opt] = Killer(self.cfg_params, self.parseRange_(val))
 
 
             elif ( opt == '-getoutput' or opt == '-get'):

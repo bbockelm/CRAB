@@ -80,8 +80,8 @@ class DBinterface:
         with the first coniguration stuff 
         """
         opt={}
-        opt['serverName']=optsToSave['server_name'] 
-        opt[ 'name']=common.work_space.taskName()  
+        if optsToSave.get('server_mode',0) == 1: opt['serverName']=optsToSave['server_name'] 
+        opt['name']=common.work_space.taskName()  
      	task = Task( opt )
         try:
             common.bossSession.saveTask( task )

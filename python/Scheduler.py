@@ -31,15 +31,31 @@ class Scheduler :
 
     def configure(self, cfg_params):
         self._boss.configure(cfg_params)
+        from BlackWhiteListParser import BlackWhiteListParser
+        self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
         return
 
     def boss(self):
         return self._boss
 
+    def rb_configure(self, RB):
+        """
+        Return a requirement to be add to Jdl to select a specific RB/WMS:
+        return None if RB=None
+        To be re-implemented in concrete scheduler
+        """
+        return None
+
+    def ce_list(self):
+        return '',None,None
+
+    def se_list(self, id, dest):
+        return '',None,None
+
     def sched_fix_parameter(self):
         return     
 
-    def sched_parameter(self):
+    def sched_parameter(self,i,task):
         """
         Returns parameter scheduler-specific, to use with BOSS .
         """
@@ -63,17 +79,26 @@ class Scheduler :
         """ return logging info about job nj """
         return
 
-    def listMatch(self,tags, dest , whiteL, blackL): ##  whiteL, blackL added by MATTY as patch
+    def tags(self):
+        return ''
+
+    def listMatch(self, dest): ##  whiteL, blackL added by MATTY as patch
         """ Return the number of differente sites matching the actual requirements """
         start = time.time()
+        tags=self.tags()
+
+        if len(dest)!=0:cleanedList = self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list') 
+        whiteL=self.ce_list()[1]
+        blackL=self.ce_list()[2]
         nsites= self.boss().listMatch(tags, dest , whiteL, blackL) 
         stop = time.time()
 
         return nsites 
     
-    def submit(self,list,req):
+    def submit(self,list,task):
         """ submit to scheduler a list of jobs """
         if (not len(list)): common.logger.message("No sites where to submit jobs")
+        req=str(self.sched_parameter(list[0],task))
         self.boss().submit(list,req) 
         return
 
@@ -93,22 +118,11 @@ class Scheduler :
         self.boss().getOutput(taskId, jobRange, outdir)
         return
 
-    def cancel(self,int_id):
+    def cancel(self,ids):
         """
-        Cancel the job job with id: if id == -1, means all jobs.
+        Cancel the job(s) with ids (a list of id's)
         """
-        subm_id = []
-
-        nTot = common.jobDB.nJobs()
-        for id in int_id:
-            if nTot >= id: ## TODO check the number of jobs..else: 'IndexError: list index out of range'
-                if ( common.jobDB.status(id-1) in ['S','R','A']) and (id not in subm_id):
-                    subm_id.append(id)
-                else:
-                    common.logger.message("Not possible to kill Job #"+str(id))
-            else:
-                common.logger.message("Warning: job # "+str(id)+" doesn't exists! Not possible to kill it.")
-        self._boss.cancel(subm_id)
+        self._boss.cancel(ids)
         return
 
     def wsSetupEnvironment(self):
@@ -138,3 +152,7 @@ class Scheduler :
 
     def tOut(self, list):
         return 120
+
+    def clean(self):
+        del self._boss
+        return

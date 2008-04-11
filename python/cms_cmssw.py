@@ -134,15 +134,15 @@ class Cmssw(JobType):
         # script_exe file as additional file in inputSandbox
         self.scriptExe = cfg_params.get('USER.script_exe',None)
         if self.scriptExe :
-           if not os.path.isfile(self.scriptExe):
-              msg ="ERROR. file "+self.scriptExe+" not found"
-              raise CrabException(msg)
-           self.additional_inbox_files.append(string.strip(self.scriptExe))
+            if not os.path.isfile(self.scriptExe):
+                msg ="ERROR. file "+self.scriptExe+" not found"
+                raise CrabException(msg)
+            self.additional_inbox_files.append(string.strip(self.scriptExe))
 
         #CarlosDaniele
         if self.datasetPath == None and self.pset == None and self.scriptExe == '' :
-           msg ="Error. script_exe  not defined"
-           raise CrabException(msg)
+            msg ="Error. script_exe  not defined"
+            raise CrabException(msg)
 
         ## additional input files
         if cfg_params.has_key('USER.additional_input_files'):
@@ -534,7 +534,8 @@ class Cmssw(JobType):
         for block in blocks:
             if block in jobsOfBlock.keys() :
                 blockCounter += 1
-                screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)))
+                screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),
+                    ','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)))
                 if len(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)) == 0:
                     noSiteBlock.append( spanRanges(jobsOfBlock[block]) )
                     bloskNoSite.append( blockCounter )
@@ -676,14 +677,6 @@ class Cmssw(JobType):
         self.argsList = (len(jobParams[1])+1)
 
         return
-#
-#    def getJobTypeArguments(self, nj, sched):
-#        result = ''
-#        jobs=[]
-#        jobs.append(nj)
-#        for i in common._db.queryJob('arguments',jobs):##  BL--DS
-#            result=result+str(i)+" "
-#        return result
 
     def numberOfJobs(self):
         # Fabio
@@ -925,6 +918,7 @@ class Cmssw(JobType):
             txt += 'echo "PSETHASH = $PSETHASH" \n'
             txt += '\n'
         return txt
+
     def wsUntarSoftware(self, nj=0):
         """
         Put in the script the commands to build an executable
@@ -1217,10 +1211,7 @@ class Cmssw(JobType):
         """
 
         txt = '\n#Written by cms_cmssw::modifyReport\n'
-        try:
-            publish_data = int(self.cfg_params['USER.publish_data'])
-        except KeyError:
-            publish_data = 0
+        publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (publish_data == 1):
             processedDataset = self.cfg_params['USER.publish_data_name']
             LFNBaseName = LFNBase(processedDataset)

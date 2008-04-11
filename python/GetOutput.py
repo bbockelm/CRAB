@@ -8,24 +8,22 @@ class GetOutput(Actor):
         self.cfg_params = args[0]
         self.jobs = args[1]
         
-        self.outDir = self.cfg_params.get("USER.outputdir", common.work_space.resDir() )
-        self.logDir = self.cfg_params.get("USER.logdir", common.work_space.resDir() )
+        self.outDir = common.work_space.resDir()
+        self.logDir = common.work_space.resDir()
         self.return_data = self.cfg_params.get('USER.return_data',0)
 
-        self.possible_status = [
-                         'Undefined', 
-                         'Submitted',
-                         'Waiting',
-                         'Ready', 
-                         'Scheduled',
-                         'Running',
-                         'Done',
-                         'Cancelled',
-                         'Aborted',
-                         'Unknown',
-                         'Done(failed)'
-                         'Cleared'
-                          ]
+        self.possible_status = {
+                         'UN': 'Unknown', 
+                         'SU': 'Submitted',
+                         'SW': 'Waiting',
+                         'SS': 'Scheduled',
+                         'R': 'Running',
+                         'SD': 'Done',
+                         'SK': 'Killed',
+                         'SA': 'Aborted',
+                         'SE': 'Cleared',
+                         'E': 'Cleared'
+                          }
         return
 
     def run(self):
@@ -50,7 +48,7 @@ class GetOutput(Actor):
         self.list_id=[]
         self.all_id =[]    
         for job in self.up_task.jobs:
-            if job.runningJob['statusScheduler']=='Done':
+            if job.runningJob['status']=='SD':
                 list_id_done.append(job['id'])  
             self.all_id.append(job['id'])  
         check = -1 
@@ -58,9 +56,9 @@ class GetOutput(Actor):
         if len(list_id_done)==0 or ( check == 0 ) :
             msg='\n'    
             list_ID=[] 
-            for st in self.possible_status:
-                list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
-                if len(list_ID)>0: msg += "       %i Jobs  %s \n" % (len(list_ID), str(st))
+            for st,stDetail in self.possible_status.iteritems():
+                list_ID = common._db.queryAttrRunJob({'status':st},'jobId')
+                if len(list_ID)>0: msg += "       %i Jobs in status: %s \n" % (len(list_ID), str(stDetail))
             msg += '\n*******No jobs in Done status. It is not possible yet to retrieve the output.\n'
             raise CrabException(msg)
         else:
