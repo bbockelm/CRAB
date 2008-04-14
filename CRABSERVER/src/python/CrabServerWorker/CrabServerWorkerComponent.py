@@ -5,7 +5,7 @@ _CrabServerWorkerComponent_
 """
 
 __version__ = "$Revision: 1.0 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.0 2007/12/17 06:33:00 farinafa Exp $"
+__revision__ = "$Id: CrabServerWorkerComponentV2.py,v 1.0 2007/12/17 06:33:00 farinafa Exp $"
 
 import os
 import pickle
@@ -53,6 +53,7 @@ class CrabServerWorkerComponent:
         self.args.setdefault('storageName', 'localhost')
         self.args.setdefault('storagePort', '')
         self.args.setdefault('storagePath', self.args["dropBoxPath"])
+        self.args.setdefault('gsiftpNode', 'localhost')
         self.args.update(args)
         
         if self.args['storagePath'] == None and self.args['Protocol'] == 'local': 
@@ -213,9 +214,11 @@ class CrabServerWorkerComponent:
         workerCfg['proxy'] = reason
         workerCfg['firstSubmit'] = True 
         workerCfg['resubCount'] = self.args['maxCmdAttempts']
+
         workerCfg['SEproto'] = self.args['Protocol']
         workerCfg['SEurl'] = self.args['storageName']
         workerCfg['SEport'] = self.args['storagePort']
+        workerCfg['gsiftpNode'] = self.args['gsiftpNode']
 
         workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
         workerCfg['se_dynBList'] = []
@@ -308,9 +311,11 @@ class CrabServerWorkerComponent:
         workerCfg['proxy'] = reason
         workerCfg['firstSubmit'] = False
         workerCfg['resubCount'] = resubCount
+
         workerCfg['SEproto'] = self.args['Protocol']
         workerCfg['SEurl'] = self.args['storageName']
         workerCfg['SEport'] = self.args['storagePort']
+        workerCfg['gsiftpNode'] = self.args['gsiftpNode']
 
         workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
         workerCfg['se_dynBList'] = []
@@ -433,7 +438,7 @@ class CrabServerWorkerComponent:
                     return 0, assocFile 
                 return 0, assocFile
             
-        reason = "Unable to locate a proper proxy for the task %s with subjcet %s"%(taskUniqName, subj)
+        reason = "Unable to locate a proper proxy for the task %s with subject %s"%(taskUniqName, subj)
         logging.info(reason)
         logging.debug(self.proxyMap)
         return 2, reason
@@ -449,7 +454,7 @@ class CrabServerWorkerComponent:
             pickle.dump(ldump, f)
             f.close()
         except Exception, e:
-            logging.info("Error while materializing component status %s\n"%e)
+            logging.info("Error while materializing component status\n"+e)
         return
 
     def dematerializeStatus(self):

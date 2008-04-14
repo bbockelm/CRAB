@@ -55,6 +55,7 @@ class FatWorker(Thread):
             self.SEproto = configs['SEproto']
             self.SEurl = configs['SEurl']
             self.SEport = configs['SEport']
+            self.gsiftpNode = configs['gsiftpNode']
 
             self.wmsEndpoint = configs['wmsEndpoint']
             self.se_blackL = [] + configs['se_dynBList']
@@ -299,7 +300,9 @@ class FatWorker(Thread):
         submitted = [] 
 
         # modify sandbox and other paths for WMS bypass
-        turlpreamble = 'gsiftp://%s:%s'%(self.SEurl, self.SEport)
+        ### NOTE MODIFIED with GetSURL call 
+        ### turlpreamble = 'gsiftp://%s:%s'%(self.SEurl, self.SEport)
+        turlpreamble = 'gsiftp://%s'%self.gsiftpNode
         task['startDirectory'] = turlpreamble
 
         # add fjr XML file to the retrieved files and WMS OSB bypass
@@ -475,7 +478,7 @@ class FatWorker(Thread):
            if  j['dlsDestination'] not in distinct_dests:
                distinct_dests.append( j['dlsDestination'] )
         ##
- 
+
         jobs_to_match = []
         all_jobs = []
         count = 0
