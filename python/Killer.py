@@ -17,7 +17,6 @@ class Killer(Actor):
         jStatus=common._db.queryRunJob('status','all')
 
         toBeKilled = []
-        print jStatus
         for id in self.range:
             if id not in  common._db.nJobs("list"):
                 common.logger.message("Warning: job # "+str(id)+" doesn't exists! Not possible to kill it.")
