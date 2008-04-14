@@ -70,7 +70,6 @@ cat > crab.sh <<EOF
 #! /bin/sh
 # CRAB related Stuff
 export CRABDIR=$TopDir
-export CRABSCRIPT=\${CRABDIR}/script
 
 CRABPATH=\${CRABDIR}/python
 CRABDLSAPIPATH=\${CRABDIR}/DLSAPI
@@ -125,7 +124,6 @@ cat > crab.csh <<EOF
 #! /bin/csh
 # CRAB related Stuff
 setenv CRABDIR $TopDir
-setenv CRABSCRIPT \${CRABDIR}/script
 
 set CRABPATH=\${CRABDIR}/python
 set CRABDLSAPIPATH=\${CRABDIR}/DLSAPI
