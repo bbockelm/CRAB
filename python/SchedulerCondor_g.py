@@ -13,8 +13,8 @@ import CondorGLoggingInfo
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.91 2008/04/11 21:35:41 ewv Exp $"
-__version__ = "$Revision: 1.91 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.92 2008/04/15 09:37:47 spiga Exp $"
+__version__ = "$Revision: 1.92 $"
 
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
@@ -238,6 +238,9 @@ class SchedulerCondor_g(SchedulerGrid):
         """
         Parse logging info file and return main info
         """
+
+        print "decode called",file
+
         loggingInfo = CondorGLoggingInfo.CondorGLoggingInfo()
         reason = loggingInfo.decodeReason(file)
         return reason
@@ -270,17 +273,17 @@ class SchedulerCondor_g(SchedulerGrid):
         txt = '\n'
         return txt
 
-    def loggingInfo(self, id):
-        """
-        retrieve the logging info from logging and bookkeeping and return it
-        """
-        schedd    = id.split('//')[0]
-        condor_id = id.split('//')[1]
-        cmd = 'condor_q -l -name ' + schedd + ' ' + condor_id
-        cmd_out = runCommand(cmd)
-        common.logger.debug(5,"Condor-G loggingInfo cmd: "+cmd)
-        common.logger.debug(5,"Condor-G loggingInfo cmd_out: "+cmd_out)
-        return cmd_out
+    #def loggingInfo(self, id):
+        #"""
+        #retrieve the logging info from logging and bookkeeping and return it
+        #"""
+        #schedd    = id.split('//')[0]
+        #condor_id = id.split('//')[1]
+        #cmd = 'condor_q -l -name ' + schedd + ' ' + condor_id
+        #cmd_out = runCommand(cmd)
+        #common.logger.debug(5,"Condor-G loggingInfo cmd: "+cmd)
+        #common.logger.debug(5,"Condor-G loggingInfo cmd_out: "+cmd_out)
+        #return cmd_out
 
     def listMatch(self, nj):
         """
