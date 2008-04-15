@@ -10,7 +10,7 @@ from ServerCommunicator import ServerCommunicator
 from ServerConfig import *
 
 
-class GetOutputServer(StatusServer, GetOutput):
+class GetOutputServer( GetOutput, StatusServer ):
 
     def __init__(self, *args):
         self.cfg_params = args[0]
@@ -46,44 +46,52 @@ class GetOutputServer(StatusServer, GetOutput):
         self.logDir = common.work_space.resDir()
         self.return_data = self.cfg_params.get('USER.return_data',0)
 
-        self.possible_status = [
-                         'Undefined',
-                         'Submitted',
-                         'Waiting',
-                         'Ready',
-                         'Scheduled',
-                         'Running',
-                         'Done',
-                         'Cancelled',
-                         'Aborted',
-                         'Unknown',
-                         'Done(failed)'
-                         'Cleared'
-                          ]
+        self.possible_status = {
+                         'UN': 'Unknown',
+                         'SU': 'Submitted',
+                         'SW': 'Waiting',
+                         'SS': 'Scheduled',
+                         'R': 'Running',
+                         'SD': 'Done',
+                         'SK': 'Killed',
+                         'SA': 'Aborted',
+                         'SE': 'Cleared',
+                         'E': 'Cleared'
+                         }
         return
 
-    def run(self):
-        common.logger.debug(5, "GetOutput server::run() called")
-        start = time.time()
-        common.scheduler.checkProxy()
+    
+    def getOutput(self): 
 
         # get updated status from server #inherited from StatusServer
         self.resynchClientSide()
 
         # understand whether the required output are available
         self.checkBeforeGet()
-        filesToRetrieve = self.list_id
+
+        # retrive files
+        self.retrieveFiles(self.list_id) 
+
+        self.organizeOutput()    
+
+        return
+
+    def retrieveFiles(self,filesToRetrieve):
+        """
+        Real get output from server storage
+        """
+        common.scheduler.checkProxy()
 
         # create the list with the actual filenames 
         taskuuid = str(common._db.queryTask('name'))
         remotedir = os.path.join(self.storage_path, taskuuid)
 
         osbTemplate = self.storage_proto + '://'+ self.storage_name +\
-            ':' + self.storage_port + remotedir + '/out_%s.tgz'  
+            ':' + self.storage_port + remotedir + '/out_files_%s.tgz'  
         osbFiles = [ osbTemplate%str(jid) for jid in filesToRetrieve ]
 
         copyHere = common.work_space.resDir()
-        destTemplate = 'file://'+copyHere+'/out_%s.tgz'  
+        destTemplate = 'file://'+copyHere+'/out_files_%s.tgz'  
         destFiles = [ destTemplate%str(jid) for jid in filesToRetrieve ]
 
         # retrieve them from SE #TODO replace this with SE-API
@@ -102,12 +110,12 @@ class GetOutputServer(StatusServer, GetOutput):
                 ## 
  
                 ## clean-up SE
-                cmd = 'lcg-del --vo cms %s'%osbFiles[i]
-                out = os.system(cmd +' >& /dev/null')
-                common.logger.debug(5, cmd)
-                if out != 0:
-                    print "Unable to clean up SE for output file %s. The deletion will be performed by the server"%osbFiles[i]
-                    continue
+               # cmd = 'lcg-del --vo cms %s'%osbFiles[i]
+               # out = os.system(cmd +' >& /dev/null')
+               # common.logger.debug(5, cmd)
+               # if out != 0:
+               #     print "Unable to clean up SE for output file %s. The deletion will be performed by the server"%osbFiles[i]
+               #     continue
 
             except Exception, e:
                 print "Unable to retrieve output file %s"%osbFiles[i] 

@@ -48,7 +48,7 @@ class GetOutput(Actor):
         self.list_id=[]
         self.all_id =[]    
         for job in self.up_task.jobs:
-            if job.runningJob['status']=='SD':
+            if job.runningJob['status'] in ['SD','E']:
                 list_id_done.append(job['id'])  
             self.all_id.append(job['id'])  
         check = -1 
@@ -91,12 +91,16 @@ class GetOutput(Actor):
     def getOutput(self):
         """
         Get output for a finished job with id.
-        Returns the name of directory with results.
-
         """
         self.checkBeforeGet()
         common.scheduler.getOutput(1,self.list_id,self.outDir) ## NeW BL--DS
-
+        self.organizeOutput()    
+        return
+  
+    def organizeOutput(self): 
+        """
+        Untar Output  
+        """
         listCode = []
         job_id = []
 
