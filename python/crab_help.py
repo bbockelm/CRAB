@@ -451,7 +451,9 @@ To be used together with I<copy_data>. Path where to put output files on Storage
 
 Only for LSF scheduer: allow to define the command to be used to copy the output to final location. Default is rfcp
 
-=item B<register_data>
+=item B<xml_report>
+
+To be used to switch off the screen report during the status query, enabling the db serialization in a file. Specifying I<xml_report> = FileName CRAB will serialize the DB into CRAB_WORKING_DIR/share/FileName.
 
 =back
 
