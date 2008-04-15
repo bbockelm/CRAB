@@ -117,7 +117,7 @@ class DBinterface:
         for id in jobsL:
             parameters = {}
             parameters['jobId'] =  str(id)
-            parameters['name'] = 'job' + str(id)
+            parameters['name'] = task['name'] + '_' + 'job' + str(id)
             job = Job(parameters)
             jobs.append(job)  
         task.addJobs(jobs)
