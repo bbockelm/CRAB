@@ -15,7 +15,8 @@ class EdgLoggingInfo:
                             'Grid error after job started',
                             'Aborted by user',
                             'Application error',
-                            'Success']
+                            'Success',
+                            'Failure while executing job wrapper' ]
         self.category = ''
         self.reason = ''
 
@@ -46,7 +47,6 @@ class EdgLoggingInfo:
         """
         extract meaningful message from edg-job-get-logging-info -v 2
         """
-
         # init final variables
         final_done_code = 0
         final_abort_msg = ''
@@ -62,7 +62,6 @@ class EdgLoggingInfo:
         exit_code = ''
 
         lines = input.split('\n')
-
         for line in lines :
             if line.count('Event:') >= 1 :
                 event = line.split(':')[1].strip()
@@ -72,7 +71,7 @@ class EdgLoggingInfo:
                 final_running = 1
             if event == 'Done' :
                 final_done = 1
-            if line.count('reason') >= 1 :
+            if line.count('Reason') >= 1 :
                 reason = self.parse_reason(line.split('=')[1].strip())
             match = EXIT_CODE_RE.match(line) #DS
             if match:                       #DS                         
@@ -81,7 +80,6 @@ class EdgLoggingInfo:
             #    exit_code = line.split('=')[1].strip()
             # if line.count('time') >= 1 :
             #     time = line.split('=')[1].strip()
-            
             if ( line.count('---') >= 1 or line.count('***') >= 1 ) and event != '' :
                 if event in self._events :
                     if event == 'Done' :
@@ -92,7 +90,10 @@ class EdgLoggingInfo:
                             final_done_msg += '. '+reason
                     elif event == 'Abort' :
                         final_abort_msg = reason
-
+ 
+        if final_abort_msg.count('Failure while executing job wrapper') >= 1 and \
+           ( final_running == 1 ) :
+            final_category = self._categories[6]
 
         if final_abort_msg.count('no compatible resources') >= 1 :
             final_category = self._categories[0]
@@ -168,6 +169,10 @@ class EdgLoggingInfo:
             self.category = self._categories[4]
         elif final_category == self._categories[5] :
             msg = 'succeeded'
+            self.reason = msg
+            self.category = self._categories[5]
+        elif final_category == self._categories[6] :
+            msg = 'aborted with msg "'+final_abort_msg+'".'
             self.reason = msg
             self.category = self._categories[5]
 

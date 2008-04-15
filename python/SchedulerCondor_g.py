@@ -9,11 +9,12 @@ import common
 import popen2
 import os
 from BlackWhiteListParser import BlackWhiteListParser
+import CondorGLoggingInfo
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.90 2008/04/10 13:50:41 ewv Exp $"
-__version__ = "$Revision: 1.90 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.91 2008/04/11 21:35:41 ewv Exp $"
+__version__ = "$Revision: 1.91 $"
 
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
@@ -232,6 +233,14 @@ class SchedulerCondor_g(SchedulerGrid):
 
       common._db.updateTask_({'jobType':jobParams})
       return jobParams # Not sure I even need to return anything
+
+    def decodeLogInfo(self, file):
+        """
+        Parse logging info file and return main info
+        """
+        loggingInfo = CondorGLoggingInfo.CondorGLoggingInfo()
+        reason = loggingInfo.decodeReason(file)
+        return reason
 
     def wsSetupEnvironment(self):
       """

@@ -75,14 +75,15 @@ class Scheduler :
         """ return the user name """
         return
 
-    def loggingInfo(self, nj):
+    def loggingInfo(self,list_id,outfile ):
         """ return logging info about job nj """
-        return
+        self.checkProxy()
+        return self.boss().LoggingInfo(list_id,outfile)
 
     def tags(self):
         return ''
 
-    def listMatch(self, dest): ##  whiteL, blackL added by MATTY as patch
+    def listMatch(self, dest):
         """ Return the number of differente sites matching the actual requirements """
         start = time.time()
         tags=self.tags()
@@ -103,7 +104,6 @@ class Scheduler :
         return
 
     def queryEverything(self,taskid):
-
         """
         Query needed info of all jobs with specified boss taskid
         """
@@ -123,6 +123,12 @@ class Scheduler :
         Cancel the job(s) with ids (a list of id's)
         """
         self._boss.cancel(ids)
+        return
+
+    def decodeLogInfo(self, file):
+        """
+        Parse logging info file and return main info
+        """
         return
 
     def wsSetupEnvironment(self):
@@ -150,9 +156,3 @@ class Scheduler :
         """
         self._boss.declare(jobs)
 
-    def tOut(self, list):
-        return 120
-
-    def clean(self):
-        del self._boss
-        return

@@ -3,6 +3,7 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 from GliteConfig import *
+import EdgLoggingInfo
 import common
 
 import os, sys, time
@@ -146,6 +147,14 @@ class SchedulerGlite(SchedulerGrid):
 
         return sched_param
 
+    def decodeLogInfo(self, file):
+        """
+        Parse logging info file and return main info
+        """
+        loggingInfo = EdgLoggingInfo.EdgLoggingInfo()
+        reason = loggingInfo.decodeReason(file)
+        return reason
+
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
@@ -169,21 +178,6 @@ class SchedulerGlite(SchedulerGrid):
         txt += 'fi \n'
 
         return txt
-
-    def loggingInfo(self, id):
-        """
-        retrieve the logging info from logging and bookkeeping and return it
-        """
-        self.checkProxy()
-        cmd = 'glite-job-logging-info -v 3 ' + id
-        cmd_out = runCommand(cmd)
-        return cmd_out
-
-    def queryDetailedStatus(self, id):
-        """ Query a detailed status of the job with id """
-        cmd = 'glite-job-status '+id
-        cmd_out = runCommand(cmd)
-        return cmd_out
 
     def findSites_(self, n, sites):
         itr4 =[]

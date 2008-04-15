@@ -167,6 +167,19 @@ class Boss:
             raise CrabException('Kill: '+str(err))
         return
 
+    def LoggingInfo(self,list_id,outfile):
+        """
+        query the logging info with id from a list and
+        retourn the reults 
+        """  
+        try: 
+            self.schedSession().postMortem(1,list_id,outfile)
+        except SchedulerError, err :
+            common.logger.message("logginginfo: " +str(err))
+            common.logger.debug(3, "logginginfo: " +str(traceback.format_exc()))
+            raise CrabException('logginginfo: '+str(err))
+        return
+
     def setFlag( self, list, index ):
         if len( list ) > (index + 1):
             if list[index + 1] == ( list[index] + 1 ):
