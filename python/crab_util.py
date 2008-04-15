@@ -379,19 +379,29 @@ def spanRanges(jobArray):
 
     return output
 
-def displayReport(self, header, lines):
+def displayReport(self, header, lines, xml=''):
  
-    counter = 0
-    printline = ''
-    printline+= header 
-    print printline
-    print '---------------------------------------------------------------------------------------------------'
-   
-    for i in range(len(lines)):
-        if counter != 0 and counter%10 == 0 :
-            print '---------------------------------------------------------------------------------------------------'
-        print lines[i]
-        counter += 1
+    if xml == '' :
+        counter = 0
+        printline = ''
+        printline+= header 
+        print printline
+        print '---------------------------------------------------------------------------------------------------'
+       
+        for i in range(len(lines)):
+            if counter != 0 and counter%10 == 0 :
+                print '---------------------------------------------------------------------------------------------------'
+            print lines[i]
+            counter += 1
+    else:
+        fileName = common.work_space.shareDir() + xml
+        task = common._db.getTask()
+        taskXML = common._db.serializeTask(task)
+        common.logger.debug(5, taskXML)
+        f = open(fileName, 'w')
+        f.write(taskXML)
+        f.close()
+        pass
 
 
 

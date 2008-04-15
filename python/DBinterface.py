@@ -305,3 +305,43 @@ class DBinterface:
         for i in task:
             matched.append(i[field])
         return matched 
+
+    def deserXmlStatus(self, reportList):
+
+        task = self.getTask()
+ 
+        for job in task.jobs:
+            if not job.runningJob:
+                raise CrabException( "Missing running object for job %s"%str(job['id']) )
+
+            id = str(job.runningJob['id'])
+            # TODO linear search, probably it can be optized with binary search
+            rForJ = None
+            for r in reportList:
+                if r.getAttribute('id') in [ id, 'all']:
+                    rForJ = r
+                    break
+
+            # Data alignment
+            jobStatus = str(job.runningJob['statusScheduler'])
+            if rForJ.getAttribute('status') not in ['Created', 'Submitting']:
+                job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
+                jobStatus = str(job.runningJob['statusScheduler'])
+                job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
+
+            job.runningJob['destination'] = str( rForJ.getAttribute('site') )
+            dest = str(job.runningJob['destination']).split(':')[0]
+
+            job.runningJob['applicationReturnCode'] = str( rForJ.getAttribute('exe_exit') )
+            exe_exit_code = str(job.runningJob['applicationReturnCode'])
+
+            job.runningJob['wrapperReturnCode'] = str( rForJ.getAttribute('job_exit') )
+            job_exit_code = str(job.runningJob['wrapperReturnCode'])
+
+            if str( rForJ.getAttribute('resubmit') ).isdigit():
+                job['submissionNumber'] = int(rForJ.getAttribute('resubmit'))
+            # TODO cleared='0' field, how should it be handled/mapped in BL? #Fabio
+
+        common.bossSession.updateDB( task )
+
+        return

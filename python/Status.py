@@ -1,17 +1,13 @@
 from Actor import *
 import common
 import string, os, time
-from crab_util import makeCksum
+from crab_util import *
 
 class Status(Actor):
     def __init__(self, *args):
         self.cfg_params = args[0]
 
-        if common.scheduler.name().upper() == 'CONDOR_G':
-            # create hash of cfg file
-            self.hash = makeCksum(common.work_space.cfgFileName())
-        else:
-            self.hash = ''
+        self.xml = self.cfg_params.get("USER.xmlReport",'')
 
         return
 
@@ -22,22 +18,28 @@ class Status(Actor):
         common.logger.debug(5, "Status::run() called")
 
         start = time.time()
-        self.compute()
+        self.query()
         self.PrintReport_()
         stop = time.time()
         common.logger.debug(1, "Status Time: "+str(stop - start))
         common.logger.write("Status Time: "+str(stop - start))
         pass
 
-    def compute(self):
+    def query(self):
         """
         compute the status
         """
-
         common.logger.message("Checking the status of all jobs: please wait")
         task = common._db.getTask()
-        up_task = common.scheduler.queryEverything(task['id']) ## NeW BL--DS
+        upTask = common.scheduler.queryEverything(task['id']) 
+        self.compute(upTask)
+
+    def compute(self, up_task):
+ 
         toPrint=[]
+
+        taskId="_".join(up_task['name']).split('_')[:-1]
+
         for job in up_task.jobs :
             id = str(job.runningJob['id'])
             jobStatus =  str(job.runningJob['statusScheduler'])
@@ -45,85 +47,25 @@ class Status(Actor):
             exe_exit_code = str(job.runningJob['applicationReturnCode'])
             job_exit_code = str(job.runningJob['wrapperReturnCode']) 
             printline=''
-        
-#            if jobStatus == 'Done (Success)' or jobStatus == 'Cleared' or jobStatus == 'Done (Aborted)':
+            header = ''
             if dest == 'None' :  dest = ''
             if exe_exit_code == 'None' :  exe_exit_code = ''
             if job_exit_code == 'None' :  job_exit_code = ''
             printline+="%-8s %-18s %-40s %-13s %-15s" % (id,jobStatus,dest,exe_exit_code,job_exit_code)
             toPrint.append(printline)
-#           elif jobStatus == 'Created':
-#               printline+="%-8s %-18s %-40s %-13s %-15s" % (bossid,'Created',dest,'','')
-#               pass
-#           else:
-#               printline+="%-8s %-18s %-40s %-13s %-15s" % (bossid,jobStatus,dest,'','')
-#               toPrint.append(printline)
-            resFlag = 0
 
-## Here to be implemented.. maybe putting stuff in a dedicated funcion.... better if not needed
-#"""     
-#            if jobStatus != 'Created'  and jobStatus != 'Unknown':
-#                jid1 = string.strip(jobAttributes[bossid]['SCHED_ID'])
-#
-#                jobId = ''
-#                if common.scheduler.name().upper() == 'CONDOR_G':
-#                    jobId = str(bossid) + '_' + self.hash + '_' + string.strip(jobAttributes[bossid]['SCHED_ID'])
-#                    common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
-#                else:
-#                    jobId = str(bossid) + '_' + string.strip(jobAttributes[bossid]['SCHED_ID'])
-#                    if common.scheduler.name() == 'lsf' or common.scheduler.name() == 'caf':
-#                        jobId=str(bossid)+"_https://"+common.scheduler.name()+":/"+string.strip(jobAttributes[bossid]['SCHED_ID'])+"-"+string.replace(common.taskDB.dict('taskId'),"_","-")
-#                        common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
-#                    pass
-#                pass
-#
-#                common.logger.debug(5,"sending info to ML")
-#                params = {}
-#                if RB != None:
-#                    params = {'taskId': common.taskDB.dict('taskId'), \
-#                    'jobId': jobId,\
-#                    'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
-#                    'StatusValueReason': job_status_reason, \
-#                    'StatusValue': jobStatus, \
-#                    'StatusEnterTime': job_last_time, \
-#                    'StatusDestination': dest, \
-#                    'RBname': RB }
-#                else:
-#                    params = {'taskId': common.taskDB.dict('taskId'), \
-#                    'jobId': jobId,\
-#                    'sid': string.strip(jobAttributes[bossid]['SCHED_ID']), \
-#                    'StatusValueReason': job_status_reason, \
-#                    'StatusValue': jobStatus, \
-#                    'StatusEnterTime': job_last_time, \
-#                    'StatusDestination': dest }
-#                common.logger.debug(5,str(params))
-#
-#                common.apmon.sendToML(params)
-##            if printline != '':
-##                print printline
+            if jobStatus is not None:
+                self.dataToDash(job,id,taskId,dest,jobStatus)
+ 
+        header = ''
+        header+= "%-8s %-18s %-40s %-13s %-15s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
 
-        self.detailedReport(toPrint)
-  #      self.update_(for_summary)
+        displayReport(self,header,toPrint,self.xml)
+
         return
-
-    def detailedReport(self, lines):
-
-        counter = 0
-        printline = ''
-        printline+= "%-8s %-18s %-40s %-13s %-15s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
-        print printline
-        print '---------------------------------------------------------------------------------------------------'
-
-        for i in range(len(lines)):
-            if counter != 0 and counter%10 == 0 :
-                print '---------------------------------------------------------------------------------------------------'
-            print lines[i]
-            counter += 1
 
     def PrintReport_(self):
 
-        # query sui distinct statusScheduler
-        #distinct_status =  common._db.queryDistJob('dlsDestination')
         possible_status = [
                          'Undefined', 
                          'Submitted',
@@ -166,7 +108,49 @@ class Status(Actor):
 #            print ''
 
 
+    def dataToDash(self,job,id,taskId,dest,jobStatus):
+        
 
+        jid = job.runningJob['schedulerId']
+        WMS = job.runningJob['service']
+        job_status_reason = str(job.runningJob['statusReason'])
+        job_last_time = str(job.runningJob['startTime'])
+        if common.scheduler.name().upper() == 'CONDOR_G':
+            self.hash = makeCksum(common.work_space.cfgFileName())
+            jobId = str(id) + '_' + self.hash + '_' + str(jid)
+            common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+        else:
+            jobId = str(id) + '_' + str(jid)
+            if common.scheduler.name() in ['lsf','caf']:
+                jobId=str(bossid)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(taskId,"_","-")
+                common.logger.debug(5,'JobID for ML monitoring is created for Local scheduler:'+jobId)
+            pass
+        pass
+
+        common.logger.debug(5,"sending info to ML")
+        params = {}
+        if WMS != None:
+            params = {'taskId': taskId, \
+            'jobId': jobId,\
+            'sid': str(jid), \
+            'StatusValueReason': job_status_reason, \
+            'StatusValue': jobStatus, \
+            'StatusEnterTime': job_last_time, \
+            'StatusDestination': dest, \
+            'RBname': WMS }
+        else:
+            params = {'taskId': taskId, \
+            'jobId': jobId,\
+            'sid': str(jid), \
+            'StatusValueReason': job_status_reason, \
+            'StatusValue': jobStatus, \
+            'StatusEnterTime': job_last_time, \
+            'StatusDestination': dest }
+        common.logger.debug(5,str(params))
+        common.apmon.sendToML(params)
+
+        return
+ 
     def joinIntArray_(self,array) :
         output = ''
         for item in array :
