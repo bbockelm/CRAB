@@ -37,11 +37,12 @@ class Boss:
         ## Add here the map for others Schedulers (LSF/CAF/CondorG)
         SchedMap = {'glite':'SchedulerGLiteAPI',
                     'glitecoll':'SchedulerGLiteAPI',\
-                    'condor_g':'SchedulerCondorGAPI',\
+                    'condor_g':'SchedulerCondorG',\
+                    'glidein':'SchedulerGlidein',\
                     'lsf':'SchedulerLsf',\
                     'caf':'SchedulerLsf'
-                    }         
-                 
+                    }
+
         self.schedulerConfig = {
               'name' : SchedMap[self.schedulerName], \
               'service' : self.wms_service, \
@@ -51,12 +52,12 @@ class Boss:
         self.session=None
         return
 
-    def schedSession(self): 
-        ''' 
+    def schedSession(self):
+        '''
         Istantiate BossLiteApi session
-        '''  
+        '''
         if not self.session:
-            try: 
+            try:
                 self.session =  BossLiteAPISched( common.bossSession, self.schedulerConfig)
             except Exception, e :
                 common.logger.debug(3, "Istantiate SchedSession: " +str(traceback.format_exc()))
@@ -118,7 +119,7 @@ class Boss:
         Submit one job. nj -- job number.
         """
         task = common._db.getTask(jobsList)
-        try: 
+        try:
             self.schedSession().submit( task,jobsList,req )
         except SchedulerError, err :
             common.logger.message("Submit: " +str(err))
@@ -145,13 +146,13 @@ class Boss:
         """
         Retrieve output of all jobs with specified taskid
         """
-        try: 
+        try:
             self.schedSession().getOutput( taskId, jobRange, outdir )
         except SchedulerError, err :
             common.logger.message("GetOutput : " +str(err))
             common.logger.debug(3, "GetOutput : " +str(traceback.format_exc()))
             raise CrabException('GetOutput : '+str(err))
- 
+
         return
 
     def cancel(self,list):
@@ -159,7 +160,7 @@ class Boss:
         Cancel the job with id from a list
         """
         task = common._db.getTask(list)
-        try: 
+        try:
             self.schedSession().kill( task, list)
         except SchedulerError, err :
             common.logger.message("Kill: " +str(err))
@@ -170,9 +171,9 @@ class Boss:
     def LoggingInfo(self,list_id,outfile):
         """
         query the logging info with id from a list and
-        retourn the reults 
-        """  
-        try: 
+        retourn the reults
+        """
+        try:
             self.schedSession().postMortem(1,list_id,outfile)
         except SchedulerError, err :
             common.logger.message("logginginfo: " +str(err))

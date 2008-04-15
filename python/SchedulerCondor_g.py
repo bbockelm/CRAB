@@ -13,8 +13,8 @@ import CondorGLoggingInfo
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.93 2008/04/15 17:01:56 ewv Exp $"
-__version__ = "$Revision: 1.93 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.94 2008/04/15 17:50:42 ewv Exp $"
+__version__ = "$Revision: 1.94 $"
 
 class SchedulerCondor_g(SchedulerGrid):
     def __init__(self):
@@ -221,7 +221,7 @@ class SchedulerCondor_g(SchedulerGrid):
       first = []
       last  = []
 
-      seDest=self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']))
+      seDest = self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']))
       ceDest = self.getCEfromSE(seDest)
 
       jobParams = "globusscheduler = "+ceDest+":2119/jobmanager-condor; "
@@ -289,4 +289,3 @@ class SchedulerCondor_g(SchedulerGrid):
       req = ''
 
       return req,self.EDG_ce_white_list,self.EDG_ce_black_list
-
