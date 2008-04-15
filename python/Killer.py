@@ -15,7 +15,7 @@ class Killer(Actor):
         common.logger.debug(5, "Killer::run() called")
 
         jStatus=common._db.queryRunJob('status','all')
-
+        human_status = common._db.queryRunJob('statusScheduler','all')
         toBeKilled = []
         for id in self.range:
             if id not in  common._db.nJobs("list"):
@@ -24,9 +24,10 @@ class Killer(Actor):
                 if ( jStatus[id-1] in ['SS','R']):
                     toBeKilled.append(id)
                 else:
-                    common.logger.message("Not possible to kill Job #"+str(id)+" : Status is "+jStatus[id-1])
+                    common.logger.message("Not possible to kill Job #"+str(id)+" : Status is "+human_status[id-1])
                 pass
             pass
 
-        common.scheduler.cancel(toBeKilled)
-        common.logger.message("Jobs killed "+str(toBeKilled))
+        if len(toBeKilled)>0:
+            common.scheduler.cancel(toBeKilled)
+            common.logger.message("Jobs killed "+str(toBeKilled))
