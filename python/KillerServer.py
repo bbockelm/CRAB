@@ -1,15 +1,32 @@
-import os, common, string
 from Actor import *
 from crab_util import *
+import common
+from ApmonIf import ApmonIf
+import time
 
-import xml.dom.minidom
+import traceback
+from xml.dom import minidom
+from ServerCommunicator import ServerCommunicator
+from ServerConfig import *
+
 
 class KillerServer(Actor):
-    # Matteo for kill by range
-    def __init__(self, cfg_params, range, parsedRange=[]):
+    def __init__(self, cfg_params, range):
         self.cfg_params = cfg_params
         self.range = range
-        self.parsedRange = parsedRange 
+
+        self.server_name = None
+        self.server_port = None
+        self.srvCfg = {}
+        try:
+            self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
+            self.server_name = str(self.srvCfg['serverName'])
+            self.server_port = int(self.srvCfg['serverPort'])
+        except KeyError:
+            msg = 'No server selected or port specified.'
+            msg = msg + 'Please specify a server in the crab cfg file'
+            raise CrabException(msg)
+
         return
 
     def run(self):
@@ -17,70 +34,29 @@ class KillerServer(Actor):
         The main method of the class: kill a complete task
         """
         common.logger.debug(5, "Killer::run() called")
-        
-        common.jobDB.load()
-        server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
-        if not server_name.endswith("/"):
-            server_name = server_name + "/"
-        WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
-        projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict('TasKUUID')
 
-        ### Here start the kill operation  
-        try:
-            x509=os.environ['X509_USER_PROXY']
-        except Exception, ex:
-            import traceback
-            common.logger.debug( 6, str(ex) )
-            x509_cmd = 'ls /tmp/x509up_u`id -u`'
-            x509=runCommand(x509_cmd).strip()
-        pSubj = os.popen3('openssl x509 -in '+str(x509)+' -subject -noout')[1].readlines()[0]
-       
-        try: 
-            self.cfile = xml.dom.minidom.Document()
-            root = self.cfile.createElement("TaskCommand")
-            node = self.cfile.createElement("TaskAttributes")
-            node.setAttribute("Task", projectUniqName)
-            node.setAttribute("Subject", string.strip(pSubj))
-            node.setAttribute("Command", "kill")
-            node.setAttribute("Range", str(self.parsedRange)) # Matteo for kill by range
-            root.appendChild(node)
-            self.cfile.appendChild(root)
-            self.toFile(WorkDirName + '/share/command.xml')
-            cmd = 'lcg-cp --vo cms file://'+os.getcwd()+'/'+str(WorkDirName)+'/share/command.xml gsiftp://' + str(server_name) + str(projectUniqName)+'.xml'
-            retcode = os.system(cmd)
-            if retcode: raise CrabException("Failed to ship kill command to server")
-            else: common.logger.message("Kill command succesfully shipped to server")
-        except RuntimeError,e:
-            msg +="Project "+str(WorkDirName)+" not killed: \n"      
-            raise CrabException(msg + e.__str__())
+        ## get subject ##
+        self.proxy = None # TODO From task object alreadyFrom task object already  ? common._db.queryTask('proxy')
+        if 'X509_USER_PROXY' in os.environ:
+            self.proxy = os.environ['X509_USER_PROXY']
+        else:
+            status, self.proxy = commands.getstatusoutput('ls /tmp/x509up_u`id -u`')
+            self.proxy = self.proxy.strip()
 
-        # synch the range of submitted jobs to server (otherwise You wont be able to submit them again) # Fabio
-        file = open(common.work_space.shareDir()+'/submit_directive','r')
-        subms = str(file.readlines()[0]).split('\n')[0]
-        file.close()
-        if self.range=='all':
-            subms = []
-        elif self.range != None and self.range != "": 
-            if len(self.range)!=0:
-                subms = eval(subms)
-                for i in self.parsedRange:
-                    if i in subms:
-                        subms.remove(i)
-        
-        file = open(common.work_space.shareDir()+'/submit_directive','w')
-        file.write(str(subms))
-        file.close()
-        #  
+        ## register proxy ##
+        common.scheduler.checkProxy()
+        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxy)
+
+        taskuuid = str(common._db.queryTask('name'))
+        ret = csCommunicator.killJobs( taskuuid, self.range)
+        del csCommunicator
+
+        if ret != 0:
+            msg = "ClientServer ERROR: %d raised during the communication.\n"%ret
+            raise CrabException(msg)
+
+        # update runningjobs status
+        updList = [{'statusScheduler':'Killed', 'status':'K'}] * len(self.range)
+        common._db.updateRunJob_(self.range, updList)
         return
                 
-    def toFile(self, filename):
-        filename_tmp = filename+".tmp"
-        file = open(filename_tmp, 'w')
-        # Fix for minidom # Fabio
-            # xml.dom.ext.PrettyPrint(self.cfile, file)
-        file.write(self.cfile.toprettyxml())
-        #
-        file.close()
-        os.rename(filename_tmp, filename) # this should be an atomic operation thread-safe and multiprocess-safe
-
-
