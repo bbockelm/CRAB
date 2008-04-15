@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.24 2008/04/14 15:41:19 farinafa Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: FatWorker.py,v 1.25 2008/04/14 22:06:04 afanfani Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import sys, os
 import time
@@ -529,7 +529,7 @@ class FatWorker(Thread):
                 if len(distinct_dests[sel])!=0:
                     cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
 
-                sites = self.blSchedSession.lcgInfo(tags, cleanedList, self.ce_whiteL, self.ce_blackL )
+                sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL) 
                 match = len( sites )
             else :
                 match = "1"
