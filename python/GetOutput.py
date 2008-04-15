@@ -28,13 +28,13 @@ class GetOutput(Actor):
 
     def run(self):
         """
-        The main method of the class: compute the status and print a report
+        The main method of the class: Check destination dirs and 
+        perform the get output
         """
-        common.logger.debug(5, "Status::run() called")
+        common.logger.debug(5, "GetOutput::run() called")
 
         start = time.time()
         self.getOutput()
-        # self.parse.fjr 
         stop = time.time()
         common.logger.debug(1, "GetOutput Time: "+str(stop - start))
         common.logger.write("GetOutput Time: "+str(stop - start))

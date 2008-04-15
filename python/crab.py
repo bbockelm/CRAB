@@ -509,7 +509,6 @@ class Crab:
 
             elif ( opt == '-status' ):
                 from Status import Status 
-                # modified to support server mode 
                 if (self.UseServer== 1):
                     from StatusServer import StatusServer
                     self.actions[opt] = StatusServer(self.cfg_params)
@@ -524,9 +523,7 @@ class Crab:
 
                 if val:
                     if val =='all':
-                         ## this should be NOT scheduler dependent... to move from Scheduler to _db BL--DS 
                         jobs = common._db.nJobs("list")
-                        #common.scheduler.list()
                     else:
                         jobs = self.parseRange_(val)
                     pass
@@ -536,31 +533,25 @@ class Crab:
 
                 if (self.UseServer== 1):
                     from KillerServer import KillerServer
-                    self.actions[opt] = KillerServer(self.cfg_params,val, self.parseRange_(val)) #Fabio
+                    self.actions[opt] = KillerServer(self.cfg_params,jobs) 
                 else:
                     from Killer import Killer
-                    self.actions[opt] = Killer(self.cfg_params, self.parseRange_(val))
+                    self.actions[opt] = Killer(self.cfg_params,jobs)
 
 
             elif ( opt == '-getoutput' or opt == '-get'):
-                from GetOutput import GetOutput
-                # modified to support server mode
+    
+                if val=='all' or val==None or val=='':
+                    jobs = 'all' 
+                else:
+                    jobs = self.parseRange_(val)
+
                 if (self.UseServer== 1):
                     from GetOutputServer import GetOutputServer
-                    self.actions[opt] = GetOutputServer(self.cfg_params)
+                    self.actions[opt] = GetOutputServer(self.cfg_params,jobs)
                 else:
-                    if val=='all' or val==None or val=='':
-                         ## this should be NOT scheduler dependent... to move from Scheduler to _db BL--DS 
-                        jobs = 'all' # common.scheduler.list()
-                    else:
-                        jobs = self.parseRange_(val)
-                
-                  #  jobs_done = []
-                  #  for nj in jobs:
-                  #      jobs_done.append(nj)
+                    from GetOutput import GetOutput
                     self.actions[opt] = GetOutput(self.cfg_params,jobs)
-#                    common.scheduler.getOutput(jobs_done)
-
 
             elif ( opt == '-resubmit' ):
                 if val:
@@ -655,46 +646,22 @@ class Crab:
 
             elif ( opt == '-postMortem' ):
 
-                # modified to support server mode
+                if val:
+                    if val =='all':
+                        jobs = common._db.nJobs("list")
+                    else:
+                        jobs = self.parseRange_(val)
+                    pass
+                else:
+                    raise CrabException("Warning: please specify a job range or 'all'")
+                    pass
+
                 if (self.UseServer== 1):
                     from PostMortemServer import PostMortemServer
-                    self.actions[opt] = PostMortemServer(self.cfg_params)
+                    self.actions[opt] = PostMortemServer(self.cfg_params,jobs)
                 else:            
-                    if val:
-                        val = string.replace(val,'-',':')
-                    else: val=''
-                    nj_list = {} 
-
-                    try:
-                        from BossSession import ALL
-                        common.scheduler.boss().task().query(ALL, val)
-                    except RuntimeError,e:
-                        common.logger.message( e.__str__() )
-                    except ValueError,e:
-                        common.logger.message("Warning : Scheduler interaction in query operation failed for jobs:")
-                        common.logger.message( e.what())
-                        pass
-
-                    task = common.scheduler.boss().task().jobsDict()
-   
-                    for c, v in task.iteritems():
-                        k = int(c)
-                        nj=k
-                        if v['SCHED_ID']: nj_list[v['CHAIN_ID']]=v['SCHED_ID']
-                        pass
-
-                    if len(nj_list) != 0:
-                    # Instantiate PostMortem object
-                        from PostMortem import PostMortem
-                        self.actions[opt] = PostMortem(self.cfg_params, nj_list)
-                    # Create and initialize JobList
-                        if len(common.job_list) == 0 :
-                            common.job_list = JobList(common.jobDB.nJobs(), None)
-                            common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                            pass
-                        pass
-                    else:
-                        common.logger.message("No jobs to analyze")
+                    from PostMortem import PostMortem
+                    self.actions[opt] = PostMortem(self.cfg_params, jobs)
 
             elif ( opt == '-clean' ):
                 if val != None:
