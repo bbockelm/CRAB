@@ -27,7 +27,7 @@ class StatusServer(Status):
             msg = msg + 'Please specify a server in the crab cfg file'
             raise CrabException(msg)
  
-        self.xml = self.cfg_params.get("USER.xmlReport",'')
+        self.xml = self.cfg_params.get("USER.xml_report",'')
         return
 
     # all the behaviors are inherited from the direct status. Only some mimimal modifications

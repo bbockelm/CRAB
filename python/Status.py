@@ -7,7 +7,7 @@ class Status(Actor):
     def __init__(self, *args):
         self.cfg_params = args[0]
 
-        self.xml = self.cfg_params.get("USER.xmlReport",'')
+        self.xml = self.cfg_params.get("USER.xml_report",'')
 
         return
 
