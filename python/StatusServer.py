@@ -62,7 +62,7 @@ class StatusServer(Status):
         del csCommunicator
 
         # align back data and print
-        reportList = minidom.parseString(reportXML).getElementsByTagName('Job')
+        reportList = minidom.parseString(reportXML.strip()).getElementsByTagName('Job')
         common._db.deserXmlStatus(reportList)
 
         return 
