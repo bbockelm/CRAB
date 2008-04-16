@@ -9,6 +9,9 @@ import zlib
 
 from ServerCommunicator import ServerCommunicator 
 from ServerConfig import *
+
+from ProdCommon.Storage.SEAPI.SElement import SElement
+from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
  
 class SubmitterServer(Actor):
     def __init__(self, cfg_params, parsed_range, val):
@@ -110,7 +113,8 @@ class SubmitterServer(Actor):
 	# partial submission code # TODO is that file the right way? 
         ## NO! to be changed... query DB... 
 	if os.path.exists(common.work_space.shareDir()+'/first_submission') == False:
-	    self.moveISB()
+            self.moveISB_SEAPI() 
+	    #self.moveISB()
 	    isFirstSubmission = True
 	    os.system('touch %s'%str(common.work_space.shareDir()+'/first_submission'))
 
@@ -118,8 +122,55 @@ class SubmitterServer(Actor):
 	common.logger.debug(5, "SubmitterServer::run() called")
 	self.performSubmission(isFirstSubmission)
 	return
-	
+
+    def moveISB_SEAPI(self):
+        ## get task info from BL ##
+        common.logger.debug(3, "Task name: " + self.taskuuid)
+        isblist = common._db.queryTask('globalSandbox').split(',')
+        common.logger.debug(3, "List of ISB files: " +str(isblist) )
+        
+        # init SE interface
+        common.logger.message("Starting sending the project to the storage "+str(self.storage_name)+"...")
+        seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
+        loc = SElement("localhost", "local")
+
+        # create remote dir for gsiftp 
+        if self.storage_proto == 'gridftp':
+            try:
+                action = SBinterface( seEl )  
+                action.createDir( self.remotedir, self.proxyPath)
+            except Exception, ex:
+                common.logger.debug(1, str(ex))
+                msg = "ERROR : Unable to create project destination on the Storage Element \n"
+                msg +="Project "+ self.taskuuid +" not Submitted \n"
+                raise CrabException(msg)
+
+        ## copy ISB ##
+        sbi = SBinterface( loc, seEl )
+
+        for filetocopy in isblist:
+            source = os.path.abspath(filetocopy) 
+            dest = os.path.join(self.remotedir, os.path.basename(filetocopy))
+            common.logger.debug(1, "Sending "+ os.path.basename(filetocopy) +" to "+ self.storage_name)
+
+            try:
+                sbi.copy( source, dest, self.proxyPath)
+            except Exception, ex:
+                common.logger.debug(1, str(ex))
+                msg = "ERROR : Unable to ship the project to the server \n"
+                msg +="Project "+ self.taskuuid +" not Submitted \n"
+                raise CrabException(msg)
+
+        ## if here then project submitted ##
+        msg = 'Project '+ self.taskuuid +' files successfully submitted to the supporting storage element.\n'
+        common.logger.debug(3,msg)
+        return
+
     def moveISB(self):
+        ########################################
+        ##  TODO Deprecated, remove this method. Use the above one # Fabio
+        ########################################
+
 
 	## get task info from BL ##
 	common.logger.debug(3, "Task name: " + self.taskuuid)
