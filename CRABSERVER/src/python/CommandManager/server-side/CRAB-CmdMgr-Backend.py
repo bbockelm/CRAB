@@ -88,7 +88,7 @@ class CRAB_AS_beckend:
         """
         Initialize the logging system
         """
-        
+        '''    
         # Logging system init
         if 'Logfile' not in self.args:
             self.args['Logfile'] = self.args['ComponentDir']+'/ComponentLog'
@@ -98,6 +98,7 @@ class CRAB_AS_beckend:
         logHandler.setFormatter(logFormatter)
         logging.getLogger().addHandler(logHandler)
         logging.getLogger().setLevel(logging.INFO)
+        '''
         self.log = logging
 
         logging.info("CRABProxyGateway allocating ...")
