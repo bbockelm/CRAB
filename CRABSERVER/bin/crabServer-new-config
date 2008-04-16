@@ -76,6 +76,7 @@ crabServerConfiguration = {
     'storagePort':'',
     'storagePath':None,
     'Protocol':'local',
+    'gsiftpNode':'localhost',
 }
 
 # component fields
