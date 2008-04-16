@@ -73,8 +73,7 @@ class Boss:
         jbt = job.type()
         base = jbt.name()
 
-        #wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
-        wrapper = str(common._db.queryTask('scriptName'))
+        wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
         listField=[]
         listID=[]
         task=common._db.getTask()
