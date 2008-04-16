@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.25 2008/04/14 22:06:04 afanfani Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: FatWorker.py,v 1.26 2008/04/15 12:08:28 afanfani Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import sys, os
 import time
@@ -310,10 +310,15 @@ class FatWorker(Thread):
         ## task['outputDirectory'] = '' 
 
         for jid in xrange(len(task.jobs)):
-            gsiOSB = [ turlpreamble + destDir + '/' + of for of in  task.jobs[jid]['outputFiles']  ]
-            task.jobs[jid]['outputFiles'] = gsiOSB # [:-1]
-            task.jobs[jid]['outputFiles'].append( 'crab_fjr_%d.xml'%(jid+1) ) #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
-            task.jobs[jid]['outputFiles'].append( '.BrokerInfo' )
+            # TODO reactivate once tgz won't be corrupted by the transfer 
+            #### gsiOSB = [ turlpreamble + destDir + '/' + of for of in  task.jobs[jid]['outputFiles']  ]
+            #### task.jobs[jid]['outputFiles'] = gsiOSB # [:-1]
+            #
+            if 'crab_fjr_%d.xml'%(jid+1) not in task.jobs[jid]['outputFiles']:
+                task.jobs[jid]['outputFiles'].append( 'crab_fjr_%d.xml'%(jid+1) ) #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
+
+            if '.BrokerInfo' not in task.jobs[jid]['outputFiles']:
+                task.jobs[jid]['outputFiles'].append( '.BrokerInfo' )
 
         task['scriptName'] = turlpreamble + task['scriptName']
         task['cfgName'] = turlpreamble + task['cfgName']
@@ -418,11 +423,12 @@ class FatWorker(Thread):
             Session.start_transaction(self.taskName)
 
             for job in taskArg.jobs:
-                jobName = self.taskName + '_' + job['name'] 
+                jobName = job['name'] 
                 cacheArea = self.wdir + '/' + self.taskName + '_spec/%s'%job['name']
                 jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':0, 'max_racers':1, 'owner':self.taskName}
 
                 wfJob.register(jobName, None, jobDetails)
+                wfJob.setState(jobName, 'register')
                 wfJob.setState(jobName, 'create')
                 wfJob.setCacheDir(jobName, cacheArea)
                 wfJob.setState(jobName, 'inProgress')
