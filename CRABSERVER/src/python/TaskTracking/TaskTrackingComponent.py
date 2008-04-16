@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.54 2008/01/10 09:10:15 mcinquil Exp $"
-__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.64 2008/04/09 10:36:15 mcinquil Exp $"
+__version__ = "$Revision: 1.64 $"
 
 import os
 import time
@@ -166,9 +166,8 @@ class TaskTrackingComponent:
         """
         #"""
         from InternalLoggingInfo import InternalLoggingInfo
-
         dbgInfo = InternalLoggingInfo()
-        path2Wr = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
+        path2Wr = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" 
         #logging.info("Appending: \n\n" + message + "\n\n")
         dbgInfo.appendLoggingInfo( path2Wr, "***"+str(time.asctime())+"***\n" + message )
         del dbgInfo
@@ -200,29 +199,31 @@ class TaskTrackingComponent:
         ERROR = ""
         taskName = payload
         logBuf = ""
+        _loginfo = "[" + event + "]: "
 
         # new task to insert
 	#if event == "DropBoxGuardianComponent:NewFile":
         if event == "CRAB_Cmd_Mgr:NewTask":
-            logging.info( event )
-            logging.info( payload )
 	    if payload != None or payload != "" or len(payload) > 0:
-                #taskName = payload.split("::")[2]
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__logToBuf__(logBuf, "NewTask: %s" % taskName)
 		logBuf = self.__logToBuf__(logBuf, taskName)
 		self.insertNewTask( taskName )
                 logBuf = self.__logToBuf__(logBuf, "               new task inserted.")
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                _loginfo += "Arrived task: " + str(taskName) + "\n"
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: wrong payload from [" +event+ "]!!!!")
                 logBuf = self.__logToBuf__(logBuf, " ")
             logging.info(logBuf)
+            if _loginfo != '':
+                self.__appendDbgInfo__(taskName, _loginfo)
             return None
 	    
 	if event == "CrabServerWorkerComponent:TaskArrival":
 	    if payload != None or payload != "" or len(payload) > 0:
+                _loginfo += "Task in submission queue: " + str(taskName) + "\n"
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 ## start dbg info ##
                 OK += "  Task ["+ taskName +"] ready to be submitted and already in queue.\n"
@@ -231,6 +232,7 @@ class TaskTrackingComponent:
 		self.updateTaskStatus( taskName, self.taskState[1] )
                 logBuf = self.__logToBuf__(logBuf, "              task updated.")
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                _loginfo += "Task in submission queue: " + str(taskName) + "\n"
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
@@ -239,6 +241,8 @@ class TaskTrackingComponent:
                 ERROR += "  ERROR: problems managing task ["+taskName+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
             logging.info(logBuf)
+            if _loginfo != '':
+                self.__appendDbgInfo__(taskName, _loginfo)
             return taskName, str(OK + "\n" + ERROR)
 
         if event == "CrabServerWorkerComponent:CrabWorkPerformed":
@@ -251,6 +255,7 @@ class TaskTrackingComponent:
 		self.updateTaskStatus( taskName, self.taskState[3])
                 logBuf = self.__logToBuf__(logBuf, "               task updated.")
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                _loginfo += "Task submitted to the Grid " + str(taskName) + "\n"
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -259,6 +264,8 @@ class TaskTrackingComponent:
                 ERROR += "  ERROR: problems managing task ["+taskName+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
             logging.info(logBuf)
+            if _loginfo != '':
+                self.__appendDbgInfo__(taskName, _loginfo)
             return taskName, str(OK + "\n" + ERROR)
 
         if event == "CrabServerWorkerComponent:CrabWorkFailed":
@@ -267,9 +274,11 @@ class TaskTrackingComponent:
                 logBuf = self.__logToBuf__(logBuf, "CrabWorkFailed: %s" % payload)
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 ## start dbg info ##
-                OK += "  Task ["+taskName+"] not submitted to the grid (devel-note: be more verbose).\n"
+                OK += "  Task ["+taskName+"] not submitted to the grid.\n"
                 ## end dbg info ##
 		self.updateTaskStatus(taskName, self.taskState[2])
+                _loginfo += "Submission failed to the Grid: " + str(taskName) + "\n"
+                _loginfo  += " payload: " + str(payload) + "\n"
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -278,6 +287,8 @@ class TaskTrackingComponent:
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
             logging.info(logBuf)
+            if _loginfo != '':
+                self.__appendDbgInfo__(taskName, _loginfo)
             return taskName, str(OK + "\n" + ERROR)
 
         if event == "CrabServerWorkerComponent:SubmitNotSucceeded" or \
@@ -293,6 +304,9 @@ class TaskTrackingComponent:
                       "        reason = " + str(reason)
                 ## end dbg info ##
                 self.updateTaskStatus(taskName, self.taskState[2])
+                _loginfo += "Submission failed to the Grid: " + str(taskName) + "\n"
+                _loginfo += "\t-status:\t" + str(taskStatus) + "\n"
+                _loginfo += "\t-reason:\t" + str(reason) + "\n"
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -301,6 +315,8 @@ class TaskTrackingComponent:
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
             logging.info(logBuf)
+            if _loginfo != '':
+                self.__appendDbgInfo__(taskName, _loginfo)
             return taskName, str(OK + "\n" + ERROR)
 
 
@@ -316,6 +332,7 @@ class TaskTrackingComponent:
                 ## end dbg info ##
                 #self.preUpdatePartialTask(payload, self.taskState[7])
                 self.updateTaskStatus(taskName, self.taskState[7])
+                _loginfo  += "Partial submission to the Grid: " + str(taskName) + "\n"
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -324,6 +341,8 @@ class TaskTrackingComponent:
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
             logging.info(logBuf)
+            if _loginfo != '':
+                self.__appendDbgInfo__(taskName, _loginfo)
             return taskName, str(OK + "\n" + ERROR)
 
         if event == "CrabServerWorkerComponent:FastKill":
@@ -959,6 +978,7 @@ class TaskTrackingComponent:
             #logging.info("connected...")
             ## task from DB
             task = TaskStateAPI.getNLockFirstNotFinished()
+            _loginfo =  ""
             try:
                 taskId = 0
                 if task == None or len(task) <= 0:
@@ -1117,19 +1137,27 @@ class TaskTrackingComponent:
 		 	            ###  updating endedLevel  ###
 				    if endedLevel == 100:
                                         msg = TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
+                                        _loginfo += "Updating task: " + str(taskName) + "\n"
+                                        _loginfo += "\tcompleteness level:\t" + str(percentage) + "\n"
+                                        _loginfo += "\tstatus:\t" + self.taskState[5] + "\n"
                                         logBuf = self.__logToBuf__(logBuf, msg)
                                         if notified != 2:
                                             self.taskEnded(taskName)
+                                            _loginfo += "\tended:\tyes"
                                             notified = 2
                                             succexo = 1
                                             logBuf = self.__logToBuf__(logBuf, msg)
 				    elif percentage != endedLevel:
 				        msg = TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
+                                        _loginfo += "Updating task: " + str(taskName) + "\n"
+                                        _loginfo += "\tcompleteness level:\t" + str(percentage) + "\n"
+                                        _loginfo += "\tstatus:\t" + status 
                                         logBuf = self.__logToBuf__(logBuf, msg)
                                         if percentage >= thresholdLevel:
 					    if percentage == 100:
                                                 succexo = 1
                                                 self.taskEnded(taskName)
+                                                _loginfo += "\tended:\tyes"
 					        notified = 2
                                                 logBuf = self.__logToBuf__(logBuf, msg)
 					    elif notified <= 0:
@@ -1148,6 +1176,8 @@ class TaskTrackingComponent:
                                 self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
                                 if succexo:
                                     self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
+                                    _loginfo += "Updating task: " + str(taskName) + "\n"
+                                    _loginfo += "\tpublishing task success (sending e-mail to %s)"%(srt(eMail))
                                     msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
                                     logBuf = self.__logToBuf__(logBuf, msg)
  			    except ZeroDivisionError, detail:
@@ -1164,6 +1194,10 @@ class TaskTrackingComponent:
                 ## clean task from memory
                 del task
                 del taskObj
+
+                if _loginfo != '':
+                    self.__appendDbgInfo__(taskName, _loginfo)
+
 
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "ERROR: " + str(traceback.format_exc()))
