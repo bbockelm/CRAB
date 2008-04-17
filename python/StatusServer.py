@@ -62,8 +62,11 @@ class StatusServer(Status):
         del csCommunicator
 
         # align back data and print
-        reportList = minidom.parseString(reportXML.strip()).getElementsByTagName('Job')
-        common._db.deserXmlStatus(reportList)
-
+        try:
+            reportList = minidom.parseString(reportXML.strip()).getElementsByTagName('Job')
+            common._db.deserXmlStatus(reportList)
+        except Exception, e:
+            print "WARNING: Problem while retrieving fresh status from the server."
+            return
         return 
 
