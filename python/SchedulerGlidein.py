@@ -1,8 +1,8 @@
 from SchedulerCondorCommon import SchedulerCondorCommon
 import common
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.96 2008/04/16 19:42:59 ewv Exp $"
-__version__ = "$Revision: 1.96 $"
+__revision__ = "$Id: SchedulerGlidein.py,v 1.1 2008/04/17 14:20:55 ewv Exp $"
+__version__ = "$Revision: 1.1 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -22,7 +22,7 @@ class SchedulerGlidein(SchedulerCondorCommon):
 
     # FIXME: Translate seDest into glidein name using SiteDB
 
-    jobParams += '+DESIRED_Sites = "UCSDT2"; '
+    jobParams += '+DESIRED_Sites = "T2_US_UCSD"; '
     jobParams += '+DESIRED_Archs = "INTEL,X86_64"; '
     jobParams += "Requirements = stringListMember(GLIDEIN_Site,DESIRED_Sites) &&  stringListMember(Arch,DESIRED_Archs); "
 
