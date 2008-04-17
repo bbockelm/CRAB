@@ -36,9 +36,9 @@ class Crab:
         ## test_tag
         # The order of main_actions is important !
         self.main_actions = [ '-create', '-submit' ]
-        ### FEDE new option "-publish" FOR DBS OUTPUT PUBLICATION
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput','-get',
-                             '-resubmit' , '-cancelAndResubmit', '-testJdl', '-postMortem', '-clean',
+                             '-resubmit' , '-cancelAndResubmit', '-testJdl',
+                             '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-publish' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
@@ -426,27 +426,6 @@ class Crab:
                                        ncjobs)
                 self.actions[opt] = self.creator
 
-### ToBeRempoved BL--DS
-#               # ############################
-#               #  environmet swapping 
-#               #  N.B. CRAB is expected to works coherently with python version and lib
-#               #  used by the UI, and it is able to manage the user env. re-organizing 
-#               #  the paths according to its needed.    
-#
-#               #  Since the job creation require the CMSSW python API usage 
-#               #  which need the  python2.4 (shipped with CMSSW), at the moment, 
-#               #  and just for this functionality, if creation and submition are required together
-#               #  CRAB prioritarize the CMSSW stuff first and then  re-set the environment.  DS.
-#               # ############################
-#                if '-submit' in opts:
-#                     os.putenv('PATH', os.environ['AUX_SUBM_PATH'])
-#                     os.putenv('PYTHONPATH', os.environ['AUX_SUBM_PY'])
-#                     #
-#                     os.environ['PATH'] = os.environ['AUX_SUBM_PATH']
-#                     os.environ['PYTHONPATH'] = os.environ['AUX_SUBM_PY']
-#                     #
-#                     dropOutPy23dynLoads()
-#                     pass 
                # ############################
 
                 # Initialize the JobDB object if needed
@@ -623,26 +602,13 @@ class Crab:
                     pass
                 common.jobDB.save()
                 pass
-            elif ( opt == '-testJdl' ):
+            elif ( opt in ['-testJdl','-listMatch', '-match']):
                 jobs = self.parseRange_(val)
-                nj_list = []
-                for nj in jobs:
-                    st = common.jobDB.status(nj-1)
-                    if st != 'X': nj_list.append(nj-1)
-                    pass
 
-                if len(nj_list) != 0:
+                if len(jobs) != 0:
                     # Instantiate Checker object
                     from Checker import Checker   
-                    self.actions[opt] = Checker(self.cfg_params, nj_list)
-
-                    # Create and initialize JobList
-
-                    if len(common.job_list) == 0 :
-                        common.job_list = JobList(common.jobDB.nJobs(), None)
-                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                        pass
-                    pass
+                    self.actions[opt] = Checker(self.cfg_params, jobs)
 
             elif ( opt == '-postMortem' ):
 
@@ -673,7 +639,6 @@ class Crab:
                     from Cleaner import Cleaner
                     self.actions[opt] = Cleaner(self.cfg_params)
                
-            ### FEDE DBS/DLS OUTPUT PUBLICATION 
             elif ( opt == '-publish' ):
                 from Publisher import Publisher
                 self.actions[opt] = Publisher(self.cfg_params)
@@ -817,7 +782,7 @@ if __name__ == '__main__':
     try:
         import warnings
         warnings.simplefilter("ignore", RuntimeWarning)
-    except:
+    except ImportError:
         pass # too bad, you'll get the warning
  
     # Parse command-line options and create a dictionary with

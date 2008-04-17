@@ -88,13 +88,15 @@ class Scheduler :
         start = time.time()
         tags=self.tags()
 
-        if len(dest)!=0:cleanedList = self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list') 
+        if len(dest)!=0: dest = self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list') 
+
         whiteL=self.ce_list()[1]
         blackL=self.ce_list()[2]
-        nsites= self.boss().listMatch(tags, dest , whiteL, blackL) 
+
+        sites= self.boss().listMatch(tags, dest , whiteL, blackL) 
         stop = time.time()
 
-        return nsites 
+        return sites 
     
     def submit(self,list,task):
         """ submit to scheduler a list of jobs """

@@ -13,12 +13,11 @@ class BlackWhiteListParser:
     def configure(self, cfg_params):
 
         SEBlackList = []
-        try:
+        if cfg_params.has_key('EDG.se_black_list'):
             tmpBad = string.split(cfg_params['EDG.se_black_list'],',')
             for tmp in tmpBad:
                 tmp=string.strip(tmp)
                 SEBlackList.append(tmp)
-        except KeyError:
             pass
         common.logger.debug(5,'SEBlackList: '+str(SEBlackList))
         self.reSEBlackList=[]
@@ -26,12 +25,11 @@ class BlackWhiteListParser:
             self.reSEBlackList.append(re.compile( string.lower(bad) ))
 
         SEWhiteList = []
-        try:
+        if cfg_params.has_key('EDG.se_white_list'):
             tmpGood = string.split(cfg_params['EDG.se_white_list'],',')
             for tmp in tmpGood:
                 tmp=string.strip(tmp)
                 SEWhiteList.append(tmp)
-        except KeyError:
             pass
         common.logger.debug(5,'SEWhiteList: '+str(SEWhiteList))
         self.reSEWhiteList=[]
@@ -88,7 +86,7 @@ class BlackWhiteListParser:
         """
         clean for black/white lists using parser
         """
-	if list=='list':
+        if list=='list':
             return self.checkWhiteList(self.checkBlackList(destinations,''),'')
         else:
             return ','.join(self.checkWhiteList(self.checkBlackList(destinations,''),''))

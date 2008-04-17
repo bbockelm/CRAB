@@ -10,7 +10,6 @@ import os,string
 class SchedulerLocal(Scheduler) :
 
     def configure(self, cfg_params):
-        Scheduler.configure(self,cfg_params)
 
         self.jobtypeName = cfg_params['CRAB.jobtype']
 
@@ -62,6 +61,7 @@ class SchedulerLocal(Scheduler) :
         cfg_params['EDG.se_white_list']=localDomainName
         common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
 
+        Scheduler.configure(self,cfg_params)
         return
 
     def userName(self):

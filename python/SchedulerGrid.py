@@ -159,6 +159,18 @@ class SchedulerGrid(Scheduler):
     def sched_fix_parameter(self):
         return
 
+    def listMatch(self, dest):
+        ces=Scheduler.listMatch(self,dest)
+        sites=[]
+        for ce in ces:
+            site=ce.split(":")[0]
+            if site not in sites:
+                sites.append(site)
+            pass
+
+        return sites
+
+
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.

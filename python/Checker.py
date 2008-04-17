@@ -16,20 +16,21 @@ class Checker(Actor):
         if len(self.nj_list)==0:
             common.logger.debug(5, "No jobs to check")
             return
+        
+        task=common._db.getTask()
+        Jobs=task.getJobs()
 
-        # run a list-match on first job
-        for nj in self.nj_list:
-            block = common.jobDB.block(nj)
-            if common.scheduler.name().upper() != "CONDOR_G" :
-              match = common.scheduler.listMatch(nj, block, [], [])
+        allMatch={}
+        for id_job in self.nj_list:
+            dest = eval(Jobs[id_job-1]['dlsDestination'])
+            if dest in allMatch.keys():
+                common.logger.message("As previous job: "+str(allMatch[dest]))
             else:
-              match = "1"
-            flag = ''
-            if not match:
-                flag=' NOT '
-                number=' '
-            if match : number= str(match)
-            common.logger.message("Job #"+str(nj+1)+" does "+flag+" matches " + number + " sites")
-            pass
+                match = common.scheduler.listMatch(dest)
+                allMatch[Jobs[id_job-1]['dlsDestination']]= match 
+                if len(match)>0:
+                    common.logger.message("Found "+str(len(match))+" compatible site(s) for job "+str(id_job)+" : "+str(match))
+                else:
+                    common.logger.message("No compatible site found, will not submit jobs "+str(id_job))
 
         return

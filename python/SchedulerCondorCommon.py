@@ -15,8 +15,8 @@ import CondorGLoggingInfo
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.95 2008/04/15 22:16:01 ewv Exp $"
-__version__ = "$Revision: 1.95 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.1 2008/04/16 19:42:58 ewv Exp $"
+__version__ = "$Revision: 1.1 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -269,7 +269,7 @@ class SchedulerCondorCommon(SchedulerGrid):
         Check the compatibility of available resources
         """
         #self.checkProxy()
-        return 1
+        return [""]
 
     def userName(self):
         """ return the user name """
