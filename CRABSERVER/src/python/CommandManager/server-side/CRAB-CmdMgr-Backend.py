@@ -88,17 +88,7 @@ class CRAB_AS_beckend:
         """
         Initialize the logging system
         """
-        '''    
-        # Logging system init
-        if 'Logfile' not in self.args:
-            self.args['Logfile'] = self.args['ComponentDir']+'/ComponentLog'
-
-        logHandler = RotatingFileHandler(self.args['Logfile'], "a", 1000000, 3)
-        logFormatter = logging.Formatter("%(asctime)s:%(message)s")
-        logHandler.setFormatter(logFormatter)
-        logging.getLogger().addHandler(logHandler)
-        logging.getLogger().setLevel(logging.INFO)
-        '''
+        
         self.log = logging
 
         logging.info("CRABProxyGateway allocating ...")
