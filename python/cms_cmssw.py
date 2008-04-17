@@ -222,23 +222,23 @@ class Cmssw(JobType):
         ## remove
         self.sourceSeed = cfg_params.get('CMSSW.pythia_seed',None)
         if self.sourceSeed:
-          print "pythia_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
-          self.incrementSeeds.append('sourceSeed')
+            print "pythia_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
+            self.incrementSeeds.append('sourceSeed')
 
         self.sourceSeedVtx = cfg_params.get('CMSSW.vtx_seed',None)
         if self.sourceSeedVtx:
-          print "vtx_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
-          self.incrementSeeds.append('VtxSmeared')
+            print "vtx_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
+            self.incrementSeeds.append('VtxSmeared')
 
         self.sourceSeedG4 = cfg_params.get('CMSSW.g4_seed',None)
         if self.sourceSeedG4:
-          print "g4_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
-          self.incrementSeeds.append('g4SimHits')
+            print "g4_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
+            self.incrementSeeds.append('g4SimHits')
 
         self.sourceSeedMix = cfg_params.get('CMSSW.mix_seed',None)
         if self.sourceSeedMix:
-          print "mix_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
-          self.incrementSeeds.append('mix')
+            print "mix_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
+            self.incrementSeeds.append('mix')
 
         self.firstRun = cfg_params.get('CMSSW.first_run',None)
 
@@ -393,7 +393,6 @@ class Cmssw(JobType):
         else :
             totalNumberOfJobs = self.ncjobs
 
-
         blocks = blockSites.keys()
         blockCount = 0
         # Backup variable in case self.maxEvents counted events in a non-included block
@@ -448,9 +447,9 @@ class Cmssw(JobType):
                         except KeyError:
                             common.logger.message("File "+str(file)+" has unknown number of events: skipping")
 
-
+                    eventsPerJobRequested = min(eventsPerJobRequested, eventsRemaining)
                     # if less events in file remain than eventsPerJobRequested
-                    if ( filesEventCount - jobSkipEventCount < eventsPerJobRequested ) :
+                    if ( filesEventCount - jobSkipEventCount < eventsPerJobRequested):
                         # if last file in block
                         if ( fileCount == numFilesInBlock-1 ) :
                             # end job using last file, use remaining events in block
