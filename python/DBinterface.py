@@ -173,25 +173,16 @@ class DBinterface:
         """
          List a complete set of infos for a job/range of jobs   
         """
-        task = self.getTask()
+        task = self.getTask(jobs)
 
-        njobs = len(jobs)
-        lines=[] 
-        header=''
-     #   ##query the DB asking the right infos for runningJobs  TODO  DS
-     #   for job in jobs:
-     #       ## here the query over runngJobs  
-     #       pass
-
-
-     #   ##Define Header to show and Pass the query results,
-     #   ##  header and format to displayReport()   TODO  DS
-     #   if njobs == 1: plural = ''
-     #   else:          plural = 's'
-     #   header += 'Listing %d job%s:\n' % (njobs, plural) 
-     #   header += ' :\n' % (---) ## TODO DS 
-
-     #   displayReport(header, lines):
+        Jobs = task.getJobs()
+        print "--------------------------"
+        for Job in Jobs:
+            print "Id: ",Job['id']
+            print "Dest: ", Job['dlsDestination']
+            print "Output: ", Job['outputFiles']
+            print "Args: ",Job['arguments']
+            print "--------------------------"
         return      
 
     def serializeTask(self, tmp_task = None):
