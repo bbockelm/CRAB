@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.26 2008/04/15 12:08:28 afanfani Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: FatWorker.py,v 1.27 2008/04/16 09:18:43 farinafa Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import sys, os
 import time
@@ -55,7 +55,6 @@ class FatWorker(Thread):
             self.SEproto = configs['SEproto']
             self.SEurl = configs['SEurl']
             self.SEport = configs['SEport']
-            self.gsiftpNode = configs['gsiftpNode']
 
             self.wmsEndpoint = configs['wmsEndpoint']
             self.se_blackL = [] + configs['se_dynBList']
@@ -81,6 +80,8 @@ class FatWorker(Thread):
 
         self.dashParams = {}
         #self.apmon = ApmonIf()
+
+        self.TURLpreamble = ""
 
         # Parse the XML files
         taskDir = self.wdir + '/' + self.taskName + '_spec/'
@@ -119,13 +120,18 @@ class FatWorker(Thread):
         if self.schedName in ['glite', 'glitecoll']:
             self.schedulerConfig['name'] = 'SchedulerGLiteAPI' 
             self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
-            self.schedulerConfig['service'] = "https://wms102.cern.ch:7443/glite_wms_wmproxy_server" # self.wmsEndpoint
+            if self.wmsEndpoint:
+                self.schedulerConfig['service'] = self.wmsEndpoint
+
         elif self.schedName == 'condor_g':
             self.schedulerConfig['name'] = 'SchedulerCondorGAPI' 
             self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
-            self.schedulerConfig['service'] = "https://wms102.cern.ch:7443/glite_wms_wmproxy_server"
+            if self.wmsEndpoint:
+                self.schedulerConfig['service'] = self.wmsEndpoint
+
         elif self.schedName == 'arc':
             pass
+
         elif self.schedName == 'lsf':
             pass
 
@@ -262,12 +268,22 @@ class FatWorker(Thread):
         remotePath = str(self.cfg_params['CRAB.se_remote_dir'])
         
         try:
-            seEl = SElement(self.SEurl, self.SEproto, self.SEport) 
+            seEl = SElement(self.SEurl, self.SEproto, self.SEport)
             sbi = SBinterface( seEl )
+
+            # check for files
             for f in taskFileList:
                 if sbi.checkExists(f, self.proxy) == False:
                     self.log.info("FatWorker %s. Missing file %s"%(self.myName, f)) 
                     return [], newRange
+
+            # get TURL for WMS bypass
+            if len(taskFileList) > 0: 
+                self.TURLpreamble = sbi.getTurl( taskFileList[0], self.proxy )
+                self.TURLpreamble = self.TURLpreamble.split(taskFileList[0])[0]
+                if self.TURLpreamble[-1] != '/':
+                    self.TURLpreamble += '/'  
+           
         except Exception, e:
             self.log.info( traceback.format_exc() )
             return [], newRange
@@ -300,9 +316,15 @@ class FatWorker(Thread):
         submitted = [] 
 
         # modify sandbox and other paths for WMS bypass
-        ### NOTE MODIFIED with GetSURL call 
-        ### turlpreamble = 'gsiftp://%s:%s'%(self.SEurl, self.SEport)
-        turlpreamble = 'gsiftp://%s'%self.gsiftpNode
+        turlpreamble = ""
+        ## turlpreamble = 'gsiftp://%s:%s'%(self.SEurl, self.SEport)
+        ## turlpreamble = 'gsiftp://%s'%self.gsiftpNode
+
+        self.log.debug('Turl %s'%self.TURLpreamble)
+
+        if (self.TURLpreamble):
+            turlpreamble = self.TURLpreamble 
+        #
         task['startDirectory'] = turlpreamble
 
         # add fjr XML file to the retrieved files and WMS OSB bypass

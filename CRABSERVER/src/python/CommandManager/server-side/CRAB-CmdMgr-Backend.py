@@ -273,7 +273,7 @@ class CRAB_AS_beckend:
         except Exception, e:
             errLog = traceback.format_exc()  
             self.log.info( errLog )
-            return str("Error: " + errLog)
+            return str("Error: Unable to open %s"%prjUName_fRep)
         
         # return the document
         retStatus = "".join(retStatus)

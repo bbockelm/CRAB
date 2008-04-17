@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.0 $"
-__revision__ = "$Id: CrabServerWorkerComponentV2.py,v 1.0 2007/12/17 06:33:00 farinafa Exp $"
+__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.27 2008/04/14 15:41:19 farinafa Exp $"
 
 import os
 import pickle
@@ -45,7 +45,7 @@ class CrabServerWorkerComponent:
 
         self.args.setdefault('allow_anonymous', 0)
         self.args.setdefault('resourceBroker', 'CERN')
-        self.args.setdefault('WMSserviceList', 'https://wms102.cern.ch:7443/glite_wms_wmproxy_server')
+        self.args.setdefault('WMSserviceList', '')
         self.args.setdefault('EDG_retry_count', 3)
         self.args.setdefault('EDG_shallow_retry_count', 3)
 
@@ -53,7 +53,6 @@ class CrabServerWorkerComponent:
         self.args.setdefault('storageName', 'localhost')
         self.args.setdefault('storagePort', '')
         self.args.setdefault('storagePath', self.args["dropBoxPath"])
-        self.args.setdefault('gsiftpNode', 'localhost')
         self.args.update(args)
         
         if self.args['storagePath'] == None and self.args['Protocol'] == 'local': 
@@ -218,7 +217,6 @@ class CrabServerWorkerComponent:
         workerCfg['SEproto'] = self.args['Protocol']
         workerCfg['SEurl'] = self.args['storageName']
         workerCfg['SEport'] = self.args['storagePort']
-        workerCfg['gsiftpNode'] = self.args['gsiftpNode']
 
         workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
         workerCfg['se_dynBList'] = []
@@ -315,7 +313,6 @@ class CrabServerWorkerComponent:
         workerCfg['SEproto'] = self.args['Protocol']
         workerCfg['SEurl'] = self.args['storageName']
         workerCfg['SEport'] = self.args['storagePort']
-        workerCfg['gsiftpNode'] = self.args['gsiftpNode']
 
         workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
         workerCfg['se_dynBList'] = []

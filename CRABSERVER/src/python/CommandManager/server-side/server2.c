@@ -358,6 +358,7 @@ int ns1__getTaskStatus(struct soap *soap, char *getTaskStatusRequest, struct ns1
         time_t rawtime;
 
         locTemp = pInstance;
+	res = NULL;
 
 	if (locTemp == NULL)
 	{
@@ -376,23 +377,32 @@ int ns1__getTaskStatus(struct soap *soap, char *getTaskStatusRequest, struct ns1
 		} 
 		else 
 		{
-			res = (char*)malloc( sizeof(char) * ( strlen(PyString_AsString(pResult))+1 ) );
-			strcpy(res, PyString_AsString(pResult) );
+			long len;
+			len =  strlen( PyString_AsString(pResult) ) + 1;
+			res = (char*)malloc( sizeof(char) * len );
+			strcpy(res, PyString_AsString(pResult));
                         Py_XDECREF(pResult);
                 }
 	}
 
 	// constuct response
-        _param_3->getTaskStatusResponse = (char*)malloc( sizeof(char) * (strlen(res)) );
-        if ( _param_3->getTaskStatusResponse != NULL)
-        {
-                strcpy( _param_3->getTaskStatusResponse , res );
-		free(res);
-        }
-        else
-        {
-                fprintf(stderr, "Error while allocating return code location\n");
-        }
+	if (res != NULL)
+	{
+		_param_3->getTaskStatusResponse = (char*)malloc( sizeof(char) * (strlen(res)) );
+		if ( _param_3->getTaskStatusResponse != NULL)
+        	{
+                	strcpy( _param_3->getTaskStatusResponse , res );
+	                free(res);
+        	}
+	        else
+	        {
+        	        fprintf(stderr, "Error while allocating return code location\n");
+	        }
+	}
+	else
+	{
+                fprintf(stderr, "Error while allocating result message location\n");
+	}
 
 	time(&rawtime);
 	fprintf(stdout, "GetTaskStatus RPC (len=%d) TStamp: %s", strlen(_param_3->getTaskStatusResponse), asctime(localtime(&rawtime)) );
