@@ -222,6 +222,9 @@ cat > /etc/ld.so.conf.d/globusglite.conf << EOF
 EOF
 ldconfig
 
+echo "*** Creating /var/www/html/transfer for user $CRAB_USER:cms";
+mkdir -p /var/www/html/transfer
+chown -R $CRAB_USER:cms /var/www/html/transfer
 
 echo ""
 echo "*** Note:"
