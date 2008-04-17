@@ -131,8 +131,24 @@ class SubmitterServer(Actor):
         
         # init SE interface
         common.logger.message("Starting sending the project to the storage "+str(self.storage_name)+"...")
-        seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
-        loc = SElement("localhost", "local")
+        try:  
+            seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
+        except Exception, ex:
+            common.logger.debug(1, str(ex))
+            msg = "ERROR : Unable to create SE destination interface \n"
+            msg +="Project "+ self.taskuuid +" not Submitted \n"
+            raise CrabException(msg)
+          
+        try:  
+            loc = SElement("localhost", "local")
+        except Exception, ex:
+            common.logger.debug(1, str(ex))
+            msg = "ERROR : Unable to create SE source interface \n"
+            msg +="Project "+ self.taskuuid +" not Submitted \n"
+            raise CrabException(msg)
+
+
+        ### it should not be there... To move into SE API. DS
 
         # create remote dir for gsiftp 
         if self.storage_proto == 'gridftp':
@@ -241,14 +257,7 @@ class SubmitterServer(Actor):
     def moveProxy(self):
 	WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
 
-	## get subject ##
-	x509 = None # TODO From task object alreadyFrom task object already  ? common._db.queryTask('proxy')
-	if 'X509_USER_PROXY' in os.environ:
-	    x509 = os.environ['X509_USER_PROXY']
-	else:
-	    status, x509 = commands.getstatusoutput('ls /tmp/x509up_u`id -u`')
-	    x509 = x509.strip()
-
+        x509 = getSubject(self)
 	## register proxy ##
 	common.scheduler.checkProxy()
 	try:

@@ -9,6 +9,8 @@ from xml.dom import minidom
 from ServerCommunicator import ServerCommunicator
 from ServerConfig import *
 
+from ProdCommon.Storage.SEAPI.SElement import SElement
+from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 
 class GetOutputServer( GetOutput, StatusServer ):
 
@@ -81,52 +83,63 @@ class GetOutputServer( GetOutput, StatusServer ):
         Real get output from server storage
         """
         common.scheduler.checkProxy()
+       
+        self.proxyPath = getSubject(self)
+
+
+        self.taskuuid = str(common._db.queryTask('name'))
+        common.logger.debug(3, "Task name: " + self.taskuuid)
 
         # create the list with the actual filenames 
-        taskuuid = str(common._db.queryTask('name'))
-        remotedir = os.path.join(self.storage_path, taskuuid)
+        remotedir = os.path.join(self.storage_path, self.taskuuid)
 
-        osbTemplate = self.storage_proto + '://'+ self.storage_name +\
-            ':' + self.storage_port + remotedir + '/out_files_%s.tgz'  
+      
+        # list of file to retrieve
+        osbTemplate = remotedir + '/out_files_%s.tgz'  
         osbFiles = [ osbTemplate%str(jid) for jid in filesToRetrieve ]
-
+        common.logger.debug(3, "List of OSB files: " +str(osbFiles) )
+ 
+        #   
         copyHere = common.work_space.resDir()
-        destTemplate = 'file://'+copyHere+'/out_files_%s.tgz'  
+        destTemplate = copyHere+'/out_files_%s.tgz'  
         destFiles = [ destTemplate%str(jid) for jid in filesToRetrieve ]
+
+        common.logger.message("Starting retrieving output from server "+str(self.storage_name)+"...")
+
+        try:  
+            seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
+        except Exception, ex:
+            common.logger.debug(1, str(ex))
+            msg = "ERROR : Unable to create SE source interface \n"
+            raise CrabException(msg)
+        try:  
+            loc = SElement("localhost", "local")
+        except Exception, ex:
+            common.logger.debug(1, str(ex))
+            msg = "ERROR : Unable to create destination  interface \n"
+            raise CrabException(msg)
+
+        ## copy ISB ##
+        sbi = SBinterface( seEl, loc )
 
         # retrieve them from SE #TODO replace this with SE-API
         for i in xrange(len(filesToRetrieve)):
+            source = osbFiles[i] 
+            dest = destFiles[i]
+            common.logger.debug(1, "retrieving "+ str(source) +" to "+ str(dest) )
             try:
-                cmd = 'lcg-cp --vo cms %s %s'%(osbFiles[i], destFiles[i])
-                out = os.system(cmd +' >& /dev/null')
-                common.logger.debug(5, cmd)
-                if out != 0:
-                    print "Unable to retrieve output file %s"%osbFiles[i]
-                    del filesToRetrieve[i]
-                    continue
-
-                ##    
-                ## TODO check if sizes are ok/the transfer was safe. Simpler with the API
-                ## 
- 
-                ## clean-up SE
-               # cmd = 'lcg-del --vo cms %s'%osbFiles[i]
-               # out = os.system(cmd +' >& /dev/null')
-               # common.logger.debug(5, cmd)
-               # if out != 0:
-               #     print "Unable to clean up SE for output file %s. The deletion will be performed by the server"%osbFiles[i]
-               #     continue
-
-            except Exception, e:
-                print "Unable to retrieve output file %s"%osbFiles[i] 
-                del filesToRetrieve[i]
+                sbi.copy( source, dest, self.proxyPath)
+            except Exception, ex:
+                common.logger.debug(1, str(ex))
+                msg = "WARNING: Unable to retrieve output file %s"%osbFiles[i] 
+                common.logger.message(msg)
                 continue
 
         # notify to the server that output have been retrieved successfully. proxy from StatusServer
         if len(filesToRetrieve) > 0:
             common.logger.debug(5, "List of retrieved files notified to server: %s"%str(filesToRetrieve) ) 
-            csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxy)
-            csCommunicator.outputRetrieved(taskuuid, filesToRetrieve)
+            csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxyPath)
+            csCommunicator.outputRetrieved(self.taskuuid, filesToRetrieve)
 
         return
 

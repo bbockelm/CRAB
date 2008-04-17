@@ -403,6 +403,18 @@ def displayReport(self, header, lines, xml=''):
         f.close()
         pass
 
+def getSubject(self):
+	"""
+         get subject from proxy 
+        """ 
+	x509 = None # TODO From task object alreadyFrom task object already  ? common._db.queryTask('proxy')
+	if 'X509_USER_PROXY' in os.environ:
+	    x509 = os.environ['X509_USER_PROXY']
+	else:
+	    status, x509 = commands.getstatusoutput('ls /tmp/x509up_u`id -u`')
+	    x509 = x509.strip()
+
+        return x509 
 
 
 ####################################
