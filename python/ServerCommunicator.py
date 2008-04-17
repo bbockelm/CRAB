@@ -275,9 +275,10 @@ class ServerCommunicator:
         ret = -1
         ret = self.asSession.sendCommand(cmdXML, blTaskName)
         logMsg = ''
+        debugMsg = ''  
         if ret == 0:
              # success
-             logMsg = 'Task %s successfully submitted to server %s'%(self.crab_task_name, self.serverName)
+             debugMsg = 'Task %s successfully submitted to server %s'%(self.crab_task_name, self.serverName)
         elif ret == 101:
              # overlaod
              logMsg = 'The server %s refused the submission %s because you asked to handle a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
@@ -291,6 +292,9 @@ class ServerCommunicator:
              logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret) 
 
         # print loggings
-        common.logger.message(logMsg+'\n')  
+        if logMsg != '':
+            common.logger.message(logMsg+'\n')  
+        else: 
+            common.logger.debug(3,debugMsg+'\n')  
         return ret
     
