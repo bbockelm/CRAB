@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.64 2008/04/09 10:36:15 mcinquil Exp $"
-__version__ = "$Revision: 1.64 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.65 2008/04/16 14:23:14 mcinquil Exp $"
+__version__ = "$Revision: 1.65 $"
 
 import os
 import time
@@ -1177,7 +1177,7 @@ class TaskTrackingComponent:
                                 if succexo:
                                     self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
                                     _loginfo += "Updating task: " + str(taskName) + "\n"
-                                    _loginfo += "\tpublishing task success (sending e-mail to %s)"%(srt(eMail))
+                                    _loginfo += "\tpublishing task success (sending e-mail to %s)"%(str(eMail))
                                     msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
                                     logBuf = self.__logToBuf__(logBuf, msg)
  			    except ZeroDivisionError, detail:
