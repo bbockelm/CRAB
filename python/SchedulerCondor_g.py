@@ -2,8 +2,8 @@ from SchedulerCondorCommon import SchedulerCondorCommon
 import common
 import Scram
 from osg_bdii import getJobManagerList
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.97 2008/04/17 14:20:55 ewv Exp $"
-__version__ = "$Revision: 1.97 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.97.2.1 2008/04/18 20:35:08 ewv Exp $"
+__version__ = "$Revision: 1.97.2.1 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -27,10 +27,15 @@ class SchedulerCondor_g(SchedulerCondorCommon):
     versionCMSSW = scram.getSWVersion()
     arch = scram.getArch()
     ceDest = getJobManagerList(seDest,versionCMSSW,arch)
+    if not ceDest[0]:
+      ceDest = ceDest[1:]
     print "CE's",ceDest
 #    ceDest = self.getCEfromSE(seDest)
 
-    jobParams += "globusscheduler = "+ceDest+":2119/jobmanager-condor; "
+    if len(ceDest) == 1:
+      jobParams += "globusscheduler = "+ceDest[0]+"; "
+    else:
+      jobParams += "schedulerList = "+','.join(ceDest)+"; "
 
     common._db.updateTask_({'jobType':jobParams})
     return jobParams # Not sure I even need to return anything
