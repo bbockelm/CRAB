@@ -19,6 +19,8 @@ SOAP_SOCKET dequeue();
 pthread_mutex_t queue_cs; 
 pthread_cond_t queue_cv; 
 
+pthread_mutex_t status_cs;
+
 // global var for backend loading
 PyObject *pClass;
 PyObject *pInstance;
@@ -103,6 +105,8 @@ int run_service(int port, char* logFile)
  	}
 	fprintf(stdout, "DONE (%d)\n", m);
 
+	pthread_mutex_init(&status_cs, NULL); //TODO  needed for status concurrency
+
 	pthread_mutex_init(&queue_cs, NULL); 
 	pthread_cond_init(&queue_cv, NULL); 
 	for (i = 0; i < MAX_THR; i++) 
@@ -159,6 +163,8 @@ int run_service(int port, char* logFile)
 		soap_done(soap_thr[i]); 
 		free(soap_thr[i]); 
 	} 
+
+	pthread_mutex_destroy(&status_cs);
 
 	pthread_mutex_destroy(&queue_cs); 
 	pthread_cond_destroy(&queue_cv); 
@@ -359,7 +365,8 @@ int ns1__getTaskStatus(struct soap *soap, char *getTaskStatusRequest, struct ns1
 
         locTemp = pInstance;
 	//res = NULL;
-
+        pthread_mutex_lock(&status_cs); //TODO
+ 
 	if (locTemp == NULL)
 	{
 		PyErr_Print();
@@ -404,6 +411,8 @@ int ns1__getTaskStatus(struct soap *soap, char *getTaskStatusRequest, struct ns1
 	{
                 fprintf(stderr, "Error while allocating result message location\n");
 	}
+
+        pthread_mutex_unlock(&status_cs); //TODO
 
 	time(&rawtime);
 	fprintf(stdout, "GetTaskStatus RPC (len=%d) TStamp: %s", strlen(_param_3->getTaskStatusResponse), asctime(localtime(&rawtime)) );
