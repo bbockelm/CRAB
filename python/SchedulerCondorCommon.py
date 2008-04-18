@@ -15,8 +15,8 @@ import CondorGLoggingInfo
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.1 2008/04/16 19:42:58 ewv Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.2 2008/04/17 10:51:49 slacapra Exp $"
+__version__ = "$Revision: 1.2 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -177,19 +177,19 @@ class SchedulerCondorCommon(SchedulerGrid):
 
         # redo this with SchedulerGrid SE list
 
-        try:
-            tmpGood = string.split(cfg_params['EDG.se_white_list'],',')
-        except KeyError:
-            msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
-            msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
-            common.logger.debug(2,msg)
-            raise CrabException(msg)
+        #try:
+            #tmpGood = string.split(cfg_params['EDG.se_white_list'],',')
+        #except KeyError:
+            #msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
+            #msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
+            #common.logger.debug(2,msg)
+            #raise CrabException(msg)
 
-        if len(tmpGood) != 1 :
-            msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
-            msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
-            common.logger.debug(2,msg)
-            raise CrabException(msg)
+        #if len(tmpGood) != 1 :
+            #msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
+            #msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
+            #common.logger.debug(2,msg)
+            #raise CrabException(msg)
 
         try:
             self.UseGT4 = cfg_params['USER.use_gt_4'];

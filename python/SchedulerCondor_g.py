@@ -1,8 +1,9 @@
 from SchedulerCondorCommon import SchedulerCondorCommon
 import common
-
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.96 2008/04/16 19:42:59 ewv Exp $"
-__version__ = "$Revision: 1.96 $"
+import Scram
+from osg_bdii import getJobManagerList
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.97 2008/04/17 14:20:55 ewv Exp $"
+__version__ = "$Revision: 1.97 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -17,8 +18,17 @@ class SchedulerCondor_g(SchedulerCondorCommon):
     """
     jobParams = SchedulerCondorCommon.sched_parameter(self,i,task)
 
-    seDest = self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']))
-    ceDest = self.getCEfromSE(seDest)
+    print "Raw SE: ",eval(task.jobs[i-1]['dlsDestination'])
+
+    seDest = self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']),"list")
+    print "Cleaned SE: ",seDest
+    scram = Scram.Scram(None)
+
+    versionCMSSW = scram.getSWVersion()
+    arch = scram.getArch()
+    ceDest = getJobManagerList(seDest,versionCMSSW,arch)
+    print "CE's",ceDest
+#    ceDest = self.getCEfromSE(seDest)
 
     jobParams += "globusscheduler = "+ceDest+":2119/jobmanager-condor; "
 
