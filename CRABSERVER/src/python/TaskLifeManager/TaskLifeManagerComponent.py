@@ -213,7 +213,7 @@ class TaskLifeManagerComponent:
                 logging.info("Deleting osb of task: " + str(taskname) + \
                              " for jobs " + str(jobstr) )
                 try:
-                    self.deleteRetrievedOSB( taskName, jobstr )
+                    self.deleteRetrievedOSB( taskname, jobstr )
                 except Exception, ex:
                     import traceback
                     logging.error( "Exception raised: " + str(ex) )
@@ -250,12 +250,12 @@ class TaskLifeManagerComponent:
         """
         own = " "
         mail = " " 
-        taskPath = self.args['storagePath'] + "/" + taskName + "_spec"
+        taskPath = self.args['dropBoxPath'] + "/" + taskName + "_spec"
         try:
             import xml.dom.minidom
             import xml.dom.ext
-            from os.path import join
-            if self.SeSbI.checkExists( join(taskPath, "xmlReportFile.xml")):
+            from os.path import join, exists
+            if exists( join(taskPath, "xmlReportFile.xml")):
                 fileXml = None
                 try:
                     fileXml = open( join(taskPath, "xmlReportFile.xml"), "r")
