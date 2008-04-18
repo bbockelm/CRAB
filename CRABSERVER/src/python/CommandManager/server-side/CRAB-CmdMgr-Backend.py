@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.0 $"
-__revision__ = "$Id: CRAB-Proxy.py, v 1.0 2007/12/12 19:21:47 farinafa Exp $"
+__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.4 2008/04/17 17:40:06 farinafa Exp $"
 
 import os
 import time
@@ -260,11 +260,7 @@ class CRAB_AS_beckend:
         """
         self.log.info("TaskStatus requested "+taskUniqName)
         
-        # TODO # Fabio
-        # TO BE CHECKED FOR CONSISTENCY w.r.t. the rest of the system
-        # NAME CONVENSION IDENTICAL TO THE ONE USED BY CURRENT SERVER CLIENT (see StatusServer.py, line 79)
         retStatus = ""
-
         prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/xmlReportFile.xml"
         try:
             f = open(prjUName_fRep, 'r')
