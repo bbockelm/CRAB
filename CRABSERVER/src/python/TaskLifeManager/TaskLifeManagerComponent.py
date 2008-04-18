@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.11 2008/04/10 16:24:19 farinafa Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.12 2008/04/10 16:30:25 mcinquil Exp $"
+__version__ = "$Revision: 1.12 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -106,9 +106,12 @@ class TaskLifeManagerComponent:
         #####################
         # which dbox ?!?
         #self.args['SEBaseDir'] = '/castor/cern.ch/user/m/mcinquil/'
+        if self.args['dropBoxPath'] == None:
+            self.args['dropBoxPath'] = self.args['ComponentDir']
         if self.args['storagePath'] == None:
-            self.args['storagePath'] = self.args['ComponentDir']
-        logging.info("Using " +str(self.args['storagePath']))
+            self.args['storagePath'] = self.args['dropBoxPath']
+        logging.info("Using drop "  +str(self.args['dropBoxPath']) )
+        logging.info("Using storage " +str(self.args['storagePath']) )
 
         # minimum space available
         if int(self.args['levelAvailable']) < 5:
@@ -410,8 +413,9 @@ class TaskLifeManagerComponent:
         """
         deleting OSB
         """
+        from os.path import join
         task = self.taskQueue.getbyName( taskName )
-        proxy = task.getProxy() 
+        proxy = join( self.args['dropBoxPath'], task.getProxy() )
         from os.path import join
         taskPath = join(self.args['storagePath'] , taskName)
         jobList = eval(strJobs)
@@ -623,11 +627,12 @@ class TaskLifeManagerComponent:
             self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
 
     def deleteTasks( self ):
+        from os.path import join
         toDelete = self.taskDeleteQueue.getHowMany()
         totFreeSpace = 0
         for index in range( toDelete ):
             task = self.taskDeleteQueue.getCurrentSwitch()
-            proxy = task.getProxy()
+            proxy = join( self.args['dropBoxPath'], task.getProxy() )
             logging.info ( "task life expired " + task.getName() )
             summ = self.cleanTask( task.getName(), proxy )
             if summ > 0:
