@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.0 $"
-__revision__ = "$Id: CRAB-Proxy.py, v 1.0 2007/12/12 19:21:47 farinafa Exp $"
+__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.6 2008/04/18 13:43:43 farinafa Exp $"
 
 import os
 import time
@@ -91,14 +91,6 @@ class CRAB_AS_beckend:
         """
         
         # Logging system init
-        if 'Logfile' not in self.args:
-            self.args['Logfile'] = self.args['ComponentDir']+'/ComponentLog'
-
-        logHandler = RotatingFileHandler(self.args['Logfile'], "a", 1000000, 3)
-        logFormatter = logging.Formatter("%(asctime)s:%(message)s")
-        logHandler.setFormatter(logFormatter)
-        logging.getLogger().addHandler(logHandler)
-        logging.getLogger().setLevel(logging.INFO)
         self.log = logging
 
         logging.info("CRABProxyGateway allocating ...")
@@ -221,8 +213,14 @@ class CRAB_AS_beckend:
 
         try:
             cmdName = self.wdir + '/' + taskUniqName + '_spec/cmd.xml'
+
+            if not os.path.exists(self.wdir + '/' + taskUniqName + '_spec'):
+                self.log.info("Task spec location missing %s "%taskUniqName)
+                return 20
+ 
             if os.path.exists(cmdName):
                 os.rename(cmdName, cmdName+'.%s'%time.time())
+
             f = open(cmdName, 'w')
             f.write(cmdDescriptor)
             f.close()
@@ -276,14 +274,16 @@ class CRAB_AS_beckend:
         retStatus = ""
 
         prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/xmlReportFile.xml"
-        try:
-            f = open(prjUName_fRep, 'r')
-            retStatus = f.readlines()
-            f.close()
-        except Exception, e:
-            errLog = traceback.format_exc()  
-            self.log.info( errLog )
-            return str("Error: " + errLog)
+        if not os.path.exists(prjUName_fRep):
+            retStatus = "Error: file %s not exists"%prjUName_fRep
+        else:
+            try:
+                f = open(prjUName_fRep, 'r')
+                retStatus = f.readlines()
+                f.close()
+            except Exception, e:
+                self.log.debug( traceback.format_exc() )
+                str("Error: problem reading %s report file"%prjUName_fRep )
         
         # return the document
         retStatus = "".join(retStatus)

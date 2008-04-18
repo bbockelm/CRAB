@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.0 $"
-__revision__ = "$Id: CRAB-Proxy.py, v 1.0 2007/12/12 19:21:47 farinafa Exp $"
+__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.7 2008/04/18 14:11:46 farinafa Exp $"
 
 import os
 import time
@@ -213,8 +213,14 @@ class CRAB_AS_beckend:
 
         try:
             cmdName = self.wdir + '/' + taskUniqName + '_spec/cmd.xml'
+
+            if not os.path.exists(self.wdir + '/' + taskUniqName + '_spec'):
+                self.log.info("Task spec location missing %s "%taskUniqName)
+                return 20
+ 
             if os.path.exists(cmdName):
                 os.rename(cmdName, cmdName+'.%s'%time.time())
+
             f = open(cmdName, 'w')
             f.write(cmdDescriptor)
             f.close()
@@ -269,7 +275,7 @@ class CRAB_AS_beckend:
 
         prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/xmlReportFile.xml"
         if not os.path.exists(prjUName_fRep):
-            retStatus = "Error: file %s not exists" % prjUName_fRep
+            retStatus = "Error: file %s not exists"%prjUName_fRep
         else:
             try:
                 f = open(prjUName_fRep, 'r')
@@ -277,7 +283,7 @@ class CRAB_AS_beckend:
                 f.close()
             except Exception, e:
                 self.log.debug( traceback.format_exc() )
-                retStatus = "Error: problem reading %s report file" % prjUName_fRep 
+                str("Error: problem reading %s report file"%prjUName_fRep )
         
         # return the document
         retStatus = "".join(retStatus)
