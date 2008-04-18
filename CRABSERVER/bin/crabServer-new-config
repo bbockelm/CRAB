@@ -137,7 +137,8 @@ componentFields = {
 
 print "Creating ProdAgent configuration\n"
  
-os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder,JobKiller,GetOutput")
+#os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder,JobKiller,GetOutput,HTTPFrontend")
+os.system("prodAgent-new-config --components=JobTracking,GetOutput,HTTPFrontend")
 
 # read configuration
 
@@ -162,15 +163,15 @@ for parameter, value in crabServerConfiguration.items():
     config['CrabServerConfigurations'][parameter] = value
 
 ## set default fields
-try:
+#try:
 #    config['CrabServerConfigurations']['bossClads'] = os.path.join(prodAgentBlock['ProdAgentWorkDir'], "BOSS/config/")
 
-    config['JobSubmitter']['SubmitterName'] = "RESubmitter"
-    config['JobKiller']['KillerName'] = "BOSSKiller"
-except Exception, ex:
-    msg = "\n Unable to configure the component file: "
-    msg += str(ex) + "\n"
-    print msg
+#   config['JobSubmitter']['SubmitterName'] = "RESubmitter"
+#    config['JobKiller']['KillerName'] = "BOSSKiller"
+#except Exception, ex:
+#    msg = "\n Unable to configure the component file: "
+#    msg += str(ex) + "\n"
+#    print msg
 
 # create new components
 
