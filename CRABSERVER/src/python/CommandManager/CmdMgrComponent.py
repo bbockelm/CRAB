@@ -77,14 +77,17 @@ class CmdMgrComponent:
             logging.info('Error while importing Frontend module')
             logging.info( traceback.format_exc() )
  
-        try_frontend_reboot = 8 
+        try_frontend_reboot = 8
+        preTime = time.time() 
+
         while try_frontend_reboot:
-            logging.info('Starting the Frontend WebService') 
-
-            outcode = FrontendLoader.start(self.port, self.WSlogFile) 
-            logging.info('Frontend returned with code %d. Please inspect log file %s for further details'%(outcode, self.WSlogFile) )
-
-            try_frontend_reboot -= 1
+            logging.info('Starting the Frontend WebService')
+            outcode = 0
+            try: 
+                outcode = FrontendLoader.start(self.port, self.WSlogFile) 
+            except Exception, e:
+                logging.info('Frontend returned with code %d. Please inspect log file %s for further details'%(outcode, self.WSlogFile) )
+                logging.info( traceback.format_exc() )
         #
         logging.info('Frontend failed too many times. Command Manager exits')  
         return 

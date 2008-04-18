@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.4 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.4 2008/04/17 17:40:06 farinafa Exp $"
+__version__ = "$Revision: 1.0 $"
+__revision__ = "$Id: CRAB-Proxy.py, v 1.0 2007/12/12 19:21:47 farinafa Exp $"
 
 import os
 import time
@@ -9,6 +9,7 @@ import getopt
 import urllib
 import pickle
 import zlib
+import base64
 from xml.dom import minidom
 
 import logging
@@ -89,6 +90,15 @@ class CRAB_AS_beckend:
         Initialize the logging system
         """
         
+        # Logging system init
+        if 'Logfile' not in self.args:
+            self.args['Logfile'] = self.args['ComponentDir']+'/ComponentLog'
+
+        logHandler = RotatingFileHandler(self.args['Logfile'], "a", 1000000, 3)
+        logFormatter = logging.Formatter("%(asctime)s:%(message)s")
+        logHandler.setFormatter(logFormatter)
+        logging.getLogger().addHandler(logHandler)
+        logging.getLogger().setLevel(logging.INFO)
         self.log = logging
 
         logging.info("CRABProxyGateway allocating ...")
@@ -260,7 +270,11 @@ class CRAB_AS_beckend:
         """
         self.log.info("TaskStatus requested "+taskUniqName)
         
+        # TODO # Fabio
+        # TO BE CHECKED FOR CONSISTENCY w.r.t. the rest of the system
+        # NAME CONVENSION IDENTICAL TO THE ONE USED BY CURRENT SERVER CLIENT (see StatusServer.py, line 79)
         retStatus = ""
+
         prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/xmlReportFile.xml"
         try:
             f = open(prjUName_fRep, 'r')
@@ -269,11 +283,12 @@ class CRAB_AS_beckend:
         except Exception, e:
             errLog = traceback.format_exc()  
             self.log.info( errLog )
-            return str("Error: Unable to open %s"%prjUName_fRep)
+            return str("Error: " + errLog)
         
         # return the document
         retStatus = "".join(retStatus)
-        return retStatus
+        handledStatus = base64.encodestring(zlib.compress(retStatus))
+        return handledStatus #retStatus
 
 
 ###############################

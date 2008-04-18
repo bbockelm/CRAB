@@ -6,8 +6,8 @@
 #include <Python.h>
 
 #define BACKLOG (100) // Max. request backlog 
-#define MAX_THR (10) // Size of thread pool 
-#define MAX_QUEUE (1000) // Max. size of request queue 
+#define MAX_THR (4) // Size of thread pool 
+#define MAX_QUEUE (100) // Max. size of request queue 
 
 SOAP_SOCKET queue[MAX_QUEUE]; // The global request queue of sockets 
 int head = 0, tail = 0; // Queue head and tail 
@@ -354,11 +354,11 @@ int ns1__sendCommand(struct soap *soap, struct ns1__sendCommandType *sendCommand
 int ns1__getTaskStatus(struct soap *soap, char *getTaskStatusRequest, struct ns1__getTaskStatusResponse *_param_3)
 {
         PyObject *pResult, *locTemp;
-	char* res;
+	char res[ 8192*16 ];
         time_t rawtime;
 
         locTemp = pInstance;
-	res = NULL;
+	//res = NULL;
 
 	if (locTemp == NULL)
 	{
@@ -378,9 +378,10 @@ int ns1__getTaskStatus(struct soap *soap, char *getTaskStatusRequest, struct ns1
 		else 
 		{
 			long len;
-			len =  strlen( PyString_AsString(pResult) ) + 1;
-			res = (char*)malloc( sizeof(char) * len );
-			strcpy(res, PyString_AsString(pResult));
+			len =  strlen( PyString_AsString(pResult) );
+			// res = (char*)malloc( sizeof(char) * len );
+			strncpy(res, PyString_AsString(pResult), len);
+                        res[len+1] = '\0';
                         Py_XDECREF(pResult);
                 }
 	}
@@ -388,11 +389,11 @@ int ns1__getTaskStatus(struct soap *soap, char *getTaskStatusRequest, struct ns1
 	// constuct response
 	if (res != NULL)
 	{
-		_param_3->getTaskStatusResponse = (char*)malloc( sizeof(char) * (strlen(res)) );
+		_param_3->getTaskStatusResponse = (char*)malloc( sizeof(char) * strlen(res) );
 		if ( _param_3->getTaskStatusResponse != NULL)
         	{
-                	strcpy( _param_3->getTaskStatusResponse , res );
-	                free(res);
+                	strncpy( _param_3->getTaskStatusResponse , res, strlen(res) );
+	                // free(res);
         	}
 	        else
 	        {
