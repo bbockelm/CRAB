@@ -10,6 +10,9 @@ from ServerCommunicator import ServerCommunicator
 from Status import Status
 from ServerConfig import *
 
+import zlib
+import base64
+
 class StatusServer(Status):
 
     def __init__(self, *args):
@@ -58,15 +61,22 @@ class StatusServer(Status):
 
         # communicator allocation
         csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxy)
-        reportXML = csCommunicator.getStatus( str(task['name']) )
+        handledXML = csCommunicator.getStatus( str(task['name']) )
         del csCommunicator
 
         # align back data and print
+        try:
+            reportXML = zlib.decompress( base64.decodestring(handledXML) )
+        except Exception, e:
+            print "WARNING: Problem while decompressing fresh status from the server."
+            return
+
         try:
             reportList = minidom.parseString(reportXML.strip()).getElementsByTagName('Job')
             common._db.deserXmlStatus(reportList)
         except Exception, e:
             print "WARNING: Problem while retrieving fresh status from the server."
             return
+
         return 
 

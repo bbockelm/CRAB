@@ -130,9 +130,9 @@ class GetOutputServer( GetOutput, StatusServer ):
             try:
                 sbi.copy( source, dest, self.proxyPath)
             except Exception, ex:
-                common.logger.debug(1, str(ex))
-                msg = "WARNING: Unable to retrieve output file %s"%osbFiles[i] 
-                common.logger.message(msg)
+                msg = "WARNING: Unable to retrieve output file %s \n"%osbFiles[i] 
+                msg += str(ex)
+                common.logger.debug(1,msg)
                 continue
 
         # notify to the server that output have been retrieved successfully. proxy from StatusServer
