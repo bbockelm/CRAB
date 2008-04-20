@@ -133,7 +133,7 @@ class Submitter(Actor):
     def performMatch(self):    
         """
         """ 
-        common.logger.message("Starting check available resources...")
+        common.logger.message("Checking available resources...")
         ### define here the list of distinct destinations sites list    
        # distinct_dests =  common._db.queryDistJob('dlsDestination')
         distinct_dests = common._db.queryDistJob_Attr('dlsDestination', 'jobId' ,self.nj_list)

@@ -7,73 +7,20 @@ import os, errno, time, sys, re
 import commands
 import zlib
 
+from Submitter import Submitter
 from ServerCommunicator import ServerCommunicator 
 from ServerConfig import *
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
  
-class SubmitterServer(Actor):
+class SubmitterServer( Submitter ):
     def __init__(self, cfg_params, parsed_range, val):
 	self.srvCfg = {}
         self.cfg_params = cfg_params
         self.submitRange = []
-
-        # range parse
-        nsjobs = -1
-        chosenJobsList = None
-        if val:
-            if val=='range':  # for Resubmitter
-                chosenJobsList = parsed_range
-            elif val=='all':
-                pass
-            elif (type(eval(val)) is int) and eval(val) > 0:
-                # positive number
-                nsjobs = eval(val)
-            elif (type(eval(val)) is tuple)or( type(eval(val)) is int and eval(val)<0 ) :
-                chosenJobsList = parsed_range
-                nsjobs = len(chosenJobsList)
-            else:
-                msg = 'Bad submission option <'+str(val)+'>\n'
-                msg += '      Must be an integer or "all"'
-                msg += '      Generic range is not allowed"'
-                raise CrabException(msg)
-            pass
-        common.logger.debug(5,'nsjobs '+str(nsjobs))
-
-        # total jobs
-        nj_list = []
-        common.logger.debug(5,'Total jobs '+str(common._db.nJobs()))
-        jobSetForSubmission = 0
-        jobSkippedInSubmission = []
-
-        tmp_jList = common._db.nJobs('list')
-        if chosenJobsList != None:
-            tmp_jList = chosenJobsList
-
-        # build job list
-        dlsDest=common._db.queryJob('dlsDestination',tmp_jList)
-        jStatus=common._db.queryRunJob('status',tmp_jList)
-        for nj in range(len(tmp_jList)):
-            if nsjobs>0 and nsjobs == jobSetForSubmission:
-                break
-            if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z']):
-                jobSetForSubmission +=1
-                nj_list.append(tmp_jList[nj])## Warning added +1 for jobId BL--DS
-            else :
-                jobSkippedInSubmission.append(tmp_jList[nj])
-            pass
-
-        if nsjobs>jobSetForSubmission:
-            common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
-        if len(jobSkippedInSubmission) > 0 :
-            mess =""
-            for jobs in jobSkippedInSubmission:
-                mess += str(jobs) + ","
-            common.logger.message("Jobs:  " +str(mess) + "\n      skipped because no sites are hosting this data\n")
-            pass
-        common.logger.debug(5,'nj_list '+str(nj_list))
-        self.submitRange = nj_list 
+       
+        Submitter.__init__(self, cfg_params, parsed_range, val)      
 
         # init client-server interactions 
 	try:
@@ -100,27 +47,33 @@ class SubmitterServer(Actor):
 	"""
 	The main method of the class: submit jobs in range self.nj_list
 	"""
-
-        if len(self.submitRange) == 0:
-            return
-
-	isFirstSubmission = False
-
-        self.taskuuid = str(common._db.queryTask('name'))
-        self.remotedir = os.path.join(self.storage_path, self.taskuuid)
-        self.proxyPath = self.moveProxy()
-
-	# partial submission code # TODO is that file the right way? 
-        ## NO! to be changed... query DB... 
-	if os.path.exists(common.work_space.shareDir()+'/first_submission') == False:
-            self.moveISB_SEAPI() 
-	    #self.moveISB()
-	    isFirstSubmission = True
-	    os.system('touch %s'%str(common.work_space.shareDir()+'/first_submission'))
-
-	# standard submission to the server
 	common.logger.debug(5, "SubmitterServer::run() called")
-	self.performSubmission(isFirstSubmission)
+
+        self.submitRange = self.nj_list
+
+        check = self.checkIfCreate() 
+
+        if check == 0 :
+	    isFirstSubmission = False
+
+            self.taskuuid = str(common._db.queryTask('name'))
+            self.remotedir = os.path.join(self.storage_path, self.taskuuid)
+            self.proxyPath = self.moveProxy()
+
+	    # partial submission code # TODO is that file the right way? 
+            ## NO! to be changed... query DB... 
+	    if os.path.exists(common.work_space.shareDir()+'/first_submission') == False:
+                self.moveISB_SEAPI() 
+	        #self.moveISB()
+	        isFirstSubmission = True
+	        os.system('touch %s'%str(common.work_space.shareDir()+'/first_submission'))
+
+	    # standard submission to the server
+	    self.performSubmission(isFirstSubmission)
+        
+            msg = '\nTotal of %d jobs submitted'%len(self.submitRange) 
+            common.logger.message(msg)
+ 
 	return
 
     def moveISB_SEAPI(self):
@@ -181,78 +134,6 @@ class SubmitterServer(Actor):
         msg = 'Project '+ self.taskuuid +' files successfully submitted to the supporting storage element.\n'
         common.logger.debug(3,msg)
         return
-
-    def moveISB(self):
-        ########################################
-        ##  TODO Deprecated, remove this method. Use the above one # Fabio
-        ########################################
-
-
-	## get task info from BL ##
-	common.logger.debug(3, "Task name: " + self.taskuuid)
-	isblist = common._db.queryTask('globalSandbox').split(',')
-        
-	common.logger.debug(3, "List of ISB files: " +str(isblist) )
-	scriptexe = common._db.queryTask('scriptName')
-	common.logger.debug(3, "Executable: " +str(scriptexe) )
-	common.logger.message("Starting sending the project to the storage "+str(self.storage_name)+"...")
-
-	## create remote dir ##
-	try:
-	    cmd = "edg-gridftp-mkdir gsiftp://" +self.storage_name + self.remotedir
-	    common.logger.debug(3, "Creating project directory on gsiftp://" + self.storage_name + self.remotedir)
-	    common.logger.debug(5, " with:\n    " + cmd)
-	    status, out = commands.getstatusoutput (cmd)
-	    if int(status) != 0:
-		common.logger.debug(1, str(out))
-		msg = "ERROR : Unable to ship the project to the server \n"
-		msg +="Project "+ self.taskuuid + " not Submitted \n"
-		raise CrabException(msg)
-	except Exception, ex:
-	    common.logger.debug(1, str(ex))
-	    msg = "ERROR : Unable to ship the project to the server \n"
-	    msg +="Project "+ self.taskuuid +" not Submitted \n"
-	    raise CrabException(msg)
-
-	## copy ISB ##
-	for filetocopy in isblist:
-	    try:
-		cmd = 'lcg-cp -v --vo cms file://%s'%os.path.abspath(filetocopy) + ' '
-                cmd += 'gsiftp://' + self.storage_name + os.path.join(self.remotedir, os.path.basename(filetocopy))
-		common.logger.debug(1, "Sending "+filetocopy+" to "+ self.storage_name)
-		common.logger.debug(5, " with:\n    " + cmd)
-		status, out = commands.getstatusoutput(cmd)
-		if int(status) != 0:
-		    common.logger.debug(1, str(out))
-		    msg = "ERROR : Unable to ship the project to the server \n"
-		    msg +="Project "+ self.taskuuid +" not Submitted \n"
-		    raise CrabException(msg)
-	    except Exception, ex:
-		common.logger.debug(1, str(ex))
-		msg = "ERROR : Unable to ship the project to the server \n"
-		msg +="Project "+ self.taskuuid +" not Submitted \n"
-		raise CrabException(msg)
-	try:
-	    cmd = 'lcg-cp -v --vo cms file://%s'%scriptexe + ' '
-            cmd += 'gsiftp://' + self.storage_name + os.path.join(self.remotedir, os.path.basename(scriptexe))
-	    common.logger.debug(3, "Sending "+scriptexe+" to "+ self.storage_name)
-	    common.logger.debug(5, " with:\n    " + cmd)
-	    status, out = commands.getstatusoutput(cmd)
-	    if int(status) != 0:
-		common.logger.debug(1, str(out))
-		msg = "ERROR : Unable to ship the project to the server \n"
-		msg +="Project "+ self.taskuuid+" not Submitted \n"
-		raise CrabException(msg)
-	except Exception, ex:
-	    common.logger.debug(1, str(ex))
-	    msg = "ERROR : Unable to ship the project to the server \n"
-	    msg +="Project "+ self.taskuuid+" not Submitted \n"
-	    raise CrabException(msg)
-
-	## if here then project submitted ##
-	msg = 'Project '+ self.taskuuid +' files successfully submitted to the supporting storage element.\n'
-	common.logger.debug(3,msg)
-	return
 
     def moveProxy(self):
 	WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
