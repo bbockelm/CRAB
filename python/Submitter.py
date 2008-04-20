@@ -131,6 +131,9 @@ class Submitter(Actor):
 
 
     def performMatch(self):    
+        """
+        """ 
+        common.logger.message("Starting check available resources...")
         ### define here the list of distinct destinations sites list    
        # distinct_dests =  common._db.queryDistJob('dlsDestination')
         distinct_dests = common._db.queryDistJob_Attr('dlsDestination', 'jobId' ,self.nj_list)
@@ -336,7 +339,6 @@ class Submitter(Actor):
 
             common.logger.debug(5,'Submission DashBoard report: '+str(params))
             common.apmon.sendToML(params)
-            print params 
         return
 
 
