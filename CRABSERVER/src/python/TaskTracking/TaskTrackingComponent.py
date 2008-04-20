@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.65 2008/04/16 14:23:14 mcinquil Exp $"
-__version__ = "$Revision: 1.65 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.66 2008/04/17 12:43:49 mcinquil Exp $"
+__version__ = "$Revision: 1.66 $"
 
 import os
 import time
@@ -707,12 +707,22 @@ class TaskTrackingComponent:
     def convertStatus( self, status ):
         """
         _convertStatus_
+        U  : undefined
+        C  : created
+        S  : submitted
+	SR : enqueued by the scheduler
+	R  : running
+	A  : Aborted
+	D  : Done
+	K  : killed
+	E  : erased from the scheduler queue (also disappeared...)
+	DA : finished but with some failures (aka Done Failed in GLite or Held for condor)
         """
         stateConverting = { \
-                    'R': 'Running', 'SA': 'Aborted', 'SD': 'Done', 'SE': 'Done', \
-                    'E': 'Done', 'SK': 'Cancelled', 'SR': 'Ready', 'SU': 'Submitted', \
-                    'SS': 'Scheduled', 'UN': 'Unknown', 'SW': 'Waiting', 'W': 'Created', \
-                    'K': 'Killed', 'S': 'Submitted', 'DA': 'Done (Failed)', \
+                    'R': 'Running', 'SD': 'Done', 'DA': 'Done (Failed)', \
+                    'E': 'Done', 'SR': 'Ready', \
+                    'SS': 'Scheduled', 'U': 'Unknown', 'SW': 'Waiting', \
+                    'K': 'Killed', 'S': 'Submitted', \
                     'NotSubmitted': 'NotSubmitted', 'C': 'Created'
                           }
         if status in stateConverting:
@@ -1050,7 +1060,7 @@ class TaskTrackingComponent:
  
 #                                jobPartList = self.getJobFromFile(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir)
 
-			        if stato == "SE" or stato == "E":
+			        if stato == "E":
 				    if (eec == "0" or eec == "" or eec == "NULL") and jec == "0":
 				        dictReportTot['JobSuccess'] += 1
 				        dictStateTot[job][3] = 1
@@ -1061,20 +1071,18 @@ class TaskTrackingComponent:
 				    else:
 				        dictReportTot['JobInProgress'] += 1
                                         dictStateTot[job][0] = "Resubmitting by server"
-			        elif stato == "SA" or stato == "SK" or stato == "K":
+			        elif stato == "A" or stato == "Done (Failed)" or stato == "K":
 				    if not resubmitting:
 				        dictReportTot['JobFailed'] += 1
 				    else:
 				        dictReportTot['JobInProgress'] += 1
                                         dictStateTot[job][0] = "Resubmitting by server"
-			        elif stato == "W":
+			        elif stato == "C":
                                     if not resubmitting:
    				        countNotSubmitted += 1 
 				        dictReportTot['JobFailed'] += 1
-                                        if status == self.taskState[4]:
-                                            dictStateTot[job][0] = "Killed"
-                                        else:
-                                            dictStateTot[job][0] = "NotSubmitted"
+#                                        if status == self.taskState[4]:
+#                                            dictStateTot[job][0] = "Killed"
 #                                    elif int(job) in jobPartList:
 #                                        countNotSubmitted += 1
 #                                        dictReportTot['JobFailed'] += 1
@@ -1082,22 +1090,18 @@ class TaskTrackingComponent:
 ##                                            dictStateTot[job][0] = "Created"
 ##                                        else:
 #                                        dictStateTot[job][0] = "NotSubmitted"
-                                    elif status == self.taskState[4]:
+#                                    elif status == self.taskState[4]:
                                         #countNotSubmitted += 1   
-                                        dictReportTot['JobFailed'] += 1
-                                        dictStateTot[job][0] = "Killed"
-                                    elif status == self.taskState[9]:
-                                        dictStateTot[job][0] = "Created"
-                                        countNotSubmitted += 1
-                                        dictReportTot['JobInProgress'] += 1
+#                                        dictReportTot['JobFailed'] += 1
+#                                        dictStateTot[job][0] = "Killed"
+#                                    elif status == self.taskState[9]:
+#                                        countNotSubmitted += 1
+#                                        dictReportTot['JobInProgress'] += 1
                                     else:
                                         countNotSubmitted += 1
                                         dictReportTot['JobInProgress'] += 1
                                 elif not resubmitting:
-                                    if status == self.taskState[4]:
-                                        dictReportTot['JobInProgress'] += 1
-                                    else:
-                                        dictReportTot['JobInProgress'] += 1
+                                    dictReportTot['JobInProgress'] += 1
                                #elif stato != "K": ## ridondante
                                     #dictReportTot['JobFailed'] += 1
                                     #else:
