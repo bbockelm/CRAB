@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.27 2008/04/16 09:18:43 farinafa Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: FatWorker.py,v 1.29 2008/04/17 17:40:07 farinafa Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import sys, os
 import time
@@ -346,13 +346,39 @@ class FatWorker(Thread):
         task['cfgName'] = turlpreamble + task['cfgName']
         self.blDBsession.updateDB(task) 
 
+        ##send here pre submission info to ML DS
+
         # loop and submit blocks
         for ii in matched:
             # extract task for the range and submit
             # task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
             unsubmitted += sub_jobs[ii]
+            ##############  SplitCollection if too big DS
+            sub_bulk = []
+            if len(sub_jobs[ii]) > 400:
+                n_sub_bulk = int( int(len(sub_jobs[ii]) ) / 400 )
+                for n in range(n_sub_bulk):
+                    first =n*400
+                    last = (n+1)*400
+                    sub_bulk.append(sub_jobs[ii][first:last])
+                if len(sub_jobs[ii][last:-1]) < 50:
+                    for pp in sub_jobs[ii][last:-1]:
+                        sub_bulk[n_sub_bulk-1].append(pp)
+                else:
+                    n_sub_bulk += 1 
+                    sub_bulk.append(sub_jobs[ii][last:-1])
+                self.log.info("FatWorker check: the collection is too Big..splitted in %s sub_collection"%(n_sub_bulk))
+              ###############
             try:
-                task = self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
+                if len(sub_bulk)>0:
+                    count = 1
+                    for sub_list in sub_bulk: 
+                        self.blSchedSession.submit(task, sub_list,reqs_jobs[ii])
+                        self.log.info("FatWorker submitted sub collection # %s "%(count))
+                        count += 1
+                    task =  self.blDBsession.load( task['id'],sub_jobs[ii] )[0]
+                else:
+                    task = self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
             except Exception, e:
                 self.log.info("FatWorker %s. Problem submitting task %s jobs %s. %s"%(self.myName, self.taskName, str(sub_jobs[ii]), str(e)))
                 continue
@@ -366,6 +392,9 @@ class FatWorker(Thread):
                     unsubmitted.remove(j['jobId'])
                     self.blDBsession.getRunningInstance(j)
                     j.runningJob['status'] = 'S'
+
+                    ##send here post submission info to ML DS
+
             self.blDBsession.updateDB( task )
 
         return submitted, unsubmitted 
