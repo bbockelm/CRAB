@@ -24,7 +24,7 @@ class Killer(Actor):
                 if ( jStatus[id-1] in ['SS','R']):
                     toBeKilled.append(id)
                 else:
-                    common.logger.message("Not possible to kill Job #"+str(id)+" : Status is "+human_status[id-1])
+                    common.logger.message("Not possible to kill Job #"+str(id)+" : Status is "+str(human_status[id-1]))
                 pass
             pass
 

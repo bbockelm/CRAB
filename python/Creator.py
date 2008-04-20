@@ -99,7 +99,8 @@ class Creator(Actor):
         listID=[]
         listField=[]
         listRunField=[]
-        run_jobToSave = {'status' :'C'}
+        run_jobToSave = {'status' :'C', \
+                         'statusScheduler' : 'Created'  }
         for nj in range(self.total_njobs):
             output=[]
             if njc == self.ncjobs : break
