@@ -15,9 +15,9 @@ from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 class GetOutputServer( GetOutput, StatusServer ):
 
     def __init__(self, *args):
-        self.cfg_params = args[0]
-        self.jobs = args[1]
  
+        GetOutput.__init__(self,*args)
+
         self.server_name = None
         self.server_port = None
 
@@ -44,22 +44,6 @@ class GetOutputServer( GetOutput, StatusServer ):
         if self.storage_path[0]!='/':
             self.storage_path = '/'+self.storage_path
 
-        self.outDir = common.work_space.resDir()
-        self.logDir = common.work_space.resDir()
-        self.return_data = self.cfg_params.get('USER.return_data',0)
-
-        self.possible_status = {
-                         'UN': 'Unknown',
-                         'SU': 'Submitted',
-                         'SW': 'Waiting',
-                         'SS': 'Scheduled',
-                         'R': 'Running',
-                         'SD': 'Done',
-                         'SK': 'Killed',
-                         'SA': 'Aborted',
-                         'SE': 'Cleared',
-                         'E': 'Cleared'
-                         }
         return
 
     

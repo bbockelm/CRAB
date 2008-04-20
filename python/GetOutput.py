@@ -106,6 +106,7 @@ class GetOutput(Actor):
 
         cwd = os.getcwd()
         os.chdir( self.outDir )
+        success_ret = 0
         for id in self.list_id:
             file = 'out_files_'+ str(id)+'.tgz'
             if os.path.exists(file):
@@ -115,7 +116,7 @@ class GetOutput(Actor):
                 cmd_out2 = runCommand(cmd_2)
             else:  
                 msg ="Output files for job "+ str(id) +" not available.\n"
-                common.logger.message(msg)
+                common.logger.debug(1,msg)
                 continue   
             input = 'crab_fjr_' + str(id) + '.xml'
             if os.path.exists(input):
@@ -125,6 +126,7 @@ class GetOutput(Actor):
             else:
                 msg = "Problems with "+str(input)+". File not available.\n"
                 common.logger.message(msg) 
+            success_ret +=1 
         os.chdir( cwd )
         common._db.updateRunJob_(job_id , listCode)
 
@@ -139,7 +141,10 @@ class GetOutput(Actor):
             msg = 'Results of Jobs # '+str(self.list_id)+' are in '+self.outDir+' (log files are in '+self.logDir+')'
             common.logger.message(msg)
         else:
-            msg = 'Results of Jobs # '+str(self.list_id)+' are in '+self.outDir
+            if success_ret > 0: 
+                msg = 'Results of Jobs # '+str(self.list_id)+' are in '+self.outDir
+            else:
+                msg = 'Any output file available for Jobs # '+str(self.list_id)
             common.logger.message(msg)
 
         return
@@ -172,10 +177,8 @@ class GetOutput(Actor):
             for error in jobReport.errors:
                 if error['Type'] == 'WrapperExitCode':
                     codeValue["wrapperReturnCode"] = error['ExitStatus']
-                    #print "wrapperReturnCode = ", error['ExitStatus']
                 elif error['Type'] == 'ExeExitCode':     
                     codeValue["applicationReturnCode"] = error['ExitStatus']
-                    #print "applicationReturnCode = ", error['ExitStatus']
                 else:
                     continue
 

@@ -112,18 +112,22 @@ class Status(Actor):
         
 
         jid = job.runningJob['schedulerId']
-        WMS = job.runningJob['service']
         job_status_reason = str(job.runningJob['statusReason'])
         job_last_time = str(job.runningJob['startTime'])
         if common.scheduler.name().upper() == 'CONDOR_G':
+            WMS = 'OSG'
             self.hash = makeCksum(common.work_space.cfgFileName())
             jobId = str(id) + '_' + self.hash + '_' + str(jid)
             common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
         else:
-            jobId = str(id) + '_' + str(jid)
             if common.scheduler.name() in ['lsf','caf']:
-                jobId=str(bossid)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(taskId,"_","-")
+                WMS = common.scheduler.name()
+                jobId=str(id)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(taskId,"_","-")
                 common.logger.debug(5,'JobID for ML monitoring is created for Local scheduler:'+jobId)
+            else:
+                jobId = str(id) + '_' + str(jid)
+                WMS = job.runningJob['service']
+                common.logger.debug(5,'JobID for ML monitoring is created for gLite scheduler:'+jobId)
             pass
         pass
 

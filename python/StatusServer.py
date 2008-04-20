@@ -16,7 +16,7 @@ import base64
 class StatusServer(Status):
 
     def __init__(self, *args):
-        self.cfg_params = args[0]
+        Status.__init__(self, *args) 
         self.server_name = None
         self.server_port = None
         self.srvCfg = {}
@@ -30,13 +30,8 @@ class StatusServer(Status):
             msg = msg + 'Please specify a server in the crab cfg file'
             raise CrabException(msg)
  
-        self.xml = self.cfg_params.get("USER.xml_report",'')
         return
 
-    # all the behaviors are inherited from the direct status. Only some mimimal modifications
-    # are needed in order to extract data from status XML and to align back DB information   
-    # Fabio
-  
     def query(self):
         common.scheduler.checkProxy()
 
@@ -68,14 +63,14 @@ class StatusServer(Status):
         try:
             reportXML = zlib.decompress( base64.decodestring(handledXML) )
         except Exception, e:
-            print "WARNING: Problem while decompressing fresh status from the server."
+            common.logger.debug(1,"WARNING: Problem while decompressing fresh status from the server.")
             return
 
         try:
             reportList = minidom.parseString(reportXML.strip()).getElementsByTagName('Job')
             common._db.deserXmlStatus(reportList)
         except Exception, e:
-            print "WARNING: Problem while retrieving fresh status from the server."
+            common.logger.debug(1,"WARNING: Problem while retrieving fresh status from the server.")
             return
 
         return 
