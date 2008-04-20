@@ -102,8 +102,25 @@ class Scheduler :
         """ submit to scheduler a list of jobs """
         if (not len(list)): common.logger.message("No sites where to submit jobs")
         req=str(self.sched_parameter(list[0],task))
-        self.boss().submit(list,req) 
-        return
+
+        ### reduce collection size...if needed 
+        sub_bulk = []
+        if len(list) > 400:
+            n_sub_bulk = int( int(len(list) ) / 400 )
+            for n in range(n_sub_bulk):
+                first =n*400
+                last = (n+1)*400
+                sub_bulk.append(list[first:last])
+            if len(list[last:-1]) < 50:
+                for pp in list[last:-1]:
+                    sub_bulk[n_sub_bulk-1].append(pp)
+            else:
+                sub_bulk.append(list[last:-1])
+            for sub_list in sub_bulk: 
+                self.boss().submit(sub_list,req)
+        else:
+            self.boss().submit(list,req) 
+        return 
 
     def queryEverything(self,taskid):
         """
