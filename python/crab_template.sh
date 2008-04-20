@@ -294,11 +294,6 @@ voms-proxy-info -all
 
 repo=jobreport.txt
 
-echo ">>> tar zxvf MLfiles.tgz:"
-tar zxf MLfiles.tgz
-if [ $? -ne 0 ]; then
-    echo "Warning: Failed to untar ML files"
-fi
 
 #CRAB untar_software 
 

@@ -12,8 +12,8 @@ class WorkSpace:
 
         #Matteo: Necessary to manage user ui_working_dir
         if 'USER.ui_working_dir' in cfg_params.keys():    
-            self._top_dir = cfg_params['USER.ui_working_dir']
-            self._pathForTgz = cfg_params['USER.ui_working_dir']
+            self._top_dir = os.path.abspath(cfg_params['USER.ui_working_dir'])
+            self._pathForTgz = self._top_dir
 
         self._log_dir = cfg_params.get("USER.logdir",self._top_dir + '/log')    # log-directory
         self._job_dir = self._top_dir + '/job'     # job pars, scripts, jdl's

@@ -34,7 +34,6 @@ class Cmssw(JobType):
         self.executable = ''
         self.executable_arch = self.scram.getArch()
         self.tgz_name = 'default.tgz'
-        self.additional_tgz_name = 'additional.tgz'
         self.scriptName = 'CMSSW.sh'
         self.pset = ''      #scrip use case Da
         self.datasetPath = '' #scrip use case Da
@@ -242,7 +241,6 @@ class Cmssw(JobType):
             blockSites = self.DataDiscoveryAndLocation(cfg_params)
         #DBSDLS-end
 
-        self.tgzNameWithPath = self.getTarBall(self.executable)
 
         ## Select Splitting
         if self.selectNoInput:
@@ -264,6 +262,7 @@ class Cmssw(JobType):
             except:
                 msg='Error while manipuliating ParameterSet: exiting...'
                 raise CrabException(msg)
+        self.tgzNameWithPath = self.getTarBall(self.executable)
 
     def DataDiscoveryAndLocation(self, cfg_params):
 
@@ -733,10 +732,18 @@ class Cmssw(JobType):
 
             ## Now check if any data dir(s) is present
             swAreaLen=len(swArea)
+            self.dataExist = False
             for root, dirs, files in os.walk(swArea):
                 if "data" in dirs:
+                    self.dataExist=True
                     common.logger.debug(5,"data "+root+"/data"+" to be tarred")
                     tar.add(root+"/data",root[swAreaLen:]+"/data")
+                     
+            ### CMSSW ParameterSet
+            if not self.pset is None:
+                cfg_file = common.work_space.jobDir()+self.configFilename()
+                tar.add(cfg_file,self.configFilename())     
+                common.logger.debug(5,"File added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
 
             ## Add ProdCommon dir to tar
@@ -744,8 +751,26 @@ class Cmssw(JobType):
             prodcommonPath = os.environ['CRABDIR'] + '/' + 'ProdCommon'
             if os.path.isdir(prodcommonPath):
                 tar.add(prodcommonPath,prodcommonDir)
-
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
+
+            ##### ML stuff
+            ML_file_list=['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py']
+            path=os.environ['CRABDIR'] + '/python/'
+            for file in ML_file_list:
+                tar.add(path+file,file)
+            common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
+
+            ##### Utils
+            Utils_file_list=['parseCrabFjr.py','writeCfg.py', 'JobReportErrorCode.py']
+            for file in Utils_file_list:
+                tar.add(path+file,file)
+            common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
+
+            ##### AdditionalFiles 
+            for file in self.additional_inbox_files:
+                tar.add(file,string.split(file,'/')[-1])
+            common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
+ 
             tar.close()
         except :
             raise CrabException('Could not create tar-ball')
@@ -756,31 +781,6 @@ class Cmssw(JobType):
             raise CrabException('Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + str(self.MaxTarBallSize) + ' MB input sandbox limit and not supported by the used GRID submission system. Please make sure that no unnecessary files are in all data directories in your local CMSSW project area as they are automatically packed into the input sandbox.')
 
         ## create tar-ball with ML stuff
-        self.MLtgzfile =  common.work_space.pathForTgz()+'share/MLfiles.tgz'
-        try:
-            tar = tarfile.open(self.MLtgzfile, "w:gz")
-            path=os.environ['CRABDIR'] + '/python/'
-            for file in ['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py', 'parseCrabFjr.py','writeCfg.py', 'JobReportErrorCode.py']:
-                tar.add(path+file,file)
-            common.logger.debug(5,"Files added to "+self.MLtgzfile+" : "+str(tar.getnames()))
-            tar.close()
-        except :
-            raise CrabException('Could not create ML files tar-ball')
-
-        return
-
-    def additionalInputFileTgz(self):
-        """
-        Put all additional files into a tar ball and return its name
-        """
-        import tarfile
-        tarName=  common.work_space.pathForTgz()+'share/'+self.additional_tgz_name
-        tar = tarfile.open(tarName, "w:gz")
-        for file in self.additional_inbox_files:
-            tar.add(file,string.split(file,'/')[-1])
-        common.logger.debug(5,"Files added to "+self.additional_tgz_name+" : "+str(tar.getnames()))
-        tar.close()
-        return tarName
 
     def wsSetupEnvironment(self, nj=0):
         """
@@ -880,11 +880,6 @@ class Cmssw(JobType):
 
             txt += 'mv -f '+pset+' pset.cfg\n'
 
-        if len(self.additional_inbox_files) > 0:
-            txt += 'if [ -e $RUNTIME_AREA/'+self.additional_tgz_name+' ] ; then\n'
-            txt += '  tar xzvf $RUNTIME_AREA/'+self.additional_tgz_name+'\n'
-            txt += 'fi\n'
-            pass
 
         if self.pset != None:
             txt += '\n'
@@ -908,6 +903,7 @@ class Cmssw(JobType):
         if os.path.isfile(self.tgzNameWithPath):
             txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
             txt += 'tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'ls -Al \n'
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '   echo "ERROR ==> Untarring .tgz file failed"\n'
@@ -942,6 +938,10 @@ class Cmssw(JobType):
         txt += 'rm -r lib/ module/ \n'
         txt += 'mv $RUNTIME_AREA/lib/ . \n'
         txt += 'mv $RUNTIME_AREA/module/ . \n'
+        if self.dataExist == True: txt += 'mv $RUNTIME_AREA/src/ . \n'
+        if len(self.additional_inbox_files)>0:        
+            for file in self.additional_inbox_files:
+                txt += 'mv $RUNTIME_AREA/'+file+' . \n'
         txt += 'mv $RUNTIME_AREA/ProdCommon/ . \n'
 
         txt += 'if [ -z "$PYTHONPATH" ]; then\n'
@@ -1003,15 +1003,6 @@ class Cmssw(JobType):
         ## code
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
-        if os.path.isfile(self.MLtgzfile):
-            inp_box.append(self.MLtgzfile)
-        ## config
-        if not self.pset is None:
-            inp_box.append(common.work_space.pathForTgz() + 'job/' + self.configFilename())
-        ## additional input files
-        tgz = self.additionalInputFileTgz()
-        inp_box.append(tgz)
-        ## executable
         wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
         inp_box.append(common.work_space.pathForTgz() +'job/'+ wrapper)
         return inp_box
