@@ -59,14 +59,10 @@ class SubmitterServer( Submitter ):
             self.taskuuid = str(common._db.queryTask('name'))
             self.remotedir = os.path.join(self.storage_path, self.taskuuid)
             self.proxyPath = self.moveProxy()
-
-	    # partial submission code # TODO is that file the right way? 
-            ## NO! to be changed... query DB... 
-	    if os.path.exists(common.work_space.shareDir()+'/first_submission') == False:
-                self.moveISB_SEAPI() 
-	        #self.moveISB()
-	        isFirstSubmission = True
-	        os.system('touch %s'%str(common.work_space.shareDir()+'/first_submission'))
+            
+            # check if it is the first submission  
+            n_createdJob = len(common._db.queryAttrRunJob({'status':'C'},'status'))
+            if n_createdJob == len(self.complete_List): isFirstSubmission = True
 
 	    # standard submission to the server
 	    self.performSubmission(isFirstSubmission)
@@ -174,6 +170,9 @@ class SubmitterServer( Submitter ):
         self.cfg_params['CRAB.se_remote_dir'] = self.remotedir
 
         if firstSubmission==True:
+            # move the sandbox
+            self.moveISB_SEAPI() 
+
             # first time submit
             try:
                 task = common._db.getTask() 

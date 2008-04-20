@@ -36,13 +36,14 @@ class Submitter(Actor):
         # total jobs
         nj_list = []
         # get the first not already submitted
-        common.logger.debug(5,'Total jobs '+str(common._db.nJobs()))
+        self.complete_List = common._db.nJobs('list')
+        common.logger.debug(5,'Total jobs '+str(len(self.complete_List)))
         jobSetForSubmission = 0
         jobSkippedInSubmission = []
         datasetpath=self.cfg_params['CMSSW.datasetpath']
         if string.lower(datasetpath)=='none':
             datasetpath = None
-        tmp_jList = common._db.nJobs('list')
+        tmp_jList = self.complete_List
         if chosenJobsList != None:
             tmp_jList = chosenJobsList
         # build job list
