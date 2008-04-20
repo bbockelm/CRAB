@@ -294,7 +294,7 @@ class DBinterface:
             common.logger.debug(3, "Error loading Jobs By Running Attr : " +str(traceback.format_exc()))
             raise CrabException('Error loading Jobs By Running Attr '+str(e))
         for i in task:
-            matched.append(i[field])
+            matched.append(i.runningJob[field])
         return matched 
 
     def deserXmlStatus(self, reportList):
