@@ -20,7 +20,7 @@ class SchedulerLocal(Scheduler) :
 
         if (cfg_params.has_key(self.name()+'.env_id')): self.environment_unique_identifier = cfg_params[self.name()+'.env_id']
 
-        self._taskId = common._db.queryTask('name')  ## DS--BL 
+        self._taskId=str("_".join(common._db.queryTask('name').split('_')[:-1]))
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
 

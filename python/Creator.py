@@ -35,36 +35,6 @@ class Creator(Actor):
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
         if ncjobs > self.total_njobs : self.ncjobs = self.total_njobs
         
-
-        # This is code for dashboard
-        #First checkProxy
-        common.scheduler.checkProxy()
-        try:
-            gridName = string.strip(common.scheduler.userName())
-            common.logger.debug(5, "GRIDNAME: "+gridName)
-            taskType = 'analysis'
-            VO = cfg_params.get('EDG.virtual_organization','cms')
-
-            params = {'tool': common.prog_name,\
-                      'JSToolVersion': common.prog_version_str, \
-                      'tool_ui': os.environ['HOSTNAME'], \
-                      'scheduler': common.scheduler.name(), \
-                      'GridName': gridName, \
-                      'taskType': taskType, \
-                      'vo': VO, \
-                      'user': os.environ['USER']}
-            jtParam = self.job_type.getParams()
-            for i in jtParam.iterkeys():
-                params[i] = string.strip(jtParam[i])
-            fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'w')
-            for j, k in params.iteritems():
-                fl.write(j + ':' + k + '\n')
-            fl.close()
-        except:
-            exctype, value = sys.exc_info()[:2]
-            common.logger.message("Creator::run Exception raised in collection params for dashboard: %s %s"%(exctype, value))
-            pass
-
         self.job_type_name = self.job_type.name()
  
         common.logger.debug(5, "Creator constructor finished")

@@ -78,11 +78,6 @@ class Submitter(Actor):
         # submit N from last submitted job
         common.logger.debug(5,'nj_list '+str(nj_list))
 
-        if common.scheduler.name().upper() == 'CONDOR_G':
-            # create hash of cfg file
-            self.hash = makeCksum(common.work_space.cfgFileName())
-        else:
-            self.hash = ''
 
         self.nj_list = nj_list
         return
@@ -93,8 +88,36 @@ class Submitter(Actor):
         """
         common.logger.debug(5, "Submitter::run() called")
 
-        totalCreatedJobs = 0
         start = time.time()
+
+        check = self.checkIfCreate() 
+        
+        if check == 0 :
+            self.SendMLpre()
+            
+            list_matched , task = self.performMatch()        
+            njs = self.perfromSubmission(list_matched, task)  
+        
+            stop = time.time()
+            common.logger.debug(1, "Submission Time: "+str(stop - start))
+            common.logger.write("Submission time :"+str(stop - start))
+        
+            msg = '\nTotal of %d jobs submitted'%njs
+            if njs != len(self.nj_list) :
+                msg += ' (from %d requested).'%(len(self.nj_list))
+            else:
+                msg += '.'
+            common.logger.message(msg)
+        
+            if (njs < len(self.nj_list) or len(self.nj_list)==0):
+                self.submissionError()
+
+
+    def checkIfCreate(self): 
+        """
+        """
+        code = 0
+        totalCreatedJobs = 0
         jList=common._db.nJobs('list')
         st = common._db.queryRunJob('status',jList)
         for nj in range(len(jList)):
@@ -102,44 +125,30 @@ class Submitter(Actor):
             pass
 
         if (totalCreatedJobs==0):
-            common.logger.message("No jobs to be submitted: first create them")
-            return
+              common.logger.message("No jobs to be submitted: first create them")
+              code = 1  
+        return code         
 
-        # submit pre DashBoard information
-        params = {'jobId':'TaskMeta'}
 
-        fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
-        for i in fl.readlines():
-            try:
-                key, val = i.split(':')
-                params[key] = string.strip(val)
-            except ValueError: # Not in the right format
-                pass
-        fl.close()
-
-        common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
-
-        common.apmon.sendToML(params)
-
+    def performMatch(self):    
         ### define here the list of distinct destinations sites list    
        # distinct_dests =  common._db.queryDistJob('dlsDestination')
         distinct_dests = common._db.queryDistJob_Attr('dlsDestination', 'jobId' ,self.nj_list)
 
 
         ### define here the list of jobs Id for each distinct list of sites
-        sub_jobs =[] # list of jobs Id list to submit
+        self.sub_jobs =[] # list of jobs Id list to submit
         jobs_to_match =[] # list of jobs Id to match
         all_jobs=[] 
         count=0
-        njs=0 
         for distDest in distinct_dests: 
              all_jobs.append(common._db.queryAttrJob({'dlsDestination':distDest},'jobId'))
              sub_jobs_temp=[]
              for i in self.nj_list:
                  if i in all_jobs[count]: sub_jobs_temp.append(i) 
              if len(sub_jobs_temp)>0:
-                 sub_jobs.append(sub_jobs_temp)   
-                 jobs_to_match.append(sub_jobs[count][0])
+                 self.sub_jobs.append(sub_jobs_temp)   
+                 jobs_to_match.append(self.sub_jobs[count][0])
              count +=1
         sel=0
         matched=[] 
@@ -152,10 +161,16 @@ class Submitter(Actor):
                 common.logger.message("Found "+str(len(match))+" compatible site(s) for job "+str(id_job))
                 matched.append(sel)
             else:
-                common.logger.message("No compatible site found, will not submit jobs "+str(sub_jobs[sel]))
+                common.logger.message("No compatible site found, will not submit jobs "+str(self.sub_jobs[sel]))
                 self.submissionError()
             sel += 1
 
+        return matched , task 
+
+    def perfromSubmission(self,matched,task):
+
+        njs=0 
+   
         ### Progress Bar indicator, deactivate for debug
         if not common.logger.debugLevel() :
             term = TerminalController()
@@ -163,103 +178,45 @@ class Submitter(Actor):
         if len(matched)>0: 
             common.logger.message(str(len(matched))+" blocks of jobs will be submitted")
             for ii in matched: 
-                common.logger.debug(1,'Submitting jobs '+str(sub_jobs[ii]))
-                
+                common.logger.debug(1,'Submitting jobs '+str(self.sub_jobs[ii]))
+
                 try:
-                    common.scheduler.submit(sub_jobs[ii],task)
+                    common.scheduler.submit(self.sub_jobs[ii],task)
                 except CrabException:
                     raise CrabException("Job not submitted")
 
                 if not common.logger.debugLevel() :
-                    try: pbar = ProgressBar(term, 'Submitting '+str(len(sub_jobs[ii]))+' jobs')
+                    try: pbar = ProgressBar(term, 'Submitting '+str(len(self.sub_jobs[ii]))+' jobs')
                     except: pbar = None
                 if not common.logger.debugLevel():
                     if pbar :
-                        pbar.update(float(ii+1)/float(len(sub_jobs)),'please wait')
+                        pbar.update(float(ii+1)/float(len(self.sub_jobs)),'please wait')
                 ### check the if the submission succeded Maybe not neede 
                 if not common.logger.debugLevel():
                     if pbar :
-                        pbar.update(float(ii+1)/float(len(sub_jobs)),'please wait')
+                        pbar.update(float(ii+1)/float(len(self.sub_jobs)),'please wait')
 
                 ### check the if the submission succeded Maybe not needed or at least simplified 
                 #njs=0 
-                sched_Id = common._db.queryRunJob('schedulerId', sub_jobs[ii])
+                sched_Id = common._db.queryRunJob('schedulerId', self.sub_jobs[ii])
                 listId=[]
                 run_jobToSave = {'status' :'S'}
                 listRunField = []
-                for j in range(len(sub_jobs[ii])): # Add loop over SID returned from group submission  DS
+                for j in range(len(self.sub_jobs[ii])): # Add loop over SID returned from group submission  DS
                     if str(sched_Id[j]) != '': 
                     #if (st[j]=='S'):
-                        listId.append(sub_jobs[ii][j]) 
+                        listId.append(self.sub_jobs[ii][j]) 
                         listRunField.append(run_jobToSave) 
-                        common.logger.debug(5,"Submitted job # "+ str(sub_jobs[ii][j]))
+                        common.logger.debug(5,"Submitted job # "+ str(self.sub_jobs[ii][j]))
                         njs += 1
                 common._db.updateRunJob_(listId, listRunField) ## New BL--DS
-#
-#                    ##### DashBoard report #####################
-#                        Sub_Type = 'Direct'
-#
-#                    # OLI: JobID treatment, special for Condor-G scheduler
-#                    jobId = ''
-#                    localId = ''
-#                    if common.scheduler.name().upper() == 'CONDOR_G':
-#                        rb = 'OSG'
-#                        jobId = str(jj) + '_' + self.hash + '_' + jid
-#                        common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
-#                    elif common.scheduler.name() == 'lsf' or common.scheduler.name() == 'caf':
-#                        jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(common.taskDB.dict('taskId'),"_","-")+"-"+str(jj)
-#                        common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
-#                        rb = common.scheduler.name()
-#                        localId = jid
-#                    else:
-#                        jobId = str(jj) + '_' + jid
-#                        common.logger.debug(5,'JobID for ML monitoring is created for EDG scheduler'+jobId)
-#                        rb = jid.split(':')[1]
-#                        rb = rb.replace('//', '')
-#
-#                    if len(common.jobDB.destination(tmpNj)) <= 2 :
-#                        T_SE=string.join((common.jobDB.destination(tmpNj)),",")
-#                    else :
-#                        T_SE=str(len(common.jobDB.destination(tmpNj)))+'_Selected_SE'
-#
-#                    params = {'jobId': jobId, \
-#                              'sid': jid, \
-#                              'broker': rb, \
-#                              'bossId': jj, \
-#                              'SubmissionType': Sub_Type, \
-#                              'TargetSE': T_SE, \
-#                              'localId' : localId}
-#                    common.logger.debug(5,str(params))
-#
-#                    fl = open(common.work_space.shareDir() + '/' + common.apmon.fName, 'r')
-#                    for i in fl.readlines():
-#                        key, val = i.split(':')
-#                        params[key] = string.strip(val)
-#                    fl.close()
-#
-#                    common.logger.debug(5,'Submission DashBoard report: '+str(params))
-#
-#                    common.apmon.sendToML(params)
-#                pass
-#            pass
-#
+
+                self.SendMLpost(self.sub_jobs[ii])
+
         else:
             common.logger.message("The whole task doesn't found compatible site ")
 
-        stop = time.time()
-        common.logger.debug(1, "Submission Time: "+str(stop - start))
-        common.logger.write("Submission time :"+str(stop - start))
-
-        msg = '\nTotal of %d jobs submitted'%njs
-        if njs != len(self.nj_list) :
-            msg += ' (from %d requested).'%(len(self.nj_list))
-        else:
-            msg += '.'
-        common.logger.message(msg)
-
-        if (njs < len(self.nj_list) or len(self.nj_list)==0):
-            self.submissionError()
-        return
+        return njs
 
     def submissionError(self):
         ## add some more verbose message in case submission is not complete
@@ -276,8 +233,110 @@ class Submitter(Actor):
         if self.cfg_params.has_key('EDG.ce_black_list'):
             msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
         msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\nPlease check if the dataset is available at this site!)\n'
-
         common.logger.message(msg)
 
-
         return
+
+    def collect_MLInfo(self):
+        """
+        Preapre DashBoard information
+        """
+
+        taskId=str("_".join(common._db.queryTask('name').split('_')[:-1]))
+        gridName = string.strip(common.scheduler.userName())
+        common.logger.debug(5, "GRIDNAME: "+gridName)
+        taskType = 'analysis'
+       # version 
+        
+        self.datasetPath =  self.cfg_params['CMSSW.datasetpath']
+        if string.lower(self.datasetPath)=='none':
+            self.datasetPath = None
+        self.executable = self.cfg_params.get('CMSSW.executable','cmsRun')
+        VO = self.cfg_params.get('EDG.virtual_organization','cms')
+
+        params = {'tool': common.prog_name,\
+                  'JSToolVersion': common.prog_version_str, \
+                  'tool_ui': os.environ['HOSTNAME'], \
+                  'scheduler': common.scheduler.name(), \
+                  'GridName': gridName, \
+                  'taskType': taskType, \
+                  'vo': VO, \
+                  'user': os.environ['USER'], \
+                  'taskId': taskId, \
+                  'datasetFull': self.datasetPath, \
+                  #'application', version, \
+                  'exe': self.executable } 
+
+        return params
+   
+    def SendMLpre(self):
+        """
+        Send Pre info to ML 
+        """
+        params = self.collect_MLInfo()
+ 
+        params['jobId'] ='TaskMeta'
+ 
+        common.apmon.sendToML(params)
+ 
+        common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
+        
+        return
+
+    def SendMLpost(self,allList):
+        """
+        Send post-submission info to ML  
+        """  
+        task = common._db.getTask(allList) 
+
+        params = {}
+        for k,v in self.collect_MLInfo().iteritems():
+            params[k] = v
+ 
+        taskId=str("_".join(task['name']).split('_')[:-1])
+   
+        Sub_Type = 'Direct'
+        for job in task.jobs:
+            jj = job['id']          
+            jobId = ''
+            localId = ''
+            jid = str(job.runningJob['schedulerId']) 
+            if common.scheduler.name().upper() == 'CONDOR_G':
+                self.hash = makeCksum(common.work_space.cfgFileName())
+                rb = 'OSG'
+                jobId = str(jj) + '_' + self.hash + '_' + jid
+                common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+            elif common.scheduler.name() in ['lsf', 'caf']:
+                jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(taskId,"_","-")
+                common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
+                rb = common.scheduler.name()
+                localId = jid
+            else:
+                jobId = str(jj) + '_' + str(jid)
+                common.logger.debug(5,'JobID for ML monitoring is created for gLite scheduler'+jobId)
+                rb = str(job.runningJob['service'])
+        
+            dlsDest = eval(job['dlsDestination']) 
+            if len(dlsDest) <= 2 :
+                T_SE=string.join(str(dlsDest),",")
+            else : 
+                T_SE=str(len(dlsDest))+'_Selected_SE'
+
+
+            infos = { 'jobId': jobId, \
+                      'sid': jid, \
+                      'broker': rb, \
+                      'bossId': jj, \
+                      'SubmissionType': Sub_Type, \
+                      'TargetSE': T_SE, \
+                      'localId' : localId}
+
+            for k,v in infos.iteritems():
+                params[k] = v
+
+            common.logger.debug(5,'Submission DashBoard report: '+str(params))
+            common.apmon.sendToML(params)
+            print params 
+        return
+
+

@@ -58,7 +58,6 @@ class Cmssw(JobType):
 #            raise CrabException(msg)
 #
 
-        self.setParam_('application', self.version)
 
         ### collect Data cards
 
@@ -74,30 +73,10 @@ class Cmssw(JobType):
             self.datasetPath = tmp
             self.selectNoInput = 0
 
-        # ML monitoring
-        # split dataset path style: /PreProdR3Minbias/SIM/GEN-SIM
-        if not self.datasetPath:
-            self.setParam_('dataset', 'None')
-            self.setParam_('owner', 'None')
-        else:
-            ## SL what is supposed to fail here?
-            try:
-                datasetpath_split = self.datasetPath.split("/")
-                # standard style
-                self.setParam_('datasetFull', self.datasetPath)
-                self.setParam_('dataset', datasetpath_split[1])
-                self.setParam_('owner', datasetpath_split[2])
-            except:
-                self.setParam_('dataset', self.datasetPath)
-                self.setParam_('owner', self.datasetPath)
-
-        self.setParam_('taskId', common._db.queryTask('name')) ## new BL--DS
-
         self.dataTiers = []
 
         ## now the application
         self.executable = cfg_params.get('CMSSW.executable','cmsRun')
-        self.setParam_('exe', self.executable)
         log.debug(6, "CMSSW::CMSSW(): executable = "+self.executable)
 
         if not cfg_params.has_key('CMSSW.pset'):
