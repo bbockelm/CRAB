@@ -38,7 +38,7 @@ class Status(Actor):
  
         toPrint=[]
 
-        taskId="_".join(up_task['name']).split('_')[:-1]
+        taskId=str("_".join(up_task['name']).split('_')[:-1])
 
         for job in up_task.jobs :
             id = str(job.runningJob['id'])
