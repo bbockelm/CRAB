@@ -105,7 +105,7 @@ class Boss:
         Check the compatibility of available resources
         """
         try:
-            sites = self.schedSession().lcgInfo(tags, dest, whiteL, blackL )
+            sites = self.schedSession().lcgInfo(tags, seList=dest, blacklist=blackL, whitelist=whiteL)
         except SchedulerError, err :
             common.logger.message("Warning: List Match operation failed with message: " +str(err))
             common.logger.debug(3, "List Match failed: " +str(traceback.format_exc()))
