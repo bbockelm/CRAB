@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.29 2008/04/17 17:40:07 farinafa Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: FatWorker.py,v 1.30 2008/04/20 20:54:35 spiga Exp $"
+__version__ = "$Revision: 1.30 $"
 
 import sys, os
 import time
@@ -33,7 +33,7 @@ from ProdCommon.Database import Session
 from ProdCommon.Database.MysqlInstance import MysqlInstance
 
 # CRAB dependencies
-#from CrabServer.ApmonIf import ApmonIf
+from CrabServer.ApmonIf import ApmonIf
 
 class FatWorker(Thread):
     def __init__(self, logger, FWname, configs):
@@ -77,9 +77,6 @@ class FatWorker(Thread):
 
         self.se_whiteL = []
         self.ce_whiteL = []
-
-        self.dashParams = {}
-        #self.apmon = ApmonIf()
 
         self.TURLpreamble = ""
 
@@ -160,6 +157,7 @@ class FatWorker(Thread):
                          self.se_blackL.append( re.compile(seB.strip().lower()) )
 
         # actual submission
+        self.apmon = ApmonIf()
         self.log.info("Worker %s warmed up and ready to submit"%self.myName)
         try:
             self.submissionDriver()
@@ -167,6 +165,7 @@ class FatWorker(Thread):
             self.log.info( traceback.format_exc() )
             self.sendResult(66, "Worker exception. Free-resource message", \
                     "FatWorkerError %s. Task %s."%(self.myName, self.taskName) )
+        self.apmon.free()
         return
 
 ####################################
@@ -347,6 +346,7 @@ class FatWorker(Thread):
         self.blDBsession.updateDB(task) 
 
         ##send here pre submission info to ML DS
+        self.SendMLpre(task)
 
         # loop and submit blocks
         for ii in matched:
@@ -360,6 +360,9 @@ class FatWorker(Thread):
                 for n in range(n_sub_bulk):
                     first =n*400
                     last = (n+1)*400
+                    if last > len(sub_jobs[ii]):
+                        last = len(sub_jobs[ii])
+  
                     sub_bulk.append(sub_jobs[ii][first:last])
                 if len(sub_jobs[ii][last:-1]) < 50:
                     for pp in sub_jobs[ii][last:-1]:
@@ -376,7 +379,7 @@ class FatWorker(Thread):
                         self.blSchedSession.submit(task, sub_list,reqs_jobs[ii])
                         self.log.info("FatWorker submitted sub collection # %s "%(count))
                         count += 1
-                    task =  self.blDBsession.load( task['id'],sub_jobs[ii] )[0]
+                    task =  self.blDBsession.load( task['id'], sub_jobs[ii] )[0]
                 else:
                     task = self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
             except Exception, e:
@@ -393,10 +396,10 @@ class FatWorker(Thread):
                     self.blDBsession.getRunningInstance(j)
                     j.runningJob['status'] = 'S'
 
-                    ##send here post submission info to ML DS
-
+            ## send here post submission info to ML DS
+            self.SendMLpost( task, sub_jobs[ii] )
+            #   
             self.blDBsession.updateDB( task )
-
         return submitted, unsubmitted 
 
 ####################################
@@ -493,32 +496,6 @@ class FatWorker(Thread):
             Session.rollback(self.taskName)
             Session.close(self.taskName)
             return 1
-
-        # register DashBoard information
-        try:
-            gridName = str(self.cmdXML.getAttribute('Subject')).split('subject=')[1].strip()
-            gridName = gridName[:gridName.rindex('/CN')]
- 
-            # TODO fix JSTool ver
-            self.dashParams = {'jobId':'TaskMeta', \
-                      'tool': 'crab',\
-                      'JSToolVersion': '', \
-                      'tool_ui': os.environ['HOSTNAME'], \
-                      'scheduler': self.schedName, \
-                      'GridName': gridName, \
-                      'taskType': 'analysis', \
-                      'vo': self.cfg_params['VO'], \
-                      'user': os.environ['USER'],  \
-                      'exe': 'cmsRun', \
-                      'SubmissionType': 'Server'} 
-
-            #self.apmon.sendToML(self.dashParams)
-        except Exception, e:
-            self.log.info('Error while registering job for Dashboard: %s'%self.taskName)
-            self.log.info( traceback.format_exc() )
-            Session.rollback(self.taskName)
-            Session.close(self.taskName)
-            return 1
         return 0    
 
     def submissionListCreation(self, taskObj, jobRng):
@@ -532,7 +509,7 @@ class FatWorker(Thread):
         # distinct_dests = self.queryDistJob_Attr(taskObj['id'], 'dlsDestination', 'jobId', jobRng)
         distinct_dests = []
         for j in taskObj.jobs:
-           if not (isinstance(j['dlsDestination'], list)):
+           if not isinstance(j['dlsDestination'], list):
               j['dlsDestination'] = eval(j['dlsDestination'])
            if  j['dlsDestination'] not in distinct_dests:
                distinct_dests.append( j['dlsDestination'] )
@@ -545,7 +522,7 @@ class FatWorker(Thread):
              # get job_ids for a specific destination 
              jobs_per_dest = []
              for j in taskObj.jobs:
-                 if str(distDest) == str(j['dlsDestination']):
+                 if str(distDest) == str( j['dlsDestination'] ):
                      jobs_per_dest.append(j['jobId'])
              all_jobs.append( [] + jobs_per_dest )
              
@@ -632,6 +609,96 @@ class FatWorker(Thread):
                 pass
             if good: goodSites.append(aSite)
         return goodSites
+
+    def SendMLpre(self, task):
+        """
+        Send Pre info to ML
+        """
+        params = self.collect_MLInfo(task)
+        params['jobId'] = 'TaskMeta'
+        self.apmon.sendToML(params)
+        return
+
+    def collect_MLInfo(self, taskObj):
+        """
+        Preapre DashBoard information
+        """
+
+        taskId = "_".join( taskObj['name'].split('_')[:-1] )
+        gridName = self.schedName.strip()
+        taskType = 'analysis'
+        # version
+        datasetPath = self.cfg_params['CMSSW.datasetpath']
+        if string.lower(datasetPath) == 'none':
+            datasetPath = None
+        VO = self.cfg_params['VO']
+        executable = self.cfg_params.get('CMSSW.executable','cmsRun')
+
+        params = {'tool': 'crab',\
+                  'JSToolVersion': os.environ['CRAB_SERVER_VERSION'], \
+                  'tool_ui': os.environ['HOSTNAME'], \
+                  'scheduler': self.schedName, \
+                  'GridName': gridName, \
+                  'taskType': taskType, \
+                  'vo': VO, \
+                  'user': os.environ['USER'], \
+                  'taskId': taskId, \
+                  'datasetFull': datasetPath, \
+                  #'application', version, \
+                  'exe': executable }
+        return params
+
+    def SendMLpost(self, taskFull, allList):
+        """
+        Send post-submission info to ML
+        """
+
+        task = self.blDBsession.load(taskFull, allList)[0]
+        params = {}
+        for k,v in self.collect_MLInfo(task).iteritems():
+            params[k] = v
+
+        taskId=str("_".join(task['name']).split('_')[:-1])
+        Sub_Type = 'Server'
+
+        for job in task.jobs:
+            jj = job['id']
+            jobId = ''
+            localId = ''
+            jid = str(job.runningJob['schedulerId'])
+
+            if self.schedName.upper() == 'CONDOR_G':
+                hash = self.cfg_params['cfgFileNameCkSum'] #makeCksum(common.work_space.cfgFileName())
+                rb = 'OSG'
+                jobId = str(jj) + '_' + hash + '_' + jid
+            elif self.schedName in ['lsf', 'caf']:
+                jobId = "https://"+self.schedName+":/" + jid + "-" + taskId.replace("_", "-")
+                rb = self.schedName
+                localId = jid
+            else:
+                jobId = str(jj) + '_' + str(jid)
+                rb = str(job.runningJob['service'])
+
+            dlsDest = eval(job['dlsDestination'])
+            if len(dlsDest) <= 2 :
+                T_SE = string.join( str(dlsDest), ",")
+            else :
+                T_SE = str(len(dlsDest))+'_Selected_SE'
+
+            infos = { 'jobId': jobId, \
+                      'sid': jid, \
+                      'broker': rb, \
+                      'bossId': jj, \
+                      'SubmissionType': Sub_Type, \
+                      'TargetSE': T_SE, \
+                      'localId' : localId}
+
+            for k,v in infos.iteritems():
+                params[k] = v
+
+            self.apmon.sendToML(params)
+        return
+
 
 #########################################################
 ### Specific Scheduler requirements parameters
@@ -727,4 +794,6 @@ class FatWorker(Thread):
         # requirement added to skip gliteCE
         req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
         return req
+
+
 

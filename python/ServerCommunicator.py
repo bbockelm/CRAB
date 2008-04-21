@@ -9,6 +9,7 @@ __revision__ = "$Revision"
 __author__ = "farinafa@cern.ch"
 
 from crab_exceptions import *
+from crab_util import *
 from crab_logger import Logger
 import common
 
@@ -235,7 +236,7 @@ class ServerCommunicator:
         if 'EDG.se_black_list' in self.cfg_params:
             miniCfg['EDG.se_black_list'] = str( self.cfg_params['EDG.se_black_list'] )
 
-        miniCfg['cfgFileNameCkSum'] = '' 
+        miniCfg['cfgFileNameCkSum'] = makeCksum(common.work_space.cfgFileName()) 
         if 'cfgFileNameCkSum' in self.cfg_params:
             miniCfg['cfgFileNameCkSum'] = str(self.cfg_params['cfgFileNameCkSum'])
 
@@ -244,16 +245,15 @@ class ServerCommunicator:
             miniCfg['CRAB.se_remote_dir'] = str(self.cfg_params['CRAB.se_remote_dir']) 
 
         ## JDL requirements specific data. Scheduler dependant
-        if 'glite' in str(self.cfg_params['CRAB.scheduler']):
-            miniCfg['EDG.max_wall_time'] = self.cfg_params.get('EDG.max_wall_clock_time', None)
-            miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('EDG.max_cpu_time', '130')
-            miniCfg['proxyServer'] = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
-            miniCfg['VO'] = self.cfg_params.get('EDG.virtual_organization', 'cms')
-            miniCfg['EDG_retry_count'] = self.cfg_params.get('EDG.retry_count',0)
-            miniCfg['EDG_shallow_retry_count'] = self.cfg_params.get('EDG.shallow_retry_count',-1)
-        else:
-            # TODO fill here with proper data
-            pass
+        miniCfg['EDG.max_wall_time'] = self.cfg_params.get('EDG.max_wall_clock_time', None)
+        miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('EDG.max_cpu_time', '130')
+        miniCfg['proxyServer'] = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
+        miniCfg['VO'] = self.cfg_params.get('EDG.virtual_organization', 'cms')
+        miniCfg['EDG_retry_count'] = self.cfg_params.get('EDG.retry_count',0)
+        miniCfg['EDG_shallow_retry_count'] = self.cfg_params.get('EDG.shallow_retry_count',-1)
+
+        ## Additional fields for DashBoard
+        miniCfg['CMSSW.datasetpath'] = self.cfg_params.get('CMSSW.datasetpath', 'None') 
 
         ## put here other fields if needed
         node.setAttribute("CfgParamDict", str(miniCfg) )
