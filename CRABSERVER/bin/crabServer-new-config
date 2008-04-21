@@ -84,7 +84,7 @@ crabServerConfiguration = {
 componentFields = {
     "CrabServerWorker" : {
     'ComponentDir':None,
-    'maxThreads':'10',
+    'maxThreads':'5',
     'allow_anonymous':'0',
     },
   
@@ -99,7 +99,7 @@ componentFields = {
 
     "TaskTracking" : {
     'ComponentDir':None,
-    'Thread':'8',
+    'Thread':'5',
     'PollInterval':'4',
     'debugLevel':'9',
     },
