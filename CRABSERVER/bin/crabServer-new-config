@@ -71,7 +71,7 @@ crabServerConfiguration = {
     'maxCmdAttempts':'5',
     'dropBoxPath':'',
     'ProxiesDir':'/tmp/del_proxies/',
-    'crabServerschemaLocation' : "$CRABSERVER_ROOT/share/CrabServerDB.sql",
+    'crabServerschemaLocation' : "$CRAB_SERVER_ROOT/share/CrabServerDB.sql",
     'storageName':'localhost',
     'storagePort':'',
     'storagePath':None,

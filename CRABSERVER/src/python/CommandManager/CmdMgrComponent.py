@@ -51,7 +51,7 @@ class CmdMgrComponent:
             logging.info('PYTHONHOME set')
 
         ## add the source folder to the pypath
-        cdir = os.path.expandvars(os.environ['CRABSERVER_ROOT']+'/lib/CommandManager')
+        cdir = os.path.expandvars(os.environ['CRAB_SERVER_ROOT']+'/lib/CommandManager')
         logging.debug('cdir=%s'%cdir)
 
         if cdir not in os.environ['PYTHONPATH']:
