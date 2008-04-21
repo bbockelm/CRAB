@@ -1,8 +1,9 @@
 from SchedulerCondorCommon import SchedulerCondorCommon
 import common
-
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.96 2008/04/16 19:42:59 ewv Exp $"
-__version__ = "$Revision: 1.96 $"
+import Scram
+from osg_bdii import getJobManagerList
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.97.2.2 2008/04/18 22:01:48 ewv Exp $"
+__version__ = "$Revision: 1.97.2.2 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -17,10 +18,24 @@ class SchedulerCondor_g(SchedulerCondorCommon):
     """
     jobParams = SchedulerCondorCommon.sched_parameter(self,i,task)
 
-    seDest = self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']))
-    ceDest = self.getCEfromSE(seDest)
+    print "Raw SE: ",eval(task.jobs[i-1]['dlsDestination'])
 
-    jobParams += "globusscheduler = "+ceDest+":2119/jobmanager-condor; "
+    seDest = self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']),"list")
+    print "Cleaned SE: ",seDest
+    scram = Scram.Scram(None)
+
+    versionCMSSW = scram.getSWVersion()
+    arch = scram.getArch()
+    ceDest = getJobManagerList(seDest,versionCMSSW,arch)
+    if not ceDest[0]:
+      ceDest = ceDest[1:]
+    print "CE's",ceDest
+#    ceDest = self.getCEfromSE(seDest)
+
+    if len(ceDest) == 1:
+      jobParams += "globusscheduler = "+ceDest[0]+"; "
+    else:
+      jobParams += "schedulerList = "+','.join(ceDest)+"; "
 
     common._db.updateTask_({'jobType':jobParams})
     return jobParams # Not sure I even need to return anything

@@ -15,8 +15,8 @@ import CondorGLoggingInfo
 
 import pdb # Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.1 2008/04/16 19:42:58 ewv Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.2.2.2 2008/04/18 22:01:48 ewv Exp $"
+__version__ = "$Revision: 1.2.2.2 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -51,13 +51,9 @@ class SchedulerCondorCommon(SchedulerGrid):
             raise CrabException(msg)
 
         self.checkExecutableInPath('condor_config_val')
-
         self.checkCondorVariablePointsToFile('GRIDMANAGER')
-
         self.checkCondorVariablePointsToFile('GT2_GAHP',alternate_name='GAHP')
-
         self.checkCondorVariablePointsToFile('GRID_MONITOR')
-
         self.checkCondorVariableIsTrue('ENABLE_GRID_MONITOR')
 
         max_submit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE',100).strip()
@@ -74,35 +70,35 @@ class SchedulerCondorCommon(SchedulerGrid):
 
         return
 
-    def getCEfromSE(self, seSite):
-      # returns the ce including jobmanager
-      ces = jm_from_se_bdii(seSite)
+    #def getCEfromSE(self, seSite):
+      ## returns the ce including jobmanager
+      #ces = jm_from_se_bdii(seSite)
 
-      # mapping ce_hostname to full ce name including jobmanager
-      ce_hostnames = {}
-      for ce in ces :
-        ce_hostnames[ce.split(':')[0].strip()] = ce
+      ## mapping ce_hostname to full ce name including jobmanager
+      #ce_hostnames = {}
+      #for ce in ces :
+        #ce_hostnames[ce.split(':')[0].strip()] = ce
 
-      oneSite=''
-      if len(ce_hostnames.keys()) == 1:
-        oneSite=ce_hostnames[ce_hostnames.keys()[0]]
-      elif len(ce_hostnames.keys()) > 1:
-        if self.EDG_ce_white_list and len(self.EDG_ce_white_list) == 1 and self.EDG_ce_white_list[0] in ce_hostnames.keys():
-          oneSite = self.EDG_ce_white_list[0]
-        else :
-          msg  = '[Condor-G Scheduler]: More than one Compute Element (CE) is available for job submission.\n'
-          msg += '[Condor-G Scheduler]: Please select one of the following CEs:\n'
-          msg += '[Condor-G Scheduler]:'
-          for host in ce_hostnames.keys() :
-            msg += ' ' + host
-          msg += '\n'
-          msg += '[Condor-G Scheduler]: and enter this CE in the ce_white_list variable of the [EDG] section in your crab.cfg.\n'
-          common.logger.debug(2,msg)
-          raise CrabException(msg)
-      else :
-        raise CrabException('[Condor-G Scheduler]: CE hostname(s) for SE '+seSite+' could not be determined from BDII.')
+      #oneSite=''
+      #if len(ce_hostnames.keys()) == 1:
+        #oneSite=ce_hostnames[ce_hostnames.keys()[0]]
+      #elif len(ce_hostnames.keys()) > 1:
+        #if self.EDG_ce_white_list and len(self.EDG_ce_white_list) == 1 and self.EDG_ce_white_list[0] in ce_hostnames.keys():
+          #oneSite = self.EDG_ce_white_list[0]
+        #else :
+          #msg  = '[Condor-G Scheduler]: More than one Compute Element (CE) is available for job submission.\n'
+          #msg += '[Condor-G Scheduler]: Please select one of the following CEs:\n'
+          #msg += '[Condor-G Scheduler]:'
+          #for host in ce_hostnames.keys() :
+            #msg += ' ' + host
+          #msg += '\n'
+          #msg += '[Condor-G Scheduler]: and enter this CE in the ce_white_list variable of the [EDG] section in your crab.cfg.\n'
+          #common.logger.debug(2,msg)
+          #raise CrabException(msg)
+      #else :
+        #raise CrabException('[Condor-G Scheduler]: CE hostname(s) for SE '+seSite+' could not be determined from BDII.')
 
-      return oneSite
+      #return oneSite
 
     def checkExecutableInPath(self, name):
         # check if executable is in PATH
@@ -177,19 +173,19 @@ class SchedulerCondorCommon(SchedulerGrid):
 
         # redo this with SchedulerGrid SE list
 
-        try:
-            tmpGood = string.split(cfg_params['EDG.se_white_list'],',')
-        except KeyError:
-            msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
-            msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
-            common.logger.debug(2,msg)
-            raise CrabException(msg)
+        #try:
+            #tmpGood = string.split(cfg_params['EDG.se_white_list'],',')
+        #except KeyError:
+            #msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
+            #msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
+            #common.logger.debug(2,msg)
+            #raise CrabException(msg)
 
-        if len(tmpGood) != 1 :
-            msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
-            msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
-            common.logger.debug(2,msg)
-            raise CrabException(msg)
+        #if len(tmpGood) != 1 :
+            #msg  = '[Condor-G Scheduler]: destination site is not selected properly.\n'
+            #msg += '[Condor-G Scheduler]: Please select your destination site and only your destination site in the SE_white_list variable of the [EDG] section in your crab.cfg.'
+            #common.logger.debug(2,msg)
+            #raise CrabException(msg)
 
         try:
             self.UseGT4 = cfg_params['USER.use_gt_4'];
