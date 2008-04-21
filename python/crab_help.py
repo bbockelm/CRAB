@@ -82,7 +82,7 @@ I<http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/>
 
 =head1 HOW TO RUN CRAB FOR THE IMPATIENT USER
 
-Please, read all through in any case!
+Please, read all the way through in any case!
 
 Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.
 
