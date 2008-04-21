@@ -822,12 +822,15 @@ class Cmssw(JobType):
         txt += '    func_exit\n'
         txt += 'fi \n'
         txt += 'cd '+self.version+'\n'
-        ########## FEDE FOR DBS2 ######################
         txt += 'SOFTWARE_DIR=`pwd`\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
-        ###############################################
-        ### needed grep for bug in scramv1 ###
         txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
+        txt += 'if [ $? != 0 ] ; then\n'
+        txt += '    echo "ERROR ==> Problem with the command: "\n'
+        txt += '    echo "eval \`'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME \` at `hostname`"\n'
+        txt += '    job_exit_code=10034\n'
+        txt += '    func_exit\n'
+        txt += 'fi \n'
         # Handle the arguments:
         txt += "\n"
         txt += "## number of arguments (first argument always jobnumber)\n"
