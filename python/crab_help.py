@@ -24,11 +24,11 @@ The most useful general options (use '-h' to get complete help):
   -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs
   -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance
   -kill [range]       -- kill submitted jobs
-  -clean              -- gracefully cleanup the idrectory of a task
+  -clean              -- gracefully cleanup the directory of a task
   -testJdl [range]    -- check if resources exist which are compatible with jdl
   -list [range]       -- show technical job details
   -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
-  -printId [range]    -- print the job SID or Task Unique ID while using the server 
+  -printId [range]    -- print the job SID or Task Unique ID while using the server
   -continue|-c [dir]  -- Apply command to task stored in [dir].
   -h [format]         -- Detailed help. Formats: man (default), tex, html, txt
   -cfg fname          -- Configuration file name. Default is 'crab.cfg'
@@ -69,11 +69,11 @@ Parameters for CRAB usage and configuration are provided by the user changing th
 
 CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BossLite to interface to the Grid scheduler, as well as for logging and bookkeeping.
 
-CRAB support any CMSSW based executable, with any modules/libraries, including the user provided one, and deals with the output produced by the executable. Up to version 1_2_1, also ORCA (and FAMOS) based executable were supported.  CRAB provides an interface with CMS data discovery services (DBS and DLS), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.
+CRAB support any CMSSW based executable, with any modules/libraries, including the user provided one, and deals with the output produced by the executable. CRAB provides an interface with CMS data discovery services (DBS and DLS), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.
 
 CRAB can be used in two ways: StandAlone and with a Server.
 The StandAlone mode is suited for small task, of the order of O(100) jobs: it submits the jobs directly to the scheduler, and these jobs are under user responsibility.
-Instead, in the Server mode, suited for larger task, the jobs are prepared locally and then passed to a dedicated CRAB server, which then interact with the scheduler on behalf of the user, including additional services, such as automatic resubmission, status caching, output retrival, and more.
+Instead, in the Server mode, suited for larger task, the jobs are prepared locally and then passed to a dedicated CRAB server, which then interact with the scheduler on behalf of the user, including additional services, such as automatic resubmission, status caching, output retrieval, and more.
 The CRAB commands are exactly the same in both cases.
 
 CRAB web page is available at
@@ -86,7 +86,7 @@ Please, read all anyway!
 
 Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.
 
-Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list: in particular set your jobtype (orca or famos) and fill the corresponding section. A template and commented B<crab.cfg> can be found on B<$CRABDIR/python/crab.cfg>
+Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list. A template and commented B<crab.cfg> can be found on B<$CRABDIR/python/crab.cfg>
 
 ~>crab -create
   create all jobs (no submission!)
@@ -112,7 +112,7 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 
 =item B<A)>
 
-Develop your code in your CMSSW working area.  Do anything which is needed to run interactively your executable, including the setup of run time environment (I<eval `scramv1 runtime -sh|csh`>), a suitable I<ParameterSet>, etc. It seems silly, but B<be extra sure that you actaully did compile your code> I<scramv1 b>.
+Develop your code in your CMSSW working area.  Do anything which is needed to run interactively your executable, including the setup of run time environment (I<eval `scramv1 runtime -sh|csh`>), a suitable I<ParameterSet>, etc. It seems silly, but B<be extra sure that you actually did compile your code> I<scramv1 b>.
 
 =item B<B)>
 
@@ -162,9 +162,11 @@ for authentication via Grid certificate proxies ("voms-proxy-init -voms cms" sho
 
 =over 2
 
-=item submission directly to a single OSG site,
+=item submission directly to multiple OSG sites,
 
-the requested dataset has to be published correctly by the site in the local and global services
+the requested dataset has to be published correctly by the site in the local and global services.
+Previous restrictions on submitting only to a single site have been removed. SE and CE whitelisting
+and blacklisting work as in the other modes.
 
 =back
 
@@ -175,8 +177,6 @@ the requested dataset has to be published correctly by the site in the local and
 =item submit jobs if no condor scheduler is running on the submission machine
 
 =item submit jobs if the local condor installation does not provide Condor-G capabilities
-
-=item submit jobs to more than one site in parallel
 
 =item submit jobs to a LCG site
 
@@ -194,10 +194,6 @@ The CRAB configuration for the Condor-G mode only requires changes in crab.cfg:
 
 scheduler = condor_g
 
-=item select the domain for a single OSG site:
-
-CE_white_list = "one of unl.edu,ufl.edu,ucsd.edu,wisc.edu,purdue.edu,ultralight.org,mit.edu"
-
 =back
 
 =head1 COMMAND
@@ -207,14 +203,14 @@ CE_white_list = "one of unl.edu,ufl.edu,ucsd.edu,wisc.edu,purdue.edu,ultralight.
 =item B<-create>
 
 Create the jobs: from version 1_3_0 it is only possible to create all jobs.
-The maximum number of jobs depens on dataset and splittig directives. This set of identical jobs accessing the same dataset are defined as a task.
+The maximum number of jobs depends on dataset and splitting directives. This set of identical jobs accessing the same dataset are defined as a task.
 This command create a directory with default name is I<crab_0_date_time> (can be changed via ui_working_dir parameter, see below). Inside this directory it is placed whatever is needed to submit your jobs. Also the output of your jobs (once finished) will be place there (see after). Do not cancel by hand this directory: rather use -clean (see).
 See also I<-continue>.
 
 =item B<-submit [range]>
 
 Submit n jobs: 'n' is either a positive integer or 'all' or a [range]. Default is all.
-If 'n' is passed as argument, the first 'n' suitable jobs will be submitted. Please note that this is behaviour is different from other commenads, where -command N means act the command to the job N, and not to the first N jobs. If a [range] is passed, the selected jobs will be submitted. 
+If 'n' is passed as argument, the first 'n' suitable jobs will be submitted. Please note that this is behaviour is different from other commands, where -command N means act the command to the job N, and not to the first N jobs. If a [range] is passed, the selected jobs will be submitted.
 This option must be used in conjunction with -create (to create and submit immediately) or with -continue (which is assumed by default), to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.  See also I<-continue>.
 
 =item B<-continue [dir] | -c [dir]>
@@ -257,7 +253,7 @@ Try to collect more information of the job from the scheduler point of view.
 
 =item B<-list [range]>
 
-Dump technical informations about jobs: for developers only.
+Dump technical information about jobs: for developers only.
 
 =item B<-clean [dir]>
 
@@ -308,8 +304,8 @@ The type of the job to be executed: I<cmssw> jobtypes are supported
 
 =item B<scheduler *>
 
-The scheduler to be used: I<glitecoll> is the more efficient grid scheduler and should be used. Other choice are I<glite>, same as I<glitecoll> but without bulk sumbission (and so slower) or I<condor_g> (see specific paragraph) or I<edg> which is the former Grid scheduler, which will be dismissed in some future 
-From version 210, also local scheduler are supported, for the tim being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities.
+The scheduler to be used: I<glitecoll> is the more efficient grid scheduler and should be used. Other choice are I<glite>, same as I<glitecoll> but without bulk submission (and so slower) or I<condor_g> (see specific paragraph) or I<edg> which is the former Grid scheduler, which will be dismissed in some future
+From version 210, also local scheduler are supported, for the time being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities.
 
 =item B<server_name>
 
@@ -327,7 +323,7 @@ B<[CMSSW]>
 the path of processed dataset as defined on the DBS. It comes with the format I</PrimaryDataset/DataTier/Process> . In case no input is needed I<None> must be specified.
 
 =item B<runselection *>
-                                                                                                                        
+
 within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 .
 
 =item B<pset *>
@@ -409,11 +405,11 @@ Any additional input file you want to ship to WN: comma separated list. These ar
 
 =item B<script_exe>
 
-A user script that will be run on WN (instead of default cmsrun). It\'s up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (eg scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The user must ensure that a job report named crab_fjr.xml will be written. This can be guaranteed by passing the arguments "-j crab_fjr.xml" to cmsRun in the script. The script itself will be added automatically to the input sandbox.
+A user script that will be run on WN (instead of default cmsrun). It\'s up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (e.g. scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The user must ensure that a job report named crab_fjr.xml will be written. This can be guaranteed by passing the arguments "-j crab_fjr.xml" to cmsRun in the script. The script itself will be added automatically to the input sandbox.
 
 =item B<ui_working_dir>
 
-Name of the working directory for the current task. By default, a name I<crab_0_(date)_(time)> will be used. If this card is set, any CRAB command which require I<-continue> need to specify also the name of the working directory. A special syntax is also possible, to reuse the name of the dataset provided before: I<ui_working_dir : %(dataset)s> . In this case, if eg the dataset is SingleMuon, the ui_working_dir will be set to SingleMuon as well.
+Name of the working directory for the current task. By default, a name I<crab_0_(date)_(time)> will be used. If this card is set, any CRAB command which require I<-continue> need to specify also the name of the working directory. A special syntax is also possible, to reuse the name of the dataset provided before: I<ui_working_dir : %(dataset)s> . In this case, if e.g. the dataset is SingleMuon, the ui_working_dir will be set to SingleMuon as well.
 
 =item B<thresholdLevel>
 
@@ -421,23 +417,23 @@ This has to be a value between 0 and 100, that indicates the percentage of task 
 
 =item B<eMail>
 
-The server will notify the specified e-mail when the task will reaches the specified B<thresholdLevel>. A notification is also sended when the task will reach the 100\% of completeness. This field can also be a list of e-mail: "B<eMail = user1@cern.ch, user2@cern.ch>". Works just with the server_mode = 1.
+The server will notify the specified e-mail when the task will reaches the specified B<thresholdLevel>. A notification is also sent when the task will reach the 100\% of completeness. This field can also be a list of e-mail: "B<eMail = user1@cern.ch, user2@cern.ch>". Works just with the server_mode = 1.
 
 =item B<return_data *>
 
-The output produced by the executable on WN is returned (via output sandbox) to the UI, by issuing the I<-getoutput> command. B<Warning>: this option should be used only for I<small> output, say less than 10MB, since the sandbox cannot accomodate big files. Depending on Resource Broker used, a size limit on output sandbox can be applied: bigger files will be truncated. To be used in alternative to I<copy_data>.
+The output produced by the executable on WN is returned (via output sandbox) to the UI, by issuing the I<-getoutput> command. B<Warning>: this option should be used only for I<small> output, say less than 10MB, since the sandbox cannot accommodate big files. Depending on Resource Broker used, a size limit on output sandbox can be applied: bigger files will be truncated. To be used in alternative to I<copy_data>.
 
 =item B<outputdir>
 
-To be used together with I<return_data>. Directory on user interface where to store the output. Full path is mandatory, "~/" is not allowed: the defaul location of returned output is ui_working_dir/res .
+To be used together with I<return_data>. Directory on user interface where to store the output. Full path is mandatory, "~/" is not allowed: the default location of returned output is ui_working_dir/res .
 
 =item B<logdir>
 
-To be used together with I<return_data>. Directory on user interface where to store the standard output and error. Full path is mandatory, "~/" is not allowed: the defaul location of returned output is ui_working_dir/res .
+To be used together with I<return_data>. Directory on user interface where to store the standard output and error. Full path is mandatory, "~/" is not allowed: the default location of returned output is ui_working_dir/res .
 
 =item B<copy_data *>
 
-The output (only that produced by the executable, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recomended in case of large output.
+The output (only that produced by the executable, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recommended in case of large output.
 
 =item B<storage_element>
 
@@ -449,7 +445,7 @@ To be used together with I<copy_data>. Path where to put output files on Storage
 
 =item B<copyCommand>
 
-Only for LSF scheduer: allow to define the command to be used to copy the output to final location. Default is rfcp
+Only for LSF scheduler: allow to define the command to be used to copy the output to final location. Default is rfcp
 
 =item B<xml_report>
 
@@ -463,8 +459,8 @@ B<[EDG]>
 
 =item B<RB>
 
-Which RB you want to use instead of the default one, as defined in the configuration of your UI. The ones available for CMS are I<CERN> and I<CNAF>. They are actaully identical, being a colelction of all RB/WMS available for CMS: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used.
-You can use any other RB which is available, if you provide the proper configuration files. Eg, for RB XYZ, you should provide I<edg_wl_ui.conf.CMS_XYZ> and I<edg_wl_ui_cmd_var.conf.CMS_XYZ> for EDG RB, or I<glite.conf.CMS_XYZ> for glite WMS. These files are searched for in the current working directory, and, if not found, on crab web page. So, if you put your private configuration files in the working directory, they will be used, even if they are not available on crab web page.
+Which RB you want to use instead of the default one, as defined in the configuration of your UI. The ones available for CMS are I<CERN> and I<CNAF>. They are actually identical, being a collection of all RB/WMS available for CMS: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used.
+You can use any other RB which is available, if you provide the proper configuration files. E.g., for RB XYZ, you should provide I<edg_wl_ui.conf.CMS_XYZ> and I<edg_wl_ui_cmd_var.conf.CMS_XYZ> for EDG RB, or I<glite.conf.CMS_XYZ> for glite WMS. These files are searched for in the current working directory, and, if not found, on crab web page. So, if you put your private configuration files in the working directory, they will be used, even if they are not available on crab web page.
 Please get in contact with crab team if you wish to provide your RB or WMS as a service to the CMS community.
 
 =item B<proxy_server>
@@ -481,7 +477,7 @@ The group to be set in the VOMS, See VOMS documentation for more info.
 
 =item B<dont_check_proxy>
 
-If you do not want CRAB to check your proxy. The creation of the proxy (with proper lenght), its delegation to a myproxyserver is your responsability.
+If you do not want CRAB to check your proxy. The creation of the proxy (with proper length), its delegation to a myproxyserver is your responsibility.
 
 =item B<requirements>
 
@@ -506,11 +502,11 @@ Same as previous, but with real time, and not CPU one.
 
 =item B<CE_black_list>
 
-All the CE (Computing Element) whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (eg fnal, cern, ifae, fzk, cnaf, lnl,....)
+All the CE (Computing Element) whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....)
 
 =item B<CE_white_list>
 
-Only the CE (Computing Element) whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (eg fnal, cern, ifae, fzk, cnaf, lnl,....). Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place.
+Only the CE (Computing Element) whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place.
 
 =item B<SE_black_list>
 
@@ -544,7 +540,7 @@ B<[LSF]>
 
 =item B<queue>
 
-The LSF queue you want to use: if none, the default one will be used. For CAF, the proper queue will be autoamtically selected.
+The LSF queue you want to use: if none, the default one will be used. For CAF, the proper queue will be automatically selected.
 
 =item B<resource>
 
@@ -563,7 +559,7 @@ I<crab> saves all command lines in the file I<crab.history>.
 
 =head1 HISTORY
 
-B<CRAB> is a tool for the CMS analysis on the Grid environment. It is based on the ideas from CMSprod, a production tools implemented originally by Nikolai Smirnov.
+B<CRAB> is a tool for the CMS analysis on the Grid environment. It is based on the ideas from CMSprod, a production tool originally implemented by Nikolai Smirnov.
 
 =head1 AUTHORS
 
