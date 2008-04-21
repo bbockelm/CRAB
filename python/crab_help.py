@@ -63,17 +63,17 @@ B<"""+common.prog_name+"""> [I<options>] [I<command>]
 
 =head1 DESCRIPTION
 
-CRAB is a Python program intended to simplify the process of creation and submission into Grid environment of CMS analysis jobs.
+CRAB is a Python program intended to simplify the process of creation and submission of CMS analysis jobs to the Grid environment .
 
 Parameters for CRAB usage and configuration are provided by the user changing the configuration file B<crab.cfg>.
 
 CRAB generates scripts and additional data files for each job. The produced scripts are submitted directly to the Grid. CRAB makes use of BossLite to interface to the Grid scheduler, as well as for logging and bookkeeping.
 
-CRAB support any CMSSW based executable, with any modules/libraries, including the user provided one, and deals with the output produced by the executable. CRAB provides an interface with CMS data discovery services (DBS and DLS), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according with user requirements.
+CRAB supports any CMSSW based executable, with any modules/libraries, including user provided ones, and deals with the output produced by the executable. CRAB provides an interface to CMS data discovery services (DBS and DLS), which are completely hidden to the final user. It also splits a task (such as analyzing a whole dataset) into smaller jobs, according to user requirements.
 
 CRAB can be used in two ways: StandAlone and with a Server.
 The StandAlone mode is suited for small task, of the order of O(100) jobs: it submits the jobs directly to the scheduler, and these jobs are under user responsibility.
-Instead, in the Server mode, suited for larger task, the jobs are prepared locally and then passed to a dedicated CRAB server, which then interact with the scheduler on behalf of the user, including additional services, such as automatic resubmission, status caching, output retrieval, and more.
+In the Server mode, suited for larger tasks, the jobs are prepared locally and then passed to a dedicated CRAB server, which then interacts with the scheduler on behalf of the user, including additional services, such as automatic resubmission, status caching, output retrieval, and more.
 The CRAB commands are exactly the same in both cases.
 
 CRAB web page is available at
@@ -82,7 +82,7 @@ I<http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/>
 
 =head1 HOW TO RUN CRAB FOR THE IMPATIENT USER
 
-Please, read all anyway!
+Please, read all through in any case!
 
 Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.
 
@@ -140,7 +140,7 @@ You must have a valid voms-enabled Grid proxy. See CRAB web page for details.
 
 The B<Condor-G> mode for B<CRAB> is a special submission mode next to the standard Resource Broker submission. It is designed to submit jobs directly to a site and not using the Resource Broker.
 
-Due to the nature of this submission possibility, the B<Condor-G> mode is restricted to OSG sites within the CMS Grid, currently the 7 US T2: Florida(ufl.edu), Nebraska(unl.edu), San Diego(ucsd.edu), Purdue(purdue.edu), Wisconsin(wisc.edu), Caltech(ultralight.org), MIT(mit.edu).
+Due to the nature of B<Condor-G> submission, the B<Condor-G> mode is restricted to OSG sites within the CMS Grid, currently the 7 US T2: Florida(ufl.edu), Nebraska(unl.edu), San Diego(ucsd.edu), Purdue(purdue.edu), Wisconsin(wisc.edu), Caltech(ultralight.org), MIT(mit.edu).
 
 =head2 B<Requirements:>
 
@@ -154,7 +154,7 @@ Due to the nature of this submission possibility, the B<Condor-G> mode is restri
 
 for authentication via Grid certificate proxies ("voms-proxy-init -voms cms" should result in valid proxy)
 
-=item set of the environment variable EDG_WL_LOCATION to the edg directory of the local LCG or OSG UI installation
+=item set the environment variable EDG_WL_LOCATION to the edg directory of the local LCG or OSG UI installation
 
 =back
 
@@ -164,7 +164,7 @@ for authentication via Grid certificate proxies ("voms-proxy-init -voms cms" sho
 
 =item submission directly to multiple OSG sites,
 
-the requested dataset has to be published correctly by the site in the local and global services.
+the requested dataset must be published correctly by the site in the local and global services.
 Previous restrictions on submitting only to a single site have been removed. SE and CE whitelisting
 and blacklisting work as in the other modes.
 
@@ -178,7 +178,7 @@ and blacklisting work as in the other modes.
 
 =item submit jobs if the local condor installation does not provide Condor-G capabilities
 
-=item submit jobs to a LCG site
+=item submit jobs to an LCG site
 
 =item support Grid certificate proxy renewal via the myproxy service
 
@@ -186,7 +186,7 @@ and blacklisting work as in the other modes.
 
 =head2 B<CRAB configuration for Condor-G mode:>
 
-The CRAB configuration for the Condor-G mode only requires changes in crab.cfg:
+The CRAB configuration for the Condor-G mode only requires one change in crab.cfg:
 
 =over 2
 
@@ -196,7 +196,7 @@ scheduler = condor_g
 
 =back
 
-=head1 COMMAND
+=head1 COMMANDS
 
 =over 4
 
