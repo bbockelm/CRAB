@@ -161,7 +161,14 @@ class GetOutput(Actor):
         #input = self.outDir + '/crab_fjr_' + str(jobid) + '.xml'  
         codeValue = {} 
 
-        jobReport = readJobReport(input)[0]
+        jreports = readJobReport(input)
+        if len(jreports) <= 0 :
+            codeValue["applicationReturnCode"] = str(50115)
+            codeValue["wrapperReturnCode"] = str(50115)
+            common.logger.debug(5,"Empty FWkobreport: error code assigned is 50115 ")
+            return codeValue
+
+        jobReport = jreports[0]
 
         exit_status = ''
     
