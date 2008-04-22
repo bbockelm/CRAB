@@ -642,7 +642,7 @@ class FatWorker(Thread):
                   'GridName': gridName, \
                   'taskType': taskType, \
                   'vo': VO, \
-                  'user': os.environ['USER'], \
+                  'user': self.taskName.split('_')[0], \
                   'taskId': taskId, \
                   'datasetFull': datasetPath, \
                   #'application', version, \
@@ -659,7 +659,7 @@ class FatWorker(Thread):
         for k,v in self.collect_MLInfo(task).iteritems():
             params[k] = v
 
-        taskId=str("_".join(task['name']).split('_')[:-1])
+        taskId = str("_".join(task['name']).split('_')[:-1])
         Sub_Type = 'Server'
 
         for job in task.jobs:
