@@ -225,7 +225,7 @@ class DBinterface:
         lines=[]
         task = self.getTask(jobsL)
         for job in task.jobs:
-            lines.append(eval(job[attr]))
+            lines.append(job[attr])
         return lines
 
     def queryRunJob(self, attr, jobsL):
@@ -251,7 +251,7 @@ class DBinterface:
             common.logger.debug(3, "Error loading Jobs By distinct Attr : " +str(traceback.format_exc()))
             raise CrabException('Error loading Jobs By distinct Attr '+str(e))
 
-        for i in task: distAttr.append(eval(i[attr]))   
+        for i in task: distAttr.append(i[attr])   
         return  distAttr
 
     def queryDistJob_Attr(self, attr_1, attr_2, list):
@@ -265,7 +265,7 @@ class DBinterface:
             common.logger.debug(3, "Error loading Jobs By distinct Attr : " +str(traceback.format_exc()))
             raise CrabException('Error loading Jobs By distinct Attr '+str(e))
 
-        for i in task: distAttr.append(eval(i[attr_1]))   
+        for i in task: distAttr.append(i[attr_1])  
         return  distAttr
 
     def queryAttrJob(self, attr, field):
