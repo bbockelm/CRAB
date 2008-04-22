@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.66 2008/04/17 12:43:49 mcinquil Exp $"
-__version__ = "$Revision: 1.66 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.68 2008/04/22 14:46:50 mcinquil Exp $"
+__version__ = "$Revision: 1.68 $"
 
 import os
 import time
@@ -479,45 +479,6 @@ class TaskTrackingComponent:
             logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
             logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
         logging.info(logBuf)
-
-
-    def updateInfoTask( self, payload ):
-        """
-        _updateInfoTask_
-
-        updating a task that is just sumitted
-        """
-        logBuf = ""
-        uuid, taskName, proxy = payload.split(":", 3)
-	
-        eMail, thresholdLevel = self.readInfoCfg( self.args['dropBoxPath'] + "/" + taskName )
-        if eMail == None:
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-            logBuf = self.__logToBuf__(logBuf, "ERROR: missing 'eMail' from " + self.crabcfg + " for task: " + str(taskName) )
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-            eMail = "mattia.cinquilli@pg.infn.it"  #### TEMPORARY SOLUTION!
-        if thresholdLevel == None:
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-            logBuf = self.__logToBuf__(logBuf, "WARNING: missing 'thresholdLevel' from " + self.crabcfg + " for task: " + str(taskName) )
-            logBuf = self.__logToBuf__(logBuf, "         using default value 'thresholdLevel = 100'")
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-            thresholdLevel = 100
-        elif int(thresholdLevel) < 0:
-            thresholdLevel = 0
-        elif int(thresholdLevel) > 100:
-            thresholdLevel = 100
-        dictionaryReport =  {"all": ["", "", "", 0, '', 'C']} 
-        self.prepareReport( taskName, uuid, eMail, thresholdLevel, 0, dictionaryReport, 0, 0 )
-
-        try:
-            TaskStateAPI.updateNotSubmitted( taskName, eMail, thresholdLevel, proxy, uuid, self.taskState[6] )
-        except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-            logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(taskName) )
-            logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-        logging.info(logBuf)
-
 
     def preUpdatePartialTask( self, payload, status ):
         """
