@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.30 2008/04/20 20:54:35 spiga Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: FatWorker.py,v 1.31 2008/04/21 16:12:11 farinafa Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import sys, os
 import time
@@ -396,10 +396,10 @@ class FatWorker(Thread):
                     self.blDBsession.getRunningInstance(j)
                     j.runningJob['status'] = 'S'
 
+            self.blDBsession.updateDB( task )
             ## send here post submission info to ML DS
             self.SendMLpost( task, sub_jobs[ii] )
-            #   
-            self.blDBsession.updateDB( task )
+            # note: this must be done after update, otherwise jobIds will be None
         return submitted, unsubmitted 
 
 ####################################
@@ -616,6 +616,7 @@ class FatWorker(Thread):
         """
         params = self.collect_MLInfo(task)
         params['jobId'] = 'TaskMeta'
+        self.log.debug('DashBoard PreSubmission Infos: %s'%str(params)) 
         self.apmon.sendToML(params)
         return
 
@@ -629,7 +630,7 @@ class FatWorker(Thread):
         taskType = 'analysis'
         # version
         datasetPath = self.cfg_params['CMSSW.datasetpath']
-        if string.lower(datasetPath) == 'none':
+        if datasetPath.lower() == 'none':
             datasetPath = None
         VO = self.cfg_params['VO']
         executable = self.cfg_params.get('CMSSW.executable','cmsRun')
@@ -679,9 +680,9 @@ class FatWorker(Thread):
                 jobId = str(jj) + '_' + str(jid)
                 rb = str(job.runningJob['service'])
 
-            dlsDest = eval(job['dlsDestination'])
+            dlsDest = job['dlsDestination'] # this is surely a list, see before
             if len(dlsDest) <= 2 :
-                T_SE = string.join( str(dlsDest), ",")
+                T_SE = ','.join(dlsDest)
             else :
                 T_SE = str(len(dlsDest))+'_Selected_SE'
 
@@ -696,6 +697,7 @@ class FatWorker(Thread):
             for k,v in infos.iteritems():
                 params[k] = v
 
+            self.log.debug('DashBoard PostSubmission Infos: %s'%str(params))
             self.apmon.sendToML(params)
         return
 
