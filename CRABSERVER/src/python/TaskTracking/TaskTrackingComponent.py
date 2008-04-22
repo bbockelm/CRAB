@@ -1078,7 +1078,7 @@ class TaskTrackingComponent:
 				        dictReportTot['JobInProgress'] += 1
                                         dictStateTot[job][0] = "Resubmitting by server"
 			        elif stato == "C":
-                                    if not resubmitting:
+                                    if not resubmitting and status == self.taskState[3] and status == self.taskState[8]:
    				        countNotSubmitted += 1 
 				        dictReportTot['JobFailed'] += 1
 #                                        if status == self.taskState[4]:
