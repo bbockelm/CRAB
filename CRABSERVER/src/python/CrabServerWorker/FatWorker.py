@@ -663,7 +663,7 @@ class FatWorker(Thread):
         Sub_Type = 'Server'
 
         for job in task.jobs:
-            jj = job['id']
+            jj = job['jobId']
             jobId = ''
             localId = ''
             jid = str(job.runningJob['schedulerId'])
