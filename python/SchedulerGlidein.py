@@ -1,8 +1,8 @@
 from SchedulerCondorCommon import SchedulerCondorCommon
 import common
 
-__revision__ = "$Id: SchedulerGlidein.py,v 1.2 2008/04/17 21:23:07 ewv Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SchedulerGlidein.py,v 1.3 2008/04/17 21:23:52 ewv Exp $"
+__version__ = "$Revision: 1.3 $"
 
 class SchedulerGlidein(SchedulerCondorCommon):
   def __init__(self):
@@ -15,7 +15,7 @@ class SchedulerGlidein(SchedulerCondorCommon):
     """
     jobParams = SchedulerCondorCommon.sched_parameter(self,i,task)
 
-    seDest = self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']))
+    seDest = self.blackWhiteListParser.cleanForBlackWhiteList(task.jobs[i-1]['dlsDestination'])
     #ceDest = self.getCEfromSE(seDest)
 
     # FIXME: Translate seDest into glidein name using SiteDB

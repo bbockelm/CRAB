@@ -320,7 +320,7 @@ class Submitter(Actor):
                 common.logger.debug(5,'JobID for ML monitoring is created for gLite scheduler'+jobId)
                 rb = str(job.runningJob['service'])
         
-            dlsDest = eval(job['dlsDestination']) 
+            dlsDest = job['dlsDestination'] 
             if len(dlsDest) <= 2 :
                 T_SE=string.join(str(dlsDest),",")
             else : 

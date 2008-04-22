@@ -2,8 +2,8 @@ from SchedulerCondorCommon import SchedulerCondorCommon
 import common
 import Scram
 from osg_bdii import getJobManagerList
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.98 2008/04/21 16:08:30 ewv Exp $"
-__version__ = "$Revision: 1.98 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.99 2008/04/21 16:12:21 ewv Exp $"
+__version__ = "$Revision: 1.99 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -18,7 +18,7 @@ class SchedulerCondor_g(SchedulerCondorCommon):
     """
     jobParams = SchedulerCondorCommon.sched_parameter(self,i,task)
 
-    seDest = self.blackWhiteListParser.cleanForBlackWhiteList(eval(task.jobs[i-1]['dlsDestination']),"list")
+    seDest = self.blackWhiteListParser.cleanForBlackWhiteList(task.jobs[i-1]['dlsDestination'],"list")
     scram = Scram.Scram(None)
 
     versionCMSSW = scram.getSWVersion()
