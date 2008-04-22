@@ -13,10 +13,10 @@ import CondorGLoggingInfo
 
 # This class was originally SchedulerCondor_g. For a history of this code, see that file.
 
-import pdb # Use while debugging
+import pdb # FIXME: Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.3 2008/04/21 16:08:30 ewv Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.4 2008/04/22 18:35:24 ewv Exp $"
+__version__ = "$Revision: 1.4 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
