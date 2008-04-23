@@ -37,7 +37,7 @@ class JabberThread(Thread):
 
             tPost = time.time()
             deltaT = tPost - tPre
-            self.logsys.info("AvgThroughput: %f s (%d / day)"%(deltaT, int(0.5+86400/(deltaT+1)) ) )
+            self.logsys.info("AvgThroughput: %f s (%d connections / day)"%(deltaT, int(0.5+86400/(deltaT+1)) ) )
             
             # jabber disabled
             if self.thr <= 0.0:

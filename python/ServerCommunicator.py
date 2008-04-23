@@ -252,8 +252,12 @@ class ServerCommunicator:
         miniCfg['EDG_retry_count'] = self.cfg_params.get('EDG.retry_count',0)
         miniCfg['EDG_shallow_retry_count'] = self.cfg_params.get('EDG.shallow_retry_count',-1)
 
-        ## Additional fields for DashBoard
-        miniCfg['CMSSW.datasetpath'] = self.cfg_params.get('CMSSW.datasetpath', 'None') 
+        ## Additional field for DashBoard
+        miniCfg['CMSSW.datasetpath'] = self.cfg_params.get('CMSSW.datasetpath', 'None')
+
+        ## Additional fields for Notification by the server
+        miniCfg['eMail'] = self.cfg_params.get('USER.eMail', None) 
+        miniCfg['threshold'] = self.cfg_params.get('USER.threshold', 100)
 
         ## put here other fields if needed
         node.setAttribute("CfgParamDict", str(miniCfg) )
