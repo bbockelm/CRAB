@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.68 2008/04/22 14:46:50 mcinquil Exp $"
-__version__ = "$Revision: 1.68 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.66 2008/04/17 12:43:49 mcinquil Exp $"
+__version__ = "$Revision: 1.66 $"
 
 import os
 import time
@@ -220,7 +220,25 @@ class TaskTrackingComponent:
             if _loginfo != '':
                 self.__appendDbgInfo__(taskName, _loginfo)
             return None
-	    
+
+        if event == "CRAB_Cmd_Mgr:MailReference":
+            if payload != None or payload != "" or len(payload) > 0:
+                taskName, eMail, threshold = payload.split("::")
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "E-mail "+str(eMail)+" arrived for task %s" % taskName)
+                self.updateEmailThresh(taskName, eMail, threshold)
+	        logBuf = self.__logToBuf__(logBuf, "     db updated.")
+                _loginfo += "Updated e-mail and threshold level for task %s" % taskName
+            else:
+                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__logToBuf__(logBuf, "ERROR: wrong payload from [" +event+ "]!!!!")
+                logBuf = self.__logToBuf__(logBuf, " ")
+            logging.info(logBuf)
+            if _loginfo != '':
+                self.__appendDbgInfo__(taskName, _loginfo)
+            return None
+
+
 	if event == "CrabServerWorkerComponent:TaskArrival":
 	    if payload != None or payload != "" or len(payload) > 0:
                 _loginfo += "Task in submission queue: " + str(taskName) + "\n"
@@ -479,6 +497,25 @@ class TaskTrackingComponent:
             logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
             logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
         logging.info(logBuf)
+
+    def updateEmailThresh( self, taskname, email, threshold ):
+        """
+        _updateEmailThresh_
+        """
+        logBuf = ""
+
+        if email == None:
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__logToBuf__(logBuf, "ERROR: missing 'eMail' for task: " + str(taskname) )
+            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+        elif threshold == None:
+            threshold = "100"
+        else:
+            try:
+                TaskStateAPI.updateEmailThresh( taskname, str(email), str(threshold) )
+            except Exception, ex:
+                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__logToBuf__(logBuf, "ERROR while updating the 'eMail' field for task: " + str(taskname) )
 
     def preUpdatePartialTask( self, payload, status ):
         """
@@ -1229,6 +1266,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:TaskNotSubmitted")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:GetOutputNotification")
+        self.ms.subscribeTo("CRAB_Cmd_Mgr:MailReference")
 
         #reset all work_status
         TaskStateAPI.resetAllWorkStatus()

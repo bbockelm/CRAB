@@ -177,6 +177,30 @@ def updateProxy( taskName, proxy):
         #logging.error( "Error updating PA DB! Method: " + updatingEndedPA.__name__ )
         raise
 
+def updateEmailThresh( taskName, email, threshold):
+    """
+    """
+    logging.info( "   -> updating the task table for task: " + taskName )
+
+    ## opening connection with PA's DB
+    conn, dbCur = openConnPA()
+    try:
+        dbCur.execute("START TRANSACTION")
+        if checkExistPA(conn, dbCur, taskName):
+            sqlStr='UPDATE js_taskInstance SET eMail="'+email+'", tresholdLevel="'+threshold+'"\
+                    WHERE taskName="'+taskName+'";'
+            dbCur.execute(sqlStr)
+        else:
+            logging.error( "Error updating 'eMail' to '"+email+"' in js_taskInstance. TaskName: '" + str(taskName) + "': task not found.")
+        dbCur.execute("COMMIT")
+        ## closing connection with PA's DB
+        closeConnPA( dbCur, conn )
+    except:
+        dbCur.execute("ROLLBACK")
+        ## closing connection with PA's DB
+        closeConnPA( dbCur, conn )
+        raise
+
 def updateStatus( taskName, status ):
     """
     _updateStatus_
