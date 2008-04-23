@@ -21,7 +21,6 @@ def unwraplines(wrapped_list):
 def runldapquery(filter, attribute, bdii):
     command = 'ldapsearch -xLLL -p 2170 -h ' + bdii + ' -b o=grid '
     command += filter + ' ' + attribute
-
     pout,pin,perr = popen2.popen3(command)
 
     pout = pout.readlines()
@@ -237,16 +236,13 @@ def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch'):
     softarch_list = getSoftwareAndArch(osg_list, software, arch)
 
     # remove any non-OSG sites from the list
+    jminfo_newlist = []
     for item in jminfo_list:
-        found = 0
         for narrowed_item in softarch_list:
             if (item["host"] == narrowed_item):
-                found = 1
-                break
-        if (found == 0):
-            jminfo_list.remove(item)
+                jminfo_newlist.append(item)
 
-    return jminfo_list
+    return jminfo_newlist
 
 # This function is used to sort lists of dictionaries
 def compare_by (fieldname):

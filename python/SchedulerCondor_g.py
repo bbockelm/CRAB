@@ -1,9 +1,10 @@
 from SchedulerCondorCommon import SchedulerCondorCommon
+from crab_exceptions import *
 import common
 import Scram
 from osg_bdii import getJobManagerList
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.99 2008/04/21 16:12:21 ewv Exp $"
-__version__ = "$Revision: 1.99 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.100 2008/04/22 16:18:00 spiga Exp $"
+__version__ = "$Revision: 1.100 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -24,6 +25,11 @@ class SchedulerCondor_g(SchedulerCondorCommon):
     versionCMSSW = scram.getSWVersion()
     arch = scram.getArch()
     ceDest = getJobManagerList(seDest,versionCMSSW,arch)
+
+    if (not ceDest):
+      msg = 'No OSG sites found hosting the data or all sites blocked by CE/SE white/blacklisting'
+      print msg
+      raise CrabException(msg)
 
     if len(ceDest) == 1:
       jobParams += "globusscheduler = "+ceDest[0]+"; "

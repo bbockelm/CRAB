@@ -15,8 +15,8 @@ import CondorGLoggingInfo
 
 import pdb # FIXME: Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.4 2008/04/22 18:35:24 ewv Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.5 2008/04/22 20:26:45 ewv Exp $"
+__version__ = "$Revision: 1.5 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -185,32 +185,56 @@ class SchedulerCondorCommon(SchedulerGrid):
         return reason
 
     def wsSetupEnvironment(self):
-      """
-      Returns part of a job script which does scheduler-specific work.
-      """
-      txt = SchedulerGrid.wsSetupEnvironment(self)
-
-      if int(self.copy_data) == 1:
-        if self.SE:
-          txt += 'export SE='+self.SE+'\n'
-          txt += 'echo "SE = $SE"\n'
-        if self.SE_PATH:
-          if self.SE_PATH[-1] != '/':
-            self.SE_PATH = self.SE_PATH + '/'
-          txt += 'export SE_PATH='+self.SE_PATH+'\n'
-          txt += 'echo "SE_PATH = $SE_PATH"\n'
-
-      txt += 'export VO='+self.VO+'\n'
-      txt += 'CE=${args[3]}\n'
-      txt += 'echo "CE = $CE"\n'
-      return txt
-
-    def wsCopyInput(self):
         """
-        Copy input data from SE to WN
+        Returns part of a job script which does scheduler-specific work.
         """
-        txt = '\n'
+        txt = SchedulerGrid.wsSetupEnvironment(self)
+
+        txt += 'export VO='+self.VO+'\n'
+        txt += 'if [ $middleware == LCG ]; then\n'
+        txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
+        txt += '    echo "CloseCEs = $CloseCEs"\n'
+        txt += '    CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
+        txt += '    echo "CE = $CE"\n'
+        txt += 'elif [ $middleware == OSG ]; then \n'
+        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
+        txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
+        txt += '    else \n'
+        txt += '        echo "ERROR ==> OSG mode in setting CE name from OSG_JOB_CONTACT" \n'
+        txt += '        job_exit_code=10099\n'
+        txt += '        func_exit\n'
+        txt += '    fi \n'
+        txt += 'fi \n'
+
         return txt
+
+    #def wsSetupEnvironment(self):
+      #"""
+      #Returns part of a job script which does scheduler-specific work.
+      #"""
+      #txt = SchedulerGrid.wsSetupEnvironment(self)
+
+      #if int(self.copy_data) == 1:
+        #if self.SE:
+          #txt += 'export SE='+self.SE+'\n'
+          #txt += 'echo "SE = $SE"\n'
+        #if self.SE_PATH:
+          #if self.SE_PATH[-1] != '/':
+            #self.SE_PATH = self.SE_PATH + '/'
+          #txt += 'export SE_PATH='+self.SE_PATH+'\n'
+          #txt += 'echo "SE_PATH = $SE_PATH"\n'
+
+      #txt += 'export VO='+self.VO+'\n'
+      #txt += 'CE=${args[3]}\n'
+      #txt += 'echo "CE = $CE"\n'
+      #return txt
+
+    #def wsCopyInput(self):
+        #"""
+        #Copy input data from SE to WN
+        #"""
+        #txt = '\n'
+        #return txt
 
     def listMatch(self, nj):
         """
