@@ -256,7 +256,7 @@ class ServerCommunicator:
         miniCfg['CMSSW.datasetpath'] = self.cfg_params.get('CMSSW.datasetpath', 'None')
 
         ## Additional fields for Notification by the server
-        miniCfg['eMail'] = self.cfg_params.get('USER.eMail', None) 
+        miniCfg['eMail'] = self.cfg_params.get('USER.email', None)
         miniCfg['threshold'] = self.cfg_params.get('USER.threshold', 100)
 
         ## put here other fields if needed
