@@ -31,11 +31,11 @@ class Status(Actor):
         """
         common.logger.message("Checking the status of all jobs: please wait")
         task = common._db.getTask()
-        upTask = common.scheduler.queryEverything(task['id']) 
+        upTask = common.scheduler.queryEverything(task['id'])
         self.compute(upTask)
 
     def compute(self, up_task):
- 
+
         toPrint=[]
         taskId= str("_".join(str(up_task['name']).split('_')[:-1]))
 
@@ -44,7 +44,7 @@ class Status(Actor):
             jobStatus =  str(job.runningJob['statusScheduler'])
             dest = str(job.runningJob['destination']).split(':')[0]
             exe_exit_code = str(job.runningJob['applicationReturnCode'])
-            job_exit_code = str(job.runningJob['wrapperReturnCode']) 
+            job_exit_code = str(job.runningJob['wrapperReturnCode'])
             printline=''
             header = ''
             if dest == 'None' :  dest = ''
@@ -55,7 +55,7 @@ class Status(Actor):
 
             if jobStatus is not None:
                 self.dataToDash(job,id,taskId,dest,jobStatus)
- 
+
         header = ''
         header+= "%-8s %-18s %-40s %-13s %-15s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
 
@@ -66,10 +66,10 @@ class Status(Actor):
     def PrintReport_(self):
 
         possible_status = [
-                         'Undefined', 
+                         'Undefined',
                          'Submitted',
                          'Waiting',
-                         'Ready', 
+                         'Ready',
                          'Scheduled',
                          'Running',
                          'Done',
@@ -83,7 +83,7 @@ class Status(Actor):
         print ''
         print ">>>>>>>>> %i Total Jobs " % (common._db.nJobs())
         print ''
-        list_ID=[] 
+        list_ID=[]
         for st in possible_status:
             list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
             if len(list_ID)>0:
@@ -91,7 +91,7 @@ class Status(Actor):
                 if st == 'killed' or st == 'Aborted': print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
                 if st == 'Done'   : print "          Retrieve them with: crab -getoutput <Jobs list>"
 		if st == 'Cleared': print "          %i Jobs with EXE_EXIT_CODE: %s" % (len(common._db.queryDistJob('wrapperReturnCode')))
-                print "          List of jobs: %s" % str(common._db.queryAttrRunJob({'statusScheduler':st},'jobId'))
+                print "          List of jobs: %s" % self.readableList(common._db.queryAttrRunJob({'statusScheduler':st},'jobId'))
                 print " "
 
 #        if (len(self.countCorrupt) != 0):
@@ -106,9 +106,27 @@ class Status(Actor):
 #                total_size += len(self.countCleared[key])
 #            print ''
 
+    def readableList(self,rawList):
+      listString = str(rawList[0])
+      endRange = ''
+      for i in range(1,len(rawList)):
+        if rawList[i] == rawList[i-1]+1:
+          endRange = str(rawList[i])
+        else:
+          if endRange:
+            listString += '-' + endRange + ', ' + str(rawList[i])
+            endRange = ''
+          else:
+            listString += ', ' + str(rawList[i])
+      if endRange:
+        listString += '-' + endRange
+        endRange = ''
+
+      return listString
+
 
     def dataToDash(self,job,id,taskId,dest,jobStatus):
-        
+
 
         jid = job.runningJob['schedulerId']
         job_status_reason = str(job.runningJob['statusReason'])
@@ -153,7 +171,7 @@ class Status(Actor):
         common.apmon.sendToML(params)
 
         return
- 
+
     def joinIntArray_(self,array) :
         output = ''
         for item in array :
