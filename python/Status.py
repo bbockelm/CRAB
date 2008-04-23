@@ -114,10 +114,10 @@ class Status(Actor):
           endRange = str(rawList[i])
         else:
           if endRange:
-            listString += '-' + endRange + ', ' + str(rawList[i])
+            listString += '-' + endRange + ',' + str(rawList[i])
             endRange = ''
           else:
-            listString += ', ' + str(rawList[i])
+            listString += ',' + str(rawList[i])
       if endRange:
         listString += '-' + endRange
         endRange = ''
