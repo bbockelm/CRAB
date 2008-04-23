@@ -718,7 +718,7 @@ class TaskTrackingComponent:
         """
         stateConverting = { \
                     'R': 'Running', 'SD': 'Done', 'DA': 'Done (Failed)', \
-                    'E': 'Done', 'SR': 'Ready', \
+                    'E': 'Done', 'SR': 'Ready', 'A': 'Aborted', \
                     'SS': 'Scheduled', 'U': 'Unknown', 'SW': 'Waiting', \
                     'K': 'Killed', 'S': 'Submitted', \
                     'NotSubmitted': 'NotSubmitted', 'C': 'Created'
