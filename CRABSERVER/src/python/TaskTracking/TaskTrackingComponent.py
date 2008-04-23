@@ -1145,7 +1145,7 @@ class TaskTrackingComponent:
                                         logBuf = self.__logToBuf__(logBuf, msg)
                                         if notified != 2:
                                             self.taskEnded(taskName)
-                                            _loginfo += "\tended:\tyes"
+                                            _loginfo += "\tended:\tyes\n"
                                             notified = 2
                                             succexo = 1
                                             logBuf = self.__logToBuf__(logBuf, msg)
@@ -1153,13 +1153,13 @@ class TaskTrackingComponent:
 				        msg = TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
                                         _loginfo += "Updating task: " + str(taskName) + "\n"
                                         _loginfo += "\tcompleteness level:\t" + str(percentage) + "\n"
-                                        _loginfo += "\tstatus:\t" + status 
+                                        _loginfo += "\tstatus:\t" + status + "\n" 
                                         logBuf = self.__logToBuf__(logBuf, msg)
                                         if percentage >= thresholdLevel:
 					    if percentage == 100:
                                                 succexo = 1
                                                 self.taskEnded(taskName)
-                                                _loginfo += "\tended:\tyes"
+                                                _loginfo += "\tended:\tyes\n"
 					        notified = 2
                                                 logBuf = self.__logToBuf__(logBuf, msg)
 					    elif notified <= 0:
@@ -1179,7 +1179,7 @@ class TaskTrackingComponent:
                                 if succexo:
                                     self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
                                     _loginfo += "Updating task: " + str(taskName) + "\n"
-                                    _loginfo += "\tpublishing task success (sending e-mail to %s)"%(str(eMail))
+                                    _loginfo += "\tpublishing task success (sending e-mail to %s)"%(str(eMail)) + "\n"
                                     msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
                                     logBuf = self.__logToBuf__(logBuf, msg)
  			    except ZeroDivisionError, detail:
