@@ -17,8 +17,8 @@ import CondorGLoggingInfo
 
 import pdb # FIXME: Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.7 2008/04/24 14:58:12 ewv Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.8 2008/04/24 15:10:42 ewv Exp $"
+__version__ = "$Revision: 1.8 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -226,5 +226,3 @@ class SchedulerCondorCommon(SchedulerGrid):
         raise CrabException(msg)
 
       return ceDest
-
-
