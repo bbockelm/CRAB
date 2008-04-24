@@ -178,6 +178,7 @@ def getSoftwareAndArch(host_list, software, arch, bdii='exp-bdii.cern.ch'):
     return results_list
 
 def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
+    print "gjmi",onlyOSG,bdii
     jminfo_list = []
     host_list = []
 
@@ -230,6 +231,7 @@ def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
             jminfo_list.append(copy.deepcopy(jminfo))
 
     # Narrow the list of host to include only OSG sites if requested
+    
     if onlyOSG:
         osg_list = isOSGSite(host_list)
     else:
@@ -254,7 +256,8 @@ def compare_by (fieldname):
     return compare_two_dicts
 
 def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
-    jms = getJMInfo(selist, software, arch, onlyOSG)
+    print "gjm",onlyOSG,bdii
+    jms = getJMInfo(selist, software, arch, bdii, onlyOSG)
     # Sort by waiting_jobs field and return the jobmanager with the least waiting jobs
     jms.sort(compare_by('waiting_jobs'))
     jmlist = []
