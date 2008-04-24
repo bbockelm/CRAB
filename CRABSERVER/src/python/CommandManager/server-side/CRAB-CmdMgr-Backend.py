@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.6 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.6 2008/04/18 13:43:43 farinafa Exp $"
+__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.9 2008/04/18 14:13:39 farinafa Exp $"
 
 import os
 import time
@@ -192,6 +192,14 @@ class CRAB_AS_beckend:
               
             self.ms.publish("CRAB_Cmd_Mgr:NewTask", taskUniqName)
             self.ms.commit()
+
+            # send additional informations for TT and Notification
+            notifDict = eval(xmlCmd.getAttribute('CfgParamDict'))
+            if notifDict['eMail']:
+                msg = "%s::%s::%s"%(taskUniqName, notifDict['eMail'], notifDict['threshold'])
+                self.ms.publish("CRAB_Cmd_Mgr:MailReference", msg)
+                self.ms.commit()
+            
         except Exception, e:
             self.log.info( traceback.format_exc() )
             return 11
@@ -250,8 +258,20 @@ class CRAB_AS_beckend:
                 self.log.info("NewCommand GetOutput "+taskUniqName)
                 return 0
 
-            # TODO kill
-            # complete here            
+            # kill
+            if cmdKind == 'kill':
+                # prepare the killTask payload with the proper range
+                # old killer payload format (as adopted by the killer)
+
+                # WARNING: the field proxy is not needed for BossLite, 
+                #    as it is included in the task object
+                msg = taskUniqName + ':' + 'fake_proxy' + ':' + cmdRng 
+                self.ms.publish("KillTask", msg)
+                self.ms.commit()
+                self.log.info("NewCommand Kill "+taskUniqName)
+                return 0
+ 
+            # complete here with additional message classes           
 
         except Exception, e:
             self.log.info( traceback.format_exc() )
@@ -287,7 +307,7 @@ class CRAB_AS_beckend:
         
         # return the document
         retStatus = "".join(retStatus)
-        handledStatus = base64.encodestring(zlib.compress(retStatus))
+        handledStatus = base64.urlsafe_b64encode(zlib.compress(retStatus))
         return handledStatus #retStatus
 
 

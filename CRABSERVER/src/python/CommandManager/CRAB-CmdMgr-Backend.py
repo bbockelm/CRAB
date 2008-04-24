@@ -258,8 +258,20 @@ class CRAB_AS_beckend:
                 self.log.info("NewCommand GetOutput "+taskUniqName)
                 return 0
 
-            # TODO kill
-            # complete here            
+            # kill
+            if cmdKind == 'kill':
+                # prepare the killTask payload with the proper range
+                # old killer payload format (as adopted by the killer)
+
+                # WARNING: the field proxy is not needed for BossLite, 
+                #    as it is included in the task object
+                msg = taskUniqName + ':' + 'fake_proxy' + ':' + cmdRng 
+                self.ms.publish("KillTask", msg)
+                self.ms.commit()
+                self.log.info("NewCommand Kill "+taskUniqName)
+                return 0
+ 
+            # complete here with additional message classes           
 
         except Exception, e:
             self.log.info( traceback.format_exc() )
