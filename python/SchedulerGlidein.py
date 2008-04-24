@@ -1,8 +1,8 @@
 from SchedulerCondorCommon import SchedulerCondorCommon
 import common
 
-__revision__ = "$Id: SchedulerGlidein.py,v 1.4 2008/04/22 16:18:00 spiga Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SchedulerGlidein.py,v 1.5 2008/04/24 15:22:33 ewv Exp $"
+__version__ = "$Revision: 1.5 $"
 
 class SchedulerGlidein(SchedulerCondorCommon):
   def __init__(self):
@@ -18,7 +18,7 @@ class SchedulerGlidein(SchedulerCondorCommon):
     ceDest = self.seListToCElist(task.jobs[i-1]['dlsDestination'])
     ceString = ','.join(ceDest)
 
-    jobParams += '+DESIRED_Gatekeeper = "'+ceString+'"; '
+    jobParams += '+DESIRED_Gatekeepers = "'+ceString+'"; '
     jobParams += '+DESIRED_Archs = "INTEL,X86_64"; '
     jobParams += "Requirements = stringListMember(GLIDEIN_Gatekeeper,DESIRED_Gatekeepers) &&  stringListMember(Arch,DESIRED_Archs); "
 
