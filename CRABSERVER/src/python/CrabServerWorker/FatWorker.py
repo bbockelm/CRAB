@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.31 2008/04/21 16:12:11 farinafa Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: FatWorker.py,v 1.35 2008/04/24 10:27:28 farinafa Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import sys, os
 import time
@@ -643,7 +643,7 @@ class FatWorker(Thread):
                   'JSToolVersion': os.environ['CRAB_SERVER_VERSION'], \
                   'tool_ui': os.environ['HOSTNAME'], \
                   'scheduler': self.schedName, \
-                  'GridName': gridName, \
+                  'GridName': str(gridName), \
                   'taskType': taskType, \
                   'vo': VO, \
                   'user': self.taskName.split('_')[0], \
