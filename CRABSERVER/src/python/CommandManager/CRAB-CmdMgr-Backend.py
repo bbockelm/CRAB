@@ -295,7 +295,7 @@ class CRAB_AS_beckend:
         
         # return the document
         retStatus = "".join(retStatus)
-        handledStatus = base64.encodestring(zlib.compress(retStatus))
+        handledStatus = base64.urlsafe_b64encode(zlib.compress(retStatus))
         return handledStatus #retStatus
 
 

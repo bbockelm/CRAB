@@ -61,13 +61,15 @@ class StatusServer(Status):
 
         # align back data and print
         try:
-            reportXML = zlib.decompress( base64.decodestring(handledXML) )
+            handledXML += "="*( len(handledXML)%4 )  
+            reportXML = zlib.decompress( base64.urlsafe_b64decode(handledXML) )
         except Exception, e:
             common.logger.debug(1,"WARNING: Problem while decompressing fresh status from the server.")
+            common.logger.debug(1, traceback.format_exc() )
             return
 
         try:
-            reportList = minidom.parseString(reportXML.strip()).getElementsByTagName('Job')
+            reportList = minidom.parseString(reportXML).getElementsByTagName('Job')
             common._db.deserXmlStatus(reportList)
         except Exception, e:
             common.logger.debug(1,"WARNING: Problem while retrieving fresh status from the server.")
