@@ -626,7 +626,11 @@ class FatWorker(Thread):
         """
 
         taskId = "_".join( taskObj['name'].split('_')[:-1] )
-        gridName = self.schedName.strip()
+
+        gridName = self.cmdXML.getAttribute('Subject')
+        # rebuild flat gridName string (pruned from SSL print and delegation adds)
+        gridName = '/'+"/".join(gridName.split('/')[1:-1])
+ 
         taskType = 'analysis'
         # version
         datasetPath = self.cfg_params['CMSSW.datasetpath']
