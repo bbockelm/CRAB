@@ -3,20 +3,22 @@ from JobList import JobList
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-from osg_bdii import *
+from osg_bdii import getJobManagerList
 import time
 import common
 import popen2
 import os
 from BlackWhiteListParser import BlackWhiteListParser
+from BlackWhiteListParser import CEBlackWhiteListParser
+import Scram
 import CondorGLoggingInfo
 
 # This class was originally SchedulerCondor_g. For a history of this code, see that file.
 
 import pdb # FIXME: Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.5 2008/04/22 20:26:45 ewv Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.6 2008/04/23 18:20:01 ewv Exp $"
+__version__ = "$Revision: 1.6 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -122,7 +124,7 @@ class SchedulerCondorCommon(SchedulerGrid):
         SchedulerGrid.configure(self,cfg_params)
 
         # init BlackWhiteListParser
-        #self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
+        self.ceBlackWhiteListParser = CEBlackWhiteListParser(cfg_params)
 
         try:
           self.GLOBUS_RSL = cfg_params['CONDORG.globus_rsl']
@@ -255,3 +257,26 @@ class SchedulerCondorCommon(SchedulerGrid):
       req = ''
 
       return req,self.EDG_ce_white_list,self.EDG_ce_black_list
+
+    def seListToCElist(self,seList):
+      seDest = self.blackWhiteListParser.cleanForBlackWhiteList(seList,"list")
+      scram = Scram.Scram(None)
+
+      versionCMSSW = scram.getSWVersion()
+      arch = scram.getArch()
+      availCEs = getJobManagerList(seDest,versionCMSSW,arch)
+      uniqCEs = []
+      for ce in availCEs:
+        if ce not in uniqCEs:
+          uniqCEs.append(ce)
+
+      ceDest = self.ceBlackWhiteListParser.cleanForBlackWhiteList(uniqCEs,"list")
+
+      if (not ceDest):
+        msg = 'No OSG sites found hosting the data or all sites blocked by CE/SE white/blacklisting'
+        print msg
+        raise CrabException(msg)
+
+      return ceDest
+
+

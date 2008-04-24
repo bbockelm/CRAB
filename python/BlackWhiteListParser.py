@@ -5,6 +5,11 @@ import common
 
 import os, sys, time
 
+# A more general design would have SEBlackWhiteListParser and CEBlackWhiteListParser
+# inheriting from BlackWhiteListParser, but BlackWhiteListParser is used for SEs in many
+# places, so I just subclassed CEBlackWhiteListParser from that with a couple of changes.
+#                   -- ewv
+
 class BlackWhiteListParser:
     def __init__(self,cfg_params):
         self.configure(cfg_params)
@@ -72,16 +77,16 @@ class BlackWhiteListParser:
                     good=1
                 pass
             if good: goodSites.append(aSite)
-        
+
         if len(goodSites) == 0:
             msg = "No sites hosting the block %s after WhiteList" % fileblocks
             common.logger.debug(5,msg)
             common.logger.debug(5,"Proceeding without this block.\n")
         else:
             common.logger.debug(5,"Selected sites for block "+str(fileblocks)+" via WhiteList are "+str(goodSites)+"\n")
-       
-        return goodSites 
-    
+
+        return goodSites
+
     def cleanForBlackWhiteList(self,destinations,list=''):
         """
         clean for black/white lists using parser
@@ -90,3 +95,34 @@ class BlackWhiteListParser:
             return self.checkWhiteList(self.checkBlackList(destinations,''),'')
         else:
             return ','.join(self.checkWhiteList(self.checkBlackList(destinations,''),''))
+
+class CEBlackWhiteListParser(BlackWhiteListParser):
+    def __init__(self,cfg_params):
+        BlackWhiteListParser.__init__(self,cfg_params)
+        return
+
+    def configure(self, cfg_params):
+
+        SEBlackList = []
+        if cfg_params.has_key('EDG.ce_black_list'):
+            tmpBad = string.split(cfg_params['EDG.ce_black_list'],',')
+            for tmp in tmpBad:
+                tmp=string.strip(tmp)
+                SEBlackList.append(tmp)
+            pass
+        common.logger.debug(5,'CEBlackList: '+str(SEBlackList))
+        self.reSEBlackList=[]
+        for bad in SEBlackList:
+            self.reSEBlackList.append(re.compile( string.lower(bad) ))
+
+        SEWhiteList = []
+        if cfg_params.has_key('EDG.ce_white_list'):
+            tmpGood = string.split(cfg_params['EDG.ce_white_list'],',')
+            for tmp in tmpGood:
+                tmp=string.strip(tmp)
+                SEWhiteList.append(tmp)
+            pass
+        common.logger.debug(5,'CEWhiteList: '+str(SEWhiteList))
+        self.reSEWhiteList=[]
+        for good in SEWhiteList:
+            self.reSEWhiteList.append(re.compile( string.lower(good) ))
