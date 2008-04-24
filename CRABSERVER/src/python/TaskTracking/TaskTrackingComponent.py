@@ -1035,8 +1035,9 @@ class TaskTrackingComponent:
                                 job   = jobbe.runningJob['jobId']
                                 stato = jobbe.runningJob['status']
                                 sId   = jobbe.runningJob['schedulerId']
-                                jec   = jobbe.runningJob['wrapperReturnCode']
-                                eec   = jobbe.runningJob['applicationReturnCode']
+                                jec   = str( jobbe.runningJob['wrapperReturnCode'] )
+                                eec   = str( jobbe.runningJob['applicationReturnCode'] )
+#                                logging.info (taskName + " " + str(jec) + " " + str(eec) + " " + str(job) )
                                 site  = ""
                                 if jobbe.runningJob['destination'] != None and jobbe.runningJob['destination'] != '':
                                     site  = jobbe.runningJob['destination'].split(":")[0]
