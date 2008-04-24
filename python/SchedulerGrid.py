@@ -224,6 +224,22 @@ class SchedulerGrid(Scheduler):
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
         txt += '\n\n'
 
+        txt += 'export VO='+self.VO+'\n'
+        txt += 'if [ $middleware == LCG ]; then\n'
+        txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
+        txt += '    echo "CloseCEs = $CloseCEs"\n'
+        txt += '    CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
+        txt += '    echo "CE = $CE"\n'
+        txt += 'elif [ $middleware == OSG ]; then \n'
+        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
+        txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
+        txt += '    else \n'
+        txt += '        echo "ERROR ==> OSG mode in setting CE name from OSG_JOB_CONTACT" \n'
+        txt += '        job_exit_code=10099\n'
+        txt += '        func_exit\n'
+        txt += '    fi \n'
+        txt += 'fi \n'
+
         return txt
 
     # def wsCopyInput(self):
@@ -437,7 +453,7 @@ class SchedulerGrid(Scheduler):
 
     def tags(self):
         task=common._db.getTask()
-        tags_tmp=string.split(task['jobType'],'"') 
+        tags_tmp=string.split(task['jobType'],'"')
         tags=[str(tags_tmp[1]),str(tags_tmp[3])]
         return tags
-        
+

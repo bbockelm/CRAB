@@ -154,30 +154,6 @@ class SchedulerGlite(SchedulerGrid):
         reason = loggingInfo.decodeReason(file)
         return reason
 
-    def wsSetupEnvironment(self):
-        """
-        Returns part of a job script which does scheduler-specific work.
-        """
-        txt = SchedulerGrid.wsSetupEnvironment(self)
-
-        txt += 'export VO='+self.VO+'\n'
-        txt += 'if [ $middleware == LCG ]; then\n'
-        txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
-        txt += '    echo "CloseCEs = $CloseCEs"\n'
-        txt += '    CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
-        txt += '    echo "CE = $CE"\n'
-        txt += 'elif [ $middleware == OSG ]; then \n'
-        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
-        txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
-        txt += '    else \n'
-        txt += '        echo "ERROR ==> OSG mode in setting CE name from OSG_JOB_CONTACT" \n'
-        txt += '        job_exit_code=10099\n'
-        txt += '        func_exit\n'
-        txt += '    fi \n'
-        txt += 'fi \n'
-
-        return txt
-
     def findSites_(self, n, sites):
         itr4 =[]
         if len(sites)>0 and sites[0]=="":
