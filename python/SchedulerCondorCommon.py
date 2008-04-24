@@ -17,8 +17,8 @@ import CondorGLoggingInfo
 
 import pdb # FIXME: Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.8 2008/04/24 15:10:42 ewv Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.9 2008/04/24 15:22:33 ewv Exp $"
+__version__ = "$Revision: 1.9 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -206,13 +206,13 @@ class SchedulerCondorCommon(SchedulerGrid):
 
       return req,self.EDG_ce_white_list,self.EDG_ce_black_list
 
-    def seListToCElist(self,seList):
+    def seListToCElist(self, seList, onlyOSG=True):
       seDest = self.blackWhiteListParser.cleanForBlackWhiteList(seList,"list")
       scram = Scram.Scram(None)
 
       versionCMSSW = scram.getSWVersion()
       arch = scram.getArch()
-      availCEs = getJobManagerList(seDest,versionCMSSW,arch)
+      availCEs = getJobManagerList(seDest,versionCMSSW,arch,onlyOSG)
       uniqCEs = []
       for ce in availCEs:
         if ce not in uniqCEs:
