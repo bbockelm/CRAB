@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.37 2008/04/24 14:09:40 farinafa Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: FatWorker.py,v 1.38 2008/04/24 14:11:05 farinafa Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import sys, os
 import time
@@ -280,8 +280,9 @@ class FatWorker(Thread):
             if len(taskFileList) > 0: 
                 self.TURLpreamble = sbi.getTurl( taskFileList[0], self.proxy )
                 self.TURLpreamble = self.TURLpreamble.split(taskFileList[0])[0]
-                if self.TURLpreamble[-1] != '/':
-                    self.TURLpreamble += '/'  
+                if self.TURLpreamble:
+                    if self.TURLpreamble[-1]!='/':
+                        self.TURLpreamble += '/'  
            
         except Exception, e:
             self.log.info( traceback.format_exc() )
@@ -383,7 +384,8 @@ class FatWorker(Thread):
                 else:
                     task = self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
             except Exception, e:
-                self.log.info("FatWorker %s. Problem submitting task %s jobs %s. %s"%(self.myName, self.taskName, str(sub_jobs[ii]), str(e)))
+                self.log.info("FatWorker %s. Problem submitting task %s jobs %s."%(self.myName, self.taskName, str(sub_jobs[ii])) )
+                self.log.info( traceback.format_exc() )
                 continue
 
             # check if submitted
