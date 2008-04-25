@@ -41,7 +41,6 @@ def jm_from_se_bdii(se, bdii='exp-bdii.cern.ch'):
     r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*?)-(.*)')
     jm = []
     for l in pout:
-        print l
         m = r.match(l)
         if m:
             item = m.groups()[0]
@@ -94,6 +93,7 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
     jmlist = []
 
     query = ''' '(|'''
+    print "1 ",selist
     for se in selist:
         query = query + '''(GlueCESEBindGroupSEUniqueID=''' + se + ''')'''
     query = query + ''')' '''
@@ -108,6 +108,7 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
             if (jmlist.count(item) == 0):
                 jmlist.append(item)
 
+
     query = ''' '(&(GlueCEAccessControlBaseRule=VO:cms)(|'''
     for l in jmlist:
         query += '''(GlueCEInfoContactString=''' + l + '''-*)'''
@@ -116,7 +117,6 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
 
     pout = runldapquery(query, 'GlueCEInfoContactString', bdii)
 
-#    r = re.compile('^GlueCEInfoContactString: (.*:.*/jobmanager-.*?)-(.*)')
     r = re.compile('^GlueCEInfoContactString: (.*:.*/jobmanager-.*)')
     for l in pout:
         m = r.match(l)
@@ -157,6 +157,72 @@ def isOSGSite(host_list, bdii='exp-bdii.cern.ch'):
 
     return results_list
 
+def getSoftwareAndArch2(host_list, software, arch, bdii='exp-bdii.cern.ch'):
+    results_list = []
+
+    # Find installed CMSSW versions and Architecture
+    software = 'VO-cms-' + software
+    arch = 'VO-cms-' + arch
+
+    query = "'(|"
+
+    for h in host_list:
+        query += "(GlueCEInfoContactString=" + h + ")"
+    query += ")'"
+
+    pout = runldapquery(query, 'GlueForeignKey GlueCEInfoContactString', bdii)
+    r = re.compile('GlueForeignKey: GlueClusterUniqueID=(.*)')
+    s = re.compile('GlueCEInfoContactString: (.*)')
+
+    ClusterMap =  {}
+    ClusterUniqueID = None
+    CEInfoContact = None
+
+    for l in pout:
+        m = r.match(l)
+        if m:
+            ClusterUniqueID = m.groups()[0]
+        m = s.match(l)
+        if m:
+            CEInfoContact = m.groups()[0]
+
+        if (ClusterUniqueID and CEInfoContact):
+            ClusterMap[ClusterUniqueID] = CEInfoContact
+            ClusterUniqueID = None
+            CEInfoContact = None
+
+    query = "'(|"
+    for c in ClusterMap.keys():
+        query += "(GlueChunkKey=GlueClusterUniqueID="+c+")"
+    query += ")'"
+
+    pout = runldapquery(query, 'GlueHostApplicationSoftwareRunTimeEnvironment GlueChunkKey', bdii)
+    output = concatoutput(pout)
+
+    r = re.compile('^GlueHostApplicationSoftwareRunTimeEnvironment: (.*)')
+    s = re.compile('^GlueChunkKey: GlueClusterUniqueID=(.*)')
+    stanzas = output.split(LF + LF)
+    for stanza in stanzas:
+        software_installed = 0
+        architecture = 0
+        host = ''
+        details = stanza.split(LF)
+        for detail in details:
+            m = r.match(detail)
+            if m:
+                if (m.groups()[0] == software):
+                    software_installed = 1
+                elif (m.groups()[0] == arch):
+                    architecture = 1
+            m2 = s.match(detail)
+            if m2:
+                ClusterUniqueID = m2.groups()[0]
+                host = ClusterMap[ClusterUniqueID]
+
+        if ((software_installed == 1) and (architecture == 1)):
+            results_list.append(host)
+
+    return results_list
 
 def getSoftwareAndArch(host_list, software, arch, bdii='exp-bdii.cern.ch'):
     results_list = []
@@ -195,9 +261,11 @@ def getSoftwareAndArch(host_list, software, arch, bdii='exp-bdii.cern.ch'):
         if ((software_installed == 1) and (architecture == 1)):
             results_list.append(host)
 
+    print '2', results_list
     return results_list
 
 def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
+    print "gjmi",onlyOSG,bdii
     jminfo_list = []
     host_list = []
 
@@ -250,6 +318,8 @@ def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
 
             jminfo_list.append(copy.deepcopy(jminfo))
 
+    CElist = [x['name'] for x in jminfo_list]
+
     # Narrow the list of host to include only OSG sites if requested
 
     if onlyOSG:
@@ -258,13 +328,15 @@ def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
         osg_list = host_list
 
     # Narrow the OSG host list to include only those with the specified software and architecture
-    softarch_list = getSoftwareAndArch(osg_list, software, arch)
+#    softarch_list = getSoftwareAndArch(osg_list, software, arch)
+    softarch_list = getSoftwareAndArch2(CElist, software, arch)
 
     # remove any non-OSG sites from the list
     jminfo_newlist = []
+
     for item in jminfo_list:
         for narrowed_item in softarch_list:
-            if (item["host"] == narrowed_item):
+            if (item['name'] == narrowed_item):
                 if (jminfo_newlist.count(item) == 0):
                     jminfo_newlist.append(item)
 
@@ -277,6 +349,7 @@ def compare_by (fieldname):
     return compare_two_dicts
 
 def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
+    print "gjm",onlyOSG,bdii
     jms = getJMInfo(selist, software, arch, bdii, onlyOSG)
     # Sort by waiting_jobs field and return the jobmanager with the least waiting jobs
     jms.sort(compare_by('waiting_jobs'))
@@ -292,8 +365,11 @@ def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=T
     return jmlist
 
 if __name__ == '__main__':
-    seList =['ccsrm.in2p3.fr', 'cmssrm.fnal.gov', 'storm.ifca.es', 't2data2.t2.ucsd.edu']
-    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345", 'exp-bdii.cern.ch', False)
+    seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
+#    seList = ['ccsrm.in2p3.fr', 'storm.ifca.es']
+    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345", 'uscmsbd2.fnal.gov', False)
     for jm in jmlist:
         print jm
+#   print jm_from_se_bdii(sys.argv[1])
+
 
