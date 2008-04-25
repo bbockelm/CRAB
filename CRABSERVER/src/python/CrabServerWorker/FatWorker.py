@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.38 2008/04/24 14:11:05 farinafa Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: FatWorker.py,v 1.31 2008/04/21 16:12:11 farinafa Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import sys, os
 import time
@@ -51,7 +51,7 @@ class FatWorker(Thread):
             self.taskName = configs['taskname']
             self.resubCount = int(configs['resubCount'])
             self.wdir = configs['wdir'] 
-            self.firstSubm = configs['firstSubmit']
+            self.submissionKind = configs['submitKind']
             self.SEproto = configs['SEproto']
             self.SEurl = configs['SEurl']
             self.SEport = configs['SEport']
@@ -68,7 +68,7 @@ class FatWorker(Thread):
         self.local_ms = MessageService()
         self.local_ms.registerAs(self.myName)
         
-        self.blDBsession = None
+        self.blDBsession = BossLiteAPI('MySQL', dbConfig)
         self.blSchedSession = None
         self.schedulerConfig = {}
 
@@ -80,6 +80,14 @@ class FatWorker(Thread):
 
         self.TURLpreamble = ""
 
+        self.log.info("Worker %s initialized"%self.myName)
+
+        # fast management for ErrorHandler triggered resubmissions
+        if self.submissionKind == 'errHdlTriggered':
+            self.taskId = configs['taskId'] 
+            self.jobId = configs['jobId']
+            self.resubmissionDriver()
+ 
         # Parse the XML files
         taskDir = self.wdir + '/' + self.taskName + '_spec/'
         try:
@@ -110,7 +118,6 @@ class FatWorker(Thread):
         
     def run(self):
         ## Warm up phase
-        self.blDBsession = BossLiteAPI('MySQL', dbConfig)
         self.schedulerConfig.update( {'user_proxy' : self.proxy} )
         self.schedName = str( self.cmdXML.getAttribute('Scheduler') )
         
@@ -177,7 +184,7 @@ class FatWorker(Thread):
         newRange = None
         skipped = None
 
-        if self.firstSubm == True:
+        if self.submissionKind == 'first':
             ## create a new task object in the boss session and register its jobs to PA core
             self.local_ms.publish("CrabServerWorkerComponent:TaskArrival", self.taskName)
             self.local_ms.commit()
@@ -192,7 +199,7 @@ class FatWorker(Thread):
                 return 
             self.log.info('Worker %s submitting a new task'%self.myName)
 
-        else:
+        elif self.submissionKind == 'subsequent':
             ## retrieve the task from the boss session 
             self.local_ms.publish("CrabServerWorkerComponent:CommandArrival", self.taskName)
             self.local_ms.commit()
@@ -206,6 +213,15 @@ class FatWorker(Thread):
                 self.local_ms.commit()
                 return 
             self.log.info('Worker %s submitting a new command on a task'%self.myName)
+
+        else:
+            ## not the proper submission handler
+            self.sendResult(10, "Bad sumbission manager for %s. This kind of submission should not be handled here."%(self.taskName), \
+                    "FatWorkerError %s. Wrong submission manager for %s."%(self.myName, self.taskName) )
+            # propagate failure message
+            self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
+            self.local_ms.commit()
+            return
 
         ## Go on with the submission
         self.blSchedSession = BossLiteAPISched(self.blDBsession, self.schedulerConfig)
@@ -229,7 +245,7 @@ class FatWorker(Thread):
 
         ## Manage the empty range case due to incompatibilities
         if (newRange is not None):
-            if self.firstSubm == True:
+            if self.submissionKind == 'first':
                 self.sendResult(20, "Empty submission range for task %s"%self.taskName, \
                     "FatWorker %s. Empty range submission for task %s"%(self.myName, self.taskName) )
             else:
@@ -281,7 +297,7 @@ class FatWorker(Thread):
                 self.TURLpreamble = sbi.getTurl( taskFileList[0], self.proxy )
                 self.TURLpreamble = self.TURLpreamble.split(taskFileList[0])[0]
                 if self.TURLpreamble:
-                    if self.TURLpreamble[-1]!='/':
+                    if self.TURLpreamble[-1] != '/':
                         self.TURLpreamble += '/'  
            
         except Exception, e:
@@ -350,6 +366,7 @@ class FatWorker(Thread):
         self.SendMLpre(task)
 
         # loop and submit blocks
+        self.log.info("------------ sub_jobs[ii] %s"%sub_jobs )
         for ii in matched:
             # extract task for the range and submit
             # task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
@@ -357,22 +374,22 @@ class FatWorker(Thread):
             ##############  SplitCollection if too big DS
             sub_bulk = []
             if len(sub_jobs[ii]) > 400:
-                n_sub_bulk = int( int(len(sub_jobs[ii]) ) / 400 )
-                for n in range(n_sub_bulk):
-                    first =n*400
+                n_sub_bulk = int( int(len(sub_jobs[ii]) ) / 400 ) 
+                for n in xrange(n_sub_bulk):
+                    first = n*400
                     last = (n+1)*400
                     if last > len(sub_jobs[ii]):
                         last = len(sub_jobs[ii])
   
                     sub_bulk.append(sub_jobs[ii][first:last])
+
                 if len(sub_jobs[ii][last:-1]) < 50:
                     for pp in sub_jobs[ii][last:-1]:
                         sub_bulk[n_sub_bulk-1].append(pp)
-                else:
-                    n_sub_bulk += 1 
-                    sub_bulk.append(sub_jobs[ii][last:-1])
+
                 self.log.info("FatWorker check: the collection is too Big..splitted in %s sub_collection"%(n_sub_bulk))
-              ###############
+            ###############
+            self.log.info("------------ sub_bulk %s"%sub_bulk )
             try:
                 if len(sub_bulk)>0:
                     count = 1
@@ -384,8 +401,7 @@ class FatWorker(Thread):
                 else:
                     task = self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
             except Exception, e:
-                self.log.info("FatWorker %s. Problem submitting task %s jobs %s."%(self.myName, self.taskName, str(sub_jobs[ii])) )
-                self.log.info( traceback.format_exc() )
+                self.log.info("FatWorker %s. Problem submitting task %s jobs %s. %s"%(self.myName, self.taskName, str(sub_jobs[ii]), str(e)))
                 continue
 
             # check if submitted
@@ -394,7 +410,8 @@ class FatWorker(Thread):
                 if j.runningJob['schedulerId']:
                     self.log.debug(j.runningJob['schedulerId'])
                     submitted.append(j['jobId'])
-                    unsubmitted.remove(j['jobId'])
+                    if j['jobId'] in unsubmitted:
+                        unsubmitted.remove(j['jobId'])
                     self.blDBsession.getRunningInstance(j)
                     j.runningJob['status'] = 'S'
 
@@ -403,6 +420,30 @@ class FatWorker(Thread):
             self.SendMLpost( task, sub_jobs[ii] )
             # note: this must be done after update, otherwise jobIds will be None
         return submitted, unsubmitted 
+
+####################################
+    # Resubmission driver
+####################################
+    def resubmissionDriver(self):
+        # load the task
+        task = self.blDBsession.load(self.taskId, self.jobId)[0]
+        job = task.job[0]
+
+        # create the scheduler session extracting infos from running job
+        schedulerConfig = {'name' : job.runningJob['scheduler'], 'user_proxy' : task['user_proxy'] }
+        self.blSchedSession = BossLiteAPISched( self.blDBsession, schedulerConfig ) 
+
+        # submit once again
+        sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(task, [self.jobId])
+        self.log.info('Worker %s listmatched jobs, now submitting'%self.myName)
+
+        if len(matched) > 0:
+            submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
+        else:
+            self.log.info('Worker %s unable to submit jobs. No sites matched'%self.myName)
+
+        self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
+        return   
 
 ####################################
     # Results propagation methods
@@ -618,7 +659,6 @@ class FatWorker(Thread):
         """
         params = self.collect_MLInfo(task)
         params['jobId'] = 'TaskMeta'
-        self.log.debug('DashBoard PreSubmission Infos: %s'%str(params)) 
         self.apmon.sendToML(params)
         return
 
@@ -632,7 +672,6 @@ class FatWorker(Thread):
         gridName = self.cmdXML.getAttribute('Subject')
         # rebuild flat gridName string (pruned from SSL print and delegation adds)
         gridName = '/'+"/".join(gridName.split('/')[1:-1])
- 
         taskType = 'analysis'
         # version
         datasetPath = self.cfg_params['CMSSW.datasetpath']
@@ -653,6 +692,7 @@ class FatWorker(Thread):
                   'datasetFull': datasetPath, \
                   'application': os.environ['CRAB_SERVER_VERSION'], \
                   'exe': executable }
+
         return params
 
     def SendMLpost(self, taskFull, allList):
@@ -703,7 +743,6 @@ class FatWorker(Thread):
             for k,v in infos.iteritems():
                 params[k] = v
 
-            self.log.debug('DashBoard PostSubmission Infos: %s'%str(params))
             self.apmon.sendToML(params)
         return
 

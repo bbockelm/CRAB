@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.27 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.27 2008/04/14 15:41:19 farinafa Exp $"
+__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.28 2008/04/17 17:40:07 farinafa Exp $"
 
 import os
 import pickle
@@ -112,15 +112,12 @@ class CrabServerWorkerComponent:
         self.ms.registerAs("CrabServerWorkerComponent")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewCommand")
-
         self.ms.subscribeTo("CrabServerWorkerComponent:FatWorkerResult")
-        #
-        # TODO # Fabio
-        # It should register to ErrorHandler messages.
-        # So that it can decide whether to retry submissions
         #
         self.ms.subscribeTo("CrabServerWorkerComponent:StartDebug")
         self.ms.subscribeTo("CrabServerWorkerComponent:EndDebug")
+        # error handler signal
+        self.ms.subscribeTo("ResubmitJob") 
 
         self.dematerializeStatus()   
         while True:
@@ -147,15 +144,17 @@ class CrabServerWorkerComponent:
             self.handleCommands(payload)
         elif event == "CrabServerWorkerComponent:FatWorkerResult":
             self.handleWorkerResults(payload)
+        elif event == "ResubmitJob":
+            self.handleResubmission(payload)
         elif event == "CrabServerWorkerComponent:StartDebug":
             logging.getLogger().setLevel(logging.DEBUG)
         elif event == "CrabServerWorkerComponent:EndDebug":
             logging.getLogger().setLevel(logging.INFO)
+
         else:
             logging.info('Unknown message received %s'%event)
 
         self.materializeStatus()
-
         return 
 
 ################################
@@ -211,7 +210,7 @@ class CrabServerWorkerComponent:
         workerCfg['wdir'] = '' + self.wdir
         workerCfg['taskname'] = taskUniqName
         workerCfg['proxy'] = reason
-        workerCfg['firstSubmit'] = True 
+        workerCfg['submitKind'] = 'first' 
         workerCfg['resubCount'] = self.args['maxCmdAttempts']
 
         workerCfg['SEproto'] = self.args['Protocol']
@@ -237,7 +236,8 @@ class CrabServerWorkerComponent:
             status = 10
             reason = "Command for task %s has no more attempts. Give up."%taskUniqName
             logging.info(reason)
-            self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason) 
+            self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason)
+            # TODO put here SubmissionFailed message  
             self.ms.commit()
 
             # clean up structures if needed
@@ -272,8 +272,6 @@ class CrabServerWorkerComponent:
         if cmdType == 'kill':
             if taskUniqName in self.workerSet:
                 del self.workerSet[taskUniqName]
-            self.ms.publish("KillTask", taskUniqName)
-            self.ms.commit()
             if taskUniqName in self.taskPool:
                 del self.taskPool[taskUniqName]
             return
@@ -307,7 +305,7 @@ class CrabServerWorkerComponent:
         workerCfg['wdir'] = '' + self.wdir
         workerCfg['taskname'] = taskUniqName
         workerCfg['proxy'] = reason
-        workerCfg['firstSubmit'] = False
+        workerCfg['submitKind'] = 'subsequent'
         workerCfg['resubCount'] = resubCount
 
         workerCfg['SEproto'] = self.args['Protocol']
@@ -315,7 +313,7 @@ class CrabServerWorkerComponent:
         workerCfg['SEport'] = self.args['storagePort']
 
         workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
-        workerCfg['se_dynBList'] = []
+        workerCfg['se_dynBList'] = [] 
         workerCfg['ce_dynBList'] = []
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
         workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
@@ -324,6 +322,50 @@ class CrabServerWorkerComponent:
         self.availWorkers -= 1
         doc.unlink()
         return
+
+################################
+#   Resubmission Method for signals from ErrorHandler
+################################
+
+    def handleResubmission(self, payload):
+        taskId, jobId, siteToBan = payload.split(':')
+
+        if self.availWorkers <= 0:
+            self.ms.publish("ResubmitJob", payload, "00:00:30")
+            self.ms.commit()
+            return
+
+        # run FatWorker
+        thrName = "worker_"+str(int(self.args['maxThreads']) - self.availWorkers)+"_"+str(taskId)+"."+str(jobId)
+
+        # Implicit default param dynamicBlackList
+        self.taskPool[thrName] = ("ResubmitJob", payload)
+
+        workerCfg = {}
+        workerCfg['rb'] = '' + self.args['resourceBroker']
+        workerCfg['wdir'] = '' + self.wdir
+        workerCfg['taskname'] = str(taskId)
+        workerCfg['proxy'] = ''
+        workerCfg['submitKind'] = 'errHdlTriggered'
+        workerCfg['resubCount'] = resubCount
+
+        workerCfg['SEproto'] = self.args['Protocol']
+        workerCfg['SEurl'] = self.args['storageName']
+        workerCfg['SEport'] = self.args['storagePort']
+
+        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
+        workerCfg['se_dynBList'] = []
+        workerCfg['ce_dynBList'] = [siteToBan]
+        workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
+        workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
+
+        # Error Handler specific parameters
+        workerCfg['taskId'] = taskId
+        workerCfg['jobId'] = jobId
+
+        self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
+        self.availWorkers -= 1
+        return 
 
 ################################
 #   Ret-code handler Method
@@ -363,6 +405,7 @@ class CrabServerWorkerComponent:
 
         elif status in giveUpCodes:
             self.subStats['fail'] += 1
+            # TODO put here SubmissionFailed message to ErrorHandle 
         else: 
             logging.info('Unknown status for worker message %s'%payload)
 
