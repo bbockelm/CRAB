@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.31 2008/04/21 16:12:11 farinafa Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: FatWorker.py,v 1.40 2008/04/25 15:07:29 farinafa Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import sys, os
 import time
@@ -394,12 +394,12 @@ class FatWorker(Thread):
                 if len(sub_bulk)>0:
                     count = 1
                     for sub_list in sub_bulk: 
-                        self.blSchedSession.submit(task, sub_list,reqs_jobs[ii])
+                        self.blSchedSession.submit(task[id], sub_list,reqs_jobs[ii])
                         self.log.info("FatWorker submitted sub collection # %s "%(count))
                         count += 1
                     task =  self.blDBsession.load( task['id'], sub_jobs[ii] )[0]
                 else:
-                    task = self.blSchedSession.submit(task, sub_jobs[ii], reqs_jobs[ii])
+                    task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
             except Exception, e:
                 self.log.info("FatWorker %s. Problem submitting task %s jobs %s. %s"%(self.myName, self.taskName, str(sub_jobs[ii]), str(e)))
                 continue
