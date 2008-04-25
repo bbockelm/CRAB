@@ -94,7 +94,6 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
     jmlist = []
 
     query = ''' '(|'''
-    print "1 ",selist
     for se in selist:
         query = query + '''(GlueCESEBindGroupSEUniqueID=''' + se + ''')'''
     query = query + ''')' '''
@@ -199,7 +198,6 @@ def getSoftwareAndArch(host_list, software, arch, bdii='exp-bdii.cern.ch'):
     return results_list
 
 def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
-    print "gjmi",onlyOSG,bdii
     jminfo_list = []
     host_list = []
 
@@ -279,7 +277,6 @@ def compare_by (fieldname):
     return compare_two_dicts
 
 def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
-    print "gjm",onlyOSG,bdii
     jms = getJMInfo(selist, software, arch, bdii, onlyOSG)
     # Sort by waiting_jobs field and return the jobmanager with the least waiting jobs
     jms.sort(compare_by('waiting_jobs'))
@@ -295,11 +292,8 @@ def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=T
     return jmlist
 
 if __name__ == '__main__':
-    seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
-
-    jmlist =  getJobManagerList(seList, "CMSSW_2_0_0", "slc4_ia32_gcc345", 'exp-bdii.cern.ch', False)
+    seList =['ccsrm.in2p3.fr', 'cmssrm.fnal.gov', 'storm.ifca.es', 't2data2.t2.ucsd.edu']
+    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345", 'exp-bdii.cern.ch', False)
     for jm in jmlist:
         print jm
-#   print jm_from_se_bdii(sys.argv[1])
-
 
