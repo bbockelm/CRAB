@@ -37,14 +37,16 @@ def jm_from_se_bdii(se, bdii='exp-bdii.cern.ch'):
     se = '\'' + se + '\''
     pout = runldapquery(''' '(GlueCESEBindGroupSEUniqueID=''' + se + ''')' ''', 'GlueCESEBindGroupCEUniqueID', bdii)
 
-    r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*)-cms')
+#    r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*)-cms')
+    r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*?)-(.*)')
     jm = []
     for l in pout:
+        print l
         m = r.match(l)
         if m:
             item = m.groups()[0]
             if (jm.count(item) == 0):
-                jm.append(m.groups()[0])
+                jm.append(item)
 
     return jm
 
@@ -92,18 +94,37 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
     jmlist = []
 
     query = ''' '(|'''
+    print "1 ",selist
     for se in selist:
         query = query + '''(GlueCESEBindGroupSEUniqueID=''' + se + ''')'''
     query = query + ''')' '''
 
     pout = runldapquery(query, 'GlueCESEBindGroupCEUniqueID', bdii)
-    r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*)-cms')
+    r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*?)-(.*)')
+
     for l in pout:
         m = r.match(l)
         if m:
             item = m.groups()[0]
             if (jmlist.count(item) == 0):
-                jmlist.append(m.groups()[0])
+                jmlist.append(item)
+
+    query = ''' '(&(GlueCEAccessControlBaseRule=VO:cms)(|'''
+    for l in jmlist:
+        query += '''(GlueCEInfoContactString=''' + l + '''-*)'''
+
+    query += '''))' '''
+
+    pout = runldapquery(query, 'GlueCEInfoContactString', bdii)
+
+#    r = re.compile('^GlueCEInfoContactString: (.*:.*/jobmanager-.*?)-(.*)')
+    r = re.compile('^GlueCEInfoContactString: (.*:.*/jobmanager-.*)')
+    for l in pout:
+        m = r.match(l)
+        if m:
+            item = m.groups()[0]
+            if (jmlist.count(item) == 0):
+                jmlist.append(item)
 
     return jmlist
 
@@ -188,9 +209,10 @@ def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
     name = re.compile('^GlueCEUniqueID: (.*)')
 
     jmlist = getJMListFromSEList(selist)
+
     query = ''' '(&(objectClass=GlueCEState)(|'''
     for jm in jmlist:
-        query = query + '''(GlueCEUniqueID=''' + jm + '''-cms)'''
+        query = query + '''(GlueCEUniqueID=''' + jm + ''')'''
     query = query + '''))' '''
 
     pout = runldapquery(query, 'GlueCEUniqueID GlueCEStateStatus GlueCEInfoHostName GlueCEStateWaitingJobs GlueCEStateFreeJobSlots', bdii)
@@ -231,7 +253,7 @@ def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
             jminfo_list.append(copy.deepcopy(jminfo))
 
     # Narrow the list of host to include only OSG sites if requested
-    
+
     if onlyOSG:
         osg_list = isOSGSite(host_list)
     else:
@@ -245,7 +267,8 @@ def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
     for item in jminfo_list:
         for narrowed_item in softarch_list:
             if (item["host"] == narrowed_item):
-                jminfo_newlist.append(item)
+                if (jminfo_newlist.count(item) == 0):
+                    jminfo_newlist.append(item)
 
     return jminfo_newlist
 
@@ -261,15 +284,22 @@ def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=T
     # Sort by waiting_jobs field and return the jobmanager with the least waiting jobs
     jms.sort(compare_by('waiting_jobs'))
     jmlist = []
+    r = re.compile('^(.*:.*/jobmanager-.*?)-(.*)')
     for jm in jms:
-        jmlist.append(jm["name"][:-4])
+        fullname = jm['name']
+        m = r.match(fullname)
+        if m:
+            name = m.groups()[0]
+            if (jmlist.count(name) == 0): jmlist.append(name)
 
     return jmlist
 
 if __name__ == '__main__':
     seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
-    jmlist =  getJobManagerList(seList, "CMSSW_2_0_0", "slc4_ia32_gcc345")
+
+    jmlist =  getJobManagerList(seList, "CMSSW_2_0_0", "slc4_ia32_gcc345", 'exp-bdii.cern.ch', False)
     for jm in jmlist:
         print jm
 #   print jm_from_se_bdii(sys.argv[1])
+
 
