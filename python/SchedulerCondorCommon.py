@@ -17,8 +17,8 @@ import CondorGLoggingInfo
 
 import pdb # FIXME: Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.10 2008/04/24 18:44:04 ewv Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.11 2008/04/24 21:03:43 ewv Exp $"
+__version__ = "$Revision: 1.11 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -170,11 +170,6 @@ class SchedulerCondorCommon(SchedulerGrid):
       Returns scheduler-specific parameters
       """
       jobParams = ''
-      globusRSL = self.GLOBUS_RSL
-      if (self.EDG_clock_time):
-        globusRSL += '(maxWalltime='+self.EDG_clock_time+')'
-      if (globusRSL != ''):
-        jobParams +=  'globusrsl = ' + globusRSL + '; '
 
       return jobParams
 

@@ -1,8 +1,8 @@
 from SchedulerCondorCommon import SchedulerCondorCommon
 from crab_exceptions import *
 import common
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.101 2008/04/23 18:20:01 ewv Exp $"
-__version__ = "$Revision: 1.101 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.102 2008/04/24 14:58:12 ewv Exp $"
+__version__ = "$Revision: 1.102 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -23,6 +23,12 @@ class SchedulerCondor_g(SchedulerCondorCommon):
       jobParams += "globusscheduler = "+ceDest[0]+"; "
     else:
       jobParams += "schedulerList = "+','.join(ceDest)+"; "
+
+    globusRSL = self.GLOBUS_RSL
+    if (self.EDG_clock_time):
+      globusRSL += '(maxWalltime='+self.EDG_clock_time+')'
+    if (globusRSL != ''):
+      jobParams +=  'globusrsl = ' + globusRSL + '; '
 
     common._db.updateTask_({'jobType':jobParams})
     return jobParams # Not sure I even need to return anything
