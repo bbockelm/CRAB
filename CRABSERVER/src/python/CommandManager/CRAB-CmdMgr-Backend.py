@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.12 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.12 2008/04/24 16:55:48 farinafa Exp $"
+__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.9 2008/04/18 14:13:39 farinafa Exp $"
 
 import os
 import time
@@ -267,6 +267,11 @@ class CRAB_AS_beckend:
                 #    as it is included in the task object
                 msg = taskUniqName + ':' + 'fake_proxy' + ':' + cmdRng 
                 self.ms.publish("KillTask", msg)
+
+                # Fastkill support
+                msg = taskUniqName + "::" + str(self.cmdAttempts)
+                self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
+
                 self.ms.commit()
                 self.log.info("NewCommand Kill "+taskUniqName)
                 return 0
