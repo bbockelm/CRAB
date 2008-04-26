@@ -1,6 +1,7 @@
 from Submitter import Submitter
 import common
 from crab_util import *
+from crab_exceptions import *
 
 class Resubmitter(Submitter):
     def __init__(self, cfg_params, jobs):
@@ -36,13 +37,11 @@ class Resubmitter(Submitter):
                 common.logger.message('Job #'+`int(nj)`+' has status '+str(job.runningJob['statusScheduler'])+' must be retrieved before resubmission')
             else:
                 common.logger.message('Job #'+`nj`+' has status '+str(job.runningJob['statusScheduler'])+' must be "killed" before resubmission')
-        try: 
-            1/len(nj_list)  
-        except Exception:
+
+        if len(nj_list) == 0 :
             msg='No jobs to resubmit'
             raise CrabException(msg)
-
-        if len(nj_list)>0 :
+        else:
             common._db.updateRunJob_(nj_list, listRunField ) 
             return nj_list
         
