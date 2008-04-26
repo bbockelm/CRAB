@@ -17,17 +17,16 @@ class Checker(Actor):
             common.logger.debug(5, "No jobs to check")
             return
         
-        task=common._db.getTask()
-        Jobs=task.getJobs()
-
+        task=common._db.getTask(self.nj_list)
         allMatch={}
-        for id_job in self.nj_list:
-            dest = eval(Jobs[id_job-1]['dlsDestination'])
+        for job in task.jobs:
+            id_job = job['id'] 
+            dest = job['dlsDestination']
             if dest in allMatch.keys():
                 common.logger.message("As previous job: "+str(allMatch[dest]))
             else:
                 match = common.scheduler.listMatch(dest)
-                allMatch[Jobs[id_job-1]['dlsDestination']]= match 
+             #   allMatch[job['dlsDestination']]= match 
                 if len(match)>0:
                     common.logger.message("Found "+str(len(match))+" compatible site(s) for job "+str(id_job)+" : "+str(match))
                 else:
