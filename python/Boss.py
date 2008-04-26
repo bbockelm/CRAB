@@ -119,7 +119,7 @@ class Boss:
         """
         task = common._db.getTask(jobsList)
         try:
-            self.schedSession().submit( task,jobsList,req )
+            self.schedSession().submit( task['id'],jobsList,req )
         except SchedulerError, err :
             common.logger.message("Submit: " +str(err))
             common.logger.debug(3, "Submit: " +str(traceback.format_exc()))
