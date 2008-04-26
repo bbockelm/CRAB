@@ -2,6 +2,7 @@ from crab_exceptions import *
 from Boss import Boss
 import common
 import string, time, os
+from crab_util import *
 
 #
 #  Naming convention:
@@ -103,22 +104,10 @@ class Scheduler :
         req=str(self.sched_parameter(list[0],task))
 
         ### reduce collection size...if needed 
-        sub_bulk = []
-        if len(list) > 400:
-            n_sub_bulk = int( int(len(list) ) / 400 )
-            for n in range(n_sub_bulk):
-                first =n*400
-                last = (n+1)*400
-                sub_bulk.append(list[first:last])
-            if len(list[last:-1]) < 50:
-                for pp in list[last:-1]:
-                    sub_bulk[n_sub_bulk-1].append(pp)
-            else:
-                sub_bulk.append(list[last:-1])
-            for sub_list in sub_bulk: 
-                self.boss().submit(sub_list,req)
-        else:
-            self.boss().submit(list,req) 
+        new_list = bulkControl(self,list)
+  
+        for sub_list in new_list: 
+            self.boss().submit(task['id'],sub_list,req)
         return 
 
     def queryEverything(self,taskid):
@@ -146,6 +135,18 @@ class Scheduler :
         Parse logging info file and return main info
         """
         return
+
+    def writeJDL(self, list, task):
+        """ 
+        Materialize JDL for a list of jobs
+        """
+        req=str(self.sched_parameter(list[0],task))
+        new_list = bulkControl(self,list)
+        jdl=[]
+        for sub_list in new_list: 
+            tmp_jdl =  self.boss().writeJDL(task['id'], sub_list, req)
+            jdl.append(tmp_jdl)
+        return jdl
 
     def wsSetupEnvironment(self):
         """

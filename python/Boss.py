@@ -112,14 +112,13 @@ class Boss:
 
         return sites
 
-    def submit(self, jobsList,req):
+    def submit(self, taskId,  jobsList, req):
         """
         Submit BOSS function.
         Submit one job. nj -- job number.
         """
-        task = common._db.getTask(jobsList)
         try:
-            self.schedSession().submit( task['id'],jobsList,req )
+            self.schedSession().submit( taskId, jobsList,req )
         except SchedulerError, err :
             common.logger.message("Submit: " +str(err))
             common.logger.debug(3, "Submit: " +str(traceback.format_exc()))
@@ -179,6 +178,19 @@ class Boss:
             common.logger.debug(3, "logginginfo: " +str(traceback.format_exc()))
             raise CrabException('logginginfo: '+str(err))
         return
+
+    def writeJDL(self, taskId,jobsList,req):
+        """
+        JDL description BOSS function.
+        """
+        try:
+            jdl = self.schedSession().jobDescription( taskId,jobsList,req )
+        except SchedulerError, err :
+            common.logger.message("writeJDL: " +str(err))
+            common.logger.debug(3, "writeJDL: " +str(traceback.format_exc()))
+            raise CrabException('writeJDL: '+str(err))
+
+        return jdl
 
     def setFlag( self, list, index ):
         if len( list ) > (index + 1):

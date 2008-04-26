@@ -37,9 +37,9 @@ class Crab:
         # The order of main_actions is important !
         self.main_actions = [ '-create', '-submit' ]
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput','-get',
-                             '-resubmit' , '-cancelAndResubmit', '-testJdl',
+                             '-resubmit' , '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
-                             '-printId', '-publish' ]
+                             '-printId', '-printJdl', '-publish' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -453,7 +453,6 @@ class Crab:
 
             elif ( opt == '-submit' ):
                 ## Dealt with val == int so that -submit N means submit N jobs and not job # N
-                # modified to support server mode
                 if (self.UseServer== 1):
                     from SubmitterServer import SubmitterServer
                     self.actions[opt] = SubmitterServer(self.cfg_params, self.parseRange_(val), val)
@@ -550,54 +549,6 @@ class Crab:
                     pass
                 pass
 
-            elif ( opt == '-cancelAndResubmit' ):
-
-                if val:
-                    if val =='all':
-                        jobs = common.scheduler.list()
-                    else:
-                        jobs = self.parseRange_(val)
-                    # kill submitted jobs
-                    common.scheduler.cancel(jobs)
-                else:
-                    common.logger.message("Warning: with '-cancelAndResubmit' you _MUST_ specify a job range or 'all'")
-
-                # resubmit cancelled jobs.
-                if val:
-                    nj_list = []
-                    for nj in jobs:
-                        st = common.jobDB.status(int(nj)-1)
-                        if st in ['K','A']:
-                            nj_list.append(int(nj)-1)
-                            common.jobDB.setStatus(int(nj)-1,'C')
-                        elif st == 'Y':
-#                            common.scheduler.moveOutput(nj)
-                            nj_list.append(int(nj)-1)
-                            st = common.jobDB.setStatus(int(nj)-1,'RC')
-                        elif st in ['C','X']:
-                            common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' not yet submitted!!!')
-                            pass
-                        elif st == 'D':
-                            common.logger.message('Job #'+`int(nj)`+' has status '+crabJobStatusToString(st)+' must be retrieved before resubmission')
-                        else:
-                            common.logger.message('Job #'+`nj`+' has status '+crabJobStatusToString(st)+' must be "killed" before resubmission')
-                            pass
-                                                                                                                                                            
-                    if len(common.job_list) == 0 :
-                        common.job_list = JobList(common.jobDB.nJobs(),None)
-                        common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                        pass
-                                                                                                                                                             
-                    if len(nj_list) != 0:
-#                        common.scheduler.resubmit(nj_list)
-                        self.actions[opt] = Submitter(self.cfg_params, nj_list)
-                        pass
-                        pass
-                else:
-                    common.logger.message("WARNING: _all_ job specified in the rage will be cancelled and resubmitted!!!")
-                    pass
-                common.jobDB.save()
-                pass
             elif ( opt in ['-testJdl','-listMatch', '-match']):
                 jobs = self.parseRange_(val)
 
@@ -634,7 +585,19 @@ class Crab:
                 else:
                     from Cleaner import Cleaner
                     self.actions[opt] = Cleaner(self.cfg_params)
-               
+
+            elif (opt == '-printJdl'):            
+                 """
+                 Materialize JDL 
+                 """  
+                 if val =='all' or val == None or val == '':
+                     jobs = common._db.nJobs("list")
+                 else:
+                     jobs = self.parseRange_(val)
+                 pass
+                 from JdlWriter import JdlWriter
+                 self.actions[opt] = JdlWriter(self.cfg_params, jobs)
+
             elif ( opt == '-publish' ):
                 from Publisher import Publisher
                 self.actions[opt] = Publisher(self.cfg_params)

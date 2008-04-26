@@ -174,16 +174,6 @@ def crabJobStatusToString(crab_status):
            'O?':'Done',
            'R?':'Running'
            }
-#    if   crab_status == 'C': status = 'Created'
-#    elif crab_status == 'D': status = 'Done'
-#    elif crab_status == 'R': status = 'Submitted'#Should be running? ds  
-#    elif crab_status == 'S': status = 'Submitted'
-#    elif crab_status == 'K': status = 'Killed'
-#    elif crab_status == 'X': status = 'None'
-#    elif crab_status == 'Y': status = 'Output retrieved'
-#    elif crab_status == 'A': status = 'Aborted'
-#    elif crab_status == 'RC': status = 'ReCreated'
-#    else: status = '???'
     return status[crab_status]
 
 ###########################################################################
@@ -424,6 +414,28 @@ def CliServerParams(self):
 	    msg = msg + 'Please specify a server in the crab cfg file' 
 	    raise CrabException(msg)
         return
+
+def bulkControl(self,list): 
+        """
+        Check the BULK size and  reduce collection ...if needed 
+        """
+        max_size = 400
+        sub_bulk = []
+        if len(list) > int(max_size):
+            n_sub_bulk = int( int(len(list) ) / int(max_size) )
+            for n in range(n_sub_bulk):
+                first =n*int(max_size)
+                last = (n+1)*int(max_size)
+                sub_bulk.append(list[first:last])
+            if len(list[last:-1]) < 50:
+                for pp in list[last:-1]:
+                    sub_bulk[n_sub_bulk-1].append(pp)
+            else:
+                sub_bulk.append(list[last:-1])
+        else:
+            sub_bulk.append(list)
+
+        return sub_bulk
 
 ####################################
 if __name__ == '__main__':
