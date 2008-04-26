@@ -168,8 +168,7 @@ class SchedulerGlite(SchedulerGrid):
             #####
         return itr4
 
-
-
-
-    def tOut(self, list):
-        return 180
+    def userName(self):
+        """ return the user name """
+        tmp=runCommand("voms-proxy-info -identity")
+        return tmp.strip()

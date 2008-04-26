@@ -77,7 +77,6 @@ class Scheduler :
 
     def loggingInfo(self,list_id,outfile ):
         """ return logging info about job nj """
-        self.checkProxy()
         return self.boss().LoggingInfo(list_id,outfile)
 
     def tags(self):
@@ -126,14 +125,12 @@ class Scheduler :
         """
         Query needed info of all jobs with specified boss taskid
         """
-        self.checkProxy()
         return self.boss().queryEverything(taskid)
 
     def getOutput(self, taskId, jobRange, outdir):
         """
         Get output for a finished job with id.
         """
-        self.checkProxy()
         self.boss().getOutput(taskId, jobRange, outdir)
         return
 

@@ -435,7 +435,6 @@ class SchedulerGrid(Scheduler):
 
     def userName(self):
         """ return the user name """
-        self.checkProxy()
         tmp=runCommand("voms-proxy-info -identity")
         return tmp.strip()
 
