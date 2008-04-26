@@ -24,11 +24,13 @@ The most useful general options (use '-h' to get complete help):
   -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs
   -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance
   -kill [range]       -- kill submitted jobs
+  -resubmit [range]   -- resubmit killed/aborted/retrieved jobs
   -clean              -- gracefully cleanup the directory of a task
   -testJdl [range]    -- check if resources exist which are compatible with jdl
   -list [range]       -- show technical job details
   -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
   -printId [range]    -- print the job SID or Task Unique ID while using the server
+  -printJdl [range]   -- provide files with a complete Job Description (JDL) 
   -continue|-c [dir]  -- Apply command to task stored in [dir].
   -h [format]         -- Detailed help. Formats: man (default), tex, html, txt
   -cfg fname          -- Configuration file name. Default is 'crab.cfg'
@@ -246,6 +248,10 @@ Check if the job can find compatible resources. It's equivalent of doing I<edg-j
 =item B<-printId [range]>
 
 Just print the job identifier, which can be the SID (Grid job identifier) of the job(s) or the taskId if you are using CRAB with the server or local scheduler Id.
+
+=item B<-printJdl [range]>
+
+Collect the full Job Description in a file located under share directory. The file base name is File- .  
 
 =item B<-postMortem [range]>
 
