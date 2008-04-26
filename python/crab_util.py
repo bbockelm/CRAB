@@ -9,6 +9,7 @@ import ConfigParser, re, popen2, select, fcntl
 
 import common
 from crab_exceptions import CrabException
+from ServerConfig import *
 
 ###########################################################################
 def parseOptions(argv):
@@ -403,19 +404,26 @@ def displayReport(self, header, lines, xml=''):
         f.close()
         pass
 
-def getSubject(self):
-	"""
-         get subject from proxy 
-        """ 
-	x509 = None # TODO From task object alreadyFrom task object already  ? common._db.queryTask('proxy')
-	if 'X509_USER_PROXY' in os.environ:
-	    x509 = os.environ['X509_USER_PROXY']
-	else:
-	    status, x509 = commands.getstatusoutput('ls /tmp/x509up_u`id -u`')
-	    x509 = x509.strip()
+def CliServerParams(self):
+        """
+        Init client-server interactions 
+        """
+        self.srvCfg = {}
+	try:
+            self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
 
-        return x509 
+            self.server_name = str(self.srvCfg['serverName']) 
+            self.server_port = int(self.srvCfg['serverPort'])
 
+            self.storage_name = str(self.srvCfg['storageName'])
+            self.storage_path = str(self.srvCfg['storagePath'])
+            self.storage_proto = str(self.srvCfg['storageProtocol'])
+            self.storage_port = str(self.srvCfg['storagePort'])
+	except KeyError:
+	    msg = 'No server selected or port specified.' 
+	    msg = msg + 'Please specify a server in the crab cfg file' 
+	    raise CrabException(msg)
+        return
 
 ####################################
 if __name__ == '__main__':

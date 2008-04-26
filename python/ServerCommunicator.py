@@ -27,6 +27,10 @@ class ServerCommunicator:
         """
         Open the communication with an Analysis Server by passing the server URL and the port
         """
+       
+        self.dontMoveProxy = False
+        if string.lower(cfg_params.get("CRAB.scheduler")) in ['lsf','caf']:
+            self.dontMoveProxy = True
   
         self.asSession = C_AS_Session(serverName, serverPort)
         self.cfg_params = cfg_params
@@ -35,9 +39,8 @@ class ServerCommunicator:
 
         self.crab_task_name = common.work_space.topDir().split('/')[-2] # nice task name "crab_0_..."
 
-        # get the user subject from the proxy
         x509 = proxyPath
-        if x509 is None: 
+        if self.dontMoveProxy == False:  
             if 'X509_USER_PROXY' in os.environ:
                 x509 = os.environ['X509_USER_PROXY']
             else:
@@ -46,12 +49,14 @@ class ServerCommunicator:
                     raise CrabException("Error while locating the user proxy file")
                     return
 
-        exitCode, self.userSubj = commands.getstatusoutput('openssl x509 -in %s -subject -noout'%x509)
-        if exitCode != 0:
-            raise CrabException("Error while getting the subject from the user proxy")  
-            return
-
-        self.userSubj = str(self.userSubj).strip()
+            exitCode, self.userSubj = commands.getstatusoutput('openssl x509 -in %s -subject -noout'%x509)
+            if exitCode != 0:
+                raise CrabException("Error while getting the subject from the user proxy")  
+                return
+            self.userSubj = str(self.userSubj).strip()
+        else:
+            x509 = '' 
+            self.userSubj = ''
         pass
 
 ###################################################

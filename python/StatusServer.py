@@ -8,7 +8,6 @@ import traceback
 from xml.dom import minidom
 from ServerCommunicator import ServerCommunicator
 from Status import Status
-from ServerConfig import *
 
 import zlib
 import base64
@@ -16,24 +15,15 @@ import base64
 class StatusServer(Status):
 
     def __init__(self, *args):
-        Status.__init__(self, *args) 
-        self.server_name = None
-        self.server_port = None
-        self.srvCfg = {}
-        try:
-            self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
 
-            self.server_name = str(self.srvCfg['serverName'])
-            self.server_port = int(self.srvCfg['serverPort'])
-        except KeyError:
-            msg = 'No server selected or port specified.'
-            msg = msg + 'Please specify a server in the crab cfg file'
-            raise CrabException(msg)
+        Status.__init__(self, *args) 
  
+        # init client server params...
+        CliServerParams(self)       
+
         return
 
     def query(self):
-        common.scheduler.checkProxy()
 
         self.resynchClientSide()
         
@@ -46,16 +36,9 @@ class StatusServer(Status):
         aling back data on client
         """ 
         task = common._db.getTask()
-        # proxy management
-        self.proxy = None # common._db.queryTask('proxy')
-        if 'X509_USER_PROXY' in os.environ:
-            self.proxy = os.environ['X509_USER_PROXY']
-        else:
-            status, self.proxy = commands.getstatusoutput('ls /tmp/x509up_u`id -u`')
-            self.proxy = proxy.strip()
 
         # communicator allocation
-        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxy)
+        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
         handledXML = csCommunicator.getStatus( str(task['name']) )
         del csCommunicator
 

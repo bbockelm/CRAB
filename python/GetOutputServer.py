@@ -7,7 +7,6 @@ import time
 import traceback
 from xml.dom import minidom
 from ServerCommunicator import ServerCommunicator
-from ServerConfig import *
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
@@ -18,28 +17,8 @@ class GetOutputServer( GetOutput, StatusServer ):
  
         GetOutput.__init__(self,*args)
 
-        self.server_name = None
-        self.server_port = None
-
-        self.storage_name = None
-        self.storage_path = None
-        self.storage_proto = None
-        self.storage_port = None
-
-        self.srvCfg = {}
-
-        try:
-            self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
-            self.server_name = str(self.srvCfg['serverName'])
-            self.server_port = int(self.srvCfg['serverPort'])
-            self.storage_name = str(self.srvCfg['storageName'])
-            self.storage_path = str(self.srvCfg['storagePath'])
-            self.storage_proto = str(self.srvCfg['storageProtocol'])
-            self.storage_port = str(self.srvCfg['storagePort'])
-        except KeyError:
-            msg = 'No server selected or port specified.'
-            msg = msg + 'Please specify a server in the crab cfg file'
-            raise CrabException(msg)
+        # init client server params...
+        CliServerParams(self)       
 
         if self.storage_path[0]!='/':
             self.storage_path = '/'+self.storage_path
@@ -66,10 +45,6 @@ class GetOutputServer( GetOutput, StatusServer ):
         """
         Real get output from server storage
         """
-        common.scheduler.checkProxy()
-       
-        self.proxyPath = getSubject(self)
-
 
         self.taskuuid = str(common._db.queryTask('name'))
         common.logger.debug(3, "Task name: " + self.taskuuid)
@@ -112,7 +87,7 @@ class GetOutputServer( GetOutput, StatusServer ):
             dest = destFiles[i]
             common.logger.debug(1, "retrieving "+ str(source) +" to "+ str(dest) )
             try:
-                sbi.copy( source, dest, self.proxyPath)
+                sbi.copy( source, dest)
             except Exception, ex:
                 msg = "WARNING: Unable to retrieve output file %s \n"%osbFiles[i] 
                 msg += str(ex)
@@ -122,7 +97,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         # notify to the server that output have been retrieved successfully. proxy from StatusServer
         if len(filesToRetrieve) > 0:
             common.logger.debug(5, "List of retrieved files notified to server: %s"%str(filesToRetrieve) ) 
-            csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxyPath)
+            csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
             csCommunicator.outputRetrieved(self.taskuuid, filesToRetrieve)
 
         return

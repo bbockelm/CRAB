@@ -9,7 +9,6 @@ import zlib
 
 from Submitter import Submitter
 from ServerCommunicator import ServerCommunicator 
-from ServerConfig import *
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
@@ -19,24 +18,14 @@ class SubmitterServer( Submitter ):
 	self.srvCfg = {}
         self.cfg_params = cfg_params
         self.submitRange = []
-       
+        self.dontMoveProxy = False
+        if string.lower(self.cfg_params.get("CRAB.scheduler")) in ['lsf','caf']:
+            self.dontMoveProxy = True
+
         Submitter.__init__(self, cfg_params, parsed_range, val)      
-
-        # init client-server interactions 
-	try:
-            self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
-
-            self.server_name = str(self.srvCfg['serverName']) 
-            self.server_port = int(self.srvCfg['serverPort'])
-
-            self.storage_name = str(self.srvCfg['storageName'])
-            self.storage_path = str(self.srvCfg['storagePath'])
-            self.storage_proto = str(self.srvCfg['storageProtocol'])
-            self.storage_port = str(self.srvCfg['storagePort'])
-	except KeyError:
-	    msg = 'No server selected or port specified.' 
-	    msg = msg + 'Please specify a server in the crab cfg file' 
-	    raise CrabException(msg)
+    
+        # init client server params...
+        CliServerParams(self)       
 
         # path fix
         if self.storage_path[0]!='/':
@@ -58,7 +47,7 @@ class SubmitterServer( Submitter ):
 
             self.taskuuid = str(common._db.queryTask('name'))
             self.remotedir = os.path.join(self.storage_path, self.taskuuid)
-            self.proxyPath = self.moveProxy()
+            self.moveProxy(self.dontMoveProxy)
             
             # check if it is the first submission  
             n_createdJob = len(common._db.queryAttrRunJob({'status':'C'},'status'))
@@ -100,10 +89,10 @@ class SubmitterServer( Submitter ):
         ### it should not be there... To move into SE API. DS
 
         # create remote dir for gsiftp 
-        if self.storage_proto == 'gridftp':
+        if self.storage_proto in ['gridftp','rfio']:
             try:
                 action = SBinterface( seEl )  
-                action.createDir( self.remotedir, self.proxyPath)
+                action.createDir( self.remotedir)
             except Exception, ex:
                 common.logger.debug(1, str(ex))
                 msg = "ERROR : Unable to create project destination on the Storage Element \n"
@@ -117,9 +106,8 @@ class SubmitterServer( Submitter ):
             source = os.path.abspath(filetocopy) 
             dest = os.path.join(self.remotedir, os.path.basename(filetocopy))
             common.logger.debug(1, "Sending "+ os.path.basename(filetocopy) +" to "+ self.storage_name)
-
             try:
-                sbi.copy( source, dest, self.proxyPath)
+                sbi.copy( source, dest)
             except Exception, ex:
                 common.logger.debug(1, str(ex))
                 msg = "ERROR : Unable to ship the project to the server \n"
@@ -131,38 +119,41 @@ class SubmitterServer( Submitter ):
         common.logger.debug(3,msg)
         return
 
-    def moveProxy(self):
-	WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
+    def moveProxy(self,dontMove):
 
-        x509 = getSubject(self)
-	## register proxy ##
-	common.scheduler.checkProxy()
-	try:
-	    flag = " --myproxy"
-	    common.logger.message("Registering a valid proxy to the server\n")
-	    cmd = 'asap-user-register --server '+str(self.server_name) + flag
-	    attempt = 3
-	    while attempt:
-		common.logger.debug(3, " executing:\n    " + cmd)
-		status, outp = commands.getstatusoutput(cmd)
-		common.logger.debug(3, outp)
-		if status == 0:
-		    common.logger.message("Proxy successfully delegated to the server.")
-		    break
-		else:
-		    attempt = attempt - 1
-		if (attempt == 0):
-		    raise CrabException("ASAP ERROR: Unable to ship a valid proxy to the server "+str(self.server_name)+"\n")
-	except:
-	    msg = "ASAP ERROR: Unable to ship a valid proxy to the server \n"
-	    msg +="Project "+str(self.taskuuid)+" not Submitted \n"
-	    raise CrabException(msg)
-            return None
-	return x509
+	WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
+        if dontMove==True:
+            msg = 'Submittig to local resources...proxy not needed.'
+            common.logger.debug(5, msg)
+        else:
+            ## register proxy ##
+            common.scheduler.checkProxy()
+            try:
+                flag = " --myproxy"
+                common.logger.message("Registering a valid proxy to the server\n")
+                cmd = 'asap-user-register --server '+str(self.server_name) + flag
+                attempt = 3
+                while attempt:
+               	    common.logger.debug(3, " executing:\n    " + cmd)
+                    status, outp = commands.getstatusoutput(cmd)
+                    common.logger.debug(3, outp)
+                    if status == 0:
+                        common.logger.message("Proxy successfully delegated to the server.")
+                	break
+                    else:
+                        attempt = attempt - 1
+                    if (attempt == 0):
+                        raise CrabException("ASAP ERROR: Unable to ship a valid proxy to the server "+str(self.server_name)+"\n")
+            except:
+                msg = "ASAP ERROR: Unable to ship a valid proxy to the server \n"
+                msg +="Project "+str(self.taskuuid)+" not Submitted \n"
+                raise CrabException(msg)
+                return None
+	return 
 
     def performSubmission(self, firstSubmission=True):
         # create the communication session with the server frontend
-        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params, self.proxyPath)
+        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
         taskXML = ''
         subOutcome = 0
 
