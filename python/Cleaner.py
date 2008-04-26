@@ -19,8 +19,8 @@ class Cleaner(Actor):
 
         self.status.compute() # compute the status
 
-        countSub=common.bossSession.loadJobsByRunningAttr( { 'status' : 'S' })
-        countDone=common.bossSession.loadJobsByRunningAttr( { 'status' : 'SD' })
+        countSub  = len(common._db.queryAttrRunJob({'status':'S'},'status'))
+        countDone = len(common._db.queryAttrRunJob({'status':'SD'},'status'))
 
         if countSub or countDone:
             msg = "There are still "
