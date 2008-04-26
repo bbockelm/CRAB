@@ -465,7 +465,6 @@ class Crab:
                     if len(common.job_list) == 0 :
                         common.job_list = JobList(common._db.nJobs(), ## New BL--DS
                                                   None)
-           #             common.job_list.setJDLNames(self.job_type_name+'.jdl')
                         pass
                     pass
 
@@ -535,19 +534,16 @@ class Crab:
             elif ( opt == '-resubmit' ):
                 if val:
                     if val=='all':
-                        jobs = common.scheduler.list()
+                        jobs = common._db.nJobs('list')
                     else:
                         jobs = self.parseRange_(val)
 
-                    # Instantiate Submitter object
-                    from Resubmitter import Resubmitter
-                    self.actions[opt] = Resubmitter(self.cfg_params, jobs, self.UseServer)
-
-                    # if len(common.job_list) == 0 :
-                    #      common.job_list = JobList(common.jobDB.nJobs(),None)
-                    #      common.job_list.setJDLNames(self.job_type_name+'.jdl')
-                    #      pass
-                    pass
+                    if (self.UseServer== 1):
+                        from ResubmitterServer import ResubmitterServer
+                        self.actions[opt] = ResubmitterServer(self.cfg_params, jobs)
+                    else:
+                        from Resubmitter import Resubmitter
+                        self.actions[opt] = Resubmitter(self.cfg_params, jobs)
                 else:
                     common.logger.message("Warning: with '-resubmit' you _MUST_ specify a job range or 'all'")
                     common.logger.message("WARNING: _all_ job specified in the range will be resubmitted!!!")
