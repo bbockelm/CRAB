@@ -423,6 +423,9 @@ class CrabServerWorkerComponent:
 ################################
     
     def updateProxyMap(self):
+        if self.args['allow_anonymous']!=0:
+            return
+ 
         pfList = []
         proxyDir = self.args['ProxiesDir']
         
