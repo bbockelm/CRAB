@@ -56,7 +56,7 @@ class ServerCommunicator:
             self.userSubj = str(self.userSubj).strip()
         else:
             x509 = '' 
-            self.userSubj = ''
+            self.userSubj = 'anonymous'
         pass
 
 ###################################################
