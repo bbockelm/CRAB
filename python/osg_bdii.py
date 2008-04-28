@@ -93,7 +93,6 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
     jmlist = []
 
     query = ''' '(|'''
-    print "1 ",selist
     for se in selist:
         query = query + '''(GlueCESEBindGroupSEUniqueID=''' + se + ''')'''
     query = query + ''')' '''
@@ -265,7 +264,6 @@ def getSoftwareAndArch(host_list, software, arch, bdii='exp-bdii.cern.ch'):
     return results_list
 
 def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
-    print "gjmi",onlyOSG,bdii
     jminfo_list = []
     host_list = []
 
@@ -349,7 +347,6 @@ def compare_by (fieldname):
     return compare_two_dicts
 
 def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
-    print "gjm",onlyOSG,bdii
     jms = getJMInfo(selist, software, arch, bdii, onlyOSG)
     # Sort by waiting_jobs field and return the jobmanager with the least waiting jobs
     jms.sort(compare_by('waiting_jobs'))
