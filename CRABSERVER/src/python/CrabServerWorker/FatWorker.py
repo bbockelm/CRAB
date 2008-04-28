@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.48 2008/04/28 17:33:58 farinafa Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: FatWorker.py,v 1.49 2008/04/28 17:38:46 farinafa Exp $"
+__version__ = "$Revision: 1.49 $"
 
 import sys, os
 import time
@@ -125,13 +125,13 @@ class FatWorker(Thread):
         self.schedulerConfig.update( {'user_proxy' : self.proxy} )
         self.schedName = str( self.cmdXML.getAttribute('Scheduler') )
         
-        if self.schedName in ['glite', 'glitecoll']:
+        if self.schedName.lower() in ['glite', 'glitecoll']:
             self.schedulerConfig['name'] = 'SchedulerGLiteAPI' 
             self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
             if self.wmsEndpoint:
                 self.schedulerConfig['service'] = self.wmsEndpoint
 
-        elif self.schedName == 'condor_g':
+        elif self.schedName.lower() == 'condor_g':
             self.schedulerConfig['name'] = 'SchedulerCondorGAPI' 
             self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
             if self.wmsEndpoint:
@@ -140,7 +140,7 @@ class FatWorker(Thread):
         elif self.schedName == 'arc':
             pass
 
-        elif self.schedName in ['lsf','caf']:
+        elif self.schedName.lower() in ['lsf','caf']:
             self.schedulerConfig['name'] = 'SchedulerLsf' 
 
         # Prepare filter lists for matching sites
@@ -618,7 +618,7 @@ class FatWorker(Thread):
                 requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
             elif self.schedName.upper()== "CONDOR_G":
                 requirements.append( self.sched_parameter_Condor() )
-            elif self.schedName.upper()== "LSF":
+            elif self.schedName.upper() in [ "LSF", "CAF"]:
                 requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
                 tags = ''
             else:
