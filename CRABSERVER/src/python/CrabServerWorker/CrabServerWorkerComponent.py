@@ -330,7 +330,7 @@ class CrabServerWorkerComponent:
 ################################
 
     def handleResubmission(self, payload):
-        taskId, jobId, siteToBan = payload.split(':')
+        taskId, jobId, siteToBan = payload.split('::')
 
         if self.availWorkers <= 0:
             self.ms.publish("ResubmitJob", payload, "00:00:30")
@@ -349,7 +349,7 @@ class CrabServerWorkerComponent:
         workerCfg['taskname'] = str(taskId)
         workerCfg['proxy'] = ''
         workerCfg['submitKind'] = 'errHdlTriggered'
-        workerCfg['resubCount'] = resubCount
+        workerCfg['resubCount'] = 2
 
         workerCfg['SEproto'] = self.args['Protocol']
         workerCfg['SEurl'] = self.args['storageName']

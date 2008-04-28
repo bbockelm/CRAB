@@ -430,7 +430,7 @@ class FatWorker(Thread):
     def resubmissionDriver(self):
         # load the task
         task = self.blDBsession.load(self.taskId, self.jobId)[0]
-        job = task.job[0]
+        job = task.jobs[0]
 
         # create the scheduler session extracting infos from running job
         schedulerConfig = {'name' : job.runningJob['scheduler'], 'user_proxy' : task['user_proxy'] }
