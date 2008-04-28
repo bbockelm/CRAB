@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.12 2008/04/10 16:30:25 mcinquil Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.14 2008/04/18 13:02:03 mcinquil Exp $"
+__version__ = "$Revision: 1.14 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -421,9 +421,9 @@ class TaskLifeManagerComponent:
         jobList = eval(strJobs)
         for idjob in jobList:
             baseToDelete = [ \
-                             "out_files_"+str(idjob)+".tgz", \
-                             "crab_fjr_"+str(idjob)+".xml" \
-                           ]
+                             "out_files_"+str(idjob)+".tgz"]#, \
+                           #  "crab_fjr_"+str(idjob)+".xml" \
+                           #]
             for file in baseToDelete:
                 try:
                     self.SeSbI.delete( join(taskPath, file), proxy )
