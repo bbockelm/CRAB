@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.40 2008/04/25 15:07:29 farinafa Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: FatWorker.py,v 1.41 2008/04/25 15:50:40 spiga Exp $"
+__version__ = "$Revision: 1.41 $"
 
 import sys, os
 import time
@@ -64,6 +64,9 @@ class FatWorker(Thread):
             self.log.info('Missing parameters in the Worker configuration')
             self.log.info( traceback.format_exc() ) 
         
+
+        if self.proxy == 'anonymus' : self.proxy == None
+
         # derived attributes
         self.local_ms = MessageService()
         self.local_ms.registerAs(self.myName)
@@ -136,8 +139,8 @@ class FatWorker(Thread):
         elif self.schedName == 'arc':
             pass
 
-        elif self.schedName == 'lsf':
-            pass
+        elif self.schedName in ['lsf','caf']:
+            self.schedulerConfig['name'] = 'SchedulerLsf' 
 
         # Prepare filter lists for matching sites
         if 'glite' in self.schedName:
@@ -586,17 +589,18 @@ class FatWorker(Thread):
         sel = 0
         matched = []
         unmatched = []
-        tags_tmp = str(taskObj['jobType']).split('"')
-        tags = [str(tags_tmp[1]),str(tags_tmp[3])]
 
         for id_job in jobs_to_match:
             # Get JDL requirements
             if "GLITE" in self.schedName.upper(): 
+                tags_tmp = str(taskObj['jobType']).split('"')
+                tags = [str(tags_tmp[1]),str(tags_tmp[3])]
                 requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
             elif self.schedName.upper()== "CONDOR_G":
                 requirements.append( self.sched_parameter_Condor() )
             elif self.schedName.upper()== "LSF":
-                requirements.append( self.sched_parameter_Lsf() )
+                requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
+                tags = ''
             else:
                 continue
             
@@ -753,7 +757,20 @@ class FatWorker(Thread):
     def sched_parameter_Condor(self):
         return
 
-    def sched_parameter_Lsf(self):
+    def sched_parameter_Lsf(self, i, task):
+
+        sched_param= ''
+        resDir= "/".join((task['globalSandbox'].split(',')[0]).split('/')[:-1])  
+        self.queue =  'cmscaf' ### ToBeAddede in cfg.xml file
+        self.res = None ### ToBeAddede in cfg.xml file
+        if (self.queue):
+            sched_param += '-q '+self.queue +' '
+            if (self.res): sched_param += ' -R '+self.res +' '
+        pass
+
+       # sched_param+='-cwd '+resDir + ' '
+        return sched_param
+
         return
 
     def sched_parameter_Glite(self, i, task):
