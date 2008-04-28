@@ -26,6 +26,11 @@ if __name__ == '__main__':
     except:
         exeExitCode=''
     pass
+
+    if (wrapperExitCode == '0') and (exeExitCode == '0'):
+       status = 'Success'
+    else:
+       status = 'Failed'
                                     
     if not os.path.exists(reportFileName):
         fwjr = FwkJobReport()
@@ -56,4 +61,9 @@ if __name__ == '__main__':
             jobReport.addError(wrapperExitCode, "WrapperExitCode")
             if (exeExitCode != ""):
                 jobReport.addError(exeExitCode, "ExeExitCode")
-            jobReport.write(reportFileName) 
+            jobReport.write(reportFileName)
+
+    jobReport = readJobReport(reportFileName)[0]
+    jobReport.status = status
+    jobReport.write(reportFileName)
+
