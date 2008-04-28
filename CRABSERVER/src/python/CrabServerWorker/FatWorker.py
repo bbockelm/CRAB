@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.47 2008/04/28 17:14:30 farinafa Exp $"
-__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: FatWorker.py,v 1.48 2008/04/28 17:33:58 farinafa Exp $"
+__version__ = "$Revision: 1.48 $"
 
 import sys, os
 import time
@@ -313,8 +313,8 @@ class FatWorker(Thread):
                 try:
                     # do not submit already running or scheduled jobs
                     if j.runningJob['status'] in doNotSubmitStatusMask:
-                        self.log.info("FatWorker %s.Task %s job %s status %s. Won't be submitted"%(self.myName, \
-                            self.taskName, j['name'], j.runningJob['status']) )
+                        # self.log.info("FatWorker %s.Task %s job %s status %s. Won't be submitted"%(self.myName, \
+                        #    self.taskName, j['name'], j.runningJob['status']) )
                         newRange.remove(j['jobId'])
                         continue
 
