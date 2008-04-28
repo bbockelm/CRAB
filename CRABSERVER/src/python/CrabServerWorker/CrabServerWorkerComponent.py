@@ -222,7 +222,7 @@ class CrabServerWorkerComponent:
         workerCfg['ce_dynBList'] = []
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
         workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
-        workerCfg['allow_anonymous'] = self.args['allow_anonymous']
+        workerCfg['allow_anonymous'] = int(self.args['allow_anonymous'])
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         self.availWorkers -= 1
@@ -318,7 +318,7 @@ class CrabServerWorkerComponent:
         workerCfg['ce_dynBList'] = []
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
         workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
-        workerCfg['allow_anonymous'] = self.args['allow_anonymous']
+        workerCfg['allow_anonymous'] = int(self.args['allow_anonymous'])
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)        
         self.availWorkers -= 1
@@ -423,7 +423,7 @@ class CrabServerWorkerComponent:
 ################################
     
     def updateProxyMap(self):
-        if self.args['allow_anonymous']!=0:
+        if int(self.args['allow_anonymous']) !=0 :
             return
  
         pfList = []
@@ -464,7 +464,7 @@ class CrabServerWorkerComponent:
             logging.info(reason)
             return 4, reason
 
-        if self.args['allow_anonymous']!=0: # and (subj=='anonymous'):
+        if int(self.args['allow_anonymous']) != 0: # and (subj=='anonymous'):
             return 0, 'anonymous'
  
         for psubj in self.proxyMap:
