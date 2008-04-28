@@ -260,7 +260,6 @@ def getSoftwareAndArch(host_list, software, arch, bdii='exp-bdii.cern.ch'):
         if ((software_installed == 1) and (architecture == 1)):
             results_list.append(host)
 
-    print '2', results_list
     return results_list
 
 def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
