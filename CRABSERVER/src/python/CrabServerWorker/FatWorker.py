@@ -90,6 +90,7 @@ class FatWorker(Thread):
             self.taskId = configs['taskId'] 
             self.jobId = configs['jobId']
             self.resubmissionDriver()
+            return
  
         # Parse the XML files
         taskDir = self.wdir + '/' + self.taskName + '_spec/'
@@ -369,7 +370,6 @@ class FatWorker(Thread):
         self.SendMLpre(task)
 
         # loop and submit blocks
-        self.log.info("------------ sub_jobs[ii] %s"%sub_jobs )
         for ii in matched:
             # extract task for the range and submit
             # task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
@@ -392,7 +392,6 @@ class FatWorker(Thread):
 
                 self.log.info("FatWorker check: the collection is too Big..splitted in %s sub_collection"%(n_sub_bulk))
             ###############
-            self.log.info("------------ sub_bulk %s"%sub_bulk )
             try:
                 if len(sub_bulk)>0:
                     count = 1
@@ -440,12 +439,15 @@ class FatWorker(Thread):
         sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(task, [self.jobId])
         self.log.info('Worker %s listmatched jobs, now submitting'%self.myName)
 
+        submittedJobs = []
+        nonSubmittedJobs = []
+        skippedJobs = []
         if len(matched) > 0:
-            submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
+            submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(task, sub_jobs, reqs_jobs, matched)
         else:
             self.log.info('Worker %s unable to submit jobs. No sites matched'%self.myName)
 
-        self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
+        self.evaluateSubmissionOutcome(task, [self.jobId], submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
         return   
 
 ####################################
@@ -471,6 +473,11 @@ class FatWorker(Thread):
 
             self.local_ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", taskObj['name'])
             self.local_ms.commit()
+            return
+
+        elif self.submissionKind == 'errHdlTriggered':
+            self.sendResult(55, "Unable to resubmit single job as requested by ErrorHandler for task %s"%self.taskName, \
+                    "FatWorker %s. Unable to resubmit task %s as requested by ErrorHandler"%(self.myName, self.taskName))
             return
 
         ## some jobs need to be resubmitted later
