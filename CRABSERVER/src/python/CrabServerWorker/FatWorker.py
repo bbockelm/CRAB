@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.42 2008/04/28 07:31:49 spiga Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: FatWorker.py,v 1.47 2008/04/28 17:14:30 farinafa Exp $"
+__version__ = "$Revision: 1.47 $"
 
 import sys, os
 import time
@@ -376,17 +376,18 @@ class FatWorker(Thread):
             unsubmitted += sub_jobs[ii]
             ##############  SplitCollection if too big DS
             sub_bulk = []
-            if len(sub_jobs[ii]) > 400:
-                n_sub_bulk = int( int(len(sub_jobs[ii]) ) / 400 ) 
+            bulk_window = 200
+            if len(sub_jobs[ii]) > bulk_window:
+                n_sub_bulk = int( int(len(sub_jobs[ii]) ) / bulk_window ) 
                 for n in xrange(n_sub_bulk):
-                    first = n*400
-                    last = (n+1)*400
+                    first = n*bulk_window
+                    last = (n+1)*bulk_window
                     if last > len(sub_jobs[ii]):
                         last = len(sub_jobs[ii])
   
                     sub_bulk.append(sub_jobs[ii][first:last])
 
-                if len(sub_jobs[ii][last:-1]) < 50:
+                if len(sub_jobs[ii][last:-1]) < bulk_window/8:
                     for pp in sub_jobs[ii][last:-1]:
                         sub_bulk[n_sub_bulk-1].append(pp)
 
