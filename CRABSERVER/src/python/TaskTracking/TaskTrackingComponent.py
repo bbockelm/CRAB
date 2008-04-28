@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.66 2008/04/17 12:43:49 mcinquil Exp $"
-__version__ = "$Revision: 1.66 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.73 2008/04/24 14:19:15 mcinquil Exp $"
+__version__ = "$Revision: 1.73 $"
 
 import os
 import time
@@ -720,7 +720,7 @@ class TaskTrackingComponent:
                     'R': 'Running', 'SD': 'Done', 'DA': 'Done (Failed)', \
                     'E': 'Done', 'SR': 'Ready', 'A': 'Aborted', \
                     'SS': 'Scheduled', 'U': 'Unknown', 'SW': 'Waiting', \
-                    'K': 'Killed', 'S': 'Submitted', \
+                    'K': 'Killed', 'S': 'Submitted', 'SU': 'Submitted',\
                     'NotSubmitted': 'NotSubmitted', 'C': 'Created'
                           }
         if status in stateConverting:
