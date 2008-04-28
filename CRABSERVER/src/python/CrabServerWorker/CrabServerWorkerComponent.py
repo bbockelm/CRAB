@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.28 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.28 2008/04/17 17:40:07 farinafa Exp $"
+__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.29 2008/04/25 15:08:07 farinafa Exp $"
 
 import os
 import pickle
@@ -222,6 +222,7 @@ class CrabServerWorkerComponent:
         workerCfg['ce_dynBList'] = []
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
         workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
+        workerCfg['allow_anonymous'] = self.args['allow_anonymous']
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         self.availWorkers -= 1
@@ -317,6 +318,7 @@ class CrabServerWorkerComponent:
         workerCfg['ce_dynBList'] = []
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
         workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
+        workerCfg['allow_anonymous'] = self.args['allow_anonymous']
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)        
         self.availWorkers -= 1
@@ -358,6 +360,7 @@ class CrabServerWorkerComponent:
         workerCfg['ce_dynBList'] = [siteToBan]
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
         workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
+        workerCfg['allow_anonymous'] = self.args['allow_anonymous']
 
         # Error Handler specific parameters
         workerCfg['taskId'] = taskId
@@ -458,7 +461,7 @@ class CrabServerWorkerComponent:
             logging.info(reason)
             return 4, reason
 
-        if (self.args['allow_anonymous']!=0) and (subj=='anonymous'):
+        if self.args['allow_anonymous']!=0: # and (subj=='anonymous'):
             return 0, 'anonymous'
  
         for psubj in self.proxyMap:

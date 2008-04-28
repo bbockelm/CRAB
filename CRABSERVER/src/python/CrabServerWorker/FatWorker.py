@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.41 2008/04/25 15:50:40 spiga Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: FatWorker.py,v 1.42 2008/04/28 07:31:49 spiga Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import sys, os
 import time
@@ -65,7 +65,7 @@ class FatWorker(Thread):
             self.log.info( traceback.format_exc() ) 
         
 
-        if self.proxy == 'anonymus' : self.proxy == None
+        if configs['allow_anonymous'] !=0 : self.proxy == None
 
         # derived attributes
         self.local_ms = MessageService()
