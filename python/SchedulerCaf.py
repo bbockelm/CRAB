@@ -25,7 +25,7 @@ class SchedulerCaf(SchedulerLsf) :
         CAF is just a special queue and resources for LSF at CERN
         """
         SchedulerLsf.configure(self, cfg_params)
-        self.queue = cfg_params.get(self.name().upper()+'.queue','dedicated')
+        self.queue = cfg_params.get(self.name().upper()+'.queue','cmscaf')
         self.res = cfg_params.get(self.name().upper()+'.resource','cmscaf')
     def wsSetupEnvironment(self):
         """
