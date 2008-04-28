@@ -44,7 +44,7 @@ class Boss:
                     }
 
         self.schedulerConfig = {
-              'name' : SchedMap[self.schedulerName], \
+              'name' : SchedMap[(self.schedulerName).lower()], \
               'service' : self.wms_service, \
               'config' : self.rb_param_file
               }
