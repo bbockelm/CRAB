@@ -435,19 +435,30 @@ class FatWorker(Thread):
         schedulerConfig = {'name' : job.runningJob['scheduler'], 'user_proxy' : task['user_proxy'] }
         self.blSchedSession = BossLiteAPISched( self.blDBsession, schedulerConfig ) 
 
+        # TODO to be cleaned
+        # get the scheduler name used by listCreation  
+        self.schedName = 'glite'
+        if job.runningJob['scheduler'] == 'SchedulerCondorGAPI':
+           self.schedName = 'condor_g'
+        elif  job.runningJob['scheduler'] == 'SchedulerLsf':
+           self.schedName = 'lsf'  
+        else: 
+           self.schedName = 'arc'
+
         # submit once again
-        sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(task, [self.jobId])
+        sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(task, [int(self.jobId)])
         self.log.info('Worker %s listmatched jobs, now submitting'%self.myName)
 
         submittedJobs = []
         nonSubmittedJobs = []
         skippedJobs = []
         if len(matched) > 0:
+            self.log.info("---- ErrHandDBG --- %s"%str( (task, sub_jobs, reqs_jobs, matched) ) )
             submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(task, sub_jobs, reqs_jobs, matched)
         else:
             self.log.info('Worker %s unable to submit jobs. No sites matched'%self.myName)
 
-        self.evaluateSubmissionOutcome(task, [self.jobId], submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
+        self.evaluateSubmissionOutcome(task, [int(self.jobId)], submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
         return   
 
 ####################################
@@ -554,7 +565,8 @@ class FatWorker(Thread):
     def submissionListCreation(self, taskObj, jobRng):
         '''
            Matchmaking process. Inherited from CRAB-SA
-        ''' 
+        '''
+
         sub_jobs = []      # list of jobs Id list to submit
         requirements = []  # list of requirements for the submitting jobs
 
@@ -617,6 +629,7 @@ class FatWorker(Thread):
                 if len(distinct_dests[sel])!=0:
                     cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
 
+                self.log.info("-------------------- %s"%str( (tags, cleanedList, self.ce_blackL, self.ce_whiteL)) )
                 sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL) 
                 match = len( sites )
             else :
