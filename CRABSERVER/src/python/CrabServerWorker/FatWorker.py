@@ -435,6 +435,13 @@ class FatWorker(Thread):
         task = self.blDBsession.load(self.taskId, self.jobId)[0]
         job = task.jobs[0]
 
+        # update the runningJob 
+        job.runningJob['status'] = 'C'
+        job.runningJob['statusScheduler'] = 'Created'
+        job.runningJob['closed'] = 'N'
+        job.runningJob['applicationReturnCode'] = ''
+        job.runningJob['wrapperReturnCode'] = ''
+ 
         # create the scheduler session extracting infos from running job
         schedulerConfig = {'name' : job.runningJob['scheduler'], 'user_proxy' : task['user_proxy'] }
         self.blSchedSession = BossLiteAPISched( self.blDBsession, schedulerConfig ) 
