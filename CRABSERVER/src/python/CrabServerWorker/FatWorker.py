@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.50 2008/04/28 23:56:43 spiga Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: FatWorker.py,v 1.51 2008/04/29 10:58:11 farinafa Exp $"
+__version__ = "$Revision: 1.51 $"
 
 import sys, os
 import time
@@ -409,15 +409,18 @@ class FatWorker(Thread):
 
             # check if submitted
             #task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
+            parentIds = {}
             for j in task.jobs: 
                 if j.runningJob['schedulerId']:
-                    self.log.debug(j.runningJob['schedulerId'])
+                    parentIds[str(j.runningJob['schedulerParentId'])] = ''
                     submitted.append(j['jobId'])
                     if j['jobId'] in unsubmitted:
                         unsubmitted.remove(j['jobId'])
                     self.blDBsession.getRunningInstance(j)
                     j.runningJob['status'] = 'S'
 
+            parentIds = ','.join(parentIds.keys()) 
+            self.log.debug("Parent IDs for task %s :%s"%(self.taskName, parentIds) )
             self.blDBsession.updateDB( task )
             ## send here post submission info to ML DS
             self.SendMLpost( task, sub_jobs[ii] )
