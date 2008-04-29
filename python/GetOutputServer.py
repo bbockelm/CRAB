@@ -82,6 +82,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         sbi = SBinterface( seEl, loc )
 
         # retrieve them from SE #TODO replace this with SE-API
+        retrievedFilesJodId = []
         for i in xrange(len(filesToRetrieve)):
             source = osbFiles[i] 
             dest = destFiles[i]
@@ -93,13 +94,14 @@ class GetOutputServer( GetOutput, StatusServer ):
                 msg += str(ex)
                 common.logger.debug(1,msg)
                 continue
+            retrievedFilesJodId.append(i)
 
         # notify to the server that output have been retrieved successfully. proxy from StatusServer
-        if len(filesToRetrieve) > 0:
-            common.logger.debug(5, "List of retrieved files notified to server: %s"%str(filesToRetrieve) ) 
+        if len(retrievedFilesJodId) > 0:
+            common.logger.debug(5, "List of retrieved files notified to server: %s"%str(retrievedFilesJodId) ) 
             csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
-            csCommunicator.outputRetrieved(self.taskuuid, filesToRetrieve)
+            csCommunicator.outputRetrieved(self.taskuuid, retrievedFilesJodId)
 
+            self.db_.updateRunJob_(retrievedFilesJodId, {'statusScheduler':'Cleared', 'status':'E'})
         return
-
 

@@ -317,7 +317,8 @@ class DBinterface:
 
             # Data alignment
             jobStatus = str(job.runningJob['statusScheduler'])
-            if rForJ.getAttribute('status') not in ['Created', 'Submitting']:
+            if rForJ.getAttribute('status') not in ['Created', 'Submitting'] and \
+                     job.runningJob['statusScheduler'] != 'Cleared':
                 job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
                 jobStatus = str(job.runningJob['statusScheduler'])
                 job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
