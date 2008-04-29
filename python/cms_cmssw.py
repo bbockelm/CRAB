@@ -651,7 +651,7 @@ class Cmssw(JobType):
             #common.logger.debug(5,"Job "+str(job)+" Destination: "+str(self.jobDestination[job]))
         common._db.updateJob_(listID,listField)## new BL--DS
         ## Pay Attention Here....DS--BL
-        self.argsList = (len(jobParams[1])+1)
+        self.argsList = (len(jobParams[0])+1)
 
         return
 
