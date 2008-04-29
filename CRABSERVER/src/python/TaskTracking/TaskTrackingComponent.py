@@ -337,32 +337,6 @@ class TaskTrackingComponent:
                 self.__appendDbgInfo__(taskName, _loginfo)
             return taskName, str(OK + "\n" + ERROR)
 
-
-        if event == "CrabServerWorkerComponent:CrabWorkPerformedPartial":
-            if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, event + ": %s" % payload)
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-#                taskName = str(payload.split("::", 1)[0])
-                ## start dbg info ##
-                OK += "  Task ["+taskName+"] submitted to the grid.\n"
-#                OK += "    -> WARNING: couldn't submit jobs "+str(eval(payload.split("::")[2]))+".\n"
-                ## end dbg info ##
-                #self.preUpdatePartialTask(payload, self.taskState[7])
-                self.updateTaskStatus(taskName, self.taskState[7])
-                _loginfo  += "Partial submission to the Grid: " + str(taskName) + "\n"
-            else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
-                ## start dbg info ##
-                ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
-                ## end dbg info ##
-            logging.info(logBuf)
-            if _loginfo != '':
-                self.__appendDbgInfo__(taskName, _loginfo)
-            return taskName, str(OK + "\n" + ERROR)
-
         if event == "CrabServerWorkerComponent:FastKill":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
@@ -516,56 +490,6 @@ class TaskTrackingComponent:
             except Exception, ex:
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__logToBuf__(logBuf, "ERROR while updating the 'eMail' field for task: " + str(taskname) )
-
-    def preUpdatePartialTask( self, payload, status ):
-        """
-        _preUpdatePartialTask_
-
-        split the payload-sendes email(updates status)
-        """
-        logBuf = ""
-
-        fields = payload.split("::")
-        taskName = fields[0]
-        totJobs = int(fields[1])
-        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
-        jobList = []
-        if status == self.taskState[7]:
-            jobList = eval( fields[2] )
-            self.addJobsToFile( pathToWrite, jobList )#, totJobs)
-
-        ## call function that updates DB
-        self.updateTaskStatus(taskName, status)
-        
-        uuid = ""
-        eMail = ""
-        valuess = TaskStateAPI.getStatusUUIDEmail( taskName )
-        if valuess != None:
-            #status = valuess[0]
-            if len(valuess) > 1:
-                uuid = valuess[1]
-                if len(valuess) > 2:
-                    eMail = valuess[2]
-            ## XML report file
-            dictionaryReport =  {}
-            for jobId in range( 1, totJobs + 1 ):
-                vect = ["Submitted", "", "", 0, '', 'C']
-                dictionaryReport.setdefault(jobId, vect)
-            try:
-                for jobId in jobList:
-                    dictionaryReport[jobId+1][0] = "NotSubmitted"
-        #        self.addJobsToFile()
-            except Exception, ex:
-                logBuf = self.__logToBuf__(logBuf, str(ex) )
-                logBuf = self.__logToBuf__(logBuf, str(ex.args) )
-            #            logBuf = self.__logToBuf__(logBuf, str(dictionaryReport))
-            self.prepareReport( taskName, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
-            """
-            ## MAIL report user
-            self.prepareTaskFailed( payload, uuid, eMail, status )
-            """
-            logging.info(logBuf)
-
 
     def addJobsToFile(self, taskPath, jobList):#, totJobs):
         """
