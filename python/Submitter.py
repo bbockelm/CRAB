@@ -55,7 +55,7 @@ class Submitter(Actor):
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(dlsDest[nj]) 
             if (cleanedBlackWhiteList != '') or (datasetpath == None): ## Matty's fix
                 ##if ( jStatus[nj] not in ['R','S','K','Y','A','D','Z']): ## here the old flags
-                if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z']):
+                if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z','E']):
                     #nj_list.append(nj+1)## Warning added +1 for jobId BL--DS 
                     jobSetForSubmission +=1
                     nj_list.append(tmp_jList[nj])## Warning added +1 for jobId BL--DS 
