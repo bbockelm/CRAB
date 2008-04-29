@@ -39,5 +39,9 @@ class KillerServer(Actor):
         # update runningjobs status
         updList = [{'statusScheduler':'Killed', 'status':'K'}] * len(self.range)
         common._db.updateRunJob_(self.range, updList)
+
+        # printout the command result
+        common.logger.message("Kill request succesfully sent to the server") 
+
         return
                 
