@@ -17,7 +17,9 @@ class Cleaner(Actor):
         Check whether no job is still running or not yet retrieved
         """
 
-        self.status.compute() # compute the status
+        task = common._db.getTask()
+        upTask = common.scheduler.queryEverything(task['id'])
+        self.status.compute(upTask) # compute the status
 
         countSub  = len(common._db.queryAttrRunJob({'status':'S'},'status'))
         countDone = len(common._db.queryAttrRunJob({'status':'SD'},'status'))
@@ -42,6 +44,6 @@ class Cleaner(Actor):
             self.check()
 
         # here I should first purge boss DB if central
-        common.scheduler.clean()
+        #common.scheduler.clean()
         common.work_space.delete()
         print 'directory '+common.work_space.topDir()+' removed'
