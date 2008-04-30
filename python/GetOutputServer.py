@@ -83,7 +83,7 @@ class GetOutputServer( GetOutput, StatusServer ):
 
         # retrieve them from SE #TODO replace this with SE-API
         retrievedFilesJodId = []
-        for i in xrange(len(filesToRetrieve)):
+        for i in xrange(len(filesToRetrieve)): 
             source = osbFiles[i] 
             dest = destFiles[i]
             common.logger.debug(1, "retrieving "+ str(source) +" to "+ str(dest) )
@@ -94,7 +94,8 @@ class GetOutputServer( GetOutput, StatusServer ):
                 msg += str(ex)
                 common.logger.debug(1,msg)
                 continue
-            retrievedFilesJodId.append(i)
+            ## appending jobs id related to the index "i"
+            retrievedFilesJodId.append(filesToRetrieve[i])
 
         # notify to the server that output have been retrieved successfully. proxy from StatusServer
         if len(retrievedFilesJodId) > 0:
