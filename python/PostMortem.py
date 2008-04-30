@@ -39,7 +39,7 @@ class PostMortem(Actor):
                 out = "".join(fl.readlines())  
                 fl.close()
                 reason = self.decodeLogging(out)
-                common.logger.message('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname) )
+                common.logger.message('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
         return
         
     def decodeLogging(self, out):
