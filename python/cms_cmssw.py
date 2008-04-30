@@ -42,6 +42,16 @@ class Cmssw(JobType):
         self.fjrFileName = 'crab_fjr.xml'
 
         self.version = self.scram.getSWVersion()
+        version_array = self.version.split('_')
+        self.major_version = 0
+        self.minor_version = 0
+        try:
+            self.major_version = int(version_array[1])
+            self.minor_version = int(version_array[2])
+        except:
+            msg = "Cannot parse CMSSW version string: " + "_".join(version_array) + " for major and minor release number!"
+            raise CrabException(msg)
+
 
         #
         # Try to block creation in case of arch/version mismatch
@@ -256,7 +266,7 @@ class Cmssw(JobType):
             try:
                 # Add FrameworkJobReport to parameter-set, set max events.
                 # Reset later for data jobs by writeCFG which does all modifications
-                PsetEdit.addCrabFJR(self.fjrFileName)
+                PsetEdit.addCrabFJR(self.fjrFileName) # FUTURE: Job report addition not needed by CMSSW>1.5
                 PsetEdit.maxEvent(self.eventsPerJob)
                 PsetEdit.psetWriter(self.configFilename())
             except:
@@ -738,11 +748,11 @@ class Cmssw(JobType):
                     self.dataExist=True
                     common.logger.debug(5,"data "+root+"/data"+" to be tarred")
                     tar.add(root+"/data",root[swAreaLen:]+"/data")
-                     
+
             ### CMSSW ParameterSet
             if not self.pset is None:
                 cfg_file = common.work_space.jobDir()+self.configFilename()
-                tar.add(cfg_file,self.configFilename())     
+                tar.add(cfg_file,self.configFilename())
                 common.logger.debug(5,"File added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
 
@@ -766,11 +776,11 @@ class Cmssw(JobType):
                 tar.add(path+file,file)
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
-            ##### AdditionalFiles 
+            ##### AdditionalFiles
             for file in self.additional_inbox_files:
                 tar.add(file,string.split(file,'/')[-1])
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
- 
+
             tar.close()
         except :
             raise CrabException('Could not create tar-ball')
@@ -942,7 +952,7 @@ class Cmssw(JobType):
         txt += 'mv $RUNTIME_AREA/lib/ . \n'
         txt += 'mv $RUNTIME_AREA/module/ . \n'
         if self.dataExist == True: txt += 'mv $RUNTIME_AREA/src/ . \n'
-        if len(self.additional_inbox_files)>0:        
+        if len(self.additional_inbox_files)>0:
             for file in self.additional_inbox_files:
                 txt += 'mv $RUNTIME_AREA/'+file+' . \n'
         txt += 'mv $RUNTIME_AREA/ProdCommon/ . \n'
@@ -974,20 +984,10 @@ class Cmssw(JobType):
         if self.scriptExe:#CarlosDaniele
             return   self.scriptExe + " $NJob"
         else:
-            version_array = self.scram.getSWVersion().split('_')
-            major = 0
-            minor = 0
-            try:
-                major = int(version_array[1])
-                minor = int(version_array[2])
-            except:
-                msg = "Cannot parse CMSSW version string: " + "_".join(version_array) + " for major and minor release number!"
-                raise CrabException(msg)
-
             ex_args = ""
             # FUTURE: This tests the CMSSW version. Can remove code as versions deprecated
             # Framework job report
-            if major >= 1 and minor >= 5 :
+            if (self.major_version >= 1 and self.minor_version >= 5) or (self.major_version >= 2):
                 ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
             # Type of cfg file
             if major >= 2 :
@@ -1115,7 +1115,11 @@ class Cmssw(JobType):
 
     def configFilename(self):
         """ return the config filename """
-        return self.name()+'.cfg'
+        # FUTURE: Can remove cfg mode for CMSSW >= 2_1_x
+        if (self.major_version >= 2 and self.minor_version >= 1) or (self.major_version >= 3):
+          return self.name()+'.py'
+        else:
+          return self.name()+'.cfg'
 
     def wsSetupCMSOSGEnvironment_(self):
         """
@@ -1195,7 +1199,7 @@ class Cmssw(JobType):
             txt += '    SE=""\n'
             txt += '    SE_PATH=""\n'
             txt += 'fi\n'
-            
+
             txt += 'echo ">>> Modify Job Report:" \n'
             txt += 'chmod a+x $SOFTWARE_DIR/ProdCommon/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
             txt += 'ProcessedDataset='+processedDataset+'\n'
