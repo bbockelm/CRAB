@@ -79,11 +79,14 @@ class SchedulerGrid(Scheduler):
            raise CrabException(msg)
 
         self.publish_data = cfg_params.get("USER.publish_data",0)
-        if int(self.publish_data) == 1:
+        self.usenamespace = cfg_params.get("USER.usenamespace",0)
+        if int(self.publish_data) == 1 or int(self.usenamespace) == 1:
             self.publish_data_name = cfg_params.get('USER.publish_data_name',None)
-            if not self.publish_data_name:
+            if not self.publish_data_name and int(self.publish_data) == 1:
                 msg = "Error. The [USER] section does not have 'publish_data_name'"
                 raise CrabException(msg)
+            if not self.publish_data_name and int(self.usenamespace) == 1:
+               self.publish_data_name = "DefaultDataset"
 
             ## SL I don't like a direct call to voms-proxy here
 
@@ -309,7 +312,7 @@ class SchedulerGrid(Scheduler):
             if self.SE_PATH:
                 if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
                 SE_PATH=self.SE_PATH
-            if int(self.publish_data) == 1:
+            if int(self.publish_data) == 1 or int(self.usenamespace) == 1:
                 txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
                 #path_add = self.hnUserName + '/' + self.publish_data_name +'_${PSETHASH}/'
                 path_add = PFNportion(self.publish_data_name) +'_${PSETHASH}/'
