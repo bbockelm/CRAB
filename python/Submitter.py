@@ -296,8 +296,9 @@ class Submitter(Actor):
         params = {}
         for k,v in self.collect_MLInfo().iteritems():
             params[k] = v
- 
-        taskId=str("_".join(task['name']).split('_')[:-1])
+  
+
+        taskId= str("_".join(str(task['name']).split('_')[:-1]))
    
         Sub_Type = 'Direct'
         for job in task.jobs:
@@ -311,7 +312,7 @@ class Submitter(Actor):
                 jobId = str(jj) + '_' + self.hash + '_' + jid
                 common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
             elif common.scheduler.name() in ['lsf', 'caf']:
-                jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(taskId,"_","-")
+                jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(str(taskId),"_","-")
                 common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
                 rb = common.scheduler.name()
                 localId = jid
