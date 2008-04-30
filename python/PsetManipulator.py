@@ -2,6 +2,8 @@
 
 import os
 import common
+import imp
+
 from crab_util import *
 from crab_exceptions import *
 from crab_logger import Logger
@@ -24,13 +26,13 @@ class PsetManipulator:
         #convert Pset
         from FWCore.ParameterSet.Config import include
         common.logger.debug(3,"PsetManipulator::__init__: PSet file = "+self.pset)
-        if (self.pset.endswith('py') or self.pset.endswith('pycfg') ):
+        if self.pset.endswith('py'):
             handle = open(self.pset, 'r')
             try:   # Nested form for Python < 2.5
                 try:
                     self.cfo = imp.load_source("pycfg", self.pset, handle)
                 except Exception, ex:
-                    msg = "Your pycfg file is not valid python: %s" % str(ex)
+                    msg = "Your config file is not valid python: %s" % str(ex)
                     raise CrabException(msg)
             finally:
                 handle.close()
@@ -44,61 +46,6 @@ class PsetManipulator:
                 msg += "  https://twiki.cern.ch/twiki/bin/view/CMS/CrabFaq#Problem_with_ParameterSet_parsin\n"
                 msg += "  may help you understand the problem."
                 raise CrabException(msg)
-        pass
-
-    def inputModule(self, source):
-        """
-        Set  vString Filenames key
-        """
-        # set input module
-        inModule = self.cfg.inputSource
-        inModule.setFileNames(source)
-        return
-
-    def pythiaSeed(self,seed):
-        """
-        Set pythia seed key
-        """
-        ranGenerator = self.cfg.data.services['RandomNumberGeneratorService']
-        ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(seed))
-        return
-
-    def vtxSeed(self,vtxSeed):
-        """
-        Set vtx seed key
-        """
-        ranGenerator = self.cfg.data.services['RandomNumberGeneratorService']
-        ranModules   = ranGenerator.moduleSeeds
-        # set seed
-        ranModules.VtxSmeared = CfgTypes.untracked(CfgTypes.uint32(vtxSeed))
-        return
-
-    def g4Seed(self,g4Seed):
-        """
-        Set g4 seed key
-        """
-        ranGenerator = self.cfg.data.services['RandomNumberGeneratorService']
-        ranModules   = ranGenerator.moduleSeeds
-        # set seed
-        ranModules.g4SimHits = CfgTypes.untracked(CfgTypes.uint32(g4Seed))
-        return
-
-    def mixSeed(self,mixSeed):
-        """
-        Set mix seed key
-        """
-        ranGenerator = self.cfg.data.services['RandomNumberGeneratorService']
-        ranModules   = ranGenerator.moduleSeeds
-        ranModules.mix = CfgTypes.untracked(CfgTypes.uint32(mixSeed))
-        return
-
-    def pythiaFirstRun(self, firstrun):
-        """
-        Set firstRun
-        """
-        inModule = self.cfg.inputSource
-        inModule.setFirstRun(firstrun)   ## Add Daniele
-        return
 
     def maxEvent(self, maxEv):
         """
@@ -107,30 +54,19 @@ class PsetManipulator:
         self.cfg.maxEvents.setMaxEventsInput(maxEv)
         return
 
-    def skipEvent(self, skipEv):
-        """
-        Set skipEvents
-        """
-        inModule = self.cfg.inputSource
-        inModule.setSkipEvents(skipEv)   ## Add Daniele
-        return
-
-    def outputModule(self, output):
-
-        #set output module
-        outModule = self.cfg.outputModules['out']
-        outModule.setFileName('file:'+str(output))
-
-        return
-
     def psetWriter(self, name):
         """
         Write out modified CMSSW.cfg
         """
 
-        file1 = open(common.work_space.jobDir()+name,"w")
-        file1.write(str(self.cfg))
-        file1.close()
+        # FUTURE: Can drop cfg mode for CMSSW < 2_1_x
+        outFile = open(common.work_space.jobDir()+name,"w")
+        if name.endswith('py'):
+          outFile.write("import FWCore.ParameterSet.Config as cms\n")
+          outFile.write(self.cfo.dumpPython())
+        else:
+          outFile.write(str(self.cfg))
+        outFile.close()
 
         return
 
