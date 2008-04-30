@@ -43,30 +43,16 @@ class Cmssw(JobType):
 
         self.version = self.scram.getSWVersion()
         version_array = self.version.split('_')
-        self.major_version = 0
-        self.minor_version = 0
+        self.CMSSW_major = 0
+        self.CMSSW_minor = 0
+        self.CMSSW_patch = 0
         try:
-            self.major_version = int(version_array[1])
-            self.minor_version = int(version_array[2])
+            self.CMSSW_major = int(version_array[1])
+            self.CMSSW_minor = int(version_array[2])
+            self.CMSSW_patch = int(version_array[3])
         except:
-            msg = "Cannot parse CMSSW version string: " + "_".join(version_array) + " for major and minor release number!"
+            msg = "Cannot parse CMSSW version string: " + self.version + " for major and minor release number!"
             raise CrabException(msg)
-
-
-        #
-        # Try to block creation in case of arch/version mismatch
-        #
-
-#        a = string.split(self.version, "_")
-#
-#        if int(a[1]) == 1 and (int(a[2]) < 5 and self.executable_arch.find('slc4') == 0):
-#            msg = "Warning: You are using %s version of CMSSW  with %s architecture. \n--> Did you compile your libraries with SLC3? Otherwise you can find some problems running on SLC4 Grid nodes.\n"%(self.version, self.executable_arch)
-#            common.logger.message(msg)
-#        if int(a[1]) == 1 and (int(a[2]) >= 5 and self.executable_arch.find('slc3') == 0):
-#            msg = "Error: CMS does not support %s with %s architecture"%(self.version, self.executable_arch)
-#            raise CrabException(msg)
-#
-
 
         ### collect Data cards
 
@@ -270,7 +256,7 @@ class Cmssw(JobType):
                 PsetEdit.maxEvent(self.eventsPerJob)
                 PsetEdit.psetWriter(self.configFilename())
             except:
-                msg='Error while manipuliating ParameterSet: exiting...'
+                msg='Error while manipulating ParameterSet: exiting...'
                 raise CrabException(msg)
         self.tgzNameWithPath = self.getTarBall(self.executable)
 
@@ -797,6 +783,10 @@ class Cmssw(JobType):
         Returns part of a job script which prepares
         the execution environment for the job 'nj'.
         """
+        if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
+            psetName = 'pset.py'
+        else:
+            psetName = 'pset.cfg'
         # Prepare JobType-independent part
         txt = '\n#Written by cms_cmssw::wsSetupEnvironment\n'
         txt += 'echo ">>> setup environment"\n'
@@ -891,16 +881,17 @@ class Cmssw(JobType):
                     txt += 'FirstRun=${args[1]}; export FirstRun\n'
                     txt += 'echo "FirstRun: <$FirstRun>"\n'
 
-            txt += 'mv -f '+pset+' pset.cfg\n'
+            txt += 'mv -f ' + pset + ' ' + psetName + '\n'
 
 
         if self.pset != None:
+            # FUTURE: Can simply for 2_1_x and higher
             txt += '\n'
-            txt += 'echo "***** cat pset.cfg *********"\n'
-            txt += 'cat pset.cfg\n'
-            txt += 'echo "****** end pset.cfg ********"\n'
+            txt += 'echo "***** cat ' + psetName + ' *********"\n'
+            txt += 'cat ' + psetName + '\n'
+            txt += 'echo "****** end ' + psetName + ' ********"\n'
             txt += '\n'
-            txt += 'PSETHASH=`EdmConfigHash < pset.cfg` \n'
+            txt += 'PSETHASH=`edmConfigHash < ' + psetName + '` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
             txt += '\n'
         return txt
@@ -987,10 +978,10 @@ class Cmssw(JobType):
             ex_args = ""
             # FUTURE: This tests the CMSSW version. Can remove code as versions deprecated
             # Framework job report
-            if (self.major_version >= 1 and self.minor_version >= 5) or (self.major_version >= 2):
+            if (self.CMSSW_major >= 1 and self.CMSSW_minor >= 5) or (self.CMSSW_major >= 2):
                 ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
-            # Type of cfg file
-            if self.major_version >= 2 :
+            # Type of config file
+            if self.CMSSW_major >= 2 :
                 ex_args += " -p pset.py"
             else:
                 ex_args += " -p pset.cfg"
@@ -1116,7 +1107,7 @@ class Cmssw(JobType):
     def configFilename(self):
         """ return the config filename """
         # FUTURE: Can remove cfg mode for CMSSW >= 2_1_x
-        if (self.major_version >= 2 and self.minor_version >= 1) or (self.major_version >= 3):
+        if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
           return self.name()+'.py'
         else:
           return self.name()+'.cfg'

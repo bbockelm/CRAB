@@ -31,21 +31,22 @@ class PsetManipulator:
             try:   # Nested form for Python < 2.5
                 try:
                     self.cfo = imp.load_source("pycfg", self.pset, handle)
+                    self.cmsProcess = self.cfo.process
                 except Exception, ex:
                     msg = "Your config file is not valid python: %s" % str(ex)
                     raise CrabException(msg)
             finally:
                 handle.close()
-            self.cfg = CfgInterface(self.cfo.process)
         else:
             try:
                 self.cfo = include(self.pset)
-                self.cfg = CfgInterface(self.cfo)
+                self.cmsProcess = self.cfo
             except Exception, ex:
                 msg =  "Your cfg file is not valid, %s\n" % str(ex)
                 msg += "  https://twiki.cern.ch/twiki/bin/view/CMS/CrabFaq#Problem_with_ParameterSet_parsin\n"
                 msg += "  may help you understand the problem."
                 raise CrabException(msg)
+        self.cfg = CfgInterface(self.cmsProcess)
 
     def maxEvent(self, maxEv):
         """
@@ -63,7 +64,7 @@ class PsetManipulator:
         outFile = open(common.work_space.jobDir()+name,"w")
         if name.endswith('py'):
           outFile.write("import FWCore.ParameterSet.Config as cms\n")
-          outFile.write(self.cfo.dumpPython())
+          outFile.write(self.cmsProcess.dumpPython())
         else:
           outFile.write(str(self.cfg))
         outFile.close()

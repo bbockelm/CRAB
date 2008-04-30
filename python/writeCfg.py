@@ -95,27 +95,28 @@ def main(argv) :
 
 # Read Input cfg or python cfg file
 
-  if (fileName.endswith('py') or fileName.endswith('pycfg') ):
+  if fileName.endswith('py'):
     handle = open(fileName, 'r')
     try:   # Nested form for Python < 2.5
       try:
         cfo = imp.load_source("pycfg", fileName, handle)
+        cmsProcess = cfo.process
       except Exception, ex:
         msg = "Your pycfg file is not valid python: %s" % str(ex)
         raise "Error: ",msg
     finally:
         handle.close()
-    cfg = CfgInterface(cfo.process)
   else:
     try:
       cfo = include(fileName)
-      cfg = CfgInterface(cfo)
+      cmsProcess = cfo
     except Exception, ex:
       msg =  "The cfg file is not valid, %s\n" % str(ex)
       raise "Error: ",msg
-  inModule = cfg.inputSource
+  cfg = CfgInterface(cmsProcess)
 
   # Set parameters for job
+  inModule = cfg.inputSource
   if maxEvents:
     cfg.maxEvents.setMaxEventsInput(maxEvents)
 
@@ -128,7 +129,6 @@ def main(argv) :
     inputFileNames = inputFiles.split(',')
     inModule.setFileNames(*inputFileNames)
 
-  # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
   # Pythia parameters
   if (firstRun):
     inModule.setFirstRun(firstRun)
@@ -141,6 +141,7 @@ def main(argv) :
   if preserveSeeds:
     preserveSeedList  = preserveSeeds.split(',')
 
+  # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
   if CMSSW_major < 3: # True for now, should be < 2 when really ready
   # Treatment for seeds, CMSSW < 2_0_x
     if cfg.data.services.has_key('RandomNumberGeneratorService'):
@@ -195,15 +196,14 @@ def main(argv) :
       print "Problems converting old seeds to new format"
 
   # Write out new config file in one format or the other
-
   outFile = open(outFileName,"w")
   if (outFileName.endswith('py') or outFileName.endswith('pycfg') ):
     outFile.write("import FWCore.ParameterSet.Config as cms\n")
-    outFile.write(cfo.dumpPython())
+    outFile.write(cmsProcess.dumpPython())
     if (debug):
       print "writeCfg output:"
       print "import FWCore.ParameterSet.Config as cms"
-      print cfo.dumpPython()
+      print cmsProcess.dumpPython()
   else:
     outFile.write(str(cfg))
     if (debug):
