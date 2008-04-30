@@ -102,6 +102,6 @@ class GetOutputServer( GetOutput, StatusServer ):
             csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
             csCommunicator.outputRetrieved(self.taskuuid, retrievedFilesJodId)
 
-            common._db.updateRunJob_(retrievedFilesJodId, {'statusScheduler':'Cleared', 'status':'E'})
+            common._db.updateRunJob_(retrievedFilesJodId, [{'statusScheduler':'Cleared', 'status':'E'}] * len(retrievedFilesJodId) )
         return
 
