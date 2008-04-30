@@ -990,7 +990,7 @@ class Cmssw(JobType):
             if (self.major_version >= 1 and self.minor_version >= 5) or (self.major_version >= 2):
                 ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
             # Type of cfg file
-            if major >= 2 :
+            if self.major_version >= 2 :
                 ex_args += " -p pset.py"
             else:
                 ex_args += " -p pset.cfg"
