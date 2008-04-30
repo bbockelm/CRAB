@@ -142,9 +142,9 @@ class GetOutput(Actor):
             common.logger.message(msg)
         else:
             if success_ret > 0: 
-                msg = 'Results of Jobs # '+str(self.list_id)+' are in '+self.outDir
+                msg = 'Results of Jobs # '+str(self.list_id)+' are in '+self.outDir+'. \n'
             else:
-                msg = 'Any output file available for Jobs # '+str(self.list_id)
+                msg = 'Any output file available for Jobs # '+str(self.list_id)+'. \n'
             common.logger.message(msg)
 
         return
