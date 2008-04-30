@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.14 2008/04/18 13:02:03 mcinquil Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.15 2008/04/28 13:16:38 mcinquil Exp $"
+__version__ = "$Revision: 1.15 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -415,24 +415,44 @@ class TaskLifeManagerComponent:
         """
         from os.path import join
         task = self.taskQueue.getbyName( taskName )
-        proxy = join( self.args['dropBoxPath'], task.getProxy() )
-        from os.path import join
-        taskPath = join(self.args['storagePath'] , taskName)
-        jobList = eval(strJobs)
-        for idjob in jobList:
-            baseToDelete = [ \
-                             "out_files_"+str(idjob)+".tgz"]#, \
-                           #  "crab_fjr_"+str(idjob)+".xml" \
-                           #]
-            for file in baseToDelete:
-                try:
-                    self.SeSbI.delete( join(taskPath, file), proxy )
-                except Exception, ex: 
-                    import traceback
-                    logging.error( "Exception raised: " + str(ex) )
-                    logging.error( str(traceback.format_exc()) )
-                    logging.info( "problems deleting osb for job " + str(idjob) )
-      
+        if task != None:
+            proxy = join( self.args['dropBoxPath'], task.getProxy() )
+            from os.path import join
+            taskPath = join(self.args['storagePath'] , taskName)
+            jobList = eval(strJobs)
+            for idjob in jobList:
+                baseToDelete = [ \
+                                 "out_files_"+str(idjob)+".tgz"]#, \
+                               #  "crab_fjr_"+str(idjob)+".xml" \
+                               #]
+                for file in baseToDelete:
+                    try:
+                        self.SeSbI.delete( join(taskPath, file), proxy )
+                    except Exception, ex: 
+                        import traceback
+                        logging.error( "Exception raised: " + str(ex) )
+                        logging.error( str(traceback.format_exc()) )
+                        logging.info( "problems deleting osb for job " + str(idjob) )
+        else:
+            logging.error("Task not found: " + str(taskName))
+            logging.info(" trying safe delete backup...")
+            proxy = join( self.args['dropBoxPath'], taskName + "_spec", "userProxy")
+            taskPath = join(self.args['storagePath'] , taskName)
+            jobList = eval(strJobs)
+            for idjob in jobList:
+                baseToDelete = [ \
+                                 "out_files_"+str(idjob)+".tgz"]#, \
+                               #  "crab_fjr_"+str(idjob)+".xml" \
+                               #]
+                for file in baseToDelete:
+                    try:
+                        self.SeSbI.delete( join(taskPath, file), proxy )
+                    except Exception, ex:
+                        import traceback
+                        logging.error( "Exception raised: " + str(ex) )
+                        logging.error( str(traceback.format_exc()) )
+                        logging.info( "problems deleting osb for job " + str(idjob) )
+
 
     ##########################################################################
     # task queue functionalities
