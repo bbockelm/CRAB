@@ -39,6 +39,10 @@ class GliteConfig:
             if (time.time() - statinfo.st_ctime) > oldness:
                 url = self.url+self.configFileName
                 common.logger.message('Downloading config files for WMS: '+url)
-                self.downloadFile( url, self.configFileName)
+                try:
+                   self.downloadFile( url, self.configFileName)
+                except:
+                   common.logger.message('Error downloading config files for WMS: %s . Keep using the local one.'%url) 
+                   pass
             pass
         return os.getcwd()+'/'+self.configFileName
