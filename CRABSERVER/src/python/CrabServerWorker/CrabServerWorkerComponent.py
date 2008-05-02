@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.29 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.29 2008/04/25 15:08:07 farinafa Exp $"
+__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.33 2008/04/28 10:30:11 farinafa Exp $"
 
 import os
 import pickle
@@ -53,6 +53,7 @@ class CrabServerWorkerComponent:
         self.args.setdefault('storageName', 'localhost')
         self.args.setdefault('storagePort', '')
         self.args.setdefault('storagePath', self.args["dropBoxPath"])
+        self.args.setdefault('maxRetries', '0') 
         self.args.update(args)
         
         if self.args['storagePath'] == None and self.args['Protocol'] == 'local': 
@@ -223,6 +224,7 @@ class CrabServerWorkerComponent:
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
         workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
         workerCfg['allow_anonymous'] = int(self.args['allow_anonymous'])
+        workerCfg['maxRetries'] = int(self.args['maxRetries'])
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         self.availWorkers -= 1

@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.51 2008/04/29 10:58:11 farinafa Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: FatWorker.py,v 1.53 2008/04/29 16:29:26 farinafa Exp $"
+__version__ = "$Revision: 1.53 $"
 
 import sys, os
 import time
@@ -59,6 +59,8 @@ class FatWorker(Thread):
             self.wmsEndpoint = configs['wmsEndpoint']
             self.se_blackL = [] + configs['se_dynBList']
             self.ce_blackL = [] + configs['ce_dynBList']
+
+            self.maxRetries = configs['maxRetries']
 
         except Exception, e:
             self.log.info('Missing parameters in the Worker configuration')
@@ -554,7 +556,7 @@ class FatWorker(Thread):
             for job in taskArg.jobs:
                 jobName = job['name'] 
                 cacheArea = self.wdir + '/' + self.taskName + '_spec/%s'%job['name']
-                jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':0, 'max_racers':1, 'owner':self.taskName}
+                jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':self.maxRetries, 'max_racers':1, 'owner':self.taskName}
 
                 wfJob.register(jobName, None, jobDetails)
                 wfJob.setState(jobName, 'register')

@@ -21,6 +21,7 @@ try:
     compCfg = config.getConfig("CrabServerWorker")
     compCfg['ComponentDir'] = os.path.expandvars(compCfg['ComponentDir'])
     compCfg.update( config.getConfig("CrabServerConfigurations") )
+    compCfg.update( config.getConfig("JobStates"))
 except StandardError, ex:
     msg = "Error reading configuration:\n"
     msg += str(ex)
