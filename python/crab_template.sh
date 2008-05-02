@@ -47,9 +47,9 @@ function cmscp {
 
  ################ lcg-utils ##########################
   if [ $srm_ver -eq  1 ] ; then
-      lcgOpt=" -b -D srmv1 --vo $VO -t 2400 --verbose "  
+      lcgOpt=" -b -D srmv1 --vo $VO -t 2400 --verbose "
   else
-      lcgOpt=" -b -D srmv2 --vo $VO -t 2400 --verbose "  
+      lcgOpt=" -b -D srmv2 --vo $VO -t 2400 --verbose "
   fi
   cmd="lcg-cp $lcgOpt file://$path_out_file $destination"
   echo $cmd
@@ -72,18 +72,18 @@ function cmscp {
   fi
 
   ############# now try srm utils ##############
-  if [ $cmscp_exit_status -eq 60307 ]; then 
+  if [ $cmscp_exit_status -ne 0 ]; then
       opt=" -debug=true -report ./srmcp.report "
       opt="${opt} -retry_timeout 480000 -retry_num 3 "
 
       ################ srmv2 ##########################
       if [ $srm_ver -eq  2 ] || [ $srm_ver -eq 0 ]; then
      # if [ $srm_ver -eq  2 ] && [ $srm_ver -ne 1 ] ; then
-          echo "--> Check if the file already exists in the storage element $SE"
+          echo "--> Check if the file already exists in the storage element $SE, using SRM2"
           srmls -retry_num 0 $destination | grep 'does not exist' >/dev/null
           if [ $? -eq  0 ]; then
               echo "Starting to copy  the output to $SE using srmv2"
-              cmd="srmcp -2 $opt file:///$path_out_file $destination"
+              cmd="srmcp -srm_protocol_version 2  $opt file:///$path_out_file $destination"
               echo $cmd
               exitstring=`$cmd 2>&1`
               #copy_exit_status=$?
@@ -122,7 +122,7 @@ function cmscp {
       fi
 
       if [ $srm_ver -eq 1 ] ; then
-          echo "--> Check if the file already exists in the storage element $SE"
+          echo "--> Check if the file already exists in the storage element $SE, using SRM1"
           srm-get-metadata -retry_num 0 $destination
           if [ $? -eq 0 ]; then
               #copy_exit_status=60303
@@ -196,7 +196,7 @@ update_fjr() {
         python $RUNTIME_AREA/JobReportErrorCode.py $RUNTIME_AREA/crab_fjr_$NJob.xml $job_exit_code $executable_exit_status
     fi
 }
-                                            
+
 ### REMOVE THE WORKING_DIR IN OSG SITES ###
 remove_working_dir() {
     cd $RUNTIME_AREA
@@ -209,14 +209,14 @@ remove_working_dir() {
         job_exit_code=10017
     fi
 }
-                                            
+
 ### CRAB EXIT FUNCTION ###
 func_exit() {
     if [ $PYTHONPATH ]; then
         update_fjr
     fi
 ##################
-    cd $RUNTIME_AREA    
+    cd $RUNTIME_AREA
     for file in $filesToCheck ; do
         if [ -e $file ]; then
             echo tarring file $file in  $out_files
@@ -233,7 +233,7 @@ func_exit() {
 #    tmp_size=`ls -gGrta ${outDir}.tgz | awk \'{ print $3 }\'`
 #    size=`expr $tmp_size`
 #    echo "Total Output dimension: $size";
-#    limit=550000   
+#    limit=550000
 #    echo "WARNING: output files size limit is set to: $limit";
 #    if [ $limit -lt $sum ]; then
 #        job_exit_code=70000
@@ -267,7 +267,7 @@ voms-proxy-info -all
 repo=jobreport.txt
 
 
-#CRAB untar_software 
+#CRAB untar_software
 
 #
 # SETUP ENVIRONMENT
@@ -315,7 +315,7 @@ if [ $res -ne 0 ];then
 
   echo "ERROR ==> executable not found on WN `hostname`"
   job_exit_code=50110
-  func_exit 
+  func_exit
 else
   echo "ok executable found"
 fi
@@ -355,7 +355,7 @@ if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then
           if [ $executable_exit_status -eq 50115 ];then
               echo ">>> crab_fjr.xml contents: "
               #cat crab_fjr.xml
-              #### FEDE ###### 
+              #### FEDE ######
               cat $RUNTIME_AREA/crab_fjr_NJob.xml
               ################
               echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"
