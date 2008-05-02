@@ -1,8 +1,8 @@
 from SchedulerCondorCommon import SchedulerCondorCommon
 import common
 
-__revision__ = "$Id: SchedulerGlidein.py,v 1.9 2008/04/24 21:03:43 ewv Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: SchedulerGlidein.py,v 1.10 2008/04/25 18:23:10 ewv Exp $"
+__version__ = "$Revision: 1.10 $"
 
 class SchedulerGlidein(SchedulerCondorCommon):
   def __init__(self):
@@ -26,3 +26,8 @@ class SchedulerGlidein(SchedulerCondorCommon):
 
     common._db.updateTask_({'jobType':jobParams})
     return jobParams # Not sure I even need to return anything
+
+  def listMatch(self, seList):
+    ceDest = SchedulerCondorCommon.listMatch(seList, onlyOSG=False)
+    return ceDest
+

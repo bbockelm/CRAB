@@ -17,8 +17,8 @@ import CondorGLoggingInfo
 
 import pdb # FIXME: Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.12 2008/04/25 18:23:10 ewv Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.13 2008/04/25 21:14:05 ewv Exp $"
+__version__ = "$Revision: 1.13 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -181,17 +181,30 @@ class SchedulerCondorCommon(SchedulerGrid):
         reason = loggingInfo.decodeReason(file)
         return reason
 
-    def listMatch(self, nj):
-        """
-        Check the compatibility of available resources
-        """
-        #self.checkProxy()
-        return [""]
+    def listMatch(self, seList, onlyOSG=True):
+      """
+      Check the compatibility of available resources
+      """
+      seDest = self.blackWhiteListParser.cleanForBlackWhiteList(seList,"list")
+      scram = Scram.Scram(None)
+
+      versionCMSSW = scram.getSWVersion()
+      arch = scram.getArch()
+      print "OOSG: ",onlyOSG
+      availCEs = getJobManagerList(seDest,versionCMSSW,arch,onlyOSG=onlyOSG)
+      print availCEs
+      uniqCEs = []
+      for ce in availCEs:
+        if ce not in uniqCEs:
+          uniqCEs.append(ce)
+
+      ceDest = self.ceBlackWhiteListParser.cleanForBlackWhiteList(uniqCEs,"list")
+      return ceDest
 
     def userName(self):
-        """ return the user name """
-        self.checkProxy()
-        return runCommand("voms-proxy-info -identity")
+      """ return the user name """
+      self.checkProxy()
+      return runCommand("voms-proxy-info -identity")
 
     def ce_list(self):
       """
@@ -202,18 +215,7 @@ class SchedulerCondorCommon(SchedulerGrid):
       return req,self.EDG_ce_white_list,self.EDG_ce_black_list
 
     def seListToCElist(self, seList, onlyOSG=True):
-      seDest = self.blackWhiteListParser.cleanForBlackWhiteList(seList,"list")
-      scram = Scram.Scram(None)
-
-      versionCMSSW = scram.getSWVersion()
-      arch = scram.getArch()
-      availCEs = getJobManagerList(seDest,versionCMSSW,arch,onlyOSG=onlyOSG)
-      uniqCEs = []
-      for ce in availCEs:
-        if ce not in uniqCEs:
-          uniqCEs.append(ce)
-
-      ceDest = self.ceBlackWhiteListParser.cleanForBlackWhiteList(uniqCEs,"list")
+      ceDest = self.listMatch(seList, onlyOSG)
 
       if (not ceDest):
         msg = 'No OSG sites found hosting the data or all sites blocked by CE/SE white/blacklisting'
