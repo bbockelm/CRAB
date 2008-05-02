@@ -390,23 +390,23 @@ class TaskLifeManagerComponent:
         dBox = self.args['storagePath']
         from os.path import join
         pathTask = join(dBox, taskName)
-        if self.SeSbI.checkExists( pathTask, proxy ):
-            logging.info("removing task '" + pathTask + "' ...")
-            try:
+        try:
+            if self.SeSbI.checkExists( pathTask, proxy ):
+                logging.info("removing task '" + pathTask + "' ...")
                 summ = self.deleteTask( pathTask, proxy )
                 if not self.SeSbI.checkExists( pathTask, proxy ):
                     logging.debug( "removed " + str(summ) + " bytes.")
                     return summ
                 else:
                     logging.error( "could not remove task ["+taskName+"]!")
-            except Exception, ex:
-                import traceback
-                logging.error( "Exception rasied: " +str(ex) )
-                logging.error( str(traceback.format_exc()) )
-                logging.error("Not able to delete the task [" + taskName +\
-                              "] in the path [" + dBox +"]")
-        else:
-            logging.error("The path [" + pathTask +"] does not exists!")
+            else:
+                logging.error("The path [" + pathTask +"] does not exists!")
+        except Exception, ex:
+            import traceback
+            logging.error( "Exception rasied: " +str(ex) )
+            logging.error( str(traceback.format_exc()) )
+            logging.error("Not able to delete the task [" + taskName +\
+                          "] in the path [" + dBox +"]")
         return 0
 
     def deleteRetrievedOSB( self, taskName, strJobs ):
@@ -430,8 +430,8 @@ class TaskLifeManagerComponent:
                         self.SeSbI.delete( join(taskPath, file), proxy )
                     except Exception, ex: 
                         import traceback
-                        logging.error( "Exception raised: " + str(ex) )
-                        logging.error( str(traceback.format_exc()) )
+                        logging.debug( "Exception raised: " + str(ex) )
+                        logging.debug( str(traceback.format_exc()) )
                         logging.info( "problems deleting osb for job " + str(idjob) )
         else:
             logging.error("Task not found: " + str(taskName))
