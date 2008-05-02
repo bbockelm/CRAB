@@ -35,7 +35,7 @@ def runldapquery(filter, attribute, bdii):
 
 def jm_from_se_bdii(se, bdii='exp-bdii.cern.ch'):
     se = '\'' + se + '\''
-    pout = runldapquery(''' '(GlueCESEBindGroupSEUniqueID=''' + se + ''')' ''', 'GlueCESEBindGroupCEUniqueID', bdii)
+    pout = runldapquery(" '(GlueCESEBindGroupSEUniqueID=" + se + ")' ", 'GlueCESEBindGroupCEUniqueID', bdii)
 
 #    r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*)-cms')
     r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*?)-(.*)')
@@ -57,7 +57,7 @@ def cestate_from_se_bdii(se, bdii='exp-bdii.cern.ch' ):
     for jm in jmlist:
         jm += "-cms"
 
-        pout = runldapquery(''' '(&(objectClass=GlueCEState)(GlueCEUniqueID=''' + jm + '''))' ''', 'GlueCEStateStatus', bdii)
+        pout = runldapquery(" '(&(objectClass=GlueCEState)(GlueCEUniqueID=" + jm + "))' ", 'GlueCEStateStatus', bdii)
 
         r = re.compile('^GlueCEStateStatus: (.*)')
         for l in pout:
@@ -68,7 +68,7 @@ def cestate_from_se_bdii(se, bdii='exp-bdii.cern.ch' ):
     return status
 
 def cestate_from_ce_bdii(ce, bdii='exp-bdii.cern.ch'):
-    pout = runldapquery(''' '(&(objectClass=GlueCEState)(GlueCEInfoHostName=''' + ce + ''')(GlueCEAccessControlBaseRule=VO:cms))' ''', 'GlueCEStateStatus', bdii)
+    pout = runldapquery(" '(&(objectClass=GlueCEState)(GlueCEInfoHostName=" + ce + ")(GlueCEAccessControlBaseRule=VO:cms))' ", 'GlueCEStateStatus', bdii)
 
     status = ''
     r = re.compile('^GlueCEStateStatus: (.*)')
@@ -92,10 +92,10 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
     # Get the Jobmanager list
     jmlist = []
 
-    query = ''' '(|'''
+    query = " '(|"
     for se in selist:
-        query = query + '''(GlueCESEBindGroupSEUniqueID=''' + se + ''')'''
-    query = query + ''')' '''
+        query = query + "(GlueCESEBindGroupSEUniqueID=" + se + ")"
+    query = query + ")' "
 
     pout = runldapquery(query, 'GlueCESEBindGroupCEUniqueID', bdii)
     r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*?)-(.*)')
@@ -108,11 +108,11 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
                 jmlist.append(item)
 
 
-    query = ''' '(&(GlueCEAccessControlBaseRule=VO:cms)(|'''
+    query = " '(&(GlueCEAccessControlBaseRule=VO:cms)(|"
     for l in jmlist:
-        query += '''(GlueCEInfoContactString=''' + l + '''-*)'''
+        query += "(GlueCEInfoContactString=" + l + "-*)"
 
-    query += '''))' '''
+    query += "))' "
 
     pout = runldapquery(query, 'GlueCEInfoContactString', bdii)
 
@@ -131,10 +131,10 @@ def isOSGSite(host_list, bdii='exp-bdii.cern.ch'):
     r = re.compile('^GlueSiteDescription: (OSG.*)')
     s = re.compile('^GlueSiteUniqueID: (.*)')
 
-    query = ''' '(|'''
+    query = " '(|"
     for h in host_list:
-        query = query + '''(GlueSiteUniqueID=''' + h + ''')'''
-    query = query + ''')' GlueSiteDescription'''
+        query = query + "(GlueSiteUniqueID=" + h + ")"
+    query = query + ")' GlueSiteDescription"
 
     pout = runldapquery(query, 'GlueSubClusterUniqueID GlueSiteUniqueID', bdii)
     output = concatoutput(pout)
@@ -230,10 +230,10 @@ def getSoftwareAndArch(host_list, software, arch, bdii='exp-bdii.cern.ch'):
     software = 'VO-cms-' + software
     arch = 'VO-cms-' + arch
 
-    query = ''' '(|'''
+    query = " '(|"
     for h in host_list:
-        query = query + '''(GlueChunkKey='GlueClusterUniqueID=''' + h + '''\')'''
-    query = query + ''')' '''
+        query = query + "(GlueChunkKey='GlueClusterUniqueID=" + h + "\')"
+    query = query + ")' "
 
     pout = runldapquery(query, 'GlueHostApplicationSoftwareRunTimeEnvironment GlueSubClusterUniqueID GlueChunkKey', bdii)
     output = concatoutput(pout)
@@ -260,6 +260,7 @@ def getSoftwareAndArch(host_list, software, arch, bdii='exp-bdii.cern.ch'):
         if ((software_installed == 1) and (architecture == 1)):
             results_list.append(host)
 
+    print '2', results_list
     return results_list
 
 def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
@@ -273,10 +274,10 @@ def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
 
     jmlist = getJMListFromSEList(selist)
 
-    query = ''' '(&(objectClass=GlueCEState)(|'''
+    query = " '(&(objectClass=GlueCEState)(|"
     for jm in jmlist:
-        query = query + '''(GlueCEUniqueID=''' + jm + ''')'''
-    query = query + '''))' '''
+        query = query + "(GlueCEUniqueID=" + jm + ")"
+    query = query + "))' "
 
     pout = runldapquery(query, 'GlueCEUniqueID GlueCEStateStatus GlueCEInfoHostName GlueCEStateWaitingJobs GlueCEStateFreeJobSlots', bdii)
     output = concatoutput(pout)
@@ -315,14 +316,12 @@ def getJMInfo(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
 
             jminfo_list.append(copy.deepcopy(jminfo))
 
-    CElist = [x['name'] for x in jminfo_list]
-
     # Narrow the list of host to include only OSG sites if requested
-
-    if onlyOSG:
-        osg_list = isOSGSite(host_list)
+    osg_list = isOSGSite([x['host'] for x in jminfo_list])
+    if not onlyOSG:
+        CElist = [x['name'] for x in jminfo_list]
     else:
-        osg_list = host_list
+        CElist = [x['name'] for x in jminfo_list if osg_list.count(x['host'])]
 
     # Narrow the OSG host list to include only those with the specified software and architecture
 #    softarch_list = getSoftwareAndArch(osg_list, software, arch)
@@ -363,9 +362,7 @@ def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=T
 if __name__ == '__main__':
     seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
 #    seList = ['ccsrm.in2p3.fr', 'storm.ifca.es']
-    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345", 'uscmsbd2.fnal.gov', False)
+    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345", 'uscmsbd2.fnal.gov', True)
     for jm in jmlist:
         print jm
 #   print jm_from_se_bdii(sys.argv[1])
-
-

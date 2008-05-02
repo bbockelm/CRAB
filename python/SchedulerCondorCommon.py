@@ -17,8 +17,8 @@ import CondorGLoggingInfo
 
 import pdb # FIXME: Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.13 2008/04/25 21:14:05 ewv Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.14 2008/05/02 19:33:17 ewv Exp $"
+__version__ = "$Revision: 1.14 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -190,9 +190,7 @@ class SchedulerCondorCommon(SchedulerGrid):
 
       versionCMSSW = scram.getSWVersion()
       arch = scram.getArch()
-      print "OOSG: ",onlyOSG
       availCEs = getJobManagerList(seDest,versionCMSSW,arch,onlyOSG=onlyOSG)
-      print availCEs
       uniqCEs = []
       for ce in availCEs:
         if ce not in uniqCEs:
@@ -223,3 +221,4 @@ class SchedulerCondorCommon(SchedulerGrid):
         raise CrabException(msg)
 
       return ceDest
+
