@@ -90,7 +90,7 @@ function cmscp {
               #if [ $copy_exit_status -eq 0 ]; then
               cmscp_exit_status=$?
               if [ $cmscp_exit_status -eq 0 ]; then
-                  remoteMetadata=(`srmls -retry_num=0 $destination 2>/dev/null`)
+                  remoteMetadata=(`srmls -retry_num=0 $destination | grep -v WARNING 2>/dev/null`)
                   remoteSize=`echo ${remoteMetadata}`
                   echo "--> remoteSize = $remoteSize"
                   ## for local file
