@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.54 2008/05/02 23:30:51 mcinquil Exp $"
-__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: FatWorker.py,v 1.55 2008/05/03 02:06:54 afanfani Exp $"
+__version__ = "$Revision: 1.55 $"
 import string
 import sys, os
 import time
@@ -67,7 +67,15 @@ class FatWorker(Thread):
             self.log.info( traceback.format_exc() ) 
         
 
-        if configs['allow_anonymous'] !=0 : self.proxy == None
+        # Mandatory parameters for local usage (e.g. caf) #Ds
+        if configs['allow_anonymous'] !=0 : 
+            try:
+                self.proxy == None
+                self.cpCmd = configs['cpCmd']
+                self.rfioServer = configs['rfioServer']
+            except Exception, e:
+                self.log.info('Missing parameters in the Worker configuration')
+                self.log.info( traceback.format_exc() ) 
 
         # derived attributes
         self.local_ms = MessageService()
@@ -143,7 +151,9 @@ class FatWorker(Thread):
             pass
 
         elif self.schedName.lower() in ['lsf','caf']:
-            self.schedulerConfig['name'] = 'SchedulerLsf' 
+            self.schedulerConfig['name']    = 'SchedulerLsf' 
+            self.schedulerConfig['cpCmd']   = self.cpCmd 
+            self.schedulerConfig['rfioSer'] = self.rfioServer 
 
         # Prepare filter lists for matching sites
         if 'glite' in self.schedName:
@@ -794,11 +804,11 @@ class FatWorker(Thread):
 
         sched_param= ''
         resDir= "/".join((task['globalSandbox'].split(',')[0]).split('/')[:-1])  
-        self.queue =  'cmscaf' ### ToBeAddede in cfg.xml file
-        self.res = None ### ToBeAddede in cfg.xml file
-        if (self.queue):
-            sched_param += '-q '+self.queue +' '
-            if (self.res): sched_param += ' -R '+self.res +' '
+        queue =  'cmscaf' ### ToBeAddede in cfg.xml file
+        res = 'cmscaf'
+        if (queue):
+            sched_param += '-q '+queue +' '
+            if (res): sched_param += ' -R '+res +' '
         pass
 
        # sched_param+='-cwd '+resDir + ' '
