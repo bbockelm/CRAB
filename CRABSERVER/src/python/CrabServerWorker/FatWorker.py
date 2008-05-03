@@ -6,9 +6,9 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.53 2008/04/29 16:29:26 farinafa Exp $"
-__version__ = "$Revision: 1.53 $"
-
+__revision__ = "$Id: FatWorker.py,v 1.54 2008/05/02 23:30:51 mcinquil Exp $"
+__version__ = "$Revision: 1.54 $"
+import string
 import sys, os
 import time
 from threading import Thread
