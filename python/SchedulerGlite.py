@@ -12,10 +12,27 @@ class SchedulerGlite(SchedulerGrid):
     def __init__(self, name="GLITE"):
         SchedulerGrid.__init__(self,name)
 
+        self.OSBsize = 55000
+
     def configure(self,cfg_params):
         SchedulerGrid.configure(self, cfg_params)
         self.checkProxy()
         self.environment_unique_identifier = 'GLITE_WMS_JOBID'
+
+    def realSchedParams(self,cfg_params):
+        """
+        Return dictionary with specific parameters, to use 
+        with real scheduler  
+        """
+        self.rb_param_file=''
+        if (cfg_params.has_key('EDG.rb')):
+            self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
+        self.wms_service=cfg_params.get("EDG.wms_service",'')
+        params = { 'service' : self.wms_service, \
+                   'config' : self.rb_param_file
+                 }
+        return  params
+      
 
     def rb_configure(self, RB):
         if not RB: return None
@@ -167,6 +184,48 @@ class SchedulerGlite(SchedulerGrid):
             itr4 = replicas
             #####
         return itr4
+
+    
+    def wsExitFunc(self):
+        """
+        """
+        txt = '\n'
+
+        txt += '#\n'
+        txt += '# EXECUTE THIS FUNCTION BEFORE EXIT \n'
+        txt += '#\n\n'
+
+        txt += 'func_exit() { \n'
+        txt += self.wsExitFunc_common()
+        ### specific Glite check for OSB
+        txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
+        txt += '    tmp_size=`ls -gGrta ${out_files}.tgz | awk \'{ print $3 }\'`\n'
+        txt += '    rm ${out_files}.tgz\n'  
+        txt += '    size=`expr $tmp_size`\n'
+        txt += '    echo "Total Output dimension: $size"\n'
+        txt += '    limit='+str(self.OSBsize) +' \n'  
+        txt += '    echo "WARNING: output files size limit is set to: $limit"\n'
+        txt += '    if [ $limit -lt $sum ]; then\n'
+        txt += '        exceed=1\n'
+        txt += '        job_exit_code=70000\n'
+        txt += '        echo "Output Sanbox too big. Produced output is lost "\n'
+        txt += '    else\n'
+        txt += '        exceed=0\n'
+        txt += '        echo "Total Output dimension $sum is fine."\n'
+        txt += '    fi\n'
+
+        txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
+        txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '    if [ $exceed -ne 1 ]; then\n'
+        txt += '        tar zcvf ${out_files}.tgz  ${final_list}\n'
+        txt += '    else\n'
+        txt += '        tar zcvf ${out_files}.tgz CMSSW_${NJob}.stdout CMSSW_${NJob}.stderr\n'
+        txt += '    fi\n'
+        txt += '    exit $job_exit_code\n'
+
+        txt += '}\n'
+        return txt
 
     def userName(self):
         """ return the user name """

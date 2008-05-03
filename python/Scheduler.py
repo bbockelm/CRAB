@@ -30,6 +30,11 @@ class Scheduler :
     def name(self):
         return self._name
 
+    def realSchedParams(self,cfg_params):
+        """
+        """
+        return {} 
+
     def configure(self, cfg_params):
         self._boss.configure(cfg_params)
         from BlackWhiteListParser import BlackWhiteListParser
@@ -65,6 +70,13 @@ class Scheduler :
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
+        """
+        return ''
+
+    def  wsExitFunc(self):
+        """
+        Returns part of a job script which does scheduler-specific
+        output checks and management.
         """
         return ''
 

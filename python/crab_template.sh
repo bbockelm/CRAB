@@ -1,5 +1,7 @@
 #!/bin/sh
-# CRAB title
+
+#CRAB title
+
 #
 # HEAD
 #
@@ -210,47 +212,8 @@ remove_working_dir() {
     fi
 }
 
-### CRAB EXIT FUNCTION ###
-func_exit() {
-    if [ $PYTHONPATH ]; then
-        update_fjr
-    fi
-##################
-    cd $RUNTIME_AREA
-    for file in $filesToCheck ; do
-        if [ -e $file ]; then
-            echo tarring file $file in  $out_files
-        else
-            echo "WARNING: output file $file not found!"
-        fi
-    done
-    if [ $middleware == 'OSG' ]; then
-        tar zcvf ${out_files}.tgz $filesToCheck
-    else
-        tar zcvf ${out_files}.tgz $filesToCheck .BrokerInfo
-    fi
-
-#    tmp_size=`ls -gGrta ${outDir}.tgz | awk \'{ print $3 }\'`
-#    size=`expr $tmp_size`
-#    echo "Total Output dimension: $size";
-#    limit=550000
-#    echo "WARNING: output files size limit is set to: $limit";
-#    if [ $limit -lt $sum ]; then
-#        job_exit_code=70000
-#    else
-#        echo "Total Output dimension $sum is fine."
-#    fi
-#    echo "Ending output sandbox limit check"
-#################
-
-    if [ $middleware == 'OSG' ] && [ $WORKING_DIR]; then
-        remove_working_dir
-    fi
-    echo "JOB_EXIT_STATUS = $job_exit_code"
-    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo
-    dumpStatus $RUNTIME_AREA/$repo
-    exit $job_exit_code
-}
+#CRAB func_exit
+                                            
 
 RUNTIME_AREA=`pwd`
 

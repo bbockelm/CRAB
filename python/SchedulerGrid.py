@@ -354,6 +354,32 @@ class SchedulerGrid(Scheduler):
         return txt
 
 
+    def wsExitFunc_common(self):
+        """
+        """
+        txt = '' 
+        txt += '    if [ $PYTHONPATH ]; then \n'
+        txt += '        update_fjr\n'
+        txt += '    fi\n'
+        txt += '    cd $RUNTIME_AREA  \n'   
+        txt += '    for file in $filesToCheck ; do\n'
+        txt += '        if [ -e $file ]; then\n'
+        txt += '            echo "tarring file $file in  $out_files"\n'
+        txt += '        else\n'
+        txt += '            echo "WARNING: output file $file not found!"\n'
+        txt += '        fi\n'
+        txt += '    done\n'
+        txt += '    if [ $middleware == OSG ]; then\n'
+        txt += '        final_list = $filesToCheck\n'
+        txt += '        if [ $WORKING_DIR]; then\n'
+        txt += '            remove_working_dir\n'
+        txt += '        fi\n'
+        txt += '    else\n'
+        txt += '        final_list = $filesToCheck" .BrokerInfo"\n'
+        txt += '    fi\n'
+
+        return txt
+
     def checkProxy(self):
         """
         Function to check the Globus proxy.
@@ -453,8 +479,6 @@ class SchedulerGrid(Scheduler):
             edg_ui_cfg_opt += ' --config-vo ' + self.edg_config_vo + ' '
         return edg_ui_cfg_opt
 
-    def tOut(self, list):
-        return 120
 
 
     def tags(self):

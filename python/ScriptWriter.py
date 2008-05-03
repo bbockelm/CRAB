@@ -8,7 +8,7 @@ import Scram
 import string,os
 
 class ScriptWriter:
-    def __init__(self, template, output_troncate_flag): ## added by Matty
+    def __init__(self, template): 
         # pattern -> action
         ### FEDE added modify_report FOR DBS OUTPUT PUBLICATION
         self.actions = {
@@ -23,8 +23,7 @@ class ScriptWriter:
             'rename_output'               : self.renameOutput_,
             'copy_output'                 : self.copyOutput_,
             'modify_report'               : self.modifyReport_,
-            #'clean_env'                   : self.cleanEnv_,
-            'check_output_limit'          : self.checkOut_
+            'func_exit'                   : self.func_exit_
             }
 
         if os.path.isfile("./"+template):
@@ -35,7 +34,6 @@ class ScriptWriter:
             raise CrabException("No crab_template.sh found!")
         self.nj = -1     # current job number
 
-        self.output_troncate_flag = output_troncate_flag
         try:
             self.scram = Scram.Scram(None)
             self.CMSSWversion = self.scram.getSWVersion()
@@ -181,15 +179,12 @@ class ScriptWriter:
         txt = jbt.cleanEnv()
         return txt
 
-    def checkOut_(self):
+    def func_exit_(self):
         """
-        With glite check if the output is too big
+        Returns part of a job script which does scheduler-specific 
+        output checks and management.
         """
-        txt = "\n"
-        if self.output_troncate_flag == 1:
-            limit = 55000000 ##52 MB
-            jbt = common.job_list.type()
-            txt = jbt.checkOut(limit)
+        txt = common.scheduler.wsExitFunc()
         return txt
 
     def rewriteCMSSWcfg_(self):

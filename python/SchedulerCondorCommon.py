@@ -17,8 +17,8 @@ import CondorGLoggingInfo
 
 import pdb # FIXME: Use while debugging
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.14 2008/05/02 19:33:17 ewv Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.15 2008/05/02 19:55:39 ewv Exp $"
+__version__ = "$Revision: 1.15 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -222,3 +222,22 @@ class SchedulerCondorCommon(SchedulerGrid):
 
       return ceDest
 
+
+    def wsExitFunc(self):
+        """
+        """
+        txt = '\n'
+
+        txt += '#\n'
+        txt += '# EXECUTE THIS FUNCTION BEFORE EXIT \n'
+        txt += '#\n\n'
+
+        txt += 'func_exit() { \n'
+        txt += self.wsExitFunc_common()
+        txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
+        txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
+        txt += '    exit $job_exit_code\n'
+        txt += '}\n'
+        return txt
