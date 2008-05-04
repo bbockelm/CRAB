@@ -34,7 +34,7 @@ class PostMortem(Actor):
                 if os.path.exists(fname):
                     common.logger.message('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
                     continue
-                common.scheduler.loggingInfo(id,self.fname_base+str(id))
+                common.scheduler.loggingInfo(id,fname)
                 fl = open(fname, 'r')
                 out = "".join(fl.readlines())  
                 fl.close()
