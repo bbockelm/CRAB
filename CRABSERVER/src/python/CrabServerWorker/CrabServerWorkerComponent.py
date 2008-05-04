@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.33 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.33 2008/04/28 10:30:11 farinafa Exp $"
+__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.34 2008/05/02 23:30:51 mcinquil Exp $"
 
 import os
 import pickle
@@ -225,6 +225,8 @@ class CrabServerWorkerComponent:
         workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
         workerCfg['allow_anonymous'] = int(self.args['allow_anonymous'])
         workerCfg['maxRetries'] = int(self.args['maxRetries'])
+        workerCfg['cpCmd'] = self.args['cpCmd']
+        workerCfg['rfioServer'] = self.args['rfioServer']
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         self.availWorkers -= 1
