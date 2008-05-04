@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.34 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.34 2008/05/02 23:30:51 mcinquil Exp $"
+__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.35 2008/05/04 08:28:12 spiga Exp $"
 
 import os
 import pickle
@@ -54,6 +54,8 @@ class CrabServerWorkerComponent:
         self.args.setdefault('storagePort', '')
         self.args.setdefault('storagePath', self.args["dropBoxPath"])
         self.args.setdefault('maxRetries', '0') 
+        self.args.setdefault('cpCmd','cp')
+        self.args.setdefault('rfioServer','')
         self.args.update(args)
         
         if self.args['storagePath'] == None and self.args['Protocol'] == 'local': 
@@ -289,6 +291,7 @@ class CrabServerWorkerComponent:
         
         status = -1
         status, reason = self.taskIsSubmittable(taskUniqName, node)
+        
         if (status == 4):
             # CAVEAT in this case it means that everything is ok
             status = 0
@@ -323,6 +326,9 @@ class CrabServerWorkerComponent:
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
         workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
         workerCfg['allow_anonymous'] = int(self.args['allow_anonymous'])
+        workerCfg['maxRetries'] = int(self.args['maxRetries'])
+        workerCfg['cpCmd'] = self.args['cpCmd']
+        workerCfg['rfioServer'] = self.args['rfioServer']
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)        
         self.availWorkers -= 1
@@ -365,6 +371,9 @@ class CrabServerWorkerComponent:
         workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
         workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
         workerCfg['allow_anonymous'] = self.args['allow_anonymous']
+        workerCfg['maxRetries'] = int(self.args['maxRetries'])
+        workerCfg['cpCmd'] = self.args['cpCmd']
+        workerCfg['rfioServer'] = self.args['rfioServer']
 
         # Error Handler specific parameters
         workerCfg['taskId'] = taskId
