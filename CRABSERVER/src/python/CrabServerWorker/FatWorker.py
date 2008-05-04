@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.55 2008/05/03 02:06:54 afanfani Exp $"
-__version__ = "$Revision: 1.55 $"
+__revision__ = "$Id: FatWorker.py,v 1.56 2008/05/03 18:38:21 spiga Exp $"
+__version__ = "$Revision: 1.56 $"
 import string
 import sys, os
 import time
@@ -713,8 +713,7 @@ class FatWorker(Thread):
         """
         Preapre DashBoard information
         """
-
-        taskId = "_".join( taskObj['name'].split('_')[:-1] )
+        taskId=str("_".join(str(taskObj['name']).split('_')[:-1]))
 
         gridName = self.cmdXML.getAttribute('Subject')
         # rebuild flat gridName string (pruned from SSL print and delegation adds)
@@ -752,7 +751,7 @@ class FatWorker(Thread):
         for k,v in self.collect_MLInfo(task).iteritems():
             params[k] = v
 
-        taskId = str("_".join(task['name']).split('_')[:-1])
+        taskId = str("_".join(str(task['name']).split('_')[:-1]))
         Sub_Type = 'Server'
 
         for job in task.jobs:
