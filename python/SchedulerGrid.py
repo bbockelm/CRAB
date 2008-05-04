@@ -370,12 +370,12 @@ class SchedulerGrid(Scheduler):
         txt += '        fi\n'
         txt += '    done\n'
         txt += '    if [ $middleware == OSG ]; then\n'
-        txt += '        final_list = $filesToCheck\n'
+        txt += '        final_list=$filesToCheck\n'
         txt += '        if [ $WORKING_DIR]; then\n'
         txt += '            remove_working_dir\n'
         txt += '        fi\n'
         txt += '    else\n'
-        txt += '        final_list = $filesToCheck" .BrokerInfo"\n'
+        txt += '        final_list=$filesToCheck" .BrokerInfo"\n'
         txt += '    fi\n'
 
         return txt
