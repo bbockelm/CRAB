@@ -45,9 +45,9 @@ class Boss:
                     }
 
         self.schedulerConfig = common.scheduler.realSchedParams(cfg_params)
-        self.schedulerConfig['name'] =  SchedMap[(self.schedulerName).lower()
+        self.schedulerConfig['name'] =  SchedMap[(self.schedulerName).lower()]
 
-        self.session=None
+        self.session = None
         return
 
     def schedSession(self):
