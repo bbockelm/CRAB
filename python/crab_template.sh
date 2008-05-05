@@ -53,6 +53,9 @@ function cmscp {
   else
       lcgOpt=" -b -D srmv2 --vo $VO -t 2400 --verbose "
   fi
+  echo "lcg-cp --version "
+  lcg-cp --version
+  echo "---------------- "
   cmd="lcg-cp $lcgOpt file://$path_out_file $destination"
   echo $cmd
   exitstring=`$cmd 2>&1`
