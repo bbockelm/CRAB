@@ -15,10 +15,8 @@ import CondorGLoggingInfo
 
 # This class was originally SchedulerCondor_g. For a history of this code, see that file.
 
-import pdb # FIXME: Use while debugging
-
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.15 2008/05/02 19:55:39 ewv Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.16 2008/05/03 17:14:17 spiga Exp $"
+__version__ = "$Revision: 1.16 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -164,6 +162,16 @@ class SchedulerCondorCommon(SchedulerGrid):
             raise CrabException(msg)
 
         return
+
+    def realSchedParams(self,cfg_params):
+      """
+      Return dictionary with specific parameters, to use
+      with real scheduler
+      """
+
+      tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
+      params = {'tmpDir':tmpDir}
+      return  params
 
     def sched_parameter(self,i,task):
       """
