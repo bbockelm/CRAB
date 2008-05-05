@@ -45,6 +45,9 @@ class UtilSubject:
         /C=IT/O=INFN/OU=Personal Certificate/L=Perugia/CN=Mattia Cinquilli/CN=proxy
         """
         tName = self.taskName
+        if self.uuid == "":
+           tName = tName.split("_",1)[1]
+           tName = self.invert( self.invert(tName).split("_",1)[1] )
         name = "Unknown"
         if os.path.exists( self.path ):
             org, self.userName = self.parseUserSubj( open(self.path).read() )
