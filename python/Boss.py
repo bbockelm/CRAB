@@ -44,11 +44,8 @@ class Boss:
                     'caf':      'SchedulerLsf'
                     }
 
-        self.schedulerConfig = {
-              'name' : SchedMap[(self.schedulerName).lower()], \
-              'service' : self.wms_service, \
-              'config' : self.rb_param_file
-              }
+        self.schedulerConfig = common.scheduler.realSchedParams(cfg_params)
+        self.schedulerConfig['name'] =  SchedMap[(self.schedulerName).lower()
 
         self.session=None
         return
