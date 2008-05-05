@@ -52,6 +52,8 @@ class UtilSubject:
         if os.path.exists( self.path ):
             org, self.userName = self.parseUserSubj( open(self.path).read() )
 	    return self.getOriginalTaskName2(), self.userName
+        else:
+           name = self.taskName.split("_",1)[0]
         return tName, name
 
     def getOriginalTaskName2( self ):
