@@ -205,7 +205,7 @@ class SchedulerGlite(SchedulerGrid):
         txt += '    echo "Total Output dimension: $size"\n'
         txt += '    limit='+str(self.OSBsize) +' \n'  
         txt += '    echo "WARNING: output files size limit is set to: $limit"\n'
-        txt += '    if [ $limit -lt $sum ]; then\n'
+        txt += '    if [ "$limit" -lt "$sum" ]; then\n'
         txt += '        exceed=1\n'
         txt += '        job_exit_code=70000\n'
         txt += '        echo "Output Sanbox too big. Produced output is lost "\n'
