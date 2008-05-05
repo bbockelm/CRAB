@@ -272,7 +272,7 @@ class CreateXmlJobReport:
         allJobs = self.root.getElementsByTagName( Job().getJobTagName() )
         #print "len=%d\n" % len(allJobs)
         if allJobs[0].getAttribute( Job().getStatusTagName())=="NotSubmitted":
-            report = " has not been submitted by the server to the grid.\nTry to execute the command 'crab -testJdl' to verify if there are sites that can satisfy your requirements."
+            report = " has not been submitted by the server.\nPlease, check your log files and try to execute the command 'crab -testJdl' to verify if there are sites that can satisfy your requirements."
             #return report
 
         if allJobs[0].getAttribute( Job().getStatusTagName())=="Killed":
@@ -292,7 +292,7 @@ class CreateXmlJobReport:
             allJobs = self.root.getElementsByTagName( Job().getJobTagName() )
             
             if allJobs[0].getAttribute( Job().getStatusTagName())=="NotSubmitted":
-                outcome = " has not been submitted by the server to the grid."
+                outcome = " has not been submitted by the server."
                 
             if allJobs[0].getAttribute( Job().getStatusTagName())=="Killed":
                 outcome = " has been correctly killed."
