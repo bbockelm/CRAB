@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.56 2008/05/03 18:38:21 spiga Exp $"
-__version__ = "$Revision: 1.56 $"
+__revision__ = "$Id: FatWorker.py,v 1.57 2008/05/04 13:38:35 spiga Exp $"
+__version__ = "$Revision: 1.57 $"
 import string
 import sys, os
 import time
@@ -94,15 +94,17 @@ class FatWorker(Thread):
         self.TURLpreamble = ""
 
         self.log.info("Worker %s initialized"%self.myName)
+        self.apmon = ApmonIf()
 
         # fast management for ErrorHandler triggered resubmissions
         if self.submissionKind == 'errHdlTriggered':
-            self.taskId = configs['taskId'] 
+            self.taskId = configs['taskId']
             self.jobId = configs['jobId']
             self.resubmissionDriver()
+            self.apmon.free()
             return
- 
-        # Parse the XML files
+
+        # Parse the XML files (cmd CfgParamDict needed by ErrHand resub too) 
         taskDir = self.wdir + '/' + self.taskName + '_spec/'
         try:
             cmdSpecFile = taskDir + 'cmd.xml'
@@ -121,13 +123,13 @@ class FatWorker(Thread):
         self.cfg_params = eval( self.cmdXML.getAttribute("CfgParamDict") )
         self.EDG_retry_count = int(self.cfg_params['EDG_retry_count'])
         self.EDG_shallow_retry_count = int(self.cfg_params['EDG_shallow_retry_count'])
- 
-        ## Perform the submission
-        self.log.info("Worker %s initialized"%self.myName)
+
         try:
             self.start()
         except Exception, e:
             self.log.info('"Worker %s exception : \n'+traceback.format_exc() )
+
+        self.apmon.free()
         pass
         
     def run(self):
@@ -180,7 +182,6 @@ class FatWorker(Thread):
                          self.se_blackL.append( re.compile(seB.strip().lower()) )
 
         # actual submission
-        self.apmon = ApmonIf()
         self.log.info("Worker %s warmed up and ready to submit"%self.myName)
         try:
             self.submissionDriver()
@@ -188,7 +189,6 @@ class FatWorker(Thread):
             self.log.info( traceback.format_exc() )
             self.sendResult(66, "Worker exception. Free-resource message", \
                     "FatWorkerError %s. Task %s."%(self.myName, self.taskName) )
-        self.apmon.free()
         return
 
 ####################################
@@ -423,14 +423,14 @@ class FatWorker(Thread):
             #task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
             parentIds = {}
             for j in task.jobs: 
+                self.blDBsession.getRunningInstance(j)
                 if j.runningJob['schedulerId']:
                     parentIds[str(j.runningJob['schedulerParentId'])] = ''
                     submitted.append(j['jobId'])
                     if j['jobId'] in unsubmitted:
                         unsubmitted.remove(j['jobId'])
-                    self.blDBsession.getRunningInstance(j)
                     j.runningJob['status'] = 'S'
-
+                     
             parentIds = ','.join(parentIds.keys()) 
             self.log.debug("Parent IDs for task %s :%s"%(self.taskName, parentIds) )
             self.blDBsession.updateDB( task )
@@ -446,37 +446,67 @@ class FatWorker(Thread):
         # load the task
         task = self.blDBsession.load(self.taskId, self.jobId)[0]
         job = task.jobs[0]
-
-        # update the runningJob 
-        job.runningJob['status'] = 'C'
-        job.runningJob['statusScheduler'] = 'Created'
-        job.runningJob['closed'] = 'N'
-        job.runningJob['applicationReturnCode'] = ''
-        job.runningJob['wrapperReturnCode'] = ''
- 
-        # create the scheduler session extracting infos from running job
-        schedulerConfig = {'name' : job.runningJob['scheduler'], 'user_proxy' : task['user_proxy'] }
-        self.blSchedSession = BossLiteAPISched( self.blDBsession, schedulerConfig ) 
+        self.blDBsession.getRunningInstance(job)
 
         # TODO to be cleaned
-        # get the scheduler name used by listCreation  
+        # get the scheduler name used by listCreation
         self.schedName = 'glite'
-        if job.runningJob['scheduler'] == 'SchedulerCondorGAPI':
+        if 'condor' in str(job.runningJob['scheduler']).lower():
            self.schedName = 'condor_g'
-        elif  job.runningJob['scheduler'] == 'SchedulerLsf':
-           self.schedName = 'lsf'  
-        else: 
+        elif 'lsf' in str(job.runningJob['scheduler']).lower():
+           self.schedName = 'lsf'
+        elif 'arc' in str(job.runningJob['scheduler']).lower():
            self.schedName = 'arc'
+        else:
+           self.schedName = 'glite'
 
+        schedulerConfig = {'name' : job.runningJob['scheduler'], 'user_proxy' : task['user_proxy'] }
+        self.blSchedSession = BossLiteAPISched( self.blDBsession, schedulerConfig )
+
+        job.runningJob["closed"] = "Y"
+        self.blDBsession.updateDB(task)
+        self.blDBsession.getRunningInstance(job)
+        self.blDBsession.updateDB(task)
+
+        # recreate auxiliary infos from old dictionary
+        self.cfg_params = {}
+        self.cmdXML = None
+        taskDir = self.wdir + '/' + task['name'] + '_spec/'
+        try:
+            cmdSpecFile = taskDir + 'cmd.xml'
+            doc = minidom.parse(cmdSpecFile)
+            self.cmdXML = doc.getElementsByTagName("TaskCommand")[0]
+            self.cfg_params.update( eval( self.cmdXML.getAttribute("CfgParamDict") ) )
+        except Exception, e:
+            status = 6
+            reason = "Error parsing command XML for %s, resubmission attempt will not be processed"%self.myName
+            self.log.info( reason +'\n'+ traceback.format_exc() )
+            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", task['name'] + "::" + str(status) + "::" + reason)
+            self.local_ms.commit()
+            return
+
+        # simple container to move _small_ portions of the cfg to server
+        self.EDG_retry_count = int(self.cfg_params['EDG_retry_count'])
+        self.EDG_shallow_retry_count = int(self.cfg_params['EDG_shallow_retry_count'])
+ 
         # submit once again
+        seEl = SElement(self.SEurl, self.SEproto, self.SEport)
+        sbi = SBinterface( seEl )
+        taskFileList = task['globalSandbox'].split(',')
+        self.TURLpreamble = sbi.getTurl( taskFileList[0], self.proxy )
+        self.TURLpreamble = self.TURLpreamble.split(taskFileList[0])[0]
+        if self.TURLpreamble:
+            if self.TURLpreamble[-1] != '/':
+                self.TURLpreamble += '/'
+
         sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(task, [int(self.jobId)])
         self.log.info('Worker %s listmatched jobs, now submitting'%self.myName)
 
         submittedJobs = []
-        nonSubmittedJobs = []
+        nonSubmittedJobs = [int(self.jobId)]
         skippedJobs = []
+
         if len(matched) > 0:
-            self.log.info("---- ErrHandDBG --- %s"%str( (task, sub_jobs, reqs_jobs, matched) ) )
             submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(task, sub_jobs, reqs_jobs, matched)
         else:
             self.log.info('Worker %s unable to submit jobs. No sites matched'%self.myName)
@@ -490,6 +520,8 @@ class FatWorker(Thread):
 
     def evaluateSubmissionOutcome(self, taskObj, submittableRange, submittedJobs, \
             unmatchedJobs, nonSubmittedJobs, skippedJobs):
+
+        resubmissionList = list( set(submittableRange).difference(set(submittedJobs)) )
 
         ## log the result of the submission
         self.log.info("FatWorker %s. Task %s (%d jobs): submitted %d unmatched %d notSubmitted %d skipped %d"%(self.myName, self.taskName, \
@@ -507,6 +539,21 @@ class FatWorker(Thread):
 
             self.local_ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", taskObj['name'])
             self.local_ms.commit()
+
+            # update state in WE for succesfull jobs
+            dbCfg = copy.deepcopy(dbConfig)
+            dbCfg['dbType'] = 'mysql'
+
+            Session.set_database(dbCfg)
+            Session.connect(self.taskName)
+            Session.start_transaction(self.taskName)
+
+            for j in taskObj.jobs:
+                if j['jobId'] in resubmissionList:
+                    wfJob.setState(j['name'], 'submit')
+
+            Session.commit(self.taskName)
+            Session.close(self.taskName)
             return
 
         elif self.submissionKind == 'errHdlTriggered':
@@ -516,9 +563,6 @@ class FatWorker(Thread):
 
         ## some jobs need to be resubmitted later
         else:
-            # get the list of missing jobs # discriminate on the lists? in future maybe
-            resubmissionList = list( set(submittableRange).difference(set(submittedJobs)) )
-
             # prepare a new message for the missing jobs
             newRange = ','.join(map(str, resubmissionList))
             self.cmdXML.setAttribute('Range', newRange)
@@ -537,8 +581,28 @@ class FatWorker(Thread):
             # propagate the re-submission attempt
             self.resubCount -= 1
             payload = self.taskName+"::"+str(self.resubCount)
-            self.local_ms.publish("CRAB_Cmd_Mgr:NewCommand", payload)
+            self.local_ms.publish("CRAB_Cmd_Mgr:NewCommand", payload, "00:00:10")
             self.local_ms.commit()
+
+            # needed for ErrHandler interaction: redundant w.r.t. CSW, where the range info are not available
+            if self.resubCount < 0 and len(resubmissionList) > 0:
+                # SubmissionFailed message for ErrHandler
+                self.local_ms.publish("SubmissionFailed", self.taskName+"::"+str(resubmissionList) )
+                self.local_ms.commit()
+
+                dbCfg = copy.deepcopy(dbConfig)
+                dbCfg['dbType'] = 'mysql'
+
+                Session.set_database(dbCfg)
+                Session.connect(self.taskName)
+                Session.start_transaction(self.taskName)
+
+                for j in taskObj.jobs:
+                    if j['jobId'] in resubmissionList:   
+                        wfJob.setState(j['name'], 'finished') # TODO failed?? # Fabio
+
+                Session.commit(self.taskName)
+                Session.close(self.taskName)
         return
 
 ####################################
@@ -573,7 +637,7 @@ class FatWorker(Thread):
                 wfJob.setState(jobName, 'create')
                 wfJob.setCacheDir(jobName, cacheArea)
                 wfJob.setState(jobName, 'inProgress')
-                wfJob.setState(jobName, 'submit')
+                # wfJob.setState(jobName, 'submit')
  
             Session.commit(self.taskName)
             Session.close(self.taskName)
@@ -606,6 +670,7 @@ class FatWorker(Thread):
         jobs_to_match = []
         all_jobs = []
         count = 0
+
         for distDest in distinct_dests:
              # get job_ids for a specific destination 
              jobs_per_dest = []
@@ -647,15 +712,14 @@ class FatWorker(Thread):
                 continue
             
             # Perform listMatching
-            if self.schedName.upper() != "CONDOR_G" :
+            if self.schedName.upper() != "CONDOR_G" or self.submissionKind != 'errHdlTriggered':
                 cleanedList = None
                 if len(distinct_dests[sel])!=0:
                     cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
 
-                self.log.info("-------------------- %s"%str( (tags, cleanedList, self.ce_blackL, self.ce_whiteL)) )
                 sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL) 
                 match = len( sites )
-            else :
+            else:
                 match = "1"
             if match:
                matched.append(sel)
@@ -816,7 +880,11 @@ class FatWorker(Thread):
         return
 
     def sched_parameter_Glite(self, i, task):
-        dest = task.jobs[i-1]['dlsDestination'] # shift due to BL ranges 
+        if self.submissionKind != 'errHdlTriggered':
+            dest = task.jobs[i-1]['dlsDestination'] # shift due to BL ranges 
+        else:
+            dest = task.jobs[0]['dlsDestination']
+
         sched_param = 'Requirements = ' + task['jobType'] 
 
         req=''
