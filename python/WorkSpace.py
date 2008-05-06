@@ -10,14 +10,22 @@ class WorkSpace:
         self._cwd_dir = os.getcwd()+'/'
         self._top_dir = top_dir    # top working directory
 
+        self._user_out_dir = ''
+        self._user_log_dir = ''
+        if 'USER.outputdir' in cfg_params.keys():    
+            self._user_out_dir = os.path.abspath(cfg_params['USER.outputdir'])
+        if 'USER.logdir' in cfg_params.keys():    
+            self._user_log_dir = os.path.abspath(cfg_params['USER.logdir'])
         #Matteo: Necessary to manage user ui_working_dir
         if 'USER.ui_working_dir' in cfg_params.keys():    
             self._top_dir = os.path.abspath(cfg_params['USER.ui_working_dir'])
             self._pathForTgz = self._top_dir
 
-        self._log_dir = cfg_params.get("USER.logdir",self._top_dir + '/log')    # log-directory
+       # self._res_dir = cfg_params.get("USER.outputdir", self._top_dir + '/res')     # dir to store job results
+       # self._log_dir = ("USER.logdir",self._top_dir + '/log')    # log-directory
+        self._log_dir = self._top_dir + '/log'    # log-directory
         self._job_dir = self._top_dir + '/job'     # job pars, scripts, jdl's
-        self._res_dir = cfg_params.get("USER.outputdir", self._top_dir + '/res')     # dir to store job results
+        self._res_dir = self._top_dir + '/res'     # dir to store job results
         self._share_dir = self._top_dir + '/share' # directory for common stuff
 
         #Matteo: Necessary to manage user ui_working_dir
@@ -45,29 +53,33 @@ class WorkSpace:
         if not os.listdir(self._top_dir):
             os.mkdir(self._job_dir)
             os.mkdir(self._share_dir)
+            os.mkdir(self._res_dir)
+            os.mkdir(self._log_dir)
             pass
 
         # Some more check for _res_dir, since it can be user defined
-        if not os.path.exists(self._res_dir):
-            try: 
-                os.mkdir(self._res_dir)
-            except:
-                msg = 'Cannot mkdir ' + self._res_dir + ' Check permission'
+        if self._user_out_dir != '':
+            if not os.path.exists(self._user_out_dir):
+                try: 
+                    os.mkdir(self._user_out_dir)
+                except:
+                    msg = 'Cannot mkdir ' + self._user_out_dir + ' Check permission'
+                    raise CrabException(msg)
+            if os.listdir(self._user_out_dir):
+                msg = self._user_out_dir + ' already exists and is not empty. Please remove it before create new task'
                 raise CrabException(msg)
-        if os.listdir(self._res_dir):
-            msg = self._res_dir + ' already exists and is not empty. Please remove it before create new task'
-            raise CrabException(msg)
         # ditto for _log_dir
-        if not os.path.exists(self._log_dir):
-            try:
-                os.mkdir(self._log_dir)
-            except:
-                msg = 'Cannot mkdir ' + self._log_dir + ' Check permission'
+        if self._user_log_dir != '':
+            if not os.path.exists(self._user_log_dir):
+                try:
+                    os.mkdir(self._user_log_dir)
+                except:
+                    msg = 'Cannot mkdir ' + self._user_log_dir + ' Check permission'
+                    raise CrabException(msg)
+                pass 
+            if os.listdir(self._user_log_dir):
+                msg = self._user_log_dir + ' already exists and is not empty. Please remove it before create new task'
                 raise CrabException(msg)
-            pass 
-        if os.listdir(self._log_dir):
-            msg = self._log_dir + ' already exists and is not empty. Please remove it before create new task'
-            raise CrabException(msg)
         return
 
     def delete(self):
