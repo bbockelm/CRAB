@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.73 2008/04/24 14:19:15 mcinquil Exp $"
-__version__ = "$Revision: 1.73 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.75 2008/04/29 06:49:46 mcinquil Exp $"
+__version__ = "$Revision: 1.75 $"
 
 import os
 import time
@@ -27,7 +27,7 @@ from threading import Condition
 # logging
 import logging
 from logging.handlers import RotatingFileHandler
-import  ProdAgentCore.LoggingUtils as LoggingUtils
+import ProdAgentCore.LoggingUtils as LoggingUtils
 from ProdAgentCore.ProdAgentException import ProdAgentException
 from ProdCommon.Core.ProdException import ProdException
 from ProdAgentCore.Configuration import ProdAgentConfiguration
@@ -491,23 +491,6 @@ class TaskTrackingComponent:
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__logToBuf__(logBuf, "ERROR while updating the 'eMail' field for task: " + str(taskname) )
 
-    def addJobsToFile(self, taskPath, jobList):#, totJobs):
-        """
-        _addJobToFile_
-        """
-        fileName = "/.notSubmitted.TT"
-        file(taskPath + fileName, 'w').write(str(jobList))#+"::"+str(totJobs))
-
-    def getJobFromFile(self, taskPath):
-        """
-        _getJobFromFile_
-        """
-        fileName = "/.notSubmitted.TT"
-        if os.path.exists( taskPath + fileName ):
-            return eval( file(taskPath + fileName, 'r').read() )#.split("::")
-        return []
-
-    
     def updateTaskStatus(self, payload, status):
         """
 	_updateTaskStatus_
@@ -593,8 +576,6 @@ class TaskTrackingComponent:
 	TaskStateAPI.updatingNotifiedPA( taskName, 2 )
         if status == self.taskState[2]:
             self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + taskName + self.workAdd + self.resSubDir + self.xmlReportFileName, taskName )
-        elif status == self.taskState[7]:
-            self.taskIncompleteSubmission(origTaskName, strEmail[0:len(strEmail)-1], userName)
         else:
             self.taskFailed(origTaskName, strEmail[0:len(strEmail)-1], userName)
 	 
@@ -842,28 +823,6 @@ class TaskTrackingComponent:
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
   
-
-    def taskIncompleteSubmission( self, taskName, eMaiList, userName ):
-        """
-        _taskIncompleteSubmission_
-        """
-        logBuf = ""
-        if userName == "" or userName == None:
-            userName = "Unknown"
-        payload = taskName + ":" + userName + ":" + eMaiList
-        try:
-            ms_sem.acquire()
-            self.msThread.publish("TaskIncompleteSubmission", payload)
-            self.msThread.commit()
-        finally:
-            ms_sem.release()
-
-        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
-        logBuf = self.__logToBuf__(logBuf, "Published 'TaskIncompleteSubmission' message with payload: %s" % payload)
-        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
-        logging.info(logBuf)
-
-
     def __logToBuf__(self, buf, strToAppend):
         """
         __logToBug__
@@ -981,8 +940,6 @@ class TaskTrackingComponent:
                                     vect = [self.convertStatus(stato), eec, jec, 0, Resub, site, stato]
                                 dictStateTot.setdefault(job, vect)
  
-#                                jobPartList = self.getJobFromFile(str(self.args['dropBoxPath']) + "/" + taskName + "/" + self.resSubDir)
-
 			        if stato == "E":
 				    if (eec == "0" or eec == "" or eec == "NULL") and jec == "0":
 				        dictReportTot['JobSuccess'] += 1
