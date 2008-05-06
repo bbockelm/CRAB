@@ -317,7 +317,8 @@ if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then
           cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
           ####################
           echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
-          executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
+          #executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
+          executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}' | awk -F ' ' '{print $NF}'`
           if [ $executable_exit_status -eq 50115 ];then
               echo ">>> crab_fjr.xml contents: "
               #cat crab_fjr.xml
