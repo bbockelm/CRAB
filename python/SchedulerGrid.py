@@ -67,7 +67,7 @@ class SchedulerGrid(Scheduler):
                 msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
                 common.logger.message(msg)
                 raise CrabException(msg)
-            if self.srm_ver != 1 and self.SE_PATH.find("managerv1") != -1:
+            if int(self.srm_ver) != 1 and self.SE_PATH.find("managerv1") != -1:
                 msg = "Warning: The storage_path and srm_version seem to be incompatible."
                 msg = msg + " Set srm_version = 1 if your path contains manager1"
                 common.logger.message(msg)
