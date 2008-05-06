@@ -21,7 +21,7 @@ class Killer(Actor):
             if id not in  common._db.nJobs("list"):
                 common.logger.message("Warning: job # "+str(id)+" doesn't exists! Not possible to kill it.")
             else:
-                if ( jStatus[id-1] in ['SS','R']):
+                if ( jStatus[id-1] in ['SS','R','S']):
                     toBeKilled.append(id)
                 else:
                     common.logger.message("Not possible to kill Job #"+str(id)+" : Status is "+str(human_status[id-1]))
