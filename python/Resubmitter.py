@@ -10,6 +10,8 @@ class Resubmitter(Submitter):
         nj_list = []
       
         nj_list = self.checkAlowedJob(jobs,nj_list)
+ 
+        manageNewRunJobs(nj_list)   
        
         common.logger.message('Jobs '+str(nj_list)+' will be resubmitted')
         Submitter.__init__(self, cfg_params, nj_list, 'range')
@@ -19,10 +21,7 @@ class Resubmitter(Submitter):
     def checkAlowedJob(self,jobs,nj_list):
         listRunField=[]
         run_jobToSave = {'status' :'C', \
-                         'statusScheduler' : 'Created', \
-                         'closed' : 'N', \
-                         'applicationReturnCode' : '',\
-                         'wrapperReturnCode' : '' }
+                         'statusScheduler' : 'Created'}
 
         task=common._db.getTask(jobs)
         for job in task.jobs:
@@ -46,3 +45,10 @@ class Resubmitter(Submitter):
             return nj_list
         
         if UseServer==1:  SubmitterServer.__init__(self, cfg_params, nj_list, 'range')
+
+    def manageNewRunJobs(self,nj_list):
+        """
+        Get new running instances
+        """
+        common._db.newRunJobs(nj_list)
+        return

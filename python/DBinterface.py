@@ -299,6 +299,23 @@ class DBinterface:
             matched.append(i.runningJob[field])
         return matched 
 
+    def newRunJobs(self,nj='all'):
+        """
+        Get new running instances
+        """  
+        task = self.getTask(nj)
+
+        for job in task.jobs:
+            if job.runningJob is not None :
+                job.runningJob["closed"] = "Y"
+
+        common.bossSession.updateDB(task)
+
+        for job in task.jobs:
+            job.runningJob = None
+            common.bossSession.getRunningInstance(job)
+        return        
+
     def deserXmlStatus(self, reportList):
 
         task = self.getTask()
