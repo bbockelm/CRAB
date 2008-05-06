@@ -361,12 +361,12 @@ class FatWorker(Thread):
 
         # add fjr XML file to the retrieved files and WMS OSB bypass
         destDir = task['outputDirectory']
-        ## task['outputDirectory'] = '' 
+        task['outputDirectory'] = self.TURLpreamble + destDir[1:] # substr to avoid multiple '/'
 
         for jid in xrange(len(task.jobs)):
             # TODO reactivate once tgz won't be corrupted by the transfer 
-            #### gsiOSB = [ turlpreamble + destDir + '/' + of for of in  task.jobs[jid]['outputFiles']  ]
-            #### task.jobs[jid]['outputFiles'] = gsiOSB # [:-1]
+            gsiOSB = [ os.path.basename(of) for of in  task.jobs[jid]['outputFiles']  ]
+            task.jobs[jid]['outputFiles'] = gsiOSB # [:-1]
             #
             if 'crab_fjr_%d.xml'%(jid+1) not in task.jobs[jid]['outputFiles']:
                 task.jobs[jid]['outputFiles'].append( 'crab_fjr_%d.xml'%(jid+1) ) #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
@@ -376,7 +376,7 @@ class FatWorker(Thread):
 
         task['scriptName'] = turlpreamble + task['scriptName']
         task['cfgName'] = turlpreamble + task['cfgName']
-        self.blDBsession.updateDB(task) 
+        #self.blDBsession.updateDB(task) 
 
         ##send here pre submission info to ML DS
         self.SendMLpre(task)
@@ -466,7 +466,7 @@ class FatWorker(Thread):
         job.runningJob["closed"] = "Y"
         self.blDBsession.updateDB(task)
         self.blDBsession.getRunningInstance(job)
-        self.blDBsession.updateDB(task)
+        # self.blDBsession.updateDB(task)
 
         # recreate auxiliary infos from old dictionary
         self.cfg_params = {}
@@ -512,6 +512,22 @@ class FatWorker(Thread):
             self.log.info('Worker %s unable to submit jobs. No sites matched'%self.myName)
 
         self.evaluateSubmissionOutcome(task, [int(self.jobId)], submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
+
+        # increase the resubmit counter
+        dbCfg = copy.deepcopy(dbConfig)
+        dbCfg['dbType'] = 'mysql'
+
+        Session.set_database(dbCfg)
+        Session.connect(self.taskName)
+        Session.start_transaction(self.taskName)
+
+        # TODO avoid SQL interactions 
+        sqlStr="UPDATE we_Job SET retries=retries+1 WHERE id='%s' AND retries<max_retries"%job['name']
+        Session.execute(sqlStr)
+
+        Session.commit(self.taskName)
+        Session.close(self.taskName)
+
         return   
 
 ####################################
