@@ -49,6 +49,8 @@ def main(argv) :
   g4Seed         = 0
   mixSeed        = 0
   debug          = False
+  _MAXINT        = 900000000
+  maxSeeds       = 4         # Kludge, maximum # of seeds that any engine takes
 
   try:
     opts, args = getopt.getopt(argv, "", ["debug", "help"])
@@ -85,15 +87,16 @@ def main(argv) :
 
 # Optional Parameters
 
-  maxEvents  = int(os.environ.get('MaxEvents','0'))
+  maxEvents  = int(os.environ.get('MaxEvents', '0'))
   skipEvents = int(os.environ.get('SkipEvents','0'))
-  inputFiles = os.environ.get('InputFiles','')
-  firstRun   = int(os.environ.get('FirstRun','0'))
-  nJob       = int(os.environ.get('NJob','0'))
-  preserveSeeds = os.environ.get('PreserveSeeds','')
+  firstRun   = int(os.environ.get('FirstRun',  '0'))
+  nJob       = int(os.environ.get('NJob',      '0'))
+
+  inputFiles     = os.environ.get('InputFiles','')
+  preserveSeeds  = os.environ.get('PreserveSeeds','')
   incrementSeeds = os.environ.get('IncrementSeeds','')
 
-# Read Input cfg or python cfg file
+# Read Input cfg or python cfg file, FUTURE: Get rid cfg mode
 
   if fileName.endswith('py'):
     handle = open(fileName, 'r')
@@ -142,13 +145,10 @@ def main(argv) :
     preserveSeedList  = preserveSeeds.split(',')
 
   # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
-  if CMSSW_major < 3: # True for now, should be < 2 when really ready
-  # Treatment for seeds, CMSSW < 2_0_x
+  if CMSSW_major < 2 or (CMSSW_major == 2 and CMSSW_minor == 0): # Treatment for seeds, CMSSW < 2_1_x
     if cfg.data.services.has_key('RandomNumberGeneratorService'):
       ranGenerator = cfg.data.services['RandomNumberGeneratorService']
       ranModules   = ranGenerator.moduleSeeds
-
-      _MAXINT = 900000000
 
       sourceSeed = int(ranGenerator.sourceSeed.value())
       if 'sourceSeed' in preserveSeedList:
@@ -171,33 +171,36 @@ def main(argv) :
           if curSeed:
             curValue = int(curSeed.value())
             setattr(ranGenerator.moduleSeeds,seed,CfgTypes.untracked(CfgTypes.uint32(_inst.randint(1,_MAXINT))))
-  else:
-    # Treatment for  seeds, CMSSW => 2_0_x
-    #from RandomService import RandomSeedService
+  else: # Treatment for  seeds, CMSSW 2_1_x and later
+    if cfg.data.services.has_key('RandomNumberGeneratorService'):
+      from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
 
-
-    # This code not currently working because randSvc is not part of the actual configuration file
-
-    # Translate old format to new format first
-    randSvc = RandomSeedService()
-    try:
       ranGenerator = cfg.data.services['RandomNumberGeneratorService']
-      ranModules   = ranGenerator.moduleSeeds
-      for seed in ranGenerator.moduleSeeds.parameters().keys():
-        curSeed = getattr(ranGenerator.moduleSeeds,seed,None)
-        curValue = int(curSeed.value())
-        setattr(randSvc,seed,CfgTypes.PSet())
-        curPSet = getattr(randSvc,seed,None)
-        curPSet.initialSeed = CfgTypes.untracked(CfgTypes.uint32(curValue))
-      del ranGenerator.moduleSeeds # Get rid of seeds in old format
-# Doesn't work, filter is false      randSvc.populate()
+      randSvc = RandomNumberServiceHelper(ranGenerator)
+      # sourceSeed is different from the rest, John says will become "theSource"
+      if 'sourceSeed' in preserveSeedList:
+        pass
+      elif 'sourceSeed' in incrementSeedList:
+        sourceSeed = int(ranGenerator.sourceSeed.value())
+        ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(sourceSeed+nJob))
+      else:
+        ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(_inst.randint(1,_MAXINT)))
 
-    except:
-      print "Problems converting old seeds to new format"
+      # Increment requested seed sets
+      for seedName in incrementSeedList:
+        curSeeds = randSvc.getNamedSeed(seedName)
+        newSeeds = [x+nJob for x in curSeeds]
+        randSvc.setNamedSeed(seedName,*newSeeds)
+        preserveSeedList.append(seedName)
 
-  # Write out new config file in one format or the other
+      # Randomize remaining seeds
+      randSvc.populate(*preserveSeedList)
+
+  # End version specific code
+
+  # Write out new config file in one format or the other, FUTURE: Get rid of cfg mode
   outFile = open(outFileName,"w")
-  if (outFileName.endswith('py') or outFileName.endswith('pycfg') ):
+  if outFileName.endswith('py'):
     outFile.write("import FWCore.ParameterSet.Config as cms\n")
     outFile.write(cmsProcess.dumpPython())
     if (debug):
@@ -215,4 +218,3 @@ def main(argv) :
 if __name__ == '__main__' :
     exit_status = main(sys.argv[1:])
     sys.exit(exit_status)
-
