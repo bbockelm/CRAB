@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.15 2008/04/28 13:16:38 mcinquil Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.17 2008/05/02 08:34:19 mcinquil Exp $"
+__version__ = "$Revision: 1.17 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -365,6 +365,18 @@ class TaskLifeManagerComponent:
         if taskPath != "/" and taskPath != self.args['storagePath'] \
            and self.SeSbI.checkExists( taskPath, proxy ):
             try:
+                baseToDelete = [ \
+                                 "CMSSW.sh", \
+                                 "default.tgz" \
+                               ]
+                for file in baseToDelete:
+                    try:
+                        self.SeSbI.delete( join(taskPath, file), proxy )
+                    except Exception, ex: 
+                        import traceback
+                        logging.debug( "Exception raised: " + str(ex) )
+                        logging.debug( str(traceback.format_exc()) )
+                        logging.info( "problems deleting isb for task " + str(taskPath) )
                 summ = self.SeSbI.getDirSpace(taskPath, proxy)
                 self.SeSbI.delete( taskPath, proxy )
             except OperationException, ex:
