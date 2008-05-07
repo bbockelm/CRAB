@@ -8,8 +8,8 @@ class GetOutput(Actor):
         self.cfg_params = args[0]
         self.jobs = args[1]
         
-        self.outDir = common.work_space.resDir()
-        self.logDir = common.work_space.resDir()
+        self.outDir = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
+        self.logDir = self.cfg_params.get('USER.logdir' ,common.work_space.resDir())
         self.return_data = self.cfg_params.get('USER.return_data',0)
 
         self.possible_status = {
