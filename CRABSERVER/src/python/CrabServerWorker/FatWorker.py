@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.57 2008/05/04 13:38:35 spiga Exp $"
-__version__ = "$Revision: 1.57 $"
+__revision__ = "$Id: FatWorker.py,v 1.59 2008/05/06 15:21:57 farinafa Exp $"
+__version__ = "$Revision: 1.59 $"
 import string
 import sys, os
 import time
@@ -376,7 +376,7 @@ class FatWorker(Thread):
 
         task['scriptName'] = turlpreamble + task['scriptName']
         task['cfgName'] = turlpreamble + task['cfgName']
-        #self.blDBsession.updateDB(task) 
+        self.blDBsession.updateDB(task) 
 
         ##send here pre submission info to ML DS
         self.SendMLpre(task)
@@ -463,9 +463,8 @@ class FatWorker(Thread):
         schedulerConfig = {'name' : job.runningJob['scheduler'], 'user_proxy' : task['user_proxy'] }
         self.blSchedSession = BossLiteAPISched( self.blDBsession, schedulerConfig )
 
-        job.runningJob["closed"] = "Y"
-        self.blDBsession.updateDB(task)
-        self.blDBsession.getRunningInstance(job)
+        self.blDBsession.getNewRunningInstance(job)
+        self.log.info( "Re-Submission number %s" % job.runningJob['submission'] )
         # self.blDBsession.updateDB(task)
 
         # recreate auxiliary infos from old dictionary
