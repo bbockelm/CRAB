@@ -198,6 +198,7 @@ class Cmssw(JobType):
         if self.sourceSeed:
             print "pythia_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
             self.incrementSeeds.append('sourceSeed')
+            self.incrementSeeds.append('theSource')
 
         self.sourceSeedVtx = cfg_params.get('CMSSW.vtx_seed',None)
         if self.sourceSeedVtx:

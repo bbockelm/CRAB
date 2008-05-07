@@ -144,12 +144,11 @@ def main(argv) :
   if preserveSeeds:
     preserveSeedList  = preserveSeeds.split(',')
 
-  # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
-  if CMSSW_major < 2 or (CMSSW_major == 2 and CMSSW_minor == 0): # Treatment for seeds, CMSSW < 2_1_x
-    if cfg.data.services.has_key('RandomNumberGeneratorService'):
-      ranGenerator = cfg.data.services['RandomNumberGeneratorService']
-      ranModules   = ranGenerator.moduleSeeds
-
+  # FUTURE: This function tests the CMSSW version and presence of old-style seed specification. Reduce when we drop support for old versions
+  if cfg.data.services.has_key('RandomNumberGeneratorService'): # There are random #'s to deal with
+    ranGenerator = cfg.data.services['RandomNumberGeneratorService']
+    ranModules   = getattr(ranGenerator,"moduleSeeds",None)
+    if ranModules != None:              # Old format present, no matter the CMSSW version
       sourceSeed = int(ranGenerator.sourceSeed.value())
       if 'sourceSeed' in preserveSeedList:
         pass
@@ -171,20 +170,9 @@ def main(argv) :
           if curSeed:
             curValue = int(curSeed.value())
             setattr(ranGenerator.moduleSeeds,seed,CfgTypes.untracked(CfgTypes.uint32(_inst.randint(1,_MAXINT))))
-  else: # Treatment for  seeds, CMSSW 2_1_x and later
-    if cfg.data.services.has_key('RandomNumberGeneratorService'):
+    elif CMSSW_major > 2 or (CMSSW_major == 2 and CMSSW_minor >= 1): # Treatment for  seeds, CMSSW 2_1_x and later
       from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
-
-      ranGenerator = cfg.data.services['RandomNumberGeneratorService']
       randSvc = RandomNumberServiceHelper(ranGenerator)
-      # sourceSeed is different from the rest, John says will become "theSource"
-      if 'sourceSeed' in preserveSeedList:
-        pass
-      elif 'sourceSeed' in incrementSeedList:
-        sourceSeed = int(ranGenerator.sourceSeed.value())
-        ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(sourceSeed+nJob))
-      else:
-        ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(_inst.randint(1,_MAXINT)))
 
       # Increment requested seed sets
       for seedName in incrementSeedList:
@@ -196,7 +184,7 @@ def main(argv) :
       # Randomize remaining seeds
       randSvc.populate(*preserveSeedList)
 
-  # End version specific code
+    # End version specific code
 
   # Write out new config file in one format or the other, FUTURE: Get rid of cfg mode
   outFile = open(outFileName,"w")
