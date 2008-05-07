@@ -146,13 +146,15 @@ def main(argv) :
 
   # FUTURE: This function tests the CMSSW version and presence of old-style seed specification. Reduce when we drop support for old versions
   if cfg.data.services.has_key('RandomNumberGeneratorService'): # There are random #'s to deal with
+    print "RandomNumberGeneratorService found, will attempt to change seeds"
     ranGenerator = cfg.data.services['RandomNumberGeneratorService']
     ranModules   = getattr(ranGenerator,"moduleSeeds",None)
     if ranModules != None:              # Old format present, no matter the CMSSW version
+      print "Old-style random number seeds found, will be changed."
       sourceSeed = int(ranGenerator.sourceSeed.value())
-      if 'sourceSeed' in preserveSeedList:
+      if ('sourceSeed' in preserveSeedList) or ('theSource' in preserveSeedList):
         pass
-      elif 'sourceSeed' in incrementSeedList:
+      elif ('sourceSeed' in incrementSeedList) or ('theSource' in incrementSeedList):
         ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(sourceSeed+nJob))
       else:
         ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(_inst.randint(1,_MAXINT)))
@@ -171,6 +173,7 @@ def main(argv) :
             curValue = int(curSeed.value())
             setattr(ranGenerator.moduleSeeds,seed,CfgTypes.untracked(CfgTypes.uint32(_inst.randint(1,_MAXINT))))
     elif CMSSW_major > 2 or (CMSSW_major == 2 and CMSSW_minor >= 1): # Treatment for  seeds, CMSSW 2_1_x and later
+      print "New-style random number seeds found, will be changed."
       from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
       randSvc = RandomNumberServiceHelper(ranGenerator)
 
@@ -183,6 +186,8 @@ def main(argv) :
 
       # Randomize remaining seeds
       randSvc.populate(*preserveSeedList)
+    else:
+      print "Neither old nor new seed format found!"
 
     # End version specific code
 
