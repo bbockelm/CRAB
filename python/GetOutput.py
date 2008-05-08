@@ -133,7 +133,7 @@ class GetOutput(Actor):
         if self.logDir != self.outDir:
             for i_id in self.list_id:  
                 try:
-                    cmd = 'mv '+str(self.outDir)+'/*'+str(i_id)+'.std* '+str(self.outDir)+'/.BrokerInfo '+str(self.outDir)+'/*.log '+str(self.logDir)
+                    cmd = 'mv '+str(self.outDir)+'/*'+str(i_id)+'.std* '+str(self.outDir)+'/.BrokerInfo '+str(self.logDir)
                     cmd_out =os.system(cmd)
                 except:
                     msg = 'Problem with copy of job results'

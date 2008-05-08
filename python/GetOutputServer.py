@@ -59,7 +59,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         common.logger.debug(3, "List of OSB files: " +str(osbFiles) )
  
         #   
-        copyHere = common.work_space.resDir()
+        copyHere = self.outDir 
         destTemplate = copyHere+'/out_files_%s.tgz'  
         destFiles = [ destTemplate%str(jid) for jid in filesToRetrieve ]
 
