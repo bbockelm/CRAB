@@ -360,8 +360,11 @@ class FatWorker(Thread):
         task['startDirectory'] = turlpreamble
 
         # add fjr XML file to the retrieved files and WMS OSB bypass
-        destDir = task['outputDirectory']
-        task['outputDirectory'] = self.TURLpreamble + destDir[1:] # substr to avoid multiple '/'
+        if self.submissionKind == 'first': 
+            destDir = task['outputDirectory']
+            task['outputDirectory'] = self.TURLpreamble + destDir[1:] # substr to avoid multiple '/'
+            task['scriptName'] = turlpreamble + task['scriptName']
+            task['cfgName'] = turlpreamble + task['cfgName']
 
         for jid in xrange(len(task.jobs)):
             # TODO reactivate once tgz won't be corrupted by the transfer 
@@ -374,8 +377,6 @@ class FatWorker(Thread):
             if '.BrokerInfo' not in task.jobs[jid]['outputFiles']:
                 task.jobs[jid]['outputFiles'].append( '.BrokerInfo' )
 
-        task['scriptName'] = turlpreamble + task['scriptName']
-        task['cfgName'] = turlpreamble + task['cfgName']
         self.blDBsession.updateDB(task) 
 
         ##send here pre submission info to ML DS
@@ -488,7 +489,7 @@ class FatWorker(Thread):
         self.EDG_retry_count = int(self.cfg_params['EDG_retry_count'])
         self.EDG_shallow_retry_count = int(self.cfg_params['EDG_shallow_retry_count'])
  
-        # submit once again
+        # get the turl
         seEl = SElement(self.SEurl, self.SEproto, self.SEport)
         sbi = SBinterface( seEl )
         taskFileList = task['globalSandbox'].split(',')
@@ -498,6 +499,23 @@ class FatWorker(Thread):
             if self.TURLpreamble[-1] != '/':
                 self.TURLpreamble += '/'
 
+
+        # backup for job output (tgz files only, less load)
+        outcomes = [ str(task['outputDirectory']+'/'+f).replace(self.TURLpreamble, '/') for f in job['outputFiles'] if 'tgz' in f ]
+        bk_sbi = SBinterface( seEl, copy.deepcopy(seEl) )
+
+        for orig in outcomes:
+            try:
+                if sbi.checkExists(orig, task['user_proxy']) == True:
+                    # create a backup copy
+                    replica = orig+'.'+str(time.time())
+                    bk_sbi.copy( source=orig, dest=replica, proxy=task['user_proxy'])
+            except Exception, ex:
+                self.log.info("Problem while creating back-up copy for %s: %s"%(self.myName, orig))
+                self.log.info( traceback.format_exc() )
+        self.log.info('Backup output try completed for %s'%self.myName)
+
+        # submit once again 
         sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(task, [int(self.jobId)])
         self.log.info('Worker %s listmatched jobs, now submitting'%self.myName)
 
