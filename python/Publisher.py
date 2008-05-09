@@ -48,8 +48,9 @@ class Publisher(Actor):
                 msg = msg + "Please write your local one in the [USER] section 'dbs_url_for_publication'"
                 raise CrabException(msg)
         except KeyError:
-            msg = "Error. The [USER] section does not have 'dbs_url_for_publication'"
-            msg = msg + " entry, necessary to publish the data"
+            msg = "Warning. The [USER] section does not have 'dbs_url_for_publication'"
+            msg = msg + " entry, necessary to publish the data.\n"
+            msg = msg + "Use the command **crab -publish -USER.dbs_url_for_publication=dbs_url_for_publication*** \nwhere dbs_url_for_publication is your local dbs instance."
             raise CrabException(msg)
             
         self.content=file(self.pset).read()
@@ -90,8 +91,8 @@ class Publisher(Actor):
             msg = "Error: Problem with "+file+" file"  
             common.logger.message(msg)
             return self.exit_status
-            
-        if (self.datasetpath != 'None'):
+        
+        if (self.datasetpath.upper() != 'NONE'):
             common.logger.message("--->>> Importing parent dataset in the dbs")
             status_import=self.importParentDataset(self.globalDBS, self.datasetpath)
             if (status_import == 1):
