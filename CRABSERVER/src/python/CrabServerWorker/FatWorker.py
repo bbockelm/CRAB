@@ -362,7 +362,7 @@ class FatWorker(Thread):
         # add fjr XML file to the retrieved files and WMS OSB bypass
         if self.submissionKind == 'first': 
             destDir = task['outputDirectory']
-            task['outputDirectory'] = self.TURLpreamble + destDir[1:] # substr to avoid multiple '/'
+            task['outputDirectory'] = self.TURLpreamble + destDir # diabled for the CAF destDir[1:] # substr to avoid multiple '/'
             task['scriptName'] = turlpreamble + task['scriptName']
             task['cfgName'] = turlpreamble + task['cfgName']
 
@@ -449,6 +449,15 @@ class FatWorker(Thread):
         job = task.jobs[0]
         self.blDBsession.getRunningInstance(job)
 
+        # no more attempts  
+        if int(job.runningJob['submission']) > int(self.maxRetries):
+            status = 6
+            reason = "No more attempts for resubmission for %s, the attempts will not be stopped"%self.myName
+            self.log.info(reason) 
+            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", task['name'] + "::" + str(status) + "::" + reason)
+            self.local_ms.commit()
+            return
+
         # TODO to be cleaned
         # get the scheduler name used by listCreation
         self.schedName = 'glite'
@@ -462,7 +471,15 @@ class FatWorker(Thread):
            self.schedName = 'glite'
 
         schedulerConfig = {'name' : job.runningJob['scheduler'], 'user_proxy' : task['user_proxy'] }
-        self.blSchedSession = BossLiteAPISched( self.blDBsession, schedulerConfig )
+        try:
+            self.blSchedSession = BossLiteAPISched( self.blDBsession, schedulerConfig )
+        except Exception, e:
+            status = 6
+            reason = "Error allocating SchedSession for %s, resubmission attempt will not be processed"%self.myName
+            self.log.info( reason +'\n'+ traceback.format_exc() )
+            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", task['name'] + "::" + str(status) + "::" + reason)
+            self.local_ms.commit()
+            return
 
         self.blDBsession.getNewRunningInstance(job)
         self.log.info( "Re-Submission number %s" % job.runningJob['submission'] )
@@ -499,7 +516,6 @@ class FatWorker(Thread):
             if self.TURLpreamble[-1] != '/':
                 self.TURLpreamble += '/'
 
-
         # backup for job output (tgz files only, less load)
         outcomes = [ str(task['outputDirectory']+'/'+f).replace(self.TURLpreamble, '/') for f in job['outputFiles'] if 'tgz' in f ]
         bk_sbi = SBinterface( seEl, copy.deepcopy(seEl) )
@@ -510,10 +526,10 @@ class FatWorker(Thread):
                     # create a backup copy
                     replica = orig+'.'+str(time.time())
                     bk_sbi.copy( source=orig, dest=replica, proxy=task['user_proxy'])
+
             except Exception, ex:
                 self.log.info("Problem while creating back-up copy for %s: %s"%(self.myName, orig))
                 self.log.info( traceback.format_exc() )
-        self.log.info('Backup output try completed for %s'%self.myName)
 
         # submit once again 
         sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(task, [int(self.jobId)])
