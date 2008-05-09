@@ -114,9 +114,12 @@ class FatWorker(Thread):
         except Exception, e:
             status = 6
             reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
-            self.log.info( reason +'\n'+ traceback.format_exc() )
+
+            self.sendResult(status, reason, reason)
+            self.log.info( traceback.format_exc() )
             self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
             self.local_ms.commit()
+
             return
 
         # simple container to move _small_ portions of the cfg to server
@@ -232,7 +235,7 @@ class FatWorker(Thread):
 
         else:
             ## not the proper submission handler
-            self.sendResult(10, "Bad sumbission manager for %s. This kind of submission should not be handled here."%(self.taskName), \
+            self.sendResult(10, "Bad submission manager for %s. This kind of submission should not be handled here."%(self.taskName), \
                     "FatWorkerError %s. Wrong submission manager for %s."%(self.myName, self.taskName) )
             # propagate failure message
             self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
@@ -452,9 +455,9 @@ class FatWorker(Thread):
         # no more attempts  
         if int(job.runningJob['submission']) > int(self.maxRetries):
             status = 6
-            reason = "No more attempts for resubmission for %s, the attempts will not be stopped"%self.myName
-            self.log.info(reason) 
-            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", task['name'] + "::" + str(status) + "::" + reason)
+            reason = "No more attempts for resubmission for %s, the attempts will be stopped"%self.myName
+            self.sendResult(status, reason, reason)
+            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
             self.local_ms.commit()
             return
 
@@ -476,8 +479,8 @@ class FatWorker(Thread):
         except Exception, e:
             status = 6
             reason = "Error allocating SchedSession for %s, resubmission attempt will not be processed"%self.myName
-            self.log.info( reason +'\n'+ traceback.format_exc() )
-            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", task['name'] + "::" + str(status) + "::" + reason)
+            self.sendResult(status, reason, reason)
+            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
             self.local_ms.commit()
             return
 
@@ -497,8 +500,8 @@ class FatWorker(Thread):
         except Exception, e:
             status = 6
             reason = "Error parsing command XML for %s, resubmission attempt will not be processed"%self.myName
-            self.log.info( reason +'\n'+ traceback.format_exc() )
-            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", task['name'] + "::" + str(status) + "::" + reason)
+            self.sendResult(status, reason, reason)
+            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
             self.local_ms.commit()
             return
 
