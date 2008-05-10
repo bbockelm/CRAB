@@ -40,7 +40,7 @@ class Status(Actor):
         taskId= str("_".join(str(up_task['name']).split('_')[:-1]))
 
         for job in up_task.jobs :
-            id = str(job.runningJob['id'])
+            id = str(job.runningJob['jobId'])
             jobStatus =  str(job.runningJob['statusScheduler'])
             dest = str(job.runningJob['destination']).split(':')[0]
             exe_exit_code = str(job.runningJob['applicationReturnCode'])

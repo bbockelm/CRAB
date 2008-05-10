@@ -11,7 +11,6 @@ class Resubmitter(Submitter):
 
         nj_list = self.checkAlowedJob(jobs,nj_list)
 
-        self.manageNewRunJobs(nj_list)
 
         common.logger.message('Jobs '+str(nj_list)+' will be resubmitted')
         Submitter.__init__(self, cfg_params, nj_list, 'range')
@@ -20,16 +19,13 @@ class Resubmitter(Submitter):
 
     def checkAlowedJob(self,jobs,nj_list):
         listRunField=[]
-        run_jobToSave = {'status' :'C', \
-                         'statusScheduler' : 'Created'}
 
         task=common._db.getTask(jobs)
         for job in task.jobs:
             st = job.runningJob['status']
-            nj = job['id']
+            nj = job['jobId']
             if st in ['K','A','SE','E']:
                 nj_list.append(int(nj))
-                listRunField.append(run_jobToSave)
             elif st == 'C':
                 common.logger.message('Job #'+`int(nj)`+' has status '+str(job.runningJob['statusScheduler'])+' not yet submitted!!!')
             elif st in ['SD','D']:
@@ -40,11 +36,8 @@ class Resubmitter(Submitter):
         if len(nj_list) == 0 :
             msg='No jobs to resubmit'
             raise CrabException(msg)
-        else:
-            common._db.updateRunJob_(nj_list, listRunField )
-            return nj_list
-
-        if UseServer==1:  SubmitterServer.__init__(self, cfg_params, nj_list, 'range')
+        self.manageNewRunJobs(nj_list)
+        return nj_list
 
     def manageNewRunJobs(self,nj_list):
         """

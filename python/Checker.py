@@ -20,7 +20,7 @@ class Checker(Actor):
         task=common._db.getTask(self.nj_list)
         allMatch={}
         for job in task.jobs:
-            id_job = job['id'] 
+            id_job = job['jobId'] 
             dest = job['dlsDestination']
             if dest in allMatch.keys():
                 common.logger.message("As previous job: "+str(allMatch[dest]))

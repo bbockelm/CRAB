@@ -180,7 +180,7 @@ class DBinterface:
         Jobs = task.getJobs()
         print "--------------------------"
         for Job in Jobs:
-            print "Id: ",Job['id']
+            print "Id: ",Job['jobId']
             print "Dest: ", Job['dlsDestination']
             print "Output: ", Job['outputFiles']
             print "Args: ",Job['arguments']
@@ -206,7 +206,7 @@ class DBinterface:
             for job in task.jobs: 
                 toPrint=''
                 common.bossSession.getRunningInstance(job)
-                toPrint = "%-5s %-50s " % (job['id'],job.runningJob['schedulerId'])
+                toPrint = "%-5s %-50s " % (job['jobId'],job.runningJob['schedulerId'])
                 lines.append(toPrint)
             header+= "%-5s %-50s " % ('Job:','ID' ) 
         displayReport(self,header,lines)
@@ -306,14 +306,10 @@ class DBinterface:
         task = self.getTask(nj)
 
         for job in task.jobs:
-            if job.runningJob is not None :
-                job.runningJob["closed"] = "Y"
-
-        common.bossSession.updateDB(task)
-
-        for job in task.jobs:
-            job.runningJob = None
-            common.bossSession.getRunningInstance(job)
+            common.bossSession.getNewRunningInstance(job)
+            job.runningJob['status'] = 'C'
+            job.runningJob['statusScheduler'] = 'Created'
+        common.bossSession.updateDB(task)     
         return        
 
     def deserXmlStatus(self, reportList):

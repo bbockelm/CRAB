@@ -49,8 +49,8 @@ class GetOutput(Actor):
         self.all_id =[]    
         for job in self.up_task.jobs:
             if job.runningJob['status'] in ['SD','E']:
-                list_id_done.append(job['id'])  
-            self.all_id.append(job['id'])  
+                list_id_done.append(job['jobId'])  
+            self.all_id.append(job['jobId'])  
         check = -1 
         if self.jobs != 'all': check = len( set(self.jobs).intersection(set(list_id_done)) )  
         if len(list_id_done)==0 or ( check == 0 ) :

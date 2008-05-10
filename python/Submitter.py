@@ -302,7 +302,7 @@ class Submitter(Actor):
    
         Sub_Type = 'Direct'
         for job in task.jobs:
-            jj = job['id']          
+            jj = job['jobId']          
             jobId = ''
             localId = ''
             jid = str(job.runningJob['schedulerId']) 
