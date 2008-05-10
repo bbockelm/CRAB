@@ -13,20 +13,17 @@ class Killer(Actor):
         The main method of the class: kill a complete task
         """
         common.logger.debug(5, "Killer::run() called")
-
-        jStatus=common._db.queryRunJob('status','all')
-        human_status = common._db.queryRunJob('statusScheduler','all')
+        task = common._db.getTask(self.range)
         toBeKilled = []
-        for id in self.range:
-            if id not in  common._db.nJobs("list"):
-                common.logger.message("Warning: job # "+str(id)+" doesn't exists! Not possible to kill it.")
-            else:
-                if ( jStatus[id-1] in ['SS','R','S']):
-                    toBeKilled.append(id)
-                else:
-                    common.logger.message("Not possible to kill Job #"+str(id)+" : Status is "+str(human_status[id-1]))
-                pass
-            pass
+        for job  in task.jobs:
+           # if id not in  common._db.nJobs("list"):
+           #     common.logger.message("Warning: job # "+str(id)+" doesn't exists! Not possible to kill it.")
+           # else:
+           if ( job.runningJob['status'] in ['SS','R','S']):
+               toBeKilled.append(job['jobId'])
+           else:
+               common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['schedulerStatus']))
+           pass
 
         if len(toBeKilled)>0:
             common.scheduler.cancel(toBeKilled)
