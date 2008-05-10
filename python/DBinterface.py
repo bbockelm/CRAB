@@ -318,9 +318,9 @@ class DBinterface:
  
         for job in task.jobs:
             if not job.runningJob:
-                raise CrabException( "Missing running object for job %s"%str(job['id']) )
+                raise CrabException( "Missing running object for job %s"%str(job['jobId']) )
 
-            id = str(job.runningJob['id'])
+            id = str(job.runningJob['jobId'])
             # TODO linear search, probably it can be optized with binary search
             rForJ = None
             for r in reportList:
