@@ -175,5 +175,8 @@ return
 
 #configureSqlite 
 #configurePysqlite 
+echo
+echo -n Configuring CRAB..... 
 configureCrab
-
+echo "Done"
+echo
