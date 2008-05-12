@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.59 2008/05/06 15:21:57 farinafa Exp $"
-__version__ = "$Revision: 1.59 $"
+__revision__ = "$Id: FatWorker.py,v 1.63 2008/05/09 10:28:50 farinafa Exp $"
+__version__ = "$Revision: 1.63 $"
 import string
 import sys, os
 import time
@@ -79,7 +79,7 @@ class FatWorker(Thread):
 
         # derived attributes
         self.local_ms = MessageService()
-        self.local_ms.registerAs(self.myName)
+        self.local_ms.registerAs( '_'.join(self.myName.split('_')[:2]) )
         
         self.blDBsession = BossLiteAPI('MySQL', dbConfig)
         self.blSchedSession = None
