@@ -137,7 +137,7 @@ componentFields = {
 print "Creating ProdAgent configuration\n"
  
 #os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder,JobKiller,GetOutput,HTTPFrontend")
-os.system("prodAgent-new-config --components=JobTracking,GetOutput,HTTPFrontend")
+os.system("prodAgent-new-config --components=JobTracking,GetOutput,ErrorHandler,JobKiller,HTTPFrontend")
 
 # read configuration
 
