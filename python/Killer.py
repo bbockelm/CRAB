@@ -22,7 +22,7 @@ class Killer(Actor):
            if ( job.runningJob['status'] in ['SS','R','S']):
                toBeKilled.append(job['jobId'])
            else:
-               common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['schedulerStatus']))
+               common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
            pass
 
         if len(toBeKilled)>0:
