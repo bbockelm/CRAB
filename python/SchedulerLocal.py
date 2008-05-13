@@ -131,9 +131,9 @@ class SchedulerLocal(Scheduler) :
 
         txt += 'echo ">>> Copy output files from WN = `hostname` to PATH = $SE_PATH using $CP_CMD :"\n'
 
-        txt += 'if [ $output_exit_status -eq 60302 ]; then\n'
+        txt += 'if [ $job_exit_code -eq 60302 ]; then\n'
         txt += '    echo "--> No output file to copy to $SE"\n'
-        txt += '    copy_exit_status=$output_exit_status\n'
+        txt += '    copy_exit_status=$job_exit_code\n'
         txt += '    echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
         txt += 'else\n'
         txt += '    for out_file in $file_list ; do\n'
