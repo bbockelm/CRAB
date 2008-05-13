@@ -1,8 +1,8 @@
 from SchedulerCondorCommon import SchedulerCondorCommon
 from crab_exceptions import *
 import common
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.102 2008/04/24 14:58:12 ewv Exp $"
-__version__ = "$Revision: 1.102 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.103 2008/04/25 18:23:10 ewv Exp $"
+__version__ = "$Revision: 1.103 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -27,6 +27,9 @@ class SchedulerCondor_g(SchedulerCondorCommon):
     globusRSL = self.GLOBUS_RSL
     if (self.EDG_clock_time):
       globusRSL += '(maxWalltime='+self.EDG_clock_time+')'
+    else:
+      globusRSL += '(maxWalltime=120)'
+        
     if (globusRSL != ''):
       jobParams +=  'globusrsl = ' + globusRSL + '; '
 

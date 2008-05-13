@@ -357,11 +357,36 @@ def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=T
             if (jmlist.count(name) == 0): jmlist.append(name)
 
     return jmlist
+	    
+def listAllSEs(bdii='exp-bdii.cern.ch'):
+    host = re.compile('^GlueCEInfoDefaultSE: (.*)')
+    
+    seList = []
+
+    query = ' "(GlueCEAccessControlBaseRule=VO:cms)" '
+    pout = runldapquery(query, 'GlueCEInfoDefaultSE', bdii)
+    output = concatoutput(pout)
+
+    stanza_list = output.split(LF+LF)
+    for stanza in stanza_list:
+        if len(stanza) > 1:
+            details = stanza.split(LF)
+            for det in details:
+                mhost = host.match(det)
+                if mhost: # hostname
+                    hostname = mhost.groups()[0]
+                    if hostname not in seList:
+                        seList.append(mhost.groups()[0])
+    
+    return seList                    
+    		    
 
 if __name__ == '__main__':
-    seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
+    import pprint
+    pprint.pprint(listAllSEs())
+#    seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
 #    seList = ['ccsrm.in2p3.fr', 'storm.ifca.es']
-    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345", 'uscmsbd2.fnal.gov', True)
-    for jm in jmlist:
-        print jm
+#    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345", 'uscmsbd2.fnal.gov', True)
+#    for jm in jmlist:
+#        print jm
 #   print jm_from_se_bdii(sys.argv[1])
