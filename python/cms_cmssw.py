@@ -943,7 +943,9 @@ class Cmssw(JobType):
         txt += 'rm -r lib/ module/ \n'
         txt += 'mv $RUNTIME_AREA/lib/ . \n'
         txt += 'mv $RUNTIME_AREA/module/ . \n'
-        if self.dataExist == True: txt += 'mv $RUNTIME_AREA/src/ . \n'
+        if self.dataExist == True:
+            txt += 'rm -r src/ \n'
+            txt += 'mv $RUNTIME_AREA/src/ . \n'
         if len(self.additional_inbox_files)>0:
             for file in self.additional_inbox_files:
                 txt += 'mv $RUNTIME_AREA/'+file+' . \n'
