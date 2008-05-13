@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.63 2008/05/09 10:28:50 farinafa Exp $"
-__version__ = "$Revision: 1.63 $"
+__revision__ = "$Id: FatWorker.py,v 1.64 2008/05/12 13:47:27 farinafa Exp $"
+__version__ = "$Revision: 1.64 $"
 import string
 import sys, os
 import time
@@ -453,7 +453,7 @@ class FatWorker(Thread):
         self.blDBsession.getRunningInstance(job)
 
         # no more attempts  
-        if int(job.runningJob['submission']) > int(self.maxRetries):
+        if int(job.runningJob['submission']) >= int(self.maxRetries):
             status = 6
             reason = "No more attempts for resubmission for %s, the attempts will be stopped"%self.myName
             self.sendResult(status, reason, reason)
@@ -497,6 +497,31 @@ class FatWorker(Thread):
             doc = minidom.parse(cmdSpecFile)
             self.cmdXML = doc.getElementsByTagName("TaskCommand")[0]
             self.cfg_params.update( eval( self.cmdXML.getAttribute("CfgParamDict") ) )
+
+            # Prepare filter lists for matching sites
+            if 'glite' in self.schedName:
+                # ce related
+                if ('EDG.ce_white_list' in self.cfg_params) and (self.cfg_params['EDG.ce_white_list']):
+                    for ceW in self.cfg_params['EDG.ce_white_list'].strip().split(","):
+                        if ceW:
+                            self.ce_whiteL.append(ceW.strip())
+
+                if ('EDG.ce_black_list' in self.cfg_params) and (self.cfg_params['EDG.ce_black_list']):
+                    for ceB in self.cfg_params['EDG.ce_black_list'].strip().split(","):
+                        if ceB:
+                            self.ce_blackL.append(ceB.strip())
+
+                # se related
+                if ('EDG.se_white_list' in self.cfg_params) and (self.cfg_params['EDG.se_white_list']):
+                    for seW in self.cfg_params['EDG.se_white_list'].strip().split(","):
+                        if seW:
+                            self.se_whiteL.append( re.compile(seW.strip().lower()) )
+
+                if ('EDG.se_black_list' in self.cfg_params) and (self.cfg_params['EDG.se_black_list']):
+                    for seB in self.cfg_params['EDG.se_black_list'].strip().split(","):
+                        if seB:
+                            self.se_blackL.append( re.compile(seB.strip().lower()) )
+
         except Exception, e:
             status = 6
             reason = "Error parsing command XML for %s, resubmission attempt will not be processed"%self.myName
