@@ -79,6 +79,22 @@ def main(argv) :
     # dashboard report dictionary
     dashboard_report = {}
 
+##Brian's patch to sent number of events procedded to the Dashboard 
+    # Add NoEventsPerRun to the Dashboard report
+    eventsPerRun = 0
+    for inputFile in jobReport.inputFiles:
+        try:
+            eventsRead = str(inputFile.get('EventsRead', 0))
+            eventsRead = int(eventsRead.strip())
+        except:
+            continue
+        eventsPerRun += eventsRead
+    dashboard_report['NoEventsPerRun'] = eventsPerRun
+    dashboard_report['NbEvPerRun'] = eventsPerRun
+    dashboard_report['NEventsProcessed'] = eventsPerRun
+        #print "Total number of events:", eventsPerRun
+##
+
     # check if storageStatistics is valid
     if storageStatistics.find('Storage statistics:') != -1 :
         # report form: { 'protocol' : { 'action' : [attempted,succedeed,total-size,total-time,min-time,max-time] , ... } , ... }
