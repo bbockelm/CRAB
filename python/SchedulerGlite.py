@@ -12,7 +12,7 @@ class SchedulerGlite(SchedulerGrid):
     def __init__(self, name="GLITE"):
         SchedulerGrid.__init__(self,name)
 
-        self.OSBsize = 55000
+        self.OSBsize = 55000000
 
     def configure(self,cfg_params):
         SchedulerGrid.configure(self, cfg_params)
