@@ -294,7 +294,7 @@ class FatWorker(Thread):
     def preSubmissionCheck(self, task, rng):
         newRange = eval(rng)  # a-la-CRAB range expansion and Boss ranges (1 starting)
         doNotSubmitStatusMask = ['R','S'] # ,'K','Y','D'] # to avoid resubmission of final state jobs
-        tryToSubmitMask = ['C', 'A', 'RC', 'Z'] + ['K','Y','D']
+        tryToSubmitMask = ['C', 'A', 'RC', 'Z'] + ['K','Y','D','E']
         skippedSubmissions = []
 
         ## check if the input sandbox is already on the right SE  
@@ -449,6 +449,14 @@ class FatWorker(Thread):
     def resubmissionDriver(self):
         # load the task
         task = self.blDBsession.load(self.taskId, self.jobId)[0]
+        if not task or len(task.jobs)==0:
+            status = 6
+            reason = "Error loading task for %s, the attempts will be stopped"%self.myName
+            self.sendResult(status, reason, reason)
+            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
+            self.local_ms.commit()
+            return
+ 
         job = task.jobs[0]
         self.blDBsession.getRunningInstance(job)
 
@@ -705,10 +713,7 @@ class FatWorker(Thread):
             Session.start_transaction(self.taskName)
 
             for job in taskArg.jobs:
-                jobName = job['name']
-                if wfJob.exists(jobName):
-                    continue
-  
+                jobName = job['name'] 
                 cacheArea = self.wdir + '/' + self.taskName + '_spec/%s'%job['name']
                 jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':self.maxRetries, 'max_racers':1, 'owner':self.taskName}
 
