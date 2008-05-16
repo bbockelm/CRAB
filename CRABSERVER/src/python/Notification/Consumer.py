@@ -15,10 +15,11 @@ class Consumer(Thread):
     #
     # ***************************************
     #
-    def __init__(self):
+    def __init__(self, servername):
         Thread.__init__(self)
 	
         config = os.environ.get("PRODAGENT_CONFIG", None)
+        self.serverName = servername
 	
         if config == None:
             msg = "No ProdAgent Config file provided\n"
@@ -146,7 +147,7 @@ class Consumer(Thread):
             toList = []
             toList.appen( user )
 
-            completeMessage = "Subject:\"CRAB Server Notification: Job output available+\n\n" + message
+            completeMessage = "Subject:\""+str(self.serverName)+" Notification: Job output available+\n\n" + message
 
             try:
                 self.mailer.SendMail( toList, completeMessage )
@@ -173,7 +174,7 @@ class Consumer(Thread):
                 msg = "Notification.Consumer.Notify: Sending mail to [" + emailAddr + "]"
         	logging.info( msg )
 
-                completeMessage = "Subject:\"CRAB Server Notification: The task ["+ task.getTaskname() + "] " + task.getTaskOutcome() + "\n\n" + message
+                completeMessage = "Subject:\""+str(self.serverName)+" Notification: The task ["+ task.getTaskname() + "] " + task.getTaskOutcome() + "\n\n" + message
 
                 try:
                     self.mailer.SendMail( emails, completeMessage )

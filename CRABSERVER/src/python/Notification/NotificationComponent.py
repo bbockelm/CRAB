@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.10 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.10 2008/01/30 13:19:09 mcinquil Exp $"
+__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.13 2008/03/17 17:48:01 mcinquil Exp $"
 
 import os
 import socket
@@ -126,6 +126,8 @@ class NotificationComponent:
             logging.error( mex )
             sys.exit(1)
 
+        self.serverName =  self.args['ProdAgentName']
+
     #--------------------------------------------------------------------------------------        
     def startComponent(self):
         #        print "Notification.startComponent CALLED!"
@@ -153,7 +155,7 @@ class NotificationComponent:
 
         # Start the thread Consumer
         threadList = []
-        consumerThread = Consumer.Consumer()
+        consumerThread = Consumer.Consumer(self.serverName)
 	consumerThread.setParams(self.jobs, self.tasks, self.PERJOB, self.PERTASK)
         threadList.append(consumerThread)
         consumerThread.start()
@@ -405,7 +407,7 @@ class NotificationComponent:
                 msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                 logging.info( msg )
 
-                completeMessage = 'Subject:"CRAB Server Notification: Task Cleaning"\n\n' + mailMess
+                completeMessage = 'Subject:"'+str(self.serverName)+' Notification: Task Cleaning"\n\n' + mailMess
                 try:
                     self.mailer.SendMail(emaillist, completeMessage)
                 except RuntimeError, mess:
@@ -460,13 +462,13 @@ class NotificationComponent:
                 except OSError:
                     pass
                 import socket
-                mailMess = "The CRABSERVER " + str(socket.gethostbyaddr(socket.gethostname())) + "\n"
+                mailMess = "The CRABSERVER "+str(self.serverName)+" " + str(socket.gethostbyaddr(socket.gethostname())) + "\n"
                 mailMess +="has the drop box partition full at " + str(level) + "% that is over the level you requested.\n"
 
                 msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                 logging.info( msg )
 
-                completeMessage = 'Subject:"CRAB Server Notification: Space Management"\n\n' + mailMess
+                completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Space Management"\n\n' + mailMess
                 try:
                     self.mailer.SendMail(emaillist, completeMessage)
                 except RuntimeError, mess:
@@ -561,7 +563,7 @@ class NotificationComponent:
                 msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                 logging.info( msg )
 
-                completeMessage = "Subject:\"CRAB Server Notification: Task Failed! \"\n\n" + mailMess
+                completeMessage = "Subject:\""+str(self.serverName)+" Server Notification: Task Failed! \"\n\n" + mailMess
                 
                 try:
                     self.mailer.SendMail(emaillist, completeMessage)

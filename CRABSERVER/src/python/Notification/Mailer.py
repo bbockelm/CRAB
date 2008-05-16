@@ -66,7 +66,9 @@ class Mailer:
             server.ehlo() 
             server.login(self.senderName, self.senderPwd);
  
-            server.sendmail( self.senderName, toList, message)
+            for mailt in toList:
+                logging.info("Sending to: " + str(mailt) )
+            server.sendmail(self.senderName, toList, message)
             server.quit()
 
             
