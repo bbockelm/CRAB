@@ -66,11 +66,16 @@ class Mailer:
             server.ehlo() 
             server.login(self.senderName, self.senderPwd);
  
+            flag = 1
             for mailt in toList:
                 logging.info("Sending to: " + str(mailt) )
-            server.sendmail(self.senderName, toList, message)
+                if str(mailt) !=  None or len(str(mailt)) != 0:
+                    flag = 0
+            if flag == 0:
+                server.sendmail(self.senderName, toList, message)
+            else: 
+                logging.error("No e-mail address specified...")
             server.quit()
-
             
         except SMTPException, ex:
             errmsg = "SMTP ERROR! " + str(ex)
