@@ -95,8 +95,6 @@ function cmscp {
               cmd="srmcp -srm_protocol_version 2  $opt file:///$path_out_file $destination"
               echo $cmd
               exitstring=`$cmd 2>&1`
-              #copy_exit_status=$?
-              #if [ $copy_exit_status -eq 0 ]; then
               cmscp_exit_status=$?
               if [ $cmscp_exit_status -eq 0 ]; then
                   remoteMetadata=(`srmls -retry_num=0 $destination | grep -v WARNING 2>/dev/null`)
@@ -109,7 +107,6 @@ function cmscp {
                       echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
                       echo "Copy failed: removing remote file $destination"
                           srmrm $destination
-                          #copy_exit_status=60307
                           cmscp_exit_status=60307
                           echo "Problem copying $path_out_file to $destination with srmcp command"
                           StageOutExitStatusReason='remote and local file dimension not match'
@@ -117,14 +114,12 @@ function cmscp {
                   fi
                   StageOutExitStatusReason='copy ok with srm utils'
               else
-                  #copy_exit_status=60307
                   cmscp_exit_status=60307
                   echo "Problem copying $path_out_file to $destination with srmcp command"
                   StageOutExitStatusReason=$exitstring
                   echo "StageOutReport = `cat ./srmcp.report`"
               fi
           else
-              #copy_exit_status=60303
               cmscp_exit_status=60303
               StageOutExitStatusReason='file already exists'
           fi
@@ -134,7 +129,6 @@ function cmscp {
           echo "--> Check if the file already exists in the storage element $SE, using SRM1"
           srm-get-metadata -retry_num 0 $destination
           if [ $? -eq 0 ]; then
-              #copy_exit_status=60303
               cmscp_exit_status=60303
               StageOutExitStatusReason='file already exists'
           else
@@ -142,8 +136,6 @@ function cmscp {
               cmd="srmcp $opt -streams_num=1 file:///$path_out_file $destination"
               echo $cmd
               exitstring=`$cmd 2>&1`
-              #copy_exit_status=$?
-              #if [ $copy_exit_status -eq 0 ]; then
               cmscp_exit_status=$?
               if [ $cmscp_exit_status -eq 0 ]; then
                   ## Put into an array the remote file metadata
@@ -157,7 +149,6 @@ function cmscp {
                       echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
                       echo "Copy failed: removing remote file $destination"
                       srm-advisory-delete $destination
-                      #copy_exit_status=60307
                       cmscp_exit_status=60307
                       echo "Problem copying $path_out_file to $destination with srmcp command"
                       StageOutExitStatusReason='remote and local file dimension not match'
@@ -165,7 +156,6 @@ function cmscp {
                   fi
                   StageOutExitStatusReason='copy ok with srm utils'
               else
-                  #copy_exit_status=60307
                   cmscp_exit_status=60307
                   echo "Problem copying $path_out_file to $destination with srmcp command"
                   StageOutExitStatusReason=$exitstring
@@ -209,7 +199,7 @@ update_fjr() {
 ### REMOVE THE WORKING_DIR IN OSG SITES ###
 remove_working_dir() {
     cd $RUNTIME_AREA
-    echo "############### WORKING_DIR = $WORKING_DIR #####################"
+    echo ">>> working dir = $WORKING_DIR"
     echo ">>> current directory (RUNTIME_AREA): $RUNTIME_AREA"
     echo ">>> Remove working directory: $WORKING_DIR"
     /bin/rm -rf $WORKING_DIR
@@ -311,24 +301,14 @@ echo "TIME_EXE = $TIME_EXE sec"
 echo "ExeTime=$TIME_EXE" >> $RUNTIME_AREA/$repo
 
 echo ">>> Parse FrameworkJobReport crab_fjr.xml"
-#if [ -s crab_fjr.xml ]; then
-### FEDE ###
 if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then
-#########################
       if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
-          #cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input crab_fjr.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
-          ### FEDE ###
           cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
-          ####################
           echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
-          #executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}'`
           executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}' | awk -F ' ' '{print $NF}'`
           if [ $executable_exit_status -eq 50115 ];then
               echo ">>> crab_fjr.xml contents: "
-              #cat crab_fjr.xml
-              #### FEDE ######
               cat $RUNTIME_AREA/crab_fjr_NJob.xml
-              ################
               echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"
           else
               echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"
@@ -336,15 +316,37 @@ if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then
       else
           echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
       fi
+      
+      #### Patch to check input data reading for CMSSW16x
+      if [ $executable_exit_status -eq 0 ];then
+        # VERIFY PROCESSED DATA
+        echo ">>> Verify list of processed files:"
+        echo $InputFiles |tr -d '\\' |tr ',' '\n'|tr -d '"' > input-files.txt
+        grep LFN $RUNTIME_AREA/crab_fjr_$NJob.xml |cut -d'>' -f2|cut -d'<' -f1|grep "/" > processed-files.txt
+        echo "cat input-files.txt"
+        echo "----------------------"
+        cat input-files.txt
+        echo "----------------------"
+        echo "cat processed-files.txt"
+        echo "----------------------"
+        cat processed-files.txt
+        echo "----------------------"
+        diff -q input-files.txt processed-files.txt
+        fileverify_status=$?
+        if [ $fileverify_status -ne 0 ]; then
+           executable_exit_status=30001
+           echo "ERROR ==> not all input files processed"
+           echo "      ==> list of processed files from crab_fjr.xml differs from list in pset.cfg"
+           echo "      ==> diff input-files.txt processed-files.txt"
+        fi
+      fi
+      
 else
     echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
 fi
 
 echo "ExeExitCode=$executable_exit_status" | tee -a $RUNTIME_AREA/$repo
 echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"
-#echo "ExeEnd=$executable" | tee -a $RUNTIME_AREA/$repo
-#dumpStatus $RUNTIME_AREA/$repo
-#echo ">>> $executable ended at `date`"
 job_exit_code=$executable_exit_status
 
 if [ $executable_exit_status -ne 0 ]; then
