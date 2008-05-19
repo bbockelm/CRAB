@@ -233,6 +233,16 @@ class FatWorker(Thread):
                 return 
             self.log.info('Worker %s submitting a new command on a task'%self.myName)
 
+            # resubmission of retrieved jobs
+            needUpd = False
+            for j in taskObj.jobs:
+                if j.runningJob['closed'] == 'Y':  
+                    needUpd = True  
+                    self.blDBsession.getNewRunningInstance(j)
+                    j.runningJob['status'] = 'C'
+                    j.runningJob['statusScheduler'] = 'Created'
+            if needUpd:
+                self.blDBsession.updateDB(taskObj)  
         else:
             ## not the proper submission handler
             self.sendResult(10, "Bad submission manager for %s. This kind of submission should not be handled here."%(self.taskName), \
@@ -418,6 +428,7 @@ class FatWorker(Thread):
                         count += 1
                     task =  self.blDBsession.load( task['id'], sub_jobs[ii] )[0]
                 else:
+
                     task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
             except Exception, e:
                 self.log.info("FatWorker %s. Problem submitting task %s jobs %s. %s"%(self.myName, self.taskName, str(sub_jobs[ii]), str(e)))
@@ -433,8 +444,10 @@ class FatWorker(Thread):
                     submitted.append(j['jobId'])
                     if j['jobId'] in unsubmitted:
                         unsubmitted.remove(j['jobId'])
+
                     j.runningJob['status'] = 'S'
-                     
+                    j.runningJob['statusScheduler'] = 'Submitted'
+ 
             parentIds = ','.join(parentIds.keys()) 
             self.log.debug("Parent IDs for task %s :%s"%(self.taskName, parentIds) )
             self.blDBsession.updateDB( task )
@@ -591,7 +604,7 @@ class FatWorker(Thread):
         Session.start_transaction(self.taskName)
 
         # TODO avoid SQL interactions 
-        sqlStr="UPDATE we_Job SET retries=retries+1 WHERE id='%s' AND retries<max_retries"%job['name']
+        sqlStr="UPDATE we_Job SET retries=retries+1 WHERE id='%s' "%job['name']
         Session.execute(sqlStr)
 
         Session.commit(self.taskName)
