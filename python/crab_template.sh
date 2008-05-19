@@ -51,6 +51,7 @@ function cmscp {
   if [ $srm_ver -eq  1 ] ; then
       lcgOpt=" -b -D srmv1 --vo $VO -t 2400 --verbose "
   else
+      Dsrm_ver="2"
       lcgOpt=" -b -D srmv2 --vo $VO -t 2400 --verbose "
   fi
   echo "lcg-cp --version "
@@ -63,12 +64,13 @@ function cmscp {
   if [ $cmscp_exit_status -ne 0 ]; then
       cmscp_exit_status=60307
       echo "Problem copying $path_out_file to $destination with lcg-cp command"
+      echo "Error message:    $exitstring "
       StageOutExitStatusReason=$exitstring
-      cmd="echo $StageOutExitStatusReason | grep exists"
+      cmd="lcg-ls -D srmv${Dsrm_ver} $destination"
       tmpstring=`$cmd 2>&1`
+      echo $tmpstring | grep 'not found' 
       exit_status=$?
       if [ $exit_status -eq 0 ]; then
-          #copy_exit_status=60303
           cmscp_exit_status=60303
           StageOutExitStatusReason='file already exists'
       fi
@@ -84,6 +86,8 @@ function cmscp {
       ################ srmv2 ##########################
       if [ $srm_ver -eq  2 ] || [ $srm_ver -eq 0 ]; then
      # if [ $srm_ver -eq  2 ] && [ $srm_ver -ne 1 ] ; then
+          ## unset SRM_PATH
+          unset SRM_PATH
           echo "--> Check if the file already exists in the storage element $SE, using SRM2"
           srmls -retry_num 0 $destination | grep 'does not exist' >/dev/null
           if [ $? -eq  0 ]; then
