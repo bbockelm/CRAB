@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.9 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.9 2008/04/18 14:13:39 farinafa Exp $"
+__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.14 2008/04/25 10:55:30 farinafa Exp $"
 
 import os
 import time
@@ -313,6 +313,7 @@ class CRAB_AS_beckend:
         # return the document
         retStatus = "".join(retStatus)
         handledStatus = base64.urlsafe_b64encode(zlib.compress(retStatus))
+        handledStatus += "="*( len(handledStatus)%4 )
         return handledStatus #retStatus
 
 
