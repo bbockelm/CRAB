@@ -34,7 +34,7 @@ class DBinterface:
             raise CrabException('Istantiate DB Session : '+str(e))
 
         try:
-            common.bossSession.bossLiteDB.installDB('$CRABPRODCOMMONPYTHON/ProdCommon/BossLite/DbObjects/setupDatabase-sqlite.sql')     
+            common.bossSession.installDB('$CRABPRODCOMMONPYTHON/ProdCommon/BossLite/DbObjects/setupDatabase-sqlite.sql')     
         except Exception, e :
             raise CrabException('DB Installation error : '+str(e))
         return 
@@ -352,5 +352,13 @@ class DBinterface:
             # TODO cleared='0' field, how should it be handled/mapped in BL? #Fabio
 
         common.bossSession.updateDB( task )
-
         return
+
+    # FIXME temporary method to verify what kind of submission to perform towards the server
+    def checkIfNeverSubmittedBefore(self):
+        for j in self.getTask().jobs:
+            if j.runningJob['submission'] > 1 or j.runningJob['status'] != 'C':
+                return False
+        return True
+
+
