@@ -43,13 +43,15 @@ class SubmitterServer( Submitter ):
         check = self.checkIfCreate() 
 
         if check == 0 :
+	    isFirstSubmission = False
 
             self.taskuuid = str(common._db.queryTask('name'))
             self.remotedir = os.path.join(self.storage_path, self.taskuuid)
             self.moveProxy(self.dontMoveProxy)
             
             # check if it is the first submission  
-            isFirstSubmission =  common._db.checkIfNeverSubmittedBefore() 
+            n_createdJob = len(common._db.queryAttrRunJob({'status':'C'},'status'))
+            if n_createdJob == len(self.complete_List): isFirstSubmission = True
 
 	    # standard submission to the server
 	    self.performSubmission(isFirstSubmission)
