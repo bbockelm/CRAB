@@ -34,7 +34,7 @@ class DBinterface:
             raise CrabException('Istantiate DB Session : '+str(e))
 
         try:
-            common.bossSession.installDB('$CRABPRODCOMMONPYTHON/ProdCommon/BossLite/DbObjects/setupDatabase-sqlite.sql')     
+            common.bossSession.bossLiteDB.installDB('$CRABPRODCOMMONPYTHON/ProdCommon/BossLite/DbObjects/setupDatabase-sqlite.sql')     
         except Exception, e :
             raise CrabException('DB Installation error : '+str(e))
         return 
