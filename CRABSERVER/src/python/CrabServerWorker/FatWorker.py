@@ -209,13 +209,6 @@ class FatWorker(Thread):
             self.local_ms.commit()
            
             taskObj = self.blDBsession.declare(self.taskXML, self.proxy)
-            if self.registerTask(taskObj) != 0:
-                self.sendResult(10, "Unable to register task %s. Causes: deserialization, saving, registration "%(self.taskName), \
-                    "FatWorkerError %s. Error while registering jobs for task %s."%(self.myName, self.taskName) )
-                # propagate failure message
-                self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
-                self.local_ms.commit()
-                return 
             self.log.info('Worker %s submitting a new task'%self.myName)
 
         elif self.submissionKind == 'subsequent':
@@ -448,6 +441,7 @@ class FatWorker(Thread):
                     j.runningJob['status'] = 'S'
                     j.runningJob['statusScheduler'] = 'Submitted'
  
+           
             parentIds = ','.join(parentIds.keys()) 
             self.log.debug("Parent IDs for task %s :%s"%(self.taskName, parentIds) )
             self.blDBsession.updateDB( task )
@@ -632,13 +626,22 @@ class FatWorker(Thread):
 
         ## if all the jobs have been submitted send a success message
         if len( set(submittableRange).difference(set(submittedJobs)) )==0:
+
+            # update state in WE for succesfull jobs OR insert a new entry if first submission 
+            if self.registerTask(taskObj) != 0:
+                self.sendResult(10, "Unable to register task %s. Causes: deserialization, saving, registration "%(self.taskName), \
+                    "FatWorkerError %s. Error while registering jobs for task %s."%(self.myName, self.taskName) )
+                # propagate failure message
+                self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
+                self.local_ms.commit()
+                return
+
+            # diffuse success communication
             self.sendResult(0, "Full Success for %s"%self.taskName, \
                 "FatWorker %s. Successful complete submission for task %s"%(self.myName, self.taskName) )
-
             self.local_ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", taskObj['name'])
             self.local_ms.commit()
 
-            # update state in WE for succesfull jobs
             dbCfg = copy.deepcopy(dbConfig)
             dbCfg['dbType'] = 'mysql'
 
@@ -726,7 +729,15 @@ class FatWorker(Thread):
             Session.start_transaction(self.taskName)
 
             for job in taskArg.jobs:
-                jobName = job['name'] 
+                jobName = job['name']
+
+                try:
+                    if wfJob.exists(jobName):
+                        continue
+                except Exception, e:
+                    self.log.info('Error checking if job is already registered in WF-Entities. Trying to re-register it.')
+                    pass
+ 
                 cacheArea = self.wdir + '/' + self.taskName + '_spec/%s'%job['name']
                 jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':self.maxRetries, 'max_racers':1, 'owner':self.taskName}
 
