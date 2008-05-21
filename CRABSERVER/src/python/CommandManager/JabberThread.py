@@ -27,10 +27,15 @@ class JabberThread(Thread):
         If the time exceeds too much the requirements (+10% to avoid fluctuations) then stop accepting
         new tasks.
         """
+        self.logsys.debug("Starting JabberThread")
+
         tPre = time.time()
         self.go_on_accepting_load = 1
+        if self.thr == 0:
+            self.go_on_accepting_load = 0
+            self.logsys.info("Stopping accepting load")
+
         count = 0
- 
         while True:
             # get messages
             type, payload = self.ms.get()
