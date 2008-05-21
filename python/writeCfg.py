@@ -82,8 +82,8 @@ def main(argv) :
     fileName    = args[0];
     outFileName = args[1];
   except IndexError:
-      print main.__doc__
-      sys.exit()
+    print main.__doc__
+    sys.exit()
 
 # Optional Parameters
 
@@ -111,14 +111,17 @@ def main(argv) :
         handle.close()
   else:
     try:
+      print "Importing .cfg file"
       cfo = include(fileName)
       cmsProcess = cfo
     except Exception, ex:
       msg =  "The cfg file is not valid, %s\n" % str(ex)
       raise "Error: ",msg
+  print "Getting interface"
   cfg = CfgInterface(cmsProcess)
 
   # Set parameters for job
+  print "Setting parameters"
   inModule = cfg.inputSource
   if maxEvents:
     cfg.maxEvents.setMaxEventsInput(maxEvents)

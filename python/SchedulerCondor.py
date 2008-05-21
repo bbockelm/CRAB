@@ -1,5 +1,5 @@
-__revision__ = "$Id: SchedulerCondor.py,v 0 2008/04/25 18:23:10 ewv Exp $"
-__version__ = "$Revision: 0 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.1 2008/04/28 21:18:06 ewv Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
@@ -36,6 +36,16 @@ class SchedulerCondor(SchedulerLocal) :
       pass
 
     return sched_param
+
+  def realSchedParams(self,cfg_params):
+    """
+    Return dictionary with specific parameters, to use
+    with real scheduler
+    """
+
+    tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
+    params = {'tmpDir':tmpDir}
+    return  params
 
   def loggingInfo(self, id):
     """ return logging info about job nj """
