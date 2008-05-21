@@ -28,7 +28,9 @@ class JabberThread(Thread):
         new tasks.
         """
         tPre = time.time()
-        
+        self.go_on_accepting_load = 1
+        count = 0
+ 
         while True:
             # get messages
             type, payload = self.ms.get()
@@ -37,17 +39,22 @@ class JabberThread(Thread):
 
             tPost = time.time()
             deltaT = tPost - tPre
-            self.logsys.info("AvgThroughput: %f s (%d / day)"%(deltaT, int(0.5+86400/(deltaT+1)) ) )
+
+            if count%2000 == 0:             
+                self.logsys.info("AvgThroughput: %f s (%d connections / day)"%(deltaT, int(0.5+86400/(deltaT+1)) ) )
+                count = 0
+            count += 1 
             
             # jabber disabled
-            if self.thr <= 0.0:
+            if self.thr < 0.0:
                 continue
 
             # alter the guard on the proxy service
             if deltaT > 1.1 * self.thr:
-                self.summoner.go_on_accepting_load = 0 #False
+                self.go_on_accepting_load = 0 #False
+                self.logsys.info("Stopping accepting load")  
             else:
-                self.summoner.go_on_accepting_load = 1 #True
+                self.go_on_accepting_load = 1 #True
         pass
         
     

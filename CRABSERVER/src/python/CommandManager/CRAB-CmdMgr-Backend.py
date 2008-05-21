@@ -29,8 +29,6 @@ class CRAB_AS_beckend:
     """    
     def __init__(self):
         # load balancing feature. Use an integer, useful for future developments
-        self.go_on_accepting = 1 # True
-        #
         self.args = {}
         self.args["maxCmdAttempts"] = '5'
         self.cmdAttempts = int(self.args["maxCmdAttempts"])
@@ -112,10 +110,10 @@ class CRAB_AS_beckend:
         jabber_ms.subscribeTo("CrabServerWorkerComponent:FatWorkerResult")
 
         ## DISABLED FOR DEBUG
-        self.args['acceptableThroughput'] = -1
+        #self.args['acceptableThroughput'] = -1
         ## DISABLED FOR DEBUG
-        self.log.debug("Create Jabber: thsLevel %d"%self.args['acceptableThroughput'])
-        self.jabber = JabberThread(self, self.log, self.args['acceptableThroughput'], jabber_ms)
+        self.log.debug("Create Jabber: thsLevel %d"%int(self.args['acceptableThroughput']) )
+        self.jabber = JabberThread(self, self.log, int(self.args['acceptableThroughput']), jabber_ms)
         pass
 
     def initUiConfigs(self):
@@ -173,8 +171,8 @@ class CRAB_AS_beckend:
             10  task refused for exceeding overload
             11  error during MessageService sending
         """
-        
-        if self.go_on_accepting != 1:
+       
+        if self.jabber.go_on_accepting_load != 1:
             self.log.info("Task refused for overloading: "+ taskUniqName)
             return 10
 
