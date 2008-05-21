@@ -326,6 +326,8 @@ if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then
         echo "cat input-files.txt"
         echo "----------------------"
         cat input-files.txt
+        cat processed-files.txt | sort | uniq > tmp.txt
+        mv tmp.txt processed-files.txt
         echo "----------------------"
         echo "cat processed-files.txt"
         echo "----------------------"
