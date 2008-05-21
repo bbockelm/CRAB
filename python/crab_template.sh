@@ -323,6 +323,8 @@ if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then
         echo ">>> Verify list of processed files:"
         echo $InputFiles |tr -d '\\' |tr ',' '\n'|tr -d '"' > input-files.txt
         grep LFN $RUNTIME_AREA/crab_fjr_$NJob.xml |cut -d'>' -f2|cut -d'<' -f1|grep "/" > processed-files.txt
+        cat input-files.txt  | sort | uniq > tmp.txt
+        mv tmp.txt input-files.txt
         echo "cat input-files.txt"
         echo "----------------------"
         cat input-files.txt
