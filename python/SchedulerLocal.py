@@ -58,8 +58,14 @@ class SchedulerLocal(Scheduler) :
         localDomainName = string.split(tmp,'.',1)[-1]
         #common.taskDB.setDict('localSite',localDomainName)
         ## is this ok?
-        cfg_params['EDG.se_white_list']=localDomainName
-        common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
+        if not cfg_params.has_key('EDG.se_white_list'):
+            cfg_params['EDG.se_white_list']=localDomainName
+            common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
+        else:
+            common.logger.message("Your se_white_list is set to "+str(cfg_params['EDG.se_white_list'])+": only local dataset will be considered")
+        
+
+        
 
         Scheduler.configure(self,cfg_params)
         return
