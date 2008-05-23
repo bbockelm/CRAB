@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.75 2008/04/29 06:49:46 mcinquil Exp $"
-__version__ = "$Revision: 1.75 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.76 2008/05/06 21:26:08 mcinquil Exp $"
+__version__ = "$Revision: 1.76 $"
 
 import os
 import time
@@ -321,7 +321,7 @@ class TaskTrackingComponent:
                       "        status = " + str(taskStatus) + \
                       "        reason = " + str(reason)
                 ## end dbg info ##
-                self.updateTaskStatus(taskName, self.taskState[2])
+                #self.updateTaskStatus(taskName, self.taskState[2])
                 _loginfo += "Submission failed to the Grid: " + str(taskName) + "\n"
                 _loginfo += "\t-status:\t" + str(taskStatus) + "\n"
                 _loginfo += "\t-reason:\t" + str(reason) + "\n"
@@ -866,8 +866,7 @@ class TaskTrackingComponent:
             logging.info(str(ex))
             return 0
         try:
-            #logging.info("connected...")
-            ## task from DB
+            ## loading task from DB
             task = TaskStateAPI.getNLockFirstNotFinished()
             _loginfo =  ""
             try:
@@ -929,6 +928,7 @@ class TaskTrackingComponent:
                                 try:
                                     self.mutex.acquire()
                                     resubmitting, MaxResub, Resub = TaskStateAPI.checkNSubmit( taskName, job )
+                                    internalstatus = TaskStateAPI.jobStatusServer( taskName, job )
                                 finally:
                                     self.mutex.notifyAll()
                                     self.mutex.release()
@@ -958,9 +958,13 @@ class TaskTrackingComponent:
 				        dictReportTot['JobInProgress'] += 1
                                         dictStateTot[job][0] = "Resubmitting by server"
 			        elif stato == "C":
-                                    if not resubmitting and status == self.taskState[3] and status == self.taskState[8]:
-   				        countNotSubmitted += 1 
-				        dictReportTot['JobFailed'] += 1
+                                    if internalstatus == "failed" and not resubmitting:
+                                        countNotSubmitted += 1
+                                        dictReportTot['JobFailed'] += 1
+                                        dictStateTot[job][0] = "NotSubmitted"
+#                                    if not resubmitting and status == self.taskState[3] and status == self.taskState[8]:
+#   				        countNotSubmitted += 1 
+#				        dictReportTot['JobFailed'] += 1
 #                                        if status == self.taskState[4]:
 #                                            dictStateTot[job][0] = "Killed"
 #                                    elif int(job) in jobPartList:
@@ -1001,6 +1005,7 @@ class TaskTrackingComponent:
 			    if countNotSubmitted > 0:
                                 logBuf = self.__logToBuf__(logBuf, "    -> of which not yet submitted: " + str(countNotSubmitted))
 
+                            totjob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress']  
 			    endedJob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed']
 
 			    try:
@@ -1174,10 +1179,7 @@ class TaskTrackingComponent:
             logBuf = ""
 
             #queue the message, instead of exetute it
-            #then i commit it, then try to execut
-
-            #queue the message, instead of exetute it
-            #then i commit it, then try to executee
+            #then i commit it, then try to execute
             self.__addToQueue__(messageType, payload)
             #self.__call__(messageType, payload)
             self.ms.commit()

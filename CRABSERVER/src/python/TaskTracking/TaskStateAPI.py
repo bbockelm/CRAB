@@ -82,6 +82,35 @@ def checkNSubmit( taskName, idJob):
     return 0, jobMaxRetries, jobRetries
 
 
+def jobStatusServer( taskName, idJob):
+    """
+    _checkNSubmit_
+
+    return the status of we_Job.status
+    """
+    jobSpecId = taskName + "_job" + str(idJob)
+    jobState = ""
+    try:
+        Session.set_database(dbConfig)
+        Session.connect(jobSpecId)
+        Session.start_transaction(jobSpecId)
+
+        jobInfo = { 'State' : "inProgress" }
+        if JobState.isRegistered( jobSpecId ) == True:
+            jobInfo = JobState.general(jobSpecId)
+
+        Session.commit(jobSpecId)
+        Session.close(jobSpecId)
+
+        if 'State' in jobInfo:
+            jobState = str(jobInfo['State'])
+    except Exception, ex:
+        Session.commit_all()
+        Session.close_all()
+
+    return jobState
+
+
 def insertTaskPA( taskName, status ):
     """
     _insertTaskPA_
