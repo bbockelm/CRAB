@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.35 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.35 2008/05/04 08:28:12 spiga Exp $"
+__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.36 2008/05/04 23:23:34 spiga Exp $"
 
 import os
 import pickle
@@ -74,7 +74,7 @@ class CrabServerWorkerComponent:
         logFormatter = logging.Formatter("%(asctime)s:%(message)s")
         logHandler.setFormatter(logFormatter)
         logging.getLogger().addHandler(logHandler)
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.INFO)
 
         # component resources
         ## persistent properties
@@ -238,23 +238,6 @@ class CrabServerWorkerComponent:
     def handleCommands(self, payload):
         taskUniqName, resubCount = payload.split('::')
 
-        # no more TTL. Send failure and give up
-        if int(resubCount) < 0:
-            status = 10
-            reason = "Command for task %s has no more attempts. Give up."%taskUniqName
-            logging.info(reason)
-            self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason)
-            # TODO put here SubmissionFailed message  
-            self.ms.commit()
-
-            # clean up structures if needed
-            for wName in self.workerSet:
-                if taskUniqName in wName:
-                    del self.workerSet[wName]
-                if wName in self.taskPool:
-                    del self.taskPool[wName]
-            return 
-
         # parse XML data
         doc = None
         node = None
@@ -272,7 +255,7 @@ class CrabServerWorkerComponent:
  
         # skip non-interesting messages
         cmdType = str(node.getAttribute('Command'))
-        if cmdType not in ['kill', 'submit']:
+        if cmdType not in ['kill', 'submit', 'resubmit']:
             return
 
         ## FAST-KILL handler
@@ -405,7 +388,7 @@ class CrabServerWorkerComponent:
         ## Track workers outcomes
         successfulCodes = [0, -2] # full and partial submissions
         retryItCodes = [20, 21, 30, 31, -1] # temporary failure conditions mainly
-        giveUpCodes = [10, 11, 66] # severe failure conditions
+        giveUpCodes = [10, 11, 66, 6] # severe failure conditions
  
         if status in successfulCodes:
             self.subStats['succ'] += 1 

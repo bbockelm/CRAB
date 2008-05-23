@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.65 2008/05/13 16:17:36 farinafa Exp $"
-__version__ = "$Revision: 1.65 $"
+__revision__ = "$Id: FatWorker.py,v 1.69 2008/05/21 10:14:26 farinafa Exp $"
+__version__ = "$Revision: 1.69 $"
 import string
 import sys, os
 import time
@@ -185,13 +185,12 @@ class FatWorker(Thread):
                          self.se_blackL.append( re.compile(seB.strip().lower()) )
 
         # actual submission
-        self.log.info("Worker %s warmed up and ready to submit"%self.myName)
         try:
             self.submissionDriver()
         except Exception, e:
             self.log.info( traceback.format_exc() )
             self.sendResult(66, "Worker exception. Free-resource message", \
-                    "FatWorkerError %s. Task %s."%(self.myName, self.taskName) )
+                    "WorkerError %s. Task %s."%(self.myName, self.taskName) )
         return
 
 ####################################
@@ -219,7 +218,7 @@ class FatWorker(Thread):
             taskObj = self.blDBsession.loadTaskByName(self.cmdXML.getAttribute('Task') )
             if taskObj is None:
                 self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), \
-                    "FatWorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) )
+                    "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) )
                 # propagate failure message
                 self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
                 self.local_ms.commit()
@@ -239,7 +238,7 @@ class FatWorker(Thread):
         else:
             ## not the proper submission handler
             self.sendResult(10, "Bad submission manager for %s. This kind of submission should not be handled here."%(self.taskName), \
-                    "FatWorkerError %s. Wrong submission manager for %s."%(self.myName, self.taskName) )
+                    "WorkerError %s. Wrong submission manager for %s."%(self.myName, self.taskName) )
             # propagate failure message
             self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
             self.local_ms.commit()
@@ -248,50 +247,18 @@ class FatWorker(Thread):
         ## Go on with the submission
         self.blSchedSession = BossLiteAPISched(self.blDBsession, self.schedulerConfig)
         newRange, skippedJobs = self.preSubmissionCheck(taskObj, str(self.cmdXML.getAttribute('Range')) )
-        self.log.info('Worker %s pre-submission checks passed'%self.myName)
 
-        if (newRange is not None) and (len(newRange) > 0):
-            submittedJobs = []
-            nonSubmittedJobs = [] + newRange
+        submittedJobs = []
+        nonSubmittedJobs = [] + newRange
 
-            sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange) 
-            self.log.info('Worker %s listmatched jobs, now submitting'%self.myName)
+        sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange) 
 
-            if len(matched) > 0:
-                submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
-            else:
-                self.log.info('Worker %s unable to submit jobs. No sites matched'%self.myName)
-
-            self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
-            return 
-
-        ## Manage the empty range case due to incompatibilities
-        if (newRange is not None):
-            if self.submissionKind == 'first':
-                self.sendResult(20, "Empty submission range for task %s"%self.taskName, \
-                    "FatWorker %s. Empty range submission for task %s"%(self.myName, self.taskName) )
-            else:
-                self.sendResult(21, "Command empty submission range for task %s"%self.taskName, \
-                    "FatWorker %s. Empty range submission for task %s"%(self.myName, self.taskName) )
-            # propagate the re-submission attempt
-            self.resubCount -= 1
-            payload = self.taskName+"::"+str(self.resubCount)
-            self.local_ms.publish("CRAB_Cmd_Mgr:NewCommand", payload)
-            self.local_ms.commit()
-            return 
-
-        ## Finally, manage possible exceptions on the preSubmission checks
-        if taskDescr is not None:
-            self.sendResult(30, "Exception during task %s submission checks"%self.taskName, \
-                 "FatWorker %s. Failure during pre-submission checks for task %s"%(self.myName, self.taskName) )
+        if len(matched) > 0:
+            submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
         else:
-            self.sendResult(31, "Command failure during pre-submission checks for task %s"%self.taskName, \
-                 "FatWorker %s. Failure during pre-submission checks for task %s"%(self.myName, self.taskName) )
-        # propagate the re-submission attempt
-        self.resubCount -= 1
-        payload = self.taskName+"::"+str(self.resubCount)
-        self.local_ms.publish("CRAB_Cmd_Mgr:NewCommand", payload)
-        self.local_ms.commit()
+            self.log.info('Worker %s unable to submit jobs. No sites matched or missing Input Sandbox files'%self.myName)
+
+        self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
         return 
 
     def preSubmissionCheck(self, task, rng):
@@ -311,7 +278,7 @@ class FatWorker(Thread):
             # check for files
             for f in taskFileList:
                 if sbi.checkExists(f, self.proxy) == False:
-                    self.log.info("FatWorker %s. Missing file %s"%(self.myName, f)) 
+                    self.log.info("Worker %s. Missing file %s"%(self.myName, f)) 
                     return [], newRange
 
             # get TURL for WMS bypass
@@ -331,8 +298,6 @@ class FatWorker(Thread):
                 try:
                     # do not submit already running or scheduled jobs
                     if j.runningJob['status'] in doNotSubmitStatusMask:
-                        # self.log.info("FatWorker %s.Task %s job %s status %s. Won't be submitted"%(self.myName, \
-                        #    self.taskName, j['name'], j.runningJob['status']) )
                         newRange.remove(j['jobId'])
                         continue
 
@@ -341,7 +306,7 @@ class FatWorker(Thread):
                         newRange.remove(j['jobId'])
                         skippedSubmissions.append(j['jobId'])
                 except Exception, e:
-                    self.log.info("FatWorker %s. Problem inspecting task %s job %s. Won't be submitted"%(self.myName, \
+                    self.log.info("Worker %s. Problem inspecting task %s job %s. Won't be submitted"%(self.myName, \
                                 self.taskName, j['name']) )
                     self.log.debug( traceback.format_exc() )
                     newRange.remove(j['jobId'])
@@ -358,8 +323,6 @@ class FatWorker(Thread):
         ## turlpreamble = 'gsiftp://%s:%s'%(self.SEurl, self.SEport)
         ## turlpreamble = 'gsiftp://%s'%self.gsiftpNode
 
-        self.log.debug('Turl %s'%self.TURLpreamble)
-
         if (self.TURLpreamble):
             turlpreamble = self.TURLpreamble 
         #
@@ -368,15 +331,14 @@ class FatWorker(Thread):
         # add fjr XML file to the retrieved files and WMS OSB bypass
         if self.submissionKind == 'first': 
             destDir = task['outputDirectory']
-            task['outputDirectory'] = self.TURLpreamble + destDir # diabled for the CAF destDir[1:] # substr to avoid multiple '/'
+            task['outputDirectory'] = self.TURLpreamble + destDir 
             task['scriptName'] = turlpreamble + task['scriptName']
             task['cfgName'] = turlpreamble + task['cfgName']
 
         for jid in xrange(len(task.jobs)):
-            # TODO reactivate once tgz won't be corrupted by the transfer 
             gsiOSB = [ os.path.basename(of) for of in  task.jobs[jid]['outputFiles']  ]
-            task.jobs[jid]['outputFiles'] = gsiOSB # [:-1]
-            #
+            task.jobs[jid]['outputFiles'] = gsiOSB 
+
             if 'crab_fjr_%d.xml'%(jid+1) not in task.jobs[jid]['outputFiles']:
                 task.jobs[jid]['outputFiles'].append( 'crab_fjr_%d.xml'%(jid+1) ) #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
 
@@ -390,8 +352,6 @@ class FatWorker(Thread):
 
         # loop and submit blocks
         for ii in matched:
-            # extract task for the range and submit
-            # task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
             unsubmitted += sub_jobs[ii]
             ##############  SplitCollection if too big DS
             sub_bulk = []
@@ -410,25 +370,24 @@ class FatWorker(Thread):
                     for pp in sub_jobs[ii][last:-1]:
                         sub_bulk[n_sub_bulk-1].append(pp)
 
-                self.log.info("FatWorker check: the collection is too Big..splitted in %s sub_collection"%(n_sub_bulk))
+                self.log.info("Worker check: the collection is too Big..splitted in %s sub_collection"%(n_sub_bulk))
             ###############
             try:
                 if len(sub_bulk)>0:
                     count = 1
                     for sub_list in sub_bulk: 
                         self.blSchedSession.submit(task['id'], sub_list,reqs_jobs[ii])
-                        self.log.info("FatWorker submitted sub collection # %s "%(count))
+                        self.log.info("Worker submitted sub collection # %s "%(count))
                         count += 1
                     task =  self.blDBsession.load( task['id'], sub_jobs[ii] )[0]
                 else:
 
                     task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
             except Exception, e:
-                self.log.info("FatWorker %s. Problem submitting task %s jobs %s. %s"%(self.myName, self.taskName, str(sub_jobs[ii]), str(e)))
+                self.log.info("Worker %s. Problem submitting task %s jobs %s. %s"%(self.myName, self.taskName, str(sub_jobs[ii]), str(e)))
                 continue
 
             # check if submitted
-            #task = self.blDBsession.load(taskObj['id'], sub_jobs[ii])[0]
             parentIds = {}
             for j in task.jobs: 
                 self.blDBsession.getRunningInstance(j)
@@ -443,7 +402,7 @@ class FatWorker(Thread):
  
            
             parentIds = ','.join(parentIds.keys()) 
-            self.log.debug("Parent IDs for task %s :%s"%(self.taskName, parentIds) )
+            self.log.info("Parent IDs for task %s: %s"%(self.taskName, parentIds) )
             self.blDBsession.updateDB( task )
             ## send here post submission info to ML DS
             self.SendMLpost( task, sub_jobs[ii] )
@@ -500,8 +459,6 @@ class FatWorker(Thread):
             return
 
         self.blDBsession.getNewRunningInstance(job)
-        self.log.info( "Re-Submission number %s" % job.runningJob['submission'] )
-        # self.blDBsession.updateDB(task)
 
         # recreate auxiliary infos from old dictionary
         self.cfg_params = {}
@@ -615,43 +572,39 @@ class FatWorker(Thread):
 
         resubmissionList = list( set(submittableRange).difference(set(submittedJobs)) )
 
-        ## log the result of the submission
-        self.log.info("FatWorker %s. Task %s (%d jobs): submitted %d unmatched %d notSubmitted %d skipped %d"%(self.myName, self.taskName, \
-            len(submittableRange), len(submittedJobs), len(unmatchedJobs), len(nonSubmittedJobs), len(skippedJobs) ) \
-            )
-        self.log.debug("FatWorker %s. Task %s\n"%(self.myName, self.taskName) + \
-            "jobs : %s \nsubmitted %s \nunmatched %s\nnotSubmitted %s\nskipped %s"%(str(submittableRange), \
-            str(submittedJobs), str(unmatchedJobs), str(nonSubmittedJobs), str(skippedJobs) ) \
-            )
+        self.log.info("Worker. Task %s (%d jobs): submitted %d unmatched %d notSubmitted %d skipped %d"%(self.taskName, \
+            len(submittableRange), len(submittedJobs), len(unmatchedJobs), len(nonSubmittedJobs), len(skippedJobs) )    )
+        self.log.debug("Task %s\n"%self.myName + "jobs : %s \nsubmitted %s \nunmatched %s\nnotSubmitted %s\nskipped %s"%(str(submittableRange), \
+            str(submittedJobs), str(unmatchedJobs), str(nonSubmittedJobs), str(skippedJobs) )   )
 
         ## if all the jobs have been submitted send a success message
-        if len( set(submittableRange).difference(set(submittedJobs)) )==0:
-
+        if len( resubmissionList )==0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs)==0:
             # update state in WE for succesfull jobs OR insert a new entry if first submission 
             if self.registerTask(taskObj) != 0:
                 self.sendResult(10, "Unable to register task %s. Causes: deserialization, saving, registration "%(self.taskName), \
-                    "FatWorkerError %s. Error while registering jobs for task %s."%(self.myName, self.taskName) )
-                # propagate failure message
+                    "WorkerError %s. Error while registering jobs for task %s."%(self.myName, self.taskName) )
                 self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
                 self.local_ms.commit()
                 return
 
             # diffuse success communication
-            self.sendResult(0, "Full Success for %s"%self.taskName, \
-                "FatWorker %s. Successful complete submission for task %s"%(self.myName, self.taskName) )
+            self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. Successful complete submission for task %s"%self.taskName )
             self.local_ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", taskObj['name'])
             self.local_ms.commit()
 
             dbCfg = copy.deepcopy(dbConfig)
             dbCfg['dbType'] = 'mysql'
-
             Session.set_database(dbCfg)
             Session.connect(self.taskName)
             Session.start_transaction(self.taskName)
 
             for j in taskObj.jobs:
-                if j['jobId'] in resubmissionList:
-                    wfJob.setState(j['name'], 'submit')
+                if j['jobId'] in submittedJobs:
+                    try:
+                        wfJob.setState(j['name'], 'submit')
+                    except Exception, e:
+                        # TODO improve here
+                        pass
 
             Session.commit(self.taskName)
             Session.close(self.taskName)
@@ -659,51 +612,63 @@ class FatWorker(Thread):
 
         elif self.submissionKind == 'errHdlTriggered':
             self.sendResult(55, "Unable to resubmit single job as requested by ErrorHandler for task %s"%self.taskName, \
-                    "FatWorker %s. Unable to resubmit task %s as requested by ErrorHandler"%(self.myName, self.taskName))
+                    "Worker %s. Unable to resubmit task %s as requested by ErrorHandler"%(self.myName, self.taskName))
             return
 
-        ## some jobs need to be resubmitted later
         else:
-            # prepare a new message for the missing jobs
-            newRange = ','.join(map(str, resubmissionList))
-            self.cmdXML.setAttribute('Range', newRange)
-            #### replaceChild(newChild, oldChild)? # Check if ok # Fabio
-
+            ## some jobs need to be resubmitted later
             if len(submittedJobs) == 0:
                 self.sendResult(-1, "Any jobs submitted for task %s"%self.taskName, \
-                    "FatWorker %s. Any job submitted for task %s, %d more attempts \
-                     will be performed"%(self.myName, self.taskName, self.resubCount))
+                    "Worker %s. Any job submitted: %d more attempts \
+                    will be performed"%(self.myName, self.resubCount))
             else:
                 self.local_ms.publish("CrabServerWorkerComponent:CrabWorkPerformedPartial", self.taskName)
                 self.sendResult(-2, "Partial Success for %s"%self.taskName, \
-                    "FatWorker %s. Partial submission for task %s, %d more attempts \
-                     will be performed"%(self.myName, self.taskName, self.resubCount))
+                    "Worker %s. Partial submission: %d more attempts \
+                     will be performed"%(self.myName, self.resubCount))
 
             # propagate the re-submission attempt
-            self.resubCount -= 1
-            payload = self.taskName+"::"+str(self.resubCount)
-            self.local_ms.publish("CRAB_Cmd_Mgr:NewCommand", payload, "00:00:10")
-            self.local_ms.commit()
-
-            # needed for ErrHandler interaction: redundant w.r.t. CSW, where the range info are not available
-            if self.resubCount < 0 and len(resubmissionList) > 0:
+            self.cmdXML.setAttribute('Range', ','.join(map(str, resubmissionList)) )
+            if self.resubCount <= 0:
                 # SubmissionFailed message for ErrHandler
                 self.local_ms.publish("SubmissionFailed", self.taskName+"::"+str(resubmissionList) )
                 self.local_ms.commit()
 
-                dbCfg = copy.deepcopy(dbConfig)
-                dbCfg['dbType'] = 'mysql'
+                try:
+                    self.registerTask(taskObj)
 
-                Session.set_database(dbCfg)
-                Session.connect(self.taskName)
-                Session.start_transaction(self.taskName)
+                    dbCfg = copy.deepcopy(dbConfig)
+                    dbCfg['dbType'] = 'mysql'
+                    Session.set_database(dbCfg)
+                    Session.connect(self.taskName)
+                    Session.start_transaction(self.taskName)
 
-                for j in taskObj.jobs:
-                    if j['jobId'] in resubmissionList:   
-                        wfJob.setState(j['name'], 'finished') # TODO failed?? # Fabio
+                    jobSpecId = []
+                    toMarkAsFailed = list(set(resubmissionList+unmatchedJobs + nonSubmittedJobs + skippedJobs))
+                    for j in taskObj.jobs:
+                        if j['jobId'] in toMarkAsFailed:
+                            wfJob.setState(j['name'], 'failed')
+                            jobSpecId.append(j['name']) 
 
-                Session.commit(self.taskName)
-                Session.close(self.taskName)
+                    JobState.doNotAllowMoreSubmissions(jobSpecId)
+                    Session.commit(self.taskName)
+                    Session.close(self.taskName)
+                except Exception,e:
+                    self.log.info("Unable to mark failed jobs in WorkFlow Entities ")
+                    self.log.info( traceback.format_exc() )
+
+                # Give up message
+                status = 10
+                reason = "Command for task %s has no more attempts. Give up."%self.taskName
+                self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
+                self.local_ms.commit()
+                self.log.info("Worker %s has no more attempts: give up with task %s"%(self.myName, self.taskName) )
+                return 
+
+            self.resubCount -= 1
+            payload = self.taskName+"::"+str(self.resubCount)
+            self.local_ms.publish("CRAB_Cmd_Mgr:NewCommand", payload, "00:00:10")
+            self.local_ms.commit()
         return
 
 ####################################
