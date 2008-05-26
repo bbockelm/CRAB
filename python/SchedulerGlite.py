@@ -109,8 +109,7 @@ class SchedulerGlite(SchedulerGrid):
         if self.EDG_addJdlParam:
             if self.EDG_addJdlParam[-1] == '': self.EDG_addJdlParam= self.EDG_addJdlParam[:-1]
             for p in self.EDG_addJdlParam:
-             #   param_file.write(string.strip(p)+';\n')
-                req+=string.strip(p)+';\n' ## BL--DS
+                req+=string.strip(p)+';\n' 
         return req
 
     def specific_req(self):
@@ -142,22 +141,22 @@ class SchedulerGlite(SchedulerGrid):
             if (not req == ' '): req = req +  ' && '
             req = req + self.EDG_requirements
 
-        Task_Req={'jobType':req}## DS--BL
+        Task_Req={'jobType':req}
         common._db.updateTask_(Task_Req)
 
     def sched_parameter(self,i,task):
         """
         Returns string with requirements and scheduler-specific parameters
         """
-        dest=  task.jobs[i-1]['dlsDestination'] ## DS--BL
+        dest=  task.jobs[i-1]['dlsDestination'] 
 
         req=''
         req +=task['jobType']
 
         sched_param=''
         sched_param+='Requirements = ' + req +self.specific_req() + self.se_list(i,dest) +\
-                                        self.ce_list()[0] +';\n' ## BL--DS
-        if self.EDG_addJdlParam: sched_param+=self.jdlParam() ## BL--DS
+                                        self.ce_list()[0] +';\n' 
+        if self.EDG_addJdlParam: sched_param+=self.jdlParam() 
         sched_param+='MyProxyServer = "' + self.proxyServer + '";\n'
         sched_param+='VirtualOrganisation = "' + self.VO + '";\n'
         sched_param+='RetryCount = '+str(self.EDG_retry_count)+';\n'
@@ -178,13 +177,11 @@ class SchedulerGlite(SchedulerGrid):
         if len(sites)>0 and sites[0]=="":
             return itr4
         if sites != [""]:
-            ##Addedd Daniele
             replicas = self.blackWhiteListParser.checkBlackList(sites,n)
             if len(replicas)!=0:
                 replicas = self.blackWhiteListParser.checkWhiteList(replicas,n)
 
             itr4 = replicas
-            #####
         return itr4
 
     

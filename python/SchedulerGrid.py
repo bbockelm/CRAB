@@ -36,10 +36,6 @@ class SchedulerGrid(Scheduler):
         self.proxyValid=0
         self.dontCheckProxy=int(cfg_params.get("EDG.dont_check_proxy",0))
 
-#        self.rb_param_file=None
-#        if (cfg_params.has_key('EDG.rb')):
-#            self.rb_param_file=self.rb_configure(cfg_params.get("EDG.rb"))
-
         self.proxyServer = cfg_params.get("EDG.proxy_server",'myproxy.cern.ch')
         common.logger.debug(5,'Setting myproxy server to '+self.proxyServer)
 
@@ -61,7 +57,7 @@ class SchedulerGrid(Scheduler):
         if int(self.copy_data) == 1:
             self.SE = cfg_params.get('USER.storage_element',None)
             self.SE_PATH = cfg_params.get('USER.storage_path',None)
-            self.srm_ver  = cfg_params.get('USER.srm_version',0) ## DS for srmv2
+            self.srm_ver  = cfg_params.get('USER.srm_version',0) 
             if not self.SE or not self.SE_PATH:
                 msg = "Error. The [USER] section does not have 'storage_element'"
                 msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
@@ -249,54 +245,6 @@ class SchedulerGrid(Scheduler):
 
         return txt
 
-    # def wsCopyInput(self):
-    #     """
-    #     Copy input data from SE to WN
-    #     """
-    #     txt = ''
-    #     if not self.copy_input_data: return txt
-
-    #     ## OLI_Daniele deactivate for OSG (wait for LCG UI installed on OSG)
-    #     txt += 'if [ $middleware == OSG ]; then\n'
-    #     txt += '   #\n'
-    #     txt += '   #   Copy Input Data from SE to this WN deactivated in OSG mode\n'
-    #     txt += '   #\n'
-    #     txt += '   echo "Copy Input Data from SE to this WN deactivated in OSG mode"\n'
-    #     txt += 'elif [ $middleware == LCG ]; then \n'
-    #     txt += '   #\n'
-    #     txt += '   #   Copy Input Data from SE to this WN\n'
-    #     txt += '   #\n'
-    #     ### changed by georgia (put a loop copying more than one input files per jobs)
-    #     txt += '   for input_file in $cur_file_list \n'
-    #     txt += '   do \n'
-    #     txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$input_lfn/$input_file file:`pwd`/$input_file 2>&1\n'
-    #     txt += '      copy_input_exit_status=$?\n'
-    #     txt += '      echo "COPY_INPUT_EXIT_STATUS = $copy_input_exit_status"\n'
-    #     txt += '      if [ $copy_input_exit_status -ne 0 ]; then \n'
-    #     txt += '         echo "Problems with copying to WN" \n'
-    #     txt += '      else \n'
-    #     txt += '         echo "input copied into WN" \n'
-    #     txt += '      fi \n'
-    #     txt += '   done \n'
-    #     ### copy a set of PU ntuples (same for each jobs -- but accessed randomly)
-    #     txt += '   for file in $cur_pu_list \n'
-    #     txt += '   do \n'
-    #     txt += '      lcg-cp --vo $VO --verbose -t 1200 lfn:$pu_lfn/$file file:`pwd`/$file 2>&1\n'
-    #     txt += '      copy_input_pu_exit_status=$?\n'
-    #     txt += '      echo "COPY_INPUT_PU_EXIT_STATUS = $copy_input_pu_exit_status"\n'
-    #     txt += '      if [ $copy_input_pu_exit_status -ne 0 ]; then \n'
-    #     txt += '         echo "Problems with copying pu to WN" \n'
-    #     txt += '      else \n'
-    #     txt += '         echo "input pu files copied into WN" \n'
-    #     txt += '      fi \n'
-    #     txt += '   done \n'
-    #     txt += '   \n'
-    #     txt += '   ### Check SCRATCH space available on WN : \n'
-    #     txt += '   df -h \n'
-    #     txt += 'fi \n'
-
-    #     return txt
-
     def wsCopyOutput(self):
         """
         Write a CopyResults part of a job script, e.g.
@@ -318,14 +266,13 @@ class SchedulerGrid(Scheduler):
                 SE_PATH=self.SE_PATH
             if int(self.publish_data) == 1 or int(self.usenamespace) == 1:
                 txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
-                #path_add = self.hnUserName + '/' + self.publish_data_name +'_${PSETHASH}/'
                 path_add = PFNportion(self.publish_data_name) +'_${PSETHASH}/'
                 SE_PATH = SE_PATH + path_add
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
 
-            txt += 'export SRM_VER='+str(self.srm_ver)+'\n' ## DS for srmVer
-            txt += 'echo "SRM_VER = $SRM_VER"\n' ## DS for srmVer
+            txt += 'export SRM_VER='+str(self.srm_ver)+'\n' 
+            txt += 'echo "SRM_VER = $SRM_VER"\n' 
 
             txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
             txt += 'copy_exit_status=0\n'
