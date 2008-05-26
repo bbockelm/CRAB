@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.36 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.36 2008/05/04 23:23:34 spiga Exp $"
+__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.37 2008/05/23 14:08:36 farinafa Exp $"
 
 import os
 import pickle
@@ -101,8 +101,9 @@ class CrabServerWorkerComponent:
         # This implies a fake message between the Crab-WS and the submission handler
         # (delay to schedule msgs <-> prioritized FCFS fair scheduler w/o queues OR DLT-aware scheduler
 
+        logging.info("-----------------------------------------")
         logging.info("CrabServerWorkerComponent ver2 Started...")
-        logging.info("Component dropbox working directory: %s"%self.wdir)        
+        logging.info("Component dropbox working directory: %s\n"%self.wdir)        
         pass
     
     def startComponent(self):
@@ -128,6 +129,9 @@ class CrabServerWorkerComponent:
             self.ms.commit()
             logging.debug("CrabServerWorkerComponent: %s %s" % ( type, payload))
             self.__call__(type, payload)
+
+            self.updateProxyMap()            
+            self.materializeStatus()
         #
         return
 
@@ -140,10 +144,8 @@ class CrabServerWorkerComponent:
         logging.debug("Event: %s %s" % (event, payload))
 
         if event == "CRAB_Cmd_Mgr:NewTask":
-            self.updateProxyMap()
             self.newSubmission(payload)
         elif event == "CRAB_Cmd_Mgr:NewCommand":
-            self.updateProxyMap()
             self.handleCommands(payload)
         elif event == "CrabServerWorkerComponent:FatWorkerResult":
             self.handleWorkerResults(payload)
@@ -153,11 +155,8 @@ class CrabServerWorkerComponent:
             logging.getLogger().setLevel(logging.DEBUG)
         elif event == "CrabServerWorkerComponent:EndDebug":
             logging.getLogger().setLevel(logging.INFO)
-
         else:
             logging.info('Unknown message received %s'%event)
-
-        self.materializeStatus()
         return 
 
 ################################
@@ -170,10 +169,7 @@ class CrabServerWorkerComponent:
         interactions with the Grid.
         
         """
-
-        taskUniqName = ''+payload
         
-        # no workers availabe (delay submission)
         if self.availWorkers <= 0:
             # calculate resub delay by using average completion time
             dT = sum(self.subTimes)/(len(self.subTimes) + 1.0)
@@ -183,12 +179,16 @@ class CrabServerWorkerComponent:
             self.ms.commit()
             return
 
-        node = None
-        doc = None
+        taskUniqName = ''+payload
+        status = -1
+        reason = "Generic Error"
+
         try:
             cmdSpecFile = self.wdir + '/' + taskUniqName + '_spec/cmd.xml'
             doc = xml.dom.minidom.parse(cmdSpecFile)
             node = doc.getElementsByTagName("TaskCommand")[0]
+            status, reason = self.associateProxyToTask(taskUniqName, node)
+            doc.unlink()
         except Exception, e:
             logging.info( traceback.format_exc() )
             status = 6
@@ -197,54 +197,44 @@ class CrabServerWorkerComponent:
             self.ms.commit()
             return 
         
-        status, reason = self.taskIsSubmittable(taskUniqName, node)
         if (status != 0):
             self.ms.publish("CrabServerWorkerComponent:TaskNotSubmitted", taskUniqName + "::" + str(status) + "::" + reason)
             self.ms.commit()  
             return
 
         ## real submission stuff
-        thrName = "worker_"+str(int(self.args['maxThreads']) - self.availWorkers)+"_"+taskUniqName           
-        # Implicit default params resubCount = 1 and dynamicBlackList = []
-        self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewTask", payload)
-
-        workerCfg = {}
-        workerCfg['rb'] = '' + self.args['resourceBroker']
-        workerCfg['wdir'] = '' + self.wdir
+        workerCfg = self.prepareWorkerBaseStatus()
+        workerCfg['submitKind'] = 'first' 
         workerCfg['taskname'] = taskUniqName
         workerCfg['proxy'] = reason
-        workerCfg['submitKind'] = 'first' 
         workerCfg['resubCount'] = self.args['maxCmdAttempts']
 
-        workerCfg['SEproto'] = self.args['Protocol']
-        workerCfg['SEurl'] = self.args['storageName']
-        workerCfg['SEport'] = self.args['storagePort']
-
-        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
-        workerCfg['se_dynBList'] = []
-        workerCfg['ce_dynBList'] = []
-        workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
-        workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
-        workerCfg['allow_anonymous'] = int(self.args['allow_anonymous'])
-        workerCfg['maxRetries'] = int(self.args['maxRetries'])
-        workerCfg['cpCmd'] = self.args['cpCmd']
-        workerCfg['rfioServer'] = self.args['rfioServer']
+        thrName = "worker_"+str(int(self.args['maxThreads']) - self.availWorkers)+"_"+taskUniqName
+        self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewTask", payload)
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         self.availWorkers -= 1
-        doc.unlink()
         return
 
     def handleCommands(self, payload):
-        taskUniqName, resubCount = payload.split('::')
+        
+        if self.availWorkers <= 0:
+            self.ms.publish("CRAB_Cmd_Mgr:NewCommand", payload, "00:01:00")
+            self.ms.commit()
+            return
 
-        # parse XML data
-        doc = None
-        node = None
+        taskUniqName, resubCount = payload.split('::')
+        cmdType = ""
+        status = -1
+        reason = "Generic Error"
+    
         try:
             cmdSpecFile = self.wdir + '/' + taskUniqName + '_spec/cmd.xml'
             doc = xml.dom.minidom.parse(cmdSpecFile)
-            node = doc.getElementsByTagName("TaskCommand")[0]
+            node = doc.getElementsByTagName("TaskCommand")[0]            
+            status, reason = self.associateProxyToTask(taskUniqName, node)
+            cmdType = str(node.getAttribute('Command'))
+            doc.unlink()
         except Exception, e:
             logging.info( traceback.format_exc() ) 
             status = 6
@@ -254,7 +244,6 @@ class CrabServerWorkerComponent:
             return
  
         # skip non-interesting messages
-        cmdType = str(node.getAttribute('Command'))
         if cmdType not in ['kill', 'submit', 'resubmit']:
             return
 
@@ -265,15 +254,6 @@ class CrabServerWorkerComponent:
             if taskUniqName in self.taskPool:
                 del self.taskPool[taskUniqName]
             return
-
-        ## SUBSEQUENT SUBMISSIONS for a task
-        if self.availWorkers <= 0:
-            self.ms.publish("CRAB_Cmd_Mgr:NewCommand", payload, "00:01:00")
-            self.ms.commit()
-            return
-        
-        status = -1
-        status, reason = self.taskIsSubmittable(taskUniqName, node)
         
         if (status == 4):
             # CAVEAT in this case it means that everything is ok
@@ -286,36 +266,17 @@ class CrabServerWorkerComponent:
             return
 
         # run FatWorker
-        thrName = "worker_"+str(int(self.args['maxThreads']) - self.availWorkers)+"_"+taskUniqName
-
-        # Implicit default param dynamicBlackList
-        self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewCommand", payload)
-
-        workerCfg = {}
-        workerCfg['rb'] = '' + self.args['resourceBroker']
-        workerCfg['wdir'] = '' + self.wdir
+        workerCfg = self.prepareWorkerBaseStatus()
+        workerCfg['submitKind'] = 'subsequent'
         workerCfg['taskname'] = taskUniqName
         workerCfg['proxy'] = reason
-        workerCfg['submitKind'] = 'subsequent'
         workerCfg['resubCount'] = resubCount
 
-        workerCfg['SEproto'] = self.args['Protocol']
-        workerCfg['SEurl'] = self.args['storageName']
-        workerCfg['SEport'] = self.args['storagePort']
+        thrName = "worker_"+str(int(self.args['maxThreads']) - self.availWorkers)+"_"+taskUniqName
+        self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewCommand", payload)
 
-        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
-        workerCfg['se_dynBList'] = [] 
-        workerCfg['ce_dynBList'] = []
-        workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
-        workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
-        workerCfg['allow_anonymous'] = int(self.args['allow_anonymous'])
-        workerCfg['maxRetries'] = int(self.args['maxRetries'])
-        workerCfg['cpCmd'] = self.args['cpCmd']
-        workerCfg['rfioServer'] = self.args['rfioServer']
-
-        self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)        
+        self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         self.availWorkers -= 1
-        doc.unlink()
         return
 
 ################################
@@ -330,37 +291,20 @@ class CrabServerWorkerComponent:
             self.ms.commit()
             return
 
-        # run FatWorker
-        thrName = "worker_"+str(int(self.args['maxThreads']) - self.availWorkers)+"_"+str(taskId)+"."+str(jobId)
-
-        # Implicit default param dynamicBlackList
-        self.taskPool[thrName] = ("ResubmitJob", payload)
-
-        workerCfg = {}
-        workerCfg['rb'] = '' + self.args['resourceBroker']
-        workerCfg['wdir'] = '' + self.wdir
+        workerCfg = self.prepareWorkerBaseStatus()
+        workerCfg['submitKind'] = 'errHdlTriggered'
         workerCfg['taskname'] = str(taskId)
         workerCfg['proxy'] = ''
-        workerCfg['submitKind'] = 'errHdlTriggered'
         workerCfg['resubCount'] = 2
 
-        workerCfg['SEproto'] = self.args['Protocol']
-        workerCfg['SEurl'] = self.args['storageName']
-        workerCfg['SEport'] = self.args['storagePort']
-
-        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
-        workerCfg['se_dynBList'] = []
-        workerCfg['ce_dynBList'] = [siteToBan]
-        workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
-        workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
-        workerCfg['allow_anonymous'] = self.args['allow_anonymous']
-        workerCfg['maxRetries'] = int(self.args['maxRetries'])
-        workerCfg['cpCmd'] = self.args['cpCmd']
-        workerCfg['rfioServer'] = self.args['rfioServer']
-
         # Error Handler specific parameters
+        workerCfg['ce_dynBList'] += [siteToBan]
         workerCfg['taskId'] = taskId
         workerCfg['jobId'] = jobId
+
+        # run FatWorker
+        thrName = "worker_"+str(int(self.args['maxThreads']) - self.availWorkers)+"_"+str(taskId)+"."+str(jobId)
+        self.taskPool[thrName] = ("ResubmitJob", payload)
 
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         self.availWorkers -= 1
@@ -394,7 +338,6 @@ class CrabServerWorkerComponent:
             self.subStats['succ'] += 1 
             if status == -2:
                 self.subStats['retry'] += 1
-            # moving average with fixed window (adapt if needed but not parametric) 
             self.subTimes.append(float(timing))
             if len(self.subTimes) > 64:
                 self.subTimes.pop(0)
@@ -404,7 +347,6 @@ class CrabServerWorkerComponent:
 
         elif status in giveUpCodes:
             self.subStats['fail'] += 1
-            # TODO put here SubmissionFailed message to ErrorHandle 
         else: 
             logging.info('Unknown status for worker message %s'%payload)
 
@@ -446,7 +388,7 @@ class CrabServerWorkerComponent:
         #     
         return
 
-    def taskIsSubmittable(self, taskUniqName, node):
+    def associateProxyToTask(self, taskUniqName, node):
         """
         Check whether there are macroscopic conditions that prevent the task to be submitted.
         At the same time performs the proxy <--> task association.
@@ -525,3 +467,25 @@ class CrabServerWorkerComponent:
             self.ms.commit()
         return
 
+    def prepareWorkerBaseStatus(self):
+        workerCfg = {}
+        
+        workerCfg['rb'] = '' + self.args['resourceBroker']
+        workerCfg['wdir'] = '' + self.wdir
+        
+        workerCfg['SEproto'] = self.args['Protocol']
+        workerCfg['SEurl'] = self.args['storageName']
+        workerCfg['SEport'] = self.args['storagePort']
+
+        workerCfg['wmsEndpoint'] = self.args['WMSserviceList'][self.outcomeCounter%len(self.args['WMSserviceList'])]
+        workerCfg['se_dynBList'] = []
+        workerCfg['ce_dynBList'] = []
+        workerCfg['EDG_retry_count'] = self.args['EDG_retry_count']
+        workerCfg['EDG_shallow_retry_count'] = self.args['EDG_shallow_retry_count']
+        workerCfg['allow_anonymous'] = int(self.args['allow_anonymous'])
+        workerCfg['maxRetries'] = int(self.args['maxRetries'])
+        workerCfg['cpCmd'] = self.args['cpCmd']
+        workerCfg['rfioServer'] = self.args['rfioServer']
+
+        return workerCfg
+        
