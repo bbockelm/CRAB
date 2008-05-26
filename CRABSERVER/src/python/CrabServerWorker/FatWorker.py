@@ -215,7 +215,13 @@ class FatWorker(Thread):
             self.local_ms.publish("CrabServerWorkerComponent:CommandArrival", self.taskName)
             self.local_ms.commit()
 
-            taskObj = self.blDBsession.loadTaskByName(self.cmdXML.getAttribute('Task') )
+            try:  
+                taskObj = self.blDBsession.loadTaskByName(self.cmdXML.getAttribute('Task'))
+            except Exception, e:
+                self.log.info("Error loading %s"%str(self.cmdXML.getAttribute('Task')) )
+                taskObj = None
+                pass
+
             if taskObj is None:
                 self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), \
                     "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) )
@@ -414,7 +420,12 @@ class FatWorker(Thread):
 ####################################
     def resubmissionDriver(self):
         # load the task
-        task = self.blDBsession.load(self.taskId, self.jobId)[0]
+        try:
+            task = self.blDBsession.load(self.taskId, self.jobId)[0]
+        except Exception, e:
+            task = None
+            pass
+        
         if not task or len(task.jobs)==0:
             status = 6
             reason = "Error loading task for %s, the attempts will be stopped"%self.myName
@@ -647,10 +658,12 @@ class FatWorker(Thread):
                     toMarkAsFailed = list(set(resubmissionList+unmatchedJobs + nonSubmittedJobs + skippedJobs))
                     for j in taskObj.jobs:
                         if j['jobId'] in toMarkAsFailed:
-                            wfJob.setState(j['name'], 'failed')
-                            jobSpecId.append(j['name']) 
+                            jobSpecId.append(j['name'])
 
                     JobState.doNotAllowMoreSubmissions(jobSpecId)
+                    for jId in jobSpecId:
+                            wfJob.setState(jId, "reallyFinished")##'failed')
+
                     Session.commit(self.taskName)
                     Session.close(self.taskName)
                 except Exception,e:
