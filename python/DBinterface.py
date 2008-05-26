@@ -330,7 +330,7 @@ class DBinterface:
 
             # Data alignment
             jobStatus = str(job.runningJob['statusScheduler'])
-            if rForJ.getAttribute('status') not in ['Created', 'Submitting', 'Unknown'] and \
+            if rForJ.getAttribute('statusScheduler') not in ['Created', 'Submitting', 'Unknown'] and \
                      job.runningJob['statusScheduler'] != 'Cleared':
                 job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
                 jobStatus = str(job.runningJob['statusScheduler'])
@@ -352,13 +352,13 @@ class DBinterface:
             # TODO cleared='0' field, how should it be handled/mapped in BL? #Fabio
 
         common.bossSession.updateDB( task )
-
         return
 
     # FIXME temporary method to verify what kind of submission to perform towards the server
     def checkIfNeverSubmittedBefore(self):
         for j in self.getTask().jobs:
-            if j.runningJob['submission'] > 1 or j.runningJob['status'] != 'C':
+            if j.runningJob['submission'] > 1 or j.runningJob['status'] != 'C' or \
+                    j.runningJob['statusScheduler'] != 'Created':
                 return False
         return True
 
