@@ -93,24 +93,26 @@ class ServerCommunicator:
         if ret == 0:
              # success
              logMsg = 'Task %s successfully submitted to server %s'%(self.crab_task_name, self.serverName)
-        elif ret == 10:
-             # overlaod
-             logMsg = 'The server %s refused to accept the task %s because it is overloaded'%(self.serverName, self.crab_task_name)
-        elif ret == 101:
-             # overlaod
-             logMsg = 'The server %s refused the submission %s because you asked a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
-        elif ret == 11:
-             # failed to push message in DB
-             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
-        elif ret == 12:
-             # failed SOAP communication
-             logMsg = 'Error during SOAP communication with server %s.\n'%self.serverName
-             logMsg +='\t ----- The server could be under maintainance. ----- '
+             common.logger.message(logMsg+'\n')
         else:
-             logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret)
+            if ret == 10:
+                 # overlaod
+                 logMsg = 'The server %s refused to accept the task %s because it is overloaded'%(self.serverName, self.crab_task_name)
+            elif ret == 101:
+                 # overlaod
+                 logMsg = 'The server %s refused the submission %s because you asked a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
+            elif ret == 11:
+                 # failed to push message in DB
+                 logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
+            elif ret == 12:
+                 # failed SOAP communication
+                 logMsg = 'Error during SOAP communication with server %s.\n'%self.serverName
+                 logMsg +='\t ----- The server could be under maintainance. ----- '
+            else:
+                 logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret)
 
-        # print loggings
-        common.logger.message(logMsg+'\n')
+            common.logger.write(logMsg+'\n')
+            raise CrabException(logMsg) 
         return ret
          
     def subsequentJobSubmit(self, blTaskName, rng):
