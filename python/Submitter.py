@@ -53,12 +53,10 @@ class Submitter(Actor):
         jStatus=common._db.queryRunJob('status',tmp_jList)
         for nj in range(len(tmp_jList)):
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(dlsDest[nj]) 
-            if (cleanedBlackWhiteList != '') or (datasetpath == None): ## Matty's fix
-                ##if ( jStatus[nj] not in ['R','S','K','Y','A','D','Z']): ## here the old flags
+            if (cleanedBlackWhiteList != '') or (datasetpath == None): 
                 if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z','E']):
-                    #nj_list.append(nj+1)## Warning added +1 for jobId BL--DS 
                     jobSetForSubmission +=1
-                    nj_list.append(tmp_jList[nj])## Warning added +1 for jobId BL--DS 
+                    nj_list.append(tmp_jList[nj])
                 else:
                     continue
             else :
@@ -136,7 +134,6 @@ class Submitter(Actor):
         """ 
         common.logger.message("Checking available resources...")
         ### define here the list of distinct destinations sites list    
-       # distinct_dests =  common._db.queryDistJob('dlsDestination')
         distinct_dests = common._db.queryDistJob_Attr('dlsDestination', 'jobId' ,self.nj_list)
 
 
@@ -201,20 +198,17 @@ class Submitter(Actor):
                         pbar.update(float(ii+1)/float(len(self.sub_jobs)),'please wait')
 
                 ### check the if the submission succeded Maybe not needed or at least simplified 
-                #njs=0 
                 sched_Id = common._db.queryRunJob('schedulerId', self.sub_jobs[ii])
                 listId=[]
                 run_jobToSave = {'status' :'S'}
                 listRunField = []
-                for j in range(len(self.sub_jobs[ii])): # Add loop over SID returned from group submission  DS
+                for j in range(len(self.sub_jobs[ii])): 
                     if str(sched_Id[j]) != '': 
-                    #if (st[j]=='S'):
                         listId.append(self.sub_jobs[ii][j]) 
                         listRunField.append(run_jobToSave) 
                         common.logger.debug(5,"Submitted job # "+ str(self.sub_jobs[ii][j]))
                         njs += 1
-                common._db.updateRunJob_(listId, listRunField) ## New BL--DS
-
+                common._db.updateRunJob_(listId, listRunField) 
                 self.SendMLpost(self.sub_jobs[ii])
 
         else:
@@ -268,7 +262,6 @@ class Submitter(Actor):
                   'user': os.environ['USER'], \
                   'taskId': taskId, \
                   'datasetFull': self.datasetPath, \
-                  #'application', version, \
                   'exe': self.executable } 
 
         return params

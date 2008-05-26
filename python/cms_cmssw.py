@@ -35,8 +35,8 @@ class Cmssw(JobType):
         self.executable_arch = self.scram.getArch()
         self.tgz_name = 'default.tgz'
         self.scriptName = 'CMSSW.sh'
-        self.pset = ''      #scrip use case Da
-        self.datasetPath = '' #scrip use case Da
+        self.pset = ''   
+        self.datasetPath = ''
 
         # set FJR file name
         self.fjrFileName = 'crab_fjr.xml'
@@ -113,7 +113,6 @@ class Cmssw(JobType):
                 raise CrabException(msg)
             self.additional_inbox_files.append(string.strip(self.scriptExe))
 
-        #CarlosDaniele
         if self.datasetPath == None and self.pset == None and self.scriptExe == '' :
             msg ="Error. script_exe  not defined"
             raise CrabException(msg)
@@ -136,9 +135,6 @@ class Cmssw(JobType):
                     if not os.path.exists(file):
                         raise CrabException("Additional input file not found: "+file)
                     pass
-                    # fname = string.split(file, '/')[-1]
-                    # storedFile = common.work_space.pathForTgz()+'share/'+fname
-                    # shutil.copyfile(file, storedFile)
                     self.additional_inbox_files.append(string.strip(file))
                 pass
             pass
@@ -168,7 +164,7 @@ class Cmssw(JobType):
             self.total_number_of_events = 0
             self.selectTotalNumberEvents = 0
 
-        if self.pset != None: #CarlosDaniele
+        if self.pset != None:
              if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
                  msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
                  raise CrabException(msg)
@@ -241,7 +237,7 @@ class Cmssw(JobType):
 
         ## Select Splitting
         if self.selectNoInput:
-            if self.pset == None: #CarlosDaniele
+            if self.pset == None:
                 self.jobSplittingForScript()
             else:
                 self.jobSplittingNoInput()
@@ -249,7 +245,7 @@ class Cmssw(JobType):
             self.jobSplittingByBlocks(blockSites)
 
         # modify Pset
-        if self.pset != None: #CarlosDaniele
+        if self.pset != None: 
             try:
                 # Add FrameworkJobReport to parameter-set, set max events.
                 # Reset later for data jobs by writeCFG which does all modifications
@@ -290,7 +286,7 @@ class Cmssw(JobType):
         self.eventsbyfile=self.pubdata.getEventsPerFile()
 
         ## get max number of events
-        self.maxEvents=self.pubdata.getMaxEvents() ##  self.maxEvents used in Creator.py
+        self.maxEvents=self.pubdata.getMaxEvents() 
 
         ## Contact the DLS and build a list of sites hosting the fileblocks
         try:
@@ -313,10 +309,6 @@ class Cmssw(JobType):
         common.logger.message("Requested dataset: " + datasetPath + " has " + str(self.maxEvents) + " events in " + str(len(self.filesbyblock.keys())) + " blocks.\n")
 
         return sites
-
-  # to Be Removed  DS -- BL
-  #  def setArgsList(self, argsList):
-  #      self.argsList = argsList
 
     def jobSplittingByBlocks(self, blockSites):
         """
@@ -596,7 +588,7 @@ class Cmssw(JobType):
         return
 
 
-    def jobSplittingForScript(self):#CarlosDaniele
+    def jobSplittingForScript(self):
         """
         Perform job splitting based on number of job
         """
@@ -612,16 +604,12 @@ class Cmssw(JobType):
         # argument is seed number.$i
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
-            ## Since there is no input, any site is good
-           # self.jobDestination.append(["Any"])
             self.jobDestination.append([""])
-            ## no random seed
             self.list_of_args.append([str(i)])
         return
 
     def split(self, jobParams):
 
-        #### Fabio
         njobs = self.total_number_of_jobs
         arglist = self.list_of_args
         # create the empty structure
@@ -638,33 +626,24 @@ class Cmssw(JobType):
             argu=''
             if len(jobParams[job]):
                 argu +=   concString.join(jobParams[job] )
-            job_ToSave['arguments']= str(job+1)+' '+argu## new BL--DS
-            job_ToSave['dlsDestination']= self.jobDestination[job]## new BL--DS
-            #common._db.updateJob_(job,job_ToSave)## new BL--DS
+            job_ToSave['arguments']= str(job+1)+' '+argu
+            job_ToSave['dlsDestination']= self.jobDestination[job]
             listField.append(job_ToSave)
             msg="Job "+str(job)+" Arguments:   "+str(job+1)+" "+argu+"\n"  \
             +"                     Destination: "+str(self.jobDestination[job])
             common.logger.debug(5,msg)
-            #common.logger.debug(5,"Job "+str(job)+" Destination: "+str(self.jobDestination[job]))
-        common._db.updateJob_(listID,listField)## new BL--DS
-        ## Pay Attention Here....DS--BL
+        common._db.updateJob_(listID,listField)
         self.argsList = (len(jobParams[0])+1)
 
         return
 
     def numberOfJobs(self):
-        # Fabio
         return self.total_number_of_jobs
 
     def getTarBall(self, exe):
         """
         Return the TarBall with lib and exe
         """
-
-        # if it exist, just return it
-        #
-        # Marco. Let's start to use relative path for Boss XML files
-        #
         self.tgzNameWithPath = common.work_space.pathForTgz()+'share/'+self.tgz_name
         if os.path.exists(self.tgzNameWithPath):
             return self.tgzNameWithPath
@@ -678,11 +657,7 @@ class Cmssw(JobType):
 
         # First of all declare the user Scram area
         swArea = self.scram.getSWArea_()
-        #print "swArea = ", swArea
-        # swVersion = self.scram.getSWVersion()
-        # print "swVersion = ", swVersion
         swReleaseTop = self.scram.getReleaseTop_()
-        #print "swReleaseTop = ", swReleaseTop
 
         ## check if working area is release top
         if swReleaseTop == '' or swArea == swReleaseTop:
@@ -806,8 +781,6 @@ class Cmssw(JobType):
         txt += '    cd $WORKING_DIR\n'
         txt += '    echo ">>> current directory (WORKING_DIR): $WORKING_DIR"\n'
         txt += self.wsSetupCMSOSGEnvironment_()
-        #txt += '    echo "### Set SCRAM ARCH to ' + self.executable_arch + ' ###"\n'
-        #txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += 'fi\n'
 
         # Prepare JobType-specific part
@@ -846,7 +819,6 @@ class Cmssw(JobType):
 
         # Prepare job-specific part
         job = common.job_list[nj]
-        ### FEDE FOR DBS OUTPUT PUBLICATION
         if (self.datasetPath):
             txt += '\n'
             txt += 'DatasetPath='+self.datasetPath+'\n'
@@ -968,7 +940,7 @@ class Cmssw(JobType):
         """
 
     def executableName(self):
-        if self.scriptExe: #CarlosDaniele
+        if self.scriptExe: 
             return "sh "
         else:
             return self.executable
@@ -995,9 +967,6 @@ class Cmssw(JobType):
         Returns a list of filenames to be put in JDL input sandbox.
         """
         inp_box = []
-        # # dict added to delete duplicate from input sandbox file list
-        # seen = {}
-        ## code
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
         wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
@@ -1094,9 +1063,7 @@ class Cmssw(JobType):
             req='Member("VO-cms-' + \
                  self.version + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-        ## SL add requirement for OS version only if SL4
-        #reSL4 = re.compile( r'slc4' )
-        if self.executable_arch: # and reSL4.search(self.executable_arch):
+        if self.executable_arch: 
             req+=' && Member("VO-cms-' + \
                  self.executable_arch + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
@@ -1139,7 +1106,6 @@ class Cmssw(JobType):
 
         return txt
 
-    ### OLI_DANIELE
     def wsSetupCMSLCGEnvironment_(self):
         """
         Returns part of a job script which is prepares
@@ -1174,7 +1140,6 @@ class Cmssw(JobType):
         txt += '    echo "==> setup cms environment ok"\n'
         return txt
 
-    ### FEDE FOR DBS OUTPUT PUBLICATION
     def modifyReport(self, nj):
         """
         insert the part of the script that modifies the FrameworkJob Report
