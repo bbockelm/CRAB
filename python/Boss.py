@@ -41,7 +41,8 @@ class Boss:
                     'condor_g': 'SchedulerCondorG',\
                     'glidein':  'SchedulerGlidein',\
                     'lsf':      'SchedulerLsf',\
-                    'caf':      'SchedulerLsf'
+                    'caf':      'SchedulerLsf',\
+                    'sge':      'SchedulerSge'
                     }
 
         self.schedulerConfig = common.scheduler.realSchedParams(cfg_params)
