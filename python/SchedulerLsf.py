@@ -17,6 +17,8 @@ class SchedulerLsf(SchedulerLocal) :
 
     def __init__(self):
         Scheduler.__init__(self,"LSF")
+        
+        self.outputDir = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
 
         return
 
@@ -56,7 +58,7 @@ class SchedulerLsf(SchedulerLocal) :
                 if (self.res): sched_param += ' -R '+self.res +' '
             pass
 
-        sched_param+='-cwd '+common.work_space.resDir() + ' '
+        sched_param+='-cwd '+ str(self.outputDir)  + ' '
         return sched_param
 
     def loggingInfo(self, id):
