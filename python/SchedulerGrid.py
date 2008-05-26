@@ -60,12 +60,12 @@ class SchedulerGrid(Scheduler):
             self.srm_ver  = cfg_params.get('USER.srm_version',0) 
             if not self.SE or not self.SE_PATH:
                 msg = "Error. The [USER] section does not have 'storage_element'"
-                msg = msg + " and/or 'storage_path' entries, necessary to copy the output"
+                msg = msg + " and/or 'storage_path' entries, necessary to copy the output\n"
                 common.logger.message(msg)
                 raise CrabException(msg)
             if int(self.srm_ver) != 1 and self.SE_PATH.find("managerv1") != -1:
                 msg = "Warning: The storage_path and srm_version seem to be incompatible."
-                msg = msg + " Set srm_version = 1 if your path contains manager1"
+                msg = msg + " Set srm_version = 1 if your path contains manager1\n"
                 common.logger.message(msg)
 
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):

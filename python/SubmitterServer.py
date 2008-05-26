@@ -121,14 +121,14 @@ class SubmitterServer( Submitter ):
 
 	WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
         if dontMove==True:
-            msg = 'Submittig to local resources...proxy not needed.'
+            msg = 'Submittig to local resources...proxy not needed.\n'
             common.logger.debug(5, msg)
         else:
             ## register proxy ##
             common.scheduler.checkProxy()
             try:
                 flag = " --myproxy"
-                common.logger.message("Registering a valid proxy to the server\n")
+                common.logger.message("Registering a valid proxy to the server:")
                 cmd = 'asap-user-register --server '+str(self.server_name) + flag
                 attempt = 3
                 while attempt:
@@ -136,7 +136,7 @@ class SubmitterServer( Submitter ):
                     status, outp = commands.getstatusoutput(cmd)
                     common.logger.debug(3, outp)
                     if status == 0:
-                        common.logger.message("Proxy successfully delegated to the server.")
+                        common.logger.message("Proxy successfully delegated to the server.\n")
                 	break
                     else:
                         attempt = attempt - 1
