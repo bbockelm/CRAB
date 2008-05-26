@@ -958,7 +958,7 @@ class TaskTrackingComponent:
 				        dictReportTot['JobInProgress'] += 1
                                         dictStateTot[job][0] = "Resubmitting by server"
 			        elif stato == "C":
-                                    if internalstatus == "failed" and not resubmitting:
+                                    if (internalstatus == "failed" or internalstatus == "finished")  and not resubmitting:
                                         countNotSubmitted += 1
                                         dictReportTot['JobFailed'] += 1
                                         dictStateTot[job][0] = "NotSubmitted"
