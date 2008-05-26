@@ -353,11 +353,12 @@ class Crab:
         result = []
         minus = str(aRange).find('-') #DEPRECATED #Fabio #string.find(aRange, '-')
         if ( minus < 0 ):
-            if int(aRange)>0:
+            if isInt(aRange) and int(aRange)>0 :
                 result.append(int(aRange))
             else:
                 common.logger.message("parseSimpleRange_  ERROR "+aRange)
                 processHelpOptions()
+                raise CrabException("parseSimpleRange_ ERROR "+aRange)
                 pass
   
             pass
@@ -366,7 +367,9 @@ class Crab:
             if isInt(start) and isInt(end) and int(start)>0 and int(start)<int(end):
                 result=range(int(start), int(end)+1)   
             else:
-                common.logger.message("parseSimpleRange_ ERROR "+start+end)
+                common.logger.write("parseSimpleRange_ ERROR "+start+end)
+                processHelpOptions()
+                raise CrabException("parseSimpleRange_ ERROR "+start+end)
 
         return result
 
