@@ -1,25 +1,5 @@
 #!/usr/bin/env python
 import sys, os, time, string
-
-### Hopefully will be removed soon!!! DS
-## pre-import env configuratin steps
-#def dropOutPy23dynLoads():
-#    # FEDE added -publish
-#    #if not ('-create' in sys.argv or '-publish' in sys.argv):
-#    if not ('-create' in sys.argv or '-publish' in sys.argv):
-#        return
-#    tmp = []
-#    for p in sys.path:
-#        if p.find( "python2.3/lib-dynload" ) == -1 :
-#            tmp.append(p)
-#        pass
-#
-#    sys.path=tmp
-#    pass
-
-# this is needed to remove interferences between LCG and CMSSW envs  
-#dropOutPy23dynLoads()
-
 ## actual import session 
 from crab_util import *
 from crab_exceptions import *
@@ -95,15 +75,12 @@ class Crab:
         
         self.processOptions_(opts)
 
-
-        # self.UseServer=int(self.cfg_params.get('CRAB.server_mode',0))
-        #
         srvName = opts.get('-server_name', None)
         if srvName == 'None':
             srvName = None
         self.UseServer = int( srvName is not None ) # cast bool to int
 
-        common._db = DBinterface(self.cfg_params) #BL--DS
+        common._db = DBinterface(self.cfg_params) 
 
         if not self.flag_continue:
             self.createWorkingSpace_()
@@ -117,10 +94,8 @@ class Crab:
                     optsToBeSavedDB[it[1:]]=opts[it]
                     optsToBeSaved[it]=opts[it]
                     if self.UseServer==0: optsToBeSavedDB['server_name']= srvName  
-                    # store in taskDB the opts
-
             
-            common._db.createTask_(optsToBeSavedDB) #BL--DS
+            common._db.createTask_(optsToBeSavedDB) 
             common.work_space.saveConfiguration(optsToBeSaved, self.cfg_fname)
         else:  
             common._db.loadDB()
@@ -339,7 +314,7 @@ class Crab:
 
         common.logger.debug(5,"parseRange_ "+str(aRange))
         if aRange=='all' or aRange==None or aRange=='':
-            result=range(1,common._db.nJobs()+1)## new funct. BL--DS
+            result=range(1,common._db.nJobs()+1)
             return result
         elif aRange=='0':
             return result
@@ -360,7 +335,6 @@ class Crab:
         """
 
         uniqueList = []
-        # use a list comprehension statement (takes a while to understand) 
 
         [uniqueList.append(it) for it in list if not uniqueList.count(it)]
 
@@ -380,9 +354,6 @@ class Crab:
         minus = str(aRange).find('-') #DEPRECATED #Fabio #string.find(aRange, '-')
         if ( minus < 0 ):
             if int(aRange)>0:
-                # FEDE
-                #result.append(int(aRange)-1)
-                ###
                 result.append(int(aRange))
             else:
                 common.logger.message("parseSimpleRange_  ERROR "+aRange)
@@ -393,8 +364,7 @@ class Crab:
         else:
             (start, end) = str(aRange).split('-')
             if isInt(start) and isInt(end) and int(start)>0 and int(start)<int(end):
-                #result=range(int(start)-1, int(end))
-                result=range(int(start), int(end)+1) #Daniele  
+                result=range(int(start), int(end)+1)   
             else:
                 common.logger.message("parseSimpleRange_ ERROR "+start+end)
 
@@ -426,29 +396,24 @@ class Crab:
                                        ncjobs)
                 self.actions[opt] = self.creator
 
-               # ############################
-
                 # Initialize the JobDB object if needed
                 if not self.flag_continue:
-                    common._db.createJobs_(self.creator.nJobsL()) ## new  BL--DS
+                    common._db.createJobs_(self.creator.nJobsL()) 
                     pass
 
                 # Create and initialize JobList
-                common.job_list = JobList(common._db.nJobs(), ## new BL--DS
+                common.job_list = JobList(common._db.nJobs(), 
                                           self.creator.jobType())
 
-                taskinfo={} ## new BL--DS  
-                taskinfo['scriptName'] = common.work_space.jobDir()+"/"+self.job_type_name+'.sh' ## new BL--DS 
-                taskinfo['cfgName'] = common.work_space.jobDir()+"/"+self.creator.jobType().configFilename() ## new BL--DS 
-
-                
-                	     
+                taskinfo={}   
+                taskinfo['scriptName'] = common.work_space.jobDir()+"/"+self.job_type_name+'.sh'  
+                taskinfo['cfgName'] = common.work_space.jobDir()+"/"+self.creator.jobType().configFilename()  
     
                 common.job_list.setScriptNames(self.job_type_name+'.sh')
                 common.job_list.setCfgNames(self.creator.jobType().configFilename())
 
                 self.creator.writeJobsSpecsToDB()
-                common._db.updateTask_(taskinfo) ## New BL--DS	
+                common._db.updateTask_(taskinfo) 	
                 pass
 
             elif ( opt == '-submit' ):
@@ -462,7 +427,7 @@ class Crab:
                     self.actions[opt] = Submitter(self.cfg_params, self.parseRange_(val), val)
                     # Create and initialize JobList
                     if len(common.job_list) == 0 :
-                        common.job_list = JobList(common._db.nJobs(), ## New BL--DS
+                        common.job_list = JobList(common._db.nJobs(), 
                                                   None)
                         pass
                     pass
@@ -473,7 +438,7 @@ class Crab:
                 ''' 
                 jobs = self.parseRange_(val)
 
-                common._db.dump(jobs) ## New BL--DS
+                common._db.dump(jobs) 
                 pass
 
             elif ( opt == '-printId' ):
@@ -481,8 +446,7 @@ class Crab:
                 Print the unique name of the task if crab is used as client
                 Print the SID list of all the jobs      
                 ''' 
-                # modified to support server mode 
-                common._db.queryID(self.UseServer) ## New BL--DS
+                common._db.queryID(self.UseServer) 
 
             elif ( opt == '-status' ):
                 from Status import Status 
@@ -666,7 +630,6 @@ class Crab:
              ') running on ' + \
              time.ctime(time.time())+'\n\n' + \
              common.prog_name+'. Working options:\n'
-        #print self.job_type_name 
         header = header +\
                  '  scheduler           ' + self.cfg_params['CRAB.scheduler'] + '\n'+\
                  '  job type            ' + self.job_type_name + '\n'+\

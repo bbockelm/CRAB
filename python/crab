@@ -14,20 +14,5 @@ fi
 
 export LD_LIBRARY_PATH=${GLITE_LOCATION}/lib:${LD_LIBRARY_PATH}
 
-# echo $LD_LIBRARY_PATH
-# ldd `which voms-proxy-info`
 
-
-#if [ -z "$CMSSW_VERSION" ]; then
-#  echo ''
-#  echo 'crab Error: Could not find CMSSW environment' 
-#  echo '      Please before use crab setup:' 
-#  echo '      eval `scramv1 runtime -c|sh` ' 
-#else
-# prepare the environment # Fabio
-#  eval `python $CRABPYTHON/unfoldEnv.py $*`
-#  
-  #/usr/bin/env python $CRABPYTHON/crab.py $*
-  python $CRABPYTHON/crab.py $*
-#fi
-
+python $CRABPYTHON/crab.py $*
