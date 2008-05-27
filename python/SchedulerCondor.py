@@ -1,5 +1,5 @@
-__revision__ = "$Id: SchedulerCondor.py,v 1.1 2008/04/28 21:18:06 ewv Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.2 2008/05/21 19:27:30 ewv Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
@@ -20,10 +20,12 @@ class SchedulerCondor(SchedulerLocal) :
     Scheduler.__init__(self,"CONDOR")
     return
 
+
   def configure(self, cfg_params):
     SchedulerLocal.configure(self, cfg_params)
     self.environment_unique_identifier ='${HOSTNAME}_${CONDOR_ID}_' + common._db.queryTask('name')
     return
+
 
   def sched_parameter(self,i,task):
     """
@@ -37,6 +39,7 @@ class SchedulerCondor(SchedulerLocal) :
 
     return sched_param
 
+
   def realSchedParams(self,cfg_params):
     """
     Return dictionary with specific parameters, to use
@@ -47,8 +50,42 @@ class SchedulerCondor(SchedulerLocal) :
     params = {'tmpDir':tmpDir}
     return  params
 
+
   def loggingInfo(self, id):
     """ return logging info about job nj """
     cmd = 'something'
     #cmd_out = runCommand(cmd)
     return ''
+
+
+  def wsExitFunc(self):
+    """
+    """
+    txt = '\n'
+    txt += '#\n'
+    txt += '# EXECUTE THIS FUNCTION BEFORE EXIT \n'
+    txt += '#\n\n'
+
+    txt += 'func_exit() { \n'
+    txt += '    if [ $PYTHONPATH ]; then \n'
+    txt += '        update_fjr\n'
+    txt += '    fi\n'
+    txt += '    for file in $filesToCheck ; do\n'
+    txt += '        if [ -e $file ]; then\n'
+    txt += '            echo "tarring file $file in  $out_files"\n'
+    txt += '        else\n'
+    txt += '            echo "WARNING: output file $file not found!"\n'
+    txt += '        fi\n'
+    txt += '    done\n'
+    txt += '    final_list=$filesToCheck\n'
+    txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
+    txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
+    txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+    txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
+    txt += '    cp  ${out_files}.tgz $ORIG_WD/\n'
+    txt += '    cp  crab_fjr_$NJob.xml $ORIG_WD/\n'
+
+    txt += '    exit $job_exit_code\n'
+    txt += '}\n'
+
+    return txt

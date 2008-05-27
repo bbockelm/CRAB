@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, os, time, string
-## actual import session 
+## actual import session
 from crab_util import *
 from crab_exceptions import *
 from crab_logger import Logger
@@ -23,7 +23,7 @@ class Crab:
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
-      
+
         # Configuration file
         self.cfg_fname = None
         # Dictionary with configuration parameters
@@ -72,7 +72,7 @@ class Crab:
         self.processIniFile_(opts)
 
         if self.flag_continue: opts = self.loadConfiguration_(opts)
-        
+
         self.processOptions_(opts)
 
         srvName = opts.get('-server_name', None)
@@ -80,25 +80,26 @@ class Crab:
             srvName = None
         self.UseServer = int( srvName is not None ) # cast bool to int
 
-        common._db = DBinterface(self.cfg_params) 
+        common._db = DBinterface(self.cfg_params)
 
+        isCreating = False
         if not self.flag_continue:
             self.createWorkingSpace_()
             common._db.configureDB()
             optsToBeSaved={}
             optsToBeSavedDB={}
-            isCreating = True 
+            isCreating = True
             for it in opts.keys():
                 if (it in self.main_actions) or (it in self.aux_actions) or (it == '-debug'):
                     pass
                 else:
                     optsToBeSavedDB[it[1:]]=opts[it]
                     optsToBeSaved[it]=opts[it]
-                    if self.UseServer==0: optsToBeSavedDB['server_name']= srvName  
-            
-            common._db.createTask_(optsToBeSavedDB) 
+                    if self.UseServer==0: optsToBeSavedDB['server_name']= srvName
+
+            common._db.createTask_(optsToBeSavedDB)
             common.work_space.saveConfiguration(optsToBeSaved, self.cfg_fname)
-        else:  
+        else:
             common._db.loadDB()
 
         # At this point all configuration options have been read.
@@ -107,11 +108,11 @@ class Crab:
         self.updateHistory_(args)
 
         self.createLogger_(args)
-        
+
         common.apmon = ApmonIf()
 
         self.createScheduler_()
-       
+
         common.logger.debug(6, 'Used properties:')
         if (common.logger.debugLevel()<6 ):
             if isCreating :
@@ -127,8 +128,8 @@ class Crab:
 
     def UserCfgProperties(self):
         """
-        print user configuration parameters 
-        """ 
+        print user configuration parameters
+        """
         keys = self.cfg_params.keys()
         keys.sort()
         for k in keys:
@@ -194,7 +195,7 @@ class Crab:
         """
 
         # Extract cfg-file name from the cmd-line options.
-    
+
         for opt in opts.keys():
             if ( opt == '-cfg' ):
                 if self.flag_continue:
@@ -210,7 +211,7 @@ class Crab:
             pass
 
         # Set default cfg-fname
-        
+
         if self.cfg_fname == None:
             if self.flag_continue:
                 self.cfg_fname = common.work_space.cfgFileName()
@@ -220,7 +221,7 @@ class Crab:
             pass
 
         # Load cfg-file
-        
+
         if string.lower(self.cfg_fname) != 'none':
             if os.path.exists(self.cfg_fname):
                 self.cfg_params = loadConfig(self.cfg_fname)
@@ -262,7 +263,7 @@ class Crab:
             if opt in self.aux_actions:
                 self.cfg_params['CRAB.'+opt[1:]] = val
                 continue
-            
+
             elif ( opt == '-server_name' ):
                 # TODO
                 pass
@@ -359,7 +360,7 @@ class Crab:
         'n1'    -> [n1]
         """
         (start, end) = (None, None)
-        
+
         result = []
         minus = str(aRange).find('-') #DEPRECATED #Fabio #string.find(aRange, '-')
         if ( minus < 0 ):
@@ -370,12 +371,12 @@ class Crab:
                 processHelpOptions()
                 raise CrabException("parseSimpleRange_ ERROR "+aRange)
                 pass
-  
+
             pass
         else:
             (start, end) = str(aRange).split('-')
             if isInt(start) and isInt(end) and int(start)>0 and int(start)<int(end):
-                result=range(int(start), int(end)+1)   
+                result=range(int(start), int(end)+1)
             else:
                 common.logger.write("parseSimpleRange_ ERROR "+start+end)
                 processHelpOptions()
@@ -390,10 +391,10 @@ class Crab:
         """
 
         for opt in opts.keys():
-          
+
             val = opts[opt]
-                                                                                                               
- 
+
+
             if (  opt == '-create' ):
                 if val and val != 'all':
                     msg  = 'Per default, CRAB will create all jobs as specified in the crab.cfg file, not the command line!'
@@ -411,22 +412,22 @@ class Crab:
 
                 # Initialize the JobDB object if needed
                 if not self.flag_continue:
-                    common._db.createJobs_(self.creator.nJobsL()) 
+                    common._db.createJobs_(self.creator.nJobsL())
                     pass
 
                 # Create and initialize JobList
-                common.job_list = JobList(common._db.nJobs(), 
+                common.job_list = JobList(common._db.nJobs(),
                                           self.creator.jobType())
 
-                taskinfo={}   
-                taskinfo['scriptName'] = common.work_space.jobDir()+"/"+self.job_type_name+'.sh'  
-                taskinfo['cfgName'] = common.work_space.jobDir()+"/"+self.creator.jobType().configFilename()  
-    
+                taskinfo={}
+                taskinfo['scriptName'] = common.work_space.jobDir()+"/"+self.job_type_name+'.sh'
+                taskinfo['cfgName'] = common.work_space.jobDir()+"/"+self.creator.jobType().configFilename()
+
                 common.job_list.setScriptNames(self.job_type_name+'.sh')
                 common.job_list.setCfgNames(self.creator.jobType().configFilename())
 
                 self.creator.writeJobsSpecsToDB()
-                common._db.updateTask_(taskinfo) 	
+                common._db.updateTask_(taskinfo)
                 pass
 
             elif ( opt == '-submit' ):
@@ -440,35 +441,35 @@ class Crab:
                     self.actions[opt] = Submitter(self.cfg_params, self.parseRange_(val), val)
                     # Create and initialize JobList
                     if len(common.job_list) == 0 :
-                        common.job_list = JobList(common._db.nJobs(), 
+                        common.job_list = JobList(common._db.nJobs(),
                                                   None)
                         pass
                     pass
 
             elif ( opt == '-list' ):
                 '''
-                Print the relevant infos of a range-all jobs/task  
-                ''' 
+                Print the relevant infos of a range-all jobs/task
+                '''
                 jobs = self.parseRange_(val)
 
-                common._db.dump(jobs) 
+                common._db.dump(jobs)
                 pass
 
             elif ( opt == '-printId' ):
                 '''
                 Print the unique name of the task if crab is used as client
-                Print the SID list of all the jobs      
-                ''' 
-                common._db.queryID(self.UseServer) 
+                Print the SID list of all the jobs
+                '''
+                common._db.queryID(self.UseServer)
 
             elif ( opt == '-status' ):
-                from Status import Status 
+                from Status import Status
                 if (self.UseServer== 1):
                     from StatusServer import StatusServer
                     self.actions[opt] = StatusServer(self.cfg_params)
                 else:
                     jobs = self.parseRange_(val)
-                
+
                     if len(jobs) != 0:
                         self.actions[opt] = Status(self.cfg_params)
                     pass
@@ -487,16 +488,16 @@ class Crab:
 
                 if (self.UseServer== 1):
                     from KillerServer import KillerServer
-                    self.actions[opt] = KillerServer(self.cfg_params,jobs) 
+                    self.actions[opt] = KillerServer(self.cfg_params,jobs)
                 else:
                     from Killer import Killer
                     self.actions[opt] = Killer(self.cfg_params,jobs)
 
 
             elif ( opt == '-getoutput' or opt == '-get'):
-    
+
                 if val=='all' or val==None or val=='':
-                    jobs = 'all' 
+                    jobs = 'all'
                 else:
                     jobs = self.parseRange_(val)
 
@@ -531,7 +532,7 @@ class Crab:
 
                 if len(jobs) != 0:
                     # Instantiate Checker object
-                    from Checker import Checker   
+                    from Checker import Checker
                     self.actions[opt] = Checker(self.cfg_params, jobs)
 
             elif ( opt == '-postMortem' ):
@@ -549,7 +550,7 @@ class Crab:
                 if (self.UseServer== 1):
                     from PostMortemServer import PostMortemServer
                     self.actions[opt] = PostMortemServer(self.cfg_params,jobs)
-                else:            
+                else:
                     from PostMortem import PostMortem
                     self.actions[opt] = PostMortem(self.cfg_params, jobs)
 
@@ -563,10 +564,10 @@ class Crab:
                     from Cleaner import Cleaner
                     self.actions[opt] = Cleaner(self.cfg_params)
 
-            elif (opt == '-printJdl'):            
+            elif (opt == '-printJdl'):
                  """
-                 Materialize JDL 
-                 """  
+                 Materialize JDL
+                 """
                  if val =='all' or val == None or val == '':
                      jobs = common._db.nJobs("list")
                  else:
@@ -649,7 +650,7 @@ class Crab:
                  '  working directory   ' + common.work_space.topDir()\
                  + '\n'
         return header
-    
+
     def createScheduler_(self):
         """
         Creates a scheduler object instantiated by its name.
@@ -660,7 +661,7 @@ class Crab:
             raise CrabException(msg)
         self.scheduler_name = self.cfg_params["CRAB.scheduler"]
         ### just temporary... will disappear
-        if self.scheduler_name.lower()=='glitecoll': self.scheduler_name='glite'       
+        if self.scheduler_name.lower()=='glitecoll': self.scheduler_name='glite'
 
         klass_name = 'Scheduler' + string.capitalize(self.scheduler_name)
         file_name = klass_name
@@ -681,7 +682,7 @@ class Crab:
 
     def run(self):
         """
-        For each 
+        For each
         """
 
         for act in self.main_actions:
@@ -719,7 +720,7 @@ if __name__ == '__main__':
         warnings.simplefilter("ignore", RuntimeWarning)
     except ImportError:
         pass # too bad, you'll get the warning
- 
+
     # Parse command-line options and create a dictionary with
     # key-value pairs.
     options = parseOptions(sys.argv[1:])
