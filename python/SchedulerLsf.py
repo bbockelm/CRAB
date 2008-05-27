@@ -18,12 +18,11 @@ class SchedulerLsf(SchedulerLocal) :
     def __init__(self):
         Scheduler.__init__(self,"LSF")
         
-        self.outputDir = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
-
         return
 
     def configure(self, cfg_params):
         SchedulerLocal.configure(self, cfg_params)
+        self.outputDir = cfg_params.get('USER.outputdir' ,common.work_space.resDir())
         self.environment_unique_identifier = "https://"+common.scheduler.name()+":/${LSB_BATCH_JID}-"+ \
             string.replace(common._db.queryTask('name'),"_","-")
 
