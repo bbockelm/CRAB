@@ -8,9 +8,8 @@ import Scram
 import string,os
 
 class ScriptWriter:
-    def __init__(self, template): 
+    def __init__(self, cfg_params, template): 
         # pattern -> action
-        ### FEDE added modify_report FOR DBS OUTPUT PUBLICATION
         self.actions = {
             'title'                       : self.title_,
             'untar_software'              : self.untarSoftware_,

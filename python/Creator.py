@@ -87,7 +87,7 @@ class Creator(Actor):
         common.logger.debug(5, "Creator::run() called")
         start = time.time()
         # Instantiate ScriptWriter
-        script_writer = ScriptWriter('crab_template.sh')
+        script_writer = ScriptWriter(self.cfg_params,'crab_template.sh')
 
         # Loop over jobs
         argsList = []
