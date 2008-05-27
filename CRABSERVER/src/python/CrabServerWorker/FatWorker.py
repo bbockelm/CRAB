@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.71 2008/05/26 15:28:25 farinafa Exp $"
-__version__ = "$Revision: 1.71 $"
+__revision__ = "$Id: FatWorker.py,v 1.69 2008/05/21 10:14:26 farinafa Exp $"
+__version__ = "$Revision: 1.69 $"
 import string
 import sys, os
 import time
@@ -256,13 +256,17 @@ class FatWorker(Thread):
 
         submittedJobs = []
         nonSubmittedJobs = [] + newRange
-
-        sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange) 
-
-        if len(matched) > 0:
-            submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
+        matched = []
+        unmatched = []
+ 
+        if len(newRange) > 0:
+            sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange) 
+            if len(matched) > 0:
+                submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
+            else:
+                self.log.info('Worker %s unable to submit jobs. No sites matched '%self.myName)
         else:
-            self.log.info('Worker %s unable to submit jobs. No sites matched or missing Input Sandbox files'%self.myName)
+            self.log.info('Worker %s unable to submit jobs. File missing on SE'%self.myName)
 
         self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
         return 
@@ -326,21 +330,44 @@ class FatWorker(Thread):
 
         # modify sandbox and other paths for WMS bypass
         turlpreamble = ""
-        ## turlpreamble = 'gsiftp://%s:%s'%(self.SEurl, self.SEport)
-        ## turlpreamble = 'gsiftp://%s'%self.gsiftpNode
-
         if (self.TURLpreamble):
             turlpreamble = self.TURLpreamble 
-        #
         task['startDirectory'] = turlpreamble
 
-        # add fjr XML file to the retrieved files and WMS OSB bypass
         if self.submissionKind == 'first': 
+            # add fjr XML file to the retrieved files and WMS OSB bypass
             destDir = task['outputDirectory']
             task['outputDirectory'] = self.TURLpreamble + destDir 
             task['scriptName'] = turlpreamble + task['scriptName']
             task['cfgName'] = turlpreamble + task['cfgName']
+        else:
+            # backup for job output (tgz files only, less load)
+            fullSubJob = []
+            for sub in sub_jobs:  
+                fullSubJob += sub
+  
+            for jid in task.jobs:
+                if jid not in fullSubJob:
+                    continue
 
+                seEl = SElement(self.SEurl, self.SEproto, self.SEport)
+                sbi = SBinterface( seEl )
+                outcomes = [ str(task['outputDirectory']+'/'+f).replace(self.TURLpreamble, '/') for f in job['outputFiles'] if 'tgz' in f ]
+                bk_sbi = SBinterface( seEl, copy.deepcopy(seEl) )
+
+                for orig in outcomes:
+                    try:
+                        if sbi.checkExists(orig, task['user_proxy']) == True:
+                            # create a backup copy
+                            replica = orig+'.'+str(job['submissionNumber'])
+                            bk_sbi.copy( source=orig, dest=replica, proxy=task['user_proxy'])
+                    except Exception, ex:
+                        self.log.info("Problem while creating back-up copy for %s: %s"%(self.myName, orig))
+                        self.log.info( traceback.format_exc() )
+                        continue
+            pass
+
+        # file lists correction 
         for jid in xrange(len(task.jobs)):
             gsiOSB = [ os.path.basename(of) for of in  task.jobs[jid]['outputFiles']  ]
             task.jobs[jid]['outputFiles'] = gsiOSB 
@@ -527,21 +554,6 @@ class FatWorker(Thread):
             if self.TURLpreamble[-1] != '/':
                 self.TURLpreamble += '/'
 
-        # backup for job output (tgz files only, less load)
-        outcomes = [ str(task['outputDirectory']+'/'+f).replace(self.TURLpreamble, '/') for f in job['outputFiles'] if 'tgz' in f ]
-        bk_sbi = SBinterface( seEl, copy.deepcopy(seEl) )
-
-        for orig in outcomes:
-            try:
-                if sbi.checkExists(orig, task['user_proxy']) == True:
-                    # create a backup copy
-                    replica = orig+'.'+str(time.time())
-                    bk_sbi.copy( source=orig, dest=replica, proxy=task['user_proxy'])
-
-            except Exception, ex:
-                self.log.info("Problem while creating back-up copy for %s: %s"%(self.myName, orig))
-                self.log.info( traceback.format_exc() )
-
         # submit once again 
         sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(task, [int(self.jobId)])
         self.log.info('Worker %s listmatched jobs, now submitting'%self.myName)
@@ -589,7 +601,7 @@ class FatWorker(Thread):
             str(submittedJobs), str(unmatchedJobs), str(nonSubmittedJobs), str(skippedJobs) )   )
 
         ## if all the jobs have been submitted send a success message
-        if len( resubmissionList )==0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs)==0:
+        if len(resubmissionList) == 0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs) == 0:
             # update state in WE for succesfull jobs OR insert a new entry if first submission 
             if self.registerTask(taskObj) != 0:
                 self.sendResult(10, "Unable to register task %s. Causes: deserialization, saving, registration "%(self.taskName), \
@@ -614,7 +626,7 @@ class FatWorker(Thread):
                     try:
                         wfJob.setState(j['name'], 'submit')
                     except Exception, e:
-                        # TODO improve here
+                        wfJob.remove(j['name'])
                         pass
 
             Session.commit(self.taskName)
@@ -697,6 +709,10 @@ class FatWorker(Thread):
         return
 
     def registerTask(self, taskArg):
+
+        if self.submissionKind != 'first':
+            return 0
+ 
         # register in workflow  
         try:
             dbCfg = copy.deepcopy(dbConfig)
