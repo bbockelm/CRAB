@@ -43,7 +43,10 @@ class ScriptWriter:
             self.CMSSW_patch = int(parts[3])
         except:
             raise CrabException("Could not determine CMSSW version")
-
+        self.debug_pset=''
+        debug = cfg_params.get('USER.debug_pset',False)
+        if debug: self.debug_pset='--debug'
+ 
         return
 
     def setAction(self, pattern, action):
@@ -195,13 +198,13 @@ class ScriptWriter:
         txt = "# Rewrite cfg for this job\n"
 
         if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or self.CMSSW_major > 2: #  py in,  py out for 2_1_x
-          txt += "echo  $RUNTIME_AREA/writeCfg.py --debug pset.py pset.py\n"
-          txt += "python $RUNTIME_AREA/writeCfg.py --debug pset.py pset.py\n"
+          txt += "echo  $RUNTIME_AREA/writeCfg.py "+str(self.debug_pset)+" pset.py pset.py\n"
+          txt += "python $RUNTIME_AREA/writeCfg.py "+str(self.debug_pset)+" pset.py pset.py\n"
         elif self.CMSSW_major >= 2:                                                   # cfg in,  py out for 2_0_x
-          txt += "echo  $RUNTIME_AREA/writeCfg.py --debug pset.cfg pset.py\n"
-          txt += "python $RUNTIME_AREA/writeCfg.py --debug pset.cfg pset.py\n"
+          txt += "echo  $RUNTIME_AREA/writeCfg.py "+str(self.debug_pset)+" pset.cfg pset.py\n"
+          txt += "python $RUNTIME_AREA/writeCfg.py "+str(self.debug_pset)+" pset.cfg pset.py\n"
         else:                                                                         # cfg in, cfg out for 1_x_y
-          txt += "echo  $RUNTIME_AREA/writeCfg.py --debug pset.cfg pset.cfg\n"
-          txt += "python $RUNTIME_AREA/writeCfg.py --debug pset.cfg pset.cfg\n"
+          txt += "echo  $RUNTIME_AREA/writeCfg.py "+str(self.debug_pset)+" pset.cfg pset.cfg\n"
+          txt += "python $RUNTIME_AREA/writeCfg.py "+str(self.debug_pset)+" pset.cfg pset.cfg\n"
 
         return txt

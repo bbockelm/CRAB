@@ -457,6 +457,10 @@ Only for LSF scheduler: allow to define the command to be used to copy the outpu
 
 To be used to switch off the screen report during the status query, enabling the db serialization in a file. Specifying I<xml_report> = FileName CRAB will serialize the DB into CRAB_WORKING_DIR/share/FileName.
 
+=item B<pset_debug>
+
+To enable the CMSSW pset printing on STDOUT specify I<pset_debug> = True. The Pset contents before and after the CRAB maipulation will be written. 
+
 =back
 
 B<[EDG]>

@@ -69,6 +69,8 @@ class Cmssw(JobType):
             self.selectNoInput = 0
 
         self.dataTiers = []
+ 
+        self.debug_pset = cfg_params.get('USER.debug_pset',False)
 
         ## now the application
         self.executable = cfg_params.get('CMSSW.executable','cmsRun')
@@ -860,10 +862,11 @@ class Cmssw(JobType):
         if self.pset != None:
             # FUTURE: Can simply for 2_1_x and higher
             txt += '\n'
-            txt += 'echo "***** cat ' + psetName + ' *********"\n'
-            txt += 'cat ' + psetName + '\n'
-            txt += 'echo "****** end ' + psetName + ' ********"\n'
-            txt += '\n'
+            if self.debug_pset==True:  
+                txt += 'echo "***** cat ' + psetName + ' *********"\n'
+                txt += 'cat ' + psetName + '\n'
+                txt += 'echo "****** end ' + psetName + ' ********"\n'
+                txt += '\n'
             txt += 'PSETHASH=`edmConfigHash < ' + psetName + '` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
             txt += '\n'
