@@ -35,7 +35,7 @@ class Cmssw(JobType):
         self.executable_arch = self.scram.getArch()
         self.tgz_name = 'default.tgz'
         self.scriptName = 'CMSSW.sh'
-        self.pset = ''   
+        self.pset = ''
         self.datasetPath = ''
 
         # set FJR file name
@@ -69,7 +69,7 @@ class Cmssw(JobType):
             self.selectNoInput = 0
 
         self.dataTiers = []
- 
+
         self.debug_pset = cfg_params.get('USER.debug_pset',False)
 
         ## now the application
@@ -247,7 +247,7 @@ class Cmssw(JobType):
             self.jobSplittingByBlocks(blockSites)
 
         # modify Pset
-        if self.pset != None: 
+        if self.pset != None:
             try:
                 # Add FrameworkJobReport to parameter-set, set max events.
                 # Reset later for data jobs by writeCFG which does all modifications
@@ -288,7 +288,7 @@ class Cmssw(JobType):
         self.eventsbyfile=self.pubdata.getEventsPerFile()
 
         ## get max number of events
-        self.maxEvents=self.pubdata.getMaxEvents() 
+        self.maxEvents=self.pubdata.getMaxEvents()
 
         ## Contact the DLS and build a list of sites hosting the fileblocks
         try:
@@ -862,7 +862,7 @@ class Cmssw(JobType):
         if self.pset != None:
             # FUTURE: Can simply for 2_1_x and higher
             txt += '\n'
-            if self.debug_pset==True:  
+            if self.debug_pset==True:
                 txt += 'echo "***** cat ' + psetName + ' *********"\n'
                 txt += 'cat ' + psetName + '\n'
                 txt += 'echo "****** end ' + psetName + ' ********"\n'
@@ -943,7 +943,7 @@ class Cmssw(JobType):
         """
 
     def executableName(self):
-        if self.scriptExe: 
+        if self.scriptExe:
             return "sh "
         else:
             return self.executable
@@ -1066,7 +1066,7 @@ class Cmssw(JobType):
             req='Member("VO-cms-' + \
                  self.version + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
-        if self.executable_arch: 
+        if self.executable_arch:
             req+=' && Member("VO-cms-' + \
                  self.executable_arch + \
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
@@ -1182,9 +1182,9 @@ class Cmssw(JobType):
             txt += 'fi\n'
         return txt
 
-    def wsParseFJR(self):   
+    def wsParseFJR(self):
         """
-        Parse the FrameworkJobReport to obtain useful infos 
+        Parse the FrameworkJobReport to obtain useful infos
         """
         txt = '\n#Written by cms_cmssw::wsParseFJR\n'
         txt += 'echo ">>> Parse FrameworkJobReport crab_fjr.xml"\n'
@@ -1209,7 +1209,7 @@ class Cmssw(JobType):
           # VERIFY PROCESSED DATA
             txt += '    if [ $executable_exit_status -eq 0 ];then\n'
             txt += '      echo ">>> Verify list of processed files:"\n'
-            txt += '      echo $InputFiles |tr -d "\\" |tr "," \n"|tr -d "\"" > input-files.txt\n'
+            txt += '      echo $InputFiles |tr -d "\\\\" |tr "," "\\n"|tr -d "\\"" > input-files.txt\n'
             txt += '      grep LFN $RUNTIME_AREA/crab_fjr_$NJob.xml |cut -d">" -f2|cut -d"<" -f1|grep "/" > processed-files.txt\n'
             txt += '      cat input-files.txt  | sort | uniq > tmp.txt\n'
             txt += '      mv tmp.txt input-files.txt\n'
