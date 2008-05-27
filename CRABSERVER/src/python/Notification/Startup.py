@@ -24,7 +24,7 @@ try:
     config = loadProdAgentConfiguration()
     compCfg = config.getConfig("Notification")
     #compCfg.update( config.getConfig("NotificationConfigurations") )
-    
+    compCfg.update( config.getConfig("ProdAgent") )
 except StandardError, ex:
     msg = "Error reading configuration:\n"
     msg += str(ex)
