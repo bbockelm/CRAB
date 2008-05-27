@@ -114,6 +114,7 @@ class GetOutput(Actor):
                 cmd_out = runCommand(cmd)
                 cmd_2 ='rm out_files_'+ str(id)+'.tgz'
                 cmd_out2 = runCommand(cmd_2)
+                msg = 'Results of Jobs # '+str(id)+' are in '+self.outDir+'. \n'
             else:  
                 msg ="Output files for job "+ str(id) +" not available.\n"
                 common.logger.debug(1,msg)
@@ -140,13 +141,6 @@ class GetOutput(Actor):
                     common.logger.message(msg)
             msg = 'Results of Jobs # '+str(self.list_id)+' are in '+self.outDir+' (log files are in '+self.logDir+')'
             common.logger.message(msg)
-        else:
-            if success_ret > 0: 
-                msg = 'Results of Jobs # '+str(self.list_id)+' are in '+self.outDir+'. \n'
-            else:
-                msg = 'Any output file available for Jobs # '+str(self.list_id)+'. \n'
-            common.logger.message(msg)
-
         return
 
     def parseFinalReport(self, input):
