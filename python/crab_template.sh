@@ -300,63 +300,7 @@ let "TIME_EXE = stop_exe_time - start_exe_time"
 echo "TIME_EXE = $TIME_EXE sec"
 echo "ExeTime=$TIME_EXE" >> $RUNTIME_AREA/$repo
 
-echo ">>> Parse FrameworkJobReport crab_fjr.xml"
-if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then
-      if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then
-          cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`
-          echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"
-          executable_exit_status=`echo $cmd_out | awk -F\; '{print $1}' | awk -F ' ' '{print $NF}'`
-          if [ $executable_exit_status -eq 50115 ];then
-              echo ">>> crab_fjr.xml contents: "
-              cat $RUNTIME_AREA/crab_fjr_NJob.xml
-              echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"
-          else
-              echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"
-          fi
-      else
-          echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
-      fi
-      
-      #### Patch to check input data reading for CMSSW16x
-      if [ $executable_exit_status -eq 0 ];then
-        # VERIFY PROCESSED DATA
-        echo ">>> Verify list of processed files:"
-        echo $InputFiles |tr -d '\\' |tr ',' '\n'|tr -d '"' > input-files.txt
-        grep LFN $RUNTIME_AREA/crab_fjr_$NJob.xml |cut -d'>' -f2|cut -d'<' -f1|grep "/" > processed-files.txt
-        cat input-files.txt  | sort | uniq > tmp.txt
-        mv tmp.txt input-files.txt
-        echo "cat input-files.txt"
-        echo "----------------------"
-        cat input-files.txt
-        cat processed-files.txt | sort | uniq > tmp.txt
-        mv tmp.txt processed-files.txt
-        echo "----------------------"
-        echo "cat processed-files.txt"
-        echo "----------------------"
-        cat processed-files.txt
-        echo "----------------------"
-        diff -q input-files.txt processed-files.txt
-        fileverify_status=$?
-        if [ $fileverify_status -ne 0 ]; then
-           executable_exit_status=30001
-           echo "ERROR ==> not all input files processed"
-           echo "      ==> list of processed files from crab_fjr.xml differs from list in pset.cfg"
-           echo "      ==> diff input-files.txt processed-files.txt"
-        fi
-      fi
-      
-else
-    echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."
-fi
-
-echo "ExeExitCode=$executable_exit_status" | tee -a $RUNTIME_AREA/$repo
-echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"
-job_exit_code=$executable_exit_status
-
-if [ $executable_exit_status -ne 0 ]; then
-   echo "ERROR ==> Processing of job failed with exit code $executable_exit_status"
-   func_exit
-fi
+#CRAB parse_report
 
 
 #

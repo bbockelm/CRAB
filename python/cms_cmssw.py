@@ -1147,7 +1147,6 @@ class Cmssw(JobType):
         """
         insert the part of the script that modifies the FrameworkJob Report
         """
-
         txt = '\n#Written by cms_cmssw::modifyReport\n'
         publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (publish_data == 1):
@@ -1181,6 +1180,67 @@ class Cmssw(JobType):
             txt += 'else\n'
             txt += '    mv NewFrameworkJobReport.xml $RUNTIME_AREA/crab_fjr_$NJob.xml\n'
             txt += 'fi\n'
+        return txt
+
+     def wsParseFJR(self):   
+        """
+        Parse the FrameworkJobReport to obtain useful infos 
+        """
+        txt = '\n#Written by cms_cmssw::wsParseFJR\n'
+        txt += 'echo ">>> Parse FrameworkJobReport crab_fjr.xml"\n'
+        txt += 'if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then\n'
+        txt += '    if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then\n'
+        txt += '        cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`\n'
+        txt += '        echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"\n'
+        txt += '        executable_exit_status=`echo $cmd_out | awk -F\; "{print $1}" | awk -F ' ' "{print $NF}"`\n'
+        txt += '        if [ $executable_exit_status -eq 50115 ];then\n'
+        txt += '            echo ">>> crab_fjr.xml contents: "\n'
+        txt += '            cat $RUNTIME_AREA/crab_fjr_NJob.xml\n'
+        txt += '            echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"\n'
+        txt += '        else\n'
+        txt += '            echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"\n'
+        txt += '        fi\n'
+        txt += '    else\n'
+        txt += '        echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."\n'
+        txt += '    fi\n'
+          #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
+
+        if self.datasetPath:
+          # VERIFY PROCESSED DATA
+            txt += '    if [ $executable_exit_status -eq 0 ];then\n'
+            txt += '      echo ">>> Verify list of processed files:"\n'
+            txt += '      echo $InputFiles |tr -d "\\" |tr "," \n"|tr -d "\"" > input-files.txt\n'
+            txt += '      grep LFN $RUNTIME_AREA/crab_fjr_$NJob.xml |cut -d">" -f2|cut -d"<" -f1|grep "/" > processed-files.txt\n'
+            txt += '      cat input-files.txt  | sort | uniq > tmp.txt\n'
+            txt += '      mv tmp.txt input-files.txt\n'
+            txt += '      echo "cat input-files.txt"\n'
+            txt += '      echo "----------------------"\n'
+            txt += '      cat input-files.txt\n'
+            txt += '      cat processed-files.txt | sort | uniq > tmp.txt\n'
+            txt += '      mv tmp.txt processed-files.txt\n'
+            txt += '      echo "----------------------"\n'
+            txt += '      echo "cat processed-files.txt"\n'
+            txt += '      echo "----------------------"\n'
+            txt += '      cat processed-files.txt\n'
+            txt += '      echo "----------------------"\n'
+            txt += '      diff -q input-files.txt processed-files.txt\n'
+            txt += '      fileverify_status=$?\n'
+            txt += '      if [ $fileverify_status -ne 0 ]; then\n'
+            txt += '         executable_exit_status=30001\n'
+            txt += '         echo "ERROR ==> not all input files processed"\n'
+            txt += '         echo "      ==> list of processed files from crab_fjr.xml differs from list in pset.cfg"\n'
+            txt += '         echo "      ==> diff input-files.txt processed-files.txt"\n'
+            txt += '      fi\n'
+            txt += '    fi\n'
+            txt += '\n'
+        txt += 'else\n'
+        txt += '    echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."\n'
+        txt += 'fi\n'
+        txt += '\n'
+        txt += 'echo "ExeExitCode=$executable_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"\n'
+        txt += 'job_exit_code=$executable_exit_status\n'
+
         return txt
 
     def setParam_(self, param, value):

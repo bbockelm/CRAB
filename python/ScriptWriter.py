@@ -21,6 +21,7 @@ class ScriptWriter:
             'run_executable'              : self.runExe_,
             'rename_output'               : self.renameOutput_,
             'copy_output'                 : self.copyOutput_,
+            'parse_report'                : self.parseReport_,
             'modify_report'               : self.modifyReport_,
             'func_exit'                   : self.func_exit_
             }
@@ -163,6 +164,14 @@ class ScriptWriter:
         Returns part of a job script which copies output files to SE.
         """
         txt = common.scheduler.wsCopyOutput()
+        return txt
+
+    def parseReport_(self):
+        """
+        Returns part of a job script which parse the FrameworkJobReport.
+        """
+        jbt = common.job_list.type()
+        txt = jbt.wsParseFJR(self.nj)
         return txt
 
     def modifyReport_(self):
