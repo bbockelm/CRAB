@@ -171,7 +171,7 @@ class ScriptWriter:
         Returns part of a job script which parse the FrameworkJobReport.
         """
         jbt = common.job_list.type()
-        txt = jbt.wsParseFJR(self.nj)
+        txt = jbt.wsParseFJR()
         return txt
 
     def modifyReport_(self):
