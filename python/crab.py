@@ -87,6 +87,7 @@ class Crab:
             common._db.configureDB()
             optsToBeSaved={}
             optsToBeSavedDB={}
+            isCreating = True 
             for it in opts.keys():
                 if (it in self.main_actions) or (it in self.aux_actions) or (it == '-debug'):
                     pass
@@ -110,10 +111,24 @@ class Crab:
         common.apmon = ApmonIf()
 
         self.createScheduler_()
-
+       
         common.logger.debug(6, 'Used properties:')
         if (common.logger.debugLevel()<6 ):
-            common.logger.write('Used properties:')
+            if isCreating :
+                common.logger.write('Used properties:')
+                self.UserCfgProperties()
+                common.logger.write('End of used properties.\n')
+        else:
+            self.UserCfgProperties()
+        common.logger.debug(6, 'End of used properties.\n')
+
+        self.initializeActions_(opts)
+        return
+
+    def UserCfgProperties(self):
+        """
+        print user configuration parameters 
+        """ 
         keys = self.cfg_params.keys()
         keys.sort()
         for k in keys:
@@ -128,11 +143,6 @@ class Crab:
                     common.logger.write('   '+k+' : ')
                 pass
             pass
-        common.logger.debug(6, 'End of used properties.\n')
-        if (common.logger.debugLevel()<6 ):
-            common.logger.write('End of used properties.\n')
-
-        self.initializeActions_(opts)
         return
 
     def processContinueOption_(self,opts):
