@@ -923,7 +923,7 @@ class Cmssw(JobType):
             txt += 'mv $RUNTIME_AREA/src/ . \n'
         if len(self.additional_inbox_files)>0:
             for file in self.additional_inbox_files:
-                txt += 'mv $RUNTIME_AREA/'+file+' . \n'
+                txt += 'mv $RUNTIME_AREA/'+os.path.basename(file)+' . \n'
         txt += 'mv $RUNTIME_AREA/ProdCommon/ . \n'
 
         txt += 'if [ -z "$PYTHONPATH" ]; then\n'
