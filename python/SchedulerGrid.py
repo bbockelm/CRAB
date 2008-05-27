@@ -344,7 +344,11 @@ class SchedulerGrid(Scheduler):
              
         mustRenew = 0
         timeLeftLocal = runCommand('voms-proxy-info -timeleft 2>/dev/null')
-        if timeLeftLocal is not int or int(timeLeftLocal)<minTimeLeft :
+        ## if no valid proxy
+        if timeLeftLocal == None:
+            mustRenew = 1
+        ## if valid check how long 
+        elif int(timeLeftLocal)<minTimeLeft :
             mustRenew = 1
 
         if mustRenew:
