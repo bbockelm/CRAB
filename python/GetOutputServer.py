@@ -101,7 +101,10 @@ class GetOutputServer( GetOutput, StatusServer ):
         if len(retrievedFilesJodId) > 0:
             common.logger.debug(5, "List of retrieved files notified to server: %s"%str(retrievedFilesJodId) ) 
             csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
-            csCommunicator.outputRetrieved(self.taskuuid, retrievedFilesJodId)
+            try:
+                csCommunicator.outputRetrieved(self.taskuuid, retrievedFilesJodId)
+            except Exception, e:
+                pass
 
             common._db.updateRunJob_(retrievedFilesJodId, [{'statusScheduler':'Cleared', 'status':'E'}] * len(retrievedFilesJodId) )
         return

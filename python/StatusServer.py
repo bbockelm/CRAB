@@ -44,7 +44,7 @@ class StatusServer(Status):
 
         # align back data and print
         try:
-            handledXML += "="*( len(handledXML)%4 )  
+            handledXML += "="*( len(handledXML)%8 )  
             reportXML = zlib.decompress( base64.urlsafe_b64decode(handledXML) )
         except Exception, e:
             common.logger.debug(1,"WARNING: Problem while decompressing fresh status from the server.")
