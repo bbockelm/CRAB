@@ -327,7 +327,7 @@ class SchedulerGrid(Scheduler):
 
         return txt
 
-    def checkProxy(self):
+    def checkProxy(self, deep=0):
         """
         Function to check the Globus proxy.
         """
@@ -337,24 +337,15 @@ class SchedulerGrid(Scheduler):
         if (self.dontCheckProxy==1):
             self.proxyValid=1
             return
-
-        minTimeLeft=10*3600 # in seconds
-
-        minTimeLeftServer = 100 # in hours
-
+        if deep == 0 :
+            minTimeLeft=10*3600 # in seconds
+        else:
+            minTimeLeft=100*3600 # in seconds
+             
         mustRenew = 0
         timeLeftLocal = runCommand('voms-proxy-info -timeleft 2>/dev/null')
-        timeLeftServer = -999
-        if not timeLeftLocal or int(timeLeftLocal) <= 0 or not isInt(timeLeftLocal):
+        if timeLeftLocal is not int or int(timeLeftLocal)<minTimeLeft :
             mustRenew = 1
-        else:
-            timeLeftServer = runCommand('voms-proxy-info -actimeleft 2>/dev/null | head -1')
-            if not timeLeftServer or not isInt(timeLeftServer):
-                mustRenew = 1
-            elif int(timeLeftLocal)<minTimeLeft or int(timeLeftServer)<minTimeLeft:
-                mustRenew = 1
-            pass
-        pass
 
         if mustRenew:
             common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 192h\n")

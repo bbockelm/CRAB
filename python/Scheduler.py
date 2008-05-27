@@ -80,7 +80,7 @@ class Scheduler :
         """
         return ''
 
-    def checkProxy(self):
+    def checkProxy(self, deep=0):
         """ check proxy """
         return
 

@@ -125,7 +125,7 @@ class SubmitterServer( Submitter ):
             common.logger.debug(5, msg)
         else:
             ## register proxy ##
-            common.scheduler.checkProxy()
+            common.scheduler.checkProxy(deep=1)
             try:
                 flag = " --myproxy"
                 common.logger.message("Registering a valid proxy to the server:")
