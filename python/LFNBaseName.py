@@ -14,14 +14,27 @@ def LFNBase(ProcessedDataset,merged=True):
     """
     lfnbase = "/store" 
     if not merged:
-        lfnbase = os.path.join(lfnbase,"tmp")
-    
-    lfnbase = os.path.join(lfnbase, "user", gethnUserName(), ProcessedDataset )
+        lfnbase = os.path.join(lfnbase,"tmp")   
+#    lfnbase = os.path.join(lfnbase, "user", gethnUserName(), ProcessedDataset )
+    lfnbase = os.path.join(lfnbase, "user", getUserName(), ProcessedDataset )
     return lfnbase
 
 def PFNportion(ProcessedDataset):
-    pfnpath = os.path.join(gethnUserName(), ProcessedDataset )
+#    pfnpath = os.path.join(gethnUserName(), ProcessedDataset )
+    pfnpath = os.path.join(getUserName(), ProcessedDataset )
     return pfnpath
+
+def getUnixUserName():
+    """
+    extract username from whoami
+    """
+    try:
+        UserName = runCommand("whoami")
+        UserName = string.strip(UserName)
+    except:
+        msg = "Error. Problem with whoami command"
+        raise CrabException(msg)
+    return UserName
 
 def getDN():
     """
@@ -63,17 +76,29 @@ def gethnUserName():
         raise CrabException(msg)
     return hnUserName
 
+def getUserName():
+    """
+    extract user name from either SiteDB or Unix
+    """
+    try: 
+      UserName=gethnUserName()
+    except:
+      common.logger.message("==> Using as username the Unix user name")
+      UserName=getUnixUserName()
+    return UserName
+
 if __name__ == '__main__' :
     """
     """
     from crab_logger import Logger
     from WorkSpace import *
-    continue_dir="/bohome/fanfani/CRAB"
+    continue_dir="/afs/cern.ch/user/a/afanfani/"
     cfg_params={'USER.logdir' : continue_dir }
     common.work_space = WorkSpace(continue_dir, cfg_params)
     log = Logger()
     common.logger = log
 
+    print "xx %s xx"%getUserName() 
     baselfn = LFNBase("datasetstring")
     print baselfn    
 
