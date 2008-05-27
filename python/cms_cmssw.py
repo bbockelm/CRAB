@@ -1182,7 +1182,7 @@ class Cmssw(JobType):
             txt += 'fi\n'
         return txt
 
-     def wsParseFJR(self):   
+    def wsParseFJR(self):   
         """
         Parse the FrameworkJobReport to obtain useful infos 
         """
