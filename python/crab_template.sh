@@ -68,7 +68,7 @@ function cmscp {
       StageOutExitStatusReason=$exitstring
       cmd="lcg-ls -D srmv${Dsrm_ver} $destination"
       tmpstring=`$cmd 2>&1`
-      echo $tmpstring | grep 'not found' 
+      echo $tmpstring | grep 'not found'
       exit_status=$?
       if [ $exit_status -eq 0 ]; then
           cmscp_exit_status=60303
@@ -210,7 +210,12 @@ remove_working_dir() {
 }
 
 #CRAB func_exit
-                                            
+
+if [ -d $_CONDOR_SCRATCH_DIR ]; then
+    ORIG_WD=`pwd`
+    cp ../default.tgz $_CONDOR_SCRATCH_DIR
+    cd $_CONDOR_SCRATCH_DIR
+fi
 
 RUNTIME_AREA=`pwd`
 
@@ -299,6 +304,7 @@ dumpStatus $RUNTIME_AREA/$repo
 let "TIME_EXE = stop_exe_time - start_exe_time"
 echo "TIME_EXE = $TIME_EXE sec"
 echo "ExeTime=$TIME_EXE" >> $RUNTIME_AREA/$repo
+
 
 #CRAB parse_report
 
