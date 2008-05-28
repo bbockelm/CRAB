@@ -162,6 +162,10 @@ class Cmssw(JobType):
         if cfg_params.has_key('CMSSW.total_number_of_events'):
             self.total_number_of_events = int(cfg_params['CMSSW.total_number_of_events'])
             self.selectTotalNumberEvents = 1
+            if self.selectNumberOfJobs  == 1:
+                if int(self.total_number_of_events) < int(self.theNumberOfJobs):  
+                    msg = 'Must specify at least one event per job. total_number_of_events > number_of_jobs '
+                    raise CrabException(msg)
         else:
             self.total_number_of_events = 0
             self.selectTotalNumberEvents = 0
