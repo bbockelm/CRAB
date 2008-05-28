@@ -9,19 +9,18 @@ import common
 import os, string
 
 
-def LFNBase(ProcessedDataset,merged=True):
+def LFNBase(ProcessedDataset,merged=True,LocalUser=False):
     """
     """
     lfnbase = "/store" 
     if not merged:
         lfnbase = os.path.join(lfnbase,"tmp")   
-#    lfnbase = os.path.join(lfnbase, "user", gethnUserName(), ProcessedDataset )
-    lfnbase = os.path.join(lfnbase, "user", getUserName(), ProcessedDataset )
+    lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), ProcessedDataset )
+       
     return lfnbase
 
-def PFNportion(ProcessedDataset):
-#    pfnpath = os.path.join(gethnUserName(), ProcessedDataset )
-    pfnpath = os.path.join(getUserName(), ProcessedDataset )
+def PFNportion(ProcessedDataset,LocalUser=False):
+    pfnpath = os.path.join(getUserName(LocalUser=LocalUser), ProcessedDataset )
     return pfnpath
 
 def getUnixUserName():
@@ -76,15 +75,16 @@ def gethnUserName():
         raise CrabException(msg)
     return hnUserName
 
-def getUserName():
+def getUserName(LocalUser=False):
     """
     extract user name from either SiteDB or Unix
     """
-    try: 
-      UserName=gethnUserName()
-    except:
-      common.logger.message("==> Using as username the Unix user name")
-      UserName=getUnixUserName()
+    if LocalUser:
+       common.logger.message("==> Using as username the Unix user name")
+       UserName=getUnixUserName()
+       return UserName
+    
+    UserName=gethnUserName()
     return UserName
 
 if __name__ == '__main__' :
