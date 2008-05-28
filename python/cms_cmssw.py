@@ -163,7 +163,7 @@ class Cmssw(JobType):
             self.total_number_of_events = int(cfg_params['CMSSW.total_number_of_events'])
             self.selectTotalNumberEvents = 1
             if self.selectNumberOfJobs  == 1:
-                if int(self.total_number_of_events) < int(self.theNumberOfJobs):  
+                if int(self.total_number_of_events) < int(self.theNumberOfJobs):
                     msg = 'Must specify at least one event per job. total_number_of_events > number_of_jobs '
                     raise CrabException(msg)
         else:
@@ -1196,7 +1196,7 @@ class Cmssw(JobType):
         txt += '    if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then\n'
         txt += '        cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`\n'
         txt += '        echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"\n'
-        txt += '        executable_exit_status=`echo $cmd_out | awk -F\; "{print $1}" | awk -F ' ' "{print $NF}"`\n'
+        txt += '        executable_exit_status=`echo $cmd_out | awk -F\; \'{print $1}\' | awk -F \' \' \'{print $NF}\'`\n'
         txt += '        if [ $executable_exit_status -eq 50115 ];then\n'
         txt += '            echo ">>> crab_fjr.xml contents: "\n'
         txt += '            cat $RUNTIME_AREA/crab_fjr_NJob.xml\n'
