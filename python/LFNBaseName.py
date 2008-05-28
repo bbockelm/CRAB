@@ -62,12 +62,13 @@ def gethnUserName():
         try:
             userinfo= eval(udata)
         except StandardError, ex:
-            msg = "Error. Problem extracting user name from %s : %s"%(sitedburl,ex)
+            msg = "Error. Problem extracting user name from %s : %s \n SiteDB call output: \n %s"%(sitedburl,ex,udata)
             raise CrabException(msg)
         hnUserName = userinfo['user']
     except:
-        msg = "Error. Problem extracting user name from %s"%sitedburl
-        msg += "Check that you are registered in SiteDB, see https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB" 
+        msg = "Error. Problem extracting user name from %s "%sitedburl
+        msg += "\n Check that you are registered in SiteDB, see https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB" 
+        msg += "\n SiteDB call output: \n %s"%udata
         raise CrabException(msg)
     if not hnUserName:
         msg = "Error. There is no user name associated to DN %s in %s. You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB"%(userdn,sitedburl)
