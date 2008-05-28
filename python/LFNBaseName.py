@@ -42,6 +42,8 @@ def getDN():
     try:
         userdn = runCommand("voms-proxy-info -identity")
         userdn = string.strip(userdn)
+        #search for a / to avoid picking up warning messages
+        userdn = userdn[userdn.find('/'):]
     except:
         msg = "Error. Problem with voms-proxy-info -identity command"
         raise CrabException(msg)
