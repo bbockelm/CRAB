@@ -177,13 +177,13 @@ class DBinterface:
         """
         task = self.getTask(jobs)
 
-        Jobs = task.getJobs()
         print "--------------------------"
-        for Job in Jobs:
+        for Job in task.jobs:
             print "Id: ",Job['jobId']
             print "Dest: ", Job['dlsDestination']
             print "Output: ", Job['outputFiles']
             print "Args: ",Job['arguments']
+            print "Service: ",Job.runningJob['service']
             print "--------------------------"
         return      
 
