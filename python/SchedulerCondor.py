@@ -1,5 +1,5 @@
-__revision__ = "$Id: SchedulerCondor.py,v 1.2 2008/05/21 19:27:30 ewv Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.3 2008/05/27 22:03:29 ewv Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
@@ -51,11 +51,14 @@ class SchedulerCondor(SchedulerLocal) :
     return  params
 
 
-  def loggingInfo(self, id):
-    """ return logging info about job nj """
-    cmd = 'something'
-    #cmd_out = runCommand(cmd)
-    return ''
+  def decodeLogInfo(self, file):
+    """
+    Parse logging info file and return main info
+    """
+    import CondorGLoggingInfo
+    loggingInfo = CondorGLoggingInfo.CondorGLoggingInfo()
+    reason = loggingInfo.decodeReason(file)
+    return reason
 
 
   def wsExitFunc(self):
