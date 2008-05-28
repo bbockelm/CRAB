@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.69 2008/05/21 10:14:26 farinafa Exp $"
-__version__ = "$Revision: 1.69 $"
+__revision__ = "$Id: FatWorker.py,v 1.73 2008/05/27 13:15:24 farinafa Exp $"
+__version__ = "$Revision: 1.73 $"
 import string
 import sys, os
 import time
@@ -624,10 +624,10 @@ class FatWorker(Thread):
             for j in taskObj.jobs:
                 if j['jobId'] in submittedJobs:
                     try:
-                        wfJob.setState(j['name'], 'submit')
+                        if wfJob.exists(j['name']):
+                            wfJob.setState(j['name'], 'submit')
                     except Exception, e:
-                        wfJob.remove(j['name'])
-                        pass
+                        continue  
 
             Session.commit(self.taskName)
             Session.close(self.taskName)
@@ -710,9 +710,6 @@ class FatWorker(Thread):
 
     def registerTask(self, taskArg):
 
-        if self.submissionKind != 'first':
-            return 0
- 
         # register in workflow  
         try:
             dbCfg = copy.deepcopy(dbConfig)
@@ -724,23 +721,19 @@ class FatWorker(Thread):
 
             for job in taskArg.jobs:
                 jobName = job['name']
-
-                try:
-                    if wfJob.exists(jobName):
-                        continue
-                except Exception, e:
-                    self.log.info('Error checking if job is already registered in WF-Entities. Trying to re-register it.')
-                    pass
- 
-                cacheArea = self.wdir + '/' + self.taskName + '_spec/%s'%job['name']
+                cacheArea = self.wdir + '/' + self.taskName + '_spec/%s'%jobName
                 jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':self.maxRetries, 'max_racers':1, 'owner':self.taskName}
 
-                wfJob.register(jobName, None, jobDetails)
-                wfJob.setState(jobName, 'register')
-                wfJob.setState(jobName, 'create')
-                wfJob.setCacheDir(jobName, cacheArea)
-                wfJob.setState(jobName, 'inProgress')
-                # wfJob.setState(jobName, 'submit')
+                try:
+                    if not wfJob.exists(jobName):
+                        wfJob.register(jobName, None, jobDetails)
+                        wfJob.setState(jobName, 'register')
+                        wfJob.setState(jobName, 'create')
+                        wfJob.setCacheDir(jobName, cacheArea)
+                        wfJob.setState(jobName, 'inProgress')
+                except Exception, e:
+                    self.log.info('Error checking if job is already registered in WF-Entities.')
+                    continue
  
             Session.commit(self.taskName)
             Session.close(self.taskName)
