@@ -1216,7 +1216,7 @@ class Cmssw(JobType):
           # VERIFY PROCESSED DATA
             txt += '    if [ $executable_exit_status -eq 0 ];then\n'
             txt += '      echo ">>> Verify list of processed files:"\n'
-            txt += '      echo $InputFiles |tr -d "\\\\" |tr "," "\\n"|tr -d "\\"" > input-files.txt\n'
+            txt += '      echo $InputFiles |tr -d \'\\\\\' |tr \',\' \'\\n\'|tr -d \'"\' > input-files.txt\n'
             txt += '      grep LFN $RUNTIME_AREA/crab_fjr_$NJob.xml |cut -d">" -f2|cut -d"<" -f1|grep "/" > processed-files.txt\n'
             txt += '      cat input-files.txt  | sort | uniq > tmp.txt\n'
             txt += '      mv tmp.txt input-files.txt\n'
