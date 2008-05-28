@@ -116,7 +116,8 @@ export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHON
 ## need to do something like:
 #export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python`echo $PYTHON_VERSION | cut -f1,2 -d.`/site-packages:\${PYTHONPATH}
 
-
+### TEMPORARY PATCH for gLite UI
+export PYTHONPATH=${PYTHONPATH}:${GLITE_LOCATION}/lib
 EOF
 
 # csh style
@@ -168,6 +169,8 @@ setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHON
 ## need to do something like:
 #setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python`echo $PYTHON_VERSION | cut -f1,2 -d.`/site-packages:\${PYTHONPATH}
 
+### TEMPORARY PATCH for gLite UI
+setenv PYTHONPATH ${PYTHONPATH}:${GLITE_LOCATION}/lib
 
 EOF
 return
