@@ -887,7 +887,8 @@ class Cmssw(JobType):
         if os.path.isfile(self.tgzNameWithPath):
             txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
             txt += 'tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
-            txt += 'ls -Al \n'
+            if  self.debug_wrapper:
+                txt += 'ls -Al \n'
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '   echo "ERROR ==> Untarring .tgz file failed"\n'
@@ -1006,7 +1007,8 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsRenameOutput\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
-        txt += 'ls \n'
+        if self.debug_wrapper: 
+            txt += 'ls -Al\n'
         txt += '\n'
 
         for fileWithSuffix in (self.output_file):
@@ -1037,7 +1039,8 @@ class Cmssw(JobType):
         txt += '\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
-        txt += 'ls \n'
+        if self.debug_wrapper: 
+            txt += 'ls -Al\n'
         txt += '\n'
         txt += 'cd $RUNTIME_AREA\n'
         txt += 'echo ">>> current directory (RUNTIME_AREA):  $RUNTIME_AREA"\n'
