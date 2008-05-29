@@ -69,9 +69,9 @@ class Cmssw(JobType):
             self.selectNoInput = 0
 
         self.dataTiers = []
-
-        self.debug_pset = cfg_params.get('USER.debug_pset',False)
-
+        self.debugWrap = ''
+        self.debug_wrapper = cfg_params.get('USER.debug_wrapper',False)
+        if self.debug_wrapper: self.debugWrap='--debug'
         ## now the application
         self.executable = cfg_params.get('CMSSW.executable','cmsRun')
         log.debug(6, "CMSSW::CMSSW(): executable = "+self.executable)
@@ -866,7 +866,7 @@ class Cmssw(JobType):
         if self.pset != None:
             # FUTURE: Can simply for 2_1_x and higher
             txt += '\n'
-            if self.debug_pset==True:
+            if self.debug_wrapper==True:
                 txt += 'echo "***** cat ' + psetName + ' *********"\n'
                 txt += 'cat ' + psetName + '\n'
                 txt += 'echo "****** end ' + psetName + ' ********"\n'
@@ -1194,16 +1194,16 @@ class Cmssw(JobType):
         txt += 'echo ">>> Parse FrameworkJobReport crab_fjr.xml"\n'
         txt += 'if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then\n'
         txt += '    if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then\n'
-        txt += '        cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --MonitorID $MonitorID --MonitorJobID $MonitorJobID`\n'
-        txt += '        echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"\n'
-        txt += '        tmp_executable_exit_status=`echo $cmd_out | awk -F\; \'{print $1}\' | awk -F \' \' \'{print $NF}\'`\n'
-        txt += '        if [ -n $tmp_executable_exit_status ];then\n'
-        txt += '            executable_exit_status=$tmp_executable_exit_status\n'
-        txt += '        fi\n'
+        txt += '        cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --dashboard $MonitorID,$MonitorJobID '+self.debugWrap+'`\n'
+        if self.debug_wrapper :
+            txt += '        echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"\n'
+        txt += '        executable_exit_status=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --exitcode`\n'
         txt += '        if [ $executable_exit_status -eq 50115 ];then\n'
         txt += '            echo ">>> crab_fjr.xml contents: "\n'
         txt += '            cat $RUNTIME_AREA/crab_fjr_NJob.xml\n'
         txt += '            echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"\n'
+        txt += '        elif [ $executable_exit_status -eq -999 ];then\n'
+        txt += '            echo "ExitStatus from FrameworkJobReport not available. not available. Using exit code of executable from command line."\n'
         txt += '        else\n'
         txt += '            echo "Extracted ExitStatus from FrameworkJobReport parsing output: $executable_exit_status"\n'
         txt += '        fi\n'
@@ -1217,7 +1217,7 @@ class Cmssw(JobType):
             txt += '    if [ $executable_exit_status -eq 0 ];then\n'
             txt += '      echo ">>> Verify list of processed files:"\n'
             txt += '      echo $InputFiles |tr -d \'\\\\\' |tr \',\' \'\\n\'|tr -d \'"\' > input-files.txt\n'
-            txt += '      grep LFN $RUNTIME_AREA/crab_fjr_$NJob.xml |cut -d">" -f2|cut -d"<" -f1|grep "/" > processed-files.txt\n'
+            txt += '      `python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --lfn`  > processed-files.txt\n'
             txt += '      cat input-files.txt  | sort | uniq > tmp.txt\n'
             txt += '      mv tmp.txt input-files.txt\n'
             txt += '      echo "cat input-files.txt"\n'
