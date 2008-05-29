@@ -88,29 +88,6 @@ class SchedulerGrid(Scheduler):
             if not self.publish_data_name and int(self.usenamespace) == 1:
                self.publish_data_name = "DefaultDataset"
 
-            ## SL I don't like a direct call to voms-proxy here
-
-            import urllib
-            try:
-                userdn = runCommand("voms-proxy-info -identity")
-                self.userdn = string.strip(userdn)
-            except:
-                msg = "Error. Problem with voms-proxy-info -identity command"
-                raise CrabException(msg)
-            try:
-                sitedburl="https://cmsweb.cern.ch/sitedb/sitedb/json/index/dnUserName"
-                params = urllib.urlencode({'dn': self.userdn })
-                f = urllib.urlopen(sitedburl,params)
-                udata = f.read()
-                userinfo= eval(udata)
-                self.hnUserName = userinfo['user']
-            except:
-                msg = "Error. Problem extracting user name from %s"%sitedburl
-                raise CrabException(msg)
-
-            if not self.hnUserName:
-                msg = "Error. There is no user name associated to DN %s in %s.You need to register in SiteDB"%(userdn,sitedburl)
-                raise CrabException(msg)
 
         if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
            msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
@@ -149,6 +126,7 @@ class SchedulerGrid(Scheduler):
 
         self.schedulerName = cfg_params.get('CRAB.scheduler','')
 
+        self.checkProxy()
         return
 
     def rb_configure(self, RB):

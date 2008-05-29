@@ -16,7 +16,6 @@ class SchedulerGlite(SchedulerGrid):
 
     def configure(self,cfg_params):
         SchedulerGrid.configure(self, cfg_params)
-        self.checkProxy()
         self.environment_unique_identifier = 'GLITE_WMS_JOBID'
 
     def realSchedParams(self,cfg_params):

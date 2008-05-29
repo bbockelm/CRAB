@@ -15,8 +15,8 @@ import CondorGLoggingInfo
 
 # This class was originally SchedulerCondor_g. For a history of this code, see that file.
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.16 2008/05/03 17:14:17 spiga Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.17 2008/05/05 18:46:02 ewv Exp $"
+__version__ = "$Revision: 1.17 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -145,7 +145,6 @@ class SchedulerCondorCommon(SchedulerGrid):
             self.UseGT4 = 0;
 
         # added here because checklistmatch is not used
-        self.checkProxy()
         self.environment_unique_identifier = 'GLOBUS_GRAM_JOB_CONTACT'
         self.datasetPath = ''
 
@@ -209,7 +208,6 @@ class SchedulerCondorCommon(SchedulerGrid):
 
     def userName(self):
       """ return the user name """
-      self.checkProxy()
       return runCommand("voms-proxy-info -identity")
 
     def ce_list(self):
