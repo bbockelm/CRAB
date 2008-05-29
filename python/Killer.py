@@ -16,10 +16,7 @@ class Killer(Actor):
         task = common._db.getTask(self.range)
         toBeKilled = []
         for job  in task.jobs:
-           # if id not in  common._db.nJobs("list"):
-           #     common.logger.message("Warning: job # "+str(id)+" doesn't exists! Not possible to kill it.")
-           # else:
-           if ( job.runningJob['status'] in ['SS','R','S']):
+           if ( job.runningJob['status'] in ['SS','R','S','SR']):
                toBeKilled.append(job['jobId'])
            else:
                common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
