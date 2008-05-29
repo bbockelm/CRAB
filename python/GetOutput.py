@@ -93,7 +93,7 @@ class GetOutput(Actor):
         Get output for a finished job with id.
         """
         self.checkBeforeGet()
-        common.scheduler.getOutput(1,self.list_id,self.outDir) ## NeW BL--DS
+        common.scheduler.getOutput(1,self.list_id,self.outDir)
         self.organizeOutput()    
         return
   
@@ -115,6 +115,7 @@ class GetOutput(Actor):
                 cmd_2 ='rm out_files_'+ str(id)+'.tgz'
                 cmd_out2 = runCommand(cmd_2)
                 msg = 'Results of Jobs # '+str(id)+' are in '+self.outDir+'. \n'
+                common.logger.message(msg) 
             else:  
                 msg ="Output files for job "+ str(id) +" not available.\n"
                 common.logger.debug(1,msg)
