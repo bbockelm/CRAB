@@ -24,7 +24,7 @@ class CleanerServer(Actor):
     def run(self):
         """
         remove all
-        """
+
         if common.jobDB.nJobs()>0:
             self.check()
 
@@ -39,3 +39,8 @@ class CleanerServer(Actor):
             print ( 'crab. directory '+tempWorkSpace+' removed' )
         else:
             common.logger.message ( 'Impossible to remove: not all jobs are yet finished\n      (you maight kill these jobs and then clean the task)')
+        """
+        msg=''  
+        msg+='functionality not yet available for the server. Work in progres \n' 
+        msg+='planned for CRAB_2_2_3'
+        common.logger.message(msg) 
