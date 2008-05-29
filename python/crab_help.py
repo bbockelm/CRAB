@@ -407,11 +407,11 @@ B<[USER]>
 
 =item B<additional_input_files>
 
-Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. You don\'t need to specify the I<ParameterSet> you are using, which will be included automatically. Wildcards are allowed.
+Any additional input file you want to ship to WN: comma separated list. These are the files which might be needed by your executable: they will be placed in the WN working dir. You do not need to specify the I<ParameterSet> you are using, which will be included automatically. Wildcards are allowed.
 
 =item B<script_exe>
 
-A user script that will be run on WN (instead of default cmsrun). It\'s up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (e.g. scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The user must ensure that a job report named crab_fjr.xml will be written. This can be guaranteed by passing the arguments "-j crab_fjr.xml" to cmsRun in the script. The script itself will be added automatically to the input sandbox.
+A user script that will be run on WN (instead of default cmsrun). It is up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (e.g. scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The user must ensure that a job report named crab_fjr.xml will be written. This can be guaranteed by passing the arguments "-j crab_fjr.xml" to cmsRun in the script. The script itself will be added automatically to the input sandbox.
 
 =item B<ui_working_dir>
 
@@ -449,17 +449,21 @@ To be used together with I<copy_data>. Storage Element name.
 
 To be used together with I<copy_data>. Path where to put output files on Storage Element. Full path is needed, and the directory must be writeable by all.
 
-=item B<copyCommand>
+=item B<srm_version>
 
-Only for LSF scheduler: allow to define the command to be used to copy the output to final location. Default is rfcp
+To choose the srm version specify I<srm_version> = N (1 or 2).  
 
 =item B<xml_report>
 
 To be used to switch off the screen report during the status query, enabling the db serialization in a file. Specifying I<xml_report> = FileName CRAB will serialize the DB into CRAB_WORKING_DIR/share/FileName.
 
-=item B<pset_debug>
+=item B<usenamespace>
 
-To enable the CMSSW pset printing on STDOUT specify I<pset_debug> = True. The Pset contents before and after the CRAB maipulation will be written. 
+To use the automate namespace definition (perfomed by CRAB) it is possible to set I<usenamespace>=1. The same policy used for the stage out in case of data publication will be applied.  
+
+=item B<debug_wrapper>
+
+To enable the higer verbose level on wrapper specify I<debug_wrapper> = True. The Pset contents before and after the CRAB maipulation will be written together with other useful infos. 
 
 =back
 
@@ -542,9 +546,13 @@ Number of time shallow resubmission the Grid will try: resubmissions are tried B
 
 Maximum size of tar-ball in Mb. If bigger, an error will be generated. The actual limit is that on the RB input sandbox. Default is 9.5 Mb (sandbox limit is 10 Mb)
 
+=item B<skipwmsauth>
+
+Temporary useful parameter to allow the WMSAuthorisation handling. Specifying I<skipwmsauth> = 1 the pyopenssl problmes  will disappear. It is needed working on gLite UI outside of CERN. 
+
 =back
 
-B<[LSF]>
+B<[LSF]> or B<[CAF]>
 
 =over 4
 
@@ -556,6 +564,9 @@ The LSF queue you want to use: if none, the default one will be used. For CAF, t
 
 The resources to be used within a LSF queue. Again, for CAF, the right one is selected.
 
+=item B<copyCommand>
+
+To define the command to be used to copy both Input and Output sandboxes to final location. Default is cp
 
 =back
 
