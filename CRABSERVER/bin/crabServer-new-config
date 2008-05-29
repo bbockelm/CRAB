@@ -129,6 +129,11 @@ componentFields = {
     "BotPeriod" : "12:00:00",
     },
 
+    "HTTPFrontend" : {
+    "ComponentDir" : None,
+    "FirstRun" : None,
+    "HWmonitorLogFile" : None,
+    },
 
 }
 
@@ -137,7 +142,8 @@ componentFields = {
 print "Creating ProdAgent configuration\n"
  
 #os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder,JobKiller,GetOutput,HTTPFrontend")
-os.system("prodAgent-new-config --components=JobTracking,GetOutput,ErrorHandler,JobKiller,HTTPFrontend")
+#os.system("prodAgent-new-config --components=JobTracking,GetOutput,ErrorHandler,JobKiller,HTTPFrontend")
+os.system("prodAgent-new-config --components=JobTracking,GetOutput,ErrorHandler,JobKiller")
 
 # read configuration
 
