@@ -18,7 +18,7 @@ class Scheduler :
         if not Scheduler._instance :
             raise CrabException('Scheduler has no instance.')
         return Scheduler._instance
-    
+
     getInstance = staticmethod(getInstance)
 
     def __init__(self, name):
@@ -33,7 +33,7 @@ class Scheduler :
     def realSchedParams(self,cfg_params):
         """
         """
-        return {} 
+        return {}
 
     def configure(self, cfg_params):
         self._boss.configure(cfg_params)
@@ -59,7 +59,7 @@ class Scheduler :
         return '',None,None
 
     def sched_fix_parameter(self):
-        return     
+        return
 
     def sched_parameter(self,i,task):
         """
@@ -100,27 +100,27 @@ class Scheduler :
         start = time.time()
         tags=self.tags()
 
-        if len(dest)!=0: dest = self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list') 
+        if len(dest)!=0: dest = self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')
 
         whiteL=self.ce_list()[1]
         blackL=self.ce_list()[2]
 
-        sites= self.boss().listMatch(tags, dest , whiteL, blackL) 
+        sites= self.boss().listMatch(tags, dest , whiteL, blackL)
         stop = time.time()
 
-        return sites 
-    
+        return sites
+
     def submit(self,list,task):
         """ submit to scheduler a list of jobs """
         if (not len(list)): common.logger.message("No sites where to submit jobs")
         req=str(self.sched_parameter(list[0],task))
 
-        ### reduce collection size...if needed 
+        ### reduce collection size...if needed
         new_list = bulkControl(self,list)
-  
-        for sub_list in new_list: 
+
+        for sub_list in new_list:
             self.boss().submit(task['id'],sub_list,req)
-        return 
+        return
 
     def queryEverything(self,taskid):
         """
@@ -149,18 +149,24 @@ class Scheduler :
         return
 
     def writeJDL(self, list, task):
-        """ 
+        """
         Materialize JDL for a list of jobs
         """
         req=str(self.sched_parameter(list[0],task))
         new_list = bulkControl(self,list)
         jdl=[]
-        for sub_list in new_list: 
+        for sub_list in new_list:
             tmp_jdl =  self.boss().writeJDL(task['id'], sub_list, req)
             jdl.append(tmp_jdl)
         return jdl
 
     def wsSetupEnvironment(self):
+        """
+        Returns part of a job script which does scheduler-specific work.
+        """
+        return ''
+
+    def wsInitialEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
         """

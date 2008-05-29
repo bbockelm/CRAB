@@ -1,5 +1,5 @@
-__revision__ = "$Id: SchedulerCondor.py,v 1.3 2008/05/27 22:03:29 ewv Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.4 2008/05/28 19:53:29 ewv Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
@@ -90,5 +90,29 @@ class SchedulerCondor(SchedulerLocal) :
 
     txt += '    exit $job_exit_code\n'
     txt += '}\n'
+
+    return txt
+
+  def wsInitialEnvironment(self):
+    """
+    Returns part of a job script which does scheduler-specific work.
+    """
+
+    txt  = '\n# Written by SchedulerCondor::wsInitialEnvironment\n'
+    txt += 'echo "Beginning environment"\n'
+    txt += 'printenv | sort\n'
+
+    txt += 'middleware='+self.name()+' \n'
+    txt += """
+      if [ $_CONDOR_SCRATCH_DIR ] && [ -d $_CONDOR_SCRATCH_DIR ]; then
+          ORIG_WD=`pwd`
+          echo "Change from $ORIG_WD to Condor scratch directory: $_CONDOR_SCRATCH_DIR"
+          if [ -e ../default.tgz ] ;then
+            echo "Found ISB in parent directory (Local Condor)"
+            cp ../default.tgz $_CONDOR_SCRATCH_DIR
+          fi
+          cd $_CONDOR_SCRATCH_DIR
+      fi
+      """
 
     return txt
