@@ -211,11 +211,8 @@ remove_working_dir() {
 
 #CRAB func_exit
 
-if [ -d $_CONDOR_SCRATCH_DIR ]; then
-    ORIG_WD=`pwd`
-    cp ../default.tgz $_CONDOR_SCRATCH_DIR
-    cd $_CONDOR_SCRATCH_DIR
-fi
+
+#CRAB initial_environment
 
 RUNTIME_AREA=`pwd`
 

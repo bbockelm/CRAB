@@ -8,11 +8,12 @@ import Scram
 import string,os
 
 class ScriptWriter:
-    def __init__(self, cfg_params, template): 
+    def __init__(self, cfg_params, template):
         # pattern -> action
         self.actions = {
             'title'                       : self.title_,
             'untar_software'              : self.untarSoftware_,
+            'initial_environment'         : self.initialEnvironment_,
             'setup_scheduler_environment' : self.setupSchedulerEnvironment_,
             'setup_jobtype_environment'   : self.setupJobTypeEnvironment_,
             'copy_input'                  : self.copyInput_,
@@ -46,7 +47,7 @@ class ScriptWriter:
         self.debug_pset=''
         debug = cfg_params.get('USER.debug_pset',False)
         if debug: self.debug_pset='--debug'
- 
+
         return
 
     def setAction(self, pattern, action):
@@ -111,6 +112,13 @@ class ScriptWriter:
         Returns part of a job script which does scheduler-specific work.
         """
         txt = common.scheduler.wsSetupEnvironment()
+        return txt
+
+    def initialEnvironment_(self):
+        """
+        Returns part of a job script which does scheduler-specific work.
+        """
+        txt = common.scheduler.wsInitialEnvironment()
         return txt
 
     def setupJobTypeEnvironment_(self):
@@ -192,7 +200,7 @@ class ScriptWriter:
 
     def func_exit_(self):
         """
-        Returns part of a job script which does scheduler-specific 
+        Returns part of a job script which does scheduler-specific
         output checks and management.
         """
         txt = common.scheduler.wsExitFunc()

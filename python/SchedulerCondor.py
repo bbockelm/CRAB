@@ -1,5 +1,5 @@
-__revision__ = "$Id: SchedulerCondor.py,v 1.4 2008/05/28 19:53:29 ewv Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.5 2008/05/29 19:18:49 ewv Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
@@ -104,15 +104,15 @@ class SchedulerCondor(SchedulerLocal) :
 
     txt += 'middleware='+self.name()+' \n'
     txt += """
-      if [ $_CONDOR_SCRATCH_DIR ] && [ -d $_CONDOR_SCRATCH_DIR ]; then
-          ORIG_WD=`pwd`
-          echo "Change from $ORIG_WD to Condor scratch directory: $_CONDOR_SCRATCH_DIR"
-          if [ -e ../default.tgz ] ;then
-            echo "Found ISB in parent directory (Local Condor)"
-            cp ../default.tgz $_CONDOR_SCRATCH_DIR
-          fi
-          cd $_CONDOR_SCRATCH_DIR
-      fi
-      """
+if [ $_CONDOR_SCRATCH_DIR ] && [ -d $_CONDOR_SCRATCH_DIR ]; then
+    ORIG_WD=`pwd`
+    echo "Change from $ORIG_WD to Condor scratch directory: $_CONDOR_SCRATCH_DIR"
+    if [ -e ../default.tgz ] ;then
+      echo "Found ISB in parent directory (Local Condor)"
+      cp ../default.tgz $_CONDOR_SCRATCH_DIR
+    fi
+    cd $_CONDOR_SCRATCH_DIR
+fi
+"""
 
     return txt
