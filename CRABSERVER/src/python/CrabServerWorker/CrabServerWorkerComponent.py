@@ -284,7 +284,10 @@ class CrabServerWorkerComponent:
 ################################
 
     def handleResubmission(self, payload):
-        taskId, jobId, siteToBan = payload.split('::')
+        try:
+            taskId, jobId, siteToBan = payload.split('::')
+        except Exception, e:
+            logging.info("Bad resubmission message format. Resubmission will not be performed") 
 
         if self.availWorkers <= 0:
             self.ms.publish("ResubmitJob", payload, "00:00:30")
