@@ -117,7 +117,9 @@ class Boss:
         Submit one job. nj -- job number.
         """
         try:
-            self.schedSession().submit( taskId, jobsList,req )
+            task_sub =  self.schedSession().submit( taskId, jobsList,req )
+            wms = task_sub.jobs[0].runningJob['service']
+            common.logger.write("WMS : " +str(wms))
         except SchedulerError, err :
             common.logger.message("Submit: " +str(err))
             common.logger.debug(3, "Submit: " +str(traceback.format_exc()))
