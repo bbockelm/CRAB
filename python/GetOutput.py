@@ -114,7 +114,7 @@ class GetOutput(Actor):
                 cmd_out = runCommand(cmd)
                 cmd_2 ='rm out_files_'+ str(id)+'.tgz'
                 cmd_out2 = runCommand(cmd_2)
-                msg = 'Results of Jobs # '+str(id)+' are in '+self.outDir+'. \n'
+                msg = 'Results of Jobs # '+str(id)+' are in '+self.outDir
                 common.logger.message(msg) 
             else:  
                 msg ="Output files for job "+ str(id) +" not available.\n"
