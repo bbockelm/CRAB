@@ -76,8 +76,9 @@ class Status(Actor):
                          'Cancelled',
                          'Aborted',
                          'Unknown',
-                         'Done(failed)'
-                         'Cleared'
+                         'done(failed)',
+                         'cleared',
+                         'retrieved' 
                           ]
 
         print ''
