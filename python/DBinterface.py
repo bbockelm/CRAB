@@ -315,19 +315,32 @@ class DBinterface:
     def deserXmlStatus(self, reportList):
 
         task = self.getTask()
- 
         for job in task.jobs:
             if not job.runningJob:
                 raise CrabException( "Missing running object for job %s"%str(job['jobId']) )
 
+            id = str(job.runningJob['jobId'])
+            rForJ = None
+            nj_list= []
+            for r in reportList:
+                if r.getAttribute('id') in [ id, 'all']:
+                    rForJ = r
+                    break
+            ## Check the submission number and create new running jobs on the client side          
+            if int(job.runningJob['submission']) < int(rForJ.getAttribute('resubmit')) + 1:
+                nj_list.append(id)
+                self.newRunJobs(nj_list)
+
+        task_new = self.getTask()
+
+        for job in task_new.jobs:
             id = str(job.runningJob['jobId'])
             # TODO linear search, probably it can be optized with binary search
             rForJ = None
             for r in reportList:
                 if r.getAttribute('id') in [ id, 'all']:
                     rForJ = r
-                    break
-
+                    break  
             # Data alignment
             jobStatus = str(job.runningJob['statusScheduler'])
             if rForJ.getAttribute('statusScheduler') not in ['Created', 'Submitting', 'Unknown'] and \
@@ -351,7 +364,7 @@ class DBinterface:
 
             # TODO cleared='0' field, how should it be handled/mapped in BL? #Fabio
 
-        common.bossSession.updateDB( task )
+        common.bossSession.updateDB( task_new )
         return
 
     # FIXME temporary method to verify what kind of submission to perform towards the server
