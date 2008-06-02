@@ -32,7 +32,7 @@ tar zxvf py2-pysqlite.tgz > /dev/null 2>&1
 rm py2-pysqlite.tgz
 
 tar zxvf pyOpenSSL-0.6-python2.4.tar.gz  > /dev/null 2>&1
-rm  > /dev/null 2>&1
+rm pyOpenSSL-0.6-python2.4.tar.gz > /dev/null 2>&1
 
 # sh style
 cat > crab.sh <<EOF
