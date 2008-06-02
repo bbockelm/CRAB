@@ -141,6 +141,7 @@ class SchedulerGrid(Scheduler):
         return
 
     def listMatch(self, dest, full):
+        matching='fast' 
         ces=Scheduler.listMatch(self, dest, full)
         sites=[]
         for ce in ces:
@@ -148,7 +149,8 @@ class SchedulerGrid(Scheduler):
             if site not in sites:
                 sites.append(site)
             pass
-
+        if full == True: matching='full' 
+        common.logger.write("list of available site ( "+str(matching) +" matching ) :" str(sites)) 
         return sites
 
 
