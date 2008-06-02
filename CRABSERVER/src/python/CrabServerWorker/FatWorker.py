@@ -465,13 +465,21 @@ class FatWorker(Thread):
         self.blDBsession.getRunningInstance(job)
 
         # no more attempts  
-        if int(job.runningJob['submission']) >= int(self.maxRetries):
+        dbCfg = copy.deepcopy(dbConfig)
+        dbCfg['dbType'] = 'mysql'
+        Session.set_database(dbCfg)
+        Session.connect(self.taskName)
+
+        jobInfo = wfJob.get(job['name'])
+        if int(jobInfo['retries']) >= int(jobInfo['max_retries']):
             status = 6
             reason = "No more attempts for resubmission for %s, the attempts will be stopped"%self.myName
             self.sendResult(status, reason, reason)
             self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
             self.local_ms.commit()
             return
+
+        Session.close(self.taskName)
 
         # TODO to be cleaned
         # get the scheduler name used by listCreation
