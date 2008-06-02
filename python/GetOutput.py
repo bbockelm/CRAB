@@ -84,7 +84,7 @@ class GetOutput(Actor):
             submission_id = common._db.queryRunJob('submission',self.list_id)
             submission_id.sort()
             max_id=submission_id[0]
-            if max_id > 1: self.moveOutput()
+            if max_id > 1: self.moveOutput(max_id)
 
         return 
 
@@ -191,7 +191,7 @@ class GetOutput(Actor):
             
         return codeValue
 
-    def moveOutput(self):
+    def moveOutput(self,max_id):
         """
         Move output of job already retrieved
         into the correct backup directory
@@ -201,20 +201,25 @@ class GetOutput(Actor):
 
         OutDir_Base=self.outDir+'Submission_' 
         
-        for i in Dist_sub_id:
+        for i in range(1,max_id-1):
             if not os.path.isdir(OutDir_Base+str(i)):
                 cmd=('mkdir '+OutDir_Base+str(i))
                 cmd_out = runCommand(cmd)   
+                common.logger.write(3,cmd_out)
                 common.logger.debug(3,cmd_out)
-        i = 0
-        for id in self.list_id:
+        for i in range(len(self.list_id)):
+            id = self.list_id(i)
+            if sub_id[i] > 1 :
+                cmd='mv '+self.outDir+'*_'+str(self.list_id(i))+'.* '+OutDir_Base+str(sub_id[i-1])  
+            else: 
+                cmd='mv '+self.outDir+'*_'+str(self.list_id(i))+'.* '+OutDir_Base+str(sub_id[i])  
             try:
-                cmd='mv '+self.outDir+'*_'+str(id)+'.* '+OutDir_Base+str(sub_id[i])  
                 cmd_out = runCommand(cmd) 
+                common.logger.write(3,cmd_out)
                 common.logger.debug(3,cmd_out)
             except:
                 msg = 'no output to move for job '+str(id)
-                common.logger.debig(3,msg)
+                common.logger.write(3,msg)
+                common.logger.debug(3,msg)
                 pass
-            i+=1 
         return
