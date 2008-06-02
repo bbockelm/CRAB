@@ -14,8 +14,7 @@ echo "CRABDIR = $CRABdir"
 CRABtag=$tag
 DBSAPItag="DBS_1_0_9"
 DLSAPItag="DLS_1_0_0"
-#PRODCOMMONtag="PRODCOMMON_0_7_0_pre1"
-PRODCOMMONtag="PRODCOMMON_0_10_7_testCS1"
+PRODCOMMONtag="PRODCOMMON_0_10_7_testCS5"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
