@@ -224,8 +224,3 @@ class SchedulerGlite(SchedulerGrid):
 
         txt += '}\n'
         return txt
-
-    def userName(self):
-        """ return the user name """
-        tmp=runCommand("voms-proxy-info -identity")
-        return tmp.strip()
