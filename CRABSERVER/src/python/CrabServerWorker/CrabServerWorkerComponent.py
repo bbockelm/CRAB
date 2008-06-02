@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.37 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.37 2008/05/23 14:08:36 farinafa Exp $"
+__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.39 2008/05/29 08:46:19 farinafa Exp $"
 
 import os
 import pickle
@@ -184,7 +184,7 @@ class CrabServerWorkerComponent:
         reason = "Generic Error"
 
         try:
-            cmdSpecFile = self.wdir + '/' + taskUniqName + '_spec/cmd.xml'
+            cmdSpecFile = os.path.join(self.wdir, (taskUniqName + '_spec/cmd.xml'))
             doc = xml.dom.minidom.parse(cmdSpecFile)
             node = doc.getElementsByTagName("TaskCommand")[0]
             status, reason = self.associateProxyToTask(taskUniqName, node)
@@ -229,7 +229,7 @@ class CrabServerWorkerComponent:
         reason = "Generic Error"
     
         try:
-            cmdSpecFile = self.wdir + '/' + taskUniqName + '_spec/cmd.xml'
+            cmdSpecFile = os.path.join(self.wdir, (taskUniqName + '_spec/cmd.xml') )
             doc = xml.dom.minidom.parse(cmdSpecFile)
             node = doc.getElementsByTagName("TaskCommand")[0]            
             status, reason = self.associateProxyToTask(taskUniqName, node)
@@ -378,7 +378,7 @@ class CrabServerWorkerComponent:
 
         # new gridsite version
         if len(pfList) == 0:
-            pfList = [ proxyDir + '/'+q  for q in os.listdir(proxyDir) if q[0]!="." ]
+            pfList = [ os.path.join(proxyDir, q)  for q in os.listdir(proxyDir) if q[0]!="." ]
 
         # Get an associative map between each proxy file and its subject
         for pf in pfList:
@@ -409,11 +409,12 @@ class CrabServerWorkerComponent:
             return 0, 'anonymous'
  
         for psubj in self.proxyMap:
+            logging.info ("Pippo: " + str(self.proxyMap) )
             if subj in psubj: 
                 assocFile = self.proxyMap[psubj]
                 logging.info("Project -> Task association: %s -> %s"%(taskUniqName, assocFile) )
                 try:
-                    proxyLink = self.wdir + '/' + taskUniqName + '_spec/userProxy'
+                    proxyLink = os.path.join(self.wdir, (taskUniqName + '_spec/userProxy'))
                     if not os.path.exists(proxyLink):
                         cmd = 'ln -s %s %s'%(assocFile, proxyLink)
                         cmd = cmd + ' && chmod 600 %s'%assocFile

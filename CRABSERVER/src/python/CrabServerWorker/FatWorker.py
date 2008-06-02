@@ -105,7 +105,7 @@ class FatWorker(Thread):
             return
 
         # Parse the XML files (cmd CfgParamDict needed by ErrHand resub too) 
-        taskDir = self.wdir + '/' + self.taskName + '_spec/'
+        taskDir = os.path.join(self.wdir, (self.taskName + '_spec/') )
         try:
             cmdSpecFile = taskDir + 'cmd.xml'
             doc = minidom.parse(cmdSpecFile)
@@ -509,7 +509,7 @@ class FatWorker(Thread):
         # recreate auxiliary infos from old dictionary
         self.cfg_params = {}
         self.cmdXML = None
-        taskDir = self.wdir + '/' + task['name'] + '_spec/'
+        taskDir = os.path.join( self.wdir, (task['name'] + '_spec/') )
         try:
             cmdSpecFile = taskDir + 'cmd.xml'
             doc = minidom.parse(cmdSpecFile)
