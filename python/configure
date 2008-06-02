@@ -22,48 +22,17 @@ pysql_ver=2.4.0
 SQLITE_ROOT=$TopDir/sqlite/
 PYSQLITE_ROOT=$TopDir/pysqlite/
 
-function configureSqlite {
-# part for Sqlite install
-echo " SQLITE Installation: begin at `date`"
-cd $TopDir/sqlite
-echo "untar.. "
-tar zxvf sqlite-$sqlite_ver.tar.gz > /dev/null 2>&1 
-cd sqlite-$sqlite_ver
-mkdir .libs
-ln -s /usr/lib/libreadline.so.4.3 .libs/libreadline.so
-echo "configure... "
-./configure --prefix=$SQLITE_ROOT --disable-tcl >/dev/null 2>&1
-echo "compile and install.... "
-make >/dev/null 2>&1
-make install >/dev/null 2>&1
-cd ../..
-echo "SQLITE Installation: end at `date`"
-return
-}
-function configurePysqlite {
-# part for Py2-pysqlite install
-echo "Py2-pysqlite Installation: begin at `date`"
-cd $TopDir/py2-pysqlite
-echo "untar.. "
-tar zxvf pysqlite-$pysql_ver.tar.gz  >/dev/null 2>&1
-cd pysqlite-$pysql_ver
-perl -p -i -e "s!include_dirs=.*!include_dirs=$SQLITE_ROOT/include!" setup.cfg
-perl -p -i -e "s!library_dirs=.*!library_dirs=$SQLITE_ROOT/lib!" setup.cfg
-echo "build and install... "
-python setup.py build  >/dev/null 2>&1
-python setup.py install --prefix=$PYSQLITE_ROOT  >/dev/null 2>&1
-cd ../..
-echo "Py2-pysqlite  Installation: end at `date`"
-return
-}
-
 function configureCrab {
 ## prapare the crab env
 cd $TopDir
 tar zxvf sqlite.tgz > /dev/null 2>&1
 rm sqlite.tgz
+
 tar zxvf py2-pysqlite.tgz > /dev/null 2>&1
 rm py2-pysqlite.tgz
+
+tar zxvf pyOpenSSL-0.6-python2.4.tar.gz  > /dev/null 2>&1
+rm  > /dev/null 2>&1
 
 # sh style
 cat > crab.sh <<EOF
@@ -115,6 +84,10 @@ export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHON
 ## partially hardcoded path for python version "2.4"
 ## need to do something like:
 #export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python`echo $PYTHON_VERSION | cut -f1,2 -d.`/site-packages:\${PYTHONPATH}
+
+## pyOpenssl
+export PyOpenSSLPYTHON=\${CRABDIR}/OpenSSL
+export PYTHONPATH=\${PYTHONPATH}:\${PyOpenSSLPYTHON}
 
 ### TEMPORARY PATCH for gLite UI
 export PYTHONPATH=\${PYTHONPATH}:\${GLITE_LOCATION}/lib
@@ -169,6 +142,10 @@ setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHON
 ## need to do something like:
 #setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python`echo $PYTHON_VERSION | cut -f1,2 -d.`/site-packages:\${PYTHONPATH}
 
+## pyOpenssl
+setenv PyOpenSSLPYTHON \${CRABDIR}/OpenSSL
+setenv PYTHONPATH \${PYTHONPATH}:\${PyOpenSSLPYTHON}
+
 ### TEMPORARY PATCH for gLite UI
 setenv PYTHONPATH \${PYTHONPATH}:\${GLITE_LOCATION}/lib
 
@@ -176,8 +153,6 @@ EOF
 return
 }
 
-#configureSqlite 
-#configurePysqlite 
 echo
 echo -n Configuring CRAB..... 
 configureCrab

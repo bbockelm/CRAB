@@ -39,12 +39,16 @@ rm -rf PsetCode
 mv python/configure .
 
 ## download sqlite
-echo ">> downloading sqlite CRAB web page"
+echo ">> downloading sqlite from CRAB web page"
 wget http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/sqlite.tgz
 
 ## download py2-sqlite
 echo ">> downloading py2-sqlite from CRAB web page"
 wget http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/py2-pysqlite.tgz
+
+## download pyOpenSSL
+echo ">> downloading pyOpenSSL CRAB web page"
+wget http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/pyOpenSSL-0.6-python2.4.tar.gz
 
 ## download DBS API
 echo ">> downloading DBS API tag ${DBSAPItag} from CVS DBS/Clients/PythonAPI"
