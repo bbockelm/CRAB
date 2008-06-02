@@ -157,9 +157,9 @@ class Submitter(Actor):
         task=common._db.getTask()
 
         for id_job in jobs_to_match :
-            match = common.scheduler.listMatch(distinct_dests[sel])
+            match = common.scheduler.listMatch(distinct_dests[sel], False)
             if len(match)>0:
-                common.logger.message("Found "+str(len(match))+" compatible site(s) for job "+str(id_job))
+                common.logger.message("Found  compatible site(s) for job "+str(id_job))
                 matched.append(sel)
             else:
                 common.logger.message("No compatible site found, will not submit jobs "+str(self.sub_jobs[sel]))

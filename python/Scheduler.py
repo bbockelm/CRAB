@@ -95,7 +95,7 @@ class Scheduler :
     def tags(self):
         return ''
 
-    def listMatch(self, dest):
+    def listMatch(self, dest, full):
         """ Return the number of differente sites matching the actual requirements """
         start = time.time()
         tags=self.tags()
@@ -105,7 +105,7 @@ class Scheduler :
         whiteL=self.ce_list()[1]
         blackL=self.ce_list()[2]
 
-        sites= self.boss().listMatch(tags, dest , whiteL, blackL)
+        sites= self.boss().listMatch(tags, dest , whiteL, blackL, full)
         stop = time.time()
 
         return sites

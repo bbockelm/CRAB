@@ -25,7 +25,7 @@ class Checker(Actor):
             if dest in allMatch.keys():
                 common.logger.message("As previous job: "+str(allMatch[dest]))
             else:
-                match = common.scheduler.listMatch(dest)
+                match = common.scheduler.listMatch(dest, True)
              #   allMatch[job['dlsDestination']]= match 
                 if len(match)>0:
                     common.logger.message("Found "+str(len(match))+" compatible site(s) for job "+str(id_job)+" : "+str(match))

@@ -140,8 +140,8 @@ class SchedulerGrid(Scheduler):
     def sched_fix_parameter(self):
         return
 
-    def listMatch(self, dest):
-        ces=Scheduler.listMatch(self,dest)
+    def listMatch(self, dest, full):
+        ces=Scheduler.listMatch(self, dest, full)
         sites=[]
         for ce in ces:
             site=ce.split(":")[0]
