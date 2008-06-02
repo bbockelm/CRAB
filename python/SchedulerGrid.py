@@ -150,7 +150,7 @@ class SchedulerGrid(Scheduler):
                 sites.append(site)
             pass
         if full == True: matching='full' 
-        common.logger.write("list of available site ( "+str(matching) +" matching ) :" str(sites)) 
+        common.logger.write("list of available site ( "+str(matching) +" matching ) : "+str(sites)) 
         return sites
 
 
