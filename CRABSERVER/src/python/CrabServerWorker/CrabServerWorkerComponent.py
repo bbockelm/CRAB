@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.39 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.39 2008/05/29 08:46:19 farinafa Exp $"
+__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.40 2008/06/02 17:22:18 mcinquil Exp $"
 
 import os
 import pickle
@@ -409,7 +409,6 @@ class CrabServerWorkerComponent:
             return 0, 'anonymous'
  
         for psubj in self.proxyMap:
-            logging.info ("Pippo: " + str(self.proxyMap) )
             if subj in psubj: 
                 assocFile = self.proxyMap[psubj]
                 logging.info("Project -> Task association: %s -> %s"%(taskUniqName, assocFile) )
