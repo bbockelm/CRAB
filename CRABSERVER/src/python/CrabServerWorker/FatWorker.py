@@ -624,8 +624,9 @@ class FatWorker(Thread):
             for j in taskObj.jobs:
                 if j['jobId'] in submittedJobs:
                     try:
-                        if wfJob.exists(j['name']):
-                            wfJob.setState(j['name'], 'submit')
+                        if wfJob.exists(j['name']) and not (wfJob.get(j['name'])['status'] == 'inProgress'):
+                            #wfJob.setState(j['name'], 'submit')
+                            wfJob.setState(j['name'], 'inProgress')
                     except Exception, e:
                         continue  
 
@@ -722,6 +723,7 @@ class FatWorker(Thread):
             for job in taskArg.jobs:
                 jobName = job['name']
                 cacheArea = self.wdir + '/' + self.taskName + '_spec/%s'%jobName
+                #jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':self.maxRetries, 'max_racers':(self.maxRetries+1), 'owner':self.taskName}
                 jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':self.maxRetries, 'max_racers':1, 'owner':self.taskName}
 
                 try:
@@ -730,7 +732,7 @@ class FatWorker(Thread):
                         wfJob.setState(jobName, 'register')
                         wfJob.setState(jobName, 'create')
                         wfJob.setCacheDir(jobName, cacheArea)
-                        wfJob.setState(jobName, 'inProgress')
+                        # wfJob.setState(jobName, 'inProgress')
                 except Exception, e:
                     self.log.info('Error checking if job is already registered in WF-Entities.')
                     continue
