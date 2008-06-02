@@ -19,7 +19,7 @@ class Crab:
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput','-get',
                              '-resubmit' , '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
-                             '-printId', '-printJdl', '-publish' ]
+                             '-printId', '-createJdl','-printJdl', '-publish' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -564,10 +564,13 @@ class Crab:
                     from Cleaner import Cleaner
                     self.actions[opt] = Cleaner(self.cfg_params)
 
-            elif (opt == '-printJdl'):
+            elif ( opt in ['-printJdl','-createJdl']):
                  """
                  Materialize JDL
                  """
+                 ## Temporary:
+                 if opt == '-printJdl':
+                     common.logger.message("WARNING: -printJdl option is deprecated : please use -createJdl \n")
                  if val =='all' or val == None or val == '':
                      jobs = common._db.nJobs("list")
                  else:

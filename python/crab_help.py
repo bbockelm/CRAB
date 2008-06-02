@@ -30,7 +30,7 @@ The most useful general options (use '-h' to get complete help):
   -list [range]       -- show technical job details
   -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
   -printId [range]    -- print the job SID or Task Unique ID while using the server
-  -printJdl [range]   -- provide files with a complete Job Description (JDL) 
+  -createJdl [range]  -- provide files with a complete Job Description (JDL) 
   -continue|-c [dir]  -- Apply command to task stored in [dir].
   -h [format]         -- Detailed help. Formats: man (default), tex, html, txt
   -cfg fname          -- Configuration file name. Default is 'crab.cfg'
