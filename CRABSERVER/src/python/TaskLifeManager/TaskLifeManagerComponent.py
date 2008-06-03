@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.17 2008/05/02 08:34:19 mcinquil Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.18 2008/05/06 21:34:35 mcinquil Exp $"
+__version__ = "$Revision: 1.18 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -21,6 +21,8 @@ from TaskQueue import *
 # module from TaskTracking component
 from TaskTracking.UtilSubject import UtilSubject
 from TaskTracking.TaskStateAPI import findTaskPA, getStatusUUIDEmail
+
+from ProxyLife import ProxyLife
 
 # SE_API
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
@@ -70,6 +72,7 @@ class TaskLifeManagerComponent:
         self.args.setdefault("Protocol", "local")
         self.args.setdefault("storageName", "localhost")
         self.args.setdefault("storagePort", None)
+        self.args.setdefault("ProxiesDir", "/tmp/del_proxies")
         # update parameters
         self.args.update(args)
 
@@ -149,6 +152,18 @@ class TaskLifeManagerComponent:
         #################################
         self.loadFromPickle()
         #self.buildDropBox()
+
+
+        #####################################################
+        ### parameters for blite connection of ProxyLife ###
+        ###################################################
+        self.bossCfgDB = {\
+                           'dbName': self.args['dbName'], \
+                           'user': self.args['user'], \
+                           'passwd': self.args['passwd'], \
+                           'socketFileLocation': self.args['socketFileLocation'] \
+                         }
+        self.proxypath = self.args["ProxiesDir"]
 
     ##########################################################################
     # handle events
@@ -759,6 +774,10 @@ class TaskLifeManagerComponent:
 
         self.checkDelete()
         self.deleteTasks()
+
+        ## checking proxy life time
+        procheck = ProxyLife(self.bossCfgDB, self.proxypath)
+        procheck.pollProxies()
             
         # Renewing polling cycle
         pollT = int(self.args['pollingTimeCheck'])
