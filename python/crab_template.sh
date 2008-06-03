@@ -185,17 +185,6 @@ dumpStatus() {
 }
 
 
-### CRAB UPDATE THE FJR WITH WRAPPER_EXIT_CODE ###
-update_fjr() {
-    if [ ! -s $RUNTIME_AREA/JobReportErrorCode.py ]; then
-        echo "WARNING: it is not possible to create crab_fjr.xml to final report"
-    else
-        echo "PYTHONPATH = $PYTHONPATH"
-        chmod a+x $RUNTIME_AREA/JobReportErrorCode.py
-        python $RUNTIME_AREA/JobReportErrorCode.py $RUNTIME_AREA/crab_fjr_$NJob.xml $job_exit_code $executable_exit_status
-    fi
-}
-
 ### REMOVE THE WORKING_DIR IN OSG SITES ###
 remove_working_dir() {
     cd $RUNTIME_AREA

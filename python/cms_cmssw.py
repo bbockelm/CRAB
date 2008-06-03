@@ -739,7 +739,7 @@ class Cmssw(JobType):
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             ##### Utils
-            Utils_file_list=['parseCrabFjr.py','writeCfg.py', 'JobReportErrorCode.py']
+            Utils_file_list=['parseCrabFjr.py','writeCfg.py', 'fillCrabFjr.py']
             for file in Utils_file_list:
                 tar.add(path+file,file)
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
