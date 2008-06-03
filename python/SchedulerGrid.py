@@ -164,7 +164,11 @@ class SchedulerGrid(Scheduler):
         if not self.environment_unique_identifier:
             raise CrabException('environment_unique_identifier not set')
 
-        txt = '# '+self.name()+' specific stuff\n'
+        # start with wrapper timing 
+        txt  = 'export TIME_WRAP=`date +%s` \n'
+        txt += 'export TIME_STAGEOUT=NULL \n\n'
+        # as usual ... #Fabio
+        txt += '# '+self.name()+' specific stuff\n'
         txt += '# strip arguments\n'
         txt += 'echo "strip arguments"\n'
         txt += 'args=("$@")\n'
@@ -255,6 +259,7 @@ class SchedulerGrid(Scheduler):
             txt += 'echo "SRM_VER = $SRM_VER"\n' 
 
             txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
+            txt += 'export TIME_STAGEOUT=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
             txt += 'for out_file in $file_list ; do\n'
             txt += '    if [ -e $SOFTWARE_DIR/$out_file ] ; then\n'
@@ -277,6 +282,10 @@ class SchedulerGrid(Scheduler):
             txt += '    SE_PATH=""\n'
             txt += '    job_exit_code=$copy_exit_status\n'
             txt += 'fi\n'
+            txt += 'export TIME_STAGEOUT=$((`date +%s`-$TIME_STAGEOUT)) \n'
+        else:
+            # set stageout timing to a fake value
+            txt += 'export TIME_STAGEOUT=-1 \n'
             pass
         return txt
 
@@ -286,7 +295,10 @@ class SchedulerGrid(Scheduler):
         """
         txt = '' 
         txt += '    if [ $PYTHONPATH ]; then \n'
-        txt += '        update_fjr\n'
+        txt += '       if [ ! -s $RUNTIME_AREA/fillCrabFjr.py ]; then \n'
+        txt += '           echo "WARNING: it is not possible to create crab_fjr.xml to final report" \n'
+        txt += '       else \n'
+        txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --errorcode $job_exit_code $executable_exit_status \n'
         txt += '    fi\n'
         txt += '    cd $RUNTIME_AREA  \n'   
         txt += '    for file in $filesToCheck ; do\n'
@@ -304,7 +316,21 @@ class SchedulerGrid(Scheduler):
         txt += '    else\n'
         txt += '        final_list=$filesToCheck" .BrokerInfo"\n'
         txt += '    fi\n'
-
+        txt += '    export TIME_WRAP=$((`date +%s`-$TIME_WRAP)) \n'
+        txt += '    if [ $PYTHONPATH ]; then \n'
+        txt += '       if [ ! -s $RUNTIME_AREA/fillCrabFjr.py ]; then \n'
+        txt += '           echo "WARNING: it is not possible to create crab_fjr.xml to final report" \n'
+        txt += '       else \n'
+        # call timing FJR filling
+        txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --timing $TIME_WRAP $TIME_EXE $TIME_STAGEOUT \n'
+        txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n' 
+        txt += '           if [ $TIME_STAGEOUT -lt 0 ]; then \n'
+        txt += '               export TIME_STAGEOUT=NULL \n'
+        txt += '           fi\n'
+        txt += '           echo "CrabStageoutTime=$TIME_STAGEOUT" >> $RUNTIME_AREA/$repo \n'
+        txt += '       fi\n'
+        txt += '    fi\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo \n\n'
         return txt
 
     def checkProxy(self, deep=0):
