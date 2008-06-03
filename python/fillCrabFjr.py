@@ -17,16 +17,31 @@ class fjrParser:
     def __init__(self, argv):
         try:
             self.reportFileName = argv[1]
-            self.wrapperExitCode = argv[2]
+            self.directive = argv[2]
         except:
             print "it is necessary to specify the fjr name"
             sys.exit(2)
-        try:
-            self.exeExitCode = argv[3] 
-        except:
-            self.exeExitCode=''
-        pass
 
+        if self.directive=='--errorcode':
+            try:
+                self.wrapperExitCode = argv[3]
+                self.exeExitCode = argv[4] 
+            except:
+                self.exeExitCode=''
+
+        elif self.directive=='--timing':
+            self.wrapperTime = 'NULL'
+            self.exeTime = 'NULL'
+            self.stageoutTime = 'NULL'
+            try:
+                self.wrapperTime = argv[3]
+                self.exeTime = argv[4]
+                self.stageoutTime = argv[5]
+            except:
+                pass
+        else: 
+            print "bad directive specified"
+            sys.exit(2)
         return
 
     def run(self): 
@@ -78,7 +93,7 @@ class fjrParser:
         """
         """ 
         valid = self.checkValidFJR()
-        if valid == 1:
+        if valid == 1 and self.directive=='--errorcode':
             jobReport = readJobReport(self.reportFileName)[0]
             if (len(jobReport.errors) > 0):
                 error = 0
@@ -102,6 +117,10 @@ class fjrParser:
                 if (self.exeExitCode != ""):
                     jobReport.addError(self.exeExitCode, "ExeExitCode")
                 jobReport.write(self.reportFileName)
+
+        elif valid == 1 and self.directive=='--timing':
+            # add here timing settings
+            pass
         else: 
             self.writeFJR()
 
