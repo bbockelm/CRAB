@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.76 2008/05/06 21:26:08 mcinquil Exp $"
-__version__ = "$Revision: 1.76 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.78 2008/05/26 15:42:12 mcinquil Exp $"
+__version__ = "$Revision: 1.78 $"
 
 import os
 import time
@@ -900,7 +900,7 @@ class TaskTrackingComponent:
                             logBuf = self.__logToBuf__(logBuf,"  Requested task [%s] does not exist."%(taskName) )
                         else:
                             logBuf = self.__logToBuf__(logBuf, " - - - - - - - ")
-                            logBuf = self.__logToBuf__(logBuf, " *" + taskName + "*:")
+                            logBuf = self.__logToBuf__(logBuf, " [" + str(taskObj['id']) + "] *" + taskName + "*:")
 
 			    pathToWrite = ""
 			    dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
