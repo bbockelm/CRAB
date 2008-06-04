@@ -2,6 +2,13 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
+# Message service import
+from MessageService.MessageService import MessageService
+
+# module from TaskTracking component
+from TaskTracking.UtilSubject import UtilSubject
+from TaskTracking.TaskStateAPI import findTaskPA, getStatusUUIDEmail
+
 import os
 from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.Database import Session
@@ -16,18 +23,40 @@ class ProxyLife:
             min = 3600*6
         self.minimumleft = min
         self.bossCfgDB = dBlite
+        self.ms = MessageService()
+        # register
+        self.ms.registerAs("TaskLifeManager")
 
     def executeCommand(self, command):
-        pin, pout = os.popen4(self, command)
-        msg = pout.read()
-        return msg 
+        import commands
+        status, outp = commands.getstatusoutput(command)
+        return outp
 
     def checkUserProxy(self, cert=''):
         if cert != '' and os.path.exists(cert):
             proxiescmd = 'voms-proxy-info -timeleft -file ' + str(cert)
-            output = executeCommand( proxiescmd )
+            output = self.executeCommand( proxiescmd )
             return output
-        return None
+        return -1
+
+    def getListProxies(self):
+        proxyList = []
+        dbCfg = copy.deepcopy(dbConfig)
+        dbCfg['dbType'] = 'mysql'
+
+        Session.set_database(dbCfg)
+        Session.connect(self)
+        Session.start_transaction(self)
+
+        sqlStr="select distinct(proxy) from js_taskInstance;"
+        Session.execute(sqlStr)
+
+        for tupla in Session.fetchall(self):
+            proxyList.append(tupla[0]) 
+
+        Session.commit(self)
+        Session.close(self)
+        return proxyList
 
     def getTaskList(self, proxy):
         dictionary = {}
@@ -77,7 +106,7 @@ class ProxyLife:
                 logging.error( "Problem archiving task: " + str(taskObj['name']) )
                 logging.error( str(te) )
         else:
-            logging.error( "Problem archiving task: " + str(taskObj['name']) )
+            logging.error( "Problem archiving task: " + taskname )
         
     def getListJobName(self, taskname):
         joblist = []
@@ -128,19 +157,37 @@ class ProxyLife:
         #executeCommand( "rm -f " + str(proxy) )
         pass
 
+    def notifyExpiring(self, mail, tasks, lifetime):
+        mexage = "ProxyExpiring"
+
+        payload = str(mail) + "::" + str(lifetime) #str(mail) + "::" + str(tasks) + "::" + str(lifetime)
+
+        logging.info(" Publishing ['"+ mexage +"']")
+        logging.info("   payload = " + payload )
+        self.ms.publish( mexage, payload)
+        self.ms.commit()
+
+
     def pollProxies(self):
         logging.info( "Start proxy's polling...." )
         if os.path.exists(self.proxiespath):
-            proxieslist = os.listdir(self.proxiespath)
+            #proxieslist = os.listdir(self.proxiespath)
+            proxieslist = self.getListProxies()
             for proxy in proxieslist:
-                proxyfull = self.proxiespath + "/" + proxy #os.path.join(self.proxiespath,proxy)
+                proxyfull = proxy #self.proxiespath + "/" + proxy #os.path.join(self.proxiespath,proxy)
+                logging.info("Checking proxy [" + str(proxyfull) + "]")
                 timeleft = 0
                 try:
+                    ### get the remaining life time
                     timeleft = int(self.checkUserProxy(proxyfull))
+                except ValueError, ex:
+                    timeleft = -1
                 except Exception, ex:
-                    timeleft = 0
+                    logging.info(str(ex))
                 tasksbymail = self.getTaskList(proxyfull)
-                if timeleft <= 0:
+                if timeleft < 0:
+                    logging.error( "Problem on checking proxy: [" + proxyfull + "]") 
+                elif timeleft == 0:
                     logging.info( "Proxy expired [" + proxyfull + "]: " + str(timeleft) + "sec." )
                     for mail, tasks in tasksbymail.iteritems():
                         for task in tasks:
@@ -151,7 +198,9 @@ class ProxyLife:
                     self.cleanProxy(proxyfull)
                 elif timeleft <= self.minimumleft:
                     for mail, tasks in tasksbymail.iteritems():
+                        ## need to notifying expired proxy
                         logging.info( "Renew your proxy: " + str(mail) )
+                        self.notifyExpiring(mail, tasks, timeleft)
                 else:
                     logging.debug(" Valid proxy [" + proxyfull + "]: " + str(timeleft) + "sec.")
                 logging.info("")
