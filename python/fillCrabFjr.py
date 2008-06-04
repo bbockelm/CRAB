@@ -120,6 +120,9 @@ class fjrParser:
 
         elif valid == 1 and self.directive=='--timing':
             # add here timing settings
+            jobReport.performance.addSummary("ExeTime", self.exeTime)
+            jobReport.performance.addSummary("WrapperTime", self.wrapperTime)            
+            jobReport.performance.addSummary("StageoutTime", self.stageoutTime)
             pass
         else: 
             self.writeFJR()
