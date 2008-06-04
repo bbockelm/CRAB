@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.40 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.40 2008/06/02 17:22:18 mcinquil Exp $"
+__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.41 2008/06/02 17:35:43 mcinquil Exp $"
 
 import os
 import pickle
@@ -369,7 +369,7 @@ class CrabServerWorkerComponent:
  
         pfList = []
         proxyDir = self.args['ProxiesDir']
-        
+
         # old gridsite version
         for root, dirs, files in os.walk(proxyDir):
             for f in files:
@@ -384,8 +384,24 @@ class CrabServerWorkerComponent:
         for pf in pfList:
             if pf in self.proxyMap.values():
                 continue
-            
-            ps = str(os.popen3('openssl x509 -in '+pf+' -subject -noout')[1].readlines()[0]).strip()
+
+            try:
+                ps = str(os.popen3('openssl x509 -in '+pf+' -subject -noout')[1].readlines()[0]).strip()
+            except Exception, e:
+                missingProxy = 0
+                psCandidates = list(self.proxyMap.keys())
+
+                # remove expired proxies from cache 
+                for ps2Remove in psCandidates:
+                    if not os.path.exists(self.proxyMap[ps2Remove]):
+                        del self.proxyMap[ps2Remove]
+                        missingProxy = 1
+
+                # check whether the problem is something else...
+                if missingProxy == 0:
+                    logging.info("Error while checking proxy subject for %s"%pf)
+                    continue
+
             if len(ps) > 0:
                 self.proxyMap[ps] = pf
         #     
