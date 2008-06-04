@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.78 2008/05/26 15:42:12 mcinquil Exp $"
-__version__ = "$Revision: 1.78 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.79 2008/06/03 15:23:21 mcinquil Exp $"
+__version__ = "$Revision: 1.79 $"
 
 import os
 import time
@@ -919,6 +919,7 @@ class TaskTrackingComponent:
                                 sId   = jobbe.runningJob['schedulerId']
                                 jec   = str( jobbe.runningJob['wrapperReturnCode'] )
                                 eec   = str( jobbe.runningJob['applicationReturnCode'] )
+                                joboff = str( jobbe.runningJob['closed'] )
 #                                logging.info (taskName + " " + str(jec) + " " + str(eec) + " " + str(job) )
                                 site  = ""
                                 if jobbe.runningJob['destination'] != None and jobbe.runningJob['destination'] != '':
@@ -935,9 +936,9 @@ class TaskTrackingComponent:
 
 			        vect = []
 			        if eec == "NULL" and jec == "NULL":
-   			            vect = [self.convertStatus(stato), "", "", 0, Resub, site, stato]
+   			            vect = [self.convertStatus(stato), "", "", 0, Resub, site, stato, joboff, resubmitting]
 			        else:
-                                    vect = [self.convertStatus(stato), eec, jec, 0, Resub, site, stato]
+                                    vect = [self.convertStatus(stato), eec, jec, 0, Resub, site, stato, joboff, resubmitting]
                                 dictStateTot.setdefault(job, vect)
  
 			        if stato == "E":
@@ -950,13 +951,16 @@ class TaskTrackingComponent:
                                         dictStateTot[job][3] = 1
 				    else:
 				        dictReportTot['JobInProgress'] += 1
-                                        dictStateTot[job][0] = "Resubmitting by server"
+                                #        dictStateTot[job][0] = "Resubmitting by server"
 			        elif stato == "A" or stato == "Done (Failed)" or stato == "K":
 				    if not resubmitting:
 				        dictReportTot['JobFailed'] += 1
 				    else:
 				        dictReportTot['JobInProgress'] += 1
-                                        dictStateTot[job][0] = "Resubmitting by server"
+                                #        dictStateTot[job][0] = "Resubmitting by server"
+                                elif not resubmitting and joboff == 'Y':
+                                    dictReportTot['JobFailed'] += 1
+                                    dictStateTot[job][3] = 1
 			        elif stato == "C":
                                     if (internalstatus == "failed" or internalstatus == "finished")  and not resubmitting:
                                         countNotSubmitted += 1
@@ -1004,6 +1008,8 @@ class TaskTrackingComponent:
                                 logBuf = self.__logToBuf__(logBuf, " Job " + state + ": " + str(dictReportTot[state]))
 			    if countNotSubmitted > 0:
                                 logBuf = self.__logToBuf__(logBuf, "    -> of which not yet submitted: " + str(countNotSubmitted))
+
+                            #logBuf = self.__logToBuf__(logBuf, str(dictStateTot))
 
                             totjob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress']  
 			    endedJob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed']
