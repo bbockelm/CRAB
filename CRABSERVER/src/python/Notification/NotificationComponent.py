@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.13 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.13 2008/03/17 17:48:01 mcinquil Exp $"
+__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.14 2008/05/16 10:09:26 mcinquil Exp $"
 
 import os
 import socket
@@ -152,6 +152,7 @@ class NotificationComponent:
         #self.ms.subscribeTo("NOTIFICATION_RESUME")
         #self.ms.subscribeTo("NOTIFICATION_EXIT")
 	self.ms.subscribeTo("NotificationSetup")
+        self.ms.subscribeTo("ProxyExpiring")
 
         # Start the thread Consumer
         threadList = []
@@ -584,3 +585,85 @@ class NotificationComponent:
                 #    pass
                 
                 self.ms.commit()
+
+##-------------------------------------------------------------------
+
+            if type == "ProxyExpiring":
+                pieces = payload.split("::")
+                if len(pieces) < 2:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing ProxyExpiring's payload ["
+                    msg += payload + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                emaillist = pieces[0].split(",")
+                #tasknames = eval(pieces[1])
+                proxylife = pieces[1]
+
+                ##print "emaillist=[%s]\n" % emaillist
+
+                if not emaillist:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing ProxyExpiring's payload"
+                    msg += " email's list [" + pieces[3] + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                if len(emaillist) < 1:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing ProxyExpiring's payload"
+                    msg += " email's list [" + pieces[3] + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                if len(emaillist) == 1:
+                    if emaillist[0] == "":
+                        msg = "Notification.NotificationComponent.MainLoop: empty email address ["
+                        msg += emaillist[0] + "]"
+                        logging.error("%s" % msg)
+                        self.ms.commit()
+                        continue
+
+                hours, mins, secs = self.calcFromSeconds( proxylife )
+                timeMsg = ""
+                if hours > 0:
+                    timeMsg += str(hours) + " hours "
+                if mins > 0:
+                    timeMsg += str(mins) + " minutes "
+                if secs > 0:
+                    timeMsg += str(secs) + " seconds"
+
+                mailMess = "Your proxy will expires in " + timeMsg + ". You can renew it doing:\n\t crab -renewProxy "# + task[0]
+
+                msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
+                logging.info( msg )
+
+                import socket
+                completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Expiring Proxy!"\n\n' + mailMess
+                try:
+                    self.mailer.SendMail(emaillist, completeMessage)
+                except RuntimeError, mess:
+                    logging.error(mess)
+                except gaierror, mess:
+                    logging.error("gaierror: " + mess )
+                except timeout, mess:
+                    logging.error("timeout error: " + mess )
+                except:
+                    print "Unexpected error: ", sys.exc_info()[0]
+
+                self.ms.commit()
+
+
+    def calcFromSeconds(self, totSec):
+        """
+        _calcFromSeconds_
+        """
+
+        secondi = int(totSec) % 60
+        temp = int(int(totSec) / 60)
+        minuti = temp % 60
+        ore = int(temp / 60)
+
+        return ore, minuti, secondi
+
