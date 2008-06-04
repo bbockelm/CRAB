@@ -111,6 +111,7 @@ class parseFjr:
         '''
         storageStatistics = str(jobReport.storageStatistics)
         storage_report = {}
+
         # check if storageStatistics is valid
         if storageStatistics.find('Storage statistics:') != -1 :
             # report form: { 'protocol' : { 'action' : [attempted,succedeed,total-size,total-time,min-time,max-time] , ... } , ... }
@@ -145,9 +146,57 @@ class parseFjr:
                     print 'protocol:',protocol
                     for action in storage_report[protocol].keys() :
                         print 'action:',action,'measurement:',storage_report[protocol][action]
+
+        ##### 
+        # throughput measurements # Fabio
+        throughput_report = { 'rSize':0.0, 'rTime':0.0, 'wSize':0.0, 'wTime':0.0 }
+        for protocol in storage_report.keys() :
+            for action in storage_report[protocol].keys():
+                # not interesting
+                if 'read' not in action and 'write' not in action and 'seek' not in action:
+                    continue
+
+                # convert values
+                try: 
+                    sizeValue = float(storage_report[protocol][action][2])
+                    timeValue = float(storage_report[protocol][action][3])
+                except Exception,e:
+                    continue
  
-        if self.debug == 1 : print storage_report
-        return storage_report
+                # aggregate data
+                if 'read' in action:  
+                    throughput_report['rSize'] += sizeValue
+                    throughput_report['rTime'] += timeValue
+                elif 'write' in action:
+                    throughput_report['wSize'] += sizeValue
+                    throughput_report['wTime'] += timeValue
+                elif 'seek' in action:
+                    throughput_report['rTime'] += timeValue
+                else:
+                   continue
+
+        # calculate global throughput
+        throughput_report['readThr'] = 'NULL'
+        if throughput_report['rTime'] > 0.0:
+            throughput_report['rTime'] /= 1000.0 # scale ms to s
+            throughput_report['readThr'] = float(throughput_report['rSize']/throughput_report['rTime'])
+
+        throughput_report['avgNetThr'] = 'NULL'
+        try:
+            throughput_report['avgNetThr'] = throughput_report['rSize'] / float(jobReport.performance.summaries['ExeTime']) 
+        except:
+            pass
+
+        throughput_report['writeThr'] = 'NULL'
+        if throughput_report['wTime'] > 0.0:
+            throughput_report['wTime'] /= 1000.0 
+            throughput_report['writeThr'] = float(throughput_report['wSize']/throughput_report['wTime'])
+        ##### 
+ 
+        if self.debug == 1 : 
+            print storage_report
+            print throughput_report
+        return storage_report, throughput_report
 
     def n_of_events(self,jobReport):
         '''
@@ -176,7 +225,7 @@ class parseFjr:
         dashboard report dictionary 
         '''
         event_report = self.n_of_events(jobReport)
-        storage_report = self.storageStat(jobReport)
+        storage_report, throughput_report = self.storageStat(jobReport)
         dashboard_report = {}
         #
         for k,v in event_report.iteritems() :
@@ -199,6 +248,11 @@ class parseFjr:
             ordered.sort()
             for key in ordered:
                 print key,'=',dashboard_report[key]
+
+        # IO throughput information
+        dashboard_report['io_read_throughput'] = throughput_report['readThr']
+        dashboard_report['io_write_throughput'] = throughput_report['writeThr']
+        dashboard_report['io_netAvg_throughput'] = throughput_report['avgNetThr']
  
         # send to DashBoard
         apmonSend(self.MonitorID, self.MonitorJobID, dashboard_report)
