@@ -775,7 +775,7 @@ class TaskLifeManagerComponent:
         self.checkDelete()
         self.deleteTasks()
 
-        ## checking proxy life time
+        ## checks and manages proxies 
         procheck = ProxyLife(self.bossCfgDB, self.proxypath)
         procheck.pollProxies()
             
@@ -799,7 +799,7 @@ class TaskLifeManagerComponent:
         """
 
         # create message service instances
-        self.ms = MessageService()
+        #self.ms = MessageService()
         self.ms = MessageService()
 
         # register
