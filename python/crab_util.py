@@ -222,7 +222,7 @@ def runBossCommand(cmd, printout=0, timeout=3600):
 
 ###########################################################################
 def readable(fd):
-    return bool(select.select([fd], [], [], 0)) 
+    return bool(select.select([fd], [], [], 0))
 
 ###########################################################################
 def makeNonBlocking(fd):
@@ -250,7 +250,7 @@ def runCommand(cmd, printout=0, timeout=-1):
 
     child = popen2.Popen3(cmd, 1) # capture stdout and stderr from command
     child.tochild.close()             # don't need to talk to child
-    outfile = child.fromchild 
+    outfile = child.fromchild
     outfd = outfile.fileno()
     errfile = child.childerr
     errfd = errfile.fileno()
@@ -310,37 +310,17 @@ def runCommand(cmd, printout=0, timeout=-1):
 ####################################
 def makeCksum(filename) :
     """
-    make chksum using filename and content of file
+    make check sum using filename and content of file
     """
 
-    tobedeleted=0
-    try:
-        import tempfile
-        tmpfile= tempfile.NamedTemporaryFile(mode='w')
-        tmp_filename = tmpfile.name
-    except:
-        ## SL in case py2.2 is used, fall back to old solution
-        tmp_filename = tempfile.mktemp()
-        tmpfile= open(tmp_filename,'w')
-        tobedeleted=1
+    from zlib import crc32
+    hashString = filename
 
-    # add filename as first line
-    tmpfile.write(filename+'\n')
+    inFile = open(filename, 'r')
+    hashString += inFile.read()
+    inFile.close()
 
-    # fill input file in tmp file
-    infile = open(filename)
-    tmpfile.writelines(infile.readlines())
-    tmpfile.flush()
-    infile.close()
-
-    cmd = 'cksum '+tmp_filename
-    cmd_out = runCommand(cmd)
-
-    cksum = cmd_out.split()[0]
-
-    ## SL this is not needed if we use NamedTemporaryFile, which is not available in py2.2
-    if (tobedeleted): os.remove(tmp_filename)
-
+    cksum = str(crc32(hashString))
     return cksum
 
 def spanRanges(jobArray):
@@ -351,7 +331,7 @@ def spanRanges(jobArray):
 
     output = ""
     jobArray.sort()
-        
+
     previous = jobArray[0]-1
     for job in jobArray:
         if previous+1 == job:
@@ -371,14 +351,14 @@ def spanRanges(jobArray):
     return output
 
 def displayReport(self, header, lines, xml=''):
- 
+
     if xml == '' :
         counter = 0
         printline = ''
-        printline+= header 
+        printline+= header
         print printline
         print '---------------------------------------------------------------------------------------------------'
-       
+
         for i in range(len(lines)):
             if counter != 0 and counter%10 == 0 :
                 print '---------------------------------------------------------------------------------------------------'
@@ -396,13 +376,13 @@ def displayReport(self, header, lines, xml=''):
 
 def CliServerParams(self):
         """
-        Init client-server interactions 
+        Init client-server interactions
         """
         self.srvCfg = {}
 	try:
             self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
 
-            self.server_name = str(self.srvCfg['serverName']) 
+            self.server_name = str(self.srvCfg['serverName'])
             self.server_port = int(self.srvCfg['serverPort'])
 
             self.storage_name = str(self.srvCfg['storageName'])
@@ -410,14 +390,14 @@ def CliServerParams(self):
             self.storage_proto = str(self.srvCfg['storageProtocol'])
             self.storage_port = str(self.srvCfg['storagePort'])
 	except KeyError:
-	    msg = 'No server selected or port specified.' 
-	    msg = msg + 'Please specify a server in the crab cfg file' 
+	    msg = 'No server selected or port specified.'
+	    msg = msg + 'Please specify a server in the crab cfg file'
 	    raise CrabException(msg)
         return
 
-def bulkControl(self,list): 
+def bulkControl(self,list):
         """
-        Check the BULK size and  reduce collection ...if needed 
+        Check the BULK size and  reduce collection ...if needed
         """
         max_size = 400
         sub_bulk = []
@@ -444,4 +424,4 @@ if __name__ == '__main__':
     print list
     cksum = makeCksum("crab_util.py")
     print cksum
-    
+
