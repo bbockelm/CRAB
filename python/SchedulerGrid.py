@@ -284,7 +284,6 @@ class SchedulerGrid(Scheduler):
             txt += 'fi\n'
             txt += 'export TIME_STAGEOUT_END=`date +%s` \n'
             txt += 'let "TIME_STAGEOUT = TIME_STAGEOUT_END - TIME_STAGEOUT_INI" \n'
-            txt += 'fi\n'
         else:
             # set stageout timing to a fake value
             txt += 'export TIME_STAGEOUT=-1 \n'
