@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.41 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.41 2008/06/02 17:35:43 mcinquil Exp $"
+__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.42 2008/06/04 18:26:08 farinafa Exp $"
 
 import os
 import pickle
@@ -287,7 +287,8 @@ class CrabServerWorkerComponent:
         try:
             taskId, jobId, siteToBan = payload.split('::')
         except Exception, e:
-            logging.info("Bad resubmission message format. Resubmission will not be performed") 
+            logging.info("Bad resubmission message format. Resubmission will not be performed")
+            return 
 
         if self.availWorkers <= 0:
             self.ms.publish("ResubmitJob", payload, "00:00:30")
