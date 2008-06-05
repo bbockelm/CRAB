@@ -254,12 +254,12 @@ class Submitter(Actor):
 
         params = {'tool': common.prog_name,\
                   'JSToolVersion': common.prog_version_str, \
-                  'tool_ui': os.environ['HOSTNAME'], \
+                  'tool_ui': os.environ.get('HOSTNAME',''), \
                   'scheduler': common.scheduler.name(), \
                   'GridName': gridName, \
                   'taskType': taskType, \
                   'vo': VO, \
-                  'user': os.environ['USER'], \
+                  'user': os.environ.get('USER',''), \
                   'taskId': taskId, \
                   'datasetFull': self.datasetPath, \
                   'exe': self.executable } 
