@@ -86,6 +86,10 @@ class SchedulerLocal(Scheduler) :
         index = int(common._db.nJobs())
         job = common.job_list[index-1]
         jbt = job.type()
+        # start with wrapper timing 
+        txt  = 'export TIME_WRAP=`date +%s` \n'
+        txt += 'export TIME_STAGEOUT=NULL \n\n'
+
         txt = '# '+self.name()+' specific stuff\n'
         txt += '# strip arguments\n'
         txt += 'echo "strip arguments"\n'
