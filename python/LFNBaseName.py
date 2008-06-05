@@ -47,7 +47,7 @@ def getDN():
     except:
         msg = "Error. Problem with voms-proxy-info -identity command"
         raise CrabException(msg)
-    return userdn 
+    return userdn.split('\n')[0] 
 
 def gethnUserName():
     """
