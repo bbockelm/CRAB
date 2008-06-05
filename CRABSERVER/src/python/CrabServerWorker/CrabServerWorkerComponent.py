@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.42 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.42 2008/06/04 18:26:08 farinafa Exp $"
+__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.43 2008/06/05 08:01:35 farinafa Exp $"
 
 import os
 import pickle
@@ -286,6 +286,8 @@ class CrabServerWorkerComponent:
     def handleResubmission(self, payload):
         try:
             taskId, jobId, siteToBan = payload.split('::')
+            # convert back the list of sites to a flat string
+            siteToBan = ','.join(eval(siteToBan))   
         except Exception, e:
             logging.info("Bad resubmission message format. Resubmission will not be performed")
             return 
