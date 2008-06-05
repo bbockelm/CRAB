@@ -38,6 +38,10 @@ rm -rf CRABSERVER
 rm -rf PsetCode
 mv python/configure .
 
+## create external subdir  for dependeces
+mkdir -p external
+cd external
+
 ## download sqlite
 echo ">> downloading sqlite from CRAB web page"
 wget http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/sqlite.tgz
@@ -77,7 +81,9 @@ cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
 #cvs co -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
 #cvs co -d IMProv COMP/PRODCOMMON/src/python/IMProv
 cd ../..
-##################
+
+## exit from external
+cd ..
 
 tar zcvf $CRABdir.tgz $CRABdir
 echo ""

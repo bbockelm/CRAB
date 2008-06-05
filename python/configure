@@ -16,6 +16,7 @@
 #     py2-pysqlite       
 #
 TopDir=`\pwd`
+ExtDir=$TopDir/external
 sqlite_ver=3.4.0
 pysql_ver=2.4.0
 
@@ -24,7 +25,8 @@ PYSQLITE_ROOT=$TopDir/pysqlite/
 
 function configureCrab {
 ## prapare the crab env
-cd $TopDir
+cd $ExtDir
+
 tar zxvf sqlite.tgz > /dev/null 2>&1
 rm sqlite.tgz
 
@@ -34,6 +36,9 @@ rm py2-pysqlite.tgz
 tar zxvf pyOpenSSL-0.6-python2.4.tar.gz  > /dev/null 2>&1
 rm pyOpenSSL-0.6-python2.4.tar.gz > /dev/null 2>&1
 
+## go to $TopDir
+cd ..
+
 # sh style
 cat > crab.sh <<EOF
 #! /bin/sh
@@ -41,13 +46,11 @@ cat > crab.sh <<EOF
 export CRABDIR=$TopDir
 
 CRABPATH=\${CRABDIR}/python
-CRABDLSAPIPATH=\${CRABDIR}/DLSAPI
+CRABDLSAPIPATH=\${EXTERNALDIR}/DLSAPI
 export CRABPYTHON=\${CRABDIR}/python
-export CRABDBSAPIPYTHON=\${CRABDIR}/DBSAPI
-export CRABDLSAPIPYTHON=\${CRABDIR}/DLSAPI
-export CRABPSETPYTHON=\${CRABDIR}/PsetCode
-export CRABPRODAGENTPYTHON=\${CRABDIR}/ProdAgentApi
-export CRABPRODCOMMONPYTHON=\${CRABDIR}/ProdCommon
+export CRABDBSAPIPYTHON=\${EXTERNALDIR}/DBSAPI
+export CRABDLSAPIPYTHON=\${EXTERNALDIR}/DLSAPI
+export CRABPRODCOMMONPYTHON=\${EXTERNALDIR}/ProdCommon
 
 
 if [ -z "\$PATH" ]; then
@@ -56,14 +59,14 @@ else
 export PATH=\${CRABPATH}:\${PATH}
 fi
 if [ -z "\$PYTHONPATH" ]; then
-export PYTHONPATH=\${CRABPYTHON}:\${CRABDBSAPIPYTHON}:\${CRABDLSAPIPYTHON}:\${CRABPSETPYTHON}:\${CRABPRODAGENTPYTHON}:\${CRABPRODCOMMONPYTHON}
+export PYTHONPATH=\${CRABPYTHON}:\${CRABDBSAPIPYTHON}:\${CRABDLSAPIPYTHON}:\${CRABPRODCOMMONPYTHON}
 else
-export PYTHONPATH=\${PYTHONPATH}:\${CRABPYTHON}:\${CRABDBSAPIPYTHON}:\${CRABDLSAPIPYTHON}:\${CRABPSETPYTHON}:\${CRABPRODAGENTPYTHON}:\${CRABPRODCOMMONPYTHON}
+export PYTHONPATH=\${PYTHONPATH}:\${CRABPYTHON}:\${CRABDBSAPIPYTHON}:\${CRABDLSAPIPYTHON}:\${CRABPRODCOMMONPYTHON}
 fi
 
 
 ## sqlite
-export CRABSQLITE=\${CRABDIR}/sqlite/
+export CRABSQLITE=\${EXTERNALDIR}/sqlite/
 export CRABSQLITE_VERSION="3.3.5"
 export CRABSQLITE_ROOT=\$CRABSQLITE/\$CRABSQLITE_VERSION
 
@@ -72,7 +75,7 @@ export LD_LIBRARY_PATH=\${CRABSQLITE_ROOT}/lib:\${LD_LIBRARY_PATH}
 
 
 ## py2sql
-export CRABPYSQLITE=\${CRABDIR}/py2-pysqlite
+export CRABPYSQLITE=\${EXTERNALDIR}/py2-pysqlite
 export CRABPY2_PYSQLITE_VERSION="2.3.2"
 export CRABPY2_PYSQLITE_REVISION="1008"
 export CRABPY2_PYSQLITE_ROOT=\$CRABPYSQLITE/\$CRABPY2_PYSQLITE_VERSION
@@ -86,7 +89,7 @@ export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHON
 #export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python`echo $PYTHON_VERSION | cut -f1,2 -d.`/site-packages:\${PYTHONPATH}
 
 ## pyOpenssl
-export PyOpenSSLPYTHON=\${CRABDIR}/OpenSSL
+export PyOpenSSLPYTHON=\${EXTERNALDIR}
 export PYTHONPATH=\${PYTHONPATH}:\${PyOpenSSLPYTHON}
 
 ### TEMPORARY PATCH for gLite UI
@@ -100,11 +103,11 @@ cat > crab.csh <<EOF
 setenv CRABDIR $TopDir
 
 set CRABPATH=\${CRABDIR}/python
-set CRABDLSAPIPATH=\${CRABDIR}/DLSAPI
+set CRABDLSAPIPATH=\${EXTERNALDIR}/DLSAPI
 setenv CRABPYTHON \${CRABDIR}/python
-setenv CRABDBSAPIPYTHON \${CRABDIR}/DBSAPI
-setenv CRABDLSAPIPYTHON \${CRABDIR}/DLSAPI
-setenv CRABPRODCOMMONPYTHON \${CRABDIR}/ProdCommon
+setenv CRABDBSAPIPYTHON \${EXTERNALDIR}/DBSAPI
+setenv CRABDLSAPIPYTHON \${EXTERNALDIR}/DLSAPI
+setenv CRABPRODCOMMONPYTHON \${EXTERNALDIR}/ProdCommon
 
 
 if ( ! \$?path ) then
@@ -120,7 +123,7 @@ endif
 
 
 ## sqlite
-setenv CRABSQLITE \${CRABDIR}/sqlite/
+setenv CRABSQLITE \${EXTERNALDIR}/sqlite/
 setenv CRABSQLITE_VERSION "3.3.5"
 setenv CRABSQLITE_ROOT \$CRABSQLITE/\$CRABSQLITE_VERSION
 
@@ -129,7 +132,7 @@ setenv LD_LIBRARY_PATH \${CRABSQLITE_ROOT}/lib:\${LD_LIBRARY_PATH}
 
 
 ## py2sql
-setenv CRABPYSQLITE \${CRABDIR}/py2-pysqlite
+setenv CRABPYSQLITE \${EXTERNALDIR}/py2-pysqlite
 setenv CRABPY2_PYSQLITE_VERSION "2.3.2"
 setenv CRABPY2_PYSQLITE_REVISION "1008"
 setenv CRABPY2_PYSQLITE_ROOT \$CRABPYSQLITE/\$CRABPY2_PYSQLITE_VERSION
@@ -143,7 +146,7 @@ setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHON
 #setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python`echo $PYTHON_VERSION | cut -f1,2 -d.`/site-packages:\${PYTHONPATH}
 
 ## pyOpenssl
-setenv PyOpenSSLPYTHON \${CRABDIR}/OpenSSL
+setenv PyOpenSSLPYTHON \${EXTERNALDIR}
 setenv PYTHONPATH \${PYTHONPATH}:\${PyOpenSSLPYTHON}
 
 ### TEMPORARY PATCH for gLite UI
