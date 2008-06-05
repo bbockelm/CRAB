@@ -299,6 +299,7 @@ class SchedulerGrid(Scheduler):
         txt += '           echo "WARNING: it is not possible to create crab_fjr.xml to final report" \n'
         txt += '       else \n'
         txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --errorcode $job_exit_code $executable_exit_status \n'
+        txt += '       fi\n'
         txt += '    fi\n'
         txt += '    cd $RUNTIME_AREA  \n'   
         txt += '    for file in $filesToCheck ; do\n'
