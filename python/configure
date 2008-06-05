@@ -44,7 +44,7 @@ cat > crab.sh <<EOF
 #! /bin/sh
 # CRAB related Stuff
 export CRABDIR=$TopDir
-export EXTERNALDIR =$ExtDir
+export EXTERNALDIR=$ExtDir
 
 CRABPATH=\${CRABDIR}/python
 CRABDLSAPIPATH=\${EXTERNALDIR}/DLSAPI
