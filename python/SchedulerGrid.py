@@ -166,7 +166,7 @@ class SchedulerGrid(Scheduler):
 
         # start with wrapper timing 
         txt  = 'export TIME_WRAP_INI=`date +%s` \n'
-        txt += 'export TIME_STAGEOUT_INI=NULL \n\n'
+        txt += 'export TIME_STAGEOUT=NULL \n\n'
         # as usual ... #Fabio
         txt += '# '+self.name()+' specific stuff\n'
         txt += '# strip arguments\n'
@@ -259,7 +259,7 @@ class SchedulerGrid(Scheduler):
             txt += 'echo "SRM_VER = $SRM_VER"\n' 
 
             txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
-            txt += 'export TIME_STAGEOUT_END=`date +%s` \n'
+            txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
             txt += 'for out_file in $file_list ; do\n'
             txt += '    if [ -e $SOFTWARE_DIR/$out_file ] ; then\n'
@@ -282,7 +282,9 @@ class SchedulerGrid(Scheduler):
             txt += '    SE_PATH=""\n'
             txt += '    job_exit_code=$copy_exit_status\n'
             txt += 'fi\n'
+            txt += 'export TIME_STAGEOUT_END=`date +%s` \n'
             txt += 'let "TIME_STAGEOUT = TIME_STAGEOUT_END - TIME_STAGEOUT_INI" \n'
+            txt += 'fi\n'
         else:
             # set stageout timing to a fake value
             txt += 'export TIME_STAGEOUT=-1 \n'
