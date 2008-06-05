@@ -332,6 +332,10 @@ the path of processed dataset as defined on the DBS. It comes with the format I<
 
 within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 .
 
+=item B<use_parent *>
+
+within a dataset you can ask to run over the related parent files too. For example setting use_parent=True CRAB will ask the parent files to DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source module of your parameter set.
+
 =item B<pset *>
 
 the ParameterSet to be used
