@@ -74,11 +74,11 @@ rm -r DLS
 ## download PRODCOMMON
 echo ">> downloading PRODCOMMON tag ${PRODCOMMONtag} from CVS PRODCOMMON"
 #echo ">> downloading PRODCOMMON HEAD (Temporary) from CVS PRODCOMMON"
-cvs co -r ${PRODCOMMONtag} COMP/PRODCOMMON/src/python/ProdCommon
-cvs co -r ${PRODCOMMONtag} COMP/PRODCOMMON/src/python/IMProv
+cvs co -r ${PRODCOMMONtag} -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
+cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
 
 ## exit from external
-cd ..
+cd ../..
 
 tar zcvf $CRABdir.tgz $CRABdir
 echo ""
