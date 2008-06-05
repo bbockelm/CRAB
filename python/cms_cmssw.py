@@ -753,7 +753,7 @@ class Cmssw(JobType):
 
             ## Add ProdCommon dir to tar
             prodcommonDir = 'ProdCommon'
-            prodcommonPath = os.environ['CRABDIR'] + '/' + 'ProdCommon'
+            prodcommonPath = os.environ['CRABDIR'] + '/' + 'external/'
             if os.path.isdir(prodcommonPath):
                 tar.add(prodcommonPath,prodcommonDir)
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
