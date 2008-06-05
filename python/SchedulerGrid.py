@@ -165,8 +165,8 @@ class SchedulerGrid(Scheduler):
             raise CrabException('environment_unique_identifier not set')
 
         # start with wrapper timing 
-        txt  = 'export TIME_WRAP=`date +%s` \n'
-        txt += 'export TIME_STAGEOUT=NULL \n\n'
+        txt  = 'export TIME_WRAP_INI=`date +%s` \n'
+        txt += 'export TIME_STAGEOUT_INI=NULL \n\n'
         # as usual ... #Fabio
         txt += '# '+self.name()+' specific stuff\n'
         txt += '# strip arguments\n'
@@ -259,7 +259,7 @@ class SchedulerGrid(Scheduler):
             txt += 'echo "SRM_VER = $SRM_VER"\n' 
 
             txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
-            txt += 'export TIME_STAGEOUT=`date +%s` \n'
+            txt += 'export TIME_STAGEOUT_END=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
             txt += 'for out_file in $file_list ; do\n'
             txt += '    if [ -e $SOFTWARE_DIR/$out_file ] ; then\n'
@@ -282,7 +282,7 @@ class SchedulerGrid(Scheduler):
             txt += '    SE_PATH=""\n'
             txt += '    job_exit_code=$copy_exit_status\n'
             txt += 'fi\n'
-            txt += 'export TIME_STAGEOUT=$((`date +%s`-$TIME_STAGEOUT)) \n'
+            txt += 'let "TIME_STAGEOUT = TIME_STAGEOUT_END - TIME_STAGEOUT_INI" \n'
         else:
             # set stageout timing to a fake value
             txt += 'export TIME_STAGEOUT=-1 \n'
@@ -317,7 +317,8 @@ class SchedulerGrid(Scheduler):
         txt += '    else\n'
         txt += '        final_list=$filesToCheck" .BrokerInfo"\n'
         txt += '    fi\n'
-        txt += '    export TIME_WRAP=$((`date +%s`-$TIME_WRAP)) \n'
+        txt += '    export TIME_WRAP_END=`date +%s`\n'
+        txt += '    let "TIME_WRAP = TIME_WRAP_END - TIME_WRAP_END_INI" \n'
         txt += '    if [ $PYTHONPATH ]; then \n'
         txt += '       if [ ! -s $RUNTIME_AREA/fillCrabFjr.py ]; then \n'
         txt += '           echo "WARNING: it is not possible to create crab_fjr.xml to final report" \n'
