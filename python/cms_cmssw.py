@@ -119,6 +119,9 @@ class Cmssw(JobType):
             msg ="Error. script_exe  not defined"
             raise CrabException(msg)
 
+        # use parent files... 
+        self.useParent = self.cfg_params.get('CMSSW.use_parent',False)
+
         ## additional input files
         if cfg_params.has_key('USER.additional_input_files'):
             tmpAddFiles = string.split(cfg_params['USER.additional_input_files'],',')
@@ -290,6 +293,7 @@ class Cmssw(JobType):
         self.filesbyblock=self.pubdata.getFiles()
         self.eventsbyblock=self.pubdata.getEventsPerBlock()
         self.eventsbyfile=self.pubdata.getEventsPerFile()
+        self.parentFiles=self.pubdata.getParent()
 
         ## get max number of events
         self.maxEvents=self.pubdata.getMaxEvents()
@@ -406,8 +410,15 @@ class Cmssw(JobType):
 
                 # ---- Iterate over the files in the block until we've met the requested ---- #
                 # ---- total # of events or we've gone over all the files in this block  ---- #
+                pString=''
                 while ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) and (jobCount < totalNumberOfJobs) ):
                     file = files[fileCount]
+                    if self.useParent:
+                        parent = self.parentFiles[file]
+                        for f in parent :
+                            pString += '\\\"' + f + '\\\"\,'
+                        common.logger.debug(6, "File "+str(file)+" has the following parents: "+str(parent))
+                        common.logger.write("File "+str(file)+" has the following parents: "+str(parent))
                     if newFile :
                         try:
                             numEventsInFile = self.eventsbyfile[file]
@@ -428,7 +439,11 @@ class Cmssw(JobType):
                             # end job using last file, use remaining events in block
                             # close job and touch new file
                             fullString = parString[:-2]
-                            list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
+                            if self.useParent:
+                                fullParentString = pString[:-2]
+                                list_of_lists.append([fullString,fullParentString,str(-1),str(jobSkipEventCount)])
+                            else:
+                                list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
                             common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
                             self.jobDestination.append(blockSites[block])
                             common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
@@ -440,6 +455,7 @@ class Cmssw(JobType):
                             eventsRemaining = eventsRemaining - filesEventCount + jobSkipEventCount
                             jobSkipEventCount = 0
                             # reset file
+                            pString = ""
                             parString = ""
                             filesEventCount = 0
                             newFile = 1
@@ -452,7 +468,11 @@ class Cmssw(JobType):
                     elif ( filesEventCount - jobSkipEventCount == eventsPerJobRequested ) :
                         # close job and touch new file
                         fullString = parString[:-2]
-                        list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
+                        if self.useParent:
+                            fullParentString = pString[:-2]
+                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
+                        else: 
+                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         self.jobDestination.append(blockSites[block])
                         common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
@@ -463,6 +483,7 @@ class Cmssw(JobType):
                         eventsRemaining = eventsRemaining - eventsPerJobRequested
                         jobSkipEventCount = 0
                         # reset file
+                        pString = ""
                         parString = ""
                         filesEventCount = 0
                         newFile = 1
@@ -472,7 +493,11 @@ class Cmssw(JobType):
                     else :
                         # close job but don't touch new file
                         fullString = parString[:-2]
-                        list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
+                        if self.useParent:
+                            fullParentString = pString[:-2]
+                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
+                        else:
+                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         self.jobDestination.append(blockSites[block])
                         common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
@@ -486,6 +511,8 @@ class Cmssw(JobType):
                         jobSkipEventCount = eventsPerJobRequested - (filesEventCount - jobSkipEventCount - self.eventsbyfile[file])
                         # remove all but the last file
                         filesEventCount = self.eventsbyfile[file]
+                        if self.useParent:
+                            for f in parent : pString += '\\\"' + f + '\\\"\,'
                         parString = '\\\"' + file + '\\\"\,'
                     pass # END if
                 pass # END while (iterate over files in the block)
@@ -846,9 +873,15 @@ class Cmssw(JobType):
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
             if (self.datasetPath): # standard job
                 txt += 'InputFiles=${args[1]}; export InputFiles\n'
-                txt += 'MaxEvents=${args[2]}; export MaxEvents\n'
-                txt += 'SkipEvents=${args[3]}; export SkipEvents\n'
+                if (self.useParent):   
+                    txt += 'ParentFiles=${args[2]}; export ParentFiles\n'
+                    txt += 'MaxEvents=${args[3]}; export MaxEvents\n'
+                    txt += 'SkipEvents=${args[4]}; export SkipEvents\n'
+                else:
+                    txt += 'MaxEvents=${args[2]}; export MaxEvents\n'
+                    txt += 'SkipEvents=${args[3]}; export SkipEvents\n'
                 txt += 'echo "Inputfiles:<$InputFiles>"\n'
+                if (self.useParent): txt += 'echo "ParentFiles:<$ParentFiles>"\n'
                 txt += 'echo "MaxEvents:<$MaxEvents>"\n'
                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
             else:  # pythia like job

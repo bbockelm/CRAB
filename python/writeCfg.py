@@ -42,15 +42,16 @@ def main(argv) :
   """
 
   # defaults
-  inputFileNames = None
-  firstRun       = 0
-  sourceSeed     = 0
-  vtxSeed        = 0
-  g4Seed         = 0
-  mixSeed        = 0
-  debug          = False
-  _MAXINT        = 900000000
-  maxSeeds       = 4         # Kludge, maximum # of seeds that any engine takes
+  inputFileNames  = None
+  parentFileNames = None
+  firstRun        = 0
+  sourceSeed      = 0
+  vtxSeed         = 0
+  g4Seed          = 0
+  mixSeed         = 0
+  debug           = False
+  _MAXINT         = 900000000
+  maxSeeds        = 4         # Kludge, maximum # of seeds that any engine takes
 
   try:
     opts, args = getopt.getopt(argv, "", ["debug", "help"])
@@ -75,7 +76,6 @@ def main(argv) :
       sys.exit()
     elif opt == "--debug" :
       debug = True
-
   # Parse remaining parameters
 
   try:
@@ -93,6 +93,7 @@ def main(argv) :
   nJob       = int(os.environ.get('NJob',      '0'))
 
   inputFiles     = os.environ.get('InputFiles','')
+  parentFiles     = os.environ.get('ParentFiles','')
   preserveSeeds  = os.environ.get('PreserveSeeds','')
   incrementSeeds = os.environ.get('IncrementSeeds','')
 
@@ -135,6 +136,13 @@ def main(argv) :
     inputFileNames = inputFiles.split(',')
     inModule.setFileNames(*inputFileNames)
 
+  # handle parent files if needed
+  if parentFiles:
+    parentFiles = parentFiles.replace('\\','')
+    parentFiles = parentFiles.replace('"','')
+    parentFileNames = parentFiles.split(',')
+    inModule.setSecondaryFileNames(*parentFileNames)
+    
   # Pythia parameters
   if (firstRun):
     inModule.setFirstRun(firstRun)

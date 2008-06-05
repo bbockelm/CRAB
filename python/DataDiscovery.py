@@ -80,6 +80,7 @@ class DataDiscovery:
         self.eventsPerFile = {}   # DBS output: map files-events
         self.blocksinfo = {}      # DBS output: map fileblocks-files 
         self.maxEvents = 0        # DBS output: max events
+        self.parent = {}       # DBS output: max events
 
 # ####################################
     def fetchDBSInfo(self):
@@ -105,15 +106,30 @@ class DataDiscovery:
         args['url']     = dbs_url
         args['level']   = 'CRITICAL'
 
+        ## check if has been requested to use the parent info
+        if (self.cfg_params.has_key('CMSSW.runselection')):
+            runselection = parseRange2(self.cfg_params['CMSSW.runselection'])
+
+        useParent = self.cfg_params.get('CMSSW.use_parent',False)
+    
+        allowedRetriveValue = [
+                        'retrive_child', 
+                        'retrive_block',
+                        'retrive_lumi',
+                        'retrive_run'
+                        ]
+        if useParent:  allowedRetriveValue.append('retrive_parent') 
+        common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
+        common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
         api = DBSAPI.dbsApi.DbsApi(args)
         try:
             if len(runselection) <= 0 :
-                files = api.listDatasetFiles(self.datasetPath)
+                files = api.listFiles(path=self.datasetPath,retriveList=allowedRetriveValue)
             else :
                 files=[]
                 for arun in runselection:
                     try:
-                        filesinrun = api.listFiles(path=self.datasetPath, details=True,runNumber=arun)
+                        filesinrun = api.listFiles(path=self.datasetPath,retriveList=allowedRetriveValue,runNumber=arun)
                         files.extend(filesinrun)
                     except:
                         msg="WARNING: problem extracting info from DBS for run %s "%arun
@@ -127,7 +143,11 @@ class DataDiscovery:
 
         # parse files and fill arrays
         for file in files :
+            parList = []
             filename = file['LogicalFileName']
+            # asked retry the list of parent for the given child 
+            if useParent: parList = [x['LogicalFileName'] for x in file['ParentList']] 
+            self.parent[filename] = parList 
             if filename.find('.dat') < 0 :
                 fileblock = file['Block']['Name']
                 events    = file['NumberOfEvents']
@@ -184,5 +204,12 @@ class DataDiscovery:
         return files grouped by fileblock 
         """
         return self.blocksinfo        
+
+# #################################################
+    def getParent(self):
+        """
+        return parent grouped by file 
+        """
+        return self.parent        
 
 ########################################################################
