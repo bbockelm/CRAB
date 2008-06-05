@@ -1,7 +1,6 @@
 from Actor import *
 from crab_util import *
 import common
-from ApmonIf import ApmonIf
 
 import os, errno, time, sys, re 
 import commands
@@ -10,13 +9,13 @@ class JdlWriter( Actor ):
     def __init__(self, cfg_params, jobs):
         self.cfg_params = cfg_params
         self.nj_list = jobs 
-	return
+        return
 
     def run(self):
-	"""
-	The main method of the class: write JDL for jobs in range self.nj_list
-	"""
-	common.logger.debug(5, "JdlWriter::run() called")
+        """
+        The main method of the class: write JDL for jobs in range self.nj_list
+        """
+        common.logger.debug(5, "JdlWriter::run() called")
        
         start = time.time()
 
@@ -28,7 +27,7 @@ class JdlWriter( Actor ):
 
         common.logger.write("JDL writing time :"+str(stop - start))
       
-	return
+        return
 
 
     def listOfjobs(self):
@@ -43,13 +42,13 @@ class JdlWriter( Actor ):
         all_jobs=[] 
         count=0
         for distDest in distinct_dests: 
-             all_jobs.append(common._db.queryAttrJob({'dlsDestination':distDest},'jobId'))
-             sub_jobs_temp=[]
-             for i in self.nj_list:
-                 if i in all_jobs[count]: sub_jobs_temp.append(i) 
-             if len(sub_jobs_temp)>0:
-                 self.sub_jobs.append(sub_jobs_temp)   
-             count +=1
+            all_jobs.append(common._db.queryAttrJob({'dlsDestination':distDest},'jobId'))
+            sub_jobs_temp=[]
+            for i in self.nj_list:
+                if i in all_jobs[count]: sub_jobs_temp.append(i) 
+            if len(sub_jobs_temp)>0:
+                self.sub_jobs.append(sub_jobs_temp)   
+            count +=1
         return self.sub_jobs
 
     def writer(self,list):
@@ -60,19 +59,17 @@ class JdlWriter( Actor ):
         c1 = 1
         c2 = 1
         for sub_list in list: 
-          jdl = common.scheduler.writeJDL(sub_list, task)
+            jdl = common.scheduler.writeJDL(sub_list, task)
 
-          for stri in jdl:
-              #self.jdlFile='File-'+str(c1)+'_'+str(c2)+'.jdl'
-              self.jdlFile='File-'+str(c1)+'_'+str(c2)+'.jdl'
-              j_file = open(common.work_space.shareDir()+'/'+self.jdlFile, 'w')
-              j_file.write( stri )
-              j_file.close()
-              c2 += 1
-          c1 += 1
+            for stri in jdl:
+                #self.jdlFile='File-'+str(c1)+'_'+str(c2)+'.jdl'
+                self.jdlFile='File-'+str(c1)+'_'+str(c2)+'.jdl'
+                j_file = open(common.work_space.shareDir()+'/'+self.jdlFile, 'w')
+                j_file.write( stri )
+                j_file.close()
+                c2 += 1
+            c1 += 1
 
         common.logger.message('JDL files are  written to '+str(common.work_space.shareDir())+'File-*.jdl \n' )
 
         return
-       
-
