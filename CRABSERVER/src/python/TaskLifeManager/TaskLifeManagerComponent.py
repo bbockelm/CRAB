@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.18 2008/05/06 21:34:35 mcinquil Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.20 2008/06/04 14:03:54 mcinquil Exp $"
+__version__ = "$Revision: 1.20 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -163,7 +163,11 @@ class TaskLifeManagerComponent:
                            'passwd': self.args['passwd'], \
                            'socketFileLocation': self.args['socketFileLocation'] \
                          }
+
         self.proxypath = self.args["ProxiesDir"]
+
+        ## instance the proxy's object to clean proxies
+        self.procheck = ProxyLife(self.bossCfgDB, self.proxypath)
 
     ##########################################################################
     # handle events
@@ -776,8 +780,7 @@ class TaskLifeManagerComponent:
         self.deleteTasks()
 
         ## checks and manages proxies 
-        procheck = ProxyLife(self.bossCfgDB, self.proxypath)
-        procheck.pollProxies()
+        self.procheck.pollProxies()
             
         # Renewing polling cycle
         pollT = int(self.args['pollingTimeCheck'])
