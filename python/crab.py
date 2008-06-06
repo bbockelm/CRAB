@@ -19,7 +19,8 @@ class Crab:
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput','-get',
                              '-resubmit' , '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
-                             '-printId', '-createJdl','-printJdl', '-publish' ]
+                             '-printId', '-createJdl','-printJdl', '-publish',
+                             '-copyLocal' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -565,23 +566,32 @@ class Crab:
                     self.actions[opt] = Cleaner(self.cfg_params)
 
             elif ( opt in ['-printJdl','-createJdl']):
-                 """
-                 Materialize JDL
-                 """
-                 ## Temporary:
-                 if opt == '-printJdl':
-                     common.logger.message("WARNING: -printJdl option is deprecated : please use -createJdl \n")
-                 if val =='all' or val == None or val == '':
-                     jobs = common._db.nJobs("list")
-                 else:
-                     jobs = self.parseRange_(val)
-                 pass
-                 from JdlWriter import JdlWriter
-                 self.actions[opt] = JdlWriter(self.cfg_params, jobs)
+                """
+                Materialize JDL
+                """
+                ## Temporary:
+                if opt == '-printJdl':
+                    common.logger.message("WARNING: -printJdl option is deprecated : please use -createJdl \n")
+                if val =='all' or val == None or val == '':
+                    jobs = common._db.nJobs("list")
+                else:
+                    jobs = self.parseRange_(val)
+                pass
+                from JdlWriter import JdlWriter
+                self.actions[opt] = JdlWriter(self.cfg_params, jobs)
 
             elif ( opt == '-publish' ):
                 from Publisher import Publisher
                 self.actions[opt] = Publisher(self.cfg_params)
+
+            elif ( opt == '-copyLocal' ):
+                if val =='all' or val == None or val == '':
+                    jobs = common._db.nJobs("list")
+                else:
+                    jobs = self.parseRange_(val)
+                pass
+                from CopyLocal import CopyLocal
+                self.actions[opt] = CopyLocal(self.cfg_params, jobs)
 
             pass
         return

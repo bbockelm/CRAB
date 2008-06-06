@@ -25,6 +25,7 @@ The most useful general options (use '-h' to get complete help):
   -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance
   -kill [range]       -- kill submitted jobs
   -resubmit [range]   -- resubmit killed/aborted/retrieved jobs
+  -copyLocal [range]  -- copy locally the output sored on remote SE
   -clean              -- gracefully cleanup the directory of a task
   -testJdl [range]    -- check if resources exist which are compatible with jdl
   -list [range]       -- show technical job details
@@ -240,6 +241,10 @@ The resubmit option can be used only with CRAB without server. For the server th
 =item B<-kill [range]>
 
 Kill (cancel) jobs which have been submitted to the scheduler. A range B<must> be used in all cases, no default value is set.
+
+=item B<-copyLocal [range]>
+
+Copy locally (on current working directory) the output previously stored on remote SE by the jobs. Of course, only if copy_data option has been set. Uses I<lcg-cp>
 
 =item B<-testJdl [range]>
 
