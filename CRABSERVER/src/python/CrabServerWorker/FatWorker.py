@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.73 2008/05/27 13:15:24 farinafa Exp $"
-__version__ = "$Revision: 1.73 $"
+__revision__ = "$Id: FatWorker.py,v 1.77 2008/06/02 17:22:18 mcinquil Exp $"
+__version__ = "$Revision: 1.77 $"
 import string
 import sys, os
 import time
@@ -297,7 +297,7 @@ class FatWorker(Thread):
                 self.TURLpreamble = self.TURLpreamble.split(taskFileList[0])[0]
                 if self.TURLpreamble:
                     if self.TURLpreamble[-1] != '/':
-                        self.TURLpreamble += '/'  
+                        self.TURLpreamble += '/' 
            
         except Exception, e:
             self.log.info( traceback.format_exc() )
@@ -329,18 +329,15 @@ class FatWorker(Thread):
         submitted = [] 
 
         # modify sandbox and other paths for WMS bypass
-        turlpreamble = ""
-        if (self.TURLpreamble):
-            turlpreamble = self.TURLpreamble 
-        task['startDirectory'] = turlpreamble
-
-        if self.submissionKind == 'first': 
-            # add fjr XML file to the retrieved files and WMS OSB bypass
+        self.log.debug("Worker %s. Reference TURL: %s"%(self.myName,self.TURLpreamble) )
+        if self.TURLpreamble and (self.TURLpreamble not in task['outputDirectory']):
+            task['startDirectory'] = self.TURLpreamble
             destDir = task['outputDirectory']
-            task['outputDirectory'] = self.TURLpreamble + destDir 
-            task['scriptName'] = turlpreamble + task['scriptName']
-            task['cfgName'] = turlpreamble + task['cfgName']
-        else:
+            task['outputDirectory'] = self.TURLpreamble + destDir
+            task['scriptName'] = self.TURLpreamble + task['scriptName']
+            task['cfgName'] = self.TURLpreamble + task['cfgName']
+
+        if not self.submissionKind == 'first': 
             # backup for job output (tgz files only, less load)
             fullSubJob = []
             for sub in sub_jobs:  
