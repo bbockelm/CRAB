@@ -357,33 +357,50 @@ def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=T
             if (jmlist.count(name) == 0): jmlist.append(name)
 
     return jmlist
-	    
+
+def listAllCEs(bdii='exp-bdii.cern.ch'):
+    ''' List all GlueCEUniqueIDs that advertise support for CMS '''
+
+    RE_cename = re.compile('^GlueCEUniqueID: (.*)', re.IGNORECASE)
+    filt = "'(&(GlueCEUniqueID=*)(GlueCEAccessControlBaseRule=VO:cms))'"
+    pout = runldapquery(filt, 'GlueCEUniqueID', bdii)
+    ceList = []
+    for l in pout:
+        m = RE_cename.match(l)
+        if m:
+            item = m.groups()[0]
+            if (ceList.count(item) == 0): ceList.append(item)
+
+    return ceList
+
 def listAllSEs(bdii='exp-bdii.cern.ch'):
-    host = re.compile('^GlueCEInfoDefaultSE: (.*)')
-    
+    ''' List all SEs that are bound to (CEs that advertise support for CMS) '''
+
+    RE_sename = re.compile('^GlueCESEBindGroupSEUniqueID: (.*)', re.IGNORECASE)
     seList = []
+    filt = "'(|"
+    ceList = listAllCEs(bdii)
+    for ce in ceList:
+        filtstring = '(GlueCESEBindGroupCEUniqueID=' + ce + ')'
+        filt += filtstring
+    filt += ")'"
 
-    query = ' "(GlueCEAccessControlBaseRule=VO:cms)" '
-    pout = runldapquery(query, 'GlueCEInfoDefaultSE', bdii)
-    output = concatoutput(pout)
+    pout = runldapquery(filt, 'GlueCESEBindGroupSEUniqueID', bdii)
+    for l in pout:
+        m = RE_sename.match(l)
+        if m:
+            item = m.groups()[0]
+            if (seList.count(item) == 0): seList.append(item)
 
-    stanza_list = output.split(LF+LF)
-    for stanza in stanza_list:
-        if len(stanza) > 1:
-            details = stanza.split(LF)
-            for det in details:
-                mhost = host.match(det)
-                if mhost: # hostname
-                    hostname = mhost.groups()[0]
-                    if hostname not in seList:
-                        seList.append(mhost.groups()[0])
-    
-    return seList                    
-    		    
+    return seList
+
 
 if __name__ == '__main__':
     import pprint
+#    pprint.pprint(listAllSEs('uscmsbd2.fnal.gov'))
+    pprint.pprint(listAllCEs())
     pprint.pprint(listAllSEs())
+
 #    seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
 #    seList = ['ccsrm.in2p3.fr', 'storm.ifca.es']
 #    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345", 'uscmsbd2.fnal.gov', True)

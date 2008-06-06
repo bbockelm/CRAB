@@ -4,6 +4,7 @@ from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 from osg_bdii import getJobManagerList
+from osg_bdii import listAllSEs, listAllCEs
 import time
 import common
 import popen2
@@ -15,8 +16,8 @@ import CondorGLoggingInfo
 
 # This class was originally SchedulerCondor_g. For a history of this code, see that file.
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.17 2008/05/05 18:46:02 ewv Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.18 2008/05/29 22:06:25 spiga Exp $"
+__version__ = "$Revision: 1.18 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -192,18 +193,36 @@ class SchedulerCondorCommon(SchedulerGrid):
       """
       Check the compatibility of available resources
       """
-      seDest = self.blackWhiteListParser.cleanForBlackWhiteList(seList,"list")
-      scram = Scram.Scram(None)
+      if self.selectNoInput:
+        print "Getting list of SEs"
+        availCEs = listAllCEs()
+      else:
+          ## Hack for my version of listAllSEs, still doesn't really work
+          #seList = []
+          #for se in theList:
+            #if se.find(':') != -1 or se.find('/') != -1:
+              #continue
+            #if se.find('.') != -1:
+              #seList.append(se)
 
-      versionCMSSW = scram.getSWVersion()
-      arch = scram.getArch()
-      availCEs = getJobManagerList(seDest,versionCMSSW,arch,onlyOSG=onlyOSG)
+        print "seList =",seList
+        seDest = self.blackWhiteListParser.cleanForBlackWhiteList(seList,"list")
+        print "seDest =",seDest
+        scram = Scram.Scram(None)
+
+        versionCMSSW = scram.getSWVersion()
+        arch = scram.getArch()
+        print "Params ",versionCMSSW,arch
+        availCEs = getJobManagerList(seDest,versionCMSSW,arch,onlyOSG=onlyOSG)
+      print "availCEs =",availCEs
       uniqCEs = []
       for ce in availCEs:
         if ce not in uniqCEs:
           uniqCEs.append(ce)
 
       ceDest = self.ceBlackWhiteListParser.cleanForBlackWhiteList(uniqCEs,"list")
+      print "\n\nceDest =",ceDest
+      uniqCEs = []
       return ceDest
 
     def userName(self):
