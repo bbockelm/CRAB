@@ -97,12 +97,7 @@ class Cmssw(JobType):
         self.output_file = []
         tmp = cfg_params.get('CMSSW.output_file',None)
         if tmp :
-            tmpOutFiles = string.split(tmp,',')
-            log.debug(7, 'cmssw::cmssw(): output files '+str(tmpOutFiles))
-            for tmp in tmpOutFiles:
-                tmp=string.strip(tmp)
-                self.output_file.append(tmp)
-                pass
+            self.output_file = [x.strip() for x in tmp.split(',')]
         else:
             log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available\n")
         pass
@@ -1035,7 +1030,7 @@ class Cmssw(JobType):
         ## User Declared output files
         for out in (self.output_file+self.output_file_sandbox):
             n_out = nj + 1
-            out_box.append(self.numberFile_(out,str(n_out)))
+            out_box.append(numberFile(out,str(n_out)))
         return out_box
 
     def prepareSteeringCards(self):
@@ -1057,7 +1052,7 @@ class Cmssw(JobType):
         txt += '\n'
 
         for fileWithSuffix in (self.output_file):
-            output_file_num = self.numberFile_(fileWithSuffix, '$NJob')
+            output_file_num = numberFile(fileWithSuffix, '$NJob')
             txt += '\n'
             txt += '# check output file\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
@@ -1078,7 +1073,7 @@ class Cmssw(JobType):
             txt += 'fi\n'
         file_list = []
         for fileWithSuffix in (self.output_file):
-             file_list.append(self.numberFile_(fileWithSuffix, '$NJob'))
+             file_list.append(numberFile(fileWithSuffix, '$NJob'))
 
         txt += 'file_list="'+string.join(file_list,' ')+'"\n'
         txt += '\n'
@@ -1090,24 +1085,6 @@ class Cmssw(JobType):
         txt += 'cd $RUNTIME_AREA\n'
         txt += 'echo ">>> current directory (RUNTIME_AREA):  $RUNTIME_AREA"\n'
         return txt
-
-    def numberFile_(self, file, txt):
-        """
-        append _'txt' before last extension of a file
-        """
-        p = string.split(file,".")
-        # take away last extension
-        name = p[0]
-        for x in p[1:-1]:
-            name=name+"."+x
-        # add "_txt"
-        if len(p)>1:
-            ext = p[len(p)-1]
-            result = name + '_' + txt + "." + ext
-        else:
-            result = name + '_' + txt
-
-        return result
 
     def getRequirements(self, nj=[]):
         """
@@ -1324,12 +1301,12 @@ class Cmssw(JobType):
         stderr = 'CMSSW_$NJob.stderr'
         if (self.return_data == 1):
             for file in (self.output_file+self.output_file_sandbox):
-                listOutFiles.append(self.numberFile_(file, '$NJob'))
+                listOutFiles.append(numberFile(file, '$NJob'))
             listOutFiles.append(stdout)
             listOutFiles.append(stderr)
         else:
             for file in (self.output_file_sandbox):
-                listOutFiles.append(self.numberFile_(file, '$NJob'))
+                listOutFiles.append(numberFile(file, '$NJob'))
             listOutFiles.append(stdout)
             listOutFiles.append(stderr)
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'

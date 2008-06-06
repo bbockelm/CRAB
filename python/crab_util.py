@@ -375,48 +375,66 @@ def displayReport(self, header, lines, xml=''):
         pass
 
 def CliServerParams(self):
-        """
-        Init client-server interactions
-        """
-        self.srvCfg = {}
-	try:
-            self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
+    """
+    Init client-server interactions
+    """
+    self.srvCfg = {}
+    try:
+        self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
 
-            self.server_name = str(self.srvCfg['serverName'])
-            self.server_port = int(self.srvCfg['serverPort'])
+        self.server_name = str(self.srvCfg['serverName'])
+        self.server_port = int(self.srvCfg['serverPort'])
 
-            self.storage_name = str(self.srvCfg['storageName'])
-            self.storage_path = str(self.srvCfg['storagePath'])
-            self.storage_proto = str(self.srvCfg['storageProtocol'])
-            self.storage_port = str(self.srvCfg['storagePort'])
-	except KeyError:
-	    msg = 'No server selected or port specified.'
-	    msg = msg + 'Please specify a server in the crab cfg file'
-	    raise CrabException(msg)
+        self.storage_name = str(self.srvCfg['storageName'])
+        self.storage_path = str(self.srvCfg['storagePath'])
+        self.storage_proto = str(self.srvCfg['storageProtocol'])
+        self.storage_port = str(self.srvCfg['storagePort'])
+    except KeyError:
+        msg = 'No server selected or port specified.'
+        msg = msg + 'Please specify a server in the crab cfg file'
+        raise CrabException(msg)
         return
 
 def bulkControl(self,list):
-        """
-        Check the BULK size and  reduce collection ...if needed
-        """
-        max_size = 400
-        sub_bulk = []
-        if len(list) > int(max_size):
-            n_sub_bulk = int( int(len(list) ) / int(max_size) )
-            for n in range(n_sub_bulk):
-                first =n*int(max_size)
-                last = (n+1)*int(max_size)
-                sub_bulk.append(list[first:last])
-            if len(list[last:-1]) < 50:
-                for pp in list[last:-1]:
-                    sub_bulk[n_sub_bulk-1].append(pp)
-            else:
-                sub_bulk.append(list[last:-1])
+    """
+    Check the BULK size and  reduce collection ...if needed
+    """
+    max_size = 400
+    sub_bulk = []
+    if len(list) > int(max_size):
+        n_sub_bulk = int( int(len(list) ) / int(max_size) )
+        for n in range(n_sub_bulk):
+            first =n*int(max_size)
+            last = (n+1)*int(max_size)
+            sub_bulk.append(list[first:last])
+        if len(list[last:-1]) < 50:
+            for pp in list[last:-1]:
+                sub_bulk[n_sub_bulk-1].append(pp)
         else:
-            sub_bulk.append(list)
+            sub_bulk.append(list[last:-1])
+    else:
+        sub_bulk.append(list)
 
-        return sub_bulk
+    return sub_bulk
 
+def numberFile(file, txt):
+    """
+    append _'txt' before last extension of a file
+    """
+    txt=str(txt)
+    p = string.split(file,".")
+    # take away last extension
+    name = p[0]
+    for x in p[1:-1]:
+        name=name+"."+x
+    # add "_txt"
+    if len(p)>1:
+        ext = p[len(p)-1]
+        result = name + '_' + txt + "." + ext
+    else:
+        result = name + '_' + txt
+
+    return result
 ####################################
 if __name__ == '__main__':
     print 'sys.argv[1] =',sys.argv[1]
