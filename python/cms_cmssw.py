@@ -736,13 +736,25 @@ class Cmssw(JobType):
                 tar.add(module,moduleDir)
 
             ## Now check if any data dir(s) is present
-            swAreaLen=len(swArea)
             self.dataExist = False
-            for root, dirs, files in os.walk(swArea):
-                if "data" in dirs:
-                    self.dataExist=True
-                    common.logger.debug(5,"data "+root+"/data"+" to be tarred")
-                    tar.add(root+"/data",root[swAreaLen:]+"/data")
+            #print "Starting walk."
+            #timer = -time.time()
+            todo_list = [(os.path.join(swArea, i), i) for i in  os.listdir(swArea)]
+            while len(todo_list):
+                entry, name = todo_list.pop()
+                if name.startswith('crab_0_') or  name.startswith('.'):
+                    continue
+                if os.path.isdir(entry):
+                    entryPath = entry + '/'
+                    todo_list += [(entryPath + i, i) for i in  os.listdir(entry)]
+                    if name == 'data':
+                        self.dataExist=True
+                        common.logger.debug(5,"data "+entry+" to be tarred")
+                        tar.add(entry, swArea)
+                    pass
+                pass
+            #timer += time.time()
+            #print "Finished walk.", timer
 
             ### CMSSW ParameterSet
             if not self.pset is None:
@@ -777,8 +789,8 @@ class Cmssw(JobType):
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
-        except :
-            raise CrabException('Could not create tar-ball')
+        except TarError:
+            raise CrabException('Could not create tar-ball '+self.tgzNameWithPath)
 
         ## check for tarball size
         tarballinfo = os.stat(self.tgzNameWithPath)
