@@ -83,7 +83,7 @@ crabServerConfiguration = {
 componentFields = {
     "CrabServerWorker" : {
     'ComponentDir':None,
-    'maxThreads':'5',
+    'maxThreads':'9',
     'allow_anonymous':'0',
     },
   
