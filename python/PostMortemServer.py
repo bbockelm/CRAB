@@ -1,71 +1,121 @@
-from Actor import *
+from PostMortem import PostMortem
+from StatusServer import StatusServer
+
 from crab_util import *
 import common
-from ApmonIf import ApmonIf
-import time
-from ProgressBar import ProgressBar
-from TerminalController import TerminalController
+import string, os
 
-class PostMortemServer(Actor):
- 
-    def __init__(self, cfg_params,):
-        self.cfg_params = cfg_params
-        try:  
-            self.server_name = self.cfg_params['CRAB.server_name'] # gsiftp://pcpg01.cern.ch/data/SEDir/
-            if not self.server_name.endswith("/"):
-                self.server_name = self.server_name + "/"
-        except KeyError:
-            msg = 'No server selected ...' 
-            msg = msg + 'Please specify a server in the crab cfg file' 
-            raise CrabException(msg) 
+from ProdCommon.Storage.SEAPI.SElement import SElement
+from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
+
+class PostMortemServer(PostMortem, StatusServer):
+    def __init__(self, cfg_params, nj_list):
+            
+        PostMortem.__init__(self, cfg_params, nj_list)
+
+        # init client server params...
+        CliServerParams(self)        
+
+        if self.storage_path[0]!='/':
+            self.storage_path = '/'+self.storage_path
+        
         return
     
-    def run(self):
-        """
-        The main method of the class: retrieve the post mortem output from server
-        """
-        common.logger.debug(5, "PostMortem server::run() called")
+    def collectLogging(self):
+        # get updated status from server #inherited from StatusServer
+        self.resynchClientSide()
 
-        start = time.time()
-
-        common.scheduler.checkProxy()
-
-        common.taskDB.load()
-        WorkDirName =os.path.basename(os.path.split(common.work_space.topDir())[0])
-        projectUniqName = 'crab_'+str(WorkDirName)+'_'+common.taskDB.dict("TasKUUID")     
-        #Need to add a check on the treashold level 
-        # and on the task readness  TODO  
+        #create once storage interaction object
+        seEl = None
+        loc = None
+        try:  
+            seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
+        except Exception, ex:
+            common.logger.debug(1, str(ex))
+            msg = "ERROR: Unable to create SE source interface \n"
+            raise CrabException(msg)
         try:
-            ### retrieving poject from the server
-            common.logger.message("Retrieving the poject from the server...\n")
-
-            copyHere = common.work_space.jobDir() # MATT
-             
-            cmd = 'lcg-cp --vo cms --verbose gsiftp://' + str(self.server_name) + str(projectUniqName)+'/res/failed.tgz file://'+copyHere+'failed.tgz'# MATT
-            common.logger.debug(5, cmd)
-            copyOut = os.system(cmd +' >& /dev/null')
-        except:
-            msg = ("postMortem output not yet available")
+            loc = SElement("localhost", "local")
+        except Exception, ex:
+            common.logger.debug(1, str(ex))
+            msg = "ERROR: Unable to create destination interface \n"
             raise CrabException(msg)
 
-        zipOut = "failed.tgz"
-        if os.path.exists( copyHere + zipOut ): # MATT
-            cwd = os.getcwd()
-            os.chdir( copyHere )# MATT
-            common.logger.debug( 5, 'tar -zxvf ' + zipOut )
-  	    cmd = 'tar -zxvf ' + zipOut 
-            cmd += '; mv .tmpFailed/* .; rm -drf .tmpDone/'
-	    cmd_out = runCommand(cmd)
-	    os.chdir(cwd)
-            common.logger.debug( 5, 'rm -f '+copyHere+zipOut )# MATT 
-	    cmd = 'rm -f '+copyHere+zipOut# MATT
-	    cmd_out = runCommand(cmd)
+        ## coupling se interfaces
+        sbi = SBinterface( seEl, loc )
 
-	    msg='Logging info for project '+str(WorkDirName)+': \n'      
-	    msg+='written to '+copyHere+' \n'      # MATT
-	    common.logger.message(msg)
-        else:
-            common.logger.message("Logging info is not yet ready....\n")
+        ## get the list of jobs to get logging.info skimmed by failed status
+        logginable = self.skimDeadList()
 
+        ## iter over each asked job and print warning if not in skimmed list
+        for id in self.nj_list:
+            if id not in self.all_jobs:
+                common.logger.message('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
+                continue
+            elif id in logginable:  
+                fname = self.fname_base + str(id) + '.LoggingInfo'
+                if os.path.exists(fname):
+                    common.logger.message('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
+                    continue
+                ## retrieving & processing logging info
+                if self.retrieveFile( sbi, id, fname):
+                    ## decode logging info
+                    fl = open(fname, 'r')
+                    out = "".join(fl.readlines())  
+                    fl.close()
+                    reason = self.decodeLogging(out)
+                    common.logger.message('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
+                else:
+                    common.logger.message('Logging info for job '+ str(id) +' not retrieved')
+            else:
+                common.logger.message('Warning: job # ' + str(id) + ' not killed or aborted! Not possible to ask for postMortem ')
         return
 
+
+    def skimDeadList(self):
+        """
+        __skimDeadList__
+        return the list of jobs really failed: K, A
+        """
+        skimmedlist = []
+        self.up_task = common._db.getTask( self.nj_list )
+        for job in self.up_task.jobs:
+            if job.runningJob['status'] in ['K','A']:
+                skimmedlist.append(job['jobId'])
+        return skimmedlist
+        
+    def retrieveFile(self, sbi, jobid, destlog):
+        """
+        __retrieveFile__
+
+        retrieves logging.info file from the server storage area
+        """
+        self.taskuuid = str(common._db.queryTask('name'))
+        common.logger.debug(3, "Task name: " + self.taskuuid)
+
+        # full remote dir 
+        remotedir = os.path.join(self.storage_path, self.taskuuid)
+        remotelog = remotedir + '/loggingInfo_'+str(jobid)+'.log'
+
+        common.logger.message("Starting retrieving logging-info from server " \
+                               + str(self.storage_name) + " for job " \
+                               + str(jobid) + "...")
+
+        # retrieve logging info from storage
+        common.logger.debug(1, "retrieving "+ str(remotelog) +" to "+ str(destlog) )
+        try:
+            sbi.copy( remotelog, destlog)
+        except Exception, ex:
+            msg = "WARNING: Unable to retrieve logging-info file %s \n"%remotelog
+            msg += str(ex)
+            common.logger.debug(1,msg)
+            return False
+        # cleaning remote logging info file 
+        try:
+            common.logger.debug(5, "Cleaning remote file [%s] " + str(remotelog) )
+            sbi.delete(remotelog)
+        except Exception, ex:
+            msg = "WARNING: Unable to clean remote logging-info file %s \n"%remotelog
+            msg += str(ex)
+            common.logger.debug(5,msg)
+        return True
