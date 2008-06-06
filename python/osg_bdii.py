@@ -21,6 +21,7 @@ def unwraplines(wrapped_list):
 def runldapquery(filter, attribute, bdii):
     command = 'ldapsearch -xLLL -p 2170 -h ' + bdii + ' -b o=grid '
     command += filter + ' ' + attribute
+    #print "Command",command
     pout,pin,perr = popen2.popen3(command)
 
     pout = pout.readlines()
@@ -37,7 +38,6 @@ def jm_from_se_bdii(se, bdii='exp-bdii.cern.ch'):
     se = '\'' + se + '\''
     pout = runldapquery(" '(GlueCESEBindGroupSEUniqueID=" + se + ")' ", 'GlueCESEBindGroupCEUniqueID', bdii)
 
-#    r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*)-cms')
     r = re.compile('^GlueCESEBindGroupCEUniqueID: (.*:.*/jobmanager-.*?)-(.*)')
     jm = []
     for l in pout:
@@ -153,7 +153,6 @@ def isOSGSite(host_list, bdii='exp-bdii.cern.ch'):
                 host = n.groups()[0]
         if (osg == 1):
             results_list.append(host)
-
     return results_list
 
 def getSoftwareAndArch2(host_list, software, arch, bdii='exp-bdii.cern.ch'):
@@ -358,20 +357,38 @@ def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=T
 
     return jmlist
 
-def listAllCEs(bdii='exp-bdii.cern.ch'):
+def listAllCEs(software, arch, bdii='exp-bdii.cern.ch',onlyOSG=True):
     ''' List all GlueCEUniqueIDs that advertise support for CMS '''
 
     RE_cename = re.compile('^GlueCEUniqueID: (.*)', re.IGNORECASE)
+    hostSplit  = re.compile(r'[^\w\.\-]')
     filt = "'(&(GlueCEUniqueID=*)(GlueCEAccessControlBaseRule=VO:cms))'"
     pout = runldapquery(filt, 'GlueCEUniqueID', bdii)
-    ceList = []
+    ceList   = []
+    hostList = []
     for l in pout:
         m = RE_cename.match(l)
         if m:
             item = m.groups()[0]
-            if (ceList.count(item) == 0): ceList.append(item)
+            hostname = hostSplit.split(item)[0]
+            if (ceList.count(item) == 0):       ceList.append(item)
+            if (hostList.count(hostname) == 0): hostList.append(hostname)
 
-    return ceList
+    if onlyOSG:
+      osgCEs = []
+      osgList =  isOSGSite(hostList, bdii)
+      for ce in ceList:
+        hostname = hostSplit.split(ce)[0]
+        if hostname in osgList:
+          osgCEs.append(ce)
+      #return osgCEs
+    else:
+      osgCEs = ceList
+      #return softarch_list
+
+    softarch_list = getSoftwareAndArch2(osgCEs, software, arch)
+
+    return softarch_list
 
 def listAllSEs(bdii='exp-bdii.cern.ch'):
     ''' List all SEs that are bound to (CEs that advertise support for CMS) '''
@@ -398,10 +415,10 @@ def listAllSEs(bdii='exp-bdii.cern.ch'):
 if __name__ == '__main__':
     import pprint
 #    pprint.pprint(listAllSEs('uscmsbd2.fnal.gov'))
-    pprint.pprint(listAllCEs())
-    pprint.pprint(listAllSEs())
+    pprint.pprint(listAllCEs(onlyOSG=True))
+#    pprint.pprint(listAllCEs(onlyOSG=False))
 
-#    seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
+    seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
 #    seList = ['ccsrm.in2p3.fr', 'storm.ifca.es']
 #    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345", 'uscmsbd2.fnal.gov', True)
 #    for jm in jmlist:

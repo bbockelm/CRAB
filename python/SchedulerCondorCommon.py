@@ -16,8 +16,8 @@ import CondorGLoggingInfo
 
 # This class was originally SchedulerCondor_g. For a history of this code, see that file.
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.18 2008/05/29 22:06:25 spiga Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.19 2008/06/06 18:02:08 ewv Exp $"
+__version__ = "$Revision: 1.19 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -189,39 +189,31 @@ class SchedulerCondorCommon(SchedulerGrid):
         reason = loggingInfo.decodeReason(file)
         return reason
 
-    def listMatch(self, seList, onlyOSG=True):
+    def listMatch(self, seList, full, onlyOSG=True):
       """
       Check the compatibility of available resources
       """
+
+      # May have problems with onlyOSG being false, probably due to lengths of lists and command line.
+      # Either re-write osg_bdii.py with a proper ldap library or break the queries apart
+
+      scram = Scram.Scram(None)
+      versionCMSSW = scram.getSWVersion()
+      arch = scram.getArch()
+
       if self.selectNoInput:
-        print "Getting list of SEs"
-        availCEs = listAllCEs()
+        availCEs = listAllCEs(versionCMSSW, arch, onlyOSG=onlyOSG)
       else:
-          ## Hack for my version of listAllSEs, still doesn't really work
-          #seList = []
-          #for se in theList:
-            #if se.find(':') != -1 or se.find('/') != -1:
-              #continue
-            #if se.find('.') != -1:
-              #seList.append(se)
-
-        print "seList =",seList
         seDest = self.blackWhiteListParser.cleanForBlackWhiteList(seList,"list")
-        print "seDest =",seDest
-        scram = Scram.Scram(None)
-
-        versionCMSSW = scram.getSWVersion()
-        arch = scram.getArch()
-        print "Params ",versionCMSSW,arch
         availCEs = getJobManagerList(seDest,versionCMSSW,arch,onlyOSG=onlyOSG)
-      print "availCEs =",availCEs
+      #print "\n\navailCEs =",availCEs
       uniqCEs = []
       for ce in availCEs:
         if ce not in uniqCEs:
           uniqCEs.append(ce)
 
       ceDest = self.ceBlackWhiteListParser.cleanForBlackWhiteList(uniqCEs,"list")
-      print "\n\nceDest =",ceDest
+      #print "\n\nceDest =",ceDest
       uniqCEs = []
       return ceDest
 
@@ -241,7 +233,7 @@ class SchedulerCondorCommon(SchedulerGrid):
       ceDest = self.listMatch(seList, onlyOSG)
 
       if (not ceDest):
-        msg = 'No OSG sites found hosting the data or all sites blocked by CE/SE white/blacklisting'
+        msg = 'No sites found hosting the data or all sites blocked by CE/SE white/blacklisting'
         print msg
         raise CrabException(msg)
 

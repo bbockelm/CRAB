@@ -1,8 +1,8 @@
 from SchedulerCondorCommon import SchedulerCondorCommon
 import common
 
-__revision__ = "$Id: SchedulerGlidein.py,v 1.11 2008/05/02 19:33:17 ewv Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: SchedulerGlidein.py,v 1.12 2008/05/13 17:04:29 ewv Exp $"
+__version__ = "$Revision: 1.12 $"
 
 class SchedulerGlidein(SchedulerCondorCommon):
   def __init__(self):
@@ -23,13 +23,13 @@ class SchedulerGlidein(SchedulerCondorCommon):
     jobParams += "Requirements = stringListMember(GLIDEIN_Gatekeeper,DESIRED_Gatekeepers) &&  stringListMember(Arch,DESIRED_Archs); "
     if (self.EDG_clock_time):
       jobParams += '+MaxWallTimeMins = '+self.EDG_clock_time+'; '
-    else:  
+    else:
       jobParams += '+MaxWallTimeMins = 120; '
 
     common._db.updateTask_({'jobType':jobParams})
     return jobParams # Not sure I even need to return anything
 
-  def listMatch(self, seList):
+  def listMatch(self, seList, full):
     ceDest = SchedulerCondorCommon.listMatch(seList, onlyOSG=False)
     return ceDest
 
