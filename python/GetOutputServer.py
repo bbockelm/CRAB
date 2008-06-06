@@ -35,10 +35,14 @@ class GetOutputServer( GetOutput, StatusServer ):
         self.checkBeforeGet()
 
         # retrive files
-        self.retrieveFiles(self.list_id) 
+        filesAndJodId = { }
 
-        self.organizeOutput()    
+        filesAndJodId.update( self.retrieveFiles(self.list_id) )
+        common.logger.debug(5, "Files to be organized and notified " +str(filesAndJodId)  )
 
+        self.organizeOutput()   
+
+        self.notifyRetrievalToServer(filesAndJodId)
         return
 
     def retrieveFiles(self,filesToRetrieve):
@@ -51,7 +55,6 @@ class GetOutputServer( GetOutput, StatusServer ):
 
         # create the list with the actual filenames 
         remotedir = os.path.join(self.storage_path, self.taskuuid)
-
       
         # list of file to retrieve
         osbTemplate = remotedir + '/out_files_%s.tgz'  
@@ -81,25 +84,35 @@ class GetOutputServer( GetOutput, StatusServer ):
         ## copy ISB ##
         sbi = SBinterface( seEl, loc )
 
-        # retrieve them from SE #TODO replace this with SE-API
-        retrievedFilesJodId = []
+        # retrieve them from SE 
+        filesAndJodId = {}
         for i in xrange(len(filesToRetrieve)): 
             source = osbFiles[i] 
             dest = destFiles[i]
             common.logger.debug(1, "retrieving "+ str(source) +" to "+ str(dest) )
             try:
                 sbi.copy( source, dest)
+                filesAndJodId[ filesToRetrieve[i] ] = dest
             except Exception, ex:
                 msg = "WARNING: Unable to retrieve output file %s \n"%osbFiles[i] 
                 msg += str(ex)
                 common.logger.debug(1,msg)
                 continue
-            ## appending jobs id related to the index "i"
-            retrievedFilesJodId.append(filesToRetrieve[i])
+
+        return filesAndJodId
+
+    def notifyRetrievalToServer(self, fileAndJobList):
+        retrievedFilesJodId = [] 
+
+        for jid in fileAndJobList:
+            if not os.path.exists(fileAndJobList[jid]):
+                # it means the file has been untarred
+                retrievedFilesJodId.append(jid)
+
+        common.logger.debug(5, "List of retrieved files notified to server: %s"%str(retrievedFilesJodId) )
 
         # notify to the server that output have been retrieved successfully. proxy from StatusServer
         if len(retrievedFilesJodId) > 0:
-            common.logger.debug(5, "List of retrieved files notified to server: %s"%str(retrievedFilesJodId) ) 
             csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
             try:
                 csCommunicator.outputRetrieved(self.taskuuid, retrievedFilesJodId)
