@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.14 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.14 2008/05/16 10:09:26 mcinquil Exp $"
+__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.15 2008/06/04 14:08:57 mcinquil Exp $"
 
 import os
 import socket
@@ -153,6 +153,7 @@ class NotificationComponent:
         #self.ms.subscribeTo("NOTIFICATION_EXIT")
 	self.ms.subscribeTo("NotificationSetup")
         self.ms.subscribeTo("ProxyExpiring")
+        self.ms.subscribeTo("TaskLifeManager::CleanStorage")
 
         # Start the thread Consumer
         threadList = []
@@ -634,6 +635,7 @@ class NotificationComponent:
                 if secs > 0:
                     timeMsg += str(secs) + " seconds"
 
+
                 mailMess = "Your proxy will expires in " + timeMsg + ". You can renew it doing:\n\t crab -renewProxy "# + task[0]
 
                 msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
@@ -653,6 +655,64 @@ class NotificationComponent:
                     print "Unexpected error: ", sys.exc_info()[0]
 
                 self.ms.commit()
+
+##-------------------------------------------------------------------
+
+            if type == "TaskLifeManager::CleanStorage":
+                pieces = payload.split("::")
+                if len(pieces) < 2:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing TaskLifeManager::CleanStorage's payload ["
+                    msg += payload + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                emaillist = pieces[0].split(",")
+                cmdpath = str(pieces[1])
+
+                if not emaillist:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing TaskLifeManager::CleanStorage's payload"
+                    msg += " email's list [" + pieces[3] + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                if len(emaillist) < 1:
+                    msg = "Notification.NotificationComponent.MainLoop: error parsing TaskLifeManager::CleanStorage's payload"
+                    msg += " email's list [" + pieces[3] + "]"
+                    logging.error("%s" % msg)
+                    self.ms.commit()
+                    continue
+
+                if len(emaillist) == 1:
+                    if emaillist[0] == "":
+                        msg = "Notification.NotificationComponent.MainLoop: empty email address ["
+                        msg += emaillist[0] + "]"
+                        logging.error("%s" % msg)
+                        self.ms.commit()
+                        continue
+
+                mailMess = "Dear Admin, there are sandboxes not anymore needed on the storage area used by "+str(self.serverName)+".\n" + \
+                           "Execute this script to clean them:\n\t python "+cmdpath+" your_proxy_full_path"
+
+                msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
+                logging.info( msg )
+
+                import socket
+                completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Clean Storage Area!"\n\n' + mailMess
+                try:
+                    self.mailer.SendMail(emaillist, completeMessage)
+                except RuntimeError, mess:
+                    logging.error(mess)
+                except gaierror, mess:
+                    logging.error("gaierror: " + mess )
+                except timeout, mess:
+                    logging.error("timeout error: " + mess )
+                except:
+                    print "Unexpected error: ", sys.exc_info()[0]
+
+                self.ms.commit()
+
 
 
     def calcFromSeconds(self, totSec):
