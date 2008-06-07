@@ -166,8 +166,16 @@ class TaskLifeManagerComponent:
 
         self.proxypath = self.args["ProxiesDir"]
 
+        dictSE =  { 
+                    "SE":   self.args["storageName"], \
+                    "prot": self.args["Protocol"],    \
+                    "port": self.args["storagePort"], \
+                    "base": self.args['storagePath'], \
+                    "mail": self.args['eMailAdmin']   \
+                  }
+
         ## instance the proxy's object to clean proxies
-        self.procheck = ProxyLife(self.bossCfgDB, self.proxypath)
+        self.procheck = ProxyLife(self.bossCfgDB, self.proxypath, dictSE)
 
     ##########################################################################
     # handle events
