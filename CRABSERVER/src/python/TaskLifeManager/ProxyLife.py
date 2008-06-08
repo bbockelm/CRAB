@@ -208,7 +208,7 @@ class ProxyLife:
             if task != "" and task != None:
                 taskstring += "'" + os.path.join( self.dictSE['base'], task) + "',"
         taskstring += " '']"
-        logging.info(taskstring)
+        logging.debug(taskstring)
 
         pythonscript = "\n" + \
         "from ProdCommon.Storage.SEAPI.SElement import SElement\n" + \
@@ -337,6 +337,7 @@ class ProxyLife:
         else:
             logging.error( "Could not find proxies path [" + self.proxiespath +"]." )
 
+        logging.debug(str(self.__cleanproxies))
         logging.info( "Proxy's polling ended." )
         ###### ENDS ######
         ##################
