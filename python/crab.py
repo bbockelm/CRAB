@@ -600,10 +600,7 @@ class Crab:
         new_dir = ''
 
         if self.cfg_params.has_key('USER.ui_working_dir') :
-            new_dir = self.cfg_params['USER.ui_working_dir']
-            if  not new_dir[1] == '/':
-                new_dir = self.cwd + new_dir
-            pass
+            new_dir =os.path.abspath(self.cfg_params['USER.ui_working_dir'])
         else:
             new_dir = self.cwd + common.prog_name + '_' + self.name + '_' + self.current_time
             pass
