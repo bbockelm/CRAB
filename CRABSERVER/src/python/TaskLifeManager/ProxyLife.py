@@ -88,7 +88,7 @@ class ProxyLife:
         "for taskpath in tasks:\n" + \
         "    try:\n" + \
         "        if taskpath != '':\n " + \
-        "            SeSbi.delete( taskpath, proxy )\n" + \
+        "            SeSbI.delete( taskpath, proxy )\n" + \
         "    except OperationException, ex:\n" + \
         "        print 'Problem deleting task: [' + taskpath + ']'\n" + \
         "        for error in ex.detail:\n" + \
