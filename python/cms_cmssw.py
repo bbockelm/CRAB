@@ -10,10 +10,11 @@ from LFNBaseName import *
 import os, string, glob
 
 class Cmssw(JobType):
-    def __init__(self, cfg_params, ncjobs):
+    def __init__(self, cfg_params, ncjobs,skip_blocks, isNew):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
-
+        self.skip_blocks = skip_blocks
+ 
         self.argsList = []
 
         self._params = {}
@@ -217,12 +218,8 @@ class Cmssw(JobType):
 
         self.firstRun = cfg_params.get('CMSSW.first_run',None)
 
-        if self.pset != None: #CarlosDaniele
-            import PsetManipulator as pp
-            PsetEdit = pp.PsetManipulator(self.pset) #Daniele Pset
 
         # Copy/return
-
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
         self.return_data = int(cfg_params.get('USER.return_data',0))
 
@@ -238,7 +235,6 @@ class Cmssw(JobType):
             blockSites = self.DataDiscoveryAndLocation(cfg_params)
         #DBSDLS-end
 
-
         ## Select Splitting
         if self.selectNoInput:
             if self.pset == None:
@@ -248,18 +244,22 @@ class Cmssw(JobType):
         else:
             self.jobSplittingByBlocks(blockSites)
 
-        # modify Pset
-        if self.pset != None:
-            try:
-                # Add FrameworkJobReport to parameter-set, set max events.
-                # Reset later for data jobs by writeCFG which does all modifications
-                PsetEdit.addCrabFJR(self.fjrFileName) # FUTURE: Job report addition not needed by CMSSW>1.5
-                PsetEdit.maxEvent(self.eventsPerJob)
-                PsetEdit.psetWriter(self.configFilename())
-            except:
-                msg='Error while manipulating ParameterSet: exiting...'
-                raise CrabException(msg)
-        self.tgzNameWithPath = self.getTarBall(self.executable)
+        # modify Pset only the first time
+        if isNew:
+            if self.pset != None:
+                import PsetManipulator as pp
+                PsetEdit = pp.PsetManipulator(self.pset)
+                try:
+                    # Add FrameworkJobReport to parameter-set, set max events.
+                    # Reset later for data jobs by writeCFG which does all modifications
+                    PsetEdit.addCrabFJR(self.fjrFileName) # FUTURE: Job report addition not needed by CMSSW>1.5
+                    PsetEdit.maxEvent(self.eventsPerJob)
+                    PsetEdit.psetWriter(self.configFilename())
+                except:
+                    msg='Error while manipulating ParameterSet: exiting...'
+                    raise CrabException(msg)
+            ## Prepare inputSandbox TarBall (only the first time)  
+            self.tgzNameWithPath = self.getTarBall(self.executable)
 
     def DataDiscoveryAndLocation(self, cfg_params):
 
@@ -272,7 +272,7 @@ class Cmssw(JobType):
         ## Contact the DBS
         common.logger.message("Contacting Data Discovery Services ...")
         try:
-            self.pubdata=DataDiscovery.DataDiscovery(datasetPath, cfg_params)
+            self.pubdata=DataDiscovery.DataDiscovery(datasetPath, cfg_params,self.skip_blocks)
             self.pubdata.fetchDBSInfo()
 
         except DataDiscovery.NotExistingDatasetError, ex :
@@ -636,7 +636,7 @@ class Cmssw(JobType):
             self.list_of_args.append([str(i)])
         return
 
-    def split(self, jobParams):
+    def split(self, jobParams,firstJobID):
 
         njobs = self.total_number_of_jobs
         arglist = self.list_of_args
@@ -646,19 +646,20 @@ class Cmssw(JobType):
 
         listID=[]
         listField=[]
-        for job in range(njobs):
-            jobParams[job] = arglist[job]
+        for id in range(njobs):
+            job = id + int(firstJobID)
+            jobParams[id] = arglist[id]
             listID.append(job+1)
             job_ToSave ={}
             concString = ' '
             argu=''
-            if len(jobParams[job]):
-                argu +=   concString.join(jobParams[job] )
+            if len(jobParams[id]):
+                argu +=   concString.join(jobParams[id] )
             job_ToSave['arguments']= str(job+1)+' '+argu
-            job_ToSave['dlsDestination']= self.jobDestination[job]
+            job_ToSave['dlsDestination']= self.jobDestination[id]
             listField.append(job_ToSave)
             msg="Job "+str(job)+" Arguments:   "+str(job+1)+" "+argu+"\n"  \
-            +"                     Destination: "+str(self.jobDestination[job])
+            +"                     Destination: "+str(self.jobDestination[id])
             common.logger.debug(5,msg)
         common._db.updateJob_(listID,listField)
         self.argsList = (len(jobParams[0])+1)
@@ -981,11 +982,6 @@ class Cmssw(JobType):
 
         return txt
 
-    def modifySteeringCards(self, nj):
-        """
-        modify the card provided by the user,
-        writing a new card into share dir
-        """
 
     def executableName(self):
         if self.scriptExe:
@@ -1033,11 +1029,6 @@ class Cmssw(JobType):
             out_box.append(numberFile(out,str(n_out)))
         return out_box
 
-    def prepareSteeringCards(self):
-        """
-        Make initial modifications of the user's steering card file.
-        """
-        return
 
     def wsRenameOutput(self, nj):
         """

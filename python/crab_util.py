@@ -435,6 +435,31 @@ def numberFile(file, txt):
         result = name + '_' + txt
 
     return result
+
+def readTXTfile(self,inFileName):
+    """
+    read file and return a list with the content
+    """
+    out_list=[]
+    if os.path.exists(inFileName):
+        f = open(inFileName, 'r')
+        for line in  f.readlines():
+            out_list.append(string.strip(line)) 
+        f.close()
+    else:
+        msg = ' file '+str(inFileName)+' not found.'
+        raise CrabException(msg)  
+    return out_list
+
+def writeTXTfile(self, outFileName, args):
+    """
+    write a file with the given content ( args )
+    """
+    outFile = open(outFileName,"a")
+    outFile.write(str(args))
+    outFile.close()
+    return
+
 ####################################
 if __name__ == '__main__':
     print 'sys.argv[1] =',sys.argv[1]

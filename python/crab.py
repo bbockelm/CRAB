@@ -397,6 +397,10 @@ class Crab:
 
 
             if (  opt == '-create' ):
+                if self.flag_continue:
+                    msg =  'Cannot create an existing project. If you want to extend it (to analyze new fileBloks) use: \n'
+                    msg += ' crab -extend '
+                    raise CrabException(msg)  
                 if val and val != 'all':
                     msg  = 'Per default, CRAB will create all jobs as specified in the crab.cfg file, not the command line!'
                     common.logger.message(msg)
@@ -411,10 +415,8 @@ class Crab:
                                        ncjobs)
                 self.actions[opt] = self.creator
 
-                # Initialize the JobDB object if needed
-                if not self.flag_continue:
-                    common._db.createJobs_(self.creator.nJobsL())
-                    pass
+                # create jobs in the DB
+                common._db.createJobs_(self.creator.nJobsL())
 
                 # Create and initialize JobList
                 common.job_list = JobList(common._db.nJobs(),
@@ -426,10 +428,40 @@ class Crab:
 
                 common.job_list.setScriptNames(self.job_type_name+'.sh')
                 common.job_list.setCfgNames(self.creator.jobType().configFilename())
-
                 self.creator.writeJobsSpecsToDB()
                 common._db.updateTask_(taskinfo)
                 pass
+       
+            if (  opt == '-extend' ):
+
+                if val and val != 'all':
+                    self.parseRange_(val)
+                    msg  = 'Per default, CRAB will extend the task with all jobs as specified in the crab.cfg file, not the command line!'
+                    msg  += 'Submission will still take into account the command line\n'
+                    common.logger.message(msg)
+
+                skip_blocks = True
+                ncjobs = 'all'
+                isNew=False
+                firstJob=common._db.nJobs()  
+
+                from Creator import Creator
+                # Instantiate Creator object
+                self.creator = Creator(self.job_type_name,
+                                       self.cfg_params,
+                                       ncjobs, skip_blocks, isNew, firstJob)
+                self.actions[opt] = self.creator
+
+                # create jobs in the DB
+                common._db.createJobs_(self.creator.nJobsL(),isNew)
+
+                # Create and initialize JobList
+                common.job_list = JobList(common._db.nJobs(),
+                                          self.creator.jobType())
+
+                self.creator.writeJobsSpecsToDB(firstJob)
+                pass
+             
 
             elif ( opt == '-submit' ):
                 ## Dealt with val == int so that -submit N means submit N jobs and not job # N

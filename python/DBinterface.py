@@ -107,7 +107,7 @@ class DBinterface:
 
         return 
 
-    def createJobs_(self, jobsL):
+    def createJobs_(self, jobsL, isNew=True):
         """  
         Fill crab DB with  the jobs filed 
         """
@@ -116,13 +116,19 @@ class DBinterface:
         jobs = [] 
         for id in jobsL:
             parameters = {}
-            parameters['jobId'] =  str(id)
+            parameters['jobId'] = int(id)
+            parameters['taskId'] = 1
             parameters['name'] = task['name'] + '_' + 'job' + str(id)
             job = Job(parameters)
             jobs.append(job) 
             common.bossSession.getRunningInstance(job)
             job.runningJob['status'] = 'C'
-        task.addJobs(jobs)
+        ## added to support second step creation
+        ## maybe it is not needed. TO CLARIFY
+        if isNew:
+            task.addJobs(jobs)
+        else:
+            task.appendJobs(jobs)
         try:
             common.bossSession.updateDB( task )
         except Exception, e :
