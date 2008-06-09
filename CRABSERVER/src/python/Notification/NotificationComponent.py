@@ -591,7 +591,7 @@ class NotificationComponent:
 
             if type == "ProxyExpiring":
                 pieces = payload.split("::")
-                if len(pieces) < 2:
+                if len(pieces) < 3:
                     msg = "Notification.NotificationComponent.MainLoop: error parsing ProxyExpiring's payload ["
                     msg += payload + "]"
                     logging.error("%s" % msg)
@@ -601,6 +601,8 @@ class NotificationComponent:
                 emaillist = pieces[0].split(",")
                 #tasknames = eval(pieces[1])
                 proxylife = pieces[1]
+                taskslist = eval(file(str(pieces[2]), 'r').read())
+                os.remove(str(pieces[2]))
 
                 ##print "emaillist=[%s]\n" % emaillist
 
@@ -635,9 +637,14 @@ class NotificationComponent:
                 if secs > 0:
                     timeMsg += str(secs) + " seconds"
 
+                stringtask = "\n\t"
+                for taskname in taskslist:
+                    stringtask += str(taskname) + "\n\t"
 
-                mailMess = "Your proxy will expires in " + timeMsg + ". You can renew it doing:\n\t crab -renewProxy "# + task[0]
-
+                mailMess = "Your proxy will expires in " + timeMsg + ". You can renew it doing:\n"
+                mailMess += "\t crab -renewProxy\n\n"
+                mailMess += "Your active tasks on the server:\n" + stringtask
+               
                 msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                 logging.info( msg )
 

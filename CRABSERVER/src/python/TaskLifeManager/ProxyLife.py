@@ -54,6 +54,64 @@ class ProxyLife:
     def cleanProxy(self, proxy):
         self.executeCommand( "rm -f " + str(proxy) )
 
+    def buildScript(self, tasklist):
+        import time
+        scriptname = "deleteSB_"+str(time.time())+"_.py"
+        scriptpath = os.path.join(os.getcwd(), scriptname)
+        taskstring = "["
+        for task in tasklist:
+            if task != "" and task != None:
+                taskstring += "'" + os.path.join( self.dictSE['base'], task) + "',"
+        taskstring += " '']"
+        logging.debug(taskstring)
+
+        pythonscript = "\n" + \
+        "from ProdCommon.Storage.SEAPI.SElement import SElement\n" + \
+        "from ProdCommon.Storage.SEAPI.SBinterface import *\n" + \
+        "from ProdCommon.Storage.SEAPI.Exceptions import OperationException\n" + \
+        "import os\n" + \
+        "import sys\n\n" + \
+        "print 'Initializing...'\n" + \
+        "proxy = ''\n" + \
+        "if len(sys.argv) == 2:\n" + \
+        "    proxy = sys.argv[1]\n" + \
+        "    if not os.path.exists(proxy):\n" + \
+        "        raise ('Proxy not existing!')\n" + \
+        "elif len(sys.argv) < 2:\n" + \
+        "    raise ('No arguments passed. Pass the complete path of a valid proxy.')\n" + \
+        "else:\n" + \
+        "    raise ('Too many arguments passed. Pass just the complete path of a valid proxy.')\n" + \
+        "storage = SElement('"+self.dictSE['SE']+"', '"+self.dictSE['prot']+"', '"+self.dictSE['port']+"')\n" + \
+        "SeSbI = SBinterface(storage)\n" + \
+        "tasks = "+taskstring+"\n\n" + \
+        "print 'Start cleaning...\\n\'\n" + \
+        "for taskpath in tasks:\n" + \
+        "    try:\n" + \
+        "        if taskpath != '':\n " + \
+        "            SeSbi.delete( taskpath, proxy )\n" + \
+        "    except OperationException, ex:\n" + \
+        "        print 'Problem deleting task: [' + taskpath + ']'\n" + \
+        "        for error in ex.detail:\n" + \
+        "            print error\n" + \
+        "        print ex.output\n" + \
+        "print '\\n...done!'\n"
+        logging.debug("\n\n " + pythonscript + " \n\n")
+        file(scriptpath, 'w').write(pythonscript)
+
+        return scriptpath
+
+
+    def dumpToFile(self, tasklist):
+        towrite = []
+        for task in tasklist:
+           obj = UtilSubject(self.dictSE["drop"], task, "")
+           towrite.append( obj.getInfos()[0] )
+        import time
+        filename = "tasklist_"+str(time.time())
+        filepath = os.path.join(os.getcwd(), filename)
+        file(filepath, 'w').write(str(towrite))
+        return filepath
+
     ###############################################
     ######          SELF UTILITIES           ###### 
 
@@ -190,60 +248,16 @@ class ProxyLife:
             logging.error( "   cause: " + str(ex) )
 
     def notifyExpiring(self, email, tasks, lifetime):
+        taskspath = self.dumpToFile(tasks)
+
         mexage = "ProxyExpiring"
 
-        payload = str(email) + "::" + str(lifetime)
+        payload = str(email) + "::" + str(lifetime) + "::" + str(taskspath)
 
         logging.info(" Publishing ['"+ mexage +"']")
         logging.info("   payload = " + payload )
         self.ms.publish( mexage, payload)
         self.ms.commit()
-
-    def buildScript(self, tasklist):
-        import time
-        scriptname = "deleteSB_"+str(time.time())+"_.py"
-        scriptpath = os.path.join(os.getcwd(), scriptname)
-        taskstring = "["
-        for task in tasklist:
-            if task != "" and task != None:
-                taskstring += "'" + os.path.join( self.dictSE['base'], task) + "',"
-        taskstring += " '']"
-        logging.debug(taskstring)
-
-        pythonscript = "\n" + \
-        "from ProdCommon.Storage.SEAPI.SElement import SElement\n" + \
-        "from ProdCommon.Storage.SEAPI.SBinterface import *\n" + \
-        "from ProdCommon.Storage.SEAPI.Exceptions import OperationException\n" + \
-        "import os\n" + \
-        "import sys\n\n" + \
-        "print 'Initializing...'\n" + \
-        "proxy = ''\n" + \
-        "if len(sys.argv) == 2:\n" + \
-        "    proxy = sys.argv[1]\n" + \
-        "    if not os.path.exists(proxy):\n" + \
-        "        raise ('Proxy not existing!')\n" + \
-        "elif len(sys.argv) < 2:\n" + \
-        "    raise ('No arguments passed. Pass the complete path of a valid proxy.')\n" + \
-        "else:\n" + \
-        "    raise ('Too many arguments passed. Pass just the complete path of a valid proxy.')\n" + \
-        "storage = SElement('"+self.dictSE['SE']+"', '"+self.dictSE['prot']+"', '"+self.dictSE['port']+"')\n" + \
-        "SeSbI = SBinterface(storage)\n" + \
-        "tasks = "+taskstring+"\n\n" + \
-        "print 'Start cleaning...\\n\'\n" + \
-        "for taskpath in tasks:\n" + \
-        "    try:\n" + \
-        "        if taskpath != '':\n " + \
-        "            SeSbi.delete( taskpath, proxy )\n" + \
-        "    except OperationException, ex:\n" + \
-        "        print 'Problem deleting task: [' + taskpath + ']'\n" + \
-        "        for error in ex.detail:\n" + \
-        "            print error\n" + \
-        "        print ex.output\n" + \
-        "print '\\n...done!'\n"
-        logging.debug("\n\n " + pythonscript + " \n\n")
-        file(scriptpath, 'w').write(pythonscript)
-
-        return scriptpath
 
     def notifyToClean(self, tasklist):
         if len(tasklist) > 0:

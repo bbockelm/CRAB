@@ -171,7 +171,8 @@ class TaskLifeManagerComponent:
                     "prot": self.args["Protocol"],    \
                     "port": self.args["storagePort"], \
                     "base": self.args['storagePath'], \
-                    "mail": self.args['eMailAdmin']   \
+                    "mail": self.args['eMailAdmin'],  \
+                    "drop": self.args['dropBoxPath']
                   }
 
         ## instance the proxy's object to clean proxies
