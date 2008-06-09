@@ -90,7 +90,7 @@ class SchedulerLocal(Scheduler) :
         txt  = 'export TIME_WRAP_INI=`date +%s` \n'
         txt += 'export TIME_STAGEOUT=NULL \n\n'
 
-        txt = '# '+self.name()+' specific stuff\n'
+        txt += '# '+self.name()+' specific stuff\n'
         txt += '# strip arguments\n'
         txt += 'echo "strip arguments"\n'
         txt += 'args=("$@")\n'

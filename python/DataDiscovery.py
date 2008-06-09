@@ -119,12 +119,12 @@ class DataDiscovery:
         try:
             if len(runselection) <= 0 :
                 if useParent:
-                    files = api.listFiles(path=self.datasetPath,retriveList= [
-                                                                              'retrive_parent', 
-                                                                              'retrive_block',
-                                                                              'retrive_lumi',
-                                                                              'retrive_run'
-                                                                              ])
+                    allowedRetriveValue = ['retrive_parent', 
+                                           'retrive_block',
+                                           'retrive_lumi',
+                                           'retrive_run'
+                                           ]
+                    files = api.listFiles(path=self.datasetPath, retriveList=allowedRetriveValue)
                     common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
                     common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
                 else:

@@ -63,38 +63,36 @@ class Boss:
                 raise CrabException('Scheduler Session: '+str(e))
         return self.session
 
-    def declare(self, nj):
+    def declare(self, listID):
         """
         BOSS declaration of jobs
         """
-        index = nj - 1
+        index = len(listID) - 1
         job = common.job_list[index]
         jbt = job.type()
         base = jbt.name()
 
         wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
         listField=[]
-        listID=[]
         task=common._db.getTask()
-        for id in range(nj):
+        for id in listID:
             parameters={}
             jobs=[]
             out=[]
-            stdout = base +'_'+ str(id+1)+'.stdout'
-            stderr = base +'_'+ str(id+1)+'.stderr'
+            stdout = base +'_'+ str(id)+'.stdout'
+            stderr = base +'_'+ str(id)+'.stderr'
             jobs.append(id)
-            out=task.jobs[id]['outputFiles']
+            out=task.jobs[id-1]['outputFiles']
          #   out.append(stdout)
          #   out.append(stderr)
          #   out.append('.BrokerInfo')
             ## To be better understood if it is needed
-            out.append('crab_fjr_'+str(id+1)+'.xml')
+            out.append('crab_fjr_'+str(id)+'.xml')
             parameters['outputFiles']=out
             parameters['executable']=wrapper
             parameters['standardOutput'] = stdout
             parameters['standardError'] = stderr
             listField.append(parameters)
-            listID.append(id+1)
         common._db.updateJob_( listID, listField)
 
         return
