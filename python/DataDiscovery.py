@@ -4,6 +4,7 @@ import DBSAPI.dbsApi
 from DBSAPI.dbsApiException import * 
 import common
 from crab_util import *
+import os 
 
 
 # #######################################
@@ -70,11 +71,12 @@ class NoDataTierinProvenanceError(exceptions.Exception):
 # ####################################
 # class to find and extact info from published data
 class DataDiscovery:
-    def __init__(self, datasetPath, cfg_params):
+    def __init__(self, datasetPath, cfg_params, skipAnBlocks):
 
         #       Attributes
         self.datasetPath = datasetPath
         self.cfg_params = cfg_params
+        self.skipBlocks = skipAnBlocks
 
         self.eventsPerBlock = {}  # DBS output: map fileblocks-events for collection
         self.eventsPerFile = {}   # DBS output: map files-events
@@ -107,24 +109,26 @@ class DataDiscovery:
         args['level']   = 'CRITICAL'
 
         ## check if has been requested to use the parent info
-        if (self.cfg_params.has_key('CMSSW.runselection')):
-            runselection = parseRange2(self.cfg_params['CMSSW.runselection'])
-
         useParent = self.cfg_params.get('CMSSW.use_parent',False)
-    
-        allowedRetriveValue = [
-                        'retrive_child', 
-                        'retrive_block',
-                        'retrive_lumi',
-                        'retrive_run'
-                        ]
-        if useParent:  allowedRetriveValue.append('retrive_parent') 
-        common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
-        common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
+
+        ## check if has been asked for a non default file to store/read analyzed fileBlocks   
+        defaultName = common.work_space.shareDir()+'AnalyzedBlocks.txt'  
+        fileBlocks_FileName = os.path.abspath(self.cfg_params.get('CMSSW.fileblocks_file',defaultName))
+ 
         api = DBSAPI.dbsApi.DbsApi(args)
         try:
             if len(runselection) <= 0 :
-                files = api.listFiles(path=self.datasetPath,retriveList=allowedRetriveValue)
+                if useParent:
+                    files = api.listFiles(path=self.datasetPath,retriveList= [
+                                                                              'retrive_parent', 
+                                                                              'retrive_block',
+                                                                              'retrive_lumi',
+                                                                              'retrive_run'
+                                                                              ])
+                    common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
+                    common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
+                else:
+                    files = api.listDatasetFiles(self.datasetPath)
             else :
                 files=[]
                 for arun in runselection:
@@ -141,36 +145,47 @@ class DataDiscovery:
         except DBSError, msg:
             raise DataDiscoveryError(msg)
 
+        anFileBlocks = []
+        if self.skipBlocks: anFileBlocks = readTXTfile(self, fileBlocks_FileName) 
+
         # parse files and fill arrays
         for file in files :
             parList = []
-            filename = file['LogicalFileName']
-            # asked retry the list of parent for the given child 
-            if useParent: parList = [x['LogicalFileName'] for x in file['ParentList']] 
-            self.parent[filename] = parList 
-            if filename.find('.dat') < 0 :
-                fileblock = file['Block']['Name']
-                events    = file['NumberOfEvents']
-                # number of events per block
-                if fileblock in self.eventsPerBlock.keys() :
-                    self.eventsPerBlock[fileblock] += events
-                else :
-                    self.eventsPerBlock[fileblock] = events
-                # number of events per file
-                self.eventsPerFile[filename] = events
+            # skip already analyzed blocks
+            fileblock = file['Block']['Name']
+            if fileblock not in anFileBlocks :
+                filename = file['LogicalFileName']
+                # asked retry the list of parent for the given child 
+                if useParent: parList = [x['LogicalFileName'] for x in file['ParentList']] 
+                self.parent[filename] = parList 
+                if filename.find('.dat') < 0 :
+                    events    = file['NumberOfEvents']
+                    # number of events per block
+                    if fileblock in self.eventsPerBlock.keys() :
+                        self.eventsPerBlock[fileblock] += events
+                    else :
+                        self.eventsPerBlock[fileblock] = events
+                    # number of events per file
+                    self.eventsPerFile[filename] = events
+            
+                    # number of events per block
+                    if fileblock in self.blocksinfo.keys() :
+                        self.blocksinfo[fileblock].append(filename)
+                    else :
+                        self.blocksinfo[fileblock] = [filename]
+            
+                    # total number of events
+                    self.maxEvents += events
+        if  self.skipBlocks and len(self.eventsPerBlock.keys()) == 0:
+            msg = "No new fileblocks available for dataset: "+str(self.datasetPath)
+            raise  CrabException(msg)    
 
-                # number of events per block
-                if fileblock in self.blocksinfo.keys() :
-                    self.blocksinfo[fileblock].append(filename)
-                else :
-                    self.blocksinfo[fileblock] = [filename]
-
-                # total number of events
-                self.maxEvents += events
-
+        saveFblocks='' 
         for block in self.eventsPerBlock.keys() :
+            saveFblocks += str(block)+'\n' 
             common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(self.eventsPerBlock[block],block))
-
+        writeTXTfile(self, fileBlocks_FileName , saveFblocks) 
+                      
         if len(self.eventsPerBlock) <= 0:
             raise NotExistingDatasetError(("\nNo data for %s in DBS\nPlease check"
                                             + " dataset path variables in crab.cfg")
