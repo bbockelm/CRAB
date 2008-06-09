@@ -360,6 +360,7 @@ def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=T
 def listAllCEs(software, arch, bdii='exp-bdii.cern.ch',onlyOSG=True):
     ''' List all GlueCEUniqueIDs that advertise support for CMS '''
 
+#    RE_cename = re.compile('^GlueCEUniqueID: (.*:.*/jobmanager-.*?)-(.*)', re.IGNORECASE)
     RE_cename = re.compile('^GlueCEUniqueID: (.*)', re.IGNORECASE)
     hostSplit  = re.compile(r'[^\w\.\-]')
     filt = "'(&(GlueCEUniqueID=*)(GlueCEAccessControlBaseRule=VO:cms))'"
@@ -381,14 +382,20 @@ def listAllCEs(software, arch, bdii='exp-bdii.cern.ch',onlyOSG=True):
         hostname = hostSplit.split(ce)[0]
         if hostname in osgList:
           osgCEs.append(ce)
-      #return osgCEs
     else:
       osgCEs = ceList
-      #return softarch_list
 
     softarch_list = getSoftwareAndArch2(osgCEs, software, arch)
 
-    return softarch_list
+    shortCeList   = [] # Convert to CE without queue
+    RE_short = re.compile('^(.*:.*/jobmanager-.*?)-(.*)', re.IGNORECASE)
+    for ce in softarch_list:
+        m = RE_short.match(ce)
+        if m:
+            item = m.groups()[0]
+            if (shortCeList.count(item) == 0):       shortCeList.append(item)
+
+    return shortCeList
 
 def listAllSEs(bdii='exp-bdii.cern.ch'):
     ''' List all SEs that are bound to (CEs that advertise support for CMS) '''
@@ -415,7 +422,7 @@ def listAllSEs(bdii='exp-bdii.cern.ch'):
 if __name__ == '__main__':
     import pprint
 #    pprint.pprint(listAllSEs('uscmsbd2.fnal.gov'))
-    pprint.pprint(listAllCEs(onlyOSG=True))
+    pprint.pprint(listAllCEs( "CMSSW_1_6_11", "slc4_ia32_gcc345", onlyOSG=False))
 #    pprint.pprint(listAllCEs(onlyOSG=False))
 
     seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
