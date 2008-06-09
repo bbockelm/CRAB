@@ -119,7 +119,11 @@ class Boss:
         try:
             task_sub =  self.schedSession().submit( taskId, jobsList,req )
             wms = task_sub.jobs[0].runningJob['service']
-            common.logger.write("WMS : " +str(wms))
+            collId = task_sub.jobs[0].runningJob['schedulerParentId']   
+            msg = 'WMS : ' +str(wms)+'\n'
+            msg+= 'Collection ID : ' +str(collId)
+            common.logger.write(msg)
+            common.logger.debug(5,msg)
         except SchedulerError, err :
             common.logger.message("Submit: " +str(err))
             common.logger.debug(3, "Submit: " +str(traceback.format_exc()))
