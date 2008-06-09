@@ -21,23 +21,24 @@ The most useful general options (use '-h' to get complete help):
   -create             -- Create all the jobs.
   -submit n           -- Submit the first n available jobs. Default is all.
   -status [range]     -- check status of all jobs.
-  -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs
-  -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance
-  -kill [range]       -- kill submitted jobs
-  -resubmit [range]   -- resubmit killed/aborted/retrieved jobs
-  -copyLocal [range]  -- copy locally the output sored on remote SE
-  -renewProxy         -- renew the proxy on the server
-  -clean              -- gracefully cleanup the directory of a task
-  -testJdl [range]    -- check if resources exist which are compatible with jdl
-  -list [range]       -- show technical job details
-  -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs
-  -printId [range]    -- print the job SID or Task Unique ID while using the server
-  -createJdl [range]  -- provide files with a complete Job Description (JDL) 
+  -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs.
+  -extend             -- Extend an existing task to run on new fileblocks if there.  
+  -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance.
+  -kill [range]       -- kill submitted jobs.
+  -resubmit [range]   -- resubmit killed/aborted/retrieved jobs.
+  -copyLocal [range]  -- copy locally the output sored on remote SE.
+  -renewProxy         -- renew the proxy on the server.
+  -clean              -- gracefully cleanup the directory of a task.
+  -testJdl [range]    -- check if resources exist which are compatible with jdl.
+  -list [range]       -- show technical job details.
+  -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs.
+  -printId [range]    -- print the job SID or Task Unique ID while using the server.
+  -createJdl [range]  -- provide files with a complete Job Description (JDL). 
   -continue|-c [dir]  -- Apply command to task stored in [dir].
-  -h [format]         -- Detailed help. Formats: man (default), tex, html, txt
-  -cfg fname          -- Configuration file name. Default is 'crab.cfg'
-  -debug N            -- set the verbosity level to N
-  -v                  -- Print version and exit
+  -h [format]         -- Detailed help. Formats: man (default), tex, html, txt.
+  -cfg fname          -- Configuration file name. Default is 'crab.cfg'.
+  -debug N            -- set the verbosity level to N.
+  -v                  -- Print version and exit.
 
   "range" has syntax "n,m,l-p" which correspond to [n,m,l,l+1,...,p-1,p] and all possible combination
 
@@ -238,6 +239,10 @@ Publish user output in a local DBS instance after retrieving of output. By defau
 
 Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax.
 The resubmit option can be used only with CRAB without server. For the server this option will be implemented as soon as possible
+
+=item B<-extend>
+
+Create new jobs for an existing task, checking if new blocks are available for the given dataset.  
 
 =item B<-kill [range]>
 
