@@ -3,7 +3,7 @@ from crab_exceptions import *
 from crab_util import *
 import common
 
-import urllib
+import urllib2
 import os, time
 
 class GliteConfig:
@@ -19,11 +19,11 @@ class GliteConfig:
 
     def downloadFile(self, url, destination):
         try:
-            f = urllib.urlopen(url)
+            f = urllib2.urlopen(url)
             ff = open(destination, 'w')
             ff.write(f.read())
             ff.close()
-        except IOError:
+        except urllib2.HTTPError:
             # print 'Cannot access URL: '+url
             raise CrabException('Cannot download config file '+destination+' from '+self.url)
 
@@ -41,7 +41,7 @@ class GliteConfig:
                 common.logger.message('Downloading config files for WMS: '+url)
                 try:
                    self.downloadFile( url, self.configFileName)
-                except:
+                except CrabException:
                    common.logger.message('Error downloading config files for WMS: %s . Keep using the local one.'%url) 
                    pass
             pass
