@@ -57,7 +57,7 @@ class SchedulerGrid(Scheduler):
         if int(self.copy_data) == 1:
             self.SE = cfg_params.get('USER.storage_element',None)
             self.SE_PATH = cfg_params.get('USER.storage_path',None)
-            self.srm_ver  = cfg_params.get('USER.srm_version',0) 
+            self.srm_ver  = cfg_params.get('USER.srm_version',0)
             if not self.SE or not self.SE_PATH:
                 msg = "Error. The [USER] section does not have 'storage_element'"
                 msg = msg + " and/or 'storage_path' entries, necessary to copy the output\n"
@@ -141,7 +141,7 @@ class SchedulerGrid(Scheduler):
         return
 
     def listMatch(self, dest, full):
-        matching='fast' 
+        matching='fast'
         ces=Scheduler.listMatch(self, dest, full)
         sites=[]
         for ce in ces:
@@ -149,8 +149,8 @@ class SchedulerGrid(Scheduler):
             if site not in sites:
                 sites.append(site)
             pass
-        if full == True: matching='full' 
-        common.logger.write("list of available site ( "+str(matching) +" matching ) : "+str(sites)) 
+        if full == True: matching='full'
+        common.logger.write("list of available site ( "+str(matching) +" matching ) : "+str(sites))
         return sites
 
 
@@ -164,7 +164,7 @@ class SchedulerGrid(Scheduler):
         if not self.environment_unique_identifier:
             raise CrabException('environment_unique_identifier not set')
 
-        # start with wrapper timing 
+        # start with wrapper timing
         txt  = 'export TIME_WRAP_INI=`date +%s` \n'
         txt += 'export TIME_STAGEOUT=NULL \n\n'
         # as usual ... #Fabio
@@ -255,8 +255,8 @@ class SchedulerGrid(Scheduler):
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
 
-            txt += 'export SRM_VER='+str(self.srm_ver)+'\n' 
-            txt += 'echo "SRM_VER = $SRM_VER"\n' 
+            txt += 'export SRM_VER='+str(self.srm_ver)+'\n'
+            txt += 'echo "SRM_VER = $SRM_VER"\n'
 
             txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
@@ -294,7 +294,7 @@ class SchedulerGrid(Scheduler):
     def wsExitFunc_common(self):
         """
         """
-        txt = '' 
+        txt = ''
         txt += '    if [ $PYTHONPATH ]; then \n'
         txt += '       if [ ! -s $RUNTIME_AREA/fillCrabFjr.py ]; then \n'
         txt += '           echo "WARNING: it is not possible to create crab_fjr.xml to final report" \n'
@@ -302,7 +302,7 @@ class SchedulerGrid(Scheduler):
         txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --errorcode $job_exit_code $executable_exit_status \n'
         txt += '       fi\n'
         txt += '    fi\n'
-        txt += '    cd $RUNTIME_AREA  \n'   
+        txt += '    cd $RUNTIME_AREA  \n'
         txt += '    for file in $filesToCheck ; do\n'
         txt += '        if [ -e $file ]; then\n'
         txt += '            echo "tarring file $file in  $out_files"\n'
@@ -315,6 +315,7 @@ class SchedulerGrid(Scheduler):
         txt += '        if [ $WORKING_DIR ]; then\n'
         txt += '            remove_working_dir\n'
         txt += '        fi\n'
+        txt += '        symlinks -d .\n'
         txt += '    else\n'
         txt += '        final_list=$filesToCheck" .BrokerInfo"\n'
         txt += '    fi\n'
@@ -326,7 +327,7 @@ class SchedulerGrid(Scheduler):
         txt += '       else \n'
         # call timing FJR filling
         txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --timing $TIME_WRAP $TIME_EXE $TIME_STAGEOUT \n'
-        txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n' 
+        txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n'
         txt += '           if [ $TIME_STAGEOUT -lt 0 ]; then \n'
         txt += '               export TIME_STAGEOUT=NULL \n'
         txt += '           fi\n'
@@ -350,13 +351,13 @@ class SchedulerGrid(Scheduler):
             minTimeLeft=10*3600 # in seconds
         else:
             minTimeLeft=100*3600 # in seconds
-             
+
         mustRenew = 0
         timeLeftLocal = runCommand('voms-proxy-info -timeleft 2>/dev/null')
         ## if no valid proxy
         if timeLeftLocal == None:
             mustRenew = 1
-        ## if valid check how long 
+        ## if valid check how long
         elif int(timeLeftLocal)<minTimeLeft :
             mustRenew = 1
 
