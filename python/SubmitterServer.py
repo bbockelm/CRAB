@@ -30,6 +30,9 @@ class SubmitterServer( Submitter ):
         # path fix
         if self.storage_path[0]!='/':
             self.storage_path = '/'+self.storage_path
+
+        self.taskuuid = str(common._db.queryTask('name'))
+
 	return
 
     def run(self):
@@ -44,7 +47,6 @@ class SubmitterServer( Submitter ):
 
         if check == 0 :
 
-            self.taskuuid = str(common._db.queryTask('name'))
             self.remotedir = os.path.join(self.storage_path, self.taskuuid)
             self.moveProxy(self.dontMoveProxy)
             

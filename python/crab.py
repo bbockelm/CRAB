@@ -20,7 +20,7 @@ class Crab:
                              '-resubmit' , '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-createJdl','-printJdl', '-publish',
-                             '-copyLocal' ]
+                             '-copyLocal', '-renewProxy' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -593,6 +593,13 @@ class Crab:
                 from CopyLocal import CopyLocal
                 self.actions[opt] = CopyLocal(self.cfg_params, jobs)
 
+            elif ( opt == '-renewProxy' ):
+                if (self.UseServer== 1):
+                    from ProxyRenewServer import ProxyRenewServer
+                    self.actions[opt] = ProxyRenewServer(self.cfg_params)
+                else:
+                    msg = "The option [-renewProxy] can be used only with the server modality!"
+                    raise CrabException(msg)
             pass
         return
 
