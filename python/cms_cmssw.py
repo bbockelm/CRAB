@@ -733,19 +733,18 @@ class Cmssw(JobType):
 
             ## Now check if any data dir(s) is present
             self.dataExist = False
-            srcArea=swArea+"/src/" 
-            todo_list = [(i, i) for i in  os.listdir(srcArea)]
+            todo_list = [(i, i) for i in  os.listdir(swArea+"/src")]
             while len(todo_list):
                 entry, name = todo_list.pop()
                 if name.startswith('crab_0_') or  name.startswith('.') or name == 'CVS':
                     continue
-                if os.path.isdir(srcArea+entry):
+                if os.path.isdir(swArea+"/src/"+entry):
                     entryPath = entry + '/'
-                    todo_list += [(entryPath + i, i) for i in  os.listdir(srcArea+entry)]
+                    todo_list += [(entryPath + i, i) for i in  os.listdir(swArea+"/src/"+entry)]
                     if name == 'data':
                         self.dataExist=True
                         common.logger.debug(5,"data "+entry+" to be tarred")
-                        tar.add(entry)
+                        tar.add(swArea+"/src/"+entry,"src/"+entry)
                     pass
                 pass
 
@@ -784,7 +783,7 @@ class Cmssw(JobType):
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
-        except TarError:
+        except tarfile.TarError:
             raise CrabException('Could not create tar-ball '+self.tgzNameWithPath)
 
         ## check for tarball size
