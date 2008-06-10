@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.77 2008/06/02 17:22:18 mcinquil Exp $"
-__version__ = "$Revision: 1.77 $"
+__revision__ = "$Id: FatWorker.py,v 1.78 2008/06/06 09:29:44 farinafa Exp $"
+__version__ = "$Revision: 1.78 $"
 import string
 import sys, os
 import time
@@ -206,11 +206,18 @@ class FatWorker(Thread):
             ## create a new task object in the boss session and register its jobs to PA core
             self.local_ms.publish("CrabServerWorkerComponent:TaskArrival", self.taskName)
             self.local_ms.commit()
-           
-            taskObj = self.blDBsession.declare(self.taskXML, self.proxy)
-            self.log.info('Worker %s submitting a new task'%self.myName)
+          
+            try: 
+                taskObj = self.blDBsession.declare(self.taskXML, self.proxy)
+                self.log.info('Worker %s submitting a new task'%self.myName)
+            except Exception, e:
+                self.log.info('Worker %s failed to declare task. Checking if already registered'%self.myName)
+                # force the other computation branch
+                self.submissionKind = 'subsequent'
+                taskObj = None 
+                pass
 
-        elif self.submissionKind == 'subsequent':
+        if taskObj == None and self.submissionKind == 'subsequent':
             ## retrieve the task from the boss session 
             self.local_ms.publish("CrabServerWorkerComponent:CommandArrival", self.taskName)
             self.local_ms.commit()
@@ -222,13 +229,6 @@ class FatWorker(Thread):
                 taskObj = None
                 pass
 
-            if taskObj is None:
-                self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), \
-                    "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) )
-                # propagate failure message
-                self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
-                self.local_ms.commit()
-                return 
             self.log.info('Worker %s submitting a new command on a task'%self.myName)
 
             # resubmission of retrieved jobs
@@ -241,11 +241,19 @@ class FatWorker(Thread):
                     j.runningJob['statusScheduler'] = 'Created'
             if needUpd:
                 self.blDBsession.updateDB(taskObj)  
-        else:
-            ## not the proper submission handler
+
+        ## not the proper submission handler
+        if self.submissionKind not in ['first', 'subsequent']:
             self.sendResult(10, "Bad submission manager for %s. This kind of submission should not be handled here."%(self.taskName), \
                     "WorkerError %s. Wrong submission manager for %s."%(self.myName, self.taskName) )
-            # propagate failure message
+            self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
+            self.local_ms.commit()
+            return
+
+        ## failed to load
+        if taskObj is None:
+            self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), \
+                "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) )
             self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
             self.local_ms.commit()
             return
@@ -465,9 +473,19 @@ class FatWorker(Thread):
         dbCfg = copy.deepcopy(dbConfig)
         dbCfg['dbType'] = 'mysql'
         Session.set_database(dbCfg)
-        Session.connect(self.taskName)
 
-        jobInfo = wfJob.get(job['name'])
+        jobInfo = {}
+        try:
+            Session.connect(self.taskName)
+            jobInfo.update( wfJob.get(job['name']) )
+            Session.close(self.taskName)
+        except Exception, e:
+            self.log.info("Error while getting WF-Entities for job %s"%job['name'])
+            # force the following condition to be true
+            jobInfo['retries'] = 1
+            jobInfo['max_retries'] = 0
+            pass  
+ 
         if int(jobInfo['retries']) >= int(jobInfo['max_retries']):
             status = 6
             reason = "No more attempts for resubmission for %s, the attempts will be stopped"%self.myName
@@ -475,8 +493,6 @@ class FatWorker(Thread):
             self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
             self.local_ms.commit()
             return
-
-        Session.close(self.taskName)
 
         # TODO to be cleaned
         # get the scheduler name used by listCreation
@@ -666,21 +682,21 @@ class FatWorker(Thread):
                 try:
                     self.registerTask(taskObj)
 
-                    dbCfg = copy.deepcopy(dbConfig)
-                    dbCfg['dbType'] = 'mysql'
-                    Session.set_database(dbCfg)
-                    Session.connect(self.taskName)
-                    Session.start_transaction(self.taskName)
-
                     jobSpecId = []
                     toMarkAsFailed = list(set(resubmissionList+unmatchedJobs + nonSubmittedJobs + skippedJobs))
                     for j in taskObj.jobs:
                         if j['jobId'] in toMarkAsFailed:
                             jobSpecId.append(j['name'])
 
+                    dbCfg = copy.deepcopy(dbConfig)
+                    dbCfg['dbType'] = 'mysql'
+                    Session.set_database(dbCfg)
+                    Session.connect(self.taskName)
+                    Session.start_transaction(self.taskName)
+
                     JobState.doNotAllowMoreSubmissions(jobSpecId)
                     for jId in jobSpecId:
-                            wfJob.setState(jId, 'failed')
+                            wfJob.setState(jId, 'reallyFinished') #'failed')
 
                     Session.commit(self.taskName)
                     Session.close(self.taskName)
