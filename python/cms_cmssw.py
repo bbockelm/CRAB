@@ -758,7 +758,7 @@ class Cmssw(JobType):
             ## Add ProdCommon dir to tar
             prodcommonDir = './'
             prodcommonPath = os.environ['CRABDIR'] + '/' + 'external/'
-            neededStuff = ['ProdCommon/FwkJobRep', 'IMProv']
+            neededStuff = ['ProdCommon/FwkJobRep', 'ProdCommon/CMSConfigTools', 'IMProv']
             for dir in neededStuff:
                 if os.path.isdir(prodcommonPath+dir):
                     tar.add(prodcommonPath+dir,prodcommonDir+dir)
