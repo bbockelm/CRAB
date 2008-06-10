@@ -733,18 +733,19 @@ class Cmssw(JobType):
 
             ## Now check if any data dir(s) is present
             self.dataExist = False
-            todo_list = [(os.path.join(swArea, i), i) for i in  os.listdir(swArea)]
+            srcArea=swArea+"/src/" 
+            todo_list = [(i, i) for i in  os.listdir(srcArea)]
             while len(todo_list):
                 entry, name = todo_list.pop()
-                if name.startswith('crab_0_') or  name.startswith('.'):
+                if name.startswith('crab_0_') or  name.startswith('.') or name == 'CVS':
                     continue
-                if os.path.isdir(entry):
+                if os.path.isdir(srcArea+entry):
                     entryPath = entry + '/'
-                    todo_list += [(entryPath + i, i) for i in  os.listdir(entry)]
+                    todo_list += [(entryPath + i, i) for i in  os.listdir(srcArea+entry)]
                     if name == 'data':
                         self.dataExist=True
                         common.logger.debug(5,"data "+entry+" to be tarred")
-                        tar.add(entry, name)
+                        tar.add(entry)
                     pass
                 pass
 
@@ -756,10 +757,12 @@ class Cmssw(JobType):
 
 
             ## Add ProdCommon dir to tar
-            prodcommonDir = 'ProdCommon'
-            prodcommonPath = os.environ['CRABDIR'] + '/' + 'external/ProdCommon'
-            if os.path.isdir(prodcommonPath):
-                tar.add(prodcommonPath,prodcommonDir)
+            prodcommonDir = './'
+            prodcommonPath = os.environ['CRABDIR'] + '/' + 'external/'
+            neededStuff = ['ProdCommon/FwkJobRep', 'IMProv']
+            for dir in neededStuff:
+                if os.path.isdir(prodcommonPath+dir):
+                    tar.add(prodcommonPath+dir,prodcommonDir+dir)
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             ##### ML stuff
@@ -935,11 +938,11 @@ class Cmssw(JobType):
             txt += '   echo "Successful untar" \n'
             txt += 'fi \n'
             txt += '\n'
-            txt += 'echo ">>> Include ProdCommon in PYTHONPATH:"\n'
+            txt += 'echo ">>> Include $RUNTIME_AREA in PYTHONPATH:"\n'
             txt += 'if [ -z "$PYTHONPATH" ]; then\n'
-            txt += '   export PYTHONPATH=$RUNTIME_AREA/ProdCommon\n'
+            txt += '   export PYTHONPATH=$RUNTIME_AREA/\n'
             txt += 'else\n'
-            txt += '   export PYTHONPATH=$RUNTIME_AREA/ProdCommon:${PYTHONPATH}\n'
+            txt += '   export PYTHONPATH=$RUNTIME_AREA/:${PYTHONPATH}\n'
             txt += 'echo "PYTHONPATH=$PYTHONPATH"\n'
             txt += 'fi\n'
             txt += '\n'
@@ -967,11 +970,13 @@ class Cmssw(JobType):
             for file in self.additional_inbox_files:
                 txt += 'mv $RUNTIME_AREA/'+os.path.basename(file)+' . \n'
         txt += 'mv $RUNTIME_AREA/ProdCommon/ . \n'
+        txt += 'mv $RUNTIME_AREA/IMProv/ . \n'
 
+        txt += 'echo ">>> Include $RUNTIME_AREA in PYTHONPATH:"\n'
         txt += 'if [ -z "$PYTHONPATH" ]; then\n'
-        txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdCommon\n'
+        txt += '   export PYTHONPATH=$RUNTIME_AREA/\n'
         txt += 'else\n'
-        txt += '   export PYTHONPATH=$SOFTWARE_DIR/ProdCommon:${PYTHONPATH}\n'
+        txt += '   export PYTHONPATH=$RUNTIME_AREA/:${PYTHONPATH}\n'
         txt += 'echo "PYTHONPATH=$PYTHONPATH"\n'
         txt += 'fi\n'
         txt += '\n'
