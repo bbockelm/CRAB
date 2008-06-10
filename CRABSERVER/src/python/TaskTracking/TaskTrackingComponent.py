@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.79 2008/06/03 15:23:21 mcinquil Exp $"
-__version__ = "$Revision: 1.79 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.80 2008/06/04 10:13:26 mcinquil Exp $"
+__version__ = "$Revision: 1.80 $"
 
 import os
 import time
@@ -225,7 +225,7 @@ class TaskTrackingComponent:
             if payload != None or payload != "" or len(payload) > 0:
                 taskName, eMail, threshold = payload.split("::")
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, "E-mail "+str(eMail)+" arrived for task %s" % taskName)
+                logBuf = self.__logToBuf__(logBuf, "E-mail "+str(eMail)+" and threshold "+str(threshold)+" arrived for task %s" % taskName)
                 self.updateEmailThresh(taskName, eMail, threshold)
 	        logBuf = self.__logToBuf__(logBuf, "     db updated.")
                 _loginfo += "Updated e-mail and threshold level for task %s" % taskName
