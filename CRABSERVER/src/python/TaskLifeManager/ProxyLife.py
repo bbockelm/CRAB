@@ -139,7 +139,7 @@ class ProxyLife:
             self.__cleanproxies.remove(proxy)
 
     def askclean(self, proxy):
-        if not self.notified(proxy):
+        if not self.cleanasked(proxy):
             self.__cleanproxies.append(proxy)
 
    
@@ -324,6 +324,7 @@ class ProxyLife:
                     self.cleanProxy(proxyfull)
                     ## notify the admin to hand-clean
                     if not self.cleanasked(proxyfull):
+                        logging.debug ("proxy: "+str(proxyfull)+" not in " +str(self.__cleanproxies))
                         self.notifyToClean(allTasks)
                         self.askclean(proxyfull)
                 ######
