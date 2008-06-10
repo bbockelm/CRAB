@@ -36,6 +36,9 @@ class ProxyLife:
         ## preserv proxy nitified for cleaning
         self.__cleanproxies = []
 
+        ## clean script
+        self.delOldScript()
+
     ###############################################
     ######       SYSTEM  INTERACTIONS        ######
 
@@ -53,6 +56,12 @@ class ProxyLife:
 
     def cleanProxy(self, proxy):
         self.executeCommand( "rm -f " + str(proxy) )
+
+    def delOldScript(self):
+        try:
+            self.cleanProxy("deleteSB_*_.py")
+        except:
+            pass
 
     def buildScript(self, tasklist):
         import time
