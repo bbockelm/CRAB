@@ -226,7 +226,6 @@ class Crab:
         if string.lower(self.cfg_fname) != 'none':
             if os.path.exists(self.cfg_fname):
                 self.cfg_params = loadConfig(self.cfg_fname)
-                self.cfg_params['user'] = os.environ['USER']
                 pass
             else:
                 msg = 'cfg-file '+self.cfg_fname+' not found.'
