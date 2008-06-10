@@ -26,7 +26,8 @@ class SchedulerLocal(Scheduler) :
 
         self.copy_data = int(cfg_params.get("USER.copy_data",0))
         if self.copy_data == 1:
-            self._copyCommand = cfg_params.get('USER.copyCommand','rfcp')
+            self._copyCommand = cfg_params.get('USER.copycommand','rfcp')
+            common.logger.debug(3, "copyCommand set to "+ self._copyCommand)
             self.SE_path= cfg_params.get('USER.storage_path',None)
             if not self.SE_path:
                 if os.environ.has_key('CASTOR_HOME'):
@@ -63,9 +64,9 @@ class SchedulerLocal(Scheduler) :
             common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
         else:
             common.logger.message("Your se_white_list is set to "+str(cfg_params['EDG.se_white_list'])+": only local dataset will be considered")
-        
 
-        
+
+
 
         Scheduler.configure(self,cfg_params)
         return
@@ -86,7 +87,7 @@ class SchedulerLocal(Scheduler) :
         index = int(common._db.nJobs())
         job = common.job_list[index-1]
         jbt = job.type()
-        # start with wrapper timing 
+        # start with wrapper timing
         txt  = 'export TIME_WRAP_INI=`date +%s` \n'
         txt += 'export TIME_STAGEOUT=NULL \n\n'
 
@@ -138,6 +139,7 @@ class SchedulerLocal(Scheduler) :
         txt += 'export SE_PATH='+self.SE_path+'\n'
 
         txt += 'export CP_CMD='+self._copyCommand+'\n'
+        common.logger.debug(3, "Wrapper script CP_CMD set to "+ self._copyCommand)
 
         txt += 'echo ">>> Copy output files from WN = `hostname` to PATH = $SE_PATH using $CP_CMD :"\n'
 

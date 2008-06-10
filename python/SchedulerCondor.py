@@ -1,5 +1,5 @@
-__revision__ = "$Id: SchedulerCondor.py,v 1.5 2008/05/29 19:18:49 ewv Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.6 2008/05/29 19:20:40 ewv Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
@@ -24,6 +24,19 @@ class SchedulerCondor(SchedulerLocal) :
   def configure(self, cfg_params):
     SchedulerLocal.configure(self, cfg_params)
     self.environment_unique_identifier ='${HOSTNAME}_${CONDOR_ID}_' + common._db.queryTask('name')
+
+    try:
+      tmp =  cfg_params['CMSSW.datasetpath']
+      if string.lower(tmp)=='none':
+        self.datasetPath = None
+        self.selectNoInput = 1
+      else:
+        self.datasetPath = tmp
+        self.selectNoInput = 0
+    except KeyError:
+      msg = "Error: datasetpath not defined "
+      raise CrabException(msg)
+
     return
 
 
@@ -49,6 +62,22 @@ class SchedulerCondor(SchedulerLocal) :
     tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
     params = {'tmpDir':tmpDir}
     return  params
+
+
+  def listMatch(self, seList, full, onlyOSG=True):
+    """
+    Check the compatibility of available resources
+    """
+
+    # May have problems with onlyOSG being false, probably due to lengths of lists and command line.
+    # Either re-write osg_bdii.py with a proper ldap library or break the queries apart
+
+    #scram = Scram.Scram(None)
+    #versionCMSSW = scram.getSWVersion()
+    #arch = scram.getArch()
+
+    if self.selectNoInput:
+      return [True]
 
 
   def decodeLogInfo(self, file):
