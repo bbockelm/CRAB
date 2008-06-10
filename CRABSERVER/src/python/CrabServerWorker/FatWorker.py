@@ -202,6 +202,14 @@ class FatWorker(Thread):
         newRange = None
         skipped = None
 
+        ## not the proper submission handler
+        if self.submissionKind not in ['first', 'subsequent']:
+            self.sendResult(10, "Bad submission manager for %s. This kind of submission should not be handled here."%(self.taskName), \
+                    "WorkerError %s. Wrong submission manager for %s."%(self.myName, self.taskName) )
+            self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
+            self.local_ms.commit()
+            return
+
         if self.submissionKind == 'first':
             ## create a new task object in the boss session and register its jobs to PA core
             self.local_ms.publish("CrabServerWorkerComponent:TaskArrival", self.taskName)
@@ -232,23 +240,16 @@ class FatWorker(Thread):
             self.log.info('Worker %s submitting a new command on a task'%self.myName)
 
             # resubmission of retrieved jobs
-            needUpd = False
-            for j in taskObj.jobs:
-                if j.runningJob['closed'] == 'Y':  
-                    needUpd = True  
-                    self.blDBsession.getNewRunningInstance(j)
-                    j.runningJob['status'] = 'C'
-                    j.runningJob['statusScheduler'] = 'Created'
-            if needUpd:
-                self.blDBsession.updateDB(taskObj)  
-
-        ## not the proper submission handler
-        if self.submissionKind not in ['first', 'subsequent']:
-            self.sendResult(10, "Bad submission manager for %s. This kind of submission should not be handled here."%(self.taskName), \
-                    "WorkerError %s. Wrong submission manager for %s."%(self.myName, self.taskName) )
-            self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
-            self.local_ms.commit()
-            return
+            if taskObj is not None:
+                needUpd = False
+                for j in taskObj.jobs:
+                    if j.runningJob['closed'] == 'Y':  
+                        needUpd = True  
+                        self.blDBsession.getNewRunningInstance(j)
+                        j.runningJob['status'] = 'C'
+                        j.runningJob['statusScheduler'] = 'Created'
+                if needUpd:
+                    self.blDBsession.updateDB(taskObj)  
 
         ## failed to load
         if taskObj is None:
