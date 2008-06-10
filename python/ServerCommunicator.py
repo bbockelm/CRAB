@@ -264,7 +264,7 @@ class ServerCommunicator:
 
         ## Additional fields for Notification by the server
         miniCfg['eMail'] = self.cfg_params.get('USER.email', None)
-        miniCfg['threshold'] = self.cfg_params.get('USER.threshold', 100)
+        miniCfg['threshold'] = self.cfg_params.get('USER.thresholdlevel', 100)
 
         ## put here other fields if needed
         node.setAttribute("CfgParamDict", str(miniCfg) )
