@@ -733,8 +733,6 @@ class Cmssw(JobType):
 
             ## Now check if any data dir(s) is present
             self.dataExist = False
-            #print "Starting walk."
-            #timer = -time.time()
             todo_list = [(os.path.join(swArea, i), i) for i in  os.listdir(swArea)]
             while len(todo_list):
                 entry, name = todo_list.pop()
@@ -746,11 +744,9 @@ class Cmssw(JobType):
                     if name == 'data':
                         self.dataExist=True
                         common.logger.debug(5,"data "+entry+" to be tarred")
-                        tar.add(entry, swArea)
+                        tar.add(entry, name)
                     pass
                 pass
-            #timer += time.time()
-            #print "Finished walk.", timer
 
             ### CMSSW ParameterSet
             if not self.pset is None:
@@ -761,7 +757,7 @@ class Cmssw(JobType):
 
             ## Add ProdCommon dir to tar
             prodcommonDir = 'ProdCommon'
-            prodcommonPath = os.environ['CRABDIR'] + '/' + 'external/'
+            prodcommonPath = os.environ['CRABDIR'] + '/' + 'external/ProdCommon'
             if os.path.isdir(prodcommonPath):
                 tar.add(prodcommonPath,prodcommonDir)
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
