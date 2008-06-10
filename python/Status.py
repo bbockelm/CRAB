@@ -38,13 +38,14 @@ class Status(Actor):
 
         toPrint=[]
         taskId= str("_".join(str(up_task['name']).split('_')[:-1]))
-
+        self.wrapErrorList = []
         for job in up_task.jobs :
             id = str(job.runningJob['jobId'])
             jobStatus =  str(job.runningJob['statusScheduler'])
             dest = str(job.runningJob['destination']).split(':')[0]
             exe_exit_code = str(job.runningJob['applicationReturnCode'])
             job_exit_code = str(job.runningJob['wrapperReturnCode'])
+            self.wrapErrorList.append(job_exit_code)
             printline=''
             header = ''
             if dest == 'None' :  dest = ''
@@ -65,47 +66,23 @@ class Status(Actor):
 
     def PrintReport_(self):
 
-        possible_status = [
-                         'Undefined',
-                         'Submitted',
-                         'Waiting',
-                         'Ready',
-                         'Scheduled',
-                         'Running',
-                         'Done',
-                         'Cancelled',
-                         'Aborted',
-                         'Unknown',
-                         'done(failed)',
-                         'cleared',
-                         'retrieved' 
-                          ]
+        jobs = common._db.nJobs('list')
+
+        WrapExitCode = list(set(self.wrapErrorList))
 
         print ''
-        print ">>>>>>>>> %i Total Jobs " % (common._db.nJobs())
+        print ">>>>>>>>> %i Total Jobs " % (len(jobs))
         print ''
         list_ID=[]
-        for st in possible_status:
-            list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
+        for c in WrapExitCode:
+            list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':c},'jobId')
             if len(list_ID)>0:
-                print ">>>>>>>>> %i Jobs  %s " % (len(list_ID), str(st))#,len(list_ID)
-                if st == 'killed' or st == 'Aborted': print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
-                if st == 'Done'   : print "          Retrieve them with: crab -getoutput <Jobs list>"
-		if st == 'Cleared': print "          %i Jobs with EXE_EXIT_CODE: %s" % (len(common._db.queryDistJob('wrapperReturnCode')))
-                print "          List of jobs: %s" % self.readableList(common._db.queryAttrRunJob({'statusScheduler':st},'jobId'))
+                print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(c))#,len(list_ID)
+     #           if st == 'killed' or st == 'Aborted': print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
+     #           if st == 'Done'   : print "          Retrieve them with: crab -getoutput <Jobs list>"
+     #           if st == 'Cleared': print "          %i Jobs with EXE_EXIT_CODE: %s" % (len(common._db.queryDistJob('wrapperReturnCode')))
+                print "          List of jobs: %s" % self.readableList(list_ID)
                 print " "
-
-#        if (len(self.countCorrupt) != 0):
-#            self.countCorrupt.sort()
-#            print ''
-#            print ">>>>>>>>> %i Jobs cleared with corrupt output" % len(self.countCorrupt)
-#            print "          List of jobs: %s" % self.joinIntArray_(self.countCorrupt)
-#            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
-#        if (len(self.countCleared.keys()) != 0):
-#            total_size = 0
-#            for key in self.countCleared.keys() :
-#                total_size += len(self.countCleared[key])
-#            print ''
 
     def readableList(self,rawList):
       listString = str(rawList[0])
