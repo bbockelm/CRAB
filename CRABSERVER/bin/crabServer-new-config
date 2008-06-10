@@ -119,7 +119,7 @@ componentFields = {
     "levelAvailable": 15,
     "taskLife": "168:00:00",
     "eMailAdmin": None,
-    "pollingTimeCheck": 5*60,
+    "pollingTimeCheck": 10*60,
     },
 
     ## impored from PA
