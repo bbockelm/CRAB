@@ -1,5 +1,5 @@
-__revision__ = "$Id: SchedulerCondor.py,v 1.6 2008/05/29 19:20:40 ewv Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.7 2008/06/10 17:46:00 ewv Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
@@ -99,20 +99,8 @@ class SchedulerCondor(SchedulerLocal) :
     txt += '#\n\n'
 
     txt += 'func_exit() { \n'
-    txt += '    if [ $PYTHONPATH ]; then \n'
-    txt += '        update_fjr\n'
-    txt += '    fi\n'
-    txt += '    for file in $filesToCheck ; do\n'
-    txt += '        if [ -e $file ]; then\n'
-    txt += '            echo "tarring file $file in  $out_files"\n'
-    txt += '        else\n'
-    txt += '            echo "WARNING: output file $file not found!"\n'
-    txt += '        fi\n'
-    txt += '    done\n'
-    txt += '    final_list=$filesToCheck\n'
-    txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
-    txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
-    txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+    txt += self.wsExitFunc_common()
+
     txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
     txt += '    cp  ${out_files}.tgz $ORIG_WD/\n'
     txt += '    cp  crab_fjr_$NJob.xml $ORIG_WD/\n'
