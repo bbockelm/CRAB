@@ -789,7 +789,12 @@ class TaskLifeManagerComponent:
         self.deleteTasks()
 
         ## checks and manages proxies 
-        self.procheck.pollProxies()
+        try:
+            self.procheck.pollProxies()
+        except Exception, ex:
+            import traceback
+            logging.error("Problem on polling proxies: \n" + str(ex) )
+            logging.error(" details: \n" + str(traceback.format_exc()) )
             
         # Renewing polling cycle
         pollT = int(self.args['pollingTimeCheck'])
