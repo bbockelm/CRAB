@@ -291,52 +291,6 @@ class SchedulerGrid(Scheduler):
         return txt
 
 
-    def wsExitFunc_common(self):
-        """
-        """
-        txt = ''
-        txt += '    if [ $PYTHONPATH ]; then \n'
-        txt += '       if [ ! -s $RUNTIME_AREA/fillCrabFjr.py ]; then \n'
-        txt += '           echo "WARNING: it is not possible to create crab_fjr.xml to final report" \n'
-        txt += '       else \n'
-        txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --errorcode $job_exit_code $executable_exit_status \n'
-        txt += '       fi\n'
-        txt += '    fi\n'
-        txt += '    cd $RUNTIME_AREA  \n'
-        txt += '    for file in $filesToCheck ; do\n'
-        txt += '        if [ -e $file ]; then\n'
-        txt += '            echo "tarring file $file in  $out_files"\n'
-        txt += '        else\n'
-        txt += '            echo "WARNING: output file $file not found!"\n'
-        txt += '        fi\n'
-        txt += '    done\n'
-        txt += '    if [ $middleware == OSG ]; then\n'
-        txt += '        final_list=$filesToCheck\n'
-        txt += '        if [ $WORKING_DIR ]; then\n'
-        txt += '            remove_working_dir\n'
-        txt += '        fi\n'
-        txt += '        symlinks -d .\n'
-        txt += '    else\n'
-        txt += '        final_list=$filesToCheck" .BrokerInfo"\n'
-        txt += '    fi\n'
-        txt += '    export TIME_WRAP_END=`date +%s`\n'
-        txt += '    let "TIME_WRAP = TIME_WRAP_END - TIME_WRAP_END_INI" \n'
-        txt += '    if [ $PYTHONPATH ]; then \n'
-        txt += '       if [ ! -s $RUNTIME_AREA/fillCrabFjr.py ]; then \n'
-        txt += '           echo "WARNING: it is not possible to create crab_fjr.xml to final report" \n'
-        txt += '       else \n'
-        # call timing FJR filling
-        txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --timing $TIME_WRAP $TIME_EXE $TIME_STAGEOUT \n'
-        txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n'
-        txt += '           if [ $TIME_STAGEOUT -lt 0 ]; then \n'
-        txt += '               export TIME_STAGEOUT=NULL \n'
-        txt += '           fi\n'
-        txt += '           echo "CrabStageoutTime=$TIME_STAGEOUT" >> $RUNTIME_AREA/$repo \n'
-        txt += '       fi\n'
-        txt += '    fi\n'
-        txt += '    dumpStatus $RUNTIME_AREA/$repo \n\n'
-        return txt
-
     def checkProxy(self, deep=0):
         """
         Function to check the Globus proxy.
