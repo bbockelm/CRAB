@@ -14,7 +14,7 @@ echo "CRABDIR = $CRABdir"
 CRABtag=$tag
 DBSAPItag="DBS_1_1_6"
 DLSAPItag="DLS_1_0_0"
-PRODCOMMONtag="PRODCOMMON_0_10_7_testCS5"
+PRODCOMMONtag="PRODCOMMON_0_10_9_testCS1"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
@@ -73,13 +73,13 @@ rm -r DLS
 
 ## download PRODCOMMON
 echo ">> downloading PRODCOMMON tag ${PRODCOMMONtag} from CVS PRODCOMMON"
-mkdir -p ProdCommon
-cd ProdCommon
-cvs co -r ${PRODCOMMONtag} -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
-cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
-#cvs co -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
-#cvs co -d IMProv COMP/PRODCOMMON/src/python/IMProv
-
+#mkdir -p ProdCommon
+#cd ProdCommon
+#cvs co -r ${PRODCOMMONtag} -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
+#cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
+cvs co -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
+cvs co -d IMProv COMP/PRODCOMMON/src/python/IMProv
+#cd ..
 ## exit from external
 cd ../..
 
