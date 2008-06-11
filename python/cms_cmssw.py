@@ -255,7 +255,16 @@ class Cmssw(JobType):
                     PsetEdit.addCrabFJR(self.fjrFileName) # FUTURE: Job report addition not needed by CMSSW>1.5
                     PsetEdit.maxEvent(self.eventsPerJob)
                     PsetEdit.psetWriter(self.configFilename())
-                except:
+                    ## If present, add TFileService to output files
+                    if not int(cfg_params.get('CMSSW.skip_TFileService_output',0)):
+                        tfsOutput = PsetEdit.getTFileService()
+                        if tfsOutput: 
+                            if tfsOutput in self.output_file:
+                                common.logger.debug(5,"Output from TFileService "+tfsOutput+" already in output files")
+                            else:
+                                self.output_file.append(tfsOutput)
+                                common.logger.message("Adding "+tfsOutput+" to output files (from TFileService)")
+                except CrabException:
                     msg='Error while manipulating ParameterSet: exiting...'
                     raise CrabException(msg)
             ## Prepare inputSandbox TarBall (only the first time)  

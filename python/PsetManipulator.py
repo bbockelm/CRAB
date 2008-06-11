@@ -63,10 +63,10 @@ class PsetManipulator:
         # FUTURE: Can drop cfg mode for CMSSW < 2_1_x
         outFile = open(common.work_space.jobDir()+name,"w")
         if name.endswith('py'):
-          outFile.write("import FWCore.ParameterSet.Config as cms\n")
-          outFile.write(self.cmsProcess.dumpPython())
+            outFile.write("import FWCore.ParameterSet.Config as cms\n")
+            outFile.write(self.cmsProcess.dumpPython())
         else:
-          outFile.write(str(self.cfg))
+            outFile.write(str(self.cfg))
         outFile.close()
 
         return
@@ -97,3 +97,16 @@ class PsetManipulator:
             messageLogger.fwkJobReports.append(name)
 
         return
+
+    def getTFileService(self):
+        """ Get Output filename from TFileService and return it. If not existing, return None """
+        if not self.cfg.data.services.has_key('TFileService'):
+            return None
+        tFileService = self.cfg.data.services['TFileService']
+        if "fileName" in tFileService.parameterNames_():
+            fileName = getattr(tFileService,'fileName',None).value()
+            return fileName
+        return None
+        
+        #fileName
+

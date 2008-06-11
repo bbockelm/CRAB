@@ -371,7 +371,11 @@ Define the number of job to be run for the task. The number of event for each jo
 
 =item B<output_file *>
 
-the output files produced by your application (comma separated list).
+the output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1.
+
+=item B<skip_TFileService_output>
+
+Force CRAB to skip the inclusion of file produced by TFileService to list of output files. Default is I<0>, namely the file is included.
 
 =item B<increment_seeds>
 
