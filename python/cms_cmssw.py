@@ -758,10 +758,9 @@ class Cmssw(JobType):
             ## Add ProdCommon dir to tar
             prodcommonDir = './'
             prodcommonPath = os.environ['CRABDIR'] + '/' + 'external/'
-            neededStuff = ['ProdCommon/FwkJobRep', 'ProdCommon/CMSConfigTools', 'IMProv']
-            for dir in neededStuff:
-                if os.path.isdir(prodcommonPath+dir):
-                    tar.add(prodcommonPath+dir,prodcommonDir+dir)
+            neededStuff = ['ProdCommon/__init__.py','ProdCommon/FwkJobRep', 'ProdCommon/CMSConfigTools','ProdCommon/Core','ProdCommon/MCPayloads', 'IMProv']
+            for file in neededStuff:
+                tar.add(prodcommonPath+file,prodcommonDir+file)
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             ##### ML stuff
@@ -968,8 +967,8 @@ class Cmssw(JobType):
         if len(self.additional_inbox_files)>0:
             for file in self.additional_inbox_files:
                 txt += 'mv $RUNTIME_AREA/'+os.path.basename(file)+' . \n'
-        txt += 'mv $RUNTIME_AREA/ProdCommon/ . \n'
-        txt += 'mv $RUNTIME_AREA/IMProv/ . \n'
+        # txt += 'mv $RUNTIME_AREA/ProdCommon/ . \n'
+        # txt += 'mv $RUNTIME_AREA/IMProv/ . \n'
 
         txt += 'echo ">>> Include $RUNTIME_AREA in PYTHONPATH:"\n'
         txt += 'if [ -z "$PYTHONPATH" ]; then\n'
