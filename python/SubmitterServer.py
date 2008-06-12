@@ -206,8 +206,8 @@ class SubmitterServer( Submitter ):
         del csCommunicator
 
         # update runningjobs status
-        ## updList = [{'statusScheduler':'Submitted', 'status':'S'}] * len(self.submitRange) 
-        ## common._db.updateRunJob_(self.submitRange, updList)
+        updlist = [{'statusscheduler':'submitting', 'status':'sse'}] * len(self.submitrange) 
+        common._db.updaterunjob_(self.submitrange, updlist)
         return
 
 
