@@ -75,14 +75,15 @@ class Status(Actor):
         print ''
         list_ID=[]
         for c in WrapExitCode:
-            list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':c},'jobId')
-            if len(list_ID)>0:
-                print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(c))#,len(list_ID)
-     #           if st == 'killed' or st == 'Aborted': print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
-     #           if st == 'Done'   : print "          Retrieve them with: crab -getoutput <Jobs list>"
-     #           if st == 'Cleared': print "          %i Jobs with EXE_EXIT_CODE: %s" % (len(common._db.queryDistJob('wrapperReturnCode')))
-                print "          List of jobs: %s" % self.readableList(list_ID)
-                print " "
+            if c != 'None':
+                list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':c},'jobId')
+                if len(list_ID)>0:
+                    print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(c))#,len(list_ID)
+         #           if st == 'killed' or st == 'Aborted': print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
+         #           if st == 'Done'   : print "          Retrieve them with: crab -getoutput <Jobs list>"
+         #           if st == 'Cleared': print "          %i Jobs with EXE_EXIT_CODE: %s" % (len(common._db.queryDistJob('wrapperReturnCode')))
+                    print "          List of jobs: %s" % self.readableList(list_ID)
+                    print " "
 
     def readableList(self,rawList):
       listString = str(rawList[0])
