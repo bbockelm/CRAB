@@ -95,13 +95,14 @@ class Cmssw(JobType):
         self.output_file_sandbox.append(self.fjrFileName)
 
         # other output files to be returned via sandbox or copied to SE
+        outfileflag = False
         self.output_file = []
         tmp = cfg_params.get('CMSSW.output_file',None)
         if tmp :
             self.output_file = [x.strip() for x in tmp.split(',')]
-        else:
-            log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available\n")
-        pass
+            outfileflag = True #output found
+        #else:
+        #    log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available\n")
 
         # script_exe file as additional file in inputSandbox
         self.scriptExe = cfg_params.get('USER.script_exe',None)
@@ -262,8 +263,13 @@ class Cmssw(JobType):
                             if tfsOutput in self.output_file:
                                 common.logger.debug(5,"Output from TFileService "+tfsOutput+" already in output files")
                             else:
+                                outfileflag = True #output found
                                 self.output_file.append(tfsOutput)
                                 common.logger.message("Adding "+tfsOutput+" to output files (from TFileService)")
+                    # if no output specified
+                    if not outfileflag:
+                        log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available\n")
+
                 except CrabException:
                     msg='Error while manipulating ParameterSet: exiting...'
                     raise CrabException(msg)
