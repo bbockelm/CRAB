@@ -119,6 +119,6 @@ class GetOutputServer( GetOutput, StatusServer ):
             except Exception, e:
                 pass
 
-            common._db.updateRunJob_(retrievedFilesJodId, [{'statusScheduler':'Cleared', 'status':'E'}] * len(retrievedFilesJodId) )
+            common._db.updateRunJob_(retrievedFilesJodId, [{'statusScheduler':'Cleared', 'status':'EE'}] * len(retrievedFilesJodId) )
         return
 
