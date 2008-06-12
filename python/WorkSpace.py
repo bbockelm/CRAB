@@ -19,7 +19,6 @@ class WorkSpace:
         #Matteo: Necessary to manage user ui_working_dir
         if 'USER.ui_working_dir' in cfg_params.keys():    
             self._top_dir = os.path.abspath(cfg_params['USER.ui_working_dir'])
-            self._pathForTgz = self._top_dir
 
        # self._res_dir = cfg_params.get("USER.outputdir", self._top_dir + '/res')     # dir to store job results
        # self._log_dir = ("USER.logdir",self._top_dir + '/log')    # log-directory
@@ -28,9 +27,7 @@ class WorkSpace:
         self._res_dir = self._top_dir + '/res'     # dir to store job results
         self._share_dir = self._top_dir + '/share' # directory for common stuff
 
-        #Matteo: Necessary to manage user ui_working_dir
-        if 'USER.ui_working_dir' not in cfg_params.keys():    
-            self._pathForTgz = string.split(top_dir, '/')[-1]
+        self._pathForTgz = string.split(top_dir, '/')[-1]
 
         self.uuid = commands.getoutput('uuidgen')
 
