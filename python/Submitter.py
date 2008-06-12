@@ -54,7 +54,7 @@ class Submitter(Actor):
         for nj in range(len(tmp_jList)):
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(dlsDest[nj]) 
             if (cleanedBlackWhiteList != '') or (datasetpath == None): 
-                if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z','E']):
+                if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z','E','EE','SSE']):
                     jobSetForSubmission +=1
                     nj_list.append(tmp_jList[nj])
                 else:
