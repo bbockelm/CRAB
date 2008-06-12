@@ -217,12 +217,6 @@ class ServerCommunicator:
         node.setAttribute("Range", str(rng) )
         node.setAttribute("Scheduler", str(self.cfg_params['CRAB.scheduler']) ) 
 
-        # first submission specific attributes: not available or not considered for the other kind of messages
-        if (newTaskAddIns == True):
-            # add here one time fields if needed
-            pass
-            # node.setAttribute("Service", self.cfg_params[''])
-        
         # create a mini-cfg to be transfered to the server
         miniCfg = {}
 
