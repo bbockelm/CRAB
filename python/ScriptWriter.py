@@ -149,7 +149,13 @@ class ScriptWriter:
         """
         job = common.job_list[self.nj]
         args = job.type().executableArgs()
-        return '$executable '+args+'\n'
+
+        txt  = ''
+        txt += 'CRAB_EXE_CPU_TIME=-1 \n'
+        # NO carriage return for this line #Fabio 
+        txt += '/usr/bin/time -f \"\\"%U %S %P\\"\" -o cpu_timing.txt '
+        txt += '$executable '+args+'\n'
+        return txt
 
     def renameOutput_(self):
         """

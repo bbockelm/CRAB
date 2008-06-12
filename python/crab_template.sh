@@ -280,6 +280,7 @@ echo ">>> $executable started at `date`"
 start_exe_time=`date +%s`
 #CRAB run_executable
 executable_exit_status=$?
+CRAB_EXE_CPU_TIME=`tail -n 1 cpu_timing.txt`
 stop_exe_time=`date +%s`
 echo ">>> $executable ended at `date`"
 
