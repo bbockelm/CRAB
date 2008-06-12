@@ -93,8 +93,6 @@ export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHON
 export PyOpenSSLPYTHON=\${EXTERNALDIR}
 export PYTHONPATH=\${PYTHONPATH}:\${PyOpenSSLPYTHON}
 
-### TEMPORARY PATCH for gLite UI
-export PYTHONPATH=\${PYTHONPATH}:\${GLITE_LOCATION}/lib
 EOF
 
 # csh style
@@ -150,9 +148,6 @@ setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHON
 ## pyOpenssl
 setenv PyOpenSSLPYTHON \${EXTERNALDIR}
 setenv PYTHONPATH \${PYTHONPATH}:\${PyOpenSSLPYTHON}
-
-### TEMPORARY PATCH for gLite UI
-setenv PYTHONPATH \${PYTHONPATH}:\${GLITE_LOCATION}/lib
 
 EOF
 return
