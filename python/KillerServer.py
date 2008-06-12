@@ -25,23 +25,33 @@ class KillerServer(Actor):
         """
         common.logger.debug(5, "Killer::run() called")
 
-        ## register proxy ##
-        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
+        task = common._db.getTask(self.range)
+        toBeKilled = []
+        for job  in task.jobs:
+           if ( job.runningJob['status'] in ['SS','R','S','SR','SW']):
+               toBeKilled.append(job['jobId'])
+           else:
+               common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
+           pass
 
-        taskuuid = str(common._db.queryTask('name'))
-        ret = csCommunicator.killJobs( taskuuid, self.range)
-        del csCommunicator
-
-        if ret != 0:
-            msg = "ClientServer ERROR: %d raised during the communication.\n"%ret
-            raise CrabException(msg)
-
-        # update runningjobs status
-        updList = [{'statusScheduler':'Killed', 'status':'K'}] * len(self.range)
-        common._db.updateRunJob_(self.range, updList)
-
-        # printout the command result
-        common.logger.message("Kill request succesfully sent to the server") 
+        if len(toBeKilled)>0:
+            ## register proxy ##
+            csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
+ 
+            taskuuid = str(common._db.queryTask('name'))
+            ret = csCommunicator.killJobs( taskuuid, toBeKilled)
+            del csCommunicator
+ 
+            if ret != 0:
+                msg = "ClientServer ERROR: %d raised during the communication.\n"%ret
+                raise CrabException(msg)
+ 
+            # update runningjobs status
+            updList = [{'statusScheduler':'Killed', 'status':'K'}] * len(toBeKilled)
+            common._db.updateRunJob_(toBeKilled, updList)
+ 
+            # printout the command result
+            common.logger.message("Kill request succesfully sent to the server") 
 
         return
                 
