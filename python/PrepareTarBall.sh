@@ -75,10 +75,10 @@ rm -r DLS
 echo ">> downloading PRODCOMMON tag ${PRODCOMMONtag} from CVS PRODCOMMON"
 #mkdir -p ProdCommon
 #cd ProdCommon
-#cvs co -r ${PRODCOMMONtag} -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
-#cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
-cvs co -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
-cvs co -d IMProv COMP/PRODCOMMON/src/python/IMProv
+cvs co -r ${PRODCOMMONtag} -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
+cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
+#cvs co -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
+#cvs co -d IMProv COMP/PRODCOMMON/src/python/IMProv
 #cd ..
 ## exit from external
 cd ../..
