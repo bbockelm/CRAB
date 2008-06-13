@@ -20,7 +20,7 @@ class Crab:
                              '-resubmit' , '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-createJdl','-printJdl', '-publish',
-                             '-copyLocal', '-renewProxy' ]
+                             '-copyLocal', '-renewProxy', '-extend' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
