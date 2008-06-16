@@ -26,7 +26,7 @@ The most useful general options (use '-h' to get complete help):
   -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance.
   -kill [range]       -- kill submitted jobs.
   -resubmit [range]   -- resubmit killed/aborted/retrieved jobs.
-  -copyLocal [range]  -- copy locally the output sored on remote SE.
+  -copyLocal [range]  -- copy locally the output stored on remote SE.
   -renewProxy         -- renew the proxy on the server.
   -clean              -- gracefully cleanup the directory of a task.
   -testJdl [range]    -- check if resources exist which are compatible with jdl.
