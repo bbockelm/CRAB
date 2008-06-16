@@ -269,7 +269,7 @@ class Cmssw(JobType):
                             pass
                         pass
                     ## If present and requested, add PoolOutputModule to output files
-                    if not int(cfg_params.get('CMSSW.get_edm_output',0)):
+                    if int(cfg_params.get('CMSSW.get_edm_output',0)):
                         edmOutput = PsetEdit.getPoolOutputModule()
                         if edmOutput: 
                             if edmOutput in self.output_file:
