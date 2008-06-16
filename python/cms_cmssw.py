@@ -266,10 +266,19 @@ class Cmssw(JobType):
                                 outfileflag = True #output found
                                 self.output_file.append(tfsOutput)
                                 common.logger.message("Adding "+tfsOutput+" to output files (from TFileService)")
-                    # if no output specified
-                    if not outfileflag:
-                        log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available\n")
-
+                            pass
+                        pass
+                    ## If present and requested, add PoolOutputModule to output files
+                    if not int(cfg_params.get('CMSSW.get_edm_output',0)):
+                        edmOutput = PsetEdit.getPoolOutputModule()
+                        if edmOutput: 
+                            if edmOutput in self.output_file:
+                                common.logger.debug(5,"Output from PoolOutputModule "+edmOutput+" already in output files")
+                            else:
+                                self.output_file.append(edmOutput)
+                                common.logger.message("Adding "+edmOutput+" to output files (from PoolOutputModule)")
+                            pass
+                        pass
                 except CrabException:
                     msg='Error while manipulating ParameterSet: exiting...'
                     raise CrabException(msg)

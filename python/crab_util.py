@@ -47,12 +47,12 @@ def parseOptions(argv):
         pass
     return options
 
-def loadConfig(file):
+def loadConfig(file, config):
     """
     returns a dictionary with keys of the form
     <section>.<option> and the corresponding values
     """
-    config={}
+    #config={}
     cp = ConfigParser.ConfigParser()
     cp.read(file)
     for sec in cp.sections():
