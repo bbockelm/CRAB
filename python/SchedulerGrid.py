@@ -315,6 +315,21 @@ class SchedulerGrid(Scheduler):
         elif int(timeLeftLocal)<minTimeLeft :
             mustRenew = 1
 
+        ## check first attribute
+        att=runCommand('voms-proxy-info -fqan 2>/dev/null | head -1')
+        reg="/%s/"%self.VO
+        if self.group:
+            reg+=self.group
+        if self.role:
+            reg+="/Role=%s"%self.role
+        ## you always have at least  /cms/Role=NULL/Capability=NULL
+        if not re.compile(r"^"+reg).search(att):
+            if not mustRenew:
+                common.logger.message( "Valid proxy found, but with wrong VO group/role.\n")
+            mustRenew = 1
+        ######
+
+
         if mustRenew:
             common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 192h\n")
             cmd = 'voms-proxy-init -voms '+self.VO
