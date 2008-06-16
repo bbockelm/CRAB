@@ -166,26 +166,7 @@ class SubmitterServer( Submitter ):
 
             # first time submit
             try:
-                task = common._db.getTask() 
-
-                # set the paths refered to SE remotedir
-                # NOTE WMS/JDL supports only gsiftp protocol for base ISB/OSB 
-                surlpreamble = '' #'gsiftp://%s:%s'%(self.storage_name, str(self.storage_port) )
-                remoteSBlist = [surlpreamble + os.path.join(self.remotedir, os.path.basename(f)) \
-                        for f in common._db.queryTask('globalSandbox').split(',') ]
-                task['globalSandbox'] = ','.join(remoteSBlist)
-                task['outputDirectory'] = self.remotedir
-                task['scriptName'] = surlpreamble + os.path.join( self.remotedir, \
-                        os.path.basename(common._db.queryTask('scriptName')) )
-                task['cfgName'] = surlpreamble + os.path.join( self.remotedir, \
-                        os.path.basename(common._db.queryTask('cfgName')) )
-
-                for j in task.jobs:
-                    j['executable'] = os.path.basename(j['executable'])
-                    # buggy, only the local file needed #surlpreamble + os.path.join( self.remotedir, os.path.basename(j['executable']) )
-                #
-
-                taskXML += common._db.serializeTask(task)
+                taskXML += common._db.serializeTask( common._db.getTask() )
                 common.logger.debug(5, taskXML)
             except Exception, e:
                 msg = "BossLite ERROR: Unable to serialize task object\n"
