@@ -1,5 +1,5 @@
-__revision__ = "$Id: SchedulerCondor.py,v 1.7 2008/06/10 17:46:00 ewv Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.8 2008/06/11 10:03:07 spiga Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
@@ -72,13 +72,10 @@ class SchedulerCondor(SchedulerLocal) :
     # May have problems with onlyOSG being false, probably due to lengths of lists and command line.
     # Either re-write osg_bdii.py with a proper ldap library or break the queries apart
 
-    #scram = Scram.Scram(None)
-    #versionCMSSW = scram.getSWVersion()
-    #arch = scram.getArch()
-
     if self.selectNoInput:
       return [True]
-
+    else:
+      return SchedulerLocal.listMatch(self, seList, full)
 
   def decodeLogInfo(self, file):
     """
