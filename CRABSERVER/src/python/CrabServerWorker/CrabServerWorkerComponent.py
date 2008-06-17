@@ -4,12 +4,12 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.44 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.44 2008/06/05 09:34:08 farinafa Exp $"
+__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.45 2008/06/10 12:59:56 farinafa Exp $"
 
 import os
 import pickle
-import popen2
+import commands
 
 # logging
 import logging
@@ -79,7 +79,6 @@ class CrabServerWorkerComponent:
         # component resources
         ## persistent properties
         self.taskPool = {}  # for data persistency
-        self.proxyMap = {}  # a cache for the available user tasks
         self.subTimes = []  # moving average for submission delays
         self.subStats = {'succ':0, 'retry':0, 'fail':0}
  
@@ -130,7 +129,6 @@ class CrabServerWorkerComponent:
             logging.debug("CrabServerWorkerComponent: %s %s" % ( type, payload))
             self.__call__(type, payload)
 
-            self.updateProxyMap()            
             self.materializeStatus()
         #
         return
@@ -255,11 +253,6 @@ class CrabServerWorkerComponent:
                 del self.taskPool[taskUniqName]
             return
         
-        if (status == 4):
-            # CAVEAT in this case it means that everything is ok
-            status = 0
-            reason = self.proxyMap[ str(node.getAttribute('Subject')) ]
-
         if (status != 0):
             self.ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", taskUniqName + "::" + str(status) + "::" + reason)
             self.ms.commit()  
@@ -286,8 +279,7 @@ class CrabServerWorkerComponent:
     def handleResubmission(self, payload):
         try:
             taskId, jobId, siteToBan = payload.split('::')
-            ### siteToBan = ','.join(eval(siteToBan))  
-            if siteToBan == '#fake_ce#':
+            if siteToBan=="#fake_site#":
                 siteToBan = '' 
         except Exception, e:
             logging.info("Bad resubmission message format. Resubmission will not be performed")
@@ -367,49 +359,32 @@ class CrabServerWorkerComponent:
 #   Auxiliary Methods      
 ################################
     
-    def updateProxyMap(self):
-        if int(self.args['allow_anonymous']) !=0 :
-            return
- 
-        pfList = []
+    def getProxyFile(self, proxySubject):
+
+        proxySubject = str(proxySubject)
         proxyDir = self.args['ProxiesDir']
+        pfList = [ os.path.join(proxyDir, q)  for q in os.listdir(proxyDir) if q[0]!="." ]
 
-        # old gridsite version
-        for root, dirs, files in os.walk(proxyDir):
-            for f in files:
-                if f == 'userproxy.pem':
-                    pfList.append(os.path.join(root, f))
-
-        # new gridsite version
-        if len(pfList) == 0:
-            pfList = [ os.path.join(proxyDir, q)  for q in os.listdir(proxyDir) if q[0]!="." ]
-
-        # Get an associative map between each proxy file and its subject
         for pf in pfList:
-            if pf in self.proxyMap.values():
+            exitCode = -1
+            cmd = 'openssl x509 -in '+pf+' -subject -noout'
+            try:
+                exitCode, ps = commands.getstatusoutput(cmd)
+            except Exception, e:
+                logging.info("Error while summoning %s: %s"%(cmd, str(e) ))
+                exitCode = -1
+                pass
+
+            if exitCode != 0:
+                logging.info("Error while checking proxy subject for %s"%pf)
                 continue
 
-            try:
-                ps = str(os.popen3('openssl x509 -in '+pf+' -subject -noout')[1].readlines()[0]).strip()
-            except Exception, e:
-                missingProxy = 0
-                psCandidates = list(self.proxyMap.keys())
-
-                # remove expired proxies from cache 
-                for ps2Remove in psCandidates:
-                    if not os.path.exists(self.proxyMap[ps2Remove]):
-                        del self.proxyMap[ps2Remove]
-                        missingProxy = 1
-
-                # check whether the problem is something else...
-                if missingProxy == 0:
-                    logging.info("Error while checking proxy subject for %s"%pf)
-                    continue
-
-            if len(ps) > 0:
-                self.proxyMap[ps] = pf
-        #     
-        return
+            ps = ps.split('\n')
+            if len(ps)>0: 
+                ps = str(ps[0]).strip()
+                if proxySubject in ps or ps in proxySubject:
+                    return pf 
+        return None
 
     def associateProxyToTask(self, taskUniqName, node):
         """
@@ -417,43 +392,41 @@ class CrabServerWorkerComponent:
         At the same time performs the proxy <--> task association.
         """
         reason = ""
-        subj = str(node.getAttribute('Subject'))
 
         # is it an unwanted clone?
         if taskUniqName in self.workerSet:
-            reason = "Already submitting task %s. It won't be processed"%taskUniqName
+            reason = "Already submitting task %s: existing proxy will be referenced"%taskUniqName
             logging.info(reason)
-            return 4, reason
+            # recover the already set proxy link
+            proxyLink = os.path.join(self.wdir, (taskUniqName + '_spec/userProxy'))
+            return 0, proxyLink
 
         if int(self.args['allow_anonymous']) != 0: # and (subj=='anonymous'):
             return 0, 'anonymous'
- 
-        for psubj in self.proxyMap:
-            if subj in psubj: 
-                assocFile = self.proxyMap[psubj]
-                logging.info("Project -> Task association: %s -> %s"%(taskUniqName, assocFile) )
-                try:
-                    proxyLink = os.path.join(self.wdir, (taskUniqName + '_spec/userProxy'))
-                    if not os.path.exists(proxyLink):
-                        cmd = 'ln -s %s %s'%(assocFile, proxyLink)
-                        cmd = cmd + ' && chmod 600 %s'%assocFile
-                        os.system(cmd)
-                except Exception, e:
-                    reason = "Warning: error while linking the proxy file for task %s."%taskUniqName 
-                    logging.info(reason)
-                    logging.info( traceback.format_exc() )
-                    return 0, assocFile 
-                return 0, assocFile
+
+        assocFile = self.getProxyFile( node.getAttribute('Subject') ) 
+        if assocFile: 
+            logging.info("Project -> Task association: %s -> %s"%(taskUniqName, assocFile) )
+            try:
+                proxyLink = os.path.join(self.wdir, (taskUniqName + '_spec/userProxy'))
+                if not os.path.exists(proxyLink):
+                    cmd = 'ln -s %s %s'%(assocFile, proxyLink)
+                    cmd = cmd + ' && chmod 600 %s'%assocFile
+                    os.system(cmd)
+            except Exception, e:
+                reason = "Warning: error while linking the proxy file for task %s."%taskUniqName 
+                logging.info(reason)
+                logging.info( traceback.format_exc() )
+                return 0, assocFile 
+            return 0, assocFile
             
         reason = "Unable to locate a proper proxy for the task %s with subject %s"%(taskUniqName, subj)
         logging.info(reason)
-        logging.debug(self.proxyMap)
         return 2, reason
 
     def materializeStatus(self):
         ldump = []
         ldump.append(self.taskPool)
-        ldump.append(self.proxyMap)
         ldump.append(self.subTimes)
         ldump.append(self.subStats)
         try:
@@ -469,11 +442,10 @@ class CrabServerWorkerComponent:
             f = open(self.wdir+"/cw_status.set", 'r')
             ldump = pickle.load(f)
             f.close()
-            self.taskPool, self.proxyMap, self.subTimes, self.subStats = ldump
+            self.taskPool, self.subTimes, self.subStats = ldump
         except Exception, e:
             logging.info("Failed to open cw_status.set. Building a new status\n" + str(e) )
             self.taskPool = {}
-            self.proxyMap = {}
             self.subTimes = []
             self.subStats = {'succ':0, 'retry':0, 'fail':0}
             self.materializeStatus()
