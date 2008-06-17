@@ -806,6 +806,8 @@ class Cmssw(JobType):
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
+        except IOError:
+            raise CrabException('Could not create tar-ball '+self.tgzNameWithPath)
         except tarfile.TarError:
             raise CrabException('Could not create tar-ball '+self.tgzNameWithPath)
 
