@@ -60,6 +60,14 @@ class Cmssw(JobType):
         if not cfg_params.has_key('CMSSW.datasetpath'):
             msg = "Error: datasetpath not defined "
             raise CrabException(msg)
+        
+        ### Temporary: added to remove input file control in the case of PU
+        if not cfg_params.has_key('USER.dataset_pu'):
+            self.dataset_pu = 'NONE'
+        else:
+            self.dataset_pu = cfg_params['USER.dataset_pu']
+        ####    
+        
         tmp =  cfg_params['CMSSW.datasetpath']
         log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
         if string.lower(tmp)=='none':
@@ -1253,7 +1261,7 @@ class Cmssw(JobType):
         txt += '    fi\n'
           #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
 
-        if self.datasetPath:
+        if (self.datasetPath and self.dataset_pu == 'NONE'):
           # VERIFY PROCESSED DATA
             txt += '    if [ $executable_exit_status -eq 0 ];then\n'
             txt += '      echo ">>> Verify list of processed files:"\n'
