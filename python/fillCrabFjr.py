@@ -40,7 +40,8 @@ class fjrParser:
                 self.wrapperTime = argv[3]
                 self.exeTime = argv[4]
                 self.stageoutTime = argv[5]
-                self.cpuTime =  argv[6]               
+                # pay attenition that the input env var is actually a string of 3 attrutes # Fabio
+                self.cpuTime = "%s %s %s"%(argv[6], argv[7], argv[8])
             except:
                 pass
         else: 

@@ -242,7 +242,7 @@ class parseFjr:
                 except: size = 'NULL'
                 try: time = float(storage_report[protocol][action][3])/1000
                 except: time = 'NULL'
-                ## dashboard_report['io_'+protocol+'_'+action] = str(size)+'_'+str(time)
+                dashboard_report['io_'+protocol+'_'+action] = str(size)+'_'+str(time)
         if self.debug :
             ordered = dashboard_report.keys()
             ordered.sort()
