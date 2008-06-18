@@ -240,10 +240,11 @@ class Crab:
         # Load cfg-file
 
         if string.lower(self.cfg_fname) != 'none':
-            if self.cfg_sys_fname and os.path.exists(self.cfg_sys_fname):
-                self.cfg_params = loadConfig(self.cfg_sys_fname, self.cfg_params)
-            if self.cfg_home_fname and os.path.exists(self.cfg_home_fname):
-                self.cfg_params = loadConfig(self.cfg_home_fname, self.cfg_params)
+            if not self.flag_continue:
+                if self.cfg_sys_fname and os.path.exists(self.cfg_sys_fname):
+                    self.cfg_params = loadConfig(self.cfg_sys_fname, self.cfg_params)
+                if self.cfg_home_fname and os.path.exists(self.cfg_home_fname):
+                    self.cfg_params = loadConfig(self.cfg_home_fname, self.cfg_params)
             if os.path.exists(self.cfg_fname):
                 self.cfg_params = loadConfig(self.cfg_fname,self.cfg_params)
                 pass
