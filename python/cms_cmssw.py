@@ -1249,7 +1249,7 @@ class Cmssw(JobType):
         txt += '        executable_exit_status=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --exitcode`\n'
         txt += '        if [ $executable_exit_status -eq 50115 ];then\n'
         txt += '            echo ">>> crab_fjr.xml contents: "\n'
-        txt += '            cat $RUNTIME_AREA/crab_fjr_NJob.xml\n'
+        txt += '            cat $RUNTIME_AREA/crab_fjr_$NJob.xml\n'
         txt += '            echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"\n'
         txt += '        elif [ $executable_exit_status -eq -999 ];then\n'
         txt += '            echo "ExitStatus from FrameworkJobReport not available. not available. Using exit code of executable from command line."\n'
