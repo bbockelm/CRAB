@@ -55,7 +55,22 @@ class Publisher(Actor):
             
         self.content=file(self.pset).read()
         self.resDir = common.work_space.resDir()
+        
+        self.dataset_to_import=[]
+        
         self.datasetpath=cfg_params['CMSSW.datasetpath']
+        if (self.datasetpath.upper() != 'NONE'):
+            self.dataset_to_import.append(self.datasetpath)
+        
+        ### Added PU dataset
+        tmp = cfg_params.get('USER.dataset_pu',None)
+        if tmp :
+            datasets = tmp.split(',')
+            for dataset in datasets:
+                dataset=string.strip(dataset)
+                self.dataset_to_import.append(dataset)
+        ###        
+                
         self.SEName=''
         self.CMSSW_VERSION=''
         self.exit_status=''
@@ -91,15 +106,17 @@ class Publisher(Actor):
             msg = "Error: Problem with "+file+" file"  
             common.logger.message(msg)
             return self.exit_status
-        
-        if (self.datasetpath.upper() != 'NONE'):
-            common.logger.message("--->>> Importing parent dataset in the dbs")
-            status_import=self.importParentDataset(self.globalDBS, self.datasetpath)
-            if (status_import == 1):
-                common.logger.message('Problem with parent import from the global DBS '+self.globalDBS+ 'to the local one '+self.DBSURL)
-                self.exit_status='1'
-                return self.exit_status
-            common.logger.message("Parent import ok")
+
+        if (len(self.dataset_to_import) != 0):
+           for dataset in self.dataset_to_import:
+               common.logger.message("--->>> Importing parent dataset in the dbs: " +dataset)
+               status_import=self.importParentDataset(self.globalDBS, dataset)
+               if (status_import == 1):
+                   common.logger.message('Problem with parent '+ dataset +' import from the global DBS '+self.globalDBS+ 'to the local one '+self.DBSURL)
+                   self.exit_status='1'
+                   return self.exit_status
+               else:    
+                   common.logger.message('Import ok of dataset '+dataset)
             
         #// DBS to contact
         dbswriter = DBSWriter(self.DBSURL)                        
