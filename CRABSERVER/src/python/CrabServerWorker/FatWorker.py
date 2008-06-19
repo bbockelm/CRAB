@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.80 2008/06/10 17:32:44 farinafa Exp $"
-__version__ = "$Revision: 1.80 $"
+__revision__ = "$Id: FatWorker.py,v 1.82 2008/06/17 09:05:40 farinafa Exp $"
+__version__ = "$Revision: 1.82 $"
 import string
 import sys, os
 import time
@@ -105,7 +105,7 @@ class FatWorker(Thread):
             return
 
         # Parse the XML files (cmd CfgParamDict needed by ErrHand resub too) 
-        taskDir = os.path.join(self.wdir, (self.taskName + '_spec/') )
+        taskDir = os.path.join(self.wdir, self.taskName + '_spec/' )
         try:
             cmdSpecFile = taskDir + 'cmd.xml'
             doc = minidom.parse(cmdSpecFile)
@@ -220,6 +220,8 @@ class FatWorker(Thread):
                 self.log.info('Worker %s submitting a new task'%self.myName)
             except Exception, e:
                 self.log.info('Worker %s failed to declare task. Checking if already registered'%self.myName)
+                self.log.info( traceback.format_exc() )
+
                 # force the other computation branch
                 self.submissionKind = 'subsequent'
                 taskObj = None 
@@ -240,10 +242,11 @@ class FatWorker(Thread):
             self.log.info('Worker %s submitting a new command on a task'%self.myName)
 
             # resubmission of retrieved jobs
+            meaningfulRng = eval(str(self.cmdXML.getAttribute('Range')), {}, {}) 
             if taskObj is not None:
                 needUpd = False
                 for j in taskObj.jobs:
-                    if j.runningJob['closed'] == 'Y':  
+                    if j.runningJob['closed'] == 'Y' and j['jobId'] in meaningfulRng:  
                         needUpd = True  
                         self.blDBsession.getNewRunningInstance(j)
                         j.runningJob['status'] = 'C'
@@ -286,18 +289,27 @@ class FatWorker(Thread):
         tryToSubmitMask = ['C', 'A', 'RC', 'Z'] + ['K','Y','D','E']
         skippedSubmissions = []
 
-        ## check if the input sandbox is already on the right SE  
+        ## check if the input sandbox is already on the right SE 
         taskFileList = task['globalSandbox'].split(',')
-        remotePath = str(self.cfg_params['CRAB.se_remote_dir'])
-        
         try:
-            seEl = SElement(self.SEurl, self.SEproto, self.SEport)
-            sbi = SBinterface( seEl )
-
-            # check for files
             for f in taskFileList:
-                if sbi.checkExists(f, self.proxy) == False:
-                    self.log.info("Worker %s. Missing file %s"%(self.myName, f)) 
+                remoteFile = os.path.join( str(self.cfg_params['CRAB.se_remote_dir']), f)
+                checkCount = 3
+
+                fileFound = False 
+                while (checkCount > 0):
+                    seEl = SElement(self.SEurl, self.SEproto, self.SEport)
+                    sbi = SBinterface( seEl )
+                    fileFound = sbi.checkExists(remoteFile, self.proxy)
+                    if fileFound == True:
+                        break
+                    checkCount -= 1
+                    self.log.info("Worker %s. Checking file %s"%(self.myName, remoteFile))
+                    time.sleep(15) 
+                    pass
+
+                if fileFound == False: 
+                    self.log.info("Worker %s. Missing file %s"%(self.myName, remoteFile)) 
                     return [], newRange
 
             # get TURL for WMS bypass
@@ -355,7 +367,6 @@ class FatWorker(Thread):
             for jid in task.jobs:
                 if jid not in fullSubJob:
                     continue
-
                 seEl = SElement(self.SEurl, self.SEproto, self.SEport)
                 sbi = SBinterface( seEl )
                 outcomes = [ str(task['outputDirectory']+'/'+f).replace(self.TURLpreamble, '/') for f in job['outputFiles'] if 'tgz' in f ]
@@ -676,8 +687,17 @@ class FatWorker(Thread):
             # propagate the re-submission attempt
             self.cmdXML.setAttribute('Range', ','.join(map(str, resubmissionList)) )
             if self.resubCount <= 0:
+                # determine the failure reason
+                reason = "simplyFailed"
+                if len(unmatchedJobs)>0:
+                    reason = "unmatched"  
+                elif len(nonSubmittedJobs)>0:
+                    reason = "wmsNotSubmitted"
+                elif len(skippedJobs)>0:
+                    reason = "ioSkipped"
+
                 # SubmissionFailed message for ErrHandler
-                self.local_ms.publish("SubmissionFailed", self.taskName+"::"+str(resubmissionList) )
+                self.local_ms.publish("SubmissionFailed", "%s::%s::%s"%(self.taskName, reason, str(resubmissionList)) )
                 self.local_ms.commit()
 
                 try:
