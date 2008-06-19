@@ -47,7 +47,7 @@ class KillerServer(Actor):
                 raise CrabException(msg)
  
             # update runningjobs status
-            updList = [{'statusScheduler':'Killed', 'status':'K'}] * len(toBeKilled)
+            updList = [{'statusScheduler':'Killing', 'status':'KK'}] * len(toBeKilled)
             common._db.updateRunJob_(toBeKilled, updList)
  
             # printout the command result
