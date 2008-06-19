@@ -324,7 +324,6 @@ class DBinterface:
         for job in task.jobs:
             if not job.runningJob:
                 raise CrabException( "Missing running object for job %s"%str(job['jobId']) )
-
             id = str(job.runningJob['jobId'])
             rForJ = None
             nj_list= []
@@ -350,8 +349,10 @@ class DBinterface:
             # Data alignment
             jobStatus = str(job.runningJob['statusScheduler'])
             if str(job.runningJob['status']) != 'EE':
-                if rForJ.getAttribute('statusScheduler') not in ['Created', 'Submitting', 'Unknown'] and \
+                if rForJ.getAttribute('status') not in ['Created', 'Submitting', 'Unknown'] and \
                          job.runningJob['statusScheduler'] != 'Cleared':
+                    common.logger.debug(3,"Updating DB status for job: " + str(id) + " @: " \
+                                          + str(rForJ.getAttribute('status')) )
                     job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
                     jobStatus = str(job.runningJob['statusScheduler'])
                     job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
