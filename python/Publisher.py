@@ -63,7 +63,7 @@ class Publisher(Actor):
             self.dataset_to_import.append(self.datasetpath)
         
         ### Added PU dataset
-        tmp = cfg_params.get('USER.dataset_pu',None)
+        tmp = cfg_params.get('CMSSW.dataset_pu',None)
         if tmp :
             datasets = tmp.split(',')
             for dataset in datasets:
