@@ -166,7 +166,7 @@ class SchedulerGrid(Scheduler):
 
         # start with wrapper timing
         txt  = 'export TIME_WRAP_INI=`date +%s` \n'
-        txt += 'export TIME_STAGEOUT=NULL \n\n'
+        txt += 'export TIME_STAGEOUT=-2 \n\n'
         # as usual ... #Fabio
         txt += '# '+self.name()+' specific stuff\n'
         txt += '# strip arguments\n'
