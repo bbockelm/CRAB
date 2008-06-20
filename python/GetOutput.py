@@ -202,16 +202,16 @@ class GetOutput(Actor):
         OutDir_Base=self.outDir+'Submission_' 
         for i in range(1,max_id):
             if not os.path.isdir( OutDir_Base + str(i) + '/'):
-                cmd=('mkdir '+ OutDir_Base + str(i) + '/')
+                cmd=('mkdir '+ OutDir_Base + str(i) + '/  2> /dev/null')
                 cmd_out = runCommand(cmd)   
                 common.logger.write(str(cmd_out))
                 common.logger.debug(3,str(cmd_out))
         for i in range(len(self.list_id)):
             id = self.list_id[i]
             if sub_id[i] > 1 :
-                cmd='mv '+self.outDir+'*_'+str(self.list_id[i])+'.* ' + OutDir_Base + str(sub_id[i]-1) + '/'  
+                cmd='mv '+self.outDir+'*_'+str(self.list_id[i])+'.* ' + OutDir_Base + str(sub_id[i]-1) + '/  2> /dev/null'  
             else: 
-                cmd='mv '+self.outDir+'*_'+str(self.list_id[i])+'.* ' + OutDir_Base + str(sub_id[i]) + '/'
+                cmd='mv '+self.outDir+'*_'+str(self.list_id[i])+'.* ' + OutDir_Base + str(sub_id[i]) + '/  2> /dev/null'
             try:
                 cmd_out = runCommand(cmd) 
                 common.logger.write(cmd_out)
