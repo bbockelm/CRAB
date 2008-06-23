@@ -116,14 +116,14 @@ class DataDiscovery:
         fileBlocks_FileName = os.path.abspath(self.cfg_params.get('CMSSW.fileblocks_file',defaultName))
  
         api = DBSAPI.dbsApi.DbsApi(args)
+        allowedRetriveValue = ['retrive_parent', 
+                               'retrive_block',
+                               'retrive_lumi',
+                               'retrive_run'
+                               ]
         try:
             if len(runselection) <= 0 :
                 if useParent:
-                    allowedRetriveValue = ['retrive_parent', 
-                                           'retrive_block',
-                                           'retrive_lumi',
-                                           'retrive_run'
-                                           ]
                     files = api.listFiles(path=self.datasetPath, retriveList=allowedRetriveValue)
                     common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
                     common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
