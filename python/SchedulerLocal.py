@@ -89,7 +89,7 @@ class SchedulerLocal(Scheduler) :
         jbt = job.type()
         # start with wrapper timing
         txt  = 'export TIME_WRAP_INI=`date +%s` \n'
-        txt += 'export TIME_STAGEOUT=NULL \n\n'
+        txt += 'export TIME_STAGEOUT=-2 \n\n'
 
         txt += '# '+self.name()+' specific stuff\n'
         txt += '# strip arguments\n'
