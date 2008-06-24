@@ -97,9 +97,20 @@ class Crab:
                     optsToBeSavedDB[it[1:]]=opts[it]
                     optsToBeSaved[it]=opts[it]
                     if self.UseServer==0: optsToBeSavedDB['server_name']= srvName
-
             common._db.createTask_(optsToBeSavedDB)
-            common.work_space.saveConfiguration(optsToBeSaved, self.cfg_fname)
+
+            parsToBeSaved={}
+            for it in self.cfg_params.keys():
+                sec,act = string.split(it,".")
+                if sec == string.upper(common.prog_name): 
+                    tmp = "-"+act
+                    if (tmp in self.main_actions) or (tmp in self.aux_actions) or (it == '-debug'):
+                        pass
+                    else:
+                        parsToBeSaved[it]=self.cfg_params[it]
+                else:
+                    parsToBeSaved[it]=self.cfg_params[it]
+            common.work_space.saveConfiguration(optsToBeSaved, parsToBeSaved)
         else:
             common._db.loadDB()
 
@@ -218,14 +229,24 @@ class Crab:
                 self.cfg_fname = common.work_space.cfgFileName()
             else:
                 self.cfg_fname = common.prog_name+'.cfg'
+                self.cfg_home_fname = None
+                if os.environ.has_key('CRABDIR'):
+                    self.cfg_sys_fname = os.environ['CRABDIR']+"/etc/"+common.prog_name+'.cfg'
+                if os.environ.has_key('HOME'):
+                    self.cfg_home_fname = os.environ['HOME']+"/."+common.prog_name+'.cfg'
                 pass
             pass
 
         # Load cfg-file
 
         if string.lower(self.cfg_fname) != 'none':
+            if not self.flag_continue:
+                if self.cfg_sys_fname and os.path.exists(self.cfg_sys_fname):
+                    self.cfg_params = loadConfig(self.cfg_sys_fname, self.cfg_params)
+                if self.cfg_home_fname and os.path.exists(self.cfg_home_fname):
+                    self.cfg_params = loadConfig(self.cfg_home_fname, self.cfg_params)
             if os.path.exists(self.cfg_fname):
-                self.cfg_params = loadConfig(self.cfg_fname)
+                self.cfg_params = loadConfig(self.cfg_fname,self.cfg_params)
                 pass
             else:
                 msg = 'cfg-file '+self.cfg_fname+' not found.'
