@@ -62,7 +62,7 @@ class Cmssw(JobType):
             raise CrabException(msg)
         
         ### Temporary: added to remove input file control in the case of PU
-        self.dataset_pu = cfg_params.get('CMSSW.dataset_pu',None):
+        self.dataset_pu = cfg_params.get('CMSSW.dataset_pu', None)
         
         tmp =  cfg_params['CMSSW.datasetpath']
         log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
