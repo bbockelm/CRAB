@@ -138,7 +138,12 @@ class SchedulerLocal(Scheduler) :
 
         txt += 'export SE_PATH='+self.SE_path+'\n'
 
-        txt += 'export CP_CMD='+self._copyCommand+'\n'
+        txt += 'export CP_CMD="'+self._copyCommand+'"\n'
+        if self._copyCommand.find('srmcp'):
+          txt += 'export SRC_PREFIX=file:///\n'
+        else:
+          txt += 'export SRC_PREFIX=\n'
+
         common.logger.debug(3, "Wrapper script CP_CMD set to "+ self._copyCommand)
 
         txt += 'echo ">>> Copy output files from WN = `hostname` to PATH = $SE_PATH using $CP_CMD :"\n'
@@ -149,8 +154,8 @@ class SchedulerLocal(Scheduler) :
         txt += '    echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
         txt += 'else\n'
         txt += '    for out_file in $file_list ; do\n'
-        txt += '        echo "Trying to copy output file to $SE_PATH"\n'
-        txt += '        $CP_CMD $SOFTWARE_DIR/$out_file ${SE_PATH}/$out_file\n'
+        txt += '        echo "Copy command: $CP_CMD ${SRC_PREFIX}$SOFTWARE_DIR/$out_file ${SE_PATH}/$out_file"\n'
+        txt += '        $CP_CMD ${SRC_PREFIX}$SOFTWARE_DIR/$out_file ${SE_PATH}/$out_file\n'
         txt += '        copy_exit_status=$?\n'
         txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
         txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
@@ -182,7 +187,7 @@ class SchedulerLocal(Scheduler) :
         txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --errorcode $job_exit_code $executable_exit_status \n'
         txt += '       fi\n'
         txt += '    fi\n'
-        txt += '    cd $RUNTIME_AREA  \n'   
+        txt += '    cd $RUNTIME_AREA  \n'
         txt += '    for file in $filesToCheck ; do\n'
         txt += '        if [ -e $file ]; then\n'
         txt += '            echo "tarring file $file in  $out_files"\n'
@@ -198,7 +203,7 @@ class SchedulerLocal(Scheduler) :
         txt += '       else \n'
         # call timing FJR filling
         txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --timing $TIME_WRAP $TIME_EXE $TIME_STAGEOUT \n'
-        txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n' 
+        txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n'
         txt += '           if [ $TIME_STAGEOUT -lt 0 ]; then \n'
         txt += '               export TIME_STAGEOUT=NULL \n'
         txt += '           fi\n'
