@@ -46,16 +46,11 @@ class SchedulerLsf(SchedulerLocal) :
         """
         Returns parameter scheduler-specific, to use with BOSS .
         """
-        index = int(common._db.nJobs()) - 1
         sched_param= ''
 
-        for i in range(index): # Add loop DS
-
-            sched_param= ''
-            if (self.queue):
-                sched_param += '-q '+self.queue +' '
-                if (self.res): sched_param += ' -R '+self.res +' '
-            pass
+        if (self.queue):
+            sched_param += '-q '+self.queue +' '
+            if (self.res): sched_param += ' -R '+self.res +' '
 
         sched_param+='-cwd '+ str(self.outputDir)  + ' '
         return sched_param
