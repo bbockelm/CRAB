@@ -60,6 +60,10 @@ class Cmssw(JobType):
         if not cfg_params.has_key('CMSSW.datasetpath'):
             msg = "Error: datasetpath not defined "
             raise CrabException(msg)
+        
+        ### Temporary: added to remove input file control in the case of PU
+        self.dataset_pu = cfg_params.get('CMSSW.dataset_pu',None):
+        
         tmp =  cfg_params['CMSSW.datasetpath']
         log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
         if string.lower(tmp)=='none':
@@ -266,10 +270,19 @@ class Cmssw(JobType):
                                 outfileflag = True #output found
                                 self.output_file.append(tfsOutput)
                                 common.logger.message("Adding "+tfsOutput+" to output files (from TFileService)")
-                    # if no output specified
-                    if not outfileflag:
-                        log.message("No output file defined: only stdout/err and the CRAB Framework Job Report will be available\n")
-
+                            pass
+                        pass
+                    ## If present and requested, add PoolOutputModule to output files
+                    if int(cfg_params.get('CMSSW.get_edm_output',0)):
+                        edmOutput = PsetEdit.getPoolOutputModule()
+                        if edmOutput: 
+                            if edmOutput in self.output_file:
+                                common.logger.debug(5,"Output from PoolOutputModule "+edmOutput+" already in output files")
+                            else:
+                                self.output_file.append(edmOutput)
+                                common.logger.message("Adding "+edmOutput+" to output files (from PoolOutputModule)")
+                            pass
+                        pass
                 except CrabException:
                     msg='Error while manipulating ParameterSet: exiting...'
                     raise CrabException(msg)
@@ -797,6 +810,8 @@ class Cmssw(JobType):
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
+        except IOError:
+            raise CrabException('Could not create tar-ball '+self.tgzNameWithPath)
         except tarfile.TarError:
             raise CrabException('Could not create tar-ball '+self.tgzNameWithPath)
 
@@ -1230,7 +1245,7 @@ class Cmssw(JobType):
         txt += '        executable_exit_status=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --exitcode`\n'
         txt += '        if [ $executable_exit_status -eq 50115 ];then\n'
         txt += '            echo ">>> crab_fjr.xml contents: "\n'
-        txt += '            cat $RUNTIME_AREA/crab_fjr_NJob.xml\n'
+        txt += '            cat $RUNTIME_AREA/crab_fjr_$NJob.xml\n'
         txt += '            echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"\n'
         txt += '        elif [ $executable_exit_status -eq -999 ];then\n'
         txt += '            echo "ExitStatus from FrameworkJobReport not available. not available. Using exit code of executable from command line."\n'
@@ -1242,7 +1257,7 @@ class Cmssw(JobType):
         txt += '    fi\n'
           #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
 
-        if self.datasetPath:
+        if (self.datasetPath and not self.dataset_pu ):
           # VERIFY PROCESSED DATA
             txt += '    if [ $executable_exit_status -eq 0 ];then\n'
             txt += '      echo ">>> Verify list of processed files:"\n'
