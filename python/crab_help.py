@@ -26,7 +26,7 @@ The most useful general options (use '-h' to get complete help):
   -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance.
   -kill [range]       -- kill submitted jobs.
   -resubmit [range]   -- resubmit killed/aborted/retrieved jobs.
-  -copyLocal [range]  -- copy locally the output sored on remote SE.
+  -copyLocal [range]  -- copy locally the output stored on remote SE.
   -renewProxy         -- renew the proxy on the server.
   -clean              -- gracefully cleanup the directory of a task.
   -testJdl [range]    -- check if resources exist which are compatible with jdl.
@@ -371,11 +371,15 @@ Define the number of job to be run for the task. The number of event for each jo
 
 =item B<output_file *>
 
-the output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1.
+the output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1 (default is 0 == file included). The Edm output produced via PoolOutputModule can be automatically added by setting B<get_edm_output> = 1 (default is 0 == no)
 
 =item B<skip_TFileService_output>
 
 Force CRAB to skip the inclusion of file produced by TFileService to list of output files. Default is I<0>, namely the file is included.
+
+=item B<get_edm_output>
+
+Force CRAB to add the EDM output file, as defined in PSET in PoolOutputModule (if any) to be added to the list of output files. Default is 0 (== no inclusion)
 
 =item B<increment_seeds>
 
