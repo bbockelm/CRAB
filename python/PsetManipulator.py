@@ -108,5 +108,11 @@ class PsetManipulator:
             return fileName
         return None
         
-        #fileName
+    def getPoolOutputModule(self):
+        """ Get Output filename from PoolOutputModule and return it. If not existing, return None """
+        if not self.cfg.data.outputModules:
+            return None
+        poolOutputModule = self.cfg.data.outputModules
+        for out in poolOutputModule:
+            return poolOutputModule[out].fileName.value()
 
