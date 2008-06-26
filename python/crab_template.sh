@@ -68,11 +68,14 @@ function cmscp {
       StageOutExitStatusReason=$exitstring
       cmd="lcg-ls -D srmv${Dsrm_ver} $destination"
       tmpstring=`$cmd 2>&1`
-      echo $tmpstring | grep 'not found'
       exit_status=$?
       if [ $exit_status -eq 0 ]; then
-          cmscp_exit_status=60303
-          StageOutExitStatusReason='file already exists'
+           echo $tmpstring | grep -v 'No such file' 
+           exit_status=$?
+           if [ $exit_status -eq 0 ]; then
+              cmscp_exit_status=60303
+              StageOutExitStatusReason='file already exists'
+           fi
       fi
   else
      StageOutExitStatusReason='copy ok with lcg utils'
