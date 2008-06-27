@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-import re, popen2, sys, copy
+
+import re
+import sys
+import copy
+import sets
+import popen2
 
 CR = '\r'
 LF = '\n'
@@ -127,33 +132,78 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
     return jmlist
 
 def isOSGSite(host_list, bdii='exp-bdii.cern.ch'):
-    results_list = []
-    r = re.compile('^GlueSiteDescription: (OSG.*)')
-    s = re.compile('^GlueSiteUniqueID: (.*)')
+    """
+    Determine which hosts in the host_list are OSG sites.
 
-    query = " '(|"
+    Take a list of CE host names, and find all the associated clusters.
+    Take the resulting clusters and map them to sites.  Any such site whose
+    description includes "OSG" is labeled an OSG site.
+    
+    @param host_list: A list of host names which are CEs we want to consider.
+    @keyword bdii: The BDII instance to query
+    @return: A list of host names filtered from host_list which are OSG sites. 
+    """
+    siteUniqueID_CE_map = {}
+    results = sets.Set()
+    description_re = re.compile('^GlueSiteDescription: (OSG.*)')
+    siteid_re = re.compile('GlueForeignKey: GlueSiteUniqueID=(.*)')
+    ce_re = re.compile('^GlueForeignKey: GlueCEUniqueID=(.*):')
+    
+    # Build the BDII query for all the hosts.
+    # This asks for all GlueClusters which are associated with one of the
+    # host names.
+    query = " '(&(objectClass=GlueCluster)(|"
     for h in host_list:
-        query = query + "(GlueSiteUniqueID=" + h + ")"
-    query = query + ")' GlueSiteDescription"
+        query += "(GlueForeignKey=GlueCEUniqueID=%s:*)" % h
+    query += "))' "
 
-    pout = runldapquery(query, 'GlueSubClusterUniqueID GlueSiteUniqueID', bdii)
+    pout = runldapquery(query, 'GlueForeignKey', bdii)
     output = concatoutput(pout)
 
+    # Now, we build a mapping from host to SiteUniqueID
     stanzas = output.split(LF + LF)
     for stanza in stanzas:
-        osg = 0
-        host = ""
         details = stanza.split(LF)
+        ces_tmp = sets.Set()
+        siteUniqueID = None
+        # Find out all the matching CEs and Sites with this cluster.
         for detail in details:
-            m = r.match(detail)
-            n = s.match(detail)
+            m = ce_re.match(detail)
             if m:
-                osg = 1
-            if n:
-                host = n.groups()[0]
-        if (osg == 1):
-            results_list.append(host)
-    return results_list
+                ces_tmp.add(m.groups()[0])
+            m = siteid_re.match(detail)
+            if m:
+                siteUniqueID = m.groups()[0]
+        if siteUniqueID:
+            siteUniqueID_CE_map[siteUniqueID] = ces_tmp
+
+    # Build a new query, this time for SiteUniqueIDs
+    query = " '(|"
+    for site in siteUniqueID_CE_map:
+        query += "(GlueSiteUniqueID=%s)" % site
+    query += ")' "
+    pout = runldapquery(query, "GlueForeignKey GlueSiteDescription", bdii)
+    output = concatoutput(pout)
+   
+    # See which resulting sites are OSG sites, and then add the
+    # corresponding CEs into the results set.
+    stanzas = output.split(LF + LF)
+    for stanza in stanzas:
+        isOsgSite = False
+        siteUniqueID = None
+        details = stanza.split(LF)
+        # We need to find the stanza's siteUniqueID and if the description
+        # is a "OSG Site".  If it is, afterward add it to the results.
+        for detail in details:
+            m = siteid_re.search(detail)
+            if m:
+                siteUniqueID = m.groups()[0]
+            m = description_re.match(detail)
+            if m:
+                isOsgSite = True
+        if siteUniqueID and isOsgSite:
+            results.update(siteUniqueID_CE_map[siteUniqueID])
+    return list(results)
 
 def getSoftwareAndArch2(host_list, software, arch, bdii='exp-bdii.cern.ch'):
     results_list = []
@@ -422,12 +472,12 @@ def listAllSEs(bdii='exp-bdii.cern.ch'):
 if __name__ == '__main__':
     import pprint
 #    pprint.pprint(listAllSEs('uscmsbd2.fnal.gov'))
-    pprint.pprint(listAllCEs( "CMSSW_1_6_11", "slc4_ia32_gcc345", onlyOSG=False))
+#    pprint.pprint(listAllCEs( "CMSSW_1_6_11", "slc4_ia32_gcc345", onlyOSG=False))
 #    pprint.pprint(listAllCEs(onlyOSG=False))
 
-    seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
-#    seList = ['ccsrm.in2p3.fr', 'storm.ifca.es']
-#    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345", 'uscmsbd2.fnal.gov', True)
-#    for jm in jmlist:
-#        print jm
+#    seList = ['ccsrm.in2p3.fr', 'cmssrm.hep.wisc.edu', 'pccms2.cmsfarm1.ba.infn.it', 'polgrid4.in2p3.fr', 'srm-disk.pic.es', 'srm.ciemat.es', 'srm.ihepa.ufl.edu', 't2data2.t2.ucsd.edu']
+    seList = ['srm.unl.edu', 'dcache.rcac.purdue.edu']
+    jmlist =  getJobManagerList(seList, "CMSSW_1_6_11", "slc4_ia32_gcc345")
+    for jm in jmlist:
+        print jm
 #   print jm_from_se_bdii(sys.argv[1])
