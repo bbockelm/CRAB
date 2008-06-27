@@ -2,6 +2,7 @@ from Scheduler import Scheduler
 from crab_exceptions import *
 from crab_logger import Logger
 import common
+from LFNBaseName import *
 
 import os,string
 
@@ -24,19 +25,39 @@ class SchedulerLocal(Scheduler) :
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
 
+        ## FEDE publication options
+        self.publish_data = cfg_params.get("USER.publish_data",0)
+        if int(self.publish_data) == 1 :
+            self.publish_data_name = cfg_params.get('USER.publish_data_name',None)
+            if not self.publish_data_name and int(self.publish_data) == 1:
+                msg = "Error. The [USER] section does not have 'publish_data_name'"
+                raise CrabException(msg)
+            self.SE =  cfg_params.get("USER.storage_element", None)    
+            if not self.SE:
+                msg = "Error. The [USER] section does not have 'storage_element'.\n"
+                msg = msg + "Please fill this field if you want to publish your data"
+                raise CrabException(msg)
+        
         self.copy_data = int(cfg_params.get("USER.copy_data",0))
         if self.copy_data == 1:
-            self._copyCommand = cfg_params.get('USER.copycommand','rfcp')
-            common.logger.debug(3, "copyCommand set to "+ self._copyCommand)
+            #self._copyCommand = cfg_params.get('USER.copycommand','rfcp')
+            #common.logger.debug(3, "copyCommand set to "+ self._copyCommand)
+            
+            ### FEDE could be useful to have also the name of the SE in any case? 
+            ##self.SE= cfg_params.get('USER.storage_element',None)
+            ###
+            
             self.SE_path= cfg_params.get('USER.storage_path',None)
             if not self.SE_path:
-                if os.environ.has_key('CASTOR_HOME'):
+                # do not allow CASTOR_HOME if publish_data is enabled
+                if int(self.publish_data) == 0 and os.environ.has_key('CASTOR_HOME'):
                     self.SE_path=os.environ['CASTOR_HOME']
                 else:
                     msg='No USER.storage_path has been provided: cannot copy_output'
                     raise CrabException(msg)
                 pass
             pass
+            ### FEDE to improve the final /  control
             self.SE_path+='/'
 
         if ( self.return_data == 0 and self.copy_data == 0 ):
@@ -112,8 +133,8 @@ class SchedulerLocal(Scheduler) :
         txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += 'echo "SyncCE='+self.name()+'.`hostname -d`" | tee -a $RUNTIME_AREA/$repo \n'
-
-        txt += 'middleware='+self.name()+' \n'
+        ###### FEDE
+        txt += 'middleware='+self.name().upper()+' \n'
 
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
 
@@ -132,41 +153,70 @@ class SchedulerLocal(Scheduler) :
         if not self.copy_data: return txt
 
 
+
+
+        if int(self.publish_data) == 1:
+                self.path_add = PFNportion(self.publish_data_name,LocalUser=True) +'_${PSETHASH}/'
+                
+                #### FEDE we can generalize this function for each scheluder ....
+                txt += '#\n'
+                txt += '# publication = 1 --> verify is the SE path exists '+self.SE_path+self.path_add+'\n'
+                txt += '#\n\n'
+                txt += 'verifySePath ' + self.SE_path + ' ' +  self.path_add + '\n'
+                
+                self.SE_path = self.SE_path + self.path_add
+      
+                  
+                
         txt += '#\n'
-        txt += '# COPY OUTPUT FILE TO '+self.SE_path
+        txt += '# COPY OUTPUT FILE TO '+self.SE_path+ '\n'
         txt += '#\n\n'
 
+        if int(self.publish_data) == 1:
+            txt += 'export SE='+self.SE+'\n'
         txt += 'export SE_PATH='+self.SE_path+'\n'
 
-        txt += 'export CP_CMD='+self._copyCommand+'\n'
-        common.logger.debug(3, "Wrapper script CP_CMD set to "+ self._copyCommand)
+        #txt += 'export CP_CMD='+self._copyCommand+'\n'
+        #common.logger.debug(3, "Wrapper script CP_CMD set to "+ self._copyCommand)
 
-        txt += 'echo ">>> Copy output files from WN = `hostname` to PATH = $SE_PATH using $CP_CMD :"\n'
+        #txt += 'echo ">>> Copy output files from WN = `hostname` to PATH = $SE_PATH using $CP_CMD :"\n'
 
-        txt += 'if [ $job_exit_code -eq 60302 ]; then\n'
-        txt += '    echo "--> No output file to copy to $SE"\n'
-        txt += '    copy_exit_status=$job_exit_code\n'
-        txt += '    echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
-        txt += 'else\n'
-        txt += '    for out_file in $file_list ; do\n'
+        #txt += 'if [ $job_exit_code -eq 60302 ]; then\n'
+        #txt += '    echo "--> No output file to copy to $SE"\n'
+        #txt += '    copy_exit_status=$job_exit_code\n'
+        #txt += '    echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
+        #txt += 'else\n'
+        #txt += '    for out_file in $file_list ; do\n'
+        txt += 'echo ">>> Copy output files from WN = `hostname` to SE_PATH = $SE_PATH :"\n'
+        txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
+        txt += 'copy_exit_status=0\n'
+        txt += 'for out_file in $file_list ; do\n'
+        txt += '    if [ -e $SOFTWARE_DIR/$out_file ] ; then\n'
         txt += '        echo "Trying to copy output file to $SE_PATH"\n'
-        txt += '        $CP_CMD $SOFTWARE_DIR/$out_file ${SE_PATH}/$out_file\n'
-        txt += '        copy_exit_status=$?\n'
-        txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
-        txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
-        txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
-        txt += '            echo "Problem copying $out_file to $SE $SE_PATH"\n'
-        txt += '            echo "StageOutExitStatus = $copy_exit_status " | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '            copy_exit_status=60307\n'
+        #txt += '        $CP_CMD $SOFTWARE_DIR/$out_file ${SE_PATH}/$out_file\n'
+        txt += '        cmscp $middleware $SOFTWARE_DIR/$out_file $out_file ${SE_PATH}\n'
+        txt += '        if [ $cmscp_exit_status -ne 0 ]; then\n'
+        txt += '            echo "Problem copying $out_file to $SE_PATH"\n'
+        txt += '            copy_exit_status=$cmscp_exit_status\n'
         txt += '        else\n'
-        txt += '            echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '            echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
         txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
-        txt += '            echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '        fi\n'
-        txt += '    done\n'
+        txt += '    else\n'
+        txt += '        copy_exit_status=60302\n'
+        txt += '        echo "StageOutExitStatus = $copy_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '        echo "StageOutExitStatusReason = file to copy not found" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += '    fi\n'
+        txt += 'done\n'
+        #txt += '        copy_exit_status=$?\n'
+        #txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
+        #txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
+        txt += 'if [ $copy_exit_status -ne 0 ]; then\n'
+        txt += '    SE=""\n'
+        txt += '    SE_PATH=""\n'
+        txt += '    job_exit_code=$copy_exit_status\n'
         txt += 'fi\n'
-        txt += 'exit_status=$copy_exit_status\n'
+        txt += 'export TIME_STAGEOUT_END=`date +%s` \n'
+        txt += 'let "TIME_STAGEOUT = TIME_STAGEOUT_END - TIME_STAGEOUT_INI" \n'
 
         return txt
 

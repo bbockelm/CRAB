@@ -1200,7 +1200,14 @@ class Cmssw(JobType):
         publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (publish_data == 1):
             processedDataset = self.cfg_params['USER.publish_data_name']
-            LFNBaseName = LFNBase(processedDataset)
+            ### FEDE  for publication with LSF and CAF schedulers ####
+            print "common.scheduler.name().upper() = ", common.scheduler.name().upper()
+            if (common.scheduler.name().upper() == "CAF" or common.scheduler.name().upper() == "LSF"):
+                print "chiamo LFNBaseName con localUser = true"
+                LFNBaseName = LFNBase(processedDataset, LocalUser=True)
+            else :    
+                LFNBaseName = LFNBase(processedDataset)
+            ####    
 
             txt += 'if [ $copy_exit_status -eq 0 ]; then\n'
             txt += '    FOR_LFN=%s_${PSETHASH}/\n'%(LFNBaseName)
