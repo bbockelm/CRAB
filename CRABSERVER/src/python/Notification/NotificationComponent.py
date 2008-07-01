@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.15 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.15 2008/06/04 14:08:57 mcinquil Exp $"
+__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.17 2008/06/09 14:26:15 mcinquil Exp $"
 
 import os
 import socket
@@ -414,12 +414,12 @@ class NotificationComponent:
                     self.mailer.SendMail(emaillist, completeMessage)
                 except RuntimeError, mess:
                     logging.error(mess)
-                except gaierror, mess:
-                    logging.error("gaierror: " + mess )
-                except timeout, mess:
-                    logging.error("timeout error: " + mess )
-                except:
-                    print "Unexpected error: ", sys.exc_info()[0]
+                #except gaierror, mess:
+                #    logging.error("gaierror: " + mess )
+                #except timeout, mess:
+                #    logging.error("timeout error: " + mess )
+                except Exception, exc:
+                    logging.error("Problem sending mail: " + str(exc)) 
 
                 self.ms.commit()
 
@@ -475,12 +475,14 @@ class NotificationComponent:
                     self.mailer.SendMail(emaillist, completeMessage)
                 except RuntimeError, mess:
                     logging.error(mess)
-                except gaierror, mess:
-                    logging.error("gaierror: " + mess )
-                except timeout, mess:
-                    logging.error("timeout error: " + mess )
-                except:
-                    print "Unexpected error: ", sys.exc_info()[0]
+                #except gaierror, mess:
+                #    logging.error("gaierror: " + mess )
+                #except timeout, mess:
+                #    logging.error("timeout error: " + mess )
+                #except:
+                #    print "Unexpected error: ", sys.exc_info()[0]
+                except Exception, exc:
+                    logging.error("Problem sending mail: " + str(exc))
 
                 self.ms.commit()
 
@@ -654,12 +656,14 @@ class NotificationComponent:
                     self.mailer.SendMail(emaillist, completeMessage)
                 except RuntimeError, mess:
                     logging.error(mess)
-                except gaierror, mess:
-                    logging.error("gaierror: " + mess )
-                except timeout, mess:
-                    logging.error("timeout error: " + mess )
-                except:
-                    print "Unexpected error: ", sys.exc_info()[0]
+                #except gaierror, mess:
+                #    logging.error("gaierror: " + mess )
+                #except timeout, mess:
+                #    logging.error("timeout error: " + mess )
+                #except:
+                #    print "Unexpected error: ", sys.exc_info()[0]
+                except Exception, exc:
+                    logging.error("Problem sending mail: " + str(exc))
 
                 self.ms.commit()
 
@@ -711,12 +715,14 @@ class NotificationComponent:
                     self.mailer.SendMail(emaillist, completeMessage)
                 except RuntimeError, mess:
                     logging.error(mess)
-                except gaierror, mess:
-                    logging.error("gaierror: " + mess )
-                except timeout, mess:
-                    logging.error("timeout error: " + mess )
-                except:
-                    print "Unexpected error: ", sys.exc_info()[0]
+                #except gaierror, mess:
+                #    logging.error("gaierror: " + mess )
+                #except timeout, mess:
+                #    logging.error("timeout error: " + mess )
+                #except:
+                #    print "Unexpected error: ", sys.exc_info()[0]
+                except Exception, exc:
+                    logging.error("Problem sending mail: " + str(exc))
 
                 self.ms.commit()
 
