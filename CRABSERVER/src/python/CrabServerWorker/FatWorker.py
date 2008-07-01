@@ -218,37 +218,6 @@ class FatWorker(Thread):
             try: 
                 taskObj = self.blDBsession.declare(self.taskXML, self.proxy)
                 self.log.info('Worker %s submitting a new task'%self.myName)
-
-                # get TURL for WMS bypass and manage paths
-                remotedir = str(self.cfg_params['CRAB.se_remote_dir'])
-                remoteSBlist = [ os.path.basename(f) for f in taskObj['globalSandbox'].split(',') ]
-
-                if len(remoteSBlist) > 0:
-                    seEl = SElement(self.SEurl, self.SEproto, self.SEport)
-                    sbi = SBinterface( seEl )
-
-                    turlFileCandidate = os.path.join(remotedir, remoteSBlist[0])
-                    self.TURLpreamble = sbi.getTurl( turlFileCandidate, self.proxy )
-
-                    # stores only the path without the base filename and correct the last char
-                    self.TURLpreamble = self.TURLpreamble.split(remoteSBlist[0])[0]
-                    if self.TURLpreamble:
-                        if self.TURLpreamble[-1] != '/':
-                            self.TURLpreamble += '/'
-                    pass
-
-                self.log.debug("Worker %s. Reference TURL: %s"%(self.myName,self.TURLpreamble) )
-                taskObj['globalSandbox'] = ','.join(remoteSBlist)
-                taskObj['startDirectory'] = self.TURLpreamble
-                taskObj['outputDirectory'] = self.TURLpreamble 
-
-                taskObj['scriptName'] = self.TURLpreamble + os.path.basename(taskObj['scriptName']) 
-                taskObj['cfgName'] = self.TURLpreamble + os.path.basename(taskObj['cfgName']) 
-                for j in taskObj.jobs:
-                    j['executable'] = os.path.basename(j['executable'])
-
-                self.blDBsession.updateDB(taskObj)
-
             except Exception, e:
                 self.log.info('Worker %s failed to declare task. Checking if already registered'%self.myName)
                 self.log.info( traceback.format_exc() )
@@ -321,8 +290,9 @@ class FatWorker(Thread):
         skippedSubmissions = []
 
         ## check if the input sandbox is already on the right SE 
+        taskFileList = task['globalSandbox'].split(',')
         try:
-            for f in task['globalSandbox'].split(','):
+            for f in taskFileList:
                 remoteFile = os.path.join( str(self.cfg_params['CRAB.se_remote_dir']), f)
                 checkCount = 3
 
@@ -342,6 +312,14 @@ class FatWorker(Thread):
                     self.log.info("Worker %s. Missing file %s"%(self.myName, remoteFile)) 
                     return [], newRange
 
+            # get TURL for WMS bypass
+            if len(taskFileList) > 0: 
+                self.TURLpreamble = sbi.getTurl( taskFileList[0], self.proxy )
+                self.TURLpreamble = self.TURLpreamble.split(taskFileList[0])[0]
+                if self.TURLpreamble:
+                    if self.TURLpreamble[-1] != '/':
+                        self.TURLpreamble += '/' 
+           
         except Exception, e:
             self.log.info( traceback.format_exc() )
             return [], newRange
@@ -371,6 +349,15 @@ class FatWorker(Thread):
         unsubmitted = [] # list of all the jId hadled. Used to check the number of successful jubmissions
         submitted = [] 
 
+        # modify sandbox and other paths for WMS bypass
+        self.log.debug("Worker %s. Reference TURL: %s"%(self.myName,self.TURLpreamble) )
+        if self.TURLpreamble and (self.TURLpreamble not in task['outputDirectory']):
+            task['startDirectory'] = self.TURLpreamble
+            destDir = task['outputDirectory']
+            task['outputDirectory'] = self.TURLpreamble + destDir
+            task['scriptName'] = self.TURLpreamble + task['scriptName']
+            task['cfgName'] = self.TURLpreamble + task['cfgName']
+
         if not self.submissionKind == 'first': 
             # backup for job output (tgz files only, less load)
             fullSubJob = []
@@ -382,7 +369,7 @@ class FatWorker(Thread):
                     continue
                 seEl = SElement(self.SEurl, self.SEproto, self.SEport)
                 sbi = SBinterface( seEl )
-                outcomes = [ str(task['outputDirectory']+'/'+f) for f in job['outputFiles'] if 'tgz' in f ]
+                outcomes = [ str(task['outputDirectory']+'/'+f).replace(self.TURLpreamble, '/') for f in job['outputFiles'] if 'tgz' in f ]
                 bk_sbi = SBinterface( seEl, copy.deepcopy(seEl) )
 
                 for orig in outcomes:
@@ -590,6 +577,16 @@ class FatWorker(Thread):
         self.EDG_retry_count = int(self.cfg_params['EDG_retry_count'])
         self.EDG_shallow_retry_count = int(self.cfg_params['EDG_shallow_retry_count'])
  
+        # get the turl
+        seEl = SElement(self.SEurl, self.SEproto, self.SEport)
+        sbi = SBinterface( seEl )
+        taskFileList = task['globalSandbox'].split(',')
+        self.TURLpreamble = sbi.getTurl( taskFileList[0], self.proxy )
+        self.TURLpreamble = self.TURLpreamble.split(taskFileList[0])[0]
+        if self.TURLpreamble:
+            if self.TURLpreamble[-1] != '/':
+                self.TURLpreamble += '/'
+
         # submit once again 
         sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(task, [int(self.jobId)])
         self.log.info('Worker %s listmatched jobs, now submitting'%self.myName)
