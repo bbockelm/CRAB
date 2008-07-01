@@ -17,7 +17,6 @@ class SchedulerCaf(SchedulerLsf) :
     def __init__(self):
         SchedulerLsf.__init__(self)
         Scheduler.__init__(self,"CAF")
-
         return
 
     def configure(self, cfg_params):
@@ -27,14 +26,20 @@ class SchedulerCaf(SchedulerLsf) :
         SchedulerLsf.configure(self, cfg_params)
         self.queue = cfg_params.get(self.name().upper()+'.queue','cmscaf')
         self.res = cfg_params.get(self.name().upper()+'.resource','cmscaf')
+
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
         """
         txt = SchedulerLsf.wsSetupEnvironment(self)
         txt += '# CAF specific stuff\n'
-        txt += 'middleware=CAF \n'
-        txt += 'export STAGE_SVCCLASS=cmscaf \n'
-
+        txt += 'export STAGE_SVCCLASS=cmscaf\n'
+        txt += '\n'
         return txt
 
+    def wsCopyOutput(self):
+        ### default is the name of the storage pool 
+        ### where users can copy job outputs  
+        pool='default'
+        txt=self.wsCopyOutput_tmp(pool)
+        return txt

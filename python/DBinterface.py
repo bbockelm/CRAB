@@ -346,14 +346,17 @@ class DBinterface:
             for r in reportList:
                 if r.getAttribute('id') in [ id, 'all']:
                     rForJ = r
-                    break  
+                    break 
+ 
             # Data alignment
-            jobStatus = str(job.runningJob['statusScheduler'])
             if str(job.runningJob['status']) != 'EE':
-                if rForJ.getAttribute('statusScheduler') not in ['Created', 'Submitting', 'Unknown'] and \
-                         job.runningJob['statusScheduler'] != 'Cleared':
+                if rForJ.getAttribute('status') not in ['Created', 'Submitting', 'Unknown'] and \
+                   job.runningJob['statusScheduler'] != 'Cleared' and \
+                   not (job.runningJob['statusScheduler'] == 'Killing' and rForJ.getAttribute('statusScheduler')!='Killed'):
+                       # update the status  
+                    common.logger.debug(3,"Updating DB status for job: " + str(id) + " @: " \
+                                          + str(rForJ.getAttribute('status')) )
                     job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
-                    jobStatus = str(job.runningJob['statusScheduler'])
                     job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
           
                 job.runningJob['destination'] = str( rForJ.getAttribute('site') )
