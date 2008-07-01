@@ -42,6 +42,7 @@ class fjrParser:
                 self.stageoutTime = argv[5]
                 # pay attenition that the input env var is actually a string of 3 attrutes # Fabio
                 self.cpuTime = "%s %s %s"%(argv[6], argv[7], argv[8])
+                self.cpuTime.replace('"','').replace('&quot;','')
             except:
                 pass
         else: 
