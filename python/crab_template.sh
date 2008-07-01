@@ -20,7 +20,7 @@ function createSePath {
 ##  60316 if problem with dir creation
 #######
   dir=$1
-  rfmkdir $dir
+  rfmkdir -p $dir
       if [ $? -eq 0 ]; then
           echo "the $dir has been created \n"
           exit_creation_dir=0
@@ -43,9 +43,8 @@ function verifySePath {
 ##  60316 if problem with dir creation
 #######
   se_path=$1
-  se_path_add=$2
-
   exit_verifySePath=0
+
   rfdir $se_path
   if [ $? -eq 0 ]; then
       echo "the se_path $se_path exists \n"
@@ -56,27 +55,6 @@ function verifySePath {
          return $exit_verifySePath
       fi   
   fi
-
-  if [ $se_path_add ]; then
-      path=`echo $se_path_add | awk -F '/' '{print $1}'`
-      path[1]=$se_path$path
-      path[2]=$se_path$se_path_add
-
-      for ((a=1; a<3 ; a++))
-      do
-          rfdir ${path[$a]}
-          if [ $? -eq 0 ]; then
-              echo "the se_path ${path[$a]} exists \n"
-          else
-              createSePath ${path[$a]}
-              if [ $exit_creation_dir -ne 0 ]; then
-                   exit_verifySePath=$exit_creation_dir
-                   return $exit_verifySePath
-              fi
-          fi    
-      done 
-  fi
-
   return $exit_verifySePath
         
 }
@@ -126,7 +104,7 @@ function cmscp {
       fi
       cmscp_exit_status=$copy_exit_status
       
-  elif [ $middleware =='LCG'] || [ $middleware == 'OSG']; then
+  else
       if [ $# -le 5 ]; then
           echo -e "\t$0 usage:"
           echo -e "\t$0 source <grid env: LCG(default)|OSG> <remote SE> <output_file_path> <output_file_name> <remote_se_path>> <remote_se> <srm version 1(default)|2> "
