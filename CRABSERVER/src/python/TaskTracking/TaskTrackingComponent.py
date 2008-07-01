@@ -368,10 +368,9 @@ class TaskTrackingComponent:
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__logToBuf__(logBuf, event + ": " + str(payload) )
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                taskName, count, range = payload.split("::")
+                taskName, count = payload.split("::")
                 _loginfo += "New command: " + str(taskName) + "\n"
                 _loginfo += "\tcount: \t" + str(count) + "\n"
-                _loginfo += "\trange: \t" + str(range) + "\n"
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -388,7 +387,7 @@ class TaskTrackingComponent:
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__logToBuf__(logBuf, event + ": " + str(payload) )
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                taskName, fake_proxy, range = payload.split("::")
+                taskName, fake_proxy, range = payload.split(":")
                 _loginfo += "Submission completed: " + str(taskName) + "\n"
                 _loginfo += "\trange: \t" + str(range) + "\n"
             else:
