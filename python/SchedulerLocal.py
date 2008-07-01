@@ -24,19 +24,33 @@ class SchedulerLocal(Scheduler) :
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
 
+        ## FEDE publication options
+        self.publish_data = cfg_params.get("USER.publish_data",0)
+        if int(self.publish_data) == 1 :
+            self.publish_data_name = cfg_params.get('USER.publish_data_name',None)
+            if not self.publish_data_name and int(self.publish_data) == 1:
+                msg = "Error. The [USER] section does not have 'publish_data_name'"
+                raise CrabException(msg)
+            self.SE =  cfg_params.get("USER.storage_element", None)    
+            if not self.SE:
+                msg = "Error. The [USER] section does not have 'storage_element'.\n"
+                msg = msg + "Please fill this field if you want to publish your data"
+                raise CrabException(msg)
         self.copy_data = int(cfg_params.get("USER.copy_data",0))
         if self.copy_data == 1:
             self._copyCommand = cfg_params.get('USER.copycommand','rfcp')
             common.logger.debug(3, "copyCommand set to "+ self._copyCommand)
             self.SE_path= cfg_params.get('USER.storage_path',None)
             if not self.SE_path:
-                if os.environ.has_key('CASTOR_HOME'):
+                # do not allow CASTOR_HOME if publish_data is enabled
+                if int(self.publish_data) == 0 and os.environ.has_key('CASTOR_HOME'):
                     self.SE_path=os.environ['CASTOR_HOME']
                 else:
                     msg='No USER.storage_path has been provided: cannot copy_output'
                     raise CrabException(msg)
                 pass
             pass
+            ### FEDE to improve the final /  control
             self.SE_path+='/'
 
         if ( self.return_data == 0 and self.copy_data == 0 ):
@@ -112,8 +126,8 @@ class SchedulerLocal(Scheduler) :
         txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += 'echo "SyncCE='+self.name()+'.`hostname -d`" | tee -a $RUNTIME_AREA/$repo \n'
-
-        txt += 'middleware='+self.name()+' \n'
+        ###### FEDE
+        txt += 'middleware='+self.name().upper()+' \n'
 
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
 
@@ -157,7 +171,6 @@ class SchedulerLocal(Scheduler) :
         txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
         txt += '            echo "Problem copying $out_file to $SE $SE_PATH"\n'
         txt += '            echo "StageOutExitStatus = $copy_exit_status " | tee -a $RUNTIME_AREA/$repo\n'
-        #txt += '            copy_exit_status=60307\n'
         txt += '        else\n'
         txt += '            echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '            echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
