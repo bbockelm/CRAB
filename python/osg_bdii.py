@@ -24,20 +24,65 @@ def unwraplines(wrapped_list):
 
 
 def runldapquery(filter, attribute, bdii):
-    command = 'ldapsearch -xLLL -p 2170 -h ' + bdii + ' -b o=grid '
-    command += filter + ' ' + attribute
-    #print "Command",command
-    pout,pin,perr = popen2.popen3(command)
+    filtlist = splitquery(filter, 2048)
+    output = []
 
-    pout = pout.readlines()
-    p = perr.readlines()
+    for filter in filtlist:
+        command = 'ldapsearch -xLLL -p 2170 -h '+bdii+' -b o=grid '
+        command += filter+' '+attribute
 
-    pout = unwraplines(pout)
-    if (p):
-        for l in p: print l
-        raise RuntimeError('ldapsearch call failed')
+        pout,pin,perr = popen2.popen3(command)
 
-    return pout
+        output += pout.readlines()
+        p = perr.readlines()
+
+        output = unwraplines(output)
+        if (p):
+            for l in p: print l
+            raise RuntimeError('ldapsearch call failed')
+
+    return output
+
+def splitquery(query, splitsize=2048):
+    """ Split a big OR query into multiple queries """
+
+    splitsize -= 6 # " '(|" and  ")'"
+    querylist = []
+    
+    r = re.compile("\s*\'\(\|(.*)\)\'")
+    m = r.match(query)
+        
+    if m: items = m.groups()[0]
+    else: return [query]
+
+    parens = 0
+
+    itemlist = []
+    item = ''
+    for c in items:
+        if c == '(': parens += 1
+        if c == ')': parens -= 1
+
+        item += c
+        if not parens:
+            itemlist.append(item)
+            item = ''
+
+    if (parens != 0):
+        raise RuntimeError('Invalid query (unbalanced parentheses?)')
+    
+    new_query = ''
+    for item in itemlist:
+        if len(new_query) + len(item) < splitsize:
+            new_query += item
+        else:
+            querylist.append(new_query)
+            new_query = item
+        
+    if (len(new_query) != 0): querylist.append(new_query)
+    querylist = [" '(|"+x+")'" for x in querylist]
+    
+    return querylist
 
 def jm_from_se_bdii(se, bdii='exp-bdii.cern.ch'):
     se = '\'' + se + '\''
