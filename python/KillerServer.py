@@ -28,7 +28,8 @@ class KillerServer(Actor):
         task = common._db.getTask(self.range)
         toBeKilled = []
         for job  in task.jobs:
-           if ( job.runningJob['status'] in ['SS','R','S','SR','SW']):
+           # Note SU is the status exposed when the "Not possible to kill Submitted" happens # Fabio
+           if job.runningJob['status'] in ['SS','R','S','SR','SW', 'SU']:
                toBeKilled.append(job['jobId'])
            else:
                common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
@@ -47,7 +48,7 @@ class KillerServer(Actor):
                 raise CrabException(msg)
  
             # update runningjobs status
-            updList = [{'statusScheduler':'Killed', 'status':'K'}] * len(toBeKilled)
+            updList = [{'statusScheduler':'Killing', 'status':'KK'}] * len(toBeKilled)
             common._db.updateRunJob_(toBeKilled, updList)
  
             # printout the command result
