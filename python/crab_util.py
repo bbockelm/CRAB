@@ -364,10 +364,12 @@ def displayReport(self, header, lines, xml=''):
                 print '---------------------------------------------------------------------------------------------------'
             print lines[i]
             counter += 1
+        common.logger.write(str(lines))
     else:
         fileName = common.work_space.shareDir() + xml
         task = common._db.getTask()
         taskXML = common._db.serializeTask(task)
+        common.logger.write(taskXML)
         common.logger.debug(5, taskXML)
         f = open(fileName, 'w')
         f.write(taskXML)
