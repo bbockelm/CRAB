@@ -352,24 +352,22 @@ def spanRanges(jobArray):
 
 def displayReport(self, header, lines, xml=''):
 
-    if xml == '' :
-        counter = 0
-        printline = ''
-        printline+= header
-        print printline
-        print '---------------------------------------------------------------------------------------------------'
+    counter = 0
+    printline = ''
+    printline+= header
+    print printline
+    print '---------------------------------------------------------------------------------------------------'
 
-        for i in range(len(lines)):
-            if counter != 0 and counter%10 == 0 :
-                print '---------------------------------------------------------------------------------------------------'
-            print lines[i]
-            counter += 1
-        common.logger.write(str(lines))
-    else:
+    for i in range(len(lines)):
+        if counter != 0 and counter%10 == 0 :
+            print '---------------------------------------------------------------------------------------------------'
+        print lines[i]
+        counter += 1
+    common.logger.write(str(lines))
+    if xml != '' :
         fileName = common.work_space.shareDir() + xml
         task = common._db.getTask()
         taskXML = common._db.serializeTask(task)
-        common.logger.write(taskXML)
         common.logger.debug(5, taskXML)
         f = open(fileName, 'w')
         f.write(taskXML)
