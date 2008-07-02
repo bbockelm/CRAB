@@ -315,8 +315,10 @@ class Submitter(Actor):
                 rb = str(job.runningJob['service'])
         
             dlsDest = job['dlsDestination'] 
-            if len(dlsDest) <= 2 :
-                T_SE=string.join(str(dlsDest),",")
+            if len(dlsDest) == 1 :
+                T_SE=str(dlsDest[0])
+            elif len(dlsDest) == 2 :
+                T_SE=str(dlsDest[0])+','+str(dlsDest[1])
             else : 
                 T_SE=str(len(dlsDest))+'_Selected_SE'
 
