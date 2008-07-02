@@ -13,6 +13,8 @@ import popen2
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
 from ProdCommon.FwkJobRep.FwkJobReport import FwkJobReport
 
+from ProdCommon.FwkJobRep.PerformanceReport import PerformanceReport
+
 class fjrParser:
     def __init__(self, argv):
         try:
@@ -33,10 +35,14 @@ class fjrParser:
             self.wrapperTime = 'NULL'
             self.exeTime = 'NULL'
             self.stageoutTime = 'NULL'
+            self.cpuTime = 'NULL'
             try:
                 self.wrapperTime = argv[3]
                 self.exeTime = argv[4]
                 self.stageoutTime = argv[5]
+                # pay attenition that the input env var is actually a string of 3 attrutes # Fabio
+                self.cpuTime = "%s %s %s"%(argv[6], argv[7], argv[8])
+                self.cpuTime.replace('"','').replace('&quot;','')
             except:
                 pass
         else: 
@@ -119,10 +125,12 @@ class fjrParser:
                 jobReport.write(self.reportFileName)
 
         elif valid == 1 and self.directive=='--timing':
+            jobReport = readJobReport(self.reportFileName)[0]
             # add here timing settings
-            jobReport.performance.addSummary("ExeTime", self.exeTime)
-            jobReport.performance.addSummary("WrapperTime", self.wrapperTime)            
-            jobReport.performance.addSummary("StageoutTime", self.stageoutTime)
+            perf = jobReport.performance
+            perf.addSummary("CrabTiming",  WrapperTime = self.wrapperTime, ExeTime = self.exeTime,\
+                StageoutTime = self.stageoutTime, CpuTime = self.cpuTime)
+            jobReport.write(self.reportFileName)
             pass
         else: 
             self.writeFJR()
