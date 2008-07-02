@@ -66,10 +66,26 @@ class Status(Actor):
 
     def PrintReport_(self):
 
+
+        possible_status = [
+                         'Undefined',
+                         'Submitted',
+                         'Waiting',
+                         'Ready',
+                         'Scheduled',
+                         'Running',
+                         'Done',
+                         'Cancelled',
+                         'Aborted',
+                         'Unknown',
+                         'done(failed)',
+                         'cleared',
+                         'retrieved' 
+                          ]
+
         jobs = common._db.nJobs('list')
 
         WrapExitCode = list(set(self.wrapErrorList))
-
         print ''
         print ">>>>>>>>> %i Total Jobs " % (len(jobs))
         print ''
@@ -78,12 +94,28 @@ class Status(Actor):
             if c != 'None':
                 list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':c},'jobId')
                 if len(list_ID)>0:
-                    print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(c))#,len(list_ID)
-         #           if st == 'killed' or st == 'Aborted': print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <Jobs list>"
-         #           if st == 'Done'   : print "          Retrieve them with: crab -getoutput <Jobs list>"
-         #           if st == 'Cleared': print "          %i Jobs with EXE_EXIT_CODE: %s" % (len(common._db.queryDistJob('wrapperReturnCode')))
+                    print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(c))
                     print "          List of jobs: %s" % self.readableList(list_ID)
                     print " "
+            else:
+                for st in possible_status:
+                    list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
+                    if len(list_ID)>0:
+                        if st == 'killed': 
+                            print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
+                            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <List of jobs>"
+                            print "          List of jobs: %s \n" % self.readableList(list_ID)
+                        elif st == 'Aborted': 
+                            print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
+                            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <List of jobs>"
+                            print "          List of jobs: %s \n" % self.readableList(list_ID)
+                        elif st == 'Done'   :
+                            print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
+                            print "          Retrieve them with: crab -getoutput <List of jobs>"
+                            print "          List of jobs: %s \n" % self.readableList(list_ID)
+                        else   : 
+                            print ">>>>>>>>> %i Jobs %s \n " % (len(list_ID), str(st))
+
 
     def readableList(self,rawList):
       listString = str(rawList[0])
