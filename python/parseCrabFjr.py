@@ -67,7 +67,12 @@ class parseFjr:
     def run(self): 
 
         # load FwkJobRep
-        jobReport = readJobReport(self.input)[0]
+        try:
+            jobReport = readJobReport(self.input)[0]
+        except:
+            print '50115'
+            sys.exit()
+            
         if self.exitCode : 
             self.exitCodes(jobReport)
         if self.lfnList : 
