@@ -453,8 +453,15 @@ class TaskTrackingComponent:
             return taskName, str(OK + "\n" + ERROR)
 
         if event == "CRAB_Cmd_Mgr:GetOutputNotification":
-            taskName, jobsStr = payload.split('::')
+            if payload != "" and payload != None:
+                taskName, jobstr = payload.split('::')
+                _loginfo += "GetOutput performed: " + str(taskName) + "\n"
+                _loginfo += "\tjob-list: \t" + str(jobstr) + "\n"
+            else:
+                logging.error("No task specified for " + str(event) )
             logging.debug('output retrieved ')
+            if _loginfo != '':
+                self.__appendDbgInfo__(taskName, _loginfo)
             return
 
         
