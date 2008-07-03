@@ -89,12 +89,21 @@ class DataDiscovery:
         """
         Contact DBS
         """
-
         ## get DBS URL
-        dbs_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
-        if (self.cfg_params.has_key('CMSSW.dbs_url')):
-            dbs_url=self.cfg_params['CMSSW.dbs_url']
+        global_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+        caf_url = "http://cmsdbsprod.cern.ch/cms_dbs_caf_analysis_01/servlet/DBSServlet"
+        dbs_url_map  =   {'glite':    global_url,
+                          'glitecoll':global_url,\
+                          'condor':   global_url,\
+                          'condor_g': global_url,\
+                          'glidein':  global_url,\
+                          'lsf':      global_url,\
+                          'caf':      caf_url,\
+                          'sge':      global_url
+                          }
 
+        dbs_url_default = dbs_url_map[(common.scheduler.name()).lower()]
+        dbs_url=  self.cfg_params.get('CMSSW.dbs_url', dbs_url_default)
         common.logger.debug(3,"Accessing DBS at: "+dbs_url)
 
         ## check if runs are selected
