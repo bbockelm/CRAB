@@ -14,7 +14,7 @@ class Cmssw(JobType):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
         self.skip_blocks = skip_blocks
- 
+
         self.argsList = []
 
         self._params = {}
@@ -60,10 +60,10 @@ class Cmssw(JobType):
         if not cfg_params.has_key('CMSSW.datasetpath'):
             msg = "Error: datasetpath not defined "
             raise CrabException(msg)
-        
+
         ### Temporary: added to remove input file control in the case of PU
         self.dataset_pu = cfg_params.get('CMSSW.dataset_pu', None)
-        
+
         tmp =  cfg_params['CMSSW.datasetpath']
         log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
         if string.lower(tmp)=='none':
@@ -120,7 +120,7 @@ class Cmssw(JobType):
             msg ="Error. script_exe  not defined"
             raise CrabException(msg)
 
-        # use parent files... 
+        # use parent files...
         self.useParent = self.cfg_params.get('CMSSW.use_parent',False)
 
         ## additional input files
@@ -263,7 +263,7 @@ class Cmssw(JobType):
                     ## If present, add TFileService to output files
                     if not int(cfg_params.get('CMSSW.skip_TFileService_output',0)):
                         tfsOutput = PsetEdit.getTFileService()
-                        if tfsOutput: 
+                        if tfsOutput:
                             if tfsOutput in self.output_file:
                                 common.logger.debug(5,"Output from TFileService "+tfsOutput+" already in output files")
                             else:
@@ -275,7 +275,7 @@ class Cmssw(JobType):
                     ## If present and requested, add PoolOutputModule to output files
                     if int(cfg_params.get('CMSSW.get_edm_output',0)):
                         edmOutput = PsetEdit.getPoolOutputModule()
-                        if edmOutput: 
+                        if edmOutput:
                             if edmOutput in self.output_file:
                                 common.logger.debug(5,"Output from PoolOutputModule "+edmOutput+" already in output files")
                             else:
@@ -286,7 +286,7 @@ class Cmssw(JobType):
                 except CrabException:
                     msg='Error while manipulating ParameterSet: exiting...'
                     raise CrabException(msg)
-            ## Prepare inputSandbox TarBall (only the first time)  
+            ## Prepare inputSandbox TarBall (only the first time)
             self.tgzNameWithPath = self.getTarBall(self.executable)
 
     def DataDiscoveryAndLocation(self, cfg_params):
@@ -494,7 +494,7 @@ class Cmssw(JobType):
                         if self.useParent:
                             fullParentString = pString[:-2]
                             list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        else: 
+                        else:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         self.jobDestination.append(blockSites[block])
@@ -908,7 +908,7 @@ class Cmssw(JobType):
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
             if (self.datasetPath): # standard job
                 txt += 'InputFiles=${args[1]}; export InputFiles\n'
-                if (self.useParent):   
+                if (self.useParent):
                     txt += 'ParentFiles=${args[2]}; export ParentFiles\n'
                     txt += 'MaxEvents=${args[3]}; export MaxEvents\n'
                     txt += 'SkipEvents=${args[4]}; export SkipEvents\n'
@@ -939,7 +939,10 @@ class Cmssw(JobType):
                 txt += 'cat ' + psetName + '\n'
                 txt += 'echo "****** end ' + psetName + ' ********"\n'
                 txt += '\n'
-            txt += 'PSETHASH=`edmConfigHash < ' + psetName + '` \n'
+            if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
+                txt += 'PSETHASH=`edmConfigHash ' + psetName + '` \n'
+            else:
+                txt += 'PSETHASH=`edmConfigHash < ' + psetName + '` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
             txt += '\n'
         return txt
@@ -1067,7 +1070,7 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsRenameOutput\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
-        if self.debug_wrapper: 
+        if self.debug_wrapper:
             txt += 'ls -Al\n'
         txt += '\n'
 
@@ -1099,7 +1102,7 @@ class Cmssw(JobType):
         txt += '\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
-        if self.debug_wrapper: 
+        if self.debug_wrapper:
             txt += 'ls -Al\n'
         txt += '\n'
         txt += 'cd $RUNTIME_AREA\n'
