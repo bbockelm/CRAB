@@ -349,30 +349,29 @@ class DBinterface:
                     break 
  
             # Data alignment
-            if str(job.runningJob['status']) != 'EE':
-                if rForJ.getAttribute('status') not in ['Created', 'Submitting', 'Unknown'] and \
-                   job.runningJob['statusScheduler'] != 'Cleared' and \
-                   not (job.runningJob['statusScheduler'] == 'Killing' and rForJ.getAttribute('statusScheduler')!='Killed'):
-                       # update the status  
-                    common.logger.debug(3,"Updating DB status for job: " + str(id) + " @: " \
-                                          + str(rForJ.getAttribute('status')) )
-                    job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
-                    job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
+            if rForJ.getAttribute('status') not in ['Created', 'Submitting', 'Unknown'] and \
+                not (job.runningJob['statusScheduler'] == 'Killing' and rForJ.getAttribute('status')!='Killed') \
+                and not  (job.runningJob['statusScheduler'] in 'Submitting'  and rForJ.getAttribute('status') in ['Killed','Aborted','Cleared'])  :
+                   # update the status  
+                common.logger.debug(3,"Updating DB status for job: " + str(id) + " @: " \
+                                      + str(rForJ.getAttribute('status')) )
+                job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
+                job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
           
-                job.runningJob['destination'] = str( rForJ.getAttribute('site') )
-                dest = str(job.runningJob['destination']).split(':')[0]
+            job.runningJob['destination'] = str( rForJ.getAttribute('site') )
+            dest = str(job.runningJob['destination']).split(':')[0]
           
-                job.runningJob['applicationReturnCode'] = str( rForJ.getAttribute('exe_exit') )
-                exe_exit_code = str(job.runningJob['applicationReturnCode'])
+            job.runningJob['applicationReturnCode'] = str( rForJ.getAttribute('exe_exit') )
+            exe_exit_code = str(job.runningJob['applicationReturnCode'])
           
-                job.runningJob['wrapperReturnCode'] = str( rForJ.getAttribute('job_exit') )
-                job_exit_code = str(job.runningJob['wrapperReturnCode'])
+            job.runningJob['wrapperReturnCode'] = str( rForJ.getAttribute('job_exit') )
+            job_exit_code = str(job.runningJob['wrapperReturnCode'])
           
-                #if str( rForJ.getAttribute('resubmit') ).isdigit():
-                #    job['submissionNumber'] = int(rForJ.getAttribute('resubmit'))
-                #    job.runningJob['submission'] =  int(rForJ.getAttribute('resubmit'))
+            #if str( rForJ.getAttribute('resubmit') ).isdigit():
+            #    job['submissionNumber'] = int(rForJ.getAttribute('resubmit'))
+            #    job.runningJob['submission'] =  int(rForJ.getAttribute('resubmit'))
           
-                # TODO cleared='0' field, how should it be handled/mapped in BL? #Fabio
+            # TODO cleared='0' field, how should it be handled/mapped in BL? #Fabio
 
         common.bossSession.updateDB( task_new )
         return

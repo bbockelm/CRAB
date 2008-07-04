@@ -118,7 +118,5 @@ class GetOutputServer( GetOutput, StatusServer ):
                 csCommunicator.outputRetrieved(self.taskuuid, retrievedFilesJodId)
             except Exception, e:
                 pass
-
-            common._db.updateRunJob_(retrievedFilesJodId, [{'statusScheduler':'Cleared', 'status':'EE'}] * len(retrievedFilesJodId) )
         return
 

@@ -24,7 +24,7 @@ class Resubmitter(Submitter):
         for job in task.jobs:
             st = job.runningJob['status']
             nj = job['jobId']
-            if st in ['K','A','SE','E','EE']:
+            if st in ['K','A','SE','E','UE']:
                 nj_list.append(int(nj))
             elif st == 'C':
                 common.logger.message('Job #'+`int(nj)`+' has status '+str(job.runningJob['statusScheduler'])+' not yet submitted!!!')
