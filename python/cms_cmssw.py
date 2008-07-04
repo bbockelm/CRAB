@@ -60,6 +60,9 @@ class Cmssw(JobType):
         if not cfg_params.has_key('CMSSW.datasetpath'):
             msg = "Error: datasetpath not defined "
             raise CrabException(msg)
+
+        ### Temporary: added to remove input file control in the case of PU
+        self.dataset_pu = cfg_params.get('CMSSW.dataset_pu', None)
         tmp =  cfg_params['CMSSW.datasetpath']
         log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
         if string.lower(tmp)=='none':
@@ -1188,7 +1191,12 @@ class Cmssw(JobType):
         publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (publish_data == 1):
             processedDataset = self.cfg_params['USER.publish_data_name']
-            LFNBaseName = LFNBase(processedDataset)
+            ### FEDE  for publication with LSF and CAF schedulers ####
+            if (common.scheduler.name().upper() == "CAF" or common.scheduler.name().upper() == "LSF"):
+                LFNBaseName = LFNBase(processedDataset, LocalUser=True)
+            else :    
+                LFNBaseName = LFNBase(processedDataset)
+            ####    
 
             txt += 'if [ $copy_exit_status -eq 0 ]; then\n'
             txt += '    FOR_LFN=%s_${PSETHASH}/\n'%(LFNBaseName)
@@ -1233,7 +1241,7 @@ class Cmssw(JobType):
         txt += '        executable_exit_status=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --exitcode`\n'
         txt += '        if [ $executable_exit_status -eq 50115 ];then\n'
         txt += '            echo ">>> crab_fjr.xml contents: "\n'
-        txt += '            cat $RUNTIME_AREA/crab_fjr_NJob.xml\n'
+        txt += '            cat $RUNTIME_AREA/crab_fjr_$NJob.xml\n'
         txt += '            echo "Wrong FrameworkJobReport --> does not contain useful info. ExitStatus: $executable_exit_status"\n'
         txt += '        elif [ $executable_exit_status -eq -999 ];then\n'
         txt += '            echo "ExitStatus from FrameworkJobReport not available. not available. Using exit code of executable from command line."\n'
@@ -1245,7 +1253,7 @@ class Cmssw(JobType):
         txt += '    fi\n'
           #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
 
-        if self.datasetPath:
+        if (self.datasetPath and not self.dataset_pu ):
           # VERIFY PROCESSED DATA
             txt += '    if [ $executable_exit_status -eq 0 ];then\n'
             txt += '      echo ">>> Verify list of processed files:"\n'
