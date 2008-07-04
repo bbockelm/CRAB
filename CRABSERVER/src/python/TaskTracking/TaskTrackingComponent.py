@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.82 2008/06/10 13:00:38 mcinquil Exp $"
-__version__ = "$Revision: 1.82 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.85 2008/07/03 10:08:55 mcinquil Exp $"
+__version__ = "$Revision: 1.85 $"
 
 import os
 import time
@@ -455,6 +455,14 @@ class TaskTrackingComponent:
         if event == "CRAB_Cmd_Mgr:GetOutputNotification":
             if payload != "" and payload != None:
                 taskName, jobstr = payload.split('::')
+                logging.info("Cleared jobs: " + str(jobstr) + \
+                             " for task " + str(taskName) )
+                try:
+                    self.setCleared(taskName, eval(jobstr))
+                except Exception, ex:
+                    import traceback
+                    logging.error( "Exception raised: " + str(ex) )
+                    logging.error( str(traceback.format_exc()) )
                 _loginfo += "GetOutput performed: " + str(taskName) + "\n"
                 _loginfo += "\tjob-list: \t" + str(jobstr) + "\n"
             else:
@@ -655,6 +663,60 @@ class TaskTrackingComponent:
         logging.info(logBuf)
 
 
+    def setCleared (self, taskName, jobList):
+        """
+        _setCleared_
+        """
+        taskObj = None
+        mySession = None
+
+        ## bossLite session
+        try:
+            mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+        except ProdException, ex:
+            logging.info(str(ex))
+            return 0
+        try:
+        ## lite task load in memory
+            try:
+                taskObj = mySession.loadTaskByName( taskName )
+            except TaskError, te:
+                taskObj = None
+            pass
+            if taskObj is None:
+                logging.info("Unable to load task [%s]."%(taskName))
+            else:
+                for jobbe in taskObj.jobs:
+                    try:
+                        mySession.getRunningInstance(jobbe)
+                    except JobError, ex:
+                        logging.error('Problem loading job running info')
+                        continue
+                    logging.info(str(jobbe['jobId']) + " in " + str(jobList))
+                    if jobbe['jobId'] in jobList:
+                        logging.info(str(jobbe.runningJob['status']))
+                        if jobbe.runningJob['status'] in ["D","E", "DA", "SD"]:
+                            logging.info("updated")
+                            jobbe.runningJob['status'] = "UE"
+                            jobbe.runningJob['processStatus'] = "output_requested"
+                mySession.updateDB(taskObj)
+                ## update xml -> W: duplicated code - need to clean
+                dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
+                countNotSubmitted = 0
+                dictStateTot = {}
+                numJobs = len(taskObj.jobs)
+                dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
+                pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
+                if os.path.exists( pathToWrite ):
+                    self.prepareReport( taskName, "", "", "", "", dictStateTot, numJobs, 1 )
+                    self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
+
+        except Exception, ex:
+            import traceback
+            logging.error( "Exception raised: " + str(ex) )
+            logging.error( str(traceback.format_exc()) )
+
+
     ##########################################################################
     # utilities
     ##########################################################################
@@ -672,13 +734,15 @@ class TaskTrackingComponent:
 	K  : killed
 	E  : erased from the scheduler queue (also disappeared...)
 	DA : finished but with some failures (aka Done Failed in GLite or Held for condor)
+        UE : user ended (retrieved by th user)
         """
         stateConverting = { \
                     'R': 'Running', 'SD': 'Done', 'DA': 'Done (Failed)', \
                     'E': 'Done', 'SR': 'Ready', 'A': 'Aborted', \
                     'SS': 'Scheduled', 'U': 'Unknown', 'SW': 'Waiting', \
-                    'K': 'Killed', 'S': 'Submitted', 'SU': 'Submitted',\
-                    'NotSubmitted': 'NotSubmitted', 'C': 'Created'
+                    'K': 'Killed', 'S': 'Submitted', 'SU': 'Submitted', \
+                    'NotSubmitted': 'NotSubmitted', 'C': 'Created', \
+                    'UE': 'Cleared'
                           }
         if status in stateConverting:
             return stateConverting[status]
@@ -898,6 +962,83 @@ class TaskTrackingComponent:
     # polling js_taskInstance and BOSS DB
     ##########################################################################
 
+
+    def computeJobStatus(self, taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted):
+        """
+        _computeJobStatus_
+        """
+        for jobbe in taskObj.jobs:
+            try:
+                mySession.getRunningInstance(jobbe)
+	    except JobError, ex:
+	        logging.error('Problem loading job running info')
+	        break
+	    job   = jobbe.runningJob['jobId']
+  	    stato = jobbe.runningJob['status']
+	    sId   = jobbe.runningJob['schedulerId']
+	    jec   = str( jobbe.runningJob['wrapperReturnCode'] )
+	    eec   = str( jobbe.runningJob['applicationReturnCode'] )
+	    joboff = str( jobbe.runningJob['closed'] )
+	    site  = ""
+	    if jobbe.runningJob['destination'] != None and jobbe.runningJob['destination'] != '':
+	        site  = jobbe.runningJob['destination'].split(":")[0]
+	    del jobbe
+ 
+ 	    try:
+	        self.mutex.acquire()
+	        resubmitting, MaxResub, Resub = TaskStateAPI.checkNSubmit( taskName, job )
+	        internalstatus = TaskStateAPI.jobStatusServer( taskName, job )
+	    finally:
+	        self.mutex.notifyAll()
+	        self.mutex.release()
+                    
+            vect = []
+            if eec == "NULL" and jec == "NULL":
+                vect = [self.convertStatus(stato), "", "", 0, Resub, site, stato, joboff, resubmitting]
+            else:
+                vect = [self.convertStatus(stato), eec, jec, 0, Resub, site, stato, joboff, resubmitting]
+            dictStateTot.setdefault(job, vect)
+
+            if stato == "E":
+                if (eec == "0" or eec == "" or eec == "NULL") and jec == "0":
+                    dictReportTot['JobSuccess'] += 1
+                    dictStateTot[job][3] = 1
+                elif not resubmitting:
+                    dictReportTot['JobFailed'] += 1
+                    dictStateTot[job][0] = "Done (Failed)"
+                    dictStateTot[job][3] = 1
+                else:
+                    dictReportTot['JobInProgress'] += 1
+            elif stato == "A" or stato == "Done (Failed)" or stato == "K":
+                if not resubmitting:
+                    dictReportTot['JobFailed'] += 1
+                else:
+                    dictReportTot['JobInProgress'] += 1
+            elif not resubmitting and joboff == 'Y':
+                dictReportTot['JobFailed'] += 1
+                dictStateTot[job][3] = 1
+            elif stato == "C":
+                if (internalstatus in ["failed", "finished", "reallyFinished"])  and not resubmitting:
+                   countNotSubmitted += 1
+                   dictReportTot['JobFailed'] += 1
+                   dictStateTot[job][0] = "NotSubmitted"
+                else:
+                   countNotSubmitted += 1
+                   dictReportTot['JobInProgress'] += 1
+            elif not resubmitting:
+                dictReportTot['JobInProgress'] += 1
+            else:
+                dictReportTot['JobInProgress'] += 1
+
+        rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
+        rev_items.sort()
+        dictStateTot = {}
+        for valu3, k3y in rev_items:
+            dictStateTot.setdefault( k3y, valu3 )
+        del rev_items
+
+        return dictStateTot, dictReportTot, countNotSubmitted
+
     def pollTasks(self, threadName):
         """
         _pollTasks_
@@ -959,102 +1100,8 @@ class TaskTrackingComponent:
 			    countNotSubmitted = 0 
 			    dictStateTot = {}
                             numJobs = len(taskObj.jobs)
-                            
-                            for jobbe in taskObj.jobs:
-                                try:
-                                    mySession.getRunningInstance(jobbe)
-                                except JobError, ex:
-                                    logging.error('Problem loading job running info')
-                                    break
-                                job   = jobbe.runningJob['jobId']
-                                stato = jobbe.runningJob['status']
-                                sId   = jobbe.runningJob['schedulerId']
-                                jec   = str( jobbe.runningJob['wrapperReturnCode'] )
-                                eec   = str( jobbe.runningJob['applicationReturnCode'] )
-                                joboff = str( jobbe.runningJob['closed'] )
-#                                logging.info (taskName + " " + str(jec) + " " + str(eec) + " " + str(job) )
-                                site  = ""
-                                if jobbe.runningJob['destination'] != None and jobbe.runningJob['destination'] != '':
-                                    site  = jobbe.runningJob['destination'].split(":")[0]
-                                del jobbe
- 
-                                try:
-                                    self.mutex.acquire()
-                                    resubmitting, MaxResub, Resub = TaskStateAPI.checkNSubmit( taskName, job )
-                                    internalstatus = TaskStateAPI.jobStatusServer( taskName, job )
-                                finally:
-                                    self.mutex.notifyAll()
-                                    self.mutex.release()
-
-			        vect = []
-			        if eec == "NULL" and jec == "NULL":
-   			            vect = [self.convertStatus(stato), "", "", 0, Resub, site, stato, joboff, resubmitting]
-			        else:
-                                    vect = [self.convertStatus(stato), eec, jec, 0, Resub, site, stato, joboff, resubmitting]
-                                dictStateTot.setdefault(job, vect)
- 
-			        if stato == "E":
-				    if (eec == "0" or eec == "" or eec == "NULL") and jec == "0":
-				        dictReportTot['JobSuccess'] += 1
-				        dictStateTot[job][3] = 1
-				    elif not resubmitting:
-				        dictReportTot['JobFailed'] += 1
-                                        dictStateTot[job][0] = "Done (Failed)"
-                                        dictStateTot[job][3] = 1
-				    else:
-				        dictReportTot['JobInProgress'] += 1
-                                #        dictStateTot[job][0] = "Resubmitting by server"
-			        elif stato == "A" or stato == "Done (Failed)" or stato == "K":
-				    if not resubmitting:
-				        dictReportTot['JobFailed'] += 1
-				    else:
-				        dictReportTot['JobInProgress'] += 1
-                                #        dictStateTot[job][0] = "Resubmitting by server"
-                                elif not resubmitting and joboff == 'Y':
-                                    dictReportTot['JobFailed'] += 1
-                                    dictStateTot[job][3] = 1
-			        elif stato == "C":
-                                    if (internalstatus in ["failed", "finished", "reallyFinished"])  and not resubmitting:
-                                        countNotSubmitted += 1
-                                        dictReportTot['JobFailed'] += 1
-                                        dictStateTot[job][0] = "NotSubmitted"
-#                                    if not resubmitting and status == self.taskState[3] and status == self.taskState[8]:
-#   				        countNotSubmitted += 1 
-#				        dictReportTot['JobFailed'] += 1
-#                                        if status == self.taskState[4]:
-#                                            dictStateTot[job][0] = "Killed"
-#                                    elif int(job) in jobPartList:
-#                                        countNotSubmitted += 1
-#                                        dictReportTot['JobFailed'] += 1
-##                                        if status == self.taskState[9]:
-##                                            dictStateTot[job][0] = "Created"
-##                                        else:
-#                                        dictStateTot[job][0] = "NotSubmitted"
-#                                    elif status == self.taskState[4]:
-                                        #countNotSubmitted += 1   
-#                                        dictReportTot['JobFailed'] += 1
-#                                        dictStateTot[job][0] = "Killed"
-#                                    elif status == self.taskState[9]:
-#                                        countNotSubmitted += 1
-#                                        dictReportTot['JobInProgress'] += 1
-                                    else:
-                                        countNotSubmitted += 1
-                                        dictReportTot['JobInProgress'] += 1
-                                elif not resubmitting:
-                                    dictReportTot['JobInProgress'] += 1
-                               #elif stato != "K": ## ridondante
-                                    #dictReportTot['JobFailed'] += 1
-                                    #else:
-                                    #    dictReportTot['JobFailed'] += 1
-                                else:
-                                    dictReportTot['JobInProgress'] += 1
-
-			    rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
-			    rev_items.sort()
-			    dictStateTot = {}
-			    for valu3, k3y in rev_items:
-			        dictStateTot.setdefault( k3y, valu3 )
-                            del rev_items
+                           
+                            dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
 
 			    for state in dictReportTot:
                                 logBuf = self.__logToBuf__(logBuf, " Job " + state + ": " + str(dictReportTot[state]))
