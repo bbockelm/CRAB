@@ -110,12 +110,12 @@ function cmscp {
           echo -e "\t$0 source <grid env: LCG(default)|OSG> <remote SE> <output_file_path> <output_file_name> <remote_se_path>> <remote_se> <srm version 1(default)|2> "
           exit 1
       fi
-    
+ 
       path_out_file=$2
       echo "path_out_file = $path_out_file"
-      name_out_file=$3
+      SE=$3
       SE_PATH=$4
-      SE=$5
+      name_out_file=$5
       srm_ver=$6
 
       # Set OSG certificates directory
@@ -260,6 +260,7 @@ dumpStatus() {
     cat $1
     echo "***** End Cat jobreport *****"
     chmod a+x $RUNTIME_AREA/report.py
+
     $RUNTIME_AREA/report.py $(cat $1)
     rm -f $1
     echo "MonitorJobID=`echo $MonitorJobID`" > $1
