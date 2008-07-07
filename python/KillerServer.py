@@ -8,8 +8,9 @@ import traceback
 from xml.dom import minidom
 from ServerCommunicator import ServerCommunicator
 
+from StatusServer import StatusServer
 
-class KillerServer(Actor):
+class KillerServer(Actor, StatusServer):
     def __init__(self, cfg_params, range):
         self.cfg_params = cfg_params
         self.range = range
@@ -24,6 +25,9 @@ class KillerServer(Actor):
         The main method of the class: kill a complete task
         """
         common.logger.debug(5, "Killer::run() called")
+
+        # get updated status from server #inherited from StatusServer
+        self.resynchClientSide()
 
         task = common._db.getTask(self.range)
         toBeKilled = []
