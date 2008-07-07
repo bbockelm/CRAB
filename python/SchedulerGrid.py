@@ -264,7 +264,7 @@ class SchedulerGrid(Scheduler):
             txt += 'for out_file in $file_list ; do\n'
             txt += '    if [ -e $SOFTWARE_DIR/$out_file ] ; then\n'
             txt += '        echo "Trying to copy output file $SOFTWARE_DIR/$out_file to $SE"\n'
-            txt += '        cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file ${SRM_VER} $middleware\n'
+            txt += '        cmscp $middleware $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file ${SRM_VER}\n'
             txt += '        if [ $cmscp_exit_status -ne 0 ]; then\n'
             txt += '            echo "Problem copying $out_file to $SE $SE_PATH"\n'
             txt += '            copy_exit_status=$cmscp_exit_status\n'
