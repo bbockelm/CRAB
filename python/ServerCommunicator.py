@@ -283,7 +283,7 @@ class ServerCommunicator:
         debugMsg = ''  
         if ret == 0:
              # success
-             debugMsg = 'Task %s successfully submitted to server %s'%(self.crab_task_name, self.serverName)
+             debugMsg = 'Command successfully sent to server %s for task %s'%(self.serverName, self.crab_task_name)
         elif ret == 101:
              # overlaod
              logMsg = 'The server %s refused the submission %s because you asked to handle a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
