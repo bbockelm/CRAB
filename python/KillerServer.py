@@ -28,8 +28,7 @@ class KillerServer(Actor):
         task = common._db.getTask(self.range)
         toBeKilled = []
         for job  in task.jobs:
-           # Note SU is the status exposed when the "Not possible to kill Submitted" happens # Fabio
-           if job.runningJob['status'] in ['SS','R','S','SR','SW', 'SU']:
+           if job.runningJob['status'] in ['SS','R','SR','SW', 'SU']:
                toBeKilled.append(job['jobId'])
            else:
                common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
@@ -52,7 +51,7 @@ class KillerServer(Actor):
             common._db.updateRunJob_(toBeKilled, updList)
  
             # printout the command result
-            common.logger.message("Kill request succesfully sent to the server") 
+            common.logger.message("Kill request for %d jobs succesfully sent to the server\n"%len(toBeKilled) ) 
 
         return
                 

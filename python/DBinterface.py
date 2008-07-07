@@ -349,8 +349,8 @@ class DBinterface:
                     break 
  
             # Data alignment
-            if rForJ.getAttribute('status') not in ['Created', 'Submitting', 'Unknown'] and \
-                not (job.runningJob['statusScheduler'] == 'Killing' and rForJ.getAttribute('status')!='Killed') \
+            if rForJ.getAttribute('status') not in ['Created', 'Unknown'] and not\
+                (job.runningJob['statusScheduler'] == 'Killing' and rForJ.getAttribute('status')!='Killed') \
                 and not  (job.runningJob['statusScheduler'] in 'Submitting'  and rForJ.getAttribute('status') in ['Killed','Aborted','Cleared'])  :
                    # update the status  
                 common.logger.debug(3,"Updating DB status for job: " + str(id) + " @: " \
@@ -358,14 +358,14 @@ class DBinterface:
                 job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
                 job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
           
-            job.runningJob['destination'] = str( rForJ.getAttribute('site') )
-            dest = str(job.runningJob['destination']).split(':')[0]
-          
-            job.runningJob['applicationReturnCode'] = str( rForJ.getAttribute('exe_exit') )
-            exe_exit_code = str(job.runningJob['applicationReturnCode'])
-          
-            job.runningJob['wrapperReturnCode'] = str( rForJ.getAttribute('job_exit') )
-            job_exit_code = str(job.runningJob['wrapperReturnCode'])
+                job.runningJob['destination'] = str( rForJ.getAttribute('site') )
+                dest = str(job.runningJob['destination']).split(':')[0]
+              
+                job.runningJob['applicationReturnCode'] = str( rForJ.getAttribute('exe_exit') )
+                exe_exit_code = str(job.runningJob['applicationReturnCode'])
+              
+                job.runningJob['wrapperReturnCode'] = str( rForJ.getAttribute('job_exit') )
+                job_exit_code = str(job.runningJob['wrapperReturnCode'])
           
             #if str( rForJ.getAttribute('resubmit') ).isdigit():
             #    job['submissionNumber'] = int(rForJ.getAttribute('resubmit'))

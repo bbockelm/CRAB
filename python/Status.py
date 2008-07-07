@@ -68,15 +68,17 @@ class Status(Actor):
 
 
         possible_status = [
-                         'Created', 
+                         'Created',
                          'Undefined',
+                         'Submitting', 
                          'Submitted',
                          'Waiting',
                          'Ready',
                          'Scheduled',
                          'Running',
                          'Done',
-                         'Cancelled',
+                         'Killing',  
+                         'Killed',
                          'Aborted',
                          'Unknown',
                          'done(failed)',
