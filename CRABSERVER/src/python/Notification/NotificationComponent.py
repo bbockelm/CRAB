@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.17 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.17 2008/06/09 14:26:15 mcinquil Exp $"
+__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.18 2008/07/01 16:56:48 mcinquil Exp $"
 
 import os
 import socket
@@ -645,7 +645,8 @@ class NotificationComponent:
 
                 mailMess = "Your proxy will expires in " + timeMsg + ". You can renew it doing:\n"
                 mailMess += "\t crab -renewProxy\n\n"
-                mailMess += "Your active tasks on the server:\n" + stringtask
+                mailMess += "Your active tasks:\n" + stringtask
+                mailMess += "\non the server:\n\t" + self.serverName
                
                 msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                 logging.info( msg )
