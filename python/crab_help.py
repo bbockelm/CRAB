@@ -349,7 +349,7 @@ within a dataset you can restrict to run on a specific run number or run number 
 
 =item B<use_parent *>
 
-within a dataset you can ask to run over the related parent files too. For example setting use_parent=True CRAB determine the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
+within a dataset you can ask to run over the related parent files too. E.g., this will give you access to the RAW data while running over a RECO sample. Setting use_parent=True CRAB determines the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
 
 =item B<pset *>
 
