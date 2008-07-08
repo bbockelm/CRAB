@@ -356,7 +356,10 @@ class DBinterface:
                 common.logger.debug(3,"Updating DB status for job: " + str(id) + " @: " \
                                       + str(rForJ.getAttribute('status')) )
                 job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
-                job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
+                if rForJ.getAttribute('status') == 'Done' and rForJ.getAttribute('sched_status') == 'E' :
+                    job.runningJob['status'] = 'SD'
+                else: 
+                    job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
           
                 job.runningJob['destination'] = str( rForJ.getAttribute('site') )
                 dest = str(job.runningJob['destination']).split(':')[0]
