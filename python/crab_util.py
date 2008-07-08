@@ -363,7 +363,6 @@ def displayReport(self, header, lines, xml=''):
             print '---------------------------------------------------------------------------------------------------'
         print lines[i]
         counter += 1
-    common.logger.write(str(lines))
     if xml != '' :
         fileName = common.work_space.shareDir() + xml
         task = common._db.getTask()
