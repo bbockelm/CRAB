@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.45 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.45 2008/06/10 12:59:56 farinafa Exp $"
+__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.48 2008/07/08 14:39:19 farinafa Exp $"
 
 import os
 import pickle
@@ -363,7 +363,7 @@ class CrabServerWorkerComponent:
                self.ms.publish("CrabServerWorkerComponent:FatWorkerResult", fakeResMsg)
                logging.info("Missing declaration file for task, unable to kill %s. Skip command."%taskUniqName)
            self.commit()
-         return
+        return
     
 ################################
 #   Auxiliary Methods      
