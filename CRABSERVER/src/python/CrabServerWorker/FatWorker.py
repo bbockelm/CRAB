@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.87 2008/07/08 14:39:19 farinafa Exp $"
-__version__ = "$Revision: 1.87 $"
+__revision__ = "$Id: FatWorker.py,v 1.88 2008/07/08 15:45:03 farinafa Exp $"
+__version__ = "$Revision: 1.88 $"
 import string
 import sys, os
 import time
@@ -389,7 +389,7 @@ class FatWorker(Thread):
             self.cmdRng = ','.join(map(str, resubmissionList))
             self.resubCount -= 1
             if self.resubCount > 0:
-                payload = self.taskName+"::"+str(resubmissionList)+"::"+str(self.resubCount)
+                payload = self.taskName+"::"+str(self.resubCount)+"::"+str(resubmissionList)
                 self.local_ms.publish("CrabServerWorkerComponent:Submission", payload, "00:00:10")
                 self.local_ms.commit()
                 return
