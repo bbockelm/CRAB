@@ -22,7 +22,7 @@ The most useful general options (use '-h' to get complete help):
   -submit n           -- Submit the first n available jobs. Default is all.
   -status [range]     -- check status of all jobs.
   -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs.
-  -extend             -- Extend an existing task to run on new fileblocks if there.  
+  -extend             -- Extend an existing task to run on new fileblocks if there.
   -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance.
   -kill [range]       -- kill submitted jobs.
   -resubmit [range]   -- resubmit killed/aborted/retrieved jobs.
@@ -33,7 +33,7 @@ The most useful general options (use '-h' to get complete help):
   -list [range]       -- show technical job details.
   -postMortem [range] -- provide a file with information useful for post-mortem analysis of the jobs.
   -printId [range]    -- print the job SID or Task Unique ID while using the server.
-  -createJdl [range]  -- provide files with a complete Job Description (JDL). 
+  -createJdl [range]  -- provide files with a complete Job Description (JDL).
   -continue|-c [dir]  -- Apply command to task stored in [dir].
   -h [format]         -- Detailed help. Formats: man (default), tex, html, txt.
   -cfg fname          -- Configuration file name. Default is 'crab.cfg'.
@@ -242,7 +242,7 @@ The resubmit option can be used only with CRAB without server. For the server th
 
 =item B<-extend>
 
-Create new jobs for an existing task, checking if new blocks are available for the given dataset.  
+Create new jobs for an existing task, checking if new blocks are available for the given dataset.
 
 =item B<-kill [range]>
 
@@ -266,7 +266,7 @@ Just print the job identifier, which can be the SID (Grid job identifier) of the
 
 =item B<-printJdl [range]>
 
-Collect the full Job Description in a file located under share directory. The file base name is File- .  
+Collect the full Job Description in a file located under share directory. The file base name is File- .
 
 =item B<-postMortem [range]>
 
@@ -349,11 +349,11 @@ within a dataset you can restrict to run on a specific run number or run number 
 
 =item B<use_parent *>
 
-within a dataset you can ask to run over the related parent files too. For example setting use_parent=True CRAB will ask the parent files to DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source module of your parameter set.
+within a dataset you can ask to run over the related parent files too. For example setting use_parent=True CRAB determine the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
 
 =item B<pset *>
 
-the ParameterSet to be used
+the ParameterSet to be used. Both .cfg and .py parameter sets are supported for the relevant versions of CMSSW.
 
 =item I<Of the following three parameter exactly two must be used, otherwise CRAB will complain.>
 
@@ -478,7 +478,7 @@ To be used together with I<copy_data>. Path where to put output files on Storage
 
 =item B<srm_version>
 
-To choose the srm version specify I<srm_version> = N (1 or 2).  
+To choose the srm version specify I<srm_version> = N (1 or 2).
 
 =item B<xml_report>
 
@@ -486,11 +486,11 @@ To be used to switch off the screen report during the status query, enabling the
 
 =item B<usenamespace>
 
-To use the automate namespace definition (perfomed by CRAB) it is possible to set I<usenamespace>=1. The same policy used for the stage out in case of data publication will be applied.  
+To use the automate namespace definition (perfomed by CRAB) it is possible to set I<usenamespace>=1. The same policy used for the stage out in case of data publication will be applied.
 
 =item B<debug_wrapper>
 
-To enable the higer verbose level on wrapper specify I<debug_wrapper> = True. The Pset contents before and after the CRAB maipulation will be written together with other useful infos. 
+To enable the higer verbose level on wrapper specify I<debug_wrapper> = True. The Pset contents before and after the CRAB maipulation will be written together with other useful infos.
 
 =back
 
@@ -575,7 +575,7 @@ Maximum size of tar-ball in Mb. If bigger, an error will be generated. The actua
 
 =item B<skipwmsauth>
 
-Temporary useful parameter to allow the WMSAuthorisation handling. Specifying I<skipwmsauth> = 1 the pyopenssl problmes  will disappear. It is needed working on gLite UI outside of CERN. 
+Temporary useful parameter to allow the WMSAuthorisation handling. Specifying I<skipwmsauth> = 1 the pyopenssl problmes  will disappear. It is needed working on gLite UI outside of CERN.
 
 =back
 
