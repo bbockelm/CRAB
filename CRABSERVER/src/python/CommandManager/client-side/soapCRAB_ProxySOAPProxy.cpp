@@ -161,7 +161,7 @@ int CRAB_ProxySOAPProxy::sendCommand(ns1__sendCommandType *sendCommandRequest, s
 	return soap_closesock(soap);
 }
 
-int CRAB_ProxySOAPProxy::getTaskStatus(char *getTaskStatusRequest, struct ns1__getTaskStatusResponse &_param_3)
+int CRAB_ProxySOAPProxy::getTaskStatus(ns1__getTaskStatusType *getTaskStatusRequest, struct ns1__getTaskStatusResponse &_param_3)
 {	struct soap *soap = this;
 	struct ns1__getTaskStatus soap_tmp_ns1__getTaskStatus;
 	const char *soap_action = NULL;

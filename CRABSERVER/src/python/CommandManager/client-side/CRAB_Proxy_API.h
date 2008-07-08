@@ -20,11 +20,11 @@ public:
 	/// Exposed Operations
 	virtual int transferTaskAndSubmit(string taskXML, string cmdXML, string taskUniqName);
 	virtual int sendCommand(string cmdXML, string taskUniqName);
-	virtual string getTaskStatus(string taskUniqName);
+	virtual string getTaskStatus(string statusType, string taskUniqName);
 
 private:
         string endpoint;
- 	CRAB_ProxySOAPProxy* px;		
+        CRAB_ProxySOAPProxy* px;		
 
 };
 #endif

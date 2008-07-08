@@ -7,7 +7,7 @@
 
 #include "soapH.h"
 
-SOAP_SOURCE_STAMP("@(#) soapC.cpp ver 2.7.9l 2007-12-10 12:44:05 GMT")
+SOAP_SOURCE_STAMP("@(#) soapC.cpp ver 2.7.9l 2008-07-02 11:37:27 GMT")
 
 
 #ifndef WITH_NOGLOBAL
@@ -159,6 +159,8 @@ SOAP_FMAC3 void * SOAP_FMAC4 soap_getelement(struct soap *soap, int *type)
 		return soap_in_byte(soap, NULL, NULL, "xsd:byte");
 	case SOAP_TYPE_int:
 		return soap_in_int(soap, NULL, NULL, "xsd:int");
+	case SOAP_TYPE_ns1__getTaskStatusType:
+		return soap_in_ns1__getTaskStatusType(soap, NULL, NULL, "ns1:getTaskStatusType");
 	case SOAP_TYPE_ns1__sendCommandType:
 		return soap_in_ns1__sendCommandType(soap, NULL, NULL, "ns1:sendCommandType");
 	case SOAP_TYPE_ns1__transferTaskType:
@@ -175,6 +177,8 @@ SOAP_FMAC3 void * SOAP_FMAC4 soap_getelement(struct soap *soap, int *type)
 		return soap_in_ns1__transferTaskAndSubmit(soap, NULL, NULL, "ns1:transferTaskAndSubmit");
 	case SOAP_TYPE_ns1__transferTaskAndSubmitResponse:
 		return soap_in_ns1__transferTaskAndSubmitResponse(soap, NULL, NULL, "ns1:transferTaskAndSubmitResponse");
+	case SOAP_TYPE_PointerTons1__getTaskStatusType:
+		return soap_in_PointerTons1__getTaskStatusType(soap, NULL, NULL, "ns1:getTaskStatusType");
 	case SOAP_TYPE_PointerTons1__sendCommandType:
 		return soap_in_PointerTons1__sendCommandType(soap, NULL, NULL, "ns1:sendCommandType");
 	case SOAP_TYPE_PointerTons1__transferTaskType:
@@ -193,6 +197,10 @@ SOAP_FMAC3 void * SOAP_FMAC4 soap_getelement(struct soap *soap, int *type)
 	{	const char *t = soap->type;
 		if (!*t)
 			t = soap->tag;
+		if (!soap_match_tag(soap, t, "ns1:getTaskStatusType"))
+		{	*type = SOAP_TYPE_ns1__getTaskStatusType;
+			return soap_in_ns1__getTaskStatusType(soap, NULL, NULL, NULL);
+		}
 		if (!soap_match_tag(soap, t, "ns1:sendCommandType"))
 		{	*type = SOAP_TYPE_ns1__sendCommandType;
 			return soap_in_ns1__sendCommandType(soap, NULL, NULL, NULL);
@@ -321,6 +329,8 @@ SOAP_FMAC3 int SOAP_FMAC4 soap_putelement(struct soap *soap, const void *ptr, co
 		return soap_out_byte(soap, tag, id, (const char *)ptr, "xsd:byte");
 	case SOAP_TYPE_int:
 		return soap_out_int(soap, tag, id, (const int *)ptr, "xsd:int");
+	case SOAP_TYPE_ns1__getTaskStatusType:
+		return ((ns1__getTaskStatusType *)ptr)->soap_out(soap, tag, id, "ns1:getTaskStatusType");
 	case SOAP_TYPE_ns1__sendCommandType:
 		return ((ns1__sendCommandType *)ptr)->soap_out(soap, tag, id, "ns1:sendCommandType");
 	case SOAP_TYPE_ns1__transferTaskType:
@@ -337,6 +347,8 @@ SOAP_FMAC3 int SOAP_FMAC4 soap_putelement(struct soap *soap, const void *ptr, co
 		return soap_out_ns1__transferTaskAndSubmit(soap, tag, id, (const struct ns1__transferTaskAndSubmit *)ptr, "ns1:transferTaskAndSubmit");
 	case SOAP_TYPE_ns1__transferTaskAndSubmitResponse:
 		return soap_out_ns1__transferTaskAndSubmitResponse(soap, tag, id, (const struct ns1__transferTaskAndSubmitResponse *)ptr, "ns1:transferTaskAndSubmitResponse");
+	case SOAP_TYPE_PointerTons1__getTaskStatusType:
+		return soap_out_PointerTons1__getTaskStatusType(soap, tag, id, (ns1__getTaskStatusType *const*)ptr, "ns1:getTaskStatusType");
 	case SOAP_TYPE_PointerTons1__sendCommandType:
 		return soap_out_PointerTons1__sendCommandType(soap, tag, id, (ns1__sendCommandType *const*)ptr, "ns1:sendCommandType");
 	case SOAP_TYPE_PointerTons1__transferTaskType:
@@ -366,6 +378,9 @@ SOAP_FMAC3 void SOAP_FMAC4 soap_markelement(struct soap *soap, const void *ptr, 
 	(void)soap; (void)ptr; (void)type; /* appease -Wall -Werror */
 	switch (type)
 	{
+	case SOAP_TYPE_ns1__getTaskStatusType:
+		((ns1__getTaskStatusType *)ptr)->soap_serialize(soap);
+		break;
 	case SOAP_TYPE_ns1__sendCommandType:
 		((ns1__sendCommandType *)ptr)->soap_serialize(soap);
 		break;
@@ -389,6 +404,9 @@ SOAP_FMAC3 void SOAP_FMAC4 soap_markelement(struct soap *soap, const void *ptr, 
 		break;
 	case SOAP_TYPE_ns1__transferTaskAndSubmitResponse:
 		soap_serialize_ns1__transferTaskAndSubmitResponse(soap, (const struct ns1__transferTaskAndSubmitResponse *)ptr);
+		break;
+	case SOAP_TYPE_PointerTons1__getTaskStatusType:
+		soap_serialize_PointerTons1__getTaskStatusType(soap, (ns1__getTaskStatusType *const*)ptr);
 		break;
 	case SOAP_TYPE_PointerTons1__sendCommandType:
 		soap_serialize_PointerTons1__sendCommandType(soap, (ns1__sendCommandType *const*)ptr);
@@ -421,6 +439,8 @@ SOAP_FMAC3 void * SOAP_FMAC4 soap_instantiate(struct soap *soap, int t, const ch
 		return (void*)soap_instantiate_ns1__transferTaskType(soap, -1, type, arrayType, n);
 	case SOAP_TYPE_ns1__sendCommandType:
 		return (void*)soap_instantiate_ns1__sendCommandType(soap, -1, type, arrayType, n);
+	case SOAP_TYPE_ns1__getTaskStatusType:
+		return (void*)soap_instantiate_ns1__getTaskStatusType(soap, -1, type, arrayType, n);
 #ifndef WITH_NOGLOBAL
 	case SOAP_TYPE_SOAP_ENV__Detail:
 		return (void*)soap_instantiate_SOAP_ENV__Detail(soap, -1, type, arrayType, n);
@@ -471,6 +491,12 @@ SOAP_FMAC3 int SOAP_FMAC4 soap_fdelete(struct soap_clist *p)
 			delete (ns1__sendCommandType*)p->ptr;
 		else
 			delete[] (ns1__sendCommandType*)p->ptr;
+		break;
+	case SOAP_TYPE_ns1__getTaskStatusType:
+		if (p->size < 0)
+			delete (ns1__getTaskStatusType*)p->ptr;
+		else
+			delete[] (ns1__getTaskStatusType*)p->ptr;
 		break;
 	case SOAP_TYPE_SOAP_ENV__Detail:
 		if (p->size < 0)
@@ -615,6 +641,144 @@ SOAP_FMAC3 int * SOAP_FMAC4 soap_get_int(struct soap *soap, int *p, const char *
 SOAP_FMAC3 int * SOAP_FMAC4 soap_in_int(struct soap *soap, const char *tag, int *a, const char *type)
 {
 	return soap_inint(soap, tag, a, type, SOAP_TYPE_int);
+}
+
+void ns1__getTaskStatusType::soap_default(struct soap *soap)
+{
+	this->soap = soap;
+	soap_default_string(soap, &this->ns1__getTaskStatusType::statusType);
+	soap_default_string(soap, &this->ns1__getTaskStatusType::uuid);
+	/* transient soap skipped */
+}
+
+void ns1__getTaskStatusType::soap_serialize(struct soap *soap) const
+{
+	(void)soap; /* appease -Wall -Werror */
+	/* transient soap skipped */
+}
+
+int ns1__getTaskStatusType::soap_put(struct soap *soap, const char *tag, const  char *type) const
+{
+	register int id = soap_embed(soap, (void*)this, NULL, 0, tag, SOAP_TYPE_ns1__getTaskStatusType);
+	if (this->soap_out(soap, tag, id, type))
+		return soap->error;
+	return soap_putindependent(soap);
+}
+
+int ns1__getTaskStatusType::soap_out(struct soap *soap, const char *tag, int id, const char *type) const
+{
+	return soap_out_ns1__getTaskStatusType(soap, tag, id, this, type);
+}
+
+SOAP_FMAC3 int SOAP_FMAC4 soap_out_ns1__getTaskStatusType(struct soap *soap, const char *tag, int id, const ns1__getTaskStatusType *a, const char *type)
+{
+	if (((ns1__getTaskStatusType *)a)->statusType)
+		soap_set_attr(soap, "statusType", ((ns1__getTaskStatusType *)a)->statusType);
+	if (((ns1__getTaskStatusType *)a)->uuid)
+		soap_set_attr(soap, "uuid", ((ns1__getTaskStatusType *)a)->uuid);
+	if (soap_element_begin_out(soap, tag, soap_embedded_id(soap, id, a, SOAP_TYPE_ns1__getTaskStatusType), type))
+		return soap->error;
+	/* transient soap skipped */
+	return soap_element_end_out(soap, tag);
+}
+
+void *ns1__getTaskStatusType::soap_get(struct soap *soap, const char *tag, const char *type)
+{
+	return soap_get_ns1__getTaskStatusType(soap, this, tag, type);
+}
+
+SOAP_FMAC3 ns1__getTaskStatusType * SOAP_FMAC4 soap_get_ns1__getTaskStatusType(struct soap *soap, ns1__getTaskStatusType *p, const char *tag, const char *type)
+{
+	if ((p = soap_in_ns1__getTaskStatusType(soap, tag, p, type)))
+		if (soap_getindependent(soap))
+			return NULL;
+	return p;
+}
+
+void *ns1__getTaskStatusType::soap_in(struct soap *soap, const char *tag, const char *type)
+{	return soap_in_ns1__getTaskStatusType(soap, tag, this, type);
+}
+
+SOAP_FMAC3 ns1__getTaskStatusType * SOAP_FMAC4 soap_in_ns1__getTaskStatusType(struct soap *soap, const char *tag, ns1__getTaskStatusType *a, const char *type)
+{
+	if (soap_element_begin_in(soap, tag, 0, NULL))
+		return NULL;
+	a = (ns1__getTaskStatusType *)soap_class_id_enter(soap, soap->id, a, SOAP_TYPE_ns1__getTaskStatusType, sizeof(ns1__getTaskStatusType), soap->type, soap->arrayType);
+	if (!a)
+		return NULL;
+	if (soap->alloced)
+	{	a->soap_default(soap);
+		if (soap->clist->type != SOAP_TYPE_ns1__getTaskStatusType)
+		{	soap_revert(soap);
+			*soap->id = '\0';
+			return (ns1__getTaskStatusType *)a->soap_in(soap, tag, type);
+		}
+	}
+	if (soap_s2string(soap, soap_attr_value(soap, "statusType", 0), &((ns1__getTaskStatusType *)a)->statusType))
+		return NULL;
+	if (soap_s2string(soap, soap_attr_value(soap, "uuid", 0), &((ns1__getTaskStatusType *)a)->uuid))
+		return NULL;
+	if (soap->body && !*soap->href)
+	{
+		for (;;)
+		{	soap->error = SOAP_TAG_MISMATCH;
+			/* transient soap skipped */
+			if (soap->error == SOAP_TAG_MISMATCH)
+				soap->error = soap_ignore_element(soap);
+			if (soap->error == SOAP_NO_TAG)
+				break;
+			if (soap->error)
+				return NULL;
+		}
+		if (soap_element_end_in(soap, tag))
+			return NULL;
+	}
+	else
+	{	a = (ns1__getTaskStatusType *)soap_id_forward(soap, soap->href, (void*)a, 0, SOAP_TYPE_ns1__getTaskStatusType, 0, sizeof(ns1__getTaskStatusType), 0, soap_copy_ns1__getTaskStatusType);
+		if (soap->body && soap_element_end_in(soap, tag))
+			return NULL;
+	}
+	return a;
+}
+
+SOAP_FMAC5 ns1__getTaskStatusType * SOAP_FMAC6 soap_new_ns1__getTaskStatusType(struct soap *soap, int n)
+{	return soap_instantiate_ns1__getTaskStatusType(soap, n, NULL, NULL, NULL);
+}
+
+SOAP_FMAC5 void SOAP_FMAC6 soap_delete_ns1__getTaskStatusType(struct soap *soap, ns1__getTaskStatusType *p)
+{	soap_delete(soap, p);
+}
+
+SOAP_FMAC3 ns1__getTaskStatusType * SOAP_FMAC4 soap_instantiate_ns1__getTaskStatusType(struct soap *soap, int n, const char *type, const char *arrayType, size_t *size)
+{
+	DBGLOG(TEST, SOAP_MESSAGE(fdebug, "soap_instantiate_ns1__getTaskStatusType(%d, %s, %s)\n", n, type?type:"", arrayType?arrayType:""));
+	struct soap_clist *cp = soap_link(soap, NULL, SOAP_TYPE_ns1__getTaskStatusType, n, soap_fdelete);
+	if (!cp)
+		return NULL;
+	if (n < 0)
+	{	cp->ptr = (void*)new ns1__getTaskStatusType;
+		if (size)
+			*size = sizeof(ns1__getTaskStatusType);
+		((ns1__getTaskStatusType*)cp->ptr)->soap = soap;
+	}
+	else
+	{	cp->ptr = (void*)new ns1__getTaskStatusType[n];
+		if (!cp->ptr)
+		{	soap->error = SOAP_EOM;
+			return NULL;
+		}
+		if (size)
+			*size = n * sizeof(ns1__getTaskStatusType);
+		for (int i = 0; i < n; i++)
+			((ns1__getTaskStatusType*)cp->ptr)[i].soap = soap;
+	}
+		DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Instantiated location=%p\n", cp->ptr));
+	return (ns1__getTaskStatusType*)cp->ptr;
+}
+SOAP_FMAC3 void SOAP_FMAC4 soap_copy_ns1__getTaskStatusType(struct soap *soap, int st, int tt, void *p, size_t len, const void *q, size_t n)
+{
+	DBGLOG(TEST, SOAP_MESSAGE(fdebug, "Copying ns1__getTaskStatusType %p -> %p\n", q, p));
+	*(ns1__getTaskStatusType*)p = *(ns1__getTaskStatusType*)q;
 }
 
 void ns1__sendCommandType::soap_default(struct soap *soap)
@@ -1430,13 +1594,13 @@ SOAP_FMAC3 void SOAP_FMAC4 soap_copy_SOAP_ENV__Header(struct soap *soap, int st,
 SOAP_FMAC3 void SOAP_FMAC4 soap_default_ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatus *a)
 {
 	(void)soap; (void)a; /* appease -Wall -Werror */
-	soap_default_string(soap, &a->getTaskStatusRequest);
+	a->getTaskStatusRequest = NULL;
 }
 
 SOAP_FMAC3 void SOAP_FMAC4 soap_serialize_ns1__getTaskStatus(struct soap *soap, const struct ns1__getTaskStatus *a)
 {
 	(void)soap; (void)a; /* appease -Wall -Werror */
-	soap_serialize_string(soap, &a->getTaskStatusRequest);
+	soap_serialize_PointerTons1__getTaskStatusType(soap, &a->getTaskStatusRequest);
 }
 
 SOAP_FMAC3 int SOAP_FMAC4 soap_put_ns1__getTaskStatus(struct soap *soap, const struct ns1__getTaskStatus *a, const char *tag, const char *type)
@@ -1451,7 +1615,7 @@ SOAP_FMAC3 int SOAP_FMAC4 soap_out_ns1__getTaskStatus(struct soap *soap, const c
 {
 	if (soap_element_begin_out(soap, tag, soap_embedded_id(soap, id, a, SOAP_TYPE_ns1__getTaskStatus), type))
 		return soap->error;
-	if (soap_out_string(soap, "getTaskStatusRequest", -1, &a->getTaskStatusRequest, ""))
+	if (soap_out_PointerTons1__getTaskStatusType(soap, "getTaskStatusRequest", -1, &a->getTaskStatusRequest, ""))
 		return soap->error;
 	return soap_element_end_out(soap, tag);
 }
@@ -1477,8 +1641,8 @@ SOAP_FMAC3 struct ns1__getTaskStatus * SOAP_FMAC4 soap_in_ns1__getTaskStatus(str
 	{
 		for (;;)
 		{	soap->error = SOAP_TAG_MISMATCH;
-			if (soap_flag_getTaskStatusRequest && (soap->error == SOAP_TAG_MISMATCH || soap->error == SOAP_NO_TAG))
-				if (soap_in_string(soap, "getTaskStatusRequest", &a->getTaskStatusRequest, "xsd:string"))
+			if (soap_flag_getTaskStatusRequest && soap->error == SOAP_TAG_MISMATCH)
+				if (soap_in_PointerTons1__getTaskStatusType(soap, "getTaskStatusRequest", &a->getTaskStatusRequest, "ns1:getTaskStatusType"))
 				{	soap_flag_getTaskStatusRequest--;
 					continue;
 				}
@@ -2386,6 +2550,61 @@ SOAP_FMAC3 struct SOAP_ENV__Code ** SOAP_FMAC4 soap_in_PointerToSOAP_ENV__Code(s
 }
 
 #endif
+
+SOAP_FMAC3 void SOAP_FMAC4 soap_serialize_PointerTons1__getTaskStatusType(struct soap *soap, ns1__getTaskStatusType *const*a)
+{
+	if (!soap_reference(soap, *a, SOAP_TYPE_ns1__getTaskStatusType))
+		(*a)->soap_serialize(soap);
+}
+
+SOAP_FMAC3 int SOAP_FMAC4 soap_put_PointerTons1__getTaskStatusType(struct soap *soap, ns1__getTaskStatusType *const*a, const char *tag, const char *type)
+{
+	register int id = soap_embed(soap, (void*)a, NULL, 0, tag, SOAP_TYPE_PointerTons1__getTaskStatusType);
+	if (soap_out_PointerTons1__getTaskStatusType(soap, tag, id, a, type))
+		return soap->error;
+	return soap_putindependent(soap);
+}
+
+SOAP_FMAC3 int SOAP_FMAC4 soap_out_PointerTons1__getTaskStatusType(struct soap *soap, const char *tag, int id, ns1__getTaskStatusType *const*a, const char *type)
+{
+	id = soap_element_id(soap, tag, id, *a, NULL, 0, type, SOAP_TYPE_ns1__getTaskStatusType);
+	if (id < 0)
+		return soap->error;
+	return (*a)->soap_out(soap, tag, id, type);
+}
+
+SOAP_FMAC3 ns1__getTaskStatusType ** SOAP_FMAC4 soap_get_PointerTons1__getTaskStatusType(struct soap *soap, ns1__getTaskStatusType **p, const char *tag, const char *type)
+{
+	if ((p = soap_in_PointerTons1__getTaskStatusType(soap, tag, p, type)))
+		if (soap_getindependent(soap))
+			return NULL;
+	return p;
+}
+
+SOAP_FMAC3 ns1__getTaskStatusType ** SOAP_FMAC4 soap_in_PointerTons1__getTaskStatusType(struct soap *soap, const char *tag, ns1__getTaskStatusType **a, const char *type)
+{
+	if (soap_element_begin_in(soap, tag, 1, NULL))
+		return NULL;
+	if (!a)
+		if (!(a = (ns1__getTaskStatusType **)soap_malloc(soap, sizeof(ns1__getTaskStatusType *))))
+			return NULL;
+	*a = NULL;
+	if (!soap->null && *soap->href != '#')
+	{	soap_revert(soap);
+		if (!(*a = (ns1__getTaskStatusType *)soap_instantiate_ns1__getTaskStatusType(soap, -1, soap->type, soap->arrayType, NULL)))
+			return NULL;
+		(*a)->soap_default(soap);
+		if (!(*a)->soap_in(soap, tag, NULL))
+			return NULL;
+	}
+	else
+	{	ns1__getTaskStatusType ** p = (ns1__getTaskStatusType **)soap_id_lookup(soap, soap->href, (void**)a, SOAP_TYPE_ns1__getTaskStatusType, sizeof(ns1__getTaskStatusType), 0);
+		a = p;
+		if (soap->body && soap_element_end_in(soap, tag))
+			return NULL;
+	}
+	return a;
+}
 
 SOAP_FMAC3 void SOAP_FMAC4 soap_serialize_PointerTons1__sendCommandType(struct soap *soap, ns1__sendCommandType *const*a)
 {

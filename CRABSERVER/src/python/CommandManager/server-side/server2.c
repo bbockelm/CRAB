@@ -357,8 +357,10 @@ int ns1__sendCommand(struct soap *soap, struct ns1__sendCommandType *sendCommand
 }
 
 /// Web service operation 'getTaskStatus' (return error code or SOAP_OK)
-int ns1__getTaskStatus(struct soap *soap, char *getTaskStatusRequest, struct ns1__getTaskStatusResponse *_param_3)
+int ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatusType *getTaskStatusRequest, struct ns1__getTaskStatusResponse *_param_3)
 {
+        char* statusFamilyType;
+        char* UUID;
         PyObject *pResult, *locTemp;
 	char res[ 8192*16 ];
         time_t rawtime;
@@ -367,6 +369,9 @@ int ns1__getTaskStatus(struct soap *soap, char *getTaskStatusRequest, struct ns1
 	//res = NULL;
         pthread_mutex_lock(&status_cs); //TODO
  
+        statusFamilyType = getTaskStatusRequest->statusType;
+        UUID = getTaskStatusRequest->uuid;
+
 	if (locTemp == NULL)
 	{
 		PyErr_Print();
@@ -375,7 +380,7 @@ int ns1__getTaskStatus(struct soap *soap, char *getTaskStatusRequest, struct ns1
         }
         else
         {
-		pResult = PyObject_CallMethod(locTemp, "gway_getTaskStatus", "(s)", getTaskStatusRequest);
+		pResult = PyObject_CallMethod(locTemp, "gway_getTaskStatus", "(ss)", statusFamilyType, UUID);
 		if (pResult == NULL)
 		{
 			PyErr_Print();

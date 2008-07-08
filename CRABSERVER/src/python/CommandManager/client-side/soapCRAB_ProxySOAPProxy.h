@@ -31,11 +31,12 @@ class SOAP_CMAC CRAB_ProxySOAPProxy : public soap
 	virtual	const char *soap_fault_string();
 	/// Get SOAP Fault detail as string (NULL when absent)
 	virtual	const char *soap_fault_detail();
+
 	/// Web service operation 'transferTaskAndSubmit' (return error code or SOAP_OK)
 	virtual	int transferTaskAndSubmit(ns1__transferTaskType *transferTaskAndSubmitRequest, struct ns1__transferTaskAndSubmitResponse &_param_1);
 	/// Web service operation 'sendCommand' (return error code or SOAP_OK)
 	virtual	int sendCommand(ns1__sendCommandType *sendCommandRequest, struct ns1__sendCommandResponse &_param_2);
 	/// Web service operation 'getTaskStatus' (return error code or SOAP_OK)
-	virtual	int getTaskStatus(char *getTaskStatusRequest, struct ns1__getTaskStatusResponse &_param_3);
+	virtual	int getTaskStatus(ns1__getTaskStatusType *getTaskStatusRequest, struct ns1__getTaskStatusResponse &_param_3);
 };
 #endif

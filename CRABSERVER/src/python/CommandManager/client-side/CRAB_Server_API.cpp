@@ -900,11 +900,13 @@ static PyObject *_wrap_CRAB_Server_Session_getTaskStatus(PyObject *self, PyObjec
     PyObject *resultobj;
     CRAB_Server_Session *arg1 = (CRAB_Server_Session *) 0 ;
     std::string arg2 ;
+    std::string arg3 ;
     std::string result;
     PyObject * obj0 = 0 ;
     PyObject * obj1 = 0 ;
+    PyObject * obj2 = 0 ;
     
-    if(!PyArg_ParseTuple(args,(char *)"OO:CRAB_Server_Session_getTaskStatus",&obj0,&obj1)) goto fail;
+    if(!PyArg_ParseTuple(args,(char *)"OOO:CRAB_Server_Session_getTaskStatus",&obj0,&obj1,&obj2)) goto fail;
     if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_CRAB_Server_Session,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
     {
         if (PyString_Check(obj1))
@@ -913,7 +915,15 @@ static PyObject *_wrap_CRAB_Server_Session_getTaskStatus(PyObject *self, PyObjec
         else
         SWIG_exception(SWIG_TypeError, "string expected");
     }
-    result = (arg1)->getTaskStatus(arg2);
+    {
+        if (PyString_Check(obj2))
+        arg3 = std::string(PyString_AsString(obj2),
+        PyString_Size(obj2));
+        else
+        SWIG_exception(SWIG_TypeError, "string expected");
+    }
+
+    result = (arg1)->getTaskStatus(arg2, arg3);
     
     {
         resultobj = PyString_FromStringAndSize((&result)->data(),(&result)->size());

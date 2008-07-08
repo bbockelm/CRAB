@@ -149,15 +149,12 @@ class ServerCommunicator:
         """
         return self._genericCommand('clean', blTaskName, rng)
 
-    def getStatus(self, blTaskName, statusFile=None):
+    def getStatus(self, blTaskName, statusFile=None, statusFamilyType='status'):
         """
         _getStatus_
-        Retrieve the task status from the server.
-
-        Accepts in input:
-             - the bossLite object representing the task (jobs are assumed to be RunningJobs)
-             - the range of the submission as specified by the user at the command line
+        Retrieve the task status from the server. It can recover any kind of status (version, loggingInfos,...)
         """
+
         # fill the filename
         filename = str(statusFile)
 
@@ -166,7 +163,7 @@ class ServerCommunicator:
             return ''
 
         # get the data and fill the file content
-        statusMsg = self.asSession.getTaskStatus(blTaskName)
+        statusMsg = self.asSession.getTaskStatus(statusFamilyType, blTaskName)
         if 'Error:' in  statusMsg[:6] or len(statusMsg)==0:
              raise CrabException('Error occurred while retrieving task %s status from server %s'%(self.crab_task_name, self.serverName) )
              return

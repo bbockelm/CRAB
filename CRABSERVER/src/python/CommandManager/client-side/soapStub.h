@@ -70,8 +70,30 @@ public:
 };
 #endif
 
+#ifndef SOAP_TYPE_ns1__getTaskStatusType
+#define SOAP_TYPE_ns1__getTaskStatusType (9)
+/* ns1:getTaskStatusType */
+class SOAP_CMAC ns1__getTaskStatusType
+{
+public:
+	char *statusType;	/* optional attribute */
+	char *uuid;	/* optional attribute */
+	struct soap *soap;	/* transient */
+public:
+	virtual int soap_type() const { return 9; } /* = unique id SOAP_TYPE_ns1__getTaskStatusType */
+	virtual void soap_default(struct soap*);
+	virtual void soap_serialize(struct soap*) const;
+	virtual int soap_put(struct soap*, const char*, const char*) const;
+	virtual int soap_out(struct soap*, const char*, int, const char*) const;
+	virtual void *soap_get(struct soap*, const char*, const char*);
+	virtual void *soap_in(struct soap*, const char*, const char*);
+	         ns1__getTaskStatusType() : statusType(NULL), uuid(NULL), soap(NULL) { }
+	virtual ~ns1__getTaskStatusType() { }
+};
+#endif
+
 #ifndef SOAP_TYPE_SOAP_ENV__Detail
-#define SOAP_TYPE_SOAP_ENV__Detail (11)
+#define SOAP_TYPE_SOAP_ENV__Detail (12)
 /* SOAP-ENV:Detail */
 struct SOAP_ENV__Detail
 {
@@ -84,17 +106,17 @@ public:
 #endif
 
 #ifndef SOAP_TYPE_ns1__transferTaskAndSubmitResponse
-#define SOAP_TYPE_ns1__transferTaskAndSubmitResponse (14)
+#define SOAP_TYPE_ns1__transferTaskAndSubmitResponse (15)
 /* ns1:transferTaskAndSubmitResponse */
 struct ns1__transferTaskAndSubmitResponse
 {
 public:
-	char* transferTaskAndSubmitResponse;	/* SOAP 1.2 RPC return element (when namespace qualified) */	/* optional element of type xsd:integer */
+	char *transferTaskAndSubmitResponse;	/* SOAP 1.2 RPC return element (when namespace qualified) */	/* optional element of type xsd:integer */
 };
 #endif
 
 #ifndef SOAP_TYPE_ns1__transferTaskAndSubmit
-#define SOAP_TYPE_ns1__transferTaskAndSubmit (18)
+#define SOAP_TYPE_ns1__transferTaskAndSubmit (19)
 /* ns1:transferTaskAndSubmit */
 struct ns1__transferTaskAndSubmit
 {
@@ -104,17 +126,17 @@ public:
 #endif
 
 #ifndef SOAP_TYPE_ns1__sendCommandResponse
-#define SOAP_TYPE_ns1__sendCommandResponse (19)
+#define SOAP_TYPE_ns1__sendCommandResponse (20)
 /* ns1:sendCommandResponse */
 struct ns1__sendCommandResponse
 {
 public:
-	char* sendCommandResponse;	/* SOAP 1.2 RPC return element (when namespace qualified) */	/* optional element of type xsd:integer */
+	char *sendCommandResponse;	/* SOAP 1.2 RPC return element (when namespace qualified) */	/* optional element of type xsd:integer */
 };
 #endif
 
 #ifndef SOAP_TYPE_ns1__sendCommand
-#define SOAP_TYPE_ns1__sendCommand (23)
+#define SOAP_TYPE_ns1__sendCommand (24)
 /* ns1:sendCommand */
 struct ns1__sendCommand
 {
@@ -124,7 +146,7 @@ public:
 #endif
 
 #ifndef SOAP_TYPE_ns1__getTaskStatusResponse
-#define SOAP_TYPE_ns1__getTaskStatusResponse (24)
+#define SOAP_TYPE_ns1__getTaskStatusResponse (25)
 /* ns1:getTaskStatusResponse */
 struct ns1__getTaskStatusResponse
 {
@@ -134,17 +156,17 @@ public:
 #endif
 
 #ifndef SOAP_TYPE_ns1__getTaskStatus
-#define SOAP_TYPE_ns1__getTaskStatus (27)
+#define SOAP_TYPE_ns1__getTaskStatus (29)
 /* ns1:getTaskStatus */
 struct ns1__getTaskStatus
 {
 public:
-	char *getTaskStatusRequest;	/* optional element of type xsd:string */
+	ns1__getTaskStatusType *getTaskStatusRequest;	/* optional element of type ns1:getTaskStatusType */
 };
 #endif
 
 #ifndef SOAP_TYPE_SOAP_ENV__Header
-#define SOAP_TYPE_SOAP_ENV__Header (28)
+#define SOAP_TYPE_SOAP_ENV__Header (30)
 /* SOAP Header: */
 struct SOAP_ENV__Header
 {
@@ -156,7 +178,7 @@ private:
 #endif
 
 #ifndef SOAP_TYPE_SOAP_ENV__Code
-#define SOAP_TYPE_SOAP_ENV__Code (29)
+#define SOAP_TYPE_SOAP_ENV__Code (31)
 /* SOAP Fault Code: */
 struct SOAP_ENV__Code
 {
@@ -167,7 +189,7 @@ public:
 #endif
 
 #ifndef SOAP_TYPE_SOAP_ENV__Reason
-#define SOAP_TYPE_SOAP_ENV__Reason (31)
+#define SOAP_TYPE_SOAP_ENV__Reason (33)
 /* SOAP-ENV:Reason */
 struct SOAP_ENV__Reason
 {
@@ -177,7 +199,7 @@ public:
 #endif
 
 #ifndef SOAP_TYPE_SOAP_ENV__Fault
-#define SOAP_TYPE_SOAP_ENV__Fault (32)
+#define SOAP_TYPE_SOAP_ENV__Fault (34)
 /* SOAP Fault: */
 struct SOAP_ENV__Fault
 {

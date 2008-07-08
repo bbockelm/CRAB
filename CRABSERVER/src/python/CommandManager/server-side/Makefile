@@ -1,6 +1,6 @@
 #
 # CRAB-Proxy makefile
-# $Id: Makefile,v 1.2 2008/03/13 15:40:39 farinafa Exp $
+# $Id: Makefile,v 1.3 2008/04/18 14:11:46 farinafa Exp $
 # Fabio Farina 2007/12/10 
 
 O_NAME = CRAB-CmdMgr-Frontend
@@ -23,7 +23,7 @@ server: server2.c
 server_lib: server2.c
 	gcc -c -o FrontendLoader.o FrontendLoader.c $(CFLAGS) $(IFLAGS)
 	gcc -shared -o _FrontendLoader.so FrontendLoader.o\
-		server2.c stdsoap2.c soapC.c soapServer.c\
+		stdsoap2.c soapC.c soapServer.c server2.c\
 		$(CFLAGS) $(IFLAGS) -export-dynamic \
 		$(LIBS) $(SERVER_LIBS) 
 

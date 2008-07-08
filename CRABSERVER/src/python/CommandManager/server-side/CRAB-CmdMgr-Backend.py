@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.16 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.16 2008/05/21 09:04:39 farinafa Exp $"
+__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.17 2008/05/27 15:32:02 farinafa Exp $"
 
 import os
 import time
@@ -179,11 +179,11 @@ class CRAB_AS_beckend:
         try:
             # check for too large submissions
             xmlCmd = minidom.parseString(cmdDescriptor).getElementsByTagName("TaskCommand")[0]
-            if len(eval(xmlCmd.getAttribute('Range'))) > 5000:
+            if len(eval(xmlCmd.getAttribute('Range'), {}, {})) > 5000:
                 self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
                 return 101
 
-            dirName = self.prepareTaskDir(taskDescriptor, cmdDescriptor, taskUniqName) 
+            dirName = self.prepareTaskDir(taskDescriptor, cmdDescriptor, taskUniqName)
             if dirName is None:
                 self.log.info('Unable to create directory tree for task %s'%taskUniqName) 
                 return 11
@@ -233,16 +233,16 @@ class CRAB_AS_beckend:
 
             xmlCmd = minidom.parseString(cmdDescriptor).getElementsByTagName("TaskCommand")[0]
             cmdKind = str(xmlCmd.getAttribute('Command'))
-            cmdRng = xmlCmd.getAttribute('Range') 
+            cmdRng = str(xmlCmd.getAttribute('Range')) 
 
             # submission part
             if cmdKind in ['submit', 'resubmit']:
                 # check for too large submissions
-                if len(eval(cmdRng)) > 5000:
+                if len( eval(cmdRng, {}, {}) ) > 5000:
                     self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
                     return 101
                 # send submission directive 
-                msg = taskUniqName + "::" + str(self.cmdAttempts)
+                msg = taskUniqName +"::"+ str(self.cmdAttempts) +"::"+ cmdRng
                 self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
                 self.ms.commit()
                 self.log.info("NewCommand Submit "+taskUniqName)
@@ -266,9 +266,6 @@ class CRAB_AS_beckend:
                 msg = taskUniqName + ':' + 'fake_proxy' + ':' + cmdRng 
                 self.ms.publish("KillTask", msg)
 
-                # Fastkill support
-                msg = taskUniqName + "::" + str(self.cmdAttempts)
-                self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
 
                 self.ms.commit()
                 self.log.info("NewCommand Kill "+taskUniqName)
@@ -282,7 +279,7 @@ class CRAB_AS_beckend:
         # unknown message
         return 20
     
-    def gway_getTaskStatus(self, taskUniqName=""):
+    def gway_getTaskStatus(self, taskUniqName="", statusType="status"):
         """
         Transfer the task status description to the client
         Return codes:
@@ -290,23 +287,27 @@ class CRAB_AS_beckend:
             otherwise the methods return the error condition
         """
         self.log.info("TaskStatus requested "+taskUniqName)
-        
-        # TODO # Fabio
-        # TO BE CHECKED FOR CONSISTENCY w.r.t. the rest of the system
-        # NAME CONVENSION IDENTICAL TO THE ONE USED BY CURRENT SERVER CLIENT (see StatusServer.py, line 79)
-        retStatus = ""
+        retStatus, prjUName_fRep = ("", "")
 
-        prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/xmlReportFile.xml"
-        if not os.path.exists(prjUName_fRep):
-            retStatus = "Error: file %s not exists"%prjUName_fRep
+        if statusType == "status":
+            prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/xmlReportFile.xml"
+        elif statusType == "serverLogging":
+            prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/loggingTaskInfo"
         else:
-            try:
-                f = open(prjUName_fRep, 'r')
-                retStatus = f.readlines()
-                f.close()
-            except Exception, e:
-                self.log.debug( traceback.format_exc() )
-                str("Error: problem reading %s report file"%prjUName_fRep )
+            prjUName_fRep = None
+            retStatus = "Unrecognized kind of status information required"  
+
+        # collect the information from source
+        if prjUName_fRep:
+            if not os.path.exists(prjUName_fRep):
+                retStatus = "Error: file %s not exists"%prjUName_fRep
+            else:
+                try:
+                    f = open(prjUName_fRep, 'r')
+                    retStatus = f.readlines()
+                    f.close()
+                except Exception, e:
+                    self.log.debug( traceback.format_exc() )
         
         # return the document
         retStatus = "".join(retStatus)

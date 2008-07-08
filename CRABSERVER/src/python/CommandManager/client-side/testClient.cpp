@@ -24,7 +24,7 @@ int main()
 	res = cs->sendCommand("string cmdXML", "string taskUniqName");
         cout << "cs.sendCommand " << res << endl;
 
-        cout << "cs.getTaskStatus " << cs->getTaskStatus("string taskUniqName") << endl;
+        cout << "cs.getTaskStatus " << cs->getTaskStatus("string foo", "string taskUniqName") << endl;
 
 	delete cs;
 	return 0; 

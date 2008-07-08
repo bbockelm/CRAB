@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-SOAP_SOURCE_STAMP("@(#) soapC.c ver 2.7.9l 2008-03-26 10:19:13 GMT")
+SOAP_SOURCE_STAMP("@(#) soapC.c ver 2.7.9l 2008-07-02 12:56:32 GMT")
 
 
 #ifndef WITH_NOGLOBAL
@@ -170,12 +170,16 @@ SOAP_FMAC3 void * SOAP_FMAC4 soap_getelement(struct soap *soap, int *type)
 		return soap_in_ns1__transferTaskAndSubmit(soap, NULL, NULL, "ns1:transferTaskAndSubmit");
 	case SOAP_TYPE_ns1__transferTaskAndSubmitResponse:
 		return soap_in_ns1__transferTaskAndSubmitResponse(soap, NULL, NULL, "ns1:transferTaskAndSubmitResponse");
+	case SOAP_TYPE_ns1__getTaskStatusType:
+		return soap_in_ns1__getTaskStatusType(soap, NULL, NULL, "ns1:getTaskStatusType");
 	case SOAP_TYPE_ns1__sendCommandType:
 		return soap_in_ns1__sendCommandType(soap, NULL, NULL, "ns1:sendCommandType");
 	case SOAP_TYPE_ns1__transferTaskType:
 		return soap_in_ns1__transferTaskType(soap, NULL, NULL, "ns1:transferTaskType");
 	case SOAP_TYPE_PointerTons1__getTaskStatusResponse:
 		return soap_in_PointerTons1__getTaskStatusResponse(soap, NULL, NULL, "ns1:getTaskStatusResponse");
+	case SOAP_TYPE_PointerTons1__getTaskStatusType:
+		return soap_in_PointerTons1__getTaskStatusType(soap, NULL, NULL, "ns1:getTaskStatusType");
 	case SOAP_TYPE_PointerTons1__sendCommandResponse:
 		return soap_in_PointerTons1__sendCommandResponse(soap, NULL, NULL, "ns1:sendCommandResponse");
 	case SOAP_TYPE_PointerTons1__sendCommandType:
@@ -229,6 +233,10 @@ SOAP_FMAC3 void * SOAP_FMAC4 soap_getelement(struct soap *soap, int *type)
 		if (!soap_match_tag(soap, t, "ns1:transferTaskAndSubmitResponse"))
 		{	*type = SOAP_TYPE_ns1__transferTaskAndSubmitResponse;
 			return soap_in_ns1__transferTaskAndSubmitResponse(soap, NULL, NULL, NULL);
+		}
+		if (!soap_match_tag(soap, t, "ns1:getTaskStatusType"))
+		{	*type = SOAP_TYPE_ns1__getTaskStatusType;
+			return soap_in_ns1__getTaskStatusType(soap, NULL, NULL, NULL);
 		}
 		if (!soap_match_tag(soap, t, "ns1:sendCommandType"))
 		{	*type = SOAP_TYPE_ns1__sendCommandType;
@@ -330,12 +338,16 @@ SOAP_FMAC3 int SOAP_FMAC4 soap_putelement(struct soap *soap, const void *ptr, co
 		return soap_out_ns1__transferTaskAndSubmit(soap, tag, id, (const struct ns1__transferTaskAndSubmit *)ptr, "ns1:transferTaskAndSubmit");
 	case SOAP_TYPE_ns1__transferTaskAndSubmitResponse:
 		return soap_out_ns1__transferTaskAndSubmitResponse(soap, tag, id, (const struct ns1__transferTaskAndSubmitResponse *)ptr, "ns1:transferTaskAndSubmitResponse");
+	case SOAP_TYPE_ns1__getTaskStatusType:
+		return soap_out_ns1__getTaskStatusType(soap, tag, id, (const struct ns1__getTaskStatusType *)ptr, "ns1:getTaskStatusType");
 	case SOAP_TYPE_ns1__sendCommandType:
 		return soap_out_ns1__sendCommandType(soap, tag, id, (const struct ns1__sendCommandType *)ptr, "ns1:sendCommandType");
 	case SOAP_TYPE_ns1__transferTaskType:
 		return soap_out_ns1__transferTaskType(soap, tag, id, (const struct ns1__transferTaskType *)ptr, "ns1:transferTaskType");
 	case SOAP_TYPE_PointerTons1__getTaskStatusResponse:
 		return soap_out_PointerTons1__getTaskStatusResponse(soap, tag, id, (struct ns1__getTaskStatusResponse *const*)ptr, "ns1:getTaskStatusResponse");
+	case SOAP_TYPE_PointerTons1__getTaskStatusType:
+		return soap_out_PointerTons1__getTaskStatusType(soap, tag, id, (struct ns1__getTaskStatusType *const*)ptr, "ns1:getTaskStatusType");
 	case SOAP_TYPE_PointerTons1__sendCommandResponse:
 		return soap_out_PointerTons1__sendCommandResponse(soap, tag, id, (struct ns1__sendCommandResponse *const*)ptr, "ns1:sendCommandResponse");
 	case SOAP_TYPE_PointerTons1__sendCommandType:
@@ -379,6 +391,9 @@ SOAP_FMAC3 void SOAP_FMAC4 soap_markelement(struct soap *soap, const void *ptr, 
 	case SOAP_TYPE_ns1__transferTaskAndSubmitResponse:
 		soap_serialize_ns1__transferTaskAndSubmitResponse(soap, (const struct ns1__transferTaskAndSubmitResponse *)ptr);
 		break;
+	case SOAP_TYPE_ns1__getTaskStatusType:
+		soap_serialize_ns1__getTaskStatusType(soap, (const struct ns1__getTaskStatusType *)ptr);
+		break;
 	case SOAP_TYPE_ns1__sendCommandType:
 		soap_serialize_ns1__sendCommandType(soap, (const struct ns1__sendCommandType *)ptr);
 		break;
@@ -387,6 +402,9 @@ SOAP_FMAC3 void SOAP_FMAC4 soap_markelement(struct soap *soap, const void *ptr, 
 		break;
 	case SOAP_TYPE_PointerTons1__getTaskStatusResponse:
 		soap_serialize_PointerTons1__getTaskStatusResponse(soap, (struct ns1__getTaskStatusResponse *const*)ptr);
+		break;
+	case SOAP_TYPE_PointerTons1__getTaskStatusType:
+		soap_serialize_PointerTons1__getTaskStatusType(soap, (struct ns1__getTaskStatusType *const*)ptr);
 		break;
 	case SOAP_TYPE_PointerTons1__sendCommandResponse:
 		soap_serialize_PointerTons1__sendCommandResponse(soap, (struct ns1__sendCommandResponse *const*)ptr);
@@ -867,13 +885,13 @@ SOAP_FMAC3 struct SOAP_ENV__Header * SOAP_FMAC4 soap_in_SOAP_ENV__Header(struct 
 SOAP_FMAC3 void SOAP_FMAC4 soap_default_ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatus *a)
 {
 	(void)soap; (void)a; /* appease -Wall -Werror */
-	soap_default_string(soap, &a->getTaskStatusRequest);
+	a->getTaskStatusRequest = NULL;
 }
 
 SOAP_FMAC3 void SOAP_FMAC4 soap_serialize_ns1__getTaskStatus(struct soap *soap, const struct ns1__getTaskStatus *a)
 {
 	(void)soap; (void)a; /* appease -Wall -Werror */
-	soap_serialize_string(soap, &a->getTaskStatusRequest);
+	soap_serialize_PointerTons1__getTaskStatusType(soap, &a->getTaskStatusRequest);
 }
 
 SOAP_FMAC3 int SOAP_FMAC4 soap_put_ns1__getTaskStatus(struct soap *soap, const struct ns1__getTaskStatus *a, const char *tag, const char *type)
@@ -888,7 +906,7 @@ SOAP_FMAC3 int SOAP_FMAC4 soap_out_ns1__getTaskStatus(struct soap *soap, const c
 {
 	if (soap_element_begin_out(soap, tag, soap_embedded_id(soap, id, a, SOAP_TYPE_ns1__getTaskStatus), type))
 		return soap->error;
-	if (soap_out_string(soap, "getTaskStatusRequest", -1, &a->getTaskStatusRequest, ""))
+	if (soap_out_PointerTons1__getTaskStatusType(soap, "getTaskStatusRequest", -1, &a->getTaskStatusRequest, ""))
 		return soap->error;
 	return soap_element_end_out(soap, tag);
 }
@@ -914,8 +932,8 @@ SOAP_FMAC3 struct ns1__getTaskStatus * SOAP_FMAC4 soap_in_ns1__getTaskStatus(str
 	{
 		for (;;)
 		{	soap->error = SOAP_TAG_MISMATCH;
-			if (soap_flag_getTaskStatusRequest && (soap->error == SOAP_TAG_MISMATCH || soap->error == SOAP_NO_TAG))
-				if (soap_in_string(soap, "getTaskStatusRequest", &a->getTaskStatusRequest, "xsd:string"))
+			if (soap_flag_getTaskStatusRequest && soap->error == SOAP_TAG_MISMATCH)
+				if (soap_in_PointerTons1__getTaskStatusType(soap, "getTaskStatusRequest", &a->getTaskStatusRequest, "ns1:getTaskStatusType"))
 				{	soap_flag_getTaskStatusRequest--;
 					continue;
 				}
@@ -1400,6 +1418,79 @@ SOAP_FMAC3 struct SOAP_ENV__Detail * SOAP_FMAC4 soap_in_SOAP_ENV__Detail(struct 
 
 #endif
 
+SOAP_FMAC3 void SOAP_FMAC4 soap_default_ns1__getTaskStatusType(struct soap *soap, struct ns1__getTaskStatusType *a)
+{
+	(void)soap; (void)a; /* appease -Wall -Werror */
+	soap_default_string(soap, &a->statusType);
+	soap_default_string(soap, &a->uuid);
+}
+
+SOAP_FMAC3 void SOAP_FMAC4 soap_serialize_ns1__getTaskStatusType(struct soap *soap, const struct ns1__getTaskStatusType *a)
+{
+	(void)soap; (void)a; /* appease -Wall -Werror */
+}
+
+SOAP_FMAC3 int SOAP_FMAC4 soap_put_ns1__getTaskStatusType(struct soap *soap, const struct ns1__getTaskStatusType *a, const char *tag, const char *type)
+{
+	register int id = soap_embed(soap, (void*)a, NULL, 0, tag, SOAP_TYPE_ns1__getTaskStatusType);
+	if (soap_out_ns1__getTaskStatusType(soap, tag, id, a, type))
+		return soap->error;
+	return soap_putindependent(soap);
+}
+
+SOAP_FMAC3 int SOAP_FMAC4 soap_out_ns1__getTaskStatusType(struct soap *soap, const char *tag, int id, const struct ns1__getTaskStatusType *a, const char *type)
+{
+	if (a->statusType)
+		soap_set_attr(soap, "statusType", a->statusType);
+	if (a->uuid)
+		soap_set_attr(soap, "uuid", a->uuid);
+	if (soap_element_begin_out(soap, tag, soap_embedded_id(soap, id, a, SOAP_TYPE_ns1__getTaskStatusType), type))
+		return soap->error;
+	return soap_element_end_out(soap, tag);
+}
+
+SOAP_FMAC3 struct ns1__getTaskStatusType * SOAP_FMAC4 soap_get_ns1__getTaskStatusType(struct soap *soap, struct ns1__getTaskStatusType *p, const char *tag, const char *type)
+{
+	if ((p = soap_in_ns1__getTaskStatusType(soap, tag, p, type)))
+		if (soap_getindependent(soap))
+			return NULL;
+	return p;
+}
+
+SOAP_FMAC3 struct ns1__getTaskStatusType * SOAP_FMAC4 soap_in_ns1__getTaskStatusType(struct soap *soap, const char *tag, struct ns1__getTaskStatusType *a, const char *type)
+{
+	if (soap_element_begin_in(soap, tag, 0, type))
+		return NULL;
+	a = (struct ns1__getTaskStatusType *)soap_id_enter(soap, soap->id, a, SOAP_TYPE_ns1__getTaskStatusType, sizeof(struct ns1__getTaskStatusType), 0, NULL, NULL, NULL);
+	if (!a)
+		return NULL;
+	soap_default_ns1__getTaskStatusType(soap, a);
+	if (soap_s2string(soap, soap_attr_value(soap, "statusType", 0), &a->statusType))
+		return NULL;
+	if (soap_s2string(soap, soap_attr_value(soap, "uuid", 0), &a->uuid))
+		return NULL;
+	if (soap->body && !*soap->href)
+	{
+		for (;;)
+		{	soap->error = SOAP_TAG_MISMATCH;
+			if (soap->error == SOAP_TAG_MISMATCH)
+				soap->error = soap_ignore_element(soap);
+			if (soap->error == SOAP_NO_TAG)
+				break;
+			if (soap->error)
+				return NULL;
+		}
+		if (soap_element_end_in(soap, tag))
+			return NULL;
+	}
+	else
+	{	a = (struct ns1__getTaskStatusType *)soap_id_forward(soap, soap->href, (void*)a, 0, SOAP_TYPE_ns1__getTaskStatusType, 0, sizeof(struct ns1__getTaskStatusType), 0, NULL);
+		if (soap->body && soap_element_end_in(soap, tag))
+			return NULL;
+	}
+	return a;
+}
+
 SOAP_FMAC3 void SOAP_FMAC4 soap_default_ns1__sendCommandType(struct soap *soap, struct ns1__sendCommandType *a)
 {
 	(void)soap; (void)a; /* appease -Wall -Werror */
@@ -1761,6 +1852,57 @@ SOAP_FMAC3 struct ns1__getTaskStatusResponse ** SOAP_FMAC4 soap_in_PointerTons1_
 	}
 	else
 	{	a = (struct ns1__getTaskStatusResponse **)soap_id_lookup(soap, soap->href, (void**)a, SOAP_TYPE_ns1__getTaskStatusResponse, sizeof(struct ns1__getTaskStatusResponse), 0);
+		if (soap->body && soap_element_end_in(soap, tag))
+			return NULL;
+	}
+	return a;
+}
+
+SOAP_FMAC3 void SOAP_FMAC4 soap_serialize_PointerTons1__getTaskStatusType(struct soap *soap, struct ns1__getTaskStatusType *const*a)
+{
+	if (!soap_reference(soap, *a, SOAP_TYPE_ns1__getTaskStatusType))
+		soap_serialize_ns1__getTaskStatusType(soap, *a);
+}
+
+SOAP_FMAC3 int SOAP_FMAC4 soap_put_PointerTons1__getTaskStatusType(struct soap *soap, struct ns1__getTaskStatusType *const*a, const char *tag, const char *type)
+{
+	register int id = soap_embed(soap, (void*)a, NULL, 0, tag, SOAP_TYPE_PointerTons1__getTaskStatusType);
+	if (soap_out_PointerTons1__getTaskStatusType(soap, tag, id, a, type))
+		return soap->error;
+	return soap_putindependent(soap);
+}
+
+SOAP_FMAC3 int SOAP_FMAC4 soap_out_PointerTons1__getTaskStatusType(struct soap *soap, const char *tag, int id, struct ns1__getTaskStatusType *const*a, const char *type)
+{
+	id = soap_element_id(soap, tag, id, *a, NULL, 0, type, SOAP_TYPE_ns1__getTaskStatusType);
+	if (id < 0)
+		return soap->error;
+	return soap_out_ns1__getTaskStatusType(soap, tag, id, *a, type);
+}
+
+SOAP_FMAC3 struct ns1__getTaskStatusType ** SOAP_FMAC4 soap_get_PointerTons1__getTaskStatusType(struct soap *soap, struct ns1__getTaskStatusType **p, const char *tag, const char *type)
+{
+	if ((p = soap_in_PointerTons1__getTaskStatusType(soap, tag, p, type)))
+		if (soap_getindependent(soap))
+			return NULL;
+	return p;
+}
+
+SOAP_FMAC3 struct ns1__getTaskStatusType ** SOAP_FMAC4 soap_in_PointerTons1__getTaskStatusType(struct soap *soap, const char *tag, struct ns1__getTaskStatusType **a, const char *type)
+{
+	if (soap_element_begin_in(soap, tag, 1, NULL))
+		return NULL;
+	if (!a)
+		if (!(a = (struct ns1__getTaskStatusType **)soap_malloc(soap, sizeof(struct ns1__getTaskStatusType *))))
+			return NULL;
+	*a = NULL;
+	if (!soap->null && *soap->href != '#')
+	{	soap_revert(soap);
+		if (!(*a = soap_in_ns1__getTaskStatusType(soap, tag, *a, type)))
+			return NULL;
+	}
+	else
+	{	a = (struct ns1__getTaskStatusType **)soap_id_lookup(soap, soap->href, (void**)a, SOAP_TYPE_ns1__getTaskStatusType, sizeof(struct ns1__getTaskStatusType), 0);
 		if (soap->body && soap_element_end_in(soap, tag))
 			return NULL;
 	}

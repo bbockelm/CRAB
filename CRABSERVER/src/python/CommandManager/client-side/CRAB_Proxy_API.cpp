@@ -64,11 +64,15 @@ int CRAB_Server_Session::sendCommand(string cmdXML, string taskUniqName)
 		return 22; // SOAP communication error
 	}
 
-string CRAB_Server_Session::getTaskStatus(string taskUniqName)
+string CRAB_Server_Session::getTaskStatus(string statusType, string taskUniqName)
 	{
+		ns1__getTaskStatusType* reqS = new ns1__getTaskStatusType();
 		struct ns1__getTaskStatusResponse resS;
 
-		if (px->getTaskStatus(const_cast<char*>(taskUniqName.c_str()), resS) == SOAP_OK)
+		reqS->statusType = const_cast<char*>(statusType.c_str()); 		
+                reqS->uuid = const_cast<char*>(taskUniqName.c_str());
+
+		if (px->getTaskStatus(reqS, resS) == SOAP_OK)
 		{
 			stringstream ss;
 			ss << resS.getTaskStatusResponse;

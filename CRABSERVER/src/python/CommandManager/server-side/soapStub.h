@@ -47,8 +47,18 @@ struct ns1__sendCommandType
 };
 #endif
 
+#ifndef SOAP_TYPE_ns1__getTaskStatusType
+#define SOAP_TYPE_ns1__getTaskStatusType (9)
+/* ns1:getTaskStatusType */
+struct ns1__getTaskStatusType
+{
+	char *statusType;	/* optional attribute of type xsd:string */
+	char *uuid;	/* optional attribute of type xsd:string */
+};
+#endif
+
 #ifndef SOAP_TYPE_SOAP_ENV__Detail
-#define SOAP_TYPE_SOAP_ENV__Detail (9)
+#define SOAP_TYPE_SOAP_ENV__Detail (10)
 /* SOAP-ENV:Detail */
 struct SOAP_ENV__Detail
 {
@@ -60,7 +70,7 @@ struct SOAP_ENV__Detail
 #endif
 
 #ifndef SOAP_TYPE_ns1__transferTaskAndSubmitResponse
-#define SOAP_TYPE_ns1__transferTaskAndSubmitResponse (12)
+#define SOAP_TYPE_ns1__transferTaskAndSubmitResponse (13)
 /* ns1:transferTaskAndSubmitResponse */
 struct ns1__transferTaskAndSubmitResponse
 {
@@ -69,7 +79,7 @@ struct ns1__transferTaskAndSubmitResponse
 #endif
 
 #ifndef SOAP_TYPE_ns1__transferTaskAndSubmit
-#define SOAP_TYPE_ns1__transferTaskAndSubmit (16)
+#define SOAP_TYPE_ns1__transferTaskAndSubmit (17)
 /* ns1:transferTaskAndSubmit */
 struct ns1__transferTaskAndSubmit
 {
@@ -78,7 +88,7 @@ struct ns1__transferTaskAndSubmit
 #endif
 
 #ifndef SOAP_TYPE_ns1__sendCommandResponse
-#define SOAP_TYPE_ns1__sendCommandResponse (17)
+#define SOAP_TYPE_ns1__sendCommandResponse (18)
 /* ns1:sendCommandResponse */
 struct ns1__sendCommandResponse
 {
@@ -87,7 +97,7 @@ struct ns1__sendCommandResponse
 #endif
 
 #ifndef SOAP_TYPE_ns1__sendCommand
-#define SOAP_TYPE_ns1__sendCommand (21)
+#define SOAP_TYPE_ns1__sendCommand (22)
 /* ns1:sendCommand */
 struct ns1__sendCommand
 {
@@ -96,7 +106,7 @@ struct ns1__sendCommand
 #endif
 
 #ifndef SOAP_TYPE_ns1__getTaskStatusResponse
-#define SOAP_TYPE_ns1__getTaskStatusResponse (22)
+#define SOAP_TYPE_ns1__getTaskStatusResponse (23)
 /* ns1:getTaskStatusResponse */
 struct ns1__getTaskStatusResponse
 {
@@ -105,16 +115,16 @@ struct ns1__getTaskStatusResponse
 #endif
 
 #ifndef SOAP_TYPE_ns1__getTaskStatus
-#define SOAP_TYPE_ns1__getTaskStatus (25)
+#define SOAP_TYPE_ns1__getTaskStatus (27)
 /* ns1:getTaskStatus */
 struct ns1__getTaskStatus
 {
-	char *getTaskStatusRequest;	/* optional element of type xsd:string */
+	struct ns1__getTaskStatusType *getTaskStatusRequest;	/* optional element of type ns1:getTaskStatusType */
 };
 #endif
 
 #ifndef SOAP_TYPE_SOAP_ENV__Header
-#define SOAP_TYPE_SOAP_ENV__Header (26)
+#define SOAP_TYPE_SOAP_ENV__Header (28)
 /* SOAP Header: */
 struct SOAP_ENV__Header
 {
@@ -125,7 +135,7 @@ struct SOAP_ENV__Header
 #endif
 
 #ifndef SOAP_TYPE_SOAP_ENV__Code
-#define SOAP_TYPE_SOAP_ENV__Code (27)
+#define SOAP_TYPE_SOAP_ENV__Code (29)
 /* SOAP Fault Code: */
 struct SOAP_ENV__Code
 {
@@ -135,7 +145,7 @@ struct SOAP_ENV__Code
 #endif
 
 #ifndef SOAP_TYPE_SOAP_ENV__Reason
-#define SOAP_TYPE_SOAP_ENV__Reason (29)
+#define SOAP_TYPE_SOAP_ENV__Reason (31)
 /* SOAP-ENV:Reason */
 struct SOAP_ENV__Reason
 {
@@ -144,7 +154,7 @@ struct SOAP_ENV__Reason
 #endif
 
 #ifndef SOAP_TYPE_SOAP_ENV__Fault
-#define SOAP_TYPE_SOAP_ENV__Fault (30)
+#define SOAP_TYPE_SOAP_ENV__Fault (32)
 /* SOAP Fault: */
 struct SOAP_ENV__Fault
 {
@@ -213,7 +223,7 @@ SOAP_FMAC5 int SOAP_FMAC6 ns1__transferTaskAndSubmit(struct soap*, struct ns1__t
 
 SOAP_FMAC5 int SOAP_FMAC6 ns1__sendCommand(struct soap*, struct ns1__sendCommandType *sendCommandRequest, struct ns1__sendCommandResponse *_param_2);
 
-SOAP_FMAC5 int SOAP_FMAC6 ns1__getTaskStatus(struct soap*, char *getTaskStatusRequest, struct ns1__getTaskStatusResponse *_param_3);
+SOAP_FMAC5 int SOAP_FMAC6 ns1__getTaskStatus(struct soap*, struct ns1__getTaskStatusType *getTaskStatusRequest, struct ns1__getTaskStatusResponse *_param_3);
 
 /******************************************************************************\
  *                                                                            *
