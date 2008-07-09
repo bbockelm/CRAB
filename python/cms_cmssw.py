@@ -2,7 +2,7 @@ from JobType import JobType
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-from BlackWhiteListParser import BlackWhiteListParser
+from BlackWhiteListParser import SEBlackWhiteListParser
 import common
 import Scram
 from LFNBaseName import *
@@ -20,7 +20,7 @@ class Cmssw(JobType):
         self._params = {}
         self.cfg_params = cfg_params
         # init BlackWhiteListParser
-        self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
+        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params)
 
         self.MaxTarBallSize = float(self.cfg_params.get('EDG.maxtarballsize',9.5))
 

@@ -9,15 +9,14 @@ import time
 import common
 import popen2
 import os
-from BlackWhiteListParser import BlackWhiteListParser
 from BlackWhiteListParser import CEBlackWhiteListParser
 import Scram
 import CondorGLoggingInfo
 
 # This class was originally SchedulerCondor_g. For a history of this code, see that file.
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.19 2008/06/06 18:02:08 ewv Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.20 2008/06/06 20:32:01 ewv Exp $"
+__version__ = "$Revision: 1.20 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):

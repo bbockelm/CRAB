@@ -1,8 +1,13 @@
-from crab_exceptions import *
-from Boss import Boss
+
+import os
+import time
+import string
+
 import common
-import string, time, os
+from Boss import Boss
+from crab_exceptions import *
 from crab_util import *
+from BlackWhiteListParser import SEBlackWhiteListParser
 
 #
 #  Naming convention:
@@ -37,8 +42,7 @@ class Scheduler :
 
     def configure(self, cfg_params):
         self._boss.configure(cfg_params)
-        from BlackWhiteListParser import BlackWhiteListParser
-        self.blackWhiteListParser = BlackWhiteListParser(cfg_params)
+        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params)
         return
 
     def boss(self):
