@@ -197,32 +197,16 @@ class Cmssw(JobType):
                 tmp.strip()
                 self.incrementSeeds.append(tmp)
 
-        ## Old method of dealing with seeds
-        ## FUTURE: This is for old CMSSW and old CRAB. Can throw exceptions after a couple of CRAB releases and then
-        ## remove
-        self.sourceSeed = cfg_params.get('CMSSW.pythia_seed',None)
-        if self.sourceSeed:
-            print "pythia_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
-            self.incrementSeeds.append('sourceSeed')
-            self.incrementSeeds.append('theSource')
-
+        ## FUTURE: Can remove in CRAB 2.4.0
+        self.sourceSeed    = cfg_params.get('CMSSW.pythia_seed',None)
         self.sourceSeedVtx = cfg_params.get('CMSSW.vtx_seed',None)
-        if self.sourceSeedVtx:
-            print "vtx_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
-            self.incrementSeeds.append('VtxSmeared')
-
-        self.sourceSeedG4 = cfg_params.get('CMSSW.g4_seed',None)
-        if self.sourceSeedG4:
-            print "g4_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
-            self.incrementSeeds.append('g4SimHits')
-
+        self.sourceSeedG4  = cfg_params.get('CMSSW.g4_seed',None)
         self.sourceSeedMix = cfg_params.get('CMSSW.mix_seed',None)
-        if self.sourceSeedMix:
-            print "mix_seed is a deprecated parameter. Use preserve_seeds or increment_seeds in the future.\n","Added to increment_seeds."
-            self.incrementSeeds.append('mix')
+        if self.sourceSeed or self.sourceSeedVtx or self.sourceSeedG4 or self.sourceSeedMix:
+            msg = 'pythia_seed, vtx_seed, g4_seed, and mix_seed are no longer valid settings. You must use increment_seeds or preserve_seeds'
+            raise CrabException(msg)
 
         self.firstRun = cfg_params.get('CMSSW.first_run',None)
-
 
         # Copy/return
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
@@ -1208,9 +1192,9 @@ class Cmssw(JobType):
             if (common.scheduler.name().upper() == "CAF" or common.scheduler.name().upper() == "LSF"):
                 print "chiamo LFNBaseName con localUser = true"
                 LFNBaseName = LFNBase(processedDataset, LocalUser=True)
-            else :    
+            else :
                 LFNBaseName = LFNBase(processedDataset)
-            ####    
+            ####
 
             txt += 'if [ $copy_exit_status -eq 0 ]; then\n'
             txt += '    FOR_LFN=%s_${PSETHASH}/\n'%(LFNBaseName)
