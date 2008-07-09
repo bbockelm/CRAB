@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.88 2008/07/08 15:45:03 farinafa Exp $"
-__version__ = "$Revision: 1.88 $"
+__revision__ = "$Id: FatWorker.py,v 1.89 2008/07/08 16:18:19 farinafa Exp $"
+__version__ = "$Revision: 1.89 $"
 import string
 import sys, os
 import time
@@ -318,9 +318,10 @@ class FatWorker(Thread):
                         count += 1
                     task = self.blDBsession.load( task['id'], sub_jobs[ii] )[0]
                 else:
-                    task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
+                    self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
             except Exception, e:
                 self.log.info("Worker %s. Problem submitting task %s jobs. %s"%(self.myName, self.taskName, e.description() ))
+                #self.log.info( str(e) ) # temp message
                 errorTrace = str( BossLiteLogger( task, e ) )
                 pass
 
@@ -622,7 +623,8 @@ class FatWorker(Thread):
         req=''
         sched_param = 'Requirements = ' + task['jobType'] 
         if self.cfg_params['EDG.max_wall_time']:
-            req += 'other.GlueCEPolicyMaxWallClockTime>=' + self.cfg_params['EDG.max_wall_time']
+            if (not req == ''): req = req + ' && '
+            req += ' other.GlueCEPolicyMaxWallClockTime>=' + self.cfg_params['EDG.max_wall_time']
         if self.cfg_params['EDG.max_cpu_time']:
             if (not req == ''): req = req + ' && '
             req += ' other.GlueCEPolicyMaxCPUTime>=' + self.cfg_params['EDG.max_cpu_time']
