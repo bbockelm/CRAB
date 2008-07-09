@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.17 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.17 2008/05/27 15:32:02 farinafa Exp $"
+__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.12 2008/07/08 14:26:59 farinafa Exp $"
 
 import os
 import time
@@ -279,7 +279,7 @@ class CRAB_AS_beckend:
         # unknown message
         return 20
     
-    def gway_getTaskStatus(self, taskUniqName="", statusType="status"):
+    def gway_getTaskStatus(self, statusType="status", taskUniqName=""):
         """
         Transfer the task status description to the client
         Return codes:
@@ -295,7 +295,7 @@ class CRAB_AS_beckend:
             prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/loggingTaskInfo"
         else:
             prjUName_fRep = None
-            retStatus = "Unrecognized kind of status information required"  
+            retStatus = "Error: unrecognized kind of status information required"  
 
         # collect the information from source
         if prjUName_fRep:

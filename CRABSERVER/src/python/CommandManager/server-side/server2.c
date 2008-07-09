@@ -372,6 +372,8 @@ int ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatusType *getTask
         statusFamilyType = getTaskStatusRequest->statusType;
         UUID = getTaskStatusRequest->uuid;
 
+        //fprintf(stdout, "DEBUG ----- %s %s", statusFamilyType, UUID );
+
 	if (locTemp == NULL)
 	{
 		PyErr_Print();
