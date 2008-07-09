@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.0 2008/06/16 18:00:00 farinafa Exp $"
-__version__ = "$Revision: 1.00 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.1 2008/07/08 14:39:19 farinafa Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import string
 import sys, os
@@ -153,29 +153,29 @@ class RegisterWorker(Thread):
         # get TURL for WMS bypass and manage paths
         if taskObj is not None:
             remoteSBlist = [ os.path.basename(f) for f in taskObj['globalSandbox'].split(',') ]
-                
+            remoteSBlist = [ os.path.join( '/'+self.cfg_params['CRAB.se_remote_dir'], f ) for f in remoteSBlist ]
+
             if len(remoteSBlist) > 0:
                 # get the TURL for the first sandbox file
-                turlFileCandidate = os.path.join(self.cfg_params['CRAB.se_remote_dir'], remoteSBlist[0])
+                turlFileCandidate = remoteSBlist[0]
                 self.TURLpreamble = SBinterface(self.seEl).getTurl( turlFileCandidate, self.proxy )
     
                 # stores only the path without the base filename and correct the last char
                 self.TURLpreamble = self.TURLpreamble.split(remoteSBlist[0])[0]
-                if self.TURLpreamble:
-                    if self.TURLpreamble[-1] != '/':
-                        self.TURLpreamble += '/'
-    
+
                 # correct the task attributes w.r.t. the TURL
-                self.log.debug("Worker %s. Reference TURL: %s"%(self.myName, self.TURLpreamble) )
-                taskObj['globalSandbox'] = ','.join(remoteSBlist)
+                taskObj['globalSandbox'] = ','.join( remoteSBlist )
                 taskObj['startDirectory'] = self.TURLpreamble
-                taskObj['outputDirectory'] = self.TURLpreamble 
+                taskObj['outputDirectory'] = self.TURLpreamble + self.cfg_params['CRAB.se_remote_dir']
                 taskObj['scriptName'] = self.TURLpreamble + os.path.basename(taskObj['scriptName']) 
-                taskObj['cfgName'] = self.TURLpreamble + os.path.basename(taskObj['cfgName']) 
+                taskObj['cfgName'] = self.TURLpreamble + os.path.basename(taskObj['cfgName'])
+ 
+                self.log.debug("Worker %s. Reference TURL: %s"%(self.myName, taskObj['outputDirectory']) )
+
                 for j in taskObj.jobs:
                     j['executable'] = os.path.basename(j['executable'])
-
                     j['outputFiles'] = [ os.path.basename(of) for of in j['outputFiles']  ]
+
                     jid = taskObj.jobs.index(j)
                     if 'crab_fjr_%d.xml'%(jid+1) not in j['outputFiles']:
                         j['outputFiles'].append('crab_fjr_%d.xml'%(jid+1)) 
@@ -201,7 +201,7 @@ class RegisterWorker(Thread):
         ## check if the input sandbox is already on the right SE  
         try:
             for f in task['globalSandbox'].split(','):
-                remoteFile = os.path.join( str(self.cfg_params['CRAB.se_remote_dir']), f)
+                remoteFile = f #os.path.join( str(self.cfg_params['CRAB.se_remote_dir']), f)
                 checkCount = 3
 
                 fileFound = False 

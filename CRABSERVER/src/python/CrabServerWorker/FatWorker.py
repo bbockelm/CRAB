@@ -318,7 +318,7 @@ class FatWorker(Thread):
                         count += 1
                     task = self.blDBsession.load( task['id'], sub_jobs[ii] )[0]
                 else:
-                    self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
+                    task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
             except Exception, e:
                 self.log.info("Worker %s. Problem submitting task %s jobs. %s"%(self.myName, self.taskName, e.description() ))
                 #self.log.info( str(e) ) # temp message
@@ -563,7 +563,10 @@ class FatWorker(Thread):
         Send post-submission info to ML
         """
         task = self.blDBsession.load(taskFull, allList)[0]
-        params = {}.update( self.collect_MLInfo(task) )
+        params = {}
+        for k,v in self.collect_MLInfo(task).iteritems():
+            params[k] = v
+
         taskId = params['taskId']
 
         for job in task.jobs:
@@ -619,14 +622,14 @@ class FatWorker(Thread):
         # shift due to BL ranges 
         i = i-1
         if i<0: i = 0
-        
-        req=''
+
         sched_param = 'Requirements = ' + task['jobType'] 
+        req=''
+
         if self.cfg_params['EDG.max_wall_time']:
-            if (not req == ''): req = req + ' && '
-            req += ' other.GlueCEPolicyMaxWallClockTime>=' + self.cfg_params['EDG.max_wall_time']
+            req += 'other.GlueCEPolicyMaxWallClockTime>=' + self.cfg_params['EDG.max_wall_time']
         if self.cfg_params['EDG.max_cpu_time']:
-            if (not req == ''): req = req + ' && '
+            if (not req == ' '): req = req + ' && '
             req += ' other.GlueCEPolicyMaxCPUTime>=' + self.cfg_params['EDG.max_cpu_time']
 
         sched_param += req + self.se_list(i, task.jobs[i]['dlsDestination']) + self.ce_list() +';\n'
