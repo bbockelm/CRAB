@@ -396,22 +396,6 @@ CMSSW config file. I<preserve_seeds=sourceSeed,g4SimHits> will leave the Pythia 
 
 See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserve_seeds> are randomly set for each job.
 
-=item B<pythia_seed>
-
-This parameter is deprecated. See the documentation for I<increment_seeds> and I<preserve_seeds>.
-
-=item B<vtx_seed>
-
-This parameter is deprecated. See the documentation for I<increment_seeds> and I<preserve_seeds>.
-
-=item B<g4_seed>
-
-This parameter is deprecated. See the documentation for I<increment_seeds> and I<preserve_seeds>.
-
-=item B<mix_seed>
-
-This parameter is deprecated. See the documentation for I<increment_seeds> and I<preserve_seeds>.
-
 =item B<first_run>
 
 First run to be generated in a generation jobs. Relevant only for no-input workflow.
@@ -543,19 +527,19 @@ Same as previous, but with real time, and not CPU one.
 
 =item B<CE_black_list>
 
-All the CE (Computing Element) whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....)
+All the CE (Computing Element) whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 
 =item B<CE_white_list>
 
-Only the CE (Computing Element) whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place.
+Only the CE (Computing Element) whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). You may use hostnames or CMS Site names (T2_DE_DESY) or substrings. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place.
 
 =item B<SE_black_list>
 
-All the SE (Storage Element) whose name contains the following strings (comma separated list) will not be considered for submission.It works only if a datasetpath is specified.
+All the SE (Storage Element) whose name contains the following strings (comma separated list) will not be considered for submission.It works only if a datasetpath is specified. You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 
 =item B<SE_white_list>
 
-Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.It works only if a datasetpath is specified. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place.
+Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.It works only if a datasetpath is specified. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place. You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 
 =item B<virtual_organization>
 
