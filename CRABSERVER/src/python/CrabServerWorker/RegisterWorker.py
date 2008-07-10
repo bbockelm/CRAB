@@ -250,7 +250,6 @@ class RegisterWorker(Thread):
 
         assocFile = self.getProxyFile() 
         if assocFile: 
-            self.log.info("Project -> Task association: %s -> %s"%(self.taskName, assocFile) )
             try:
                 cmd = 'ln -s %s %s'%(assocFile, proxyLink)
                 cmd = cmd + ' && chmod 600 %s'%assocFile
@@ -258,6 +257,9 @@ class RegisterWorker(Thread):
                     self.proxy = str(proxyLink)
                 else:
                     self.proxy = str(assocFile)
+
+                self.log.info("Project -> Task association: %s -> %s"%(self.taskName, assocFile) )
+
             except Exception, e:
                 reason = "Warning: error while linking the proxy file for task %s."%self.taskName 
                 self.log.info(reason)

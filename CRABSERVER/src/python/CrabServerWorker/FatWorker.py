@@ -87,7 +87,7 @@ class FatWorker(Thread):
         self.local_ms.publish("CrabServerWorkerComponent:CommandArrival", self.taskName)
         self.local_ms.commit()
         
-        if not self.parseCommandXML() == 0: 
+        if not self.parseCommandXML() == 0:
             Session.close(self.taskName)
             return
 
@@ -425,24 +425,24 @@ class FatWorker(Thread):
     # Auxiliary methods
 ####################################
     def registerTask(self, taskArg):
+        Session.start_transaction(self.taskName)
         for job in taskArg.jobs:
             jobName = job['name']
             cacheArea = self.wdir + '/' + self.taskName + '_spec/%s'%jobName
             jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':self.configs['maxRetries'], 'max_racers':1, 'owner':self.taskName}
             try:
-                Session.start_transaction(self.taskName)
                 if not wfJob.exists(jobName):
                     wfJob.register(jobName, None, jobDetails)
                     wfJob.setState(jobName, 'register')
                     wfJob.setState(jobName, 'create')
                     wfJob.setCacheDir(jobName, cacheArea)
                     # wfJob.setState(jobName, 'inProgress')
-                    Session.commit(self.taskName)
                     continue
-                Session.rollback(self.taskName)
             except Exception, e:
                 self.log.info('Error while registering job for JT: %s'%jobName)
+                Session.rollback(self.taskName)
                 return 1
+        Session.commit(self.taskName)
         return 0    
 
     def submissionListCreation(self, taskObj, jobRng):
