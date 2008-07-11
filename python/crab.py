@@ -11,7 +11,7 @@ from the executable:
 %s\n
 This is not the correct python version.  CRAB requires at least python 2.4.
 Please see
-    https://twiki.cern.ch/twiki/bin/view/CMS/CrabHowTo
+    https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo
 for more information about setting up your environment.
 """ % (sys.version, sys.executable)
     sys.exit()
