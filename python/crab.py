@@ -1,5 +1,21 @@
 #!/usr/bin/env python
 import sys, os, time, string
+
+vers = sys.version_info[0] + .1 * sys.version_info[1]
+if vers < 2.4:
+    print \
+"""
+You are currently running python version:
+%s\n
+from the executable:
+%s\n
+This is not the correct python version.  CRAB requires at least python 2.4.
+Please see
+    https://twiki.cern.ch/twiki/bin/view/CMS/CrabHowTo
+for more information about setting up your environment.
+""" % (sys.version, sys.executable)
+    sys.exit()
+
 ## actual import session
 from crab_util import *
 from crab_exceptions import *
