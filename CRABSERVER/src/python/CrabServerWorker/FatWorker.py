@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.89 2008/07/08 16:18:19 farinafa Exp $"
-__version__ = "$Revision: 1.89 $"
+__revision__ = "$Id: FatWorker.py,v 1.92 2008/07/10 17:49:25 farinafa Exp $"
+__version__ = "$Revision: 1.92 $"
 import string
 import sys, os
 import time
@@ -23,8 +23,8 @@ from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 from ProdCommon.BossLite.API.BossLiteAPISched import BossLiteAPISched
 
-from ProdCommon.BossLite.Common.BossLiteLogger import BossLiteLogger 
-from ProdCommon.BossLite.Common.Exceptions import BossLiteError
+#from ProdCommon.BossLite.Common.BossLiteLogger import BossLiteLogger 
+#from ProdCommon.BossLite.Common.Exceptions import BossLiteError
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
@@ -322,7 +322,7 @@ class FatWorker(Thread):
             except Exception, e:
                 self.log.info("Worker %s. Problem submitting task %s jobs. %s"%(self.myName, self.taskName, e.description() ))
                 #self.log.info( str(e) ) # temp message
-                errorTrace = str( BossLiteLogger( task, e ) )
+                # errorTrace = str( BossLiteLogger( task, e ) )
                 pass
 
             # check if submitted
@@ -695,7 +695,9 @@ class FatWorker(Thread):
             tmpCe=[]
             concString = '&&'
             for ce in self.ce_whiteL:
-                tmpCe.append('RegExp("' + str(ce).strip() + '", other.GlueCEUniqueId)')
+                ce = str(ce).strip()
+                if len(ce)==0: continue
+                tmpCe.append('RegExp("' + ce + '", other.GlueCEUniqueId)')
             if len(tmpCe) == 1:
                 req +=  " && (" + concString.join(tmpCe) + ") "
             elif len(tmpCe) > 1:
@@ -713,6 +715,8 @@ class FatWorker(Thread):
             tmpCe=[]
             concString = '&&'
             for ce in self.ce_blackL:
+                ce = str(ce).strip()
+                if len(ce)==0: continue
                 tmpCe.append('(!RegExp("' + str(ce).strip() + '", other.GlueCEUniqueId))')
             if len(tmpCe): req += " && (" + concString.join(tmpCe) + ") "
 
