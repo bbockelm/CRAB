@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.48 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.48 2008/07/08 14:39:19 farinafa Exp $"
+__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.49 2008/07/08 16:31:19 farinafa Exp $"
 
 import os
 import pickle
@@ -130,7 +130,6 @@ class CrabServerWorkerComponent:
             self.ms.commit()
             logging.debug("CrabServerWorkerComponent: %s %s" % ( type, payload))
             self.__call__(type, payload)
-            self.materializeStatus()
         #
         return
 
@@ -190,15 +189,15 @@ class CrabServerWorkerComponent:
 
         taskUniqName = str(payload)
         workerId = self.maxThreads - self.availWorkers
+        self.availWorkers -= 1
         thrName = "worker_"+str(workerId)
-        
-        actionType = "registerNewTask"
         self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewTask", taskUniqName)
-        
+        self.materializeStatus() 
+
+        actionType = "registerNewTask"
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, workerId, actionType)
         workerCfg['ProxiesDir'] = self.args['ProxiesDir']
         workerCfg['allow_anonymous'] = self.args['allow_anonymous']
-        self.availWorkers -= 1
         self.workerSet[thrName] = RegisterWorker(logging, thrName, workerCfg)
         return
         
@@ -216,24 +215,29 @@ class CrabServerWorkerComponent:
         items = payload.split('::')
         taskUniqName, resubCount, cmdRng = items[0:3]
         siteToBan = ''
-        if len(items) == 4:
-            siteToBan = items[3]
+        if len(items) == 4: siteToBan = items[3]
         
         workerId = self.maxThreads - self.availWorkers
+        self.availWorkers -= 1
         thrName = "worker_"+str(workerId)
-        
         self.taskPool[thrName] = ("CrabServerWorkerComponent:Submission", payload)
+
+        # clean the disaster recovery cash from previous registrations for this task
+        # if you are here the registration was successful
+        for tpk in self.taskPool.keys():
+            tp = self.taskPool[tpk]
+            if tp[0] == 'CRAB_Cmd_Mgr:NewTask' and taskUniqName in tp[1]:
+                del self.taskPool[tpk]
+
+        self.materializeStatus()
 
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, workerId)
         workerCfg['submissionRange'] = eval( cmdRng, {}, {} )
         workerCfg['retries'] = resubCount
-        
-        ## Additional attributes
         workerCfg['maxRetries'] = self.maxAttempts # NEEDED ONLY FOR wfEntities registration !!! How to avoid?
         workerCfg['se_dynBList'] = [] # TODO does have sense to black-list SEs dynamically?
         workerCfg['ce_dynBList'] = []
         if siteToBan : workerCfg['ce_dynBList'].append(siteToBan)
-
         workerCfg['cpCmd'] = self.args.get('cpCmd', 'cp')
         workerCfg['rb'] = self.args.get('resourceBroker', 'CERN')
         workerCfg['rfioServer'] = self.args.get('rfioServer', '') 
@@ -248,7 +252,6 @@ class CrabServerWorkerComponent:
             workerCfg['wmsEndpoint'] = customWmsList[ outcomeCounter % len(customWmsList) ] 
         
         # Worker Factory
-        self.availWorkers -= 1
         self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         return
 
@@ -265,10 +268,12 @@ class CrabServerWorkerComponent:
         if self.availWorkers > self.maxThreads:
             self.availWorkers = self.maxThreads
 
+        if workerName in self.taskPool:
+            del self.taskPool[workerName]
+            self.materializeStatus()
+
         if workerName in self.workerSet:
             del self.workerSet[workerName]
-        if workerName in self.taskPool: 
-            del self.taskPool[workerName]
 
         ## Track workers outcomes
         successfulCodes = [0, -2] # full and partial submissions
@@ -294,7 +299,7 @@ class CrabServerWorkerComponent:
         # print statistics at fixed periods
         outcomeCounter = sum( self.subStats.values() )
         if (outcomeCounter % 20) == 0:
-            logging.info('CrabServerWorker component activity summary:\n%s'%str(self.subStats) )
+            logging.info('CrabServerWorker component activity summary: %s'%str(self.subStats) )
         return
 
 
@@ -371,6 +376,10 @@ class CrabServerWorkerComponent:
 
     def materializeStatus(self):
         ldump = [self.taskPool, self.subTimes, self.subStats]
+
+        if len(self.taskPool)>0:
+            logging.debug("Materialized disaster recovery cache: %s"%str(self.taskPool) )
+
         try:
             f = open(self.wdir+"/cw_status.set", 'w')
             pickle.dump(ldump, f)
