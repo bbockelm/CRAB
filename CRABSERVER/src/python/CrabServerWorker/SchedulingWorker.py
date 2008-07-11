@@ -129,12 +129,13 @@ class SchedulingWorker(Thread):
         
         # release messages for submission
         # "CrabServerWorkerComponent:Submission", payload = taskUniqName, resubCount, cmdRng
-        self.log.debug("Scheduling order (submit): %s"%str(schedList)) 
-        for s in schedList:
-            payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])  
-            self.ms.publish("CrabServerWorkerComponent:Submission", payload)
-            del self.schedMapSubmissions[ s['taskName'] ]  
-        self.ms.commit()
+        if len(schedList)>0:
+            self.log.debug("Scheduling order (submit): %s"%str(schedList)) 
+            for s in schedList:
+                payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])  
+                self.ms.publish("CrabServerWorkerComponent:Submission", payload)
+                del self.schedMapSubmissions[ s['taskName'] ]  
+            self.ms.commit()
         return
     
     def scheduleResubmissions(self):
@@ -144,12 +145,13 @@ class SchedulingWorker(Thread):
         # filter on deadline expiration
         schedList = [i for i in schedList if i['deadline'] > curT]
         
-        self.log.debug("Scheduling order (resubmit): %s"%str(schedList)) 
-        for s in schedList:
-            payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])
-            self.ms.publish("CrabServerWorkerComponent:Submission", payload)
-            del self.schedMapResubmissions[ s['taskName'] ]  
-        self.ms.commit()
+        if len(schedList)>0:
+            self.log.debug("Scheduling order (resubmit): %s"%str(schedList)) 
+            for s in schedList:
+                payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])
+                self.ms.publish("CrabServerWorkerComponent:Submission", payload)
+                del self.schedMapResubmissions[ s['taskName'] ]  
+            self.ms.commit()
         return
     
     
