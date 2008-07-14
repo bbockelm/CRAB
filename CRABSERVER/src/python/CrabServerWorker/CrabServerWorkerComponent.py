@@ -173,8 +173,6 @@ class CrabServerWorkerComponent:
         else:
             logging.info('Unknown message received %s'%event)
 
-        #logging.info('DEBUG------------%s'%str(self.availWorkersIds))
-
         return 
 
 ################################
@@ -234,6 +232,7 @@ class CrabServerWorkerComponent:
                 del self.taskPool[tpk]
                 self.availWorkersIds.append(tpk)
             pass
+
         self.materializeStatus()
 
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName)
@@ -414,6 +413,7 @@ class CrabServerWorkerComponent:
             waitTime = '%s:%s:%s'%(str(dT/3600).zfill(2), str((dT/60)%60).zfill(2), str(dT%60).zfill(2))
             self.ms.publish(type, payload, waitTime)
             self.ms.commit()
+        self.taskPool = {}
         return
 
     def prepareWorkerBaseStatus(self, taskUniqName, workerId, actionType = "standardSubmission"):
