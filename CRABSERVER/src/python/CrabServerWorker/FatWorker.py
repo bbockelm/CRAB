@@ -223,29 +223,25 @@ class FatWorker(Thread):
 
         # closed running jobs regeneration and osb manipulation
         needUpd = False
+        someError = []
         for j in task.jobs:
             if j['jobId'] in self.cmdRng:
                 try:
                     if j.runningJob['closed'] == 'Y':  
-
                         # backup for job output (tgz files only, less load)
                         sbi = SBinterface( self.seEl )
                         bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
                         for orig in [ task['outputDirectory']+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
                             try:
-                                # originally was a copy, why not move?
                                 bk_sbi.move( source=orig, dest=orig+'.'+str(j['submissionNumber']), proxy=task['user_proxy'])
                             except Exception, ex:
-                                self.log.info("Unable to create backup copy %s: %s"%(self.myName, os.path.basename(orig) ))
-                                # self.log.debug( traceback.format_exc() )
+                                someError.append( os.path.basename(orig) )
                                 continue
-
                         # reproduce closed runningJob instances
                         self.blDBsession.getNewRunningInstance(j)
                         j.runningJob['status'] = 'C'
                         j.runningJob['statusScheduler'] = 'Created' 
                         needUpd = True
-
                 except Exception, e:
                     self.log.info("Worker %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
                             self.taskName, j['name']) )
@@ -253,6 +249,10 @@ class FatWorker(Thread):
                     newRange.remove(j['jobId'])
                     skippedSubmissions.append(j['jobId'])
                     continue
+
+        if len(someError) > 0:
+            self.log.info("Unable to create backup copy %s: %s"%(self.myName, str(someError) ))
+
         if needUpd == True:
             try:
                 self.blDBsession.updateDB(task)

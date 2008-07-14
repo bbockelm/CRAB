@@ -77,13 +77,18 @@ class CrabServerWorkerComponent:
             self.wdir = self.args['dropBoxPath']
 
         self.maxAttempts = int( self.args.get('maxCmdAttempts', 5) )
-        self.availWorkers = int( self.args.get('maxThreads', 5) )
-        self.maxThreads = self.availWorkers 
-        self.workerSet = {} # thread collection
-        
-        # pre-allocate a pool of message service instances that will be passed to the workers
+        self.maxThreads = int( self.args.get('maxThreads', 5) )
+
+        # pre-allocate pool instances that will be passed to the workers
         # optimize the overhead for the allocation 
-        self.localMsPool = [ MessageService() for mId in xrange( self.maxThreads ) ]
+        self.localMsPool = {}
+        self.availWorkersIds = []
+        self.workerSet = {} # thread collection
+
+        for mId in xrange( self.maxThreads ):
+            workerId = "worker_%d"%mId
+            self.localMsPool[workerId] =  MessageService() 
+            self.availWorkersIds.append(workerId) 
         
         # allocate the scheduling logic
         self.swSchedQ = scheduleRequests
@@ -120,8 +125,8 @@ class CrabServerWorkerComponent:
         # initialize the local message services pool and schedule logic
         self.schedWorker = SchedulingWorker(self.maxThreads, logging)
 
-        for mId in xrange(self.maxThreads):
-            self.localMsPool[mId].registerAs('worker_%d'%mId)
+        for mId in self.localMsPool:
+            self.localMsPool[mId].registerAs(mId)
 
         # usual loop 
         self.dematerializeStatus()   
@@ -167,6 +172,9 @@ class CrabServerWorkerComponent:
             logging.getLogger().setLevel(logging.INFO)
         else:
             logging.info('Unknown message received %s'%event)
+
+        #logging.info('DEBUG------------%s'%str(self.availWorkersIds))
+
         return 
 
 ################################
@@ -178,7 +186,7 @@ class CrabServerWorkerComponent:
         the real tasks submissions and triggers the RegisterWorker threads.
         """
         
-        if self.availWorkers <= 0:
+        if len(self.availWorkersIds) <= 0:
             # calculate resub delay by using average completion time
             dT = sum(self.subTimes)/(len(self.subTimes) + 1.0)
             dT = int(dT)
@@ -188,14 +196,12 @@ class CrabServerWorkerComponent:
             return
 
         taskUniqName = str(payload)
-        workerId = self.maxThreads - self.availWorkers
-        self.availWorkers -= 1
-        thrName = "worker_"+str(workerId)
+        thrName = self.availWorkersIds.pop(0)
         self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewTask", taskUniqName)
         self.materializeStatus() 
 
         actionType = "registerNewTask"
-        workerCfg = self.prepareWorkerBaseStatus(taskUniqName, workerId, actionType)
+        workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName, actionType)
         workerCfg['ProxiesDir'] = self.args['ProxiesDir']
         workerCfg['allow_anonymous'] = self.args['allow_anonymous']
         self.workerSet[thrName] = RegisterWorker(logging, thrName, workerCfg)
@@ -207,7 +213,7 @@ class CrabServerWorkerComponent:
         interactions with the Grid/Local schedulers.
         """
         
-        if self.availWorkers <= 0:
+        if len(self.availWorkersIds) <= 0:
             self.ms.publish("CrabServerWorkerComponent:Submission", payload, "00:01:00")
             self.ms.commit()
             return
@@ -217,9 +223,7 @@ class CrabServerWorkerComponent:
         siteToBan = ''
         if len(items) == 4: siteToBan = items[3]
         
-        workerId = self.maxThreads - self.availWorkers
-        self.availWorkers -= 1
-        thrName = "worker_"+str(workerId)
+        thrName = self.availWorkersIds.pop(0)
         self.taskPool[thrName] = ("CrabServerWorkerComponent:Submission", payload)
 
         # clean the disaster recovery cash from previous registrations for this task
@@ -228,10 +232,11 @@ class CrabServerWorkerComponent:
             tp = self.taskPool[tpk]
             if tp[0] == 'CRAB_Cmd_Mgr:NewTask' and taskUniqName in tp[1]:
                 del self.taskPool[tpk]
-
+                self.availWorkersIds.append(tpk)
+            pass
         self.materializeStatus()
 
-        workerCfg = self.prepareWorkerBaseStatus(taskUniqName, workerId)
+        workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName)
         workerCfg['submissionRange'] = eval( cmdRng, {}, {} )
         workerCfg['retries'] = resubCount
         workerCfg['maxRetries'] = self.maxAttempts # NEEDED ONLY FOR wfEntities registration !!! How to avoid?
@@ -264,9 +269,7 @@ class CrabServerWorkerComponent:
         status = int(status)
         
         ## Free submission resources
-        self.availWorkers += 1
-        if self.availWorkers > self.maxThreads:
-            self.availWorkers = self.maxThreads
+        self.availWorkersIds.append(workerName)
 
         if workerName in self.taskPool:
             del self.taskPool[workerName]
