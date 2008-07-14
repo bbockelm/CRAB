@@ -33,7 +33,7 @@ class SchedulerCaf(SchedulerLsf) :
         """
         txt = SchedulerLsf.wsSetupEnvironment(self)
         txt += '# CAF specific stuff\n'
-        txt += 'export STAGE_SVCCLASS=cmscaf\n'
+        #txt += 'export STAGE_SVCCLASS=cmscaf\n'
         txt += '\n'
         return txt
 
