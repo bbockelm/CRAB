@@ -55,6 +55,15 @@ class SchedulerLsf(SchedulerLocal) :
 
         sched_param+='-cwd '+ str(self.outputDir)  + ' '
         return sched_param
+   
+    def listMatch(self, dest, full):
+        """
+        """ 
+        if len(dest)!=0: 
+            sites = [self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')]
+        else:     
+            sites = [str(getLocalDomain(self))]  
+        return sites    
 
     def loggingInfo(self, id):
         """ return logging info about job nj """

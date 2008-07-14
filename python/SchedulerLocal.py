@@ -1,6 +1,7 @@
 from Scheduler import Scheduler
 from crab_exceptions import *
 from crab_logger import Logger
+from crab_util import getLocalDomain 
 import common
 
 import os,string
@@ -63,16 +64,8 @@ class SchedulerLocal(Scheduler) :
            msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
            raise CrabException(msg)
 
-        ## Get local domain name
-        import socket
-        tmp=socket.gethostname()
-        dot=string.find(tmp,'.')
-        if (dot==-1):
-            msg='Unkown domain name. Cannot use local scheduler'
-            raise CrabException(msg)
-        localDomainName = string.split(tmp,'.',1)[-1]
-        #common.taskDB.setDict('localSite',localDomainName)
         ## is this ok?
+        localDomainName = getLocalDomain(self)
         if not cfg_params.has_key('EDG.se_white_list'):
             cfg_params['EDG.se_white_list']=localDomainName
             common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")

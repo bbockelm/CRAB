@@ -459,6 +459,19 @@ def writeTXTfile(self, outFileName, args):
     outFile.close()
     return
 
+def getLocalDomain(self):
+    """  
+     Get local domain name
+    """  
+    import socket
+    tmp=socket.gethostname()
+    dot=string.find(tmp,'.')
+    if (dot==-1):
+        msg='Unkown domain name. Cannot use local scheduler'
+        raise CrabException(msg)
+    localDomainName = string.split(tmp,'.',1)[-1]
+    return localDomainName 
+
 ####################################
 if __name__ == '__main__':
     print 'sys.argv[1] =',sys.argv[1]
