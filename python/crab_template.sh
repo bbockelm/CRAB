@@ -22,11 +22,12 @@ function createSePath {
   dir=$1
   rfmkdir -p $dir
       if [ $? -eq 0 ]; then
-          echo "the $dir has been created \n"
+          echo "the $dir has been created"
           exit_creation_dir=0
       else
-          echo ">>> ERROR: problem with the $dir creation using rfmkdir \n"
+          echo ">>> ERROR: problem with the $dir creation using rfmkdir"
           exit_creation_dir=60316
+          echo ">>> exit code = $exit_creation_dir"
           return $exit_creation_dir
       fi       
 }
@@ -47,7 +48,7 @@ function verifySePath {
   
   rfdir $se_path
   if [ $? -eq 0 ]; then
-      echo "the se_path $se_path exists \n"
+      echo "the se_path $se_path exists"
   else
       createSePath $se_path
       if [ $exit_creation_dir -ne 0 ]; then
