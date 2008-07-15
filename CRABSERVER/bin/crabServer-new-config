@@ -70,6 +70,7 @@ crabServerConfiguration = {
     'WMSserviceList':'', 
     'maxCmdAttempts':'5',
     'dropBoxPath':'',
+    'allow_anonymous':'0',
     'ProxiesDir':'/tmp/del_proxies/',
     'crabServerschemaLocation' : "$CRAB_SERVER_ROOT/share/CrabServerDB.sql",
     'storageName':'localhost',
@@ -83,10 +84,9 @@ crabServerConfiguration = {
 componentFields = {
     "CrabServerWorker" : {
     'ComponentDir':None,
-    'maxThreads':'9',
-    'allow_anonymous':'0',
+    'maxThreads':'5',
     },
-  
+
     "CommandManager": {
     'ComponentDir':None,
     'uiConfigRB':'',
