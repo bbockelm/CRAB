@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.1 2008/07/08 14:39:19 farinafa Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.3 2008/07/10 17:49:25 farinafa Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import string
 import sys, os
@@ -109,7 +109,11 @@ class RegisterWorker(Thread):
             
             self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
             self.cmdRng =  str( cmdXML.getAttribute('Range') )
-            self.proxySubject = str( cmdXML.getAttribute('Subject') ) 
+            self.proxySubject = str( cmdXML.getAttribute('Subject') )
+
+            self.flavour = str( cmdXML.getAttribute('Flavour') )
+            self.type = str( cmdXML.getAttribute('Type') )
+
         except Exception, e:
             status = 6
             reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName

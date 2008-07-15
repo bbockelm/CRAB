@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.12 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.12 2008/07/08 14:26:59 farinafa Exp $"
+__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.19 2008/07/09 14:13:36 farinafa Exp $"
 
 import os
 import time
@@ -233,7 +233,11 @@ class CRAB_AS_beckend:
 
             xmlCmd = minidom.parseString(cmdDescriptor).getElementsByTagName("TaskCommand")[0]
             cmdKind = str(xmlCmd.getAttribute('Command'))
-            cmdRng = str(xmlCmd.getAttribute('Range')) 
+            cmdRng = str(xmlCmd.getAttribute('Range'))
+
+            # TODO not yet used, but available
+            cmdFlavour = str(xmlCmd.getAttribute('Flavour')) 
+            cmdType = str(xmlCmd.getAttribute('Type'))
 
             # submission part
             if cmdKind in ['submit', 'resubmit']:

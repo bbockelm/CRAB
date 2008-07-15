@@ -203,7 +203,7 @@ class ServerCommunicator:
     # Auxiliary methods
 ###################################################
     
-    def _createXMLcommand(self, taskUName, cmdSpec='status', rng='all', newTaskAddIns=False):
+    def _createXMLcommand(self, taskUName, cmdSpec='status', rng='all', newTaskAddIns=False, flavour='analysis', type='fullySpecified'):
         xmlString = ''
         cfile = minidom.Document()
             
@@ -213,6 +213,8 @@ class ServerCommunicator:
         node.setAttribute("Command", str(cmdSpec) )
         node.setAttribute("Range", str(rng) )
         node.setAttribute("Scheduler", str(self.cfg_params['CRAB.scheduler']) ) 
+        node.setAttribute("Flavour", str(flavour) )
+        node.setAttribute("Type", str(type) ) 
 
         # create a mini-cfg to be transfered to the server
         miniCfg = {}
