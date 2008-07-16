@@ -43,7 +43,7 @@ class PsetManipulator:
                 self.cmsProcess = self.cfo
             except Exception, ex:
                 msg =  "Your cfg file is not valid, %s\n" % str(ex)
-                msg += "  https://twiki.cern.ch/twiki/bin/view/CMS/CrabFaq#Problem_with_ParameterSet_parsin\n"
+                msg += "  https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabFaq#Problem_with_ParameterSet_parsin\n"
                 msg += "  may help you understand the problem."
                 raise CrabException(msg)
         self.cfg = CfgInterface(self.cmsProcess)
