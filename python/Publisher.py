@@ -136,7 +136,9 @@ class Publisher(Actor):
             #### for production data
             if (dataset['PrimaryDataset'] == 'null'):
                 dataset['PrimaryDataset'] = dataset['ProcessedDataset']
-                
+            else: # add parentage from input dataset
+                dataset['ParentDataset']= self.datasetpath
+    
             dataset['PSetContent']=self.content
             cfgMeta = {'name' : self.pset , 'Type' : 'user' , 'annotation': 'user cfg', 'version' : 'private version'} # add real name of user cfg
             common.logger.message("PrimaryDataset = %s"%dataset['PrimaryDataset'])
@@ -230,7 +232,9 @@ class Publisher(Actor):
                 common.logger.message("file = "+file)
                 Blocks=self.publishAJobReport(file,self.processedData)
                 if Blocks:
-                    [BlocksList.append(x) for x in Blocks]
+                    for x in Blocks: # do not allow multiple entries of the same block
+                        if x not in BlocksList:
+                           BlocksList.append(x)
                     
             # close the blocks
             common.logger.debug(6, "BlocksList = %s"%BlocksList)
