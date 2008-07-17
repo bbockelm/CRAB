@@ -24,8 +24,9 @@ class SchedulerGlite(SchedulerGrid):
         with real scheduler  
         """
         self.rb_param_file=''
-        # if (cfg_params.has_key('EDG.rb')):
-        #     self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
+        if (cfg_params.has_key('EDG.rb')):
+            cfg_params['EDG.rb']='CERN'
+        self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
         self.wms_service=cfg_params.get("EDG.wms_service",'')
         self.skipWMSAuth=cfg_params.get("EDG.skipwmsauth",0)
         params = { 'service' : self.wms_service, \
@@ -84,11 +85,11 @@ class SchedulerGlite(SchedulerGrid):
 
         return req,self.EDG_ce_white_list,self.EDG_ce_black_list
 
-    def se_list(self, id, dest):
+    def se_list(self, dest):
         """
         Returns string with requirement SE related
         """
-        hostList=self.findSites_(id,dest)
+        hostList=self.findSites_(dest)
         req=''
         reqtmp=[]
         concString = '||'
@@ -153,7 +154,7 @@ class SchedulerGlite(SchedulerGrid):
         req +=task['jobType']
 
         sched_param=''
-        sched_param+='Requirements = ' + req +self.specific_req() + self.se_list(i,dest) +\
+        sched_param+='Requirements = ' + req +self.specific_req() + self.se_list(dest) +\
                                         self.ce_list()[0] +';\n' 
         if self.EDG_addJdlParam: sched_param+=self.jdlParam() 
         sched_param+='MyProxyServer = "' + self.proxyServer + '";\n'
@@ -171,14 +172,14 @@ class SchedulerGlite(SchedulerGrid):
         reason = loggingInfo.decodeReason(file)
         return reason
 
-    def findSites_(self, n, sites):
+    def findSites_(self, sites):
         itr4 =[]
         if len(sites)>0 and sites[0]=="":
             return itr4
         if sites != [""]:
-            replicas = self.blackWhiteListParser.checkBlackList(sites,n)
+            replicas = self.blackWhiteListParser.checkBlackList(sites)
             if len(replicas)!=0:
-                replicas = self.blackWhiteListParser.checkWhiteList(replicas,n)
+                replicas = self.blackWhiteListParser.checkWhiteList(replicas)
 
             itr4 = replicas
         return itr4
