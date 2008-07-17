@@ -24,8 +24,8 @@ class SchedulerGlite(SchedulerGrid):
         with real scheduler  
         """
         self.rb_param_file=''
-        if (cfg_params.has_key('EDG.rb')):
-            self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
+        # if (cfg_params.has_key('EDG.rb')):
+        #     self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
         self.wms_service=cfg_params.get("EDG.wms_service",'')
         self.skipWMSAuth=cfg_params.get("EDG.skipwmsauth",0)
         params = { 'service' : self.wms_service, \

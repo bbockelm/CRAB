@@ -29,8 +29,9 @@ class Boss:
         self.cfg_params = cfg_params
         self.schedulerName =  self.cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
         self.rb_param_file=''
-        if (cfg_params.has_key('EDG.rb')):
-            self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
+        if (not cfg_params.has_key('EDG.rb')):
+            cfg_params['EDG.rb']='CERN'
+        self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
         self.wms_service=cfg_params.get("EDG.wms_service",'')
 
 
