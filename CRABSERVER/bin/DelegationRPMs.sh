@@ -3,6 +3,7 @@
 #defaults
 CRAB_HOME="/home/crab"
 CRAB_USER="crab"
+CRAB_GROUP="cms"
 
 if [ $# -eq 0 ]; then
     echo " At least one option is needed. For usage see :"
@@ -29,6 +30,10 @@ case $1 in
         -homeuser )
           [ $# -gt 1 ] || { echo "Option \`$1' requires an argument" 1>&2; exit 1;  }
           CRAB_HOME="$2"
+          shift; shift ;;
+        -groupuser )
+          [ $# -gt 1 ] || { echo "Option \`$1' requires an argument" 1>&2; exit 1;  }
+          CRAB_GROUP="$2"
           shift; shift ;;
         -help )
           cat << \EOF_HELP
@@ -222,9 +227,9 @@ cat > /etc/ld.so.conf.d/globusglite.conf << EOF
 EOF
 ldconfig
 
-echo "*** Creating /var/www/html/transfer for user $CRAB_USER:cms";
+echo "*** Creating /var/www/html/transfer for user $CRAB_USER:$CRAB_GROUP";
 mkdir -p /var/www/html/transfer
-chown -R $CRAB_USER:cms /var/www/html/transfer
+chown -R $CRAB_USER:$CRAB_GROUP /var/www/html/transfer
 
 echo ""
 echo "*** Note:"
