@@ -209,6 +209,8 @@ cat > /opt/glite/libexec/fetch-crl.sh <<EOF
 CRLDIR=\${X509_CERT_DIR:-/etc/grid-security/certificates}
 /usr/sbin/fetch-crl --loc \${CRLDIR} --out \${CRLDIR} --no-check-certificate
 EOF
+# make the script executable
+chmod a+x /opt/glite/libexec/fetch-crl.sh
 
 echo "*** Adding such script as a cron job "
 cat > /etc/cron.d/fetch-crl <<EOF
