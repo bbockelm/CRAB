@@ -203,14 +203,14 @@ foreach path_to_add ( /opt/globus/bin /opt/glite/bin )
    if !(\$?path) then
         set path = ( \${path_to_add} )
    else if ( "\${path}" !~ *\${path_to_add}* ) then
-        set path = ( \${path_to_add} \$path )
+        set path = ( \${path_to_add}:\$path )
    endif
 end
 foreach path_to_add ( /opt/globus/lib /opt/glite/lib )
    if !(\$?LD_LIBRARY_PATH) then
         set LD_LIBRARY_PATH = ( \${path_to_add} )
    else if ( "\${LD_LIBRARY_PATH}" !~ *\${path_to_add}* ) then
-        set LD_LIBRARY_PATH = ( \${path_to_add} \$LD_LIBRARY_PATH )
+        set LD_LIBRARY_PATH = ( \${path_to_add}:\$LD_LIBRARY_PATH )
    endif
 end
 EOF
