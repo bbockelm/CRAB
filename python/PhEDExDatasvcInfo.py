@@ -8,9 +8,10 @@ class PhEDExDatasvcInfo:
   """
   provides information from PhEDEx Data Service 
   """
-  # PhEDEx Data Service URL
-  datasvc_url="https://cmsweb.cern.ch/phedex/test/datasvc/xml/prod"
-    
+  ## PhEDEx Data Service URL
+  #datasvc_url="https://cmsweb.cern.ch/phedex/test/datasvc/xml/prod"
+  datasvc_url="https://cmsweb.cern.ch/phedex/datasvc/xml/prod"
+   
   def lfn2pfn(self,node,lfn,protocol):
       """
       PhEDEx Data Service lfn2pfn call
