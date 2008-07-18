@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+#
+# 07-Dec-2005
+# Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
+#
+# Wrapper script for crab.py
+#
+if [ -z "$PYTHONPATH" ]; then
+  export PYTHONPATH=${CRABDBSAPIPYTHON}:${CRABDLSAPIPYTHON}:${CRABPSETPYTHON}:${CRABPYTHON}
+else
+  export PYTHONPATH=${CRABDBSAPIPYTHON}:${CRABDLSAPIPYTHON}:${CRABPSETPYTHON}:${PYTHONPATH}:${CRABPYTHON}
+fi
+#echo $PYTHONPATH
+
+export LD_LIBRARY_PATH=${GLITE_LOCATION}/lib:${LD_LIBRARY_PATH}
+
+# to be removed asap
+if [ -z "$CMSSW_VERSION" ]; then
+  echo ''
+  echo 'crab Error: Please run cmsenv before setting the CRAB environment'
+  echo '(see also: https://twiki.cern.ch/twiki/bin/view/CMS/CrabHowTo) '
+  echo ''
+else
+  python $CRABPYTHON/multicrab.py $*
+fi
