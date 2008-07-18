@@ -25,7 +25,8 @@ except getopt.GetoptError, ex:
     sys.exit(1)
 
 #url = "http://cmssrv17.fnal.gov:8989/DBS/servlet/DBSServlet"
-url = "http://cmssrv17.fnal.gov:8989/DBS108LOC1/servlet/DBSServlet"
+#url = "http://cmssrv17.fnal.gov:8989/DBS108LOC1/servlet/DBSServlet"
+url = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
 
 datasetPath = None
 full = False 
