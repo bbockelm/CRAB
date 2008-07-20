@@ -39,7 +39,7 @@ class SchedulerLsf(SchedulerLocal) :
         self.rfioName =  cfg_params.get(self.name().upper()+'.rfio_server','')
 
         params = { 'cpCmd'  : self.cpCmd, \
-                   'rfipName' : self.rfioName
+                   'rfioName' : self.rfioName
                  }
         return  params
 
