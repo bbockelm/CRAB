@@ -43,6 +43,8 @@ class Crab:
 
         # Configuration file
         self.cfg_fname = None
+        self.cfg_sys_fname = None
+        self.cfg_home_fname = None
         # Dictionary with configuration parameters
         self.cfg_params = {}
 
