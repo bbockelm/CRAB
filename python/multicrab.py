@@ -162,6 +162,9 @@ class MultiCrab:
 
         self.cfg=cfg_common['cfg']
 
+        # read crab.cfg file and search for storage_path
+        cfg_params = loadConfig(self.cfg,{})
+        self.storage_path = cfg_params.get("USER.storage_path",None)
         return
 
     def loadMultiConfig(self, file):
@@ -192,6 +195,9 @@ class MultiCrab:
             for opt in self.cfg_params_dataset[sec]:
                 tmp="-"+string.upper(opt.split(".")[0])+"."+opt.split(".")[1]
                 options[tmp]=self.cfg_params_dataset[sec][opt]
+            # add section to storage_path if exist in crab.cfg
+            if self.storage_path:
+                options["-USER.storage_path"]=self.storage_path+"/"+sec
             # Input options (command)
             for opt in self.opts:
                 options[opt]=self.opts[opt]
