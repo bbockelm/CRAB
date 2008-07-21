@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.49 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.49 2008/07/08 16:31:19 farinafa Exp $"
+__version__ = "$Revision: 1.52 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.52 2008/07/14 13:55:23 farinafa Exp $"
 
 import os
 import pickle
@@ -251,6 +251,7 @@ class CrabServerWorkerComponent:
         # Specific WMS choice
         workerCfg['wmsEndpoint'] = ''
         customWmsList = str( self.args.get('WMSserviceList', '') ).split(',')
+        customWmsList = [ c for c in customWmsList if len(c.strip())>0]
         if len(customWmsList)>0:
             outcomeCounter = sum( self.subStats.values() )
             workerCfg['wmsEndpoint'] = customWmsList[ outcomeCounter % len(customWmsList) ] 
