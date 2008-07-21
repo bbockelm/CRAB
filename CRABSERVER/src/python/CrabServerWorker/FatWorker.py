@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.92 2008/07/10 17:49:25 farinafa Exp $"
-__version__ = "$Revision: 1.92 $"
+__revision__ = "$Id: FatWorker.py,v 1.94 2008/07/14 13:44:42 farinafa Exp $"
+__version__ = "$Revision: 1.94 $"
 import string
 import sys, os
 import time
@@ -291,21 +291,12 @@ class FatWorker(Thread):
 
         self.SendMLpre(task)        
         for ii in matched:
-            # SplitCollection if too big DS
+            # SplitCollection if too big DS # fix Fabio
             sub_bulk = []
             bulk_window = 200
             if len(sub_jobs[ii]) > bulk_window:
-                n_sub_bulk = int( int(len(sub_jobs[ii]) ) / bulk_window ) 
-                for n in xrange(n_sub_bulk):
-                    first = n*bulk_window
-                    last = (n+1)*bulk_window
-                    if last > len(sub_jobs[ii]):
-                        last = len(sub_jobs[ii])
-                    sub_bulk.append(sub_jobs[ii][first:last])
-                if len(sub_jobs[ii][last:-1]) < bulk_window/8:
-                    for pp in sub_jobs[ii][last:-1]:
-                        sub_bulk[n_sub_bulk-1].append(pp)
-                self.log.info("Collection too big: split in %s sub_collection"%n_sub_bulk)
+                sub_bulk = [ sub_jobs[ii][i:i+bulk_window] for i in range(0, len(sub_jobs[ii]), bulk_window)]
+                self.log.info("Collection too big: split in %s sub_collection"%len(sub_bulk) )
             
             # submit now
             errorTrace = ''
