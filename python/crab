@@ -14,6 +14,9 @@ fi
 
 export LD_LIBRARY_PATH=${GLITE_LOCATION}/lib:${LD_LIBRARY_PATH}
 
+# to fix a problem with OSG 
+export VOMS_PROXY_INFO_DONT_VERIFY_AC=1
+
 # to be removed asap
 if [ -z "$CMSSW_VERSION" ]; then
   echo ''
