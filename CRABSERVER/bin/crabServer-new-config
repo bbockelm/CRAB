@@ -82,6 +82,11 @@ crabServerConfiguration = {
 # component fields
 
 componentFields = {
+    "TaskRegister" : {
+    'ComponentDir':None,
+    'maxThreads':'5',
+    },
+
     "CrabServerWorker" : {
     'ComponentDir':None,
     'maxThreads':'5',
