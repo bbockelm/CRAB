@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.54 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.54 2008/07/23 08:00:01 farinafa Exp $"
+__version__ = "$Revision: 1.55 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.55 2008/07/23 08:53:08 farinafa Exp $"
 
 import os, pickle, time
 
@@ -290,8 +290,12 @@ class CrabServerWorkerComponent:
             retryCounter = '2'
             if len(items) == 3 and items[2] != "#fake_site#": 
                 siteToBan = items[2]
-                    
-        self.swSchedQ.put( (event, taskName, cmdRng, retryCounter, siteToBan) )
+        
+        if len(taskName) > 0:            
+            self.swSchedQ.put( (event, taskName, cmdRng, retryCounter, siteToBan) )
+        else:
+            logging.info("Empty task name. Bad format scheduling request. Task will be skipped")
+
         return
     
     def forceDequeuing(self, payload):
