@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.1 2008/07/23 07:30:06 spiga Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.2 2008/07/23 07:47:07 farinafa Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import string
 import sys, os
@@ -80,7 +80,7 @@ class RegisterWorker(Thread):
            payload = self.taskName +"::"+ str(self.configs['retries']) +"::"+ self.cmdRng 
            self.local_queue.put( (self.myName, "TaskRegisterComponent:NewTaskRegistered", payload) )
         else:
-           id = {'taskid', \
+           id = 'taskid' 
            wmbs = WMBSInterface(_input_stuff_)
            result = wmbs.run()
            

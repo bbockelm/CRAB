@@ -17,7 +17,7 @@ from TaskRegister.TaskRegisterComponent import TaskRegisterComponent
 # Find and load the Configuration
 try:
     config = loadProdAgentConfiguration()
-    compCfg = config.getConfig("Register")
+    compCfg = config.getConfig("TaskRegister")
     compCfg['ComponentDir'] = os.path.expandvars(compCfg['ComponentDir'])
     compCfg.update( config.getConfig("CrabServerConfigurations") )
     compCfg.update( config.getConfig("JobStates"))
@@ -28,6 +28,6 @@ except StandardError, ex:
 
 # Initialise and start the component
 createDaemon(compCfg['ComponentDir'])
-component = RegisterComponent(**dict(compCfg))
+component = TaskRegisterComponent(**dict(compCfg))
 runWithPostMortem(component, compCfg['ComponentDir'])
 
