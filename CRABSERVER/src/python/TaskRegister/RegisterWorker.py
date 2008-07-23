@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.3 2008/07/10 17:49:25 farinafa Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.1 2008/07/23 07:30:06 spiga Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import string
 import sys, os
@@ -39,7 +39,7 @@ class RegisterWorker(Thread):
         self.wdir = self.configs['wdir']       
          
         # derived attributes
-        self.blDBsession = BossLiteAPI('MySQL', dbConfig)
+        self.blDBsession = BossLiteAPI('MySQL', dbConfig, pool=self.configs['blSessionPool'])
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
         self.local_queue = self.configs['messageQueue']
         

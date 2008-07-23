@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.49 $"
-__revision__ = "$Id: RegisterComponent.py,v 1.49 2008/07/08 16:31:19 farinafa Exp $"
+__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.1 2008/07/23 07:30:06 spiga Exp $"
 
 import os
 import pickle
@@ -69,6 +69,10 @@ class TaskRegisterComponent:
         self.maxThreads = int( self.args.get('maxThreads', 5) )
         self.availWorkersIds = [ "worker_%d"%mId for mId in xrange(self.maxThreads) ]
         self.workerSet = {} # thread collection
+
+        # shared sessions and queue
+        self.blDBsession = BossLiteAPI('MySQL', dbConfig, makePool=True)
+        self.sharedQueue = Queue.Queue()
         pass
     
     def startComponent(self):
@@ -83,8 +87,6 @@ class TaskRegisterComponent:
         self.ms.subscribeTo("TaskRegisterComponent:StartDebug")
         self.ms.subscribeTo("TaskRegisterComponent:EndDebug")
        
-        self.sharedQueue = Queue.Queue()
- 
         self.dematerializeStatus()
         #
         # non blocking call event handler loop
@@ -217,6 +219,7 @@ class TaskRegisterComponent:
         workerCfg['retries'] = int( self.args.get('maxRetries', 0) )
 
         workerCfg['messageQueue'] = self.sharedQueue
+        workerCfg['blSessionPool'] = self.blDBsession.bossLiteDB.getPool()
 
         workerCfg['allow_anonymous'] = int( self.args.setdefault('allow_anonymous', 0) )
         return workerCfg
