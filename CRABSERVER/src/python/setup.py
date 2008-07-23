@@ -6,11 +6,12 @@ Python packages for CRAB server
 
 """
 
-__revision__ = "$Id: setup.py,v 1.7 2007/12/18 19:08:22 mcinquil Exp $"
+__revision__ = "$Id: setup.py,v 1.8 2008/03/27 11:44:34 farinafa Exp $"
 
 from distutils.core import setup
 
 packages = [
+    'TaskRegister',
     'CrabServerWorker',
     'Notification',
     'TaskTracking',
