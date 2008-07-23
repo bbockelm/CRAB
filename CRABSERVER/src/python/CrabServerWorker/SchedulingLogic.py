@@ -10,7 +10,7 @@ class SchedulingLogic:
     
     def __init__(self, nWorkers, logger, queue=None):
         self.log = logger 
-
+        self.sleepTime = 12.0
         self.scheduleReq = scheduleRequests
         self.descheduleReq = descheduleRequests
         self.messageQueue = queue
