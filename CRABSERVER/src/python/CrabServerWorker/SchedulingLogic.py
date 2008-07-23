@@ -1,25 +1,19 @@
 
-import traceback, copy, re
-import string, sys, os, time
-from xml.dom import minidom
-from threading import Thread
+import traceback 
+import time
 from Queue import Queue, Empty
-from MessageService.MessageService import MessageService
 
 scheduleRequests = Queue()
 descheduleRequests = Queue()
 
-class SchedulingWorker(Thread):
+class SchedulingLogic:
     
-    def __init__(self, nWorkers, logger):
-        Thread.__init__(self)
+    def __init__(self, nWorkers, logger, queue=None):
         self.log = logger 
-
-        self.ms = MessageService()
-        self.ms.registerAs('CSW_SchedulingWorker')
 
         self.scheduleReq = scheduleRequests
         self.descheduleReq = descheduleRequests
+        self.messageQueue = queue
         
         # queue item structure
         self.schedMapSubmissions = {}
@@ -27,42 +21,37 @@ class SchedulingWorker(Thread):
         
         # scheduling thread task independent infos 
         self.nWorkers = nWorkers
-        self.sleepTime = 12.0
-                
-        self.start()
         return
     
-    def run(self):
-        self.log.info("SchedulingWorker Started. Sleep time:%s"%self.sleepTime)
-        while True:
-            # collect scheduling directives
-            req = 1
-            while req is not None:
-                try:
-                    req = scheduleRequests.get_nowait()
-                except Empty, e:
-                    req = None
-                self.insertRequestInTables(req)
-       
-            # collect de-schedule requests
-            req = 1
-            while req is not None:
-                try:
-                    req = scheduleRequests.get_nowait()
-                except Empty, e:
-                    req = None
-                self.removeRequestFromTables(req)
-            
-            # perform scheduling strategies
-            self.scheduleSubmissions()
-            self.scheduleResubmissions()
+    def applySchedulingLogic(self):
+        # collect scheduling directives
+        req = 1
+        while req is not None:
+            try:
+                req = scheduleRequests.get_nowait()
+            except Empty, e:
+                req = None
+            self._insertRequestInTables(req)
 
-            # loop control
-            time.sleep(self.sleepTime)
-        pass
+        # collect de-schedule requests
+        req = 1
+        while req is not None:
+            try:
+                req = scheduleRequests.get_nowait()
+            except Empty, e:
+                req = None
+            self._removeRequestFromTables(req)
 
+        # perform scheduling strategies
+        self._scheduleSubmissions()
+        self._scheduleResubmissions()
+        return
+
+# ------------------------------------
 # Queue structure management methods
-    def insertRequestInTables(self, itemToInsert=None):
+# ------------------------------------
+
+    def _insertRequestInTables(self, itemToInsert=None):
         # incoming data structure (event, taskName, cmdRng, retryCounter, siteToBan)
         # representation structure in queues
         #     q_item == taskName : {rng:[ integers ], bannedSites: [strings], retryCounter, \
@@ -78,7 +67,7 @@ class SchedulingWorker(Thread):
                  'retryCounter':None, 'deadline': time.time(), 'priority':0 }
         # taskName is redundant but its useful, instead of using schedMap*.items() tuples
         
-        if event in ['CrabServerWorkerComponent:NewTaskRegistered', 'CRAB_Cmd_Mgr:NewCommand']:
+        if event in ['TaskRegisterComponent:NewTaskRegistered', 'CRAB_Cmd_Mgr:NewCommand']:
             if taskName in self.schedMapSubmissions:
                 qItem.update( self.schedMapSubmissions[taskName] )
             # fill the queueItem attributes
@@ -105,7 +94,7 @@ class SchedulingWorker(Thread):
             self.log.debug(itemToInsert)
         return
 
-    def removeRequestFromTables(self, entryToRemove=None):
+    def _removeRequestFromTables(self, entryToRemove=None):
         if entryToRemove is None:
             return
  
@@ -116,32 +105,33 @@ class SchedulingWorker(Thread):
             del self.schedMapResubmissions[entryToRemove]
         return
 
+# ------------------------------------
 # Scheduling strategies
-    def scheduleSubmissions(self):
+# ------------------------------------
+
+    def _scheduleSubmissions(self):
         # let's start with an easy FIFO
         # sort the map values according the chosen criteria
         #     e.g. of the sorted + lambda usage
         #     sorted(l, lambda x,y: cmp(y['c'],x['c']) or cmp(y['b'],x['b']) )
+
         schedList = []
-        schedList += sorted(self.schedMapSubmissions.values(), \
-                           lambda x,y: cmp(x['deadline'], y['deadline']) )
+        schedList += sorted(self.schedMapSubmissions.values(), lambda x,y: cmp(x['deadline'], y['deadline']) )
         # SJF/Min-Min: lambda x,y:  cmp(x['deadline'], y['deadline']) or cmp(len(x['rng']), len(y['rng'])) ) 
         
-        # release messages for submission
-        # "CrabServerWorkerComponent:Submission", payload = taskUniqName, resubCount, cmdRng
         if len(schedList)>0:
             self.log.debug("Scheduling order (submit): %s"%str(schedList)) 
             for s in schedList:
                 payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])  
-                self.ms.publish("CrabServerWorkerComponent:Submission", payload)
-                del self.schedMapSubmissions[ s['taskName'] ]  
-            self.ms.commit()
+                del self.schedMapSubmissions[ s['taskName'] ] 
+                self.messageQueue.put( ('schedThr', "CrabServerWorkerComponent:Submission", payload) ) 
         return
     
-    def scheduleResubmissions(self):
+    def _scheduleResubmissions(self):
         # collect the requests for task and use a deadline criterions as release strategy
         curT = time.time()
         schedList = [] + self.schedMapResubmissions.values()
+
         # filter on deadline expiration
         schedList = [i for i in schedList if i['deadline'] > curT]
         
@@ -149,9 +139,8 @@ class SchedulingWorker(Thread):
             self.log.debug("Scheduling order (resubmit): %s"%str(schedList)) 
             for s in schedList:
                 payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])
-                self.ms.publish("CrabServerWorkerComponent:Submission", payload)
-                del self.schedMapResubmissions[ s['taskName'] ]  
-            self.ms.commit()
+                del self.schedMapResubmissions[ s['taskName'] ] 
+                self.messageQueue.put( ('schedThr', "CrabServerWorkerComponent:Submission", payload) ) 
         return
     
     

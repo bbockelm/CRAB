@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.94 2008/07/14 13:44:42 farinafa Exp $"
-__version__ = "$Revision: 1.94 $"
+__revision__ = "$Id: FatWorker.py,v 1.92 2008/07/10 17:49:25 farinafa Exp $"
+__version__ = "$Revision: 1.92 $"
 import string
 import sys, os
 import time
@@ -23,8 +23,8 @@ from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 from ProdCommon.BossLite.API.BossLiteAPISched import BossLiteAPISched
 
-#from ProdCommon.BossLite.Common.BossLiteLogger import BossLiteLogger 
-#from ProdCommon.BossLite.Common.Exceptions import BossLiteError
+from ProdCommon.BossLite.Common.BossLiteLogger import BossLiteLogger 
+from ProdCommon.BossLite.Common.Exceptions import BossLiteError
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
@@ -59,14 +59,14 @@ class FatWorker(Thread):
         self.ce_blackL = [] + self.configs['ce_dynBList']
         self.ce_whiteL = []
         self.wmsEndpoint = self.configs['wmsEndpoint']
-        
-        # derived attributes
+       
+        self.local_queue = self.configs['messageQueue']
+ 
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
-        self.local_ms = self.configs['messageService']
-        self.blDBsession = BossLiteAPI('MySQL', dbConfig)
+        self.blDBsession = BossLiteAPI('MySQL', dbConfig, pool=self.configs['blSessionPool'])
         self.blSchedSession = None
-        
         self.apmon = ApmonIf()
+
         try:
             dbCfg = copy.deepcopy(dbConfig)
             dbCfg['dbType'] = 'mysql'
@@ -84,8 +84,7 @@ class FatWorker(Thread):
         self.log.info("FatWorker %s initialized"%self.myName)
 
         taskObj = None
-        self.local_ms.publish("CrabServerWorkerComponent:CommandArrival", self.taskName)
-        self.local_ms.commit()
+        self.local_queue.put((self.myName, "CrabServerWorkerComponent:CommandArrival", self.taskName))
         
         if not self.parseCommandXML() == 0:
             Session.close(self.taskName)
@@ -96,8 +95,7 @@ class FatWorker(Thread):
         except Exception, e:            
             self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), \
                 "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) )
-            self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
-            self.local_ms.commit()    
+            self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
             Session.close(self.taskName)
             return
        
@@ -148,8 +146,7 @@ class FatWorker(Thread):
         self.log.info(logMsg)
         msg = self.myName + "::" + self.taskName + "::"
         msg += str(status) + "::" + reason + "::" + str(time.time() - self.tInit)
-        self.local_ms.publish("CrabServerWorkerComponent:FatWorkerResult", msg)
-        self.local_ms.commit()
+        self.local_queue.put((self.myName, "CrabServerWorkerComponent:FatWorkerResult", msg))
         return
 
     def parseCommandXML(self):
@@ -184,8 +181,8 @@ class FatWorker(Thread):
             reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
             self.sendResult(status, reason, reason)
             self.log.info( traceback.format_exc() )
-            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
-            self.local_ms.commit()
+            pload = self.taskName + "::" + str(status) + "::" + reason
+            self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", pload))
         return status
 
     def allocateBossLiteSchedulerSession(self, taskObj):
@@ -348,13 +345,11 @@ class FatWorker(Thread):
             if self.registerTask(taskObj) != 0:
                 self.sendResult(10, "Unable to register task %s. Causes: deserialization, saving, registration "%(self.taskName), \
                     "WorkerError %s. Error while registering jobs for task %s."%(self.myName, self.taskName) )
-                self.local_ms.publish("CrabServerWorkerComponent:CrabWorkFailed", self.taskName)
-                self.local_ms.commit()
+                self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
                 return
 
             self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. Successful complete submission for task %s"%self.taskName )
-            self.local_ms.publish("CrabServerWorkerComponent:CrabWorkPerformed", taskObj['name'])
-            self.local_ms.commit()
+            self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName))
 
             Session.start_transaction(self.taskName)
             for j in taskObj.jobs:
@@ -372,7 +367,7 @@ class FatWorker(Thread):
                     "Worker %s. Any job submitted: %d more attempts \
                     will be performed"%(self.myName, self.resubCount))
             else:
-                self.local_ms.publish("CrabServerWorkerComponent:CrabWorkPerformedPartial", self.taskName)
+                self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformedPartial", self.taskName))
                 self.sendResult(-2, "Partial Success for %s"%self.taskName, \
                     "Worker %s. Partial submission: %d more attempts \
                      will be performed"%(self.myName, self.resubCount))
@@ -382,12 +377,11 @@ class FatWorker(Thread):
             self.resubCount -= 1
             if self.resubCount > 0:
                 payload = self.taskName+"::"+str(self.resubCount)+"::"+str(resubmissionList)
-                self.local_ms.publish("CrabServerWorkerComponent:Submission", payload, "00:00:10")
-                self.local_ms.commit()
+                self.local_queue.put((self.myName, "CrabServerWorkerComponent:Submission", payload))
                 return
 
-            self.local_ms.publish("SubmissionFailed", self.taskName+"::"+str(resubmissionList) )
-            self.local_ms.commit()
+            payload = self.taskName+"::"+str(resubmissionList)  
+            self.local_queue.put((self.myName, "SubmissionFailed", payload))
             try:
                 self.registerTask(taskObj)
                 jobSpecId = []
@@ -398,8 +392,7 @@ class FatWorker(Thread):
 
                 Session.start_transaction(self.taskName)
                 JobState.doNotAllowMoreSubmissions(jobSpecId)
-                for jId in jobSpecId: 
-                    wfJob.setState(jId, 'reallyFinished')
+                for jId in jobSpecId: wfJob.setState(jId, 'reallyFinished')
                 Session.commit(self.taskName)
             except Exception,e:
                 self.log.info("Unable to mark failed jobs in WorkFlow Entities ")
@@ -408,8 +401,8 @@ class FatWorker(Thread):
             # Give up message
             self.log.info("Worker %s has no more attempts: give up with task %s"%(self.myName, self.taskName) )
             status, reason = ("10", "Command for task %s has no more attempts. Give up."%self.taskName)
-            self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", "%s::%s::%s"%(self.taskName, status, reason))
-            self.local_ms.commit()
+            payload = "%s::%s::%s"%(self.taskName, status, reason)
+            self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
         return
 
 ####################################
