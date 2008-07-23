@@ -8,9 +8,10 @@ descheduleRequests = Queue()
 
 class SchedulingLogic:
     
-    def __init__(self, nWorkers, logger, queue=None):
+    def __init__(self, nWorkers, logger, queue=None, sleepTime=12):
         self.log = logger 
-        self.sleepTime = 12.0
+        self.sleepTime = sleepTime
+
         self.scheduleReq = scheduleRequests
         self.descheduleReq = descheduleRequests
         self.messageQueue = queue
@@ -78,7 +79,7 @@ class SchedulingLogic:
                     # set if there is no counter or be polite in case of subsequent submissions 
                     qItem['retryCounter'] = retryCounter
                     
-            self.schedMapSubmissions[taskName] = qItem
+            self.schedMapSubmissions[taskName].update( qItem )
         elif event == 'ResubmitJob':
             if taskName in self.schedMapResubmissions:
                 qItem.update( self.schedMapResubmissions[taskName] )
@@ -88,7 +89,7 @@ class SchedulingLogic:
             qItem['retryCounter'] = retryCounter
             qItem['deadline'] = time.time() + 3.0 * self.sleepTime
             
-            self.schedMapResubmissions[taskName] = qItem        
+            self.schedMapResubmissions[taskName].update( qItem )
         else:
             self.log.info("Unknown scheduling request will be ignored for %s"%taskName)
             self.log.debug(itemToInsert)

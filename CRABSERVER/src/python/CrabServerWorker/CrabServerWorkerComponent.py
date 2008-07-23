@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.55 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.55 2008/07/23 08:53:08 farinafa Exp $"
+__version__ = "$Revision: 1.56 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.56 2008/07/23 09:01:04 farinafa Exp $"
 
 import os, pickle, time
 
@@ -116,7 +116,7 @@ class CrabServerWorkerComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:EndDebug")
         
         # initialize the local message services pool and schedule logic
-        self.schedLogic = SchedulingLogic(self.maxThreads, logging, self.fwResultsQ)
+        self.schedLogic = SchedulingLogic(self.maxThreads, logging, self.fwResultsQ, 3.0*self.ms.pollTime )
 
         self.dematerializeStatus()   
         try:
