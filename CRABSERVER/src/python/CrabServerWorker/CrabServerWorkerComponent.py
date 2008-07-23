@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.49 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.49 2008/07/08 16:31:19 farinafa Exp $"
+__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.54 2008/07/23 08:00:01 farinafa Exp $"
 
 import os, pickle, time
 
@@ -272,9 +272,9 @@ class CrabServerWorkerComponent:
 
     def enqueueForSubmission(self, event, payload):
         items = payload.split('::')
-        taskName, cmdRng, siteToBan = ('', '[]', '')
+        taskName, cmdRng, siteToBan, retryCounter = ('', '[]', '', '2')
         
-        if event in ['RegisterComponent:NewTaskRegistered', 'CRAB_Cmd_Mgr:NewCommand']:
+        if event in ['TaskRegisterComponent:NewTaskRegistered', 'CRAB_Cmd_Mgr:NewCommand']:
             taskName, retryCounter, cmdRng = items[0:3]
         
         elif event == 'ResubmitJob':
