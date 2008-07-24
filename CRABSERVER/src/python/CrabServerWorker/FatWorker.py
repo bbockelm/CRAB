@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.92 2008/07/10 17:49:25 farinafa Exp $"
-__version__ = "$Revision: 1.92 $"
+__revision__ = "$Id: FatWorker.py,v 1.96 2008/07/23 08:00:01 farinafa Exp $"
+__version__ = "$Revision: 1.96 $"
 import string
 import sys, os
 import time
@@ -90,6 +90,7 @@ class FatWorker(Thread):
             Session.close(self.taskName)
             return
 
+        self.log.info("FatWorker %s loading task"%self.myName)
         try:  
             taskObj = self.blDBsession.loadTaskByName(self.taskName)            
         except Exception, e:            
@@ -99,11 +100,12 @@ class FatWorker(Thread):
             Session.close(self.taskName)
             return
        
+        self.log.info("FatWorker %s allocating submission system session"%self.myName)
         if not self.allocateBossLiteSchedulerSession(taskObj) == 0:
             Session.close(self.taskName)
             return
 
-        self.log.info('Worker %s submitting a new command on a task'%self.myName) 
+        self.log.info('Worker %s preparing submission'%self.myName) 
         errStatus, errMsg = (66, "Worker exception. Free-resource message")
         try:
             newRange, skippedJobs = self.preSubmissionCheck(taskObj)           
@@ -121,7 +123,8 @@ class FatWorker(Thread):
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. listMatch"%(self.myName, self.taskName) )
             Session.close(self.taskName)
             return
- 
+
+        self.log.info("FatWorker %s performing submission"%self.myName) 
         try:
             submittedJobs, nonSubmittedJobs, errorTrace = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched) 
         except Exception, e:
@@ -130,6 +133,7 @@ class FatWorker(Thread):
             Session.close(self.taskName)
             return
 
+        self.log.info("FatWorker %s evaluating submission outcomes"%self.myName)
         try:
             self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
         except Exception, e:

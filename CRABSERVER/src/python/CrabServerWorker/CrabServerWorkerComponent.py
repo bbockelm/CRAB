@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.56 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.56 2008/07/23 09:01:04 farinafa Exp $"
+__version__ = "$Revision: 1.57 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.57 2008/07/23 15:06:10 farinafa Exp $"
 
 import os, pickle, time
 
@@ -306,35 +306,20 @@ class CrabServerWorkerComponent:
             logging.info('Failed to split the payload for the Kill request:%s'%payload)
             return
 
-        # check whether the task has been previously registered        
-        taskObj = None
-        try:
-            taskObj = self.blDBsession.loadTaskByName(self.taskName)
-        except Exception, e:
-            taskObj = None
-
         # remove stuff from persistence tables
         if taskUniqName in self.workerSet: del self.workerSet[taskUniqName]
         if taskUniqName in self.taskPool:  del self.taskPool[taskUniqName]
 
         # drive the SchedulingWorker to deschedule the task if needed
         self.swDeschedQ.put(taskUniqName)
- 
-        # force registration and kill
-        taskPath = os.path.join(self.wdir, taskUniqName + '_spec/task.xml' )
-        if taskObj is None:
-           if os.path.exists(taskPath): 
-               # not yet registered task
-               self.newTaskRegistration(taskUniqName)
-               self.ms.publish("KillTask", payload, "00:05:00")
-               logging.info("Kill request for not registered task. Postponed kill.")
-           else:
-               # task never arrived on this server. give up 
-               fakeResMsg = "CWmainThr::%s::"%taskUniqName
-               fakeResMsg += "6::Missing declaration file for task, unable to kill::0.0"
-               self.ms.publish("CrabServerWorkerComponent:FatWorkerResult", fakeResMsg)
-               logging.info("Missing declaration file for task, unable to kill %s. Skip command."%taskUniqName)
-           self.commit()
+
+        # check whether the task has been previously registered        
+        taskObj = None
+        try:
+            taskObj = self.blDBsession.loadTaskByName(self.taskName)
+        except Exception, e:
+            logging.info('Error while loading %s for fast kill'%taskUniqName )
+
         return
     
 ################################
