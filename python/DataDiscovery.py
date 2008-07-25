@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import exceptions
 import DBSAPI.dbsApi
-from DBSAPI.dbsApiException import * 
+from DBSAPI.dbsApiException import *
 import common
 from crab_util import *
-import os 
+import os
 
 
 # #######################################
@@ -13,7 +13,7 @@ class DBSError(exceptions.Exception):
         args='\nERROR DBS %s : %s \n'%(errorName,errorMessage)
         exceptions.Exception.__init__(self, args)
         pass
-    
+
     def getErrorMessage(self):
         """ Return error message """
         return "%s" % (self.args)
@@ -24,7 +24,7 @@ class DBSInvalidDataTierError(exceptions.Exception):
         args='\nERROR DBS %s : %s \n'%(errorName,errorMessage)
         exceptions.Exception.__init__(self, args)
         pass
-    
+
     def getErrorMessage(self):
         """ Return error message """
         return "%s" % (self.args)
@@ -80,7 +80,7 @@ class DataDiscovery:
 
         self.eventsPerBlock = {}  # DBS output: map fileblocks-events for collection
         self.eventsPerFile = {}   # DBS output: map files-events
-        self.blocksinfo = {}      # DBS output: map fileblocks-files 
+        self.blocksinfo = {}      # DBS output: map fileblocks-files
         self.maxEvents = 0        # DBS output: max events
         self.parent = {}       # DBS output: max events
 
@@ -120,22 +120,23 @@ class DataDiscovery:
         ## check if has been requested to use the parent info
         useParent = self.cfg_params.get('CMSSW.use_parent',False)
 
-        ## check if has been asked for a non default file to store/read analyzed fileBlocks   
-        defaultName = common.work_space.shareDir()+'AnalyzedBlocks.txt'  
+        ## check if has been asked for a non default file to store/read analyzed fileBlocks
+        defaultName = common.work_space.shareDir()+'AnalyzedBlocks.txt'
         fileBlocks_FileName = os.path.abspath(self.cfg_params.get('CMSSW.fileblocks_file',defaultName))
- 
+
         api = DBSAPI.dbsApi.DbsApi(args)
-        allowedRetriveValue = ['retrive_parent', 
+        allowedRetriveValue = ['retrive_parent',
                                'retrive_block',
                                'retrive_lumi',
+                               'retrive_lumi_excluded',
                                'retrive_run'
                                ]
         try:
             if len(runselection) <= 0 :
                 if useParent:
                     files = api.listFiles(path=self.datasetPath, retriveList=allowedRetriveValue)
-                    common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
-                    common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
+                    common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue))
+                    common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue))
                 else:
                     files = api.listDatasetFiles(self.datasetPath)
             else :
@@ -155,7 +156,7 @@ class DataDiscovery:
             raise DataDiscoveryError(msg)
 
         anFileBlocks = []
-        if self.skipBlocks: anFileBlocks = readTXTfile(self, fileBlocks_FileName) 
+        if self.skipBlocks: anFileBlocks = readTXTfile(self, fileBlocks_FileName)
 
         # parse files and fill arrays
         for file in files :
@@ -164,11 +165,12 @@ class DataDiscovery:
             fileblock = file['Block']['Name']
             if fileblock not in anFileBlocks :
                 filename = file['LogicalFileName']
-                # asked retry the list of parent for the given child 
-                if useParent: parList = [x['LogicalFileName'] for x in file['ParentList']] 
-                self.parent[filename] = parList 
+                # asked retry the list of parent for the given child
+                if useParent: parList = [x['LogicalFileName'] for x in file['ParentList']]
+                self.parent[filename] = parList
                 if filename.find('.dat') < 0 :
                     events    = file['NumberOfEvents']
+                    #excludedLumis = file['ExcludedLumis???']
                     # number of events per block
                     if fileblock in self.eventsPerBlock.keys() :
                         self.eventsPerBlock[fileblock] += events
@@ -176,25 +178,25 @@ class DataDiscovery:
                         self.eventsPerBlock[fileblock] = events
                     # number of events per file
                     self.eventsPerFile[filename] = events
-            
+
                     # number of events per block
                     if fileblock in self.blocksinfo.keys() :
                         self.blocksinfo[fileblock].append(filename)
                     else :
                         self.blocksinfo[fileblock] = [filename]
-            
+
                     # total number of events
                     self.maxEvents += events
         if  self.skipBlocks and len(self.eventsPerBlock.keys()) == 0:
             msg = "No new fileblocks available for dataset: "+str(self.datasetPath)
-            raise  CrabException(msg)    
+            raise  CrabException(msg)
 
-        saveFblocks='' 
+        saveFblocks=''
         for block in self.eventsPerBlock.keys() :
-            saveFblocks += str(block)+'\n' 
+            saveFblocks += str(block)+'\n'
             common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(self.eventsPerBlock[block],block))
-        writeTXTfile(self, fileBlocks_FileName , saveFblocks) 
-                      
+        writeTXTfile(self, fileBlocks_FileName , saveFblocks)
+
         if len(self.eventsPerBlock) <= 0:
             raise NotExistingDatasetError(("\nNo data for %s in DBS\nPlease check"
                                             + " dataset path variables in crab.cfg")
@@ -204,36 +206,36 @@ class DataDiscovery:
 # #################################################
     def getMaxEvents(self):
         """
-        max events 
+        max events
         """
         return self.maxEvents
 
 # #################################################
     def getEventsPerBlock(self):
         """
-        list the event collections structure by fileblock 
+        list the event collections structure by fileblock
         """
         return self.eventsPerBlock
 
 # #################################################
     def getEventsPerFile(self):
         """
-        list the event collections structure by file 
+        list the event collections structure by file
         """
         return self.eventsPerFile
 
 # #################################################
     def getFiles(self):
         """
-        return files grouped by fileblock 
+        return files grouped by fileblock
         """
-        return self.blocksinfo        
+        return self.blocksinfo
 
 # #################################################
     def getParent(self):
         """
-        return parent grouped by file 
+        return parent grouped by file
         """
-        return self.parent        
+        return self.parent
 
 ########################################################################
