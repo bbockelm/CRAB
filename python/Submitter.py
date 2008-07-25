@@ -238,14 +238,13 @@ class Submitter(Actor):
 
     def collect_MLInfo(self):
         """
-        Preapre DashBoard information
+        Prepare DashBoard information
         """
 
         taskId=str("_".join(common._db.queryTask('name').split('_')[:-1]))
         gridName = string.strip(common.scheduler.userName())
         common.logger.debug(5, "GRIDNAME: "+gridName)
         taskType = 'analysis'
-       # version
 
         self.datasetPath =  self.cfg_params['CMSSW.datasetpath']
         if string.lower(self.datasetPath)=='none':
@@ -253,16 +252,16 @@ class Submitter(Actor):
         self.executable = self.cfg_params.get('CMSSW.executable','cmsRun')
         VO = self.cfg_params.get('EDG.virtual_organization','cms')
 
-        params = {'tool': common.prog_name,\
-                  'JSToolVersion': common.prog_version_str, \
-                  'tool_ui': os.environ.get('HOSTNAME',''), \
-                  'scheduler': common.scheduler.name(), \
-                  'GridName': gridName, \
-                  'taskType': taskType, \
-                  'vo': VO, \
-                  'user': os.environ.get('USER',''), \
-                  'taskId': taskId, \
-                  'datasetFull': self.datasetPath, \
+        params = {'tool': common.prog_name,
+                  'JSToolVersion': common.prog_version_str,
+                  'tool_ui': os.environ.get('HOSTNAME',''),
+                  'scheduler': common.scheduler.name(),
+                  'GridName': gridName,
+                  'taskType': taskType,
+                  'vo': VO,
+                  'user': os.environ.get('USER',''),
+                  'taskId': taskId,
+                  'datasetFull': self.datasetPath,
                   'exe': self.executable }
 
         return params
