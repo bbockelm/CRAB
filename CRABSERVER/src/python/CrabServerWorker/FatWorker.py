@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.96 2008/07/23 08:00:01 farinafa Exp $"
-__version__ = "$Revision: 1.96 $"
+__revision__ = "$Id: FatWorker.py,v 1.97 2008/07/24 09:53:31 farinafa Exp $"
+__version__ = "$Revision: 1.97 $"
 import string
 import sys, os
 import time
@@ -105,10 +105,12 @@ class FatWorker(Thread):
             Session.close(self.taskName)
             return
 
-        self.log.info('Worker %s preparing submission'%self.myName) 
+        self.log.info('FatWorker %s preparing submission'%self.myName) 
         errStatus, errMsg = (66, "Worker exception. Free-resource message")
         try:
-            newRange, skippedJobs = self.preSubmissionCheck(taskObj)           
+            newRange, skippedJobs = self.preSubmissionCheck(taskObj)          
+            if len(newRange) == 0 : 
+                raise Exception('Empty range submission temptative') 
         except Exception, e:
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. preSubmissionCheck"%(self.myName, self.taskName) )
@@ -116,7 +118,6 @@ class FatWorker(Thread):
             return
  
         try:
-            if len(newRange) == 0 : raise Exception('Empty range submission temptative')
             sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
         except Exception, e:
             self.log.debug( traceback.format_exc() )
@@ -219,7 +220,7 @@ class FatWorker(Thread):
     def preSubmissionCheck(self, task):
         newRange = self.cmdRng
         doNotSubmitStatusMask = ['R','S'] # ,'K','Y','D'] # to avoid resubmission of final state jobs
-        tryToSubmitMask = ['C', 'A', 'RC', 'Z'] + ['K','Y','D','E']
+        tryToSubmitMask = ['C', 'A', 'RC', 'Z'] + ['K','Y','D','E', 'SD']
         skippedSubmissions = []
 
         # closed running jobs regeneration and osb manipulation
