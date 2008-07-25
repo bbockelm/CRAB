@@ -16,12 +16,12 @@ class SchedulerGlite(SchedulerGrid):
 
     def configure(self,cfg_params):
         SchedulerGrid.configure(self, cfg_params)
-        self.environment_unique_identifier = 'GLITE_WMS_JOBID'
+        self.environment_unique_identifier = '$GLITE_WMS_JOBID'
 
     def realSchedParams(self,cfg_params):
         """
-        Return dictionary with specific parameters, to use 
-        with real scheduler  
+        Return dictionary with specific parameters, to use
+        with real scheduler
         """
         self.rb_param_file=''
         if (cfg_params.has_key('EDG.rb')):
@@ -31,10 +31,10 @@ class SchedulerGlite(SchedulerGrid):
         self.skipWMSAuth=cfg_params.get("EDG.skipwmsauth",0)
         params = { 'service' : self.wms_service, \
                    'config' : self.rb_param_file, \
-                   'skipWMSAuth' : self.skipWMSAuth 
+                   'skipWMSAuth' : self.skipWMSAuth
                  }
         return  params
-      
+
 
     def rb_configure(self, RB):
         if not RB: return None
@@ -109,7 +109,7 @@ class SchedulerGlite(SchedulerGrid):
         if self.EDG_addJdlParam:
             if self.EDG_addJdlParam[-1] == '': self.EDG_addJdlParam= self.EDG_addJdlParam[:-1]
             for p in self.EDG_addJdlParam:
-                req+=string.strip(p)+';\n' 
+                req+=string.strip(p)+';\n'
         return req
 
     def specific_req(self):
@@ -148,15 +148,15 @@ class SchedulerGlite(SchedulerGrid):
         """
         Returns string with requirements and scheduler-specific parameters
         """
-        dest=  task.jobs[i-1]['dlsDestination'] 
+        dest=  task.jobs[i-1]['dlsDestination']
 
         req=''
         req +=task['jobType']
 
         sched_param=''
         sched_param+='Requirements = ' + req +self.specific_req() + self.se_list(dest) +\
-                                        self.ce_list()[0] +';\n' 
-        if self.EDG_addJdlParam: sched_param+=self.jdlParam() 
+                                        self.ce_list()[0] +';\n'
+        if self.EDG_addJdlParam: sched_param+=self.jdlParam()
         sched_param+='MyProxyServer = "' + self.proxyServer + '";\n'
         sched_param+='VirtualOrganisation = "' + self.VO + '";\n'
         sched_param+='RetryCount = '+str(self.EDG_retry_count)+';\n'
@@ -184,7 +184,7 @@ class SchedulerGlite(SchedulerGrid):
             itr4 = replicas
         return itr4
 
-    
+
     def wsExitFunc(self):
         """
         """
@@ -199,10 +199,10 @@ class SchedulerGlite(SchedulerGrid):
         ### specific Glite check for OSB
         txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
         txt += '    tmp_size=`ls -gGrta ${out_files}.tgz | awk \'{ print $3 }\'`\n'
-        txt += '    rm ${out_files}.tgz\n'  
+        txt += '    rm ${out_files}.tgz\n'
         txt += '    size=`expr $tmp_size`\n'
         txt += '    echo "Total Output dimension: $size"\n'
-        txt += '    limit='+str(self.OSBsize) +' \n'  
+        txt += '    limit='+str(self.OSBsize) +' \n'
         txt += '    echo "WARNING: output files size limit is set to: $limit"\n'
         txt += '    if [ "$limit" -lt "$size" ]; then\n'
         txt += '        exceed=1\n'

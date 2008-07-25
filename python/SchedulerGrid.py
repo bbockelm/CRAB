@@ -181,8 +181,8 @@ class SchedulerGrid(Scheduler):
         txt += "echo $out_files\n"
         txt += jbt.outList()
 
-        txt += 'MonitorJobID=${NJob}_$'+self.environment_unique_identifier+'\n'
-        txt += 'SyncGridJobId=$'+self.environment_unique_identifier+'\n'
+        txt += 'MonitorJobID=${NJob}_'+self.environment_unique_identifier+'\n'
+        txt += 'SyncGridJobId='+self.environment_unique_identifier+'\n'
         txt += 'MonitorID='+self._taskId+'\n'
         txt += 'echo "MonitorJobID=$MonitorJobID" > $RUNTIME_AREA/$repo \n'
         txt += 'echo "SyncGridJobId=$SyncGridJobId" >> $RUNTIME_AREA/$repo \n'

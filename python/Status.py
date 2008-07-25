@@ -1,6 +1,7 @@
 from Actor import *
 import common
 import string, os, time
+import sha
 from crab_util import *
 
 class Status(Actor):
@@ -70,20 +71,20 @@ class Status(Actor):
         possible_status = [
                          'Created',
                          'Undefined',
-                         'Submitting', 
+                         'Submitting',
                          'Submitted',
                          'Waiting',
                          'Ready',
                          'Scheduled',
                          'Running',
                          'Done',
-                         'Killing',  
+                         'Killing',
                          'Killed',
                          'Aborted',
                          'Unknown',
                          'done(failed)',
                          'cleared',
-                         'retrieved' 
+                         'retrieved'
                           ]
 
         jobs = common._db.nJobs('list')
@@ -104,11 +105,11 @@ class Status(Actor):
                 for st in possible_status:
                     list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
                     if len(list_ID)>0:
-                        if st == 'killed': 
+                        if st == 'killed':
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
                             print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <List of jobs>"
                             print "          List of jobs: %s \n" % self.readableList(list_ID)
-                        elif st == 'Aborted': 
+                        elif st == 'Aborted':
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
                             print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <List of jobs>"
                             print "          List of jobs: %s \n" % self.readableList(list_ID)
@@ -116,7 +117,7 @@ class Status(Actor):
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
                             print "          Retrieve them with: crab -getoutput <List of jobs>"
                             print "          List of jobs: %s \n" % self.readableList(list_ID)
-                        else   : 
+                        else   :
                             print ">>>>>>>>> %i Jobs %s \n " % (len(list_ID), str(st))
 
 
@@ -147,19 +148,17 @@ class Status(Actor):
         job_last_time = str(job.runningJob['startTime'])
         if common.scheduler.name().upper() == 'CONDOR_G':
             WMS = 'OSG'
-            self.hash = makeCksum(common.work_space.cfgFileName())
-            jobId = str(id) + '_' + self.hash + '_' + str(jid)
+            taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+            jobId = str(id) + '_https://condorg/' + taskHash + '/' + str(id)
             common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+        elif common.scheduler.name().upper() in ['LSF','CAF']:
+            WMS = common.scheduler.name()
+            jobId=str(id)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(taskId,"_","-")
+            common.logger.debug(5,'JobID for ML monitoring is created for Local scheduler:'+jobId)
         else:
-            if common.scheduler.name() in ['lsf','caf']:
-                WMS = common.scheduler.name()
-                jobId=str(id)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(taskId,"_","-")
-                common.logger.debug(5,'JobID for ML monitoring is created for Local scheduler:'+jobId)
-            else:
-                jobId = str(id) + '_' + str(jid)
-                WMS = job.runningJob['service']
-                common.logger.debug(5,'JobID for ML monitoring is created for gLite scheduler:'+jobId)
-            pass
+            jobId = str(id) + '_' + str(jid)
+            WMS = job.runningJob['service']
+            common.logger.debug(5,'JobID for ML monitoring is created for gLite scheduler:'+jobId)
         pass
 
         common.logger.debug(5,"sending info to ML")

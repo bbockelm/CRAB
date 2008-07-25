@@ -12,11 +12,12 @@ import os
 from BlackWhiteListParser import CEBlackWhiteListParser
 import Scram
 import CondorGLoggingInfo
+import sha # Good for python 2.4, replaced with hashlib in 2.5
 
 # This class was originally SchedulerCondor_g. For a history of this code, see that file.
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.20 2008/06/06 20:32:01 ewv Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.21 2008/07/09 19:55:56 ewv Exp $"
+__version__ = "$Revision: 1.21 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -64,9 +65,6 @@ class SchedulerCondorCommon(SchedulerGrid):
         msg += 'Maximal number of parallel submits to the grid : GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE = '+max_pending+'\n'
         msg += 'Ask the administrator of your local condor installation to increase these variables to enable more jobs to be executed on the grid in parallel.\n'
         common.logger.debug(2,msg)
-
-        # create hash
-        self.hash = makeCksum(common.work_space.cfgFileName())
 
         return
 
@@ -144,8 +142,7 @@ class SchedulerCondorCommon(SchedulerGrid):
         except KeyError:
             self.UseGT4 = 0;
 
-        # added here because checklistmatch is not used
-        self.environment_unique_identifier = 'GLOBUS_GRAM_JOB_CONTACT'
+        self.environment_unique_identifier = 'https://condorg/' + sha.new(common._db.queryTask('name')).hexdigest() + '/${NJob}' #+'_${GLOBUS_GRAM_JOB_CONTACT}'
         self.datasetPath = ''
 
         try:

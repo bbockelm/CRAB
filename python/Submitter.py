@@ -4,6 +4,7 @@ import common
 from ApmonIf import ApmonIf
 #from random import random
 import time
+import sha
 from ProgressBar import ProgressBar
 from TerminalController import TerminalController
 
@@ -52,8 +53,8 @@ class Submitter(Actor):
         dlsDest=common._db.queryJob('dlsDestination',tmp_jList)
         jStatus=common._db.queryRunJob('status',tmp_jList)
         for nj in range(len(tmp_jList)):
-            cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(dlsDest[nj]) 
-            if (cleanedBlackWhiteList != '') or (datasetpath == None): 
+            cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(dlsDest[nj])
+            if (cleanedBlackWhiteList != '') or (datasetpath == None):
                 if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z','E','UE','SSE', 'KK']):
                     jobSetForSubmission +=1
                     nj_list.append(tmp_jList[nj])
@@ -64,7 +65,7 @@ class Submitter(Actor):
             if nsjobs >0 and nsjobs == jobSetForSubmission:
                 break
             pass
-        
+
         if nsjobs>jobSetForSubmission:
             common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
         if len(jobSkippedInSubmission) > 0 :
@@ -89,30 +90,30 @@ class Submitter(Actor):
 
         start = time.time()
 
-        check = self.checkIfCreate() 
-        
+        check = self.checkIfCreate()
+
         if check == 0 :
             self.SendMLpre()
-            
-            list_matched , task = self.performMatch()        
-            njs = self.perfromSubmission(list_matched, task)  
-        
+
+            list_matched , task = self.performMatch()
+            njs = self.perfromSubmission(list_matched, task)
+
             stop = time.time()
             common.logger.debug(1, "Submission Time: "+str(stop - start))
             common.logger.write("Submission time :"+str(stop - start))
-        
+
             msg = '\nTotal of %d jobs submitted'%njs
             if njs != len(self.nj_list) :
                 msg += ' (from %d requested).'%(len(self.nj_list))
             else:
                 msg += '.'
             common.logger.message(msg)
-        
+
             if (njs < len(self.nj_list) or len(self.nj_list)==0):
                 self.submissionError()
 
 
-    def checkIfCreate(self): 
+    def checkIfCreate(self):
         """
         """
         code = 0
@@ -125,34 +126,34 @@ class Submitter(Actor):
 
         if (totalCreatedJobs==0):
               common.logger.message("No jobs to be submitted: first create them")
-              code = 1  
-        return code         
+              code = 1
+        return code
 
 
-    def performMatch(self):    
+    def performMatch(self):
         """
-        """ 
+        """
         common.logger.message("Checking available resources...")
-        ### define here the list of distinct destinations sites list    
+        ### define here the list of distinct destinations sites list
         distinct_dests = common._db.queryDistJob_Attr('dlsDestination', 'jobId' ,self.nj_list)
 
 
         ### define here the list of jobs Id for each distinct list of sites
         self.sub_jobs =[] # list of jobs Id list to submit
         jobs_to_match =[] # list of jobs Id to match
-        all_jobs=[] 
+        all_jobs=[]
         count=0
-        for distDest in distinct_dests: 
+        for distDest in distinct_dests:
              all_jobs.append(common._db.queryAttrJob({'dlsDestination':distDest},'jobId'))
              sub_jobs_temp=[]
              for i in self.nj_list:
-                 if i in all_jobs[count]: sub_jobs_temp.append(i) 
+                 if i in all_jobs[count]: sub_jobs_temp.append(i)
              if len(sub_jobs_temp)>0:
-                 self.sub_jobs.append(sub_jobs_temp)   
+                 self.sub_jobs.append(sub_jobs_temp)
                  jobs_to_match.append(self.sub_jobs[count][0])
              count +=1
         sel=0
-        matched=[] 
+        matched=[]
 
         task=common._db.getTask()
 
@@ -166,19 +167,19 @@ class Submitter(Actor):
                 self.submissionError()
             sel += 1
 
-        return matched , task 
+        return matched , task
 
     def perfromSubmission(self,matched,task):
 
-        njs=0 
-   
+        njs=0
+
         ### Progress Bar indicator, deactivate for debug
         if not common.logger.debugLevel() :
             term = TerminalController()
-  
-        if len(matched)>0: 
+
+        if len(matched)>0:
             common.logger.message(str(len(matched))+" blocks of jobs will be submitted")
-            for ii in matched: 
+            for ii in matched:
                 common.logger.debug(1,'Submitting jobs '+str(self.sub_jobs[ii]))
 
                 try:
@@ -192,23 +193,23 @@ class Submitter(Actor):
                 if not common.logger.debugLevel():
                     if pbar :
                         pbar.update(float(ii+1)/float(len(self.sub_jobs)),'please wait')
-                ### check the if the submission succeded Maybe not neede 
+                ### check the if the submission succeded Maybe not neede
                 if not common.logger.debugLevel():
                     if pbar :
                         pbar.update(float(ii+1)/float(len(self.sub_jobs)),'please wait')
 
-                ### check the if the submission succeded Maybe not needed or at least simplified 
+                ### check the if the submission succeded Maybe not needed or at least simplified
                 sched_Id = common._db.queryRunJob('schedulerId', self.sub_jobs[ii])
                 listId=[]
                 run_jobToSave = {'status' :'S'}
                 listRunField = []
-                for j in range(len(self.sub_jobs[ii])): 
-                    if str(sched_Id[j]) != '': 
-                        listId.append(self.sub_jobs[ii][j]) 
-                        listRunField.append(run_jobToSave) 
+                for j in range(len(self.sub_jobs[ii])):
+                    if str(sched_Id[j]) != '':
+                        listId.append(self.sub_jobs[ii][j])
+                        listRunField.append(run_jobToSave)
                         common.logger.debug(5,"Submitted job # "+ str(self.sub_jobs[ii][j]))
                         njs += 1
-                common._db.updateRunJob_(listId, listRunField) 
+                common._db.updateRunJob_(listId, listRunField)
                 self.SendMLpost(self.sub_jobs[ii])
 
         else:
@@ -244,8 +245,8 @@ class Submitter(Actor):
         gridName = string.strip(common.scheduler.userName())
         common.logger.debug(5, "GRIDNAME: "+gridName)
         taskType = 'analysis'
-       # version 
-        
+       # version
+
         self.datasetPath =  self.cfg_params['CMSSW.datasetpath']
         if string.lower(self.datasetPath)=='none':
             self.datasetPath = None
@@ -262,49 +263,49 @@ class Submitter(Actor):
                   'user': os.environ.get('USER',''), \
                   'taskId': taskId, \
                   'datasetFull': self.datasetPath, \
-                  'exe': self.executable } 
+                  'exe': self.executable }
 
         return params
-   
+
     def SendMLpre(self):
         """
-        Send Pre info to ML 
+        Send Pre info to ML
         """
         params = self.collect_MLInfo()
- 
+
         params['jobId'] ='TaskMeta'
- 
+
         common.apmon.sendToML(params)
- 
+
         common.logger.debug(5,'Submission DashBoard Pre-Submission report: '+str(params))
-        
+
         return
 
     def SendMLpost(self,allList):
         """
-        Send post-submission info to ML  
-        """  
-        task = common._db.getTask(allList) 
+        Send post-submission info to ML
+        """
+        task = common._db.getTask(allList)
 
         params = {}
         for k,v in self.collect_MLInfo().iteritems():
             params[k] = v
-  
+
 
         taskId= str("_".join(str(task['name']).split('_')[:-1]))
-   
+
         Sub_Type = 'Direct'
         for job in task.jobs:
-            jj = job['jobId']          
+            jj = job['jobId']
             jobId = ''
             localId = ''
-            jid = str(job.runningJob['schedulerId']) 
+            jid = str(job.runningJob['schedulerId'])
             if common.scheduler.name().upper() == 'CONDOR_G':
-                self.hash = makeCksum(common.work_space.cfgFileName())
                 rb = 'OSG'
-                jobId = str(jj) + '_' + self.hash + '_' + jid
+                taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+                jobId = str(jj) + '_https://condorg/' + taskHash + '/' + str(jj)
                 common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
-            elif common.scheduler.name() in ['lsf', 'caf']:
+            elif common.scheduler.name().upper() in ['LSF', 'CAF']:
                 jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(str(taskId),"_","-")
                 common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
                 rb = common.scheduler.name()
@@ -313,13 +314,13 @@ class Submitter(Actor):
                 jobId = str(jj) + '_' + str(jid)
                 common.logger.debug(5,'JobID for ML monitoring is created for gLite scheduler'+jobId)
                 rb = str(job.runningJob['service'])
-        
-            dlsDest = job['dlsDestination'] 
+
+            dlsDest = job['dlsDestination']
             if len(dlsDest) == 1 :
                 T_SE=str(dlsDest[0])
             elif len(dlsDest) == 2 :
                 T_SE=str(dlsDest[0])+','+str(dlsDest[1])
-            else : 
+            else :
                 T_SE=str(len(dlsDest))+'_Selected_SE'
 
 
