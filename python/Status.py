@@ -146,10 +146,10 @@ class Status(Actor):
         jid = job.runningJob['schedulerId']
         job_status_reason = str(job.runningJob['statusReason'])
         job_last_time = str(job.runningJob['startTime'])
-        if common.scheduler.name().upper() == 'CONDOR_G':
+        if common.scheduler.name().upper() in ['CONDOR_G','GLIDEIN']:
             WMS = 'OSG'
             taskHash = sha.new(common._db.queryTask('name')).hexdigest()
-            jobId = str(id) + '_https://condorg/' + taskHash + '/' + str(id)
+            jobId = str(id) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(id)
             common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
         elif common.scheduler.name().upper() in ['LSF','CAF']:
             WMS = common.scheduler.name()

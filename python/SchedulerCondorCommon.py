@@ -16,8 +16,8 @@ import sha # Good for python 2.4, replaced with hashlib in 2.5
 
 # This class was originally SchedulerCondor_g. For a history of this code, see that file.
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.21 2008/07/09 19:55:56 ewv Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.22 2008/07/25 14:37:47 ewv Exp $"
+__version__ = "$Revision: 1.22 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self,name):
@@ -142,7 +142,8 @@ class SchedulerCondorCommon(SchedulerGrid):
         except KeyError:
             self.UseGT4 = 0;
 
-        self.environment_unique_identifier = 'https://condorg/' + sha.new(common._db.queryTask('name')).hexdigest() + '/${NJob}' #+'_${GLOBUS_GRAM_JOB_CONTACT}'
+        self.environment_unique_identifier = 'https://' + self.name() + '/' + sha.new(common._db.queryTask('name')).hexdigest() + '/${NJob}' #+'_${GLOBUS_GRAM_JOB_CONTACT}'
+        common.logger.debug(5,'JobID for ML monitoring is created for OSG scheduler:'+self.environment_unique_identifier)
         self.datasetPath = ''
 
         try:

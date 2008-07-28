@@ -299,10 +299,10 @@ class Submitter(Actor):
             jobId = ''
             localId = ''
             jid = str(job.runningJob['schedulerId'])
-            if common.scheduler.name().upper() == 'CONDOR_G':
+            if common.scheduler.name().upper() in ['CONDOR_G','GLIDEIN']:
                 rb = 'OSG'
                 taskHash = sha.new(common._db.queryTask('name')).hexdigest()
-                jobId = str(jj) + '_https://condorg/' + taskHash + '/' + str(jj)
+                jobId = str(jj) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(jj)
                 common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
             elif common.scheduler.name().upper() in ['LSF', 'CAF']:
                 jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(str(taskId),"_","-")
