@@ -121,9 +121,8 @@ class SchedulerGrid(Scheduler):
         libPath=os.path.join(path, "lib", "python")
         sys.path.append(libPath)
 
-        self._taskId=str("_".join(common._db.queryTask('name').split('_')[:-1]))
-        self.jobtypeName = cfg_params.get('CRAB.jobtype','')
-
+        self._taskId       = uniqueTaskName(common._db.queryTask('name'))
+        self.jobtypeName   = cfg_params.get('CRAB.jobtype','')
         self.schedulerName = cfg_params.get('CRAB.scheduler','')
 
         self.checkProxy()

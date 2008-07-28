@@ -38,7 +38,8 @@ class Status(Actor):
     def compute(self, up_task):
 
         toPrint=[]
-        taskId= str("_".join(str(up_task['name']).split('_')[:-1]))
+        taskId = uniqueTaskName(up_task['name'])
+
         self.wrapErrorList = []
         for job in up_task.jobs :
             id = str(job.runningJob['jobId'])

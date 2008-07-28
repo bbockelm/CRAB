@@ -323,6 +323,23 @@ def makeCksum(filename) :
     cksum = str(crc32(hashString))
     return cksum
 
+
+def uniqueTaskName(nativeTaskName):
+    """
+    For task names that don't follow USER_crab_0_YYMMDD_HHMMSS, generate a new one that includes
+    part of the internal BossLite taskId
+    """
+
+    import re
+    taskName = "_".join(nativeTaskName.split('_')[:-1])
+    reTask = re.compile('.*?_crab_0_\d{6}_\d{6}')
+    isDefault = reTask.match(taskName)
+    if not isDefault:
+        taskName = "-".join(nativeTaskName.split('-')[:-4])
+
+    return str(taskName)   # By default is unicode, ML needs standard string
+
+
 def spanRanges(jobArray):
     """
     take array of job numbers and concatenate 1,2,3 to 1-3
@@ -443,11 +460,11 @@ def readTXTfile(self,inFileName):
     if os.path.exists(inFileName):
         f = open(inFileName, 'r')
         for line in  f.readlines():
-            out_list.append(string.strip(line)) 
+            out_list.append(string.strip(line))
         f.close()
     else:
         msg = ' file '+str(inFileName)+' not found.'
-        raise CrabException(msg)  
+        raise CrabException(msg)
     return out_list
 
 def writeTXTfile(self, outFileName, args):
@@ -460,9 +477,9 @@ def writeTXTfile(self, outFileName, args):
     return
 
 def getLocalDomain(self):
-    """  
+    """
      Get local domain name
-    """  
+    """
     import socket
     tmp=socket.gethostname()
     dot=string.find(tmp,'.')
@@ -470,7 +487,7 @@ def getLocalDomain(self):
         msg='Unkown domain name. Cannot use local scheduler'
         raise CrabException(msg)
     localDomainName = string.split(tmp,'.',1)[-1]
-    return localDomainName 
+    return localDomainName
 
 ####################################
 if __name__ == '__main__':

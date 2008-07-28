@@ -241,7 +241,7 @@ class Submitter(Actor):
         Prepare DashBoard information
         """
 
-        taskId=str("_".join(common._db.queryTask('name').split('_')[:-1]))
+        taskId = uniqueTaskName(common._db.queryTask('name'))
         gridName = string.strip(common.scheduler.userName())
         common.logger.debug(5, "GRIDNAME: "+gridName)
         taskType = 'analysis'
