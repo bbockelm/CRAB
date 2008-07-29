@@ -678,7 +678,9 @@ class TaskTrackingComponent:
 
         ## bossLite session
         try:
-            mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+            mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
+            ## using session pool
+            #mySession = BossLiteAPI("MySQL", self.bossCfgDB)
         except ProdException, ex:
             logging.info(str(ex))
             return 0
@@ -1060,7 +1062,9 @@ class TaskTrackingComponent:
 
         ## bossLite session
         try:
-            mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+            mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
+            ## using session pool 
+            #mySession = BossLiteAPI("MySQL", self.bossCfgDB)
         except ProdException, ex:
             logging.info(str(ex))
             return 0
