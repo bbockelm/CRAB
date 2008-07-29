@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.85 2008/07/01 08:02:54 farinafa Exp $"
-__version__ = "$Revision: 1.85 $"
+__revision__ = "$Id: FatWorker.py,v 1.86 2008/07/03 07:20:47 spiga Exp $"
+__version__ = "$Revision: 1.86 $"
 import string
 import sys, os
 import time
@@ -17,7 +17,7 @@ from xml.dom import minidom
 import traceback
 import copy
 import re
-
+import logging
 # BossLite import
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 from ProdAgentDB.Config import defaultConfig as dbConfig
@@ -300,6 +300,7 @@ class FatWorker(Thread):
                 while (checkCount > 0):
                     seEl = SElement(self.SEurl, self.SEproto, self.SEport)
                     sbi = SBinterface( seEl )
+                    self.log.info("sbi.checkExists( %s, %s) se_remote_dir %s"%(remoteFile,self.proxy,str(self.cfg_params['CRAB.se_remote_dir'])))
                     fileFound = sbi.checkExists(remoteFile, self.proxy)
                     if fileFound == True:
                         break
@@ -405,7 +406,8 @@ class FatWorker(Thread):
             unsubmitted += sub_jobs[ii]
             ##############  SplitCollection if too big DS
             sub_bulk = []
-            bulk_window = 200
+            #bulk_window = 200
+            bulk_window = 20000
             if len(sub_jobs[ii]) > bulk_window:
                 n_sub_bulk = int( int(len(sub_jobs[ii]) ) / bulk_window ) 
                 for n in xrange(n_sub_bulk):
@@ -518,7 +520,9 @@ class FatWorker(Thread):
         else:
            self.schedName = 'glite'
 
-        schedulerConfig = {'name' : job.runningJob['scheduler'], 'user_proxy' : task['user_proxy'] }
+        schedulerConfig = {'name' : job.runningJob['scheduler'], 'user_proxy' : task['user_proxy'] \
+        , 'config' : self.wdir + '/glite.conf.CMS_' + self.brokerName }
+
         try:
             self.blSchedSession = BossLiteAPISched( self.blDBsession, schedulerConfig )
         except Exception, e:

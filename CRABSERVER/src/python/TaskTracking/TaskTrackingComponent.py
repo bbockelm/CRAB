@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.85 2008/07/03 10:08:55 mcinquil Exp $"
-__version__ = "$Revision: 1.85 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.86 2008/07/04 10:18:25 mcinquil Exp $"
+__version__ = "$Revision: 1.86 $"
 
 import os
 import time
@@ -593,6 +593,13 @@ class TaskTrackingComponent:
 		        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
 		        logging.info(logBuf)
 		        logBuf = ""
+                ## patch
+                try:
+                    mySession.bossLiteDB.close()
+                    del mySession
+                except:
+                    logging.info("not closed..")
+
 	    elif status == self.taskState[2] or status == self.taskState[4]:
 	        valuess = TaskStateAPI.getStatusUUIDEmail( payload )
 		if valuess != None:
@@ -715,6 +722,13 @@ class TaskTrackingComponent:
             import traceback
             logging.error( "Exception raised: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
+
+        ## patch
+        try:
+            mySession.bossLiteDB.close()
+            del mySession
+        except:
+            logging.info("not closed..")
 
 
     ##########################################################################
@@ -1187,6 +1201,13 @@ class TaskTrackingComponent:
 
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "ERROR: " + str(traceback.format_exc()))
+
+        ## patch
+        try:
+            mySession.bossLiteDB.close()
+            del mySession
+        except:
+            logging.info("not closed..")
 
         logging.info(logBuf)
 

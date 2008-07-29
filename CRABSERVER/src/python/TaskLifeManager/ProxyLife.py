@@ -213,7 +213,14 @@ class ProxyLife:
                 logging.error( str(te) )
         else:
             logging.error( "Problem archiving task: " + taskname )
-        
+
+        ## patch
+        try:
+            mySession.bossLiteDB.close()
+            del mySession
+        except:
+            logging.info("not closed..")
+
     def getListJobName(self, taskname):
         joblist = []
         dbCfg = copy.deepcopy(dbConfig)
