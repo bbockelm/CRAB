@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.85 2008/07/03 10:08:55 mcinquil Exp $"
-__version__ = "$Revision: 1.85 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.86 2008/07/04 10:18:25 mcinquil Exp $"
+__version__ = "$Revision: 1.86 $"
 
 import os
 import time
@@ -145,14 +145,15 @@ class TaskTrackingComponent:
                            'socketFileLocation': self.args['socketFileLocation'] \
                          }
 
-        #self.mySession = None
+        self.mySession = None
         ## bossLite session
-        #try:
-        #    self.mySession = BossLiteAPI("MySQL", self.bossCfgDB)
-        #except Exception, ex:
-        #    logging.info(str(ex))
-        #    logging.info(str(traceback.format_exc()))
-        #    return 0
+        try:
+            self.mySession = BossLiteAPI("MySQL", self.bossCfgDB, makePool=True)
+            self.sessionPool = self.mySession.bossLiteDB.getPool()
+        except Exception, ex:
+            logging.info(str(ex))
+            logging.info(str(traceback.format_exc()))
+            return 0
 
     ##########################################################################
     # handle events
@@ -573,7 +574,12 @@ class TaskTrackingComponent:
         taskObj = None
         try:
             if status == self.taskState[3] or status == self.taskState[7]:
-                mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+                ### using global one
+                #mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+                #if mySesssion == None:
+                #    raise Exception("No bosslite session available")
+                mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
+
 		try:
 		    taskObj = mySession.loadTaskByName( payload )
 		except TaskError, te:
