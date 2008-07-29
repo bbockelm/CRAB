@@ -145,15 +145,14 @@ class TaskTrackingComponent:
                            'socketFileLocation': self.args['socketFileLocation'] \
                          }
 
-        self.mySession = None
+        #self.mySession = None
         ## bossLite session
-        try:
-            self.mySession = BossLiteAPI("MySQL", self.bossCfgDB, makePool=True)
-            self.sessionPool = self.mySession.bossLiteDB.getPool()
-        except Exception, ex:
-            logging.info(str(ex))
-            logging.info(str(traceback.format_exc()))
-            return 0
+        #try:
+        #    self.mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+        #except Exception, ex:
+        #    logging.info(str(ex))
+        #    logging.info(str(traceback.format_exc()))
+        #    return 0
 
     ##########################################################################
     # handle events
@@ -574,12 +573,7 @@ class TaskTrackingComponent:
         taskObj = None
         try:
             if status == self.taskState[3] or status == self.taskState[7]:
-                ### using global one
-                #mySession = BossLiteAPI("MySQL", self.bossCfgDB)
-                #if mySesssion == None:
-                #    raise Exception("No bosslite session available")
-                mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
-
+                mySession = BossLiteAPI("MySQL", self.bossCfgDB)
 		try:
 		    taskObj = mySession.loadTaskByName( payload )
 		except TaskError, te:
@@ -599,8 +593,13 @@ class TaskTrackingComponent:
 		        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
 		        logging.info(logBuf)
 		        logBuf = ""
-                mySession.bossLiteDB.close()
-                del mySession
+                ## patch
+                try:
+                    mySession.bossLiteDB.close()
+                    del mySession
+                except:
+                    logging.info("not closed..")
+
 	    elif status == self.taskState[2] or status == self.taskState[4]:
 	        valuess = TaskStateAPI.getStatusUUIDEmail( payload )
 		if valuess != None:
@@ -680,9 +679,7 @@ class TaskTrackingComponent:
 
         ## bossLite session
         try:
-            mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
-            ## using session pool
-            #mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+            mySession = BossLiteAPI("MySQL", self.bossCfgDB)
         except ProdException, ex:
             logging.info(str(ex))
             return 0
@@ -725,8 +722,13 @@ class TaskTrackingComponent:
             import traceback
             logging.error( "Exception raised: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
-        mySession.bossLiteDB.close()
-        del mySession
+
+        ## patch
+        try:
+            mySession.bossLiteDB.close()
+            del mySession
+        except:
+            logging.info("not closed..")
 
 
     ##########################################################################
@@ -1066,9 +1068,7 @@ class TaskTrackingComponent:
 
         ## bossLite session
         try:
-            mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
-            ## using session pool 
-            #mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+            mySession = BossLiteAPI("MySQL", self.bossCfgDB)
         except ProdException, ex:
             logging.info(str(ex))
             return 0
@@ -1202,14 +1202,14 @@ class TaskTrackingComponent:
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "ERROR: " + str(traceback.format_exc()))
 
-        logging.info(logBuf)
-
+        ## patch
         try:
             mySession.bossLiteDB.close()
             del mySession
         except:
             logging.info("not closed..")
-            pass
+
+        logging.info(logBuf)
 
         time.sleep(float(self.args['PollInterval']))
 
