@@ -599,6 +599,8 @@ class TaskTrackingComponent:
 		        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
 		        logging.info(logBuf)
 		        logBuf = ""
+                mySession.bossLiteDB.close()
+                del mySession
 	    elif status == self.taskState[2] or status == self.taskState[4]:
 	        valuess = TaskStateAPI.getStatusUUIDEmail( payload )
 		if valuess != None:
@@ -723,6 +725,8 @@ class TaskTrackingComponent:
             import traceback
             logging.error( "Exception raised: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
+        mySession.bossLiteDB.close()
+        del mySession
 
 
     ##########################################################################
@@ -1199,6 +1203,13 @@ class TaskTrackingComponent:
             logBuf = self.__logToBuf__(logBuf, "ERROR: " + str(traceback.format_exc()))
 
         logging.info(logBuf)
+
+        try:
+            mySession.bossLiteDB.close()
+            del mySession
+        except:
+            logging.info("not closed..")
+            pass
 
         time.sleep(float(self.args['PollInterval']))
 
