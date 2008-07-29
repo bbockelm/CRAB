@@ -97,7 +97,7 @@ wget -nv -O ${MYTESTAREA}/CA_RPM_list.html http://glitesoft.cern.ch/LCG-CAs/curr
 CA_RPM_list=`grep RPMS.production ${MYTESTAREA}/CA_RPM_list.html | cut -c 27- | grep -Eo .*\.rpm\> | rev | cut -c 2- | rev `;
 rm -f ${MYTESTAREA}/CA_RPM_list.html
 
-LCG_RPM_list="lcg-vomscerts-4.9.0-1.noarch.rpm"
+LCG_RPM_list="lcg-vomscerts-5.0.0-1.noarch.rpm"
 VDT_RPM_list="vdt_globus_essentials-VDT1.6.0x86_rhas_4-1.i386.rpm myproxy-VDT1.6.0x86_rhas_4-1.i386.rpm"
 API_RPM_list="glite-security-voms-api-c-1.7.16-2.slc4.i386.rpm gridsite-shared-1.1.18.1-1.i386.rpm"
 PROXY_RPM_list="glite-security-proxyrenewal-1.3.4-2.slc4.i386.rpm"
