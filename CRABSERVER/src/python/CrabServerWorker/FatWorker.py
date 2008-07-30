@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.100 2008/07/25 17:42:54 afanfani Exp $"
-__version__ = "$Revision: 1.100 $"
+__revision__ = "$Id: FatWorker.py,v 1.101 2008/07/30 07:52:26 farinafa Exp $"
+__version__ = "$Revision: 1.101 $"
 import string
 import sys, os
 import time
@@ -79,7 +79,7 @@ class FatWorker(Thread):
         return
             
     def run(self):
-        self.log.info("FatWorker %s initialized"%self.myName)
+        self.log.info("FatWorker %s initialized: task %s"%(self.myName, self.taskName) )
         taskObj = None
         self.local_queue.put((self.myName, "CrabServerWorkerComponent:CommandArrival", self.taskName))
         if not self.parseCommandXML() == 0:
@@ -131,7 +131,7 @@ class FatWorker(Thread):
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. postSubmission"%(self.myName, self.taskName) )
             return
-        self.log.info("FatWorker %s finished"%self.myName)
+        self.log.info("FatWorker %s finished: task %s"%(self.myName, self.taskName) )
         return
 
     def sendResult(self, status, reason, logMsg):
