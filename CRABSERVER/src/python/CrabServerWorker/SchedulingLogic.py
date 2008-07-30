@@ -80,16 +80,18 @@ class SchedulingLogic:
                     qItem['retryCounter'] = retryCounter
                     
             self.schedMapSubmissions[taskName] = qItem
+
         elif event == 'ResubmitJob':
             if taskName in self.schedMapResubmissions:
                 qItem.update( self.schedMapResubmissions[taskName] )
-            
+            # fill attributes            
             qItem['rng'] = list(set( qItem['rng'] + cmdRngList ))
             qItem['bannedSites'] = list(set( qItem['bannedSites'] + siteToBan.split(',') ))
             qItem['retryCounter'] = retryCounter
-            qItem['deadline'] = time.time() + 3.0 * self.sleepTime
+            qItem['deadline'] = time.time() + self.sleepTime
             
-            self.schedMapResubmissions[taskName] = qItem 
+            self.schedMapResubmissions[taskName] = qItem
+ 
         else:
             self.log.info("Unknown scheduling request will be ignored for %s"%taskName)
             self.log.debug(itemToInsert)
@@ -114,13 +116,12 @@ class SchedulingLogic:
         # let's start with an easy FIFO
         # sort the map values according the chosen criteria
         #     e.g. of the sorted + lambda usage
-        #     sorted(l, lambda x,y: cmp(y['c'],x['c']) or cmp(y['b'],x['b']) )
-
+        #     sorted(l, lambda x,y: cmp(y['c'], x['c']) or cmp(y['b'], x['b']) )
         schedList = []
         schedList += sorted(self.schedMapSubmissions.values(), lambda x,y: cmp(x['deadline'], y['deadline']) )
+
         # SJF/Min-Min: lambda x,y:  cmp(x['deadline'], y['deadline']) or cmp(len(x['rng']), len(y['rng'])) ) 
-        
-        if len(schedList)>0:
+        if len(schedList) > 0:
             self.log.debug("Scheduling order (submit): %s"%str(schedList)) 
             for s in schedList:
                 payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])  
@@ -134,10 +135,13 @@ class SchedulingLogic:
         schedList = [] + self.schedMapResubmissions.values()
 
         # filter on deadline expiration
-        schedList = [i for i in schedList if i['deadline'] > curT]
-        
+        schedList = [i for i in schedList if curT > i['deadline'] ]
         if len(schedList)>0:
-            self.log.debug("Scheduling order (resubmit): %s"%str(schedList)) 
+            
+            # TODO: turn this to debug once verified everything works correctly # Fabio
+            self.log.info("Scheduling order (resubmit): %s"%str(schedList)) 
+            #
+ 
             for s in schedList:
                 payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])
                 del self.schedMapResubmissions[ s['taskName'] ] 

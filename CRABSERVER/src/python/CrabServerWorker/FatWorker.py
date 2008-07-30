@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.98 2008/07/25 14:00:30 farinafa Exp $"
-__version__ = "$Revision: 1.98 $"
+__revision__ = "$Id: FatWorker.py,v 1.100 2008/07/25 17:42:54 afanfani Exp $"
+__version__ = "$Revision: 1.100 $"
 import string
 import sys, os
 import time
@@ -59,19 +59,18 @@ class FatWorker(Thread):
         self.ce_blackL = [] + self.configs['ce_dynBList']
         self.ce_whiteL = []
         self.wmsEndpoint = self.configs['wmsEndpoint']
-       
         self.local_queue = self.configs['messageQueue']
  
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, pool=self.configs['blSessionPool'])
         self.blSchedSession = None
+        self.paDbSessionName = "%s_%s"%(self.myName, self.taskName)
         self.apmon = ApmonIf()
 
+        dbCfg = copy.deepcopy(dbConfig)
+        dbCfg['dbType'] = 'mysql'
         try:
-            dbCfg = copy.deepcopy(dbConfig)
-            dbCfg['dbType'] = 'mysql'
             Session.set_database(dbCfg)
-
             self.start()
         except Exception, e:
             self.log.info('FatWorker exception : %s'%self.myName)
@@ -80,14 +79,10 @@ class FatWorker(Thread):
         return
             
     def run(self):
-        Session.connect(self.taskName)
         self.log.info("FatWorker %s initialized"%self.myName)
-
         taskObj = None
         self.local_queue.put((self.myName, "CrabServerWorkerComponent:CommandArrival", self.taskName))
-        
         if not self.parseCommandXML() == 0:
-            Session.close(self.taskName)
             return
 
         self.log.info("FatWorker %s loading task"%self.myName)
@@ -97,12 +92,10 @@ class FatWorker(Thread):
             self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), \
                 "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) )
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
-            Session.close(self.taskName)
             return
        
         self.log.info("FatWorker %s allocating submission system session"%self.myName)
         if not self.allocateBossLiteSchedulerSession(taskObj) == 0:
-            Session.close(self.taskName)
             return
 
         self.log.info('FatWorker %s preparing submission'%self.myName) 
@@ -114,7 +107,6 @@ class FatWorker(Thread):
         except Exception, e:
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. preSubmissionCheck"%(self.myName, self.taskName) )
-            Session.close(self.taskName)
             return
  
         try:
@@ -122,7 +114,6 @@ class FatWorker(Thread):
         except Exception, e:
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. listMatch"%(self.myName, self.taskName) )
-            Session.close(self.taskName)
             return
 
         self.log.info("FatWorker %s performing submission"%self.myName) 
@@ -131,7 +122,6 @@ class FatWorker(Thread):
         except Exception, e:
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. sumbit %s"%(self.myName, self.taskName, errorTrace) )
-            Session.close(self.taskName)
             return
 
         self.log.info("FatWorker %s evaluating submission outcomes"%self.myName)
@@ -140,11 +130,8 @@ class FatWorker(Thread):
         except Exception, e:
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. postSubmission"%(self.myName, self.taskName) )
-            Session.close(self.taskName)
             return
-
         self.log.info("FatWorker %s finished"%self.myName)
-        Session.close(self.taskName)
         return
 
     def sendResult(self, status, reason, logMsg):
@@ -339,7 +326,6 @@ class FatWorker(Thread):
             unmatchedJobs, nonSubmittedJobs, skippedJobs):
 
         resubmissionList = list( set(submittableRange).difference(set(submittedJobs)) )
-
         self.log.info("Worker. Task %s (%d jobs): submitted %d unmatched %d notSubmitted %d skipped %d"%(self.taskName, \
             len(submittableRange), len(submittedJobs), len(unmatchedJobs), len(nonSubmittedJobs), len(skippedJobs) )    )
         self.log.debug("Task %s\n"%self.myName + "jobs : %s \nsubmitted %s \nunmatched %s\nnotSubmitted %s\nskipped %s"%(str(submittableRange), \
@@ -356,14 +342,27 @@ class FatWorker(Thread):
             self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. Successful complete submission for task %s"%self.taskName )
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName))
 
-            Session.start_transaction(self.taskName)
+            onDemandRegDone = False
+            Session.connect(self.paDbSessionName)
+            Session.start_transaction(self.paDbSessionName)
             for j in taskObj.jobs:
                 if j['jobId'] in submittedJobs:
                     try:
-                        if wfJob.exists(j['name']) and not (wfJob.get(j['name'])['status'] == 'inProgress'):
+                        genJTstate = {}
+                        genJTstate.update( JobState.general(job['name']) )
+
+                        # in case the job shouldn't be registered 
+                        if len(genJTstate) == 0 and onDemandRegDone == False :
+                            self.registerTask(taskObj)
+                            onDemandRegDone = True
+
+                        # update the job status properly
+                        if genJTstate['state'] == 'create':
                             wfJob.setState(j['name'], 'inProgress')
-                    except Exception, e: continue  
-            Session.commit(self.taskName)
+                    except Exception, e: 
+                        continue  
+            Session.commit(self.paDbSessionName)
+            Session.close(self.paDbSessionName)
             return        
         else:
             ## some jobs need to be resubmitted later
@@ -395,10 +394,16 @@ class FatWorker(Thread):
                     if j['jobId'] in toMarkAsFailed:
                         jobSpecId.append(j['name'])
 
-                Session.start_transaction(self.taskName)
+                Session.connect(self.paDbSessionName)
+                Session.start_transaction(self.paDbSessionName)
                 JobState.doNotAllowMoreSubmissions(jobSpecId)
-                for jId in jobSpecId: wfJob.setState(jId, 'reallyFinished')
-                Session.commit(self.taskName)
+                for jId in jobSpecId:
+                    try: 
+                        wfJob.setState(jId, 'reallyFinished')
+                    except Exception, e:
+                        continue
+                Session.commit(self.paDbSessionName)
+                Session.close(self.paDbSessionName)
             except Exception,e:
                 self.log.info("Unable to mark failed jobs in WorkFlow Entities ")
                 self.log.info( traceback.format_exc() )
@@ -414,24 +419,37 @@ class FatWorker(Thread):
     # Auxiliary methods
 ####################################
     def registerTask(self, taskArg):
-        Session.start_transaction(self.taskName)
+        Session.connect(self.paDbSessionName)
+        Session.start_transaction(self.paDbSessionName)
+
         for job in taskArg.jobs:
             jobName = job['name']
             cacheArea = self.wdir + '/' + self.taskName + '_spec/%s'%jobName
             jobDetails = {'id':jobName, 'job_type':'Processing', 'max_retries':self.configs['maxRetries'], 'max_racers':1, 'owner':self.taskName}
+            jobAlreadyRegistered = False
             try:
-                if not wfJob.exists(jobName):
-                    wfJob.register(jobName, None, jobDetails)
-                    wfJob.setState(jobName, 'register')
-                    wfJob.setState(jobName, 'create')
-                    wfJob.setCacheDir(jobName, cacheArea)
-                    # wfJob.setState(jobName, 'inProgress')
-                    continue
+                jobAlreadyRegistered = wfJob.exists(jobName) or len( JobState.general(jobName) ) > 0
+            except Exception, e:
+                self.log.debug('Error while checking job registration: assuming %s as not registered'%jobName)
+                jobAlreadyRegistered = False
+
+            if jobAlreadyRegistered == True: 
+                continue
+
+            self.log.debug('Registering %s'%jobName)
+            try:
+                wfJob.register(jobName, None, jobDetails)
+                wfJob.setState(jobName, 'register')
+                wfJob.setState(jobName, 'create')
+                wfJob.setCacheDir(jobName, cacheArea)
             except Exception, e:
                 self.log.info('Error while registering job for JT: %s'%jobName)
-                Session.rollback(self.taskName)
+                Session.rollback(self.paDbSessionName)
+                Session.close(self.paDbSessionName)
                 return 1
-        Session.commit(self.taskName)
+            self.log.debug('Registration for %s performed'%jobName)
+        Session.commit(self.paDbSessionName)
+        Session.close(self.paDbSessionName)
         return 0    
 
     def submissionListCreation(self, taskObj, jobRng):

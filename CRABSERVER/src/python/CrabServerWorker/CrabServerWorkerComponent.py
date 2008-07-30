@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.57 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.57 2008/07/23 15:06:10 farinafa Exp $"
+__version__ = "$Revision: 1.58 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.58 2008/07/24 09:53:31 farinafa Exp $"
 
 import os, pickle, time
 
@@ -59,7 +59,7 @@ class CrabServerWorkerComponent:
         logFormatter = logging.Formatter("%(asctime)s:%(message)s")
         logHandler.setFormatter(logFormatter)
         logging.getLogger().addHandler(logHandler)
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.INFO)
 
         # component resources
         if self.args['storagePath'] == None and self.args['Protocol'] == 'local': 
@@ -116,7 +116,7 @@ class CrabServerWorkerComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:EndDebug")
         
         # initialize the local message services pool and schedule logic
-        self.schedLogic = SchedulingLogic(self.maxThreads, logging, self.fwResultsQ, 3.0*self.ms.pollTime )
+        self.schedLogic = SchedulingLogic(self.maxThreads, logging, self.fwResultsQ, 10*self.ms.pollTime )
 
         self.dematerializeStatus()   
         try:
