@@ -12,10 +12,6 @@ from MessageService.MessageService import MessageService
 from TaskTracking.UtilSubject import UtilSubject
 from TaskTracking.TaskStateAPI import findTaskPA, getStatusUUIDEmail
 
-from ProdAgentDB.Config import defaultConfig as dbConfig
-from ProdCommon.Database import Session
-from ProdCommon.Database.MysqlInstance import MysqlInstance
-
 # Blite API import
 from ProdCommon.BossLite.API.BossLiteAPI import  BossLiteAPI
 from ProdCommon.BossLite.Common.Exceptions import TaskError, JobError
@@ -217,21 +213,6 @@ class ProxyLife:
                 joblist.append(tupla[0])
 
         return joblist
-
-    def checkResubmit(self, jobspecid):
-        from ProdAgent.WorkflowEntities import Job as wfJob
-
-        dbCfg = copy.deepcopy(dbConfig)
-        dbCfg['dbType'] = 'mysql'
-        Session.connect(jobspecid)
-        ## get info from we_job table
-        jobInfo = wfJob.get(jobspecid)
-        Session.close(jobspecid)
-
-        if int(jobInfo['retries']) >= int(jobInfo['max_retries']):
-           return True
-        else:
-            return False
 
     def archiveServerTask(self, taskname):
         #from ProdAgent.WorkflowEntities.JobState import doNotAllowMoreSubmissions
