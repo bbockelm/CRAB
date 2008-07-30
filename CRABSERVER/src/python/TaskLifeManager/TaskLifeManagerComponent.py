@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.20 2008/06/04 14:03:54 mcinquil Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.24 2008/06/11 15:02:33 mcinquil Exp $"
+__version__ = "$Revision: 1.24 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -740,7 +740,7 @@ class TaskLifeManagerComponent:
 
         logging.info(" Publishing ['"+ mexage +"']")
         logging.info("   payload = " + payload )
-        self.ms.publish( mexage, payload, "00:00:20" )
+        self.ms.publish( mexage, payload, "00:00:60" )
         self.ms.commit()
 
     def notifyCleaning( self, taskName, toLive, owner, mails ):
