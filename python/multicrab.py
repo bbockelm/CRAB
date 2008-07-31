@@ -140,14 +140,14 @@ class MultiCrab:
             pass
 
         self.cfg_params_dataset = {}
-        common_opts = []
+        common_opts = {}
         # first get common sections
         for sec in self.cfg_params:
             if sec in ['MULTICRAB']:
                 cfg_common=self.cfg_params[sec]
                 continue
             if sec in ['COMMON']:
-                common_opts.append(self.cfg_params[sec])
+                common_opts=self.cfg_params[sec]
                 continue
             pass
 
@@ -156,8 +156,8 @@ class MultiCrab:
             if sec in ['MULTICRAB', 'COMMON']: continue
             self.cfg_params_dataset[sec]=self.cfg_params[sec]
             # add common to all dataset
-            for opt in common_opts:
-                self.cfg_params_dataset[sec]=opt
+            for key in common_opts:
+                self.cfg_params_dataset[sec][key]=common_opts[key]
             pass
 
         self.cfg=cfg_common['cfg']
@@ -202,7 +202,7 @@ class MultiCrab:
             for opt in self.opts:
                 options[opt]=self.opts[opt]
             try:
-                # print options
+                #print options
                 crab = Crab(options)
                 crab.run()
                 common.apmon.free()
