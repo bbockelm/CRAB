@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.86 2008/07/03 07:20:47 spiga Exp $"
-__version__ = "$Revision: 1.86 $"
+__revision__ = "$Id: FatWorker.py,v 1.86.2.1 2008/07/31 19:06:09 ewv Exp $"
+__version__ = "$Revision: 1.86.2.1 $"
 import string
 import sys, os
 import time
@@ -47,10 +47,10 @@ class FatWorker(Thread):
 
         try:
             self.proxy = configs['proxy']
-            self.brokerName = configs['rb'] 
+            self.brokerName = configs['rb']
             self.taskName = configs['taskname']
             self.resubCount = int(configs['resubCount'])
-            self.wdir = configs['wdir'] 
+            self.wdir = configs['wdir']
             self.submissionKind = configs['submitKind']
             self.SEproto = configs['SEproto']
             self.SEurl = configs['SEurl']
@@ -64,23 +64,23 @@ class FatWorker(Thread):
 
         except Exception, e:
             self.log.info('Missing parameters in the Worker configuration')
-            self.log.info( traceback.format_exc() ) 
-        
+            self.log.info( traceback.format_exc() )
+
 
         # Mandatory parameters for local usage (e.g. caf) #Ds
-        if configs['allow_anonymous'] !=0 : 
+        if configs['allow_anonymous'] !=0 :
             try:
                 self.proxy == None
                 self.cpCmd = configs['cpCmd']
                 self.rfioServer = configs['rfioServer']
             except Exception, e:
                 self.log.info('Missing parameters in the Worker configuration')
-                self.log.info( traceback.format_exc() ) 
+                self.log.info( traceback.format_exc() )
 
         # derived attributes
         self.local_ms = MessageService()
         self.local_ms.registerAs( '_'.join(self.myName.split('_')[:2]) )
-        
+
         self.blDBsession = BossLiteAPI('MySQL', dbConfig)
         self.blSchedSession = None
         self.schedulerConfig = {}
@@ -104,7 +104,7 @@ class FatWorker(Thread):
             self.apmon.free()
             return
 
-        # Parse the XML files (cmd CfgParamDict needed by ErrHand resub too) 
+        # Parse the XML files (cmd CfgParamDict needed by ErrHand resub too)
         taskDir = os.path.join(self.wdir, self.taskName + '_spec/' )
         try:
             cmdSpecFile = taskDir + 'cmd.xml'
@@ -134,21 +134,23 @@ class FatWorker(Thread):
 
         self.apmon.free()
         pass
-        
+
     def run(self):
         ## Warm up phase
         self.schedulerConfig.update( {'user_proxy' : self.proxy} )
         self.schedName = str( self.cmdXML.getAttribute('Scheduler') )
-        
+
         if self.schedName.lower() in ['glite', 'glitecoll']:
-            self.schedulerConfig['name'] = 'SchedulerGLiteAPI' 
+            self.schedulerConfig['name'] = 'SchedulerGLiteAPI'
             self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
             if self.wmsEndpoint:
                 self.schedulerConfig['service'] = self.wmsEndpoint
 
         elif self.schedName.lower() == 'condor_g':
-            self.schedulerConfig['name'] = 'SchedulerCondorG' 
-            self.schedulerConfig['tmpDir'] = '/tmp/' 
+            self.schedulerConfig['name'] = 'SchedulerCondorG'
+            self.log.info('Global WD = %s' % self.wdir) # task['globalSandbox'])
+            self.log.info('Task Name = %s' % self.taskName)
+            self.schedulerConfig['tmpDir'] = '/tmp/' # HACK
             self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
             if self.wmsEndpoint:
                 self.schedulerConfig['service'] = self.wmsEndpoint
@@ -157,9 +159,9 @@ class FatWorker(Thread):
             pass
 
         elif self.schedName.lower() in ['lsf','caf']:
-            self.schedulerConfig['name']    = 'SchedulerLsf' 
-            self.schedulerConfig['cpCmd']   = self.cpCmd 
-            self.schedulerConfig['rfioSer'] = self.rfioServer 
+            self.schedulerConfig['name']    = 'SchedulerLsf'
+            self.schedulerConfig['cpCmd']   = self.cpCmd
+            self.schedulerConfig['rfioSer'] = self.rfioServer
 
         # Prepare filter lists for matching sites
         if 'glite' in self.schedName:
@@ -195,9 +197,9 @@ class FatWorker(Thread):
         return
 
 ####################################
-    # Submission methods 
+    # Submission methods
 ####################################
-    
+
     def submissionDriver(self):
         taskObj = None
         newRange = None
@@ -215,8 +217,8 @@ class FatWorker(Thread):
             ## create a new task object in the boss session and register its jobs to PA core
             self.local_ms.publish("CrabServerWorkerComponent:TaskArrival", self.taskName)
             self.local_ms.commit()
-          
-            try: 
+
+            try:
                 taskObj = self.blDBsession.declare(self.taskXML, self.proxy)
                 self.log.info('Worker %s submitting a new task'%self.myName)
             except Exception, e:
@@ -225,15 +227,15 @@ class FatWorker(Thread):
 
                 # force the other computation branch
                 self.submissionKind = 'subsequent'
-                taskObj = None 
+                taskObj = None
                 pass
 
         if taskObj == None and self.submissionKind == 'subsequent':
-            ## retrieve the task from the boss session 
+            ## retrieve the task from the boss session
             self.local_ms.publish("CrabServerWorkerComponent:CommandArrival", self.taskName)
             self.local_ms.commit()
 
-            try:  
+            try:
                 taskObj = self.blDBsession.loadTaskByName(self.cmdXML.getAttribute('Task'))
             except Exception, e:
                 self.log.info("Error loading %s"%str(self.cmdXML.getAttribute('Task')) )
@@ -243,17 +245,17 @@ class FatWorker(Thread):
             self.log.info('Worker %s submitting a new command on a task'%self.myName)
 
             # resubmission of retrieved jobs
-            meaningfulRng = eval(str(self.cmdXML.getAttribute('Range')), {}, {}) 
+            meaningfulRng = eval(str(self.cmdXML.getAttribute('Range')), {}, {})
             if taskObj is not None:
                 needUpd = False
                 for j in taskObj.jobs:
-                    if j.runningJob['closed'] == 'Y' and j['jobId'] in meaningfulRng:  
-                        needUpd = True  
+                    if j.runningJob['closed'] == 'Y' and j['jobId'] in meaningfulRng:
+                        needUpd = True
                         self.blDBsession.getNewRunningInstance(j)
                         j.runningJob['status'] = 'C'
                         j.runningJob['statusScheduler'] = 'Created'
                 if needUpd:
-                    self.blDBsession.updateDB(taskObj)  
+                    self.blDBsession.updateDB(taskObj)
 
         ## failed to load
         if taskObj is None:
@@ -271,9 +273,9 @@ class FatWorker(Thread):
         nonSubmittedJobs = [] + newRange
         matched = []
         unmatched = []
- 
+
         if len(newRange) > 0:
-            sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange) 
+            sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
             if len(matched) > 0:
                 submittedJobs, nonSubmittedJobs = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
             else:
@@ -282,7 +284,7 @@ class FatWorker(Thread):
             self.log.info('Worker %s unable to submit jobs. File missing on SE'%self.myName)
 
         self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
-        return 
+        return
 
     def preSubmissionCheck(self, task, rng):
         newRange = eval(rng)  # a-la-CRAB range expansion and Boss ranges (1 starting)
@@ -290,14 +292,14 @@ class FatWorker(Thread):
         tryToSubmitMask = ['C', 'A', 'RC', 'Z'] + ['K','Y','D','E']
         skippedSubmissions = []
 
-        ## check if the input sandbox is already on the right SE 
+        ## check if the input sandbox is already on the right SE
         taskFileList = task['globalSandbox'].split(',')
         try:
             for f in taskFileList:
                 remoteFile = os.path.join( str(self.cfg_params['CRAB.se_remote_dir']), f)
                 checkCount = 3
 
-                fileFound = False 
+                fileFound = False
                 while (checkCount > 0):
                     seEl = SElement(self.SEurl, self.SEproto, self.SEport)
                     sbi = SBinterface( seEl )
@@ -306,25 +308,25 @@ class FatWorker(Thread):
                         break
                     checkCount -= 1
                     self.log.info("Worker %s. Checking file %s"%(self.myName, remoteFile))
-                    time.sleep(15) 
+                    time.sleep(15)
                     pass
 
-                if fileFound == False: 
-                    self.log.info("Worker %s. Missing file %s"%(self.myName, remoteFile)) 
+                if fileFound == False:
+                    self.log.info("Worker %s. Missing file %s"%(self.myName, remoteFile))
                     return [], newRange
 
             # get TURL for WMS bypass
-            if len(taskFileList) > 0 and self.schedName.lower() not in ['condor_g']: 
+            if len(taskFileList) > 0 and self.schedName.lower() not in ['condor_g','glidein']:
                 self.TURLpreamble = sbi.getTurl( taskFileList[0], self.proxy )
                 self.TURLpreamble = self.TURLpreamble.split(taskFileList[0])[0]
                 if self.TURLpreamble:
                     if self.TURLpreamble[-1] != '/':
-                        self.TURLpreamble += '/' 
-           
+                        self.TURLpreamble += '/'
+
         except Exception, e:
             self.log.info( traceback.format_exc() )
             return [], newRange
-        
+
         for j in task.jobs:
             if (j['jobId'] in newRange):
                 try:
@@ -348,7 +350,7 @@ class FatWorker(Thread):
 
     def submitTaskBlocks(self, task, sub_jobs, reqs_jobs, matched):
         unsubmitted = [] # list of all the jId hadled. Used to check the number of successful jubmissions
-        submitted = [] 
+        submitted = []
 
         # modify sandbox and other paths for WMS bypass
         self.log.debug("Worker %s. Reference TURL: %s"%(self.myName,self.TURLpreamble) )
@@ -359,12 +361,12 @@ class FatWorker(Thread):
             task['scriptName'] = self.TURLpreamble + task['scriptName']
             task['cfgName'] = self.TURLpreamble + task['cfgName']
 
-        if not self.submissionKind == 'first': 
+        if not self.submissionKind == 'first':
             # backup for job output (tgz files only, less load)
             fullSubJob = []
-            for sub in sub_jobs:  
+            for sub in sub_jobs:
                 fullSubJob += sub
-  
+
             for jid in task.jobs:
                 if jid not in fullSubJob:
                     continue
@@ -385,10 +387,10 @@ class FatWorker(Thread):
                         continue
             pass
 
-        # file lists correction 
+        # file lists correction
         for jid in xrange(len(task.jobs)):
             gsiOSB = [ os.path.basename(of) for of in  task.jobs[jid]['outputFiles']  ]
-            task.jobs[jid]['outputFiles'] = gsiOSB 
+            task.jobs[jid]['outputFiles'] = gsiOSB
 
             if 'crab_fjr_%d.xml'%(jid+1) not in task.jobs[jid]['outputFiles']:
                 task.jobs[jid]['outputFiles'].append( 'crab_fjr_%d.xml'%(jid+1) ) #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
@@ -396,7 +398,7 @@ class FatWorker(Thread):
             if '.BrokerInfo' not in task.jobs[jid]['outputFiles'] and self.schedName.lower() not in ['condor_g','glidein']:
                 task.jobs[jid]['outputFiles'].append( '.BrokerInfo' )
 
-        self.blDBsession.updateDB(task) 
+        self.blDBsession.updateDB(task)
 
         ##send here pre submission info to ML DS
         self.SendMLpre(task)
@@ -408,13 +410,13 @@ class FatWorker(Thread):
             sub_bulk = []
             bulk_window = 200
             if len(sub_jobs[ii]) > bulk_window:
-                n_sub_bulk = int( int(len(sub_jobs[ii]) ) / bulk_window ) 
+                n_sub_bulk = int( int(len(sub_jobs[ii]) ) / bulk_window )
                 for n in xrange(n_sub_bulk):
                     first = n*bulk_window
                     last = (n+1)*bulk_window
                     if last > len(sub_jobs[ii]):
                         last = len(sub_jobs[ii])
-  
+
                     sub_bulk.append(sub_jobs[ii][first:last])
 
                 if len(sub_jobs[ii][last:-1]) < bulk_window/8:
@@ -426,7 +428,7 @@ class FatWorker(Thread):
             try:
                 if len(sub_bulk)>0:
                     count = 1
-                    for sub_list in sub_bulk: 
+                    for sub_list in sub_bulk:
                         self.blSchedSession.submit(task['id'], sub_list,reqs_jobs[ii])
                         self.log.info("Worker submitted sub collection # %s "%(count))
                         count += 1
@@ -440,7 +442,7 @@ class FatWorker(Thread):
 
             # check if submitted
             parentIds = {}
-            for j in task.jobs: 
+            for j in task.jobs:
                 self.blDBsession.getRunningInstance(j)
                 if j.runningJob['schedulerId']:
                     parentIds[str(j.runningJob['schedulerParentId'])] = ''
@@ -450,15 +452,15 @@ class FatWorker(Thread):
 
                     j.runningJob['status'] = 'S'
                     j.runningJob['statusScheduler'] = 'Submitted'
- 
-           
-            parentIds = ','.join(parentIds.keys()) 
+
+
+            parentIds = ','.join(parentIds.keys())
             self.log.info("Parent IDs for task %s: %s"%(self.taskName, parentIds) )
             self.blDBsession.updateDB( task )
             ## send here post submission info to ML DS
             self.SendMLpost( task, sub_jobs[ii] )
             # note: this must be done after update, otherwise jobIds will be None
-        return submitted, unsubmitted 
+        return submitted, unsubmitted
 
 ####################################
     # Resubmission driver
@@ -470,7 +472,7 @@ class FatWorker(Thread):
         except Exception, e:
             task = None
             pass
-        
+
         if not task or len(task.jobs)==0:
             status = 6
             reason = "Error loading task for %s, the attempts will be stopped"%self.myName
@@ -478,11 +480,11 @@ class FatWorker(Thread):
             self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
             self.local_ms.commit()
             return
- 
+
         job = task.jobs[0]
         self.blDBsession.getRunningInstance(job)
 
-        # no more attempts  
+        # no more attempts
         dbCfg = copy.deepcopy(dbConfig)
         dbCfg['dbType'] = 'mysql'
         Session.set_database(dbCfg)
@@ -497,8 +499,8 @@ class FatWorker(Thread):
             # force the following condition to be true
             jobInfo['retries'] = 1
             jobInfo['max_retries'] = 0
-            pass  
- 
+            pass
+
         if int(jobInfo['retries']) >= int(jobInfo['max_retries']):
             status = 6
             reason = "No more attempts for resubmission for %s, the attempts will be stopped"%self.myName
@@ -577,7 +579,7 @@ class FatWorker(Thread):
         # simple container to move _small_ portions of the cfg to server
         self.EDG_retry_count = int(self.cfg_params['EDG_retry_count'])
         self.EDG_shallow_retry_count = int(self.cfg_params['EDG_shallow_retry_count'])
- 
+
         # get the turl
         seEl = SElement(self.SEurl, self.SEproto, self.SEport)
         sbi = SBinterface( seEl )
@@ -588,7 +590,7 @@ class FatWorker(Thread):
             if self.TURLpreamble[-1] != '/':
                 self.TURLpreamble += '/'
 
-        # submit once again 
+        # submit once again
         sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(task, [int(self.jobId)])
         self.log.info('Worker %s listmatched jobs, now submitting'%self.myName)
 
@@ -611,14 +613,14 @@ class FatWorker(Thread):
         Session.connect(self.taskName)
         Session.start_transaction(self.taskName)
 
-        # TODO avoid SQL interactions 
+        # TODO avoid SQL interactions
         sqlStr="UPDATE we_Job SET retries=retries+1 WHERE id='%s' "%job['name']
         Session.execute(sqlStr)
 
         Session.commit(self.taskName)
         Session.close(self.taskName)
 
-        return   
+        return
 
 ####################################
     # Results propagation methods
@@ -636,7 +638,7 @@ class FatWorker(Thread):
 
         ## if all the jobs have been submitted send a success message
         if len(resubmissionList) == 0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs) == 0:
-            # update state in WE for succesfull jobs OR insert a new entry if first submission 
+            # update state in WE for succesfull jobs OR insert a new entry if first submission
             if self.registerTask(taskObj) != 0:
                 self.sendResult(10, "Unable to register task %s. Causes: deserialization, saving, registration "%(self.taskName), \
                     "WorkerError %s. Error while registering jobs for task %s."%(self.myName, self.taskName) )
@@ -662,7 +664,7 @@ class FatWorker(Thread):
                             #wfJob.setState(j['name'], 'submit')
                             wfJob.setState(j['name'], 'inProgress')
                     except Exception, e:
-                        continue  
+                        continue
 
             Session.commit(self.taskName)
             Session.close(self.taskName)
@@ -691,7 +693,7 @@ class FatWorker(Thread):
                 # determine the failure reason
                 reason = "simplyFailed"
                 if len(unmatchedJobs)>0:
-                    reason = "unmatched"  
+                    reason = "unmatched"
                 elif len(nonSubmittedJobs)>0:
                     reason = "wmsNotSubmitted"
                 elif len(skippedJobs)>0:
@@ -732,7 +734,7 @@ class FatWorker(Thread):
                 self.local_ms.publish("CrabServerWorkerComponent:SubmitNotSucceeded", self.taskName + "::" + str(status) + "::" + reason)
                 self.local_ms.commit()
                 self.log.info("Worker %s has no more attempts: give up with task %s"%(self.myName, self.taskName) )
-                return 
+                return
 
             self.resubCount -= 1
             payload = self.taskName+"::"+str(self.resubCount)
@@ -754,7 +756,7 @@ class FatWorker(Thread):
 
     def registerTask(self, taskArg):
 
-        # register in workflow  
+        # register in workflow
         try:
             dbCfg = copy.deepcopy(dbConfig)
             dbCfg['dbType'] = 'mysql'
@@ -779,7 +781,7 @@ class FatWorker(Thread):
                 except Exception, e:
                     self.log.info('Error checking if job is already registered in WF-Entities.')
                     continue
- 
+
             Session.commit(self.taskName)
             Session.close(self.taskName)
         except Exception, e:
@@ -788,7 +790,7 @@ class FatWorker(Thread):
             Session.rollback(self.taskName)
             Session.close(self.taskName)
             return 1
-        return 0    
+        return 0
 
     def submissionListCreation(self, taskObj, jobRng):
         '''
@@ -813,17 +815,17 @@ class FatWorker(Thread):
         count = 0
 
         for distDest in distinct_dests:
-             # get job_ids for a specific destination 
+             # get job_ids for a specific destination
              jobs_per_dest = []
              for j in taskObj.jobs:
                  if str(distDest) == str( j['dlsDestination'] ):
                      jobs_per_dest.append(j['jobId'])
              all_jobs.append( [] + jobs_per_dest )
-             
-             # prune by range 
+
+             # prune by range
              sub_jobs_temp = []
              for i in jobRng:
-                 if i in all_jobs[count]: 
+                 if i in all_jobs[count]:
                      sub_jobs_temp.append(i)
 
              # select match candidate
@@ -833,18 +835,18 @@ class FatWorker(Thread):
                  count += 1
              pass
 
-        # ListMatch 
+        # ListMatch
         sel = 0
         matched = []
         unmatched = []
 
         for id_job in jobs_to_match:
             # Get JDL requirements
-            if "GLITE" in self.schedName.upper(): 
+            if "GLITE" in self.schedName.upper():
                 tags_tmp = str(taskObj['jobType']).split('"')
                 tags = [str(tags_tmp[1]),str(tags_tmp[3])]
                 requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
-            elif self.schedName.upper()== "CONDOR_G":
+            elif self.schedName.lower()== "condor_g":
                 requirements.append( self.sched_parameter_Condor() )
 		tags = ''
             elif self.schedName.upper() in [ "LSF", "CAF"]:
@@ -852,18 +854,16 @@ class FatWorker(Thread):
                 tags = ''
             else:
                 continue
-            self.log.info("Shcheduler is %s "%self.schedName)
-            self.log.info("Tags are %s"%tags)
-	    
+
             # Perform listMatching
-	    if self.schedName.upper() == "CONDOR_G":
+            if self.schedName.lower()== "condor_g":
                 match = "1"
             elif self.submissionKind != 'errHdlTriggered':
                 cleanedList = None
                 if len(distinct_dests[sel])!=0:
                     cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
 
-                sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL) 
+                sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL)
                 match = len( sites )
             else:
                 match = "1"
@@ -873,7 +873,7 @@ class FatWorker(Thread):
                unmatched.append(sel)
             sel += 1
 
-        # all done and matched, go on with the submission 
+        # all done and matched, go on with the submission
         return sub_jobs, requirements, matched, unmatched
 
 #########################################################
@@ -1014,7 +1014,7 @@ class FatWorker(Thread):
     def sched_parameter_Lsf(self, i, task):
 
         sched_param= ''
-        resDir= "/".join((task['globalSandbox'].split(',')[0]).split('/')[:-1])  
+        resDir= "/".join((task['globalSandbox'].split(',')[0]).split('/')[:-1])
         queue =  'cmscaf' ### ToBeAddede in cfg.xml file
         res = 'cmscaf'
         if (queue):
@@ -1025,15 +1025,13 @@ class FatWorker(Thread):
        # sched_param+='-cwd '+resDir + ' '
         return sched_param
 
-        return
-
     def sched_parameter_Glite(self, i, task):
         if self.submissionKind != 'errHdlTriggered':
-            dest = task.jobs[i-1]['dlsDestination'] # shift due to BL ranges 
+            dest = task.jobs[i-1]['dlsDestination'] # shift due to BL ranges
         else:
             dest = task.jobs[0]['dlsDestination']
 
-        sched_param = 'Requirements = ' + task['jobType'] 
+        sched_param = 'Requirements = ' + task['jobType']
 
         req=''
 
@@ -1044,7 +1042,7 @@ class FatWorker(Thread):
             req += ' other.GlueCEPolicyMaxCPUTime>=' + self.cfg_params['EDG.max_cpu_time']
 
         sched_param += req + self.se_list(i, dest) + self.ce_list() +';\n' ## BL--DS
-        #if self.EDG_addJdlParam: 
+        #if self.EDG_addJdlParam:
         #    sched_param+=self.jdlParam() ## BL--DS
         sched_param+='MyProxyServer = "' + self.cfg_params['proxyServer'] + '";\n'
         sched_param+='VirtualOrganisation = "' + self.cfg_params['VO'] + '";\n'
