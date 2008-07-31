@@ -122,15 +122,30 @@ class SubmitterServer( Submitter ):
     def moveProxy(self,dontMove):
 
 	WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
-        if dontMove==True:
+        if dontMove == True:
             msg = 'Submittig to local resources...proxy not needed.\n'
             common.logger.debug(5, msg)
         else:
             ## register proxy ##
             common.scheduler.checkProxy(deep=1)
             try:
-                flag = " --myproxy"
                 common.logger.message("Registering a valid proxy to the server:")
+                # 
+                # proxy delegation based on myproxy
+                # ###
+
+                #from myproxyDelegation import myProxyDelegationClientside as myproxyDeleg
+                #myproxySrv = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
+                #cSrvDN = str(self.srvCfg['serverDN']) # TODO. This field must be added to the server configuration dictionary got from HTTP
+                #vomsesPath = str(os.environ['X509_USER_PROXY'])
+                #delegClient = myproxyDeleg(myproxySrv, cSrvDN, vomsesPath)
+                #if not delegClient.delegate() == 0:
+                #    raise CrabException("ERROR: Unable to delegate proxy to the myproxy server %s\n"%myproxySrv)
+                #self.cfg_params['EDG.proxyInfos'] = delegClient.pInfos 
+
+                # ###
+                #
+                flag = " --myproxy"
                 cmd = 'asap-user-register --server '+str(self.server_name) + flag
                 attempt = 3
                 while attempt:

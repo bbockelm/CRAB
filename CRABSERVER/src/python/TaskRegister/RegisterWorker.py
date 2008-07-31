@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.2 2008/07/23 07:47:07 farinafa Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.3 2008/07/23 08:23:48 farinafa Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import string
 import sys, os
@@ -291,7 +291,29 @@ class RegisterWorker(Thread):
             if len(ps)>0: 
                 ps = str(ps[0]).strip()
                 if proxySubject in ps or ps in proxySubject:
-                    return pf 
+                    return pf
+
+        # inactive code for myproxy management of delegated user proxies
+        #
+        #from myproxyDelegation import myProxyDelegationServerside as myproxyService
+        #import sha # to compose secure proxy name
+        #
+        ##TODO check if these are set in the main component and/or transfered from client-side 
+        #srvKeyPath = self.configs.get('X509_KEY', '~/.globus/hostkey.pem') 
+        #srvCertPath = self.configs.get('X509_CERT', '~/.globus/hostcert.pem')
+        #pf = os.path.join(self.configs['ProxiesDir'], sha.new(self.proxySubject).hexdigest() ) # proxy filename
+        #
+        #myproxySrv = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch') # from client
+        ## retrieve the proxy 
+        #try:
+        #    mp = myproxyService(srvKeyPath, srvCertPath, myproxySrv) # this could be turned into a class attribute
+        #    mp.getDelegatedProxy(pf, proxyArgs=self.cfg_params['EDG.proxyInfos'])
+        #    # proxyInfos not a default, strictly required ( stores VOMS extensions), from client
+        #    return pf
+        #except Exception, e:
+        #    self.log.info("Error while retrieving proxy for %s: %s"%(self.proxySubject, str(e) ))
+        #    self.log.debug( traceback.format_exc() )
+        #    pass
         return None
 
 

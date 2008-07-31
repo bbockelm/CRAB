@@ -251,6 +251,7 @@ class ServerCommunicator:
         miniCfg['VO'] = self.cfg_params.get('EDG.virtual_organization', 'cms')
         miniCfg['EDG_retry_count'] = self.cfg_params.get('EDG.retry_count',0)
         miniCfg['EDG_shallow_retry_count'] = self.cfg_params.get('EDG.shallow_retry_count',-1)
+        #miniCfg['EDG.proxyInfos'] = self.cfg_params.get('EDG.proxyInfos',{}) #TODO activate this when using MyProxy-based delegation 
 
         ## Additional field for DashBoard
         miniCfg['CMSSW.datasetpath'] = self.cfg_params.get('CMSSW.datasetpath', 'None')
