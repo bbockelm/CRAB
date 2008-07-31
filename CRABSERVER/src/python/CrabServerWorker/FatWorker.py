@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.101 2008/07/30 07:52:26 farinafa Exp $"
-__version__ = "$Revision: 1.101 $"
+__revision__ = "$Id: FatWorker.py,v 1.102 2008/07/30 09:09:35 farinafa Exp $"
+__version__ = "$Revision: 1.102 $"
 import string
 import sys, os
 import time
@@ -121,7 +121,7 @@ class FatWorker(Thread):
             submittedJobs, nonSubmittedJobs, errorTrace = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched) 
         except Exception, e:
             self.log.debug( traceback.format_exc() )
-            self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. sumbit %s"%(self.myName, self.taskName, errorTrace) )
+            self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s."%(self.myName, self.taskName) )
             return
 
         self.log.info("FatWorker %s evaluating submission outcomes"%self.myName)
@@ -131,7 +131,7 @@ class FatWorker(Thread):
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. postSubmission"%(self.myName, self.taskName) )
             return
-        self.log.info("FatWorker %s finished: task %s"%(self.myName, self.taskName) )
+        self.log.info("FatWorker %s finished %s"%(self.myName, self.taskName) )
         return
 
     def sendResult(self, status, reason, logMsg):
@@ -299,10 +299,11 @@ class FatWorker(Thread):
                     task = self.blDBsession.load( task['id'], sub_jobs[ii] )[0]
                 else:
                     task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
-            except Exception, e:
-                self.log.info("Worker %s. Problem submitting task %s jobs. %s"%(self.myName, self.taskName, e.description() ))
+            except BossLiteError, e:
+                self.log.info("Worker %s. Problem submitting task %s jobs. %s"%(self.myName, self.taskName, str(e.description()) ))
                 #self.log.info( str(e) ) # temp message
-                # errorTrace = str( BossLiteLogger( task, e ) )
+                errorTrace = str( BossLiteLogger( task, e ) )
+                self.log.debug(errorTrace)
                 pass
 
             # check if submitted
