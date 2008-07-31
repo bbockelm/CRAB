@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.85 2008/07/01 08:02:54 farinafa Exp $"
-__version__ = "$Revision: 1.85 $"
+__revision__ = "$Id: FatWorker.py,v 1.86 2008/07/03 07:20:47 spiga Exp $"
+__version__ = "$Revision: 1.86 $"
 import string
 import sys, os
 import time
@@ -147,7 +147,8 @@ class FatWorker(Thread):
                 self.schedulerConfig['service'] = self.wmsEndpoint
 
         elif self.schedName.lower() == 'condor_g':
-            self.schedulerConfig['name'] = 'SchedulerCondorGAPI' 
+            self.schedulerConfig['name'] = 'SchedulerCondorG' 
+            self.schedulerConfig['tmpDir'] = '/tmp/' 
             self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
             if self.wmsEndpoint:
                 self.schedulerConfig['service'] = self.wmsEndpoint
@@ -313,7 +314,7 @@ class FatWorker(Thread):
                     return [], newRange
 
             # get TURL for WMS bypass
-            if len(taskFileList) > 0: 
+            if len(taskFileList) > 0 and self.schedName.lower() not in ['condor_g']: 
                 self.TURLpreamble = sbi.getTurl( taskFileList[0], self.proxy )
                 self.TURLpreamble = self.TURLpreamble.split(taskFileList[0])[0]
                 if self.TURLpreamble:
@@ -392,7 +393,7 @@ class FatWorker(Thread):
             if 'crab_fjr_%d.xml'%(jid+1) not in task.jobs[jid]['outputFiles']:
                 task.jobs[jid]['outputFiles'].append( 'crab_fjr_%d.xml'%(jid+1) ) #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
 
-            if '.BrokerInfo' not in task.jobs[jid]['outputFiles']:
+            if '.BrokerInfo' not in task.jobs[jid]['outputFiles'] and self.schedName.lower() not in ['condor_g','glidein']:
                 task.jobs[jid]['outputFiles'].append( '.BrokerInfo' )
 
         self.blDBsession.updateDB(task) 
@@ -845,14 +846,19 @@ class FatWorker(Thread):
                 requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
             elif self.schedName.upper()== "CONDOR_G":
                 requirements.append( self.sched_parameter_Condor() )
+		tags = ''
             elif self.schedName.upper() in [ "LSF", "CAF"]:
                 requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
                 tags = ''
             else:
                 continue
-            
+            self.log.info("Shcheduler is %s "%self.schedName)
+            self.log.info("Tags are %s"%tags)
+	    
             # Perform listMatching
-            if self.schedName.upper() != "CONDOR_G" or self.submissionKind != 'errHdlTriggered':
+	    if self.schedName.upper() == "CONDOR_G":
+                match = "1"
+            elif self.submissionKind != 'errHdlTriggered':
                 cleanedList = None
                 if len(distinct_dests[sel])!=0:
                     cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
