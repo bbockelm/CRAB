@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.86.2.2 2008/07/31 19:29:22 ewv Exp $"
-__version__ = "$Revision: 1.86.2.2 $"
+__revision__ = "$Id: FatWorker.py,v 1.86.2.3 2008/07/31 22:10:13 ewv Exp $"
+__version__ = "$Revision: 1.86.2.3 $"
 import string
 import sys, os
 import time
@@ -148,9 +148,9 @@ class FatWorker(Thread):
 
         elif self.schedName.lower() == 'condor_g':
             self.schedulerConfig['name'] = 'SchedulerCondorG'
-            self.log.info('Global WD = %s' % self.wdir) # task['globalSandbox'])
-            self.log.info('Task Name = %s' % self.taskName)
-            self.schedulerConfig['tmpDir'] = '/tmp/' # HACK
+	    condorTemp = os.path.join(self.wdir,self.taskName+'_spec',"condorTemp")
+            self.log.info('Condor will use %s for temporary files' % condorTemp)
+	    self.schedulerConfig['tmpDir'] = condorTemp
             self.schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.brokerName
             if self.wmsEndpoint:
                 self.schedulerConfig['service'] = self.wmsEndpoint
@@ -847,7 +847,7 @@ class FatWorker(Thread):
                 tags = [str(tags_tmp[1]),str(tags_tmp[3])]
                 requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
             elif self.schedName.lower()== "condor_g":
-                requirements.append( self.sched_parameter_CondorG(id_job, taskOb) )
+                requirements.append( self.sched_parameter_CondorG(id_job, taskObj) )
 		tags = ''
             elif self.schedName.upper() in [ "LSF", "CAF"]:
                 requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
@@ -1010,10 +1010,18 @@ class FatWorker(Thread):
 #########################################################
     def sched_parameter_CondorG(self,i,task):
 
-        schedParam = 'my schedparam'
+        schedParam = ''
 
-        task['jobType'] = 'some type'
-
+        jobType = 'schedulerList = cmsgrid02.hep.wisc.edu:2119/jobmanager-condor; '
+        if self.cfg_params['EDG.max_wall_time']:
+            jobType += 'globusrsl = (maxWalltime=%s); ' % self.cfg_params['EDG.max_wall_time']
+        task['jobType'] = jobType
+        if self.submissionKind != 'errHdlTriggered':
+            dest = task.jobs[i-1]['dlsDestination'] # shift due to BL ranges
+        else:
+            dest = task.jobs[0]['dlsDestination']
+        self.log.info('Destination is %s ' % dest)
+        
         return schedParam
 
     def sched_parameter_Lsf(self, i, task):
