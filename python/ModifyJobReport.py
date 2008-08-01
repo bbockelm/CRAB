@@ -69,17 +69,30 @@ def modifyFile(file, n_job, seName):
     Calls functions to modify PFN and LFN
     """
 
-    str.split(str(file['PFN']), '.')
-    pref =  str.split(str(file['PFN']), '.')[0]
-    suff = str.split(str(file['PFN']), '.')[1]
+    str.split(str(file['PFN']), '.root')
+    pref =  str.split(str(file['PFN']), '.root')[0]
+    suff = str.split(str(file['PFN']), pref)[1]
     if (seName == ''):
-        newPfn = pref + '_' + n_job + '.' + suff
-    else:    
-        newPfn = seName + path + pref + '_' + n_job + '.' + suff
-    print "newPfn = ", newPfn  
+         newPfn = pref + '_' + n_job + suff
+    else:
+         newPfn = seName + path + pref + '_' + n_job + suff
+    print "newPfn = ", newPfn
 
-    newLfn = for_lfn + pref + '_' + n_job + '.' + suff 
+    newLfn = for_lfn + pref + '_' + n_job + suff
     print "newLfn = ", newLfn
+
+## remove parsing based on "."
+#    str.split(str(file['PFN']), '.')
+#    pref =  str.split(str(file['PFN']), '.')[0]
+#    suff = str.split(str(file['PFN']), '.')[1]
+#    if (seName == ''):
+#        newPfn = pref + '_' + n_job + '.' + suff
+#    else:    
+#        newPfn = seName + path + pref + '_' + n_job + '.' + suff
+#    print "newPfn = ", newPfn  
+#
+#    newLfn = for_lfn + pref + '_' + n_job + '.' + suff 
+#    print "newLfn = ", newLfn
 
     updatePFN(file, file['LFN'], newPfn, seName)
 
