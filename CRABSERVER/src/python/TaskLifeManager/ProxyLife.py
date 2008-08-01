@@ -10,12 +10,10 @@ from MessageService.MessageService import MessageService
 
 # module from TaskTracking component
 from TaskTracking.UtilSubject import UtilSubject
-from TaskTracking.TaskStateAPI import findTaskPA, getStatusUUIDEmail
 
-# Blite API import
-from ProdCommon.BossLite.API.BossLiteAPI import  BossLiteAPI
-from ProdCommon.BossLite.Common.Exceptions import TaskError, JobError
-
+from ProdAgentDB.Config import defaultConfig as dbConfig
+from ProdCommon.Database import Session
+from ProdCommon.Database.MysqlInstance import MysqlInstance
 
 class ProxyLife:
 
@@ -39,9 +37,6 @@ class ProxyLife:
 
         ## clean script
         self.delOldScript()
-
-        ## session blite
-        self.bossSession = None
 
     ###############################################
     ######       SYSTEM  INTERACTIONS        ######
@@ -161,32 +156,47 @@ class ProxyLife:
 
     def getListProxies(self):
         proxyList = []
+        dbCfg = copy.deepcopy(dbConfig)
+        dbCfg['dbType'] = 'mysql'
 
+        Session.set_database(dbCfg)
+        Session.connect(self)
+        Session.start_transaction(self)
         sqlStr="select distinct(proxy) from js_taskInstance;"
-        tuple = self.bossSession.select(sqlStr)
-        if tuple != None:
-            for tupla in tuple:
-                proxyList.append(tupla[0]) 
+        Session.execute(sqlStr)
+        for tupla in Session.fetchall(self):
+            proxyList.append(tupla[0]) 
+        Session.close(self)
 
         return proxyList
 
     def getTaskList(self, proxy):
         dictionary = {}
+        dbCfg = copy.deepcopy(dbConfig)
+        dbCfg['dbType'] = 'mysql'
 
+        Session.set_database(dbCfg)
+        Session.connect(proxy)
+        Session.start_transaction(proxy)
         ## get active tasks for proxy 'proxy'
         sqlStr="select taskName, eMail from js_taskInstance " + \
                "where proxy = '"+str(proxy)+"' and notificationSent < 2;"
-        tuple = self.bossSession.select(sqlStr)
-        if tuple != None:
-            for tupla in tuple:
-                if tupla[1] in dictionary.keys():
-                    dictionary[tupla[1]].append(tupla[0])
-                else:
-                    dictionary.setdefault(tupla[1],[tupla[0]])
+        Session.execute(sqlStr)
+        for tupla in Session.fetchall(proxy):
+            if tupla[1] in dictionary.keys():
+                dictionary[tupla[1]].append(tupla[0])
+            else:
+                dictionary.setdefault(tupla[1],[tupla[0]])
+        Session.close(proxy)
 
         return dictionary
 
-    def archiveBliteTask(self, mySession, taskname):
+    def archiveBliteTask(self, taskname):
+        # Blite API import
+        from ProdCommon.BossLite.API.BossLiteAPI import  BossLiteAPI
+        from ProdCommon.BossLite.Common.Exceptions import TaskError, JobError
+
+        mySession = BossLiteAPI("MySQL", self.bossCfgDB)
         taskObj = None
         try:
             taskObj = mySession.loadTaskByName( taskname )
@@ -202,35 +212,53 @@ class ProxyLife:
                 logging.error( str(te) )
         else:
             logging.error( "Problem archiving task: " + taskname )
-
+        try:
+            mySession.bossLiteDB.close()
+            del mySession
+        except:
+            logging.info("not closed..")
+        
     def getListJobName(self, taskname):
         joblist = []
+        dbCfg = copy.deepcopy(dbConfig)
+        dbCfg['dbType'] = 'mysql'
 
+        Session.set_database(dbCfg)
+        Session.connect(taskname)
+        Session.start_transaction(taskname)
         sqlStr="select id from we_Job where owner = '"+str(taskname)+"';"
-        tuple = self.bossSession.select(sqlStr)
-        if tuple != None:
-            for tupla in tuple:
-                joblist.append(tupla[0])
+        Session.execute(sqlStr)
+        for tupla in Session.fetchall(taskname):
+            joblist.append(tupla[0])
+        Session.close(taskname)
 
         return joblist
 
+    def checkResubmit(self, jobspecid):
+        from ProdAgent.WorkflowEntities import Job as wfJob
+
+        dbCfg = copy.deepcopy(dbConfig)
+        dbCfg['dbType'] = 'mysql'
+        Session.set_database(dbCfg)
+        Session.connect(jobspecid)
+        ## get info from we_job table
+        jobInfo = wfJob.get(jobspecid)
+        Session.close(jobspecid)
+
+        if int(jobInfo['retries']) >= int(jobInfo['max_retries']):
+           return True
+        else:
+            return False
+
     def archiveServerTask(self, taskname):
-        #from ProdAgent.WorkflowEntities.JobState import doNotAllowMoreSubmissions
+        from ProdAgent.WorkflowEntities.JobState import doNotAllowMoreSubmissions
         jobtoclean = self.getListJobName(taskname)
-        if len(jobtoclean) > 0:
-            try:
-                logging.info("Archiving server jobs...")
-                sqlStr = ""
-                for jobSpecId in jobtoclean:
-                    sqlStr="UPDATE we_Job SET "+    \
-                           "racers=max_racers+1, retries=max_retries+1 "+ \
-                           "WHERE id=\""+ str(jobSpecId)+ "\";"
-                self.bossSession.select(sqlStr)
-            except Exception, ex:
-                logging.error( "Not achiving server job " + str(jobtoclean) )
-                logging.error( "   cause: " + str(ex) )
-                import traceback
-                logging.error(" details: \n" + str(traceback.format_exc()) )
+        try:
+            logging.info("Archiving server jobs...")
+            doNotAllowMoreSubmissions(jobtoclean)
+        except Exception, ex:
+            logging.error( "Not achiving server job " + str(jobtoclean) )
+            logging.error( "   cause: " + str(ex) )
 
     def notifyExpiring(self, email, tasks, lifetime):
         taskspath = self.dumpToFile(tasks)
@@ -268,10 +296,6 @@ class ProxyLife:
         ##################
         ##### STARTS #####
         logging.info( "Start proxy's polling...." )
-
-        mySession = BossLiteAPI("MySQL", self.bossCfgDB)
-        self.bossSession = mySession.bossLiteDB
-
         if os.path.exists(self.proxiespath):
 
             ## get the list of proxies
@@ -303,7 +327,7 @@ class ProxyLife:
                     for mail, tasks in tasksbymail.iteritems():
                         for task in tasks:
                             ## archive the jobs for blite
-                            self.archiveBliteTask(mySession, task)
+                            self.archiveBliteTask(task)
                             ## archive the jobs for the server
                             self.archiveServerTask(task)
                             ## append for hand clean
@@ -342,13 +366,6 @@ class ProxyLife:
             logging.error( "Could not find proxies path [" + self.proxiespath +"]." )
 
         logging.debug(str(self.__cleanproxies))
-
-        try:
-            mySession.bossLiteDB.close()
-            del mySession
-        except:
-            logging.info("not closed..")
-
         logging.info( "Proxy's polling ended." )
         ###### ENDS ######
         ##################
