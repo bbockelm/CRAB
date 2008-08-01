@@ -20,7 +20,8 @@ from TaskQueue import *
 
 # module from TaskTracking component
 from TaskTracking.UtilSubject import UtilSubject
-from TaskTracking.TaskStateAPI import findTaskPA, getStatusUUIDEmail
+from TaskTracking.TaskStateAPI import TaskStateAPI
+# findTaskPA, getStatusUUIDEmail
 
 from ProxyLife import ProxyLife
 
@@ -740,7 +741,7 @@ class TaskLifeManagerComponent:
 
         logging.info(" Publishing ['"+ mexage +"']")
         logging.info("   payload = " + payload )
-        self.ms.publish( mexage, payload, "00:00:60" )
+        self.ms.publish( mexage, payload, "00:00:20" )
         self.ms.commit()
 
     def notifyCleaning( self, taskName, toLive, owner, mails ):
@@ -753,8 +754,9 @@ class TaskLifeManagerComponent:
 
         mexage = "TaskLifeManager:TaskNotifyLife"
         uuid = ""
-        if findTaskPA(taskName) != None:
-            valuess = getStatusUUIDEmail( taskName )
+        ttdb = TaskStateAPI()
+        if ttdb.findTaskPA(taskName) != None:
+            valuess = ttdb.getStatusUUIDEmail( taskName )
             if len(valuess) > 1:
                 uuid = valuess[1]
             obj = UtilSubject( self.args['storagePath'], taskName, uuid )
