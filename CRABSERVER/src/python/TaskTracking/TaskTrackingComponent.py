@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.89 2008/07/29 14:19:10 mcinquil Exp $"
-__version__ = "$Revision: 1.89 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.91 2008/07/29 18:26:00 afanfani Exp $"
+__version__ = "$Revision: 1.91 $"
 
 import os
 import time
@@ -33,7 +33,7 @@ from ProdCommon.Core.ProdException import ProdException
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 
 # DB PA
-import TaskStateAPI
+from TaskStateAPI import TaskStateAPI
 
 # XML
 from CrabServer.CreateXmlJobReport import * 
@@ -525,7 +525,8 @@ class TaskTrackingComponent:
         """
         logBuf = ""
         try:
-            TaskStateAPI.insertTaskPA( payload, self.taskState[0] )
+            ttdb = TaskStateAPI()
+            ttdb.insertTaskPA( payload, self.taskState[0] )
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "ERROR while inserting the task " + str(payload) )
@@ -547,7 +548,8 @@ class TaskTrackingComponent:
             threshold = "100"
         else:
             try:
-                TaskStateAPI.updateEmailThresh( taskname, str(email), str(threshold) )
+                ttdb = TaskStateAPI()
+                ttdb.updateEmailThresh( taskname, str(email), str(threshold) )
             except Exception, ex:
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__logToBuf__(logBuf, "ERROR while updating the 'eMail' field for task: " + str(taskname) )
@@ -559,8 +561,9 @@ class TaskTrackingComponent:
 	 update the status of a task
         """
         logBuf = ""	
+        ttdb = TaskStateAPI()
         try:
-            TaskStateAPI.updateStatus( payload, status )
+            ttdb.updateStatus( payload, status )
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(payload) )
@@ -574,10 +577,6 @@ class TaskTrackingComponent:
         taskObj = None
         try:
             if status == self.taskState[3] or status == self.taskState[7]:
-                ### using global one
-                #mySession = BossLiteAPI("MySQL", self.bossCfgDB)
-                #if mySesssion == None:
-                #    raise Exception("No bosslite session available")
                 mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
 
 		try:
@@ -591,7 +590,7 @@ class TaskTrackingComponent:
                     proxy = taskObj['user_proxy']
 	            logBuf = self.__logToBuf__(logBuf, "using proxy: [%s] "%(str(proxy)) )
                     try:
-                        TaskStateAPI.updateProxy(payload, proxy) 
+                        ttdb.updateProxy(payload, proxy) 
 		    except Exception, ex:
 		        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
 	     	        logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(payload) )
@@ -602,7 +601,7 @@ class TaskTrackingComponent:
                 mySession.bossLiteDB.close()
                 del mySession
 	    elif status == self.taskState[2] or status == self.taskState[4]:
-	        valuess = TaskStateAPI.getStatusUUIDEmail( payload )
+	        valuess = ttdb.getStatusUUIDEmail( payload )
 		if valuess != None:
 		    status = valuess[0]
 		    if len(valuess) > 1:
@@ -641,7 +640,8 @@ class TaskTrackingComponent:
 	strEmail = ""
 	for mail in eMaiList:
 	    strEmail += str(mail) + ","
-	TaskStateAPI.updatingNotifiedPA( taskName, 2 )
+        ttdb = TaskStateAPI()
+	ttdb.updatingNotifiedPA( taskName, 2 )
         if status == self.taskState[2]:
             self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + taskName + self.workAdd + self.resSubDir + self.xmlReportFileName, taskName )
         else:
@@ -654,7 +654,8 @@ class TaskTrackingComponent:
         """
         logBuf = ""
         try:
-            TaskStateAPI.updateStatus( taskName, status )
+            ttdb = TaskStateAPI()
+            ttdb.updateStatus( taskName, status )
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(taskName) )
@@ -998,8 +999,9 @@ class TaskTrackingComponent:
  
  	    try:
 	        self.mutex.acquire()
-	        resubmitting, MaxResub, Resub = TaskStateAPI.checkNSubmit( taskName, job )
-	        internalstatus = TaskStateAPI.jobStatusServer( taskName, job )
+                ttdb = TaskStateAPI()
+	        resubmitting, MaxResub, Resub = ttdb.checkNSubmit( taskName, job )
+	        internalstatus = ttdb.jobStatusServer( taskName, job )
 	    finally:
 	        self.mutex.notifyAll()
 	        self.mutex.release()
@@ -1063,6 +1065,7 @@ class TaskTrackingComponent:
         task = None
         taskObj = None
         mySession = None
+        ttdb = TaskStateAPI()
 
         ## bossLite session
         try:
@@ -1074,12 +1077,12 @@ class TaskTrackingComponent:
             return 0
         try:
             ## loading task from DB
-            task = TaskStateAPI.getNLockFirstNotFinished()
+            task = ttdb.getNLockFirstNotFinished()
             _loginfo =  ""
             try:
                 taskId = 0
                 if task == None or len(task) <= 0:
-                    TaskStateAPI.resetControlledTasks()
+                    ttdb.resetControlledTasks()
                 else:
                     taskId = task[0][0]
                     taskName = task[0][1]
@@ -1144,7 +1147,7 @@ class TaskTrackingComponent:
 
 		 	            ###  updating endedLevel  ###
 				    if endedLevel == 100:
-                                        msg = TaskStateAPI.updatingEndedPA( taskName, str(percentage), self.taskState[5])
+                                        msg = ttdb.updatingEndedPA( taskName, str(percentage), self.taskState[5])
                                         logBuf = self.__logToBuf__(logBuf, msg)
                                         if notified != 2:
                                             self.taskEnded(taskName)
@@ -1152,7 +1155,7 @@ class TaskTrackingComponent:
                                             succexo = 1
                                             logBuf = self.__logToBuf__(logBuf, msg)
 				    elif percentage != endedLevel:
-				        msg = TaskStateAPI.updatingEndedPA( taskName, str(percentage), status)
+				        msg = ttdb.updatingEndedPA( taskName, str(percentage), status)
                                         logBuf = self.__logToBuf__(logBuf, msg)
                                         if percentage >= thresholdLevel:
 					    if percentage == 100:
@@ -1167,9 +1170,9 @@ class TaskTrackingComponent:
 			        elif status == '':
                                     msg = ""
 			            if dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress'] > countNotSubmitted:
-				        msg = TaskStateAPI.updateTaskStatus( taskName, self.taskState[3] )
+				        msg = ttdb.updateTaskStatus( taskName, self.taskState[3] )
 				    else:
-				        msg = TaskStateAPI.updateTaskStatus( taskName, self.taskState[2] )
+				        msg = ttdb.updateTaskStatus( taskName, self.taskState[2] )
                                 
                                     logBuf = self.__logToBuf__(logBuf, msg)
 
@@ -1178,7 +1181,7 @@ class TaskTrackingComponent:
                                     self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
                                     _loginfo += "Updating task: " + str(taskName) + "\n"
                                     _loginfo += "\tpublishing task success (sending e-mail to %s)"%(str(eMail)) + "\n"
-                                    msg = TaskStateAPI.updatingNotifiedPA( taskName, notified )
+                                    msg = ttdb.updatingNotifiedPA( taskName, notified )
                                     logBuf = self.__logToBuf__(logBuf, msg)
  			    except ZeroDivisionError, detail:
                                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
@@ -1189,7 +1192,7 @@ class TaskTrackingComponent:
             finally:
                 #case with a task taken
                 if task != None and len(task)>0:
-                    TaskStateAPI.setTaskControlled(taskId)
+                    ttdb.setTaskControlled(taskId)
 
                 ## clean task from memory
                 del task
@@ -1279,7 +1282,8 @@ class TaskTrackingComponent:
 
 
         #reset all work_status
-        TaskStateAPI.resetAllWorkStatus()
+        ttdb = TaskStateAPI()
+        ttdb.resetAllWorkStatus()
 
         nMaxThreads = int(self.args['Thread']) + 1
         # start polling threads
@@ -1328,6 +1332,7 @@ class TaskTrackingComponent:
 
 
     def __executeQueuedMessages__(self):
+        ttdb = TaskStateAPI()
         logBuf = ""
         semMsgQueue.acquire()
         try:
@@ -1351,7 +1356,7 @@ class TaskTrackingComponent:
                         q.put_nowait(item)
                     else:
                         #try to lock the task
-                        recordAffected = TaskStateAPI.lockUnlockedTaskByTaskName(taskName)
+                        recordAffected = ttdb.lockUnlockedTaskByTaskName(taskName)
                         if recordAffected == 0:#task is locked
                             lockedTasks.append(taskName)
                             q.put_nowait(item)
@@ -1365,7 +1370,7 @@ class TaskTrackingComponent:
                                 logBuf = self.__logToBuf__(logBuf, "Message executed: " + str(item))
                             finally:
                                 if recordAffected == 1:
-                                    ris = TaskStateAPI.unlockTaskByTaskName(taskName)
+                                    ris = ttdb.unlockTaskByTaskName(taskName)
                                     if ris == 1:
                                         logBuf = self.__logToBuf__(logBuf, "Unlocked task " + str(taskName) + " for message processing")
                                     if ris != 1:
