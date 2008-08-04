@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.59 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.59 2008/07/30 07:52:26 farinafa Exp $"
+__version__ = "$Revision: 1.61 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.61 2008/08/04 13:43:08 farinafa Exp $"
 
 import os, pickle, time
 
@@ -359,7 +359,7 @@ class CrabServerWorkerComponent:
 ################################
 
     def materializeStatus(self):
-        ldump = [self.taskPool, self.subTimes, self.subStatsi, self.resubCounterMonitor]
+        ldump = [self.taskPool, self.subTimes, self.subStats, self.resubCounterMonitor]
         if len(self.taskPool)>0:
             logging.debug("Materialized disaster recovery cache: %s"%str(self.taskPool) )
         try:
