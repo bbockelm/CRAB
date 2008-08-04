@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.61 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.61 2008/08/04 13:43:08 farinafa Exp $"
+__version__ = "$Revision: 1.62 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.62 2008/08/04 14:17:31 farinafa Exp $"
 
 import os, pickle, time
 
@@ -265,9 +265,9 @@ class CrabServerWorkerComponent:
 
             # free resubmission cache for succesful jobs
             updatedCache = False
-            for jId in []+self.resubCounterMonitor.keys():
-                if taskUniqName in self.resubCounterMonitor[Id]:
-                    del self.resubCounterMonitor[Id]
+            for jId in self.resubCounterMonitor.keys():
+                if taskUniqName in jId:
+                    del self.resubCounterMonitor[jId]
                     updatedCache = True 
             if updatedCache: self.materializeStatus()
   
