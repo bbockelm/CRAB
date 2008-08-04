@@ -82,6 +82,7 @@ class CrabServerWorkerComponent:
         # optimize the overhead for the allocation 
         self.availWorkersIds = [ "worker_%d"%mId for mId in xrange(self.maxThreads) ]
         self.workerSet = {} # thread collection
+        self.resubCounterMonitor = {} # tracks the number of resubmissions 
 
         # allocate the scheduling logic
         self.swSchedQ = scheduleRequests
@@ -235,12 +236,20 @@ class CrabServerWorkerComponent:
         status = int(status)
         
         ## Free submission resources
-        self.availWorkersIds.append(workerName)
+        if len(workerName)>0: 
+            # useful to discriminate message from - to the main component (eg. resub failure feedback)
+            self.availWorkersIds.append(workerName)
+
         if workerName in self.taskPool:
             del self.taskPool[workerName]
             self.materializeStatus()
         if workerName in self.workerSet:
             del self.workerSet[workerName]
+
+        ## Free failed resubmission tracking
+        if taskUniqName in self.resubCounterMonitor and status == 10:
+            del self.resubCounterMonitor[taskUniqName]
+            self.materializeStatus()
 
         ## Track workers outcomes
         successfulCodes = [0, -2] # full and partial submissions
@@ -249,11 +258,19 @@ class CrabServerWorkerComponent:
  
         if status in successfulCodes:
             self.subStats['succ'] += 1 
-            if status == -2:
-                self.subStats['retry'] += 1
+            if status == -2: self.subStats['retry'] += 1
+
             self.subTimes.append(float(timing))
-            if len(self.subTimes) > 64:
-                self.subTimes.pop(0)
+            if len(self.subTimes) > 64: self.subTimes.pop(0)
+
+            # free resubmission cache for succesful jobs
+            updatedCache = False
+            for jId in []+self.resubCounterMonitor.keys():
+                if taskUniqName in self.resubCounterMonitor[Id]:
+                    del self.resubCounterMonitor[Id]
+                    updatedCache = True 
+            if updatedCache: self.materializeStatus()
+  
         elif status in retryItCodes: 
             self.subStats['retry'] += 1
         elif status in giveUpCodes:
@@ -268,7 +285,7 @@ class CrabServerWorkerComponent:
 
 
 ################################
-#   New Methods given by the CW factorization (TODO)      
+#   New Methods given by the CW factorization       
 ################################
 
     def enqueueForSubmission(self, event, payload):
@@ -288,15 +305,29 @@ class CrabServerWorkerComponent:
                 return
             
             cmdRng = str( [int(jobId)] )
-            retryCounter = '3'
+            # cache for resubmission messages
+            resubId = "%s_job%s"%(taskName, jobId)  
+            if resubId in self.resubCounterMonitor:
+                self.resubCounterMonitor[resubId] -= 1
+            else:
+                self.resubCounterMonitor[resubId] = 3
+
+            retryCounter = str(self.resubCounterMonitor[resubId])
+            if not self.resubCounterMonitor[resubId] > 0:
+                # no more re-submission attempts, give up. Propagate info emulating a message in FW results queue
+                logging.info("Resubmission has no more attempts: give up with job %s"%resubId )
+                status, reason = ("10", "Command for job %s has no more attempts. Give up."%resubId)
+                payload = "%s::%s::%s"%(resubId, status, reason)
+                self.fwResultsQ.put(('', "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
+                return 
+
             if len(items) == 3 and items[2] != "#fake_site#": 
                 siteToBan = items[2]
-        
+
         if len(taskName) > 0:            
             self.swSchedQ.put( (event, taskName, cmdRng, retryCounter, siteToBan) )
         else:
             logging.info("Empty task name. Bad format scheduling request. Task will be skipped")
-
         return
     
     def forceDequeuing(self, payload):
@@ -328,7 +359,7 @@ class CrabServerWorkerComponent:
 ################################
 
     def materializeStatus(self):
-        ldump = [self.taskPool, self.subTimes, self.subStats]
+        ldump = [self.taskPool, self.subTimes, self.subStatsi, self.resubCounterMonitor]
         if len(self.taskPool)>0:
             logging.debug("Materialized disaster recovery cache: %s"%str(self.taskPool) )
         try:
@@ -344,12 +375,13 @@ class CrabServerWorkerComponent:
             f = open(self.wdir+"/cw_status.set", 'r')
             ldump = pickle.load(f)
             f.close()
-            self.taskPool, self.subTimes, self.subStats = ldump
+            self.taskPool, self.subTimes, self.subStats, self.resubCounterMonitor = ldump
         except Exception, e:
             logging.info("Failed to open cw_status.set. Building a new status\n" + str(e) )
             self.taskPool = {}
             self.subTimes = []
             self.subStats = {'succ':0, 'retry':0, 'fail':0}
+            self.resubCounterMonitor = {}
             self.materializeStatus()
             return
         # cold restart for crashes

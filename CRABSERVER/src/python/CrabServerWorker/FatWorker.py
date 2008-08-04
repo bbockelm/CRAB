@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.102 2008/07/30 09:09:35 farinafa Exp $"
-__version__ = "$Revision: 1.102 $"
+__revision__ = "$Id: FatWorker.py,v 1.103 2008/07/31 13:59:21 farinafa Exp $"
+__version__ = "$Revision: 1.103 $"
 import string
 import sys, os
 import time
@@ -212,7 +212,7 @@ class FatWorker(Thread):
 
         # closed running jobs regeneration and osb manipulation
         needUpd = False
-        someError = []
+        backupFiles = []
         for j in task.jobs:
             if j['jobId'] in self.cmdRng:
                 try:
@@ -224,8 +224,10 @@ class FatWorker(Thread):
                             try:
                                 bk_sbi.move( source=orig, dest=orig+'.'+str(j['submissionNumber']), proxy=task['user_proxy'])
                             except Exception, ex:
-                                someError.append( os.path.basename(orig) )
                                 continue
+                            # track succesfully replicated files
+                            backupFiles.append( os.path.basename(orig) )
+
                         # reproduce closed runningJob instances
                         self.blDBsession.getNewRunningInstance(j)
                         j.runningJob['status'] = 'C'
@@ -239,8 +241,8 @@ class FatWorker(Thread):
                     skippedSubmissions.append(j['jobId'])
                     continue
 
-        if len(someError) > 0:
-            self.log.info("Unable to create backup copy %s: %s"%(self.myName, str(someError) ))
+        if len(backupFiles) > 0:
+            self.log.info("Backup copy created for %s: %s"%(self.myName, str(backupFiles) ))
 
         if needUpd == True:
             try:
