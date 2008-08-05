@@ -2,12 +2,11 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.9 2008/06/17 21:54:14 ewv Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.10 2008/08/05 18:48:52 ewv Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
-#from crab_logger import Logger
 
 import common
 import os

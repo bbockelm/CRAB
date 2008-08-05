@@ -141,17 +141,18 @@ def isOSGSite(host_list, bdii='exp-bdii.cern.ch'):
     Take a list of CE host names, and find all the associated clusters.
     Take the resulting clusters and map them to sites.  Any such site whose
     description includes "OSG" is labeled an OSG site.
-    
+
     @param host_list: A list of host names which are CEs we want to consider.
     @keyword bdii: The BDII instance to query
-    @return: A list of host names filtered from host_list which are OSG sites. 
+    @return: A list of host names filtered from host_list which are OSG sites.
     """
     siteUniqueID_CE_map = {}
     results = sets.Set()
     description_re = re.compile('^GlueSiteDescription: (OSG.*)')
     siteid_re = re.compile('GlueForeignKey: GlueSiteUniqueID=(.*)')
+    siteid_site_re = re.compile('^GlueSiteUniqueID: (.*)')
     ce_re = re.compile('^GlueForeignKey: GlueCEUniqueID=(.*):')
-    
+
     # Build the BDII query for all the hosts.
     # This asks for all GlueClusters which are associated with one of the
     # host names.
@@ -185,9 +186,9 @@ def isOSGSite(host_list, bdii='exp-bdii.cern.ch'):
     for site in siteUniqueID_CE_map:
         query += "(GlueSiteUniqueID=%s)" % site
     query += ")' "
-    pout = runldapquery(query, "GlueForeignKey GlueSiteDescription", bdii)
+    pout = runldapquery(query, "GlueSiteUniqueID GlueSiteDescription", bdii)
     output = concatoutput(pout)
-   
+
     # See which resulting sites are OSG sites, and then add the
     # corresponding CEs into the results set.
     stanzas = output.split(LF + LF)
@@ -198,7 +199,7 @@ def isOSGSite(host_list, bdii='exp-bdii.cern.ch'):
         # We need to find the stanza's siteUniqueID and if the description
         # is a "OSG Site".  If it is, afterward add it to the results.
         for detail in details:
-            m = siteid_re.search(detail)
+            m = siteid_site_re.search(detail)
             if m:
                 siteUniqueID = m.groups()[0]
             m = description_re.match(detail)
