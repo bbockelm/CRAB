@@ -4,10 +4,10 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.62 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.62 2008/08/04 14:17:31 farinafa Exp $"
+__version__ = "$Revision: 1.63 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.63 2008/08/04 14:56:58 farinafa Exp $"
 
-import os, pickle, time
+import os, pickle, time, copy
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -19,6 +19,10 @@ from ProdAgentCore.Configuration import ProdAgentConfiguration
 from MessageService.MessageService import MessageService
 
 from ProdAgentDB.Config import defaultConfig as dbConfig
+from ProdAgent.WorkflowEntities import JobState
+from ProdAgent.WorkflowEntities import Job as wfJob
+from ProdCommon.Database import Session
+
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 
 from CrabServerWorker.FatWorker import FatWorker
@@ -75,14 +79,13 @@ class CrabServerWorkerComponent:
         if self.args['dropBoxPath']:
             self.wdir = self.args['dropBoxPath']
 
-        self.maxAttempts = int( self.args.get('maxCmdAttempts', 5) )
+        self.maxAttempts = int( self.args.get('maxCmdAttempts', 3) )
         self.maxThreads = int( self.args.get('maxThreads', 5) )
 
         # pre-allocate pool instances that will be passed to the workers
         # optimize the overhead for the allocation 
         self.availWorkersIds = [ "worker_%d"%mId for mId in xrange(self.maxThreads) ]
         self.workerSet = {} # thread collection
-        self.resubCounterMonitor = {} # tracks the number of resubmissions 
 
         # allocate the scheduling logic
         self.swSchedQ = scheduleRequests
@@ -90,6 +93,9 @@ class CrabServerWorkerComponent:
         self.fwResultsQ = Queue.Queue()
                 
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, makePool=True)
+        dbCfg = copy.deepcopy(dbConfig)
+        dbCfg['dbType'] = 'mysql'
+        Session.set_database(dbCfg)
 
         logging.info("-----------------------------------------")
         logging.info("CrabServerWorkerComponent ver2 Started...")
@@ -205,7 +211,7 @@ class CrabServerWorkerComponent:
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName)
         workerCfg['submissionRange'] = eval( cmdRng, {}, {} )
         workerCfg['retries'] = resubCount
-        workerCfg['maxRetries'] = self.maxAttempts # NEEDED ONLY FOR wfEntities registration !!! How to avoid?
+        workerCfg['maxRetries'] = self.maxAttempts 
         workerCfg['se_dynBList'] = [] # TODO does have sense to black-list SEs dynamically?
         workerCfg['ce_dynBList'] = []
         if siteToBan : workerCfg['ce_dynBList'].append(siteToBan)
@@ -246,11 +252,6 @@ class CrabServerWorkerComponent:
         if workerName in self.workerSet:
             del self.workerSet[workerName]
 
-        ## Free failed resubmission tracking
-        if taskUniqName in self.resubCounterMonitor and status == 10:
-            del self.resubCounterMonitor[taskUniqName]
-            self.materializeStatus()
-
         ## Track workers outcomes
         successfulCodes = [0, -2] # full and partial submissions
         retryItCodes = [20, 21, 30, 31, -1] # temporary failure conditions mainly
@@ -259,17 +260,8 @@ class CrabServerWorkerComponent:
         if status in successfulCodes:
             self.subStats['succ'] += 1 
             if status == -2: self.subStats['retry'] += 1
-
             self.subTimes.append(float(timing))
             if len(self.subTimes) > 64: self.subTimes.pop(0)
-
-            # free resubmission cache for succesful jobs
-            updatedCache = False
-            for jId in self.resubCounterMonitor.keys():
-                if taskUniqName in jId:
-                    del self.resubCounterMonitor[jId]
-                    updatedCache = True 
-            if updatedCache: self.materializeStatus()
   
         elif status in retryItCodes: 
             self.subStats['retry'] += 1
@@ -297,35 +289,64 @@ class CrabServerWorkerComponent:
         
         elif event == 'ResubmitJob':
             taskId, jobId = items[0:2]
+            cmdRng = str( [int(jobId)] )
+            if len(items) == 3 and items[2] != "#fake_site#":
+                siteToBan = items[2]
+
+            # load task and job data
             try:
-                taskName = self.blDBsession.loadTask(taskId, deep=False)['name']
+                task = self.blDBsession.load(taskId, jobId)[0]
+                taskName = task['name']
+                job = task.jobs[0]
+                self.blDBsession.getRunningInstance(job)
+
+                if job.runningJob['closed'] == 'Y':
+                    self.blDBsession.getNewRunningInstance(job)
+                    job.runningJob['status'] = 'C'
+                    job.runningJob['statusScheduler'] = 'Created'
+                    self.blDBsession.updateDB(task)
             except Exception, e:
                 logging.info("Unable to load task from BossLite. Submission request won\'t be scheduled for taskId=%d"%taskId)
                 logging.info(traceback.format_exc())
                 return
-            
-            cmdRng = str( [int(jobId)] )
-            # cache for resubmission messages
-            resubId = "%s_job%s"%(taskName, jobId)  
-            if resubId in self.resubCounterMonitor:
-                self.resubCounterMonitor[resubId] -= 1
-            else:
-                self.resubCounterMonitor[resubId] = 3
 
-            retryCounter = str(self.resubCounterMonitor[resubId])
-            if not self.resubCounterMonitor[resubId] > 0:
-                # no more re-submission attempts, give up. Propagate info emulating a message in FW results queue
-                logging.info("Resubmission has no more attempts: give up with job %s"%resubId )
-                status, reason = ("10", "Command for job %s has no more attempts. Give up."%resubId)
-                payload = "%s::%s::%s"%(resubId, status, reason)
+            # check for resubmission count and increment it
+            try:
+                jobInfo = {}
+                Session.connect(taskName)
+                Session.start_transaction(taskName)
+                sqlStr="UPDATE we_Job SET retries=retries+1 WHERE id='%s' "%job['name']
+                Session.execute(sqlStr)
+                Session.commit(taskName)
+
+                jobInfo.update( wfJob.get(job['name']) )
+                retryCounter = int(jobInfo['max_retries']) - int(jobInfo['retries']) 
+                Session.close(taskName)
+            except Exception, e:
+                logging.info("Error while getting WF-Entities for job %s"%job['name'])
+
+            if retryCounter <= 0:
+                # no more re-submission attempts, give up. 
+                try:
+                   Session.connect(taskName)
+                   Session.start_transaction(taskName)
+
+                   JobState.doNotAllowMoreSubmissions(job['name'])
+                   wfJob.setState(job['name'], 'reallyFinished') 
+                   Session.commit(taskName)
+                   Session.close(taskName)
+                except Excetion, e:
+                   logging.info("Error while declaring WF-Entities failed for job %sfailed "%job['name'])
+
+                # Propagate info emulating a message in FW results queue
+                logging.info("Resubmission has no more attempts: give up with job %s"%job['name'])
+                status, reason = ("6", "Command for job %s has no more attempts. Give up."%job['name'])
+                payload = "%s::%s::%s"%(taskName, status, reason)
                 self.fwResultsQ.put(('', "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
                 return 
 
-            if len(items) == 3 and items[2] != "#fake_site#": 
-                siteToBan = items[2]
-
         if len(taskName) > 0:            
-            self.swSchedQ.put( (event, taskName, cmdRng, retryCounter, siteToBan) )
+            self.swSchedQ.put( (event, taskName, cmdRng, str(retryCounter), siteToBan) )
         else:
             logging.info("Empty task name. Bad format scheduling request. Task will be skipped")
         return
@@ -359,7 +380,7 @@ class CrabServerWorkerComponent:
 ################################
 
     def materializeStatus(self):
-        ldump = [self.taskPool, self.subTimes, self.subStats, self.resubCounterMonitor]
+        ldump = [self.taskPool, self.subTimes, self.subStats]
         if len(self.taskPool)>0:
             logging.debug("Materialized disaster recovery cache: %s"%str(self.taskPool) )
         try:
@@ -375,13 +396,12 @@ class CrabServerWorkerComponent:
             f = open(self.wdir+"/cw_status.set", 'r')
             ldump = pickle.load(f)
             f.close()
-            self.taskPool, self.subTimes, self.subStats, self.resubCounterMonitor = ldump
+            self.taskPool, self.subTimes, self.subStats = ldump
         except Exception, e:
             logging.info("Failed to open cw_status.set. Building a new status\n" + str(e) )
             self.taskPool = {}
             self.subTimes = []
             self.subStats = {'succ':0, 'retry':0, 'fail':0}
-            self.resubCounterMonitor = {}
             self.materializeStatus()
             return
         # cold restart for crashes
@@ -405,7 +425,7 @@ class CrabServerWorkerComponent:
 
         workerCfg['taskname'] = taskUniqName
         workerCfg['actionType'] = actionType
-        workerCfg['retries'] = int( self.args.get('maxRetries', 0) )
+        workerCfg['retries'] = int( self.args.get('maxRetries', 3) )
 
         workerCfg['messageQueue'] = self.fwResultsQ
         workerCfg['blSessionPool'] = self.blDBsession.bossLiteDB.getPool() 

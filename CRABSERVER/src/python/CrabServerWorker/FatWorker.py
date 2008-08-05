@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.103 2008/07/31 13:59:21 farinafa Exp $"
-__version__ = "$Revision: 1.103 $"
+__revision__ = "$Id: FatWorker.py,v 1.104 2008/08/04 13:43:08 farinafa Exp $"
+__version__ = "$Revision: 1.104 $"
 import string
 import sys, os
 import time
@@ -366,6 +366,7 @@ class FatWorker(Thread):
                         continue  
             Session.commit(self.paDbSessionName)
             Session.close(self.paDbSessionName)
+            self.log.info("FatWorker %s registered jobs entities "%self.myName)
             return        
         else:
             ## some jobs need to be resubmitted later
