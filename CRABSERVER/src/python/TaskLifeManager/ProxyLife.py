@@ -10,7 +10,6 @@ from MessageService.MessageService import MessageService
 
 # module from TaskTracking component
 from TaskTracking.UtilSubject import UtilSubject
-from TaskTracking.TaskStateAPI import findTaskPA, getStatusUUIDEmail
 
 # Blite API import
 from ProdCommon.BossLite.API.BossLiteAPI import  BossLiteAPI
