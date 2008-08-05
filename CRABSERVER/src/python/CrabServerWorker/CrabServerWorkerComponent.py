@@ -298,13 +298,6 @@ class CrabServerWorkerComponent:
                 task = self.blDBsession.load(taskId, jobId)[0]
                 taskName = task['name']
                 job = task.jobs[0]
-                self.blDBsession.getRunningInstance(job)
-
-                if job.runningJob['closed'] == 'Y':
-                    self.blDBsession.getNewRunningInstance(job)
-                    job.runningJob['status'] = 'C'
-                    job.runningJob['statusScheduler'] = 'Created'
-                    self.blDBsession.updateDB(task)
             except Exception, e:
                 logging.info("Unable to load task from BossLite. Submission request won\'t be scheduled for taskId=%d"%taskId)
                 logging.info(traceback.format_exc())
