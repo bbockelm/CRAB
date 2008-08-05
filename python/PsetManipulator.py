@@ -66,7 +66,7 @@ class PsetManipulator:
             outFile.write("import FWCore.ParameterSet.Config as cms\n")
             outFile.write(self.cmsProcess.dumpPython())
         else:
-            outFile.write(str(self.cfg))
+            outFile.write(self.cfg.data.dumpConfig())
         outFile.close()
 
         return
@@ -107,7 +107,7 @@ class PsetManipulator:
             fileName = getattr(tFileService,'fileName',None).value()
             return fileName
         return None
-        
+
     def getPoolOutputModule(self):
         """ Get Output filename from PoolOutputModule and return it. If not existing, return None """
         if not self.cfg.data.outputModules:
