@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.91 2008/07/29 18:26:00 afanfani Exp $"
-__version__ = "$Revision: 1.91 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.92 2008/08/01 09:22:41 mcinquil Exp $"
+__version__ = "$Revision: 1.92 $"
 
 import os
 import time
@@ -1070,19 +1070,18 @@ class TaskTrackingComponent:
         ## bossLite session
         try:
             mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
-            ## using session pool 
-            #mySession = BossLiteAPI("MySQL", self.bossCfgDB)
         except ProdException, ex:
             logging.info(str(ex))
             return 0
         try:
             ## loading task from DB
-            task = ttdb.getNLockFirstNotFinished()
+            task = ttdb.getNLockFirstNotFinished(mySession.bossLiteDB)
             _loginfo =  ""
             try:
                 taskId = 0
                 if task == None or len(task) <= 0:
-                    ttdb.resetControlledTasks()
+                    logging
+                    ttdb.resetControlledTasks(mySession.bossLiteDB)
                 else:
                     taskId = task[0][0]
                     taskName = task[0][1]
@@ -1147,7 +1146,7 @@ class TaskTrackingComponent:
 
 		 	            ###  updating endedLevel  ###
 				    if endedLevel == 100:
-                                        msg = ttdb.updatingEndedPA( taskName, str(percentage), self.taskState[5])
+                                        msg = ttdb.updatingEndedPA( mySession.bossLiteDB, taskName, str(percentage), self.taskState[5])
                                         logBuf = self.__logToBuf__(logBuf, msg)
                                         if notified != 2:
                                             self.taskEnded(taskName)
@@ -1155,7 +1154,7 @@ class TaskTrackingComponent:
                                             succexo = 1
                                             logBuf = self.__logToBuf__(logBuf, msg)
 				    elif percentage != endedLevel:
-				        msg = ttdb.updatingEndedPA( taskName, str(percentage), status)
+				        msg = ttdb.updatingEndedPA( mySession.bossLiteDB, taskName, str(percentage), status)
                                         logBuf = self.__logToBuf__(logBuf, msg)
                                         if percentage >= thresholdLevel:
 					    if percentage == 100:
@@ -1192,7 +1191,7 @@ class TaskTrackingComponent:
             finally:
                 #case with a task taken
                 if task != None and len(task)>0:
-                    ttdb.setTaskControlled(taskId)
+                    ttdb.setTaskControlled(mySession.bossLiteDB, taskId)
 
                 ## clean task from memory
                 del task
@@ -1212,6 +1211,7 @@ class TaskTrackingComponent:
             del mySession
         except:
             logging.info("not closed..")
+            logging.error("ERROR: " + str(traceback.format_exc()))
             pass
 
         time.sleep(float(self.args['PollInterval']))

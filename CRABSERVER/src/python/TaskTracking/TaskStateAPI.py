@@ -404,42 +404,26 @@ class TaskStateAPI:
 
         return rowsAffected
 
-    def setTaskControlled( self, taskId ):
+    def setTaskControlled( self, dbSession, taskId ):
         """
         setTaskControlled
         see the description of the private function __setTaskControlled__
         """
-        conn, dbCur = self.openConnPA()
-
         try:
-            dbCur.execute("START TRANSACTION") 
-            try:
-                self.__setTaskControlled__(taskId, conn, dbCur)
-                dbCur.execute("COMMIT")
-            except:
-                dbCur.execute("ROLLBACK")
+            self.__setTaskControlled__(dbSession, taskId)
+        except:
                 raise
-        finally:
-            self.closeConnPA(dbCur, conn)
 
-
-    def resetControlledTasks(self):
+    def resetControlledTasks(self, dbSession ):
         """
         resetControlledTasks
         see the description of the private function __resetControlledTasks__
         """
-        conn, dbCur = self.openConnPA()
 
         try:
-            dbCur.execute("START TRANSACTION")
-            try:
-                self.__resetControlledTasks__(conn, dbCur)
-                dbCur.execute("COMMIT")
-            except:
-                dbCur.execute("ROLLBACK")
-                raise
-        finally:
-            self.closeConnPA(dbCur, conn)
+            self.__resetControlledTasks__(dbSession)
+        except:
+            raise
 
     def lockUnlockedTaskByTaskName( self, taskName ):
         """
@@ -496,7 +480,7 @@ class TaskStateAPI:
 
         return rowsAffected
 
-    def getNLockFirstNotFinished(self):
+    def getNLockFirstNotFinished(self, dbSession):
         """
         getNLockFirstNotFinished
         - input:
@@ -506,50 +490,35 @@ class TaskStateAPI:
         """
         ok = 0
         row = None
-        conn, dbCur = self.openConnPA()
         try:
             semWorkStatus.acquire()
-            try:
-                try:
-                    while ok == 0:
-                        dbCur.execute("START TRANSACTION")
-                        row = self.__getFirstNotFinished__(conn, dbCur)
-                        if len(row) > 1:
-                            raise Exception("len(row) > 1 unnexcepted from getFirstNotFinished(..) = " + str(len(row)))
- 
-                        if len(row) == 0:
-                            ok = 1
-                        else:#len(row) == 1
-                            ok = 0
-
-                        if ok == 0: #a task
-                            taskId = row[0][0]
-                            rowsAffected = self.__lockTask__(taskId, conn, dbCur)
-                            if rowsAffected == 1:
-                                ok = 1 #record successfully locked
-                            elif rowsAffected != 0:
-                                raise Exception("rowsAffected for lockTask(..) = " + str(rowsAffected))
-                            else:
-                                dbCur.execute("ROLLBACK")
-                finally:
-                    semWorkStatus.release()
-
-                dbCur.execute("COMMIT")
-            except:
-                dbCur.execute("ROLLBACK")
-                raise
+            while ok == 0:
+                row = self.__getFirstNotFinished__(dbSession)
+                if len(row) > 1:
+                    raise Exception("len(row) > 1 unnexcepted from getFirstNotFinished(..) = " + str(len(row)))
+                if len(row) == 0:
+                    ok = 1
+                else:#len(row) == 1
+                    ok = 0
+                if ok == 0: #a task
+                    taskId = row[0][0]
+                    rowsAffected = self.__lockTask__(taskId, dbSession)
+                    if rowsAffected == 1:
+                         ok = 1 #record successfully locked
+                    elif rowsAffected != 0:
+                         raise Exception("rowsAffected for lockTask(..) = " + str(rowsAffected))
+                    else:
+                         pass
         finally:
-            self.closeConnPA(dbCur, conn)
-
+            semWorkStatus.release()
         return row
 
-    def __getFirstNotFinished__( self, conn, dbCur ):
+    def __getFirstNotFinished__( self, dbSession ):
        """
        __getFirstNotFinished__
        - *private function*
        - input:
          #1 conn
-         #2 dbCur
        - output:
          a row if one exist
        - work: take first task not locked and not finished
@@ -560,12 +529,12 @@ class TaskStateAPI:
              "AND (notificationSent < 2 ) "+\
              "ORDER BY ID "+\
              "LIMIT 1;"
-       dbCur.execute(sql)
-       row = dbCur.fetchall()
-       return row
+       tupla = dbSession.select(sql)
+       if tupla == None:
+           return ()
+       return tupla
 
-
-    def __lockTask__( self, taskId, conn, dbCur ):
+    def __lockTask__( self, taskId, dbSession ):
         """
         __lockTask__
         - *private function*
@@ -579,22 +548,21 @@ class TaskStateAPI:
         sql = "UPDATE js_taskInstance "\
               "SET work_status=1 "\
               "WHERE ID = " + str(taskId) + " AND work_status = 0"
-        dbCur.execute(sql)
+        dbSession.modify(sql)
         rowsAffected = 1
         sql = "SELECT work_status "+\
               "FROM js_taskInstance "+\
               "WHERE id = '" + str(taskId) + "';"
-        row = dbCur.fetchall()
+        row = dbSession.select(sql)
         if len(row) == 1:
             if row[0][0] == 1:
                 rowsAffected = 1
-
         return rowsAffected
 
 
     def __getTaskWorkStatusByTaskId__(self, taskId, conn, dbCur):
         """
-        __resetControlledTasks__
+        __getTaskWorkStatusByTaskId__
         - *private function*
         - input: taskId, conn & dbCur
         - output: none
@@ -609,7 +577,7 @@ class TaskStateAPI:
         else:
             return -1
 
-    def __resetControlledTasks__(self, conn, dbCur):
+    def __resetControlledTasks__(self, dbSession):
         """
         __resetControlledTasks__
         - *private function*
@@ -620,20 +588,20 @@ class TaskStateAPI:
         sql = "UPDATE js_taskInstance "\
               "SET work_status = 0 "\
               "WHERE (work_status = 2)"
-        dbCur.execute(sql)
+        dbSession.modify(sql)
 
-    def __setTaskControlled__(self, taskId, conn, dbCur):
+    def __setTaskControlled__(self, dbSession, taskId):
         """
-        __resetControlledTasks__
+        __setTaskControlled__
         - *private function*
-        - input: conn & dbCur
+        - input: dbSession
         - output: none
         - work: set to work_status = 2
         """
         sql = "UPDATE js_taskInstance "\
               "SET work_status = 2 "\
               "WHERE ID = " + str(taskId)
-        dbCur.execute(sql)
+        dbSession.modify(sql)
 
     def getStatusUUIDEmail( self, taskName ):
         """
@@ -655,55 +623,55 @@ class TaskStateAPI:
         return task2Check
 
 
-    def checkExistPA( self, conn, dbCur, taskName):
+    def checkExistPA( self, conn, dbCur, taskName, dbSession = None):
         """
         _checkExistPA_
 
         call this ONLY from inside a TRANSACTION
         """
-        try:
-            sqlStr='SELECT eMail from js_taskInstance WHERE taskName="'+taskName+'";'
-            dbCur.execute("START TRANSACTION")
+        if dbSession == None:
             try:
-                dbCur.execute(sqlStr)
-            except Exception,ex:
-                raise ProdAgentException("Task not found in js_taskInstance. TaskName: '" + str(taskName) + "'.")
-            row = dbCur.fetchall()
-            dbCur.execute("COMMIT")
-
-            if len(row) == 1:
-     	        return 1
-            return 0
-        except:
-            dbCur.execute("ROLLBACK")
-            logging.debug("Task not found: " +str(taskName) )
+                sqlStr='SELECT eMail from js_taskInstance WHERE taskName="'+taskName+'";'
+                dbCur.execute("START TRANSACTION")
+                try:
+                    dbCur.execute(sqlStr)
+                except Exception,ex:
+                    raise ProdAgentException("Task not found in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+                row = dbCur.fetchall()
+                dbCur.execute("COMMIT")
+                if len(row) == 1:
+                    return 1
+                return 0
+            except:
+                dbCur.execute("ROLLBACK")
+                logging.debug("Task not found: " +str(taskName) )
+        else:
+            try:
+                sqlStr='SELECT eMail from js_taskInstance WHERE taskName="'+taskName+'";'
+                tupla = dbSession.select(sqlStr)
+                if len(tupla) == 1:
+                    return 1
+                return 0
+            except:
+                logging.debug("Task not found: " +str(taskName) )
 
         return 0
 
-    def updatingEndedPA( self, taskName, newPercentage, status ):
+    def updatingEndedPA( self, dbSession, taskName, newPercentage, status ):
         """
         _updatingEndedPA_
         """
         msg = ""
-        msg += "   -> updating the task table for task: " + taskName
-        msg += "      setting the field endedLevel at '" + newPercentage +"'"
-        msg += "   Setting the field status  at '" + status +"'"
+        msg += "   -> updating task: " + taskName
+        msg += "        setting endedLevel at '" + newPercentage +"'"
+        msg += "        setting status  at    '" + status +"'"
    
-        ## opening connection with PA's DB
-        conn, dbCur = self.openConnPA()
         try:
-            dbCur.execute("START TRANSACTION")
-            if self.checkExistPA(conn, dbCur, taskName):
+            if self.checkExistPA(None, None, taskName, dbSession):
                 sqlStr='UPDATE js_taskInstance SET endedLevel="'+newPercentage+'", status="'+status+'"\
                         WHERE taskName="'+taskName+'";'
-                rowModified=dbCur.execute(sqlStr)
-            dbCur.execute("COMMIT")
-            ## closing connection with PA's DB
-            self.closeConnPA( dbCur, conn )
+                rowModified=dbSession.modify(sqlStr)
         except:
-            dbCur.execute("ROLLBACK")
-            ## closing connection with PA's DB
-            self.closeConnPA( dbCur, conn )
 	    raise
 
         return msg;
