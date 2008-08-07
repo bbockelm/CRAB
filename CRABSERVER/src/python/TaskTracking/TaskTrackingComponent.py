@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.92 2008/08/01 09:22:41 mcinquil Exp $"
-__version__ = "$Revision: 1.92 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.93 2008/08/05 10:04:53 mcinquil Exp $"
+__version__ = "$Revision: 1.93 $"
 
 import os
 import time
@@ -37,6 +37,7 @@ from TaskStateAPI import TaskStateAPI
 
 # XML
 from CrabServer.CreateXmlJobReport import * 
+from CrabServer.XmlFramework import *
 
 # subject & original name
 from UtilSubject import *
@@ -165,16 +166,27 @@ class TaskTrackingComponent:
         
         update debug informations about task processing
         """
-        #"""
-        from InternalLoggingInfo import InternalLoggingInfo
-        dbgInfo = InternalLoggingInfo()
-        path2Wr = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" 
-        #logging.info("Appending: \n\n" + message + "\n\n")
-        dbgInfo.appendLoggingInfo( path2Wr, "***"+str(time.asctime())+"***\n" + message )
-        del dbgInfo
-        #"""
-        #pass
-
+        message.setdefault('date', str(time.time()))
+        #path of the logging info file 
+        filepath = os.path.join( self.args['dropBoxPath'], \
+                                 taskName+self.workAdd,    \
+                                 'internalog.xml'          \
+                               )
+        #init the xml frame
+        c = XmlFramework()
+        #if file already exists neeed to append at the end
+        if not os.path.exists( filepath ):
+            c.initialize(taskName)
+        else: 
+            c.fromFile( filepath )
+        #create the new event
+        ev = Event()
+        #add the dictionary information to the event
+        ev.initialize(message)
+        #add the node to the xml
+        c.addNode(ev)
+        #write the xml to the path
+        c.toFile( filepath )
 
     def __call__(self, event, payload):
         """
@@ -200,7 +212,8 @@ class TaskTrackingComponent:
         ERROR = ""
         taskName = payload
         logBuf = ""
-        _loginfo = "[" + event + "]: "
+        _loginfo = {}
+        _loginfo.setdefault('ev', str(event))
 
         # new task to insert
 	#if event == "DropBoxGuardianComponent:NewFile":
@@ -212,14 +225,13 @@ class TaskTrackingComponent:
 		self.insertNewTask( taskName )
                 logBuf = self.__logToBuf__(logBuf, "               new task inserted.")
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                _loginfo += "Arrived task: " + str(taskName) + "\n"
+                _loginfo.setdefault('txt', str("Arrived task: " + str(taskName)))
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: wrong payload from [" +event+ "]!!!!")
                 logBuf = self.__logToBuf__(logBuf, " ")
             logging.info(logBuf)
-            if _loginfo != '':
-                self.__appendDbgInfo__(taskName, _loginfo)
+            self.__appendDbgInfo__(taskName, _loginfo)
             return None
 
         if event == "CRAB_Cmd_Mgr:MailReference":
@@ -247,7 +259,7 @@ class TaskTrackingComponent:
 		self.updateTaskStatus( taskName, self.taskState[1] )
                 logBuf = self.__logToBuf__(logBuf, "              task updated.")
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                _loginfo += "Task in submission queue: " + str(taskName) + "\n"
+                _loginfo.setdefault('txt', str("Task in submission queue: " + str(taskName)))
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
@@ -256,8 +268,7 @@ class TaskTrackingComponent:
                 ERROR += "  ERROR: problems managing task ["+taskName+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
             logging.info(logBuf)
-            if _loginfo != '':
-                self.__appendDbgInfo__(taskName, _loginfo)
+            self.__appendDbgInfo__(taskName, _loginfo)
             return taskName, str(OK + "\n" + ERROR)
 
         if event == "CrabServerWorkerComponent:CrabWorkPerformed":
@@ -348,10 +359,10 @@ class TaskTrackingComponent:
                 logBuf = self.__logToBuf__(logBuf, event + ": " + str(payload) )
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 threadName, taskName, code, reason, time = payload.split("::")
-                _loginfo += "Submission completed: " + str(taskName) + "\n"
-                _loginfo += "\treason: \t" + str(reason) + "\n"
-                _loginfo += "\tcode: \t" + str(code) + "\n"
-                _loginfo += "\ttime: \t" + str(time) + "\n"
+                _loginfo.setdefault('txt', str("Submission completed: " + str(taskName)))
+                _loginfo.setdefault('reason', str(reason))
+                _loginfo.setdefault('code', str(code))
+                _loginfo.setdefault('time', str(time))
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -359,8 +370,7 @@ class TaskTrackingComponent:
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
-            if _loginfo != '':
-                self.__appendDbgInfo__(taskName, _loginfo)
+            self.__appendDbgInfo__(taskName, _loginfo)
             logging.info(logBuf)
             return taskName, str(OK + "\n" + ERROR)
 
@@ -370,8 +380,8 @@ class TaskTrackingComponent:
                 logBuf = self.__logToBuf__(logBuf, event + ": " + str(payload) )
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 taskName, count = payload.split("::")
-                _loginfo += "New command: " + str(taskName) + "\n"
-                _loginfo += "\tcount: \t" + str(count) + "\n"
+                _loginfo.setdefault('txt', str("New command: " + str(taskName)))
+                _loginfo.setdefault('count', str(count))
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -379,8 +389,7 @@ class TaskTrackingComponent:
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
-            if _loginfo != '':
-                self.__appendDbgInfo__(taskName, _loginfo)
+            self.__appendDbgInfo__(taskName, _loginfo)
             logging.info(logBuf)
 
         if event == "KillTask":
@@ -389,8 +398,8 @@ class TaskTrackingComponent:
                 logBuf = self.__logToBuf__(logBuf, event + ": " + str(payload) )
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 taskName, fake_proxy, range = payload.split(":")
-                _loginfo += "Submission completed: " + str(taskName) + "\n"
-                _loginfo += "\trange: \t" + str(range) + "\n"
+                _loginfo.setdefault('txt', str("Submisson completed: " + str(taskName)))
+                _loginfo.setdefault('range', str(range))
             else:
                 logBuf = self.__logToBuf__(logBuf, " ")
                 logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -398,8 +407,7 @@ class TaskTrackingComponent:
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
-            if _loginfo != '':
-                self.__appendDbgInfo__(taskName, _loginfo)
+            self.__appendDbgInfo__(taskName, _loginfo)
             logging.info(logBuf)
 
 
@@ -464,13 +472,12 @@ class TaskTrackingComponent:
                     import traceback
                     logging.error( "Exception raised: " + str(ex) )
                     logging.error( str(traceback.format_exc()) )
-                _loginfo += "GetOutput performed: " + str(taskName) + "\n"
-                _loginfo += "\tjob-list: \t" + str(jobstr) + "\n"
+                _loginfo.setdefault('txt', str("GetOutput performed: " + str(taskName)))
+                _loginfo.setdefault('range', str(jobstr))
             else:
                 logging.error("No task specified for " + str(event) )
             logging.debug('output retrieved ')
-            if _loginfo != '':
-                self.__appendDbgInfo__(taskName, _loginfo)
+            self.__appendDbgInfo__(taskName, _loginfo)
             return
 
         
@@ -1076,7 +1083,7 @@ class TaskTrackingComponent:
         try:
             ## loading task from DB
             task = ttdb.getNLockFirstNotFinished(mySession.bossLiteDB)
-            _loginfo =  ""
+            _loginfo = {} 
             try:
                 taskId = 0
                 if task == None or len(task) <= 0:
@@ -1178,8 +1185,7 @@ class TaskTrackingComponent:
                                 self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
                                 if succexo:
                                     self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
-                                    _loginfo += "Updating task: " + str(taskName) + "\n"
-                                    _loginfo += "\tpublishing task success (sending e-mail to %s)"%(str(eMail)) + "\n"
+                                    _loginfo.setdefault('txt', "publishing task success (sending e-mail to %s)"%(str(eMail)))
                                     msg = ttdb.updatingNotifiedPA( taskName, notified )
                                     logBuf = self.__logToBuf__(logBuf, msg)
  			    except ZeroDivisionError, detail:
@@ -1197,7 +1203,7 @@ class TaskTrackingComponent:
                 del task
                 del taskObj
 
-                if _loginfo != '':
+                if len(_loginfo) > 0:
                     self.__appendDbgInfo__(taskName, _loginfo)
 
 
