@@ -786,7 +786,7 @@ class TaskTrackingComponent:
             if len(eMaiList) < 1:
                 c.initialize( origTaskName, "", userName, percentage, thresholdLevel, nJobs)
             else:
-                for index in range(len(eMaiList)):
+                for index in xrange(len(eMaiList)):
                     if index != 0:
                         c.addEmailAddress( eMaiList[index] )
                     else:
@@ -822,7 +822,7 @@ class TaskTrackingComponent:
         eMaiList2 = []
         if eMail != None:
             eMaiList = eMail.split(";")
-            for index in range(len(eMaiList)):
+            for index in xrange(len(eMaiList)):
                 temp = eMaiList[index].replace(" ", "")
                 if self.checkEmail( temp ):
                     eMaiList2.append( temp )
@@ -1293,7 +1293,7 @@ class TaskTrackingComponent:
 
         nMaxThreads = int(self.args['Thread']) + 1
         # start polling threads
-	for i in range(1, nMaxThreads):
+	for i in xrange(1, nMaxThreads):
 	    pollingThread = PollThread(self.pollTasks, "pollingThread_" + str(i))
             pollingThread.start()
 
