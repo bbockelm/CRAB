@@ -123,7 +123,7 @@ class TaskTrackingComponent:
         self.workAdd = "_spec/"
         self.xmlReportFileName = "xmlReportFile.xml"
         self.tempxmlReportFile = ".tempxmlReportFileName"
-        self.mutex = Condition()
+        ##self.mutex = Condition()
 
 	#
 	self.taskState = [\
@@ -987,6 +987,8 @@ class TaskTrackingComponent:
         """
         _computeJobStatus_
         """
+        ttdb = TaskStateAPI()
+
         for jobbe in taskObj.jobs:
             try:
                 mySession.getRunningInstance(jobbe)
@@ -1004,14 +1006,7 @@ class TaskTrackingComponent:
 	        site  = jobbe.runningJob['destination'].split(":")[0]
 	    del jobbe
  
- 	    try:
-	        self.mutex.acquire()
-                ttdb = TaskStateAPI()
-	        resubmitting, MaxResub, Resub = ttdb.checkNSubmit( taskName, job )
-	        internalstatus = ttdb.jobStatusServer( taskName, job )
-	    finally:
-	        self.mutex.notifyAll()
-	        self.mutex.release()
+	    resubmitting, MaxResub, Resub, internalstatus = ttdb.checkNSubmit(mySession.bossLiteDB, taskName, job)
                     
             vect = []
             if eec == "NULL" and jec == "NULL":
@@ -1066,10 +1061,14 @@ class TaskTrackingComponent:
 
         Poll the task database
         @note: user __logToBuf__ function utility for a cross-thread-readable logging ^^
-         """
+        """
+        t1 = t2 = t3 = t4 = t5 = t6 = t7 = 0
+        t1 = time.time()
         logBuf = ""
 
         task = None
+        taskName = ""
+        numJobs = 0
         taskObj = None
         mySession = None
         ttdb = TaskStateAPI()
@@ -1085,9 +1084,9 @@ class TaskTrackingComponent:
             task = ttdb.getNLockFirstNotFinished(mySession.bossLiteDB)
             _loginfo = {} 
             try:
+                t2 = time.time()
                 taskId = 0
                 if task == None or len(task) <= 0:
-                    logging
                     ttdb.resetControlledTasks(mySession.bossLiteDB)
                 else:
                     taskId = task[0][0]
@@ -1123,9 +1122,9 @@ class TaskTrackingComponent:
 			    countNotSubmitted = 0 
 			    dictStateTot = {}
                             numJobs = len(taskObj.jobs)
-                           
+                            t3 = time.time()
                             dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
-
+                            t4 = time.time()
 			    for state in dictReportTot:
                                 logBuf = self.__logToBuf__(logBuf, " Job " + state + ": " + str(dictReportTot[state]))
 			    if countNotSubmitted > 0:
@@ -1135,7 +1134,7 @@ class TaskTrackingComponent:
 
                             totjob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress']  
 			    endedJob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed']
-
+                            t5 = time.time()
 			    try:
 			        percentage = (100 * endedJob) / numJobs
 			        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
@@ -1193,6 +1192,7 @@ class TaskTrackingComponent:
                                 logBuf = self.__logToBuf__(logBuf, "WARNING: No jobs in the task " + taskName)
                                 logBuf = self.__logToBuf__(logBuf, "         deatil: " + str(detail))
                                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                            t6 = time.time()
                            
             finally:
                 #case with a task taken
@@ -1219,6 +1219,15 @@ class TaskTrackingComponent:
             logging.info("not closed..")
             logging.error("ERROR: " + str(traceback.format_exc()))
             pass
+        t7 = time.time()
+        messs = "\n " +taskName+ " " +str(numJobs)
+        messs += "\n"+"int1:"+str(t2-t1)+ "\t " +str(numJobs) 
+        messs += "\n"+"int2:"+str(t3-t2)+ "\t " +str(numJobs)
+        messs += "\n"+"int3:"+str(t4-t3)+ "\t " +str(numJobs)
+        messs += "\n"+"int4:"+str(t5-t4)+ "\t " +str(numJobs)
+        messs += "\n"+"int5:"+str(t6-t5)+ "\t " +str(numJobs)
+        messs += "\n"+"int6:"+str(t7-t6)+ "\t " +str(numJobs)
+        #logging.info(messs)
 
         time.sleep(float(self.args['PollInterval']))
 

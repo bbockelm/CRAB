@@ -6,12 +6,7 @@ from threading import BoundedSemaphore
 # DB PA
 from ProdAgentCore.ProdAgentException import ProdAgentException
 from ProdAgentDB.Connect import connect
-
-from ProdCommon.Database import Session
-
 from ProdAgentDB.Config import defaultConfig as dbConfig
-from ProdAgent.WorkflowEntities import JobState
-from ProdAgent.WorkflowEntities import Job
 
 import traceback
 
@@ -41,7 +36,7 @@ class TaskStateAPI:
         dbCur.close()
         conn.close()
 
-    def checkNSubmit( self, taskName, idJob):
+    def checkNSubmit( self, dbSession, taskName, idJob):
         """
         _checkNSubmit_
 
@@ -53,56 +48,42 @@ class TaskStateAPI:
         jobSpecId = taskName + "_job" + str(idJob)
         jobState = ""
         try:
-            Session.set_database(dbConfig)
-            Session.connect(jobSpecId)
-            Session.start_transaction(jobSpecId)
-
-            jobInfo = { 'MaxRetries': 1, 'Retries': 0 }
-            if JobState.isRegistered( jobSpecId ) == True:
-                jobInfo = JobState.general(jobSpecId)
-
-            Session.commit(jobSpecId)
-            Session.close(jobSpecId)
-
-            jobMaxRetries = int(jobInfo['MaxRetries'])
-            jobRetries = int(jobInfo['Retries'])
-            if 'State' in jobInfo:
-                jobState = str(jobInfo['State'])
+            sqlStr='SELECT max_retries,retries,status '+ \
+                   'FROM we_Job WHERE '+  \
+                   'id="'+jobSpecId+'";'
+            tupla = dbSession.select( sqlStr )
+            if tupla != None and len(tupla) > 0:
+                jobMaxRetries = int(tupla[0][0])
+                jobRetries = int(tupla[0][1])
+                jobState = str(tupla[0][2])
+            else:
+                return 1, None, None, None
         except Exception, ex:
-            Session.commit_all()
-            Session.close_all()
             logging.error(" Error in method "  + self.checkNSubmit.__name__ )
             logging.error(" Exception: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
-            return 1, None, None
-
+            return 1, None, None, None
         if jobMaxRetries > jobRetries and jobState != "finished":
-            return 1, jobMaxRetries, jobRetries
-        return 0, jobMaxRetries, jobRetries
+            return 1, jobMaxRetries, jobRetries, jobState
+        return 0, jobMaxRetries, jobRetries, jobState
 
-    def jobStatusServer( self, taskName, idJob):
+    def jobStatusServer( self, dbSession, taskName, idJob):
         """
         return the status of we_Job.status
         """
         jobSpecId = taskName + "_job" + str(idJob)
         jobState = ""
         try:
-            Session.set_database(dbConfig)
-            Session.connect(jobSpecId)
-            Session.start_transaction(jobSpecId)
-
-            jobInfo = { 'State' : "inProgress" }
-            if JobState.isRegistered( jobSpecId ) == True:
-                jobInfo = JobState.general(jobSpecId)
-
-            Session.commit(jobSpecId)
-            Session.close(jobSpecId)
-
-            if 'State' in jobInfo:
-                jobState = str(jobInfo['State'])
+            sqlStr='SELECT status '+ \
+                   'FROM we_Job WHERE '+  \
+                   'id="'+jobSpecId+'";'
+            tupla = dbSession.select( sqlStr )
+            jobState = str(tupla[0][0])
         except Exception, ex:
-            Session.commit_all()
-            Session.close_all()
+            logging.error(" Error in method "  + self.checkNSubmit.__name__ )
+            logging.error(" Exception: " + str(ex) )
+            logging.error( str(traceback.format_exc()) )
+            return None
 
         return jobState
 
