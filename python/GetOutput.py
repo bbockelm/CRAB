@@ -9,7 +9,9 @@ class GetOutput(Actor):
         self.jobs = args[1]
         
         self.outDir = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
+        if ( self.outDir[-1] != '/' ) : self.outDir = self.outDir + '/'
         self.logDir = self.cfg_params.get('USER.logdir' ,common.work_space.resDir())
+        if ( self.logDir[-1] != '/' ) : self.logDir = self.logDir + '/'
         self.return_data = self.cfg_params.get('USER.return_data',0)
 
         self.possible_status = {
