@@ -83,6 +83,7 @@ class GetOutput(Actor):
         else:
             submission_id = common._db.queryRunJob('submission',self.list_id)
             submission_id.sort()
+            submission_id.reverse()
             max_id=submission_id[0]
             if max_id > 1: self.moveOutput(max_id)
 
@@ -199,7 +200,7 @@ class GetOutput(Actor):
         sub_id = common._db.queryRunJob('submission',self.list_id)
         Dist_sub_id = list(set(sub_id))
 
-        OutDir_Base=self.outDir+'Submission_' 
+        OutDir_Base=self.outDir+'Submission_'
         for i in range(1,max_id):
             if not os.path.isdir( OutDir_Base + str(i) + '/'):
                 cmd=('mkdir '+ OutDir_Base + str(i) + '/  >& /dev/null')
@@ -210,8 +211,8 @@ class GetOutput(Actor):
             id = self.list_id[i]
             if sub_id[i] > 1 :
                 cmd='mv '+self.outDir+'*_'+str(self.list_id[i])+'.* ' + OutDir_Base + str(sub_id[i]-1) + '/  >& /dev/null'  
-            else: 
-                cmd='mv '+self.outDir+'*_'+str(self.list_id[i])+'.* ' + OutDir_Base + str(sub_id[i]) + '/  >& /dev/null'
+            #else: 
+            #    cmd='mv '+self.outDir+'*_'+str(self.list_id[i])+'.* ' + OutDir_Base + str(sub_id[i]) + '/  >& /dev/null'
             try:
                 cmd_out = runCommand(cmd) 
                 common.logger.write(cmd_out)
