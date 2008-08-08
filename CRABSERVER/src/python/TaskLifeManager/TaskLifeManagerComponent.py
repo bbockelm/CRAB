@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.24 2008/06/11 15:02:33 mcinquil Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.26 2008/08/01 09:23:14 mcinquil Exp $"
+__version__ = "$Revision: 1.26 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -538,8 +538,9 @@ class TaskLifeManagerComponent:
             ############################
             ### auto-registering msg ###
             ##  to wait task unpack.  ##
-            self.unpackingTask( taskName )
+            #self.unpackingTask( taskName )
             ############################
+            pass
 
     def insertEndedWrp( self, taskName ):
         """
