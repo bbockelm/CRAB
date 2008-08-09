@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.93 2008/08/05 10:04:53 mcinquil Exp $"
-__version__ = "$Revision: 1.93 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.96 2008/08/08 13:00:13 mcinquil Exp $"
+__version__ = "$Revision: 1.96 $"
 
 import os
 import time
@@ -1062,8 +1062,6 @@ class TaskTrackingComponent:
         Poll the task database
         @note: user __logToBuf__ function utility for a cross-thread-readable logging ^^
         """
-        t1 = t2 = t3 = t4 = t5 = t6 = t7 = 0
-        t1 = time.time()
         logBuf = ""
 
         task = None
@@ -1084,7 +1082,6 @@ class TaskTrackingComponent:
             task = ttdb.getNLockFirstNotFinished(mySession.bossLiteDB)
             _loginfo = {} 
             try:
-                t2 = time.time()
                 taskId = 0
                 if task == None or len(task) <= 0:
                     ttdb.resetControlledTasks(mySession.bossLiteDB)
@@ -1097,8 +1094,6 @@ class TaskTrackingComponent:
 		    endedLevel = task[0][5]
 		    status = task[0][6]
 		    uuid = task[0][7]
-
-                    #logBuf = self.__logToBuf__(logBuf, "Got Task(id, name): (" + str(taskId) + ", " + str(taskName) + ")")
 
                     if status == self.taskState[2] and notified < 2:
                         ######### Taskfailed is prepared now
@@ -1122,19 +1117,14 @@ class TaskTrackingComponent:
 			    countNotSubmitted = 0 
 			    dictStateTot = {}
                             numJobs = len(taskObj.jobs)
-                            t3 = time.time()
                             dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
-                            t4 = time.time()
 			    for state in dictReportTot:
                                 logBuf = self.__logToBuf__(logBuf, " Job " + state + ": " + str(dictReportTot[state]))
 			    if countNotSubmitted > 0:
                                 logBuf = self.__logToBuf__(logBuf, "    -> of which not yet submitted: " + str(countNotSubmitted))
 
-                            #logBuf = self.__logToBuf__(logBuf, str(dictStateTot))
-
                             totjob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress']  
 			    endedJob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed']
-                            t5 = time.time()
 			    try:
 			        percentage = (100 * endedJob) / numJobs
 			        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
@@ -1192,7 +1182,6 @@ class TaskTrackingComponent:
                                 logBuf = self.__logToBuf__(logBuf, "WARNING: No jobs in the task " + taskName)
                                 logBuf = self.__logToBuf__(logBuf, "         deatil: " + str(detail))
                                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                            t6 = time.time()
                            
             finally:
                 #case with a task taken
@@ -1206,7 +1195,6 @@ class TaskTrackingComponent:
                 if len(_loginfo) > 0:
                     self.__appendDbgInfo__(taskName, _loginfo)
 
-
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "ERROR: " + str(traceback.format_exc()))
 
@@ -1219,15 +1207,6 @@ class TaskTrackingComponent:
             logging.info("not closed..")
             logging.error("ERROR: " + str(traceback.format_exc()))
             pass
-        t7 = time.time()
-        messs = "\n " +taskName+ " " +str(numJobs)
-        messs += "\n"+"int1:"+str(t2-t1)+ "\t " +str(numJobs) 
-        messs += "\n"+"int2:"+str(t3-t2)+ "\t " +str(numJobs)
-        messs += "\n"+"int3:"+str(t4-t3)+ "\t " +str(numJobs)
-        messs += "\n"+"int4:"+str(t5-t4)+ "\t " +str(numJobs)
-        messs += "\n"+"int5:"+str(t6-t5)+ "\t " +str(numJobs)
-        messs += "\n"+"int6:"+str(t7-t6)+ "\t " +str(numJobs)
-        #logging.info(messs)
 
         time.sleep(float(self.args['PollInterval']))
 
