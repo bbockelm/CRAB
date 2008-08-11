@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.104 2008/08/04 13:43:08 farinafa Exp $"
-__version__ = "$Revision: 1.104 $"
+__revision__ = "$Id: FatWorker.py,v 1.105 2008/08/05 18:14:41 farinafa Exp $"
+__version__ = "$Revision: 1.105 $"
 import string
 import sys, os
 import time
@@ -273,12 +273,12 @@ class FatWorker(Thread):
         return newRange, skippedSubmissions
 
     def submitTaskBlocks(self, task, sub_jobs, reqs_jobs, matched):  
-        submitted, fullSubJob = ([], [])
+        submitted, fullSubJob, errorTrace = ([], [], '')
         for sub in sub_jobs: fullSubJob.extend(sub)
         unsubmitted = fullSubJob
         if len(matched)==0:
             self.log.info('Worker %s unable to submit jobs. No sites matched'%self.myName)
-            return submitted, unsubmitted
+            return submitted, unsubmitted, errorTrace
 
         self.SendMLpre(task)        
         for ii in matched:
