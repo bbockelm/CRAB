@@ -8,10 +8,13 @@ class GetOutput(Actor):
         self.cfg_params = args[0]
         self.jobs = args[1]
         
+        self.log=0
         self.outDir = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
         if ( self.outDir[-1] != '/' ) : self.outDir = self.outDir + '/'
         self.logDir = self.cfg_params.get('USER.logdir' ,common.work_space.resDir())
         if ( self.logDir[-1] != '/' ) : self.logDir = self.logDir + '/'
+        if self.logDir != self.outDir:
+            self.log=1
         self.return_data = self.cfg_params.get('USER.return_data',0)
 
         self.possible_status = {
@@ -209,10 +212,17 @@ class GetOutput(Actor):
                 cmd_out = runCommand(cmd)   
                 common.logger.write(str(cmd_out))
                 common.logger.debug(3,str(cmd_out))
+            if self.log == 1:     
+                LogDir_Base=self.logDir+'Submission_'
+                if not os.path.isdir( LogDir_Base + str(i) + '/'):
+                    cmd=('mkdir '+ LogDir_Base + str(i) + '/  >& /dev/null')
+                    cmd_out = runCommand(cmd)   
+                    common.logger.write(str(cmd_out))
+                    common.logger.debug(3,str(cmd_out))
         for i in range(len(self.list_id)):
             id = self.list_id[i]
             if sub_id[i] > 1 :
-                cmd='mv '+self.outDir+'*_'+str(self.list_id[i])+'.* ' + OutDir_Base + str(sub_id[i]-1) + '/  >& /dev/null'  
+                cmd='mv '+self.outDir+'*_'+str(self.list_id[i])+'.* ' + OutDir_Base + str(sub_id[i]-1) + '/  >& /dev/null'
             #else: 
             #    cmd='mv '+self.outDir+'*_'+str(self.list_id[i])+'.* ' + OutDir_Base + str(sub_id[i]) + '/  >& /dev/null'
             try:
@@ -224,4 +234,15 @@ class GetOutput(Actor):
                 common.logger.write(msg)
                 common.logger.debug(3,msg)
                 pass
+            if self.log == 1:
+                cmdlog='mv '+self.logDir+'*_'+str(self.list_id[i])+'.* ' + LogDir_Base + str(sub_id[i]-1) + '/  >& /dev/null' 
+                try:
+                    cmd_out = runCommand(cmdlog) 
+                    common.logger.write(cmd_out)
+                    common.logger.debug(3,cmd_out)
+                except:
+                    msg = 'no output to move for job '+str(id)
+                    common.logger.write(msg)
+                    common.logger.debug(3,msg)
+                    pass
         return
