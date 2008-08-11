@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.1 2008/07/23 07:30:06 spiga Exp $"
+__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.2 2008/07/23 07:47:07 farinafa Exp $"
 
 import os
 import pickle
@@ -166,7 +166,11 @@ class TaskRegisterComponent:
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName, actionType)
         workerCfg['ProxiesDir'] = self.args['ProxiesDir']
         workerCfg['allow_anonymous'] = self.args['allow_anonymous']
-        self.workerSet[thrName] = RegisterWorker(logging, thrName, workerCfg)
+        try:
+            self.workerSet[thrName] = RegisterWorker(logging, thrName, workerCfg)
+        except Exception, e:
+            logging.info('Unable to allocate registration thread: %s'%thrName)
+            logging.info(traceback.format_exc())
         return
 
 ################################

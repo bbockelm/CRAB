@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.63 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.63 2008/08/04 14:56:58 farinafa Exp $"
+__version__ = "$Revision: 1.65 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.65 2008/08/05 18:24:10 farinafa Exp $"
 
 import os, pickle, time, copy
 
@@ -230,7 +230,11 @@ class CrabServerWorkerComponent:
             workerCfg['wmsEndpoint'] = customWmsList[ outcomeCounter % len(customWmsList) ] 
         
         # Worker Factory
-        self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
+        try:
+            self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
+        except Exception, e:
+            logging.info('Unable to allocate submission thread: %s'%thrName)
+            logging.info(traceback.format_exc())
         return
 
 ################################
