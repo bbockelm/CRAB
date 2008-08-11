@@ -37,6 +37,7 @@ class ProxyLife:
         self.__cleanproxies = []
 
         ## clean script
+        logging.info("Cleaning old script...")
         self.delOldScript()
 
         ## session blite
@@ -57,13 +58,23 @@ class ProxyLife:
             return output
         return -1
 
-    def cleanProxy(self, proxy):
-        self.executeCommand( "rm -f " + str(proxy) )
+    def cleanFiles(self, files):
+        logging.info(files)
+        self.executeCommand( "rm -f " + str(files) )
+        logging.debug("Executed command: " + str("rm -f " + str(files)))
 
     def delOldScript(self):
+        workdir = os.getenv("PRODAGENT_WORKDIR")
+        dir = os.path.join( workdir, "TaskLifeManager" )
         try:
-            self.cleanProxy("deleteSB_*_.py")
-        except:
+            files = os.listdir(dir)
+            for file in files:
+                if file == '.' or file == '..' or \
+                  not (file.startswith("deleteSB_") and file.endswith("_.py")):
+                    continue
+                self.cleanFiles( os.path.join( dir, file ) )
+        except Exception, ex:
+            logging.info("Problem cleaning old script: " +str(ex))
             pass
 
     def buildScript(self, tasklist):
@@ -309,7 +320,7 @@ class ProxyLife:
                             allTasks.append(task)
                     logging.info( "Cleaning expired proxy: " + str(proxyfull) ) 
                     ## delete the proxy file
-                    self.cleanProxy(proxyfull)
+                    self.cleanFiles(proxyfull)
                     ## notify the admin to hand-clean
                     if not self.cleanasked(proxyfull):
                         logging.debug ("proxy: "+str(proxyfull)+" not in " +str(self.__cleanproxies))
