@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.65 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.65 2008/08/05 18:24:10 farinafa Exp $"
+__version__ = "$Revision: 1.66 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.66 2008/08/11 09:11:51 farinafa Exp $"
 
 import os, pickle, time, copy
 
@@ -79,7 +79,7 @@ class CrabServerWorkerComponent:
         if self.args['dropBoxPath']:
             self.wdir = self.args['dropBoxPath']
 
-        self.maxAttempts = int( self.args.get('maxCmdAttempts', 3) )
+        self.maxAttempts = int( self.args.get('maxRetries', 3) )
         self.maxThreads = int( self.args.get('maxThreads', 5) )
 
         # pre-allocate pool instances that will be passed to the workers

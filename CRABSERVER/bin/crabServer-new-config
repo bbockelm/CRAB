@@ -68,7 +68,6 @@ if  homeDir == None:
 crabServerConfiguration = {
     'resourceBroker':'CERN',
     'WMSserviceList':'', 
-    'maxCmdAttempts':'5',
     'dropBoxPath':'',
     'allow_anonymous':'0',
     'ProxiesDir':'/tmp/del_proxies/',
