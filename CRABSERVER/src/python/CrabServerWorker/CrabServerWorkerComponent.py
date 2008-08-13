@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.66 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.66 2008/08/11 09:11:51 farinafa Exp $"
+__version__ = "$Revision: 1.67 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.67 2008/08/12 15:01:00 farinafa Exp $"
 
 import os, pickle, time, copy
 
@@ -332,7 +332,7 @@ class CrabServerWorkerComponent:
                    wfJob.setState(job['name'], 'reallyFinished') 
                    Session.commit(taskName)
                    Session.close(taskName)
-                except Excetion, e:
+                except Exception, e:
                    logging.info("Error while declaring WF-Entities failed for job %sfailed "%job['name'])
 
                 # Propagate info emulating a message in FW results queue
