@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.105 2008/08/05 18:14:41 farinafa Exp $"
-__version__ = "$Revision: 1.105 $"
+__revision__ = "$Id: FatWorker.py,v 1.106 2008/08/11 09:05:10 farinafa Exp $"
+__version__ = "$Revision: 1.106 $"
 import string
 import sys, os
 import time
@@ -597,7 +597,7 @@ class FatWorker(Thread):
             if len(job['dlsDestination']) == 1:
                 T_SE=str(job['dlsDestination'][0])
             elif len(job['dlsDestination']) == 2:
-                T_SE='%s,%s'%(dlsDest[0], dlsDest[1])
+                T_SE='%s,%s'%(job['dlsDestination'][0], job['dlsDestination'][1])
             else:
                 T_SE = str(len(job['dlsDestination']))+'_Selected_SE'
 
