@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-import re, sys
+import re
+import sys
 import ldap
 
 DEBUG = 0
+map_source = {'ceList': [], 'bdii': ''}
 ce_to_cluster_map = {}
 cluster_to_site_map = {}
 
@@ -15,7 +17,7 @@ def runldapquery(filter, attribute, bdii):
 
     bdiiuri = 'ldap://' + bdii + ':2170'
     l = ldap.initialize(bdiiuri)
-    
+
     l.simple_bind_s('', '')
 
     base = "o=grid"
@@ -23,7 +25,7 @@ def runldapquery(filter, attribute, bdii):
     timeout = 0
     result_set = []
     filter = filter.strip("'")
-    
+
     try:
         result_id = l.search(base, scope, filter, attribute)
         while 1:
@@ -43,7 +45,7 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
     """
     Given a list of SE FQDNs, return list of CEUniqueIDs that advertise CMS
     support and are in Production,
-    sorted by number of waiting jobs in descending order 
+    sorted by number of waiting jobs in descending order
     """
     jmlist = []
 
@@ -73,19 +75,20 @@ def getJMListFromSEList(selist, bdii='exp-bdii.cern.ch'):
 
     jminfo_list.sort(compare_by('waiting_jobs'))
     jmlist = [x['ce'] for x in jminfo_list]
-    
     return jmlist
 
-def generateMaps(ce_list, bdii='exp-bdii.cern.ch'):
+def generateMaps(ceList, bdii='exp-bdii.cern.ch'):
     """
     Generate maps of CE to Cluster and Cluster to Site as the globals
     ce_to_cluster_map, cluster_to_site_map
-    
-    ce_list: list of GlueCEUniqueIDs
+
+    ceList: list of GlueCEUniqueIDs
     bdii: BDII instance to query
     """
-#    if ce_to_cluster_map: return
-    query = buildOrQuery('GlueCEUniqueID', ce_list)
+    if (ceList == map_source['ceList']
+        and bdii == map_source['bdii']): return
+
+    query = buildOrQuery('GlueCEUniqueID', ceList)
 
     pout = runldapquery(query, 'GlueCEUniqueID GlueForeignKey', bdii)
 
@@ -95,11 +98,11 @@ def generateMaps(ce_list, bdii='exp-bdii.cern.ch'):
         clusterid = x[0][1]['GlueForeignKey'][0]
         m = r.match(clusterid)
         if m: ce_to_cluster_map[host] = m.groups()[0]
-            
+
     query = "(&(objectClass=GlueCluster)"
     query += buildOrQuery('GlueClusterUniqueID', ce_to_cluster_map.values())
     query += ")"
-    
+
     pout = runldapquery(query, 'GlueClusterUniqueID GlueForeignKey', bdii)
     r = re.compile('^GlueSiteUniqueID=(.*)')
     for x in pout:
@@ -111,6 +114,11 @@ def generateMaps(ce_list, bdii='exp-bdii.cern.ch'):
                 site = m.groups()[0]
                 cluster_to_site_map[cluster] = site
 
+    # cache the list sources
+    map_source['ceList'] = ceList
+    map_source['bdii'] = bdii
+
+    if (DEBUG): print 40*'*', 'exit generateMaps', 40*'*'
 def buildOrQuery(gluekey, list):
     """
     Returns a nugget of LDAP requesting the OR of all items
@@ -120,14 +128,14 @@ def buildOrQuery(gluekey, list):
     query = "(|"
     for x in list:
         query += "(%s=%s)" % (gluekey, x)
-    query += ")"    
+    query += ")"
     return query
 
 def isOSGSite(host_list, bdii='exp-bdii.cern.ch'):
     """
     Given a list of CEs, return only the ones which belong to OSG sites
     """
-    if (not ce_to_cluster_map): generateMaps(host_list, bdii)
+    generateMaps(host_list, bdii)
 
     query = buildOrQuery('GlueSiteUniqueID', cluster_to_site_map.values())
     pout = runldapquery(query, 'GlueSiteUniqueID GlueSiteDescription', bdii)
@@ -154,7 +162,7 @@ def getSoftwareAndArch(host_list, software, arch, bdii='exp-bdii.cern.ch'):
     Given a list of CEs, return only those that match a given software
     and architecture tag
     """
-    if (not ce_to_cluster_map): generateMaps(host_list, bdii)
+    generateMaps(host_list, bdii)
 
     results_list = []
     software = 'VO-cms-' + software
@@ -176,7 +184,7 @@ def getSoftwareAndArch(host_list, software, arch, bdii='exp-bdii.cern.ch'):
 
     return results_list
 
-    
+
 def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=True):
     """
     Given a list of SE FQDNs, return list of CEUniqueIDs that advertise CMS
@@ -185,14 +193,21 @@ def getJobManagerList(selist, software, arch, bdii='exp-bdii.cern.ch', onlyOSG=T
 
     If OnlyOSG is True, return only OSG Sites.
     """
-    
+
     jmlist = getJMListFromSEList(selist, bdii)
-    generateMaps(jmlist, bdii)
-    if (onlyOSG): jmlist = isOSGSite(jmlist, bdii)
-    jmlist = getSoftwareAndArch(jmlist, software, arch, bdii)
-    res = removeQueues(jmlist)
+    jmlist = filterCE(jmlist, software, arch, bdii, onlyOSG)
+
+def filterCE(ceList, software, arch, bdii, onlyOSG):
+    """
+    Given a list of CEUniqueIDs, filter out only the ones with given
+    software, arch, and if it belongs to an OSG site.
+    """
+    generateMaps(ceList, bdii)
+    if (onlyOSG): ceList = isOSGSite(ceList, bdii)
+    ceList = getSoftwareAndArch(ceList, software, arch, bdii)
+    res = removeQueues(ceList)
     return res
-    
+
 def removeQueues(celist):
     """
     Given a list of CEUniqueIDs, return a list of jobmanager contact
@@ -207,22 +222,26 @@ def removeQueues(celist):
             if (jmlist.count(item) == 0):
                 jmlist.append(item)
     return jmlist
-    
-def listAllCEs(bdii='exp-bdii.cern.ch'):
+
+def listAllCEs(software='', arch='', onlyOSG=False, bdii='exp-bdii.cern.ch'):
     ''' List all GlueCEUniqueIDs that advertise support for CMS '''
-    
+
     RE_cename = re.compile('^GlueCEUniqueID: (.*)', re.IGNORECASE)
     filt = "'(&(GlueCEUniqueID=*)(GlueCEAccessControlBaseRule=VO:cms))'"
     res = runldapquery(filt, 'GlueCEUniqueID', bdii)
     ceList = [x[0][1]['GlueCEUniqueID'][0] for x in res]
+
+    if (software or arch or onlyOSG):
+        ceList = filterCE(ceList, software, arch, bdii, onlyOSG)
+
     return ceList
-    
+
 def listAllSEs(bdii='exp-bdii.cern.ch'):
     ''' List all SEs that are bound to CEs that advertise support for CMS '''
-    
+
     RE_sename = re.compile('^GlueCESEBindGroupSEUniqueID: (.*)', re.IGNORECASE)
     seList = []
-    ceList = listAllCEs(bdii)
+    ceList = listAllCEs(bdii=bdii)
 
     query = buildOrQuery('GlueCESEBindGroupCEUniqueID', ceList)
     res = runldapquery(query, 'GlueCESEBindGroupSEUniqueID', bdii)
@@ -235,4 +254,4 @@ def listAllSEs(bdii='exp-bdii.cern.ch'):
             pass
 
         if (seList.count(item) == 0): seList.append(item)
-    return seList                    
+    return seList
