@@ -4,6 +4,9 @@
 Re-write config file and optionally convert to python
 """
 
+__revision__ = "$Id: writeCfg.py,v 1.24 2008/08/05 19:50:28 ewv Exp $"
+__version__ = "$Revision: 1.24 $"
+
 import sys, getopt
 import imp
 import os
@@ -215,10 +218,10 @@ def main(argv) :
             print "import FWCore.ParameterSet.Config as cms"
             print cmsProcess.dumpPython()
     else:
-        outFile.write(str(cfg))
+        outFile.write(cfg.data.dumpConfig())
         if (debug):
             print "writeCfg output:"
-            print str(cfg)
+            print str(cfg.data.dumpConfig())
     outFile.close()
 
 
