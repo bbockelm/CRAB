@@ -35,12 +35,21 @@ class DataLocation:
         countblock=0
 
         dlstype='dbs'
-
+        ## to support phedex API in addition to 
+        ## the right dependence must be added the following.
+        ## this allow to locate private data also.   
+        """
+        if self.cfg_params['CMSSW.dbs_url']:
+            dlstype='dbs'
+        else:
+            dlstype='phedex'
+        """
         DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
         ## find the replicas for each block
         blockSites = {}
         failCount = 0
+        ## here we should add the support for bulk query.   
         for fileblocks in self.Listfileblocks:
             countblock=countblock+1
 
