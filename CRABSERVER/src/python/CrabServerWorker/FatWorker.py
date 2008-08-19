@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.109 2008/08/19 18:20:32 ewv Exp $"
-__version__ = "$Revision: 1.109 $"
+__revision__ = "$Id: FatWorker.py,v 1.110 2008/08/19 18:39:42 ewv Exp $"
+__version__ = "$Revision: 1.110 $"
 import string
 import sys, os
 import time
@@ -182,14 +182,26 @@ class FatWorker(Thread):
         return status
 
     def allocateBossLiteSchedulerSession(self, taskObj):
-        self.bossSchedName = {'GLITE':'SchedulerGLiteAPI', 'GLITECOLL':'SchedulerGLiteAPI',\
-                              'CONDOR_G':'SchedulerCondorG', 'ARC':'arc', \
-                              'LSF':'SchedulerLsf', "CAF":'SchedulerLsf'}[self.schedName]
+        """
+        Set scheduler specific parameters and allocate the Scheduler Session
+        """
+
+        self.bossSchedName = {'GLITE':'SchedulerGLiteAPI',
+                              'GLITECOLL':'SchedulerGLiteAPI',
+                              'CONDOR_G':'SchedulerCondorG',
+                              'ARC':'arc',
+                              'LSF':'SchedulerLsf',
+                              'CAF':'SchedulerLsf'}[self.schedName]
         schedulerConfig = {'name': self.bossSchedName, 'user_proxy':taskObj['user_proxy']}
 
-        if schedulerConfig['name'] in ['SchedulerGLiteAPI', 'SchedulerCondorG']:
+        if schedulerConfig['name'] in ['SchedulerGLiteAPI']:
             schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.configs['rb']
-            if self.wmsEndpoint: schedulerConfig['service'] = self.wmsEndpoint
+            if self.wmsEndpoint:
+                schedulerConfig['service'] = self.wmsEndpoint
+        elif schedulerConfig['name'] in ['SchedulerGlidein', 'SchedulerCondorG']:
+            condorTemp = os.path.join(self.wdir, self.taskName+'_spec', "condorTemp")
+            self.log.info('Condor will use %s for temporary files' % condorTemp)
+            schedulerConfig['tmpDir'] = condorTemp
         elif schedulerConfig['name'] == 'arc':
             pass
         elif schedulerConfig['name'] in ['SchedulerLsf']:
