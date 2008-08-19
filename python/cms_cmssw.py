@@ -1108,7 +1108,7 @@ class Cmssw(JobType):
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
 
         req = req + ' && (other.GlueHostNetworkAdapterOutboundIP)'
-        if common.scheduler.name() == "glitecoll":
+        if ( common.scheduler.name() == "glitecoll" ) or ( common.scheduler.name() == "glite"):
             req += ' && other.GlueCEStateStatus == "Production" '
 
         return req
