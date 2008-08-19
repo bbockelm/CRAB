@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.111 2008/08/19 19:00:44 ewv Exp $"
-__version__ = "$Revision: 1.111 $"
+__revision__ = "$Id: FatWorker.py,v 1.112 2008/08/19 19:05:44 ewv Exp $"
+__version__ = "$Revision: 1.112 $"
 import string
 import sys, os
 import time
@@ -112,7 +112,7 @@ class FatWorker(Thread):
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. preSubmissionCheck"%(self.myName, self.taskName) )
             return
-
+                
         try:
             sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
         except Exception, e:
@@ -515,6 +515,7 @@ class FatWorker(Thread):
         sel = 0
         matched = []
         unmatched = []
+
         for id_job in jobs_to_match:
             tags = ''
             if self.bossSchedName == 'SchedulerCondorG':
@@ -639,10 +640,9 @@ class FatWorker(Thread):
 
         schedParam = ''
 
-        jobType = 'schedulerList = cmsgrid02.hep.wisc.edu:2119/jobmanager-condor; '
+        schedParam = 'schedulerList = cmsgrid02.hep.wisc.edu:2119/jobmanager-condor; '
         if self.cfg_params['EDG.max_wall_time']:
-            jobType += 'globusrsl = (maxWalltime=%s); ' % self.cfg_params['EDG.max_wall_time']
-        task['jobType'] = jobType
+            schedParam += 'globusrsl = (maxWalltime=%s); ' % self.cfg_params['EDG.max_wall_time']
 
         # shift due to BL ranges
         i = i-1
