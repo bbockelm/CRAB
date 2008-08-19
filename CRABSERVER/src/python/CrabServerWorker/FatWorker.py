@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.107 2008/08/14 13:08:39 spiga Exp $"
-__version__ = "$Revision: 1.107 $"
+__revision__ = "$Id: FatWorker.py,v 1.108 2008/08/18 10:39:38 spiga Exp $"
+__version__ = "$Revision: 1.108 $"
 import string
 import sys, os
 import time
@@ -183,11 +183,11 @@ class FatWorker(Thread):
 
     def allocateBossLiteSchedulerSession(self, taskObj):
         self.bossSchedName = {'GLITE':'SchedulerGLiteAPI', 'GLITECOLL':'SchedulerGLiteAPI',\
-                              'CONDOR_G':'SchedulerCondorGAPI', 'ARC':'arc', \
+                              'CONDOR_G':'SchedulerCondorG', 'ARC':'arc', \
                               'LSF':'SchedulerLsf', "CAF":'SchedulerLsf'}[self.schedName]
         schedulerConfig = {'name': self.bossSchedName, 'user_proxy':taskObj['user_proxy']}
         
-        if schedulerConfig['name'] in ['SchedulerGLiteAPI', 'SchedulerCondorGAPI']:
+        if schedulerConfig['name'] in ['SchedulerGLiteAPI', 'SchedulerCondorG']:
             schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.configs['rb']
             if self.wmsEndpoint: schedulerConfig['service'] = self.wmsEndpoint
         elif schedulerConfig['name'] == 'arc':
@@ -505,8 +505,8 @@ class FatWorker(Thread):
         unmatched = []
         for id_job in jobs_to_match:
             tags = ''
-            if self.bossSchedName == 'SchedulerCondorGAPI':
-                requirements.append( self.sched_parameter_Condor() )
+            if self.bossSchedName == 'SchedulerCondorG':
+                requirements.append( self.sched_parameter_CondorG() )
             elif self.bossSchedName == 'SchedulerLsf':
                 requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )                
             elif self.bossSchedName == 'SchedulerGLiteAPI':
@@ -517,7 +517,7 @@ class FatWorker(Thread):
                 continue
 
             # Perform listMatching
-            if self.bossSchedName == 'SchedulerCondorGAPI':
+            if self.bossSchedName == 'SchedulerCondorG':
                 matched.append(sel)
             else:
                 cleanedList = None
@@ -586,7 +586,7 @@ class FatWorker(Thread):
 
         for job in task.jobs:
             jj, jobId, localId , jid = (job['jobId'], '', '', str(job.runningJob['schedulerId']) )
-            if self.bossSchedName == 'SchedulerCondorGAPI':
+            if self.bossSchedName == 'SchedulerCondorG':
                 hash = self.cfg_params['cfgFileNameCkSum'] #makeCksum(common.work_space.cfgFileName())
                 rb = 'OSG'
                 jobId = str(jj) + '_' + hash + '_' + jid
@@ -619,7 +619,7 @@ class FatWorker(Thread):
 #########################################################
 ### Specific Scheduler requirements parameters
 #########################################################
-    def sched_parameter_Condor(self):
+    def sched_parameter_CondorG(self):
         return
 
     def sched_parameter_Lsf(self, i, task):
