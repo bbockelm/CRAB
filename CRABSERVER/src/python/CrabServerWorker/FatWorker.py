@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.108 2008/08/18 10:39:38 spiga Exp $"
-__version__ = "$Revision: 1.108 $"
+__revision__ = "$Id: FatWorker.py,v 1.109 2008/08/19 18:20:32 ewv Exp $"
+__version__ = "$Revision: 1.109 $"
 import string
 import sys, os
 import time
@@ -23,7 +23,7 @@ from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 from ProdCommon.BossLite.API.BossLiteAPISched import BossLiteAPISched
 
-from ProdCommon.BossLite.Common.BossLiteLogger import BossLiteLogger 
+from ProdCommon.BossLite.Common.BossLiteLogger import BossLiteLogger
 from ProdCommon.BossLite.Common.Exceptions import BossLiteError
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
@@ -50,10 +50,10 @@ class FatWorker(Thread):
         self.configs = threadAttributes
 
         self.taskName = self.configs['taskname']
-        self.wdir = self.configs['wdir'] 
+        self.wdir = self.configs['wdir']
         self.resubCount = int(self.configs['retries'])
-        self.cmdRng = [] + self.configs['submissionRange']         
-        
+        self.cmdRng = [] + self.configs['submissionRange']
+
         self.se_blackL = [] + self.configs['se_dynBList']
         self.se_whiteL = []
         self.ce_blackL = [] + self.configs['ce_dynBList']
@@ -64,7 +64,7 @@ class FatWorker(Thread):
         ##Initialization to allow lsf@caf
         self.cpCmd = self.configs['cpCmd']
         self.rfioServer = self.configs['rfioServer']
- 
+
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, pool=self.configs['blSessionPool'])
         self.blSchedSession = None
@@ -81,7 +81,7 @@ class FatWorker(Thread):
             self.log.info( traceback.format_exc() )
         self.apmon.free()
         return
-            
+
     def run(self):
         self.log.info("FatWorker %s initialized: task %s"%(self.myName, self.taskName) )
         taskObj = None
@@ -90,29 +90,29 @@ class FatWorker(Thread):
             return
 
         self.log.info("FatWorker %s loading task"%self.myName)
-        try:  
-            taskObj = self.blDBsession.loadTaskByName(self.taskName)            
-        except Exception, e:            
+        try:
+            taskObj = self.blDBsession.loadTaskByName(self.taskName)
+        except Exception, e:
             self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), \
                 "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) )
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
             return
-       
+
         self.log.info("FatWorker %s allocating submission system session"%self.myName)
         if not self.allocateBossLiteSchedulerSession(taskObj) == 0:
             return
 
-        self.log.info('FatWorker %s preparing submission'%self.myName) 
+        self.log.info('FatWorker %s preparing submission'%self.myName)
         errStatus, errMsg = (66, "Worker exception. Free-resource message")
         try:
-            newRange, skippedJobs = self.preSubmissionCheck(taskObj)          
-            if len(newRange) == 0 : 
-                raise Exception('Empty range submission temptative') 
+            newRange, skippedJobs = self.preSubmissionCheck(taskObj)
+            if len(newRange) == 0 :
+                raise Exception('Empty range submission temptative')
         except Exception, e:
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. preSubmissionCheck"%(self.myName, self.taskName) )
             return
- 
+
         try:
             sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
         except Exception, e:
@@ -120,9 +120,9 @@ class FatWorker(Thread):
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. listMatch"%(self.myName, self.taskName) )
             return
 
-        self.log.info("FatWorker %s performing submission"%self.myName) 
+        self.log.info("FatWorker %s performing submission"%self.myName)
         try:
-            submittedJobs, nonSubmittedJobs, errorTrace = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched) 
+            submittedJobs, nonSubmittedJobs, errorTrace = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
         except Exception, e:
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s."%(self.myName, self.taskName) )
@@ -152,12 +152,12 @@ class FatWorker(Thread):
             doc = minidom.parse(cmdSpecFile)
             cmdXML = doc.getElementsByTagName("TaskCommand")[0]
             self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
-            ## already set in the message 
+            ## already set in the message
             # self.cmdRng =  eval( cmdXML.getAttribute('Range'), {}, {} )
             ##
-            self.proxySubject = str( cmdXML.getAttribute('Subject') ) 
+            self.proxySubject = str( cmdXML.getAttribute('Subject') )
             self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
-            
+
             # se related
             if 'EDG.se_white_list' in self.cfg_params:
                 for seW in str(self.cfg_params['EDG.se_white_list']).split(","):
@@ -165,13 +165,13 @@ class FatWorker(Thread):
             if 'EDG.se_black_list' in self.cfg_params:
                 for seB in self.cfg_params['EDG.se_black_list'].split(","):
                     if seB: self.se_blackL.append( re.compile(seB.strip().lower()) )
-                    
+
             # ce related
             if 'EDG.ce_white_list' in self.cfg_params:
                 self.ce_whiteL = [ ceW.strip().lower() for ceW in self.cfg_params['EDG.ce_white_list'].split(",") ]
             if 'EDG.ce_black_list' in self.cfg_params:
                 self.ce_blackL = [ ceB.strip().lower() for ceB in self.cfg_params['EDG.ce_black_list'].split(",") ]
-                
+
         except Exception, e:
             status = 6
             reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
@@ -186,7 +186,7 @@ class FatWorker(Thread):
                               'CONDOR_G':'SchedulerCondorG', 'ARC':'arc', \
                               'LSF':'SchedulerLsf', "CAF":'SchedulerLsf'}[self.schedName]
         schedulerConfig = {'name': self.bossSchedName, 'user_proxy':taskObj['user_proxy']}
-        
+
         if schedulerConfig['name'] in ['SchedulerGLiteAPI', 'SchedulerCondorG']:
             schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.configs['rb']
             if self.wmsEndpoint: schedulerConfig['service'] = self.wmsEndpoint
@@ -206,7 +206,7 @@ class FatWorker(Thread):
         return 0
 
 ####################################
-    # Submission methods 
+    # Submission methods
 ####################################
     def preSubmissionCheck(self, task):
         newRange = self.cmdRng
@@ -220,7 +220,7 @@ class FatWorker(Thread):
         for j in task.jobs:
             if j['jobId'] in self.cmdRng:
                 try:
-                    if j.runningJob['closed'] == 'Y':  
+                    if j.runningJob['closed'] == 'Y':
                         # backup for job output (tgz files only, less load)
                         sbi = SBinterface( self.seEl )
                         bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
@@ -235,7 +235,7 @@ class FatWorker(Thread):
                         # reproduce closed runningJob instances
                         self.blDBsession.getNewRunningInstance(j)
                         j.runningJob['status'] = 'C'
-                        j.runningJob['statusScheduler'] = 'Created' 
+                        j.runningJob['statusScheduler'] = 'Created'
                         needUpd = True
                 except Exception, e:
                     self.log.info("Worker %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
@@ -254,7 +254,7 @@ class FatWorker(Thread):
             except Exception, e:
                 self.log.info("Worker %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName) )
                 return [], self.cmdRng
-                      
+
         # consider only those jobs that are in a submittable status
         for j in task.jobs:
             if j['jobId'] in newRange:
@@ -276,7 +276,7 @@ class FatWorker(Thread):
                     continue
         return newRange, skippedSubmissions
 
-    def submitTaskBlocks(self, task, sub_jobs, reqs_jobs, matched):  
+    def submitTaskBlocks(self, task, sub_jobs, reqs_jobs, matched):
         submitted, fullSubJob, errorTrace = ([], [], '')
         for sub in sub_jobs: fullSubJob.extend(sub)
         unsubmitted = fullSubJob
@@ -284,7 +284,7 @@ class FatWorker(Thread):
             self.log.info('Worker %s unable to submit jobs. No sites matched'%self.myName)
             return submitted, unsubmitted, errorTrace
 
-        self.SendMLpre(task)        
+        self.SendMLpre(task)
         for ii in matched:
             # SplitCollection if too big DS # fix Fabio
             sub_bulk = []
@@ -292,13 +292,13 @@ class FatWorker(Thread):
             if len(sub_jobs[ii]) > bulk_window:
                 sub_bulk = [ sub_jobs[ii][i:i+bulk_window] for i in range(0, len(sub_jobs[ii]), bulk_window)]
                 self.log.info("Collection too big: split in %s sub_collection"%len(sub_bulk) )
-            
+
             # submit now
             errorTrace = ''
             try:
                 if len(sub_bulk)>0:
                     count = 1
-                    for sub_list in sub_bulk: 
+                    for sub_list in sub_bulk:
                         self.blSchedSession.submit(task['id'], sub_list, reqs_jobs[ii])
                         self.log.info("Worker submitted sub collection # %s "%count)
                         count += 1
@@ -315,18 +315,18 @@ class FatWorker(Thread):
             # check if submitted
             if len(errorTrace) == 0:
                 parentIds = []
-                for j in task.jobs: 
+                for j in task.jobs:
                     self.blDBsession.getRunningInstance(j)
                     if j.runningJob['schedulerId']:
                         submitted.append(j['jobId'])
                         if j['jobId'] in unsubmitted: unsubmitted.remove(j['jobId'])
                         j.runningJob['status'] = 'S'
                         j.runningJob['statusScheduler'] = 'Submitted'
-                        parentIds.append( j.runningJob['schedulerParentId'] )                 
+                        parentIds.append( j.runningJob['schedulerParentId'] )
                 self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
                 self.blDBsession.updateDB( task )
                 self.SendMLpost( task, sub_jobs[ii] )
-        return submitted, unsubmitted, errorTrace 
+        return submitted, unsubmitted, errorTrace
 
 
     def evaluateSubmissionOutcome(self, taskObj, submittableRange, submittedJobs, \
@@ -358,7 +358,7 @@ class FatWorker(Thread):
                         genJTstate = {}
                         genJTstate.update( JobState.general(job['name']) )
 
-                        # in case the job shouldn't be registered 
+                        # in case the job shouldn't be registered
                         if len(genJTstate) == 0 and onDemandRegDone == False :
                             self.registerTask(taskObj)
                             onDemandRegDone = True
@@ -366,12 +366,12 @@ class FatWorker(Thread):
                         # update the job status properly
                         if genJTstate['state'] == 'create':
                             wfJob.setState(j['name'], 'inProgress')
-                    except Exception, e: 
-                        continue  
+                    except Exception, e:
+                        continue
             Session.commit(self.paDbSessionName)
             Session.close(self.paDbSessionName)
             self.log.info("FatWorker %s registered jobs entities "%self.myName)
-            return        
+            return
         else:
             ## some jobs need to be resubmitted later
             if len(submittedJobs) == 0:
@@ -392,7 +392,7 @@ class FatWorker(Thread):
                 self.local_queue.put((self.myName, "CrabServerWorkerComponent:Submission", payload))
                 return
 
-            payload = self.taskName+"::"+str(resubmissionList)  
+            payload = self.taskName+"::"+str(resubmissionList)
             self.local_queue.put((self.myName, "SubmissionFailed", payload))
             try:
                 self.registerTask(taskObj)
@@ -406,7 +406,7 @@ class FatWorker(Thread):
                 Session.start_transaction(self.paDbSessionName)
                 JobState.doNotAllowMoreSubmissions(jobSpecId)
                 for jId in jobSpecId:
-                    try: 
+                    try:
                         wfJob.setState(jId, 'reallyFinished')
                     except Exception, e:
                         continue
@@ -415,7 +415,7 @@ class FatWorker(Thread):
             except Exception,e:
                 self.log.info("Unable to mark failed jobs in WorkFlow Entities ")
                 self.log.info( traceback.format_exc() )
-                
+
             # Give up message
             self.log.info("Worker %s has no more attempts: give up with task %s"%(self.myName, self.taskName) )
             status, reason = ("10", "Command for task %s has no more attempts. Give up."%self.taskName)
@@ -441,7 +441,7 @@ class FatWorker(Thread):
                 self.log.debug('Error while checking job registration: assuming %s as not registered'%jobName)
                 jobAlreadyRegistered = False
 
-            if jobAlreadyRegistered == True: 
+            if jobAlreadyRegistered == True:
                 continue
 
             self.log.debug('Registering %s'%jobName)
@@ -458,7 +458,7 @@ class FatWorker(Thread):
             self.log.debug('Registration for %s performed'%jobName)
         Session.commit(self.paDbSessionName)
         Session.close(self.paDbSessionName)
-        return 0    
+        return 0
 
     def submissionListCreation(self, taskObj, jobRng):
         '''
@@ -470,36 +470,36 @@ class FatWorker(Thread):
         # group jobs by destination
         distinct_dests = []
         for j in taskObj.jobs:
-           if not isinstance(j['dlsDestination'], list):
-              j['dlsDestination'] = eval(j['dlsDestination'])
-           if  j['dlsDestination'] not in distinct_dests:
-               distinct_dests.append( j['dlsDestination'] )
+            if not isinstance(j['dlsDestination'], list):
+                j['dlsDestination'] = eval(j['dlsDestination'])
+            if  j['dlsDestination'] not in distinct_dests:
+                distinct_dests.append( j['dlsDestination'] )
 
         jobs_to_match = []
         all_jobs = []
         count = 0
         for distDest in distinct_dests:
-             # get job_ids for a specific destination 
-             jobs_per_dest = []
-             for j in taskObj.jobs:
-                 if str(distDest) == str( j['dlsDestination'] ):
-                     jobs_per_dest.append(j['jobId'])
-             all_jobs.append( [] + jobs_per_dest )
-             
-             # prune by range 
-             sub_jobs_temp = []
-             for i in jobRng:
-                 if i in all_jobs[count]: 
-                     sub_jobs_temp.append(i)
+            # get job_ids for a specific destination
+            jobs_per_dest = []
+            for j in taskObj.jobs:
+                if str(distDest) == str( j['dlsDestination'] ):
+                    jobs_per_dest.append(j['jobId'])
+            all_jobs.append( [] + jobs_per_dest )
 
-             # select match candidate
-             if len(sub_jobs_temp)>0:
-                 sub_jobs.append(sub_jobs_temp)
-                 jobs_to_match.append(sub_jobs[count][0])
-                 count += 1
-             pass
+            # prune by range
+            sub_jobs_temp = []
+            for i in jobRng:
+                if i in all_jobs[count]:
+                    sub_jobs_temp.append(i)
 
-        # ListMatch 
+            # select match candidate
+            if len(sub_jobs_temp)>0:
+                sub_jobs.append(sub_jobs_temp)
+                jobs_to_match.append(sub_jobs[count][0])
+                count += 1
+            pass
+
+        # ListMatch
         sel = 0
         matched = []
         unmatched = []
@@ -508,11 +508,11 @@ class FatWorker(Thread):
             if self.bossSchedName == 'SchedulerCondorG':
                 requirements.append( self.sched_parameter_CondorG() )
             elif self.bossSchedName == 'SchedulerLsf':
-                requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )                
+                requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
             elif self.bossSchedName == 'SchedulerGLiteAPI':
                 tags_tmp = str(taskObj['jobType']).split('"')
                 tags = [str(tags_tmp[1]), str(tags_tmp[3])]
-                requirements.append( self.sched_parameter_Glite(id_job, taskObj) )                
+                requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
             else:
                 continue
 
@@ -523,13 +523,13 @@ class FatWorker(Thread):
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
                     cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
-                sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL) 
+                sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL)
 
                 if len(sites) > 0: matched.append(sel)
                 else: unmatched.append(sel)
             sel += 1
 
-        # all done and matched, go on with the submission 
+        # all done and matched, go on with the submission
         return sub_jobs, requirements, matched, unmatched
 
 #########################################################
@@ -619,12 +619,32 @@ class FatWorker(Thread):
 #########################################################
 ### Specific Scheduler requirements parameters
 #########################################################
-    def sched_parameter_CondorG(self):
-        return
+
+    def sched_parameter_CondorG(self, i, task):
+        """
+        Parameters specific to CondorG scheduler"
+        """
+
+        schedParam = ''
+
+        jobType = 'schedulerList = cmsgrid02.hep.wisc.edu:2119/jobmanager-condor; '
+        if self.cfg_params['EDG.max_wall_time']:
+            jobType += 'globusrsl = (maxWalltime=%s); ' % self.cfg_params['EDG.max_wall_time']
+        task['jobType'] = jobType
+
+        # shift due to BL ranges
+        i = i-1
+        if i<0: i = 0
+        dest = task.jobs[i]['dlsDestination']
+
+        self.log.info('Destination is %s ' % dest)
+
+        return schedParam
+
 
     def sched_parameter_Lsf(self, i, task):
         sched_param= ''
-        resDir= "/".join((task['globalSandbox'].split(',')[0]).split('/')[:-1])  
+        resDir= "/".join((task['globalSandbox'].split(',')[0]).split('/')[:-1])
         queue = 'cmscaf' ### ToBeAddede in cfg.xml file
         res = 'cmscaf'
         if (queue):
@@ -634,11 +654,11 @@ class FatWorker(Thread):
         return sched_param
 
     def sched_parameter_Glite(self, i, task):
-        # shift due to BL ranges 
+        # shift due to BL ranges
         i = i-1
         if i<0: i = 0
 
-        sched_param = 'Requirements = ' + task['jobType'] 
+        sched_param = 'Requirements = ' + task['jobType']
         req=''
 
         if self.cfg_params['EDG.max_wall_time']:
@@ -688,13 +708,13 @@ class FatWorker(Thread):
         """
         # consolidation of findSites_ method and se_list as in Crab-SA
         # hostList = self.findSites_(id, dest)
-        hostList = []        
+        hostList = []
         if len(dest) > 0 and dest[0] != "":
             replicas = self.checkBlackList(dest, id)
             if len(replicas) > 0:
                 replicas = self.checkWhiteList(replicas, id)
-            hostList = replicas        
-        
+            hostList = replicas
+
         req = ''
         if len(hostList) > 0:
             reqtmp = [ ' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ' for arg in hostList]
