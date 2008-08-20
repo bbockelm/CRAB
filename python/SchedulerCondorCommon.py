@@ -7,7 +7,7 @@ from SchedulerGrid import SchedulerGrid
 from crab_exceptions import CrabException
 from crab_util import runCommand
 
-from Bdii import getJobManagerList, listAllCEs
+from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
 from BlackWhiteListParser import CEBlackWhiteListParser
 
 import Scram
@@ -18,8 +18,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.23 2008/07/28 15:47:17 ewv Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.24 2008/08/05 19:50:28 ewv Exp $"
+__version__ = "$Revision: 1.24 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
