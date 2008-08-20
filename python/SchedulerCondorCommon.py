@@ -1,6 +1,7 @@
 """
 Scheduler implementation used by CondorG and Glidein (Common parts)
-This class was originally SchedulerCondor_g. For a history of this code, see that file.
+This class was originally SchedulerCondor_g.
+For a history of this code, see that file.
 """
 
 from SchedulerGrid import SchedulerGrid
@@ -18,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.24 2008/08/05 19:50:28 ewv Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.25 2008/08/20 20:08:10 ewv Exp $"
+__version__ = "$Revision: 1.25 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -31,11 +32,11 @@ class SchedulerCondorCommon(SchedulerGrid):
 
         # check for locally running condor scheduler
         cmd = 'ps xau | grep -i condor_schedd | grep -v grep'
-        cmd_out = runCommand(cmd)
-        if cmd_out == None:
+        cmdOut = runCommand(cmd)
+        if cmdOut == None:
             msg  = '[Condor-G Scheduler]: condor_schedd is not running on this machine.\n'
-            msg += '[Condor-G Scheduler]: Please use a machine with condor installed and running condor_schedd\n'
-            msg += '[Condor-G Scheduler]: or change the Scheduler in your crab.cfg.'
+            msg += '[Condor-G Scheduler]: Please use a machine with condor installed and running\n'
+            msg += '[Condor-G Scheduler]: condor_schedd or change the Scheduler in your crab.cfg.'
             common.logger.debug(2, msg)
             raise CrabException(msg)
 
@@ -45,10 +46,10 @@ class SchedulerCondorCommon(SchedulerGrid):
 
         # get version number
         cmd = 'condor_version'
-        cmd_out = runCommand(cmd)
-        if cmd != None :
-            tmp = cmd_out.find('CondorVersion') + 15
-            version = cmd_out[tmp:tmp+6].split('.')
+        cmdOut = runCommand(cmd)
+        if cmdOut != None :
+            tmp = cmdOut.find('CondorVersion') + 15
+            version = cmdOut[tmp:tmp+6].split('.')
             version_master = int(version[0])
             version_major  = int(version[1])
             version_minor  = int(version[2])
@@ -65,14 +66,14 @@ class SchedulerCondorCommon(SchedulerGrid):
         self.checkCondorVariablePointsToFile('GRID_MONITOR')
         self.checkCondorVariableIsTrue('ENABLE_GRID_MONITOR')
 
-        max_submit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE', 100).strip()
-        max_pending = self.queryCondorVariable('GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE', 'Unlimited').strip()
+        maxSubmit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE', 100).strip()
+        maxPending = self.queryCondorVariable('GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE', 'Unlimited').strip()
 
         msg  = '[Condor-G Scheduler]\n'
-        msg += 'Maximum number of jobs submitted to the grid   :'
-        msg += 'GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE  = '+max_submit+'\n'
-        msg += 'Maximum number of parallel submits to the grid :'
-        msg += 'GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE = '+max_pending+'\n'
+        msg += 'Maximum number of jobs submitted to the grid   : '
+        msg += 'GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE  = ' + maxSubmit + '\n'
+        msg += 'Maximum number of parallel submits to the grid : '
+        msg += 'GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE = ' + maxPending + '\n'
         msg += 'Increase these variables to enable more jobs to be executed on the grid in parallel.\n'
         common.logger.debug(2, msg)
 
@@ -84,30 +85,30 @@ class SchedulerCondorCommon(SchedulerGrid):
         """
 
         cmd = 'which '+name
-        cmd_out = runCommand(cmd)
-        if cmd_out == None:
-            msg  = '[Condor-G Scheduler]: '+name+' is not in the $PATH on this machine.\n'
+        cmdOut = runCommand(cmd)
+        if cmdOut == None:
+            msg  = '[Condor-G Scheduler]: ' + name + ' is not in the $PATH on this machine.\n'
             msg += '[Condor-G Scheduler]: Please use a machine with a properly installed condor\n'
             msg += '[Condor-G Scheduler]: or change the Scheduler in your crab.cfg.'
             common.logger.debug(2, msg)
             raise CrabException(msg)
 
-    def checkCondorVariablePointsToFile(self, name, alternate_name=None):
+    def checkCondorVariablePointsToFile(self, name, alternateName=None):
         """
         check for condor variable
         """
 
-        cmd = 'condor_config_val '+name
-        cmd_out = runCommand(cmd)
-        if alternate_name and not cmd_out:
-            cmd = 'condor_config_val '+alternate_name
-            cmd_out = runCommand(cmd)
-        if cmd_out:
-            cmd_out = cmd_out.strip()
-        if not cmd_out or not os.path.isfile(cmd_out) :
-            msg  = '[Condor-G Scheduler]: the variable '+name+' is not properly set for the condor installation.\n'
+        cmd = 'condor_config_val ' + name
+        cmdOut = runCommand(cmd)
+        if alternateName and not cmdOut:
+            cmd = 'condor_config_val ' + alternateName
+            cmdOut = runCommand(cmd)
+        if cmdOut:
+            cmdOut = cmdOut.strip()
+        if not cmdOut or not os.path.isfile(cmdOut) :
+            msg  = '[Condor-G Scheduler]: the variable ' + name + ' is not properly set for the condor installation.\n'
             msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation '
-            msg += 'to set the variable '+name+' properly, '
+            msg += 'to set the variable ' + name + ' properly, '
             msg += 'use another machine with a properly installed condor or change the Scheduler in your crab.cfg.'
             common.logger.debug(2, msg)
             raise CrabException(msg)
@@ -118,8 +119,8 @@ class SchedulerCondorCommon(SchedulerGrid):
         """
 
         cmd = 'condor_config_val '+name
-        cmd_out = runCommand(cmd)
-        if cmd_out == 'TRUE' :
+        cmdOut = runCommand(cmd)
+        if cmdOut == 'TRUE' :
             msg  = '[Condor-G Scheduler]: the variable '+name+' is not set to true for the condor installation.\n'
             msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation '
             msg += 'to set the variable '+name+' to true, '
@@ -134,33 +135,35 @@ class SchedulerCondorCommon(SchedulerGrid):
 
         cmd = 'condor_config_val '+name
         out = popen2.Popen3(cmd, 1)
-        exit_code = out.wait()
-        cmd_out = out.fromchild.readline().strip()
-        if exit_code != 0 :
-            cmd_out = str(default)
+        exitCode = out.wait()
+        cmdOut = out.fromchild.readline().strip()
+        if exitCode != 0 :
+            cmdOut = str(default)
 
-        return cmd_out
+        return cmdOut
 
-    def configure(self, cfg_params):
+    def configure(self, cfgParams):
         """
         Configure the scheduler with the config settings from the user
         """
+        # FIXME: Get rid of try/except and use get() instead
 
-        SchedulerGrid.configure(self, cfg_params)
+        SchedulerGrid.configure(self, cfgParams)
 
         # init BlackWhiteListParser
-        self.ceBlackWhiteListParser = CEBlackWhiteListParser(cfg_params)
+        self.ceBlackWhiteListParser = CEBlackWhiteListParser(cfgParams)
 
         try:
-            self.GLOBUS_RSL = cfg_params['CONDORG.globus_rsl']
+            self.GLOBUS_RSL = cfgParams['CONDORG.globus_rsl']
         except KeyError:
             self.GLOBUS_RSL = ''
 
-        # Provide an override for the batchsystem that condor_g specifies as a grid resource.
-        # this is to handle the case where the site supports several batchsystem but bdii
-        # only allows a site to public one.
+        # Provide an override for the batchsystem that condor_g specifies
+        # as a grid resource. This is to handle the case where the site
+        # supports several batchsystem but bdii only allows a site
+        # to public one.
         try:
-            self.batchsystem = cfg_params['CONDORG.batchsystem']
+            self.batchsystem = cfgParams['CONDORG.batchsystem']
             msg = '[Condor-G Scheduler]: batchsystem overide specified in your crab.cfg'
             common.logger.debug(2, msg)
         except KeyError:
@@ -173,7 +176,7 @@ class SchedulerCondorCommon(SchedulerGrid):
         self.datasetPath = ''
 
         try:
-            tmp =  cfg_params['CMSSW.datasetpath']
+            tmp =  cfgParams['CMSSW.datasetpath']
             if tmp.lower() == 'none':
                 self.datasetPath = None
                 self.selectNoInput = 1
@@ -187,7 +190,7 @@ class SchedulerCondorCommon(SchedulerGrid):
         return
 
 
-    def realSchedParams(self, cfg_params):
+    def realSchedParams(self, cfgParams):
         """
         Return dictionary with specific parameters, to use
         with real scheduler
