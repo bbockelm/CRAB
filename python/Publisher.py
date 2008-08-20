@@ -186,7 +186,9 @@ class Publisher(Actor):
                 if int(file['TotalEvents']) != 0 :
                     file.lumisections = {}
                     for ds in file.dataset:
-                        ds['ProcessedDataset']=procdataset
+                        ### FEDE FOR NEW LFN ###
+                        #ds['ProcessedDataset']=procdataset
+                        ########################
                         ### Fede for production
                         if (ds['PrimaryDataset'] == 'null'):
                             ds['PrimaryDataset']=procdataset

@@ -106,7 +106,10 @@ class SchedulerLsf(SchedulerLocal) :
         if not self.copy_data: return txt
 
         if int(self.publish_data) == 1:
-                self.path_add = PFNportion(self.publish_data_name,LocalUser=True) +'_${PSETHASH}/'
+                ### FEDE FOR NEW LFN ####
+                #self.path_add = PFNportion(self.publish_data_name,LocalUser=True) +'_${PSETHASH}/'
+                self.path_add = PFNportion(self.primaryDataset, self.publish_data_name,LocalUser=True) +'/${PSETHASH}/'
+                #########################
                 self.SE_path = self.SE_path + self.path_add
       
         txt += '#\n'

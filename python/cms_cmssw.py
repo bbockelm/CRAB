@@ -876,13 +876,18 @@ class Cmssw(JobType):
             txt += 'DatasetPath='+self.datasetPath+'\n'
 
             datasetpath_split = self.datasetPath.split("/")
-
+            ### FEDE FOR NEW LFN ###
+            self.primaryDataset = datasetpath_split[1]
+            ########################
             txt += 'PrimaryDataset='+datasetpath_split[1]+'\n'
             txt += 'DataTier='+datasetpath_split[2]+'\n'
             txt += 'ApplicationFamily=cmsRun\n'
 
         else:
             txt += 'DatasetPath=MCDataTier\n'
+            ### FEDE FOR NEW LFN ###
+            self.primaryDataset = 'null' 
+            ########################
             txt += 'PrimaryDataset=null\n'
             txt += 'DataTier=null\n'
             txt += 'ApplicationFamily=MCDataTier\n'
@@ -1187,17 +1192,24 @@ class Cmssw(JobType):
         publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (publish_data == 1):
             processedDataset = self.cfg_params['USER.publish_data_name']
-            ### FEDE  for publication with LSF and CAF schedulers ####
-            print "common.scheduler.name().upper() = ", common.scheduler.name().upper()
+            if (self.primaryDataset == 'null'):
+                 self.primaryDataset = processedDataset
             if (common.scheduler.name().upper() == "CAF" or common.scheduler.name().upper() == "LSF"):
-                print "chiamo LFNBaseName con localUser = true"
-                LFNBaseName = LFNBase(processedDataset, LocalUser=True)
+                ### FEDE FOR NEW LFN ###
+                LFNBaseName = LFNBase(self.primaryDataset, processedDataset, LocalUser=True)
+                self.user = getUserName(LocalUser=True)
+                ########################
             else :
-                LFNBaseName = LFNBase(processedDataset)
-            ####
+                ### FEDE FOR NEW LFN ###
+                LFNBaseName = LFNBase(self.primaryDataset, processedDataset)
+                self.user = getUserName()
+                ########################
 
             txt += 'if [ $copy_exit_status -eq 0 ]; then\n'
-            txt += '    FOR_LFN=%s_${PSETHASH}/\n'%(LFNBaseName)
+            ### FEDE FOR NEW LFN ###
+            #txt += '    FOR_LFN=%s_${PSETHASH}/\n'%(LFNBaseName)
+            txt += '    FOR_LFN=%s/${PSETHASH}/\n'%(LFNBaseName)
+            ########################
             txt += 'else\n'
             txt += '    FOR_LFN=/copy_problems/ \n'
             txt += '    SE=""\n'
@@ -1212,8 +1224,10 @@ class Cmssw(JobType):
             txt += 'echo "SE_PATH = $SE_PATH"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-            txt += 'echo "$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
-            txt += '$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier $ProcessedDataset $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
+            ### FEDE FOR NEW LFN ###
+            txt += 'echo "$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier ' + self.user + '-$ProcessedDataset-$PSETHASH $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
+            txt += '$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier ' + self.user + '-$ProcessedDataset-$PSETHASH $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
+            ########################
             txt += 'modifyReport_result=$?\n'
             txt += 'if [ $modifyReport_result -ne 0 ]; then\n'
             txt += '    modifyReport_result=70500\n'

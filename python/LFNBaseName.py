@@ -10,18 +10,26 @@ import os, string
 from ProdCommon.SiteDB.SiteDB import SiteDBJSON
 
 
-def LFNBase(ProcessedDataset,merged=True,LocalUser=False):
+def LFNBase(PrimaryDataset,ProcessedDataset,merged=True,LocalUser=False):
     """
     """
     lfnbase = "/store"
     if not merged:
         lfnbase = os.path.join(lfnbase,"tmp")
-    lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), ProcessedDataset )
+    #lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), ProcessedDataset )
+    ### FEDE FOR NEW LFN ###
+    if (PrimaryDataset == 'null'):
+        PrimaryDataset = ProcessedDataset
+    lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
+    ########################
 
     return lfnbase
 
-def PFNportion(ProcessedDataset,LocalUser=False):
-    pfnpath = os.path.join(getUserName(LocalUser=LocalUser), ProcessedDataset )
+def PFNportion(PrimaryDataset,ProcessedDataset,LocalUser=False):
+    ### FEDE FOR NEW LFN ###
+    #pfnpath = os.path.join(getUserName(LocalUser=LocalUser), ProcessedDataset )
+    pfnpath = os.path.join(getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
+    ########################
     return pfnpath
 
 def getUnixUserName():

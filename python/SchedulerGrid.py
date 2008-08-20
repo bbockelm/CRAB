@@ -94,6 +94,19 @@ class SchedulerGrid(Scheduler):
            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
            common.logger.message(msg)
            raise CrabException(msg)
+        
+        ### FEDE FOR NEW LFN ###
+        if int(self.publish_data) == 1:
+            self.datasetPath = cfg_params.get("CMSSW.datasetpath", None)
+           
+            if (self.datasetPath):
+                if (self.datasetPath.upper() != 'NONE'):
+                    datasetpath_split = self.datasetPath.split("/")
+                    self.primaryDataset = datasetpath_split[1]
+                else:    
+                    self.primaryDataset = self.publish_data_name 
+        ########################
+                
 
         self.EDG_requirements = cfg_params.get('EDG.requirements',None)
 
@@ -249,7 +262,10 @@ class SchedulerGrid(Scheduler):
                 SE_PATH=self.SE_PATH
             if int(self.publish_data) == 1 or int(self.usenamespace) == 1:
                 txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
-                path_add = PFNportion(self.publish_data_name) +'_${PSETHASH}/'
+                ### FEDE  FOR NEW LFN ###
+                path_add = PFNportion(self.primaryDataset, self.publish_data_name) +'/${PSETHASH}/'
+                #path_add = PFNportion(self.primaryDataset, self.publish_data_name) +'_${PSETHASH}/'
+                #########################
                 SE_PATH = SE_PATH + path_add
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
@@ -264,7 +280,6 @@ class SchedulerGrid(Scheduler):
             txt += '    if [ -e $SOFTWARE_DIR/$out_file ] ; then\n'
             txt += '        echo "Trying to copy output file $SOFTWARE_DIR/$out_file to $SE"\n'
             txt += '        cmscp $middleware $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file ${SRM_VER}\n'
-            #txt += '        cmscp $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file ${SRM_VER} $middleware\n'
             txt += '        if [ $cmscp_exit_status -ne 0 ]; then\n'
             txt += '            echo "Problem copying $out_file to $SE $SE_PATH"\n'
             txt += '            copy_exit_status=$cmscp_exit_status\n'

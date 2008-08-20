@@ -37,6 +37,16 @@ class SchedulerLocal(Scheduler) :
                 msg = "Error. The [USER] section does not have 'storage_element'.\n"
                 msg = msg + "Please fill this field if you want to publish your data"
                 raise CrabException(msg)
+        ### FEDE FOR NEW LFN ###
+        if int(self.publish_data) == 1:
+            self.datasetPath = cfg_params.get("CMSSW.datasetpath", None)
+            if (self.datasetPath):
+                if (self.datasetPath.upper() != 'NONE'):
+                    datasetpath_split = self.datasetPath.split("/")
+                    self.primaryDataset = datasetpath_split[1]
+                else:    
+                    self.primaryDataset = self.publish_data_name 
+        ########################
         self.copy_data = int(cfg_params.get("USER.copy_data",0))
         if self.copy_data == 1:
             self._copyCommand = cfg_params.get('USER.copycommand','rfcp')
