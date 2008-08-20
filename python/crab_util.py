@@ -419,7 +419,7 @@ def bulkControl(self,list):
     sub_bulk = []
     if len(list) > int(max_size):
         n_sub_bulk = int( int(len(list) ) / int(max_size) )
-        for n in range(n_sub_bulk):
+        for n in xrange(n_sub_bulk):
             first =n*int(max_size)
             last = (n+1)*int(max_size)
             sub_bulk.append(list[first:last])
@@ -427,7 +427,7 @@ def bulkControl(self,list):
             for pp in list[last:-1]:
                 sub_bulk[n_sub_bulk-1].append(pp)
         else:
-            sub_bulk.append(list[last:-1])
+            sub_bulk.append(list[last:])
     else:
         sub_bulk.append(list)
 
