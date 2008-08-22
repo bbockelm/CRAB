@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.2 2008/07/23 07:47:07 farinafa Exp $"
+__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.3 2008/08/11 09:11:52 farinafa Exp $"
 
 import os
 import pickle
@@ -62,7 +62,8 @@ class TaskRegisterComponent:
 
         ## persistent properties
         self.taskPool = {}  # for data persistence
- 
+        self.subTimes = []  # moving average for submission delays
+
         ## volatile properties
         self.wdir = self.args['ComponentDir']
         if self.args['dropBoxPath']: self.wdir = self.args['dropBoxPath']
