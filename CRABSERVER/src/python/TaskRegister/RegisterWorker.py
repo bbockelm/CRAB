@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.3 2008/07/23 08:23:48 farinafa Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.4 2008/07/31 10:21:51 farinafa Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import string
 import sys, os
@@ -57,7 +57,7 @@ class RegisterWorker(Thread):
         
     def run(self):
         self.log.info("RegisterWorker %s initialized"%self.myName)
-        self.local_queue.put( (self.myName, "CrabServerWorkerComponent:TaskArrival", self.taskName) )
+        self.local_queue.put( (self.myName, "TaskRegister:TaskArrival", self.taskName) )
 
         # reconstruct command structures
         if not self.parseCommandXML() == 0:
