@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.96 2008/08/08 13:00:13 mcinquil Exp $"
-__version__ = "$Revision: 1.96 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.97 2008/08/09 09:48:29 mcinquil Exp $"
+__version__ = "$Revision: 1.97 $"
 
 import os
 import time
@@ -249,7 +249,7 @@ class TaskTrackingComponent:
             return None
 
 
-	if event == "CrabServerWorkerComponent:TaskArrival":
+	if event == "TaskRegister:TaskArrival":
 	    if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
                 ## start dbg info ##
@@ -1263,7 +1263,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformedPartial")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformed")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkFailed")
-        self.ms.subscribeTo("CrabServerWorkerComponent:TaskArrival")
+        self.ms.subscribeTo("TaskRegister:TaskArrival")
         self.ms.subscribeTo("CrabServerWorkerComponent:SubmitNotSucceeded")
         self.ms.subscribeTo("CrabServerWorkerComponent:TaskNotSubmitted")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
