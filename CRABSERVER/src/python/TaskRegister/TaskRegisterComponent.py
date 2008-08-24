@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.3 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.3 2008/08/11 09:11:52 farinafa Exp $"
+__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.4 2008/08/22 13:31:51 spiga Exp $"
 
 import os
 import pickle
@@ -40,7 +40,9 @@ class TaskRegisterComponent:
         self.args.setdefault('ProxiesDir', None)
 
         # SE support parameters
-        self.args.setdefault('Protocol', 'local')
+        # Protocol = local cannot be the default. Any default allowd 
+        # for this parameter... it must be defined from config file. 
+        self.args.setdefault('Protocol', '')
         self.args.setdefault('storageName', 'localhost')
         self.args.setdefault('storagePort', '')
         self.args.setdefault('storagePath', self.args["dropBoxPath"])
