@@ -14,7 +14,7 @@ echo "CRABDIR = $CRABdir"
 CRABtag=$tag
 DBSAPItag="DBS_1_1_6"
 DLSAPItag="DLS_1_0_0"
-PRODCOMMONtag="PRODCOMMON_0_11_5_testCS2"
+PRODCOMMONtag="PRODCOMMON_0_12_0_testCS1"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
@@ -22,11 +22,11 @@ export CVSROOT=${CVSrepo}"/CMSSW"
 
 ## download CRAB from CVS and cleanup the code a bit
 echo ">> downloading CRAB tag $CRABtag from CVS CRAB"
-cvs co -r $CRABtag -d $CRABdir CRAB
+#cvs co -r $CRABtag -d $CRABdir CRAB
 
 #echo ">> downloading CRAB HEAD from CVS CRAB"
 #echo ">> NOTE: Temporary Use of HEAD "
-#cvs co -d $CRABdir CRAB
+cvs co -d $CRABdir CRAB
 
 cd $CRABdir
 cvs up -P python/BossScript 
