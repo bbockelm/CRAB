@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.67 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.67 2008/08/12 15:01:00 farinafa Exp $"
+__version__ = "$Revision: 1.68 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.68 2008/08/13 08:43:55 farinafa Exp $"
 
 import os, pickle, time, copy
 
@@ -46,7 +46,9 @@ class CrabServerWorkerComponent:
         self.args.setdefault('ProxiesDir', None)
         
         # SE support parameters
-        self.args.setdefault('Protocol', 'local')
+        # Protocol = local cannot be the default. Any default allowd 
+        # for this parameter... it must be defined from config file. 
+        self.args.setdefault('Protocol', '')
         self.args.setdefault('storageName', 'localhost')
         self.args.setdefault('storagePort', '')
         self.args.setdefault('storagePath', self.args["dropBoxPath"])
