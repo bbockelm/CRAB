@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.4 2008/07/31 10:21:51 farinafa Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.5 2008/08/22 13:30:37 spiga Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import string
 import sys, os
@@ -114,6 +114,8 @@ class RegisterWorker(Thread):
             self.cmdRng =  str( cmdXML.getAttribute('Range') )
             self.proxySubject = str( cmdXML.getAttribute('Subject') )
 
+            self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
+
             self.flavour = str( cmdXML.getAttribute('Flavour') ) 
             self.type = str( cmdXML.getAttribute('Type') )
         except Exception, e:
@@ -146,52 +148,81 @@ class RegisterWorker(Thread):
             self.sendResult(status, reason, reason)
             self.log.info( traceback.format_exc() )
             return None
-        
-        # get TURL for WMS bypass and manage paths
-        self.log.info('Worker %s getting TURL and altering paths'%self.myName)
+          
         if taskObj is not None:
-            remoteSBlist = [ os.path.basename(f) for f in taskObj['globalSandbox'].split(',') ]
-            remoteSBlist = [ os.path.join( '/'+self.cfg_params['CRAB.se_remote_dir'], f ) for f in remoteSBlist ]
-
-            if len(remoteSBlist) > 0:
-                # get the TURL for the first sandbox file
-                turlFileCandidate = remoteSBlist[0]
-                self.TURLpreamble = SBinterface(self.seEl).getTurl( turlFileCandidate, self.proxy )
-    
-                # stores only the path without the base filename and correct the last char
-                self.TURLpreamble = self.TURLpreamble.split(remoteSBlist[0])[0]
-
-                # correct the task attributes w.r.t. the TURL
-                taskObj['globalSandbox'] = ','.join( remoteSBlist )
-                taskObj['startDirectory'] = self.TURLpreamble
-                taskObj['outputDirectory'] = self.TURLpreamble + self.cfg_params['CRAB.se_remote_dir']
-                taskObj['scriptName'] = self.TURLpreamble + os.path.basename(taskObj['scriptName']) 
-                taskObj['cfgName'] = self.TURLpreamble + os.path.basename(taskObj['cfgName'])
- 
-                self.log.debug("Worker %s. Reference TURL: %s"%(self.myName, taskObj['outputDirectory']) )
-
-                for j in taskObj.jobs:
-                    j['executable'] = os.path.basename(j['executable'])
-                    j['outputFiles'] = [ os.path.basename(of) for of in j['outputFiles']  ]
-
-                    jid = taskObj.jobs.index(j)
-                    if 'crab_fjr_%d.xml'%(jid+1) not in j['outputFiles']:
-                        j['outputFiles'].append('crab_fjr_%d.xml'%(jid+1)) 
-                        #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
-                    if '.BrokerInfo' not in j['outputFiles']:
-                        j['outputFiles'].append('.BrokerInfo')
-
-                # save changes
-                try: 
-                    self.blDBsession.updateDB(taskObj)
-                except Exception, e:
-                    status = 6
-                    reason = "Error while updating task %s, it will not be processed"%self.taskName
-                    self.sendResult(status, reason, reason)
-                    self.log.info( traceback.format_exc() )
-                    return None
+            taskObj = self.alterPath(taskObj)
+         
         # all done
         return taskObj 
+
+    def alterPath(self, taskObj):
+        """
+        here the Input and Output SB locations 
+        are defined and related fields are filled.
+        These infos are finally picked-up for JDL creation
+        for this reason the related management is scheduler
+        dependent. 
+        Allowed Schedulers Name:  
+        1) GLITE     
+        2) GLITECOLL 
+        3) CONDOR_G  
+        4) ARC       
+        5) LSF       
+        6) CAF       
+        """
+        self.log.info('Worker %s altering paths'%self.myName)
+
+        remoteSBlist = [ os.path.basename(f) for f in taskObj['globalSandbox'].split(',') ]
+        remoteSBlist = [ os.path.join( '/'+self.cfg_params['CRAB.se_remote_dir'], f ) for f in remoteSBlist ]
+
+        if len(remoteSBlist) > 0:
+            if self.schedName in ['GLITE','GLITECOLL']:
+                # get TURL for WMS bypass and manage paths
+                self.log.info('Worker %s getting TURL (Scheduler Name %s)  '%(self.myName, self.schedName))
+                turlFileCandidate = remoteSBlist[0]
+                self.preamble = SBinterface(self.seEl).getTurl( turlFileCandidate, self.proxy )
+                self.preamble = self.preamble.split(remoteSBlist[0])[0]
+            elif self.schedName in ['LSF','CAF']:
+                self.log.info('Worker %s  NO TURL needed (Scheduler Name %s)  '%(self.myName, self.schedName))
+                self.preamble = ''
+            elif self.schedName in ['CONDOR_G','ARC'] : 
+                self.preamble = ''
+                self.log.info('Worker %s  NO TURL needed (Scheduler Name %s)  '%(self.myName, self.schedName))
+            else:
+                self.log.info('Worker %s  Scheduler %s  Not Known  '%(self.myName, self.schedName))
+                return None
+
+            # correct the task attributes w.r.t. the Preamble
+            taskObj['globalSandbox'] = ','.join( remoteSBlist )
+            taskObj['startDirectory'] = self.preamble
+            taskObj['outputDirectory'] = self.preamble + self.cfg_params['CRAB.se_remote_dir']
+            taskObj['scriptName'] = self.preamble + os.path.basename(taskObj['scriptName']) 
+            taskObj['cfgName'] = self.preamble + os.path.basename(taskObj['cfgName'])
+ 
+            self.log.debug("Worker %s. Reference Preamble: %s"%(self.myName, taskObj['outputDirectory']) )
+ 
+            for j in taskObj.jobs:
+                j['executable'] = os.path.basename(j['executable'])
+                j['outputFiles'] = [ os.path.basename(of) for of in j['outputFiles']  ]
+ 
+                jid = taskObj.jobs.index(j)
+                if 'crab_fjr_%d.xml'%(jid+1) not in j['outputFiles']:
+                    j['outputFiles'].append('crab_fjr_%d.xml'%(jid+1)) 
+                    #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
+                if '.BrokerInfo' not in j['outputFiles']:
+                    j['outputFiles'].append('.BrokerInfo')
+ 
+            # save changes
+            try: 
+                self.blDBsession.updateDB(taskObj)
+            except Exception, e:
+                status = 6
+                reason = "Error while updating task %s, it will not be processed"%self.taskName
+                self.sendResult(status, reason, reason)
+                self.log.info( traceback.format_exc() )
+                return None
+
+        return taskObj
 
     def inputFileCheck(self, task):
         self.log.info('Worker %s checking input sanbox'%self.myName) 
