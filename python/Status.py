@@ -109,11 +109,11 @@ class Status(Actor):
                     if len(list_ID)>0:
                         if st == 'killed':
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
-                            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <List of jobs>"
+                            print "          You can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>"
                             print "          List of jobs: %s \n" % self.readableList(list_ID)
                         elif st == 'Aborted':
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
-                            print "          You can resubmit them specifying JOB numbers: crab -resubmit JOB_number <List of jobs>"
+                            print "          You can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>"
                             print "          List of jobs: %s \n" % self.readableList(list_ID)
                         elif st == 'Done'   :
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
