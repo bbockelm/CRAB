@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.26 2008/08/01 09:23:14 mcinquil Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.27 2008/08/08 14:43:04 mcinquil Exp $"
+__version__ = "$Revision: 1.27 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -74,6 +74,7 @@ class TaskLifeManagerComponent:
         self.args.setdefault("storageName", "localhost")
         self.args.setdefault("storagePort", None)
         self.args.setdefault("ProxiesDir", "/tmp/del_proxies")
+        self.args.setdefault("allow_anonymous", "0")
         # update parameters
         self.args.update(args)
 
@@ -177,7 +178,9 @@ class TaskLifeManagerComponent:
                   }
 
         ## instance the proxy's object to clean proxies
-        self.procheck = ProxyLife(self.bossCfgDB, self.proxypath, dictSE)
+        self.procheck = None
+        if self.args['allow_anonymous'] != "1":
+            self.procheck = ProxyLife(self.bossCfgDB, self.proxypath, dictSE)
 
     ##########################################################################
     # handle events
@@ -791,13 +794,14 @@ class TaskLifeManagerComponent:
         self.checkDelete()
         self.deleteTasks()
 
-        ## checks and manages proxies 
-        try:
-            self.procheck.pollProxies()
-        except Exception, ex:
-            import traceback
-            logging.error("Problem on polling proxies: \n" + str(ex) )
-            logging.error(" details: \n" + str(traceback.format_exc()) )
+        if self.procheck != None:
+            ## checks and manages proxies 
+            try:
+                self.procheck.pollProxies()
+            except Exception, ex:
+                import traceback
+                logging.error("Problem on polling proxies: \n" + str(ex) )
+                logging.error(" details: \n" + str(traceback.format_exc()) )
             
         # Renewing polling cycle
         pollT = int(self.args['pollingTimeCheck'])
