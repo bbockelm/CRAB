@@ -1265,7 +1265,7 @@ class Cmssw(JobType):
         txt += '    fi\n'
           #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
 
-        if (self.datasetPath and not self.dataset_pu ):
+        if (self.datasetPath and not (self.dataset_pu or self.useParent) :
           # VERIFY PROCESSED DATA
             txt += '    if [ $executable_exit_status -eq 0 ];then\n'
             txt += '      echo ">>> Verify list of processed files:"\n'
