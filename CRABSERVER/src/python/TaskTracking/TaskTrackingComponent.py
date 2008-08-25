@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.97 2008/08/09 09:48:29 mcinquil Exp $"
-__version__ = "$Revision: 1.97 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.93 2008/08/05 10:04:53 mcinquil Exp $"
+__version__ = "$Revision: 1.93 $"
 
 import os
 import time
@@ -798,7 +798,9 @@ class TaskTrackingComponent:
                             ##         jes                       clear                       Resub
                               dictReportTot[singleJob][1], dictReportTot[singleJob][3], self.getListEl(dictReportTot[singleJob], 4), \
                             ##         site                                               sched_status
-                              self.getListEl(dictReportTot[singleJob], 5),  self.getListEl(dictReportTot[singleJob], 6) )
+                              self.getListEl(dictReportTot[singleJob], 5),  self.getListEl(dictReportTot[singleJob], 6), \
+                            ##        sId
+                              self.getListEl(dictReportTot[singleJob],9) )
                 c.addJob( J )
             c.toXml()
             c.toFile ( pathToWrite + self.tempxmlReportFile )
@@ -1010,9 +1012,9 @@ class TaskTrackingComponent:
                     
             vect = []
             if eec == "NULL" and jec == "NULL":
-                vect = [self.convertStatus(stato), "", "", 0, Resub, site, stato, joboff, resubmitting]
+                vect = [self.convertStatus(stato), "", "", 0, Resub, site, stato, joboff, resubmitting, sId]
             else:
-                vect = [self.convertStatus(stato), eec, jec, 0, Resub, site, stato, joboff, resubmitting]
+                vect = [self.convertStatus(stato), eec, jec, 0, Resub, site, stato, joboff, resubmitting, sId]
             dictStateTot.setdefault(job, vect)
 
             if stato == "E":
@@ -1095,6 +1097,8 @@ class TaskTrackingComponent:
 		    status = task[0][6]
 		    uuid = task[0][7]
 
+                    #logBuf = self.__logToBuf__(logBuf, "Got Task(id, name): (" + str(taskId) + ", " + str(taskName) + ")")
+
                     if status == self.taskState[2] and notified < 2:
                         ######### Taskfailed is prepared now
                         self.prepareTaskFailed( taskName, uuid, eMail, status)
@@ -1123,11 +1127,16 @@ class TaskTrackingComponent:
 			    if countNotSubmitted > 0:
                                 logBuf = self.__logToBuf__(logBuf, "    -> of which not yet submitted: " + str(countNotSubmitted))
 
+                            #logBuf = self.__logToBuf__(logBuf, str(dictStateTot))
+
                             totjob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress']  
 			    endedJob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed']
 			    try:
 			        percentage = (100 * endedJob) / numJobs
-			        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
+			        pathToWrite = os.path.join( str(self.args['dropBoxPath']), \
+                                                            str(taskName+self.workAdd), \
+                                                            self.resSubDir \
+                                                          )
 
                                 if os.path.exists( pathToWrite ):
                                     self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, numJobs, 1 )
@@ -1195,19 +1204,20 @@ class TaskTrackingComponent:
                 if len(_loginfo) > 0:
                     self.__appendDbgInfo__(taskName, _loginfo)
 
+
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "ERROR: " + str(traceback.format_exc()))
 
         logging.info(logBuf)
 
         try:
-            mySession.bossLiteDB.close()
+            if not mySession.bossLiteDB is None:
+                mySession.bossLiteDB.close()
             del mySession
         except:
             logging.info("not closed..")
             logging.error("ERROR: " + str(traceback.format_exc()))
             pass
-
         time.sleep(float(self.args['PollInterval']))
 
 
