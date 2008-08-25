@@ -94,19 +94,19 @@ class SchedulerGrid(Scheduler):
            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
            common.logger.message(msg)
            raise CrabException(msg)
-        
+
         ### FEDE FOR NEW LFN ###
         if int(self.publish_data) == 1:
             self.datasetPath = cfg_params.get("CMSSW.datasetpath", None)
-           
+
             if (self.datasetPath):
                 if (self.datasetPath.upper() != 'NONE'):
                     datasetpath_split = self.datasetPath.split("/")
                     self.primaryDataset = datasetpath_split[1]
-                else:    
-                    self.primaryDataset = self.publish_data_name 
+                else:
+                    self.primaryDataset = self.publish_data_name
         ########################
-                
+
 
         self.EDG_requirements = cfg_params.get('EDG.requirements',None)
 
@@ -404,7 +404,7 @@ class SchedulerGrid(Scheduler):
 
     def userName(self):
         """ return the user name """
-        tmp=runCommand("voms-proxy-info -identity")
+        tmp=runCommand("voms-proxy-info -identity 2>/dev/null")
         return tmp.strip()
 
     def configOpt_(self):

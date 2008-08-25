@@ -62,7 +62,7 @@ class SchedulerCondorCommon(SchedulerGrid):
 
         self.checkExecutableInPath('condor_config_val')
         self.checkCondorVariablePointsToFile('GRIDMANAGER')
-        self.checkCondorVariablePointsToFile('GT2_GAHP', alternate_name='GAHP')
+        self.checkCondorVariablePointsToFile('GT2_GAHP', alternateName='GAHP')
         self.checkCondorVariablePointsToFile('GRID_MONITOR')
         self.checkCondorVariableIsTrue('ENABLE_GRID_MONITOR')
 
