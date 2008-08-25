@@ -198,7 +198,7 @@ class DBinterface:
             tmp_task = self.getTask()
         return common.bossSession.serialize(tmp_task)   
  
-    def queryID(self,server_mode=0):
+    def queryID(self,server_mode=0, jid=False):
         '''
         Return the taskId if serevr_mode =1 
         Return the joblistId if serevr_mode =0 
@@ -207,15 +207,16 @@ class DBinterface:
         lines=[]
         task = self.getTask()
         if server_mode == 1:
-            header= "Task Id = %-40s " %(task['name'])
-        else:
+            headerTask= "Task Id = %-40s " %(task['name'])
+            displayReport(self,headerTask,lines)
+        if (jid ) or (server_mode == 0):
             for job in task.jobs: 
                 toPrint=''
                 common.bossSession.getRunningInstance(job)
                 toPrint = "%-5s %-50s " % (job['jobId'],job.runningJob['schedulerId'])
                 lines.append(toPrint)
             header+= "%-5s %-50s " % ('Job:','ID' ) 
-        displayReport(self,header,lines)
+            displayReport(self,header,lines)
         return   
 
     def queryTask(self,attr):
@@ -333,9 +334,10 @@ class DBinterface:
                     rForJ = r
                     break
             ## Check the submission number and create new running jobs on the client side          
-            if int(job.runningJob['submission']) < int(rForJ.getAttribute('resubmit')) + 1:
-                nj_list.append(id)
-                self.newRunJobs(nj_list)
+            if rForJ.getAttribute('resubmit') != 'None' :
+                if int(job.runningJob['submission']) < int(rForJ.getAttribute('resubmit')) + 1:
+                    nj_list.append(id)
+                    self.newRunJobs(nj_list)
 
         task_new = self.getTask()
 
@@ -347,7 +349,7 @@ class DBinterface:
                 if r.getAttribute('id') in [ id, 'all']:
                     rForJ = r
                     break 
- 
+                   
             # Data alignment
             if rForJ.getAttribute('status') not in ['Created', 'Unknown'] and not\
                 (job.runningJob['statusScheduler'] == 'Killing' and rForJ.getAttribute('status')!='Killed') \
@@ -362,6 +364,8 @@ class DBinterface:
                 else: 
                     job.runningJob['status'] = str( rForJ.getAttribute('sched_status') )
           
+                job.runningJob['schedulerId'] = str( rForJ.getAttribute('sched_id') )
+ 
                 job.runningJob['destination'] = str( rForJ.getAttribute('site') )
                 dest = str(job.runningJob['destination']).split(':')[0]
               
