@@ -48,19 +48,20 @@ class Status(Actor):
             exe_exit_code = str(job.runningJob['applicationReturnCode'])
             job_exit_code = str(job.runningJob['wrapperReturnCode'])
             self.wrapErrorList.append(job_exit_code)
+            res_ID = str(job.runningJob['submission'])  
             printline=''
             header = ''
             if dest == 'None' :  dest = ''
             if exe_exit_code == 'None' :  exe_exit_code = ''
             if job_exit_code == 'None' :  job_exit_code = ''
-            printline+="%-8s %-18s %-40s %-13s %-15s" % (id,jobStatus,dest,exe_exit_code,job_exit_code)
+            printline+="%-8s %-15s %-34s %-15s %-18s %-10s" % (id,jobStatus,dest,exe_exit_code,job_exit_code,res_ID)
             toPrint.append(printline)
 
             if jobStatus is not None:
                 self.dataToDash(job,id,taskId,dest,jobStatus)
 
         header = ''
-        header+= "%-8s %-18s %-40s %-13s %-15s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
+        header+= "%-8s %-15s %-34s %-15s %-18s %-10s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','#SUB')
 
         displayReport(self,header,toPrint,self.xml)
 
