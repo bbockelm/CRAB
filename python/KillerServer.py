@@ -32,7 +32,7 @@ class KillerServer(Actor, StatusServer):
         task = common._db.getTask(self.range)
         toBeKilled = []
         for job  in task.jobs:
-           if job.runningJob['status'] in ['SS','R','SR','SW', 'SU']:
+           if job.runningJob['status'] not in ['C','E']:
                toBeKilled.append(job['jobId'])
            else:
                common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
