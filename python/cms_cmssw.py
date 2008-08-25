@@ -1265,9 +1265,10 @@ class Cmssw(JobType):
         txt += '    fi\n'
           #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
 
+        txt += '    if [ $executable_exit_status -eq 0 ];then\n'
+        txt += '      echo ">>> Executable succeded  $executable_exit_status"\n'
         if (self.datasetPath and not (self.dataset_pu or self.useParent) :
           # VERIFY PROCESSED DATA
-            txt += '    if [ $executable_exit_status -eq 0 ];then\n'
             txt += '      echo ">>> Verify list of processed files:"\n'
             txt += '      echo $InputFiles |tr -d \'\\\\\' |tr \',\' \'\\n\'|tr -d \'"\' > input-files.txt\n'
             txt += '      python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --lfn > processed-files.txt\n'
@@ -1291,8 +1292,11 @@ class Cmssw(JobType):
             txt += '         echo "      ==> list of processed files from crab_fjr.xml differs from list in pset.cfg"\n'
             txt += '         echo "      ==> diff input-files.txt processed-files.txt"\n'
             txt += '      fi\n'
-            txt += '    fi\n'
-            txt += '\n'
+        txt += '    elif [ $executable_exit_status -ne 0 ] || [ $executable_exit_status -ne 50015 ] || [ $executable_exit_status -ne 50017 ];then\n'
+        txt += '      echo ">>> Executable failed  $executable_exit_status"\n'
+        txt += '      func_exit\n'
+        txt += '    fi\n'
+        txt += '\n'
         txt += 'else\n'
         txt += '    echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."\n'
         txt += 'fi\n'
