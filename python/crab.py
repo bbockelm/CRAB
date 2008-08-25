@@ -531,7 +531,9 @@ class Crab:
                 Print the unique name of the task if crab is used as client
                 Print the SID list of all the jobs
                 '''
-                common._db.queryID(self.UseServer)
+                jid=False
+                if val == 'full': jid=True 
+                common._db.queryID(self.UseServer,jid)
 
             elif ( opt == '-status' ):
                 from Status import Status
