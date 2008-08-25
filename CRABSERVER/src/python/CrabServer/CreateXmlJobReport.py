@@ -30,29 +30,32 @@ class Job:
         self.SITE           = "site"
         self.RESUB          = "resubmit" 
         self.STATCODE       = "sched_status"
+        self.SCHEDID        = "sched_id"
 
         self.jobid      = ""
         self.status     = ""
         self.exitstatus = ""
         self.jobexit    = ""
-	self.jobcleared = ""
+        self.jobcleared = ""
         self.site       = ""
         self.resub      = ""
-        self.statcode   = "" 
+        self.statcode   = ""
+        self.sId        = ""
         
         self.doc            = xml.dom.minidom.Document()
 	#self.root           = self.doc.createElement( self.ROOTNAME )
 	#self.init           = False
         
     #------------------------------------------------------------------------
-    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site, sched_status):
+    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site, sched_status, sId = "" ):
         self.jobid      = jobid
         self.status     = status
         self.exitstatus = exe_exit
         self.jobexit    = job_exit
 	self.jobcleared = job_cleared
         self.statcode   = sched_status
-
+        self.sId        = sId
+ 
         jobrep = self.doc.createElement(self.JOBREPORT)
         jobrep.setAttribute(self.JOBID, str(self.jobid))
 
@@ -69,6 +72,7 @@ class Job:
         jobrep.setAttribute(self.SITE, str(site))
         jobrep.setAttribute(self.RESUB, str(resub))
         jobrep.setAttribute(self.STATCODE, str(self.statcode))
+        jobrep.setAttribute(self.SCHEDID, str(self.sId))
 
         self.report = jobrep
         return self
@@ -156,6 +160,8 @@ class CreateXmlJobReport:
 	self.COUNT          = 'count'
         self.SITE           = "site"
         self.RESUB          = "resubmit"
+        self.STATCODE       = "sched_status"
+        self.SCHEDID        = "sched_id"
 	
 	self.doc            = xml.dom.minidom.Document()
 	self.root           = self.doc.createElement( self.ROOTNAME )
