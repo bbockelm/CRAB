@@ -21,15 +21,15 @@ function createSePath {
 #######
   dir=$1
   rfmkdir -p $dir
-      if [ $? -eq 0 ]; then
-          echo "the $dir has been created"
-          exit_creation_dir=0
-      else
-          echo ">>> ERROR: problem with the $dir creation using rfmkdir"
-          exit_creation_dir=60316
-          echo ">>> exit code = $exit_creation_dir"
-          return $exit_creation_dir
-      fi       
+  if [ $? -eq 0 ]; then
+      echo "the $dir has been created"
+      exit_creation_dir=0
+  else
+      echo ">>> ERROR: problem with the $dir creation using rfmkdir"
+      exit_creation_dir=60316
+      echo ">>> exit code = $exit_creation_dir"
+  fi       
+  return $exit_creation_dir
 }
 
 function verifySePath {
@@ -53,7 +53,6 @@ function verifySePath {
       createSePath $se_path
       if [ $exit_creation_dir -ne 0 ]; then
          exit_verifySePath=$exit_creation_dir
-         return $exit_verifySePath
       fi   
   fi
   return $exit_verifySePath
@@ -103,8 +102,8 @@ function cmscp {
       else
           StageOutExitStatusReason='copy ok with rfcp'
       fi
-      cmscp_exit_status=$copy_exit_status
-      
+      #cmscp_exit_status=$copy_exit_status
+
   else
       if [ $# -le 5 ]; then
           echo -e "\t$0 usage:"
@@ -251,7 +250,7 @@ function cmscp {
 
   echo "StageOutExitStatus = $cmscp_exit_status" | tee -a $RUNTIME_AREA/$repo
   echo "StageOutExitStatusReason = $StageOutExitStatusReason" | tee -a $RUNTIME_AREA/$repo
-  echo "StageOutSE = $SE" >> $RUNTIME_AREA/$repo\n
+  echo "StageOutSE = $SE" >> $RUNTIME_AREA/$repo
   return $cmscp_exit_status
 }
 

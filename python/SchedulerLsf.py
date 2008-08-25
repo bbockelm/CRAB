@@ -128,7 +128,7 @@ class SchedulerLsf(SchedulerLocal) :
         txt += '# Verify is the SE path exists '+self.SE_path+'\n'
         txt += '#\n\n'
         txt += 'verifySePath ' + self.SE_path + '\n'
-        txt += 'if [ $exit_verifySePath -ne 0 ]; then\n'
+        txt += 'if [ $exit_verifySePath -eq 0 ]; then\n'
         txt += '    echo ">>> Copy output files from WN = `hostname` to SE_PATH = $SE_PATH :"\n'
         txt += '    copy_exit_status=0\n'
         txt += '    for out_file in $file_list ; do\n'
