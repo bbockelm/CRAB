@@ -1267,7 +1267,7 @@ class Cmssw(JobType):
 
         txt += '    if [ $executable_exit_status -eq 0 ];then\n'
         txt += '      echo ">>> Executable succeded  $executable_exit_status"\n'
-        if (self.datasetPath and not (self.dataset_pu or self.useParent) :
+        if (self.datasetPath and not (self.dataset_pu or self.useParent)) :
           # VERIFY PROCESSED DATA
             txt += '      echo ">>> Verify list of processed files:"\n'
             txt += '      echo $InputFiles |tr -d \'\\\\\' |tr \',\' \'\\n\'|tr -d \'"\' > input-files.txt\n'
