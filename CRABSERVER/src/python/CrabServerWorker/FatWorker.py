@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.113 2008/08/19 22:02:19 ewv Exp $"
-__version__ = "$Revision: 1.113 $"
+__revision__ = "$Id: FatWorker.py,v 1.114 2008/08/26 12:16:51 spiga Exp $"
+__version__ = "$Revision: 1.114 $"
 import string
 import sys, os
 import time
@@ -194,6 +194,7 @@ class FatWorker(Thread):
 
         if schedulerConfig['name'] in ['SchedulerGLiteAPI']:
             schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.configs['rb']
+            schedulerConfig['skipWMSAuth'] = 1 
             if self.wmsEndpoint:
                 schedulerConfig['service'] = self.wmsEndpoint
         elif schedulerConfig['name'] in ['SchedulerGlidein', 'SchedulerCondorG']:
