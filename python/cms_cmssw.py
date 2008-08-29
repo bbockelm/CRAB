@@ -22,8 +22,14 @@ class Cmssw(JobType):
         # init BlackWhiteListParser
         self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params)
 
-        self.MaxTarBallSize = float(self.cfg_params.get('EDG.maxtarballsize',9.5))
+        ### Temporary patch to automatically skip the ISB size check:
+        server=self.cfg_params.get('CRAB.server_name',None)
+        size = 9.5 
+        if server: size = 99999
+        ### D.S.
+        self.MaxTarBallSize = float(self.cfg_params.get('EDG.maxtarballsize',size))
 
+        CRAB.scheduler
         # number of jobs requested to be created, limit obj splitting
         self.ncjobs = ncjobs
 
