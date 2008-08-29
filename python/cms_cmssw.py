@@ -29,7 +29,6 @@ class Cmssw(JobType):
         ### D.S.
         self.MaxTarBallSize = float(self.cfg_params.get('EDG.maxtarballsize',size))
 
-        CRAB.scheduler
         # number of jobs requested to be created, limit obj splitting
         self.ncjobs = ncjobs
 
