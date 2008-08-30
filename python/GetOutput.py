@@ -59,12 +59,10 @@ class GetOutput(Actor):
         check = -1 
         if self.jobs != 'all': check = len( set(self.jobs).intersection(set(list_id_done)) )  
         if len(list_id_done)==0 or ( check == 0 ) :
-            msg=''    
-            list_ID=[] 
-#            for st,stDetail in self.possible_status.iteritems():
-#                list_ID = common._db.queryAttrRunJob({'status':st},'jobId')
-#                if len(list_ID)>0: msg += "       %i Jobs in status: %s \n" % (len(list_ID), str(stDetail))  
-            msg += 'Jobs %s are not in Done status. It is not possible yet to retrieve the output.'% readableList(self,self.jobs)
+            msg=''  
+            list_jobs=self.jobs 
+            if self.jobs == 'all': list_jobs=self.all_id 
+            msg += 'Jobs %s are not in Done status. It is not possible yet to retrieve the output.'% readableList(self,list_jobs)
             raise CrabException(msg)
         else:
             if self.jobs == 'all': 
