@@ -7,7 +7,6 @@ from crab_util import *
 class Status(Actor):
     def __init__(self, *args):
         self.cfg_params = args[0]
-
         self.xml = self.cfg_params.get("USER.xml_report",'')
 
         return
@@ -54,14 +53,14 @@ class Status(Actor):
             if dest == 'None' :  dest = ''
             if exe_exit_code == 'None' :  exe_exit_code = ''
             if job_exit_code == 'None' :  job_exit_code = ''
-            printline+="%-8s %-15s %-34s %-15s %-18s %-10s" % (id,jobStatus,dest,exe_exit_code,job_exit_code,res_ID)
+            printline+="%-8s %-18s %-33s %-14s %-17s %-10s" % (id,jobStatus,dest,exe_exit_code,job_exit_code,res_ID)
             toPrint.append(printline)
 
             if jobStatus is not None:
                 self.dataToDash(job,id,taskId,dest,jobStatus)
 
         header = ''
-        header+= "%-8s %-15s %-34s %-15s %-18s %-10s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','#SUB')
+        header+= "%-8s %-18s %-33s %-14s %-17s %-10s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','#SUB')
 
         displayReport(self,header,toPrint,self.xml)
 
@@ -90,17 +89,13 @@ class Status(Actor):
                           ]
 
         jobs = common._db.nJobs('list')
-
         WrapExitCode = list(set(self.wrapErrorList))
         print ''
         print ">>>>>>>>> %i Total Jobs " % (len(jobs))
         print ''
         list_ID=[]
-        isClient=True
         for c in WrapExitCode:
-            if c != 'None' and not isClient:
-                self.reportCodes(c)
-            else:
+            if c == 'None':
                 for st in possible_status:
                     list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
                     if len(list_ID)>0:
@@ -118,14 +113,15 @@ class Status(Actor):
                             print "          List of jobs: %s \n" % readableList(self,list_ID)
                         else   :
                             print ">>>>>>>>> %i Jobs %s \n " % (len(list_ID), str(st))
+            else:
                 self.reportCodes(c)
 
-    def reportCodes(self,c): 
+    def reportCodes(self,code): 
         """
         """
-        list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':c},'jobId')
+        list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':code},'jobId')
         if len(list_ID)>0:
-            print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(c))
+            print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(code))
             print "          List of jobs: %s" % readableList(self,list_ID)
             print " "
 
