@@ -85,7 +85,7 @@ class Status(Actor):
                          'Aborted',
                          'Unknown',
                          'done(failed)',
-                         'cleared',
+                         'Cleared',
                          'retrieved'
                           ]
 
@@ -96,13 +96,10 @@ class Status(Actor):
         print ">>>>>>>>> %i Total Jobs " % (len(jobs))
         print ''
         list_ID=[]
+        isClient=True
         for c in WrapExitCode:
-            if c != 'None':
-                list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':c},'jobId')
-                if len(list_ID)>0:
-                    print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(c))
-                    print "          List of jobs: %s" % self.readableList(list_ID)
-                    print " "
+            if c != 'None' and not isClient:
+                self.reportCodes(c)
             else:
                 for st in possible_status:
                     list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
@@ -110,40 +107,31 @@ class Status(Actor):
                         if st == 'killed':
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
                             print "          You can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>"
-                            print "          List of jobs: %s \n" % self.readableList(list_ID)
+                            print "          List of jobs: %s \n" % readableList(self,list_ID)
                         elif st == 'Aborted':
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
                             print "          You can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>"
-                            print "          List of jobs: %s \n" % self.readableList(list_ID)
+                            print "          List of jobs: %s \n" % readableList(self,list_ID)
                         elif st == 'Done'   :
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
                             print "          Retrieve them with: crab -getoutput <List of jobs>"
-                            print "          List of jobs: %s \n" % self.readableList(list_ID)
+                            print "          List of jobs: %s \n" % readableList(self,list_ID)
                         else   :
                             print ">>>>>>>>> %i Jobs %s \n " % (len(list_ID), str(st))
+                self.reportCodes(c)
 
+    def reportCodes(self,c): 
+        """
+        """
+        list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':c},'jobId')
+        if len(list_ID)>0:
+            print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(c))
+            print "          List of jobs: %s" % readableList(self,list_ID)
+            print " "
 
-    def readableList(self,rawList):
-      listString = str(rawList[0])
-      endRange = ''
-      for i in range(1,len(rawList)):
-        if rawList[i] == rawList[i-1]+1:
-          endRange = str(rawList[i])
-        else:
-          if endRange:
-            listString += '-' + endRange + ',' + str(rawList[i])
-            endRange = ''
-          else:
-            listString += ',' + str(rawList[i])
-      if endRange:
-        listString += '-' + endRange
-        endRange = ''
-
-      return listString
-
-
+        return
+ 
     def dataToDash(self,job,id,taskId,dest,jobStatus):
-
 
         jid = job.runningJob['schedulerId']
         job_status_reason = str(job.runningJob['statusReason'])
