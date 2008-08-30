@@ -476,6 +476,24 @@ def writeTXTfile(self, outFileName, args):
     outFile.close()
     return
 
+def readableList(self,rawList):
+   listString = str(rawList[0])
+   endRange = ''
+   for i in range(1,len(rawList)):
+     if rawList[i] == rawList[i-1]+1:
+       endRange = str(rawList[i])
+     else:
+       if endRange:
+         listString += '-' + endRange + ',' + str(rawList[i])
+         endRange = ''
+       else:
+         listString += ',' + str(rawList[i])
+   if endRange:
+     listString += '-' + endRange
+     endRange = ''
+
+   return listString
+
 def getLocalDomain(self):
     """
      Get local domain name
@@ -488,6 +506,8 @@ def getLocalDomain(self):
         raise CrabException(msg)
     localDomainName = string.split(tmp,'.',1)[-1]
     return localDomainName
+
+
 
 ####################################
 if __name__ == '__main__':
