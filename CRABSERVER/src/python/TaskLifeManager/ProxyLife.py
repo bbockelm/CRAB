@@ -52,7 +52,10 @@ class ProxyLife:
         return outp
 
     def checkUserProxy(self, cert=''):
-        if cert != '' and os.path.exists(cert):
+        if cert == '':
+            logging.error( "Not existing proxy!")
+            return 60*60*24*3 #3 days
+        elif os.path.exists(cert):
             proxiescmd = 'voms-proxy-info -timeleft -file ' + str(cert)
             output = self.executeCommand( proxiescmd )
             return output
@@ -294,9 +297,10 @@ class ProxyLife:
                 try:
                     timeleft = int(self.checkUserProxy(proxyfull))
                 except ValueError, ex:
+                    logging.info("Problem checking proxy validity: " + str(ex))
                     timeleft = -1
                 except Exception, ex:
-                    logging.info(str(ex))
+                    logging.info("Problem checking proxy validity: " + str(ex))
 
                 ###############################################################
                 ######
