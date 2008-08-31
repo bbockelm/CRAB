@@ -31,9 +31,11 @@ class KillerServer(Actor, StatusServer):
 
         task = common._db.getTask(self.range)
         toBeKilled = []
+        toSetKilling = []
         for job  in task.jobs:
-           if job.runningJob['status'] not in ['C','E']:
+           if job.runningJob['status'] not in ['C','E','KK','SK','SA','SSE']:
                toBeKilled.append(job['jobId'])
+               if job.runningJob['status'] != 'SD': toSetKilling.append(job['jobId'])
            else:
                common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
            pass
@@ -51,8 +53,8 @@ class KillerServer(Actor, StatusServer):
                 raise CrabException(msg)
  
             # update runningjobs status
-            updList = [{'statusScheduler':'Killing', 'status':'KK'}] * len(toBeKilled)
-            common._db.updateRunJob_(toBeKilled, updList)
+            updList = [{'statusScheduler':'Killing', 'status':'KK'}] * len(toSetKilling)
+            common._db.updateRunJob_(toSetKilling, updList)
  
             # printout the command result
             common.logger.message("Kill request for %d jobs succesfully sent to the server\n"%len(toBeKilled) ) 
