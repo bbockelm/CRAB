@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.68 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.68 2008/08/13 08:43:55 farinafa Exp $"
+__version__ = "$Revision: 1.69 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.69 2008/08/24 22:18:34 spiga Exp $"
 
 import os, pickle, time, copy
 
@@ -368,7 +368,7 @@ class CrabServerWorkerComponent:
         # check whether the task has been previously registered        
         taskObj = None
         try:
-            taskObj = self.blDBsession.loadTaskByName(self.taskName)
+            taskObj = self.blDBsession.loadTaskByName(taskUniqName)
         except Exception, e:
             logging.info('Error while loading %s for fast kill'%taskUniqName )
 
