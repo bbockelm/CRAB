@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.27 2008/08/08 14:43:04 mcinquil Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.28 2008/08/25 08:43:12 mcinquil Exp $"
+__version__ = "$Revision: 1.28 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -75,6 +75,7 @@ class TaskLifeManagerComponent:
         self.args.setdefault("storagePort", None)
         self.args.setdefault("ProxiesDir", "/tmp/del_proxies")
         self.args.setdefault("allow_anonymous", "0")
+        self.args.setdefault("checkProxy", "off")
         # update parameters
         self.args.update(args)
 
@@ -179,7 +180,7 @@ class TaskLifeManagerComponent:
 
         ## instance the proxy's object to clean proxies
         self.procheck = None
-        if self.args['allow_anonymous'] != "1":
+        if self.args['allow_anonymous'] != "1" and str(self.args['checkProxy']) == 'on':
             self.procheck = ProxyLife(self.bossCfgDB, self.proxypath, dictSE)
 
     ##########################################################################
