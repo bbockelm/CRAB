@@ -83,7 +83,7 @@ class Status(Actor):
                          'Killed',
                          'Aborted',
                          'Unknown',
-                         'done(failed)',
+                         'Done (Failed)',
                          'Cleared',
                          'retrieved'
                           ]
@@ -95,7 +95,9 @@ class Status(Actor):
         print ''
         list_ID=[]
         for c in WrapExitCode:
-            if c == 'None':
+            if c != 'None':
+                self.reportCodes(c)
+            else:
                 for st in possible_status:
                     list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
                     if len(list_ID)>0:
@@ -107,14 +109,12 @@ class Status(Actor):
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
                             print "          You can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>"
                             print "          List of jobs: %s \n" % readableList(self,list_ID)
-                        elif st == 'Done'   :
+                        elif st == 'Done' or st == 'Done (Failed)' :
                             print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
                             print "          Retrieve them with: crab -getoutput <List of jobs>"
                             print "          List of jobs: %s \n" % readableList(self,list_ID)
                         else   :
                             print ">>>>>>>>> %i Jobs %s \n " % (len(list_ID), str(st))
-            else:
-                self.reportCodes(c)
 
     def reportCodes(self,code): 
         """
