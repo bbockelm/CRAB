@@ -24,7 +24,7 @@ class GetOutput(Actor):
                          'SS': 'Scheduled',
                          'R': 'Running',
                          'SD': 'Done',
-                         'SK': 'Killed',
+                         'K': 'Killed',
                          'SA': 'Aborted',
                          'SE': 'Cleared',
                          'E': 'Cleared'

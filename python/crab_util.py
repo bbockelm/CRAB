@@ -159,7 +159,6 @@ def crabJobStatusToString(crab_status):
            'SU':'Submitted',
            'S' :'Submitted (Boss)',
            'UN':'Undefined',
-           'SK':'Cancelled',
            'SD':'Done (Success)',
            'SA':'Aborted',
            'DA':'Done (Aborted)',
