@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.93 2008/08/05 10:04:53 mcinquil Exp $"
-__version__ = "$Revision: 1.93 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.99 2008/08/25 12:51:24 mcinquil Exp $"
+__version__ = "$Revision: 1.99 $"
 
 import os
 import time
@@ -1036,7 +1036,8 @@ class TaskTrackingComponent:
                 dictReportTot['JobFailed'] += 1
                 dictStateTot[job][3] = 1
             elif stato == "C":
-                if (internalstatus in ["failed", "finished", "reallyFinished"])  and not resubmitting:
+                if (internalstatus in ["failed", "finished"] and not resubmitting) \
+                  or internalstatus == "reallyFinished":
                    countNotSubmitted += 1
                    dictReportTot['JobFailed'] += 1
                    dictStateTot[job][0] = "NotSubmitted"
