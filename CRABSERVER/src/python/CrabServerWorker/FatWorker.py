@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.114 2008/08/26 12:16:51 spiga Exp $"
-__version__ = "$Revision: 1.114 $"
+__revision__ = "$Id: FatWorker.py,v 1.115 2008/08/28 08:20:13 spiga Exp $"
+__version__ = "$Revision: 1.115 $"
 import string
 import sys, os
 import time
@@ -413,17 +413,17 @@ class FatWorker(Thread):
             payload = self.taskName+"::"+str(resubmissionList)
             self.local_queue.put((self.myName, "SubmissionFailed", payload))
             try:
-                self.registerTask(taskObj)
+                self.registerTask(taskObj, dbSession)
                 jobSpecId = []
                 toMarkAsFailed = list(set(resubmissionList+unmatchedJobs + nonSubmittedJobs + skippedJobs))
                 for j in taskObj.jobs:
                     if j['jobId'] in toMarkAsFailed:
                         jobSpecId.append(j['name'])
 
-                self.cwdb.stopResubmissions(jobSpecId)
+                self.cwdb.stopResubmission(jobSpecId, dbSession)
                 for jId in jobSpecId:
                     try:
-                        self.cwdb.updateWEStatus(jId, 'reallyFinished')
+                        self.cwdb.updateWEStatus(jId, 'reallyFinished', dbSession)
                     except Exception, e:
                         continue
             except Exception,e:
