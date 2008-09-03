@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.5 2008/08/22 13:30:37 spiga Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.6 2008/08/24 22:28:51 spiga Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import string
 import sys, os
@@ -264,35 +264,20 @@ class RegisterWorker(Thread):
         """
         self.proxy = ""
         self.log.info('Worker %s pairing task and proxy'%self.myName)
-
         if int(self.configs['allow_anonymous']) != 0: # and (subj=='anonymous'):
             self.proxy = 'anonymous'
             return 0
 
-        proxyLink = os.path.join(self.wdir, (self.taskName + '_spec/userProxy'))
-        if os.path.exists(proxyLink):
-            self.log.info("Project -> Task already associated: %s"%self.taskName )
-            self.proxy = str(proxyLink)
-            return 0 
-
-        assocFile = self.getProxyFile()
-        if assocFile: 
-            try:
-                cmd = 'ln -s %s %s'%(assocFile, proxyLink)
-                cmd = cmd + ' && chmod 600 %s'%assocFile
-                if os.system(cmd) == 0:
-                    self.proxy = str(proxyLink)
-                else:
-                    self.proxy = str(assocFile)
-
-                self.log.info("Project -> Task association: %s -> %s"%(self.taskName, assocFile) )
-
-            except Exception, e:
-                reason = "Warning: error while linking the proxy file for task %s."%self.taskName 
-                self.log.info(reason)
-                self.log.info( traceback.format_exc() )
+        try:
+            assocFile = self.getProxyFile()
+            if assocFile: 
                 self.proxy = str(assocFile)
-            return 0
+                self.log.info("Project -> Task association: %s -> %s"%(self.taskName, assocFile) )
+                return 0
+        except Exception, e:
+            reason = "Warning: error while linking the proxy file for task %s."%self.taskName 
+            self.log.info(reason)
+            self.log.info( traceback.format_exc() )
             
         status = 20
         reason = "Unable to locate a proper proxy for the task %s"%(self.taskName)
