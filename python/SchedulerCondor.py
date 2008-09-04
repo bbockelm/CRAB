@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.10 2008/08/05 18:48:52 ewv Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.11 2008/08/05 19:50:28 ewv Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -110,8 +110,8 @@ class SchedulerCondor(SchedulerLocal) :
         txt += self.wsExitFunc_common()
 
         txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
-        txt += '    cp  ${out_files}.tgz $ORIG_WD/\n'
-        txt += '    cp  crab_fjr_$NJob.xml $ORIG_WD/\n'
+        txt += '    cp  ${out_files}.tgz $_CONDOR_SCRATCH_DIR/\n'
+        txt += '    cp  crab_fjr_$NJob.xml $_CONDOR_SCRATCH_DIR/\n'
 
         txt += '    exit $job_exit_code\n'
         txt += '}\n'
@@ -130,8 +130,7 @@ class SchedulerCondor(SchedulerLocal) :
         txt += 'middleware='+self.name()+' \n'
         txt += """
 if [ $_CONDOR_SCRATCH_DIR ] && [ -d $_CONDOR_SCRATCH_DIR ]; then
-    ORIG_WD=`pwd`
-    echo "Change from $ORIG_WD to Condor scratch directory: $_CONDOR_SCRATCH_DIR"
+    echo "cd to Condor scratch directory: $_CONDOR_SCRATCH_DIR"
     if [ -e ../default.tgz ] ;then
       echo "Found ISB in parent directory (Local Condor)"
       cp ../default.tgz $_CONDOR_SCRATCH_DIR
