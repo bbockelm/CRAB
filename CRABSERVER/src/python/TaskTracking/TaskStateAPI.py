@@ -87,6 +87,28 @@ class TaskStateAPI:
 
         return jobState
 
+    def getProxy( self, taskName ):
+        conn, dbCur = self.openConnPA()
+        try:
+            sqlStr="SELECT proxy from js_taskInstance " + \
+                   "WHERE taskName = '"+ str(taskName) +"';"
+            dbCur.execute("START TRANSACTION")
+            dbCur.execute(sqlStr)
+            row = dbCur.fetchall()
+            dbCur.execute("COMMIT")
+            ## closing connection with PA's DB
+            self.closeConnPA( dbCur, conn )
+            if len(row) > 0:
+                return row[0][0]
+            else:
+                return None
+        except:
+            dbCur.execute("ROLLBACK")
+            ## closing connection with PA's DB
+            self.closeConnPA( dbCur, conn )
+            logging.error( "Error quering PA DB! Method: " + self.findTaskPA.__name__ )
+            raise
+
 
     def insertTaskPA( self, taskName, status ):
         """
@@ -602,7 +624,6 @@ class TaskStateAPI:
         task2Check = self.queryMethod(queryString, taskName)
 
         return task2Check
-
 
     def checkExistPA( self, conn, dbCur, taskName, dbSession = None):
         """
