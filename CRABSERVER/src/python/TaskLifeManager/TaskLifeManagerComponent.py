@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.28 2008/08/25 08:43:12 mcinquil Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.29 2008/09/01 08:41:53 mcinquil Exp $"
+__version__ = "$Revision: 1.29 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -461,7 +461,11 @@ class TaskLifeManagerComponent:
         from os.path import join
         task = self.taskQueue.getbyName( taskName )
         if task != None:
-            proxy = join( self.args['dropBoxPath'], task.getProxy() )
+            proxy = str(task.getProxy())
+            if len(proxy) == 0:
+                ttdb = TaskStateAPI()
+                proxy = ttdb.getProxy(taskName)
+                task.setProxy(str(proxy))
             from os.path import join
             taskPath = join(self.args['storagePath'] , taskName)
             jobList = eval(strJobs)
@@ -475,7 +479,7 @@ class TaskLifeManagerComponent:
                         self.SeSbI.delete( join(taskPath, file), proxy )
                     except Exception, ex: 
                         import traceback
-                        logging.debug( "Exception raised: " + str(ex) )
+                        logging.info( "Exception raised: " + str(ex) )
                         logging.debug( str(traceback.format_exc()) )
                         logging.info( "problems deleting osb for job " + str(idjob) )
         else:
@@ -698,7 +702,7 @@ class TaskLifeManagerComponent:
         totFreeSpace = 0
         for index in range( toDelete ):
             task = self.taskDeleteQueue.getCurrentSwitch()
-            proxy = join( self.args['dropBoxPath'], task.getProxy() )
+            proxy = task.getProxy()
             logging.info ( "task life expired " + task.getName() )
             summ = self.cleanTask( task.getName(), proxy )
             if summ > 0:

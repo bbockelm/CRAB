@@ -26,7 +26,7 @@ class Task:
         ### NEW ###
         ## proxy
         import os
-        self.__proxy = os.path.join(self.__taskName + '_spec', 'userProxy')
+        self.__proxy = ""
         ## list of files to delete
         self.__sandboxes = []
 
@@ -126,3 +126,6 @@ class Task:
         for sb in listsb:
             if sb in self.__sandboxes:
                 self.__sandboxes.remove(sb)
+
+    def setProxy(self, proxy):
+        self.__proxy = proxy
