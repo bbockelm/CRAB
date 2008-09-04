@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.69 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.69 2008/08/24 22:18:34 spiga Exp $"
+__version__ = "$Revision: 1.70 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.70 2008/08/31 10:43:59 spiga Exp $"
 
 import os, pickle, time, copy
 
@@ -294,6 +294,7 @@ class CrabServerWorkerComponent:
             taskName, retryCounter, cmdRng = items[0:3]
         
         elif event == 'ResubmitJob':
+            taskId, jobId = (-1, -1)
             taskId, jobId = items[0:2]
             cmdRng = str( [int(jobId)] )
             if len(items) == 3 and items[2] != "#fake_site#":
@@ -301,11 +302,15 @@ class CrabServerWorkerComponent:
 
             # load task and job data
             try:
+                task, taskName, job = (None, None, None)
+
                 task = self.blDBsession.load(taskId, jobId)[0]
                 taskName = task['name']
                 job = task.jobs[0]
+
             except Exception, e:
-                logging.info("Unable to load task from BossLite. Submission request won\'t be scheduled for taskId=%d"%taskId)
+                logging.info("Unable to load task %s from BossLite."%taskName)
+                logging.info("Submission request won\'t be scheduled for taskId=%s, jobId=%s"%(str(taskId), str(jobId)) )
                 logging.info(traceback.format_exc())
                 return
 
