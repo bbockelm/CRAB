@@ -1,6 +1,6 @@
 class CrabWorkerAPI:
 
-    def __init__(self):
+    def __init__(self, dbSession):
         self.wejobmap = { \
                           'id':          'id', \
                           'spec':        'job_spec_file', \
@@ -12,22 +12,38 @@ class CrabWorkerAPI:
                           'cache':       'cache_dir' \
                         }
 
+        self.dbSession = dbSession
+        if self.dbSession is None:
+            raise Exception("Empty dbSession object is not allowed")
         pass
 
-    def getWEStatus(self, jobId, dbSession = None):
+    def getWEStatus(self, jobId):
         """
         _getWEStatus_
 
         get the actual we_job status
         """
         sqlStr = "select status from we_Job where id = '" + str(jobId) + "';"
-        tupla = dbSession.select( sqlStr )
+        tupla = self.dbSession.select( sqlStr )
         if len(tupla) == 1:
             return str(tupla[0][0])
         else:
             raise Exception("Not just one entry has been found: "+str(tupla))
 
-    def updateWEStatus(self, jobId, status, dbSession = None):
+    def getWERemainingRetries(self, jobId):
+        """
+        _getRemainingRetries_
+
+        get the counting of still available retries for the specified job
+        """
+        sqlStr = "select max_retries-retries from we_Job where id = '" + str(jobId) + "';"
+        tupla = self.dbSession.select( sqlStr )
+        if len(tupla) == 1:
+            return int(tupla[0][0])
+        else:
+            raise Exception("Not just one entry has been found: "+str(tupla))
+
+    def updateWEStatus(self, jobId, status):
         """
         _updateWEStatus_
 
@@ -35,16 +51,16 @@ class CrabWorkerAPI:
         """
         sqlStr = "update we_Job set status = '"+str(status)+"' " + \
                  "where id = '"+str(jobId)+"';"
-        dbSession.modify(sqlStr)
+        self.dbSession.modify(sqlStr)
 
-    def existsWEJob(self, jobId, dbSession = None):
+    def existsWEJob(self, jobId):
         """
         _existsWEJob_
 
         verify if a we_job already exists in the db
         """
         sqlStr = "select count(*) from we_Job where id = '" +str(jobId)+ "';"
-        tupla = dbSession.select(sqlStr)
+        tupla = self.dbSession.select(sqlStr)
         if int(tupla[0]) == 1:
             return True
         elif int(tupla[0]) == 0:
@@ -52,7 +68,7 @@ class CrabWorkerAPI:
         else:
             raise Exception("More then one entry has been found: "+str(tupla))
 
-    def stopResubmission(self, jobIdList = [], dbSession = None):
+    def stopResubmission(self, jobIdList = []):
         """
         _stopResubmission_
  
@@ -63,18 +79,18 @@ class CrabWorkerAPI:
             sqlStr = "UPDATE we_Job SET " + \
                      "racers=max_racers+1, retries=max_retries+1 " + \
                      "WHERE id=\""+ str(jobSpecId)+ "\";"
-        dbSession.modify(sqlStr)
+        self.dbSession.modify(sqlStr)
 
-    def increaseSubmission(self, jobId, dbSession = None):
+    def increaseSubmission(self, jobId):
         """
         _increaseSubmission
 
         increase the we_Job submission counter
         """
         sqlStr = "UPDATE we_Job SET retries=retries+1 WHERE id='" + str(jobId) + "'"
-        dbSession.modify(sqlStr)
+        self.dbSession.modify(sqlStr)
 
-    def registerWEJob(self, jobInfo, dbSession = None):
+    def registerWEJob(self, jobInfo):
         """
         _registerWEJob_
 
@@ -111,4 +127,4 @@ class CrabWorkerAPI:
             if attribute != 'jobID':
                 sqlStr += self.wejobmap[attribute] + '="' + \
                           str(jobInfo[attribute]) + '"'
-        dbSession.modify(sqlStr)
+        self.dbSession.modify(sqlStr)

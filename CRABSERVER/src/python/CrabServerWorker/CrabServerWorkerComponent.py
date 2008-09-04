@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.70 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.70 2008/08/31 10:43:59 spiga Exp $"
+__version__ = "$Revision: 1.71 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.71 2008/09/04 14:02:41 farinafa Exp $"
 
 import os, pickle, time, copy
 
@@ -21,12 +21,13 @@ from MessageService.MessageService import MessageService
 from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdAgent.WorkflowEntities import JobState
 from ProdAgent.WorkflowEntities import Job as wfJob
-from ProdCommon.Database import Session
 
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 
 from CrabServerWorker.FatWorker import FatWorker
 from CrabServerWorker.SchedulingLogic import SchedulingLogic, scheduleRequests, descheduleRequests
+
+from CrabWorkerAPI import CrabWorkerAPI
 
 class CrabServerWorkerComponent:
     """
@@ -95,9 +96,7 @@ class CrabServerWorkerComponent:
         self.fwResultsQ = Queue.Queue()
                 
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, makePool=True)
-        dbCfg = copy.deepcopy(dbConfig)
-        dbCfg['dbType'] = 'mysql'
-        Session.set_database(dbCfg)
+        self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
 
         logging.info("-----------------------------------------")
         logging.info("CrabServerWorkerComponent ver2 Started...")
@@ -316,29 +315,15 @@ class CrabServerWorkerComponent:
 
             # check for resubmission count and increment it
             try:
-                jobInfo = {}
-                Session.connect(taskName)
-                Session.start_transaction(taskName)
-                sqlStr="UPDATE we_Job SET retries=retries+1 WHERE id='%s' "%job['name']
-                Session.execute(sqlStr)
-                Session.commit(taskName)
-
-                jobInfo.update( wfJob.get(job['name']) )
-                retryCounter = int(jobInfo['max_retries']) - int(jobInfo['retries']) 
-                Session.close(taskName)
+                self.cwdb.increaseSubmission( job['name'] )
+                retryCounter = self.cwdb.getWERemainingRetries( job['name'] )
             except Exception, e:
                 logging.info("Error while getting WF-Entities for job %s"%job['name'])
 
             if retryCounter <= 0:
                 # no more re-submission attempts, give up. 
                 try:
-                   Session.connect(taskName)
-                   Session.start_transaction(taskName)
-
-                   JobState.doNotAllowMoreSubmissions(job['name'])
-                   wfJob.setState(job['name'], 'reallyFinished') 
-                   Session.commit(taskName)
-                   Session.close(taskName)
+                   self.cwdb.updateWEStatus( j['name'], 'reallyFinished' )
                 except Exception, e:
                    logging.info("Error while declaring WF-Entities failed for job %sfailed "%job['name'])
 

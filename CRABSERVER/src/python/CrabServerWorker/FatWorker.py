@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.115 2008/08/28 08:20:13 spiga Exp $"
-__version__ = "$Revision: 1.115 $"
+__revision__ = "$Id: FatWorker.py,v 1.116 2008/09/02 16:06:56 mcinquil Exp $"
+__version__ = "$Revision: 1.116 $"
 import string
 import sys, os
 import time
@@ -65,7 +65,6 @@ class FatWorker(Thread):
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, pool=self.configs['blSessionPool'])
         self.blSchedSession = None
-        self.paDbSessionName = "%s_%s"%(self.myName, self.taskName)
         self.apmon = ApmonIf()
 
         try:
@@ -76,7 +75,7 @@ class FatWorker(Thread):
         self.apmon.free()
 
         ## CW DB init
-        self.cwdb = CrabWorkerAPI()
+        self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
         return
 
     def run(self):
@@ -128,7 +127,7 @@ class FatWorker(Thread):
         self.log.info("FatWorker %s evaluating submission outcomes"%self.myName)
         try:
             ## added blite safe connection to the DB
-            self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs, self.blDBsession.bossLiteDB)
+            self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
         except Exception, e:
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. postSubmission"%(self.myName, self.taskName) )
@@ -341,7 +340,7 @@ class FatWorker(Thread):
 
 
     def evaluateSubmissionOutcome(self, taskObj, submittableRange, submittedJobs, \
-            unmatchedJobs, nonSubmittedJobs, skippedJobs, dbSession = None ):
+            unmatchedJobs, nonSubmittedJobs, skippedJobs):
 
         resubmissionList = list( set(submittableRange).difference(set(submittedJobs)) )
         self.log.info("Worker. Task %s (%d jobs): submitted %d unmatched %d notSubmitted %d skipped %d"%(self.taskName, \
@@ -351,8 +350,8 @@ class FatWorker(Thread):
 
         ## if all the jobs have been submitted send a success message
         if len(resubmissionList) == 0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs) == 0:
-            ## added dbSession to passed parameters
-            if self.registerTask(taskObj, dbSession) != 0:
+            ## added db Session to passed parameters
+            if self.registerTask(taskObj) != 0:
                 self.sendResult(10, "Unable to register task %s. Causes: deserialization, saving, registration "%(self.taskName), \
                     "WorkerError %s. Error while registering jobs for task %s."%(self.myName, self.taskName) )
                 self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
@@ -368,14 +367,14 @@ class FatWorker(Thread):
                     state_we_job = ""
                     try: 
                         ## get internal server job status (not blite status)
-                        state_we_job = self.cwdb.getWEStatus( j['name'], dbSession )
+                        state_we_job = self.cwdb.getWEStatus( j['name'] )
                     except Exception, ex:
                         self.log.info("Job Status: " +(str(ex)))
                         ##TODO: Need to differenciate between different problems!
                         # in case the job shouldn't be registered 
                         if onDemandRegDone == False:
-                            ## added dbSession to passed parameters
-                            self.registerTask( taskObj, dbSession )
+                            ## added db Session to passed parameters
+                            self.registerTask(taskObj)
                             onDemandRegDone = True
                         else:
                             ## debug problems
@@ -383,7 +382,7 @@ class FatWorker(Thread):
                     try:
                         # update the job status properly
                         if state_we_job == 'create':
-                            self.cwdb.updateWEStatus( j['name'], 'inProgress', dbSession )
+                            self.cwdb.updateWEStatus( j['name'], 'inProgress' )
                     except Exception, ex:
                         self.log.info("Problem changing status to "+str(j['name']))
                         self.log.info(str(ex))
@@ -413,17 +412,17 @@ class FatWorker(Thread):
             payload = self.taskName+"::"+str(resubmissionList)
             self.local_queue.put((self.myName, "SubmissionFailed", payload))
             try:
-                self.registerTask(taskObj, dbSession)
+                self.registerTask(taskObj)
                 jobSpecId = []
                 toMarkAsFailed = list(set(resubmissionList+unmatchedJobs + nonSubmittedJobs + skippedJobs))
                 for j in taskObj.jobs:
                     if j['jobId'] in toMarkAsFailed:
                         jobSpecId.append(j['name'])
 
-                self.cwdb.stopResubmission(jobSpecId, dbSession)
+                self.cwdb.stopResubmission(jobSpecId)
                 for jId in jobSpecId:
                     try:
-                        self.cwdb.updateWEStatus(jId, 'reallyFinished', dbSession)
+                        self.cwdb.updateWEStatus(jId, 'reallyFinished')
                     except Exception, e:
                         continue
             except Exception,e:
@@ -440,7 +439,7 @@ class FatWorker(Thread):
 ####################################
     # Auxiliary methods
 ####################################
-    def registerTask(self, taskArg, dbSession = None):
+    def registerTask(self, taskArg):
         for job in taskArg.jobs:
             jobName = job['name']
             cacheArea = os.path.join( self.wdir, str(self.taskName + '_spec'), jobName )
@@ -451,7 +450,7 @@ class FatWorker(Thread):
                          }
             jobAlreadyRegistered = False
             try:
-                jobAlreadyRegistered = self.cwdb.existsWEJob(jobName, dbSession)
+                jobAlreadyRegistered = self.cwdb.existsWEJob(jobName)
             except Exception, e:
                 ##TODO: need to differnciate when more then 1 entry per job (limit case) 
                 self.log.debug('Error while checking job registration: assuming %s as not registered'%jobName)
@@ -462,7 +461,7 @@ class FatWorker(Thread):
 
             self.log.debug('Registering %s'%jobName)
             try:
-                self.cwdb.registerWEJob(jobDetails, dbSession)
+                self.cwdb.registerWEJob(jobDetails)
             except Exception, e:
                 self.log.info('Error while registering job for JT: %s'%jobName)
                 self.log.info(str(e))
