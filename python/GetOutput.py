@@ -118,11 +118,11 @@ class GetOutput(Actor):
                 self.max_id=max(self.submission_id)
                 if self.max_id > 1:
                     for f in os.listdir(self.outDir):
-                        if (f.find(str(id)) != -1 ) and (f != file): 
+                        if (f.find(str(id)) != -1 ) and (f != file) and f.find('Submission_'+str(id)) == -1: 
                             self.moveOutput(id, self.max_id, self.outDir, f)
                     if self.log==1:
                         for f in os.listdir(self.logDir):
-                            if f.find(str(id)) != -1:
+                            if f.find(str(id)) != -1 and f.find('Submission_'+str(id)) == -1:
                                 self.moveOutput(id, self.max_id, self.logDir, f)
                 cmd = 'tar zxvf ' + self.outDir + file + ' ' + '-C ' + self.outDir  
                 cmd_out = runCommand(cmd)
