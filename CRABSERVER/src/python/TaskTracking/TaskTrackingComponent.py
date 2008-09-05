@@ -211,17 +211,17 @@ class TaskTrackingComponent:
 	#if event == "DropBoxGuardianComponent:NewFile":
         if event == "CRAB_Cmd_Mgr:NewTask":
 	    if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, "NewTask: %s" % taskName)
-		logBuf = self.__logToBuf__(logBuf, taskName)
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "NewTask: %s" % taskName)
+		logBuf = self.__log__(logBuf, taskName)
 		self.insertNewTask( taskName )
-                logBuf = self.__logToBuf__(logBuf, "               new task inserted.")
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "               new task inserted.")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 _loginfo.setdefault('txt', str("Arrived task: " + str(taskName)))
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: wrong payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: wrong payload from [" +event+ "]!!!!")
+                logBuf = self.__log__(logBuf, " ")
             logging.info(logBuf)
             self.__appendDbgInfo__(taskName, _loginfo)
             return None
@@ -229,32 +229,32 @@ class TaskTrackingComponent:
         if event == "CRAB_Cmd_Mgr:MailReference":
             if payload != None or payload != "" or len(payload) > 0:
                 taskName, eMail, threshold = payload.split("::")
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, "E-mail "+str(eMail)+" and threshold "+str(threshold)+" arrived for task %s" % taskName)
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "E-mail "+str(eMail)+" and threshold "+str(threshold)+" arrived for task %s" % taskName)
                 self.updateEmailThresh(taskName, eMail, threshold)
-	        logBuf = self.__logToBuf__(logBuf, "     db updated.")
+	        logBuf = self.__log__(logBuf, "     db updated.")
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: wrong payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: wrong payload from [" +event+ "]!!!!")
+                logBuf = self.__log__(logBuf, " ")
             logging.info(logBuf)
             return None
 
 	if event == "TaskRegister:TaskArrival":
 	    if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 ## start dbg info ##
                 OK += "  Task ["+ taskName +"] ready to be submitted and already in queue.\n"
                 ## end dbg info ##
-                logBuf = self.__logToBuf__(logBuf, "Submitting Task: %s" % str(taskName) )
+                logBuf = self.__log__(logBuf, "Submitting Task: %s" % str(taskName) )
 		self.updateTaskStatus( taskName, self.taskState[1] )
-                logBuf = self.__logToBuf__(logBuf, "              task updated.")
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "              task updated.")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 _loginfo.setdefault('txt', str("Task in submission queue: " + str(taskName)))
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
+                logBuf = self.__log__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+taskName+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -264,18 +264,18 @@ class TaskTrackingComponent:
 
         if event == "CrabServerWorkerComponent:CrabWorkPerformed":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, "CrabWorkPerformed: %s" % payload)
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "CrabWorkPerformed: %s" % payload)
                 ## start dbg info ##
                 OK += "  Task ["+ taskName +"] succesfully submitted to the grid.\n"
                 ## end dbg info ##
 		self.updateTaskStatus( taskName, self.taskState[3])
-                logBuf = self.__logToBuf__(logBuf, "               task updated.")
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "               task updated.")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__log__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+taskName+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -284,17 +284,17 @@ class TaskTrackingComponent:
 
         if event == "CrabServerWorkerComponent:CrabWorkFailed":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, "CrabWorkFailed: %s" % payload)
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "CrabWorkFailed: %s" % payload)
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 ## start dbg info ##
                 OK += "  Task ["+taskName+"] not submitted to the grid.\n"
                 ## end dbg info ##
 		self.updateTaskStatus(taskName, self.taskState[2])
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__log__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -304,9 +304,9 @@ class TaskTrackingComponent:
         if event == "CrabServerWorkerComponent:SubmitNotSucceeded" or \
             event == "CrabServerWorkerComponent:TaskNotSubmitted":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, str(event.split(":")[1]) + ": %s" % payload)
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, str(event.split(":")[1]) + ": %s" % payload)
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 taskName, taskStatus, reason = payload.split("::")
                 ## start dbg info ##
                 OK += "  Task ["+taskName+"] not submitted to the grid\n"+ \
@@ -315,9 +315,9 @@ class TaskTrackingComponent:
                 ## end dbg info ##
                 #self.updateTaskStatus(taskName, self.taskState[2])
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__log__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -326,18 +326,18 @@ class TaskTrackingComponent:
 
         if event == "CrabServerWorkerComponent:FastKill":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, event + ": " + str(payload) )
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, event + ": " + str(payload) )
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 ## start dbg info ##
                 OK += "  FastKill: task ["+payload+"] killed before the submission to the grid.\n"
                 ## end dbg info ##
                 self.updateTaskStatus(payload, self.taskState[4])
 #                self.updateTaskStatus(payload, self.taskState[5])
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__log__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -346,18 +346,18 @@ class TaskTrackingComponent:
 
         if event == "CrabServerWorkerComponent:FatWorkerResult":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, event + ": " + str(payload) )
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, event + ": " + str(payload) )
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 threadName, taskName, code, reason, time = payload.split("::")
                 _loginfo.setdefault('txt', str("Submission completed: " + str(taskName)))
                 _loginfo.setdefault('reason', str(reason))
                 _loginfo.setdefault('code', str(code))
                 _loginfo.setdefault('time', str(time))
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__log__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -367,16 +367,16 @@ class TaskTrackingComponent:
 
         if event == "CRAB_Cmd_Mgr:NewCommand":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, event + ": " + str(payload) )
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, event + ": " + str(payload) )
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 taskName, count = payload.split("::")
                 _loginfo.setdefault('txt', str("New command: " + str(taskName)))
                 _loginfo.setdefault('count', str(count))
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__log__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -385,16 +385,16 @@ class TaskTrackingComponent:
 
         if event == "KillTask":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, event + ": " + str(payload) )
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, event + ": " + str(payload) )
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 taskName, fake_proxy, range = payload.split(":")
                 _loginfo.setdefault('txt', str("Submisson completed: " + str(taskName)))
                 _loginfo.setdefault('range', str(range))
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+                logBuf = self.__log__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -404,11 +404,11 @@ class TaskTrackingComponent:
 
         if event == "TaskKilled":
             if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 rangeKillJobs = "all"
                 if payload.find("::") != -1:
                     taskName, rangeKillJobs = payload.split("::")
-                logBuf = self.__logToBuf__(logBuf, "   Killed task: %s" % taskName)
+                logBuf = self.__log__(logBuf, "   Killed task: %s" % taskName)
                 if rangeKillJobs == "all":
                     self.updateTaskKilled( taskName, self.taskState[4] )
                 else:
@@ -416,11 +416,11 @@ class TaskTrackingComponent:
                 ## start dbg info ##
                 OK += "  Task ["+str(payload.split("::")[0])+"] killed (jobs killed: "+str(rangeKillJobs)+").\n"
                 ## end dbg info ##
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
+                logBuf = self.__log__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -429,19 +429,19 @@ class TaskTrackingComponent:
 
         if event == "TaskKilledFailed":
             if payload != None or payload != "" or len(payload) > 0: 
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 rangeKillJobs = "all"
                 if payload.find("::") != -1:
                     taskName, rangeKillJobs = payload.split("::")
-                logBuf = self.__logToBuf__(logBuf, "   Error killing task: %s" % taskName)
+                logBuf = self.__log__(logBuf, "   Error killing task: %s" % taskName)
                 ## start dbg info ##
                 OK += "  WARNING: task ["+str(payload.split("::")[0])+"] failed to kill (jobs to be killed: "+str(rangeKillJobs)+").\n"
                 ## end dbg info ##
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
             else:
-                logBuf = self.__logToBuf__(logBuf, " ")
-                logBuf = self.__logToBuf__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
-                logBuf = self.__logToBuf__(logBuf, " ")
+                logBuf = self.__log__(logBuf, " ")
+                logBuf = self.__log__(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
+                logBuf = self.__log__(logBuf, " ")
                 ## start dbg info ##
                 ERROR += "  ERROR: problems managing task ["+payload+"] for the event [" +event+ "]!\n"
                 ## end dbg info ##
@@ -479,9 +479,9 @@ class TaskTrackingComponent:
             return None
 
         # wrong event
-        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-        logBuf = self.__logToBuf__(logBuf, "Unexpected event %s, ignored" % event)
-        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+        logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+        logBuf = self.__log__(logBuf, "Unexpected event %s, ignored" % event)
+        logBuf = self.__log__(logBuf, "  <-- - -- - -->")
         logging.info(logBuf)
 
         return None
@@ -500,10 +500,10 @@ class TaskTrackingComponent:
             ttdb = TaskStateAPI()
             ttdb.insertTaskPA( payload, self.taskState[0] )
         except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-            logBuf = self.__logToBuf__(logBuf, "ERROR while inserting the task " + str(payload) )
-            logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__log__(logBuf, "ERROR while inserting the task " + str(payload) )
+            logBuf = self.__log__(logBuf, "      "+str(ex))
+            logBuf = self.__log__(logBuf, "  <-- - -- - -->")
         logging.info(logBuf)
 
     def updateEmailThresh( self, taskname, email, threshold ):
@@ -513,9 +513,9 @@ class TaskTrackingComponent:
         logBuf = ""
 
         if email == None:
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-            logBuf = self.__logToBuf__(logBuf, "ERROR: missing 'eMail' for task: " + str(taskname) )
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__log__(logBuf, "ERROR: missing 'eMail' for task: " + str(taskname) )
+            logBuf = self.__log__(logBuf, "  <-- - -- - -->")
         elif threshold == None:
             threshold = "100"
         else:
@@ -523,8 +523,8 @@ class TaskTrackingComponent:
                 ttdb = TaskStateAPI()
                 ttdb.updateEmailThresh( taskname, str(email), str(threshold) )
             except Exception, ex:
-                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                logBuf = self.__logToBuf__(logBuf, "ERROR while updating the 'eMail' field for task: " + str(taskname) )
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "ERROR while updating the 'eMail' field for task: " + str(taskname) )
 
     def updateTaskStatus(self, payload, status):
         """
@@ -537,10 +537,10 @@ class TaskTrackingComponent:
         try:
             ttdb.updateStatus( payload, status )
         except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-            logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(payload) )
-            logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__log__(logBuf, "ERROR while updating the task " + str(payload) )
+            logBuf = self.__log__(logBuf, "      "+str(ex))
+            logBuf = self.__log__(logBuf, "  <-- - -- - -->")
             logging.info(logBuf)
             logBuf = ""
 
@@ -557,17 +557,17 @@ class TaskTrackingComponent:
 		    taskObj = None
 		    pass
 		if taskObj is None:
-		    logBuf = self.__logToBuf__(logBuf,"  Requested task [%s] does not exist."%(payload) )
+		    logBuf = self.__log__(logBuf,"  Requested task [%s] does not exist."%(payload) )
 		else:
                     proxy = taskObj['user_proxy']
-	            logBuf = self.__logToBuf__(logBuf, "using proxy: [%s] "%(str(proxy)) )
+	            logBuf = self.__log__(logBuf, "using proxy: [%s] "%(str(proxy)) )
                     try:
                         ttdb.updateProxy(payload, proxy) 
 		    except Exception, ex:
-		        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-	     	        logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(payload) )
-		        logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-		        logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+		        logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+	     	        logBuf = self.__log__(logBuf, "ERROR while updating the task " + str(payload) )
+		        logBuf = self.__log__(logBuf, "      "+str(ex))
+		        logBuf = self.__log__(logBuf, "  <-- - -- - -->")
 		        logging.info(logBuf)
 		        logBuf = ""
                 mySession.bossLiteDB.close()
@@ -591,10 +591,10 @@ class TaskTrackingComponent:
                         dictionaryReport =  {"all": ["Killed", "", "", 0, '', 'C']}
                         self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
         except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-            logBuf = self.__logToBuf__(logBuf, "ERROR while reporting info about the task " + str(payload) )
-            logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__log__(logBuf, "ERROR while reporting info about the task " + str(payload) )
+            logBuf = self.__log__(logBuf, "      "+str(ex))
+            logBuf = self.__log__(logBuf, "  <-- - -- - -->")
             logging.info(logBuf)
 
 
@@ -627,10 +627,10 @@ class TaskTrackingComponent:
             ttdb = TaskStateAPI()
             ttdb.updateStatus( taskName, status )
         except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-            logBuf = self.__logToBuf__(logBuf, "ERROR while updating the task " + str(taskName) )
-            logBuf = self.__logToBuf__(logBuf, "      "+str(ex))
-            logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+            logBuf = self.__log__(logBuf, "ERROR while updating the task " + str(taskName) )
+            logBuf = self.__log__(logBuf, "      "+str(ex))
+            logBuf = self.__log__(logBuf, "  <-- - -- - -->")
             logging.info(logBuf)
 
     def setCleared (self, taskName, jobList):
@@ -812,6 +812,7 @@ class TaskTrackingComponent:
     ##########################################################################
     # publishing messages
     ##########################################################################
+
     def taskEnded( self, taskName ):
         """
         _taskEnded_
@@ -828,7 +829,7 @@ class TaskTrackingComponent:
             finally:
                 ms_sem.release()
 
-            logBuf = self.__logToBuf__(logBuf, "-------> Published 'TaskEnded' message with payload: %s" % taskName)
+            logBuf = self.__log__(logBuf, "--> [TaskEnded] %s" % taskName)
         logging.info(logBuf)
 
 
@@ -837,7 +838,6 @@ class TaskTrackingComponent:
         _taskSuccess_
         
         Trasmit the "TaskSuccess" event to the prodAgent
-       kEnded
         """
         logBuf = ""
         try:
@@ -847,9 +847,7 @@ class TaskTrackingComponent:
         finally:
             ms_sem.release()
 
-        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-*")
-        logBuf = self.__logToBuf__(logBuf, "-------> Published 'TaskSuccess' message with payload: %s" % taskPath)
-        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-*")
+        logBuf = self.__log__(logBuf, "--> [TaskSuccess] %s" % taskPath)
         logging.info(logBuf)
 
 
@@ -871,10 +869,8 @@ class TaskTrackingComponent:
         finally:
             ms_sem.release()
 
-        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
-        logBuf = self.__logToBuf__(logBuf, "Published 'TaskFailed' message with payload: %s" % payload)
+        logBuf = self.__log__(logBuf, "--> [TaskFailed] %s" % payload)
         self.taskEnded(taskName)
-        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
 
 
@@ -890,28 +886,26 @@ class TaskTrackingComponent:
         finally:
             ms_sem.release()
 
-        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
-        logBuf = self.__logToBuf__(logBuf, "Published 'TaskNotSubmitted' message with payload: %s" % taskPath)
+        logBuf = self.__log__(logBuf, "==> [NotSubmitted] %s" % taskPath)
         self.taskEnded(taskName)
-        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
 
-    def __logToBuf__(self, buf, strToAppend):
+    def __log__(self, buf, toadd):
         """
         __logToBug__
         input:
         - buf: the string buffer
-        - strToAppend: the string to appent to the buffer
+        - toadd: the string to appent to the buffer
         output:
         - the buffer with a new row like [datetime] - [str]
         this is an helper method for poolTasks one.
         """
         #avoid to log empty message
-        if strToAppend == None or strToAppend == "":
+        if toadd == None or toadd == "":
             bufRet = str(buf)
         else:
-            bufRet = str(buf) + "\n" + str(datetime.datetime.now()) + " - " + str(strToAppend)
-        #logging.info(strToAppend)
+            bufRet = str(buf) + "\n" + str(datetime.datetime.now()) + \
+                     " - " + str(toadd)
         return bufRet
 
 
@@ -920,7 +914,8 @@ class TaskTrackingComponent:
     ##########################################################################
 
 
-    def computeJobStatus(self, taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted):
+    def computeJobStatus(self, taskName, mySession, taskObj, dictStateTot, \
+                               dictReportTot, countNotSubmitted):
         """
         _computeJobStatus_
         """
@@ -939,17 +934,21 @@ class TaskTrackingComponent:
 	    eec   = str( jobbe.runningJob['applicationReturnCode'] )
 	    joboff = str( jobbe.runningJob['closed'] )
 	    site  = ""
-	    if jobbe.runningJob['destination'] != None and jobbe.runningJob['destination'] != '':
+	    if jobbe.runningJob['destination'] != None and \
+               jobbe.runningJob['destination'] != '':
 	        site  = jobbe.runningJob['destination'].split(":")[0]
 	    del jobbe
  
-	    resubmitting, MaxResub, Resub, internalstatus = ttdb.checkNSubmit(mySession.bossLiteDB, taskName, job)
+	    resubmitting, MaxResub, Resub, internalstatus = \
+                        ttdb.checkNSubmit(mySession.bossLiteDB, taskName, job)
                     
             vect = []
             if eec == "NULL" and jec == "NULL":
-                vect = [self.convertStatus(stato), "", "", 0, Resub, site, stato, joboff, resubmitting, sId]
+                vect = [ self.convertStatus(stato), "", "", 0, Resub, site, \
+                         stato, joboff, resubmitting, sId]
             else:
-                vect = [self.convertStatus(stato), eec, jec, 0, Resub, site, stato, joboff, resubmitting, sId]
+                vect = [ self.convertStatus(stato), eec, jec, 0, Resub, site, \
+                         stato, joboff, resubmitting, sId]
             dictStateTot.setdefault(job, vect)
 
             if stato == "E":
@@ -984,12 +983,12 @@ class TaskTrackingComponent:
             else:
                 dictReportTot['JobInProgress'] += 1
 
-        rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
-        rev_items.sort()
-        dictStateTot = {}
-        for valu3, k3y in rev_items:
-            dictStateTot.setdefault( k3y, valu3 )
-        del rev_items
+        #rev_items = [(v, int(k)) for k, v in dictStateTot.items()]
+        #rev_items.sort()
+        #dictStateTot = {}
+        #for valu3, k3y in rev_items:
+        #    dictStateTot.setdefault( k3y, valu3 )
+        #del rev_items
 
         return dictStateTot, dictReportTot, countNotSubmitted
 
@@ -998,7 +997,7 @@ class TaskTrackingComponent:
         _pollTasks_
 
         Poll the task database
-        @note: user __logToBuf__ function utility for a cross-thread-readable logging ^^
+        @note: function utility for a cross-thread-readable logging 
         """
         logBuf = ""
 
@@ -1033,8 +1032,6 @@ class TaskTrackingComponent:
 		    status = task[0][6]
 		    uuid = task[0][7]
 
-                    #logBuf = self.__logToBuf__(logBuf, "Got Task(id, name): (" + str(taskId) + ", " + str(taskName) + ")")
-
                     if status == self.taskState[2] and notified < 2:
                         ######### Taskfailed is prepared now
                         self.prepareTaskFailed( taskName, uuid, eMail, status)
@@ -1046,27 +1043,31 @@ class TaskTrackingComponent:
                             taskObj = None
                             pass 
                         if taskObj is None:
-                            logBuf = self.__logToBuf__(logBuf, "Unable to load task [%s]."%(taskName))
-                            logBuf = self.__logToBuf__(logBuf,"  Requested task [%s] does not exist."%(taskName) )
+                            logBuf = self.__log__(logBuf, "Unable to load " + \
+                                                  "task [%s]." % (taskName))
                         else:
-                            logBuf = self.__logToBuf__(logBuf, " - - - - - - - ")
-                            logBuf = self.__logToBuf__(logBuf, " [" + str(taskObj['id']) + "] *" + taskName + "*:")
+                            logBuf = self.__log__(logBuf, " - - - - - - - ")
+                            logBuf = self.__log__(logBuf, " [" + str(taskObj['id']) + "] *" + taskName + "*:")
 
 			    pathToWrite = ""
 			    dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
 			    countNotSubmitted = 0 
 			    dictStateTot = {}
                             numJobs = len(taskObj.jobs)
-                            dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
+                            dictStateTot, dictReportTot, countNotSubmitted = \
+                                 self.computeJobStatus( taskName, mySession, \
+                                                        taskObj, dictStateTot, \
+                                                        dictReportTot, \
+                                                        countNotSubmitted )
 			    for state in dictReportTot:
-                                logBuf = self.__logToBuf__(logBuf, " Job " + state + ": " + str(dictReportTot[state]))
+                                logBuf = self.__log__(logBuf, state + " : " + \
+                                                      str(dictReportTot[state]))
 			    if countNotSubmitted > 0:
-                                logBuf = self.__logToBuf__(logBuf, "    -> of which not yet submitted: " + str(countNotSubmitted))
+                                logBuf = self.__log__(logBuf, " -not submitted: "\
+                                                      + str(countNotSubmitted))
 
-                            #logBuf = self.__logToBuf__(logBuf, str(dictStateTot))
-
-                            totjob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress']  
-			    endedJob = dictReportTot['JobSuccess'] + dictReportTot['JobFailed']
+			    endedJob = dictReportTot['JobSuccess'] + \
+                                       dictReportTot['JobFailed']
 			    try:
 			        percentage = (100 * endedJob) / numJobs
 			        pathToWrite = os.path.join( str(self.args['dropBoxPath']), \
@@ -1074,9 +1075,11 @@ class TaskTrackingComponent:
                                                           )
 
                                 if os.path.exists( pathToWrite ):
-                                    self.prepareReport( taskName, uuid, eMail, thresholdLevel, percentage, dictStateTot, numJobs, 1 )
+                                    self.prepareReport( taskName, uuid, eMail, \
+                                                        thresholdLevel, percentage, \
+                                                        dictStateTot, numJobs, 1 )
                                 else:
-                                    logBuf = self.__logToBuf__(logBuf, "Error: the path " + pathToWrite + " does not exist!\n")
+                                    logBuf = self.__log__(logBuf, "Error: The path " + pathToWrite + " does not exist!\n")
 
                                 succexo = 0
 			        if percentage != endedLevel or \
@@ -1086,46 +1089,48 @@ class TaskTrackingComponent:
 
 		 	            ###  updating endedLevel  ###
 				    if endedLevel == 100:
-                                        msg = ttdb.updatingEndedPA( mySession.bossLiteDB, taskName, str(percentage), self.taskState[5])
-                                        logBuf = self.__logToBuf__(logBuf, msg)
+                                        msg = ttdb.updatingEndedPA( mySession.bossLiteDB, \
+                                                                    taskName, str(percentage), \
+                                                                    self.taskState[5])
+                                        logBuf = self.__log__(logBuf, msg)
                                         if notified != 2:
                                             self.taskEnded(taskName)
                                             notified = 2
                                             succexo = 1
-                                            logBuf = self.__logToBuf__(logBuf, msg)
 				    elif percentage != endedLevel:
-				        msg = ttdb.updatingEndedPA( mySession.bossLiteDB, taskName, str(percentage), status)
-                                        logBuf = self.__logToBuf__(logBuf, msg)
+				        msg = ttdb.updatingEndedPA( mySession.bossLiteDB, \
+                                                                    taskName, str(percentage), \
+                                                                    status)
+                                        logBuf = self.__log__(logBuf, msg)
                                         if percentage >= thresholdLevel:
 					    if percentage == 100:
                                                 succexo = 1
                                                 self.taskEnded(taskName)
 					        notified = 2
-                                                logBuf = self.__logToBuf__(logBuf, msg)
 					    elif notified <= 0:
                                                 succexo = 1
 					        notified = 1
-                                                logBuf = self.__logToBuf__(logBuf, msg)
 			        elif status == '':
                                     msg = ""
-			            if dictReportTot['JobSuccess'] + dictReportTot['JobFailed'] + dictReportTot['JobInProgress'] > countNotSubmitted:
-				        msg = ttdb.updateTaskStatus( taskName, self.taskState[3] )
+			            if numJobs > countNotSubmitted:
+				        msg = ttdb.updateTaskStatus(taskName, self.taskState[3])
 				    else:
-				        msg = ttdb.updateTaskStatus( taskName, self.taskState[2] )
+				        msg = ttdb.updateTaskStatus(taskName, self.taskState[2])
                                 
-                                    logBuf = self.__logToBuf__(logBuf, msg)
+                                    logBuf = self.__log__(logBuf, msg)
 
-                                self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
+                                self.undiscoverXmlFile(pathToWrite, taskName, \
+                                                       self.tempxmlReportFile, \
+                                                       self.xmlReportFileName )
                                 if succexo:
-                                    self.taskSuccess( pathToWrite + self.xmlReportFileName, taskName )
+                                    self.taskSuccess( os.path.join(pathToWrite, self.xmlReportFileName), taskName )
                                     _loginfo.setdefault('txt', "publishing task success (sending e-mail to %s)"%(str(eMail)))
                                     msg = ttdb.updatingNotifiedPA( taskName, notified )
-                                    logBuf = self.__logToBuf__(logBuf, msg)
+                                    logBuf = self.__log__(logBuf, msg)
  			    except ZeroDivisionError, detail:
-                                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-                                logBuf = self.__logToBuf__(logBuf, "WARNING: No jobs in the task " + taskName)
-                                logBuf = self.__logToBuf__(logBuf, "         deatil: " + str(detail))
-                                logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
+                                logBuf = self.__log__(logBuf, "WARNING: No jobs in the task " + taskName)
+                                logBuf = self.__log__(logBuf, "         deatil: " + str(detail))
+                                logBuf = self.__log__(logBuf, " ")
                            
             finally:
                 #case with a task taken
@@ -1141,7 +1146,7 @@ class TaskTrackingComponent:
 
 
         except Exception, ex:
-            logBuf = self.__logToBuf__(logBuf, "ERROR: " + str(traceback.format_exc()))
+            logBuf = self.__log__(logBuf, "ERROR: " + str(traceback.format_exc()))
 
         logging.info(logBuf)
 
@@ -1183,8 +1188,6 @@ class TaskTrackingComponent:
         # subscribe to messages
         self.ms.subscribeTo("TaskTracking:StartDebug")
         self.ms.subscribeTo("TaskTracking:EndDebug")
-        self.ms.subscribeTo("SetThresholdLevel")
-        #self.ms.subscribeTo("CrabServerWorkerComponent:FastKill")
         self.ms.subscribeTo("TaskKilled")
         self.ms.subscribeTo("TaskKilledFailed")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformedPartial")
@@ -1220,9 +1223,8 @@ class TaskTrackingComponent:
         while True:
             messageType, payload = self.ms.get()
             logBuf = ""
-            logBuf = self.__logToBuf__(logBuf, "\n")
-            logBuf = self.__logToBuf__(logBuf, "GOT MESSAGE: " + str(messageType))
-            logBuf = self.__logToBuf__(logBuf, "\n")
+            logBuf = self.__log__(logBuf, "GOT MESSAGE: " + str(messageType))
+            logBuf = self.__log__(logBuf, " ")
             logging.info(logBuf)
             logBuf = ""
 
@@ -1257,7 +1259,7 @@ class TaskTrackingComponent:
         logBuf = ""
         semMsgQueue.acquire()
         try:
-            logBuf = self.__logToBuf__(logBuf, "Entering in __executeQueuedMessages__ method...")
+            logBuf = self.__log__(logBuf, "Entering in __executeQueuedMessages__ method...")
             lockedTasks = []
             fileName = self.__queueFileName__()
             q = PersistentQueue()
@@ -1268,7 +1270,7 @@ class TaskTrackingComponent:
             while not q.empty() and count < size:
                 count += 1
                 item = q.get()
-                logBuf = self.__logToBuf__(logBuf, "Got message: " + str(item))
+                logBuf = self.__log__(logBuf, "Got message: " + str(item))
                 messageType = item[0]
                 taskName = item[1]#payload
                 #try except for catching error
@@ -1281,25 +1283,25 @@ class TaskTrackingComponent:
                         if recordAffected == 0:#task is locked
                             lockedTasks.append(taskName)
                             q.put_nowait(item)
-                            logBuf = self.__logToBuf__(logBuf, "Message with locked task: " + str(item))
+                            logBuf = self.__log__(logBuf, "Message with locked task: " + str(item))
                         else:
                             if recordAffected == 1:
-                                logBuf = self.__logToBuf__(logBuf, "Locked task " + str(taskName) + " for message processing")
+                                logBuf = self.__log__(logBuf, "Locked task " + str(taskName) + " for message processing")
                             #try /finally for task unlocking
                             try:
                                 self.__call__(messageType, taskName)
-                                logBuf = self.__logToBuf__(logBuf, "Message executed: " + str(item))
+                                logBuf = self.__log__(logBuf, "Message executed: " + str(item))
                             finally:
                                 if recordAffected == 1:
                                     ris = ttdb.unlockTaskByTaskName(taskName)
                                     if ris == 1:
-                                        logBuf = self.__logToBuf__(logBuf, "Unlocked task " + str(taskName) + " for message processing")
+                                        logBuf = self.__log__(logBuf, "Unlocked task " + str(taskName) + " for message processing")
                                     if ris != 1:
-                                        logBuf = self.__logToBuf__(logBuf, "Unexcepted return value for unlock(..)=" + str(ris))
+                                        logBuf = self.__log__(logBuf, "Unexcepted return value for unlock(..)=" + str(ris))
                 except Exception, ex:
-                    logBuf = self.__logToBuf__(logBuf, str("ERROR: " + str(traceback.format_exc())))
+                    logBuf = self.__log__(logBuf, str("ERROR: " + str(traceback.format_exc())))
 
-            logBuf = self.__logToBuf__(logBuf, "... __executeQueuedMessages__ method done.")
+            logBuf = self.__log__(logBuf, "... __executeQueuedMessages__ method done.")
             #save queue state
             q.saveState(fileName)
         finally:
@@ -1426,9 +1428,7 @@ class MsgQueueExecuterThread(Thread):
         while True:
             try:
                 self.msgExecuterMethod()
-                time.sleep(7)
+                time.sleep(5)
             except Exception, ex:
-                # log error message
-                # new exception(detailed) logging
                 logging.error("ERROR in MsgQueueExecuterThread \n" + str(traceback.format_exc()))
 
