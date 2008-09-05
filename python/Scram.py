@@ -88,7 +88,7 @@ class Scram:
             envFile.close()
         else:
             msg  = 'Cannot find sw version:\n'
-            msg += 'Did you do cmsenv from your working area or is your are corrupt?\n'
+            msg += 'Did you do cmsenv from your working area or is your area corrupt?\n'
             raise CrabException(msg)
         return string.strip(ver)
 
