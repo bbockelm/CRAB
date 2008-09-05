@@ -87,6 +87,37 @@ class TaskStateAPI:
 
         return jobState
 
+    def updateStatusServer( self, dbSession, taskName, idJob, status ):
+        """
+        _updateStatusServer_
+        """
+        jobSpecId = taskName + "_job" + str(idJob)
+        try:
+            sqlStr="UPDATE we_Job SET status = '"+str(status)+"' " \
+                   "WHERE id = '"+jobSpecId+"';"
+            dbSession.modify( sqlStr )
+            logging.info(sqlStr)
+        except Exception, ex:
+            logging.error(" Error in method "  + self.updateStatusServer.__name__ )
+            logging.error(" Exception: " + str(ex) )
+            logging.error( str(traceback.format_exc()) )
+
+    def countServerJob( self, dbSession, taskName ):
+        """
+        _countServerJob_
+        """
+        count = 0
+        try:
+            sqlStr="SELECT count(*) FROM we_Job " \
+                   "WHERE owner = '"+taskName+"';"
+            tupla = dbSession.select( sqlStr )
+            count = int(tupla[0][0])
+        except Exception, ex:
+            logging.error(" Error in method "  + self.updateStatusServer.__name__ )
+            logging.error(" Exception: " + str(ex) )
+            logging.error( str(traceback.format_exc()) )
+        return tupla
+
     def getProxy( self, taskName ):
         conn, dbCur = self.openConnPA()
         try:
