@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.116 2008/09/02 16:06:56 mcinquil Exp $"
-__version__ = "$Revision: 1.116 $"
+__revision__ = "$Id: FatWorker.py,v 1.117 2008/09/04 16:00:24 farinafa Exp $"
+__version__ = "$Revision: 1.117 $"
 import string
 import sys, os
 import time
@@ -197,9 +197,11 @@ class FatWorker(Thread):
             if self.wmsEndpoint:
                 schedulerConfig['service'] = self.wmsEndpoint
         elif schedulerConfig['name'] in ['SchedulerGlidein', 'SchedulerCondorG']:
+            # FIXME: Get rid of "condorTemp" directory
             condorTemp = os.path.join(self.wdir, self.taskName+'_spec', "condorTemp")
             self.log.info('Condor will use %s for temporary files' % condorTemp)
             schedulerConfig['tmpDir'] = condorTemp
+            schedulerConfig['useGlexec'] = True
         elif schedulerConfig['name'] == 'arc':
             pass
         elif schedulerConfig['name'] in ['SchedulerLsf']:
@@ -632,7 +634,7 @@ class FatWorker(Thread):
 
     def sched_parameter_CondorG(self, i, task):
         """
-        Parameters specific to CondorG scheduler"
+        Parameters specific to CondorG scheduler
         """
 
         schedParam = ''
