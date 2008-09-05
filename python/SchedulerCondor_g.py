@@ -4,10 +4,9 @@ Non-specific code comes from SchedulerCondorCommon
 """
 
 from SchedulerCondorCommon import SchedulerCondorCommon
-import common
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.104 2008/05/13 17:04:29 ewv Exp $"
-__version__ = "$Revision: 1.104 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.105 2008/08/05 21:48:05 ewv Exp $"
+__version__ = "$Revision: 1.105 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -44,5 +43,5 @@ class SchedulerCondor_g(SchedulerCondorCommon):
         if (globusRSL != ''):
             jobParams +=  'globusrsl = ' + globusRSL + '; '
 
-        common._db.updateTask_({'jobType':jobParams})
-        return jobParams # Not sure I even need to return anything
+#         common._db.updateTask_({'jobType':jobParams})
+        return jobParams
