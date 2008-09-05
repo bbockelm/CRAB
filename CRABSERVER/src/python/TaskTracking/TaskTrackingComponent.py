@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.99 2008/08/25 12:51:24 mcinquil Exp $"
-__version__ = "$Revision: 1.99 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.100 2008/09/02 16:19:42 mcinquil Exp $"
+__version__ = "$Revision: 1.100 $"
 
 import os
 import time
@@ -28,8 +28,6 @@ from threading import Condition
 import logging
 from logging.handlers import RotatingFileHandler
 import ProdAgentCore.LoggingUtils as LoggingUtils
-from ProdAgentCore.ProdAgentException import ProdAgentException
-from ProdCommon.Core.ProdException import ProdException
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 
 # DB PA
@@ -53,8 +51,6 @@ import cPickle
 ##############################################################################
 
 maxnum = 1
-semvar = BoundedSemaphore(maxnum) #for synchronisation between thread 
-semfile = BoundedSemaphore(maxnum) #for synchronisation between thread 
 semMsgQueue = BoundedSemaphore(maxnum) #for synchronisation between thread for the msgQueue 
 #### will move all var to init for avoiding changement of var value by instance of this class  
 ms_sem = BoundedSemaphore(maxnum)
@@ -118,14 +114,10 @@ class TaskTrackingComponent:
         self.msThread = None
  
         # init crab.cfg name
-        self.crabcfg = "crab.cfg"
-	self.resSubDir = "" #"res/"
         self.workAdd = "_spec/"
         self.xmlReportFileName = "xmlReportFile.xml"
         self.tempxmlReportFile = ".tempxmlReportFileName"
-        ##self.mutex = Condition()
 
-	#
 	self.taskState = [\
                            "arrived", \
                            "submitting", \
@@ -247,7 +239,6 @@ class TaskTrackingComponent:
                 logBuf = self.__logToBuf__(logBuf, " ")
             logging.info(logBuf)
             return None
-
 
 	if event == "TaskRegister:TaskArrival":
 	    if payload != None or payload != "" or len(payload) > 0:
@@ -443,10 +434,6 @@ class TaskTrackingComponent:
                 if payload.find("::") != -1:
                     taskName, rangeKillJobs = payload.split("::")
                 logBuf = self.__logToBuf__(logBuf, "   Error killing task: %s" % taskName)
-                if rangeKillJobs == "all":
-                    self.killTaskFailed( taskName )
-                else:
-                    self.killTaskFailed( taskName )
                 ## start dbg info ##
                 OK += "  WARNING: task ["+str(payload.split("::")[0])+"] failed to kill (jobs to be killed: "+str(rangeKillJobs)+").\n"
                 ## end dbg info ##
@@ -492,34 +479,12 @@ class TaskTrackingComponent:
             return None
 
         # wrong event
-        logBuf = self.__logToBuf__(logBuf, " ")
         logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
         logBuf = self.__logToBuf__(logBuf, "Unexpected event %s, ignored" % event)
         logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
-        logBuf = self.__logToBuf__(logBuf, " ")
         logging.info(logBuf)
 
         return None
-
-    ##########################################################################
-    # read task config file
-    ##########################################################################
-
-
-    def readInfoCfg(self, path):
-        """
-        _readInfoCfg_
-
-        read informations from the config files
-        """
-        #pathFile = path + "/share/" + self.crabcfg
-        eMail = None
-        thresholdLevel = None
-        #if os.path.exists( pathFile ):
-        #    eMail = self.parseCrabCfg(open(pathFile).read(), "USER", "eMail")
-        #    thresholdLevel = self.parseCrabCfg(open(pathFile).read(), "USER", "thresholdLevel")
-        return eMail, thresholdLevel
-
 
     ##########################################################################
     # insert and update task in database
@@ -625,8 +590,6 @@ class TaskTrackingComponent:
                         ## XML report file
                         dictionaryReport =  {"all": ["Killed", "", "", 0, '', 'C']}
                         self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
-		        ## MAIL report user
-                        #self.taskFastKill( self.args['dropBoxPath'] + "/" + payload  + "/res/" + self.xmlReportFileName, payload )
         except Exception, ex:
             logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logBuf = self.__logToBuf__(logBuf, "ERROR while reporting info about the task " + str(payload) )
@@ -650,7 +613,7 @@ class TaskTrackingComponent:
         ttdb = TaskStateAPI()
 	ttdb.updatingNotifiedPA( taskName, 2 )
         if status == self.taskState[2]:
-            self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + taskName + self.workAdd + self.resSubDir + self.xmlReportFileName, taskName )
+            self.taskNotSubmitted( self.args['dropBoxPath'] + "/" + taskName + self.workAdd + self.xmlReportFileName, taskName )
         else:
             self.taskFailed(origTaskName, strEmail[0:len(strEmail)-1], userName)
 	 
@@ -670,15 +633,6 @@ class TaskTrackingComponent:
             logBuf = self.__logToBuf__(logBuf, "  <-- - -- - -->")
             logging.info(logBuf)
 
-    def killTaskFailed (self, taskName ):
-        """
-        _killTaskFailed_
-        """
-        logBuf = ""
-        logBuf = self.__logToBuf__(logBuf, "Error killing task: " + taskName )
-        logging.info(logBuf)
-
-
     def setCleared (self, taskName, jobList):
         """
         _setCleared_
@@ -691,7 +645,7 @@ class TaskTrackingComponent:
             mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
             ## using session pool
             #mySession = BossLiteAPI("MySQL", self.bossCfgDB)
-        except ProdException, ex:
+        except Exception, ex:
             logging.info(str(ex))
             return 0
         try:
@@ -724,7 +678,7 @@ class TaskTrackingComponent:
                 dictStateTot = {}
                 numJobs = len(taskObj.jobs)
                 dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
-                pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
+                pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/"
                 if os.path.exists( pathToWrite ):
                     self.prepareReport( taskName, "", "", "", "", dictStateTot, numJobs, 1 )
                     self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
@@ -773,7 +727,7 @@ class TaskTrackingComponent:
         """
         _prepareReport_
         """
-        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/" + self.resSubDir
+        pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/"
 
         if os.path.exists( pathToWrite ):
             ###  get user name & original task name  ###
@@ -942,25 +896,6 @@ class TaskTrackingComponent:
         logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
         logging.info(logBuf)
 
-
-    def taskFastKill( self, taskPath, taskName ):
-        """
-        _taskFastKill_
-        """
-        logBuf = ""
-        try:
-            ms_sem.acquire()
-            self.msThread.publish("TaskFastKill", taskPath)
-            self.msThread.commit()
-        finally:
-            ms_sem.release()
-
-        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
-        logBuf = self.__logToBuf__(logBuf, "Published 'TaskFastKill' message with payload: %s" % taskPath)
-        self.taskEnded(taskName)
-        logBuf = self.__logToBuf__(logBuf, "         *-*-*-*-* ")
-        logging.info(logBuf)
-  
     def __logToBuf__(self, buf, strToAppend):
         """
         __logToBug__
@@ -1077,7 +1012,7 @@ class TaskTrackingComponent:
         ## bossLite session
         try:
             mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
-        except ProdException, ex:
+        except Exception, ex:
             logging.info(str(ex))
             return 0
         try:
@@ -1135,8 +1070,7 @@ class TaskTrackingComponent:
 			    try:
 			        percentage = (100 * endedJob) / numJobs
 			        pathToWrite = os.path.join( str(self.args['dropBoxPath']), \
-                                                            str(taskName+self.workAdd), \
-                                                            self.resSubDir \
+                                                            str(taskName+self.workAdd)
                                                           )
 
                                 if os.path.exists( pathToWrite ):
@@ -1220,24 +1154,6 @@ class TaskTrackingComponent:
             logging.error("ERROR: " + str(traceback.format_exc()))
             pass
         time.sleep(float(self.args['PollInterval']))
-
-
-    def printDictKey( self, diction, value ):
-        """
-        _printDictKey_
-        """
-        msg = "Ended jobs: * "
-        try:
-            for valu3, k3y in diction.iteritems():
-#                logging.info( str(valu3) + " " + str(k3y) )
-                if str(valu3) == int(value) or\
-                   int(valu3) == int(value) or\
-                   valu3 == value:
-                    msg += str(k3y) + " * "
-        except Exception, ex:
-            logging.error(str(ex))
-        return msg
-                
 
     ##########################################################################
     # start component execution
