@@ -13,7 +13,7 @@ CRABdir=$tag
 echo "CRABDIR = $CRABdir"
 CRABtag=$tag
 DBSAPItag="DBS_1_1_6"
-DLSAPItag="DLS_1_0_0"
+DLSAPItag="DLS_1_1_0_pre5"
 PRODCOMMONtag="PRODCOMMON_0_12_0_testCS5"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
@@ -65,14 +65,14 @@ cvs co -r ${DBSAPItag} -d DBSAPI COMP/DBS/Clients/Python
 # add this dirs to the PYTHONPATH
 
 ## download DLS API
-echo ">> downloading DLS CLI tag ${DLSAPItag} from CVS DLS/Client"
-cvs co -r ${DLSAPItag} DLS/Client
-cd DLS/Client
+echo ">> downloading DLS PHEDeX API tag ${DLSAPItag} from CVS DLS/Client/LFCClient"
+cvs co -r ${DLSAPItag} DLS/Client/LFCClient
+cd DLS/Client/LFCClient
 ## creating library
-make
-cd ../..
+make PREFIX=../../../DLSAPI
+cd -
 ## move to the CRAB standard location for DLSAPI
-mv DLS/Client/lib DLSAPI
+#mv DLS/Client/lib DLSAPI
 rm -r DLS
 # add this dir to PATH
 
