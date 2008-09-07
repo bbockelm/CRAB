@@ -33,17 +33,14 @@ class DataLocation:
         Contact DLS
         """
         countblock=0
-
-        dlstype='dbs'
-        ## to support phedex API in addition to 
-        ## the right dependence must be added the following.
-        ## this allow to locate private data also.   
-        """
-        if self.cfg_params['CMSSW.dbs_url']:
+        dlstype='' 
+        
+        privateData = self.cfg_params.get('CMSSW.dbs_url',None)
+        if privateData:
             dlstype='dbs'
         else:
             dlstype='phedex'
-        """
+
         DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
         ## find the replicas for each block
