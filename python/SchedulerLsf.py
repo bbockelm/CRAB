@@ -53,7 +53,7 @@ class SchedulerLsf(SchedulerLocal) :
             sched_param += '-q '+self.queue +' '
             if (self.res): sched_param += ' -R '+self.res +' '
 
-        sched_param+='-cwd '+ str(self.outputDir)  + ' '
+        # sched_param+='-cwd '+ str(self.outputDir)  + ' '
         return sched_param
    
     def listMatch(self, dest, full):
