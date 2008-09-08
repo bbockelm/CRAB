@@ -53,7 +53,6 @@ class DLSInfo:
             raise CrabException(msg)
 
         common.logger.debug(5,"DLS interface: %s Server %s"%(type,endpoint))       
-        print "DLS interface: %s Server %s"%(type,endpoint)       
         try:
             self.api = dlsClient.getDlsApi(dls_type=type,dls_endpoint=endpoint)
         except dlsApi.DlsApiError, inst:
@@ -67,7 +66,6 @@ class DLSInfo:
         query DLS to get replicas
         """
         ##
-        entryList=self.api.getLocations([fileblocks])
         try:
             entryList=self.api.getLocations([fileblocks])
         except dlsApi.DlsApiError, inst:
