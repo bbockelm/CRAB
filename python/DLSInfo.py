@@ -37,6 +37,7 @@ class DLSNoReplicas(exceptions.Exception):
 class DLSInfo:
     def __init__(self, type, cfg_params):
         self.cfg_params = cfg_params
+        self.showCAF = False
         if type=="DLS_TYPE_DBS":
             # use dbs_url as dls_endpoint if dls_type is dbs
             try:
@@ -48,10 +49,10 @@ class DLSInfo:
                 endpoint=self.cfg_params['CMSSW.dls_phedex_url']
             except KeyError:
                 endpoint='http://cmsweb.cern.ch/phedex/datasvc/xml/prod/' 
+            if self.cfg_params['CRAB.scheduler'].upper() == 'CAF':  self.showCAF = True
         else:
             msg = "DLS type %s not among the supported DLS ( DLS_TYPE_DLI and DLS_TYPE_MYSQL ) "%type
             raise CrabException(msg)
-
         common.logger.debug(5,"DLS interface: %s Server %s"%(type,endpoint))       
         try:
             self.api = dlsClient.getDlsApi(dls_type=type,dls_endpoint=endpoint)
@@ -67,10 +68,8 @@ class DLSInfo:
         """
         ##
         try:
-            entryList=self.api.getLocations([fileblocks])
+            entryList=self.api.getLocations([fileblocks],showCAF=self.showCAF)
         except dlsApi.DlsApiError, inst:
-            #msg = "Error in the DLS query: %s." % str(inst)
-            #print msg
             raise DLSNoReplicas(fileblocks)
 
         ListSites=[] 
