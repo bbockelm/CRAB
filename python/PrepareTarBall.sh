@@ -13,7 +13,7 @@ CRABdir=$tag
 echo "CRABDIR = $CRABdir"
 CRABtag=$tag
 DBSAPItag="DBS_1_1_6"
-DLSAPItag="DLS_1_1_0_pre5"
+DLSAPItag="DLS_1_1_0_pre6"
 PRODCOMMONtag="PRODCOMMON_0_12_0_testCS5"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
