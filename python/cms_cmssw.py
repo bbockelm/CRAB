@@ -71,7 +71,11 @@ class Cmssw(JobType):
 
         tmp =  cfg_params['CMSSW.datasetpath']
         log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
-        if string.lower(tmp)=='none':
+
+        if tmp =='':
+            msg = "Error: datasetpath not defined "
+            raise CrabException(msg)
+        elif string.lower(tmp)=='none':
             self.datasetPath = None
             self.selectNoInput = 1
         else:
