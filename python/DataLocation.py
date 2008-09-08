@@ -34,13 +34,22 @@ class DataLocation:
         """
         countblock=0
         dlstype='' 
-        
+ 
+        ##### temporary for deploy : to be removed
+        dlsPhed=self.cfg_params.get('CMSSW.dls_phedex_url',None)
+        if dlsPhed:
+            dlstype='phedex'
+        else:
+            dlstype='dbs'
+        ####
+        # the following will be the defaul     
+        """      
         privateData = self.cfg_params.get('CMSSW.dbs_url',None)
         if privateData:
             dlstype='dbs'
         else:
             dlstype='phedex'
-
+        """
         DLS_type="DLS_TYPE_%s"%dlstype.upper()
 
         ## find the replicas for each block
