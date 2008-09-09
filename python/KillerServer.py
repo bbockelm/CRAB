@@ -33,7 +33,7 @@ class KillerServer(Actor, StatusServer):
         toBeKilled = []
         toSetKilling = []
         for job  in task.jobs:
-           if job.runningJob['status'] not in ['C','E','KK','K','SU','SA','SSE']:
+           if job.runningJob['status'] not in ['C','E','KK','K','SU','SA']: # commented for fast-kill at registration ,'SSE']:
                toBeKilled.append(job['jobId'])
                if job.runningJob['status'] != 'SD': toSetKilling.append(job['jobId'])
            else:
