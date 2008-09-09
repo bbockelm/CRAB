@@ -61,6 +61,9 @@ class CrabWorkerAPI:
         """
         sqlStr = "select count(*) from we_Job where id = '" +str(jobId)+ "';"
         tupla = self.dbSession.select(sqlStr)
+        if type(tupla[0]) is not int:
+            return False
+
         if int(tupla[0]) == 1:
             return True
         elif int(tupla[0]) == 0:
