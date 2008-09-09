@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.6 2008/08/24 22:28:51 spiga Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.7 2008/09/03 14:41:27 farinafa Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import string
 import sys, os
@@ -61,23 +61,27 @@ class RegisterWorker(Thread):
 
         # reconstruct command structures
         if not self.parseCommandXML() == 0:
+            self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
             return
 
         # pair proxy to task
         if not self.associateProxyToTask() == 0 or len(self.proxy)==0:
+            self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
             return
 
         # declare and customize the task object on the server
         reconstructedTask = self.declareAndLocalizeTask() 
         if reconstructedTask is None:
+            self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
             return
 
         # check if the ISB are where they should
         if self.inputFileCheck(reconstructedTask) == False:
-            return            
+             self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
+             return            
 
         if self.type == 'fullySpecified': # default by client side to backward compatibility
-           payload = self.taskName +"::"+ str(self.configs['retries']) +"::"+ self.cmdRng 
+           payload = self.taskName +"::"+ str(self.configs['retries']) +"::"+ self.cmdRng
            self.local_queue.put( (self.myName, "TaskRegisterComponent:NewTaskRegistered", payload) )
         else:
            id = 'taskid' 

@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.4 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.4 2008/08/22 13:31:51 spiga Exp $"
+__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.5 2008/08/24 22:25:12 spiga Exp $"
 
 import os
 import pickle
@@ -21,6 +21,10 @@ from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 
 from TaskRegister.RegisterWorker import *
+
+# CW DB API
+from CrabServerWorker.CrabWorkerAPI import CrabWorkerAPI
+
 
 class TaskRegisterComponent:
     """
@@ -60,11 +64,13 @@ class TaskRegisterComponent:
         logFormatter = logging.Formatter("%(asctime)s:%(message)s")
         logHandler.setFormatter(logFormatter)
         logging.getLogger().addHandler(logHandler)
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.INFO)
 
         ## persistent properties
         self.taskPool = {}  # for data persistence
         self.subTimes = []  # moving average for submission delays
+
+        self.killingRequestes = {} # fastKill request track
 
         ## volatile properties
         self.wdir = self.args['ComponentDir']
@@ -89,7 +95,8 @@ class TaskRegisterComponent:
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
         self.ms.subscribeTo("TaskRegisterComponent:StartDebug")
         self.ms.subscribeTo("TaskRegisterComponent:EndDebug")
-       
+        self.ms.subscribeTo("KillTask")
+
         self.dematerializeStatus()
         #
         # non blocking call event handler loop
@@ -103,13 +110,28 @@ class TaskRegisterComponent:
                 while True:
                     try:
                         senderId, evt, pload = self.sharedQueue.get_nowait()
-                        self.ms.publish(evt, pload)
-                        logging.debug("Publish Event: %s %s" % (evt, pload))
+
+                        if senderId in self.taskPool:
+                            taskUniqName = self.taskPool[senderId][1]
+                        else:
+                            logging.info("Feedback message from an unknown worker. It will be ignored")
 
                         # free resource if no more needed
-                        if evt in ["TaskRegisterComponent:NewTaskRegistered", "TaskRegisterComponent:WorkerResult"]: 
-                            del self.taskPool[senderId]
-                            self.availWorkersIds.append(senderId)
+                        if evt in ["TaskRegisterComponent:NewTaskRegistered"] and taskUniqName not in self.killingRequestes:
+                                del self.taskPool[senderId]
+                                self.availWorkersIds.append(senderId)
+                                self.ms.publish(evt, pload)
+                                logging.debug("Publish Event: %s %s" % (evt, pload))
+                        else:
+                            if taskUniqName in self.killingRequestes:
+                                logging.info("Task %s killed by user"%taskUniqName)
+                                self.markTaskAsNotSubmitted(taskUniqName, self.killingRequestes[taskUniqName])
+                                del self.killingRequestes[taskUniqName]
+                            else:
+                                logging.info("Task %s failed"%taskUniqName)
+                                self.markTaskAsNotSubmitted(taskUniqName, 'all')
+                            pass
+                        
                     except Queue.Empty, e:
                         break
 
@@ -135,7 +157,9 @@ class TaskRegisterComponent:
         # register new task
         if event == "CRAB_Cmd_Mgr:NewTask":
             self.newTaskRegistration(payload)
-            
+        elif event == "KillTask":
+            taskUniqName, fake_proxy, cmdRng = payload.split(':')
+            self.killingRequestes[taskUniqName] = cmdRng
         # usual stuff
         elif event == "TaskRegisterComponent:StartDebug":
             logging.getLogger().setLevel(logging.DEBUG)
@@ -175,6 +199,51 @@ class TaskRegisterComponent:
             logging.info('Unable to allocate registration thread: %s'%thrName)
             logging.info(traceback.format_exc())
         return
+
+################################
+    def markTaskAsNotSubmitted(self, taskUniqName, cmdRng):
+        # load task and init CW APIs Session
+        try:
+            taskObj = self.blDBsession.loadTaskByName(taskUniqName)
+            cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
+            if cmdRng == 'all':
+                cmdRng = [ j['jobId'] for j in taskObj.jobs ]
+            else:
+                cmdRng = eval(cmdRng, {}, {}) 
+        except Exception, e:
+            logging.info('Unable to allocate CW API Session or unable to load %s.'%taskUniqName)
+            logging.info(traceback.format_exc())
+            return
+
+        # register we_Jobs
+        jobSpecId = []
+        for job in taskObj.jobs:
+            jobName = job['name']
+            cacheArea = os.path.join( self.wdir, str(taskUniqName + '_spec'), jobName )
+            jobDetails = {'id':jobName, 'job_type':'Processing', 'cache':cacheArea, \
+                          'owner':taskUniqName, 'status': 'create', \
+                          'max_retries':self.args['maxRetries'], 'max_racers':1 }
+
+            try:
+                if cwdb.existsWEJob(jobName) == True:
+                    continue
+                cwdb.registerWEJob(jobDetails)
+                if job['jobId'] in cmdRng:
+                    jobSpecId.append(jobName)
+            except Exception, e:
+                logging.info(traceback.format_exc())
+                continue
+
+        # mark as failed
+        cwdb.stopResubmission(jobSpecId)
+        for jId in jobSpecId:
+            try:
+                cwdb.updateWEStatus(jId, 'reallyFinished')
+            except Exception, e:
+                logging.info(traceback.format_exc())
+                continue
+        logging.info('Task %s successfully marked as fast-killed'%taskUniqName)
+        return 
 
 ################################
 #   Auxiliary Methods      
