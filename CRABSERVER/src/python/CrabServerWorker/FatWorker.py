@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.118 2008/09/05 20:50:45 ewv Exp $"
-__version__ = "$Revision: 1.118 $"
+__revision__ = "$Id: FatWorker.py,v 1.119 2008/09/10 17:43:31 ewv Exp $"
+__version__ = "$Revision: 1.119 $"
 import string
 import sys, os
 import time
@@ -636,10 +636,23 @@ class FatWorker(Thread):
         """
         Parameters specific to CondorG scheduler
         """
+        from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
+        
+        # Unpack CMSSW version and architecture from gLite style-string
+        [verFrag,archFrag] = task['jobType'].split(',')[0:2]
+        version = verFrag.split('-')[-1]
+        arch = archFrag.split('-')[-1]
+        version = version.replace('"','')
+        arch = arch.replace('"','')
 
-        schedParam = ''
+        # Get list of CEs
+        seList = task.jobs[i]['dlsDestination']
+        # FIXME: Clean SE for white/blacklist
+        onlyOSG = True # change for Glidein
+        availCEs = getJobManagerList(seList, version, arch, onlyOSG=onlyOSG)
+        # FIXME: Clean CE for white/blacklist
+        schedParam = "schedulerList = " + ','.join(availCEs) + "; "
 
-        schedParam = 'schedulerList = cmsgrid02.hep.wisc.edu:2119/jobmanager-condor; '
         if self.cfg_params['EDG.max_wall_time']:
             schedParam += 'globusrsl = (maxWalltime=%s); ' % self.cfg_params['EDG.max_wall_time']
 
@@ -647,7 +660,6 @@ class FatWorker(Thread):
         i = i-1
         if i<0: 
             i = 0
-        dest = task.jobs[i]['dlsDestination']
         #seList = self.se_list(i, dest)
 
         return schedParam
