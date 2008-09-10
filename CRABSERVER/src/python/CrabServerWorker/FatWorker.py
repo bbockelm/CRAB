@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.119 2008/09/10 17:43:31 ewv Exp $"
-__version__ = "$Revision: 1.119 $"
+__revision__ = "$Id: FatWorker.py,v 1.120 2008/09/10 19:13:13 ewv Exp $"
+__version__ = "$Revision: 1.120 $"
 import string
 import sys, os
 import time
@@ -198,7 +198,7 @@ class FatWorker(Thread):
                 schedulerConfig['service'] = self.wmsEndpoint
         elif schedulerConfig['name'] in ['SchedulerGlidein', 'SchedulerCondorG']:
             # FIXME: Get rid of "condorTemp" directory
-            condorTemp = os.path.join(self.wdir, self.taskName+'_spec', "condorTemp")
+            condorTemp = os.path.join(self.wdir, self.taskName+'_spec')
             self.log.info('Condor will use %s for temporary files' % condorTemp)
             schedulerConfig['tmpDir'] = condorTemp
             schedulerConfig['useGlexec'] = True
@@ -639,7 +639,7 @@ class FatWorker(Thread):
         from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
         
         # Unpack CMSSW version and architecture from gLite style-string
-        [verFrag,archFrag] = task['jobType'].split(',')[0:2]
+        [verFrag, archFrag] = task['jobType'].split(',')[0:2]
         version = verFrag.split('-')[-1]
         arch = archFrag.split('-')[-1]
         version = version.replace('"','')
@@ -658,7 +658,7 @@ class FatWorker(Thread):
 
         # shift due to BL ranges
         i = i-1
-        if i<0: 
+        if i < 0: 
             i = 0
         #seList = self.se_list(i, dest)
 
