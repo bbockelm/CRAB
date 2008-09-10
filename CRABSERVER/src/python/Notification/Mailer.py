@@ -69,7 +69,7 @@ class Mailer:
             flag = 1
             for mailt in toList:
                 logging.info("Sending to: " + str(mailt) )
-                if str(mailt) !=  None or len(str(mailt)) != 0:
+                if str(mailt) !=  None or len(str(mailt)) > 1:
                     flag = 0
             if flag == 0:
                 server.sendmail(self.senderName, toList, message)
