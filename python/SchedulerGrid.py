@@ -1,3 +1,10 @@
+"""
+Base class for all grid schedulers
+"""
+
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.32 2008/09/09 14:55:49 ewv Exp $"
+__version__ = "$Revision: 1.32 $"
+
 from Scheduler import Scheduler
 from crab_logger import Logger
 from crab_exceptions import *
@@ -8,10 +15,6 @@ from LFNBaseName import *
 from JobList import JobList
 
 import os, sys, time
-
-#
-# Base class for all grid scheduler
-#
 
 class SchedulerGrid(Scheduler):
 
@@ -69,14 +72,14 @@ class SchedulerGrid(Scheduler):
                 common.logger.message(msg)
 
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
-           msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
-           msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n'
-           raise CrabException(msg)
+            msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
+            msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n'
+            raise CrabException(msg)
 
         if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
-           msg = 'Error: return_data and copy_data cannot be set both to 1\n'
-           msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
-           raise CrabException(msg)
+            msg = 'Error: return_data and copy_data cannot be set both to 1\n'
+            msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
+            raise CrabException(msg)
 
         self.publish_data = cfg_params.get("USER.publish_data",0)
         self.usenamespace = cfg_params.get("USER.usenamespace",0)
@@ -86,14 +89,14 @@ class SchedulerGrid(Scheduler):
                 msg = "Error. The [USER] section does not have 'publish_data_name'"
                 raise CrabException(msg)
             if not self.publish_data_name and int(self.usenamespace) == 1:
-               self.publish_data_name = "DefaultDataset"
+                self.publish_data_name = "DefaultDataset"
 
 
         if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
-           msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
-           msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
-           common.logger.message(msg)
-           raise CrabException(msg)
+            msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
+            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
+            common.logger.message(msg)
+            raise CrabException(msg)
 
         ### FEDE FOR NEW LFN ###
         if int(self.publish_data) == 1:
@@ -150,7 +153,22 @@ class SchedulerGrid(Scheduler):
         return None
 
     def sched_fix_parameter(self):
-        return
+        """
+        Returns string with requirements and scheduler-specific parameters
+        """
+        index = int(common._db.nJobs())
+        job = common.job_list[index-1]
+        jbt = job.type()
+        req = ''
+        req = req + jbt.getRequirements()
+
+        if self.EDG_requirements:
+            if (not req == ' '):
+                req = req +  ' && '
+            req = req + self.EDG_requirements
+
+        taskReq = {'jobType':req}
+        common._db.updateTask_(taskReq)
 
     def listMatch(self, dest, full):
         matching='fast'

@@ -1,3 +1,10 @@
+"""
+CRAB interface to BossLite gLite Scheduler
+"""
+
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.32 2008/09/09 14:55:49 ewv Exp $"
+__version__ = "$Revision: 1.32 $"
+
 from SchedulerGrid import SchedulerGrid
 from crab_logger import Logger
 from crab_exceptions import *
@@ -126,23 +133,6 @@ class SchedulerGlite(SchedulerGrid):
             req = req + ' other.GlueCEPolicyMaxCPUTime>='+self.EDG_cpu_time
 
         return req
-
-    def sched_fix_parameter(self):
-        """
-        Returns string with requirements and scheduler-specific parameters
-        """
-        index = int(common._db.nJobs())
-        job = common.job_list[index-1]
-        jbt = job.type()
-        req = ''
-        req = req + jbt.getRequirements()
-
-        if self.EDG_requirements:
-            if (not req == ' '): req = req +  ' && '
-            req = req + self.EDG_requirements
-
-        Task_Req={'jobType':req}
-        common._db.updateTask_(Task_Req)
 
     def sched_parameter(self,i,task):
         """
