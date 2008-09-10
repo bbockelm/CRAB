@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.18 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.18 2008/07/01 16:56:48 mcinquil Exp $"
+__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.19 2008/07/07 13:36:00 mcinquil Exp $"
 
 import os
 import socket
@@ -84,7 +84,6 @@ class NotificationComponent:
             msg = "No ProdAgent Config file provided\n"
             msg += "set $PRODAGENT_CONFIG variable\n"
             logging.error(msg)
-            sys.exit(1)
             
         okmsg = "NotificationComponent.__init__: Configuration file is ["
         okmsg += config
@@ -124,7 +123,6 @@ class NotificationComponent:
             self.mailer = Mailer.Mailer(config)
         except RuntimeError, mex:
             logging.error( mex )
-            sys.exit(1)
 
         self.serverName =  self.args['ProdAgentName']
 
@@ -163,8 +161,11 @@ class NotificationComponent:
         consumerThread.start()
 
         # Main infinite loop retrieving jobs done and ready to be notified to owner
-        self.MainLoop()
-        
+        try:
+            self.MainLoop()
+        except Exception, ex:
+            import traceback
+            logging.info(str(traceback.format_exc()))
         
     #--------------------------------------------------------------------------------------
     def MessageJobParser(self, message):
