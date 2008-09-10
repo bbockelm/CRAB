@@ -200,6 +200,7 @@ class ProxyLife:
         return dictionary
 
     def archiveBliteTask(self, mySession, taskname):
+        logging.info( "Archiving blite task: " + str(taskname) )
         taskObj = None
         try:
             taskObj = mySession.loadTaskByName( taskname )
@@ -208,13 +209,10 @@ class ProxyLife:
             taskObj = None
         if taskObj != None:
             try:
-                logging.info( "Archiving task: " + str(taskname) )
                 mySession.archive( taskObj )
             except TaskError, te:
                 logging.error( "Problem archiving task: " + str(taskObj['name']) )
                 logging.error( str(te) )
-        else:
-            logging.error( "Problem archiving task: " + taskname )
 
     def getListJobName(self, taskname):
         joblist = []
@@ -228,11 +226,10 @@ class ProxyLife:
         return joblist
 
     def archiveServerTask(self, taskname):
-        #from ProdAgent.WorkflowEntities.JobState import doNotAllowMoreSubmissions
+        logging.info("Archiving server jobs...")
         jobtoclean = self.getListJobName(taskname)
         if len(jobtoclean) > 0:
             try:
-                logging.info("Archiving server jobs...")
                 sqlStr = ""
                 for jobSpecId in jobtoclean:
                     sqlStr="UPDATE we_Job SET "+    \
@@ -266,8 +263,6 @@ class ProxyLife:
             logging.info("   payload = " + payload )
             self.ms.publish( mexage, payload)
             self.ms.commit()
-        else:
-            pass
 
     ###############################################
     ######     PUBLIC CALLABLE METHODS       ######
@@ -301,6 +296,8 @@ class ProxyLife:
                     timeleft = -1
                 except Exception, ex:
                     logging.info("Problem checking proxy validity: " + str(ex))
+                    continue
+                logging.info("Proxy still valid for: " + str(proxyfull) + " seconds.")
 
                 ###############################################################
                 ######
@@ -350,8 +347,7 @@ class ProxyLife:
                     self.denotify(proxyfull)
                     self.decleaned(proxyfull)
                 ###############################################################
-
-                logging.info("")
+                logging.info(" ")
         else:
             logging.error( "Could not find proxies path [" + self.proxiespath +"]." )
 
