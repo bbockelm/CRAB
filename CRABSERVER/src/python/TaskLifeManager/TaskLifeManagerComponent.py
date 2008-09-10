@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.29 2008/09/01 08:41:53 mcinquil Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.30 2008/09/04 13:28:12 mcinquil Exp $"
+__version__ = "$Revision: 1.30 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -205,9 +205,6 @@ class TaskLifeManagerComponent:
         #######################
         # Automessage 4 polling
         if event == "TaskLifeManager::poll":
-            #logging.info('\nProva....')
-            #self.deleteRetrievedOSB('farinafa_crab_0_080409_171840_700db5f7-8c91-4f43-8180-dc1731ce5f05', '1, 2')
-            #logging.info('\n Done\n')
             self.pollDropBox()
             return            #
         #######################
@@ -519,17 +516,6 @@ class TaskLifeManagerComponent:
             taskPath = join( self.args['storagePath'], taskName )
             ## getting user info
             owner, mail = self.checkInfoUser( taskName )
-            if owner is None and mail is None:
-                ############################
-                ### auto-registering msg ###
-                ##  to wait task unpack.  ##
-                #  self.unpackingTask( taskName )
-                ############################
-                pass
-            ############################
-            ### creating Task object ###
-            ##  & inserting on queue  ##
-            ### proxy!!!
             taskObj = Task(\
                             taskName, \
                             owner, \
@@ -543,12 +529,7 @@ class TaskLifeManagerComponent:
             self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
             ############################
         else:
-            ############################
-            ### auto-registering msg ###
-            ##  to wait task unpack.  ##
-            #self.unpackingTask( taskName )
-            ############################
-            pass
+            logging.info("Task " + str(taskName) + " already in queue")
 
     def insertEndedWrp( self, taskName ):
         """
@@ -736,21 +717,6 @@ class TaskLifeManagerComponent:
 	logging.info(" Publishing ['"+ mexage +"']")
         logging.info("   payload = " + payload )
         self.ms.publish( mexage, payload )
-        self.ms.commit()
-
-    def unpackingTask( self, taskName ):
-        """
-        _unpackingTask_
-
-        Trasmit the event "TaskLifeManager::TaskToMange" [to itself]
-        """
-        
-        mexage = "TaskLifeManager::TaskToMange"
-        payload = str(taskName)
-
-        logging.info(" Publishing ['"+ mexage +"']")
-        logging.info("   payload = " + payload )
-        self.ms.publish( mexage, payload, "00:00:20" )
         self.ms.commit()
 
     def notifyCleaning( self, taskName, toLive, owner, mails ):
