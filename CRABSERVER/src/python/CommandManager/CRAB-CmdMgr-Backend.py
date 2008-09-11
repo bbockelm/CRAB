@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.19 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.19 2008/07/09 14:13:36 farinafa Exp $"
+__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.20 2008/07/15 08:59:51 farinafa Exp $"
 
 import os
 import time
@@ -105,15 +105,11 @@ class CRAB_AS_beckend:
         of new tasks for a fixed time.
         """
 
-        jabber_ms = MessageService()
-        jabber_ms.registerAs("CRAB_CmdMgr_jabber")
-        jabber_ms.subscribeTo("CrabServerWorkerComponent:FatWorkerResult")
-
         ## DISABLED FOR DEBUG
         #self.args['acceptableThroughput'] = -1
         ## DISABLED FOR DEBUG
         self.log.debug("Create Jabber: thsLevel %d"%int(self.args['acceptableThroughput']) )
-        self.jabber = JabberThread(self, self.log, int(self.args['acceptableThroughput']), jabber_ms)
+        self.jabber = JabberThread(self, self.log, int(self.args['acceptableThroughput']) )
         pass
 
     def initUiConfigs(self):
@@ -290,13 +286,13 @@ class CRAB_AS_beckend:
             XML content if successfull
             otherwise the methods return the error condition
         """
-        self.log.info("TaskStatus requested "+taskUniqName)
+        self.log.info("TaskStatus requested "+taskUniqName+"(%s)"%statusType)
         retStatus, prjUName_fRep = ("", "")
 
         if statusType == "status":
             prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/xmlReportFile.xml"
         elif statusType == "serverLogging":
-            prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/loggingTaskInfo"
+            prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/internalog.xml"
         else:
             prjUName_fRep = None
             retStatus = "Error: unrecognized kind of status information required"  

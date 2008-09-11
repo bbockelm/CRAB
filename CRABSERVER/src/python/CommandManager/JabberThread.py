@@ -5,7 +5,7 @@ import time
 
 class JabberThread(Thread):
     
-    def __init__(self, summoner, log, throughput, ms):
+    def __init__(self, summoner, log, throughput):
         """
         @ summoner: class that invoked the Jabber and that maintains the go_on_accepting_load attribute
         @ log: logging system
@@ -16,7 +16,6 @@ class JabberThread(Thread):
         self.summoner = summoner
         self.logsys = log
         self.thr = throughput
-        self.ms = ms
 
         self.start()
         pass
@@ -28,6 +27,13 @@ class JabberThread(Thread):
         new tasks.
         """
         self.logsys.debug("Starting JabberThread")
+
+        self.ms = MessageService()
+        self.ms.registerAs("CRAB_CmdMgr_jabber")
+
+        # messages implying meaningful network load
+        self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
+        self.ms.subscribeTo("CRAB_Cmd_Mgr:NewCommand")
 
         tPre = time.time()
         self.go_on_accepting_load = 1
