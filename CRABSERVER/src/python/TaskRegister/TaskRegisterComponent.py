@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.5 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.5 2008/08/24 22:25:12 spiga Exp $"
+__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.6 2008/09/09 16:19:29 farinafa Exp $"
 
 import os
 import pickle
@@ -122,15 +122,14 @@ class TaskRegisterComponent:
                                 self.availWorkersIds.append(senderId)
                                 self.ms.publish(evt, pload)
                                 logging.debug("Publish Event: %s %s" % (evt, pload))
+                        elif evt in ["RegisterWorkerComponent:RegisterWorkerFailed"]:
+                                logging.info("Task %s failed"%taskUniqName)
+                                self.markTaskAsNotSubmitted(taskUniqName, 'all')
                         else:
                             if taskUniqName in self.killingRequestes:
                                 logging.info("Task %s killed by user"%taskUniqName)
                                 self.markTaskAsNotSubmitted(taskUniqName, self.killingRequestes[taskUniqName])
                                 del self.killingRequestes[taskUniqName]
-                            else:
-                                logging.info("Task %s failed"%taskUniqName)
-                                self.markTaskAsNotSubmitted(taskUniqName, 'all')
-                            pass
                         
                     except Queue.Empty, e:
                         break
@@ -212,7 +211,7 @@ class TaskRegisterComponent:
                 cmdRng = eval(cmdRng, {}, {}) 
         except Exception, e:
             logging.info('Unable to allocate CW API Session or unable to load %s.'%taskUniqName)
-            logging.info(traceback.format_exc())
+            logging.debug(traceback.format_exc())
             return
 
         # register we_Jobs
