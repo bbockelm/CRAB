@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.5 2008/07/08 22:19:00 ewv Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.6 2008/07/09 19:55:56 ewv Exp $"
+__version__ = "$Revision: 1.6 $"
 
 
 import os
@@ -35,6 +35,7 @@ class BlackWhiteListParser(object):
 
     def __init__(self, cfg_params):
         self.kind = 'se'
+        self.mapper = None # Defined by Super class
         self.siteDBAPI = SiteDBJSON()
 
     def configure(self, cfg_params):
@@ -63,17 +64,34 @@ class BlackWhiteListParser(object):
         #print "User's %s whitelist: %s" % (self.kind,self.whitelist)
 
     def expandList(self, userInput):
-      userList = userInput.split(',')
-      expandedList = []
-      for item in userList:
-        item = item.strip()
-        expandedItem = self.mapper(item)
-        if expandedItem:
-          expandedList.extend(expandedItem)
-        else:
-          expandedList.append(item)
+        """
+        Contact SiteDB to expand lists like T2_US into lists of
+        actual SE names and CE names.
+        """
 
-      return expandedList
+        userList = userInput.split(',')
+        expandedList = []
+        hadErrors = False
+        for item in userList:
+            item = item.strip()
+            try:
+                expandedItem = self.mapper(item)
+            except Exception: # FIXME: WMCore SiteDB re-throws particular exception
+                expandedItem = None
+                hadErrors = True
+
+            if expandedItem:
+                expandedList.extend(expandedItem)
+            else:
+                expandedList.append(item)
+
+        if hadErrors:
+            common.logger.message("Problem connecting to SiteDB. " \
+                                + "%s " % self.kind.upper() \
+                                + "white/blacklist may be incomplete.")
+            common.logger.message("List is %s" % expandedList)
+
+        return expandedList
 
     def checkBlackList(self, Sites, fileblocks=''):
         """
@@ -97,10 +115,10 @@ class BlackWhiteListParser(object):
         goodSites = list(goodSites)
         if not goodSites and fileblocks:
             msg = "No sites hosting the block %s after blackList" % fileblocks
-            common.logger.debug(5,msg)
-            common.logger.debug(5,"Proceeding without this block.\n")
+            common.logger.debug(5, msg)
+            common.logger.debug(5, "Proceeding without this block.\n")
         elif fileblocks:
-            common.logger.debug(5,"Selected sites for block %s via blacklist " \
+            common.logger.debug(5, "Selected sites for block %s via blacklist " \
                 "are %s.\n" % (', '.join(fileblocks), ', '.join(goodSites)))
         return goodSites
 
@@ -127,15 +145,15 @@ class BlackWhiteListParser(object):
         goodSites = list(goodSites)
         if not goodSites and fileblocks:
             msg = "No sites hosting the block %s after whiteList" % fileblocks
-            common.logger.debug(5,msg)
-            common.logger.debug(5,"Proceeding without this block.\n")
+            common.logger.debug(5, msg)
+            common.logger.debug(5, "Proceeding without this block.\n")
         elif fileblocks:
-            common.logger.debug(5,"Selected sites for block %s via whitelist "\
+            common.logger.debug(5, "Selected sites for block %s via whitelist "\
                 " are %s.\n" % (', '.join(fileblocks), ', '.join(goodSites)))
 
         return goodSites
 
-    def cleanForBlackWhiteList(self,destinations,list=False):
+    def cleanForBlackWhiteList(self, destinations, list=False):
         """
         Clean for black/white lists using parser.
 
@@ -230,7 +248,7 @@ class CEBlackWhiteListParser(BlackWhiteListParser):
     from the user's input; see the documentation for BlackWhiteListParser.
     """
 
-    def __init__(self,cfg_params):
+    def __init__(self, cfg_params):
         super(CEBlackWhiteListParser, self).__init__(cfg_params)
         self.kind = 'ce'
         self.mapper = self.siteDBAPI.CMSNametoCE
