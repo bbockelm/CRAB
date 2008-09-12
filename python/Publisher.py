@@ -24,7 +24,8 @@ class Publisher(Actor):
         """
 
         try:
-            self.processedData = cfg_params['USER.publish_data_name']
+            userprocessedData = cfg_params['USER.publish_data_name'] 
+            self.processedData = None
         except KeyError:
             raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
 
@@ -134,6 +135,7 @@ class Publisher(Actor):
         common.logger.debug(6,"DatasetInfo = " + str(datasets))
         for dataset in datasets:
             #### for production data
+            self.processedData = dataset['ProcessedDataset']
             if (dataset['PrimaryDataset'] == 'null'):
                 dataset['PrimaryDataset'] = dataset['ProcessedDataset']
             else: # add parentage from input dataset
