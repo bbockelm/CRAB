@@ -120,7 +120,7 @@ class Crab:
             parsToBeSaved={}
             for it in self.cfg_params.keys():
                 sec,act = string.split(it,".")
-                if sec == string.upper(common.prog_name): 
+                if sec == string.upper(common.prog_name):
                     tmp = "-"+act
                     if (tmp in self.main_actions) or (tmp in self.aux_actions) or (it == '-debug'):
                         pass
@@ -438,7 +438,7 @@ class Crab:
                 if self.flag_continue:
                     msg =  'Cannot create an existing project. If you want to extend it (to analyze new fileBloks) use: \n'
                     msg += ' crab -extend '
-                    raise CrabException(msg)  
+                    raise CrabException(msg)
                 if val and val != 'all':
                     msg  = 'Per default, CRAB will create all jobs as specified in the crab.cfg file, not the command line!'
                     common.logger.message(msg)
@@ -469,7 +469,7 @@ class Crab:
                 self.creator.writeJobsSpecsToDB()
                 common._db.updateTask_(taskinfo)
                 pass
-       
+
             if (  opt == '-extend' ):
 
                 if val and val != 'all':
@@ -481,7 +481,7 @@ class Crab:
                 skip_blocks = True
                 ncjobs = 'all'
                 isNew=False
-                firstJob=common._db.nJobs()  
+                firstJob=common._db.nJobs()
 
                 from Creator import Creator
                 # Instantiate Creator object
@@ -499,7 +499,7 @@ class Crab:
 
                 self.creator.writeJobsSpecsToDB(firstJob)
                 pass
-             
+
 
             elif ( opt == '-submit' ):
                 ## Dealt with val == int so that -submit N means submit N jobs and not job # N
@@ -532,7 +532,7 @@ class Crab:
                 Print the SID list of all the jobs
                 '''
                 jid=False
-                if val == 'full': jid=True 
+                if val == 'full': jid=True
                 common._db.queryID(self.UseServer,jid)
 
             elif ( opt == '-status' ):
@@ -807,6 +807,8 @@ if __name__ == '__main__':
     try:
         import warnings
         warnings.simplefilter("ignore", RuntimeWarning)
+        import socket
+        socket.setdefaulttimeout(5) # Default timeout in seconds
     except ImportError:
         pass # too bad, you'll get the warning
 
