@@ -808,7 +808,7 @@ if __name__ == '__main__':
         import warnings
         warnings.simplefilter("ignore", RuntimeWarning)
         import socket
-        socket.setdefaulttimeout(5) # Default timeout in seconds
+        socket.setdefaulttimeout(15) # Default timeout in seconds
     except ImportError:
         pass # too bad, you'll get the warning
 
