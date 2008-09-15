@@ -19,6 +19,7 @@ PRODCOMMONtag="PRODCOMMON_0_12_0_testCS5"
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
 
+repo_url="http://cmsweb.cern.ch/crab_conf/"
 
 ## download CRAB from CVS and cleanup the code a bit
 echo ">> downloading CRAB tag $CRABtag from CVS CRAB"
@@ -49,15 +50,15 @@ cd external
 
 ## download sqlite
 echo ">> downloading sqlite from CRAB web page"
-wget http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/sqlite.tgz
+wget --no-check-certificate $repo_url/sqlite.tgz
 
 ## download py2-sqlite
 echo ">> downloading py2-sqlite from CRAB web page"
-wget http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/py2-pysqlite.tgz
+wget --no-check-certificate  $repo_url/py2-pysqlite.tgz 
 
 ## download pyOpenSSL
 echo ">> downloading pyOpenSSL CRAB web page"
-wget http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/pyOpenSSL-0.6-python2.4.tar.gz
+wget --no-check-certificate  $repo_url/pyOpenSSL-0.6-python2.4.tar.gz
 
 ## download DBS API
 echo ">> downloading DBS API tag ${DBSAPItag} from CVS DBS/Clients/PythonAPI"

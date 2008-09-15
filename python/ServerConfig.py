@@ -9,7 +9,7 @@ import os, time
 class ServerConfig:
     def __init__(self, serverName):
         common.logger.debug(5,'Calling ServerConfig')
-        self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/Server_conf/'
+        self.url = 'http://cmsweb.cern.ch/crab_conf/'
         if 'server_' in string.lower(serverName):
             self.configFileName = '%s.conf'%string.lower(serverName)
         else: 

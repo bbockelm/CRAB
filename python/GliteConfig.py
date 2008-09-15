@@ -9,7 +9,7 @@ import os, time
 class GliteConfig:
     def __init__(self, RB):
         common.logger.debug(5,'Calling GliteConfig')
-        self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
+        self.url = 'http://cmsweb.cern.ch/crab_conf/'
         self.configFileName = 'glite.conf.CMS_'+str(RB)
         self.theConfig = self.getConfig_()
         pass
