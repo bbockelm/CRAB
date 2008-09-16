@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.120 2008/09/10 19:13:13 ewv Exp $"
-__version__ = "$Revision: 1.120 $"
+__revision__ = "$Id: FatWorker.py,v 1.121 2008/09/10 19:41:53 ewv Exp $"
+__version__ = "$Revision: 1.121 $"
 import string
 import sys, os
 import time
@@ -67,6 +67,9 @@ class FatWorker(Thread):
         self.blSchedSession = None
         self.apmon = ApmonIf()
 
+        ## CW DB init
+        self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
+
         try:
             self.start()
         except Exception, e:
@@ -74,8 +77,6 @@ class FatWorker(Thread):
             self.log.info( traceback.format_exc() )
         self.apmon.free()
 
-        ## CW DB init
-        self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
         return
 
     def run(self):
