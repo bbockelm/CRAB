@@ -18,8 +18,7 @@ PRODCOMMONtag="PRODCOMMON_0_12_0_testCS5"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
-
-repo_url="http://cmsweb.cern.ch/crab_conf/"
+repo_url="https://cmsweb.cern.ch/crabconf/files/"
 
 ## download CRAB from CVS and cleanup the code a bit
 echo ">> downloading CRAB tag $CRABtag from CVS CRAB"
