@@ -102,7 +102,7 @@ VDT_RPM_list="vdt_globus_essentials-VDT1.6.0x86_rhas_4-1.i386.rpm myproxy-VDT1.6
 API_RPM_list="glite-security-voms-api-c-1.7.16-2.slc4.i386.rpm gridsite-shared-1.1.18.1-1.i386.rpm"
 PROXY_RPM_list="glite-security-proxyrenewal-1.3.4-2.slc4.i386.rpm"
 GRIDSITEDEV_RPM_list="gridsite-devel-1.1.18.1-1.i386.rpm"
-ASAP_RPM_list="asap-delegation-server-edg-0.5.1-1.noarch.rpm"
+ASAP_RPM_list="asap-delegation-server-edg-0.5.1-rpm"
 
 echo "*** Downloading to $MYTESTAREA/RPMs the RPMs :"; echo $CA_RPM_list 
 for arpm in $CA_RPM_list; do
@@ -135,7 +135,7 @@ done
 
 echo "*** Downloading to $MYTESTAREA/RPMs the RPMs :"; echo $ASAP_RPM_list;
 for arpm in $ASAP_RPM_list; do
-    wget -nv -O $MYTESTAREA/RPMs/$arpm http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/$arpm
+    wget -nw --no-check-certificate -O $MYTESTAREA/RPMs/$arpm https://cmsweb.cern.ch/crabconf/files/$arpm
 done
 
 
