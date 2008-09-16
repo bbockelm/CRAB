@@ -135,7 +135,7 @@ done
 
 echo "*** Downloading to $MYTESTAREA/RPMs the RPMs :"; echo $ASAP_RPM_list;
 for arpm in $ASAP_RPM_list; do
-    wget -nw --no-check-certificate -O $MYTESTAREA/RPMs/$arpm https://cmsweb.cern.ch/crabconf/files/$arpm
+    wget -nv --no-check-certificate -O $MYTESTAREA/RPMs/$arpm https://cmsweb.cern.ch/crabconf/files/$arpm
 done
 
 
