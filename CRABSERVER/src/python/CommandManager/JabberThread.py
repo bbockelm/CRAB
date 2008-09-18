@@ -16,6 +16,7 @@ class JabberThread(Thread):
         self.summoner = summoner
         self.logsys = log
         self.thr = throughput
+        self.go_on_accepting_load = 1
 
         self.start()
         pass
