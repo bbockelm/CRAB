@@ -221,15 +221,19 @@ echo "*** Creating cmsXXX local users: "
 groupadd cms
 for i in {0..4}; do
     for j in {0..9}; do
-        echo -n "cms0$i$j "
-        useradd -g cms -m cms0$i$j
+        for k in {0..9}; do
+            echo -n "cms$i$j$k "
+            useradd -g cms -m cms$i$j$k
+        done
     done
 done
 echo;
 mkdir -p /etc/grid-security/gridmapdir/
 for i in {0..4}; do
   for j in {0..9}; do
-    touch /etc/grid-security/gridmapdir/cms0$i$j
+      for k in {0..9}; do
+          touch /etc/grid-security/gridmapdir/cms$i$j$k
+      done
   done
 done
 
