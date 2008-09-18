@@ -54,7 +54,7 @@ class CopyLocal(Actor):
             id_job = job['jobId'] 
             for of in self.output_file:
                 file=numberFile(of,id_job)
-                cmd="lcg-cp srm://"+self.SE+":"+self.SE_port+"//"+string.split(self.SE_PATH,"=")[-1]+"/"+file+" file:`pwd`/"+file
+                cmd="lcg-cp srm://"+self.SE+":"+self.SE_port+"//"+string.split(self.SE_PATH,"=")[-1]+"/"+file+" file:"+common.work_space.resDir()+file
                 common.logger.debug(3,cmd)
                 runCommand(cmd)
                 if not common.logger.debugLevel() and pbar: pbar.update(float(ii+1)/float(totalFiles),'please wait')
