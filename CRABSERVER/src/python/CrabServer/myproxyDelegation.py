@@ -2,6 +2,7 @@ import sys
 import commands
 import traceback
 import time
+import logging
 
 class myProxyDelegationClientside:
     def __init__(self, myproxyServer, serverDN, vomsesPath):
@@ -46,8 +47,15 @@ class myProxyDelegationClientside:
         return True
     
     def delegate(self, delegT=192, credName='CrabServerProxy'):
-        if self._getInfosFromProxy() == 0 and self._credentialExists() == True:
-            return 0
+        retCode =  self._getInfosFromProxy()
+        if not retCode == 0:
+            raise Exception('Unable to get information from proxy. Please try voms-proxy-init')
+            return retCode
+
+        # non chiaro, da fissare
+        if self._credentialExists() == False:
+            raise Exception('Too short proxy lifetime. Please renew it with myproxy-init')
+            return -1
 
         # delegate proxy to myproxy            
         cmd = 'myproxy-init -s %s -c %d -x -n '%(self.myproxyServer, delegT)
@@ -69,7 +77,12 @@ class myProxyDelegationServerside:
         pass
     
     def getDelegatedProxy(self, destProxyPath, credName = 'CrabServerProxy', proxyArgs = {}):
-        tmpProxyName = 'proxy_%s'%str(time.time())
+        tmpProxyName = 'proxy_%d'%int( time.time() )
+
+        if len(proxyArgs) == 0:
+           raise Exception('No additional information specified. Proxy won\'t be retrieved')
+           return -1
+
         acHostname = str(proxyArgs['acissuer']).split('/CN=')[1]
 
         # get delegated proxy
@@ -79,19 +92,20 @@ class myProxyDelegationServerside:
         cmd += '-l \'%s\' -k %s -o %s'%(proxyArgs['identity'], credName, tmpProxyName)
         retCode, output = commands.getstatusoutput(cmd)
         if not retCode == 0:
-            raise Exception('Error while getting MyProxy credential:\n %s\n %s'%(cmd, str(output)) )
+            raise Exception('Error while getting MyProxy credential: %s'%cmd )
             return retCode
 
-        # rebuild VOMS stuff
-        cmd  = 'voms-proxy-fake -cert %s -key %s '%(tmpProxyName, tmpProxyName)
-        cmd += '-hostcert %s -hostkey %s '%(self.uCertPath, self.uKeyPath)
-        cmd += '-voms %s -fqan \'%s\' '%(proxyArgs['VO'], proxyArgs['attribute'])
-        cmd += '-uri %s:15002 -target %s '%(acHostname, acHostname)
-        cmd += '-certdir %s -newformat -o %s'%(proxyArgs['vomsPath'], destProxyPath)
-        retCode, output = commands.getstatusoutput(cmd)
-        if not retCode == 0:
-            raise Exception('Error while getting MyProxy credential:\n %s\n %s'%(cmd, str(output)) )
-            return retCode
+        # rebuild VOMS stuff, only if MyProxy does not support  
+        if 'vomsCompliantMyProxy' not in proxyArgs:
+            cmd  = 'voms-proxy-fake -cert %s -key %s '%(tmpProxyName, tmpProxyName)
+            cmd += '-hostcert %s -hostkey %s '%(self.uCertPath, self.uKeyPath)
+            cmd += '-voms %s -fqan \'%s\' '%(proxyArgs['VO'], proxyArgs['attribute'])
+            cmd += '-uri %s:15002 -target %s '%(acHostname, acHostname)
+            cmd += '-certdir %s -newformat -o %s'%(proxyArgs['vomsPath'], destProxyPath)
+            retCode, output = commands.getstatusoutput(cmd)
+            if not retCode == 0:
+                raise Exception('Error while building VOMS extensions: %s\n %s'%(cmd, str(output)) )
+                return retCode
 
         # clean up temp and renew the proxy
         cmd = 'rm -f %s'%tmpProxyName

@@ -4,7 +4,7 @@ import common
 from ApmonIf import ApmonIf
 
 import os, errno, time, sys, re 
-import commands
+import commands, traceback
 import zlib
 
 from Submitter import Submitter
