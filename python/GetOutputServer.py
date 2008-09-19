@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: file,v 1.27 2008/08/25 16:49:09 ewv Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.32 2008/09/19 12:24:44 ewv Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -71,7 +71,6 @@ class GetOutputServer( GetOutput, StatusServer ):
             osbFiles.extend([osbTemplate % str(jid) for jid in filesToRetrieve])
         common.logger.debug(3, "List of OSB files: " +str(osbFiles) )
 
-        #
         copyHere = self.outDir
         destTemplate = copyHere+'/out_files_%s.tgz'
         destFiles = [ destTemplate % str(jid) for jid in filesToRetrieve ]
