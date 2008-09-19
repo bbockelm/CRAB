@@ -1,11 +1,16 @@
+"""
+Get output for server mode
+"""
+
+__revision__ = "$Id: file,v 1.27 2008/08/25 16:49:09 ewv Exp $"
+__version__ = "$Revision: 1.27 $"
+
 from GetOutput import GetOutput
 from StatusServer import StatusServer
 from crab_util import *
 import common
 import time
 
-import traceback
-from xml.dom import minidom
 from ServerCommunicator import ServerCommunicator
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
@@ -14,19 +19,19 @@ from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 class GetOutputServer( GetOutput, StatusServer ):
 
     def __init__(self, *args):
- 
-        GetOutput.__init__(self,*args)
+
+        GetOutput.__init__(self, *args)
 
         # init client server params...
-        CliServerParams(self)       
+        CliServerParams(self)
 
-        if self.storage_path[0]!='/':
+        if self.storage_path[0] != '/':
             self.storage_path = '/'+self.storage_path
 
         return
 
-    
-    def getOutput(self): 
+
+    def getOutput(self):
 
         # get updated status from server #inherited from StatusServer
         self.resynchClientSide()
@@ -38,14 +43,14 @@ class GetOutputServer( GetOutput, StatusServer ):
         filesAndJodId = { }
 
         filesAndJodId.update( self.retrieveFiles(self.list_id) )
-        common.logger.debug(5, "Files to be organized and notified " +str(filesAndJodId)  )
+        common.logger.debug(5, "Files to be organized and notified " + str(filesAndJodId))
 
-        self.organizeOutput()   
+        self.organizeOutput()
 
         self.notifyRetrievalToServer(filesAndJodId)
         return
 
-    def retrieveFiles(self,filesToRetrieve):
+    def retrieveFiles(self, filesToRetrieve):
         """
         Real get output from server storage
         """
@@ -53,28 +58,38 @@ class GetOutputServer( GetOutput, StatusServer ):
         self.taskuuid = str(common._db.queryTask('name'))
         common.logger.debug(3, "Task name: " + self.taskuuid)
 
-        # create the list with the actual filenames 
+        # create the list with the actual filenames
         remotedir = os.path.join(self.storage_path, self.taskuuid)
-      
+
         # list of file to retrieve
-        osbTemplate = remotedir + '/out_files_%s.tgz'  
-        osbFiles = [ osbTemplate%str(jid) for jid in filesToRetrieve ]
+        osbTemplate = remotedir + '/out_files_%s.tgz'
+        osbFiles = [osbTemplate % str(jid) for jid in filesToRetrieve]
+        if self.cfg_params['CRAB.scheduler'].lower() in ["condor_g", "glidein"]:
+            osbTemplate = remotedir + '/CMSSW_%s.stdout'
+            osbFiles.extend([osbTemplate % str(jid) for jid in filesToRetrieve])
+            osbTemplate = remotedir + '/CMSSW_%s.stderr'
+            osbFiles.extend([osbTemplate % str(jid) for jid in filesToRetrieve])
         common.logger.debug(3, "List of OSB files: " +str(osbFiles) )
- 
-        #   
-        copyHere = self.outDir 
-        destTemplate = copyHere+'/out_files_%s.tgz'  
-        destFiles = [ destTemplate%str(jid) for jid in filesToRetrieve ]
+
+        #
+        copyHere = self.outDir
+        destTemplate = copyHere+'/out_files_%s.tgz'
+        destFiles = [ destTemplate % str(jid) for jid in filesToRetrieve ]
+        if self.cfg_params['CRAB.scheduler'].lower() in ["condor_g","glidein"]:
+            destTemplate = remotedir + '/CMSSW_%s.stdout'
+            destFiles.extend([destTemplate % str(jid) for jid in filesToRetrieve])
+            osbTemplate = remotedir + '/CMSSW_%s.stderr'
+            destFiles.extend([destTemplate % str(jid) for jid in filesToRetrieve])
 
         common.logger.message("Starting retrieving output from server "+str(self.storage_name)+"...")
 
-        try:  
+        try:
             seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
         except Exception, ex:
             common.logger.debug(1, str(ex))
             msg = "ERROR : Unable to create SE source interface \n"
             raise CrabException(msg)
-        try:  
+        try:
             loc = SElement("localhost", "local")
         except Exception, ex:
             common.logger.debug(1, str(ex))
@@ -84,17 +99,17 @@ class GetOutputServer( GetOutput, StatusServer ):
         ## copy ISB ##
         sbi = SBinterface( seEl, loc )
 
-        # retrieve them from SE 
+        # retrieve them from SE
         filesAndJodId = {}
-        for i in xrange(len(filesToRetrieve)): 
-            source = osbFiles[i] 
+        for i in xrange(len(filesToRetrieve)):
+            source = osbFiles[i]
             dest = destFiles[i]
             common.logger.debug(1, "retrieving "+ str(source) +" to "+ str(dest) )
             try:
                 sbi.copy( source, dest)
                 filesAndJodId[ filesToRetrieve[i] ] = dest
             except Exception, ex:
-                msg = "WARNING: Unable to retrieve output file %s \n"%osbFiles[i] 
+                msg = "WARNING: Unable to retrieve output file %s \n" % osbFiles[i]
                 msg += str(ex)
                 common.logger.debug(1,msg)
                 continue
@@ -102,7 +117,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         return filesAndJodId
 
     def notifyRetrievalToServer(self, fileAndJobList):
-        retrievedFilesJodId = [] 
+        retrievedFilesJodId = []
 
         for jid in fileAndJobList:
             if not os.path.exists(fileAndJobList[jid]):
