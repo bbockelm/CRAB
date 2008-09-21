@@ -38,6 +38,7 @@ class Status(Actor):
 
         toPrint=[]
         taskId = uniqueTaskName(up_task['name'])
+        task_unique_name = up_task['name']
 
         self.wrapErrorList = []
         for job in up_task.jobs :
@@ -57,8 +58,7 @@ class Status(Actor):
             toPrint.append(printline)
 
             if jobStatus is not None:
-                self.dataToDash(job,id,taskId,dest,jobStatus)
-
+                self.dataToDash(job,id,taskId,task_unique_name,dest,jobStatus)
         header = ''
         header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','#SUB')
 
@@ -127,8 +127,7 @@ class Status(Actor):
 
         return
  
-    def dataToDash(self,job,id,taskId,dest,jobStatus):
-
+    def dataToDash(self,job,id,taskId,task_unique_name,dest,jobStatus):
         jid = job.runningJob['schedulerId']
         job_status_reason = str(job.runningJob['statusReason'])
         job_last_time = str(job.runningJob['startTime'])
@@ -139,7 +138,7 @@ class Status(Actor):
             common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
         elif common.scheduler.name().upper() in ['LSF','CAF']:
             WMS = common.scheduler.name()
-            jobId=str(id)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(taskId,"_","-")
+            jobId=str(id)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(task_unique_name,"_","-")
             common.logger.debug(5,'JobID for ML monitoring is created for Local scheduler:'+jobId)
         else:
             jobId = str(id) + '_' + str(jid)
