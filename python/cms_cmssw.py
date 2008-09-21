@@ -5,7 +5,6 @@ from crab_util import *
 from BlackWhiteListParser import SEBlackWhiteListParser
 import common
 import Scram
-from LFNBaseName import *
 
 import os, string, glob
 
@@ -983,7 +982,7 @@ class Cmssw(JobType):
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             ##### Utils
-            Utils_file_list=['parseCrabFjr.py','writeCfg.py', 'fillCrabFjr.py']
+            Utils_file_list=['parseCrabFjr.py','writeCfg.py', 'fillCrabFjr.py','cmscp.py']
             for file in Utils_file_list:
                 tar.add(path+file,file)
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
@@ -1002,7 +1001,12 @@ class Cmssw(JobType):
         ## check for tarball size
         tarballinfo = os.stat(self.tgzNameWithPath)
         if ( tarballinfo.st_size > self.MaxTarBallSize*1024*1024 ) :
-            raise CrabException('Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + str(self.MaxTarBallSize) + ' MB input sandbox limit and not supported by the used GRID submission system. Please make sure that no unnecessary files are in all data directories in your local CMSSW project area as they are automatically packed into the input sandbox.')
+            msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + str(self.MaxTarBallSize) \
+                   'MB input sandbox limit \n' 
+            msg += '      and not supported by the direct GRID submission system.\n'
+            msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
+            msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/CrabServer#CRABSERVER_for_Users'
+            raise CrabException(msg)
 
         ## create tar-ball with ML stuff
 
@@ -1072,22 +1076,18 @@ class Cmssw(JobType):
         # Prepare job-specific part
         job = common.job_list[nj]
         if (self.datasetPath):
+            self.primaryDataset = self.datasetPath.split("/")[1]
+            DataTier = self.datasetPath.split("/")[2]
             txt += '\n'
             txt += 'DatasetPath='+self.datasetPath+'\n'
 
-            datasetpath_split = self.datasetPath.split("/")
-            ### FEDE FOR NEW LFN ###
-            self.primaryDataset = datasetpath_split[1]
-            ########################
-            txt += 'PrimaryDataset='+datasetpath_split[1]+'\n'
-            txt += 'DataTier='+datasetpath_split[2]+'\n'
+            txt += 'PrimaryDataset='+self.primaryDataset +'\n'
+            txt += 'DataTier='+DataTier+'\n'
             txt += 'ApplicationFamily=cmsRun\n'
 
         else:
-            txt += 'DatasetPath=MCDataTier\n'
-            ### FEDE FOR NEW LFN ###
             self.primaryDataset = 'null' 
-            ########################
+            txt += 'DatasetPath=MCDataTier\n'
             txt += 'PrimaryDataset=null\n'
             txt += 'DataTier=null\n'
             txt += 'ApplicationFamily=MCDataTier\n'
@@ -1384,32 +1384,16 @@ class Cmssw(JobType):
         txt += '    echo "==> setup cms environment ok"\n'
         return txt
 
-    def modifyReport(self, nj):
+    def wsModifyReport(self, nj):
         """
         insert the part of the script that modifies the FrameworkJob Report
         """
-        txt = '\n#Written by cms_cmssw::modifyReport\n'
+        txt = '\n#Written by cms_cmssw::wsModifyReport\n'
         publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (publish_data == 1):
-            processedDataset = self.cfg_params['USER.publish_data_name']
-            if (self.primaryDataset == 'null'):
-                 self.primaryDataset = processedDataset
-            if (common.scheduler.name().upper() == "CAF" or common.scheduler.name().upper() == "LSF"):
-                ### FEDE FOR NEW LFN ###
-                LFNBaseName = LFNBase(self.primaryDataset, processedDataset, LocalUser=True)
-                self.user = getUserName(LocalUser=True)
-                ########################
-            else :
-                ### FEDE FOR NEW LFN ###
-                LFNBaseName = LFNBase(self.primaryDataset, processedDataset)
-                self.user = getUserName()
-                ########################
 
-            txt += 'if [ $copy_exit_status -eq 0 ]; then\n'
-            ### FEDE FOR NEW LFN ###
-            #txt += '    FOR_LFN=%s_${PSETHASH}/\n'%(LFNBaseName)
-            txt += '    FOR_LFN=%s/${PSETHASH}/\n'%(LFNBaseName)
-            ########################
+            txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'
+            txt += '    FOR_LFN=$LFNBaseName/${PSETHASH}/\n'
             txt += 'else\n'
             txt += '    FOR_LFN=/copy_problems/ \n'
             txt += '    SE=""\n'
@@ -1418,16 +1402,17 @@ class Cmssw(JobType):
 
             txt += 'echo ">>> Modify Job Report:" \n'
             txt += 'chmod a+x $RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
-            txt += 'ProcessedDataset='+processedDataset+'\n'
+            txt += 'ProcessedDataset= $procDataset \n'
             txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += 'echo "SE = $SE"\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-            ### FEDE FOR NEW LFN ###
-            txt += 'echo "$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier ' + self.user + '-$ProcessedDataset-$PSETHASH $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
-            txt += '$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py $RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier ' + self.user + '-$ProcessedDataset-$PSETHASH $ApplicationFamily $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH\n'
-            ########################
+            args = '$RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier ' \
+                   '$User -$ProcessedDataset-$PSETHASH $ApplicationFamily '+ \
+                    '  $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
+            txt += 'echo "$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)
+            txt += '$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)
             txt += 'modifyReport_result=$?\n'
             txt += 'if [ $modifyReport_result -ne 0 ]; then\n'
             txt += '    modifyReport_result=70500\n'
