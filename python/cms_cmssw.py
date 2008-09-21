@@ -1449,7 +1449,6 @@ class Cmssw(JobType):
         txt += '        echo "CRAB python script to parse CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."\n'
         txt += '    fi\n'
           #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
-
         txt += '    if [ $executable_exit_status -eq 0 ];then\n'
         txt += '      echo ">>> Executable succeded  $executable_exit_status"\n'
         if (self.datasetPath and not (self.dataset_pu or self.useParent)) :
