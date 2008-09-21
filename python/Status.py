@@ -53,14 +53,14 @@ class Status(Actor):
             if dest == 'None' :  dest = ''
             if exe_exit_code == 'None' :  exe_exit_code = ''
             if job_exit_code == 'None' :  job_exit_code = ''
-            printline+="%-8s %-18s %-33s %-14s %-17s %-10s" % (id,jobStatus,dest,exe_exit_code,job_exit_code,res_ID)
+            printline+="%-6s %-18s %-36s %-13s %-16s %-4s" % (id,jobStatus,dest,exe_exit_code,job_exit_code,res_ID)
             toPrint.append(printline)
 
             if jobStatus is not None:
                 self.dataToDash(job,id,taskId,dest,jobStatus)
 
         header = ''
-        header+= "%-8s %-18s %-33s %-14s %-17s %-10s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','#SUB')
+        header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','#SUB')
 
         displayReport(self,header,toPrint,self.xml)
 
