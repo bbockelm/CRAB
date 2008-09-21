@@ -30,7 +30,7 @@ class PhEDExDatasvcInfo:
        
         #check if using "private" Storage
         self.usePhedex = True 
-        if (self.node.find('T1_') + self.node.find('T2_')) == -2: self.usePhedex = False 
+        if (self.node.find('T1_') + self.node.find('T2_')+self.node.find('T3_')) == -3: self.usePhedex = False 
         if not self.usePhedex and ( self.user_lfn == '' or self.user_se_path == '' ):
             msg = 'You are asking to stage out without using CMS Storage Name convention. In this case you \n' 
             msg += '      must specify both lfn and storage_path in the crab.cfg section [USER].\n '
