@@ -10,27 +10,17 @@ import os, string
 from ProdCommon.SiteDB.SiteDB import SiteDBJSON
 
 
-def LFNBase(PrimaryDataset,ProcessedDataset,merged=True,LocalUser=False):
+def LFNBase(PrimaryDataset='',ProcessedDataset='',merged=True,LocalUser=False,publish=False):
     """
     """
     lfnbase = "/store"
     if not merged:
         lfnbase = os.path.join(lfnbase,"tmp")
-    #lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), ProcessedDataset )
-    ### FEDE FOR NEW LFN ###
     if (PrimaryDataset == 'null'):
         PrimaryDataset = ProcessedDataset
     lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
-    ########################
 
     return lfnbase
-
-def PFNportion(PrimaryDataset,ProcessedDataset,LocalUser=False):
-    ### FEDE FOR NEW LFN ###
-    #pfnpath = os.path.join(getUserName(LocalUser=LocalUser), ProcessedDataset )
-    pfnpath = os.path.join(getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
-    ########################
-    return pfnpath
 
 def getUnixUserName():
     """
@@ -83,7 +73,7 @@ def getUserName(LocalUser=False):
     extract user name from either SiteDB or Unix
     """
     if LocalUser:
-       common.logger.message("==> Using as username the Unix user name")
+       common.logger.debug(10,"Using as username the Unix user name")
        UserName=getUnixUserName()
        return UserName
 
