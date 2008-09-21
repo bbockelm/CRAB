@@ -3,6 +3,7 @@ from crab_exceptions import *
 from crab_logger import Logger
 from crab_util import getLocalDomain 
 import common
+from PhEDExDatasvcInfo import PhEDExDatasvcInfo
 
 import os,string
 
@@ -12,6 +13,7 @@ class SchedulerLocal(Scheduler) :
 
     def configure(self, cfg_params):
 
+        self.cfg_params = cfg_params
         self.jobtypeName = cfg_params['CRAB.jobtype']
 
         name=string.upper(self.name())
@@ -24,45 +26,8 @@ class SchedulerLocal(Scheduler) :
         self._taskId=str("_".join(common._db.queryTask('name').split('_')[:-1]))
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
+        self.copy_data = int(cfg_params.get('USER.copy_data',0))
 
-        ## FEDE publication options
-        self.publish_data = cfg_params.get("USER.publish_data",0)
-        if int(self.publish_data) == 1 :
-            self.publish_data_name = cfg_params.get('USER.publish_data_name',None)
-            if not self.publish_data_name and int(self.publish_data) == 1:
-                msg = "Error. The [USER] section does not have 'publish_data_name'"
-                raise CrabException(msg)
-            self.SE =  cfg_params.get("USER.storage_element", None)    
-            if not self.SE:
-                msg = "Error. The [USER] section does not have 'storage_element'.\n"
-                msg = msg + "Please fill this field if you want to publish your data"
-                raise CrabException(msg)
-        ### FEDE FOR NEW LFN ###
-        if int(self.publish_data) == 1:
-            self.datasetPath = cfg_params.get("CMSSW.datasetpath", None)
-            if (self.datasetPath):
-                if (self.datasetPath.upper() != 'NONE'):
-                    datasetpath_split = self.datasetPath.split("/")
-                    self.primaryDataset = datasetpath_split[1]
-                else:    
-                    self.primaryDataset = self.publish_data_name 
-        ########################
-        self.copy_data = int(cfg_params.get("USER.copy_data",0))
-        if self.copy_data == 1:
-            self._copyCommand = cfg_params.get('USER.copycommand','rfcp')
-            common.logger.debug(3, "copyCommand set to "+ self._copyCommand)
-            self.SE_path= cfg_params.get('USER.storage_path',None)
-            if not self.SE_path:
-                # do not allow CASTOR_HOME if publish_data is enabled
-                if int(self.publish_data) == 0 and os.environ.has_key('CASTOR_HOME'):
-                    self.SE_path=os.environ['CASTOR_HOME']
-                else:
-                    msg='No USER.storage_path has been provided: cannot copy_output'
-                    raise CrabException(msg)
-                pass
-            pass
-            ### FEDE to improve the final /  control
-            self.SE_path+='/'
 
         if ( self.return_data == 0 and self.copy_data == 0 ):
            msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
@@ -74,6 +39,11 @@ class SchedulerLocal(Scheduler) :
            msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
            raise CrabException(msg)
 
+        self.publish_data = cfg_params.get("USER.publish_data",0)
+        if int(self.publish_data) == 1 and common.scheduler.name().upper() not in ['CAF']:
+            msg = "Error. User data publication not allowed while running on %s"%common.scheduler.name().upper()
+            raise CrabException(msg)
+
         ## is this ok?
         localDomainName = getLocalDomain(self)
         if not cfg_params.has_key('EDG.se_white_list'):
@@ -81,9 +51,6 @@ class SchedulerLocal(Scheduler) :
             common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
         else:
             common.logger.message("Your se_white_list is set to "+str(cfg_params['EDG.se_white_list'])+": only local dataset will be considered")
-
-
-
 
         Scheduler.configure(self,cfg_params)
         return
@@ -129,7 +96,7 @@ class SchedulerLocal(Scheduler) :
         txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'echo "MonitorID=`echo $MonitorID`" | tee -a $RUNTIME_AREA/$repo\n'
         txt += 'echo "SyncCE='+self.name()+'.`hostname -d`" | tee -a $RUNTIME_AREA/$repo \n'
-        ###### FEDE
+
         txt += 'middleware='+self.name().upper()+' \n'
 
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
@@ -140,54 +107,56 @@ class SchedulerLocal(Scheduler) :
 
         return txt
 
-    def wsCopyOutput(self):
+    def wsCopyOutput_comm(self, pool=None):
         """
         Write a CopyResults part of a job script, e.g.
         to copy produced output into a storage element.
         """
         txt = '\n'
-        if not self.copy_data: return txt
+        if int(self.copy_data) == 1:
 
+            stageout = PhEDExDatasvcInfo(self.cfg_params)
+            endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
 
-        txt += '#\n'
-        txt += '# COPY OUTPUT FILE TO '+self.SE_path+ '\n'
-        txt += '#\n\n'
+            txt += '#\n'
+            txt += '# COPY OUTPUT FILE TO '+SE_PATH+ '\n'
+            txt += '#\n\n'
 
-        txt += 'export SE_PATH='+self.SE_path+'\n'
-
-        txt += 'export CP_CMD='+self._copyCommand+'\n'
-        common.logger.debug(3, "Wrapper script CP_CMD set to "+ self._copyCommand)
-
-        txt += 'echo ">>> Copy output files from WN = `hostname` to PATH = $SE_PATH using $CP_CMD :"\n'
-
-        txt += 'if [ $job_exit_code -eq 60302 ]; then\n'
-        txt += '    echo "--> No output file to copy to $SE"\n'
-        txt += '    copy_exit_status=$job_exit_code\n'
-        txt += '    echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
-        txt += 'else\n'
-        txt += '    for out_file in $file_list ; do\n'
-        txt += '        echo "Trying to copy output file to $SE_PATH"\n'
-        txt += '        $CP_CMD $SOFTWARE_DIR/$out_file ${SE_PATH}/$out_file\n'
-        txt += '        copy_exit_status=$?\n'
-        txt += '        echo "COPY_EXIT_STATUS = $copy_exit_status"\n'
-        txt += '        echo "STAGE_OUT = $copy_exit_status"\n'
-        txt += '        if [ $copy_exit_status -ne 0 ]; then\n'
-        txt += '            echo "Problem copying $out_file to $SE $SE_PATH"\n'
-        txt += '            echo "StageOutExitStatus = $copy_exit_status " | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '        else\n'
-        txt += '            echo "StageOutSE = $SE" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '            echo "StageOutCatalog = " | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
-        txt += '            echo "StageOutExitStatus = 0" | tee -a $RUNTIME_AREA/$repo\n'
-        txt += '        fi\n'
-        txt += '    done\n'
-        txt += 'fi\n'
-        txt += 'exit_status=$copy_exit_status\n'
-        txt += 'export TIME_STAGEOUT_END=`date +%s` \n'
-        txt += 'let "TIME_STAGEOUT = TIME_STAGEOUT_END - TIME_STAGEOUT_INI" \n'
-
+            txt += 'export SE'+SE+'\n'
+            txt += 'echo "SE = $SE"\n'
+            txt += 'export SE_PATH='+SE_PATH+'\n'
+            txt += 'echo "SE_PATH = $SE_PATH"\n'
+            txt += 'export LFNBaseName='+lfn+'\n'
+            txt += 'echo LFNBaseName = $LFNBaseName\n'
+            txt += 'export USER='+user+'\n'
+            txt += 'echo "USER = $USER\n'
+            txt += 'export endpoint='+endpoint+'\n'
+            txt += 'echo "endpoint = $endpoint\n'
+            ### Needed i.e. for caf  
+            if (pool):
+                txt += 'export STAGE_SVCCLASS='+str(pool)+'\n'
+                
+            txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
+            txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
+            txt += 'copy_exit_status=0\n'
+            txt += 'python cmscp --dest $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
+            txt += 'source cmscpReport.sh'
+            if self.debug_wrapper: 
+                txt += '########### details of SE interaction\n'
+                txt += 'cat .SEinteraction.log\n'   
+                txt += '########### \n'
+            txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'
+            txt += '    echo "Problem copying file to $SE $SE_PATH"\n'
+            txt += '    copy_exit_status=$StageOutExitStatus \n'
+         #  txt += '    SE=""\n'
+         #  txt += '    SE_PATH=""\n'
+            txt += '    job_exit_code=$StageOutExitStatus\n'
+            txt += 'fi\n'
+            txt += 'export TIME_STAGEOUT_END=`date +%s` \n'
+            txt += 'let "TIME_STAGEOUT = TIME_STAGEOUT_END - TIME_STAGEOUT_INI" \n'
+        else:
+            txt += 'export TIME_STAGEOUT=-1 \n'
         return txt
-
 
     def wsExitFunc_comm(self):
         """

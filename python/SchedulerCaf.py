@@ -42,5 +42,5 @@ class SchedulerCaf(SchedulerLsf) :
     def wsCopyOutput(self):
         ### default is the name of the storage pool 
         ### where users can copy job outputs  
-        txt=self.wsCopyOutput_tmp(self.pool)
+        txt=self.wsCopyOutput_comm(self.pool)
         return txt

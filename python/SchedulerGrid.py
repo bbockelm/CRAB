@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.32 2008/09/09 14:55:49 ewv Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.69 2008/09/10 14:41:00 ewv Exp $"
+__version__ = "$Revision: 1.69 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -11,7 +11,7 @@ from crab_exceptions import *
 from crab_util import *
 from BlackWhiteListParser import SEBlackWhiteListParser
 import common
-from LFNBaseName import *
+from PhEDExDatasvcInfo import PhEDExDatasvcInfo
 from JobList import JobList
 
 import os, sys, time
@@ -31,6 +31,7 @@ class SchedulerGrid(Scheduler):
         return
 
     def configure(self, cfg_params):
+        self.cfg_params = cfg_params
         Scheduler.configure(self,cfg_params)
 
         # init BlackWhiteListParser
@@ -56,20 +57,15 @@ class SchedulerGrid(Scheduler):
 
         self.return_data = cfg_params.get('USER.return_data',0)
 
+        self.publish_data = cfg_params.get("USER.publish_data",0)
+
         self.copy_data = cfg_params.get("USER.copy_data",0)
         if int(self.copy_data) == 1:
             self.SE = cfg_params.get('USER.storage_element',None)
-            self.SE_PATH = cfg_params.get('USER.storage_path',None)
-            self.srm_ver  = cfg_params.get('USER.srm_version',0)
-            if not self.SE or not self.SE_PATH:
+            if not self.SE:
                 msg = "Error. The [USER] section does not have 'storage_element'"
-                msg = msg + " and/or 'storage_path' entries, necessary to copy the output\n"
                 common.logger.message(msg)
                 raise CrabException(msg)
-            if int(self.srm_ver) != 1 and self.SE_PATH.find("managerv1") != -1:
-                msg = "Warning: The storage_path and srm_version seem to be incompatible."
-                msg = msg + " Set srm_version = 1 if your path contains manager1\n"
-                common.logger.message(msg)
 
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
             msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
@@ -81,35 +77,11 @@ class SchedulerGrid(Scheduler):
             msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
             raise CrabException(msg)
 
-        self.publish_data = cfg_params.get("USER.publish_data",0)
-        self.usenamespace = cfg_params.get("USER.usenamespace",0)
-        if int(self.publish_data) == 1 or int(self.usenamespace) == 1:
-            self.publish_data_name = cfg_params.get('USER.publish_data_name',None)
-            if not self.publish_data_name and int(self.publish_data) == 1:
-                msg = "Error. The [USER] section does not have 'publish_data_name'"
-                raise CrabException(msg)
-            if not self.publish_data_name and int(self.usenamespace) == 1:
-                self.publish_data_name = "DefaultDataset"
-
-
         if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
             msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
             msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
             common.logger.message(msg)
             raise CrabException(msg)
-
-        ### FEDE FOR NEW LFN ###
-        if int(self.publish_data) == 1:
-            self.datasetPath = cfg_params.get("CMSSW.datasetpath", None)
-
-            if (self.datasetPath):
-                if (self.datasetPath.upper() != 'NONE'):
-                    datasetpath_split = self.datasetPath.split("/")
-                    self.primaryDataset = datasetpath_split[1]
-                else:
-                    self.primaryDataset = self.publish_data_name
-        ########################
-
 
         self.EDG_requirements = cfg_params.get('EDG.requirements',None)
 
@@ -124,6 +96,10 @@ class SchedulerGrid(Scheduler):
 
         # Default minimum CPU time to >= 130 minutes
         self.EDG_cpu_time = cfg_params.get('EDG.max_cpu_time', '130')
+
+        self.debug_wrapper = cfg_params.get('USER.debug_wrapper',False)
+        self.debugWrap=''
+        if self.debug_wrapper: self.debugWrap='--debug'
 
         # Add EDG_WL_LOCATION to the python path
 
@@ -197,7 +173,6 @@ class SchedulerGrid(Scheduler):
         # start with wrapper timing
         txt  = 'export TIME_WRAP_INI=`date +%s` \n'
         txt += 'export TIME_STAGEOUT=-2 \n\n'
-        # as usual ... #Fabio
         txt += '# '+self.name()+' specific stuff\n'
         txt += '# strip arguments\n'
         txt += 'echo "strip arguments"\n'
@@ -270,59 +245,43 @@ class SchedulerGrid(Scheduler):
         txt += '# COPY OUTPUT FILE TO SE\n'
         txt += '#\n\n'
 
-        SE_PATH=''
         if int(self.copy_data) == 1:
-            if self.SE:
-                txt += 'export SE='+self.SE+'\n'
-                txt += 'echo "SE = $SE"\n'
-            if self.SE_PATH:
-                if ( self.SE_PATH[-1] != '/' ) : self.SE_PATH = self.SE_PATH + '/'
-                SE_PATH=self.SE_PATH
-            if int(self.publish_data) == 1 or int(self.usenamespace) == 1:
-                txt += '### publish_data = 1 so the SE path where to copy the output is: \n'
-                ### FEDE  FOR NEW LFN ###
-                path_add = PFNportion(self.primaryDataset, self.publish_data_name) +'/${PSETHASH}/'
-                #path_add = PFNportion(self.primaryDataset, self.publish_data_name) +'_${PSETHASH}/'
-                #########################
-                SE_PATH = SE_PATH + path_add
+            stageout = PhEDExDatasvcInfo(self.cfg_params)
+            endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
+
+            txt += 'export SE='+SE+'\n'
+            txt += 'echo "SE = $SE"\n'
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
-
-            txt += 'export SRM_VER='+str(self.srm_ver)+'\n'
-            txt += 'echo "SRM_VER = $SRM_VER"\n'
-
-            txt += 'echo ">>> Copy output files from WN = `hostname` to SE = $SE :"\n'
+            txt += 'export LFNBaseName='+lfn+'\n'
+            txt += 'echo LFNBaseName = $LFNBaseName\n'
+            txt += 'export USER='+user+'\n'
+            txt += 'echo "USER = $USER\n'
+            txt += 'export endpoint='+endpoint+'\n'
+            txt += 'echo "endpoint = $endpoint\n'
+            
+            txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
-            txt += 'for out_file in $file_list ; do\n'
-            txt += '    if [ -e $SOFTWARE_DIR/$out_file ] ; then\n'
-            txt += '        echo "Trying to copy output file $SOFTWARE_DIR/$out_file to $SE"\n'
-            txt += '        cmscp $middleware $SOFTWARE_DIR/$out_file ${SE} ${SE_PATH} $out_file ${SRM_VER}\n'
-            txt += '        if [ $cmscp_exit_status -ne 0 ]; then\n'
-            txt += '            echo "Problem copying $out_file to $SE $SE_PATH"\n'
-            txt += '            copy_exit_status=$cmscp_exit_status\n'
-            txt += '        else\n'
-            txt += '            echo "output copied into $SE/$SE_PATH directory"\n'
-            txt += '        fi\n'
-            txt += '    else\n'
-            txt += '        copy_exit_status=60302\n'
-            txt += '        echo "StageOutExitStatus = $copy_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '        echo "StageOutExitStatusReason = file to copy not found" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += '    fi\n'
-            txt += 'done\n'
-            txt += 'if [ $copy_exit_status -ne 0 ]; then\n'
-            txt += '    SE=""\n'
-            txt += '    SE_PATH=""\n'
-            txt += '    job_exit_code=$copy_exit_status\n'
+            txt += 'python cmscp --dest $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
+            txt += 'source cmscpReport.sh\n'
+            if self.debug_wrapper: 
+                txt += '########### details of SE interaction\n'
+                txt += 'cat .SEinteraction.log\n'   
+                txt += '########### \n'
+            txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'
+            txt += '    echo "Problem copying file to $SE $SE_PATH"\n'
+            txt += '    copy_exit_status=$StageOutExitStatus \n'
+          #  txt += '    SE=""\n'
+          #  txt += '    SE_PATH=""\n'
+            txt += '    job_exit_code=$StageOutExitStatus\n'
             txt += 'fi\n'
             txt += 'export TIME_STAGEOUT_END=`date +%s` \n'
             txt += 'let "TIME_STAGEOUT = TIME_STAGEOUT_END - TIME_STAGEOUT_INI" \n'
         else:
             # set stageout timing to a fake value
             txt += 'export TIME_STAGEOUT=-1 \n'
-            pass
         return txt
-
 
     def checkProxy(self, deep=0):
         """
