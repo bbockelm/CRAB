@@ -193,7 +193,7 @@ class ScriptWriter:
         Returns part of a job script which modifies the FrameworkJobReport.
         """
         jbt = common.job_list.type()
-        txt = jbt.modifyReport(self.nj)
+        txt = jbt.wsModifyReport(self.nj)
         return txt
 
     def cleanEnv_(self):
