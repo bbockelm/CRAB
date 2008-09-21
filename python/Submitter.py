@@ -291,8 +291,6 @@ class Submitter(Actor):
             params[k] = v
 
 
-        taskId= str("_".join(str(task['name']).split('_')[:-1]))
-
         Sub_Type = 'Direct'
         for job in task.jobs:
             jj = job['jobId']
@@ -305,7 +303,7 @@ class Submitter(Actor):
                 jobId = str(jj) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(jj)
                 common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
             elif common.scheduler.name().upper() in ['LSF', 'CAF']:
-                jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(str(taskId),"_","-")
+                jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(str(task['name']),"_","-")
                 common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
                 rb = common.scheduler.name()
                 localId = jid
