@@ -1002,7 +1002,7 @@ class Cmssw(JobType):
         tarballinfo = os.stat(self.tgzNameWithPath)
         if ( tarballinfo.st_size > self.MaxTarBallSize*1024*1024 ) :
             msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + str(self.MaxTarBallSize) \
-                   'MB input sandbox limit \n' 
+               +'MB input sandbox limit \n' 
             msg += '      and not supported by the direct GRID submission system.\n'
             msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
             msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/CrabServer#CRABSERVER_for_Users'
