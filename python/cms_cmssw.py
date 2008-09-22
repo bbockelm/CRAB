@@ -993,9 +993,11 @@ class Cmssw(JobType):
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
-        except IOError:
+        except IOError, exc:
+            common.logger.write(str(exc))
             raise CrabException('Could not create tar-ball '+self.tgzNameWithPath)
-        except tarfile.TarError:
+        except tarfile.TarError, exc:
+            common.logger.write(str(exc))
             raise CrabException('Could not create tar-ball '+self.tgzNameWithPath)
 
         ## check for tarball size
