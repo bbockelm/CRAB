@@ -16,11 +16,10 @@ class cmscp:
         including success checking  version also for CAF using rfcp command to copy the output to SE
         input:
            $1 middleware (CAF, LSF, LCG, OSG)
-           $2 local file (the physical path of output file respect to current working directory)
-           $3 file name (the output file name)
-           $4 remote SE_PATH (absolute)
-           $5 remote SE
-           $6 srm version (only in the case of LCG or OSG)
+           $2 local file (the absolute path of output file or just the name if it's in top dir)
+           $3 if needed: file name (the output file name)
+           $5 remote SE (complete endpoint)
+           $6 srm version 
         output:
              return 0 if all ok
              return 60307 if srmcp failed
@@ -170,7 +169,7 @@ class cmscp:
   #      if backup :  
   #          msg = 'WARNING: backup logic is under implementation\n'
   #          #backupDict = self.backup()
-  #          ### NOTA DEVE RITORNARE UN DICT comprensivo di LFN SE Name  
+  #          ### NOTE: IT MUST RETURN a DICT contains also LFN and SE Name  
   #          results.update(backupDict)
   #          print msg
         return results
@@ -253,7 +252,7 @@ class cmscp:
                 txt +=  'echo "LFN: '+lfn+'"\n'   
                 txt +=  'echo "StorageElement: '+se+'"\n'   
                 txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
-                txt += 'echo "StageOutSE = '+dict['se']+'" >> $RUNTIME_AREA/$repo\n'
+                txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
                 if dict['erCode'] != '0':
                     cmscp_exit_status = dict['erCode']
             txt += '\n'

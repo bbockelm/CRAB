@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.69 2008/09/10 14:41:00 ewv Exp $"
-__version__ = "$Revision: 1.69 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.70 2008/09/21 10:46:13 spiga Exp $"
+__version__ = "$Revision: 1.70 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -263,7 +263,7 @@ class SchedulerGrid(Scheduler):
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
-            txt += 'python cmscp --dest $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
+            txt += 'python cmscp.py --dest $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
             txt += 'source cmscpReport.sh\n'
             if self.debug_wrapper: 
                 txt += '########### details of SE interaction\n'
