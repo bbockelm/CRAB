@@ -150,13 +150,13 @@ class Boss:
         Retrieve output of all jobs with specified taskid
         """
         try:
-            self.schedSession().getOutput( taskId, jobRange, outdir )
+            task = self.schedSession().getOutput( taskId, jobRange, outdir )
         except SchedulerError, err :
             common.logger.message("GetOutput : " +str(err))
             common.logger.debug(3, "GetOutput : " +str(traceback.format_exc()))
-            raise CrabException('GetOutput : '+str(err))
+           # raise CrabException('GetOutput : '+str(err))
 
-        return
+        return task
 
     def cancel(self,list):
         """

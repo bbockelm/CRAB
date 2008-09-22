@@ -136,8 +136,8 @@ class Scheduler :
         """
         Get output for a finished job with id.
         """
-        self.boss().getOutput(taskId, jobRange, outdir)
-        return
+        task = self.boss().getoutput(taskid, jobrange, outdir)
+        return task
 
     def cancel(self,ids):
         """

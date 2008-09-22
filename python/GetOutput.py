@@ -97,11 +97,11 @@ class GetOutput(Actor):
         Get output for a finished job with id.
         """
         self.checkBeforeGet()
-        common.scheduler.getOutput(1,self.list_id,self.outDir)
-        self.organizeOutput()    
+        task= common.scheduler.getOutput(1,self.list_id,self.outDir)
+        self.organizeOutput( task )    
         return
   
-    def organizeOutput(self): 
+    def organizeOutput(self, task): 
         """
         Untar Output  
         """
@@ -112,9 +112,12 @@ class GetOutput(Actor):
         #os.chdir( self.outDir )
         success_ret = 0
         for id in self.list_id:
+            runningJob = task.getJob( id ).runningJob()
+            if runningJob.isError() :
+	        continue
             file = 'out_files_'+ str(id)+'.tgz'
             if os.path.exists(self.outDir + file):
-                self.submission_id = common._db.queryRunJob('submission',id)
+                self.submission_id = runningJob['submission']
                 self.max_id=max(self.submission_id)
                 if self.max_id > 1:
                     for f in os.listdir(self.outDir):
