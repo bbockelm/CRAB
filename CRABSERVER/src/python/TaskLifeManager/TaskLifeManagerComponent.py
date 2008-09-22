@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.30 2008/09/04 13:28:12 mcinquil Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.31 2008/09/10 16:46:23 mcinquil Exp $"
+__version__ = "$Revision: 1.31 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -729,17 +729,16 @@ class TaskLifeManagerComponent:
 
         mexage = "TaskLifeManager:TaskNotifyLife"
         uuid = ""
+        owner = ""
         ttdb = TaskStateAPI()
         if ttdb.findTaskPA(taskName) != None:
             valuess = ttdb.getStatusUUIDEmail( taskName )
             if len(valuess) > 1:
                 uuid = valuess[1]
+                owner = valuess[3]
             obj = UtilSubject( self.args['storagePath'], taskName, uuid )
-            origTaskName, userName = obj.getInfos()
+            origTaskName = obj.getInfos()
 
-            if owner is None or mails is None:
-                owner, mails = self.checkInfoUser(taskName)
-        
             payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ str(owner) +"::"+ str(mails)
 
             logging.info(" Publishing ['"+ mexage +"']")
