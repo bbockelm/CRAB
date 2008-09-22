@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.100 2008/09/02 16:19:42 mcinquil Exp $"
-__version__ = "$Revision: 1.100 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.102 2008/09/05 22:07:18 mcinquil Exp $"
+__version__ = "$Revision: 1.102 $"
 
 import os
 import time
@@ -87,6 +87,7 @@ class TaskTrackingComponent:
         self.args.setdefault("Logfile", None)
         self.args.setdefault("dropBoxPath", None)
         self.args.setdefault("Thread", 5)
+        self.args.setdefault("allow_anonymous", "0")
         
         # update parameters
         self.args.update(args)
@@ -125,10 +126,8 @@ class TaskTrackingComponent:
                            "submitted", \
                            "killed", \
                            "ended", \
-                           "unpacked", \
                            "partially submitted", \
-                           "partially killed", \
-                           "range submitted" \
+                           "partially killed"
                          ]
 
         self.bossCfgDB = {\
@@ -270,6 +269,7 @@ class TaskTrackingComponent:
                 OK += "  Task ["+ taskName +"] succesfully submitted to the grid.\n"
                 ## end dbg info ##
 		self.updateTaskStatus( taskName, self.taskState[3])
+                self.updateProxyName(taskName)
                 logBuf = self.__log__(logBuf, "               task updated.")
                 logBuf = self.__log__(logBuf, "  <-- - -- - -->")
             else:
@@ -290,6 +290,7 @@ class TaskTrackingComponent:
                 ## start dbg info ##
                 OK += "  Task ["+taskName+"] not submitted to the grid.\n"
                 ## end dbg info ##
+                self.updateProxyName(taskName)
 		self.updateTaskStatus(taskName, self.taskState[2])
             else:
                 logBuf = self.__log__(logBuf, " ")
@@ -313,7 +314,6 @@ class TaskTrackingComponent:
                       "        status = " + str(taskStatus) + \
                       "        reason = " + str(reason)
                 ## end dbg info ##
-                #self.updateTaskStatus(taskName, self.taskState[2])
             else:
                 logBuf = self.__log__(logBuf, " ")
                 logBuf = self.__log__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -333,7 +333,6 @@ class TaskTrackingComponent:
                 OK += "  FastKill: task ["+payload+"] killed before the submission to the grid.\n"
                 ## end dbg info ##
                 self.updateTaskStatus(payload, self.taskState[4])
-#                self.updateTaskStatus(payload, self.taskState[5])
             else:
                 logBuf = self.__log__(logBuf, " ")
                 logBuf = self.__log__(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -412,7 +411,7 @@ class TaskTrackingComponent:
                 if rangeKillJobs == "all":
                     self.updateTaskKilled( taskName, self.taskState[4] )
                 else:
-                    self.updateTaskKilled( taskName, self.taskState[8] )
+                    self.updateTaskKilled( taskName, self.taskState[7] )
                 ## start dbg info ##
                 OK += "  Task ["+str(payload.split("::")[0])+"] killed (jobs killed: "+str(rangeKillJobs)+").\n"
                 ## end dbg info ##
@@ -526,16 +525,55 @@ class TaskTrackingComponent:
                 logBuf = self.__log__(logBuf, "  <-- - -- - -->")
                 logBuf = self.__log__(logBuf, "ERROR while updating the 'eMail' field for task: " + str(taskname) )
 
-    def updateTaskStatus(self, payload, status):
-        """
-	_updateTaskStatus_
 
-	 update the status of a task
+    def updateProxyName(self, taskName):
         """
-        logBuf = ""	
+        _updateProxyName_
+        
+        duplicate proxy from blite + archive name
+        (to be executed once per task)
+        """
+        logBuf = ""
+        mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
+        taskObj = None
         ttdb = TaskStateAPI()
+
         try:
-            ttdb.updateStatus( payload, status )
+            taskObj = mySession.loadTaskByName( taskName )
+        except TaskError, te:
+            logBuf = self.__log__(logBuf,"  Requested task [%s] does not exist."%(taskName) )
+	    logBuf = self.__log__(logBuf,"  %s"%(str(te)))
+	if not taskObj is None:
+	    proxy = taskObj['user_proxy']
+            userName = ""
+            try:
+	        userName = self.cnSplitter(self.getNameFromProxy(proxy))
+            except Exception, ex:
+                userName = taskName.split("_")[0]
+	    try:
+                if len(userName) == 1:
+                    ttdb.updateProxyUname(taskName, proxy, userName[0])
+                else:
+                    ttdb.updateProxyUname(taskName, proxy, str(userName))
+            except Exception, ex:
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+                logBuf = self.__log__(logBuf, "ERROR while updating the task " + str(taskName) )
+                logBuf = self.__log__(logBuf, "      "+str(ex))
+                logBuf = self.__log__(logBuf, "  <-- - -- - -->")
+        logging.info(logBuf)
+        mySession.bossLiteDB.close()
+        del taskObj, mySession
+
+    def updateTaskStatus(self, payload, status):
+	"""
+        _updateTaskStatus_
+
+        update the status of a task
+	"""
+	logBuf = ""	
+	ttdb = TaskStateAPI()
+	try:
+	    ttdb.updateStatus( payload, status )
         except Exception, ex:
             logBuf = self.__log__(logBuf, "  <-- - -- - -->")
             logBuf = self.__log__(logBuf, "ERROR while updating the task " + str(payload) )
@@ -548,31 +586,7 @@ class TaskTrackingComponent:
 	uuid = ""
         taskObj = None
         try:
-            if status == self.taskState[3] or status == self.taskState[7]:
-                mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
-
-		try:
-		    taskObj = mySession.loadTaskByName( payload )
-		except TaskError, te:
-		    taskObj = None
-		    pass
-		if taskObj is None:
-		    logBuf = self.__log__(logBuf,"  Requested task [%s] does not exist."%(payload) )
-		else:
-                    proxy = taskObj['user_proxy']
-	            logBuf = self.__log__(logBuf, "using proxy: [%s] "%(str(proxy)) )
-                    try:
-                        ttdb.updateProxy(payload, proxy) 
-		    except Exception, ex:
-		        logBuf = self.__log__(logBuf, "  <-- - -- - -->")
-	     	        logBuf = self.__log__(logBuf, "ERROR while updating the task " + str(payload) )
-		        logBuf = self.__log__(logBuf, "      "+str(ex))
-		        logBuf = self.__log__(logBuf, "  <-- - -- - -->")
-		        logging.info(logBuf)
-		        logBuf = ""
-                mySession.bossLiteDB.close()
-                del mySession
-	    elif status == self.taskState[2] or status == self.taskState[4]:
+	    if status == self.taskState[2] or status == self.taskState[4]:
 	        valuess = ttdb.getStatusUUIDEmail( payload )
 		if valuess != None:
 		    status = valuess[0]
@@ -583,13 +597,11 @@ class TaskTrackingComponent:
                     if status == self.taskState[2]:
 	                ## XML report file
                         dictionaryReport =  {"all": ["NotSubmitted", "", "", 0, '', 'C']}
-                        self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
-                        ## MAIL report user
-                        #self.prepareTaskFailed( payload, uuid, eMail, status )
+                        self.prepareReport( payload, uuid, eMail, valuess[3], 0, 0, dictionaryReport, 0, 0 )
                     else:
                         ## XML report file
                         dictionaryReport =  {"all": ["Killed", "", "", 0, '', 'C']}
-                        self.prepareReport( payload, uuid, eMail, 0, 0, dictionaryReport, 0, 0 )
+                        self.prepareReport( payload, uuid, eMail, valuess[3], 0, 0, dictionaryReport, 0, 0 )
         except Exception, ex:
             logBuf = self.__log__(logBuf, "  <-- - -- - -->")
             logBuf = self.__log__(logBuf, "ERROR while reporting info about the task " + str(payload) )
@@ -598,14 +610,13 @@ class TaskTrackingComponent:
             logging.info(logBuf)
 
 
-    def prepareTaskFailed( self, taskName, uuid, eMail, status ):
+    def prepareTaskFailed( self, taskName, uuid, eMail, status, userName ):
         """
 	_prepareTaskFailed_
 	
 	"""
 	obj = UtilSubject( self.args['dropBoxPath'], taskName, uuid )
-	origTaskName, userName = obj.getInfos()
-        del obj
+	origTaskName = obj.getInfos()
 	eMaiList = self.getMoreMails(eMail)
 	strEmail = ""
 	for mail in eMaiList:
@@ -680,7 +691,7 @@ class TaskTrackingComponent:
                 dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
                 pathToWrite = str(self.args['dropBoxPath']) + "/" + taskName + self.workAdd + "/"
                 if os.path.exists( pathToWrite ):
-                    self.prepareReport( taskName, "", "", "", "", dictStateTot, numJobs, 1 )
+                    self.prepareReport( taskName, "", "", "", "", "", dictStateTot, numJobs, 1 )
                     self.undiscoverXmlFile( pathToWrite, taskName, self.tempxmlReportFile, self.xmlReportFileName )
 
         except Exception, ex:
@@ -722,8 +733,33 @@ class TaskTrackingComponent:
             return stateConverting[status]
         return 'Unknown'
 
+    def getNameFromProxy(self, path):
+        """
+        _getNameFromProxy_
+        """
+        
+        cmd="voms-proxy-info -file "+path+" -subject"
+        if self.args['allow_anonymous'] != "1" and \
+           os.path.exists(path) == True:
+            import commands
+            return commands.getstatusoutput(cmd)
+        else:
+            raise("Path not found or anonymous enabled")
+    
 
-    def prepareReport( self, taskName, uuid, eMail, thresholdLevel, percentage, dictReportTot, nJobs, flag ):
+    def cnSplitter(self, proxy):
+        """
+        _cnSplitter_
+        """
+        tmp = string.split(str(proxy[1]),'/')
+        cn=[]
+        for t in tmp:
+            if t[:2]== 'CN':
+                if t[3:] != 'proxy':
+                    cn.append(t[3:])
+        return cn
+
+    def prepareReport( self, taskName, uuid, eMail, userName, thresholdLevel, percentage, dictReportTot, nJobs, flag ):
         """
         _prepareReport_
         """
@@ -732,19 +768,18 @@ class TaskTrackingComponent:
         if os.path.exists( pathToWrite ):
             ###  get user name & original task name  ###
             obj = UtilSubject(self.args['dropBoxPath'], taskName, uuid)
-            origTaskName, userName = obj.getInfos()
-            del obj
+            origTaskName = obj.getInfos()
             ###  preparing xml report  ###
             c = CreateXmlJobReport()
             eMaiList = self.getMoreMails( eMail )
             if len(eMaiList) < 1:
-                c.initialize( origTaskName, "", userName, percentage, thresholdLevel, nJobs)
+                c.initialize( origTaskName, "", str(userName), percentage, thresholdLevel, nJobs)
             else:
                 for index in xrange(len(eMaiList)):
                     if index != 0:
                         c.addEmailAddress( eMaiList[index] )
                     else:
-                        c.initialize( origTaskName, eMaiList[0], userName, percentage, thresholdLevel, nJobs)
+                        c.initialize( origTaskName, eMaiList[0], str(userName), percentage, thresholdLevel, nJobs)
 
             for singleJob in dictReportTot:
                 J = Job()   ##    id             status                        eec
@@ -859,8 +894,6 @@ class TaskTrackingComponent:
 
         """
         logBuf = ""
-	if userName == "" or userName == None:
-	    userName = "Unknown"
         payload = taskName + ":" + userName + ":" + eMaiList
         try:
             ms_sem.acquire()
@@ -1031,10 +1064,11 @@ class TaskTrackingComponent:
 		    endedLevel = task[0][5]
 		    status = task[0][6]
 		    uuid = task[0][7]
+                    userName = task[0][8]
 
                     if status == self.taskState[2] and notified < 2:
                         ######### Taskfailed is prepared now
-                        self.prepareTaskFailed( taskName, uuid, eMail, status)
+                        self.prepareTaskFailed( taskName, uuid, eMail, status, userName)
                     else:
                         ## lite task load in memory
                         try:
@@ -1075,7 +1109,7 @@ class TaskTrackingComponent:
                                                           )
 
                                 if os.path.exists( pathToWrite ):
-                                    self.prepareReport( taskName, uuid, eMail, \
+                                    self.prepareReport( taskName, uuid, eMail, userName, \
                                                         thresholdLevel, percentage, \
                                                         dictStateTot, numJobs, 1 )
                                 else:
@@ -1110,14 +1144,6 @@ class TaskTrackingComponent:
 					    elif notified <= 0:
                                                 succexo = 1
 					        notified = 1
-			        elif status == '':
-                                    msg = ""
-			            if numJobs > countNotSubmitted:
-				        msg = ttdb.updateTaskStatus(taskName, self.taskState[3])
-				    else:
-				        msg = ttdb.updateTaskStatus(taskName, self.taskState[2])
-                                
-                                    logBuf = self.__log__(logBuf, msg)
 
                                 self.undiscoverXmlFile(pathToWrite, taskName, \
                                                        self.tempxmlReportFile, \

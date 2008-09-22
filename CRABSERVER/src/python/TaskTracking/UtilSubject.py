@@ -46,15 +46,10 @@ class UtilSubject:
         """
         tName = self.taskName
         if self.uuid == "":
-           tName = tName.split("_",1)[1]
-           tName = self.invert( self.invert(tName).split("_",1)[1] )
-        name = "Unknown"
-        if os.path.exists( self.path ):
-            org, self.userName = self.parseUserSubj( open(self.path).read() )
-	    return self.getOriginalTaskName2(), self.userName
-        else:
-           name = self.taskName.split("_",1)[0]
-        return tName, name
+            tName = tName.split("_",1)[1]
+            tName = self.invert( self.invert(tName).split("_",1)[1] )
+            return self.getOriginalTaskName2()
+        return tName
 
     def getOriginalTaskName2( self ):
         newName = self.taskName

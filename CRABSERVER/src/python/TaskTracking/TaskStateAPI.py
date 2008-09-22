@@ -221,6 +221,30 @@ class TaskStateAPI:
             self.closeConnPA( dbCur, conn )
             raise
 
+    def updateProxyUname( self, taskName, proxy, username):
+        logging.info( "   -> updating the task table for task: " + taskName )
+        
+        ## opening connection with PA's DB
+        conn, dbCur = self.openConnPA()
+        try:
+            dbCur.execute("START TRANSACTION")
+            if self.checkExistPA(conn, dbCur, taskName):
+                sqlStr='UPDATE js_taskInstance '+\
+                       'SET proxy="'+proxy+'" , user_name="'+username+'" '+\
+                       'WHERE taskName="'+taskName+'";'
+                dbCur.execute(sqlStr)
+            else:
+                logging.error( "Error updating in js_taskInstance. TaskName: '"\
+                                + str(taskName) + "': task not found.")
+            dbCur.execute("COMMIT")
+            ## closing connection with PA's DB
+            self.closeConnPA( dbCur, conn )
+        except:
+            dbCur.execute("ROLLBACK")
+            ## closing connection with PA's DB
+            self.closeConnPA( dbCur, conn )
+            raise
+
     def updateEmailThresh( self, taskName, email, threshold):
         logging.info( "   -> updating the task table for task: " + taskName )
 
@@ -557,7 +581,7 @@ class TaskStateAPI:
          a row if one exist
        - work: take first task not locked and not finished
        """
-       sql = "SELECT ID, taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid "+\
+       sql = "SELECT ID, taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid,user_name "+\
              "FROM js_taskInstance "+\
              "WHERE (work_status = 0) "+\
              "AND (notificationSent < 2 ) "+\
@@ -641,7 +665,8 @@ class TaskStateAPI:
         """
         _getStatus_
         """
-        queryString =  "SELECT status, uuid, eMail from js_taskInstance where taskName = '"+taskName+"';"
+        queryString =  "SELECT status, uuid, eMail, user_name " +\
+                       "FROM js_taskInstance WHERE taskName = '"+taskName+"';"
         task2Check = self.queryMethod(queryString,taskName)
         if task2Check != None:
             return task2Check[0]
