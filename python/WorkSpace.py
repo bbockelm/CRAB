@@ -27,7 +27,8 @@ class WorkSpace:
         self._res_dir = self._top_dir + '/res'     # dir to store job results
         self._share_dir = self._top_dir + '/share' # directory for common stuff
 
-        self._pathForTgz = string.split(top_dir, '/')[-1]
+        #self._pathForTgz = string.split(top_dir, '/')[-1]
+        self._pathForTgz = self._share_dir
 
         self.uuid = commands.getoutput('uuidgen')
 

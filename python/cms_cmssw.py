@@ -884,7 +884,7 @@ class Cmssw(JobType):
         """
         Return the TarBall with lib and exe
         """
-        self.tgzNameWithPath = common.work_space.pathForTgz()+'share/'+self.tgz_name
+        self.tgzNameWithPath = common.work_space.pathForTgz()+self.tgz_name
         if os.path.exists(self.tgzNameWithPath):
             return self.tgzNameWithPath
 
@@ -1237,7 +1237,7 @@ class Cmssw(JobType):
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
         wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
-        inp_box.append(common.work_space.pathForTgz() +'job/'+ wrapper)
+        inp_box.append(common.work_space.jobDir() + wrapper)
         return inp_box
 
     def outputSandbox(self, nj):
