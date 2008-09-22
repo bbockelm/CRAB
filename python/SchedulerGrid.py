@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.70 2008/09/21 10:46:13 spiga Exp $"
-__version__ = "$Revision: 1.70 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.71 2008/09/22 09:03:17 spiga Exp $"
+__version__ = "$Revision: 1.71 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -254,11 +254,11 @@ class SchedulerGrid(Scheduler):
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
             txt += 'export LFNBaseName='+lfn+'\n'
-            txt += 'echo LFNBaseName = $LFNBaseName\n'
+            txt += 'echo LFNBaseName = $LFNBaseName"\n'
             txt += 'export USER='+user+'\n'
-            txt += 'echo "USER = $USER\n'
+            txt += 'echo "USER = $USER"\n'
             txt += 'export endpoint='+endpoint+'\n'
-            txt += 'echo "endpoint = $endpoint\n'
+            txt += 'echo "endpoint = $endpoint"\n'
             
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
