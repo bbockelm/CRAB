@@ -221,29 +221,21 @@ class TaskStateAPI:
             self.closeConnPA( dbCur, conn )
             raise
 
-    def updateProxyUname( self, taskName, proxy, username):
+    def updateProxyUname( self, dbSession, taskName, proxy, username):
         logging.info( "   -> updating the task table for task: " + taskName )
         
-        ## opening connection with PA's DB
-        conn, dbCur = self.openConnPA()
         try:
-            dbCur.execute("START TRANSACTION")
-            if self.checkExistPA(conn, dbCur, taskName):
+            if self.checkExistPA(None, None, taskName, dbSession):
                 sqlStr='UPDATE js_taskInstance '+\
                        'SET proxy="'+proxy+'" , user_name="'+username+'" '+\
                        'WHERE taskName="'+taskName+'";'
-                dbCur.execute(sqlStr)
+                dbSession.modify(sqlStr)
             else:
                 logging.error( "Error updating in js_taskInstance. TaskName: '"\
                                 + str(taskName) + "': task not found.")
-            dbCur.execute("COMMIT")
-            ## closing connection with PA's DB
-            self.closeConnPA( dbCur, conn )
         except:
-            dbCur.execute("ROLLBACK")
-            ## closing connection with PA's DB
-            self.closeConnPA( dbCur, conn )
-            raise
+            raise Exception("Problem updating database for %s method " \
+                            %(self.updateProxyUname.__name__) )
 
     def updateEmailThresh( self, taskName, email, threshold):
         logging.info( "   -> updating the task table for task: " + taskName )
