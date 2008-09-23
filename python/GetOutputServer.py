@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.32 2008/09/19 12:24:44 ewv Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.33 2008/09/19 12:31:21 ewv Exp $"
+__version__ = "$Revision: 1.33 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -75,9 +75,9 @@ class GetOutputServer( GetOutput, StatusServer ):
         destTemplate = copyHere+'/out_files_%s.tgz'
         destFiles = [ destTemplate % str(jid) for jid in filesToRetrieve ]
         if self.cfg_params['CRAB.scheduler'].lower() in ["condor_g","glidein"]:
-            destTemplate = remotedir + '/CMSSW_%s.stdout'
+            destTemplate = copyHere + '/CMSSW_%s.stdout'
             destFiles.extend([destTemplate % str(jid) for jid in filesToRetrieve])
-            osbTemplate = remotedir + '/CMSSW_%s.stderr'
+            destTemplate = copyHere + '/CMSSW_%s.stderr'
             destFiles.extend([destTemplate % str(jid) for jid in filesToRetrieve])
 
         common.logger.message("Starting retrieving output from server "+str(self.storage_name)+"...")
@@ -100,13 +100,14 @@ class GetOutputServer( GetOutput, StatusServer ):
 
         # retrieve them from SE
         filesAndJodId = {}
-        for i in xrange(len(filesToRetrieve)):
+        for i in xrange(len(osbFiles)):
             source = osbFiles[i]
             dest = destFiles[i]
             common.logger.debug(1, "retrieving "+ str(source) +" to "+ str(dest) )
             try:
                 sbi.copy( source, dest)
-                filesAndJodId[ filesToRetrieve[i] ] = dest
+                if i < len(filesToRetrieve):
+                    filesAndJodId[ filesToRetrieve[i] ] = dest
             except Exception, ex:
                 msg = "WARNING: Unable to retrieve output file %s \n" % osbFiles[i]
                 msg += str(ex)
