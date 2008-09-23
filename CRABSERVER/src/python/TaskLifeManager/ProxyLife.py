@@ -9,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 from MessageService.MessageService import MessageService
 
 # module from TaskTracking component
-from TaskTracking.UtilSubject import UtilSubject
+from TaskTracking.TaskTrackingUtil import TaskTrackingUtil
 
 # Blite API import
 from ProdCommon.BossLite.API.BossLiteAPI import  BossLiteAPI
@@ -130,8 +130,8 @@ class ProxyLife:
     def dumpToFile(self, tasklist):
         towrite = []
         for task in tasklist:
-           obj = UtilSubject(self.dictSE["drop"], task, "")
-           towrite.append( obj.getInfos()[0] )
+           ttuid = TaskTrackingUtil("0")
+           towrite.append( ttuid.getOriginalTaskName(task) )
         import time
         filename = "tasklist_"+str(time.time())
         filepath = os.path.join(os.getcwd(), filename)

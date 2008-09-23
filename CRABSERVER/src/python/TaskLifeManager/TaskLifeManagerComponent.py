@@ -19,7 +19,7 @@ from Task import *
 from TaskQueue import *
 
 # module from TaskTracking component
-from TaskTracking.UtilSubject import UtilSubject
+from TaskTracking.TaskTrackingUtil import TaskTrackingUtil
 from TaskTracking.TaskStateAPI import TaskStateAPI
 # findTaskPA, getStatusUUIDEmail
 
@@ -96,9 +96,6 @@ class TaskLifeManagerComponent:
         # message service instances
         self.ms = None
 
-        #self.args["SEHostname"] = 'srm.cern.ch'
-        #self.args["Protocol"]   = 'srmv1'
-        #self.args["SEPort"]     = '8443'
         # initializing SBinterface
         storage = SElement( \
                             self.args["storageName"],
@@ -111,7 +108,6 @@ class TaskLifeManagerComponent:
         ## args constraints ##
         #####################
         # which dbox ?!?
-        #self.args['SEBaseDir'] = '/castor/cern.ch/user/m/mcinquil/'
         if self.args['dropBoxPath'] == None:
             self.args['dropBoxPath'] = self.args['ComponentDir']
         if self.args['storagePath'] == None:
@@ -214,11 +210,7 @@ class TaskLifeManagerComponent:
         # inserting on task queue
         if event == "CRAB_Cmd_Mgr:NewTask" or \
                event == "TaskLifeManager::TaskToMange":
-            try:
-                if payload.split(".")[-1] != "xml" and payload.split(".")[1] != "tgz":
-                    self.insertTaskWrp( payload )
-            except:
-                self.insertTaskWrp( payload )
+            self.insertTaskWrp( payload )
             return            #
         #######################
          
@@ -238,22 +230,17 @@ class TaskLifeManagerComponent:
             return
 
         if event == "CRAB_Cmd_Mgr:GetOutputNotification":
-            if payload != "" and payload != None:
-                taskname, jobstr = payload.split('::')
-                logging.info("Deleting osb of task: " + str(taskname) + \
-                             " for jobs " + str(jobstr) )
-                try:
-                    self.deleteRetrievedOSB( taskname, jobstr )
-                except Exception, ex:
-                    import traceback
-                    logging.error( "Exception raised: " + str(ex) )
-                    logging.error( str(traceback.format_exc()) )
-                    logging.info( "problems deleting osb for job " + str(jobstr) )
-            else:
-                logging.error("No task specified for " + str(event) )
+            taskname, jobstr = payload.split('::')
+            logging.info("Deleting osb of task: " + str(taskname) + \
+                         " for jobs " + str(jobstr) )
+            try:
+                self.deleteRetrievedOSB( taskname, jobstr )
+            except Exception, ex:
+                import traceback
+                logging.error( "Exception raised: " + str(ex) )
+                logging.error( str(traceback.format_exc()) )
+                logging.info( "problems deleting osb for job " + str(jobstr) )
             return
-        #if event == "TaskLifeManager:OverAvailableSpace":
-        #    return
 
 	# start debug event
         if event == "TaskLifeManager:StartDebug":
@@ -276,7 +263,7 @@ class TaskLifeManagerComponent:
 
     def checkInfoUser( self, taskName):
         """
-        _CheckInfoUser_
+        _checkInfoUser_
         """
         own = " "
         mail = " " 
@@ -736,8 +723,8 @@ class TaskLifeManagerComponent:
             if len(valuess) > 1:
                 uuid = valuess[1]
                 owner = valuess[3]
-            obj = UtilSubject( self.args['storagePath'], taskName, uuid )
-            origTaskName = obj.getInfos()
+            ttutil = TaskTrackingUtil( self.args['allow_anonymous'] )
+            origTaskName = ttutil.getOriginalTaskName(taskName)
 
             payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ str(owner) +"::"+ str(mails)
 
