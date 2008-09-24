@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.71 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.71 2008/09/04 14:02:41 farinafa Exp $"
+__version__ = "$Revision: 1.72 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.72 2008/09/04 16:00:24 farinafa Exp $"
 
 import os, pickle, time, copy
 
@@ -323,9 +323,10 @@ class CrabServerWorkerComponent:
             if retryCounter <= 0:
                 # no more re-submission attempts, give up. 
                 try:
-                   self.cwdb.updateWEStatus( j['name'], 'reallyFinished' )
+                   self.cwdb.updateWEStatus( job['name'], 'reallyFinished' )
                 except Exception, e:
                    logging.info("Error while declaring WF-Entities failed for job %sfailed "%job['name'])
+                   logging.info(str(e))
 
                 # Propagate info emulating a message in FW results queue
                 logging.info("Resubmission has no more attempts: give up with job %s"%job['name'])
