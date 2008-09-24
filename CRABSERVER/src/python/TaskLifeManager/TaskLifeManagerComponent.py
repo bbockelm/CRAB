@@ -744,9 +744,10 @@ class TaskLifeManagerComponent:
 	_pollDropBox_
 
 	"""
-	value, numberUsed, spacetoAvail = self.checkGlobalSpace()
-        if value:
-            self.spaceOverNotify( numberUsed )
+        if self.args["Protocol"] == 'local': 
+            value, numberUsed, spacetoAvail = self.checkGlobalSpace()
+            if value:
+                self.spaceOverNotify( numberUsed )
 
         self.checkDelete()
         self.deleteTasks()
