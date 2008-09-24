@@ -1,5 +1,4 @@
 import os
-import commands
 import logging
 import re
 
@@ -23,7 +22,7 @@ class TaskTrackingUtil:
         DA : finished but with some failures (aka Done Failed in GLite or Held for condor)
         UE : user ended (retrieved by th user)
         """
-        stateConverting = { \
+        stateconverting = { \
                     'R': 'Running', 'SD': 'Done', 'DA': 'Done (Failed)', \
                     'E': 'Done', 'SR': 'Ready', 'A': 'Aborted', \
                     'SS': 'Scheduled', 'U': 'Unknown', 'SW': 'Waiting', \
@@ -31,8 +30,8 @@ class TaskTrackingUtil:
                     'NotSubmitted': 'NotSubmitted', 'C': 'Created', \
                     'UE': 'Cleared'
                           }
-        if status in stateConverting:
-            return stateConverting[status]
+        if status in stateconverting:
+            return stateconverting[status]
         return 'Unknown'
 
     def getNameFromProxy(self, path):
@@ -40,31 +39,31 @@ class TaskTrackingUtil:
         _getNameFromProxy_
         """
 
-        cmd="voms-proxy-info -file "+path+" -subject"
+        cmd = "voms-proxy-info -file "+path+" -subject"
         if self.allow_anonymous != "1" and \
            os.path.exists(path) == True:
             import commands
             return commands.getstatusoutput(cmd)
         else:
-            raise("Path not found or anonymous enabled")
+            raise Exception("Path not found or anonymous enabled")
 
     def cnSplitter(self, proxy):
         """
         _cnSplitter_
         """
-        tmp = string.split(str(proxy[1]),'/')
-        cn=[]
-        for t in tmp:
-            if t[:2]== 'CN':
-                if t[3:] != 'proxy':
-                    cn.append(t[3:])
-        return cn
+        tmp = str(proxy[1]).split('/')
+        cnproxy = []
+        for field in tmp:
+            if field[:2] == 'CN':
+                if field[3:] != 'proxy':
+                    cnproxy.append(field[3:])
+        return cnproxy
 
     def invert(self, invertable_object):
         try:
             return invertable_object[::-1]
-        except Exception, e:
-            logging.error('Object not invertable: ' + str(e))
+        except Exception, exc:
+            logging.error('Object not invertable: ' + str(exc))
         return invertable_object
 
     def getOriginalTaskName( self, taskname, uuid ):
@@ -75,50 +74,51 @@ class TaskTrackingUtil:
         from: user_taskname_uuid
         to:   taskname
         """
-        newName = taskname
-        newName = newName.split("_",1)[1]
+        newname = taskname
+        newname = newname.split("_", 1)[1]
         if uuid != '' and uuid != None:
-            newName = newName.split(uuid,1)[0]
-            newName = newName[:len(newName)-1]
+            newname = newname.split(uuid, 1)[0]
+            newname = newname[:len(newname)-1]
         else:
-            newName = self.invert( self.invert(newName).split("_",1)[1])
-        return newName
+            newname = self.invert( self.invert(newname).split("_", 1)[1])
+        return newname
 
-    def getListEl(self, lista, el):
+    def getListEl(self, lista, elem):
+        """
+        _getListEl_
+        """
         try:
-            return str(lista[el])
+            return str(lista[elem])
         except Exception, ex:
-            logging.debug(" problems reading info.")
+            logging.debug(" problems reading info "+str(ex))
             return None
 
-    def getMoreMails ( self, eMail ):
+    def getMoreMails ( self, email ):
         """
         _getMoreMails_
 
-        prepares a list of eMails from str "eMail"
+        prepares a list of eMails from str "email"
         """
-
-        eMaiList2 = []
-        if eMail != None:
-            eMaiList = eMail.split(";")
-            for index in xrange(len(eMaiList)):
-                temp = eMaiList[index].replace(" ", "")
+        emailist2 = []
+        if email != None:
+            emailist = email.split(";")
+            for index in xrange(len(emailist)):
+                temp = emailist[index].replace(" ", "")
                 if self.checkEmail( temp ):
-                    eMaiList2.append( temp )
+                    emailist2.append( temp )
+        return emailist2
 
-        return eMaiList2
 
-
-    def checkEmail ( self, eMail ):
+    def checkEmail ( self, email ):
         """
         _checkEmail_
         
-        check the eMail with a regular expression
+        check the email with a regular expression
         """
 
         reg = re.compile('^[\w\.-_]+@(?:[\w-]+\.)+[\w]{2,4}$', re.IGNORECASE)
-        if not reg.match( eMail ):
-            errmsg = "Error parsing e-mail address; address ["+eMail+"] has "
+        if not reg.match( email ):
+            errmsg = "Error parsing e-mail address; address ["+email+"] has "
             errmsg += "an invalid format;"
             logging.debug("WARNING: " + errmsg)
             logging.debug("         this e-mail address will be ignored.")
