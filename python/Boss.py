@@ -34,7 +34,7 @@ class Boss:
         self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
         self.wms_service=cfg_params.get("EDG.wms_service",'')
 
-        self.wrapper = cfg_params.get('CRAB.jobtype')+'.sh'
+        self.wrapper = cfg_params.get('CRAB.jobtype').upper()+'.sh'
 
 
         ## Add here the map for others Schedulers (LSF/CAF/CondorG)
