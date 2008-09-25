@@ -56,7 +56,7 @@ class DBinterface:
         Return task with all/list of jobs 
         """
         try:
-            task = common.bossSession.load(1,jobsList)[0]
+            task = common.bossSession.load(1,jobsList)
         except Exception, e :
             common.logger.debug(3, "Error while getting task : " +str(traceback.format_exc()))
             raise CrabException('Error while getting task '+str(e))
@@ -67,7 +67,7 @@ class DBinterface:
         Return a task with a single job 
         """ 
         try:
-            task = common.bossSession.load(1,str(n))[0]
+            task = common.bossSession.load(1,str(n))
         except Exception, e :
             common.logger.debug(3, "Error while getting job : " +str(traceback.format_exc()))
             raise CrabException('Error while getting job '+str(e))
