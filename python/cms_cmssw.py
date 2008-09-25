@@ -1289,7 +1289,7 @@ class Cmssw(JobType):
         for fileWithSuffix in (self.output_file):
              file_list.append(numberFile(fileWithSuffix, '$NJob'))
 
-        txt += 'file_list="'+string.join(file_list,' ')+'"\n'
+        txt += 'file_list="'+string.join(file_list,',')+'"\n'
         txt += '\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
