@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.72 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.72 2008/09/04 16:00:24 farinafa Exp $"
+__version__ = "$Revision: 1.73 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.73 2008/09/24 08:31:19 mcinquil Exp $"
 
 import os, pickle, time, copy
 
@@ -303,7 +303,7 @@ class CrabServerWorkerComponent:
             try:
                 task, taskName, job = (None, None, None)
 
-                task = self.blDBsession.load(taskId, jobId)[0]
+                task = self.blDBsession.load(taskId, jobId)
                 taskName = task['name']
                 job = task.jobs[0]
 

@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.123 2008/09/17 16:06:29 spiga Exp $"
-__version__ = "$Revision: 1.123 $"
+__revision__ = "$Id: FatWorker.py,v 1.124 2008/09/21 19:41:14 spiga Exp $"
+__version__ = "$Revision: 1.124 $"
 import string
 import sys, os
 import time
@@ -315,7 +315,7 @@ class FatWorker(Thread):
                         self.blSchedSession.submit(task['id'], sub_list, reqs_jobs[ii])
                         self.log.info("Worker submitted sub collection # %s "%count)
                         count += 1
-                    task = self.blDBsession.load( task['id'], sub_jobs[ii] )[0]
+                    task = self.blDBsession.load( task['id'], sub_jobs[ii] )
                 else:
                     task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
             except BossLiteError, e:
@@ -590,7 +590,7 @@ class FatWorker(Thread):
         """
         Send post-submission info to ML
         """
-        task = self.blDBsession.load(taskFull, allList)[0]
+        task = self.blDBsession.load(taskFull, allList)
         params = {}
         for k,v in self.collect_MLInfo(task).iteritems():
             params[k] = v
