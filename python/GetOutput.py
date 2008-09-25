@@ -112,13 +112,12 @@ class GetOutput(Actor):
         #os.chdir( self.outDir )
         success_ret = 0
         for id in self.list_id:
-            runningJob = task.getJob( id ).runningJob()
+            runningJob = task.getJob( id ).runningJob
             if runningJob.isError() :
 	        continue
             file = 'out_files_'+ str(id)+'.tgz'
             if os.path.exists(self.outDir + file):
-                self.submission_id = runningJob['submission']
-                self.max_id=max(self.submission_id)
+                self.max_id = runningJob['submission']
                 if self.max_id > 1:
                     for f in os.listdir(self.outDir):
                         if (f.find(str(id)) != -1 ) and (f != file) and f.find('Submission_'+str(id)) == -1: 
