@@ -34,6 +34,8 @@ class Boss:
         self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
         self.wms_service=cfg_params.get("EDG.wms_service",'')
 
+        self.wrapper = cfg_params.get('CRAB.jobtype')+'.sh'
+
 
         ## Add here the map for others Schedulers (LSF/CAF/CondorG)
         SchedMap = {'glite':    'SchedulerGLiteAPI',
@@ -74,7 +76,6 @@ class Boss:
         jbt = job.type()
         base = jbt.name()
 
-        wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
         listField=[]
         task=common._db.getTask()
         for id in listID:
@@ -91,7 +92,7 @@ class Boss:
             ## To be better understood if it is needed
             out.append('crab_fjr_'+str(id)+'.xml')
             parameters['outputFiles']=out
-            parameters['executable']=wrapper
+            parameters['executable']=self.wrapper
             parameters['standardOutput'] = stdout
             parameters['standardError'] = stderr
             listField.append(parameters)

@@ -47,7 +47,9 @@ class ScriptWriter:
         self.debug_wrapper=''
         debug = cfg_params.get('USER.debug_wrapper',False)
         if debug: self.debug_wrapper='--debug'
- 
+
+        self.scriptName = cfg_params.get('CRAB.jobtype').upper()+'.sh'  
+
         return
 
     def setAction(self, pattern, action):
@@ -60,7 +62,7 @@ class ScriptWriter:
         """
 
         tpl = open(self.template, 'r')
-        script = open(common._db.queryTask('scriptName'),'w')
+        script = open(common.work_space.jobDir()+self.scriptName,'w')
 
         for line in tpl:
             if len(line) > 6 and line[:6] == '#CRAB ':

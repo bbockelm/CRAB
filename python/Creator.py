@@ -123,7 +123,6 @@ class Creator(Actor):
         if self.isNew:
             # Create script (sh)
             script_writer.modifyTemplateScript()
-            os.chmod(common._db.queryTask('scriptName'), 0744) 
        
             # SL This should be a list, rather than a string!
             concString = ','

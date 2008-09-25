@@ -461,7 +461,6 @@ class Crab:
                                           self.creator.jobType())
 
                 taskinfo={}
-                taskinfo['scriptName'] = common.work_space.jobDir()+"/"+self.job_type_name+'.sh'
                 taskinfo['cfgName'] = common.work_space.jobDir()+"/"+self.creator.jobType().configFilename()
 
                 common.job_list.setScriptNames(self.job_type_name+'.sh')

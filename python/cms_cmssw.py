@@ -1236,8 +1236,7 @@ class Cmssw(JobType):
         inp_box = []
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
-        wrapper = os.path.basename(str(common._db.queryTask('scriptName')))
-        inp_box.append(common.work_space.jobDir() + wrapper)
+        inp_box.append(common.work_space.jobDir() + self.scriptName)
         return inp_box
 
     def outputSandbox(self, nj):
