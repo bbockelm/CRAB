@@ -969,7 +969,8 @@ class Cmssw(JobType):
             ## Add ProdCommon dir to tar
             prodcommonDir = './'
             prodcommonPath = os.environ['CRABDIR'] + '/' + 'external/'
-            neededStuff = ['ProdCommon/__init__.py','ProdCommon/FwkJobRep', 'ProdCommon/CMSConfigTools','ProdCommon/Core','ProdCommon/MCPayloads', 'IMProv']
+            neededStuff = ['ProdCommon/__init__.py','ProdCommon/FwkJobRep', 'ProdCommon/CMSConfigTools', \
+                           'ProdCommon/Core', 'ProdCommon/MCPayloads', 'IMProv', 'ProdCommon/Storage']
             for file in neededStuff:
                 tar.add(prodcommonPath+file,prodcommonDir+file)
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
