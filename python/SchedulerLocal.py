@@ -140,11 +140,11 @@ class SchedulerLocal(Scheduler) :
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
             txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
-            txt += 'source cmscpReport.sh'
             if self.debug_wrapper: 
                 txt += '########### details of SE interaction\n'
                 txt += 'cat .SEinteraction.log\n'   
                 txt += '########### \n'
+            txt += 'source cmscpReport.sh'
             txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'
             txt += '    echo "Problem copying file to $SE $SE_PATH"\n'
             txt += '    copy_exit_status=$StageOutExitStatus \n'
