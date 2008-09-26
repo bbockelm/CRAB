@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.8 2008/09/09 16:19:29 farinafa Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.9 2008/09/19 16:22:29 farinafa Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import string
 import sys, os
@@ -200,7 +200,6 @@ class RegisterWorker(Thread):
             taskObj['globalSandbox'] = ','.join( remoteSBlist )
             taskObj['startDirectory'] = self.preamble
             taskObj['outputDirectory'] = self.preamble + self.cfg_params['CRAB.se_remote_dir']
-            taskObj['scriptName'] = self.preamble + os.path.basename(taskObj['scriptName']) 
             taskObj['cfgName'] = self.preamble + os.path.basename(taskObj['cfgName'])
  
             self.log.debug("Worker %s. Reference Preamble: %s"%(self.myName, taskObj['outputDirectory']) )
