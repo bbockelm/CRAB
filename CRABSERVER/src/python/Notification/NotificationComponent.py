@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.19 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.19 2008/07/07 13:36:00 mcinquil Exp $"
+__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.20 2008/09/10 16:30:13 mcinquil Exp $"
 
 import os
 import socket
@@ -42,7 +42,7 @@ from ProdAgentCore.Configuration import ProdAgentConfiguration
 from logging.handlers import RotatingFileHandler
 from threading import Thread
 from MessageService.MessageService import MessageService
-from FwkJobRep.ReportParser import readJobReport
+from ProdCommon.FwkJobRep.ReportParser import readJobReport
 from xml.dom import minidom
 
 import smtplib
