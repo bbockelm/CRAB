@@ -34,7 +34,8 @@ class cmscp:
         self.protocol = ''
         self.middleware = ''
         self.srmv = ''
-  
+        self.lcgOpt='-b -D srmv2 --vo cms -t 2400 --verbose'  
+        self.opt=''
         try:
             opts, args = getopt.getopt(argv, "", ["source=", "destination=", "inputFileList=", "outputFileList=", \
                                                   "protocol=", "middleware=", "srm_version=", "debug", "help"])
@@ -106,7 +107,7 @@ class cmscp:
         if self.middleware :  
            results = self.stager() 
         else:
-           results = self.copy( self.file_to_copy, self.protocol )
+           results = self.copy( self.file_to_copy, self.protocol , self.opt)
 
         self.finalReport(results,self.middleware) 
 
@@ -118,9 +119,10 @@ class cmscp:
         which depend on scheduler 
         """
         if self.middleware.lower() in ['osg','lcg']:
-            supported_protocol = ['srm-lcg','srmv2']
+            supported_protocol = {'srm-lcg': self.lcgOpt }#,
+                               #   'srmv2' : '' }
         elif self.middleware.lower() in ['lsf','caf']:
-            supported_protocol = ['rfio']
+            supported_protocol = {'rfio': '' }
         else:
             ## here we can add support for any kind of protocol, 
             ## maybe some local schedulers need something dedicated
@@ -135,9 +137,9 @@ class cmscp:
         count=0 
         list_files = self.file_to_copy
         results={}   
-        for prot in protocols:
+        for prot in protocols.keys():
             if self.debug: print 'Trying stage out with %s utils \n'%prot 
-            copy_results = self.copy( list_files, prot )
+            copy_results = self.copy( list_files, prot, protocols[prot] )
             list_retry = [] 
             list_existing = [] 
             list_ok = [] 
@@ -191,7 +193,7 @@ class cmscp:
 
         return Source_SE, Destination_SE
 
-    def copy( self, list_file, protocol ):
+    def copy( self, list_file, protocol, opt):
         """
         Make the real file copy using SE API 
         """
@@ -213,7 +215,7 @@ class cmscp:
             if self.debug : print 'start real copy for %s'%filetocopy
             ErCode, msg = self.checkFileExist( sbi_dest, os.path.basename(filetocopy) ) 
             if ErCode == '0': 
-                ErCode, msg = self.makeCopy( sbi, filetocopy )
+                ErCode, msg = self.makeCopy( sbi, filetocopy , opt)
             if self.debug : print 'Copy results for %s is %s'%( os.path.basename(filetocopy) ,ErCode)
             results.update( self.updateReport(filetocopy, ErCode, msg))
         return results
@@ -326,7 +328,7 @@ class cmscp:
 
         return ErCode,msg  
 
-    def makeCopy(self, sbi, filetocopy ):  
+    def makeCopy(self, sbi, filetocopy, opt ):  
         """
         call the copy API.  
         """
@@ -342,8 +344,9 @@ class cmscp:
             source_file = file_name  
         ErCode = '0'
         msg = ''
+ 
         try:
-            pippo = sbi.copy( source_file , dest_file )
+            pippo = sbi.copy( source_file , dest_file , opt)
             if self.protocol == 'srm' : self.checkSize( sbi, filetocopy ) 
         except Exception, ex:
             msg = '' 
