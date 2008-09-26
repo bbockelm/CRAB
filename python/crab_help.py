@@ -476,6 +476,10 @@ To use the automate namespace definition (perfomed by CRAB) it is possible to se
 
 To enable the higer verbose level on wrapper specify I<debug_wrapper> = True. The Pset contents before and after the CRAB maipulation will be written together with other useful infos.
 
+=item B<dontCheckSpaceLeft>
+
+Set it to 1 to skip the check of free space left on your working directory before attempting to get the output back. Default is 0 (=False)
+
 =back
 
 B<[EDG]>

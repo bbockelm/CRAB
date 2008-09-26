@@ -476,26 +476,26 @@ def writeTXTfile(self, outFileName, args):
     return
 
 def readableList(self,rawList):
-   listString = str(rawList[0])
-   endRange = ''
-   for i in range(1,len(rawList)):
-     if rawList[i] == rawList[i-1]+1:
-       endRange = str(rawList[i])
-     else:
-       if endRange:
-         listString += '-' + endRange + ',' + str(rawList[i])
-         endRange = ''
-       else:
-         listString += ',' + str(rawList[i])
-   if endRange:
-     listString += '-' + endRange
-     endRange = ''
-
-   return listString
+    listString = str(rawList[0])
+    endRange = ''
+    for i in range(1,len(rawList)):
+        if rawList[i] == rawList[i-1]+1:
+            endRange = str(rawList[i])
+        else:
+            if endRange:
+                listString += '-' + endRange + ',' + str(rawList[i])
+                endRange = ''
+            else:
+                listString += ',' + str(rawList[i])
+    if endRange:
+        listString += '-' + endRange
+        endRange = ''
+    
+    return listString
 
 def getLocalDomain(self):
     """
-     Get local domain name
+    Get local domain name
     """
     import socket
     tmp=socket.gethostname()
@@ -506,7 +506,104 @@ def getLocalDomain(self):
     localDomainName = string.split(tmp,'.',1)[-1]
     return localDomainName
 
+#######################################################
+# Brian Bockelman bbockelm@cse.unl.edu
+# Module to check the avaialble disk space on a specified directory.
+#
+import os
+import statvfs
 
+def has_freespace(dir_name, needed_space_kilobytes):
+     enough_unix_quota = False
+     enough_quota = False
+     enough_partition = False
+     enough_mount = False
+     try:
+         enough_mount = check_mount(dir_name, need_space_kilobytes)
+     except:
+         enough_mount = True
+     try:
+         enough_quota = check_quota(dir_name, needed_space_kilobytes)
+     except:
+         raise
+         enough_quota = True
+     try:
+         enough_partition = check_partition(dir_name,
+             needed_space_kilobytes)
+     except:
+         enough_partition = True
+     try:
+         enough_unix_quota = check_unix_quota(dir_name,
+             needed_space_kilobytes)
+     except:
+         enough_unix_quota = True
+     return enough_mount and enough_quota and enough_partition \
+         and enough_unix_quota
+
+def check_mount(dir_name, needed_space_kilobytes):
+     try:
+         vfs = os.statvfs(dir_name)
+     except:
+         raise Exception("Unable to query VFS for %s." % dir_name)
+     dev_free = vfs[statvfs.F_FRSIZE] * vfs[statvfs.F_BAVAIL]
+     return dev_free/1024 > needed_space_kilobytes
+
+def check_quota(dir_name, needed_space_kilobytes):
+     _, fd, _ = os.popen3("/usr/bin/fs lq %s" % dir_name)
+     results = fd.read()
+     if fd.close():
+         raise Exception("Unable to query the file system quota!")
+     try:
+         results = results.split('\n')[1].split()
+         quota, used = results[1:3]
+         avail = int(quota) - int(used)
+         return avail > needed_space_kilobytes
+     except:
+         return Exception("Unable to parse AFS output.")
+
+def check_partition(dir_name, needed_space_kilobytes):
+     _, fd, _ = os.popen3("/usr/bin/fs diskfree %s" % dir_name)
+     results = fd.read()
+     if fd.close():
+         raise Exception("Unable to query the file system quota!")
+     try:
+         results = results.split('\n')[1].split()
+         avail = results[3]
+         return int(avail) > needed_space_kilobytes
+     except:
+         raise Exception("Unable to parse AFS output.")
+
+def check_unix_quota(dir_name, needed_space_kilobytes):
+     _, fd, _ = os.popen3("df %s" % dir_name)
+     results = fd.read()
+     if fd.close():
+         raise Exception("Unable to query the filesystem with df.")
+     fs = results.split('\n')[1].split()[0]
+     _, fd, _ = os.popen3("quota -Q -u -g")
+     results = fd.read()
+     if fd.close():
+         raise Exception("Unable to query the quotas.")
+     has_info = False
+     for line in results.splitlines():
+         info = line.split()
+         if info[0] in ['Filesystem', 'Disk']:
+             continue
+         if len(info) == 1:
+             filesystem = info[0]
+             has_info = False
+         if len(info) == 6:
+             used, limit = info[0], info[2]
+             has_info = True
+         if len(info) == 7:
+             filesystem, used, limit = info[0], info[1], info[3]
+             has_info = True
+         if has_info:
+            if filesystem != fs:
+                continue
+            avail = int(limit) - int(used)
+            if avail < needed_space_kilobytes:
+                return False
+     return True
 
 ####################################
 if __name__ == '__main__':

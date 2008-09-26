@@ -17,6 +17,8 @@ class GetOutput(Actor):
             self.log=1
         self.return_data = self.cfg_params.get('USER.return_data',0)
 
+        self.dontCheckSpaceLeft = int(self.cfg_params.get('USER.dontCheckSpaceLeft' ,0))
+
         self.possible_status = {
                          'UN': 'Unknown', 
                          'SU': 'Submitted',
@@ -97,11 +99,33 @@ class GetOutput(Actor):
         Get output for a finished job with id.
         """
         self.checkBeforeGet()
-        task= common.scheduler.getOutput(1,self.list_id,self.outDir)
-        self.organizeOutput( task )    
+        # Get first job of the list
+        if not self.dontCheckSpaceLeft and not has_freespace(self.outDir, 10*1024): # First check for more than 10 Mb
+            msg = "You have LESS than 10 MB of free space on your working dir\n"
+            msg +="Please make some room before retrying\n\n"
+            msg +="To bypass this check, run \n"
+            msg +="crab -get -USER.dontCheckSpaceLeft=1 \n"
+            raise CrabException(msg)
+        list_first=self.list_id[0:1]
+        task= common.scheduler.getOutput(1, list_first, self.outDir)
+        lastSize = self.organizeOutput( task, list_first )    
+        # here check disk space for first job
+        if not self.dontCheckSpaceLeft and not has_freespace(self.outDir, lastSize*len(self.list_id)*1.2) : # add a 20% overhead
+            msg = "Estimated space needed for getOutput is "+str(lastSize*len(self.list_id)*1.2)
+            msg +=" which is LESS than available space on disk\n"
+            msg +="Please make some room before retrying\n"
+            msg +="To bypass this check, run \n"
+            msg +="crab -get -USER.dontCheckSpaceLeft=1 \n"
+            raise CrabException(msg)
+        # get the size of the actual OSB of first job
+        if (len(self.list_id)>1) :
+            # check disk space for other N jobs using estimate from the first
+            list_other=self.list_id[1:]
+            task= common.scheduler.getOutput(1, list_other, self.outDir)
+            self.organizeOutput( task, list_other )    
         return
   
-    def organizeOutput(self, task): 
+    def organizeOutput(self, task, list_id): 
         """
         Untar Output  
         """
@@ -111,7 +135,7 @@ class GetOutput(Actor):
         #cwd = os.getcwd()
         #os.chdir( self.outDir )
         success_ret = 0
-        for id in self.list_id:
+        for id in list_id:
             runningJob = task.getJob( id ).runningJob
             if runningJob.isError() :
 	        continue
@@ -126,6 +150,10 @@ class GetOutput(Actor):
                         for f in os.listdir(self.logDir):
                             if f.find(str(id)) != -1 and f.find('Submission_'+str(id)) == -1:
                                 self.moveOutput(id, self.max_id, self.logDir, f)
+                            pass
+                        pass
+                    pass
+                size = (os.path.getsize(self.outDir + file))/1024 # in kB
                 cmd = 'tar zxvf ' + self.outDir + file + ' ' + '-C ' + self.outDir  
                 cmd_out = runCommand(cmd)
                 cmd_2 ='rm ' + self.outDir + 'out_files_'+ str(id)+'.tgz'
@@ -150,16 +178,16 @@ class GetOutput(Actor):
         common._db.updateRunJob_(job_id , listCode)
 
         if self.logDir != self.outDir:
-            for i_id in self.list_id:  
+            for i_id in list_id:  
                 try:
                     cmd = 'mv '+str(self.outDir)+'/*'+str(i_id)+'.std* '+str(self.outDir)+'/.BrokerInfo '+str(self.logDir)
                     cmd_out =os.system(cmd)
                 except:
                     msg = 'Problem with copy of job results'
                     common.logger.message(msg)
-            msg = 'Results of Jobs # '+str(self.list_id)+' are in '+self.outDir+' (log files are in '+self.logDir+')'
+            msg = 'Results of Jobs # '+str(list_id)+' are in '+self.outDir+' (log files are in '+self.logDir+')'
             common.logger.message(msg)
-        return
+        return size
 
     def parseFinalReport(self, input):
         """
