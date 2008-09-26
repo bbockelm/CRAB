@@ -6,7 +6,7 @@ Installation and configuration script for prod agent database.
 
 """
 
-__revision__ = "$Id: prodAgent-install-db,v 1.8 2007/01/17 19:00:19 fvlingen Exp $"
+__revision__ = "$Id: crabServer-install-db,v 1.1 2008/02/25 21:24:24 afanfani Exp $"
 
 import getpass
 import os
@@ -14,7 +14,7 @@ import sys
 
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 from ProdAgentDB.Install import adminLogin
-from ProdAgentDB.Install import installDB
+from ProdAgentDB.Install import installMySQLDB as installDB
 from ProdAgentDB.Install import grantUsers
 from ProdAgentDB.Install import preInstall
 
@@ -23,7 +23,7 @@ from ProdAgentDB.Install import preInstall
 valid = ['config=','help']
 
 # check the input
-config=preInstall(valid)
+config, block =preInstall(valid)
 # load config file
 cfgObject = ProdAgentConfiguration()
 cfgObject.loadFromFile(config)
