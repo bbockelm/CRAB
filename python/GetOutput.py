@@ -153,8 +153,8 @@ class GetOutput(Actor):
                             pass
                         pass
                     pass
-                size = (os.path.getsize(self.outDir + file))/1024 # in kB
-                cmd = 'tar zxvf ' + self.outDir + file + ' ' + '-C ' + self.outDir  
+                size = getGZSize(self.outDir + file)/1024 # in kB
+                cmd = 'tar zxf ' + self.outDir + file + ' ' + '-C ' + self.outDir  
                 cmd_out = runCommand(cmd)
                 cmd_2 ='rm ' + self.outDir + 'out_files_'+ str(id)+'.tgz'
                 #cmd_2 ='rm out_files_'+ str(id)+'.tgz'

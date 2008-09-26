@@ -605,6 +605,15 @@ def check_unix_quota(dir_name, needed_space_kilobytes):
                 return False
      return True
 
+def getGZSize(gzipfile):
+    # return the uncompressed size of a gzipped file
+    import struct
+    f = open(gzipfile, "rb")
+    if f.read(2) != "\x1f\x8b":
+        raise IOError("not a gzip file")
+    f.seek(-4, 2)
+    return struct.unpack("<i", f.read())[0] 
+
 ####################################
 if __name__ == '__main__':
     print 'sys.argv[1] =',sys.argv[1]
