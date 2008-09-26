@@ -387,8 +387,8 @@ class cmscp:
 
         msg=""" 
         required parameters:
-        --source :: REMOTE           :       
-        --dest   :: REMOTE           :   
+        --source        :: REMOTE           :       
+        --destination   :: REMOTE           :   
         --debug             :
         --inFile :: absPath : or name NOT RELATIVE PATH
         --outFIle :: onlyNAME : NOT YET SUPPORTED
