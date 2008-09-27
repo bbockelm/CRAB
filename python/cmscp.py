@@ -346,7 +346,7 @@ class cmscp:
         msg = ''
  
         try:
-            pippo = sbi.copy( source_file , dest_file , opt)
+            pippo = sbi.copy( source_file , dest_file , opt = opt)
             if self.protocol == 'srm' : self.checkSize( sbi, filetocopy ) 
         except Exception, ex:
             msg = '' 
