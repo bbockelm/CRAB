@@ -34,8 +34,14 @@ class cmscp:
         self.protocol = ''
         self.middleware = ''
         self.srmv = ''
+
+        # default for stage out approach To be used with "middleware"
         self.lcgOpt='-b -D srmv2 --vo cms -t 2400 --verbose'  
+        self.srmOpt='-debug=true -report ./srmcp.report -retry_timeout 480000 -retry_num 3'
+        self.rfioOpt=''
+        # default to be used with protocol
         self.opt=''
+
         try:
             opts, args = getopt.getopt(argv, "", ["source=", "destination=", "inputFileList=", "outputFileList=", \
                                                   "protocol=", "middleware=", "srm_version=", "debug", "help"])
@@ -119,10 +125,12 @@ class cmscp:
         which depend on scheduler 
         """
         if self.middleware.lower() in ['osg','lcg']:
-            supported_protocol = {'srm-lcg': self.lcgOpt }#,
-                               #   'srmv2' : '' }
+            supported_protocol = ['srm-lcg','srmv2']
+            self.OptMap = {'srm-lcg': self.lcgOpt, 
+                           'srmv2': self.srmOpt }
         elif self.middleware.lower() in ['lsf','caf']:
-            supported_protocol = {'rfio': '' }
+            supported_protocol = ['rfio']
+            self.OptMap = {'rfio': self.rfioOpt }
         else:
             ## here we can add support for any kind of protocol, 
             ## maybe some local schedulers need something dedicated
@@ -136,10 +144,10 @@ class cmscp:
         protocols = self.setProtocol()  
         count=0 
         list_files = self.file_to_copy
-        results={}   
-        for prot in protocols.keys():
+        results={}
+        for prot in protocols:
             if self.debug: print 'Trying stage out with %s utils \n'%prot 
-            copy_results = self.copy( list_files, prot, protocols[prot] )
+            copy_results = self.copy( list_files, prot, self.OptMap[prot] )
             list_retry = [] 
             list_existing = [] 
             list_ok = [] 
