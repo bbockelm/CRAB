@@ -1287,7 +1287,7 @@ class Cmssw(JobType):
             txt += 'fi\n'
         file_list = []
         for fileWithSuffix in (self.output_file):
-             file_list.append(numberFile(fileWithSuffix, '$NJob'))
+             file_list.append(numberFile('$SOFTWARE_DIR/'+fileWithSuffix, '$NJob'))
 
         txt += 'file_list="'+string.join(file_list,',')+'"\n'
         txt += '\n'
