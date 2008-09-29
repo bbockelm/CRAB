@@ -1412,9 +1412,9 @@ class Cmssw(JobType):
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
             args = '$RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier ' \
                    '$User -$ProcessedDataset-$PSETHASH $ApplicationFamily '+ \
-                    '  $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH"\n'
-            txt += 'echo "$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)
-            txt += '$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)
+                    '  $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH'
+            txt += 'echo "$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)+'"\n'
+            txt += '$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)+'\n'
             txt += 'modifyReport_result=$?\n'
             txt += 'if [ $modifyReport_result -ne 0 ]; then\n'
             txt += '    modifyReport_result=70500\n'
