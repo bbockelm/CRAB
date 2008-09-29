@@ -2,8 +2,8 @@
 Glidein specific portions of the interface to the BossLite scheduler
 """
 
-__revision__ = "$Id: SchedulerGlidein.py,v 1.13 2008/06/06 20:32:01 ewv Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: SchedulerGlidein.py,v 1.14 2008/09/10 14:57:32 ewv Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from SchedulerCondorCommon import SchedulerCondorCommon
 import common
@@ -41,6 +41,6 @@ class SchedulerGlidein(SchedulerCondorCommon):
         """
         Check the compatibility of available resources
         """
-        ceDest = SchedulerCondorCommon.listMatch(seList, onlyOSG=False)
+        ceDest = SchedulerCondorCommon.listMatch(self, seList, full, onlyOSG=False)
         return ceDest
 
