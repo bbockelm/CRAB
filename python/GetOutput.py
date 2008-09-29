@@ -135,6 +135,7 @@ class GetOutput(Actor):
         #cwd = os.getcwd()
         #os.chdir( self.outDir )
         success_ret = 0
+        size = 0 # in kB
         for id in list_id:
             runningJob = task.getJob( id ).runningJob
             if runningJob.isError() :
