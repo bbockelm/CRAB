@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.102 2008/09/05 22:07:18 mcinquil Exp $"
-__version__ = "$Revision: 1.102 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.104 2008/09/23 13:22:50 mcinquil Exp $"
+__version__ = "$Revision: 1.104 $"
 
 import os
 import time
@@ -1067,7 +1067,6 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewCommand")
         self.ms.subscribeTo("KillTask")
 
-
         #reset all work_status
         ttdb = TaskStateAPI()
         ttdb.resetAllWorkStatus()
@@ -1078,10 +1077,6 @@ class TaskTrackingComponent:
 	    pollingThread = PollThread(self.pollTasks, "pollingThread_" + str(i))
             pollingThread.start()
 
-        # start message thread
-        msgThread = MsgQueueExecuterThread(self.__executeQueuedMessages__)
-        msgThread.start()
-
         # wait for messages
         while True:
             messageType, payload = self.ms.get()
@@ -1091,85 +1086,9 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             logBuf = ""
 
-            #queue the message, instead of exetute it
-            #then i commit it, then try to execute
-            self.__addToQueue__(messageType, payload)
-            #self.__call__(messageType, payload)
+            self.__call__(messageType, payload)
+
             self.ms.commit()
-
-
-    def __addToQueue__(self, messageType, payload):
-        semMsgQueue.acquire()
-        try:
-            try:
-                fileName = self.__queueFileName__()
-                q = PersistentQueue()
-                q.loadState(fileName)
-                q.put_nowait([messageType, payload])
-                q.saveState(fileName)
-            except Exception, ex:
-                logging.error("ERROR: " + str(traceback.format_exc()))
-        finally:
-            semMsgQueue.release()
-
-
-    def __queueFileName__(self):
-        return os.path.join(self.args['ComponentDir'], "queueSerializationFile")
-
-
-    def __executeQueuedMessages__(self):
-        ttdb = TaskStateAPI()
-        logBuf = ""
-        semMsgQueue.acquire()
-        try:
-            logBuf = self.__log(logBuf, "Entering in __executeQueuedMessages__ method...")
-            lockedTasks = []
-            fileName = self.__queueFileName__()
-            q = PersistentQueue()
-            q.loadState(fileName)
-            #count & size are need cause the message re-queue
-            count = 0
-            size = q.qsize()
-            while not q.empty() and count < size:
-                count += 1
-                item = q.get()
-                logBuf = self.__log(logBuf, "Got message: " + str(item))
-                messageType = item[0]
-                taskName = item[1]
-                #try except for catching error
-                try:
-                    if taskName in lockedTasks:#task was locked in before messages
-                        q.put_nowait(item)
-                    else:
-                        #try to lock the task
-                        recordAffected = ttdb.lockUnlockedTaskByTaskName(taskName)
-                        if recordAffected == 0:#task is locked
-                            lockedTasks.append(taskName)
-                            q.put_nowait(item)
-                            logBuf = self.__log(logBuf, "Message with locked task: " + str(item))
-                        else:
-                            if recordAffected == 1:
-                                logBuf = self.__log(logBuf, "Locked task " + str(taskName) + " for message processing")
-                            #try /finally for task unlocking
-                            try:
-                                self.__call__(messageType, taskName)
-                                logBuf = self.__log(logBuf, "Message executed: " + str(item))
-                            finally:
-                                if recordAffected == 1:
-                                    ris = ttdb.unlockTaskByTaskName(taskName)
-                                    if ris == 1:
-                                        logBuf = self.__log(logBuf, "Unlocked task " + str(taskName) + " for message processing")
-                                    if ris != 1:
-                                        logBuf = self.__log(logBuf, "Unexcepted return value for unlock(..)=" + str(ris))
-                except Exception, ex:
-                    logBuf = self.__log(logBuf, str("ERROR: " + str(traceback.format_exc())))
-
-            logBuf = self.__log(logBuf, "... __executeQueuedMessages__ method done.")
-            #save queue state
-            q.saveState(fileName)
-        finally:
-            semMsgQueue.release()
-            logging.info(logBuf)
 
 
 ##############################################################################
@@ -1232,66 +1151,4 @@ class PollThread(Thread):
             # no errors, reset failure counter
             else:
                 failedAttempts = 0
-
-##########################################
-#### serializable queue class
-##########################################
-class PersistentQueue(Queue.Queue):
-    def __init__(self, maxsize=0):
-        Queue.Queue.__init__(self, maxsize)
-      
-    def saveState(self, filePath):
-        f = open(filePath, 'w')
-        l = []
-        while not self.empty():
-            l.append(self.get())
-        cPickle.dump(l, f)
-        f.close()
-
-    def loadState(self, filePath):
-        if os.path.exists( filePath ):
-            f = open(filePath)
-            l = cPickle.load(f)
-            f.close()
-            for i in l:
-                self.put(i)
-
-
-##########################################
-#### message queue executer thread class
-##########################################
-class MsgQueueExecuterThread(Thread):
-    """
-    Thread that performs the message queue execute 
-    """
-    ##########################################################################
-    # thread initialization
-    ##########################################################################
-    def __init__(self, msgExecuterMethod):
-        """i
-        __init__
-        Initialize thread and set polling callback
-        Arguments:
-          msgExecuterMethod: method that do the message execution from the persistent queue
-        """
-        Thread.__init__(self)
-        self.msgExecuterMethod = msgExecuterMethod
-
-    ##########################################################################
-    # thread main body
-    ##########################################################################
-    def run(self):
-        """
-        __run__
-        Arguments:
-          none
-        Return:
-          none
-        """
-        while True:
-            try:
-                self.msgExecuterMethod()
-                time.sleep(5)
-            except Exception, ex:
-                logging.error("ERROR in MsgQueueExecuterThread \n" + str(traceback.format_exc()))
 
