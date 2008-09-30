@@ -19,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.25 2008/08/20 20:08:10 ewv Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.27 2008/08/25 16:49:09 ewv Exp $"
+__version__ = "$Revision: 1.27 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -197,7 +197,9 @@ class SchedulerCondorCommon(SchedulerGrid):
         """
 
         tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
-        params = {'tmpDir':tmpDir}
+        jobDir = common.work_space.jobDir()
+        params = {'tmpDir':tmpDir,
+                  'jobDir':jobDir}
         return  params
 
 
