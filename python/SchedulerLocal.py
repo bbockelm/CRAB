@@ -51,6 +51,9 @@ class SchedulerLocal(Scheduler) :
             common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
         else:
             common.logger.message("Your se_white_list is set to "+str(cfg_params['EDG.se_white_list'])+": only local dataset will be considered")
+        self.debug_wrapper = cfg_params.get('USER.debug_wrapper',False)
+        self.debugWrap=''
+        if self.debug_wrapper: self.debugWrap='--debug'
 
         Scheduler.configure(self,cfg_params)
         return
