@@ -595,7 +595,7 @@ class TaskTrackingComponent:
             dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
             pathToWrite = os.path.join(str(self.args['dropBoxPath']), (taskName + self.workAdd))
             if os.path.exists( pathToWrite ):
-                self.prepareReport( taskName, "", "", "", "", "", dictStateTot, numJobs, 1 )
+                self.prepareReport( taskName, " ", " ", " ", " ", " ", dictStateTot, numJobs, 1 )
                 self.undiscoverXmlFile( pathToWrite, self.tempxmlReportFile, self.xmlReportFileName )
         except Exception, ex:
             import traceback
@@ -684,7 +684,7 @@ class TaskTrackingComponent:
                 pathToWrite = os.path.join( self.args['dropBoxPath'], \
                                             (taskName + self.workAdd) )
                 if os.path.exists( pathToWrite ):
-                    self.prepareReport( taskName, "", "", "", "", "", dictStateTot, numJobs, 1 )
+                    self.prepareReport( taskName, " ", " ", " ", " ", " ", dictStateTot, numJobs, 1 )
                     self.undiscoverXmlFile( pathToWrite, self.tempxmlReportFile, self.xmlReportFileName )
         except Exception, ex:
             logging.error( "Exception raised: " + str(ex) )
@@ -875,7 +875,6 @@ class TaskTrackingComponent:
  
 	    resubmitting, MaxResub, Resub, internalstatus = \
                         ttdb.checkNSubmit(mySession.bossLiteDB, taskName, job)
-                    
             vect = []
             if eec == "NULL" and jec == "NULL":
                 vect = [ ttutil.convertStatus(stato), "", "", 0, Resub, site, \
@@ -900,7 +899,7 @@ class TaskTrackingComponent:
                     dictReportTot['JobFailed'] += 1
                 else:
                     dictReportTot['JobInProgress'] += 1
-            elif not resubmitting and joboff == 'Y':
+            elif (not resubmitting) and joboff == 'Y' and internalstatus != "Killing":
                 dictReportTot['JobFailed'] += 1
                 dictStateTot[job][3] = 1
             elif stato == "C":
@@ -912,14 +911,13 @@ class TaskTrackingComponent:
                 else:
                    countNotSubmitted += 1
                    dictReportTot['JobInProgress'] += 1
-            elif not resubmitting:
-                dictReportTot['JobInProgress'] += 1
             else:
                 dictReportTot['JobInProgress'] += 1
 
             ## case for killing jobs:
-            if internalstatus == "Killing":
+            if (not stato in ['K', 'A']) and internalstatus == "Killing":
                 dictStateTot[job][0] = "Killing"
+                dictStateTot[job][6] = "KK"
 
         return dictStateTot, dictReportTot, countNotSubmitted
 
