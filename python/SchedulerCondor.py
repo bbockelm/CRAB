@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.11 2008/08/05 19:50:28 ewv Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.12 2008/09/04 21:26:18 ewv Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -70,7 +70,10 @@ class SchedulerCondor(SchedulerLocal) :
         """
 
         tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
-        params = {'tmpDir':tmpDir}
+        tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
+        jobDir = common.work_space.jobDir()
+        params = {'tmpDir':tmpDir,
+                  'jobDir':jobDir}
         return params
 
 
