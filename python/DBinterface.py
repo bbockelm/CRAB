@@ -334,7 +334,7 @@ class DBinterface:
                     rForJ = r
                     break
             ## Check the submission number and create new running jobs on the client side          
-            if rForJ.getAttribute('resubmit') != 'None' and (rForJ.getAttribute('status') not in ['Killed','Killing','Done']) :
+            if rForJ.getAttribute('resubmit') != 'None' and (rForJ.getAttribute('status') not in ['Killed','Done']) :
                 if int(job.runningJob['submission']) < int(rForJ.getAttribute('resubmit')) + 1:
                     nj_list.append(id)
                     self.newRunJobs(nj_list)
@@ -352,8 +352,7 @@ class DBinterface:
                    
             # Data alignment
             if rForJ.getAttribute('status') not in ['Created', 'Unknown'] and not\
-                (job.runningJob['statusScheduler'] == 'Killing' and rForJ.getAttribute('status')!='Killed') \
-                and not  (job.runningJob['statusScheduler'] in 'Submitting'  and rForJ.getAttribute('status') in ['Killed','Cleared'])  :
+               (job.runningJob['statusScheduler'] in 'Submitting'  and rForJ.getAttribute('status') in ['Killed','Cleared'])  :
                    # update the status  
                 common.logger.debug(3,"Updating DB status for job: " + str(id) + " @: " \
                                       + str(rForJ.getAttribute('status')) )
