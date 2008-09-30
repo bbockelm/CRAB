@@ -1,3 +1,5 @@
+ALTER TABLE we_Job CHANGE COLUMN status status ENUM("register","released","create","submit","inProgress","finished","reallyFinished","failed","Killing") DEFAULT 'register';
+
 CREATE TABLE js_taskInstance (
      id int NOT NULL auto_increment,
      taskName varchar(255) NOT NULL default '',
