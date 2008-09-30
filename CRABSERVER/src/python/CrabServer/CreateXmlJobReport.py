@@ -26,7 +26,7 @@ class Job:
         self.JOBEXIT        = "job_exit"
         self.JOBREPORT      = "Job"
 	self.JOBCLEARED     = "cleared"
-        self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","NotKilled","Killed","Submitting","Done (Failed)", "Resubmitting by server", "Created")#"Managing by server")
+        self.ALLOWED_STATES = ("Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killing","Killed","Submitting","Done (Failed)", "Resubmitting by server", "Created")#"Managing by server")
         self.SITE           = "site"
         self.RESUB          = "resubmit" 
         self.STATCODE       = "sched_status"
