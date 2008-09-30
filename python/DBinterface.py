@@ -351,8 +351,7 @@ class DBinterface:
                     break 
                    
             # Data alignment
-            if rForJ.getAttribute('status') not in ['Created', 'Unknown'] and not\
-               (job.runningJob['statusScheduler'] in 'Submitting'  and rForJ.getAttribute('status') in ['Killed','Cleared'])  :
+            if rForJ.getAttribute('status') not in ['Created', 'Unknown']: 
                    # update the status  
                 common.logger.debug(3,"Updating DB status for job: " + str(id) + " @: " \
                                       + str(rForJ.getAttribute('status')) )
