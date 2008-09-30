@@ -348,6 +348,7 @@ class TaskTrackingComponent:
                 taskName, fake_proxy, range = payload.split(":")
                 _loginfo.setdefault('txt', str("Submisson completed: " + str(taskName)))
                 _loginfo.setdefault('range', str(range))
+                self.killingTask(taskName, range)
             else:
                 logBuf = self.__log(logBuf, " ")
                 logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -368,6 +369,7 @@ class TaskTrackingComponent:
                 else:
                     self.updateTaskKilled( taskName, self.taskState[7] )
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
+                self.killingTask(taskName, rangeKillJobs, True)
             else:
                 logBuf = self.__log(logBuf, " ")
                 logBuf = self.__log(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
@@ -383,6 +385,7 @@ class TaskTrackingComponent:
                     taskName, rangeKillJobs = payload.split("::")
                 logBuf = self.__log(logBuf, "   Error killing task: %s" % taskName)
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
+                self.killingTask(taskName, rangeKillJobs, True)
             else:
                 logBuf = self.__log(logBuf, " ")
                 logBuf = self.__log(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
@@ -548,6 +551,59 @@ class TaskTrackingComponent:
             logBuf = self.__log(logBuf, "      "+str(ex))
             logBuf = self.__log(logBuf, "  <-- - -- - -->")
             logging.info(logBuf)
+
+    def killingTask(self, taskName, range, unkilling = False):
+        """
+        _killingTask_
+        """
+        mySession = None
+        taskObj = None
+        joblist = eval(range)
+
+        ## bossLite session
+        try:
+            mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
+        except Exception, ex:
+            logging.info(str(ex))
+            return 0
+        try:
+            try:
+                taskObj = mySession.loadTaskByName( taskName )
+            except TaskError, te:
+                taskObj = None
+            if taskObj is None:
+                raise Exception("Unable to load task [%s]."%(taskName))
+            else:
+                for jobbe in taskObj.jobs:
+                    try:
+                        mySession.getRunningInstance(jobbe)
+                    except JobError, ex:
+                        logging.error('Problem loading job running info')
+                        continue
+            upstate = "Killing"
+            if unkilling:
+                upstate = "inProgress"
+            for jobid in joblist:
+                ttdb = TaskStateAPI()
+                ttdb.updateStatusServer(mySession.bossLiteDB, taskName, jobid, upstate)
+            ## update xml -> W: duplicated code - need to clean
+            dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
+            countNotSubmitted = 0
+            dictStateTot = {}
+            #numJobs = ttdb.countServerJob(mySession.bossLiteDB, taskName)
+            numJobs = len(taskObj.jobs)
+            dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
+            pathToWrite = os.path.join(str(self.args['dropBoxPath']), (taskName + self.workAdd))
+            if os.path.exists( pathToWrite ):
+                self.prepareReport( taskName, "", "", "", "", "", dictStateTot, numJobs, 1 )
+                self.undiscoverXmlFile( pathToWrite, self.tempxmlReportFile, self.xmlReportFileName )
+        except Exception, ex:
+            import traceback
+            logging.error( "Exception raised: " + str(ex) )
+            logging.error( str(traceback.format_exc()) )
+        mySession.bossLiteDB.close()
+        del taskObj
+        del mySession
 
 
     def prepareTaskFailed( self, taskName, uuid, eMail, status, userName ):
@@ -861,6 +917,10 @@ class TaskTrackingComponent:
             else:
                 dictReportTot['JobInProgress'] += 1
 
+            ## case for killing jobs:
+            if internalstatus == "Killing":
+                dictStateTot[job][0] = "Killing"
+
         return dictStateTot, dictReportTot, countNotSubmitted
 
     def pollTasks(self, threadName):
@@ -1066,6 +1126,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:FatWorkerResult")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewCommand")
         self.ms.subscribeTo("KillTask")
+
 
         #reset all work_status
         ttdb = TaskStateAPI()

@@ -96,7 +96,7 @@ class TaskStateAPI:
             sqlStr="UPDATE we_Job SET status = '"+str(status)+"' " \
                    "WHERE id = '"+jobSpecId+"';"
             dbSession.modify( sqlStr )
-            logging.info(sqlStr)
+            logging.debug(sqlStr)
         except Exception, ex:
             logging.error(" Error in method "  + self.updateStatusServer.__name__ )
             logging.error(" Exception: " + str(ex) )
