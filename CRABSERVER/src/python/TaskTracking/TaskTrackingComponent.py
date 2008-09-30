@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.104 2008/09/23 13:22:50 mcinquil Exp $"
-__version__ = "$Revision: 1.104 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.107 2008/09/30 22:07:23 mcinquil Exp $"
+__version__ = "$Revision: 1.107 $"
 
 import os
 import time
@@ -911,6 +911,7 @@ class TaskTrackingComponent:
                 else:
                    countNotSubmitted += 1
                    dictReportTot['JobInProgress'] += 1
+                   dictStateTot[job][0] = "Submitting"
             else:
                 dictReportTot['JobInProgress'] += 1
 
