@@ -110,7 +110,7 @@ class PhEDExDatasvcInfo:
             primaryDataset = self.computePrimaryDataset()
             lfn = LFNBase(primaryDataset,self.publish_data_name,LocalUser=l_User)  + '/${PSETHASH}/'    
         else:
-            if self.sched in ['LSF']: l_User=True 
+            if self.sched in ['CAF','LSF']: l_User=True 
             lfn = LFNBase(self.user_remote_dir,LocalUser=l_User)
         return lfn
  
