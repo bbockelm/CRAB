@@ -96,7 +96,6 @@ class TaskStateAPI:
             sqlStr="UPDATE we_Job SET status = '"+str(status)+"' " \
                    "WHERE id = '"+jobSpecId+"';"
             dbSession.modify( sqlStr )
-            logging.debug(sqlStr)
         except Exception, ex:
             logging.error(" Error in method "  + self.updateStatusServer.__name__ )
             logging.error(" Exception: " + str(ex) )
@@ -653,16 +652,19 @@ class TaskStateAPI:
               "WHERE ID = " + str(taskId)
         dbSession.modify(sql)
 
-    def getStatusUUIDEmail( self, taskName ):
+    def getStatusUUIDEmail( self, taskName, dbSession = None ):
         """
         _getStatus_
         """
         queryString =  "SELECT status, uuid, eMail, user_name " +\
                        "FROM js_taskInstance WHERE taskName = '"+taskName+"';"
-        task2Check = self.queryMethod(queryString,taskName)
-        if task2Check != None:
+        task2Check = None
+        if dbSession is None:
+            task2Check = self.queryMethod(queryString,taskName)
             return task2Check[0]
-        return None
+        else:
+            task2Check = dbSession.select(queryString)
+            return task2Check[0]
    
     def getStatus( self, taskName ):
         """

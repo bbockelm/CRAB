@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.107 2008/09/30 22:07:23 mcinquil Exp $"
-__version__ = "$Revision: 1.107 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.104 2008/09/23 13:22:50 mcinquil Exp $"
+__version__ = "$Revision: 1.104 $"
 
 import os
 import time
@@ -592,10 +592,11 @@ class TaskTrackingComponent:
             dictStateTot = {}
             #numJobs = ttdb.countServerJob(mySession.bossLiteDB, taskName)
             numJobs = len(taskObj.jobs)
+            status, uuid, email, user_name = ttdb.getStatusUUIDEmail( taskName, mySession.bossLiteDB )
             dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
             pathToWrite = os.path.join(str(self.args['dropBoxPath']), (taskName + self.workAdd))
             if os.path.exists( pathToWrite ):
-                self.prepareReport( taskName, " ", " ", " ", " ", " ", dictStateTot, numJobs, 1 )
+                self.prepareReport( taskName, uuid, email, user_name, 0, 0, dictStateTot, numJobs, 1 )
                 self.undiscoverXmlFile( pathToWrite, self.tempxmlReportFile, self.xmlReportFileName )
         except Exception, ex:
             import traceback
@@ -680,11 +681,12 @@ class TaskTrackingComponent:
                 countNotSubmitted = 0
                 dictStateTot = {}
                 numJobs = len(taskObj.jobs)
+                status, uuid, email, user_name = ttdb.getStatusUUIDEmail( taskName, mySession.bossLiteDB )
                 dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
                 pathToWrite = os.path.join( self.args['dropBoxPath'], \
                                             (taskName + self.workAdd) )
                 if os.path.exists( pathToWrite ):
-                    self.prepareReport( taskName, " ", " ", " ", " ", " ", dictStateTot, numJobs, 1 )
+                    self.prepareReport( taskName, uuid, email, user_name, 0, 0, dictStateTot, numJobs, 1 )
                     self.undiscoverXmlFile( pathToWrite, self.tempxmlReportFile, self.xmlReportFileName )
         except Exception, ex:
             logging.error( "Exception raised: " + str(ex) )
@@ -1145,8 +1147,13 @@ class TaskTrackingComponent:
             logBuf = self.__log(logBuf, " ")
             logging.info(logBuf)
             logBuf = ""
-
-            self.__call__(messageType, payload)
+            try:
+                self.__call__(messageType, payload)
+            except Exception, ex:
+                logging.error("Exception [%s] managing message "%(str(ex)))
+                logging.error("Unattended message formatting")
+                logging.error("\t-type: %s"%(str(messageType)))
+                logging.error("\t-payl: %s"%(str(payload)))
 
             self.ms.commit()
 
