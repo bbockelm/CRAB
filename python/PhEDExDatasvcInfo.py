@@ -14,7 +14,8 @@ class PhEDExDatasvcInfo:
         url="https://cmsweb.cern.ch/phedex/datasvc/xml/prod"
         self.datasvc_url = cfg_params.get("USER.datasvc_url",url)
 
-        self.FacOps_savannah = 'https://savannah.cern.ch/projects/cmscompinfrasup/'  
+        self.FacOps_savannah = 'https://savannah.cern.ch/support/?func=additem&group=cmscompinfrasup'
+
 
         self.srm_version = cfg_params.get("USER.srm_version",'srmv2')
         self.node = cfg_params.get('USER.storage_element',None)
@@ -37,7 +38,6 @@ class PhEDExDatasvcInfo:
             msg += '      For further information please visit: ADD_TWIKI_LINK'
             raise CrabException(msg)
         self.sched = common.scheduler.name().upper() 
-
         self.protocol = self.srm_version
         if self.sched in ['CAF','LSF']:self.protocol = 'direct'
 
@@ -192,10 +192,49 @@ class PhEDExDatasvcInfo:
   
             stageoutpfn = self.parse_lfn2pfn(domlfn2pfn)
             if not stageoutpfn:
-                msg ='Unable to get stageout path for Site %s. Maybe it does not correctly export its TFC. \n'%self.node
-                msg+='      Please alert the FacOps group through their savannah %s'%self.FacOps_savannah
+                msg ='Unable to get stageout path from TFC at Site %s \n'%self.node
+                msg+='      Please alert the CompInfraSup group through their savannah %s \n'%self.FacOps_savannah
+                msg+='      reporting: \n'
+                msg+='       Summary: Unable to get user stageout from TFC at Site %s \n'%self.node
+                msg+='       OriginalSubmission: stageout path is not retrieved from %s \n'%fullurl
                 raise CrabException(msg)
         else:
             stageoutpfn = 'srm://'+self.node+':8443'+self.user_se_path+self.lfn 
 
         return stageoutpfn 
+
+
+
+if __name__ == '__main__':
+  """
+  Sort of unit testing to check Phedex API for whatever site and/or lfn.
+  Usage:
+     python PhEDExDatasvcInfo.py --node T2_IT_Bari --lfn /store/maremma
+
+  """
+  import getopt,sys
+  from crab_util import *
+  import common
+  klass_name = 'SchedulerGlite'
+  klass = importName(klass_name, klass_name)
+  common.scheduler = klass()
+
+  lfn="/store/user/"
+  node='T2_IT_Bari'
+  valid = ['node=','lfn=']
+  try:
+       opts, args = getopt.getopt(sys.argv[1:], "", valid)
+  except getopt.GetoptError, ex:
+       print str(ex)
+       sys.exit(1)
+  for o, a in opts:
+        if o == "--node":
+            node = a
+        if o == "--lfn":
+            lfn = a
+  
+  mycfg_params = { 'USER.storage_element': node }
+  dsvc = PhEDExDatasvcInfo(mycfg_params)
+  dsvc.lfn = lfn
+  print dsvc.getStageoutPFN()
+
