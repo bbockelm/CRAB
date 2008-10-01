@@ -1393,9 +1393,11 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsModifyReport\n'
         publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (publish_data == 1):
+        
+            processedDataset = self.cfg_params['USER.publish_data_name']
 
             txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'
-            txt += '    FOR_LFN=$LFNBaseName/${PSETHASH}/\n'
+            txt += '    FOR_LFN=$LFNBaseName\n'
             txt += 'else\n'
             txt += '    FOR_LFN=/copy_problems/ \n'
             txt += '    SE=""\n'
@@ -1404,14 +1406,15 @@ class Cmssw(JobType):
 
             txt += 'echo ">>> Modify Job Report:" \n'
             txt += 'chmod a+x $RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
-            txt += 'ProcessedDataset= $procDataset \n'
+            txt += 'ProcessedDataset='+processedDataset+'\n'
+            #txt += 'ProcessedDataset=$procDataset \n'
             txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += 'echo "SE = $SE"\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
             args = '$RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier ' \
-                   '$User -$ProcessedDataset-$PSETHASH $ApplicationFamily '+ \
+                   '$USER-$ProcessedDataset-$PSETHASH $ApplicationFamily '+ \
                     '  $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH'
             txt += 'echo "$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)+'"\n'
             txt += '$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)+'\n'
