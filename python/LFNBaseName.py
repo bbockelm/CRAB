@@ -6,7 +6,7 @@ _LFNBaseName_
 from crab_exceptions import *
 from crab_util import runCommand
 import common
-import os, string
+import os, string, time
 from ProdCommon.SiteDB.SiteDB import SiteDBJSON
 
 
@@ -48,14 +48,13 @@ def getDN():
         raise CrabException(msg)
     return userdn.split('\n')[0]
 
-def gethnUserName():
+def gethnUserNameFromSiteDB():
     """
     extract user name from SiteDB
     """
     hnUserName = None
     userdn = getDN()
     mySiteDB = SiteDBJSON()
-
     try:
         hnUserName = mySiteDB.dnUserName(dn=userdn)
     except:
@@ -67,6 +66,36 @@ def gethnUserName():
         print msg
         raise CrabException(msg)
     return hnUserName
+
+
+def gethnUserName():
+    """
+    cache the username extracted from SiteDB for 24hours
+    """
+    userconfigFileName="SiteDBusername.conf"
+    if not os.path.exists(userconfigFileName):
+        common.logger.debug(5,"Downloading from SiteDB username into %s"%userconfigFileName)
+        nameuser = gethnUserNameFromSiteDB()
+        userfile = open(userconfigFileName, 'w')
+        userfile.write(nameuser)
+        userfile.close()
+    else:
+        statinfo = os.stat(userconfigFileName)
+        ## if the file is older then 24 hours it is re-downloaded to update the configuration
+        oldness = 24*3600
+        if (time.time() - statinfo.st_ctime) > oldness:
+           common.logger.debug(5,"Downloading from SiteDB username into %s"%userconfigFileName)
+           nameuser = gethnUserNameFromSiteDB()
+           userfile = open(userconfigFileName, 'w')
+           userfile.write(nameuser)
+           userfile.close()
+        else:
+           userfile = open(userconfigFileName, 'r')
+           for line in userfile.readlines():
+               nameuser = line
+           userfile.close()
+           nameuser = string.strip(nameuser)
+    return nameuser  
 
 def getUserName(LocalUser=False):
     """
