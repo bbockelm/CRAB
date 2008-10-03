@@ -27,7 +27,8 @@ class Event:
                          "txt":    "", \
                          "reason": "", \
                          "code":   "", \
-                         "time":   ""  \
+                         "time":   "", \
+                         "exc":    ""  \
                        }
         self._eventreport = "Event"
         self._report = None
@@ -162,7 +163,10 @@ if __name__=="__main__":
                    "reason": "develop logging info", \
                    "code":   "00", \
                    "time":   "0.0", \
-                   "author": "pipposfdsfds" \
+                   "author": "pipposfdsfds" ,\
+                   "exc":    "Exception: asldkjalskdjaklsjdaklsdhajsdhgjsadghjsagdfhasfdghas\n\
+                                         dfahjsgdajhsgdaj ASdgajhsDGAHJSgdahjGDHAJSgdajhsDGA\n\
+                                         jkhdgaksjHDGAHJsdgajhGDAJHgdajhDGAJHgdahjDGAJHdgahj"\
                  }
 
     ev.initialize(infoEvento)
