@@ -151,6 +151,11 @@ class SchedulerLocal(Scheduler) :
             txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'
             txt += '    echo "Problem copying file to $SE $SE_PATH"\n'
             txt += '    copy_exit_status=$StageOutExitStatus \n'
+            txt += '    copy_exit_status=$StageOutExitStatus \n'
+            if not self.debug_wrapper: 
+                txt += '    ########### details of SE interaction\n'
+                txt += '    cat .SEinteraction.log\n'   
+                txt += '    ########### \n'
          #  txt += '    SE=""\n'
          #  txt += '    SE_PATH=""\n'
             txt += '    job_exit_code=$StageOutExitStatus\n'

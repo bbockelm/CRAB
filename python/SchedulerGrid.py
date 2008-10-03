@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.74 2008/09/26 07:31:09 spiga Exp $"
-__version__ = "$Revision: 1.74 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.75 2008/09/26 11:00:06 spiga Exp $"
+__version__ = "$Revision: 1.75 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -273,6 +273,10 @@ class SchedulerGrid(Scheduler):
             txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'
             txt += '    echo "Problem copying file to $SE $SE_PATH"\n'
             txt += '    copy_exit_status=$StageOutExitStatus \n'
+            if not self.debug_wrapper: 
+                txt += '    ########### details of SE interaction\n'
+                txt += '    cat .SEinteraction.log\n'   
+                txt += '    ########### \n'
           #  txt += '    SE=""\n'
           #  txt += '    SE_PATH=""\n'
             txt += '    job_exit_code=$StageOutExitStatus\n'
