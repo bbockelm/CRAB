@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
-import sys, getopt, string
+import sys, string
 import os, popen2
 from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
 from ProdCommon.Storage.SEAPI.SBinterface import *
 
 
-
 class cmscp:
-    def __init__(self, argv):
+    def __init__(self, args):
         """
         cmscp
 
@@ -25,79 +24,41 @@ class cmscp:
              return 60307 if srmcp failed
              return 60303 if file already exists in the SE
         """
+
         #set default
-        self.debug = 0
-        self.source = ''
-        self.destination = ''
-        self.file_to_copy = []
-        self.remote_file_name = []
-        self.protocol = ''
-        self.middleware = ''
-        self.srmv = ''
-
-        # default for stage out approach To be used with "middleware"
-        self.lcgOpt='-b -D srmv2 --vo cms -t 2400 --verbose'
-        self.srmOpt='-debug=true -report ./srmcp.report -retry_timeout 480000 -retry_num 3'
-        self.rfioOpt=''
-        # default to be used with protocol
-        self.opt=''
-
-        try:
-            opts, args = getopt.getopt(argv, "", ["source=", "destination=", "inputFileList=", "outputFileList=", \
-                                                  "protocol=", "middleware=", "srm_version=", "debug", "help"])
-        except getopt.GetoptError:
-            print self.usage()
-            sys.exit(2)
-
-        self.setAndCheck(opts)
+        self.params = {"source":'', "destination":'', "inputFileList":'', "outputFileList":'', \
+                           "protocol":'', "option":'', "middleware":'', "srm_version":''}
+        self.debug = 0  
+ 
+        self.params.update( args )
 
         return
 
-    def setAndCheck( self, opts ):
+    def processOptions( self ):
         """
-        Set and check command line parameter
+        check command line parameter
         """
-        if not opts :
-            print self.usage()
-            sys.exit()
-        for opt, arg in opts :
-            if opt  == "--help" :
-                print self.usage()
-                sys.exit()
-            elif opt == "--debug" :
-                self.debug = 1
-            elif opt == "--source" :
-                self.source = arg
-            elif opt == "--destination":
-                self.destination = arg
-            elif opt == "--inputFileList":
-                infile = arg
-            elif opt == "--outputFileList":
-                out_file
-            elif opt == "--protocol":
-                self.protocol = arg
-            elif opt == "--middleware":
-                self.middleware = arg
-            elif opt == "--srm_version":
-                self.srmv = arg
+
+        if 'help' in self.params.keys(): HelpOptions()        
+        if 'debug' in self.params.keys(): self.debug = 1        
 
         # source and dest cannot be undefined at same time
-        if self.source == '' and self.destination == '':
-            print self.usage()
-            sys.exit()
+        if not self.params['source']  and not self.params['destination'] :
+            HelpOptions()
+
         # if middleware is not defined --> protocol cannot be empty
-        if self.middleware == '' and self.protocol == '':
-            print self.usage()
-            sys.exit()
+        if not self.params['middleware'] and not self.params['protocol'] :
+            HelpOptions()
+
         # input file must be defined
-        if infile == '':
-            print self.usage()
-            sys.exit()
+        if not self.params['inputFileList'] : HelpOptions()
         else:
-            if infile.find(','):
-                [self.file_to_copy.append(x.strip()) for x in infile.split(',')]
+            file_to_copy=[]
+            if self.params['inputFileList'].find(','): 
+                [file_to_copy.append(x.strip()) for x in self.params['inputFileList'].split(',')]
             else:
-                self.file_to_copy.append(infile)
+                file_to_copy.append(self.params['inputFileList'])
+            self.params['inputFileList'] = file_to_copy
 
         ## TO DO:
         #### add check for outFiles
@@ -110,44 +71,47 @@ class cmscp:
         Check if running on UI (no $middleware) or
         on WN (on the Grid), and take different action
         """
-        if self.middleware :
-           results = self.stager()
+
+        self.processOptions()
+        # stage out from WN
+        if self.params['middleware'] :
+           results = self.stager(self.params['middleware'],self.params['inputFileList'])
+           self.finalReport(results)
+        # Local interaction with SE
         else:
-           results = self.copy( self.file_to_copy, self.protocol , self.opt)
+           results = self.copy(self.params['inputFilesList'], self.params['protocol'], self.protocols['option'] )
+           return results
 
-        self.finalReport(results,self.middleware)
-
-        return
-
-    def setProtocol( self ):
+    def setProtocol( self, middleware ):
         """
         define the allowed potocols based on $middlware
         which depend on scheduler
         """
-        if self.middleware.lower() in ['osg','lcg']:
-            supported_protocol = ['srm-lcg','srmv2']
-            self.OptMap = {'srm-lcg': self.lcgOpt,
-                           'srmv2': self.srmOpt }
-        elif self.middleware.lower() in ['lsf','caf']:
-            supported_protocol = ['rfio']
-            self.OptMap = {'rfio': self.rfioOpt }
+        # default To be used with "middleware"
+        lcgOpt='-b -D srmv2 --vo cms -t 2400 --verbose'
+        srmOpt='-debug=true -report ./srmcp.report -retry_timeout 480000 -retry_num 3'
+        rfioOpt=''
+
+        if middleware.lower() in ['osg','lcg']:
+            supported_protocol = [('srm-lcg',lcgOpt),\
+                                  ('srmv2',srmOpt)]
+        elif middleware.lower() in ['lsf','caf']:
+            supported_protocol = [('rfio',rfioOpt)] 
         else:
             ## here we can add support for any kind of protocol,
             ## maybe some local schedulers need something dedicated
             pass
         return supported_protocol
 
-    def stager( self ):
+    def stager( self, middleware, list_files ):
         """
         Implement the logic for remote stage out
         """
-        protocols = self.setProtocol()
         count=0
-        list_files = self.file_to_copy
         results={}
-        for prot in protocols:
+        for prot, opt in self.setProtocol( middleware ):
             if self.debug: print 'Trying stage out with %s utils \n'%prot
-            copy_results = self.copy( list_files, prot, self.OptMap[prot] )
+            copy_results = self.copy( list_files, prot, opt )
             list_retry = []
             list_existing = []
             list_ok = []
@@ -163,11 +127,11 @@ class cmscp:
             results.update(copy_results)
             if len(list_ok) != 0:
                 msg = 'Copy of %s succedeed with %s utils\n'%(str(list_ok),prot)
-               # print msg
+                if self.debug : print msg
             if len(list_ok) == len(list_files) :
                 break
             else:
-         #       print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
+                if self.debug : print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
                 if len(list_retry): list_files = list_retry
                 else: break
             count =+1
@@ -190,18 +154,18 @@ class cmscp:
         """
         source_prot = protocol
         dest_prot = protocol
-        if self.source == '' : source_prot = 'local'
-        Source_SE  = self.storageInterface( self.source, source_prot )
-        if self.destination == '' : dest_prot = 'local'
-        Destination_SE = self.storageInterface( self.destination, dest_prot )
+        if not self.params['source'] : source_prot = 'local'
+        Source_SE  = self.storageInterface( self.params['source'], source_prot )
+        if not self.params['destination'] : dest_prot = 'local'
+        Destination_SE = self.storageInterface( self.params['destination'], dest_prot )
 
         if self.debug :
-            print '(source=%s,  protocol=%s)'%(self.source, source_prot)
-            print '(destination=%s,  protocol=%s)'%(self.destination, dest_prot)
+            print '(source=%s,  protocol=%s)'%(self.params['source'], source_prot)
+            print '(destination=%s,  protocol=%s)'%(self.params['destination'], dest_prot)
 
         return Source_SE, Destination_SE
 
-    def copy( self, list_file, protocol, opt):
+    def copy( self, list_file, protocol, options ):
         """
         Make the real file copy using SE API
         """
@@ -210,12 +174,18 @@ class cmscp:
         Source_SE, Destination_SE = self.initializeApi( protocol )
 
         # create remote dir
-        if protocol in ['gridftp','rfio']:
+        if protocol == 'gridftp':
             self.createDir( Destination_SE, protocol )
 
         ## prepare for real copy  ##
-        sbi = SBinterface( Source_SE, Destination_SE )
-        sbi_dest = SBinterface(Destination_SE)
+        try :
+            sbi = SBinterface( Source_SE, Destination_SE )
+            sbi_dest = SBinterface(Destination_SE)
+        except Exception, ex:
+            msg = ''
+            if self.debug : msg = str(ex)+'\n'
+            msg += "ERROR : Unable to create SBinterface with %s protocol\n"%protocol
+            raise msg
 
         results = {}
         ## loop over the complete list of files
@@ -223,57 +193,11 @@ class cmscp:
             if self.debug : print 'start real copy for %s'%filetocopy
             ErCode, msg = self.checkFileExist( sbi_dest, os.path.basename(filetocopy) )
             if ErCode == '0':
-                ErCode, msg = self.makeCopy( sbi, filetocopy , opt)
-            if self.debug : print 'Copy results for %s is %s'%( os.path.basename(filetocopy) ,ErCode)
+                ErCode, msg = self.makeCopy( sbi, filetocopy , options )
+            if self.debug : print 'Copy results for %s is %s'%( os.path.basename(filetocopy), ErCode)
             results.update( self.updateReport(filetocopy, ErCode, msg))
         return results
 
-    def updateReport(self, file, erCode, reason, lfn='', se='' ):
-        """
-        Update the final stage out infos
-        """
-        jobStageInfo={}
-        jobStageInfo['erCode']=erCode
-        jobStageInfo['reason']=reason
-        jobStageInfo['lfn']=lfn
-        jobStageInfo['se']=se
-
-        report = { file : jobStageInfo}
-        return report
-
-    def finalReport( self , results, middleware ):
-        """
-        It should return a clear list of LFNs for each SE where data are stored.
-        allow "crab -copyLocal" or better "crab -copyOutput". TO_DO.
-        """
-        if middleware:
-            outFile = open('cmscpReport.sh',"a")
-            cmscp_exit_status = 0
-            txt = ''
-            for file, dict in results.iteritems():
-                if dict['lfn']=='':
-                    lfn = '$LFNBaseName/'+os.path.basename(file)
-                    se  = '$SE'
-                else:
-                    lfn = dict['lfn']+os.pat.basename(file)
-                    se = dict['se']
-                #dict['lfn'] # to be implemented
-                txt +=  'echo "Report for File: '+file+'"\n'
-                txt +=  'echo "LFN: '+lfn+'"\n'
-                txt +=  'echo "StorageElement: '+se+'"\n'
-                txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
-                txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
-                if dict['erCode'] != '0':
-                    cmscp_exit_status = dict['erCode']
-            txt += '\n'
-            txt += 'export StageOutExitStatus='+str(cmscp_exit_status)+'\n'
-            txt +=  'echo "StageOutExitStatus = '+str(cmscp_exit_status)+'" | tee -a $RUNTIME_AREA/$repo\n'
-            outFile.write(str(txt))
-            outFile.close()
-        else:
-            for file, code in results.iteritems():
-                print 'error code = %s for file %s'%(code,file)
-        return
 
     def storageInterface( self, endpoint, protocol ):
         """
@@ -285,7 +209,7 @@ class cmscp:
             msg = ''
             if self.debug : msg = str(ex)+'\n'
             msg += "ERROR : Unable to create interface with %s protocol\n"%protocol
-            print msg
+            raise msg
 
         return interface
 
@@ -297,11 +221,10 @@ class cmscp:
 
     def createDir(self, Destination_SE, protocol):
         """
-        Create remote dir for gsiftp/rfio REALLY TEMPORARY
+        Create remote dir for gsiftp REALLY TEMPORARY
         this should be transparent at SE API level.
         """
         ErCode = '0'
-        msg_1 = ''
         try:
             action = SBinterface( Destination_SE )
             action.createDir()
@@ -309,34 +232,31 @@ class cmscp:
         except Exception, ex:
             msg = ''
             if self.debug : msg = str(ex)+'\n'
-            msg_1 = "ERROR: problem with the directory creation using %s protocol \n"%protocol
-            msg += msg_1
+            msg = "ERROR: problem with the directory creation using %s protocol \n"%protocol
             ErCode = '60316'
-            #print msg
 
-        return ErCode, msg_1
+        return ErCode, msg
 
-    def checkFileExist(self, sbi, filetocopy):
+    def checkFileExist( self, sbi, filetocopy ):
         """
         Check if file to copy already exist
         """
+        ErCode = '0'
+        msg = ''
         try:
             check = sbi.checkExists(filetocopy)
         except Exception, ex:
             msg = ''
             if self.debug : msg = str(ex)+'\n'
-            msg += "ERROR: problem with check File Exist using %s protocol \n"%protocol
-           # print msg
-        ErCode = '0'
-        msg = ''
-        if check :
+            msg +='problems checkig if file already exist'
+            raise msg
+        if check :    
             ErCode = '60303'
             msg = "file %s already exist"%filetocopy
-            print msg
 
         return ErCode,msg
 
-    def makeCopy(self, sbi, filetocopy, opt ):
+    def makeCopy(self, sbi, filetocopy, option ):
         """
         call the copy API.
         """
@@ -344,24 +264,24 @@ class cmscp:
         file_name =  os.path.basename(filetocopy)
         source_file = filetocopy
         dest_file = file_name ## to be improved supporting changing file name  TODO
-        if self.source == '' and path == '':
+        if self.params['source'] == '' and path == '':
             source_file = os.path.abspath(filetocopy)
-        elif self.destination =='':
+        elif self.params['destination'] =='':
             dest_file = os.path.join(os.getcwd(),file_name)
-        elif self.source != '' and self.destination != '' :
+        elif self.params['source'] != '' and self.params['destination'] != '' :
             source_file = file_name
+
         ErCode = '0'
         msg = ''
 
         try:
-            pippo = sbi.copy( source_file , dest_file , opt = opt)
-            if self.protocol == 'srm' : self.checkSize( sbi, filetocopy )
+            sbi.copy( source_file , dest_file , opt = option)
+            #if self.protocol == 'srm' : self.checkSize( sbi, filetocopy ) ## TODO
         except Exception, ex:
             msg = ''
             if self.debug : msg = str(ex)+'\n'
             msg = "Problem copying %s file" % filetocopy
             ErCode = '60307'
-            #print msg
 
         return ErCode, msg
 
@@ -394,23 +314,99 @@ class cmscp:
         """
         return
 
-    def usage(self):
-
-        msg="""
-        required parameters:
-        --source        :: REMOTE           :
-        --destination   :: REMOTE           :
-        --debug             :
-        --inFile :: absPath : or name NOT RELATIVE PATH
-        --outFIle :: onlyNAME : NOT YET SUPPORTED
-
-        optional parameters
+    def updateReport(self, file, erCode, reason, lfn='', se='' ):
         """
-        return msg
+        Update the final stage out infos
+        """
+        jobStageInfo={}
+        jobStageInfo['erCode']=erCode
+        jobStageInfo['reason']=reason
+        jobStageInfo['lfn']=lfn
+        jobStageInfo['se']=se
+
+        report = { file : jobStageInfo}
+        return report
+
+    def finalReport( self , results ):
+        """
+        It a list of LFNs for each SE where data are stored.
+        allow "crab -copyLocal" or better "crab -copyOutput". TO_DO.
+        """
+        outFile = open('cmscpReport.sh',"a")
+        cmscp_exit_status = 0
+        txt = ''
+        for file, dict in results.iteritems():
+            if dict['lfn']=='':
+                lfn = '$LFNBaseName/'+os.path.basename(file)
+                se  = '$SE'
+            else:
+                lfn = dict['lfn']+os.pat.basename(file)
+                se = dict['se']
+            #dict['lfn'] # to be implemented
+            txt +=  'echo "Report for File: '+file+'"\n'
+            txt +=  'echo "LFN: '+lfn+'"\n'
+            txt +=  'echo "StorageElement: '+se+'"\n'
+            txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
+            txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
+            if dict['erCode'] != '0':
+                cmscp_exit_status = dict['erCode']
+        txt += '\n'
+        txt += 'export StageOutExitStatus='+str(cmscp_exit_status)+'\n'
+        txt +=  'echo "StageOutExitStatus = '+str(cmscp_exit_status)+'" | tee -a $RUNTIME_AREA/$repo\n'
+        outFile.write(str(txt))
+        outFile.close()
+        return
+
+
+def usage():
+
+    msg="""
+    required parameters:
+    --source        :: REMOTE           :
+    --destination   :: REMOTE           :
+    --debug             :
+    --inFile :: absPath : or name NOT RELATIVE PATH
+    --outFIle :: onlyNAME : NOT YET SUPPORTED
+
+    optional parameters
+    """
+    print msg 
+
+    return 
+
+def HelpOptions(opts=[]):
+    """
+    Check otps, print help if needed
+    prepare dict = { opt : value }  
+    """
+    dict_args = {}
+    if len(opts):
+        for opt, arg in opts:
+            dict_args[opt.split('--')[1]] = arg 
+            if opt in ('-h','-help','--help') :
+                usage()
+                sys.exit(0)
+        return dict_args
+    else:
+        usage()
+        sys.exit(0)
 
 if __name__ == '__main__' :
+
+    import getopt 
+
+    allowedOpt = ["source=", "destination=", "inputFileList=", "outputFileList=", \
+                  "protocol=","option=", "middleware=", "srm_version=", "debug", "help"]
+    try:    
+        opts, args = getopt.getopt( sys.argv[1:], "", allowedOpt ) 
+    except getopt.GetoptError, err:
+        print err
+        HelpOptions()
+        sys.exit(2)
+ 
+    dictArgs = HelpOptions(opts)
     try:
-        cmscp_ = cmscp(sys.argv[1:])
+        cmscp_ = cmscp(dictArgs)
         cmscp_.run()
     except:
         pass
