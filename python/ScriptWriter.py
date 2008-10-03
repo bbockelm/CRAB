@@ -62,7 +62,9 @@ class ScriptWriter:
         """
 
         tpl = open(self.template, 'r')
-        script = open(common.work_space.jobDir()+self.scriptName,'w')
+ 
+        wrapper_fullPath = common.work_space.jobDir()+self.scriptName
+        script = open(wrapper_fullPath,'w')
 
         for line in tpl:
             if len(line) > 6 and line[:6] == '#CRAB ':
@@ -86,6 +88,7 @@ class ScriptWriter:
 
         script.close()
         tpl.close()
+       # os.chmod(wrapper_fullPath, 0744)
         return
 
     def title_(self):
