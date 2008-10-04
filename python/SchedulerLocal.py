@@ -130,11 +130,11 @@ class SchedulerLocal(Scheduler) :
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
             txt += 'export LFNBaseName='+lfn+'\n'
-            txt += 'echo LFNBaseName = $LFNBaseName\n'
+            txt += 'echo "LFNBaseName = $LFNBaseName"\n'
             txt += 'export USER='+user+'\n'
-            txt += 'echo "USER = $USER\n'
+            txt += 'echo "USER = $USER"\n'
             txt += 'export endpoint='+endpoint+'\n'
-            txt += 'echo "endpoint = $endpoint\n'
+            txt += 'echo "endpoint = $endpoint"\n'
             ### Needed i.e. for caf  
             if (pool):
                 txt += 'export STAGE_SVCCLASS='+str(pool)+'\n'
@@ -147,7 +147,7 @@ class SchedulerLocal(Scheduler) :
                 txt += '########### details of SE interaction\n'
                 txt += 'cat .SEinteraction.log\n'   
                 txt += '########### \n'
-            txt += 'source cmscpReport.sh'
+            txt += 'source cmscpReport.sh\n'
             txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'
             txt += '    echo "Problem copying file to $SE $SE_PATH"\n'
             txt += '    copy_exit_status=$StageOutExitStatus \n'
