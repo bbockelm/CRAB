@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.34 2008/09/23 09:27:53 ewv Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.35 2008/10/01 15:21:33 slacapra Exp $"
+__version__ = "$Revision: 1.35 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -45,7 +45,10 @@ class GetOutputServer( GetOutput, StatusServer ):
         filesAndJodId.update( self.retrieveFiles(self.list_id) )
         common.logger.debug(5, "Files to be organized and notified " + str(filesAndJodId))
 
-        self.organizeOutput(self.list_id)
+        # load updated task       
+        task = common._db.getTask()
+     
+        self.organizeOutput( task, self.list_id )
 
         self.notifyRetrievalToServer(filesAndJodId)
         return
