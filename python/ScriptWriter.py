@@ -88,7 +88,7 @@ class ScriptWriter:
 
         script.close()
         tpl.close()
-       # os.chmod(wrapper_fullPath, 0744)
+        os.chmod(wrapper_fullPath, 0744)
         return
 
     def title_(self):
