@@ -120,10 +120,13 @@ class ProxyLife:
 
 
     def dumpToFile(self, tasklist):
+        from TaskTracking.TaskStateAPI import TaskStateAPI
         towrite = []
+        ttdb = TaskStateAPI()
         for task in tasklist:
+            uuid = ttdb.getStatusUUIDEmail( task )[1]
             ttuid = TaskTrackingUtil("0")
-            towrite.append( ttuid.getOriginalTaskName(task) )
+            towrite.append( ttuid.getOriginalTaskName(task, uuid) )
         import time
         filename = "tasklist_"+str(time.time())
         filepath = os.path.join(os.getcwd(), filename)
