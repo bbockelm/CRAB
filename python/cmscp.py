@@ -174,7 +174,7 @@ class cmscp:
         Source_SE, Destination_SE = self.initializeApi( protocol )
 
         # create remote dir
-        if protocol == 'gridftp':
+        if protocol in ['gridftp'.'rfio']:
             self.createDir( Destination_SE, protocol )
 
         ## prepare for real copy  ##
@@ -225,6 +225,7 @@ class cmscp:
         this should be transparent at SE API level.
         """
         ErCode = '0'
+        msg = '' 
         try:
             action = SBinterface( Destination_SE )
             action.createDir()
