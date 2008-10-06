@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.21 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.21 2008/09/11 15:44:03 farinafa Exp $"
+__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.22 2008/10/06 17:09:50 spiga Exp $"
 
 import os
 import time
@@ -121,7 +121,7 @@ class CRAB_AS_beckend:
 
         # Configuration files parameters
         schedList = ["edg", "glite"]    ## as well as above
-        basicUrl = ' https://cmsweb.cern.ch/crabconf/files/'
+        basicUrl = 'https://cmsweb.cern.ch/crabconf/files/'
 
 
         # Check if everything is already on the server
@@ -139,7 +139,7 @@ class CRAB_AS_beckend:
         self.log.info("Some configuration files are missing: downloading ...")
         for sched in schedList:
             # build the cfgFile filename
-            fileName = sched + '.conf.CMS_' + self.args['resourceBroker']
+            fileName = sched + '_wms_' + self.args['resourceBroker'] + '.conf' 
             if sched == "edg":
                fileName = sched + '_wl_ui_cmd_var.conf.CMS_' + self.args['resourceBroker']
                
