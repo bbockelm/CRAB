@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.20 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.20 2008/07/15 08:59:51 farinafa Exp $"
+__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.21 2008/09/11 15:44:03 farinafa Exp $"
 
 import os
 import time
@@ -121,7 +121,8 @@ class CRAB_AS_beckend:
 
         # Configuration files parameters
         schedList = ["edg", "glite"]    ## as well as above
-        basicUrl = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
+        basicUrl = ' https://cmsweb.cern.ch/crabconf/files/'
+
 
         # Check if everything is already on the server
         existsUIcfgRB = os.path.exists( self.args['uiConfigRB'] )
