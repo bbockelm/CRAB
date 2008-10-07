@@ -12,6 +12,7 @@ CREATE TABLE js_taskInstance (
      status varchar(255) NOT NULL default 'not submitted',
      work_status TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '0=free task; 1=busy task; 2:controlled task' CHECK(VALUE>=0 AND VALUE<=2),
      user_name varchar(255) NOT NULL default '',
+     land_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
      primary key(id),
      unique(taskName),
      key(taskName)
