@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.104 2008/09/23 13:22:50 mcinquil Exp $"
-__version__ = "$Revision: 1.104 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.109 2008/10/01 15:55:57 mcinquil Exp $"
+__version__ = "$Revision: 1.109 $"
 
 import os
 import time
@@ -175,6 +175,7 @@ class TaskTrackingComponent:
         c.addNode(ev)
         #write the xml to the path
         c.toFile( filepath )
+        
 
     def __call__(self, event, payload):
         """
@@ -681,6 +682,7 @@ class TaskTrackingComponent:
                 countNotSubmitted = 0
                 dictStateTot = {}
                 numJobs = len(taskObj.jobs)
+                ttdb = TaskStateAPI()
                 status, uuid, email, user_name = ttdb.getStatusUUIDEmail( taskName, mySession.bossLiteDB )
                 dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
                 pathToWrite = os.path.join( self.args['dropBoxPath'], \
