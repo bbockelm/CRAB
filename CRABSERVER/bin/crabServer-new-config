@@ -103,7 +103,7 @@ componentFields = {
     "TaskTracking" : {
     'ComponentDir':None,
     'Thread':'5',
-    'PollInterval':'4',
+    'PollInterval':'20',
     'debugLevel':'9',
     },
 
