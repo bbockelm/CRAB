@@ -89,13 +89,15 @@ def getNumTask(statusName,ended = True):
 def getSites(from_time='all',Sites='all'):
     """
     """  
-    dateCondition == '' 
+    condition =  " where destination <> '' "
+    dateCondition = '' 
     if from_time != 'all': 
-       dateCondition =  " where submission_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) "
+       dateCondition =  " and submission_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) "
     destCondition  = composeDestinationCondition(Sites)
     outputSites={};
     OverallCount = 0;
-    queryString = "select count(*),destination from bl_runningjob "+dateCondition+" "+dest_condition+"group by destination;"
+    queryString = "select count(*),destination from bl_runningjob "+condition+" "+dateCondition+" "+destCondition+"group by destination;"
+    print queryString
     taskCheck = queryMethod(queryString)
     tmpSite=[] 
     for count, site in taskCheck:
@@ -110,6 +112,14 @@ def getSites(from_time='all',Sites='all'):
         dict_results[s]=sum_count  
 
     return dict_results
+
+def getKeyNum(key,destination='all',from_time='all'):
+    dateCondition =  " and submission_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) "
+    dest_condition = composeDestinationCondition(destination);
+    queryString = "select count("+key+"),"+key+" from bl_runningjob where 1 "+dateCondition+" "+dest_condition+" group by "+key+" "
+    taskCheck = queryMethod(queryString)
+    
+    return taskCheck
 
 
 # Statistics users
