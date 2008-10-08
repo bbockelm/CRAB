@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.75 2008/09/26 11:00:06 spiga Exp $"
-__version__ = "$Revision: 1.75 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.76 2008/10/03 11:18:23 spiga Exp $"
+__version__ = "$Revision: 1.76 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -259,24 +259,26 @@ class SchedulerGrid(Scheduler):
             txt += 'echo "USER = $USER"\n'
             txt += 'export endpoint='+endpoint+'\n'
             txt += 'echo "endpoint = $endpoint"\n'
-            
+
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
             txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'"\n'
             txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
-            if self.debug_wrapper: 
-                txt += '########### details of SE interaction\n'
-                txt += 'cat .SEinteraction.log\n'   
-                txt += '########### \n'
+            if self.debug_wrapper:
+                txt += 'echo ########### details of SE interaction\n'
+                txt += 'cat .SEinteraction.log\n'
+                txt += 'echo ########### contents of cmscpReport\n'
+                txt += 'cat cmscpReport.sh\n'
+                txt += 'echo ########### \n'
             txt += 'source cmscpReport.sh\n'
             txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'
             txt += '    echo "Problem copying file to $SE $SE_PATH"\n'
             txt += '    copy_exit_status=$StageOutExitStatus \n'
-            if not self.debug_wrapper: 
-                txt += '    ########### details of SE interaction\n'
-                txt += '    cat .SEinteraction.log\n'   
-                txt += '    ########### \n'
+            if not self.debug_wrapper:
+                txt += 'echo ########### details of SE interaction\n'
+                txt += '    cat .SEinteraction.log\n'
+                txt += 'echo ########### \n'
           #  txt += '    SE=""\n'
           #  txt += '    SE_PATH=""\n'
             txt += '    job_exit_code=$StageOutExitStatus\n'
