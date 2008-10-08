@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.124 2008/09/21 19:41:14 spiga Exp $"
-__version__ = "$Revision: 1.124 $"
+__revision__ = "$Id: FatWorker.py,v 1.125 2008/09/25 15:10:42 spiga Exp $"
+__version__ = "$Revision: 1.125 $"
 import string
 import sys, os
 import time
@@ -193,7 +193,7 @@ class FatWorker(Thread):
         schedulerConfig = {'name': self.bossSchedName, 'user_proxy':taskObj['user_proxy']}
 
         if schedulerConfig['name'] in ['SchedulerGLiteAPI']:
-            schedulerConfig['config'] = self.wdir + '/glite.conf.CMS_' + self.configs['rb']
+            schedulerConfig['config'] = self.wdir + '/glite_wms_%s.conf' % self.configs['rb']
             schedulerConfig['skipWMSAuth'] = 1 
             if self.wmsEndpoint:
                 schedulerConfig['service'] = self.wmsEndpoint
