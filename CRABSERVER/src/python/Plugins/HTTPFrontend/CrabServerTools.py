@@ -15,7 +15,7 @@ from cherrypy.lib.static import serve_file
 
 from Plugins.HTTPFrontend.Task import TaskMonitor,TaskGraph
 from Plugins.HTTPFrontend.ComponentServicesMonitor import CompServMonitor
-from Plugins.HTTPFrontend.OverallMonitor import OverallMonitor, UserGraph, DestinationSitesMonitor
+from Plugins.HTTPFrontend.OverallMonitor import OverallMonitor, UserGraph, DestinationSitesMonitor, StatusPerDest
 
 class Root:
     """
@@ -113,10 +113,14 @@ def installer(**args):
     root.usergraph = UserGraph(
         "%s/images" % baseUrl,
         args['StaticDir'])
+    root.graphstatus = StatusPerDest(
+        "%s/images" % baseUrl,
+        args['StaticDir'])
 
     root.overall = OverallMonitor(
         "%s/usergraph" % baseUrl,
-        "%s/graphdest" % baseUrl
+        "%s/graphdest" % baseUrl,
+        "%s/graphstatus" % baseUrl
         )
 
 
