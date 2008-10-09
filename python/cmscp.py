@@ -89,10 +89,10 @@ class cmscp:
         which depend on scheduler
         """
         # default To be used with "middleware"
-        lcgOpt={'srmv1':'-b -D srmv1 --vo cms -t 2400 --verbose',
-                'srmv2':'-b -D srmv2 --vo cms -t 2400 --verbose'}
-        srmOpt={'srmv1':'-debug=true -report ./srmcp.report -retry_timeout 480000 -retry_num 3 -streams_num=1 ',
-                'srmv2':'-debug=true -report ./srmcp.report -retry_timeout 480000 -retry_num 3 -srm_protocol_version 2 '}
+        lcgOpt={'srmv1':'-b -D srmv1  -t 2400 --verbose',
+                'srmv2':'-b -D srmv2  -t 2400 --verbose'}
+        srmOpt={'srmv1':' -report ./srmcp.report -retry_timeout 480000 -retry_num 3 -streams_num=1 ',
+                'srmv2':' -report ./srmcp.report -retry_timeout 480000 -retry_num 3 '}
         rfioOpt=''
 
         if middleware.lower() in ['osg','lcg']:
@@ -110,7 +110,6 @@ class cmscp:
         """
         Implement the logic for remote stage out
         """
-        count=0
         results={}
         for prot, opt in self.setProtocol( middleware ):
             if self.debug: print 'Trying stage out with %s utils \n'%prot
@@ -118,26 +117,28 @@ class cmscp:
             list_retry = []
             list_existing = []
             list_ok = []
-            for file, dict in copy_results.iteritems():
-                er_code = dict['erCode']
-                if er_code == '60307': list_retry.append( file )
-                elif er_code == '60303': list_existing.append( file )
-                else:
-                    list_ok.append(file)
-                    reason = 'Copy succedeed with %s utils'%prot
-                    upDict = self.updateReport(file, er_code, reason)
-                    copy_results.update(upDict)
-            results.update(copy_results)
-            if len(list_ok) != 0:
-                msg = 'Copy of %s succedeed with %s utils\n'%(str(list_ok),prot)
-                if self.debug : print msg
-            if len(list_ok) == len(list_files) :
-                break
+            if copy_results.keys() == '':
+                results.update(copy_results)
             else:
-                if self.debug : print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
-                if len(list_retry): list_files = list_retry
-                else: break
-            count =+1
+                for file, dict in copy_results.iteritems():
+                    er_code = dict['erCode']
+                    if er_code == '0':
+                        list_ok.append(file)
+                        reason = 'Copy succedeed with %s utils'%prot
+                        upDict = self.updateReport(file, er_code, reason)
+                        copy_results.update(upDict)
+                    elif er_code == '60303': list_existing.append( file )
+                    else: list_retry.append( file )
+                results.update(copy_results)
+                if len(list_ok) != 0:
+                    msg = 'Copy of %s succedeed with %s utils\n'%(str(list_ok),prot)
+                    if self.debug : print msg
+                if len(list_ok) == len(list_files) :
+                    break
+                else:
+                    if self.debug : print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
+                    if len(list_retry): list_files = list_retry
+                    else: break
 
         #### TODO Daniele
         #check is something fails and created related dict
@@ -174,11 +175,17 @@ class cmscp:
         """
         if self.debug :
             print 'copy(): using %s protocol'%protocol
-        Source_SE, Destination_SE = self.initializeApi( protocol )
-
+        try:
+            Source_SE, Destination_SE = self.initializeApi( protocol )
+        except Exception, ex:
+            return self.updateReport('', '-1', str(ex))
+            
         # create remote dir
         if protocol in ['gridftp','rfio']:
-            self.createDir( Destination_SE, protocol )
+            try:
+                self.createDir( Destination_SE, protocol )
+            except Exception, ex:
+                return self.updateReport('', '60316', str(ex))
 
         ## prepare for real copy  ##
         try :
@@ -187,13 +194,16 @@ class cmscp:
         except ProtocolMismatch, ex:
             msg = str(ex)+'\n'
             msg += "ERROR : Unable to create SBinterface with %s protocol\n"%protocol
-            raise msg
+            return self.updateReport('', '-1', str(ex))
 
         results = {}
         ## loop over the complete list of files
         for filetocopy in list_file:
             if self.debug : print 'start real copy for %s'%filetocopy
-            ErCode, msg = self.checkFileExist( sbi_dest, os.path.basename(filetocopy) )
+            try :
+                ErCode, msg = self.checkFileExist( sbi_dest, os.path.basename(filetocopy) )
+            except Exception, ex:
+                return self.updateReport(filetocopy, '-1', str(ex))
             if ErCode == '0':
                 ErCode, msg = self.makeCopy( sbi, filetocopy , options )
             if self.debug : print 'Copy results for %s is %s'%( os.path.basename(filetocopy), ErCode)
@@ -211,7 +221,7 @@ class cmscp:
             msg = ''
             if self.debug : msg = str(ex)+'\n'
             msg += "ERROR : Unable to create interface with %s protocol\n"%protocol
-            raise msg
+            raise Exception(msg)
 
         return interface
 
@@ -220,7 +230,6 @@ class cmscp:
         Create remote dir for gsiftp REALLY TEMPORARY
         this should be transparent at SE API level.
         """
-        ErCode = '0'
         msg = '' 
         try:
             action = SBinterface( Destination_SE )
@@ -231,17 +240,13 @@ class cmscp:
             if self.debug :
                 msg += str(ex.detail)+'\n'
                 msg += str(ex.output)+'\n'
-            msg_rep = "ERROR: problem with the directory creation using %s protocol \n"%protocol
-            ErCode = '60316'
-            res = self.updateReport('', ErCode, msg_rep )
-            self.finalReport( res )
-            raise msg
+            msg += "ERROR: problem with the directory creation using %s protocol \n"%protocol
         except OperationException, ex:
             msg = str(ex)
             if self.debug : msg += str(ex.detail)+'\n'
-            print msg
+            msg = "ERROR: problem with the directory creation using %s protocol \n"%protocol
 
-        return ErCode, msg
+        return msg
 
     def checkFileExist( self, sbi, filetocopy ):
         """
@@ -256,19 +261,20 @@ class cmscp:
             if self.debug :
                 msg += str(ex.detail)+'\n'
                 msg += str(ex.output)+'\n'
-            msg +='problems checkig if file already exist'
-            raise msg
+            msg +='ERROR: problems checkig if file %s already exist'%filetocopy
+            raise Exception(msg)
         except WrongOption, ex:
             msg = str(ex)
             if self.debug :
                 msg += str(ex.detail)+'\n'
                 msg += str(ex.output)+'\n'
-            raise msg
+            msg +='ERROR problems checkig if file % already exist'%filetocopy
+            raise Exception(msg)
         if check :    
             ErCode = '60303'
             msg = "file %s already exist"%filetocopy
-
-        return ErCode,msg
+           
+        return ErCode, msg
 
     def makeCopy(self, sbi, filetocopy, option ):
         """
@@ -302,7 +308,8 @@ class cmscp:
             if self.debug :
                 msg += str(ex.detail)+'\n'
                 msg += str(ex.output)+'\n'
-            raise msg
+            msg += "Problem copying %s file" % filetocopy
+            ErCode = '60307'
  
          ## TO BE IMPLEMENTED if NEEDED
          ## NOTE: SE API Already available
