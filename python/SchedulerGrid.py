@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.78 2008/10/09 11:18:49 spiga Exp $"
-__version__ = "$Revision: 1.78 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.77 2008/10/08 16:20:02 ewv Exp $"
+__version__ = "$Revision: 1.77 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -96,8 +96,6 @@ class SchedulerGrid(Scheduler):
 
         # Default minimum CPU time to >= 130 minutes
         self.EDG_cpu_time = cfg_params.get('EDG.max_cpu_time', '130')
-
-        self.srm_version = cfg_params.get("USER.srm_version",'srmv2')
 
         self.debug_wrapper = cfg_params.get('USER.debug_wrapper',False)
         self.debugWrap=''
@@ -205,6 +203,9 @@ class SchedulerGrid(Scheduler):
         txt += '        echo "not reporting SyncCE";\n'
         txt += '    fi\n';
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
+        txt += '    echo "source OSG GRID setup script" \n'
+        txt += '    source $OSG_GRID/setup.sh \n'
+
         txt += 'elif [ $VO_CMS_SW_DIR ]; then \n'
         txt += '    middleware=LCG \n'
         txt += '    echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
@@ -265,9 +266,11 @@ class SchedulerGrid(Scheduler):
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
-            txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware --srm_version='+self.srm_version+' '+self.debugWrap+'"\n'
-            txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware --srm_version='+self.srm_version+' '+self.debugWrap+'\n'
+            txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'"\n'
+            txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
             if self.debug_wrapper:
+                txt += 'echo "which lcg-ls"\n'
+                txt += 'which lcg-ls\n'
                 txt += 'echo ########### details of SE interaction\n'
                 txt += 'cat .SEinteraction.log\n'
                 txt += 'echo ########### contents of cmscpReport\n'
