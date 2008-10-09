@@ -460,6 +460,10 @@ To be used together with I<copy_data>. Storage Element name.
 
 To be used together with I<copy_data>. Path where to put output files on Storage Element. Full path is needed, and the directory must be writeable by all.
 
+=item B<storage_port>
+
+To choose the storage port specify I<storage_port> = N (default is 8443) .
+
 =item B<srm_version>
 
 To choose the srm version specify I<srm_version> =  (srmv1 or srmv2).
