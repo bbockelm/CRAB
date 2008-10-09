@@ -4,6 +4,7 @@ import sys, string
 import os, popen2
 from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
 from ProdCommon.Storage.SEAPI.SBinterface import *
+from ProdCommon.Storage.SEAPI.Exceptions import *
 
 
 class cmscp:
@@ -27,7 +28,7 @@ class cmscp:
 
         #set default
         self.params = {"source":'', "destination":'', "inputFileList":'', "outputFileList":'', \
-                           "protocol":'', "option":'', "middleware":'', "srm_version":''}
+                           "protocol":'', "option":'', "middleware":'', "srm_version":'srmv2'}
         self.debug = 0  
  
         self.params.update( args )
@@ -88,13 +89,15 @@ class cmscp:
         which depend on scheduler
         """
         # default To be used with "middleware"
-        lcgOpt='-b -D srmv2 --vo cms -t 2400 --verbose'
-        srmOpt='-debug=true -report ./srmcp.report -retry_timeout 480000 -retry_num 3'
+        lcgOpt={'srmv1':'-b -D srmv1 --vo cms -t 2400 --verbose',
+                'srmv2':'-b -D srmv2 --vo cms -t 2400 --verbose'}
+        srmOpt={'srmv1':'-debug=true -report ./srmcp.report -retry_timeout 480000 -retry_num 3 -streams_num=1 ',
+                'srmv2':'-debug=true -report ./srmcp.report -retry_timeout 480000 -retry_num 3 -srm_protocol_version 2 '}
         rfioOpt=''
 
         if middleware.lower() in ['osg','lcg']:
-            supported_protocol = [('srm-lcg',lcgOpt),\
-                                  ('srmv2',srmOpt)]
+            supported_protocol = [('srm-lcg',lcgOpt[params['srm_version']]),\
+                                  (params['srm_version'],srmOpt[params['srm_version']])]
         elif middleware.lower() in ['lsf','caf']:
             supported_protocol = [('rfio',rfioOpt)] 
         else:
@@ -181,9 +184,8 @@ class cmscp:
         try :
             sbi = SBinterface( Source_SE, Destination_SE )
             sbi_dest = SBinterface(Destination_SE)
-        except Exception, ex:
-            msg = ''
-            if self.debug : msg = str(ex)+'\n'
+        except ProtocolMismatch, ex:
+            msg = str(ex)+'\n'
             msg += "ERROR : Unable to create SBinterface with %s protocol\n"%protocol
             raise msg
 
@@ -205,19 +207,13 @@ class cmscp:
         """
         try:
             interface = SElement( FullPath(endpoint), protocol )
-        except Exception, ex:
+        except ProtocolUnknown, ex:
             msg = ''
             if self.debug : msg = str(ex)+'\n'
             msg += "ERROR : Unable to create interface with %s protocol\n"%protocol
             raise msg
 
         return interface
-
-    def checkDir(self, Destination_SE, protocol):
-        '''
-        ToBeImplemented NEEDED for castor
-        '''
-        return
 
     def createDir(self, Destination_SE, protocol):
         """
@@ -230,11 +226,20 @@ class cmscp:
             action = SBinterface( Destination_SE )
             action.createDir()
             if self.debug: print "The directory has been created using protocol %s\n"%protocol
-        except Exception, ex:
-            msg = ''
-            if self.debug : msg = str(ex)+'\n'
-            msg = "ERROR: problem with the directory creation using %s protocol \n"%protocol
+        except TransferException, ex:
+            msg = str(ex)
+            if self.debug :
+                msg += str(ex.detail)+'\n'
+                msg += str(ex.out)+'\n'
+            msg_rep = "ERROR: problem with the directory creation using %s protocol \n"%protocol
             ErCode = '60316'
+            res = self.updateReport('', ErCode, msg_rep )
+            self.finalReport( res )
+            raise msg
+        except OperationException, ex:
+            msg = str(ex)
+            if self.debug : msg += str(ex.detail)+'\n'
+            print msg
 
         return ErCode, msg
 
@@ -246,10 +251,18 @@ class cmscp:
         msg = ''
         try:
             check = sbi.checkExists(filetocopy)
-        except Exception, ex:
-            msg = ''
-            if self.debug : msg = str(ex)+'\n'
+        except OperationException, ex:
+            msg = str(ex)
+            if self.debug :
+                msg += str(ex.detail)+'\n'
+                msg += str(ex.out)+'\n'
             msg +='problems checkig if file already exist'
+            raise msg
+        except WrongOption, ex:
+            msg = str(ex)
+            if self.debug :
+                msg += str(ex.detail)+'\n'
+                msg += str(ex.out)+'\n'
             raise msg
         if check :    
             ErCode = '60303'
@@ -277,36 +290,26 @@ class cmscp:
 
         try:
             sbi.copy( source_file , dest_file , opt = option)
-            #if self.protocol == 'srm' : self.checkSize( sbi, filetocopy ) ## TODO
-        except Exception, ex:
-            msg = ''
-            if self.debug : msg = str(ex)+'\n'
-            msg = "Problem copying %s file" % filetocopy
+        except TransferException, ex:
+            msg = str(ex)
+            if self.debug :
+                msg += str(ex.detail)+'\n'
+                msg += str(ex.out)+'\n'
+            msg += "Problem copying %s file" % filetocopy
             ErCode = '60307'
-
+        except WrongOption, ex:
+            msg = str(ex)
+            if self.debug :
+                msg += str(ex.detail)+'\n'
+                msg += str(ex.out)+'\n'
+            raise msg
+ 
+         ## TO BE IMPLEMENTED if NEEDED
+         ## NOTE: SE API Already available
+    #    if self.protocol.find('srm')  : self.checkSize( sbi, filetocopy ) 
+          
         return ErCode, msg
 
-    '''
-    def checkSize()
-        """
-        Using srm needed a check of the ouptut file size.
-        """
-
-        echo "--> remoteSize = $remoteSize"
-        ## for local file
-        localSize=$(stat -c%s "$path_out_file")
-        echo "-->  localSize = $localSize"
-        if [ $localSize != $remoteSize ]; then
-            echo "Local fileSize $localSize does not match remote fileSize $remoteSize"
-            echo "Copy failed: removing remote file $destination"
-                srmrm $destination
-                cmscp_exit_status=60307
-
-
-                echo "Problem copying $path_out_file to $destination with srmcp command"
-                StageOutExitStatusReason='remote and local file dimension not match'
-                echo "StageOutReport = `cat ./srmcp.report`"
-    '''
     def backup(self):
         """
         Check infos from TFC using existing api obtaining:
@@ -336,21 +339,25 @@ class cmscp:
         outFile = open('cmscpReport.sh',"a")
         cmscp_exit_status = 0
         txt = ''
-        for file, dict in results.iteritems():
-            if dict['lfn']=='':
-                lfn = '$LFNBaseName/'+os.path.basename(file)
-                se  = '$SE'
+        for file, dict in results.iteritems(): 
+            if file: 
+                if dict['lfn']=='':
+                    lfn = '$LFNBaseName/'+os.path.basename(file)
+                    se  = '$SE'
+                else:
+                    lfn = dict['lfn']+os.pat.basename(file)
+                    se = dict['se']
+                #dict['lfn'] # to be implemented
+                txt +=  'echo "Report for File: '+file+'"\n'
+                txt +=  'echo "LFN: '+lfn+'"\n'
+                txt +=  'echo "StorageElement: '+se+'"\n'
+                txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
+                txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
+                if dict['erCode'] != '0':
             else:
-                lfn = dict['lfn']+os.pat.basename(file)
-                se = dict['se']
-            #dict['lfn'] # to be implemented
-            txt +=  'echo "Report for File: '+file+'"\n'
-            txt +=  'echo "LFN: '+lfn+'"\n'
-            txt +=  'echo "StorageElement: '+se+'"\n'
-            txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
-            txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
-            if dict['erCode'] != '0':
-                cmscp_exit_status = dict['erCode']
+                if dict['erCode'] != '0':
+                    cmscp_exit_status = dict['erCode']
+                    cmscp_exit_status = dict['erCode']
         txt += '\n'
         txt += 'export StageOutExitStatus='+str(cmscp_exit_status)+'\n'
         txt +=  'echo "StageOutExitStatus = '+str(cmscp_exit_status)+'" | tee -a $RUNTIME_AREA/$repo\n'
@@ -409,6 +416,6 @@ if __name__ == '__main__' :
     try:
         cmscp_ = cmscp(dictArgs)
         cmscp_.run()
-    except:
-        pass
+    except Exception, ex :
+        print str(ex)
 
