@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.109 2008/10/01 15:55:57 mcinquil Exp $"
-__version__ = "$Revision: 1.109 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.110 2008/10/07 10:28:32 mcinquil Exp $"
+__version__ = "$Revision: 1.110 $"
 
 import os
 import time
@@ -235,20 +235,22 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
-	if event == "TaskRegister:TaskArrival":
+        if event == "TaskRegisterComponent:NewTaskRegistered":
 	    if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
                 logBuf = self.__log(logBuf, "Submitting Task: %s" % str(taskName) )
-		self.updateTaskStatus( taskName, self.taskState[1] )
+                taskname, maxtry, listjob = payload.split("::")
+                self.updateTaskStatus( taskname, self.taskState[1] )
+                self.processSubmitted(taskname)
                 logBuf = self.__log(logBuf, "              task updated.")
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
-                _loginfo.setdefault('txt', str("Task in submission queue: " + str(taskName)))
+                _loginfo.setdefault('txt', str("Task in submission queue: " + str(taskname)))
             else:
                 logBuf = self.__log(logBuf, " ")
                 logBuf = self.__log(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
                 logBuf = self.__log(logBuf, " ")
             logging.info(logBuf)
-            self.__appendDbgInfo(taskName, _loginfo)
+            self.__appendDbgInfo(taskname, _loginfo)
             return
 
         if event == "CrabServerWorkerComponent:CrabWorkPerformed":
@@ -257,6 +259,7 @@ class TaskTrackingComponent:
                 logBuf = self.__log(logBuf, "CrabWorkPerformed: %s" % payload)
 		self.updateTaskStatus( taskName, self.taskState[3])
                 self.updateProxyName(taskName)
+                self.processSubmitted(taskName)
                 logBuf = self.__log(logBuf, "               task updated.")
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
             else:
@@ -584,21 +587,10 @@ class TaskTrackingComponent:
             upstate = "Killing"
             if unkilling:
                 upstate = "inProgress"
+            ttdb = TaskStateAPI()
             for jobid in joblist:
-                ttdb = TaskStateAPI()
                 ttdb.updateStatusServer(mySession.bossLiteDB, taskName, jobid, upstate)
-            ## update xml -> W: duplicated code - need to clean
-            dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
-            countNotSubmitted = 0
-            dictStateTot = {}
-            #numJobs = ttdb.countServerJob(mySession.bossLiteDB, taskName)
-            numJobs = len(taskObj.jobs)
-            status, uuid, email, user_name = ttdb.getStatusUUIDEmail( taskName, mySession.bossLiteDB )
-            dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
-            pathToWrite = os.path.join(str(self.args['dropBoxPath']), (taskName + self.workAdd))
-            if os.path.exists( pathToWrite ):
-                self.prepareReport( taskName, uuid, email, user_name, 0, 0, dictStateTot, numJobs, 1 )
-                self.undiscoverXmlFile( pathToWrite, self.tempxmlReportFile, self.xmlReportFileName )
+            self.singleTaskPoll(taskObj, ttdb, taskName, mySession)
         except Exception, ex:
             import traceback
             logging.error( "Exception raised: " + str(ex) )
@@ -645,6 +637,37 @@ class TaskTrackingComponent:
             logBuf = self.__log(logBuf, "  <-- - -- - -->")
             logging.info(logBuf)
 
+
+    def processSubmitted(self, taskName):
+        """
+        _processSubmitted_
+        """
+        taskObj = None
+        mySession = None
+
+        ## bossLite session
+        try:
+            mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
+        except Exception, ex:
+            logging.info(str(ex))
+            return 0
+        try:
+        ## lite task load in memory
+            try:
+                taskObj = mySession.loadTaskByName( taskName )
+            except TaskError, te:
+                taskObj = None
+            if taskObj is None:
+                logging.info("Unable to load task [%s]."%(taskName))
+            else:
+                self.singleTaskPoll(taskObj, TaskStateAPI(), taskName, mySession)
+        except Exception, ex:
+            logging.error( "Exception raised: " + str(ex) )
+            logging.error( str(traceback.format_exc()) )
+        mySession.bossLiteDB.close()
+        del mySession
+
+
     def setCleared (self, taskName, jobList):
         """
         _setCleared_
@@ -677,19 +700,7 @@ class TaskTrackingComponent:
                             jobbe.runningJob['status'] = "UE"
                             jobbe.runningJob['processStatus'] = "output_requested"
                 mySession.updateDB(taskObj)
-                ## update xml -> W: duplicated code - need to clean
-                dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
-                countNotSubmitted = 0
-                dictStateTot = {}
-                numJobs = len(taskObj.jobs)
-                ttdb = TaskStateAPI()
-                status, uuid, email, user_name = ttdb.getStatusUUIDEmail( taskName, mySession.bossLiteDB )
-                dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
-                pathToWrite = os.path.join( self.args['dropBoxPath'], \
-                                            (taskName + self.workAdd) )
-                if os.path.exists( pathToWrite ):
-                    self.prepareReport( taskName, uuid, email, user_name, 0, 0, dictStateTot, numJobs, 1 )
-                    self.undiscoverXmlFile( pathToWrite, self.tempxmlReportFile, self.xmlReportFileName )
+                self.singleTaskPoll(taskObj, TaskStateAPI(), taskName, mySession)
         except Exception, ex:
             logging.error( "Exception raised: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
@@ -700,6 +711,29 @@ class TaskTrackingComponent:
     ##########################################################################
     # utilities
     ##########################################################################
+
+    def singleTaskPoll(self, taskObj, ttdb, taskName, mySession):
+        """
+        _singleTaskPoll_
+        
+        update the xml info with real time updated status
+        """
+        try:
+            ## update xml -> W: duplicated code - need to clean
+            dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
+            countNotSubmitted = 0
+            dictStateTot = {}
+            #numJobs = ttdb.countServerJob(mySession.bossLiteDB, taskName)
+            numJobs = len(taskObj.jobs)
+            status, uuid, email, user_name = ttdb.getStatusUUIDEmail( taskName, mySession.bossLiteDB )
+            dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
+            pathToWrite = os.path.join(str(self.args['dropBoxPath']), (taskName + self.workAdd))
+            if os.path.exists( pathToWrite ):
+                self.prepareReport( taskName, uuid, email, user_name, 0, 0, dictStateTot, numJobs, 1 )
+                self.undiscoverXmlFile( pathToWrite, self.tempxmlReportFile, self.xmlReportFileName )
+        except Exception, ex:
+            logging.error("Problem updating job status to xml: " + str(ex))
+
 
     def prepareReport( self, taskName, uuid, eMail, userName, thresholdLevel, percentage, dictReportTot, nJobs, flag ):
         """
@@ -1023,7 +1057,7 @@ class TaskTrackingComponent:
 			           (notified < 2 and endedLevel == 100):
 
 		 	            ###  updating endedLevel  ###
-				    if endedLevel == 100:
+				    if percentage == 100:
                                         msg = ttdb.updatingEndedPA( mySession.bossLiteDB, \
                                                                     taskName, str(percentage), \
                                                                     self.taskState[5])
@@ -1116,10 +1150,9 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("TaskTracking:EndDebug")
         self.ms.subscribeTo("TaskKilled")
         self.ms.subscribeTo("TaskKilledFailed")
-        self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformedPartial")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformed")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkFailed")
-        self.ms.subscribeTo("TaskRegister:TaskArrival")
+        self.ms.subscribeTo("TaskRegisterComponent:NewTaskRegistered")
         self.ms.subscribeTo("CrabServerWorkerComponent:SubmitNotSucceeded")
         self.ms.subscribeTo("CrabServerWorkerComponent:TaskNotSubmitted")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
