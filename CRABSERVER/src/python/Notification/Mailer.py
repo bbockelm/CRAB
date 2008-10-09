@@ -53,12 +53,6 @@ class Mailer:
     def SendMail(self, toList, message):
         
         try:
-##             server = smtplib.SMTP( self.smtpServer )
-##             server.set_debuglevel( self.smtpDbgLvl )
-            
-##             server.sendmail( self.senderName, toList, message)
-##             server.quit()
-
             server = smtplib.SMTP( self.smtpServer )
             server.set_debuglevel( self.smtpDbgLvl )
             server.ehlo()
@@ -68,13 +62,12 @@ class Mailer:
  
             flag = 1
             for mailt in toList:
-                logging.info("Sending to: " + str(mailt) )
-                if str(mailt) !=  None or len(str(mailt)) > 1:
-                    flag = 0
-            if flag == 0:
+                if mailt ==  None or len(str(mailt)) < 1:
+                    flag = -1
+            if flag == 1:
                 server.sendmail(self.senderName, toList, message)
             else: 
-                logging.error("No e-mail address specified...")
+                logging.error("Not sending: NO e-mail address specified...")
             server.quit()
             
         except SMTPException, ex:
