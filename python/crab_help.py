@@ -462,7 +462,7 @@ To be used together with I<copy_data>. Path where to put output files on Storage
 
 =item B<srm_version>
 
-To choose the srm version specify I<srm_version> = N (1 or 2).
+To choose the srm version specify I<srm_version> =  (srmv1 or srmv2).
 
 =item B<xml_report>
 
