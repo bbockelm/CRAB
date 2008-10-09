@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.31 2008/09/10 16:46:23 mcinquil Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.34 2008/09/24 14:57:43 mcinquil Exp $"
+__version__ = "$Revision: 1.34 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -810,7 +810,11 @@ class TaskLifeManagerComponent:
             msType, payload = self.ms.get()
 	    if payload != None:
                 logging.info( "Got ms: ['"+str(msType)+"', '"+str(payload)+"']")
-                self.__call__(msType, payload)
+                try:
+                    self.__call__(msType, payload)
+                except Exception, ex:
+                    logging.error("Problem managing message %s with payload %s" %(msType, payload))
+                    continue
                 logging.info( "Ms exe: ['"+str(msType)+"', '"+str(payload)+"']")
 	    else:
  	        logging.error(" ")
