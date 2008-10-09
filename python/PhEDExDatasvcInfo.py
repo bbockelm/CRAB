@@ -23,11 +23,20 @@ class PhEDExDatasvcInfo:
         self.publish_data = cfg_params.get("USER.publish_data",0)
         self.usenamespace = cfg_params.get("USER.usenamespace",0)
         self.user_remote_dir = cfg_params.get("USER.remote_dir",'')
+        if self.user_remote_dir:
+            if ( self.user_remote_dir[-1] != '/' ) : self.user_remote_dir = self.user_remote_dir + '/'
+            
         self.datasetpath = cfg_params.get("CMSSW.datasetpath")
         self.publish_data_name = cfg_params.get('USER.publish_data_name','')
 
         self.user_lfn = cfg_params.get("USER.lfn",'')
+        if self.user_lfn:
+            if ( self.user_lfn[-1] != '/' ) : self.user_lfn = self.user_lfn + '/'
+            
         self.user_se_path = cfg_params.get("USER.storage_path",'')
+        if self.user_se_path:
+            if ( self.user_se_path[-1] != '/' ) : self.user_se_path = self.user_se_path + '/'
+                                                    
        
         #check if using "private" Storage
         self.usePhedex = True 
@@ -68,6 +77,8 @@ class PhEDExDatasvcInfo:
             if self.protocol == 'direct':
                 query=endpoint
                 SE_PATH = endpoint
+                ### FEDE added SE ###
+                SE = self.sched
             else: 
                 url = 'http://'+endpoint.split('://')[1]
                 # python > 2.4
