@@ -504,7 +504,7 @@ class TaskTrackingComponent:
                                           proxy, userName[0])
                 else:
                     ttdb.updateProxyUname(mySession.bossLiteDB, taskName, \
-                                          proxy, str(userName))
+                                          proxy, userName[-1])
             except Exception, ex:
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
                 logBuf = self.__log(logBuf, "ERROR while updating the task " + str(taskName) )
