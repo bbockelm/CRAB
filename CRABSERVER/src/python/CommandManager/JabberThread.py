@@ -3,6 +3,10 @@ from threading import Thread
 from random import Random
 import time
 
+# Message service import
+from MessageService.MessageService import MessageService
+
+
 class JabberThread(Thread):
     
     def __init__(self, summoner, log, throughput):
