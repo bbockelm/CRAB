@@ -125,7 +125,7 @@ class SchedulerLocal(Scheduler) :
             txt += '# COPY OUTPUT FILE TO '+SE_PATH+ '\n'
             txt += '#\n\n'
 
-            txt += 'export SE'+SE+'\n'
+            txt += 'export SE='+SE+'\n'
             txt += 'echo "SE = $SE"\n'
             txt += 'export SE_PATH='+SE_PATH+'\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
@@ -157,8 +157,6 @@ class SchedulerLocal(Scheduler) :
                 txt += '    ########### details of SE interaction\n'
                 txt += '    cat .SEinteraction.log\n'   
                 txt += '    ########### \n'
-         #  txt += '    SE=""\n'
-         #  txt += '    SE_PATH=""\n'
             txt += '    job_exit_code=$StageOutExitStatus\n'
             txt += 'fi\n'
             txt += 'export TIME_STAGEOUT_END=`date +%s` \n'
