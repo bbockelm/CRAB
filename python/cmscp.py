@@ -96,8 +96,8 @@ class cmscp:
         rfioOpt=''
 
         if middleware.lower() in ['osg','lcg']:
-            supported_protocol = [('srm-lcg',lcgOpt[params['srm_version']]),\
-                                  (params['srm_version'],srmOpt[params['srm_version']])]
+            supported_protocol = [('srm-lcg',lcgOpt[self.params['srm_version']]),\
+                                  (self.params['srm_version'],srmOpt[self.params['srm_version']])]
         elif middleware.lower() in ['lsf','caf']:
             supported_protocol = [('rfio',rfioOpt)] 
         else:
@@ -230,7 +230,7 @@ class cmscp:
             msg = str(ex)
             if self.debug :
                 msg += str(ex.detail)+'\n'
-                msg += str(ex.out)+'\n'
+                msg += str(ex.output)+'\n'
             msg_rep = "ERROR: problem with the directory creation using %s protocol \n"%protocol
             ErCode = '60316'
             res = self.updateReport('', ErCode, msg_rep )
@@ -255,14 +255,14 @@ class cmscp:
             msg = str(ex)
             if self.debug :
                 msg += str(ex.detail)+'\n'
-                msg += str(ex.out)+'\n'
+                msg += str(ex.output)+'\n'
             msg +='problems checkig if file already exist'
             raise msg
         except WrongOption, ex:
             msg = str(ex)
             if self.debug :
                 msg += str(ex.detail)+'\n'
-                msg += str(ex.out)+'\n'
+                msg += str(ex.output)+'\n'
             raise msg
         if check :    
             ErCode = '60303'
@@ -294,14 +294,14 @@ class cmscp:
             msg = str(ex)
             if self.debug :
                 msg += str(ex.detail)+'\n'
-                msg += str(ex.out)+'\n'
+                msg += str(ex.output)+'\n'
             msg += "Problem copying %s file" % filetocopy
             ErCode = '60307'
         except WrongOption, ex:
             msg = str(ex)
             if self.debug :
                 msg += str(ex.detail)+'\n'
-                msg += str(ex.out)+'\n'
+                msg += str(ex.output)+'\n'
             raise msg
  
          ## TO BE IMPLEMENTED if NEEDED
@@ -354,10 +354,11 @@ class cmscp:
                 txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
                 txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
                 if dict['erCode'] != '0':
+                    cmscp_exit_status = dict['erCode']
+                    cmscp_exit_status = dict['erCode']
             else:
-                if dict['erCode'] != '0':
-                    cmscp_exit_status = dict['erCode']
-                    cmscp_exit_status = dict['erCode']
+                cmscp_exit_status = dict['erCode']
+                cmscp_exit_status = dict['erCode']
         txt += '\n'
         txt += 'export StageOutExitStatus='+str(cmscp_exit_status)+'\n'
         txt +=  'echo "StageOutExitStatus = '+str(cmscp_exit_status)+'" | tee -a $RUNTIME_AREA/$repo\n'
