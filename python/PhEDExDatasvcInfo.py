@@ -33,6 +33,7 @@ class PhEDExDatasvcInfo:
         if self.user_lfn:
             if ( self.user_lfn[-1] != '/' ) : self.user_lfn = self.user_lfn + '/'
             
+        self.user_port = cfg_params.get("USER.storage_port",'8443')
         self.user_se_path = cfg_params.get("USER.storage_path",'')
         if self.user_se_path:
             if ( self.user_se_path[-1] != '/' ) : self.user_se_path = self.user_se_path + '/'
@@ -210,7 +211,7 @@ class PhEDExDatasvcInfo:
                 msg+='       OriginalSubmission: stageout path is not retrieved from %s \n'%fullurl
                 raise CrabException(msg)
         else:
-            stageoutpfn = 'srm://'+self.node+':8443'+self.user_se_path+self.lfn 
+            stageoutpfn = 'srm://'+self.node+':'self.user_port+self.user_se_path+self.lfn 
 
         return stageoutpfn 
 
