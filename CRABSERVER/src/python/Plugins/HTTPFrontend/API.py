@@ -68,23 +68,27 @@ def getQueues(destination = 'all'):
 #  js_taskInstance
 #
 
-
-def getNumTask(statusName,ended = True):
-
-    if statusName == 'finished':
-        queryString = "SELECT * FROM js_taskInstance  WHERE notificationSent > 1 and status <> \'killed\' and status <> \'not submitted\';"
-    elif statusName == 'not finished':
-        queryString = "SELECT * FROM js_taskInstance  WHERE notificationSent < 2;"
-    elif statusName in ['killed', 'not submitted', 'submitted']:
-        queryString = "SELECT * FROM js_taskInstance  WHERE status = \'"+statusName+ "\';"
-    else:
-        if ended == True:
-            queryString = "SELECT * FROM js_taskInstance  WHERE status =\'"+statusName+ "\' and notficationSent =2;"
-        else:
-            queryString = "SELECT * FROM js_taskInstance  WHERE status =\'"+statusName+ "\' and notificationSent <2;"
+def getTimeStatusTask( time ):
+    dateCondition= '' 
+    dateCondition = " and land_time  > DATE_SUB(Now(),INTERVAL "+str(time)+"  SECOND)"
+ 
+    queryString = "SELECT status,land_time  FROM js_taskInstance where 1 "+dateCondition +"  ORDER by status;"
     taskCheck = queryMethod(queryString)
-    return len(taskCheck)
+    return taskCheck
 
+
+def getNumTask(from_time, ended=''):
+
+    notif= ended
+    if ended == True: notif =' and notificationSent > 1 '
+    elif ended == False: notif= ' and notificationSent < 2 '
+    dateCondition= '' 
+    dateCondition = " and land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND)"
+ 
+    queryString = "SELECT count(status),status  FROM js_taskInstance where 1 "+notif+" "+dateCondition +"  group by status ORDER by status;"
+    print queryString 
+    taskCheck = queryMethod(queryString)
+    return taskCheck
 
 def getSites(from_time='all',Sites='all'):
     """
@@ -113,6 +117,17 @@ def getSites(from_time='all',Sites='all'):
 
     return dict_results
 
+def getTimeStatusJob( time ) :
+    
+    dateCondition= ''
+    dateCondition = " and submission_time  > DATE_SUB(Now(),INTERVAL "+str(time)+"  SECOND)"
+    
+    queryString = "SELECT status_scheduler,submission_time  FROM bl_runningjob where 1 "+dateCondition +"  ORDER by status_scheduler;"
+    print queryString 
+    taskCheck = queryMethod(queryString)
+    return taskCheck
+
+
 def getKeyNum(key,destination='all',from_time='all'):
     dateCondition =  " and submission_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) "
     dest_condition = composeDestinationCondition(destination);
@@ -125,7 +140,7 @@ def getKeyNum(key,destination='all',from_time='all'):
 # Statistics users
 def getUserName(from_time):
     queryString = "select user_name,land_time from js_taskInstance "+\
-                  "where land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) group by proxy ORDER by land_time ;"
+                  "where land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) and user_name <> ''  group by proxy ORDER by land_time ;"
     taskCheck = queryMethod(queryString)
     return taskCheck
 
