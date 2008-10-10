@@ -932,11 +932,13 @@ class TaskTrackingComponent:
                     dictStateTot[job][3] = 1
                 else:
                     dictReportTot['JobInProgress'] += 1
-            elif stato == "A" or stato == "Done (Failed)" or stato == "K":
+            elif stato == "Done (Failed)" or stato == "K":
                 if not resubmitting:
                     dictReportTot['JobFailed'] += 1
                 else:
                     dictReportTot['JobInProgress'] += 1
+            elif stato == "A":
+                    dictReportTot['JobFailed'] += 1
             elif (not resubmitting) and joboff == 'Y' and internalstatus != "Killing":
                 dictReportTot['JobFailed'] += 1
                 dictStateTot[job][3] = 1
@@ -1085,7 +1087,7 @@ class TaskTrackingComponent:
                                                        self.xmlReportFileName )
                                 if succexo:
                                     self.taskSuccess( os.path.join(pathToWrite, self.xmlReportFileName), taskName )
-                                    _loginfo.setdefault('ev', "Reached %s%"%str(percentage))
+                                    _loginfo.setdefault('ev', "Reached %s"%(str(percentage)) )
                                     _loginfo.setdefault('txt', "publishing task success (sending e-mail to %s)"%(str(eMail)))
                                     msg = ttdb.updatingNotifiedPA( taskName, notified )
                                     logBuf = self.__log(logBuf, msg)
