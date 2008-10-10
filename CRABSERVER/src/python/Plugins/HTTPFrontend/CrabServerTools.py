@@ -31,7 +31,7 @@ class Root:
         self.myUrl = myUrl
 
     def index(self):
-        html = """<html><body><h2>ProdAgent Instance: %s </h2>\n """ % (
+        html = """<html><body><h2>CrabServer Instance: %s </h2>\n """ % (
 
             prodAgentName(), )
 
