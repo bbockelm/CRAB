@@ -12,15 +12,17 @@ from ServerCommunicator import ServerCommunicator
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
+
+from CredentialAPI import CredentialAPI  
  
 class SubmitterServer( Submitter ):
     def __init__(self, cfg_params, parsed_range, val):
 	self.srvCfg = {}
         self.cfg_params = cfg_params
         self.submitRange = []
-        self.dontMoveProxy = False
-        if string.lower(self.cfg_params.get("CRAB.scheduler")) in ['lsf','caf']:
-            self.dontMoveProxy = True
+        self.credentialType = 'Proxy' 
+        if common.scheduler.name().upper() in ['LSF', 'CAF']:
+            self.credentialType = 'Token' 
 
         Submitter.__init__(self, cfg_params, parsed_range, val)      
     
@@ -48,8 +50,7 @@ class SubmitterServer( Submitter ):
         if check == 0 :
 
             self.remotedir = os.path.join(self.storage_path, self.taskuuid)
-            self.moveProxy(self.dontMoveProxy)
-            #self.myProxyMoveProxy(self.dontMoveProxy)
+            self.manageCredential()
             
             # check if it is the first submission  
             isFirstSubmission =  common._db.checkIfNeverSubmittedBefore() 
@@ -120,6 +121,41 @@ class SubmitterServer( Submitter ):
         common.logger.debug(3,msg)
         return
 
+
+    def manageCredential(self): 
+        """
+        Prepare configuration and Call credential API 
+        """
+        # only for temporary back-comp. 
+        if  self.credentialType == 'Token': 
+             common.scheduler.checkProxy(deep=1)
+             common.logger.message("Registering a valid proxy to the server:")
+
+             myproxyserver = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
+             configAPI = {'credential' : self.credentialType, \
+                          'myProxySvr' : myproxyserver,\
+                          'serverDN'   : self.server_dn,\
+                          'shareDir'   : common.work_space.shareDir() ,\
+                          'userName'   : UnixUserName()\
+                          }
+             #vomsesPath = str('/afs/cern.ch/project/gd/LCG-share/current/glite/etc/vomses/')### ??? not clear why
+             try:
+                 CredAPI =  CredentialAPI( configAPI )            
+             except Exception, err : 
+                 common.logger.debug(3, "Configuring Credential API: " +str(traceback.format_exc()))
+                 raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
+             try:
+                 dict = CredAPI.registerCredential(self.server_name) 
+             except Exception, err:
+                 common.logger.debug(3, "Configuring Credential API: " +str(traceback.format_exc()))
+                 raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
+        
+             self.cfg_params['EDG.proxyInfos'] = dict
+        else: 
+             # for proxy all works as before....
+             self.moveProxy()
+	return
+    ## TOREMOVE
     def myProxyMoveProxy(self,dontMove):
 
 	WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
@@ -145,8 +181,8 @@ class SubmitterServer( Submitter ):
                 traceback.format_exc()
 
 	return
-
-    def moveProxy(self,dontMove):
+    # TO REMOVE
+    def moveProxy(self,dontMove=False):
         WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
         if dontMove == True:
             msg = 'Submittig to local resources...proxy not needed.\n'
