@@ -13,7 +13,8 @@ from ProdAgentCore.Configuration import loadProdAgentConfiguration
 import cherrypy
 from cherrypy.lib.static import serve_file
 
-from Plugins.HTTPFrontend.Task import TaskMonitor,TaskGraph
+from Plugins.HTTPFrontend.TaskMon import TaskMonitor,TaskGraph, CumulativeTaskGraph
+from Plugins.HTTPFrontend.JobMon import JobMonitor,CumulativeJobStatGraph
 from Plugins.HTTPFrontend.ComponentServicesMonitor import CompServMonitor
 from Plugins.HTTPFrontend.OverallMonitor import OverallMonitor, UserGraph, DestinationSitesMonitor, StatusPerDest
 
@@ -40,6 +41,10 @@ class Root:
             self.myUrl,)
         html += "<td>Tasks entities data in this CrabServer</td></td>\n"
 
+        html += "<tr><td><a href=\"%s/jobs\">Jobs</a></td>\n" % (
+            self.myUrl,)
+        html += "<td>Jobs entities data in this CrabServer</td></td>\n"
+
         html += "<tr><td><a href=\"%s/compsermon\">Component Monitor</a></td>\n" % (
             self.myUrl,)
         html += "<td>Component and Sevice status in this CrabServer</td></td>\n"
@@ -47,6 +52,7 @@ class Root:
         html += "<tr><td><a href=\"%s/overall\">Overall Statistics</a></td>\n" % (
             self.myUrl,)
         html += "<td>Destination, Users.... </td></td>\n"
+
         html += """</table></body></html>"""
         return html
     index.exposed = True
@@ -98,12 +104,25 @@ def installer(**args):
     root = Root(baseUrl)
     root.images = ImageServer(args['StaticDir'])
 
+    root.cumulativetaskgraph = CumulativeTaskGraph(
+        "%s/images" % baseUrl,
+        args["StaticDir"])
     root.taskgraph = TaskGraph(
         "%s/images" % baseUrl,
         args["StaticDir"])
     root.tasks = TaskMonitor(
-        "%s/taskgraph" % baseUrl
+        "%s/taskgraph" % baseUrl,
+        "%s/cumulativetaskgraph" % baseUrl
         )
+ 
+    root.graphjobstcum = CumulativeJobStatGraph(
+        "%s/images" % baseUrl,
+        args["StaticDir"])
+    root.jobs = JobMonitor(
+        "%s/graphjobstcum" % baseUrl
+        )
+
+
     root.compsermon = CompServMonitor()
    
     root.graphdest = DestinationSitesMonitor(
