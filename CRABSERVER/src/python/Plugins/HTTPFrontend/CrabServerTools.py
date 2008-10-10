@@ -15,8 +15,9 @@ from cherrypy.lib.static import serve_file
 
 from Plugins.HTTPFrontend.TaskMon import TaskMonitor,TaskGraph, CumulativeTaskGraph
 from Plugins.HTTPFrontend.JobMon import JobMonitor,CumulativeJobStatGraph
-from Plugins.HTTPFrontend.ComponentServicesMonitor import CompServMonitor
+from Plugins.HTTPFrontend.ComponentServicesMonitor import CompServMonitor, ShowCompStatus, ShowCompLogs, WriteLog
 from Plugins.HTTPFrontend.OverallMonitor import OverallMonitor, UserGraph, DestinationSitesMonitor, StatusPerDest
+from Plugins.HTTPFrontend.UserMonitoring import TaskLogVisualizer,TaskLogMonitor
 
 class Root:
     """
@@ -52,6 +53,9 @@ class Root:
         html += "<tr><td><a href=\"%s/overall\">Overall Statistics</a></td>\n" % (
             self.myUrl,)
         html += "<td>Destination, Users.... </td></td>\n"
+
+        html += "<tr><td><a href=\"%s/logginfo\">User Monitoring</a></td>\n" % (
+            self.myUrl,)
 
         html += """</table></body></html>"""
         return html
@@ -121,9 +125,14 @@ def installer(**args):
     root.jobs = JobMonitor(
         "%s/graphjobstcum" % baseUrl
         )
-
-
-    root.compsermon = CompServMonitor()
+    root.writelog = WriteLog()
+    root.compstatus = ShowCompStatus()
+    root.complog = ShowCompLogs( 
+        "%s/writelog" % baseUrl)
+    root.compsermon = CompServMonitor(
+        "%s/compstatus" % baseUrl,
+        "%s/complog" % baseUrl
+        )
    
     root.graphdest = DestinationSitesMonitor(
         "%s/images" % baseUrl,
@@ -142,5 +151,9 @@ def installer(**args):
         "%s/graphstatus" % baseUrl
         )
 
+    root.visualog = TaskLogVisualizer()
+    root.logginfo = TaskLogMonitor(
+        "%s/visualog" % baseUrl,
+        )
 
     return root
