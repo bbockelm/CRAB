@@ -48,6 +48,18 @@ class Event:
         return self
 
     #------------------------------------------------------------------------
+    def getEventTagName(self):
+        return self._eventreport
+
+    #------------------------------------------------------------------------
+    def getEventFieldValue(self, fld):
+        return self._fields[fld]
+
+    #------------------------------------------------------------------------
+    def getEventFieldNameList(self):
+        return self._fields.keys()
+
+    #------------------------------------------------------------------------
     def getDoc(self):
         return self._report
 
@@ -129,7 +141,27 @@ class XmlFramework:
 
         ## assing to self.root the actual node in memory loaded from the file
         self.root = element[0]
+        
+        #Events = self.doc.getElementsByTagName( Event().getEventTagName() )
+        #for eve in Events:
+        #    evediction = {}
+        #    for fld in Event().getEventFieldNameList():
+        #        evediction.setdefault(fld, eve.getAttribute( fld ) )
+        #    eve.initialize(evediction)
+
         self.init = True
+        
+    def getEventValues(self):
+        tagdiction = {}
+        Events = self.doc.getElementsByTagName( Event().getEventTagName() )
+        counter = 1
+        for eve in Events:
+            evediction = {}
+            for fld in Event().getEventFieldNameList():
+                evediction.setdefault(fld, eve.getAttribute( fld ) )
+            tagdiction.setdefault(counter, evediction)
+            counter += 1
+        return tagdiction
 
 
 if __name__=="__main__":
