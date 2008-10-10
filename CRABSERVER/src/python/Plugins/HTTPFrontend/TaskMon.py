@@ -18,7 +18,7 @@ class TaskMonitor:
     
     def index(self):
 
-        html = """<html><body><h2>CrabServer Tasks per Status</h2>\n """
+        html = """<html><body><h2>CrabServer Tasks Entities</h2>\n """
         html += "<table>\n"
         html += "<i>a time-window of 0 (zero) means all available statistics:</i><br/><br/><br/>"
         html += "<i> </i><br/><br/>"
@@ -155,7 +155,6 @@ class CumulativeTaskGraph:
         list_status=[]
         for i in interval :
             temp_list = []
-            temp_dict = {}
             for a,b in querydata :
                 list_status.append(a)
                 t = time.mktime(b.timetuple())

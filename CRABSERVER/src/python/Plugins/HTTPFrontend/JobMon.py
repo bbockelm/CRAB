@@ -25,7 +25,7 @@ class JobMonitor:
         html += ' for last  '
         html += '<input type="text" name="length" size=4 value=0>'
         html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
-        html += '<input type="submit" value="Show Summary"/>'
+        html += '<input type="submit" value="Show Plot"/>'
         html += '</select>'
         html += '</form>'
         html += "</table>\n"
@@ -65,7 +65,6 @@ class CumulativeJobStatGraph:
         list_status=[]
         for i in interval :
             temp_list = []
-            temp_dict = {}
             for a,b in querydata :
                 list_status.append(a)
                 t = time.mktime(b.timetuple())
