@@ -462,6 +462,7 @@ class Crab:
 
                 taskinfo={}
                 taskinfo['cfgName'] = common.work_space.jobDir()+"/"+self.creator.jobType().configFilename()
+                taskinfo['dataset'] = self.cfg_params['CMSSW.datasetpath']
 
                 common.job_list.setScriptNames(self.job_type_name+'.sh')
                 common.job_list.setCfgNames(self.creator.jobType().configFilename())
