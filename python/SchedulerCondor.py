@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.12 2008/09/04 21:26:18 ewv Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.13 2008/09/30 19:35:34 ewv Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -11,12 +11,13 @@ from crab_exceptions import CrabException
 import common
 import os
 
-# Naming convention:  Methods starting with 'ws' provide the corresponding part of the job script
-# ('ws' stands for 'write script').
 
 class SchedulerCondor(SchedulerLocal) :
     """
     Class to implement the vanilla (local) Condor scheduler
+     Naming convention:  Methods starting with 'ws' provide
+     the corresponding part of the job script
+     ('ws' stands for 'write script').
     """
 
     def __init__(self):
@@ -33,7 +34,8 @@ class SchedulerCondor(SchedulerLocal) :
         """
 
         SchedulerLocal.configure(self, cfg_params)
-        self.environment_unique_identifier ='${HOSTNAME}_${CONDOR_ID}_' + common._db.queryTask('name')
+        self.environment_unique_identifier = '${HOSTNAME}_${CONDOR_ID}_' \
+                                             + common._db.queryTask('name')
 
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
@@ -99,6 +101,15 @@ class SchedulerCondor(SchedulerLocal) :
         return reason
 
 
+    def wsCopyOutput(self):
+        """
+        Write a CopyResults part of a job script, e.g.
+        to copy produced output into a storage element.
+        """
+        txt = self.wsCopyOutput_comm()
+        return txt
+
+
     def wsExitFunc(self):
         """
         Returns the part of the job script which runs prior to exit
@@ -131,6 +142,10 @@ class SchedulerCondor(SchedulerLocal) :
         txt += 'printenv | sort\n'
 
         txt += 'middleware='+self.name()+' \n'
+        txt += 'if [ -e /opt/d-cache/srm/bin ]; then\n'
+        txt += '  export PATH=${PATH}:/opt/d-cache/srm/bin\n'
+        txt += 'fi\n'
+
         txt += """
 if [ $_CONDOR_SCRATCH_DIR ] && [ -d $_CONDOR_SCRATCH_DIR ]; then
     echo "cd to Condor scratch directory: $_CONDOR_SCRATCH_DIR"

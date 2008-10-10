@@ -29,8 +29,8 @@ class cmscp:
         #set default
         self.params = {"source":'', "destination":'', "inputFileList":'', "outputFileList":'', \
                            "protocol":'', "option":'', "middleware":'', "srm_version":'srmv2'}
-        self.debug = 0  
- 
+        self.debug = 0
+
         self.params.update( args )
 
         return
@@ -40,8 +40,8 @@ class cmscp:
         check command line parameter
         """
 
-        if 'help' in self.params.keys(): HelpOptions()        
-        if 'debug' in self.params.keys(): self.debug = 1        
+        if 'help' in self.params.keys(): HelpOptions()
+        if 'debug' in self.params.keys(): self.debug = 1
 
         # source and dest cannot be undefined at same time
         if not self.params['source']  and not self.params['destination'] :
@@ -55,7 +55,7 @@ class cmscp:
         if not self.params['inputFileList'] : HelpOptions()
         else:
             file_to_copy=[]
-            if self.params['inputFileList'].find(','): 
+            if self.params['inputFileList'].find(','):
                 [file_to_copy.append(x.strip()) for x in self.params['inputFileList'].split(',')]
             else:
                 file_to_copy.append(self.params['inputFileList'])
@@ -95,11 +95,12 @@ class cmscp:
                 'srmv2':' -report ./srmcp.report -retry_timeout 480000 -retry_num 3 '}
         rfioOpt=''
 
-        if middleware.lower() in ['osg','lcg']:
+        supported_protocol = None
+        if middleware.lower() in ['osg','lcg','condor']:
             supported_protocol = [('srm-lcg',lcgOpt[self.params['srm_version']]),\
                                   (self.params['srm_version'],srmOpt[self.params['srm_version']])]
         elif middleware.lower() in ['lsf','caf']:
-            supported_protocol = [('rfio',rfioOpt)] 
+            supported_protocol = [('rfio',rfioOpt)]
         else:
             ## here we can add support for any kind of protocol,
             ## maybe some local schedulers need something dedicated
@@ -179,7 +180,7 @@ class cmscp:
             Source_SE, Destination_SE = self.initializeApi( protocol )
         except Exception, ex:
             return self.updateReport('', '-1', str(ex))
-            
+
         # create remote dir
         if protocol in ['gridftp','rfio']:
             try:
@@ -230,7 +231,7 @@ class cmscp:
         Create remote dir for gsiftp REALLY TEMPORARY
         this should be transparent at SE API level.
         """
-        msg = '' 
+        msg = ''
         try:
             action = SBinterface( Destination_SE )
             action.createDir()
@@ -270,10 +271,10 @@ class cmscp:
                 msg += str(ex.output)+'\n'
             msg +='ERROR problems checkig if file % already exist'%filetocopy
             raise Exception(msg)
-        if check :    
+        if check :
             ErCode = '60303'
             msg = "file %s already exist"%filetocopy
-           
+
         return ErCode, msg
 
     def makeCopy(self, sbi, filetocopy, option ):
@@ -310,11 +311,11 @@ class cmscp:
                 msg += str(ex.output)+'\n'
             msg += "Problem copying %s file" % filetocopy
             ErCode = '60307'
- 
+
          ## TO BE IMPLEMENTED if NEEDED
          ## NOTE: SE API Already available
-    #    if self.protocol.find('srm')  : self.checkSize( sbi, filetocopy ) 
-          
+    #    if self.protocol.find('srm')  : self.checkSize( sbi, filetocopy )
+
         return ErCode, msg
 
     def backup(self):
@@ -346,8 +347,8 @@ class cmscp:
         outFile = open('cmscpReport.sh',"a")
         cmscp_exit_status = 0
         txt = ''
-        for file, dict in results.iteritems(): 
-            if file: 
+        for file, dict in results.iteritems():
+            if file:
                 if dict['lfn']=='':
                     lfn = '$LFNBaseName/'+os.path.basename(file)
                     se  = '$SE'
@@ -386,19 +387,19 @@ def usage():
 
     optional parameters
     """
-    print msg 
+    print msg
 
-    return 
+    return
 
 def HelpOptions(opts=[]):
     """
     Check otps, print help if needed
-    prepare dict = { opt : value }  
+    prepare dict = { opt : value }
     """
     dict_args = {}
     if len(opts):
         for opt, arg in opts:
-            dict_args[opt.split('--')[1]] = arg 
+            dict_args[opt.split('--')[1]] = arg
             if opt in ('-h','-help','--help') :
                 usage()
                 sys.exit(0)
@@ -409,17 +410,17 @@ def HelpOptions(opts=[]):
 
 if __name__ == '__main__' :
 
-    import getopt 
+    import getopt
 
     allowedOpt = ["source=", "destination=", "inputFileList=", "outputFileList=", \
                   "protocol=","option=", "middleware=", "srm_version=", "debug", "help"]
-    try:    
-        opts, args = getopt.getopt( sys.argv[1:], "", allowedOpt ) 
+    try:
+        opts, args = getopt.getopt( sys.argv[1:], "", allowedOpt )
     except getopt.GetoptError, err:
         print err
         HelpOptions()
         sys.exit(2)
- 
+
     dictArgs = HelpOptions(opts)
     try:
         cmscp_ = cmscp(dictArgs)
