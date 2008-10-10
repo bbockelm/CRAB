@@ -24,7 +24,7 @@ class CompServMonitor:
         html += "<table>\n"
         html += "<i>a time-window of 0 (zero) means all available statistics:</i><br/><br/><br/>"
         html += "<i> Diplay the status of components and active service in this CrabServer: </i><br/><br/>"
-        html += '<form action=\"%s"\ method="get" target="_blank">' % (self.compstatus)
+        html += '<form action=\"%s"\ method="get" >' % (self.compstatus)
         html += ' Status of all components and external services of this CrabServer '
         html += ' <input type="submit" value="Show report"/>'
         html += '</form>'
@@ -32,7 +32,7 @@ class CompServMonitor:
 
         html += "<table>\n"
         html += "<br/><br/><i> Allow to access components logs through web:</i><br/><br/>"
-        html += ' <form action=\"%s"\ method="get" target="_blank"> ' % (self.complog)
+        html += ' <form action=\"%s"\ method="get"> ' % (self.complog)
         html += 'Show logs for  '
         html += ' <select name="comp_name" style="width:140px">'
         for components in status(True):

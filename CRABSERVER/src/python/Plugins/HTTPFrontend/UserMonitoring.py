@@ -13,7 +13,7 @@ class TaskLogMonitor:
 
         html += "<table>\n"
         html += "<i> </i><br/><br/>"
-        html += '<form action=\"%s"\ method="get" target="_blank">' % (self.visualize)
+        html += '<form action=\"%s"\ method="get">' % (self.visualize)
         html += 'Task unique name '
         html += '<input type="text" name="taskname" size=50>'
         html += '<input type="submit" value="Show logging info"/>'

@@ -20,7 +20,7 @@ class JobMonitor:
 
         html += "<table>\n"
         html += "<i> </i><br/><br/>"
-        html += '<form action=\"%s"\ method="get" target="_blank">' % (self.graphjobstcum)
+        html += '<form action=\"%s"\ method="get">' % (self.graphjobstcum)
         html += 'Cumulative plot of jobs status '
         html += ' for last  '
         html += '<input type="text" name="length" size=4 value=0>'

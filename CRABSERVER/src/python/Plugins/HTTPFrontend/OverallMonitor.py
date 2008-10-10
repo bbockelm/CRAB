@@ -44,7 +44,7 @@ class OverallMonitor:
         html += "<table>\n"
         html += "<i>a time-window of 0 (zero) means all available statistics:</i><br/><br/><br/>"
         html += "<i>History plot of CrabServer usage by different users for last 24 hours, 7 days or month:</i><br/><br/>"
-        html += '<form action=\"%s"\ method="get" target="_blank">' % (self.graphuser)
+        html += '<form action=\"%s"\ method="get">' % (self.graphuser)
         html += 'Users submitting jobs to this CrabServer  '
         html += template
         html += '</select>'
@@ -54,7 +54,7 @@ class OverallMonitor:
           
         html += "<table>\n"
         html += "<i>Current job destination pie for job submitted in the last period:</i><br/><br/>"
-        html += '<form action=\"%s"\ method="get" target="_blank">' % (self.graphdestination)
+        html += '<form action=\"%s"\ method="get">' % (self.graphdestination)
         html += 'Job Destionation sites '
         html += template
         html += template1
@@ -65,7 +65,7 @@ class OverallMonitor:
         
         html += "<table>\n"
         html += "<i>Current per-site job status distribution for jobs submitted in the last period:</i><br/><br/>"
-        html += '<form action=\"%s"\ method="get" target="_blank">' % (self.graphstatusdest)
+        html += '<form action=\"%s"\ method="get">' % (self.graphstatusdest)
         html += 'Status per Destination Sites '
         html += template
         html += template1

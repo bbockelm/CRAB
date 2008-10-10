@@ -22,7 +22,7 @@ class TaskMonitor:
         html += "<table>\n"
         html += "<i>a time-window of 0 (zero) means all available statistics:</i><br/><br/><br/>"
         html += "<i> </i><br/><br/>"
-        html += '<form action=\"%s"\ method="get" target="_blank">' % (self.graphtask)
+        html += '<form action=\"%s"\ method="get" >' % (self.graphtask)
         html += 'Status of  '
         html += ' <select name="tasktype" style="width:80px"><option>All</option><option>Archived</option><option>NotArchived</option></select>'
         html += '  tasks for last  '
@@ -36,7 +36,7 @@ class TaskMonitor:
 
         html += "<table>\n"
         html += "<i> </i><br/><br/>"
-        html += '<form action=\"%s"\ method="get" target="_blank">' % (self.graphtaskcumulative)
+        html += '<form action=\"%s"\ method="get">' % (self.graphtaskcumulative)
         html += 'Cumulative plot of tasks status '
         html += ' for last  '
         html += '<input type="text" name="length" size=4 value=0>'
