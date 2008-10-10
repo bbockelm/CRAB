@@ -397,6 +397,9 @@ def CliServerParams(self):
     try:
         self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
 
+        self.server_admin = str(self.srvCfg['serverAdmin'])
+        self.server_dn = str(self.srvCfg['serverDN'])
+
         self.server_name = str(self.srvCfg['serverName'])
         self.server_port = int(self.srvCfg['serverPort'])
 
@@ -432,6 +435,18 @@ def bulkControl(self,list):
 
     return sub_bulk
 
+
+def UnixUserName():
+    """
+    extract username from whoami
+    """
+    try:
+        UserName = runCommand("whoami")
+        UserName = string.strip(UserName)
+    except:
+        msg = "Error. Problem with whoami command"
+        raise CrabException(msg)
+    return UserName
 def numberFile(file, txt):
     """
     append _'txt' before last extension of a file

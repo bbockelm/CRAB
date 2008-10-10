@@ -4,7 +4,7 @@ _LFNBaseName_
 """
 
 from crab_exceptions import *
-from crab_util import runCommand
+from crab_util import runCommand, UnixUserName
 import common
 import os, string, time
 from ProdCommon.SiteDB.SiteDB import SiteDBJSON
@@ -26,13 +26,7 @@ def getUnixUserName():
     """
     extract username from whoami
     """
-    try:
-        UserName = runCommand("whoami")
-        UserName = string.strip(UserName)
-    except:
-        msg = "Error. Problem with whoami command"
-        raise CrabException(msg)
-    return UserName
+    return UnixUserName()
 
 def getDN():
     """
