@@ -211,7 +211,7 @@ class PhEDExDatasvcInfo:
                 msg+='       OriginalSubmission: stageout path is not retrieved from %s \n'%fullurl
                 raise CrabException(msg)
         else:
-            stageoutpfn = 'srm://'+self.node+':'self.user_port+self.user_se_path+self.lfn 
+            stageoutpfn = 'srm://'+self.node+':'+self.user_port+self.user_se_path+self.lfn 
 
         return stageoutpfn 
 
