@@ -56,6 +56,7 @@ class Root:
 
         html += "<tr><td><a href=\"%s/logginfo\">User Monitoring</a></td>\n" % (
             self.myUrl,)
+        html += "<td>User task and job log information</td></tr>\n"
 
         html += """</table></body></html>"""
         return html
