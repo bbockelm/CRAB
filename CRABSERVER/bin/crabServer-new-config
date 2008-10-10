@@ -133,7 +133,19 @@ componentFields = {
     "BotPeriod" : "12:00:00",
     },
 
+    'ErrorHandler' : {
+    "ComponentDir" : None,
+    "MaxCacheDirSizeMB" : 80,
+    "DelayFactor" : 100,
+    "ReportAction" : "noMove",
+    "RssFeed": "no",
+    "QueueFailures": False,
+    "RunHandlerName" : "crabRunFailureHandler"
+    },
+
+
     "HTTPFrontend" : {
+    "InstallerModule" : "Plugins.HTTPFrontend.CrabServerTools",
     "ComponentDir" : None,
     "FirstRun" : None,
     "HWmonitorLogFile" : None,
@@ -147,7 +159,7 @@ print "Creating ProdAgent configuration\n"
  
 #os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder,JobKiller,GetOutput,HTTPFrontend")
 #os.system("prodAgent-new-config --components=JobTracking,GetOutput,ErrorHandler,JobKiller,HTTPFrontend")
-os.system("prodAgent-new-config --components=JobTracking,GetOutput,ErrorHandler,JobKiller")
+os.system("prodAgent-new-config --components=JobTracking,GetOutput,JobKiller")
 
 # read configuration
 
