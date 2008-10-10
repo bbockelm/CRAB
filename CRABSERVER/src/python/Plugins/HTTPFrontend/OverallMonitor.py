@@ -91,15 +91,16 @@ class UserGraph:
         _span=3600 
         if span == 'days': _span=24*3600
 
-        end_time = time.time() - time.altzone
-        start_time = end_time - int(length)*_span
+        query_time = int(length)*_span
+        end_time = time.time() #- time.altzone
+        start_time = end_time - query_time
 
-        users = API.getUserName( start_time ) 
+        users = API.getUserName( query_time ) 
         total = len(users)
  
         if (total == 0):
-            html = "<html><body>No files for dataset: %s</body></html>" % (
-                dataset,)
+            html = "<html><body>No Users for last: %s %s</body></html>" % (
+                length,span)
             return html
 
         if type == 'plot':
@@ -116,18 +117,19 @@ class UserGraph:
  
             range_time= range(int(start_time),int(end_time),_span)
             binning = {}
-            count = 0
             for i in range_time:
+                count = 0
                 for t in land_time:
                     if t > i and t < i+_span:
-                        count +=1 
-                        binning[i]= count
+                        count += 1 
+                binning[i]= count
  
             pngfile = os.path.join(self.workingDir, "%s-%s-User.png" % (span, length))
             pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
  
             data={'User': binning }
-            metadata = {'title':'User Statistics', 'starttime':start_time, 'endtime':end_time, 'span':_span, 'is_cumulative':True }
+
+            metadata = {'title':'User Statistics', 'starttime':start_time, 'endtime':end_time, 'span':_span, 'is_cumulative':False }
             Graph = CumulativeGraph()
             coords = Graph( data, pngfile, metadata )
  
@@ -215,18 +217,20 @@ class DestinationSitesMonitor:
         _span=3600 
         if span == 'days': _span=24*3600
 
+        query_time = int(length)*_span
         end_time = time.time() - time.altzone
-        start_time = end_time - int(length)*_span
+        start_time = end_time - query_time
  
         import Sites
-        to_query = Sites.SiteMap()[site]
-
-        sites = API.getSites( start_time, to_query ) 
+        to_query = site 
+        if site != 'all' : to_query = Sites.SiteMap()[site]
+        
+        sites = API.getSites( query_time, to_query ) 
         total = len(sites)
  
         if (total == 0):
-            html = "<html><body>No job for Site: %s</body></html>" % (
-                site,)
+            html = "<html><body>No job for %s Site,  during last %s %s </body></html>" % (
+                site,length,span)
             return html
 
         if type == 'plot':
@@ -298,26 +302,28 @@ class StatusPerDest:
         _span=3600 
         if span == 'days': _span=24*3600
 
+        query_time = int(length)*_span
         end_time = time.time() - time.altzone
-        start_time = end_time - int(length)*_span
+        start_time = end_time - query_time
  
         status_site_dict = {} 
         import Sites
         if site == 'all' :
             for st1,st2 in Sites.SiteMap().items():
-                query =  API.getKeyNum( 'status_scheduler', st2, start_time ) 
+                query =  API.getKeyNum( 'status_scheduler', st2, query_time ) 
                 for a,b in query:
                     status_site_dict[b] = {str(st1).split('_')[2]:a}         
         else:
             site_to_query = Sites.SiteMap()[site]
-            query = API.getKeyNum('status_scheduler', site_to_query, start_time ) 
+            query = API.getKeyNum('status_scheduler', site_to_query, query_time ) 
             for a,b in query:
                 status_site_dict[b] = {site:a}         
+         
         if type == 'plot':
             html = self.TypePlot(span, length, site, status_site_dict)
         else:
-            html = """<html><body><h2>List of Users for """
-            html += "Last %s %s</h2>\n " % ( length, span )
+            html = """<html><body><h2>NOT YET IMPLEMENTED """
+         #   html += "Last %s %s</h2>\n " % ( length, span )
          #   html += self.TypeList(sites)
  
         return html
