@@ -42,7 +42,7 @@ class TaskLogVisualizer:
             dbox    = compCfg["dropBoxPath"]
         except Exception, exc:
             logging.error( str(exc) )
-            raise Exception("Proca Puttana " + str(exc))
+            raise Exception("Problem loading server configuration info " + str(exc))
         return dbox
 
     def index(self, taskname):
@@ -51,7 +51,7 @@ class TaskLogVisualizer:
         c = XmlFramework()
 
         if not os.path.exists( filepath ):
-            raise Exception("Proca Puttana " + str(exc))
+            raise Exception("Logging info file not existing")
 
         c.fromFile( filepath )
 
