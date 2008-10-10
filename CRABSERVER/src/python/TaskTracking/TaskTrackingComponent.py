@@ -1085,6 +1085,7 @@ class TaskTrackingComponent:
                                                        self.xmlReportFileName )
                                 if succexo:
                                     self.taskSuccess( os.path.join(pathToWrite, self.xmlReportFileName), taskName )
+                                    _loginfo.setdefault('ev', "Reached %s%"%str(percentage))
                                     _loginfo.setdefault('txt', "publishing task success (sending e-mail to %s)"%(str(eMail)))
                                     msg = ttdb.updatingNotifiedPA( taskName, notified )
                                     logBuf = self.__log(logBuf, msg)
