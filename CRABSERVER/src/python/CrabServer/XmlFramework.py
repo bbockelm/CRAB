@@ -71,6 +71,79 @@ class Event:
 ##-------------------------------------------------------------------------------------------------------
 
 
+
+class Job:
+    """
+    _Job_
+
+    Represent the information to be published in the xml file (a NODE)
+    """
+    
+    #------------------------------------------------------------------------
+    def __init__(self):
+        self._job_fields = { \
+                         "status":   "", \
+                         "sched_id":     "", \
+                         "site":    "", \
+                         "resubmit": "", \
+                         "job_exit":   "", \
+                         "sched_exit":   "", \
+                         "exe_exit":    "", \
+                         "cleared":    "", \
+                         "id":    "" \
+                       }
+
+        self._head_fields = { \
+                            'thresholdRequested':   "", \
+                            'ended':   "", \
+                            'owner' :   "", \
+                            'taskName':   "", \
+                            'totJob':   "", \
+                            'email':   "" \
+                            }
+
+        self._jobreport = "Job"
+        self._headreport = "TaskReport"
+        self._report = None
+        
+        self.doc = xml.dom.minidom.Document()
+        
+    #------------------------------------------------------------------------
+    def initialize(self, values): ## date, ev, txt, reason, code, time):
+        self._fields = values
+
+        eventrep = self.doc.createElement(self._jobreport)
+        for key, value in self._job_fields.iteritems():
+   #         if key == "txt":
+             eventrep.setAttribute(str(key), str(value))
+
+        self._report = eventrep
+        return self
+
+    #------------------------------------------------------------------------
+    def getEventTagName(self):
+        return self._jobreport
+
+    #------------------------------------------------------------------------
+    def getEventFieldValue(self, fld):
+        return self._fields[fld]
+
+    #------------------------------------------------------------------------
+    def getEventFieldNameList(self):
+        return self._job_fields.keys()
+
+    #------------------------------------------------------------------------
+    def getDoc(self):
+        return self._report
+
+    #------------------------------------------------------------------------
+    def toXml(self):
+        return self._report.toxml()
+
+
+##-------------------------------------------------------------------------------------------------------
+
+
 class XmlFramework:
     """
     _XmlFramework_
@@ -78,8 +151,8 @@ class XmlFramework:
     """
     
     #------------------------------------------------------------------------
-    def __init__(self):
-    	self._rootname      = "InternalLogInfo"
+    def __init__(self, _rootname="InternalLogInfo" ):
+    	self._rootname      = _rootname
 	self._evereport     = "Report"
 	self._owner         = "owner"
 	self._taskname      = "taskName"
@@ -164,8 +237,22 @@ class XmlFramework:
         return tagdiction
 
 
+    def getJobValues(self):
+        tagdiction = {}
+        Events = self.doc.getElementsByTagName( Job().getEventTagName() )
+        counter = 1
+        for eve in Events:
+            evediction = {}
+            for fld in Job().getEventFieldNameList():
+                evediction.setdefault(fld, eve.getAttribute( fld ) )
+            tagdiction.setdefault(counter, evediction)
+            counter += 1
+        return tagdiction
+    
+
 if __name__=="__main__":
-    c = XmlFramework()
+    c.XmlFramework()
+
     """
     c.initialize("Mattia Cinquilli", "taskprova")
     ev = Event()
