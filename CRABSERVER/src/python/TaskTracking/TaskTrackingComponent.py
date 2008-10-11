@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.110 2008/10/07 10:28:32 mcinquil Exp $"
-__version__ = "$Revision: 1.110 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.114 2008/10/10 14:53:06 mcinquil Exp $"
+__version__ = "$Revision: 1.114 $"
 
 import os
 import time
@@ -350,7 +350,7 @@ class TaskTrackingComponent:
                 logBuf = self.__log(logBuf, event + ": " + str(payload) )
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
                 taskName, fake_proxy, range = payload.split(":")
-                _loginfo.setdefault('txt', str("Submisson completed: " + str(taskName)))
+                _loginfo.setdefault('txt', str("Kill asked for task: " + str(taskName)))
                 _loginfo.setdefault('range', str(range))
                 self.killingTask(taskName, range)
             else:
@@ -390,11 +390,14 @@ class TaskTrackingComponent:
                 logBuf = self.__log(logBuf, "   Error killing task: %s" % taskName)
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
                 self.killingTask(taskName, rangeKillJobs, True)
+                _loginfo.setdefault('txt', str("Kill failed: " + str(taskName)))
+                _loginfo.setdefault('range', str(rangeKillJobs))
             else:
                 logBuf = self.__log(logBuf, " ")
                 logBuf = self.__log(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
                 logBuf = self.__log(logBuf, " ")
             logging.info(logBuf)
+            self.__appendDbgInfo(taskName, _loginfo)
             return
 
         if event == "CRAB_Cmd_Mgr:GetOutputNotification":
