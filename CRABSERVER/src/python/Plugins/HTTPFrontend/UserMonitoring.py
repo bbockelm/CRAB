@@ -1,10 +1,13 @@
 from CrabServer.XmlFramework import *
-import os
+import os, time
+import API
 
+_tasktype = {'All' : '', 'Archived' : True , 'NotArchived' : False }
 
 class TaskLogMonitor:
 
-    def __init__(self, showtasklog = None):
+    def __init__(self, showtasklog = None, showlisttask = None):
+        self.showtasks = showlisttask
         self.visualize  = showtasklog
 
     def index(self):
@@ -21,12 +24,71 @@ class TaskLogMonitor:
         html += '</form>'
         html += "</table>\n"
 
+        html += "<br><br><table>\n"
+        html += "<i>a time-window of 0 (zero) means all available statistics:</i><br/><br/>"
+        html += '<form action=\"%s"\ method="get">' % (self.showtasks)
+        html += 'Status of  '
+        html += ' <select name="tasktype" style="width:80px"><option>All</option><option>Archived</option><option>NotArchived</option></select>'
+        html += '  tasks for last  '
+        html += '<input type="text" name="length" size=4 value=0>'
+        html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
+        html += '<input type="submit" value="Show List"/>'
+        html += '</select>'
+        html += '</form>'
+        html += "</table>\n"
+
         html += """</body></html>"""
 
         return html
 
     index.exposed = True
 
+
+class ListTaskForLog:
+
+    def __init__(self, showlogtask = None):
+        self.visualize = showlogtask
+
+    def index( self, length, span, tasktype ):
+        _span=3600
+        if span == 'days': _span=24*3600
+
+        query_time = int(length)*_span
+        end_time = time.time() - time.altzone
+        start_time = end_time - query_time
+
+        tasks = API.getTasks( query_time, _tasktype[tasktype] )
+
+        html = """<html><body><h2>List of %s tasks"""% (tasktype)
+        html += "Last %s %s</h2>\n " % ( length, span )
+        html += "<table>\n"
+        html += "<tr>"
+        html += self.writeList(tasks)
+
+        return html
+
+    index.exposed = True
+
+    def writeList(self, data):
+
+        html = "<th align='left'>Task name</th><th align='left'>Task status</th>"
+        html += "<th align='left' ='2'>Show</th>"
+        html += "</tr>\n"
+
+        for taskname, status in data:
+            html += "<tr>"
+            html += "<td>%s</td><td align='left'>%s</td>" \
+                    % ( taskname, status )
+            baselink = self.visualize + "/?taskname=" + taskname + "&logtype="
+            html += "<td><a href='%s'>Logging</a></td><td><a href='%s'>Status</a></td>" \
+                    % ((baselink + "Logging"), (baselink + "Status"))
+            html += "</tr>\n"
+
+        html += "</table>\n"
+
+        html += "<h4>Total number of tasks: %s </h4>\n" % len(data)
+        html += """</body></html>"""
+        return html
 
 class TaskLogVisualizer:
 

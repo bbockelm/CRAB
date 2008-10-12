@@ -77,8 +77,20 @@ def getTimeStatusTask( time ):
     return taskCheck
 
 
-def getNumTask(from_time, ended=''):
+def getTasks(from_time, ended=''):
+    notif= ended
+    if ended == True: notif =' and notificationSent > 1 '
+    elif ended == False: notif= ' and notificationSent < 2 '
+    dateCondition= ''
+    dateCondition = " and land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND)"
+    
+    queryString = "SELECT taskName, status FROM js_taskInstance where 1 "+notif+" "+dateCondition +" ORDER by land_time;"
+    print queryString 
+    taskCheck = queryMethod(queryString)
+    return taskCheck
 
+
+def getNumTask(from_time, ended=''):
     notif= ended
     if ended == True: notif =' and notificationSent > 1 '
     elif ended == False: notif= ' and notificationSent < 2 '

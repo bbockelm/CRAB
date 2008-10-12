@@ -17,7 +17,7 @@ from Plugins.HTTPFrontend.TaskMon import TaskMonitor,TaskGraph, CumulativeTaskGr
 from Plugins.HTTPFrontend.JobMon import JobMonitor,CumulativeJobStatGraph
 from Plugins.HTTPFrontend.ComponentServicesMonitor import CompServMonitor, ShowCompStatus, ShowCompLogs, WriteLog
 from Plugins.HTTPFrontend.OverallMonitor import OverallMonitor, UserGraph, DestinationSitesMonitor, StatusPerDest
-from Plugins.HTTPFrontend.UserMonitoring import TaskLogVisualizer,TaskLogMonitor
+from Plugins.HTTPFrontend.UserMonitoring import TaskLogVisualizer,TaskLogMonitor, ListTaskForLog
 
 class Root:
     """
@@ -153,8 +153,12 @@ def installer(**args):
         )
 
     root.visualog = TaskLogVisualizer()
+    root.listvlog = ListTaskForLog(
+        "%s/visualog" % baseUrl
+        )
     root.logginfo = TaskLogMonitor(
         "%s/visualog" % baseUrl,
+        "%s/listvlog" % baseUrl
         )
 
     return root
