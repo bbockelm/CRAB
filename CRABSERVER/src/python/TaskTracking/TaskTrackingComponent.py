@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.114 2008/10/10 14:53:06 mcinquil Exp $"
-__version__ = "$Revision: 1.114 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.115 2008/10/11 12:26:21 mcinquil Exp $"
+__version__ = "$Revision: 1.115 $"
 
 import os
 import time
@@ -770,7 +770,7 @@ class TaskTrackingComponent:
                 sit = ttutil.getListEl(dictReportTot[singleJob], 5)
                 sst = ttutil.getListEl(dictReportTot[singleJob], 6)
                 sid = ttutil.getListEl(dictReportTot[singleJob], 9)
-                J = Job()
+                J = JobXml()
                 J.initialize( singleJob, st, eec, jec, cle, res, sit, sst, sid)
                 c.addJob( J )
 

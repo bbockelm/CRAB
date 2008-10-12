@@ -12,7 +12,7 @@ import os
 import re
 import logging
 
-class Job:
+class JobXml:
     """
     _Job_
     
