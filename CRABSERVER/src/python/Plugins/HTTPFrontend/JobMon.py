@@ -67,7 +67,7 @@ class CumulativeJobStatGraph:
             temp_list = []
             for a,b in querydata :
                 list_status.append(a)
-                t = time.mktime(b.timetuple())
+                t = time.mktime(b.timetuple()) - time.altzone
                 if t > i and t < i+_span :
                     temp_list.append(a)
             temp_dictOfList[cnt]=temp_list

@@ -46,6 +46,39 @@ class TaskMonitor:
         html += '</form>'
         html += "</table>\n"
 
+        """   
+        html += "<table>\n"
+        html += "<b>Dataset related infos </b><br/><br/>"
+        ### Then display:
+        # numb users
+        ## success/failure piechart
+        ## numb of task
+        html += '<form action=\"%s"\ method="get" >' % (self.graphtaskcumulative)
+        html += 'Cumulative plot of tasks status '
+        html += ' for last  '
+        html += '<input type="text" name="length" size=4 value=0>'
+        html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
+        html += '<input type="submit" value="Show Summary"/>'
+        html += '</select>'
+        html += '</form>'
+
+        html += "<table>\n"
+        html += "<b>Users related infos </b><br/><br/>"
+        ## numb task
+        ## numb dataset
+        html += '<form action=\"%s"\ method="get" >' % (self.graphtaskcumulative)
+        html += 'Cumulative plot of tasks status '
+        html += ' for last  '
+        html += '<input type="text" name="length" size=4 value=0>'
+        html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
+        html += '<input type="submit" value="Show Summary"/>'
+        html += '</select>'
+        html += '</form>'
+        html += "</table>\n"
+        html += "</table>\n"
+        """
+
+
         html += """</body></html>"""
 
         return html
@@ -157,7 +190,7 @@ class CumulativeTaskGraph:
             temp_list = []
             for a,b in querydata :
                 list_status.append(a)
-                t = time.mktime(b.timetuple())
+                t = time.mktime(b.timetuple()) - time.altzone
                 if t > i and t < i+_span :
                     temp_list.append(a)
             temp_dictOfList[cnt]=temp_list

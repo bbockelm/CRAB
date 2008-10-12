@@ -113,7 +113,7 @@ class UserGraph:
  
             land_time = []
             for name,land in users:
-                land_time.append( time.mktime(land.timetuple()))
+                land_time.append( time.mktime(land.timetuple())) - time.altzone
  
             range_time= range(int(start_time),int(end_time),_span)
             binning = {}
