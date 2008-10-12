@@ -119,13 +119,8 @@ class ShowCompLogs:
 
     def index(self, comp_name):
         html = """<html><body><h2>List of Available Components logs </h2>\n """
+        compDir=CompDIR(comp_name)
 
-        config = os.environ.get("PRODAGENT_CONFIG", None)
-        cfgObject = ProdAgentConfiguration()
-        cfgObject.loadFromFile(config)
-
-        compCfg = cfgObject.getConfig(comp_name)
-        compDir = compCfg['ComponentDir']
         LogFiles=[] 
         list_file = os.listdir(compDir)
         for file in list_file:
@@ -136,7 +131,7 @@ class ShowCompLogs:
         html += "<table>\n"
         html += "<table>\n"
         for f in LogFiles:
-            to_read=os.path.join(compDir,f)
+            to_read=os.path.join(comp_name,f) 
             html += "<li><a href=\"%s?to_read=%s\">%s</a></li>\n" % (
                 self.writecomp, to_read,f )
         html += "</ul>\n"
@@ -155,13 +150,14 @@ class WriteLog:
 
     def index(self, to_read):
 
+        compDir = CompDIR(str(to_read).split('/')[0])
         html = """<html><body><h2> %s </h2>\n """%os.path.basename(to_read)
 
         html += "<table>\n"
         html += " <tr><th> Log content </th>\n"
         html += "<table>\n"
         html += "<table>\n"
-        componentLog = open(to_read).read().replace('\n','<br>')
+        componentLog = open(compDir+'/'+to_read.split('/')[1]).read().replace('\n','<br>')
         html += componentLog
         html += "<table>\n"
         html += """</body></html>"""
@@ -170,4 +166,9 @@ class WriteLog:
         return html
     index.exposed = True
 
+def CompDIR(comp_name):
+
+    config = os.environ.get("PRODAGENT_CONFIG", None)
+    cfgObject = ProdAgentConfiguration()
+    cfgObject.loadFromFile(config)
 
