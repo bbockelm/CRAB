@@ -258,7 +258,7 @@ If using the server modality, this command allows to delegate a valid long proxy
 
 =item B<-testJdl [range]>
 
-Check if the job can find compatible resources. It's equivalent of doing I<edg-job-list-match> on edg.
+Check if the job can find compatible resources. It is equivalent of doing I<edg-job-list-match> on edg.
 
 =item B<-printId [range]>
 
@@ -391,7 +391,7 @@ See also I<preserve_seeds>. Seeds not listed in I<increment_seeds> or I<preserve
 
 =item B<preserve_seeds>
 
-Specifies a comma separated list of seeds to which CRAB will not change from their values in the user's
+Specifies a comma separated list of seeds to which CRAB will not change from their values in the user 
 CMSSW config file. I<preserve_seeds=sourceSeed,g4SimHits> will leave the Pythia and GEANT seeds the same for every job.
 
 See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserve_seeds> are randomly set for each job.
@@ -454,15 +454,45 @@ The output (only that produced by the executable, not the std-out and err) is co
 
 =item B<storage_element>
 
-To be used together with I<copy_data>. Storage Element name.
+To be used with <copy_data>=1
+If you want to copy the output of your analysis in a official CMS Tier2 or Tier3, you have to write the CMS Site Name of the site, as written in the SiteDB https://cmsweb.cern.ch/sitedb/reports/showReport?reportid=se_cmsname_map.ini (i.e T2_IT_legnaro). You have also to specify the <remote_dir>(see below)
+
+If you want to copy the output in a not_official_CMS remote site you have to specify the complete storage element name (i.e se.xxx.infn.it).You have also to specify the <storage_path> and the <storage_port> if you do not use the default one(see below).  
+
+=item B<user_remote_dir>
+
+To be used with <copy_data>=1 and <storage_element> official CMS sites.
+This is the directory where your output will be stored. This directory will be created under the mountpoint of the official CMS storage Element. The mountpoint is discovered by CRAB. 
 
 =item B<storage_path>
 
-To be used together with I<copy_data>. Path where to put output files on Storage Element. Full path is needed, and the directory must be writeable by all.
+To be used with <copy_data>=1 and <storage_element> not official CMS sites.
+This is the full path of the Storage Element writeable by all, the mountpoint of SE (i.e /srm/managerv2?SFN=/pnfs/se.xxx.infn.it/yyy/zzz/)
+
+=item B<lfn>
+
+To be used with <copy_data>=1 and <storage_element> not official CMS sites.
+This is the directory or tree of directories that CRAB will create under the storage path of the SE. Here your produced output will be stored.This part of the path will be used as logical file name of your files in the case of publication
 
 =item B<storage_port>
 
 To choose the storage port specify I<storage_port> = N (default is 8443) .
+
+=item B<publish_data*>
+
+To be used with <copy_data>=1
+To publish your produced output in a local istance of DBS set publish_data = 1
+All the details about how to use this functionality are written in https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo.
+N.B 1) if you are using an official CMS site to stored data, the remote dir will be not considered. The directory where data will be stored is decided by CRAB, following the CMS policy in order to be able to re-read published data. 
+2) if you are using a not official CMS site to store data, you have to check the <lfn>, that will be part of the logical file name of you published files, in order to be able to re-read the data. 
+
+=item B<publish_data_name>
+
+You produced output will be published in your local DBS with dataset name <primarydataset>/<publish_data_name>/USER
+
+=item B<dbs_url_for_publication>
+
+Specify the URL of your local DBS istance where CRAB has to publish the output files
 
 =item B<srm_version>
 
@@ -523,7 +553,7 @@ item B<must> be complete, including the closing ";".
 
 =item B<wms_service>
 
-With this field it\'s also possible to specify which WMS you want to use (https://hostname:port/pathcode) where "hostname" is WMS\' name, the "port" generally is 7443 and the "pathcode" should be something like "glite_wms_wmproxy_server".
+With this field it is also possible to specify which WMS you want to use (https://hostname:port/pathcode) where "hostname" is WMS name, the "port" generally is 7443 and the "pathcode" should be something like "glite_wms_wmproxy_server".
 
 =item B<max_cpu_time>
 
