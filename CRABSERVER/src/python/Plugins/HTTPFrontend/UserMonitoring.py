@@ -6,32 +6,49 @@ _tasktype = {'All' : '', 'Archived' : True , 'NotArchived' : False }
 
 class TaskLogMonitor:
 
-    def __init__(self, showtasklog = None, showlisttask = None):
+    def __init__(self, showtasklog = None, showlisttask = None, showusertask = None):
         self.showtasks = showlisttask
-        self.visualize  = showtasklog
+        self.visualize = showtasklog
+        self.usertasks = showusertask
+
+    def __prepareSelect(self, tuple):
+        html = ""
+        for data in tuple:
+            html += "<option>%s</option>"%(str(data[0]))
+        return html
 
     def index(self):
+        users = API.getAllUserName()
 
         html = """<html><body><h2>CrabServer Tasks: internal server logging</h2>\n """
 
         html += "<table>\n"
         html += "<i>Filling the field with the string resulting from 'crab -printId' allow to check both staus and logging: </i><br/><br/>"
         html += '<form action=\"%s"\ method="get">' % (self.visualize)
-        html += 'Task unique name '
-        html += ' <input type="text" name="taskname" size=50> '
-        html += ' <select name="logtype" style="width:80px"><option>Status</option><option>Logging</option></select>'
+        html += 'Task unique name&nbsp;'
+        html += ' <input type="text" name="taskname" size=50>&nbsp; '
+        html += ' <select name="logtype" style="width:80px"><option>Status</option><option>Logging</option></select>&nbsp;'
         html += '<input type="submit" value="Show"/>'
         html += '</form>'
         html += "</table>\n"
 
         html += "<br><br><table>\n"
-        html += "<i>a time-window of 0 (zero) means all available statistics:</i><br/><br/>"
+        html += "<i>Select the user name to see all his tasks on the server</i><br/><br/>"
+        html += '<form action=\"%s"\ method="get" >' % (self.usertasks)
+        html += 'User&nbsp;'
+        html += ' <select name="username" style="width:150px">%s</select>&nbsp;'%(self.__prepareSelect(users))
+        html += '<input type="submit" value="Show Tasks"/>'
+        html += '</select>'
+        html += '</form>'
+        html += "</table>\n"
+
+        html += "<br><br><table>\n"
         html += '<form action=\"%s"\ method="get">' % (self.showtasks)
-        html += 'Status of  '
-        html += ' <select name="tasktype" style="width:80px"><option>All</option><option>Archived</option><option>NotArchived</option></select>'
-        html += '  tasks for last  '
-        html += '<input type="text" name="length" size=4 value=0>'
-        html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
+        html += 'Status of&nbsp;'
+        html += ' <select name="tasktype" style="width:80px"><option>All</option><option>Archived</option><option>NotArchived</option></select>&nbsp;'
+        html += '&nbsp;tasks for last&nbsp;'
+        html += '<input type="text" name="length" size=4 value=0>&nbsp;'
+        html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>&nbsp;'
         html += '<input type="submit" value="Show List"/>'
         html += '</select>'
         html += '</form>'
@@ -70,6 +87,43 @@ class ListTaskForLog:
     index.exposed = True
 
     def writeList(self, data):
+        html = "<th align='left'>Task name</th><th align='left'>Task status</th>"
+        html += "<th align='left' ='2'>Show</th>"
+        html += "</tr>\n"
+
+        for taskname, status in data:
+            html += "<tr>"
+            html += "<td>%s</td><td align='left'>%s</td>" \
+                    % ( taskname, status )
+            baselink = self.visualize + "/?taskname=" + taskname + "&logtype="
+            html += "<td><a href='%s'>Logging</a></td><td><a href='%s'>Status</a></td>" \
+                    % ((baselink + "Logging"), (baselink + "Status"))
+            html += "</tr>\n"
+
+        html += "</table>\n"
+
+        html += "<h4>Total number of tasks: %s </h4>\n" % len(data)
+        html += """</body></html>"""
+        return html
+
+class ListTaskForUser:
+
+    def __init__(self, showusertask = None):
+        self.visualize = showusertask
+
+    def index( self, username ):
+        tasks = API.getUserTasks(username)
+
+        html = """<html><body><h2>List of %s's tasks"""% (username)
+        html += "<table>\n"
+        html += "<tr>"
+        html += self.writeList(tasks)
+
+        return html
+
+    index.exposed = True
+
+    def writeList(self, data):
 
         html = "<th align='left'>Task name</th><th align='left'>Task status</th>"
         html += "<th align='left' ='2'>Show</th>"
@@ -89,6 +143,8 @@ class ListTaskForLog:
         html += "<h4>Total number of tasks: %s </h4>\n" % len(data)
         html += """</body></html>"""
         return html
+
+
 
 class TaskLogVisualizer:
 

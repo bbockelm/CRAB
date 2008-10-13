@@ -89,6 +89,11 @@ def getTasks(from_time, ended=''):
     taskCheck = queryMethod(queryString)
     return taskCheck
 
+def getUserTasks(username):
+    queryString = "SELECT taskName, status  FROM js_taskInstance " +\
+                  "WHERE user_name = '%s' ORDER BY land_time DESC;"%(username)
+    taskCheck = queryMethod(queryString)
+    return taskCheck
 
 def getNumTask(from_time, ended=''):
     notif= ended
@@ -156,9 +161,12 @@ def getUserName(from_time):
     taskCheck = queryMethod(queryString)
     return taskCheck
 
+def getAllUserName():
+    queryString = "select distinct(user_name) from js_taskInstance ORDER BY user_name;"
+    taskCheck = queryMethod(queryString)
+    return taskCheck
 
-
-# Componets Monitor
+# Components Monitor
 def getPIDservice(search_service,service):
     cmd = 'ps -ef |grep "'+search_service+'"  |grep -v "grep '+search_service+'" | cut -d " " -f 6 | head -1'
 
