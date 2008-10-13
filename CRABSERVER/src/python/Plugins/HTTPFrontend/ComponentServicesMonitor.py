@@ -171,4 +171,5 @@ def CompDIR(comp_name):
     config = os.environ.get("PRODAGENT_CONFIG", None)
     cfgObject = ProdAgentConfiguration()
     cfgObject.loadFromFile(config)
-
+    compCfg = cfgObject.getConfig(comp_name)
+    return compCfg['ComponentDir']
