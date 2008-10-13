@@ -22,7 +22,7 @@ class PhEDExDatasvcInfo:
         
         self.publish_data = cfg_params.get("USER.publish_data",0)
         self.usenamespace = cfg_params.get("USER.usenamespace",0)
-        self.user_remote_dir = cfg_params.get("USER.remote_dir",'')
+        self.user_remote_dir = cfg_params.get("USER.user_remote_dir",'')
         if self.user_remote_dir:
             if ( self.user_remote_dir[-1] != '/' ) : self.user_remote_dir = self.user_remote_dir + '/'
             
