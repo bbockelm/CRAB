@@ -13,11 +13,11 @@ from ProdAgentCore.Configuration import loadProdAgentConfiguration
 import cherrypy
 from cherrypy.lib.static import serve_file
 
-from Plugins.HTTPFrontend.TaskMon import TaskMonitor,TaskGraph, CumulativeTaskGraph
+from Plugins.HTTPFrontend.TaskMon import TaskMonitor,TaskGraph, CumulativeTaskGraph,DatasetInfos
 from Plugins.HTTPFrontend.JobMon import JobMonitor,CumulativeJobStatGraph
 from Plugins.HTTPFrontend.ComponentServicesMonitor import CompServMonitor, ShowCompStatus, ShowCompLogs, WriteLog
 from Plugins.HTTPFrontend.OverallMonitor import OverallMonitor, UserGraph, DestinationSitesMonitor, StatusPerDest
-from Plugins.HTTPFrontend.UserMonitoring import TaskLogVisualizer,TaskLogMonitor, ListTaskForLog, ListTaskForUser
+from Plugins.HTTPFrontend.UserMonitoring import TaskLogVisualizer,TaskLogMonitor, ListTaskForUser
 
 class Root:
     """
@@ -109,6 +109,10 @@ def installer(**args):
     root = Root(baseUrl)
     root.images = ImageServer(args['StaticDir'])
 
+    root.datasetinfos = DatasetInfos(
+        "%s/images" % baseUrl,
+        args["StaticDir"] 
+        ) 
     root.cumulativetaskgraph = CumulativeTaskGraph(
         "%s/images" % baseUrl,
         args["StaticDir"])
@@ -117,7 +121,8 @@ def installer(**args):
         args["StaticDir"])
     root.tasks = TaskMonitor(
         "%s/taskgraph" % baseUrl,
-        "%s/cumulativetaskgraph" % baseUrl
+        "%s/cumulativetaskgraph" % baseUrl,
+        "%s/datasetinfos" % baseUrl
         )
  
     root.graphjobstcum = CumulativeJobStatGraph(
@@ -153,15 +158,11 @@ def installer(**args):
         )
 
     root.visualog = TaskLogVisualizer()
-    root.listvlog = ListTaskForLog(
-        "%s/visualog" % baseUrl
-        )
     root.usertask = ListTaskForUser(
         "%s/visualog" % baseUrl
         )
     root.logginfo = TaskLogMonitor(
         "%s/visualog" % baseUrl,
-        "%s/listvlog" % baseUrl,
         "%s/usertask" % baseUrl
         )
 

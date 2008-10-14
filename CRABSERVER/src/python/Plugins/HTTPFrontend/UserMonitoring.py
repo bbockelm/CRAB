@@ -6,8 +6,7 @@ _tasktype = {'All' : '', 'Archived' : True , 'NotArchived' : False }
 
 class TaskLogMonitor:
 
-    def __init__(self, showtasklog = None, showlisttask = None, showusertask = None):
-        self.showtasks = showlisttask
+    def __init__(self, showtasklog = None, showusertask = None):
         self.visualize = showtasklog
         self.usertasks = showusertask
 
@@ -36,20 +35,13 @@ class TaskLogMonitor:
         html += "<i>Select the user name to see all his tasks on the server</i><br/><br/>"
         html += '<form action=\"%s"\ method="get" >' % (self.usertasks)
         html += 'User&nbsp;'
-        html += ' <select name="username" style="width:150px">%s</select>&nbsp;'%(self.__prepareSelect(users))
-        html += '<input type="submit" value="Show Tasks"/>'
-        html += '</select>'
-        html += '</form>'
-        html += "</table>\n"
-
-        html += "<br><br><table>\n"
-        html += '<form action=\"%s"\ method="get">' % (self.showtasks)
-        html += 'Status of&nbsp;'
-        html += ' <select name="tasktype" style="width:80px"><option>All</option><option>Archived</option><option>NotArchived</option></select>&nbsp;'
+        html += ' <select name="username" style="width:150px"><option>All</option>%s</select>&nbsp;'%(self.__prepareSelect(users))
+        html += '&nbsp;status of&nbsp;'
+        html += ' <select name="tasktype" style="width:120px"><option>All</option><option>Archived</option><option>NotArchived</option></select>&nbsp;'
         html += '&nbsp;tasks for last&nbsp;'
         html += '<input type="text" name="length" size=4 value=0>&nbsp;'
         html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>&nbsp;'
-        html += '<input type="submit" value="Show List"/>'
+        html += '<input type="submit" value="Show Tasks"/>'
         html += '</select>'
         html += '</form>'
         html += "</table>\n"
@@ -61,12 +53,12 @@ class TaskLogMonitor:
     index.exposed = True
 
 
-class ListTaskForLog:
+class ListTaskForUser:
 
-    def __init__(self, showlogtask = None):
-        self.visualize = showlogtask
+    def __init__(self, showusertask = None):
+        self.visualize = showusertask
 
-    def index( self, length, span, tasktype ):
+    def index( self, username, length, span, tasktype ):
         _span=3600
         if span == 'days': _span=24*3600
 
@@ -74,45 +66,7 @@ class ListTaskForLog:
         end_time = time.time() - time.altzone
         start_time = end_time - query_time
 
-        tasks = API.getTasks( query_time, _tasktype[tasktype] )
-
-        html = """<html><body><h2>List of %s tasks"""% (tasktype)
-        html += "Last %s %s</h2>\n " % ( length, span )
-        html += "<table>\n"
-        html += "<tr>"
-        html += self.writeList(tasks)
-
-        return html
-
-    index.exposed = True
-
-    def writeList(self, data):
-        html = "<th align='left'>Task name</th><th align='left'>Task status</th>"
-        html += "<th align='left' ='2'>Show</th>"
-        html += "</tr>\n"
-
-        for taskname, status in data:
-            html += "<tr>"
-            html += "<td>%s</td><td align='left'>%s</td>" \
-                    % ( taskname, status )
-            baselink = self.visualize + "/?taskname=" + taskname + "&logtype="
-            html += "<td><a href='%s'>Logging</a></td><td><a href='%s'>Status</a></td>" \
-                    % ((baselink + "Logging"), (baselink + "Status"))
-            html += "</tr>\n"
-
-        html += "</table>\n"
-
-        html += "<h4>Total number of tasks: %s </h4>\n" % len(data)
-        html += """</body></html>"""
-        return html
-
-class ListTaskForUser:
-
-    def __init__(self, showusertask = None):
-        self.visualize = showusertask
-
-    def index( self, username ):
-        tasks = API.getUserTasks(username)
+        tasks = API.getUserTasks(username, query_time, _tasktype[tasktype])
 
         html = """<html><body><h2>List of %s's tasks"""% (username)
         html += "<table>\n"
@@ -125,14 +79,14 @@ class ListTaskForUser:
 
     def writeList(self, data):
 
-        html = "<th align='left'>Task name</th><th align='left'>Task status</th>"
+        html = "<th align='left'>Task name</th><th align='left'>Task status</th><th align='left'>Completeness </th>"
         html += "<th align='left' ='2'>Show</th>"
         html += "</tr>\n"
 
-        for taskname, status in data:
+        for taskname, status, percent in data:
             html += "<tr>"
-            html += "<td>%s</td><td align='left'>%s</td>" \
-                    % ( taskname, status )
+            html += "<td>%s</td><td align='left'>%s</td><td>%s</td>" \
+                    % ( taskname, status, percent )
             baselink = self.visualize + "/?taskname=" + taskname + "&logtype="
             html += "<td><a href='%s'>Logging</a></td><td><a href='%s'>Status</a></td>" \
                     % ((baselink + "Logging"), (baselink + "Status"))
@@ -225,22 +179,31 @@ class TaskLogVisualizer:
 
         c = XmlFramework("TaskTracking")
         c.fromFile( filepath )
+        xmlDict = c.getJobValues()
 
         html = "<html><body><h2>Staus of task : " + str(self.taskname) + "</h2>\n "
         html += '<table cellspacing="10">\n'
-
-        #st = ['Job','Status','Destination','Job_exit_code','Exe_exit_code','Submission Number']
-        st = ['Status','Destination','Job_exit_code','Exe_exit_code']
+      
+        st = ['Job','Status','Destination','Job_exit_code','Exe_exit_code','Submission Number']
+        html += "<tr>"
         for s in st:        
-            html += '<td align="left"> <td><b>%s</b></td>\n'%s
-        for i in c.getJobValues().values():
-            html += '<tr></tr>\n'
-            for key2, value2 in i.items():
-                if len(value2) > 0 and key2 not in  ['id','resubmit',"sched_id","cleared"]:
-                    if value2 != 'None':
-                        html += '<td align="left"> <td>%s</td>\n'%str(value2)
-                    else:
-                        html += '<td align="left"> <td>&nbsp</td>\n'
+            html += '<th align="left">%s</b></th>\n'%s
+        html += "</tr>"
+        for key, value in xmlDict.items():
+            html += "<tr>"
+            html += "<td align='left'>%s</td>"%(value['id'])
+            html += "<td align='left'>%s</td>"%(value['status'])
+            html += "<td align='left'>%s</td>"%(value['site'])
+            if value['job_exit'] != 'None':
+                html += "<td align='left'>%s</td>"%(value['job_exit'])
+            else: 
+                html += "<td align='left'>&nbsp</td>"
+            if value['job_exit'] != 'None':
+                html += "<td align='left'>%s</td>"%(value['exe_exit'])
+            else:
+                html += "<td align='left'>&nbsp</td>"
+            html += "<td align='left'>%s</td>"%(value['resubmit'])
+            html += "</tr>"
         return  html
 
 if __name__=="__main__":
