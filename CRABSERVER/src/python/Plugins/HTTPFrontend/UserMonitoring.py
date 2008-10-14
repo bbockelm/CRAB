@@ -237,7 +237,10 @@ class TaskLogVisualizer:
             html += '<tr></tr>\n'
             for key2, value2 in i.items():
                 if len(value2) > 0 and key2 not in  ['id','resubmit',"sched_id","cleared"]:
-                    html += '<td align="left"> <td>%s</td>\n'%str(value2)
+                    if value2 != 'None':
+                        html += '<td align="left"> <td>%s</td>\n'%str(value2)
+                    else:
+                        html += '<td align="left"> <td>&nbsp</td>\n'
         return  html
 
 if __name__=="__main__":
