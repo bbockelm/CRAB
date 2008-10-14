@@ -12,24 +12,25 @@ _tasktype = {'All' : '', 'Archived' : True , 'NotArchived' : False }
 
 class TaskMonitor:
 
-    def __init__(self, graphTask = None, graphTaskCumulative = None):
+    def __init__(self, graphTask = None, graphTaskCumulative = None, datasetRelated= None,graphuser=None ):
         self.graphtask = graphTask
         self.graphtaskcumulative = graphTaskCumulative
+        self.datasetrelated = datasetRelated
+        self.graphuser = graphuser
     
     def index(self):
 
         html = """<html><body><h2>CrabServer Tasks Entities</h2>\n """
         html += "<table>\n"
-        html += "<i>a time-window of 0 (zero) means all available statistics:</i><br/><br/><br/>"
-        html += "<i> </i><br/><br/>"
+        html += "<br/><br/>"
         html += '<form action=\"%s"\ method="get" >' % (self.graphtask)
         html += 'Status of  '
         html += ' <select name="tasktype" style="width:80px"><option>All</option><option>Archived</option><option>NotArchived</option></select>'
         html += '  tasks for last  '
-        html += '<input type="text" name="length" size=4 value=0>'
-        html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
-        html += '<select name="type" style="width:80px"><option>list</option><option>plot</option></select>'
-        html += '<input type="submit" value="Show Summary"/>'
+        html += ' <input type="text" name="length" size=4 value=0> '
+        html += ' <select name="span" style="width:80px"><option>hours</option><option>days</option></select> '
+        html += ' <select name="type" style="width:80px"><option>list</option><option>plot</option></select> '
+        html += ' <input type="submit" value="Show Summary"/> '
         html += '</select>'
         html += '</form>'
         html += "</table>\n"
@@ -39,34 +40,47 @@ class TaskMonitor:
         html += '<form action=\"%s"\ method="get">' % (self.graphtaskcumulative)
         html += 'Cumulative plot of tasks status '
         html += ' for last  '
-        html += '<input type="text" name="length" size=4 value=0>'
-        html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
-        html += '<input type="submit" value="Show Summary"/>'
+        html += ' <input type="text" name="length" size=4 value=0> '
+        html += ' <select name="span" style="width:80px"><option>hours</option><option>days</option></select> '
+        html += ' <input type="submit" value="Show Summary"/> '
         html += '</select>'
         html += '</form>'
         html += "</table>\n"
 
-        """   
         html += "<table>\n"
+        html += "<br/><br/>"
+        html += "<i>History plot of CrabServer usage by different users for last 24 hours, 7 days or month:</i><br/>"
+        html += '<form action=\"%s"\ method="get">' % (self.graphuser)
+        html += 'Users submitting jobs to this CrabServer  '
+        html += ' for last '
+        html += ' <input type="text" name="length" size=4 value=0> '
+        html += ' <select name="span" style="width:80px"><option>hours</option><option>days</option></select> '
+        html += ' <select name="type" style="width:80px"><option>list</option><option>plot</option></select> '
+        html += ' <input type="submit" value="Show Summary"/> '
+        html += '</select>'
+        html += '</form>'
+        html += "<br/><br/>"
+        html += "</table>\n"
+
+        html += "<table>\n"
+        html += "<br/><br/>"
         html += "<b>Dataset related infos </b><br/><br/>"
-        ### Then display:
-        # numb users
-        ## success/failure piechart
-        ## numb of task
-        html += '<form action=\"%s"\ method="get" >' % (self.graphtaskcumulative)
-        html += 'Cumulative plot of tasks status '
+        html += '<form action=\"%s"\ method="get" >' % (self.datasetrelated)
+        html += ' Distinct datasets accessed'
         html += ' for last  '
-        html += '<input type="text" name="length" size=4 value=0>'
-        html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
-        html += '<input type="submit" value="Show Summary"/>'
+        html += ' <input type="text" name="length" size=4 value=0> '
+        html += ' <select name="span" style="width:80px"><option>hours</option><option>days</option></select> '
+        html += ' <select name="type" style="width:80px"><option>list</option><option>plot</option></select> '
+        html += ' <input type="submit" value="Show Summary"/> ' 
         html += '</select>'
         html += '</form>'
 
+        """
         html += "<table>\n"
         html += "<b>Users related infos </b><br/><br/>"
         ## numb task
         ## numb dataset
-        html += '<form action=\"%s"\ method="get" >' % (self.graphtaskcumulative)
+        html += '<form action=\"%s"\ method="get" >' % (self.usersrelated)
         html += 'Cumulative plot of tasks status '
         html += ' for last  '
         html += '<input type="text" name="length" size=4 value=0>'
@@ -77,7 +91,6 @@ class TaskMonitor:
         html += "</table>\n"
         html += "</table>\n"
         """
-
 
         html += """</body></html>"""
 
@@ -100,7 +113,7 @@ class TaskGraph:
         end_time = time.time() - time.altzone
         start_time = end_time - query_time
        
-        tasks = API.getNumTask( query_time, _tasktype[tasktype] )
+        tasks = API.getNumTask( query_time, _tasyktype[tasktype] )
         
         data={}
         for num, state in tasks:
@@ -223,3 +236,204 @@ class CumulativeTaskGraph:
         return html
         
     index.exposed = True
+
+class DatasetInfos:
+    def __init__(self, imageUrl, imageDir, baseDDUrl):
+        self.imageServer = imageUrl
+        self.workingDir = imageDir
+        self.baseDDUrl = baseDDUrl
+        return
+
+    def DatasetList(self, data,query_time):
+
+
+          #                                           <td align="left"><a href=\"%s?dataset+%s\">%s</a></td>\
+          #                                           self.baseDDUrl,'job::%s'%dataset,jobs,\
+        
+        html = "<html><body><h2>List of Dataset</h2>\n "
+        html += '<table cellspacing="10" cellpadding=5>\n'
+    
+        st = ['Dataset name','Numeber of users','Number of tasks','Total Number of jobs','Efficiency']
+        html += '<tr>'  
+        for s in st:        
+            html += '<th align="left"> %s</th>\n'%s
+        html += '</tr>'  
+        for dataset in data.keys():
+            if dataset:
+                html += '<tr>'  
+                users  = API.countUsers(dataset,query_time)
+                tasks  = API.countTasks(dataset,query_time)
+                jobs  = API.countJobs(dataset,query_time)
+                exitcodes=API.getJobExit(dataset,query_time) 
+                tot = len(exitcodes) 
+                countSucc = 0
+                for appl, wrapp in exitcodes:
+                    if wrapp == 0: countSucc += 1
+                TotEff = countSucc*1./tot
+                
+                user = 'user::%s::%s'%(query_time,dataset)
+                task = 'task::%s::%s'%(query_time,dataset)
+                eff = 'eff::%s::%s'%(query_time,dataset)
+                if dataset == 'None': dataset='User Private MC Production'
+                html += '<td align="left">%s</td><td align="left"><a href=\"%s?user=%s\">%s</a></td>\
+                                                     <td align="left"><a href=\"%s?task=%s\">%s</a></td>\
+                                                     <td align="left">%s</td>\
+                                                     <td align="left"><a href=\"%s?eff=%s\">%s</a></td>\n'\
+                                                    %(str(dataset),self.baseDDUrl,user,users,\
+                                                     self.baseDDUrl,task,tasks,\
+                                                     jobs,\
+                                                     self.baseDDUrl,eff,TotEff)
+                html += '</tr>'  
+        html += "</table>\n"
+        html += """</body></html>"""
+        return  html
+
+    def DatasetGraph(self, span, length, data):
+
+        errHtml = "<html><body><h2>No Graph Tools installed!!!</h2>\n "
+        errHtml += "</body></html>"
+        try:
+            from graphtool.graphs.common_graphs import PieGraph
+        except ImportError:
+            return errHtml
+        
+        pngfile = os.path.join(self.workingDir, "%s-dataset.png" % length)
+        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+        
+        metadata = {"title" : "Datests"}
+        pie = PieGraph()
+        coords = pie.run( data, pngfile, metadata )
+
+        html = "<html><body><img src=\"%s\"></body></html>" % pngfileUrl
+        return html
+       
+    def index(self, length , span, type):
+
+        _span=3600
+        if span == 'days': _span=24*3600
+
+        query_time = int(length)*_span
+        end_time = time.time() - time.altzone
+        start_time = end_time - query_time
+
+        dataset = API.getKeyNum_task('dataset',from_time=query_time)
+
+        if not len(dataset): 
+           html = """<html><body><h2> No dataset accessed  </h2>\n """
+           html += """</body></html>"""
+           return html
+
+        data={}
+        for num,dat in dataset:
+            data[dat]= num
+
+        if type == 'plot':
+            html = self.DatasetGraph(span, length, data)
+        else:
+            html = self.DatasetList(data,query_time)
+
+        return html
+
+    index.exposed = True
+
+class DatasetDetails:
+
+    def __init__(self, imageUrl, imageDir):
+        self.imageServer = imageUrl
+        self.workingDir = imageDir
+        return
+
+    def writeList(self,data):
+ 
+        html = """<html><body>"""
+        html += "<table>\n"
+        html += "<tr>"
+        html = "<th>Task status</th><th>Number of tasks </th>"
+        html += "</tr>\n"
+        taskCount = 0
+        for status, num in data.items():
+            html += "<tr>"
+            html += "<td>%s</td><td>%s</td>" % ( status, num )
+            html += "</tr>\n"
+            taskCount += num
+
+        html += "</table>\n"
+
+        html += "<h4>Total number of tasks: %s </h4>\n" % taskCount
+        html += """</body></html>"""
+        return html
+
+
+    def index(self,user=None,task=None,eff=None):
+
+        if user : string = user 
+        elif task: string=task
+        else: string=eff
+        action = string.split('::')[0]
+        query_time = string.split('::')[1]
+        dataset = string.split('::')[2]
+        if action == 'task':
+            tasklist=API.getTaskNameList(dataset,query_time) 
+            html = """<html><body>"""
+            html += "<table>\n"
+            html += "<tr>"
+            html += "<th>List of Task</th>"
+            html += "</tr>\n"
+            for t_name, nn in tasklist:
+                html += "<tr>"
+                html += "<td>%s</td>" % ( t_name )
+                html += "</tr>\n"
+            html += "</table>\n"
+            html += """</body></html>"""
+        elif action == 'user':
+            userlist=API.getUserNameList(dataset,query_time) 
+            html = """<html><body>"""
+            html += "<table>\n"
+            html += "<tr>"
+            html += "<th>List of Users</th><th>Number of Tasks </th>"
+            html += "</tr>\n"
+            for num,user in userlist:
+                html += "<tr>"
+                html += "<td>%s</td><td>%s</td>" % ( user,num )
+                html += "</tr>\n"
+            html += "</table>\n"
+            html += """</body></html>"""
+        elif action == 'eff':  
+            onlyWrap = API.getWrapExit(dataset,query_time)
+            onlyExec = API.getApplExit(dataset,query_time)
+            data_wrap = {}
+            data_exec = {} 
+            for i,code in onlyWrap:
+                data_wrap[str(code)]=i 
+                #data_wrap['code']=i 
+            for i,code in onlyExec:
+                data_exec[str(code)]=i 
+             
+            errHtml = "<html><body><h2>No Graph Tools installed!!!</h2>\n "
+            errHtml += "</body></html>"
+            try:
+                from graphtool.graphs.common_graphs import PieGraph
+            except ImportError:
+                return errHtml
+            pngfile_wrap = os.path.join(self.workingDir, "wrappCode.png" )
+            pngfileUrl_wrap = "%s?filepath=%s" % (self.imageServer, pngfile_wrap)
+            pngfile_exec = os.path.join(self.workingDir, "applicationCode.png" )
+            pngfileUrl_exec = "%s?filepath=%s" % (self.imageServer, pngfile_exec)
+            
+            metadata_wrap = {"title" : "Wrapper Error Codes"}
+            metadata_exec = {"title" : "Executable Error Codes"}
+
+            pie = PieGraph()
+            coords_wrap = pie.run( data_wrap, pngfile_wrap, metadata_wrap )
+            pie1 = PieGraph()
+            coords_exec = pie1.run( data_exec, pngfile_exec, metadata_exec )
+                
+            html =  '<html><body>'
+            html += '<td align="left"><img src=\"%s\"></td>'% pngfileUrl_exec
+            html += '<td align="left"><img src=\"%s\"></td>'% pngfileUrl_wrap
+            html += """</body></html>"""
+           
+        return html    
+    index.exposed = True
+
+    
