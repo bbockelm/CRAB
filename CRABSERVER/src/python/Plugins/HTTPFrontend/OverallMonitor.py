@@ -7,76 +7,8 @@ CherryPy handler for displaying the Statics for:
 - exit code 
 """
 import os, time
-import API, Sites
+import API
 
-class OverallMonitor:
-    """
-    _OverallMonitor_
-
-    Generate a list of possible queries for user/site/exitcodes
-
-    """
-    def __init__(self, graphuser = None, graphdestination = None, graphstatusdest = None ):
-        self.graphuser = graphuser
-        self.graphdestination = graphdestination
-        self.graphstatusdest = graphstatusdest
-        
-    
-    def index(self):
-
-        template = ' for last '
-        template += '<input type="text" name="length" size=4 value=0>'
-        template += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
-        template += '<select name="type" style="width:80px"><option>list</option><option>plot</option></select>'
-        template += '<input type="submit" value="Show Summary"/>'
-        
-        template1 = ' for '
-        template1 += '<select name="site">'
-        template1 += '<option>all</option>'
-        sitesnames = Sites.SiteMap().keys()
-        sitesnames.sort()
-        for sitename in sitesnames:
-            template1 += '<option>'+sitename+'</option>'
-        template1 += '</select>'
-        template1 += ' site(s) '
-
-        html = """<html><body><h2> Overall Statistics </h2>\n """
-        html += "<table>\n"
-        html += "<i>a time-window of 0 (zero) means all available statistics:</i><br/><br/><br/>"
-        html += "<i>History plot of CrabServer usage by different users for last 24 hours, 7 days or month:</i><br/><br/>"
-        html += '<form action=\"%s"\ method="get">' % (self.graphuser)
-        html += 'Users submitting jobs to this CrabServer  '
-        html += template
-        html += '</select>'
-        html += '</form>'
-        html += "<br/><br/>"
-        html += "</table>\n"
-          
-        html += "<table>\n"
-        html += "<i>Current job destination pie for job submitted in the last period:</i><br/><br/>"
-        html += '<form action=\"%s"\ method="get">' % (self.graphdestination)
-        html += 'Job Destionation sites '
-        html += template
-        html += template1
-        html += '</select>'
-        html += '</form>'
-        html += "<br/><br/>"
-        html += "</table>\n"
-        
-        html += "<table>\n"
-        html += "<i>Current per-site job status distribution for jobs submitted in the last period:</i><br/><br/>"
-        html += '<form action=\"%s"\ method="get">' % (self.graphstatusdest)
-        html += 'Status per Destination Sites '
-        html += template
-        html += template1
-        html += '</select>'
-        html += '</form>'
-        html += "<br/><br/>"
-        html += "</table>\n"
-        
-        html += """</body></html>"""
-        return html
-    index.exposed = True
 
 
 class UserGraph:

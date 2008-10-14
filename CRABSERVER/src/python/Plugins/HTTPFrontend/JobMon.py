@@ -6,26 +6,67 @@ CherryPy handler for displaying the list of task state in the CS instance
 
 """
 import os, time
-import API
+import API, Sites
 
 
 class JobMonitor:
 
-    def __init__(self,  graphJobStCum = None):
+    def __init__(self,  graphJobStCum = None, graphdestination = None, graphstatusdest = None  ):
         self.graphjobstcum  =graphJobStCum
+        self.graphdestination = graphdestination
+        self.graphstatusdest = graphstatusdest
     
     def index(self):
+
+
+        template = ' for last '
+        template += ' <input type="text" name="length" size=4 value=0> '
+        template += ' <select name="span" style="width:80px"><option>hours</option><option>days</option></select> '
+        template += ' <select name="type" style="width:80px"><option>list</option><option>plot</option></select> '
+        template += ' <input type="submit" value="Show Summary"/> '
+        
+        template1 = ' for '
+        template1 += '<select name="site">'
+        template1 += '<option>all</option>'
+        sitesnames = Sites.SiteMap().keys()
+        sitesnames.sort()
+        for sitename in sitesnames:
+            template1 += '<option>'+sitename+'</option>'
+        template1 += '</select>'
+        template1 += ' site(s) '
 
         html = """<html><body><h2>CrabServer Jobs</h2>\n """
 
         html += "<table>\n"
-        html += "<i> </i><br/><br/>"
+        html += "<br/><br/>"
         html += '<form action=\"%s"\ method="get">' % (self.graphjobstcum)
         html += 'Cumulative plot of jobs status '
         html += ' for last  '
-        html += '<input type="text" name="length" size=4 value=0>'
-        html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
-        html += '<input type="submit" value="Show Plot"/>'
+        html += ' <input type="text" name="length" size=4 value=0> '
+        html += ' <select name="span" style="width:80px"><option>hours</option><option>days</option></select> '
+        html += ' <input type="submit" value="Show Plot"/> '
+        html += '</select>'
+        html += '</form>'
+        html += "</table>\n"
+
+        html += "<table>\n"
+        html += "<br/><br/>"
+        html += "<i>Current job destination pie for job submitted in the last period:</i><br/>"
+        html += '<form action=\"%s"\ method="get">' % (self.graphdestination)
+        html += 'Job Destionation sites '
+        html += template
+        html += template1
+        html += '</select>'
+        html += '</form>'
+        html += "</table>\n"
+        
+        html += "<table>\n"
+        html += "<br/><br/>"
+        html += "<i>Current per-site job status distribution for jobs submitted in the last period:</i><br/>"
+        html += '<form action=\"%s"\ method="get">' % (self.graphstatusdest)
+        html += 'Status per Destination Sites '
+        html += template
+        html += template1
         html += '</select>'
         html += '</form>'
         html += "</table>\n"
