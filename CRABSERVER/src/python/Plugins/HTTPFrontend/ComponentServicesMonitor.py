@@ -22,7 +22,6 @@ class CompServMonitor:
  
         html = """<html><body><h2>CrabServer Components and Services Monitoring</h2>\n """
         html += "<table>\n"
-        html += "<i>a time-window of 0 (zero) means all available statistics:</i><br/><br/><br/>"
         html += "<i> Diplay the status of components and active service in this CrabServer: </i><br/><br/>"
         html += '<form action=\"%s"\ method="get" >' % (self.compstatus)
         html += ' Status of all components and external services of this CrabServer '
