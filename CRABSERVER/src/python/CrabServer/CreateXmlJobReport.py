@@ -121,7 +121,20 @@ class JobXml:
     def toXml(self):
         return self.report.toxml()
 
-
+    #------------------------------------------------------------------------
+    def getJobFieldNameList(self):
+        return [ \
+                 self.JOBID, \
+                 self.STATUS, \
+                 self.EXITSTATUS, \
+                 self.JOBEXIT, \
+                 self.JOBREPORT, \
+                 self.JOBCLEARED, \
+                 self.SITE, \
+                 self.RESUB, \
+                 self.STATCODE, \
+                 self.SCHEDID \
+               ]
 
 ##-------------------------------------------------------------------------------------------------------
 
@@ -203,7 +216,7 @@ class CreateXmlJobReport:
 
     #------------------------------------------------------------------------
     def addJob(self, jobid, status, jobexit, exeexit, cleared, resub, site):
-        J = Job()
+        J = JobXml()
         
         self.root.appendChild( J.initialize(jobid, status, jobexit, exeexit, cleared, resub, site).getDoc() )
 
@@ -275,35 +288,35 @@ class CreateXmlJobReport:
         report = "CANNOT SET REPORT TEXT"
         
         #print "Report for single Job: "
-        allJobs = self.root.getElementsByTagName( Job().getJobTagName() )
+        allJobs = self.root.getElementsByTagName( JobXml().getJobTagName() )
         #print "len=%d\n" % len(allJobs)
-        if allJobs[0].getAttribute( Job().getStatusTagName())=="NotSubmitted":
+        if allJobs[0].getAttribute( JobXml().getStatusTagName())=="NotSubmitted":
             report = " has not been submitted by the server.\nPlease, check your log files and try to execute the command 'crab -testJdl' to verify if there are sites that can satisfy your requirements."
             #return report
 
-        if allJobs[0].getAttribute( Job().getStatusTagName())=="Killed":
+        if allJobs[0].getAttribute( JobXml().getStatusTagName())=="Killed":
             report = " has been correctly killed."
             
             
-        if allJobs[0].getAttribute( Job().getStatusTagName())=="NotKilled":
+        if allJobs[0].getAttribute( JobXml().getStatusTagName())=="NotKilled":
             report = " has not been correctly killed."                                                                  
         return report
           
     #------------------------------------------------------------------------
     def getTaskOutcome(self):
 
-        allJobs = self.root.getElementsByTagName( Job().getJobTagName() )
-        if len(allJobs) == 1 and allJobs[0].getAttribute( Job().getJobIDTagName())== "all":
+        allJobs = self.root.getElementsByTagName( JobXml().getJobTagName() )
+        if len(allJobs) == 1 and allJobs[0].getAttribute( JobXml().getJobIDTagName())== "all":
             outcome = ""
-            allJobs = self.root.getElementsByTagName( Job().getJobTagName() )
+            allJobs = self.root.getElementsByTagName( JobXml().getJobTagName() )
             
-            if allJobs[0].getAttribute( Job().getStatusTagName())=="NotSubmitted":
+            if allJobs[0].getAttribute( JobXml().getStatusTagName())=="NotSubmitted":
                 outcome = " has not been submitted by the server."
                 
-            if allJobs[0].getAttribute( Job().getStatusTagName())=="Killed":
+            if allJobs[0].getAttribute( JobXml().getStatusTagName())=="Killed":
                 outcome = " has been correctly killed."
                 
-            if allJobs[0].getAttribute( Job().getStatusTagName())=="NotKilled":
+            if allJobs[0].getAttribute( JobXml().getStatusTagName())=="NotKilled":
                 outcome = " has not been correctly killed."                                                                  
         else:
             if(  int( self.getPercentTaskCompleted() ) == 100):
@@ -317,11 +330,11 @@ class CreateXmlJobReport:
     def getTaskReport(self):
 
 
-        allJobs = self.root.getElementsByTagName( Job().getJobTagName() )
+        allJobs = self.root.getElementsByTagName( JobXml().getJobTagName() )
 
         report = ""
 
-        if len(allJobs) == 1 and allJobs[0].getAttribute( Job().getJobIDTagName())== "all":
+        if len(allJobs) == 1 and allJobs[0].getAttribute( JobXml().getJobIDTagName())== "all":
             report = self.getTaskReportForSingleJob()
         else:
             if(  int( self.getPercentTaskCompleted() ) == 100):
@@ -332,14 +345,14 @@ class CreateXmlJobReport:
 		report += "Actual level: " + self.getPercentTaskCompleted() + "%\n\n"
                 
             report += "Status Report:\n"
-            allJobs = self.root.getElementsByTagName( Job().getJobTagName() )
+            allJobs = self.root.getElementsByTagName( JobXml().getJobTagName() )
             statusStat = {}
-            for status in Job().getAllowedStates():
+            for status in JobXml().getAllowedStates():
                 statusStat[ status ] = 0
 
                 
             for job in allJobs:
-                statusStat[ job.getAttribute( Job().getStatusTagName() ) ] += 1
+                statusStat[ job.getAttribute( JobXml().getStatusTagName() ) ] += 1
                         
             for status in statusStat.keys():
                 if statusStat[ status ] == 0:
@@ -443,20 +456,35 @@ class CreateXmlJobReport:
         
 	tr.setAttribute( self.EMAIL, mail )
 
-        Jobs = self.doc.getElementsByTagName( Job().getJobTagName() )
+        Jobs = self.doc.getElementsByTagName( JobXml().getJobTagName() )
         for job in Jobs:
-            status = job.getAttribute( Job().getStatusTagName() )
-            if status not in Job().getAllowedStates():
+            status = job.getAttribute( JobXml().getStatusTagName() )
+            if status not in JobXml().getAllowedStates():
                 errmsg = "Status [" + status + "] not allowed. Please check file [" + filename + "]"
                 raise RuntimeError, errmsg
 
 	self.init = True
+
+
+    def getJobValues(self):
+        tagdiction = {}
+        Jobs = self.doc.getElementsByTagName( JobXml().getJobTagName() )
+        counter = 1
+        for eve in Jobs:
+            evediction = {}
+            for fld in JobXml().getJobFieldNameList():
+                evediction.setdefault(fld, eve.getAttribute( fld ) )
+            tagdiction.setdefault(counter, evediction)
+            counter += 1
+        return tagdiction
+
        
 if __name__=="__main__":
 	c = CreateXmlJobReport()
 	#c.initialize("taskname alvise", "dorigoa@pd.infn.it tdluigi@yahoo.it moreno@pd.infn.it", "dorigoa", 76, 60, 21)
-	c.fromFile("/data/dorigoa/killed.xml")
-
+	#c.fromFile("/data/dorigoa/killed.xml")
+        c.fromFile("/data/cms/logs/mcinquil_crab_0_081009_114551_f65c0bb2-3c16-4765-823f-9367da23ac3d_spec/xmlReportFile.xml")
+        print c.getJobValues()
 #        print "%s\n" % c.toXml()
         
 	#c.addStatusCount("JobFailed",1)
