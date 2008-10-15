@@ -135,8 +135,8 @@ class SchedulerLocal(Scheduler) :
             txt += 'echo "USER = $USER"\n'
             txt += 'export endpoint='+endpoint+'\n'
             txt += 'echo "endpoint = $endpoint"\n'
-            ### Needed i.e. for caf  
-            if (pool):
+            ### Needed i.e. for caf
+            if (pool) and (pool != 'None'):
                 txt += 'export STAGE_SVCCLASS='+str(pool)+'\n'
                 
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
