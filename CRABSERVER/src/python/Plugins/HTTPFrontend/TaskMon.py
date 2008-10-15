@@ -264,15 +264,19 @@ class DatasetInfos:
                 tasks  = API.countTasks(dataset,query_time)
                 jobs  = API.countJobs(dataset,query_time)
                 exitcodes=API.getJobExit(dataset,query_time) 
-                tot = len(exitcodes) 
-                countSucc = 0
-                for appl, wrapp in exitcodes:
-                    if wrapp == 0: countSucc += 1
-                TotEff = countSucc*1./tot
+                if not len(exitcodes):
+                    TotEff = 'Not jet available' 
+                    eff = 'eff::%s::%s'%('None',dataset)
+                else:  
+                    tot = len(exitcodes) 
+                    countSucc = 0
+                    for appl, wrapp in exitcodes:
+                        if wrapp == 0: countSucc += 1
+                    TotEff = countSucc*1./tot
+                    eff = 'eff::%s::%s'%(query_time,dataset)
                 
                 user = 'user::%s::%s'%(query_time,dataset)
                 task = 'task::%s::%s'%(query_time,dataset)
-                eff = 'eff::%s::%s'%(query_time,dataset)
                 if dataset == 'None': dataset='User Private MC Production'
                 html += '<td align="left">%s</td><td align="left"><a href=\"%s?user=%s\">%s</a></td>\
                                                      <td align="left"><a href=\"%s?task=%s\">%s</a></td>\
@@ -397,40 +401,45 @@ class DatasetDetails:
                 html += "</tr>\n"
             html += "</table>\n"
             html += """</body></html>"""
-        elif action == 'eff':  
-            onlyWrap = API.getWrapExit(dataset,query_time)
-            onlyExec = API.getApplExit(dataset,query_time)
-            data_wrap = {}
-            data_exec = {} 
-            for i,code in onlyWrap:
-                data_wrap[str(code)]=i 
-                #data_wrap['code']=i 
-            for i,code in onlyExec:
-                data_exec[str(code)]=i 
-             
-            errHtml = "<html><body><h2>No Graph Tools installed!!!</h2>\n "
-            errHtml += "</body></html>"
-            try:
-                from graphtool.graphs.common_graphs import PieGraph
-            except ImportError:
-                return errHtml
-            pngfile_wrap = os.path.join(self.workingDir, "wrappCode.png" )
-            pngfileUrl_wrap = "%s?filepath=%s" % (self.imageServer, pngfile_wrap)
-            pngfile_exec = os.path.join(self.workingDir, "applicationCode.png" )
-            pngfileUrl_exec = "%s?filepath=%s" % (self.imageServer, pngfile_exec)
-            
-            metadata_wrap = {"title" : "Wrapper Error Codes"}
-            metadata_exec = {"title" : "Executable Error Codes"}
-
-            pie = PieGraph()
-            coords_wrap = pie.run( data_wrap, pngfile_wrap, metadata_wrap )
-            pie1 = PieGraph()
-            coords_exec = pie1.run( data_exec, pngfile_exec, metadata_exec )
+        elif action == 'eff':
+            if query_time == 'None':
+                html = "<html><body><h2>No codes available</h2>\n "
+                html += "</body></html>"
+                return html 
+            else: 
+                onlyWrap = API.getWrapExit(dataset,query_time)
+                onlyExec = API.getApplExit(dataset,query_time)
+                data_wrap = {}
+                data_exec = {} 
+                for i,code in onlyWrap:
+                    data_wrap[str(code)]=i 
+                    #data_wrap['code']=i 
+                for i,code in onlyExec:
+                    data_exec[str(code)]=i 
+                 
+                errHtml = "<html><body><h2>No Graph Tools installed!!!</h2>\n "
+                errHtml += "</body></html>"
+                try:
+                    from graphtool.graphs.common_graphs import PieGraph
+                except ImportError:
+                    return errHtml
+                pngfile_wrap = os.path.join(self.workingDir, "wrappCode.png" )
+                pngfileUrl_wrap = "%s?filepath=%s" % (self.imageServer, pngfile_wrap)
+                pngfile_exec = os.path.join(self.workingDir, "applicationCode.png" )
+                pngfileUrl_exec = "%s?filepath=%s" % (self.imageServer, pngfile_exec)
                 
-            html =  '<html><body>'
-            html += '<td align="left"><img src=\"%s\"></td>'% pngfileUrl_exec
-            html += '<td align="left"><img src=\"%s\"></td>'% pngfileUrl_wrap
-            html += """</body></html>"""
+                metadata_wrap = {"title" : "Wrapper Error Codes"}
+                metadata_exec = {"title" : "Executable Error Codes"}
+          
+                pie = PieGraph()
+                coords_wrap = pie.run( data_wrap, pngfile_wrap, metadata_wrap )
+                pie1 = PieGraph()
+                coords_exec = pie1.run( data_exec, pngfile_exec, metadata_exec )
+                    
+                html =  '<html><body>'
+                html += '<td align="left"><img src=\"%s\"></td>'% pngfileUrl_exec
+                html += '<td align="left"><img src=\"%s\"></td>'% pngfileUrl_wrap
+                html += """</body></html>"""
            
         return html    
     index.exposed = True
