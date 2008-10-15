@@ -701,7 +701,8 @@ class TaskTrackingComponent:
                     if jobbe['jobId'] in jobList:
                         if jobbe.runningJob['status'] in ["D","E", "DA", "SD"]:
                             jobbe.runningJob['status'] = "UE"
-                            jobbe.runningJob['processStatus'] = "output_requested"
+                            if jobbe.runningJob['processStatus'] in ["handled", "not handled"]:
+                                jobbe.runningJob['processStatus'] = "output_requested"
                 mySession.updateDB(taskObj)
                 self.singleTaskPoll(taskObj, TaskStateAPI(), taskName, mySession)
         except Exception, ex:
