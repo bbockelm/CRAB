@@ -474,6 +474,11 @@ This is the full path of the Storage Element writeable by all, the mountpoint of
 To be used with <copy_data>=1 and <storage_element> not official CMS sites.
 This is the directory or tree of directories that CRAB will create under the storage path of the SE. Here your produced output will be stored.This part of the path will be used as logical file name of your files in the case of publication
 
+=item B<storage_pool>
+
+If you are using CAF scheduler, you can specify the storage pool where to write your output.
+The default is cmscafuser. If you do not want to use the default, you can overwrite it specifing None
+
 =item B<storage_port>
 
 To choose the storage port specify I<storage_port> = N (default is 8443) .
