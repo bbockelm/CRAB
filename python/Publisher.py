@@ -186,7 +186,9 @@ class Publisher(Actor):
                 self.noLFN.append(file['PFN'])
             else:
                 if int(file['TotalEvents']) != 0 :
-                    file.lumisections = {}
+                    #file.lumisections = {}
+                    # lumi info are now in run hash
+                    file.runs = {}
                     for ds in file.dataset:
                         ### FEDE FOR NEW LFN ###
                         #ds['ProcessedDataset']=procdataset
