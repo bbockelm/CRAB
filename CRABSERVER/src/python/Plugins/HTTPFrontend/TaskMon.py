@@ -265,7 +265,7 @@ class DatasetInfos:
                 jobs  = API.countJobs(dataset,query_time)
                 exitcodes=API.getJobExit(dataset,query_time) 
                 if not len(exitcodes):
-                    TotEff = 'Not jet available' 
+                    TotEff = 'Not yet available' 
                     eff = 'eff::%s::%s'%('None',dataset)
                 else:  
                     tot = len(exitcodes) 
