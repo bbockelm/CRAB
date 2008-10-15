@@ -41,11 +41,16 @@ class PhEDExDatasvcInfo:
        
         #check if using "private" Storage
         self.usePhedex = True 
+        stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabFaq#How_to_store_output_with_CRAB_2'
+        if not self.node :
+            msg = 'Please specify the storage_element name in your crab.cfg section [USER].\n'
+            msg +='      For further information please visit : %s'%stage_out_faq 
+            raise CrabException(msg)
         if (self.node.find('T1_') + self.node.find('T2_')+self.node.find('T3_')) == -3: self.usePhedex = False 
         if not self.usePhedex and ( self.user_lfn == '' or self.user_se_path == '' ):
             msg = 'You are asking to stage out without using CMS Storage Name convention. In this case you \n' 
             msg += '      must specify both lfn and storage_path in the crab.cfg section [USER].\n '
-            msg += '      For further information please visit: ADD_TWIKI_LINK'
+            msg += '      For further information please visit : %s'%stage_out_faq
             raise CrabException(msg)
         self.sched = common.scheduler.name().upper() 
         self.protocol = self.srm_version
@@ -211,7 +216,10 @@ class PhEDExDatasvcInfo:
                 msg+='       OriginalSubmission: stageout path is not retrieved from %s \n'%fullurl
                 raise CrabException(msg)
         else:
-            stageoutpfn = 'srm://'+self.node+':'+self.user_port+self.user_se_path+self.lfn 
+            if self.sched in ['CAF','LSF'] :
+                stageoutpfn = self.user_port+self.user_se_path+self.lfn 
+            else: 
+                stageoutpfn = 'srm://'+self.node+':'+self.user_port+self.user_se_path+self.lfn 
 
         return stageoutpfn 
 
