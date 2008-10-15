@@ -57,7 +57,6 @@ class TaskMonitor:
         html += ' <select name="span" style="width:80px"><option>hours</option><option>days</option></select> '
         html += ' <select name="type" style="width:80px"><option>list</option><option>plot</option></select> '
         html += ' <input type="submit" value="Show Summary"/> '
-        html += '</select>'
         html += '</form>'
         html += "<br/><br/>"
         html += "</table>\n"
@@ -113,7 +112,7 @@ class TaskGraph:
         end_time = time.time() - time.altzone
         start_time = end_time - query_time
        
-        tasks = API.getNumTask( query_time, _tasyktype[tasktype] )
+        tasks = API.getNumTask( query_time, _tasktype[tasktype] )
         
         data={}
         for num, state in tasks:
@@ -436,4 +435,82 @@ class DatasetDetails:
         return html    
     index.exposed = True
 
+class UserGraph:
+
+    def __init__(self, imageUrl, imageDir):
+        self.imageServer = imageUrl
+        self.workingDir = imageDir
+
+
+    def index(self, length, span, type ):
+
+        _span=3600 
+        if span == 'days': _span=24*3600
+
+        query_time = int(length)*_span
+        end_time = time.time() #- time.altzone
+        start_time = end_time - query_time
+
+        users = API.getUserName( query_time ) 
+        total = len(users)
+ 
+        if (total == 0):
+            html = "<html><body>No Users for last: %s %s</body></html>" % (
+                length,span)
+            return html
+
+        if type == 'plot':
+            errHtml = "<html><body><h2>No Graph Tools installed!!!</h2>\n "
+            errHtml += "</body></html>"
+            try:
+                from graphtool.graphs.common_graphs import CumulativeGraph
+            except ImportError:
+                return errHtml
+ 
+            land_time = []
+            for name,land in users:
+                land_time.append( time.mktime(land.timetuple()))
+ 
+            range_time= range(int(start_time),int(end_time),_span)
+            binning = {}
+            for i in range_time:
+                count = 0
+                for t in land_time:
+                    if t > i and t < i+_span:
+                        count += 1 
+                binning[i]= count
+ 
+            pngfile = os.path.join(self.workingDir, "%s-%s-User.png" % (span, length))
+            pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+ 
+            data={'User': binning }
+
+            metadata = {'title':'User Statistics', 'starttime':start_time, 'endtime':end_time, 'span':_span, 'is_cumulative':False }
+            Graph = CumulativeGraph()
+            coords = Graph( data, pngfile, metadata )
+ 
+            html = "<html><body><img src=\"%s\"></body></html>" % pngfileUrl
+        else:
+            html = """<html><body><h2>List of Users for """
+            html += "Last %s %s</h2>\n " % ( length, span )
+ 
+            html += "<table>\n"
+            
+            html += "<tr>"
+            html += "<th>Arrived Time</th><th>User Name</th>"
+            html += "</tr>\n"
+  
+            userCount = len(users)
+            for landed, name in users:
+                html += "<tr>"
+                html += "<td>%s</td><td>%s</td>" % ( name, landed )
+                html += "</tr>\n"
+            
+            html += "</table>\n"
+ 
+            html += "<h4>Total number of users: %s </h4>\n" % userCount
+            html += """</body></html>"""
+        return html
+        
+    index.exposed = True
     
