@@ -217,7 +217,7 @@ class PhEDExDatasvcInfo:
                 raise CrabException(msg)
         else:
             if self.sched in ['CAF','LSF'] :
-                stageoutpfn = self.user_port+self.user_se_path+self.lfn 
+                stageoutpfn = self.user_se_path+self.lfn 
             else: 
                 stageoutpfn = 'srm://'+self.node+':'+self.user_port+self.user_se_path+self.lfn 
 
