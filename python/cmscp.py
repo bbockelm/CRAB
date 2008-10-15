@@ -235,13 +235,14 @@ class cmscp:
         try:
             action = SBinterface( Destination_SE )
             action.createDir()
-            if self.debug: print "The directory has been created using protocol %s\n"%protocol
+            if self.debug: msg+= "The directory has been created using protocol %s\n"%protocol
         except TransferException, ex:
             msg = str(ex)
             if self.debug :
                 msg += str(ex.detail)+'\n'
                 msg += str(ex.output)+'\n'
             msg += "ERROR: problem with the directory creation using %s protocol \n"%protocol
+            raise Exceptions(msg)
         except OperationException, ex:
             msg = str(ex)
             if self.debug : msg += str(ex.detail)+'\n'
