@@ -25,7 +25,7 @@ class Consumer(Thread):
             msg = "No ProdAgent Config file provided\n"
             msg += "set $PRODAGENT_CONFIG variable\n"
             logging.error(msg)
-            sys.exit(1)
+            raise Exception(msg)
             
         okmsg = "Notification.Consumer.__init__: Configuration file is ["
         okmsg += config
@@ -45,7 +45,13 @@ class Consumer(Thread):
             self.mailer = Mailer.Mailer(config)
         except RuntimeError, mex:
             logging.error( mex )
-            sys.exit(1)
+            import traceback
+            logging.error(str(traceback.format_exc()))
+            raise Exception(mex)
+        except Exception, ex:
+            import traceback
+            logging.error(str(traceback.format_exc()))
+            raise Exception(ex)
 
         okmsg = "Notification.Consumer.__init__: Notifying every " + str(self.notif_delay) + " seconds"
         logging.info(okmsg)
@@ -154,6 +160,8 @@ class Consumer(Thread):
                 self.jobList.removeJobs(listToRemove)
             except RuntimeError, mess:
                 logging.error(mess)
+                import traceback
+                logging.error(str(traceback.format_exc()))
 
         
     #
@@ -181,4 +189,6 @@ class Consumer(Thread):
                     listToRemove.append( task )
                     self.taskList.removeTasks(listToRemove)
                 except RuntimeError, mex:
+                    import traceback
+                    logging.error(str(traceback.format_exc()))
                     logging.error(mex)
