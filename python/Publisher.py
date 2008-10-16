@@ -210,9 +210,9 @@ class Publisher(Actor):
         Blocks=None
         try:
             Blocks=dbswriter.insertFiles(jobReport)
-            common.logger.message("Blocks = %s"%Blocks)
+            common.logger.message("Inserting file in blocks = %s"%Blocks)
         except DBSWriterError, ex:
-            common.logger.message("Insert file error: %s"%ex)
+            common.logger.error("Insert file error: %s"%ex)
         return Blocks
 
     def run(self):
@@ -235,7 +235,7 @@ class Publisher(Actor):
 
             common.logger.message("--->>> Start files publication")
             for file in file_list:
-                common.logger.message("file = "+file)
+                common.logger.debug(1, "file = "+file)
                 Blocks=self.publishAJobReport(file,self.processedData)
                 if Blocks:
                     for x in Blocks: # do not allow multiple entries of the same block
