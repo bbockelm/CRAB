@@ -20,7 +20,7 @@ def LFNBase(PrimaryDataset='',ProcessedDataset='',merged=True,LocalUser=False,pu
         PrimaryDataset = ProcessedDataset
     #lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
     ### for tutorial
-    lfnbase = os.path.join(lfnbase, "user/test", getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
+    lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
 
     return lfnbase
 
