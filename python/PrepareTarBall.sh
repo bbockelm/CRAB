@@ -15,6 +15,7 @@ CRABtag=$tag
 DBSAPItag="DBS_1_1_6"
 DLSAPItag="DLS_1_1_0_pre7"
 PRODCOMMONtag="PRODCOMMON_0_12_3_CRAB_2"
+WMCOREtag="WMCORE_0_0_11"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
@@ -29,7 +30,7 @@ cvs co -r $CRABtag -d $CRABdir CRAB
 #cvs co -d $CRABdir CRAB
 
 cd $CRABdir
-cvs up -P python/BossScript 
+cvs up -P python/BossScript
 chmod -x python/crab.py
 rm python/crab.*sh
 rm python/tar*
@@ -53,7 +54,7 @@ wget --no-check-certificate $repo_url/sqlite.tgz
 
 ## download py2-sqlite
 echo ">> downloading py2-sqlite from CRAB web page"
-wget --no-check-certificate  $repo_url/py2-pysqlite.tgz 
+wget --no-check-certificate  $repo_url/py2-pysqlite.tgz
 
 ## download pyOpenSSL
 echo ">> downloading pyOpenSSL CRAB web page"
@@ -82,6 +83,11 @@ echo ">> downloading PRODCOMMON tag ${PRODCOMMONtag} from CVS PRODCOMMON"
 #cd ProdCommon
 cvs co -r ${PRODCOMMONtag} -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
 cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
+
+mkdir WMCore
+cvs co -r ${WMCOREtag} -d WMCore/SiteScreening COMP/WMCORE/src/python/WMCore/SiteScreening
+cvs co -r ${WMCOREtag} -d WMCore/Services      COMP/WMCORE/src/python/WMCore/Services
+
 #cvs co -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
 #cvs co -d IMProv COMP/PRODCOMMON/src/python/IMProv
 #cd ..
@@ -90,4 +96,4 @@ cd ../..
 
 tar zcvf $CRABdir.tgz $CRABdir
 echo ""
-echo " tarball prepared : $CRABdir.tgz " 
+echo " tarball prepared : $CRABdir.tgz "
