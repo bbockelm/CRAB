@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.32 2008/09/09 14:55:49 ewv Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.62 2008/09/10 14:41:00 ewv Exp $"
+__version__ = "$Revision: 1.62 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_logger import Logger
@@ -31,7 +31,7 @@ class SchedulerGlite(SchedulerGrid):
         with real scheduler
         """
         self.rb_param_file=''
-        if (cfg_params.has_key('EDG.rb')):
+        if (not cfg_params.has_key('EDG.rb')):
             cfg_params['EDG.rb']='CERN'
         self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
         self.wms_service=cfg_params.get("EDG.wms_service",'')
