@@ -43,7 +43,7 @@ mv python/configure .
 mkdir -p etc
 ## create basic config file
 
-cat > crab.sh <<EOF
+cat > etc/crab.cfg <<EOF
 [CRAB]
 jobtype = cmssw
 
