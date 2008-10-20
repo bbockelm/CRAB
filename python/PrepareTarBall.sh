@@ -41,8 +41,15 @@ mv python/configure .
 
 ## create etc subdir for admin config file
 mkdir -p etc
-## create empty config file
-touch etc/crab.cfg
+## create basic config file
+
+cat > crab.sh <<EOF
+[CRAB]
+jobtype = cmssw
+
+[USER]
+return_data = 1
+EOF
 
 ## create external subdir  for dependeces
 mkdir -p external
