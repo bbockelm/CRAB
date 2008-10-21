@@ -348,8 +348,6 @@ class cmscp:
         cmscp_exit_status = 0
         txt = ''
         for file, dict in results.iteritems():
-            print file
-            print dict
             if file:
                 if dict['lfn']=='':
                     lfn = '$LFNBaseName/'+os.path.basename(file)
