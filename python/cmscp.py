@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-import sys, string
-import os, popen2
+import sys, os
 from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
 from ProdCommon.Storage.SEAPI.SBinterface import *
 from ProdCommon.Storage.SEAPI.Exceptions import *
@@ -80,7 +79,7 @@ class cmscp:
            self.finalReport(results)
         # Local interaction with SE
         else:
-           results = self.copy(self.params['inputFilesList'], self.params['protocol'], self.protocols['option'] )
+           results = self.copy(self.params['inputFilesList'], self.params['protocol'], self.params['option'] )
            return results
 
     def setProtocol( self, middleware ):
@@ -246,7 +245,7 @@ class cmscp:
         except OperationException, ex:
             msg = str(ex)
             if self.debug : msg += str(ex.detail)+'\n'
-            msg = "ERROR: problem with the directory creation using %s protocol \n"%protocol
+            msg += "ERROR: problem with the directory creation using %s protocol \n"%protocol
 
         return msg
 
@@ -349,12 +348,14 @@ class cmscp:
         cmscp_exit_status = 0
         txt = ''
         for file, dict in results.iteritems():
+            print file
+            print dict
             if file:
                 if dict['lfn']=='':
                     lfn = '$LFNBaseName/'+os.path.basename(file)
                     se  = '$SE'
                 else:
-                    lfn = dict['lfn']+os.pat.basename(file)
+                    lfn = dict['lfn']+os.path.basename(file)
                     se = dict['se']
                 #dict['lfn'] # to be implemented
                 txt +=  'echo "Report for File: '+file+'"\n'
