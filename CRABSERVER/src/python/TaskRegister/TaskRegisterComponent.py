@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.6 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.6 2008/09/09 16:19:29 farinafa Exp $"
+__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.7 2008/09/11 15:00:33 farinafa Exp $"
 
 import os
 import pickle
@@ -19,6 +19,7 @@ from ProdAgentCore.Configuration import ProdAgentConfiguration
 from MessageService.MessageService import MessageService
 from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
+from ProdCommon.BossLite.Common.Exceptions import TaskError, JobError
 
 from TaskRegister.RegisterWorker import *
 
@@ -123,6 +124,7 @@ class TaskRegisterComponent:
                                 self.ms.publish(evt, pload)
                                 logging.debug("Publish Event: %s %s" % (evt, pload))
                         elif evt in ["RegisterWorkerComponent:RegisterWorkerFailed"]:
+                                del self.taskPool[senderId]
                                 logging.info("Task %s failed"%taskUniqName)
                                 self.markTaskAsNotSubmitted(taskUniqName, 'all')
                         else:
@@ -132,7 +134,10 @@ class TaskRegisterComponent:
                                 del self.killingRequestes[taskUniqName]
                         
                     except Queue.Empty, e:
+                        logging.debug("Queue empty: " + str(e))
                         break
+                    except Exception, exc:
+                        logging.error("'Generic' problem: " + str(exc))
 
                 self.ms.commit()
                 self.materializeStatus()
@@ -141,8 +146,8 @@ class TaskRegisterComponent:
                     continue
                 self.__call__(type, payload)
         except Exception, e:
-            logging.info(e)
-        #
+            logging.error(e)
+
         return
 
     def __call__(self, event, payload):
@@ -165,7 +170,7 @@ class TaskRegisterComponent:
         elif event == "TaskRegisterComponent:EndDebug":
             logging.getLogger().setLevel(logging.INFO)
         else:
-            logging.info('Unknown message received %s'%event)
+            logging.info('Unknown message received %s + %s'%(event,payload))
         return 
 
 ################################
@@ -202,46 +207,77 @@ class TaskRegisterComponent:
 ################################
     def markTaskAsNotSubmitted(self, taskUniqName, cmdRng):
         # load task and init CW APIs Session
+        taskObj = None
+        cwdb = None
         try:
             taskObj = self.blDBsession.loadTaskByName(taskUniqName)
+        except TaskError, te:
+            logging.error("Problem loading task '%s': %s" %(taskUniqName,str(te)))
+        except Exception, exc:
+            logging.error("Generic exception when loadin task from blite: %s" %str(exc))
+
+        try:
             cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
-            if cmdRng == 'all':
-                cmdRng = [ j['jobId'] for j in taskObj.jobs ]
+            if taskObj is not None:
+                if cmdRng == 'all':
+                    cmdRng = [ j['jobId'] for j in taskObj.jobs ]
+                else:
+                    cmdRng = eval(cmdRng, {}, {}) 
             else:
-                cmdRng = eval(cmdRng, {}, {}) 
+                cmdRng = eval(str(self.getRangeFromXml(self.wdir, taskUniqName)), {}, {})
         except Exception, e:
             logging.info('Unable to allocate CW API Session or unable to load %s.'%taskUniqName)
-            logging.debug(traceback.format_exc())
+            logging.info(traceback.format_exc())
             return
 
-        # register we_Jobs
-        jobSpecId = []
-        for job in taskObj.jobs:
-            jobName = job['name']
-            cacheArea = os.path.join( self.wdir, str(taskUniqName + '_spec'), jobName )
-            jobDetails = {'id':jobName, 'job_type':'Processing', 'cache':cacheArea, \
-                          'owner':taskUniqName, 'status': 'create', \
-                          'max_retries':self.args['maxRetries'], 'max_racers':1 }
+        if taskObj is not None:
+            # register we_Jobs
+            jobSpecId = []
+            for job in taskObj.jobs:
+                jobName = job['name']
+                cacheArea = os.path.join( self.wdir, str(taskUniqName + '_spec'), jobName )
+                jobDetails = {'id':jobName, 'job_type':'Processing', 'cache':cacheArea, \
+                              'owner':taskUniqName, 'status': 'create', \
+                              'max_retries':self.args['maxRetries'], 'max_racers':1 }
 
-            try:
-                if cwdb.existsWEJob(jobName) == True:
+                try:
+                    if cwdb.existsWEJob(jobName) == True:
+                        continue
+                    cwdb.registerWEJob(jobDetails)
+                    if job['jobId'] in cmdRng:
+                        jobSpecId.append(jobName)
+                except Exception, e:
+                    logging.error(str(e))
+                    logging.error(traceback.format_exc())
                     continue
-                cwdb.registerWEJob(jobDetails)
-                if job['jobId'] in cmdRng:
-                    jobSpecId.append(jobName)
-            except Exception, e:
-                logging.info(traceback.format_exc())
-                continue
 
-        # mark as failed
-        cwdb.stopResubmission(jobSpecId)
-        for jId in jobSpecId:
-            try:
-                cwdb.updateWEStatus(jId, 'reallyFinished')
-            except Exception, e:
-                logging.info(traceback.format_exc())
-                continue
-        logging.info('Task %s successfully marked as fast-killed'%taskUniqName)
+            # mark as failed
+            cwdb.stopResubmission(jobSpecId)
+            for jId in jobSpecId:
+                try:
+                    cwdb.updateWEStatus(jId, 'reallyFinished')
+                except Exception, e:
+                    logging.error(str(e))
+                    logging.error(traceback.format_exc())
+                    continue
+            logging.info('Task %s successfully marked as fast-killed'%taskUniqName)
+        else:
+            logging.error("Fallback not submitted marking for '%s'"%taskUniqName)
+            for jobbe in cmdRng:
+                jobName = taskUniqName + "_job" + str(jobbe)
+                try:
+                    if not cwdb.existsWEJob(jobName):
+                        cacheArea = os.path.join( self.wdir, str(taskUniqName + '_spec'), jobName )
+                        jobDetails = {'id':jobName, 'job_type':'Processing', 'cache':cacheArea, \
+                                      'owner':taskUniqName, 'status': 'reallyFinished', \
+                                      'max_retries':self.args['maxRetries'], 'max_racers':1 }
+                        cwdb.registerWEJob(jobDetails)
+                    else:
+                        cwdb.updateWEStatus(jId, 'reallyFinished')
+                except Exception, e:
+                    logging.error(str(e))
+                    logging.error(traceback.format_exc())
+
         return 
 
 ################################
@@ -255,7 +291,7 @@ class TaskRegisterComponent:
             pickle.dump(ldump, f)
             f.close()
         except Exception, e:
-            logging.info("Error while materializing component status\n"+e)
+            logging.error("Error while materializing component status\n"+e)
         return
 
     def dematerializeStatus(self):
@@ -265,7 +301,7 @@ class TaskRegisterComponent:
             f.close()
             self.taskPool = ldump
         except Exception, e:
-            logging.info("Failed to open reg_status.set. Building a new status\n" + str(e) )
+            logging.error("Failed to open reg_status.set. Building a new status\n" + str(e) )
             self.taskPool = {}
             self.materializeStatus()
             return
@@ -299,3 +335,15 @@ class TaskRegisterComponent:
         workerCfg['allow_anonymous'] = int( self.args.setdefault('allow_anonymous', 0) )
         return workerCfg
         
+    def getRangeFromXml(self, wdir, taskName):
+        from xml.dom import minidom
+        status = 0
+        cmdSpecFile = os.path.join(wdir, taskName + '_spec/cmd.xml' )
+        try:
+            doc = minidom.parse(cmdSpecFile)
+            cmdXML = doc.getElementsByTagName("TaskCommand")[0]
+            cmdRng =  eval( str(cmdXML.getAttribute('Range')) )
+        except Exception, e:
+            return []
+        return cmdRng
+
