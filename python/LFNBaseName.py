@@ -10,17 +10,16 @@ import os, string, time
 from ProdCommon.SiteDB.SiteDB import SiteDBJSON
 
 
-def LFNBase(PrimaryDataset='',ProcessedDataset='',merged=True,LocalUser=False,publish=False):
+def LFNBase(lfn, PrimaryDataset='',ProcessedDataset='',merged=True,LocalUser=False,publish=False):
     """
     """
-    lfnbase = "/store"
-    if not merged:
-        lfnbase = os.path.join(lfnbase,"tmp")
+    #lfnbase = "/store"
+    #if not merged:
+        #lfnbase = os.path.join(lfnbase,"tmp")
     if (PrimaryDataset == 'null'):
         PrimaryDataset = ProcessedDataset
-    #lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
-    ### for tutorial
-    lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
+   # lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
+    lfnbase = os.path.join(lfn, getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset)
 
     return lfnbase
 

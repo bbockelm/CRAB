@@ -125,7 +125,11 @@ class PhEDExDatasvcInfo:
         if int(self.publish_data) == 1 or int(self.usenamespace) == 1:
             if self.sched in ['CAF']: l_User=True 
             primaryDataset = self.computePrimaryDataset()
-            lfn = LFNBase(primaryDataset,self.publish_data_name,LocalUser=l_User)  + '/${PSETHASH}/'    
+            #lfn = LFNBase(primaryDataset,self.publish_data_name,LocalUser=l_User)  + '/${PSETHASH}/'    
+            if self.usePhedex: 
+               lfn = LFNBase('/store/user', primaryDataset, self.publish_data_name, LocalUser=l_User) + '/${PSETHASH}/'
+            else:
+               lfn = LFNBase(self.user_lfn, primaryDataset, self.publish_data_name, LocalUser=l_User) + '/${PSETHASH}/'
         else:
             if self.sched in ['CAF','LSF']: l_User=True 
             lfn = LFNBase(self.user_remote_dir,LocalUser=l_User)
