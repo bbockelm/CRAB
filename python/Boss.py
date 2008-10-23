@@ -155,7 +155,7 @@ class Boss:
         except SchedulerError, err :
             common.logger.message("GetOutput : " +str(err))
             common.logger.debug(3, "GetOutput : " +str(traceback.format_exc()))
-           # raise CrabException('GetOutput : '+str(err))
+            raise CrabException('GetOutput : '+str(err))
 
         return task
 
