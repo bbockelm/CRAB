@@ -51,6 +51,7 @@ class Boss:
         self.schedulerConfig = common.scheduler.realSchedParams(cfg_params)
         self.schedulerConfig['name'] =  SchedMap[(self.schedulerName).lower()]
         self.schedulerConfig['timeout'] = 180
+        self.schedulerConfig['skipProxyCheck'] = True 
 
         self.session = None
         return
