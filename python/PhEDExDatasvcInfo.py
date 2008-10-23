@@ -56,6 +56,9 @@ class PhEDExDatasvcInfo:
         self.protocol = self.srm_version
         if self.sched in ['CAF','LSF']:self.protocol = 'direct'
 
+        self.forced_path = '/store/user/'
+        if not self.usePhedex: 
+            self.forced_path = self.user_lfn
         return
  
     def getEndpoint(self):   
@@ -83,7 +86,6 @@ class PhEDExDatasvcInfo:
             if self.protocol == 'direct':
                 query=endpoint
                 SE_PATH = endpoint
-                ### FEDE added SE ###
                 SE = self.sched
             else: 
                 url = 'http://'+endpoint.split('://')[1]
@@ -125,14 +127,10 @@ class PhEDExDatasvcInfo:
         if int(self.publish_data) == 1 or int(self.usenamespace) == 1:
             if self.sched in ['CAF']: l_User=True 
             primaryDataset = self.computePrimaryDataset()
-            #lfn = LFNBase(primaryDataset,self.publish_data_name,LocalUser=l_User)  + '/${PSETHASH}/'    
-            if self.usePhedex: 
-               lfn = LFNBase('/store/user', primaryDataset, self.publish_data_name, LocalUser=l_User) + '/${PSETHASH}/'
-            else:
-               lfn = LFNBase(self.user_lfn, primaryDataset, self.publish_data_name, LocalUser=l_User) + '/${PSETHASH}/'
+            lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name, LocalUser=l_User)  + '/${PSETHASH}/'    
         else:
             if self.sched in ['CAF','LSF']: l_User=True 
-            lfn = LFNBase(self.user_remote_dir,LocalUser=l_User)
+            lfn = LFNBase(self.forced_path,self.user_remote_dir,LocalUser=l_User)
         return lfn
  
     def computePrimaryDataset(self):

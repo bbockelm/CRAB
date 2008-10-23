@@ -10,7 +10,7 @@ import os, string, time
 from ProdCommon.SiteDB.SiteDB import SiteDBJSON
 
 
-def LFNBase(lfn, PrimaryDataset='',ProcessedDataset='',merged=True,LocalUser=False,publish=False):
+def LFNBase(forced_path, PrimaryDataset='',ProcessedDataset='',merged=True,LocalUser=False,publish=False):
     """
     """
     #lfnbase = "/store"
@@ -19,7 +19,7 @@ def LFNBase(lfn, PrimaryDataset='',ProcessedDataset='',merged=True,LocalUser=Fal
     if (PrimaryDataset == 'null'):
         PrimaryDataset = ProcessedDataset
    # lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
-    lfnbase = os.path.join(lfn, getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset)
+    lfnbase = os.path.join(forced_path, getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset)
 
     return lfnbase
 
