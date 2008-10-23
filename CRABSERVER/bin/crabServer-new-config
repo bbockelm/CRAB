@@ -129,7 +129,7 @@ componentFields = {
     ## impored from PA
     'AdminControl' : {
     "ComponentDir" : None,
-    "Bots" : "RestartBot",
+    "Bots" : "RestartBot,MessageBot",
     "BotPeriod" : "12:00:00",
     },
 
