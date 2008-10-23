@@ -100,6 +100,7 @@ class SubmitterServer( Submitter ):
                 msg = "ERROR : Unable to create project destination on the Storage Element \n"
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
+        if self.storage_proto in ['rfio']:
             try:
                 action.setGrant( self.remotedir, '777')
             except Exception, ex:

@@ -203,7 +203,8 @@ class cmscp:
             try :
                 ErCode, msg = self.checkFileExist( sbi_dest, os.path.basename(filetocopy) )
             except Exception, ex:
-                return self.updateReport(filetocopy, '-1', str(ex))
+                ErCode = -1
+                msg = str(ex)  
             if ErCode == '0':
                 ErCode, msg = self.makeCopy( sbi, filetocopy , options )
             if self.debug : print 'Copy results for %s is %s'%( os.path.basename(filetocopy), ErCode)
