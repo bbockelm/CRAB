@@ -24,7 +24,7 @@ class Cmssw(JobType):
         ### Temporary patch to automatically skip the ISB size check:
         server=self.cfg_params.get('CRAB.server_name',None)
         size = 9.5 
-        if server: size = 99999
+        if server or common.scheduler.name().upper() in ['LSF','CAF']: size = 99999
         ### D.S.
         self.MaxTarBallSize = float(self.cfg_params.get('EDG.maxtarballsize',size))
 
