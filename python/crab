@@ -21,7 +21,7 @@ export VOMS_PROXY_INFO_DONT_VERIFY_AC=1
 if [ -z "$CMSSW_VERSION" ]; then
   echo ''
   echo 'crab Error: Please run cmsenv before setting the CRAB environment'
-  echo '(see also: https://twiki.cern.ch/twiki/bin/view/CMS/CrabHowTo) '
+  echo '(see also: https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrab#CRAB_FAQ_and_HOWTO)'
   echo ''
 else
   python $CRABPYTHON/crab.py $*
