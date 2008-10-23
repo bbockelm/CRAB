@@ -206,7 +206,7 @@ class cmscp:
                 ErCode = -1
                 msg = str(ex)  
             if ErCode == '0':
-                ErCode, msg = self.makeCopy( sbi, filetocopy , options )
+                ErCode, msg = self.makeCopy( sbi, filetocopy , options, protocol,sbi_dest )
             if self.debug : print 'Copy results for %s is %s'%( os.path.basename(filetocopy), ErCode)
             results.update( self.updateReport(filetocopy, ErCode, msg))
         return results
@@ -278,7 +278,7 @@ class cmscp:
 
         return ErCode, msg
 
-    def makeCopy(self, sbi, filetocopy, option ):
+    def makeCopy(self, sbi, filetocopy, option, protocol, sbi_dest ):
         """
         call the copy API.
         """
@@ -312,10 +312,28 @@ class cmscp:
                 msg += str(ex.output)+'\n'
             msg += "Problem copying %s file" % filetocopy
             ErCode = '60307'
-
-         ## TO BE IMPLEMENTED if NEEDED
-         ## NOTE: SE API Already available
-    #    if self.protocol.find('srm')  : self.checkSize( sbi, filetocopy )
+        if ErCode == '0' and protocol.find('srm') == 0:
+            remote_file_size = -1 
+            local_file_size = os.path.getsize( source_file ) 
+            try:
+                remote_file_size = sbi_dest.getSize( dest_file )
+            except TransferException, ex:
+                msg = str(ex)
+                if self.debug :
+                    msg += str(ex.detail)+'\n'
+                    msg += str(ex.output)+'\n'
+                msg += "Problem checking the size of %s file" % filetocopy
+                ErCode = '60307'
+            except WrongOption, ex:
+                msg = str(ex)
+                if self.debug :
+                    msg += str(ex.detail)+'\n'
+                    msg += str(ex.output)+'\n'
+                msg += "Problem checking the size of %s file" % filetocopy
+                ErCode = '60307'
+            if local_file_size != remote_file_size:
+                msg = "File size dosn't match: local size = %s ; remote size = %s " % (local_file_size, remote_file_size)
+                ErCode = '60307'
 
         return ErCode, msg
 
