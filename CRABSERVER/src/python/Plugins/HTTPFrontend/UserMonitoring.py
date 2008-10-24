@@ -59,21 +59,24 @@ class ListTaskForUser:
         self.visualize = showusertask
 
     def index( self, username, length, span, tasktype ):
-        _span=3600
-        if span == 'days': _span=24*3600
+        try:
+            _span=3600
+            if span == 'days': _span=24*3600
 
-        query_time = int(length)*_span
-        end_time = time.time() - time.altzone
-        start_time = end_time - query_time
+            query_time = int(length)*_span
+            end_time = time.time() - time.altzone
+            start_time = end_time - query_time
 
-        tasks = API.getUserTasks(username, query_time, _tasktype[tasktype])
+            tasks = API.getUserTasks(username, query_time, _tasktype[tasktype])
 
-        html = """<html><body><h2>List of %s's tasks"""% (username)
-        html += "<table>\n"
-        html += "<tr>"
-        html += self.writeList(tasks)
+            html = """<html><body><h2>List of %s's tasks"""% (username)
+            html += "<table>\n"
+            html += "<tr>"
+            html += self.writeList(tasks)
 
-        return html
+            return html
+        except ValueError, ve:
+            return "<html><body><h2>Problem</h2>Not a valid time format provided ['%s']!</body></html>"%(str(length))
 
     index.exposed = True
 
