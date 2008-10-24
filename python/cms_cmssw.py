@@ -2,7 +2,7 @@ from JobType import JobType
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-from BlackWhiteListParser import SEBlackWhiteListParser
+from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 import common
 import Scram
 
@@ -19,11 +19,11 @@ class Cmssw(JobType):
         self._params = {}
         self.cfg_params = cfg_params
         # init BlackWhiteListParser
-        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params)
+        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params, common.logger)
 
         ### Temporary patch to automatically skip the ISB size check:
         server=self.cfg_params.get('CRAB.server_name',None)
-        size = 9.5 
+        size = 9.5
         if server or common.scheduler.name().upper() in ['LSF','CAF']: size = 99999
         ### D.S.
         self.MaxTarBallSize = float(self.cfg_params.get('EDG.maxtarballsize',size))
@@ -595,7 +595,7 @@ class Cmssw(JobType):
             eventsPerJobRequested = self.eventsPerJob
             if (self.selectNumberOfJobs):
                 totalEventsRequested = self.theNumberOfJobs * self.eventsPerJob
-                                                                                                          
+
         # If user requested all the events in the dataset
         if (totalEventsRequested == -1):
             eventsRemaining=self.maxEvents
@@ -606,30 +606,30 @@ class Cmssw(JobType):
         # If user requested less events than are in the dataset
         else:
             eventsRemaining = totalEventsRequested
-                                                                                                          
+
         # If user requested more events per job than are in the dataset
         if (self.selectEventsPerJob and eventsPerJobRequested > self.maxEvents):
             eventsPerJobRequested = self.maxEvents
-                                                                                                          
+
         # For user info at end
         totalEventCount = 0
 
         if (self.selectTotalNumberEvents and self.selectNumberOfJobs):
             eventsPerJobRequested = int(eventsRemaining/self.theNumberOfJobs)
-                                                                                                          
+
         if (self.selectNumberOfJobs):
             common.logger.message("May not create the exact number_of_jobs requested.")
-                                                                                                          
+
         if ( self.ncjobs == 'all' ) :
             totalNumberOfJobs = 999999999
         else :
             totalNumberOfJobs = self.ncjobs
-                                                                                                          
+
         blocks = blockSites.keys()
         blockCount = 0
         # Backup variable in case self.maxEvents counted events in a non-included block
         numBlocksInDataset = len(blocks)
-                                                                                                          
+
         jobCount = 0
         list_of_lists = []
 
@@ -685,14 +685,14 @@ class Cmssw(JobType):
                             numEventsInFile = self.eventsbyfile[file]
                             common.logger.debug(6, "File "+str(file)+" has "+str(numEventsInFile)+" events")
                             # increase filesEventCount
-                            filesEventCount += numEventsInFile 
+                            filesEventCount += numEventsInFile
                             # Add file to current job
                             parString += '\\\"' + file + '\\\"\,'
                             newFile = 0
                         except KeyError:
                             common.logger.message("File "+str(file)+" has unknown number of events: skipping")
                     eventsPerJobRequested = min(eventsPerJobRequested, eventsRemaining)
-                    #common.logger.message("AF filesEventCount %s - jobSkipEventCount %s "%(filesEventCount,jobSkipEventCount))  
+                    #common.logger.message("AF filesEventCount %s - jobSkipEventCount %s "%(filesEventCount,jobSkipEventCount))
                     # if less events in file remain than eventsPerJobRequested
                     if ( filesEventCount - jobSkipEventCount < eventsPerJobRequested):
                       #AF
@@ -766,8 +766,8 @@ class Cmssw(JobType):
         screenOutput = "List of jobs and available destination sites:\n\n"
 
         #AF
-        #AF   skip check on  block with no sites 
-        #AF 
+        #AF   skip check on  block with no sites
+        #AF
         self.list_of_args = list_of_lists
 
         return
@@ -1005,7 +1005,7 @@ class Cmssw(JobType):
         tarballinfo = os.stat(self.tgzNameWithPath)
         if ( tarballinfo.st_size > self.MaxTarBallSize*1024*1024 ) :
             msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + str(self.MaxTarBallSize) \
-               +'MB input sandbox limit \n' 
+               +'MB input sandbox limit \n'
             msg += '      and not supported by the direct GRID submission system.\n'
             msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
             msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/CrabServer#CRABSERVER_for_Users'
@@ -1089,7 +1089,7 @@ class Cmssw(JobType):
             txt += 'ApplicationFamily=cmsRun\n'
 
         else:
-            self.primaryDataset = 'null' 
+            self.primaryDataset = 'null'
             txt += 'DatasetPath=MCDataTier\n'
             txt += 'PrimaryDataset=null\n'
             txt += 'DataTier=null\n'
@@ -1393,7 +1393,7 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsModifyReport\n'
         publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (publish_data == 1):
-        
+
             processedDataset = self.cfg_params['USER.publish_data_name']
 
             txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'

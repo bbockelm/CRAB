@@ -9,7 +9,7 @@ from crab_exceptions import CrabException
 from crab_util import runCommand
 
 from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
-from BlackWhiteListParser import CEBlackWhiteListParser
+from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser
 
 import Scram
 import CondorGLoggingInfo
@@ -19,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.27 2008/08/25 16:49:09 ewv Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.28 2008/09/30 19:20:33 ewv Exp $"
+__version__ = "$Revision: 1.28 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -33,10 +33,11 @@ class SchedulerCondorCommon(SchedulerGrid):
         # check for locally running condor scheduler
         cmd = 'ps xau | grep -i condor_schedd | grep -v grep'
         cmdOut = runCommand(cmd)
+        self.msgPre = '[Condor-G Scheduler]: '
         if cmdOut == None:
-            msg  = '[Condor-G Scheduler]: condor_schedd is not running on this machine.\n'
-            msg += '[Condor-G Scheduler]: Please use a machine with condor installed and running\n'
-            msg += '[Condor-G Scheduler]: condor_schedd or change the Scheduler in your crab.cfg.'
+            msg  = self.msgPre + 'condor_schedd is not running on this machine.\n'
+            msg += self.msgPre + 'Please use a machine with condor installed and running\n'
+            msg += self.msgPre + 'condor_schedd or change the Scheduler in your crab.cfg.'
             common.logger.debug(2, msg)
             raise CrabException(msg)
 
@@ -48,15 +49,16 @@ class SchedulerCondorCommon(SchedulerGrid):
         cmd = 'condor_version'
         cmdOut = runCommand(cmd)
         if cmdOut != None :
-            tmp = cmdOut.find('CondorVersion') + 15
-            version = cmdOut[tmp:tmp+6].split('.')
-            version_master = int(version[0])
-            version_major  = int(version[1])
-            version_minor  = int(version[2])
+            pass
+#             tmp = cmdOut.find('CondorVersion') + 15
+#             version = cmdOut[tmp:tmp+6].split('.')
+#             version_master = int(version[0])
+#             version_major  = int(version[1])
+#             version_minor  = int(version[2])
         else :
-            msg  = '[Condor-G Scheduler]: condor_version was not able to determine the installed condor version.\n'
-            msg += '[Condor-G Scheduler]: Please use a machine with a properly installed condor\n'
-            msg += '[Condor-G Scheduler]: or change the Scheduler in your crab.cfg.'
+            msg  = self.msgPre + 'condor_version was not able to determine the installed condor version.\n'
+            msg += self.msgPre + 'Please use a machine with a properly installed condor\n'
+            msg += self.msgPre + 'or change the Scheduler in your crab.cfg.'
             common.logger.debug(2, msg)
             raise CrabException(msg)
 
@@ -87,9 +89,9 @@ class SchedulerCondorCommon(SchedulerGrid):
         cmd = 'which '+name
         cmdOut = runCommand(cmd)
         if cmdOut == None:
-            msg  = '[Condor-G Scheduler]: ' + name + ' is not in the $PATH on this machine.\n'
-            msg += '[Condor-G Scheduler]: Please use a machine with a properly installed condor\n'
-            msg += '[Condor-G Scheduler]: or change the Scheduler in your crab.cfg.'
+            msg  = self.msgPre + name + ' is not in the $PATH on this machine.\n'
+            msg += self.msgPre + 'Please use a machine with a properly installed condor\n'
+            msg += self.msgPre + 'or change the Scheduler in your crab.cfg.'
             common.logger.debug(2, msg)
             raise CrabException(msg)
 
@@ -106,10 +108,12 @@ class SchedulerCondorCommon(SchedulerGrid):
         if cmdOut:
             cmdOut = cmdOut.strip()
         if not cmdOut or not os.path.isfile(cmdOut) :
-            msg  = '[Condor-G Scheduler]: the variable ' + name + ' is not properly set for the condor installation.\n'
-            msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation '
-            msg += 'to set the variable ' + name + ' properly, '
-            msg += 'use another machine with a properly installed condor or change the Scheduler in your crab.cfg.'
+            msg  = self.msgPre + 'the variable ' + name
+            msg += ' is not properly set for the condor installation.\n'
+            msg += self.msgPre + 'Please ask the administrator of the local condor '
+            msg += 'installation  to set the variable ' + name + ' properly, '
+            msg += 'use another machine with a properly installed condor\n'
+            msg += 'or change the Scheduler in your crab.cfg.'
             common.logger.debug(2, msg)
             raise CrabException(msg)
 
@@ -121,10 +125,12 @@ class SchedulerCondorCommon(SchedulerGrid):
         cmd = 'condor_config_val '+name
         cmdOut = runCommand(cmd)
         if cmdOut == 'TRUE' :
-            msg  = '[Condor-G Scheduler]: the variable '+name+' is not set to true for the condor installation.\n'
-            msg += '[Condor-G Scheduler]: Please ask the administrator of the local condor installation '
-            msg += 'to set the variable '+name+' to true, '
-            msg += 'use another machine with a properly installed condor or change the Scheduler in your crab.cfg.'
+            msg  = self.msgPre + 'the variable ' + name
+            msg += ' is not set to true for the condor installation.\n'
+            msg += self.msgPre + 'Please ask the administrator of the local condor installation '
+            msg += 'to set the variable ' + name + ' to true, '
+            msg += 'use another machine with a properly installed condor or '
+            msg += 'change the Scheduler in your crab.cfg.'
             common.logger.debug(2, msg)
             raise CrabException(msg)
 
@@ -151,7 +157,8 @@ class SchedulerCondorCommon(SchedulerGrid):
         SchedulerGrid.configure(self, cfgParams)
 
         # init BlackWhiteListParser
-        self.ceBlackWhiteListParser = CEBlackWhiteListParser(cfgParams)
+        self.ceBlackWhiteListParser = \
+            CEBlackWhiteListParser(cfgParams, common.logger)
 
         try:
             self.GLOBUS_RSL = cfgParams['CONDORG.globus_rsl']
@@ -164,14 +171,16 @@ class SchedulerCondorCommon(SchedulerGrid):
         # to public one.
         try:
             self.batchsystem = cfgParams['CONDORG.batchsystem']
-            msg = '[Condor-G Scheduler]: batchsystem overide specified in your crab.cfg'
+            msg = self.msgPre + 'batchsystem overide specified in your crab.cfg'
             common.logger.debug(2, msg)
         except KeyError:
             self.batchsystem = ''
 
         taskHash = sha.new(common._db.queryTask('name')).hexdigest()
-        self.environment_unique_identifier = 'https://' + self.name() + '/' + taskHash + '/${NJob}'
-        msg = 'JobID for ML monitoring is created for OSG scheduler: '+self.environment_unique_identifier
+        self.environment_unique_identifier = \
+            'https://' + self.name() + '/' + taskHash + '/${NJob}'
+        msg = 'JobID for ML monitoring is created for OSG scheduler: ' \
+            + self.environment_unique_identifier
         common.logger.debug(5, msg)
         self.datasetPath = ''
 
@@ -235,7 +244,8 @@ class SchedulerCondorCommon(SchedulerGrid):
             availCEs = listAllCEs(versionCMSSW, arch, onlyOSG=onlyOSG)
         else:
             seDest = self.blackWhiteListParser.cleanForBlackWhiteList(seList, "list")
-            availCEs = getJobManagerList(seDest, versionCMSSW, arch, onlyOSG=onlyOSG)
+            availCEs = getJobManagerList(seDest, versionCMSSW,
+                                         arch, onlyOSG=onlyOSG)
 
         uniqCEs = []
         for ce in availCEs:
@@ -270,7 +280,8 @@ class SchedulerCondorCommon(SchedulerGrid):
         ceDest = self.listMatch(seList, onlyOSG)
 
         if (not ceDest):
-            msg = 'No sites found hosting the data or all sites blocked by CE/SE white/blacklisting'
+            msg = 'No sites found hosting the data or ' \
+                + 'all sites blocked by CE/SE white/blacklisting'
             print msg
             raise CrabException(msg)
 

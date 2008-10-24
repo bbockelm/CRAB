@@ -7,7 +7,7 @@ import common
 from Boss import Boss
 from crab_exceptions import *
 from crab_util import *
-from BlackWhiteListParser import SEBlackWhiteListParser
+from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 
 #
 #  Naming convention:
@@ -42,7 +42,7 @@ class Scheduler :
 
     def configure(self, cfg_params):
         self._boss.configure(cfg_params)
-        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params)
+        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params, common.logger)
         return
 
     def boss(self):
@@ -213,7 +213,7 @@ class Scheduler :
         # call timing FJR filling
         txt += '           echo "CrabCpuTime=$CRAB_EXE_CPU_TIME" >>  $RUNTIME_AREA/$repo \n' # TODO check the right name
         txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --timing $TIME_WRAP $TIME_EXE $TIME_STAGEOUT \\\"$CRAB_EXE_CPU_TIME\\\" \n'
-        txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n' 
+        txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n'
         txt += '           if [ $TIME_STAGEOUT -lt 0 ]; then \n'
         txt += '               export TIME_STAGEOUT=NULL \n'
         txt += '           fi\n'

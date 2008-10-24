@@ -2,14 +2,14 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.77 2008/10/08 16:20:02 ewv Exp $"
-__version__ = "$Revision: 1.77 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.80 2008/10/09 16:58:17 ewv Exp $"
+__version__ = "$Revision: 1.80 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-from BlackWhiteListParser import SEBlackWhiteListParser
+from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 import common
 from PhEDExDatasvcInfo import PhEDExDatasvcInfo
 from JobList import JobList
@@ -35,7 +35,7 @@ class SchedulerGrid(Scheduler):
         Scheduler.configure(self,cfg_params)
 
         # init BlackWhiteListParser
-        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params)
+        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params,common.logger)
 
         self.proxyValid=0
         self.dontCheckProxy=int(cfg_params.get("EDG.dont_check_proxy",0))

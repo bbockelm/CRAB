@@ -7,7 +7,7 @@ from crab_exceptions import *
 from crab_util import runCommand, UnixUserName
 import common
 import os, string, time
-from ProdCommon.SiteDB.SiteDB import SiteDBJSON
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
 
 def LFNBase(forced_path, PrimaryDataset='',ProcessedDataset='',merged=True,LocalUser=False,publish=False):
@@ -90,7 +90,7 @@ def gethnUserName():
                nameuser = line
            userfile.close()
            nameuser = string.strip(nameuser)
-    return nameuser  
+    return nameuser
 
 def getUserName(LocalUser=False):
     """

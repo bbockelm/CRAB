@@ -48,8 +48,8 @@ class Submitter(Actor):
         if chosenJobsList != None:
             tmp_jList = chosenJobsList
         # build job list
-        from BlackWhiteListParser import SEBlackWhiteListParser
-        self.blackWhiteListParser = SEBlackWhiteListParser(self.cfg_params)
+        from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
+        self.blackWhiteListParser = SEBlackWhiteListParser(self.cfg_params,common.logger)
         dlsDest=common._db.queryJob('dlsDestination',tmp_jList)
         jStatus=common._db.queryRunJob('status',tmp_jList)
         for nj in range(len(tmp_jList)):
