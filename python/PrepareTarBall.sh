@@ -91,10 +91,9 @@ echo ">> downloading PRODCOMMON tag ${PRODCOMMONtag} from CVS PRODCOMMON"
 cvs co -r ${PRODCOMMONtag} -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
 cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
 
-mkdir WMCore
+cvs co -r ${WMCOREtag} -d WMCore               COMP/WMCORE/src/python/WMCore/__init__.py
 cvs co -r ${WMCOREtag} -d WMCore/SiteScreening COMP/WMCORE/src/python/WMCore/SiteScreening
 cvs co -r ${WMCOREtag} -d WMCore/Services      COMP/WMCORE/src/python/WMCore/Services
-cvs co -r ${WMCOREtag} -d WMCore               COMP/WMCORE/src/python/WMCore/__init__.py
 
 #cvs co -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
 #cvs co -d IMProv COMP/PRODCOMMON/src/python/IMProv
