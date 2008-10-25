@@ -44,11 +44,6 @@ mkdir -p etc
 ## create basic config file
 
 cat > etc/crab.cfg <<EOF
-[CRAB]
-jobtype = cmssw
-
-[USER]
-return_data = 1
 EOF
 
 ## create external subdir  for dependeces
