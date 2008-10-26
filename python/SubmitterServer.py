@@ -23,6 +23,12 @@ class SubmitterServer( Submitter ):
         self.credentialType = 'Proxy' 
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.credentialType = 'Token' 
+        try:
+            from StatusServer import StatusServer
+            stat = StatusServer(self.cfg_params)
+            stat.resynchClientSide()
+        except:
+            pass    
 
         Submitter.__init__(self, cfg_params, parsed_range, val)      
     
