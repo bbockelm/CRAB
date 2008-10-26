@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.115 2008/10/11 12:26:21 mcinquil Exp $"
-__version__ = "$Revision: 1.115 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.117 2008/10/15 07:33:48 mcinquil Exp $"
+__version__ = "$Revision: 1.117 $"
 
 import os
 import time
@@ -241,7 +241,7 @@ class TaskTrackingComponent:
                 logBuf = self.__log(logBuf, "Submitting Task: %s" % str(taskName) )
                 taskname, maxtry, listjob = payload.split("::")
                 self.updateTaskStatus( taskname, self.taskState[1] )
-                self.processSubmitted(taskname)
+                self.processSubmitted(taskname,listjob)
                 logBuf = self.__log(logBuf, "              task updated.")
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
                 _loginfo.setdefault('txt', str("Task in submission queue: " + str(taskname)))
@@ -333,7 +333,7 @@ class TaskTrackingComponent:
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
                 logBuf = self.__log(logBuf, event + ": " + str(payload) )
                 logBuf = self.__log(logBuf, "  <-- - -- - -->")
-                taskName, count = payload.split("::")
+                taskName, count, listjob = payload.split("::")
                 _loginfo.setdefault('txt', str("New command: " + str(taskName)))
                 _loginfo.setdefault('count', str(count))
             else:
@@ -641,7 +641,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
 
 
-    def processSubmitted(self, taskName):
+    def processSubmitted(self, taskName, listjob=''):
         """
         _processSubmitted_
         """
@@ -663,7 +663,7 @@ class TaskTrackingComponent:
             if taskObj is None:
                 logging.info("Unable to load task [%s]."%(taskName))
             else:
-                self.singleTaskPoll(taskObj, TaskStateAPI(), taskName, mySession)
+                self.singleTaskPoll(taskObj, TaskStateAPI(), taskName, mySession, listjob)
         except Exception, ex:
             logging.error( "Exception raised: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
@@ -716,7 +716,7 @@ class TaskTrackingComponent:
     # utilities
     ##########################################################################
 
-    def singleTaskPoll(self, taskObj, ttdb, taskName, mySession):
+    def singleTaskPoll(self, taskObj, ttdb, taskName, mySession, listjob=''):
         """
         _singleTaskPoll_
         
@@ -730,7 +730,7 @@ class TaskTrackingComponent:
             #numJobs = ttdb.countServerJob(mySession.bossLiteDB, taskName)
             numJobs = len(taskObj.jobs)
             status, uuid, email, user_name = ttdb.getStatusUUIDEmail( taskName, mySession.bossLiteDB )
-            dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
+            dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted,listjob)
             pathToWrite = os.path.join(str(self.args['dropBoxPath']), (taskName + self.workAdd))
             if os.path.exists( pathToWrite ):
                 self.prepareReport( taskName, uuid, email, user_name, 0, 0, dictStateTot, numJobs, 1 )
@@ -890,7 +890,7 @@ class TaskTrackingComponent:
 
 
     def computeJobStatus(self, taskName, mySession, taskObj, dictStateTot, \
-                               dictReportTot, countNotSubmitted):
+                               dictReportTot, countNotSubmitted, listjob=''):
         """
         _computeJobStatus_
         """
@@ -955,7 +955,9 @@ class TaskTrackingComponent:
                 else:
                    countNotSubmitted += 1
                    dictReportTot['JobInProgress'] += 1
-                   dictStateTot[job][0] = "Submitting"
+                   range = []
+                   if listjob != '': range = eval(listjob)
+                   if job in range: dictStateTot[job][0] = "Submitting"
             else:
                 dictReportTot['JobInProgress'] += 1
 
