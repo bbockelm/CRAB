@@ -1,7 +1,6 @@
 from Actor import *
 from crab_exceptions import *
 from crab_logger import Logger
-from StatusServer import StatusServer
 import common
 import string
 
@@ -16,10 +15,13 @@ class CleanerServer(Actor):
         """
         Check whether no job is still running or not yet retrieved
         """
-        obj = StatusServer(self.cfg_params)
-        obj.run()
-
-        pass
+        # get updated status from server 
+        try:
+            from StatusServer import StatusServer
+            stat = StatusServer(self.cfg_params)
+            stat.resynchClientSide()
+        except:
+            pass
 
     def run(self):
         """
@@ -42,5 +44,5 @@ class CleanerServer(Actor):
         """
         msg=''  
         msg+='functionality not yet available for the server. Work in progres \n' 
-        msg+='planned for CRAB_2_2_3'
+        msg+='planned for CRAB_2_5_0'
         common.logger.message(msg) 

@@ -1,5 +1,4 @@
 from PostMortem import PostMortem
-from StatusServer import StatusServer
 
 from crab_util import *
 import common
@@ -8,7 +7,7 @@ import string, os
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 
-class PostMortemServer(PostMortem, StatusServer):
+class PostMortemServer(PostMortem):
     def __init__(self, cfg_params, nj_list):
             
         PostMortem.__init__(self, cfg_params, nj_list)
@@ -22,8 +21,13 @@ class PostMortemServer(PostMortem, StatusServer):
         return
     
     def collectLogging(self):
-        # get updated status from server #inherited from StatusServer
-        self.resynchClientSide()
+        # get updated status from server 
+        try:
+            from StatusServer import StatusServer
+            stat = StatusServer(self.cfg_params)
+            stat.resynchClientSide()
+        except:
+            pass
 
         #create once storage interaction object
         seEl = None
