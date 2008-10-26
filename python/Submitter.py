@@ -50,24 +50,23 @@ class Submitter(Actor):
         # build job list
         from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
         self.blackWhiteListParser = SEBlackWhiteListParser(self.cfg_params,common.logger)
-        dlsDest=common._db.queryJob('dlsDestination',tmp_jList)
-        jStatus=common._db.queryRunJob('status',tmp_jList)
-        for nj in range(len(tmp_jList)):
-            cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(dlsDest[nj])
+        for job in common._db.getTask(tmp_jList).jobs:
+            cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(job['dlsDestination']) 
             if (cleanedBlackWhiteList != '') or (datasetpath == None):
-                if ( jStatus[nj] not in ['SS','SU','SR','R','S','K','Y','A','D','Z','E','UE','SSE', 'KK']):
+                if ( job.runningJob['status'] in ['C','RC'] and \
+                  job.runningJob['statusScheduler'] in ['Created',None]):
                     jobSetForSubmission +=1
-                    nj_list.append(tmp_jList[nj])
+                    nj_list.append(job['id']) 
                 else:
                     continue
             else :
-                jobSkippedInSubmission.append(tmp_jList[nj])
+                jobSkippedInSubmission.append( job['id'] )
             if nsjobs >0 and nsjobs == jobSetForSubmission:
                 break
             pass
-
         if nsjobs>jobSetForSubmission:
-            common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+str(jobSetForSubmission)+' left: submitting those')
+            common.logger.message('asking to submit '+str(nsjobs)+' jobs, but only '+\
+                                  str(jobSetForSubmission)+' left: submitting those')
         if len(jobSkippedInSubmission) > 0 :
             mess =""
             for jobs in jobSkippedInSubmission:
@@ -118,11 +117,10 @@ class Submitter(Actor):
         """
         code = 0
         totalCreatedJobs = 0
-        jList=common._db.nJobs('list')
-        st = common._db.queryRunJob('status',jList)
-        for nj in range(len(jList)):
-            if ( st[nj] in ['C','RC']):totalCreatedJobs +=1
-            pass
+        task=common._db.getTask()
+        for job in task.jobs:
+            if job.runningJob['status'] in ['C','RC'] \
+               and job.runningJob['statusScheduler'] == 'Created':totalCreatedJobs +=1
 
         if (totalCreatedJobs==0):
               common.logger.message("No jobs to be submitted: first create them")
