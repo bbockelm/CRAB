@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.25 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.25 2008/10/10 10:22:35 afanfani Exp $"
+__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.26 2008/10/26 16:13:30 spiga Exp $"
 
 import os
 import time
@@ -197,9 +197,8 @@ class CRAB_AS_beckend:
                 self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
                 return 101
             # ONLY to help the deplyment ClientSide  
-            try:  
-                forBackComp = xmlCmd.getAttribute('ClientVersion')  
-            except:
+            if not xmlCmd.getAttribute('ClientVersion')  :
+                self.log.info("ci PAS S0 ma non mi blocco %s ")
                 skipClientCheck = 1
             if skipClientCheck == 0 :
                 if xmlCmd.getAttribute('ClientVersion') not in ClientList :
