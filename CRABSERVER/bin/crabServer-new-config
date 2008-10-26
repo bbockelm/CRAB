@@ -97,6 +97,7 @@ componentFields = {
     'uiConfigRBVO':'',
     'uiConfigWMS':'',
     'acceptableThroughput':'-1',
+    'acceptableClient':'',
     'Port':'20081',
     },
 
