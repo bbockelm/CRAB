@@ -27,6 +27,8 @@ class ServerCommunicator:
         """
         Open the communication with an Analysis Server by passing the server URL and the port
         """
+
+        self.ServerTwiki = 'https://twiki.cern.ch/twiki/bin/view/CMS/CrabServer#Server_available_for_users'
        
         self.dontMoveProxy = False
         if string.lower(cfg_params.get("CRAB.scheduler")) in ['lsf','caf']:
@@ -37,6 +39,7 @@ class ServerCommunicator:
         self.userSubj = ''
         self.serverName = serverName
 
+        CliServerParams(self)
         self.crab_task_name = common.work_space.topDir().split('/')[-2] # nice task name "crab_0_..."
 
         x509 = proxyPath
@@ -89,28 +92,55 @@ class ServerCommunicator:
 
         ret = -1  
         ret = self.asSession.transferTaskAndSubmit(blXml, cmdXML, blTaskName)
-        logMsg = ''
+       
         if ret == 0:
              # success
              logMsg = 'Task %s successfully submitted to server %s'%(self.crab_task_name, self.serverName)
              common.logger.message(logMsg+'\n')
         else:
-            if ret == 10:
-                 # overlaod
-                 logMsg = 'The server %s refused to accept the task %s because it is overloaded'%(self.serverName, self.crab_task_name)
-            elif ret == 101:
-                 # overlaod
-                 logMsg = 'The server %s refused the submission %s because you asked a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
-            elif ret == 11:
-                 # failed to push message in DB
-                 logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
-            elif ret == 12:
-                 # failed SOAP communication
-                 logMsg = 'Error during SOAP communication with server %s.\n'%self.serverName
-                 logMsg +='\t ----- The server could be under maintainance. ----- '
-            else:
-                 logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret)
+             self.checkServerResponse(ret)    
 
+        return ret
+
+    def checkServerResponse(self, ret): 
+        """
+        analyze the server return codes
+        """
+        
+        logMsg = ''
+        if ret == 10:
+             # overlaod
+             logMsg = 'Error The server %s refused to accept the task %s because it is overloaded\n'%(self.serverName, self.crab_task_name)
+             logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
+        elif ret == 14:
+             # Draining 
+             logMsg  = 'Error The server %s refused to accept the task %s because it is Draining\n'%(self.serverName, self.crab_task_name)
+             logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
+        elif ret == 101:
+             # overlaod
+             logMsg = 'Error The server %s refused the submission %s because you asked a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
+        elif ret == 11:
+             # failed to push message in DB
+             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
+        elif ret == 12:
+             # failed SOAP communication
+             logMsg = 'Error The server %s refused to accept the task %s. It could be under maintainance. \n'%(self.serverName, self.crab_task_name)
+             logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
+        elif ret == 20:
+             # failed to push message in PA
+             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
+        elif ret == 22:
+             # failed SOAP communication
+             logMsg = 'Error during SOAP communication with server %s'%self.serverName
+        elif ret == 33:
+             # uncompatible client version
+             logMsg  = 'Error You are using a wrong client version for server: %s\n'%self.serverName
+             logMsg += '\t For further informations about "Servers available for users" please check here:\n \t%s '%self.ServerTwiki
+        else:
+             logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret) 
+
+        # print loggings
+        if logMsg != '':
             common.logger.write(logMsg+'\n')
             raise CrabException(logMsg) 
         return ret
@@ -207,6 +237,7 @@ class ServerCommunicator:
         xmlString = ''
         cfile = minidom.Document()
             
+        ver = common.prog_version_str
         node = cfile.createElement("TaskCommand")
         node.setAttribute("Task", str(taskUName) )
         node.setAttribute("Subject", str(self.userSubj) )
@@ -215,6 +246,7 @@ class ServerCommunicator:
         node.setAttribute("Scheduler", str(self.cfg_params['CRAB.scheduler']) ) 
         node.setAttribute("Flavour", str(flavour) )
         node.setAttribute("Type", str(type) ) 
+        node.setAttribute("ClientVersion", str(ver) ) 
 
         # create a mini-cfg to be transfered to the server
         miniCfg = {}
@@ -276,7 +308,7 @@ class ServerCommunicator:
         if not cmdXML:
             raise CrabException('Error while creating the Command XML')
             return -3
-
+        
         ret = -1
         ret = self.asSession.sendCommand(cmdXML, blTaskName)
         logMsg = ''
@@ -284,22 +316,7 @@ class ServerCommunicator:
         if ret == 0:
              # success
              debugMsg = 'Command successfully sent to server %s for task %s'%(self.serverName, self.crab_task_name)
-        elif ret == 101:
-             # overlaod
-             logMsg = 'The server %s refused the submission %s because you asked to handle a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
-        elif ret == 20:
-             # failed to push message in PA
-             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
-        elif ret == 22:
-             # failed SOAP communication
-             logMsg = 'Error during SOAP communication with server %s'%self.serverName
         else:
-             logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret) 
-
-        # print loggings
-        if logMsg != '':
-            common.logger.message(logMsg+'\n')  
-        else: 
-            common.logger.debug(3,debugMsg+'\n')  
+             self.checkServerResponse(ret)
         return ret
     
