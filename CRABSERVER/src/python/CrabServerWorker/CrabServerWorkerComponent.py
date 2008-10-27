@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.73 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.73 2008/09/24 08:31:19 mcinquil Exp $"
+__version__ = "$Revision: 1.74 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.74 2008/09/25 15:10:42 spiga Exp $"
 
 import os, pickle, time, copy
 
@@ -289,7 +289,9 @@ class CrabServerWorkerComponent:
         items = payload.split('::')
         taskName, cmdRng, siteToBan, retryCounter = ('', '[]', '', '2')
         
-        if event in ['TaskRegisterComponent:NewTaskRegistered', 'CRAB_Cmd_Mgr:NewCommand']:
+        if event == 'TaskRegisterComponent:NewTaskRegistered':
+            taskName, retryCounter, cmdRng = items[0:3]
+        if (event == 'CRAB_Cmd_Mgr:NewCommand') and (items[3] in ['submit','resubmit']):
             taskName, retryCounter, cmdRng = items[0:3]
         
         elif event == 'ResubmitJob':
