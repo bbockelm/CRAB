@@ -114,7 +114,8 @@ class ServerCommunicator:
              logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
         elif ret == 14:
              # Draining 
-             logMsg  = 'Error The server %s refused to accept the task %s because it is Draining\n'%(self.serverName, self.crab_task_name)
+             logMsg  = 'Error The server %s refused to accept the task %s because it is Draining out\n'%(self.serverName, self.crab_task_name)
+             logMsg  = '\t remaining jobs due to scheduled maintainence\n'
              logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
         elif ret == 101:
              # overlaod
