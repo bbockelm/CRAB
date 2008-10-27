@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.9 2008/09/19 16:22:29 farinafa Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.10 2008/09/26 07:36:27 spiga Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import string
 import sys, os
@@ -25,6 +25,7 @@ from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 
+from CrabServerWorker.CrabWorkerAPI import CrabWorkerAPI
 class RegisterWorker(Thread):
     def __init__(self, logger, FWname, threadAttributes):
         Thread.__init__(self)
@@ -53,6 +54,8 @@ class RegisterWorker(Thread):
         except Exception, e:
             self.log.info('RegisterWorker exception : %s'%self.myName)
             self.log.info( traceback.format_exc() )
+        ## CW DB init
+        self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
         return
         
     def run(self):
@@ -72,6 +75,12 @@ class RegisterWorker(Thread):
         # declare and customize the task object on the server
         reconstructedTask = self.declareAndLocalizeTask() 
         if reconstructedTask is None:
+            self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
+            return
+
+        # register jobs of the task object on the server (we_job)
+        registeredTask = self.registerTask(reconstructedTask)
+        if registeredTask != 0:
             self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
             return
 
@@ -141,7 +150,7 @@ class RegisterWorker(Thread):
                 tmpTask = None 
 
             if tmpTask is not None:
-                self.log.info("Task already registered: %s"%self.taskName)
+                self.log.info("Task %s already registered in BossLite"%self.taskName)
                 return tmpTask
  
             taskObj = self.blDBsession.declare(taskSpecFile, self.proxy)
@@ -226,6 +235,47 @@ class RegisterWorker(Thread):
                 return None
 
         return taskObj
+
+
+    def registerTask(self, taskArg):
+ 
+        taskName = taskArg['name']  
+
+        range = eval(self.cmdRng)
+
+        for job in taskArg.jobs:
+            jobName = job['name']
+            cacheArea = os.path.join( self.wdir, taskName + '_spec', jobName )
+            we_status = 'create'
+            if job['jobId'] in range : we_status = 'Submitting' 
+            jobDetails = { 
+                          'id':jobName, 'job_type':'Processing', 'cache':cacheArea, \
+                          'owner':taskName, 'status': we_status, \
+                          'max_retries': self.configs['retries'], 'max_racers':1 \
+                         }
+            jobAlreadyRegistered = False
+            try:
+                jobAlreadyRegistered = self.cwdb.existsWEJob(jobName)
+            except Exception, e:
+                ##TODO: need to differnciate when more then 1 entry per job (limit case) 
+                logMsg = 'Error while checking job registration: assuming %s as not registered'%jobName
+                logMsg +=  traceback.format_exc()
+                self.log.info (logMsg) 
+                jobAlreadyRegistered = False
+
+            if jobAlreadyRegistered == True:
+                continue
+
+            self.log.debug('Registering %s'%jobName)
+            try:
+                self.cwdb.registerWEJob(jobDetails)
+            except Exception, e:
+                logMsg = 'Error while registering job for JT: %s'%jobName
+                logMsg +=  traceback.format_exc()
+                self.log.info (logMsg) 
+                return 1
+            self.log.debug('Registration for %s performed'%jobName)
+        return 0
 
     def inputFileCheck(self, task):
         self.log.info('Worker %s checking input sanbox'%self.myName) 
