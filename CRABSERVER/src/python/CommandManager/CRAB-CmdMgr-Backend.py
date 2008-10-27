@@ -198,7 +198,6 @@ class CRAB_AS_beckend:
                 return 101
             # ONLY to help the deplyment ClientSide  
             if not xmlCmd.getAttribute('ClientVersion')  :
-                self.log.info("ci PAS S0 ma non mi blocco %s ")
                 skipClientCheck = 1
             if skipClientCheck == 0 :
                 if xmlCmd.getAttribute('ClientVersion') not in ClientList :
@@ -262,6 +261,8 @@ class CRAB_AS_beckend:
             cmdFlavour = str(xmlCmd.getAttribute('Flavour')) 
             cmdType = str(xmlCmd.getAttribute('Type'))
 
+           
+
             # submission part
             if cmdKind in ['submit', 'resubmit']:
                 # check for too large submissions
@@ -269,11 +270,11 @@ class CRAB_AS_beckend:
                     self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
                     return 101
                 # send submission directive 
-                msg = taskUniqName +"::"+ str(self.cmdAttempts) +"::"+ cmdRng
-                self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
-                self.ms.commit()
-                self.log.info("NewCommand Submit "+taskUniqName)
-                return 0
+                #return 0
+            msg = '%s::%s::%s::%s'%(taskUniqName, str(self.cmdAttempts), cmdRng, cmdKind)
+            self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
+            self.ms.commit()
+            self.log.info("NewCommand %s for task %s"%(cmdKind, taskUniqName))
 
             # getoutput
             if cmdKind == 'outputRetrieved':
