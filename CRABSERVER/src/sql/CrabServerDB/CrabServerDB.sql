@@ -1,4 +1,4 @@
-ALTER TABLE we_Job CHANGE COLUMN status status ENUM("register","released","create","submit","inProgress","finished","reallyFinished","failed","Killing") DEFAULT 'register';
+ALTER TABLE we_Job CHANGE COLUMN status status ENUM("register","released","create","submit","inProgress","finished","reallyFinished","failed","Killing","Submitting") DEFAULT 'register';
 
 CREATE TABLE js_taskInstance (
      id int NOT NULL auto_increment,
