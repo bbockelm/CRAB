@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.126 2008/10/08 17:53:39 spiga Exp $"
-__version__ = "$Revision: 1.126 $"
+__revision__ = "$Id: FatWorker.py,v 1.127 2008/10/25 11:31:22 spiga Exp $"
+__version__ = "$Revision: 1.127 $"
 import string
 import sys, os
 import time
@@ -375,12 +375,6 @@ class FatWorker(Thread):
 
         ## if all the jobs have been submitted send a success message
         if len(resubmissionList) == 0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs) == 0:
-            ## added db Session to passed parameters
-            if self.registerTask(taskObj) != 0:
-                self.sendResult(10, "Unable to register task %s. Causes: deserialization, saving, registration "%(self.taskName), \
-                    "WorkerError %s. Error while registering jobs for task %s."%(self.myName, self.taskName) )
-                self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
-                return
 
             self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. Successful complete submission for task %s"%self.taskName )
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName))
@@ -397,18 +391,9 @@ class FatWorker(Thread):
                         logMsg = "Problem Loading Job Status (we_job) : \n"
                         logMsg +=  traceback.format_exc()
                         self.log.info(logMsg)
-                        ##TODO: Need to differenciate between different problems!
-                        # in case the job shouldn't be registered 
-                        if onDemandRegDone == False:
-                            ## added db Session to passed parameters
-                            self.registerTask(taskObj)
-                            onDemandRegDone = True
-                        else:
-                            ## debug problems
-                            pass
                     try:
                         # update the job status properly
-                        if state_we_job == 'create':
+                        if state_we_job == 'Submitting':
                             self.cwdb.updateWEStatus( j['name'], 'inProgress' )
                     except Exception, ex:
                         logMsg = "Problem changing status to "+str(j['name'])+"\n"
@@ -439,7 +424,6 @@ class FatWorker(Thread):
             payload = self.taskName+"::"+str(resubmissionList)
             self.local_queue.put((self.myName, "SubmissionFailed", payload))
             try:
-                self.registerTask(taskObj)
                 jobSpecId = []
                 toMarkAsFailed = list(set(resubmissionList+unmatchedJobs + nonSubmittedJobs + skippedJobs))
                 for j in taskObj.jobs:
@@ -469,39 +453,6 @@ class FatWorker(Thread):
 ####################################
     # Auxiliary methods
 ####################################
-    def registerTask(self, taskArg):
-        for job in taskArg.jobs:
-            jobName = job['name']
-            cacheArea = os.path.join( self.wdir, str(self.taskName + '_spec'), jobName )
-            jobDetails = { \
-                          'id':jobName, 'job_type':'Processing', 'cache':cacheArea, \
-                          'owner':self.taskName, 'status': 'create', \
-                          'max_retries':self.configs['maxRetries'], 'max_racers':1 \
-                         }
-            jobAlreadyRegistered = False
-            try:
-                jobAlreadyRegistered = self.cwdb.existsWEJob(jobName)
-            except Exception, e:
-                ##TODO: need to differnciate when more then 1 entry per job (limit case) 
-                logMsg = 'Error while checking job registration: assuming %s as not registered'%jobName
-                logMsg +=  traceback.format_exc()
-                self.log.info (logMsg) 
-                jobAlreadyRegistered = False
-
-            if jobAlreadyRegistered == True:
-                continue
-
-            self.log.debug('Registering %s'%jobName)
-            try:
-                self.cwdb.registerWEJob(jobDetails)
-            except Exception, e:
-                logMsg = 'Error while registering job for JT: %s'%jobName
-                logMsg +=  traceback.format_exc()
-                self.log.info (logMsg) 
-                return 1
-            self.log.debug('Registration for %s performed'%jobName)
-        return 0
-
     def submissionListCreation(self, taskObj, jobRng):
         '''
            Matchmaking process. Inherited from CRAB-SA
