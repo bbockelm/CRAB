@@ -235,7 +235,6 @@ class TaskTrackingComponent:
                 self.updateTaskStatus( taskname, self.taskState[1] )
                 self.processSubmitted(taskname)
                 logBuf = self.__log(logBuf, "              task updated.")
-                _loginfo.setdefault('txt', str("Task in submission queue: " + str(taskname)))
                 _loginfo.setdefault('range', str(listjob))
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
@@ -293,7 +292,6 @@ class TaskTrackingComponent:
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, event + ": " + str(payload) )
                 threadName, taskName, code, reason, time = payload.split("::")
-                _loginfo.setdefault('txt', str("Submission completed: " + str(taskName)))
                 _loginfo.setdefault('reason', str(reason))
                 _loginfo.setdefault('code', str(code))
                 _loginfo.setdefault('time', str(time))
@@ -330,7 +328,6 @@ class TaskTrackingComponent:
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, event + ": " + str(payload) )
                 taskName, fake_proxy, range = payload.split(":")
-                _loginfo.setdefault('txt', str("Kill asked for task: " + str(taskName)))
                 _loginfo.setdefault('range', str(range))
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -363,7 +360,6 @@ class TaskTrackingComponent:
                     taskName, rangeKillJobs = payload.split("::")
                 logBuf = self.__log(logBuf, "   Error killing task: %s" % taskName)
                 self.transientTaskJob(taskName, rangeKillJobs, "", True)
-                _loginfo.setdefault('txt', str("Kill failed: " + str(taskName)))
                 _loginfo.setdefault('range', str(rangeKillJobs))
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
@@ -382,7 +378,6 @@ class TaskTrackingComponent:
                 except Exception, ex:
                     logBuf = self.__log(logBuf, "Exception raised: " + str(ex) )
                     logBuf = self.__log(logBuf, str(traceback.format_exc()) )
-                _loginfo.setdefault('txt', str("GetOutput performed: " + str(taskName)))
                 _loginfo.setdefault('range', str(jobstr))
             else:
                 logBuf = self.__log(logBuf, "No task specified for " + str(event) )
@@ -701,12 +696,11 @@ class TaskTrackingComponent:
         try:
             ## update xml -> W: duplicated code - need to clean
             dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
-            countNotSubmitted = 0
             dictStateTot = {}
             #numJobs = ttdb.countServerJob(mySession.bossLiteDB, taskName)
             numJobs = len(taskObj.jobs)
             status, uuid, email, user_name = ttdb.getStatusUUIDEmail( taskName, mySession.bossLiteDB )
-            dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot, countNotSubmitted)
+            dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot)
             pathToWrite = os.path.join(str(self.args['dropBoxPath']), (taskName + self.workAdd))
             if os.path.exists( pathToWrite ):
                 self.prepareReport( taskName, uuid, email, user_name, 0, 0, dictStateTot, numJobs, 1 )
@@ -866,12 +860,14 @@ class TaskTrackingComponent:
 
 
     def computeJobStatus(self, taskName, mySession, taskObj, dictStateTot, \
-                               dictReportTot, countNotSubmitted):
+                               dictReportTot):
         """
         _computeJobStatus_
         """
         ttdb = TaskStateAPI()
         ttutil = TaskTrackingUtil(self.args['allow_anonymous'])
+
+        countNotSubmitted = 0
 
         for jobbe in taskObj.jobs:
             try:
@@ -1006,14 +1002,12 @@ class TaskTrackingComponent:
 
 			    pathToWrite = ""
 			    dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
-			    countNotSubmitted = 0 
 			    dictStateTot = {}
                             numJobs = len(taskObj.jobs)
                             dictStateTot, dictReportTot, countNotSubmitted = \
                                  self.computeJobStatus( taskName, mySession, \
                                                         taskObj, dictStateTot, \
-                                                        dictReportTot, \
-                                                        countNotSubmitted )
+                                                        dictReportTot )
 			    for state in dictReportTot:
                                 logBuf = self.__log(logBuf, state + " : " + \
                                                       str(dictReportTot[state]))
