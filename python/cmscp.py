@@ -156,16 +156,16 @@ class cmscp:
         """
         Instantiate storage interface
         """
-        source_prot = protocol
-        dest_prot = protocol
-        if not self.params['source'] : source_prot = 'local'
-        Source_SE  = self.storageInterface( self.params['source'], source_prot )
-        if not self.params['destination'] : dest_prot = 'local'
-        Destination_SE = self.storageInterface( self.params['destination'], dest_prot )
+        self.source_prot = protocol
+        self.dest_prot = protocol
+        if not self.params['source'] : self.source_prot = 'local'
+        Source_SE  = self.storageInterface( self.params['source'], self.source_prot )
+        if not self.params['destination'] : self.dest_prot = 'local'
+        Destination_SE = self.storageInterface( self.params['destination'], self.dest_prot )
 
         if self.debug :
-            print '(source=%s,  protocol=%s)'%(self.params['source'], source_prot)
-            print '(destination=%s,  protocol=%s)'%(self.params['destination'], dest_prot)
+            print '(source=%s,  protocol=%s)'%(self.params['source'], self.source_prot)
+            print '(destination=%s,  protocol=%s)'%(self.params['destination'], self.dest_prot)
 
         return Source_SE, Destination_SE
 
@@ -191,6 +191,7 @@ class cmscp:
         try :
             sbi = SBinterface( Source_SE, Destination_SE )
             sbi_dest = SBinterface(Destination_SE)
+            sbi_source = SBinterface(Source_SE)
         except ProtocolMismatch, ex:
             msg = str(ex)+'\n'
             msg += "ERROR : Unable to create SBinterface with %s protocol\n"%protocol
@@ -201,7 +202,7 @@ class cmscp:
         for filetocopy in list_file:
             if self.debug : print 'start real copy for %s'%filetocopy
             try :
-                ErCode, msg = self.checkFileExist( sbi_dest, os.path.basename(filetocopy) )
+                ErCode, msg = self.checkFileExist( sbi_source, sbi_dest, filetocopy )
             except Exception, ex:
                 ErCode = -1
                 msg = str(ex)  
@@ -250,14 +251,40 @@ class cmscp:
 
         return msg
 
-    def checkFileExist( self, sbi, filetocopy ):
+    def checkFileExist( self, sbi_source, sbi_dest, filetocopy ):
         """
-        Check if file to copy already exist
+        Check both if source file exist AND 
+        if destination file ALREADY exist. 
         """
         ErCode = '0'
         msg = ''
+        f_tocopy=filetocopy
+        if self.source_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
         try:
-            check = sbi.checkExists(filetocopy)
+            checkSource = sbi_source.checkExists( f_tocopy )
+        except OperationException, ex:
+            msg = str(ex)
+            if self.debug :
+                msg += str(ex.detail)+'\n'
+                msg += str(ex.output)+'\n'
+            msg +='ERROR: problems checkig if source file %s exist'%filetocopy
+            raise Exception(msg)
+        except WrongOption, ex:
+            msg = str(ex)
+            if self.debug :
+                msg += str(ex.detail)+'\n'
+                msg += str(ex.output)+'\n'
+            msg +='ERROR problems checkig if source file % exist'%filetocopy
+            raise Exception(msg)
+        if not checkSource :
+            ErCode = '60302'
+            msg = "ERROR file %s do not exist"%os.path.basename(filetocopy)
+            return ErCode, msg
+
+        f_tocopy=filetocopy
+        if self.dest_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
+        try:
+            check = sbi_dest.checkExists( f_tocopy )
         except OperationException, ex:
             msg = str(ex)
             if self.debug :
@@ -274,7 +301,7 @@ class cmscp:
             raise Exception(msg)
         if check :
             ErCode = '60303'
-            msg = "file %s already exist"%filetocopy
+            msg = "file %s already exist"%os.path.basename(filetocopy)
 
         return ErCode, msg
 
