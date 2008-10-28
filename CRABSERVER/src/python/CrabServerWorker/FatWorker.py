@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.127 2008/10/25 11:31:22 spiga Exp $"
-__version__ = "$Revision: 1.127 $"
+__revision__ = "$Id: FatWorker.py,v 1.128 2008/10/27 18:30:00 spiga Exp $"
+__version__ = "$Revision: 1.128 $"
 import string
 import sys, os
 import time
@@ -245,15 +245,16 @@ class FatWorker(Thread):
                 try:
                     if j.runningJob['closed'] == 'Y':
                         # backup for job output (tgz files only, less load)
-                        sbi = SBinterface( self.seEl )
                         bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
-                        for orig in [ task['outputDirectory']+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
+                        basePath = task['outputDirectory']
+                        if task['startDirectory'] != '': basePath = task['outputDirectory'].split(task['startDirectory'])[1]
+                        for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
                             try:
                                 bk_sbi.move( source=orig, dest=orig+'.'+str(j['submissionNumber']), proxy=task['user_proxy'])
                             except Exception, ex:
                                 logMsg = "Worker %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
                                  j['name'], self.taskName) 
-                                logMsg += str(e)  
+                                logMsg += str(ex)  
                                 self.log.info( logMsg ) 
                                 continue
                             # track succesfully replicated files
@@ -367,7 +368,7 @@ class FatWorker(Thread):
 
         resubmissionList = list( set(submittableRange).difference(set(submittedJobs)) )
         logMsg = "Worker. Task %s summary: \n "%self.taskName
-        logMsg +="                        (%d jobs), submitted %d unmatched %d notSubmitted %d skipped %d"%( 
+        logMsg +="\t\t  (%d jobs), submitted %d unmatched %d notSubmitted %d skipped %d"%( 
             len(submittableRange), len(submittedJobs), len(unmatchedJobs), len(nonSubmittedJobs), len(skippedJobs) )    
         self.log.info( logMsg )
         self.log.debug("Task %s\n"%self.myName + "jobs : %s \nsubmitted %s \nunmatched %s\nnotSubmitted %s\nskipped %s"%(str(submittableRange), \
