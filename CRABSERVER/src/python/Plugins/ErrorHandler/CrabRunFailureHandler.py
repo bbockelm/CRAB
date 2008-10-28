@@ -53,7 +53,25 @@ class CrabRunFailureHandler(HandlerInterface):
          self.args={}
          self.blDBsession = None
          
-         
+
+    def infoLogger(self, taskname, jobid, diction):
+        """
+        _infoLogger_
+        Send the default message to log the information in the job logging info
+        """
+        from IMProv.IMProvAddEntry import Event
+        eve = Event( )
+        eve.initialize( diction ) 
+        import time
+        unifilename = os.path.join(self.args['jobReportLocation'], str(time.time())+".pkl")
+        eve.dump( unifilename )
+        message = "TTXmlLogging"
+        payload  = taskname + "::" +str(jobid) + "::" + unifilename
+        logging.info("Sending %s."%message)
+        self.publishEvent( message, payload )
+        logging.info("Registering information:\n%s"%str(diction))
+
+
     def parseFinalReport(self, input):
         """
         Parses the FJR produced by job in order to retrieve
@@ -86,145 +104,149 @@ class CrabRunFailureHandler(HandlerInterface):
          
 
     def handleError(self,payload):
-         """
-         The payload of a job failure is a url to the job report
-         """
+        """
+        The payload of a job failure is a url to the job report
+        """
+        ## pictionary where to put the information to logs
+        loggindict = {}
+        textmsg = "No action defined"
+
+        self.bliteSession = BossLiteAPI('MySQL', dbConfig)
+        
+        logging.info(">CrabRunFailureHandler<:payload %s " % payload)
+        jobReportUrl = payload
          
-         self.bliteSession = BossLiteAPI('MySQL', dbConfig)
-         
-         logging.info(">CrabRunFailureHandler<:payload %s " % payload)
-         jobReportUrl = payload
-         
-         #### split of payload to obtain taskId and jobId ####
-         tmp = payload.split("BossJob")
-         tmp_1 = tmp[1]
-         tmp_2 = tmp_1.split('/')
-         numbers = tmp_2[0]
-         numbers_tmp = numbers.split('_')
-         taskId = numbers_tmp[1]
-         logging.info("--->>> taskId = " + str(taskId))         
-         jobId = numbers_tmp[2]
-         logging.info("--->>> jobId = " + str(jobId))        
+        #### split of payload to obtain taskId and jobId ####
+        tmp = payload.split("BossJob")
+        tmp_1 = tmp[1]
+        tmp_2 = tmp_1.split('/')
+        numbers = tmp_2[0]
+        numbers_tmp = numbers.split('_')
+        taskId = numbers_tmp[1]
+        logging.info("--->>> taskId = " + str(taskId))         
+        jobId = numbers_tmp[2]
+        logging.info("--->>> jobId = " + str(jobId))        
  
-         # prepare to retrieve the job report file.
-         # NOTE: we assume that the report file has a relative unique name
-         # NOTE: if that is not the case we need to add a unique identifier to it.
-         slash = jobReportUrl.rfind('/')
-         fileName = jobReportUrl[slash+1:]
-         ### to test if correct !!
-         urllib.urlretrieve(jobReportUrl, self.args['jobReportLocation']+'/'+fileName)
-         logging.info(">CrabRunFailureHandler<:Retrieving job report from %s " % jobReportUrl)
+        # prepare to retrieve the job report file.
+        # NOTE: we assume that the report file has a relative unique name
+        # NOTE: if that is not the case we need to add a unique identifier to it.
+        slash = jobReportUrl.rfind('/')
+        fileName = jobReportUrl[slash+1:]
+        ### to test if correct !!
+        urllib.urlretrieve(jobReportUrl, self.args['jobReportLocation']+'/'+fileName)
+        logging.info(">CrabRunFailureHandler<:Retrieving job report from %s " % jobReportUrl)
+ 
+        jobReport=readJobReport(self.args['jobReportLocation']+'/'+fileName)
+        logging.info("--->>> " + self.args['jobReportLocation']+'/'+fileName)
+         
+        ### Retrieving wrapper and application exit code from fjr #### 
+        input = self.args['jobReportLocation']+'/'+fileName
+        logging.info("--->>> input = " + input)         
         
-          
-         jobReport=readJobReport(self.args['jobReportLocation']+'/'+fileName)
-         logging.info("--->>> " + self.args['jobReportLocation']+'/'+fileName)
-         
-         ### Retrieving wrapper and application exit code from fjr #### 
-         input = self.args['jobReportLocation']+'/'+fileName
-         logging.info("--->>> input = " + input)         
+        listCode = []
+        if os.path.exists(input):
+            codeValue = self.parseFinalReport(input)
+        else:
+            msg = ">CrabRunFailureHandler<:Problems with "+str(input)+". File not available.\n"
+            logging.info(msg)
+        logging.info("--->>> wrapperReturnCode = " + str(codeValue["wrapperReturnCode"]))
+        logging.info("--->>> applicationReturnCode = " + str(codeValue["applicationReturnCode"]))
+
+        ### Updating the boss DB with wrapper and application exit code #### 
+        task = self.bliteSession.load(taskId,jobId)
+        if (codeValue["applicationReturnCode"] != '' ):
+            task.jobs[0].runningJob['applicationReturnCode']=int(codeValue["applicationReturnCode"])
+        if (codeValue["wrapperReturnCode"] != ''): 
+            task.jobs[0].runningJob['wrapperReturnCode']=int(codeValue["wrapperReturnCode"])
+        self.bliteSession.updateDB(task)
         
-         listCode = []
-         if os.path.exists(input):
-              codeValue = self.parseFinalReport(input)
-         else:
-              msg = ">CrabRunFailureHandler<:Problems with "+str(input)+". File not available.\n"
-              logging.info(msg)
-         logging.info("--->>> wrapperReturnCode = " + str(codeValue["wrapperReturnCode"]))
-         logging.info("--->>> applicationReturnCode = " + str(codeValue["applicationReturnCode"]))
+        wrapperReturnCode=task.jobs[0].runningJob['wrapperReturnCode']
+        applicationReturnCode=task.jobs[0].runningJob['applicationReturnCode']
+        loggindict.setdefault
 
-         ### Updating the boss DB with wrapper and application exit code #### 
-         task = self.bliteSession.load(taskId,jobId)
+        logging.info("--->>> wrapperReturnCode = " + str(wrapperReturnCode))         
+        logging.info("--->>> applicationReturnCode = " + str(applicationReturnCode))
+
+        #### if both codes are empty and the job has been killed or aborted
+        #### the job will be resubmit with delay
+        #### add a control about the number of resubmission ####
+
+        if ((wrapperReturnCode is None) and ( applicationReturnCode is None)):
+            if (task.jobs[0].runningJob['status'] == 'K'):# or (task.jobs[0].runningJob['status'] == 'A')):
+                ### to check if correct 
+                if (task.jobs[0].runningJob['submission'] >= 2):
+                    try:
+                        doNotAllowMoreSubmissions([jobId])
+                        ## logger human readble message
+                        textmsg = "Do not allowing more resubmission"
+                    except ProdAgentException, ex:
+                        msg = "Updating max racers fields failed for job %s\n" % jobId
+                        logging.error(msg)
+                else:
+                    ### or check the statusReason or postmortem to get the failure reason
+                    ### wait 2 minutes before resubmitting
+                    delay = 120
+                    delay=convertSeconds(delay) 
+                    logging.info(">CrabRunFailureHandler<: re-submitting with delay (h:m:s) "+ str(delay))
+                    payload = str(taskId)+'::'+str(jobId) 
+                    logging.info("--->>> payload = " + payload)         
+                    self.publishEvent("ResubmitJob",payload,delay)
+                    ## logger human readble message
+                    textmsg = "Resubmitting with (h:m:s) %s delay" %(str(delay))
+            elif (task.jobs[0].runningJob['status'] == 'A'):
+                try:
+                    doNotAllowMoreSubmissions([jobId])
+                    ## logger human readble message
+                    textmsg = "Do not allowing more resubmission"
+                except ProdAgentException, ex:
+                    msg = "Updating max racers fields failed for job %s\n" % jobId
+                    logging.error(msg)
+            else:
+                logging.info("--->>> status = " + task.jobs[0].runningJob['status'])
+                ## logger human readble message
+                textmsg = "No action taken"
+
+        #### if wrapper code is not null and different from 60303 (file already exists in the SE) and 
+        #### from 70000 (output too big), the job will be resubmit banning the site where it previously run
+
+        if ((wrapperReturnCode is not None) and (wrapperReturnCode != 50117) and (wrapperReturnCode != 60303) and (wrapperReturnCode != 70000) and (wrapperReturnCode != 0)):
+            ce = str(task.jobs[0].runningJob['destination'])
+            ce_temp = task.jobs[0].runningJob['destination'].split(':')
+
+            # fix to avoid empty ce names # Fabio
+            if len(ce_temp[0])>0:
+                ce_name = ce_temp[0] 
+            else:
+                ce_name = "#fake_ce#"
+
+            logging.info("--->>> ce = " + str(ce))
+            logging.info("--->>> ce_name = " + str(ce_name))
+            logging.info(">CrabRunFailureHandler<: re-submitting banning the ce "+ str(ce_name))
+            payload = str(taskId) + '::' + str(jobId) + '::' + str(ce_name)  
+            logging.info("--->>> payload = " + payload)         
+            self.publishEvent("ResubmitJob",payload)
+            ## logger human readble message
+            textmsg = "Resubmitting bunning [%s] ce" %(str(ce_name))
          
-         if (codeValue["applicationReturnCode"] != '' ):
-             task.jobs[0].runningJob['applicationReturnCode']=int(codeValue["applicationReturnCode"])
-         if (codeValue["wrapperReturnCode"] != ''): 
-             task.jobs[0].runningJob['wrapperReturnCode']=int(codeValue["wrapperReturnCode"])
+        #### if wrapper code is 60303 (file already exists in the SE) or 70000 (output too big),
+        #### the job will be not resubmitted
 
-         self.bliteSession.updateDB(task)
-        
-         #### Querying the boss db to obtain wrapper and application exit code ###
-         task = self.bliteSession.load(taskId,jobId)
-         wrapperReturnCode=task.jobs[0].runningJob['wrapperReturnCode']
-         applicationReturnCode=task.jobs[0].runningJob['applicationReturnCode']
+        if ((wrapperReturnCode == 50117) or (wrapperReturnCode == 60303) or (wrapperReturnCode == 70000)):
+            try:
+                doNotAllowMoreSubmissions([jobId])
+                ## logger human readble message
+                textmsg = "Do not allowing more resubmission"
+            except ProdAgentException, ex:
+                msg = "Updating max racers fields failed for job %s\n" % jobId
+                logging.error(msg)
 
-         logging.info("--->>> wrapperReturnCode = " + str(wrapperReturnCode))         
-         logging.info("--->>> applicationReturnCode = " + str(applicationReturnCode))
+        ## prepare dictionary for logging.info
+        loggindict.setdefault("ev", "Error handling with: [%s]" %(str(self.__class__.__name__)))
+        loggindict.setdefault("wrapperReturnCode", str(wrapperReturnCode))
+        loggindict.setdefault("applicationReturnCode", str(applicationReturnCode))
+        loggindict.setdefault("status", task.jobs[0].runningJob['status'])
+        loggindict.setdefault("txt", textmsg)
+        ## send information to log
+        self.infoLogger(task['name'], jobId, loggindict)
 
-         #### if both codes are empty and the job has been killed or aborted
-         #### the job will be resubmit with delay
-         
-         #### add a control about the number of resubmission ####
-
-         if ((wrapperReturnCode is None) and ( applicationReturnCode is None)):
-             if (task.jobs[0].runningJob['status'] == 'K'):# or (task.jobs[0].runningJob['status'] == 'A')):
-                 ### to check if correct 
-                 ### dont_allow_resubmission()
-                 #if ((task.jobs[0].runningJob['submission'] >= 2) and (task.jobs[0].runningJob['status_history'] == 'A')):
-                 if (task.jobs[0].runningJob['submission'] >= 2):
-                     try:
-                         doNotAllowMoreSubmissions([jobId])
-                     except ProdAgentException, ex:
-                         msg = "Updating max racers fields failed for job %s\n" % jobId
-                         logging.info(msg)
-                         logging.error(msg)
-                 
-                 else:
-                     ### or check the statusReason or postmortem to get the failure reason
-                     ### wait 2 minutes before resubmitting
-                     delay = 120
-                     delay=convertSeconds(delay) 
-                     logging.info(">CrabRunFailureHandler<: re-submitting with delay (h:m:s) "+ str(delay))
-                     payload = str(taskId)+'::'+str(jobId) 
-                     logging.info("--->>> payload = " + payload)         
-                     self.publishEvent("ResubmitJob",payload,delay)
-             elif (task.jobs[0].runningJob['status'] == 'A'):
-                 try:
-                     doNotAllowMoreSubmissions([jobId])
-                 except ProdAgentException, ex:
-                     msg = "Updating max racers fields failed for job %s\n" % jobId
-                     logging.info(msg)
-                     logging.error(msg)
-             else:
-                 logging.info("--->>> status = " + task.jobs[0].runningJob['status'])
-                 pass
-         #try:
-         #except Exception, e :
-         #    logging.info(str(e))
-         #    logging.info(traceback.format_exc())
-
-         #### if wrapper code is not null and different from 60303 (file already exists in the SE) and 
-         #### from 70000 (output too big), the job will be resubmit banning the site where it previously run
-
-         if ((wrapperReturnCode is not None) and (wrapperReturnCode != 50117) and (wrapperReturnCode != 60303) and (wrapperReturnCode != 70000) and (wrapperReturnCode != 0)):
-             ce = str(task.jobs[0].runningJob['destination'])
-             ce_temp = task.jobs[0].runningJob['destination'].split(':')
-
-             # fix to avoid empty ce names # Fabio
-             if len(ce_temp[0])>0:
-                 ce_name = ce_temp[0] 
-             else:
-                 ce_name = "#fake_ce#"
-             # 
-
-             logging.info("--->>> ce = " + str(ce))
-             logging.info("--->>> ce_name = " + str(ce_name))
-             logging.info(">CrabRunFailureHandler<: re-submitting banning the ce "+ str(ce_name))
-             payload = str(taskId) + '::' + str(jobId) + '::' + str(ce_name)  
-             logging.info("--->>> payload = " + payload)         
-             self.publishEvent("ResubmitJob",payload)
-         #### to understand how to implement the notification #### 
-         #else:
-         #    self.publishEvent(notification)
-         
-         #### if wrapper code is 60303 (file already exists in the SE) or 70000 (output too big),
-         #### the job will be not resubmitted
-
-         if ((wrapperReturnCode == 50117) or (wrapperReturnCode == 60303) or (wrapperReturnCode == 70000)):
-             try:
-                 doNotAllowMoreSubmissions([jobId])
-             except ProdAgentException, ex:
-                 msg = "Updating max racers fields failed for job %s\n" % jobId
-                 logging.info(msg)
-                 logging.error(msg)
-             
 registerHandler(CrabRunFailureHandler(),"crabRunFailureHandler","ErrorHandler")
