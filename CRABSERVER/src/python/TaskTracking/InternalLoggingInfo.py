@@ -30,6 +30,11 @@ class InternalLoggingInfo:
        output = open(pkl, 'r')
        eve = pickle.load(output)
        output.close()
+       try:
+           import os
+           os.remove(pkl)
+       except Exception, ex:
+           pass
        return eve
 
    def toFile(self, xmlobj):
