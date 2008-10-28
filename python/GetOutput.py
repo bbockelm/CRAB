@@ -225,15 +225,22 @@ class GetOutput(Actor):
             for error in jobReport.errors:
                 if error['Type'] == 'WrapperExitCode':
                     codeValue["wrapperReturnCode"] = error['ExitStatus']
-                elif error['Type'] == 'ExeExitCode':     
-                    codeValue["applicationReturnCode"] = error['ExitStatus']
+                elif error['Type'] == 'ExeExitCode': 
+                   codeValue["applicationReturnCode"] = error['ExitStatus']
+                if error['Type'] == 'CMSException':
+                    codeValue["applicationReturnCodeOrig"] = error['ExitStatus']
                 else:
                     continue
 
         if not codeValue.has_key('wrapperReturnCode'):
             codeValue["wrapperReturnCode"] = ''
         if not codeValue.has_key('applicationReturnCode'):
-            codeValue["applicationReturnCode"] = ''
+            if codeValue.has_key('applicationReturnCodeOrig'): 
+                codeValue["applicationReturnCode"] = \
+                    codeValue["applicationReturnCodeOrig"]
+                codeValue.pop("applicationReturnCodeOrig")
+            else: 
+                codeValue["applicationReturnCode"] = ''
             
         return codeValue
 
