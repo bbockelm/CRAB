@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.74 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.74 2008/09/25 15:10:42 spiga Exp $"
+__version__ = "$Revision: 1.75 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.75 2008/10/27 18:29:22 spiga Exp $"
 
 import os, pickle, time, copy
 
@@ -288,12 +288,13 @@ class CrabServerWorkerComponent:
     def enqueueForSubmission(self, event, payload):
         items = payload.split('::')
         taskName, cmdRng, siteToBan, retryCounter = ('', '[]', '', '2')
-        
+        command = ''        
+       
         if event == 'TaskRegisterComponent:NewTaskRegistered':
             taskName, retryCounter, cmdRng = items[0:3]
         if (event == 'CRAB_Cmd_Mgr:NewCommand') and (items[3] in ['submit','resubmit']):
             taskName, retryCounter, cmdRng = items[0:3]
-        
+            command = str(items[3])
         elif event == 'ResubmitJob':
             taskId, jobId = (-1, -1)
             taskId, jobId = items[0:2]
@@ -337,10 +338,13 @@ class CrabServerWorkerComponent:
                 self.fwResultsQ.put(('', "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
                 return 
 
-        if len(taskName) > 0:            
+        if len(taskName) > 0 :
             self.swSchedQ.put( (event, taskName, cmdRng, str(retryCounter), siteToBan) )
         else:
-            logging.info("Empty task name. Bad format scheduling request. Task will be skipped")
+            if command != '' :            
+                MsgLog  = "Empty task name. Bad format scheduling request. Task will be skipped"
+                MsgLog += "\t\t event = %s, payload =  %s"%(str(event), str(items))
+                logging.info( MgLog )
         return
     
     def forceDequeuing(self, payload):
