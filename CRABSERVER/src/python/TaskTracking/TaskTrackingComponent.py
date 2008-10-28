@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.118 2008/10/26 13:07:36 spiga Exp $"
-__version__ = "$Revision: 1.118 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.119 2008/10/27 17:04:52 mcinquil Exp $"
+__version__ = "$Revision: 1.119 $"
 
 import os
 import time
@@ -160,15 +160,14 @@ class TaskTrackingComponent:
 
         #path of the logging info file
         filepath = None
-        logging.info( jobid )
         if jobid == "-1":
             filepath = os.path.join( self.args['dropBoxPath'], \
                                      taskName+self.workAdd,    \
                                      'internalog.xml'          \
                                    )
         else:
-            filepath = os.path.join( self.args['dropBoxPath'],      \
-                                     taskName+self.workAdd,         \
+            filepath = os.path.join( self.args['dropBoxPath'], \
+                                     taskName+self.workAdd,    \
                                      'internalog_'+jobid+'.xml'\
                                    )
 
@@ -216,6 +215,7 @@ class TaskTrackingComponent:
             self.__appendDbgInfo(taskName, _loginfo)
             return
 
+        # e-mail & treshold for arrived task
         if event == "CRAB_Cmd_Mgr:MailReference":
             if payload != None or payload != "" or len(payload) > 0:
                 taskName, eMail, threshold = payload.split("::")
@@ -227,6 +227,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
+        # task registered in the db
         if event == "TaskRegisterComponent:NewTaskRegistered":
 	    if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "Submitting Task: %s" % str(taskName) )
@@ -242,6 +243,7 @@ class TaskTrackingComponent:
             self.__appendDbgInfo(taskname, _loginfo)
             return
 
+        # submission performed
         if event == "CrabServerWorkerComponent:CrabWorkPerformed":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "CrabWorkPerformed: %s" % payload)
@@ -254,6 +256,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
+        # submission failed
         if event == "CrabServerWorkerComponent:CrabWorkFailed":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "CrabWorkFailed: %s" % payload)
@@ -264,6 +267,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
+        # submission failed
         if event == "CrabServerWorkerComponent:SubmitNotSucceeded" or \
             event == "CrabServerWorkerComponent:TaskNotSubmitted":
             if payload != None or payload != "" or len(payload) > 0:
@@ -274,6 +278,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
+        # fast kill performed
         if event == "CrabServerWorkerComponent:FastKill":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, event + ": " + str(payload) )
@@ -283,6 +288,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
+        # submission result
         if event == "CrabServerWorkerComponent:FatWorkerResult":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, event + ": " + str(payload) )
@@ -297,6 +303,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
+        # new command
         if event == "CRAB_Cmd_Mgr:NewCommand":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, event + ": " + str(payload) )
@@ -318,6 +325,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
+        # kill asked
         if event == "KillTask":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, event + ": " + str(payload) )
@@ -330,6 +338,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
+        # successfully killed
         if event == "TaskKilled":
             if payload != None or payload != "" or len(payload) > 0:
                 rangeKillJobs = "all"
@@ -346,6 +355,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
+        # problems killing
         if event == "TaskKilledFailed":
             if payload != None or payload != "" or len(payload) > 0: 
                 rangeKillJobs = "all"
@@ -361,6 +371,7 @@ class TaskTrackingComponent:
             self.__appendDbgInfo(taskName, _loginfo)
             return
 
+        # get output performed
         if event == "CRAB_Cmd_Mgr:GetOutputNotification":
             if payload != "" and payload != None:
                 taskName, jobstr = payload.split('::')
