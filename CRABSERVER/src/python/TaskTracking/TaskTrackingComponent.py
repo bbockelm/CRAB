@@ -267,13 +267,15 @@ class TaskTrackingComponent:
             return
 
         # submission failed
-        if event == "CrabServerWorkerComponent:SubmitNotSucceeded" or \
-            event == "CrabServerWorkerComponent:TaskNotSubmitted":
+        if event == "CrabServerWorkerComponent:SubmitNotSucceeded":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, str(event.split(":")[1]) + ": %s" % payload)
-                taskName, taskStatus, reason = payload.split("::")
+                taskName, taskStatus, reason, jobid = payload.split("::")
+                _loginfo.setdefault('txt', str(reason))
+                _loginfo.setdefault('code', str(taskStatus))
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+            self.__appendDbgInfo(taskName, _loginfo, jobid)
             logging.info(logBuf)
             return
 
@@ -284,20 +286,6 @@ class TaskTrackingComponent:
                 self.updateTaskStatus(payload, self.taskState[4])
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-            logging.info(logBuf)
-            return
-
-        # submission result
-        if event == "CrabServerWorkerComponent:FatWorkerResult":
-            if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__log(logBuf, event + ": " + str(payload) )
-                threadName, taskName, code, reason, time = payload.split("::")
-                _loginfo.setdefault('reason', str(reason))
-                _loginfo.setdefault('code', str(code))
-                _loginfo.setdefault('time', str(time))
-            else:
-                logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-            self.__appendDbgInfo(taskName, _loginfo)
             logging.info(logBuf)
             return
 
@@ -1065,8 +1053,10 @@ class TaskTrackingComponent:
                                                        self.xmlReportFileName )
                                 if succexo:
                                     self.taskSuccess( os.path.join(pathToWrite, self.xmlReportFileName), taskName )
-                                    _loginfo.setdefault('ev', "Reached %s"%(str(percentage)) )
-                                    _loginfo.setdefault('txt', "publishing task success (sending e-mail to %s)"%(str(eMail)))
+                                    _loginfo.setdefault('ev', "Archiving task")
+                                    _loginfo.setdefault('txt', "Reached %s"%(str(percentage)))
+                                    _loginfo.setdefault('success', "Number of successful jobs: %s"%(str(dictReportTot['JobSuccess'])))
+                                    _loginfo.setdefault('failed', "Number of failed jobs: %s"%(str(dictReportTot['JobFailed'])))
                                     msg = ttdb.updatingNotifiedPA( taskName, notified )
                                     logBuf = self.__log(logBuf, msg)
  			    except ZeroDivisionError, detail:
@@ -1134,12 +1124,10 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkFailed")
         self.ms.subscribeTo("TaskRegisterComponent:NewTaskRegistered")
         self.ms.subscribeTo("CrabServerWorkerComponent:SubmitNotSucceeded")
-        self.ms.subscribeTo("CrabServerWorkerComponent:TaskNotSubmitted")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:GetOutputNotification")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:MailReference")
         ## new for logging task info
-        self.ms.subscribeTo("CrabServerWorkerComponent:FatWorkerResult")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewCommand")
         self.ms.subscribeTo("KillTask")
         self.ms.subscribeTo("TTXmlLogging")
