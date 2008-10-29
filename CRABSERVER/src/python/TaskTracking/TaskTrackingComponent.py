@@ -246,12 +246,15 @@ class TaskTrackingComponent:
         if event == "CrabServerWorkerComponent:CrabWorkPerformed":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "CrabWorkPerformed: %s" % payload)
+                taskName, textreason = payload.split("::")
 		self.updateTaskStatus( taskName, self.taskState[3])
                 self.updateProxyName(taskName)
                 self.processSubmitted(taskName)
                 logBuf = self.__log(logBuf, "               task updated.")
+                _loginfo.setdefault('txt', textreason)
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+            self.__appendDbgInfo(taskName, _loginfo)
             logging.info(logBuf)
             return
 
@@ -270,12 +273,9 @@ class TaskTrackingComponent:
         if event == "CrabServerWorkerComponent:SubmitNotSucceeded":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, str(event.split(":")[1]) + ": %s" % payload)
-                taskName, taskStatus, reason, jobid = payload.split("::")
-                _loginfo.setdefault('txt', str(reason))
-                _loginfo.setdefault('code', str(taskStatus))
+                taskName, taskStatus, reason = payload.split("::")
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-            self.__appendDbgInfo(taskName, _loginfo, jobid)
             logging.info(logBuf)
             return
 
@@ -1053,10 +1053,8 @@ class TaskTrackingComponent:
                                                        self.xmlReportFileName )
                                 if succexo:
                                     self.taskSuccess( os.path.join(pathToWrite, self.xmlReportFileName), taskName )
-                                    _loginfo.setdefault('ev', "Archiving task")
-                                    _loginfo.setdefault('txt', "Reached %s"%(str(percentage)))
-                                    _loginfo.setdefault('success', "Number of successful jobs: %s"%(str(dictReportTot['JobSuccess'])))
-                                    _loginfo.setdefault('failed', "Number of failed jobs: %s"%(str(dictReportTot['JobFailed'])))
+                                    _loginfo.setdefault('ev', "Reached %s"%(str(percentage)) )
+                                    _loginfo.setdefault('txt', "publishing task success (sending e-mail to %s)"%(str(eMail)))
                                     msg = ttdb.updatingNotifiedPA( taskName, notified )
                                     logBuf = self.__log(logBuf, msg)
  			    except ZeroDivisionError, detail:
