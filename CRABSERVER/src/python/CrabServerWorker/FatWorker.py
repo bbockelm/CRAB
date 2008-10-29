@@ -91,9 +91,10 @@ class FatWorker(Thread):
         try:
             taskObj = self.blDBsession.loadTaskByName(self.taskName)
         except Exception, e:
-            logMsg = "WorkerError %s. Requested task %s does not exist. \n"%(self.myName, self.taskName) 
-            logMsg += str(e) 
-            self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), logMsg ) 
+            exc = str( traceback.format_exc() )
+            self.log.debug( exc )
+            logMsg = "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) 
+            self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), logMsg, e, exc, True ) 
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
             return
 
@@ -108,29 +109,33 @@ class FatWorker(Thread):
             if len(newRange) == 0 :
                 raise Exception('Empty range submission temptative')
         except Exception, e:
-            self.log.debug( traceback.format_exc() )
-            logMsg = "WorkerError %s. Task %s. preSubmissionCheck \n"%(self.myName, self.taskName) 
-            logMsg +=  traceback.format_exc()
-            self.sendResult(errStatus, errMsg, logMsg)
+            exc = str( traceback.format_exc() )
+            self.log.debug( exc )
+            logMsg = "WorkerError %s. Task %s. preSubmissionCheck."%(self.myName, self.taskName) 
+            self.sendResult(errStatus, errMsg, logMsg, e, "", True)
             return
                 
         try:
             sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
+            if len(matched)==0:
+                raise Exception("Unable to submit jobs %s: no sites matched!"%(str(sub_jobs)))
         except Exception, e:
-            self.log.debug( traceback.format_exc() )
-            logMsg = "WorkerError %s. Task %s. listMatch \n"%(self.myName, self.taskName) 
-            logMsg +=  traceback.format_exc()
-            self.sendResult(errStatus, errMsg, logMsg )
-            return
+            exc = str( traceback.format_exc() )
+            self.log.debug( exc )
+            logMsg = "WorkerError %s. Task %s. listMatch."%(self.myName, self.taskName) 
+            try:
+                self.sendResult(errStatus, errMsg, logMsg, e, "", True)
+            except Exception, cazzo:
+                self.log.info(str(cazzo) + "\n" + str( traceback.format_exc() ))
 
         self.log.info("FatWorker %s performing submission"%self.myName)
         try:
             submittedJobs, nonSubmittedJobs, errorTrace = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
         except Exception, e:
-            self.log.debug( traceback.format_exc() )
-            logMsg = "WorkerError %s. Task %s.\n"%(self.myName, self.taskName) 
-            logMsg +=  traceback.format_exc()
-            self.sendResult(errStatus, errMsg, logMsg )
+            exc = str( traceback.format_exc() )
+            self.log.debug( exc )
+            logMsg = "WorkerError %s. Task %s."%(self.myName, self.taskName) 
+            self.sendResult(errStatus, errMsg, logMsg, e, exc, True)
             return
 
         self.log.info("FatWorker %s evaluating submission outcomes"%self.myName)
@@ -138,20 +143,33 @@ class FatWorker(Thread):
             ## added blite safe connection to the DB
             self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
         except Exception, e:
-            self.log.debug( traceback.format_exc() )
-            logMsg = "WorkerError %s. Task %s. postSubmission \n"%(self.myName, self.taskName) 
-            logMsg +=  str(traceback.format_exc()) 
-            self.sendResult(errStatus, errMsg, logMsg )
+            exc = str( traceback.format_exc() )
+            self.log.debug( exc )
+            logMsg = "WorkerError %s. Task %s. postSubmission."%(self.myName, self.taskName) 
+            self.sendResult(errStatus, errMsg, logMsg, e, exc, True)
             return
         self.log.info("FatWorker %s finished %s"%(self.myName, self.taskName) )
         return
 
-    def sendResult(self, status, reason, logMsg):
+    def sendResult(self, status, reason, logMsg, error = '', exc = '', loggable = False):
         self.log.info(logMsg)
+        self.log.info(str(error))
+        timespent = time.time() - self.tInit
         msg = self.myName + "::" + self.taskName + "::"
-        msg += str(status) + "::" + reason + "::" + str(time.time() - self.tInit)
+        msg += str(status) + "::" + reason + "::" + str(timespent)
         self.local_queue.put((self.myName, "CrabServerWorkerComponent:FatWorkerResult", msg))
-        return
+        if loggable:
+            infotolog = {
+                         "ev": self.__class__.__name__, \
+                         "reason": logMsg,              \
+                         "txt": str(reason),            \
+                         "time": str(timespent)         \
+                        }
+            if len(str(error)) > 0:
+                infotolog.setdefault("error", str(error))
+            if len(str(exc)) > 0:
+                infotolog.setdefault("exc", str(exc))
+            self.infoLogger( self.taskName, infotolog)
 
     def parseCommandXML(self):
         status = 0
@@ -181,11 +199,12 @@ class FatWorker(Thread):
                 self.ce_blackL = [ ceB.strip().lower() for ceB in self.cfg_params['EDG.ce_black_list'].split(",") ]
 
         except Exception, e:
+            exc = traceback.format_exc()
             status = 6
             reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
-            self.sendResult(status, reason, reason)
+            self.sendResult(status, reason, reason, e, exc, True)
             self.log.info( traceback.format_exc() )
-            pload = self.taskName + "::" + str(status) + "::" + reason
+            pload = self.taskName + "::" + str(status) + "::" + reason + "::-1"
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", pload))
         return status
 
@@ -222,9 +241,10 @@ class FatWorker(Thread):
         try:
             self.blSchedSession = BossLiteAPISched(self.blDBsession, schedulerConfig)
         except Exception, e:
+            exc = traceback.format_exc()
             status = 6
-            reason = "Unable to create a BossLite Session because of the following error: \n %s"%str(e)
-            self.sendResult(status, reason, reason)
+            reason = "Unable to create a BossLite Session because of the following error: \n "
+            self.sendResult(status, reason, reason, e, exc, True)
             return 1
         return 0
 
@@ -245,6 +265,7 @@ class FatWorker(Thread):
                 try:
                     if j.runningJob['closed'] == 'Y':
                         # backup for job output (tgz files only, less load)
+                   #     sbi = SBinterface( self.seEl )
                         bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
                         basePath = task['outputDirectory']
                         if task['startDirectory'] != '': basePath = task['outputDirectory'].split(task['startDirectory'])[1]
@@ -406,8 +427,8 @@ class FatWorker(Thread):
         else:
             ## some jobs need to be resubmitted later
             if len(submittedJobs) == 0:
-                self.sendResult(-1, "Any jobs submitted for task %s"%self.taskName, \
-                    "Worker %s. Any job submitted: %d more attempts will be performed"%(self.myName, self.resubCount))
+                self.sendResult(-1, "No jobs submitted for task %s"%self.taskName, \
+                    "Worker %s. No job submitted: %d more attempts will be performed"%(self.myName, self.resubCount))
             else:
                 self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformedPartial", self.taskName))
                 self.sendResult(-2, "Partial Success for %s"%self.taskName, \
@@ -445,9 +466,10 @@ class FatWorker(Thread):
                 logMsg +=  traceback.format_exc()
                 self.log.info (logMsg) 
             # Give up message
-            self.log.info("Worker %s has no more attempts: give up with task %s"%(self.myName, self.taskName) )
-            status, reason = ("10", "Command for task %s has no more attempts. Give up."%self.taskName)
-            payload = "%s::%s::%s"%(self.taskName, status, reason)
+            reason = "Worker %s has no more attempts: give up with task %s"%(self.myName, self.taskName)
+            self.log.info( reason )
+            status = "10"
+            payload = "%s::%s::%s::%s"%(self.taskName, status, reason, "-1")
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
         return
 
@@ -765,3 +787,22 @@ class FatWorker(Thread):
         # requirement added to skip gliteCE
         req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
         return req
+
+
+    def infoLogger(self, taskname, diction, jobid = -1):
+        """
+        _infoLogger_
+        Send the default message to log the information in the task/job log info
+        """
+        from IMProv.IMProvAddEntry import Event
+        eve = Event( )
+        eve.initialize( diction )
+        import time
+        unifilename = os.path.join(self.wdir, taskname+"_spec", str(time.time())+".pkl")
+        eve.dump( unifilename )
+        message = "TTXmlLogging"
+        payload  = taskname + "::" +str(jobid) + "::" + unifilename
+        self.log.info("Sending %s."%message)
+        self.local_queue.put((self.myName, message, payload))
+        self.log.info("Registering information:\n%s"%str(diction))
+

@@ -332,9 +332,10 @@ class CrabServerWorkerComponent:
                    logging.info(str(e))
 
                 # Propagate info emulating a message in FW results queue
-                logging.info("Resubmission has no more attempts: give up with job %s"%job['name'])
-                status, reason = ("6", "Command for job %s has no more attempts. Give up."%job['name'])
-                payload = "%s::%s::%s"%(taskName, status, reason)
+                reason = "Resubmission has no more attempts: give up with job %s"%job['name']
+                status = "6"
+                logging.info( reason )
+                payload = "%s::%s::%s::%s"%(taskName, status, reason, str(job['jobId']))
                 self.fwResultsQ.put(('', "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
                 return 
 
@@ -345,6 +346,8 @@ class CrabServerWorkerComponent:
                 MsgLog  = "Empty task name. Bad format scheduling request. Task will be skipped"
                 MsgLog += "\t\t event = %s, payload =  %s"%(str(event), str(items))
                 logging.info( MgLog )
+            else:
+                logging.error("Not handled case in [%s]."%(self.enqueueForSubmission.__name__))
         return
     
     def forceDequeuing(self, payload):
