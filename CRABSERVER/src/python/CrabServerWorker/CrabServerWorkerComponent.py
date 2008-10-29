@@ -138,6 +138,7 @@ class CrabServerWorkerComponent:
                 while True:
                     try:
                         senderId, evt, pload = self.fwResultsQ.get_nowait()
+                        logging.info("Publishing " + str(evt))
                         self.ms.publish(evt, pload)
                         logging.debug("Publish Event: %s %s" % (evt, pload))
                     except Queue.Empty, e: break
@@ -332,10 +333,9 @@ class CrabServerWorkerComponent:
                    logging.info(str(e))
 
                 # Propagate info emulating a message in FW results queue
-                reason = "Resubmission has no more attempts: give up with job %s"%job['name']
-                status = "6"
-                logging.info( reason )
-                payload = "%s::%s::%s::%s"%(taskName, status, reason, str(job['jobId']))
+                logging.info("Resubmission has no more attempts: give up with job %s"%job['name'])
+                status, reason = ("6", "Command for job %s has no more attempts. Give up."%job['name'])
+                payload = "%s::%s::%s"%(taskName, status, reason)
                 self.fwResultsQ.put(('', "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
                 return 
 
@@ -346,8 +346,6 @@ class CrabServerWorkerComponent:
                 MsgLog  = "Empty task name. Bad format scheduling request. Task will be skipped"
                 MsgLog += "\t\t event = %s, payload =  %s"%(str(event), str(items))
                 logging.info( MgLog )
-            else:
-                logging.error("Not handled case in [%s]."%(self.enqueueForSubmission.__name__))
         return
     
     def forceDequeuing(self, payload):
@@ -410,6 +408,7 @@ class CrabServerWorkerComponent:
             delay += 1
             dT = delay/float(self.maxThreads)
             waitTime = '%s:%s:%s'%(str(dT/3600).zfill(2), str((dT/60)%60).zfill(2), str(dT%60).zfill(2))
+            logging.info("Publishing " + str(type))
             self.ms.publish(type, payload, waitTime)
             self.ms.commit()
         self.taskPool = {}
