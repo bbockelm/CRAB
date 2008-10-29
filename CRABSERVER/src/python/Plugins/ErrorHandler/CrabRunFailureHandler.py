@@ -247,6 +247,6 @@ class CrabRunFailureHandler(HandlerInterface):
         loggindict.setdefault("status", task.jobs[0].runningJob['status'])
         loggindict.setdefault("txt", textmsg)
         ## send information to log
-        self.infoLogger(task['name'], jobId, loggindict)
+        #self.infoLogger(task['name'], jobId, loggindict)
 
 registerHandler(CrabRunFailureHandler(),"crabRunFailureHandler","ErrorHandler")
