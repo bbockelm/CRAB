@@ -907,7 +907,6 @@ class Cmssw(JobType):
         import tarfile
         try: # create tar ball
             tar = tarfile.open(self.tgzNameWithPath, "w:gz")
-            tar.dereference=True
             ## First find the executable
             if (self.executable != ''):
                 exeWithPath = self.scram.findFile_(executable)
@@ -990,8 +989,10 @@ class Cmssw(JobType):
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             ##### AdditionalFiles
+            tar.dereference=True
             for file in self.additional_inbox_files:
                 tar.add(file,string.split(file,'/')[-1])
+            tar.dereference=False
             common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
