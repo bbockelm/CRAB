@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.28 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.28 2008/10/27 10:42:15 spiga Exp $"
+__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.29 2008/10/27 12:00:04 spiga Exp $"
 
 import os
 import time
@@ -314,6 +314,12 @@ class CRAB_AS_beckend:
             XML content if successfull
             otherwise the methods return the error condition
         """
+        if taskUniqName is None or statusType is None:
+            retStatus = "Error: unrecognized [%s] of status information required for [%s]"%(str(statusType),str(taskUniqName))
+            handledStatus = base64.urlsafe_b64encode(zlib.compress(retStatus))
+            handledStatus += "="*( len(handledStatus)%8 )
+            return handledStatus
+
         self.log.info("TaskStatus requested "+taskUniqName+"(%s)"%statusType)
         retStatus, prjUName_fRep = ("", "")
 
