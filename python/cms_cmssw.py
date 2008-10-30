@@ -907,6 +907,7 @@ class Cmssw(JobType):
         import tarfile
         try: # create tar ball
             tar = tarfile.open(self.tgzNameWithPath, "w:gz")
+            tar.dereference=True
             ## First find the executable
             if (self.executable != ''):
                 exeWithPath = self.scram.findFile_(executable)
