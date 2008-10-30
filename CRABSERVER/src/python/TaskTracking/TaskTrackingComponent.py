@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.119 2008/10/27 17:04:52 mcinquil Exp $"
-__version__ = "$Revision: 1.119 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.123 2008/10/29 22:38:27 mcinquil Exp $"
+__version__ = "$Revision: 1.123 $"
 
 import os
 import time
@@ -273,7 +273,10 @@ class TaskTrackingComponent:
         if event == "CrabServerWorkerComponent:SubmitNotSucceeded":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, str(event.split(":")[1]) + ": %s" % payload)
-                taskName, taskStatus, reason = payload.split("::")
+                taskName, taskStatus, reason, jobid = payload.split("::")
+	        _loginfo.setdefault('txt', str(reason)) 	 
+	        _loginfo.setdefault('code', str(taskStatus))
+                self.__appendDbgInfo(taskName, _loginfo) #, jobid)
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
             logging.info(logBuf)
@@ -583,7 +586,7 @@ class TaskTrackingComponent:
                                                  self.xmlReportFileName), \
                                    taskName )
         else:
-            self.taskFailed(origTaskName, strEmail[0:len(strEmail)-1], userName)
+            self.taskFailed(origTaskName, strEmail[0:len(strEmail)-1], userName, taskName)
 	 
 
     def updateTaskKilled ( self, taskName, status ):
@@ -777,7 +780,7 @@ class TaskTrackingComponent:
         logBuf = ""
         try:
             ms_sem.acquire()
-            self.msThread.publish("TaskSuccess", taskPath)
+            self.msThread.publish("TaskSuccess", taskPath+"::"+taskName)
             self.msThread.commit()
         finally:
             ms_sem.release()
@@ -786,7 +789,7 @@ class TaskTrackingComponent:
         logging.info(logBuf)
 
 
-    def taskFailed( self, taskName, eMaiList, userName ):
+    def taskFailed( self, taskName, eMaiList, userName, fullname ):
         """
         _taskFailed_
 
@@ -794,7 +797,7 @@ class TaskTrackingComponent:
 
         """
         logBuf = ""
-        payload = taskName + ":" + userName + ":" + eMaiList
+        payload = taskName + ":" + userName + ":" + eMaiList + ":" + fullname
         try:
             ms_sem.acquire()
             self.msThread.publish("TaskFailed", payload)
@@ -814,7 +817,7 @@ class TaskTrackingComponent:
         logBuf = ""
         try:
             ms_sem.acquire()
-            self.msThread.publish("TaskNotSubmitted", taskPath) 
+            self.msThread.publish("TaskNotSubmitted", taskPath+"::"+taskName) 
             self.msThread.commit()
         finally:
             ms_sem.release()
@@ -1110,8 +1113,13 @@ class TaskTrackingComponent:
         self.msThread = MessageService()
 
         # register
-        self.ms.registerAs("TaskTracking")
-        self.msThread.registerAs("TaskTrackingThread")
+        try:
+            self.ms.registerAs("TaskTracking")
+            self.msThread.registerAs("TaskTrackingThread")
+        except Exception, ex:
+            logging.error("Problem registering component\n [%s]"%str(ex))
+            logging.error(str(traceback.format_exc()))
+            exit
 
         # subscribe to messages
         self.ms.subscribeTo("TaskTracking:StartDebug")
