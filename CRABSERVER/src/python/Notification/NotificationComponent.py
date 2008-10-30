@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.20 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.20 2008/09/10 16:30:13 mcinquil Exp $"
+__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.21 2008/09/26 07:35:02 spiga Exp $"
 
 import os
 import socket
@@ -165,7 +165,8 @@ class NotificationComponent:
             self.MainLoop()
         except Exception, ex:
             import traceback
-            logging.info(str(traceback.format_exc()))
+            logging.error(str(ex))
+            logging.error(str(traceback.format_exc()))
         
     #--------------------------------------------------------------------------------------
     def MessageJobParser(self, message):
@@ -274,46 +275,30 @@ class NotificationComponent:
         while True:
             type, payload = self.ms.get(True) # this call is blocking...
             logging.info("  -> " + str(type) + " <-  ")
-            if type == "JobSuccess":
-	    	if not self.PERJOB:
-                        self.ms.commit()
-			continue
-			
-                pieces = []
-                pieces = self.MessageJobParser(payload)
-		
-		if not pieces:
-			continue
-			
-                if len(pieces) >= 3:
-                    jobid = pieces[0]
-		    task  = pieces[1]
-                    #ts = pieces[1]
-                    own = pieces[2]
-                    newJ = JobInfo.JobInfo(jobid, task, own)
-                    self.jobs.lock()
-                    msg = "Notification.NotificationComponent.MainLoop: Adding new job ["
-                    msg += jobid + "] owned by [" + own + "]"
-                    logging.info( msg )
-                    self.jobs.pushJob( newJ )
-                    self.jobs.unlock()
-                    self.ms.commit()
-                    continue
-            
+
+            ## info to the logger ##
+            excep = ""
+            trace = ""
+            tasks = []
+            mails = ""
+            txt   = ""
+
 	    if type == "TaskSuccess" or type == "TaskNotSubmitted":
 	    	if not self.PERTASK:
 			continue
-		C = self.MessageTaskParser( payload )
+                pathe, taskname = payload.split("::")
+		C = self.MessageTaskParser( pathe )
 		
 		if not C:
 			logging.error("Notification.NotificationComponent.MainLoop: MessageTaskParser returned a null object. Continuing to next iteration...")
 			continue
 			
 		self.tasks.lock()
-		msg = "Notification.NotificationComponent.MainLoop: Adding new task ["
-                msg += C.getTaskname() + "] owned by [" + ",".join(C.getUserMail()) + "]"
-                logging.info( msg )
-                #print "Notification.NotificationComponent.MainLoop: [%s]\n" % C.getTaskReport()
+                tasks = [taskname]
+                mails = str(C.getUserMail())
+		txt = "Notification.NotificationComponent.MainLoop: Adding new task ["
+                txt += str(tasks) + "] owned by [" + ",".join(mails) + "]"
+                logging.info( txt )
 		self.tasks.pushTask( C )
 		self.tasks.unlock()
 		self.ms.commit()
@@ -334,93 +319,109 @@ class NotificationComponent:
 
             if type == "TaskLifeManager:TaskNotifyLife":
                 pieces = payload.split("::")
-                if len(pieces) < 3:
-                    msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload ["
-                    msg += payload + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
-                emaillist = pieces[3].split(",")
-                taskname = pieces[0]
-                lifetime = pieces[1]
-                username = pieces[2]
-                
-                if not emaillist:
-                    msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload"
-                    msg += " email's list [" + pieces[2] + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
+                try: 
+                    if len(pieces) < 3:
+                        msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload ["
+                        msg += payload + "]"
+                        raise Exception(msg)
 
-                if len(emaillist) < 1:
-                    msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload"
-                    msg += " email's list [" + pieces[2] + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
+                    emaillist = pieces[3].split(",")
+                    taskname = pieces[0]
+                    lifetime = pieces[1]
+                    username = pieces[2]
+                    fullname = pieces[4]
 
-                if len(emaillist) == 1:
-                    if emaillist[0] == "":
-                        msg = "Notification.NotificationComponent.MainLoop: empty email address ["
-                        msg += emaillist[0] + "]"
-                        logging.error("%s" % msg)
-                        self.ms.commit()
-                        continue
+                    ## info to log ##
+                    tasks = str(fullname)
+                    mails = str(emaillist)
 
-                infoFile = "/tmp/crabNotifInfoFile." + str(time.time())
+                    if not emaillist:
+                        msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload"
+                        msg += " email's list [" + pieces[2] + "]"
+                        raise Exception(msg)
 
-                try:
-                    os.remove(infoFile)
-                except OSError:
-                    pass
-                #logging.info("lifetime: "+str(lifetime))
-                hours = 0
-                mins = 0
-                secs = 0
-                if lifetime.find(":") != -1:
-                    hours, mins, secs = lifetime.split(":")
-                    hours = int(hours)
-                    mins = int(mins)
+                    if len(emaillist) < 1:
+                        msg = "Notification.NotificationComponent.MainLoop: error parsing "+type+"'s payload"
+                        msg += " email's list [" + pieces[2] + "]"
+                        raise Exception(msg)
+ 
+                    if len(emaillist) == 1:
+                        if emaillist[0] == "":
+                            msg = "Notification.NotificationComponent.MainLoop: empty email address ["
+                            msg += emaillist[0] + "]"
+                            raise Exception(msg)
+ 
+                    infoFile = "/tmp/crabNotifInfoFile." + str(time.time())
+
                     try:
-                        secs = int(secs)
-                    except Exception:
+                        os.remove(infoFile)
+                    except OSError:
                         pass
-                else:
-                    secs = int(lifetime)
-                days = 0
-                if hours > 24:
-                    days = int(hours/24)
-                    hours = int(hours - days * 24)
 
-                timeMsg = " "
-                if days > 0:
-                    timeMsg += str(days) + " days "
-                if hours > 0:
-                    timeMsg += str(hours) + " hours "
-                if mins > 0:
-                    timeMsg += str(mins) + " minutes "
-                if secs > 0:
-                    timeMsg += str(secs) + " seconds"
+                    hours = 0
+                    mins = 0
+                    secs = 0
+                    if lifetime.find(":") != -1:
+                        hours, mins, secs = lifetime.split(":")
+                        hours = int(hours)
+                        mins = int(mins)
+                        try:
+                            secs = int(secs)
+                        except Exception:
+                            pass
+                    else:
+                        secs = int(lifetime)
+                    days = 0
+                    if hours > 24:
+                        days = int(hours/24)
+                        hours = int(hours - days * 24)
 
-                mailMess = "The task [" + taskname + "] owned by [" + username + "] is ended and will be deleted within " + timeMsg
-                mailMess += ".\nIf you have to retrieve the outputs of those jobs, you should execute the command:\n\n"
-                mailMess += "\tcrab -getoutput -c " + taskname
-                mailMess += "\n\nfrom your working area."
+                    timeMsg = " "
+                    if days > 0:
+                        timeMsg += str(days) + " days "
+                    if hours > 0:
+                        timeMsg += str(hours) + " hours "
+                    if mins > 0:
+                        timeMsg += str(mins) + " minutes "
+                    if secs > 0:
+                        timeMsg += str(secs) + " seconds"
 
-                msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
-                logging.info( msg )
+                    mailMess = "The task [" + taskname + "] owned by [" + username + "] is ended and will be deleted within " + timeMsg
+                    mailMess += ".\nIf you have to retrieve the outputs of those jobs, you should execute the command:\n\n"
+                    mailMess += "\tcrab -getoutput -c " + taskname
+                    mailMess += "\n\nfrom your working area."
 
-                completeMessage = 'Subject:"'+str(self.serverName)+' Notification: Task Cleaning"\n\n' + mailMess
-                try:
-                    self.mailer.SendMail(emaillist, completeMessage)
-                except RuntimeError, mess:
-                    logging.error(mess)
-                #except gaierror, mess:
-                #    logging.error("gaierror: " + mess )
-                #except timeout, mess:
-                #    logging.error("timeout error: " + mess )
+                    txt = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
+                    logging.info( txt )
+
+                    completeMessage = 'Subject:"'+str(self.serverName)+' Notification: Task Cleaning"\n\n' + mailMess
+                    try:
+                        self.mailer.SendMail(emaillist, completeMessage)
+                    except RuntimeError, mess:
+                        ## info to log ##
+                        import traceback 
+                        excep = str(mess)
+                        trace = str(traceback.format_exc())
+
+                        logging.error(mess)
+                        logging.error(trace)
+                    except Exception, exc:
+                        ## info to log ##
+                        import traceback
+                        excep = str(exc)
+                        trace = str(traceback.format_exc())
+
+                        logging.error(exc)
+                        logging.error(trace)
+
                 except Exception, exc:
-                    logging.error("Problem sending mail: " + str(exc)) 
+                        ## info to log ##
+                        import traceback
+                        excep = str(exc)
+                        trace = str(traceback.format_exc())
+
+                        logging.error(exc)
+                        logging.error(trace)
 
                 self.ms.commit()
 
@@ -475,197 +476,185 @@ class NotificationComponent:
                 try:
                     self.mailer.SendMail(emaillist, completeMessage)
                 except RuntimeError, mess:
-                    logging.error(mess)
-                #except gaierror, mess:
-                #    logging.error("gaierror: " + mess )
-                #except timeout, mess:
-                #    logging.error("timeout error: " + mess )
-                #except:
-                #    print "Unexpected error: ", sys.exc_info()[0]
+                        ## info to log ##
+                        import traceback
+                        excep = str(mess)
+                        trace = str(traceback.format_exc())
+
+                        logging.error(mess)
+                        logging.error(trace)
                 except Exception, exc:
-                    logging.error("Problem sending mail: " + str(exc))
+                        ## info to log ##
+                        import traceback
+                        excep = str(exc)
+                        trace = str(traceback.format_exc())
+
+                        logging.error(exc)
+                        logging.error(trace)
 
                 self.ms.commit()
-
 
 ##-------------------------------------------------------------------
             
             if type == "TaskFailed":
                 pieces = payload.split(":")
-                if len(pieces) < 3:
-                    msg = "Notification.NotificationComponent.MainLoop: error parsing TaskFailed's payload ["
-                    msg += payload + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
+                try:
+                    if len(pieces) < 3:
+                        msg = "Notification.NotificationComponent.MainLoop: error parsing TaskFailed's payload ["
+                        msg += payload + "]"
 
-                emaillist = pieces[2].split(",")
-                taskname = pieces[0]
-                username = pieces[1]
+                    emaillist = pieces[2].split(",")
+                    taskname = pieces[0]
+                    username = pieces[1]
 
-                ##print "emaillist=[%s]\n" % emaillist
-                 
-                if not emaillist:
-                    msg = "Notification.NotificationComponent.MainLoop: error parsing TaskFailed payload's"
-                    msg += " email's list [" + pieces[2] + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
-
-                if len(emaillist) < 1:
-                    msg = "Notification.NotificationComponent.MainLoop: error parsing TaskFailed payload's"
-                    msg += " email's list [" + pieces[2] + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
-
-                if len(emaillist) == 1:
-                    if emaillist[0] == "":
-                        msg = "Notification.NotificationComponent.MainLoop: empty email address ["
-                        msg += emaillist[0] + "]"
-                        logging.error("%s" % msg)
-                        self.ms.commit()
-                        continue
+                    ## info to log ##
+                    tasks = [str(pieces[3])]
+                    mails = str(emaillist)
  
-                infoFile = "/tmp/crabNotifInfoFile." + str(time.time())
+                    if not emaillist:
+                        msg = "Notification.NotificationComponent.MainLoop: error parsing TaskFailed payload's"
+                        msg += " email's list [" + pieces[2] + "]"
+                        raise Exception(msg)
 
-                try:
-                    os.remove(infoFile)
-                except OSError:
-                    pass
+                    if len(emaillist) < 1:
+                        msg = "Notification.NotificationComponent.MainLoop: error parsing TaskFailed payload's"
+                        msg += " email's list [" + pieces[2] + "]"
+                        raise Exception(msg)
 
-                mailMess = "The task [" + taskname + "] owned by [" + username + "] is Failed"
-                #FILE = open(infoFile,"w")
-        	#FILE.write(mailMess)
-        	#FILE.close()
+                    if len(emaillist) == 1:
+                        if emaillist[0] == "":
+                            msg = "Notification.NotificationComponent.MainLoop: empty email address ["
+                            msg += emaillist[0] + "]"
+                            raise Exception(msg)
+ 
+                    infoFile = "/tmp/crabNotifInfoFile." + str(time.time())
+ 
+                    try:
+                        os.remove(infoFile)
+                    except OSError:
+                        pass
+ 
+                    mailMess = "The task [" + taskname + "] owned by [" + username + "] is Failed"
+  
+                    txt = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
+                    logging.info( txt )
+   
+                    completeMessage = "Subject:\""+str(self.serverName)+" Server Notification: Task Failed! \"\n\n" + mailMess
+                  
+                    try:
+                        self.mailer.SendMail(emaillist, completeMessage)
+                    except RuntimeError, mess:
+                        ## info to log ##
+                        import traceback
+                        excep = str(mess)
+                        trace = str(traceback.format_exc())
 
-                #mainEmail = emaillist.pop(0)
-                #CCRecipients = ",".join( emaillist )
-		
-		#toaddrs  = emaillist
-		    
-#                if len(pieces[2].split(",")) >=2:
-#                    cmd = "mail -s \"CRAB Server Notification: Task Failed! \" "
-#                    cmd += mainEmail + " -c " + CCRecipients + " < " + infoFile
-#		    
-#		    fromaddr = self.senderName
-#		    toaddrs  = emaillist
-#                else:
-#                    cmd = "mail -s \"CRAB Server Notification: Task Failed! \" "
-#                    cmd += mainEmail + " < " + infoFile
+                        logging.error(mess)
+                        logging.error(trace)
+                    except Exception, exc:
+                        ## info to log ##
+                        import traceback
+                        excep = str(exc)
+                        trace = str(traceback.format_exc())
 
-##		try:
-##			#server = smtplib.SMTP('crabas.lnl.infn.it')
-##			server = smtplib.SMTP( self.smtpServer )
-##			server.set_debuglevel(1)
-##			server.sendmail(self.senderName, emaillist, mailMess)
-##			server.quit()
-			
-##		except SMTPException, ex:
-##			errmsg = "ERROR! " + str(ex)
-##			logging.error(errmsg)
+                        logging.error(exc)
+                        logging.error(trace)
 
-                msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
-                logging.info( msg )
+                except Exception, exc:
+                    ## info to log ##
+                    import traceback
+                    excep = str(exc)
+                    trace = str(traceback.format_exc())
 
-                completeMessage = "Subject:\""+str(self.serverName)+" Server Notification: Task Failed! \"\n\n" + mailMess
-                
-                try:
-                    self.mailer.SendMail(emaillist, completeMessage)
-                except RuntimeError, mess:
-                    logging.error(mess)
-                
-		#logging.info( cmd )
-                
-	        #retCode = os.system( cmd )
+                    logging.error(exc)
+                    logging.error(trace)
 
-        	#if(retCode != 0):
-                 #   errmsg = "ERROR! Command ["+cmd+"] FAILED!"
-                  #  logging.error(errmsg)
-                    
-                #try:
-                #    os.remove(infoFile)
-                #except OSError:
-                #    pass
-                
                 self.ms.commit()
 
 ##-------------------------------------------------------------------
 
             if type == "ProxyExpiring":
                 pieces = payload.split("::")
-                if len(pieces) < 3:
-                    msg = "Notification.NotificationComponent.MainLoop: error parsing ProxyExpiring's payload ["
-                    msg += payload + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
-
-                emaillist = pieces[0].split(",")
-                #tasknames = eval(pieces[1])
-                proxylife = pieces[1]
-                taskslist = eval(file(str(pieces[2]), 'r').read())
-                os.remove(str(pieces[2]))
-
-                ##print "emaillist=[%s]\n" % emaillist
-
-                if not emaillist:
-                    msg = "Notification.NotificationComponent.MainLoop: error parsing ProxyExpiring's payload"
-                    msg += " email's list [" + pieces[3] + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
-
-                if len(emaillist) < 1:
-                    msg = "Notification.NotificationComponent.MainLoop: error parsing ProxyExpiring's payload"
-                    msg += " email's list [" + pieces[3] + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
-
-                if len(emaillist) == 1:
-                    if emaillist[0] == "":
-                        msg = "Notification.NotificationComponent.MainLoop: empty email address ["
-                        msg += emaillist[0] + "]"
-                        logging.error("%s" % msg)
-                        self.ms.commit()
-                        continue
-
-                hours, mins, secs = self.calcFromSeconds( proxylife )
-                timeMsg = ""
-                if hours > 0:
-                    timeMsg += str(hours) + " hours "
-                if mins > 0:
-                    timeMsg += str(mins) + " minutes "
-                if secs > 0:
-                    timeMsg += str(secs) + " seconds"
-
-                stringtask = "\n\t"
-                for taskname in taskslist:
-                    stringtask += str(taskname) + "\n\t"
-
-                mailMess = "Your proxy will expires in " + timeMsg + ". You can renew it doing:\n"
-                mailMess += "\t crab -renewProxy\n\n"
-                mailMess += "Your active tasks:\n" + stringtask
-                mailMess += "\non the server:\n\t" + self.serverName
-               
-                msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
-                logging.info( msg )
-
-                import socket
-                completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Expiring Proxy!"\n\n' + mailMess
                 try:
-                    self.mailer.SendMail(emaillist, completeMessage)
-                except RuntimeError, mess:
-                    logging.error(mess)
-                #except gaierror, mess:
-                #    logging.error("gaierror: " + mess )
-                #except timeout, mess:
-                #    logging.error("timeout error: " + mess )
-                #except:
-                #    print "Unexpected error: ", sys.exc_info()[0]
+                    if len(pieces) < 3:
+                        msg = "Notification.NotificationComponent.MainLoop: error parsing ProxyExpiring's payload ["
+                        msg += payload + "]"
+
+                    emaillist = pieces[0].split(",")
+                    proxylife = pieces[1]
+                    taskslist = eval(file(str(pieces[2]), 'r').read())
+                    os.remove(str(pieces[2]))
+ 
+                    ## info to log ##
+                    tasks = taskslist
+                    mails = str(emaillist)
+                    
+                    if not emaillist:
+                        msg = "Notification.NotificationComponent.MainLoop: error parsing ProxyExpiring's payload"
+                        msg += " email's list [" + pieces[3] + "]"
+                        raise Exception(msg)
+   
+                    if len(emaillist) < 1:
+                        msg = "Notification.NotificationComponent.MainLoop: error parsing ProxyExpiring's payload"
+                        msg += " email's list [" + pieces[3] + "]"
+                        raise Exception(msg)
+
+                    if len(emaillist) == 1:
+                        if emaillist[0] == "":
+                            msg = "Notification.NotificationComponent.MainLoop: empty email address ["
+                            msg += emaillist[0] + "]"
+                            raise Exception(msg)
+
+                    hours, mins, secs = self.calcFromSeconds( proxylife )
+                    timeMsg = ""
+                    if hours > 0:
+                        timeMsg += str(hours) + " hours "
+                    if mins > 0:
+                        timeMsg += str(mins) + " minutes "
+                    if secs > 0:
+                        timeMsg += str(secs) + " seconds"
+   
+                    stringtask = "\n\t"
+                    for taskname in taskslist:
+                        stringtask += str(taskname) + "\n\t"
+  
+                    mailMess = "Your proxy will expires in " + timeMsg + ". You can renew it doing:\n"
+                    mailMess += "\t crab -renewProxy\n\n"
+                    mailMess += "Your active tasks:\n" + stringtask
+                    mailMess += "\non the server:\n\t" + self.serverName
+                
+                    txt = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
+                    logging.info( txt )
+
+                    import socket
+                    completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Expiring Proxy!"\n\n' + mailMess
+                    try:
+                        self.mailer.SendMail(emaillist, completeMessage)
+                    except RuntimeError, mess:
+                        ## info to log ##
+                        import traceback
+                        excep = str(mess)
+                        trace = str(traceback.format_exc())
+
+                        logging.error(mess)
+                        logging.error(trace)
+                    except Exception, exc:
+                        ## info to log ##
+                        import traceback
+                        excep = str(exc)
+                        trace = str(traceback.format_exc())
+
+                        logging.error(exc)
+                        logging.error(trace)
+
                 except Exception, exc:
-                    logging.error("Problem sending mail: " + str(exc))
+                    ## info to log ##
+                    import traceback
+                    excep = str(exc)
+                    trace = str(traceback.format_exc())
+
+                    logging.error(exc)
+                    logging.error(trace)
 
                 self.ms.commit()
 
@@ -676,9 +665,6 @@ class NotificationComponent:
                 if len(pieces) < 2:
                     msg = "Notification.NotificationComponent.MainLoop: error parsing TaskLifeManager::CleanStorage's payload ["
                     msg += payload + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
 
                 emaillist = pieces[0].split(",")
                 cmdpath = str(pieces[1])
@@ -686,24 +672,18 @@ class NotificationComponent:
                 if not emaillist:
                     msg = "Notification.NotificationComponent.MainLoop: error parsing TaskLifeManager::CleanStorage's payload"
                     msg += " email's list [" + pieces[3] + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
+                    raise Exception(msg)
 
                 if len(emaillist) < 1:
                     msg = "Notification.NotificationComponent.MainLoop: error parsing TaskLifeManager::CleanStorage's payload"
                     msg += " email's list [" + pieces[3] + "]"
-                    logging.error("%s" % msg)
-                    self.ms.commit()
-                    continue
+                    raise Exception(msg)
 
                 if len(emaillist) == 1:
                     if emaillist[0] == "":
                         msg = "Notification.NotificationComponent.MainLoop: empty email address ["
                         msg += emaillist[0] + "]"
-                        logging.error("%s" % msg)
-                        self.ms.commit()
-                        continue
+                        raise Exception(msg)
 
                 mailMess = "Dear Admin, there are sandboxes not anymore needed on the storage area used by "+str(self.serverName)+".\n" + \
                            "Execute this script to clean them:\n\t python "+cmdpath+" your_proxy_full_path"
@@ -711,23 +691,43 @@ class NotificationComponent:
                 msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                 logging.info( msg )
 
+               
+
                 import socket
                 completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Clean Storage Area!"\n\n' + mailMess
                 try:
                     self.mailer.SendMail(emaillist, completeMessage)
                 except RuntimeError, mess:
-                    logging.error(mess)
-                #except gaierror, mess:
-                #    logging.error("gaierror: " + mess )
-                #except timeout, mess:
-                #    logging.error("timeout error: " + mess )
-                #except:
-                #    print "Unexpected error: ", sys.exc_info()[0]
+                        ## info to log ##
+                        import traceback
+                        excep = str(mess)
+                        trace = str(traceback.format_exc())
+
+                        logging.error(mess)
+                        logging.error(trace)
                 except Exception, exc:
-                    logging.error("Problem sending mail: " + str(exc))
+                        ## info to log ##
+                        import traceback
+                        excep = str(exc)
+                        trace = str(traceback.format_exc())
+
+                        logging.error(exc)
+                        logging.error(trace)
 
                 self.ms.commit()
 
+            if type in ["TaskSuccess", "TaskFailed", "TaskNotSubmitted", "TaskLifeManager:TaskNotifyLife", "ProxyExpiring"]:
+                logging.info("Building info")
+                for task in tasks:
+                    logging.info("Building info for task [%s]"%task)
+                    buildinfo = {\
+                                 "ev":     type,       \
+                                 "reason": str(excep), \
+                                 "exc":    str(trace), \
+                                 "mails":  str(mails), \
+                                 "txt":    txt         \
+                                }
+                    self.infoLogger(task, buildinfo)
 
 
     def calcFromSeconds(self, totSec):
@@ -742,3 +742,18 @@ class NotificationComponent:
 
         return ore, minuti, secondi
 
+    def infoLogger(self, taskname, diction, jobid = -1):
+        """             
+        _infoLogger_
+        Send the default message to log the information in the task/job log info
+        """ 
+        from IMProv.IMProvAddEntry import Event
+        eve = Event( )
+        eve.initialize( diction )
+        import time
+        unifilename = os.path.join(self.args["ComponentDir"], taskname+str(time.time())+".pkl")
+        eve.dump( unifilename )
+        message = "TTXmlLogging"
+        payload  = taskname + "::" +str(jobid) + "::" + unifilename
+        self.ms.publish(message, payload)
+        logging.info("DONE")
