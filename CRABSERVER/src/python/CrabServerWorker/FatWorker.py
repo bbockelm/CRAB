@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.130 2008/10/29 18:49:46 mcinquil Exp $"
-__version__ = "$Revision: 1.130 $"
+__revision__ = "$Id: FatWorker.py,v 1.132 2008/10/30 09:11:42 mcinquil Exp $"
+__version__ = "$Revision: 1.132 $"
 import string
 import sys, os
 import time
@@ -394,9 +394,9 @@ class FatWorker(Thread):
 
         ## if all the jobs have been submitted send a success message
         if len(resubmissionList) == 0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs) == 0:
-
-            self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. Successful complete submission for task %s"%self.taskName )
-            self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName))
+            messagelog = "Successful complete submission for task %s"%self.taskName
+            self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. %s"%messagelog )
+            self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName+"::"+messagelog))
 
             onDemandRegDone = False
             self.log.info("Submitted jobs: " + str(submittedJobs))
@@ -427,10 +427,9 @@ class FatWorker(Thread):
                 self.sendResult(-1, "No jobs submitted for task %s"%self.taskName, \
                     "Worker %s. No job submitted: %d more attempts will be performed"%(self.myName, self.resubCount))
             else:
-                self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformedPartial", self.taskName))
-                self.sendResult(-2, "Partial Success for %s"%self.taskName, \
-                    "Worker %s. Partial submission: %d more attempts \
-                     will be performed"%(self.myName, self.resubCount))
+                messagelog = "Partial submission: %d more attempts will be performed"%self.resubCount
+                self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformedPartial", self.taskName+"::"+messagelog))
+                self.sendResult(-2, "Partial Success for %s"%self.taskName, "Worker %s. %s"%(self.myName, messagelog))
 
             # propagate the re-submission attempt
             self.cmdRng = ','.join(map(str, resubmissionList))
