@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.34 2008/09/24 14:57:43 mcinquil Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.35 2008/10/09 14:35:38 mcinquil Exp $"
+__version__ = "$Revision: 1.35 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -726,7 +726,7 @@ class TaskLifeManagerComponent:
             ttutil = TaskTrackingUtil( self.args['allow_anonymous'] )
             origTaskName = ttutil.getOriginalTaskName(taskName)
 
-            payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ str(owner) +"::"+ str(mails)
+            payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ str(owner) +"::"+ str(mails) +"::"+ taskName
 
             logging.info(" Publishing ['"+ mexage +"']")
             logging.info("   payload = " + payload )
