@@ -49,14 +49,16 @@ class Submitter(Actor):
             tmp_jList = chosenJobsList
         # build job list
         from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
-        self.blackWhiteListParser = SEBlackWhiteListParser(self.cfg_params,common.logger)
+        seWhiteList = cfg_params.get('EDG.se_white_list',[])
+        seBlackList = cfg_params.get('EDG.se_black_list',[])
+        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
         for job in common._db.getTask(tmp_jList).jobs:
-            cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(job['dlsDestination']) 
+            cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(job['dlsDestination'])
             if (cleanedBlackWhiteList != '') or (datasetpath == None):
                 if ( job.runningJob['status'] in ['C','RC'] and \
                   job.runningJob['statusScheduler'] in ['Created',None]):
                     jobSetForSubmission +=1
-                    nj_list.append(job['id']) 
+                    nj_list.append(job['id'])
                 else:
                     continue
             else :

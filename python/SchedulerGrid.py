@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.80 2008/10/09 16:58:17 ewv Exp $"
-__version__ = "$Revision: 1.80 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.81 2008/10/24 16:02:48 ewv Exp $"
+__version__ = "$Revision: 1.81 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -35,7 +35,9 @@ class SchedulerGrid(Scheduler):
         Scheduler.configure(self,cfg_params)
 
         # init BlackWhiteListParser
-        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params,common.logger)
+        seWhiteList = cfg_params.get('EDG.se_white_list',[])
+        seBlackList = cfg_params.get('EDG.se_black_list',[])
+        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
 
         self.proxyValid=0
         self.dontCheckProxy=int(cfg_params.get("EDG.dont_check_proxy",0))

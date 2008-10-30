@@ -18,8 +18,11 @@ class Cmssw(JobType):
 
         self._params = {}
         self.cfg_params = cfg_params
+
         # init BlackWhiteListParser
-        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params, common.logger)
+        seWhiteList = cfg_params.get('EDG.se_white_list',[])
+        seBlackList = cfg_params.get('EDG.se_black_list',[])
+        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
 
         ### Temporary patch to automatically skip the ISB size check:
         server=self.cfg_params.get('CRAB.server_name',None)

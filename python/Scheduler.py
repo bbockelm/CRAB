@@ -42,7 +42,9 @@ class Scheduler :
 
     def configure(self, cfg_params):
         self._boss.configure(cfg_params)
-        self.blackWhiteListParser = SEBlackWhiteListParser(cfg_params, common.logger)
+        seWhiteList = cfg_params.get('EDG.se_white_list',[])
+        seBlackList = cfg_params.get('EDG.se_black_list',[])
+        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
         return
 
     def boss(self):
