@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.125 2008/09/25 15:10:42 spiga Exp $"
-__version__ = "$Revision: 1.125 $"
+__revision__ = "$Id: FatWorker.py,v 1.126 2008/10/08 17:53:39 spiga Exp $"
+__version__ = "$Revision: 1.126 $"
 import string
 import sys, os
 import time
@@ -31,6 +31,9 @@ from ProdCommon.BossLite.Common.Exceptions import BossLiteError
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
+
+from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
+from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser
 
 # CRAB dependencies
 from CrabServer.ApmonIf import ApmonIf
@@ -159,16 +162,22 @@ class FatWorker(Thread):
             # se related
             if 'EDG.se_white_list' in self.cfg_params:
                 for seW in str(self.cfg_params['EDG.se_white_list']).split(","):
-                    if seW: self.se_whiteL.append( re.compile(seW.strip().lower()) )
+                    if seW: 
+                        self.se_whiteL.append(seW.strip().lower()) 
             if 'EDG.se_black_list' in self.cfg_params:
                 for seB in self.cfg_params['EDG.se_black_list'].split(","):
-                    if seB: self.se_blackL.append( re.compile(seB.strip().lower()) )
+                    if seB: 
+                        self.se_blackL.append(seB.strip().lower())
 
             # ce related
             if 'EDG.ce_white_list' in self.cfg_params:
-                self.ce_whiteL = [ ceW.strip().lower() for ceW in self.cfg_params['EDG.ce_white_list'].split(",") ]
+                for ceW in str(self.cfg_params['EDG.ce_white_list']).split(","):
+                    if seW: 
+                        self.ce_whiteL.append(ceW.strip().lower()) 
             if 'EDG.ce_black_list' in self.cfg_params:
-                self.ce_blackL = [ ceB.strip().lower() for ceB in self.cfg_params['EDG.ce_black_list'].split(",") ]
+                for ceB in self.cfg_params['EDG.ce_black_list'].split(","):
+                    if ceB: 
+                        self.ce_blackL.append(ceB.strip().lower())
 
         except Exception, e:
             status = 6
@@ -640,6 +649,11 @@ class FatWorker(Thread):
         """
         from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
         
+        # shift due to BL ranges
+        i = i-1
+        if i<0: 
+            i = 0
+            
         # Unpack CMSSW version and architecture from gLite style-string
         [verFrag, archFrag] = task['jobType'].split(',')[0:2]
         version = verFrag.split('-')[-1]
@@ -647,22 +661,21 @@ class FatWorker(Thread):
         version = version.replace('"','')
         arch = arch.replace('"','')
 
-        # Get list of CEs
+        # Get list of SEs and clean according to white/black list
         seList = task.jobs[i]['dlsDestination']
-        # FIXME: Clean SE for white/blacklist
+        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL, self.log)
+        seDest   = seParser.cleanForBlackWhiteList(seList, 'list')
+
+        # Convert to list of CEs and clean according to white/black list
         onlyOSG = True # change for Glidein
-        availCEs = getJobManagerList(seList, version, arch, onlyOSG=onlyOSG)
-        # FIXME: Clean CE for white/blacklist
-        schedParam = "schedulerList = " + ','.join(availCEs) + "; "
+        availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
+        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL, self.log)
+        ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
+
+        schedParam = "schedulerList = " + ','.join(ceDest) + "; "
 
         if self.cfg_params['EDG.max_wall_time']:
             schedParam += 'globusrsl = (maxWalltime=%s); ' % self.cfg_params['EDG.max_wall_time']
-
-        # shift due to BL ranges
-        i = i-1
-        if i < 0: 
-            i = 0
-        #seList = self.se_list(i, dest)
 
         return schedParam
 
