@@ -1154,8 +1154,9 @@ class Cmssw(JobType):
 
         if os.path.isfile(self.tgzNameWithPath):
             txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
-            txt += 'tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
             if  self.debug_wrapper:
+                txt += 'tar tzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
                 txt += 'ls -Al \n'
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
