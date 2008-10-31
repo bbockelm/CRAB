@@ -66,11 +66,15 @@ class SchedulerLsf(SchedulerLocal) :
             sites = [str(getLocalDomain(self))]  
         return sites    
 
-    def loggingInfo(self, id):
+    def loggingInfo(self, id, fname):
         """ return logging info about job nj """
-        cmd = 'bjobs -l ' + id
+        lsfid = common._db.queryRunJob('schedulerId',id)
+        cmd = 'bjobs -l ' + str(lsfid[0])
         cmd_out = runCommand(cmd)
-        return cmd_out
+        f = open(fname,'w')
+        f.write(cmd_out)
+        f.close()
+        return fname
 
     def wsCopyOutput(self):
         txt=self.wsCopyOutput_comm(self.pool)
