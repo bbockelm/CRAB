@@ -296,8 +296,8 @@ class NotificationComponent:
 		self.tasks.lock()
                 tasks = [taskname]
                 mails = str(C.getUserMail())
-		txt = "Notification.NotificationComponent.MainLoop: Adding new task ["
-                txt += str(tasks) + "] owned by [" + ",".join(mails) + "]"
+		txt = "Notification.NotificationComponent.MainLoop: Adding new task "
+                txt += str(tasks) + " owned by [" + str(mails) + "]"
                 logging.info( txt )
 		self.tasks.pushTask( C )
 		self.tasks.unlock()
