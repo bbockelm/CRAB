@@ -17,19 +17,16 @@ from ProdCommon.FwkJobRep.PerformanceReport import PerformanceReport
 
 class fjrParser:
     def __init__(self, argv):
-        try:
-            self.reportFileName = argv[1]
-            self.directive = argv[2]
-        except:
+        if (len(argv))<2:
             print "it is necessary to specify the fjr name"
             sys.exit(2)
+        self.reportFileName = argv[1]
+        self.directive = argv[2]
 
         if self.directive=='--errorcode':
-            try:
-                self.wrapperExitCode = argv[3]
-                self.exeExitCode = argv[4] 
-            except:
-                self.exeExitCode=''
+            self.wrapperExitCode = argv[3]
+            self.exeExitCode=''
+            if (len(argv))>4: self.exeExitCode = argv[4] 
 
         elif self.directive=='--timing':
             self.wrapperTime = 'NULL'
