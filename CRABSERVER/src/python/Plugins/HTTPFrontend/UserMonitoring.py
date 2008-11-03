@@ -1,4 +1,3 @@
-from CrabServer.XmlFramework import *
 import os, time
 import API
 
@@ -163,50 +162,88 @@ class TaskLogVisualizer:
 
         return html
 
-    def showLogging( self, filepath):
+    def showLogging( self, filepath ):
+        from IMProv.IMProvLoader import loadIMProvFile
+        from IMProv.IMProvQuery import IMProvQuery
 
-        c = XmlFramework()
-        c.fromFile( filepath )
+        rootag  = "InternalLogInfo"
+        keystag = "Keys"
+        eventag = "Event"
+
+        gotit = loadIMProvFile( filepath )
+        k4v   = IMProvQuery( keystag )
+        nodiparam = k4v( gotit )
+
+        tags = []
+        for item in nodiparam:
+            tags = eval( item.attrs.get("tags") )
+
+        param = IMProvQuery( eventag)
+        nodiparam = param( gotit )
 
         html = "<html><body><h2>Internal server logging for task: " + str(self.taskname) + "</h2>\n "
         html += '<table cellspacing="10">\n'
 
-        for key, value in c.getEventValues().iteritems():
-            html += '<tr><td colspan="2">Event: <b>'+str(value['ev'])+'</b></td></tr>\n'
-            for key2, value2 in value.iteritems():
-                if len(value2) > 0 and key2 != "ev": 
-                    html += '<tr> <td align="right">'+str(key2)+': </td><td>'+str(value2)+'</td></tr>\n'
+        for item in nodiparam:
+            for key in tags:
+                value = item.attrs.get(key)
+                if key is 'ev':
+                    html += '<tr><td colspan="2">Event: <b>'+value+'</b></td></tr>\n'
+                elif (value is not None) and len(str(value)) > 0:
+                    html += '<tr> <td align="right">'+key+': </td><td>'+value+'</td></tr>\n'
+
+        html += "</table>"
+        html += "</body>"
+
         return  html
     
     def showStatus( self, filepath ):
+        from IMProv.IMProvLoader import loadIMProvFile
+        from IMProv.IMProvQuery import IMProvQuery
 
-        c = XmlFramework("TaskTracking")
-        c.fromFile( filepath )
-        xmlDict = c.getJobValues()
+        rootag  = "TaskTracking"
+        headtag = "TaskReport"
+        eventag = "Job"
+
+        gotit = loadIMProvFile( filepath )
+        param = IMProvQuery( eventag)
+        nodiparam = param( gotit )
 
         html = "<html><body><h2>Staus of task : " + str(self.taskname) + "</h2>\n "
         html += '<table cellspacing="10">\n'
-      
+
         st = ['Job','Status','Destination','Job_exit_code','Exe_exit_code','Submission Number']
         html += "<tr>"
-        for s in st:        
+        for s in st:
             html += '<th align="left">%s</b></th>\n'%s
         html += "</tr>"
-        for key, value in xmlDict.items():
+
+        for item in nodiparam:
+            status   = item.attrs.get("status")
+            site     = item.attrs.get("site")
+            resubmit = item.attrs.get("resubmit")
+            jec      = item.attrs.get("job_exit")
+            eec      = item.attrs.get("exe_exit")
+            jobid    = item.attrs.get("id")
+
             html += "<tr>"
-            html += "<td align='left'>%s</td>"%(value['id'])
-            html += "<td align='left'>%s</td>"%(value['status'])
-            html += "<td align='left'>%s</td>"%(value['site'])
-            if value['job_exit'] != 'None':
-                html += "<td align='left'>%s</td>"%(value['job_exit'])
+            html += "<td align='left'>%s</td>"%(jobid)
+            html += "<td align='left'>%s</td>"%(status)
+            html += "<td align='left'>%s</td>"%(site)
+            if jec != 'None':
+                html += "<td align='left'>%s</td>"%(jec)
             else: 
                 html += "<td align='left'>&nbsp</td>"
-            if value['job_exit'] != 'None':
-                html += "<td align='left'>%s</td>"%(value['exe_exit'])
+            if eec != 'None':
+                html += "<td align='left'>%s</td>"%(eec)
             else:
                 html += "<td align='left'>&nbsp</td>"
-            html += "<td align='left'>%s</td>"%(value['resubmit'])
+            html += "<td align='left'>%s</td>"%(resubmit)
             html += "</tr>"
+
+        html += "</table>"
+        html += "</body>"
+
         return  html
 
 if __name__=="__main__":
