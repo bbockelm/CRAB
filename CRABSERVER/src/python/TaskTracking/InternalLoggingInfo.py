@@ -8,6 +8,7 @@ class InternalLoggingInfo:
        self.rootname = rootname
        self.entrname = entrname
        self.filepath = filepath
+       self.keystag  = "Keys"
 
    def loadXml(self):
        """
@@ -64,6 +65,20 @@ class InternalLoggingInfo:
            eve = Event( self.entrname )
            eve.initialize( values )
 
+       ## updating keys of event entries
+       keytag = values.keys()
+       oldtag = loadxml.getFirstElementOf("Keys")
+       oldkeytag = eval(oldtag.getAttribute("tags"))
+       updtag = oldkeytag
+       for i in keytag:
+           if i not in updtag:
+               updtag.append(i)
+       try:
+           loadxml.replaceEntry(loadxml.getFirstElementOf("Keys"), "Keys", {"tags" : str(updtag)})
+       except Exception, exc:
+           import logging, traceback
+           logging.info(str(exc))
+           logging.error( str(traceback.format_exc()) ) 
        ## add the event
        loadxml.addNode( eve )
 
@@ -83,10 +98,13 @@ class InternalLoggingInfo:
            dictions = eve.fields
        else:
            dictions = values
+       keytag = {"tags" : str(dictions.keys())}
 
        result = IMProvNode( self.rootname )
+       key4report = IMProvNode( self.keystag, None, **keytag )
        report = IMProvNode( self.entrname, None, **dictions)
 
+       result.addNode(key4report)
        result.addNode(report)
 
        outfile = file( self.filepath, 'w').write(str(result))
