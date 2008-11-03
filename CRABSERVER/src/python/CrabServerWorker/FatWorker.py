@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.126 2008/10/08 17:53:39 spiga Exp $"
-__version__ = "$Revision: 1.126 $"
+__revision__ = "$Id: FatWorker.py,v 1.126.2.1 2008/10/30 20:14:32 ewv Exp $"
+__version__ = "$Revision: 1.126.2.1 $"
 import string
 import sys, os
 import time
@@ -163,21 +163,21 @@ class FatWorker(Thread):
             if 'EDG.se_white_list' in self.cfg_params:
                 for seW in str(self.cfg_params['EDG.se_white_list']).split(","):
                     if seW: 
-                        self.se_whiteL.append(seW.strip().lower()) 
+                        self.se_whiteL.append(seW.strip()) 
             if 'EDG.se_black_list' in self.cfg_params:
                 for seB in self.cfg_params['EDG.se_black_list'].split(","):
                     if seB: 
-                        self.se_blackL.append(seB.strip().lower())
+                        self.se_blackL.append(seB.strip())
 
             # ce related
             if 'EDG.ce_white_list' in self.cfg_params:
                 for ceW in str(self.cfg_params['EDG.ce_white_list']).split(","):
                     if seW: 
-                        self.ce_whiteL.append(ceW.strip().lower()) 
+                        self.ce_whiteL.append(ceW.strip()) 
             if 'EDG.ce_black_list' in self.cfg_params:
                 for ceB in self.cfg_params['EDG.ce_black_list'].split(","):
                     if ceB: 
-                        self.ce_blackL.append(ceB.strip().lower())
+                        self.ce_blackL.append(ceB.strip())
 
         except Exception, e:
             status = 6
@@ -671,6 +671,10 @@ class FatWorker(Thread):
         availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
         ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL, self.log)
         ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
+        self.log.info('CE parser output: WL=%s, BL=%s' % (ceParser.whiteList(),ceParser.blackList()))
+        self.log.info('SE parser output: WL=%s, BL=%s' % (seParser.whiteList(),seParser.blackList()))
+        self.log.info('SE destination = %s' % seDest)
+        self.log.info('CE destination = %s' % ceDest)
 
         schedParam = "schedulerList = " + ','.join(ceDest) + "; "
 
@@ -695,6 +699,15 @@ class FatWorker(Thread):
         # shift due to BL ranges
         i = i-1
         if i<0: i = 0
+
+        seList = task.jobs[i]['dlsDestination']
+        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL, self.log)
+        seDest   = seParser.cleanForBlackWhiteList(seList, 'list')
+        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL, self.log)
+
+        self.log.info('CE parser output: WL=%s, BL=%s' % (ceParser.whiteList(),ceParser.blackList()))
+        self.log.info('SE parser output: WL=%s, BL=%s' % (seParser.whiteList(),seParser.blackList()))
+        self.log.info('SE destination = %s' % seDest)
 
         sched_param = 'Requirements = ' + task['jobType']
         req=''
