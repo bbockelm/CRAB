@@ -1,3 +1,4 @@
+from CrabServer.XmlFramework import *
 import os, time
 import API
 
@@ -185,11 +186,13 @@ class TaskLogVisualizer:
         html += '<table cellspacing="10">\n'
 
         for item in nodiparam:
+            if item.attrs.has_key('ev'):
+                html += '<tr><td colspan="2">Event: <b>'+item.attrs.get('ev')+'</b></td></tr>\n'
+            else:
+                html += '<tr><td colspan="2">Event: <b>Unknown</b></td></tr>\n'
             for key in tags:
                 value = item.attrs.get(key)
-                if key is 'ev':
-                    html += '<tr><td colspan="2">Event: <b>'+value+'</b></td></tr>\n'
-                elif (value is not None) and len(str(value)) > 0:
+                if key is not 'ev' and value is not None and len(str(value)) > 0:
                     html += '<tr> <td align="right">'+key+': </td><td>'+value+'</td></tr>\n'
 
         html += "</table>"
