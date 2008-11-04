@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.126.2.2 2008/11/03 21:32:25 ewv Exp $"
-__version__ = "$Revision: 1.126.2.2 $"
+__revision__ = "$Id: FatWorker.py,v 1.126.2.3 2008/11/04 16:07:28 ewv Exp $"
+__version__ = "$Revision: 1.126.2.3 $"
 import string
 import sys, os
 import time
@@ -18,7 +18,7 @@ import traceback
 import copy
 import re
 
-# CW DB API 
+# CW DB API
 from CrabWorkerAPI import CrabWorkerAPI
 
 # BossLite import
@@ -112,7 +112,7 @@ class FatWorker(Thread):
             self.log.debug( traceback.format_exc() )
             self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. preSubmissionCheck"%(self.myName, self.taskName) )
             return
-                
+
         try:
             sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
         except Exception, e:
@@ -162,21 +162,21 @@ class FatWorker(Thread):
             # se related
             if 'EDG.se_white_list' in self.cfg_params:
                 for seW in str(self.cfg_params['EDG.se_white_list']).split(","):
-                    if seW: 
-                        self.se_whiteL.append(seW.strip()) 
+                    if seW:
+                        self.se_whiteL.append(seW.strip())
             if 'EDG.se_black_list' in self.cfg_params:
                 for seB in self.cfg_params['EDG.se_black_list'].split(","):
-                    if seB: 
+                    if seB:
                         self.se_blackL.append(seB.strip())
 
             # ce related
             if 'EDG.ce_white_list' in self.cfg_params:
                 for ceW in str(self.cfg_params['EDG.ce_white_list']).split(","):
-                    if seW: 
-                        self.ce_whiteL.append(ceW.strip()) 
+                    if seW:
+                        self.ce_whiteL.append(ceW.strip())
             if 'EDG.ce_black_list' in self.cfg_params:
                 for ceB in self.cfg_params['EDG.ce_black_list'].split(","):
-                    if ceB: 
+                    if ceB:
                         self.ce_blackL.append(ceB.strip())
 
         except Exception, e:
@@ -203,7 +203,7 @@ class FatWorker(Thread):
 
         if schedulerConfig['name'] in ['SchedulerGLiteAPI']:
             schedulerConfig['config'] = self.wdir + '/glite_wms_%s.conf' % self.configs['rb']
-            schedulerConfig['skipWMSAuth'] = 1 
+            schedulerConfig['skipWMSAuth'] = 1
             if self.wmsEndpoint:
                 schedulerConfig['service'] = self.wmsEndpoint
         elif schedulerConfig['name'] in ['SchedulerGlidein', 'SchedulerCondorG']:
@@ -377,13 +377,13 @@ class FatWorker(Thread):
             for j in taskObj.jobs:
                 if j['jobId'] in submittedJobs:
                     state_we_job = ""
-                    try: 
+                    try:
                         ## get internal server job status (not blite status)
                         state_we_job = self.cwdb.getWEStatus( j['name'] )
                     except Exception, ex:
                         self.log.info("Job Status: " +(str(ex)))
                         ##TODO: Need to differenciate between different problems!
-                        # in case the job shouldn't be registered 
+                        # in case the job shouldn't be registered
                         if onDemandRegDone == False:
                             ## added db Session to passed parameters
                             self.registerTask(taskObj)
@@ -464,7 +464,7 @@ class FatWorker(Thread):
             try:
                 jobAlreadyRegistered = self.cwdb.existsWEJob(jobName)
             except Exception, e:
-                ##TODO: need to differnciate when more then 1 entry per job (limit case) 
+                ##TODO: need to differnciate when more then 1 entry per job (limit case)
                 self.log.debug('Error while checking job registration: assuming %s as not registered'%jobName)
                 jobAlreadyRegistered = False
 
@@ -649,12 +649,12 @@ class FatWorker(Thread):
         Parameters specific to CondorG scheduler
         """
         from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
-        
+
         # shift due to BL ranges
-        i = i-1
-        if i<0: 
+        i = i - 1
+        if i < 0:
             i = 0
-            
+
         # Unpack CMSSW version and architecture from gLite style-string
         [verFrag, archFrag] = task['jobType'].split(',')[0:2]
         version = verFrag.split('-')[-1]
@@ -664,19 +664,22 @@ class FatWorker(Thread):
 
         # Get list of SEs and clean according to white/black list
         seList = task.jobs[i]['dlsDestination']
-        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL, self.log)
+        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL,
+                                          self.log)
         seDest   = seParser.cleanForBlackWhiteList(seList, 'list')
 
         # Convert to list of CEs and clean according to white/black list
         onlyOSG = True # change for Glidein
         availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
-        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL, self.log)
+        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
+                                          self.log)
         ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
 
         schedParam = "schedulerList = " + ','.join(ceDest) + "; "
 
         if self.cfg_params['EDG.max_wall_time']:
-            schedParam += 'globusrsl = (maxWalltime=%s); ' % self.cfg_params['EDG.max_wall_time']
+            schedParam += 'globusrsl = (maxWalltime=%s); ' % \
+                          self.cfg_params['EDG.max_wall_time']
 
         return schedParam
 
@@ -693,62 +696,39 @@ class FatWorker(Thread):
         return sched_param
 
     def sched_parameter_Glite(self, i, task):
+        """
+        Parameters specific to gLite scheduler
+        """
         # shift due to BL ranges
-        i = i-1
-        if i<0: i = 0
-
-        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL, self.log)
+        i = i - 1
+        if i < 0:
+            i = 0
 
         sched_param = 'Requirements = ' + task['jobType']
-        req=''
+        req = ''
 
         if self.cfg_params['EDG.max_wall_time']:
             req += 'other.GlueCEPolicyMaxWallClockTime>=' + self.cfg_params['EDG.max_wall_time']
         if self.cfg_params['EDG.max_cpu_time']:
-            if (not req == ' '): req = req + ' && '
+            if (not req == ' '):
+                req = req + ' && '
             req += ' other.GlueCEPolicyMaxCPUTime>=' + self.cfg_params['EDG.max_cpu_time']
         seReq = self.se_list(i, task.jobs[i]['dlsDestination'])
-        ceReq = self.ce_list() 
-        sched_param += req + seReq + ceReq +';\n'
+        ceReq = self.ce_list()
+        sched_param += req + seReq + ceReq + ';\n'
 
-        sched_param+='MyProxyServer = "' + self.cfg_params['proxyServer'] + '";\n'
-        sched_param+='VirtualOrganisation = "' + self.cfg_params['VO'] + '";\n'
-        sched_param+='RetryCount = '+str(self.cfg_params['EDG_retry_count'])+';\n'
-        sched_param+='ShallowRetryCount = '+str(self.cfg_params['EDG_shallow_retry_count'])+';\n'
+        sched_param += 'MyProxyServer = "' + self.cfg_params['proxyServer'] + '";\n'
+        sched_param += 'VirtualOrganisation = "' + self.cfg_params['VO'] + '";\n'
+        sched_param += 'RetryCount = '+str(self.cfg_params['EDG_retry_count'])+';\n'
+        sched_param += 'ShallowRetryCount = '+str(self.cfg_params['EDG_shallow_retry_count'])+';\n'
         return sched_param
-
-#########################################################
-    def checkWhiteList(self, Sites, fileblocks):
-        """
-        select sites that are defined by the user (via SE white list)
-        """
-        goodSites = []
-        if len(self.se_whiteL)==0: return Sites
-        for aSite in Sites:
-            good=0
-            for re in self.se_whiteL:
-                if re.search(string.lower(aSite)):good=1
-            if good: goodSites.append(aSite)
-        return goodSites
-
-    def checkBlackList(self, Sites, fileblocks):
-        """
-        select sites that are not excluded by the user (via SE black list)
-        """
-        goodSites = []
-        for aSite in Sites:
-            good=1
-            for re in self.se_blackL:
-                if re.search(aSite.lower()): good=0
-                pass
-            if good: goodSites.append(aSite)
-        return goodSites
 
     def se_list(self, id, dest):
         """
         Returns string with requirement SE related
         """
-        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL, self.log)
+        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL,
+                                          self.log)
         seDest   = seParser.cleanForBlackWhiteList(dest, 'list')
 
         req = ''
@@ -761,14 +741,16 @@ class FatWorker(Thread):
         """
         Returns string with requirement CE related
         """
-        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL, self.log)
+        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
+                                          self.log)
         req = ''
         if self.ce_whiteL:
-            tmpCe=[]
+            tmpCe = []
             concString = '&&'
             for ce in ceParser.whiteList():
                 ce = str(ce).strip()
-                if len(ce)==0: continue
+                if len(ce)==0:
+                    continue
                 tmpCe.append('RegExp("' + ce + '", other.GlueCEUniqueId)')
             if len(tmpCe) == 1:
                 req +=  " && (" + concString.join(tmpCe) + ") "
@@ -784,13 +766,15 @@ class FatWorker(Thread):
                     req += ") "
 
         if self.ce_blackL:
-            tmpCe=[]
+            tmpCe = []
             concString = '&&'
             for ce in ceParser.blackList():
                 ce = str(ce).strip()
-                if len(ce)==0: continue
+                if len(ce)==0:
+                    continue
                 tmpCe.append('(!RegExp("' + str(ce).strip() + '", other.GlueCEUniqueId))')
-            if len(tmpCe): req += " && (" + concString.join(tmpCe) + ") "
+            if len(tmpCe):
+                req += " && (" + concString.join(tmpCe) + ") "
 
         # requirement added to skip gliteCE
         req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
