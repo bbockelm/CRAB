@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.126.2.1 2008/10/30 20:14:32 ewv Exp $"
-__version__ = "$Revision: 1.126.2.1 $"
+__revision__ = "$Id: FatWorker.py,v 1.126.2.2 2008/11/03 21:32:25 ewv Exp $"
+__version__ = "$Revision: 1.126.2.2 $"
 import string
 import sys, os
 import time
@@ -117,7 +117,7 @@ class FatWorker(Thread):
             sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
         except Exception, e:
             self.log.debug( traceback.format_exc() )
-            self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. listMatch"%(self.myName, self.taskName) )
+            self.sendResult(errStatus, errMsg, "WorkerError %s. Task %s. submissionListCreation"%(self.myName, self.taskName) )
             return
 
         self.log.info("FatWorker %s performing submission"%self.myName)
@@ -544,9 +544,10 @@ class FatWorker(Thread):
             else:
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
-                    cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
+                    seList = distinct_dests[sel]
+                    seParser = SEBlackWhiteListParser('', '', self.log)
+                    cleanedList = seParser.cleanForBlackWhiteList(seList, 'list')
                 sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL)
-
                 if len(sites) > 0: matched.append(sel)
                 else: unmatched.append(sel)
             sel += 1
@@ -671,10 +672,6 @@ class FatWorker(Thread):
         availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
         ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL, self.log)
         ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
-        self.log.info('CE parser output: WL=%s, BL=%s' % (ceParser.whiteList(),ceParser.blackList()))
-        self.log.info('SE parser output: WL=%s, BL=%s' % (seParser.whiteList(),seParser.blackList()))
-        self.log.info('SE destination = %s' % seDest)
-        self.log.info('CE destination = %s' % ceDest)
 
         schedParam = "schedulerList = " + ','.join(ceDest) + "; "
 
@@ -700,14 +697,7 @@ class FatWorker(Thread):
         i = i-1
         if i<0: i = 0
 
-        seList = task.jobs[i]['dlsDestination']
-        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL, self.log)
-        seDest   = seParser.cleanForBlackWhiteList(seList, 'list')
         ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL, self.log)
-
-        self.log.info('CE parser output: WL=%s, BL=%s' % (ceParser.whiteList(),ceParser.blackList()))
-        self.log.info('SE parser output: WL=%s, BL=%s' % (seParser.whiteList(),seParser.blackList()))
-        self.log.info('SE destination = %s' % seDest)
 
         sched_param = 'Requirements = ' + task['jobType']
         req=''
@@ -717,9 +707,10 @@ class FatWorker(Thread):
         if self.cfg_params['EDG.max_cpu_time']:
             if (not req == ' '): req = req + ' && '
             req += ' other.GlueCEPolicyMaxCPUTime>=' + self.cfg_params['EDG.max_cpu_time']
+        seReq = self.se_list(i, task.jobs[i]['dlsDestination'])
+        ceReq = self.ce_list() 
+        sched_param += req + seReq + ceReq +';\n'
 
-        sched_param += req + self.se_list(i, task.jobs[i]['dlsDestination']) + self.ce_list() +';\n'
-        #if self.EDG_addJdlParam: sched_param+=self.jdlParam() ## BL--DS
         sched_param+='MyProxyServer = "' + self.cfg_params['proxyServer'] + '";\n'
         sched_param+='VirtualOrganisation = "' + self.cfg_params['VO'] + '";\n'
         sched_param+='RetryCount = '+str(self.cfg_params['EDG_retry_count'])+';\n'
@@ -757,18 +748,12 @@ class FatWorker(Thread):
         """
         Returns string with requirement SE related
         """
-        # consolidation of findSites_ method and se_list as in Crab-SA
-        # hostList = self.findSites_(id, dest)
-        hostList = []
-        if len(dest) > 0 and dest[0] != "":
-            replicas = self.checkBlackList(dest, id)
-            if len(replicas) > 0:
-                replicas = self.checkWhiteList(replicas, id)
-            hostList = replicas
+        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL, self.log)
+        seDest   = seParser.cleanForBlackWhiteList(dest, 'list')
 
         req = ''
-        if len(hostList) > 0:
-            reqtmp = [ ' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ' for arg in hostList]
+        if len(seDest) > 0:
+            reqtmp = [ ' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ' for arg in seDest]
             req += " && (" + '||'.join(reqtmp) + ") "
         return req
 
@@ -776,11 +761,12 @@ class FatWorker(Thread):
         """
         Returns string with requirement CE related
         """
+        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL, self.log)
         req = ''
         if self.ce_whiteL:
             tmpCe=[]
             concString = '&&'
-            for ce in self.ce_whiteL:
+            for ce in ceParser.whiteList():
                 ce = str(ce).strip()
                 if len(ce)==0: continue
                 tmpCe.append('RegExp("' + ce + '", other.GlueCEUniqueId)')
@@ -800,7 +786,7 @@ class FatWorker(Thread):
         if self.ce_blackL:
             tmpCe=[]
             concString = '&&'
-            for ce in self.ce_blackL:
+            for ce in ceParser.blackList():
                 ce = str(ce).strip()
                 if len(ce)==0: continue
                 tmpCe.append('(!RegExp("' + str(ce).strip() + '", other.GlueCEUniqueId))')
