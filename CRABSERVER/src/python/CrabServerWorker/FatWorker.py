@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.132 2008/10/30 09:11:42 mcinquil Exp $"
-__version__ = "$Revision: 1.132 $"
+__revision__ = "$Id: FatWorker.py,v 1.133 2008/10/30 11:25:59 mcinquil Exp $"
+__version__ = "$Revision: 1.133 $"
 import string
 import sys, os
 import time
@@ -32,6 +32,8 @@ from ProdCommon.BossLite.Common.Exceptions import BossLiteError
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 
+from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
+from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser
 # CRAB dependencies
 from CrabServer.ApmonIf import ApmonIf
 
@@ -184,24 +186,29 @@ class FatWorker(Thread):
             # se related
             if 'EDG.se_white_list' in self.cfg_params:
                 for seW in str(self.cfg_params['EDG.se_white_list']).split(","):
-                    if seW: self.se_whiteL.append( re.compile(seW.strip().lower()) )
+                    if seW:
+                        self.se_whiteL.append(seW.strip())
             if 'EDG.se_black_list' in self.cfg_params:
                 for seB in self.cfg_params['EDG.se_black_list'].split(","):
-                    if seB: self.se_blackL.append( re.compile(seB.strip().lower()) )
+                    if seB:
+                        self.se_blackL.append(seB.strip())
 
             # ce related
             if 'EDG.ce_white_list' in self.cfg_params:
-                self.ce_whiteL = [ ceW.strip().lower() for ceW in self.cfg_params['EDG.ce_white_list'].split(",") ]
+                for ceW in str(self.cfg_params['EDG.ce_white_list']).split(","):
+                    if seW:
+                        self.ce_whiteL.append(ceW.strip())
             if 'EDG.ce_black_list' in self.cfg_params:
-                self.ce_blackL = [ ceB.strip().lower() for ceB in self.cfg_params['EDG.ce_black_list'].split(",") ]
+                for ceB in self.cfg_params['EDG.ce_black_list'].split(","):
+                    if ceB:
+                        self.ce_blackL.append(ceB.strip())
 
         except Exception, e:
-            exc = traceback.format_exc()
             status = 6
             reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
-            self.sendResult(status, reason, reason, e, exc, True)
+            self.sendResult(status, reason, reason)
             self.log.info( traceback.format_exc() )
-            pload = self.taskName + "::" + str(status) + "::" + reason + "::-1"
+            pload = self.taskName + "::" + str(status) + "::" + reason
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", pload))
         return status
 
@@ -262,7 +269,6 @@ class FatWorker(Thread):
                 try:
                     if j.runningJob['closed'] == 'Y':
                         # backup for job output (tgz files only, less load)
-                   #     sbi = SBinterface( self.seEl )
                         bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
                         basePath = task['outputDirectory']
                         if task['startDirectory'] != '': basePath = task['outputDirectory'].split(task['startDirectory'])[1]
@@ -535,9 +541,10 @@ class FatWorker(Thread):
             else:
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
-                    cleanedList = self.checkWhiteList(self.checkBlackList(distinct_dests[sel],''),'')
+                    seList = distinct_dests[sel]
+                    seParser = SEBlackWhiteListParser('', '', self.log)
+                    cleanedList = seParser.cleanForBlackWhiteList(seList, 'list')
                 sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL)
-
                 if len(sites) > 0: matched.append(sel)
                 else: unmatched.append(sel)
             sel += 1
@@ -639,7 +646,12 @@ class FatWorker(Thread):
         Parameters specific to CondorG scheduler
         """
         from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
-        
+
+        # shift due to BL ranges
+        i = i - 1
+        if i < 0:
+            i = 0
+
         # Unpack CMSSW version and architecture from gLite style-string
         [verFrag, archFrag] = task['jobType'].split(',')[0:2]
         version = verFrag.split('-')[-1]
@@ -647,22 +659,24 @@ class FatWorker(Thread):
         version = version.replace('"','')
         arch = arch.replace('"','')
 
-        # Get list of CEs
+        # Get list of SEs and clean according to white/black list
         seList = task.jobs[i]['dlsDestination']
-        # FIXME: Clean SE for white/blacklist
+        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL,
+                                          self.log)
+        seDest   = seParser.cleanForBlackWhiteList(seList, 'list')
+
+        # Convert to list of CEs and clean according to white/black list
         onlyOSG = True # change for Glidein
-        availCEs = getJobManagerList(seList, version, arch, onlyOSG=onlyOSG)
-        # FIXME: Clean CE for white/blacklist
-        schedParam = "schedulerList = " + ','.join(availCEs) + "; "
+        availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
+        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
+                                          self.log)
+        ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
+
+        schedParam = "schedulerList = " + ','.join(ceDest) + "; "
 
         if self.cfg_params['EDG.max_wall_time']:
-            schedParam += 'globusrsl = (maxWalltime=%s); ' % self.cfg_params['EDG.max_wall_time']
-
-        # shift due to BL ranges
-        i = i-1
-        if i < 0: 
-            i = 0
-        #seList = self.se_list(i, dest)
+            schedParam += 'globusrsl = (maxWalltime=%s); ' % \
+                          self.cfg_params['EDG.max_wall_time']
 
         return schedParam
 
@@ -679,70 +693,44 @@ class FatWorker(Thread):
         return sched_param
 
     def sched_parameter_Glite(self, i, task):
+        """
+        Parameters specific to gLite scheduler
+        """
         # shift due to BL ranges
-        i = i-1
-        if i<0: i = 0
+        i = i - 1
+        if i < 0:
+            i = 0
 
         sched_param = 'Requirements = ' + task['jobType']
-        req=''
+        req = ''
 
         if self.cfg_params['EDG.max_wall_time']:
             req += 'other.GlueCEPolicyMaxWallClockTime>=' + self.cfg_params['EDG.max_wall_time']
         if self.cfg_params['EDG.max_cpu_time']:
-            if (not req == ' '): req = req + ' && '
+            if (not req == ' '):
+                req = req + ' && '
             req += ' other.GlueCEPolicyMaxCPUTime>=' + self.cfg_params['EDG.max_cpu_time']
+        seReq = self.se_list(i, task.jobs[i]['dlsDestination'])
+        ceReq = self.ce_list()
+        sched_param += req + seReq + ceReq + ';\n'
 
-        sched_param += req + self.se_list(i, task.jobs[i]['dlsDestination']) + self.ce_list() +';\n'
-        #if self.EDG_addJdlParam: sched_param+=self.jdlParam() ## BL--DS
-        sched_param+='MyProxyServer = "' + self.cfg_params['proxyServer'] + '";\n'
-        sched_param+='VirtualOrganisation = "' + self.cfg_params['VO'] + '";\n'
-        sched_param+='RetryCount = '+str(self.cfg_params['EDG_retry_count'])+';\n'
-        sched_param+='ShallowRetryCount = '+str(self.cfg_params['EDG_shallow_retry_count'])+';\n'
+        sched_param += 'MyProxyServer = "' + self.cfg_params['proxyServer'] + '";\n'
+        sched_param += 'VirtualOrganisation = "' + self.cfg_params['VO'] + '";\n'
+        sched_param += 'RetryCount = '+str(self.cfg_params['EDG_retry_count'])+';\n'
+        sched_param += 'ShallowRetryCount = '+str(self.cfg_params['EDG_shallow_retry_count'])+';\n'
         return sched_param
-
-#########################################################
-    def checkWhiteList(self, Sites, fileblocks):
-        """
-        select sites that are defined by the user (via SE white list)
-        """
-        goodSites = []
-        if len(self.se_whiteL)==0: return Sites
-        for aSite in Sites:
-            good=0
-            for re in self.se_whiteL:
-                if re.search(string.lower(aSite)):good=1
-            if good: goodSites.append(aSite)
-        return goodSites
-
-    def checkBlackList(self, Sites, fileblocks):
-        """
-        select sites that are not excluded by the user (via SE black list)
-        """
-        goodSites = []
-        for aSite in Sites:
-            good=1
-            for re in self.se_blackL:
-                if re.search(aSite.lower()): good=0
-                pass
-            if good: goodSites.append(aSite)
-        return goodSites
 
     def se_list(self, id, dest):
         """
         Returns string with requirement SE related
         """
-        # consolidation of findSites_ method and se_list as in Crab-SA
-        # hostList = self.findSites_(id, dest)
-        hostList = []
-        if len(dest) > 0 and dest[0] != "":
-            replicas = self.checkBlackList(dest, id)
-            if len(replicas) > 0:
-                replicas = self.checkWhiteList(replicas, id)
-            hostList = replicas
+        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL,
+                                          self.log)
+        seDest   = seParser.cleanForBlackWhiteList(dest, 'list')
 
         req = ''
-        if len(hostList) > 0:
-            reqtmp = [ ' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ' for arg in hostList]
+        if len(seDest) > 0:
+            reqtmp = [ ' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ' for arg in seDest]
             req += " && (" + '||'.join(reqtmp) + ") "
         return req
 
@@ -750,13 +738,16 @@ class FatWorker(Thread):
         """
         Returns string with requirement CE related
         """
+        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
+                                          self.log)
         req = ''
         if self.ce_whiteL:
-            tmpCe=[]
+            tmpCe = []
             concString = '&&'
-            for ce in self.ce_whiteL:
+            for ce in ceParser.whiteList():
                 ce = str(ce).strip()
-                if len(ce)==0: continue
+                if len(ce)==0:
+                    continue
                 tmpCe.append('RegExp("' + ce + '", other.GlueCEUniqueId)')
             if len(tmpCe) == 1:
                 req +=  " && (" + concString.join(tmpCe) + ") "
@@ -772,13 +763,15 @@ class FatWorker(Thread):
                     req += ") "
 
         if self.ce_blackL:
-            tmpCe=[]
+            tmpCe = []
             concString = '&&'
-            for ce in self.ce_blackL:
+            for ce in ceParser.blackList():
                 ce = str(ce).strip()
-                if len(ce)==0: continue
+                if len(ce)==0:
+                    continue
                 tmpCe.append('(!RegExp("' + str(ce).strip() + '", other.GlueCEUniqueId))')
-            if len(tmpCe): req += " && (" + concString.join(tmpCe) + ") "
+            if len(tmpCe):
+                req += " && (" + concString.join(tmpCe) + ") "
 
         # requirement added to skip gliteCE
         req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
