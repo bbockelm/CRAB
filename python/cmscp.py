@@ -208,6 +208,11 @@ class cmscp:
                 msg = str(ex)  
             if ErCode == '0':
                 ErCode, msg = self.makeCopy( sbi, filetocopy , options, protocol,sbi_dest )
+            if ErCode != '0':
+                try :
+                    self.removeFile( sbi_dest, filetocopy )
+                except Exception, ex:
+                    msg += '\n'+str(ex)  
             if self.debug : print 'Copy results for %s is %s'%( os.path.basename(filetocopy), ErCode)
             results.update( self.updateReport(filetocopy, ErCode, msg))
         return results
@@ -363,6 +368,22 @@ class cmscp:
                 ErCode = '60307'
 
         return ErCode, msg
+
+    def removeFile( self, sbi_dest, filetocopy ):
+
+        f_tocopy=filetocopy
+        if self.dest_prot != 'local':f_tocopy = os.path.basename(filetocopy)
+        try:
+            sbi_dest.delete( f_tocopy )
+        except OperationException, ex:
+            msg = str(ex)
+            if self.debug :
+                msg += str(ex.detail)+'\n'
+                msg += str(ex.output)+'\n'
+            msg +='ERROR: problems removing partially staged file %s'%filetocopy
+            raise Exception(msg)
+
+        return 
 
     def backup(self):
         """
