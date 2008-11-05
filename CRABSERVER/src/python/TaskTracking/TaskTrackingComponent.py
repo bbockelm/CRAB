@@ -206,6 +206,7 @@ class TaskTrackingComponent:
                 logBuf = self.__log(logBuf, "NewTask: %s" % taskName)
                 logBuf = self.__log(logBuf, taskName)
                 self.insertNewTask( taskName )
+                self.fastReport( taskName )
                 logBuf = self.__log(logBuf, "               new task inserted.")
                 _loginfo.setdefault('txt', str("Arrived task: " + str(taskName)))
             else:
@@ -677,6 +678,13 @@ class TaskTrackingComponent:
     # utilities
     ##########################################################################
 
+    def fastReport(self, taskName, taskstatus = "Processing"):
+        """
+        _fastReport_
+        """
+        self.prepareReport( taskName, "", "", "", 0, 0, {}, 0, 0, taskstatus )
+
+
     def singleTaskPoll(self, taskObj, ttdb, taskName, mySession):
         """
         _singleTaskPoll_
@@ -699,7 +707,7 @@ class TaskTrackingComponent:
             logging.error("Problem updating job status to xml: " + str(ex))
 
 
-    def prepareReport( self, taskName, uuid, eMail, userName, thresholdLevel, percentage, dictReportTot, nJobs, flag ):
+    def prepareReport( self, taskName, uuid, eMail, userName, thresholdLevel, percentage, dictReportTot, nJobs, flag, taskstatus = "Processed" ):
         """
         _prepareReport_
         """
@@ -714,13 +722,13 @@ class TaskTrackingComponent:
             c = CreateXmlJobReport()
             eMaiList = ttutil.getMoreMails( eMail )
             if len(eMaiList) < 1:
-                c.initialize( origTaskName, "", str(userName), percentage, thresholdLevel, nJobs)
+                c.initialize( origTaskName, "", str(userName), percentage, thresholdLevel, nJobs, taskstatus)
             else:
                 for index in xrange(len(eMaiList)):
                     if index != 0:
                         c.addEmailAddress( eMaiList[index] )
                     else:
-                        c.initialize( origTaskName, eMaiList[0], str(userName), percentage, thresholdLevel, nJobs)
+                        c.initialize( origTaskName, eMaiList[0], str(userName), percentage, thresholdLevel, nJobs, taskstatus)
 
             for singleJob in dictReportTot:
                 st  = dictReportTot[singleJob][0]

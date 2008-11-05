@@ -26,7 +26,7 @@ class JobXml:
         self.JOBEXIT        = "job_exit"
         self.JOBREPORT      = "Job"
 	self.JOBCLEARED     = "cleared"
-        self.ALLOWED_STATES = ("Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killing","Killed","Submitting","Done (Failed)", "Resubmitting by server", "Created")#"Managing by server")
+        self.ALLOWED_STATES = ("Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killing","Killed","Submitting","Done (Failed)", "Created")
         self.SITE           = "site"
         self.RESUB          = "resubmit" 
         self.STATCODE       = "sched_status"
@@ -169,13 +169,14 @@ class CreateXmlJobReport:
 	self.ENDED          = "ended"
 	self.THRESHOLDREQ   = "thresholdRequested"
         self.TOTJOB         = "totJob"
-        self.ALLOWED_STATES = ("Running","JobSuccess","JobFailed","Aborted","Cancelled","Cleared","JobInProgress","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","NotKilled","Killed","Submitting", "Done (Failed)", "Resubmitting by server", "Created")#"Managing by server")
+        self.ALLOWED_STATES = ("Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed","Submitting", "Done (Failed)", "Created")
 	self.COUNT          = 'count'
         self.SITE           = "site"
         self.RESUB          = "resubmit"
         self.STATCODE       = "sched_status"
         self.SCHEDID        = "sched_id"
-	
+	self.TASKSTATUS     = "TaskStatus"
+
 	self.doc            = xml.dom.minidom.Document()
 	self.root           = self.doc.createElement( self.ROOTNAME )
 	self.init           = False
@@ -183,7 +184,7 @@ class CreateXmlJobReport:
 	self.statusHash     = {}
 
     #------------------------------------------------------------------------
-    def initialize(self, tname, email, owner, percent_ended, threshold, totjob):
+    def initialize(self, tname, email, owner, percent_ended, threshold, totjob, process = "Processed"):
     	#root = self.doc.createElementNS(self.NS,"TaskReport")
 	#taskrep =  self.doc.createElementNS(self.NS,"TaskReport")
 	taskrep =  self.doc.createElement(self.TASKREPORT)
@@ -209,6 +210,7 @@ class CreateXmlJobReport:
 	taskrep.setAttribute(self.THRESHOLDREQ, str(threshold) )
 	taskrep.setAttribute(self.OWNER,	owner)
 	taskrep.setAttribute(self.TOTJOB,       str(totjob) )
+	taskrep.setAttribute(self.TASKSTATUS,   str(process) )
         
         self.root.appendChild(taskrep)
         self.doc.appendChild(self.root)
