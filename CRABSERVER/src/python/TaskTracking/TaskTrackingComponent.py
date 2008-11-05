@@ -34,7 +34,6 @@ from TaskStateAPI import TaskStateAPI
 
 # XML
 from CrabServer.CreateXmlJobReport import * 
-from CrabServer.XmlFramework import *
 
 # TT utility
 from TaskTrackingUtil import *
@@ -205,8 +204,8 @@ class TaskTrackingComponent:
         if event == "CRAB_Cmd_Mgr:NewTask":
 	    if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "NewTask: %s" % taskName)
-		logBuf = self.__log(logBuf, taskName)
-		self.insertNewTask( taskName )
+                logBuf = self.__log(logBuf, taskName)
+                self.insertNewTask( taskName )
                 logBuf = self.__log(logBuf, "               new task inserted.")
                 _loginfo.setdefault('txt', str("Arrived task: " + str(taskName)))
             else:
