@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.7 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.7 2008/09/11 15:00:33 farinafa Exp $"
+__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.8 2008/10/22 16:34:27 mcinquil Exp $"
 
 import os
 import pickle
@@ -189,7 +189,7 @@ class TaskRegisterComponent:
             self.ms.commit()
             return
 
-        taskUniqName = str(payload)
+        taskUniqName, TotJobs, cmdRng =  payload.split('::')  
         thrName = self.availWorkersIds.pop(0)
         self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewTask", taskUniqName)
         
@@ -291,7 +291,7 @@ class TaskRegisterComponent:
             pickle.dump(ldump, f)
             f.close()
         except Exception, e:
-            logging.error("Error while materializing component status\n"+e)
+            logging.error("Error while materializing component status\n"+str(e))
         return
 
     def dematerializeStatus(self):
