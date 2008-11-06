@@ -64,7 +64,14 @@ class PsetManipulator:
         outFile = open(common.work_space.jobDir()+name,"w")
         if name.endswith('py'):
             outFile.write("import FWCore.ParameterSet.Config as cms\n")
-            outFile.write(self.cmsProcess.dumpPython())
+            try:
+                outFile.write(self.cmsProcess.dumpPython())
+            except Exception, ex:
+                msg =  "Your cfg file is not valid, %s\n" % str(ex)
+                msg += "  https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabFaq#Problem_with_ParameterSet_parsin\n"
+                msg += "  may help you understand the problem."
+                raise CrabException(msg)
+
         else:
             outFile.write(self.cfg.data.dumpConfig())
         outFile.close()
