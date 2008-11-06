@@ -17,6 +17,7 @@ from Plugins.HTTPFrontend.TaskMon import TaskMonitor,TaskGraph, CumulativeTaskGr
 from Plugins.HTTPFrontend.JobMon import JobMonitor,CumulativeJobStatGraph, DestinationSitesMonitor, StatusPerDest
 from Plugins.HTTPFrontend.ComponentServicesMonitor import CompServMonitor, ShowCompStatus, ShowCompLogs, WriteLog
 from Plugins.HTTPFrontend.UserMonitoring import TaskLogVisualizer,TaskLogMonitor, ListTaskForUser
+from  Plugins.HTTPFrontend.ComponentCpuPlot import ComponentCpuPlot 
 
 class Root:
     """
@@ -129,14 +130,15 @@ def installer(**args):
  
     root.graphdest = DestinationSitesMonitor(
         "%s/images" % baseUrl,
-        args['StaticDir'])
-
+        args['StaticDir']
+        )
     root.graphstatus = StatusPerDest(
         "%s/images" % baseUrl,
         args['StaticDir'])
     root.graphjobstcum = CumulativeJobStatGraph(
         "%s/images" % baseUrl,
-        args["StaticDir"])
+        args["StaticDir"]
+        )
     root.jobs = JobMonitor(
         "%s/graphjobstcum" % baseUrl,
         "%s/graphdest" % baseUrl,
@@ -146,9 +148,16 @@ def installer(**args):
     root.compstatus = ShowCompStatus()
     root.complog = ShowCompLogs( 
         "%s/writelog" % baseUrl)
+    root.compcpu = ComponentCpuPlot(
+        "%s/images" % baseUrl,
+        args["StaticDir"],
+        args["ComponentDir"],
+        "%s/compcpu" % baseUrl
+        )
     root.compsermon = CompServMonitor(
         "%s/compstatus" % baseUrl,
-        "%s/complog" % baseUrl
+        "%s/complog" % baseUrl,
+        "%s/compcpu" % baseUrl
         )
    
 

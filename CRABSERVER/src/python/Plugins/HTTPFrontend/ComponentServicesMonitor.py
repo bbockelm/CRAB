@@ -13,9 +13,10 @@ from ProdAgentCore.DaemonDetails import DaemonDetails
 
 class CompServMonitor:
 
-    def __init__(self, compStatus = None, compLog = None):
+    def __init__(self, compStatus = None, compLog = None, compCpu = None):
         self.compstatus = compStatus
         self.complog = compLog
+        self.compcpu = compCpu
     
     def index(self):
 
@@ -37,6 +38,23 @@ class CompServMonitor:
         for components in status(True):
             html += '<option>'+components+'</option>'
         html += '<input type="submit" value="Show logs"/>'
+        html += '</select>'
+        html += '</form>'
+        html += "</table>\n"
+
+        html += "<table>\n"
+        html += "<br/><br/><i> Display components CPU usage:</i><br/><br/>"
+        html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
+        html += 'Show CPU plot for  '
+        html += ' <select name="Component" style="width:140px">'
+        html += '<option>All</option>'
+        for components in status(True):
+            html += '<option>'+components+'</option>'
+        html += '</select>'
+        html += ' for last  '
+        html += ' <input type="text" name="length" size=4 value=0> '
+        html += ' <select name="span" style="width:80px"><option>hours</option><option>days</option></select> '
+        html += ' <input type="submit" value="Show Plot"/> '
         html += '</select>'
         html += '</form>'
         html += "</table>\n"
