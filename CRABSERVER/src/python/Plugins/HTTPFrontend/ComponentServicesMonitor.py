@@ -78,19 +78,51 @@ class ShowCompStatus:
 
         run , not_run = status()
 
-        html = "<html><body><h2>Components and Services State </h2>\n"
+        html = """
+        <html><head><style type=\"text/css\">
+        th, td { text-indent:16px; text-align:left}
+        th:first-child, td:first-child {text-indent:0px !important; }
+        </style>
+        </head>
+        """
+        html += "<body><h2>Components and Services State<br/>\n"
+        html += "<small>(Work in progress)</small></h2>\n"
 
         html += "<table>\n"
-        html += " <tr><th>Components </th><th> Status</th></tr>\n"
+        html += "<tr><th align=\"left\">Components</th><th align=\"left\" style=\"text-indent: 16px\">Process ID</th><th align=\"left\" style=\"text-indent: 16px\">CPU sensor</th></tr>\n"
+
         for r in run:
-            html += "<tr><td align=\"left\">%s:</td><td><a href=\"%s/?Component=%s&length=12&span=hours\"><b>PID : %s</b></a></td></tr>\n'"%(
-                str(r[0]),self.compcpu,str(r[0]),str(r[1])
+            comp = str(r[0])
+            cpid = str(r[1])
+            html += "<tr><td align=\"left\"><a href=\"%s/?Component=%s&length=12&span=hours\">%s</a></td><td style=\"text-indent: 16px\">%s</td>\n"%(
+                self.compcpu,comp,comp,cpid
                 )
+            html += "<td align=\"left\" style=\"text-indent: 16px\"><small>"
+            sensorOn, spid, cpid = API.isSensorRunning(comp)
+            if sensorOn:
+                html += "sensor %s is attached to %s"%(spid,cpid)
+            else:
+                sensorDaemonOn, spid = API.isSensorDaemonRunning(comp)
+                if sensorDaemonOn:
+                    html += "sensor %s is going to attach component %s... retry in a minute"%(spid,comp)
+                else:
+                    html += "<b>no CPU sensor found for component %s...!</b>"%(comp)
+            html += "</small></td></tr>\n"
+
         for n in not_run:
-            html  += "<tr><td align=\"left\">%s: </td><td><b>Not Running </b></td></tr>\n"%str(n)
-        html += "</table>\n"
+            html  += "<tr><td align=\"left\"><a href=\"%s/?Component=%s&length=12&span=hours\">%s</a></td><td style=\"text-indent: 16px\"><b>Not Running </b></td>\n"%(self.compcpu,str(n),str(n))
+            html += "<td align=\"left\" style=\"text-indent: 16px\"><small>"
+            sensorDaemonOn, spid = API.isSensorDaemonRunning(n)
+            if sensorDaemonOn:
+                html += "sensor %s will attach component %s when it will start"%(spid,n)
+            else:
+                html += "<b>no CPU sensor found for component %s!</b>"%(n)
+            html += "</small></td></tr>\n"
+
+          
+        html += "</table><br/>\n"
         html += "<table>\n"
-        html += " <tr><th>Services </th><th> Status</th></tr>\n"
+        html += " <tr><th>Services </th><th>Status</th></tr>\n"
         html += "<tr><td align=\"left\">%s: </td><td><b>%s</b></td></tr>\n"%(str(gridftp[0]),str(gridftp[1]))
         html += "<tr><td align=\"left\">%s: </td><td><b>%s</b></td></tr>\n"%(str(delegation[0]),str(delegation[1]))
         html += "</table>\n"
