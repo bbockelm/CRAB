@@ -70,7 +70,7 @@ GFTP_RPM_list="glite-initscript-globus-gridftp-1.0.0-1.noarch.rpm"
 VDT_RPM_list="vdt_globus_data_server-VDT1.6.0x86_rhas_4-3.i386.rpm";
 
 LCMAPS_RPM_list="glite-security-lcmaps-1.3.14-2.slc4.i386.rpm"
-GLITE_U_RPM_list="glite-security-lcmaps-plugins-basic-1.3.7-2.slc4.i386.rpm glite-security-voms-api-cpp-1.7.22-1.slc4.i386.rpm glite-security-voms-api-c-1.7.22-1.slc4.i386.rpm glite-security-lcmaps-plugins-voms-1.3.7-2.slc4.i386.rpm glite-security-voms-clients-1.7.22-1.slc4.i386.rpm "
+GLITE_U_RPM_list="glite-security-lcmaps-plugins-basic-1.3.7-2.slc4.i386.rpm glite-security-voms-api-cpp-1.8.3-3.slc4.i386.rpm glite-security-voms-api-c-1.8.3-4.slc4.i386.rpm glite-security-lcmaps-plugins-voms-1.3.7-2.slc4.i386.rpm glite-security-voms-clients-1.7.22-1.slc4.i386.rpm "
 GLITE_R_RPM_list="glite-security-lcas-plugins-voms-1.3.3-1.slc4.i386.rpm glite-security-lcmaps-interface-1.3.14-1.slc4.i386.rpm glite-security-lcas-1.3.7-0.slc4.i386.rpm glite-security-lcas-interface-1.3.6-1.slc4.i386.rpm glite-security-lcas-plugins-check-executable-1.2.1-1.slc4.i386.rpm glite-security-lcmaps-plugins-verify-proxy-1.2.8-1.slc4.i386.rpm "
 GT4_RPM_list="org.glite.security.lcas-lcmaps-gt4-interface-0.0.13-1.slc4.i386.rpm"
 XALAN_RPM_list="xalan-c-1.10.0-1.slc4.i686.rpm"
@@ -218,12 +218,12 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 EOF
 
 echo "*** Creating cmsXXX local users: "
-groupadd cms
+/usr/sbin/groupadd cms
 for i in {0..4}; do
     for j in {0..9}; do
         for k in {0..9}; do
             echo -n "cms$i$j$k "
-            useradd -g cms -m cms$i$j$k
+            /usr/sbin/useradd -g cms -m cms$i$j$k
         done
     done
 done
