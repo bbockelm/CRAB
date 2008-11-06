@@ -191,7 +191,7 @@ def isSensorRunning(comp):
     sensors = os.popen('ps -C sar ho pid,cmd').readlines()
     for sensor in sensors:
         spid,cpid = sensor.split()[0:4:3]
-        Rcomp = os.popen('ps -p '+str(cpid)+' wwho cmd').read().split('/')[-2]
+        Rcomp = os.popen('ps -p '+str(cpid)+' wwho cmd').read()  #.split('/')[-2]
         if re.search(comp,Rcomp):
             return True, spid, cpid
     return False, 0, 0
