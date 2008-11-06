@@ -205,8 +205,10 @@ class TaskTrackingComponent:
 	    if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "NewTask: %s" % taskName)
                 logBuf = self.__log(logBuf, taskName)
+                taskName, totjobs, templistsubmit = payload.split("::")
                 self.insertNewTask( taskName )
-                self.fastReport( taskName )
+                listsubmit = eval(templistsubmit)
+                self.fastReport( taskName, totjobs, listsubmit )
                 logBuf = self.__log(logBuf, "               new task inserted.")
                 _loginfo.setdefault('txt', str("Arrived task: " + str(taskName)))
             else:
@@ -678,12 +680,17 @@ class TaskTrackingComponent:
     # utilities
     ##########################################################################
 
-    def fastReport(self, taskName, taskstatus = "Processing"):
+    def fastReport(self, taskName, totjobs, listsubmit, taskstatus = "Processing"):
         """
         _fastReport_
         """
-        self.prepareReport( taskName, "", "", "", 0, 0, {}, 0, 0, taskstatus )
-
+        dictionaryReport =  {}
+        for job in xrange(1, int(totjobs)+1):
+            if job in listsubmit:
+                dictionaryReport.setdefault(job, ["Submitting", "", "", 0, 0, '', 'CS'])
+            else:
+                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'C'])
+        self.prepareReport( taskName, "", "", "", 0, 0, dictionaryReport, int(totjobs), 0, taskstatus )
 
     def singleTaskPoll(self, taskObj, ttdb, taskName, mySession):
         """
