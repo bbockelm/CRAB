@@ -4,7 +4,7 @@ import logging
 from ProdAgentCore.ProdAgentException import ProdAgentException
 from ProdAgentDB.Connect import connect
 from ProdAgentDB.Config import defaultConfig as dbConfig
-
+import re
 
 def openConnPA():
     """
@@ -282,3 +282,23 @@ def getpidof(procname,service):
         msg = [service,"PID : "+pid ]
 
     return msg
+    
+                                    
+def isSensorRunning(comp):
+    # get all sensors pids with their component pid
+    sensors = os.popen('ps -C sar wwho pid,cmd').readlines()
+    for sensor in sensors:
+        spid,cpid = sensor.split()[0:4:3]
+        Rcomp = os.popen('ps -p '+str(cpid)+' wwho cmd').read()  #.split('/')[-2]
+        if re.search(comp,Rcomp):
+            return True, spid, cpid
+    return False, 0, 0
+
+def isSensorDaemonRunning(comp):
+    # get all sensors pids with their component pid
+    sensors = os.popen('ps -C sensord wwho pid,cmd').readlines()
+    for sensor in sensors:
+        spid,Rcomp = sensor.split()[0:4:3]
+        if re.search(comp,Rcomp):
+            return True, spid
+    return False, 0
