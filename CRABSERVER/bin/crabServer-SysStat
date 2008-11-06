@@ -196,6 +196,15 @@ def isSensorRunning(comp):
             return True, spid, cpid
     return False, 0, 0
 
+def isSensorDaemonRunning(comp):
+    # get all sensors pids with their component pid
+    sensors = os.popen('ps -C sensord ho pid,cmd').readlines()
+    for sensor in sensors:
+        spid,Rcomp = sensor.split()[0:4:3]
+        if re.search(comp,Rcomp):
+            return True, spid
+    return False, 0
+
 
 def startup():
     HTTPFeDir = getComponentDir("HTTPFrontend")
@@ -218,38 +227,51 @@ def startup():
                 print "sensor for component %s(%s) started" % (component,daemon['ProcessID'])
 
 
-
 def Oldatus():
     for component in components:
         OldisSensorRunning(component)
 
 
 def status():
-    sensors = os.popen('ps -C sar ho pid,cmd').readlines()
+    sensors = os.popen('ps -C sar wwho pid,cmd').readlines()
     for sensor in sensors:
         spid,cpid = sensor.split()[0:4:3]
-        component = os.popen('ps -p '+str(cpid)+' ho cmd').read().split('/')[-2]
+        component = os.popen('ps -p '+str(cpid)+' wwho cmd').read()
+        if component != "":
+            component = component.split('/')[-2]
         if component in components:
             print "Found running sensor for %6s, %-18s: %8s"%(cpid,component,spid)
             components.remove(component)
     for component in components:
-        print "sensor for %-18s is NOT running"%component
+        srun, cpid = isSensorDaemonRunning(component)
+        if srun:
+            print "sensor %s is going to attach component %-18s"%(cpid,component)
+        else:
+            print "sensor for %-18s is not running"%component
 
 
 def shutdown():
-    sensors = os.popen('ps -C sensord ho pid,cmd').readlines()
+    componentsL = components[:]
+    sensors = os.popen('ps -C sensord wwho pid,cmd').readlines()
     for sensor in sensors:
         sensorPid,component = sensor.split()[0:4:3]
-#        component = os.popen('ps -p '+str(cpid)+' ho cmd').read().split('/')[-2]
         if component in components:
             print "Found running sensor for %-18s: %6s, Shutting Down!"%(component,sensorPid)
-            sarPid = os.popen('ps --ppid '+str(sensorPid)+' ho pid,cmd | grep sar').read().split()[0]
-            sadcPid = os.popen('ps --ppid '+str(sarPid)+' ho pid,cmd | grep sadc').read().split()[0]
+            sarPid = os.popen('ps --ppid '+str(sensorPid)+' wwho pid,cmd | grep sar').read()
+            sadcPid = ""
+            if sarPid != "":
+                sarPid = sarPid.split()[0]
+                sadcPid = os.popen('ps --ppid '+str(sarPid)+' wwho pid,cmd | grep sadc').read()
+                if sadcPid != "":
+                    sadcPid = sadcPid.split()[0]
+                    
             os.kill(int(sensorPid), 9)
-            os.kill(int(sarPid),9)
-            os.kill(int(sadcPid),9)
-            components.remove(component)
-    for component in components:
+            if sarPid != "":
+                os.kill(int(sarPid),9)
+            if sadcPid != "":
+                os.kill(int(sadcPid),9)
+            componentsL.remove(component)
+    for component in componentsL:
         print "sensor for %s is NOT running"%component
 
 

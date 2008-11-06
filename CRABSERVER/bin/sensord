@@ -12,7 +12,8 @@ until false; do
             printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "component ${CSC} not running, will retry in a minute...";
             if [ $pid -gt 0 ]; then
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${pid}";
-                ps -C sar ho pid,cmd | grep "sar -X $pid " | awk '{print $1}' | xargs kill -9
+                ps -C sar wwho pid,cmd | grep "sar -X $pid " | awk '{print $1}' | xargs kill -9
+                ps -C sadc wwho pid,cmd | grep " -X $pid" | awk '{print $1}' | xargs kill -9
             fi
             pid=0
             break;
@@ -21,17 +22,19 @@ until false; do
             if [ $pid -gt 0 ]; then
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "component ${CSC} was restarted:";
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${pid}";
-                ps -C sar ho pid,cmd | grep "sar -X $pid " | awk '{print $1}' | xargs kill -9
+                ps -C sar wwho pid,cmd | grep "sar -X $pid " | awk '{print $1}' | xargs kill -9
+                ps -C sadc wwho pid,cmd | grep " -X $pid" | awk '{print $1}' | xargs kill -9
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "new pid to be monitored: ${currentpid}";
             else
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "searching for already running sar sensor for component ${CSC}...";
                 printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
                 ps -C nocommand o pid,cmd
                 printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
-                if ps -C sar ho pid,cmd | grep "sar -X $currentpid " ; then
+                if ps -C sar wwho pid,cmd | grep "sar -X $currentpid " ; then
                     printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "sar sensor fo component ${CSC} already running (see above)! restarting";
                     printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${currentpid}";
-                    ps -C sar ho pid,cmd | grep "sar -X $currentpid " | awk '{print $1}' | xargs kill -9
+                    ps -C sar wwho pid,cmd | grep "sar -X $currentpid " | awk '{print $1}' | xargs kill -9
+                    ps -C sadc wwho pid,cmd | grep " -X $currentpid" | awk '{print $1}' | xargs kill -9
                 else
                     echo not found
                 fi
@@ -51,7 +54,7 @@ until false; do
         printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
         ps -C nocommand o pid,cmd
         printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
-        ps -C sar ho pid,cmd | grep "X $pid "
+        ps -C sar wwho pid,cmd | grep "X $pid "
     fi
 done >> ${PRODAGENT_WORKDIR}/HTTPFrontend/sensors/${CSC}-pidstat.log
 
