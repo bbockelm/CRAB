@@ -87,7 +87,10 @@ class ComponentCpuPlot:
         cherrypy.response.headers['Content-Type']= 'text/html'
         
         page = [_header]
-        if Component == 'All':
+
+        if int(length) <= 0:
+                page.append("Unable to process request for %s %s<br/>Please ask for a strictly positive period of time..."%(length,span))
+        elif Component == 'All':
                 for Comp in status(True):
                         pngfile = os.path.join(self.workingDir, "%s-%s-%s_pidstat.png" % (Comp,length,span))
                         pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
@@ -98,6 +101,8 @@ class ComponentCpuPlot:
                 pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
                 page += "<img src=\"%s\">" % pngfileUrl
                 draw_TimeComponentCpuGraph(Component,self.sensorsDir,pngfile,length,span)
+                        
+                
         page.append(_footer)
         return page
        
