@@ -40,7 +40,7 @@ class SubmitterServer( Submitter ):
             self.storage_path = '/'+self.storage_path
 
         self.taskuuid = str(common._db.queryTask('name'))
-
+        
 	return
 
     def run(self):
@@ -50,7 +50,7 @@ class SubmitterServer( Submitter ):
 	common.logger.debug(5, "SubmitterServer::run() called")
 
         self.submitRange = self.nj_list
-
+     
         check = self.checkIfCreate() 
 
         if check == 0 :
@@ -236,6 +236,8 @@ class SubmitterServer( Submitter ):
         self.cfg_params['CRAB.se_remote_dir'] = self.remotedir
 
         if firstSubmission==True:
+ 
+            TotJob = common._db.nJobs() 
             # move the sandbox
             self.moveISB_SEAPI() 
 
@@ -250,7 +252,7 @@ class SubmitterServer( Submitter ):
                 raise CrabException(msg)
 
             # TODO fix not needed first field 
-            subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange)
+            subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,TotJob)
         else:
             # subsequent submissions and resubmit
             subOutcome = csCommunicator.subsequentJobSubmit(self.taskuuid, self.submitRange)
