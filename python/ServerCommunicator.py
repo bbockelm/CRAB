@@ -66,7 +66,7 @@ class ServerCommunicator:
     # Interactions with the server
 ###################################################
 
-    def submitNewTask(self, blTaskName, blXml, rng):
+    def submitNewTask(self, blTaskName, blXml, rng, TotJob):
         """
         _submitNewTask_
         Send a new task to the server to be submitted. 
@@ -85,7 +85,7 @@ class ServerCommunicator:
             return -3
 
         cmdXML = None
-        cmdXML = self._createXMLcommand(blTaskName, 'submit', rng, newTaskAddIns=True)
+        cmdXML = self._createXMLcommand(blTaskName, 'submit', rng, newTaskAddIns=True,jobs=TotJob)
         if not cmdXML:
             raise CrabException('Error while creating the Command XML')
             return -4
@@ -234,7 +234,7 @@ class ServerCommunicator:
     # Auxiliary methods
 ###################################################
     
-    def _createXMLcommand(self, taskUName, cmdSpec='status', rng='all', newTaskAddIns=False, flavour='analysis', type='fullySpecified'):
+    def _createXMLcommand(self, taskUName, cmdSpec='status', rng='all', newTaskAddIns=False, flavour='analysis', type='fullySpecified',jobs='-1'):
         xmlString = ''
         cfile = minidom.Document()
             
@@ -244,6 +244,7 @@ class ServerCommunicator:
         node.setAttribute("Subject", str(self.userSubj) )
         node.setAttribute("Command", str(cmdSpec) )
         node.setAttribute("Range", str(rng) )
+        node.setAttribute("TotJob", str(jobs) )
         node.setAttribute("Scheduler", str(self.cfg_params['CRAB.scheduler']) ) 
         node.setAttribute("Flavour", str(flavour) )
         node.setAttribute("Type", str(type) ) 
