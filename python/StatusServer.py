@@ -48,6 +48,7 @@ class StatusServer(Status):
             reportXML = zlib.decompress( base64.urlsafe_b64decode(handledXML) )
         except Exception, e:
             common.logger.debug(1,"WARNING: Problem while decompressing fresh status from the server.")
+            common.logger.debug(1, str(e))
             common.logger.debug(1, traceback.format_exc() )
             return
 
@@ -56,6 +57,8 @@ class StatusServer(Status):
             common._db.deserXmlStatus(reportList)
         except Exception, e:
             common.logger.debug(1,"WARNING: Problem while retrieving fresh status from the server.")
+            common.logger.debug(1, str(e))
+            common.logger.debug(1, traceback.format_exc() ) 
             return
 
         return 
