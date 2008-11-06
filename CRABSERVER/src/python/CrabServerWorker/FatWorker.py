@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.133 2008/10/30 11:25:59 mcinquil Exp $"
-__version__ = "$Revision: 1.133 $"
+__revision__ = "$Id: FatWorker.py,v 1.134 2008/11/05 14:02:43 spiga Exp $"
+__version__ = "$Revision: 1.134 $"
 import string
 import sys, os
 import time
@@ -274,15 +274,18 @@ class FatWorker(Thread):
                         if task['startDirectory'] != '': basePath = task['outputDirectory'].split(task['startDirectory'])[1]
                         for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
                             try:
-                                bk_sbi.move( source=orig, dest=orig+'.'+str(j['submissionNumber']), proxy=task['user_proxy'])
+                                if bk_sbi.checkExists(source=orig) is True:
+                                    bk_sbi.move( source=orig, dest=orig+'.'+str(j['submissionNumber']), proxy=task['user_proxy'])
+                                    # track succesfully replicated files
+                                    backupFiles.append( os.path.basename(orig) )
+                                else:
+                                    self.log.debug("No need to back up osb")
                             except Exception, ex:
                                 logMsg = "Worker %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
-                                 j['name'], self.taskName) 
-                                logMsg += str(ex)  
-                                self.log.info( logMsg ) 
+                                j['name'], self.taskName)
+                                logMsg += str(ex)
+                                self.log.info( logMsg )
                                 continue
-                            # track succesfully replicated files
-                            backupFiles.append( os.path.basename(orig) )
 
                         # reproduce closed runningJob instances
                         self.blDBsession.getNewRunningInstance(j)
