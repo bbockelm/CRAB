@@ -68,7 +68,8 @@ class CompServMonitor:
 
 class ShowCompStatus:
   
-    def init(self) :
+    def __init__(self, compCpu = None):
+        self.compcpu = compCpu
         return
 
     def index(self):
@@ -77,21 +78,23 @@ class ShowCompStatus:
 
         run , not_run = status()
 
-        html = """<html><body><h2>Components and Services State </h2>\n """
+        html = "<html><body><h2>Components and Services State </h2>\n"
 
         html += "<table>\n"
         html += " <tr><th>Components </th><th> Status</th></tr>\n"
         for r in run:
-            html += '<tr><td align="left">'+str(r[0])+': </td><td><b>PID : '+str(r[1])+'</b></td></tr>\n'
+            html += "<tr><td align=\"left\">%s:</td><td><a href=\"%s/?Component=%s&length=12&span=hours\"><b>PID : %s</b></a></td></tr>\n'"%(
+                str(r[0]),self.compcpu,str(r[0]),str(r[1])
+                )
         for n in not_run:
-            html  += '<tr><td align="left">'+str(n)+': </td><td><b>Not Running </b></td></tr>\n'
+            html  += "<tr><td align=\"left\">%s: </td><td><b>Not Running </b></td></tr>\n"%str(n)
         html += "</table>\n"
         html += "<table>\n"
         html += " <tr><th>Services </th><th> Status</th></tr>\n"
-        html+= "<tr><td align=\"left\">"+str(gridftp[0])+": </td><td><b>"+str(gridftp[1])+"</b></td></tr>\n"
-        html += "<tr><td align=\"left\">"+str(delegation[0])+": </td><td><b>"+str(delegation[1])+"</b></td></tr>\n"
+        html += "<tr><td align=\"left\">%s: </td><td><b>%s</b></td></tr>\n"%(str(gridftp[0]),str(gridftp[1]))
+        html += "<tr><td align=\"left\">%s: </td><td><b>%s</b></td></tr>\n"%(str(delegation[0]),str(delegation[1]))
         html += "</table>\n"
-        html += """</body></html>"""
+        html += "</body></html>"
 
         return html
     index.exposed = True

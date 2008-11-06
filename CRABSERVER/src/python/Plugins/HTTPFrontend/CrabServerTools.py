@@ -145,7 +145,9 @@ def installer(**args):
         "%s/graphstatus" % baseUrl
         )
     root.writelog = WriteLog()
-    root.compstatus = ShowCompStatus()
+    root.compstatus = ShowCompStatus(
+        "%s/compcpu" % baseUrl
+        )
     root.complog = ShowCompLogs( 
         "%s/writelog" % baseUrl)
     root.compcpu = ComponentCpuPlot(
