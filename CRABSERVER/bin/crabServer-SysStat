@@ -1,0 +1,277 @@
+#!/usr/bin/env python
+"""
+crabServer-SysStat-launch
+
+launcher of SysStat sensors for crabServer components and other stuff
+
+"""
+
+import os
+import sys
+import getopt
+import subprocess
+import re
+import time
+import string
+
+try:
+    from ProdAgentCore.Configuration import loadProdAgentConfiguration
+    from ProdAgentCore.Configuration import ProdAgentConfiguration
+    from ProdAgentCore.DaemonDetails import DaemonDetails
+except ImportError, ex:
+    msg = "Unable to import ProdAgent Python modules:\n"
+    msg += "There may be a problem with your PYTHONPATH env variable\n"
+    print msg
+    sys.exit(1)
+
+def usage():
+
+    usage = \
+    """
+    Usage: crabServer-SysStat <--start|--shutdown|--statuts> <opts>
+           You must provide either --start OR --shutdown OR --status
+
+           You can optionally specify the crabServer Config file with
+           --config otherwise it will expect to get the config file from
+           the $PRODAGENT_CONFIG environment variable
+
+           You can optionally specify the crabServer components list with
+           --components=<comp> otherwise it will act on all component
+           listed in the crabServer Config file 
+
+           --start starts up the crabServer component(s) SysStat sensor
+           --shutdown shutsdown the crabServer component(s) SysStat sensor
+           --status prints the status of the crabServer component(s) SysStat sensor
+    """
+    print usage
+
+
+# # # #
+
+valid = ['config=', 'start', 'shutdown', 'status', 'restart',
+         'components=']
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "", valid)
+except getopt.GetoptError, ex:
+    print str(ex)
+    usage()
+    sys.exit(1)
+
+config = None
+command = None
+componentsList = None
+
+for opt, arg in opts:
+    if opt == "--config":
+        config = arg
+    if opt == "--start":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "start"
+    if opt == "--shutdown":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "shutdown"
+    if opt == "--status":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "status"
+    if opt == "--restart":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "restart"
+    if opt == "--components":
+        compList = arg.split(',')
+        componentsList = []
+        for item in compList:
+            if item.strip == "":
+                continue
+            componentsList.append(item)
+            
+if config == None:            
+    configFile = os.environ.get("PRODAGENT_CONFIG", None)
+    if config == None:
+        msg = "No ProdAgent Config file provided\n"
+        msg += "either set $PRODAGENT_CONFIG variable\n"
+        msg += "or provide the --config option"
+
+
+try:
+    config = loadProdAgentConfiguration()
+except StandardError, ex:
+    msg = "Unable to read the configuration file:\n"
+    msg += "%s\n" % configFile
+    msg += "Error:\n"
+    msg += str(ex)
+    print msg
+    sys.exit(1)
+
+cfgObject = ProdAgentConfiguration()
+cfgObject.loadFromFile(configFile)
+
+
+if componentsList != None:
+    msg = "Components List Specified:\n"
+    msg += str(componentsList).replace('\'', '')
+    print msg
+    components = componentsList
+else:
+    components = cfgObject.listComponents()
+
+def getComponentDir(component):
+    compCfg = cfgObject.getConfig(component)
+    try:
+        compDir = compCfg['ComponentDir']
+    except StandardError, ex:
+        msg = "Unable to find component:\n"
+        msg += "%s\n" % component
+        msg += "Error:\n"
+        msg += str(ex)
+        print msg
+        sys.exit(1)
+    compDir = os.path.expandvars(compDir)
+    return compDir
+
+def readPids(PidsFile):
+    file = open(PidsFile, 'r')
+    pid = int(file.readline());
+    pgid = int(file.readline());
+    file.close()
+    return pid, pgid
+
+def writePids(PidsFile,pid,pgid):
+    pid = "%i\n" % pid
+    pgid = "%i\n" % pgid
+    file = open(PidsFile, 'w')
+    file.write(pid)
+    file.write(pgid)
+    file.close()
+
+
+def OldisSensorRunning(component):
+    HTTPFeDir = getComponentDir("HTTPFrontend")
+    sensorPidFile = "sensorsLogs/"+component+"-sensord.ids"
+    sensorPidFile = os.path.join(HTTPFeDir, sensorPidFile)
+    if not os.path.exists(sensorPidFile):
+        print "sensor for %s is NOT running" % component
+        return False
+    pid, pgid = readPids(sensorPidFile)
+    sensorPidProcFile = "/proc/"+str(pid)+"/status"
+    if not os.path.exists(sensorPidProcFile):
+        print "sensor for %s is NOT running (process %s not found...)" % (component,pid)
+        print "for safety, removing file %s"%sensorPidFile
+        os.remove(sensorPidFile)
+        return False
+    file = open(sensorPidProcFile, 'r')
+    name = file.readline();
+    file.close()
+    if not re.search("sensord",name):
+        print "%s do not seems to be a sensor process, it says: %s" % (sensorPidProcFile, name)
+        print "for safety, removing file %s"%sensorPidFile
+        os.remove(sensorPidFile)
+        return False
+    print "%s sensor running with pid:%i and pgid=%i" % (component, pid, pgid)
+    return True, pid, pgid, sensorPidFile
+
+def isSensorRunning(comp):
+    # get all sensors pids with their component pid
+    sensors = os.popen('ps -C sar ho pid,cmd').readlines()
+    for sensor in sensors:
+        spid,cpid = sensor.split()[0:4:3]
+        Rcomp = os.popen('ps -p '+str(cpid)+' ho cmd').read().split('/')[-2]
+        if re.search(comp,Rcomp):
+            return True, spid, cpid
+    return False, 0, 0
+
+
+def startup():
+    HTTPFeDir = getComponentDir("HTTPFrontend")
+    for component in components:
+        compDir = getComponentDir(component)
+        daemonXml = os.path.join(compDir, "Daemon.xml")
+        if not os.path.exists(daemonXml):
+            print "CrabServer component %s not running, sensor will NOT be activated" % component
+            print "Hint: start the component first"
+            continue
+        daemon = DaemonDetails(daemonXml)
+        if not daemon.isAlive():
+            print "CrabServer component %s not running, sensor will NOT be activated" % component
+        else:
+            running, spid, cpid = isSensorRunning(component)
+            if running:
+                print "sensor for component %s(%s) already running with pid %s" % (component,cpid,spid)
+            else:
+                subprocess.Popen(["sensord",component])
+                print "sensor for component %s(%s) started" % (component,daemon['ProcessID'])
+
+
+
+def Oldatus():
+    for component in components:
+        OldisSensorRunning(component)
+
+
+def status():
+    sensors = os.popen('ps -C sar ho pid,cmd').readlines()
+    for sensor in sensors:
+        spid,cpid = sensor.split()[0:4:3]
+        component = os.popen('ps -p '+str(cpid)+' ho cmd').read().split('/')[-2]
+        if component in components:
+            print "Found running sensor for %6s, %-18s: %8s"%(cpid,component,spid)
+            components.remove(component)
+    for component in components:
+        print "sensor for %-18s is NOT running"%component
+
+
+def shutdown():
+    sensors = os.popen('ps -C sensord ho pid,cmd').readlines()
+    for sensor in sensors:
+        sensorPid,component = sensor.split()[0:4:3]
+#        component = os.popen('ps -p '+str(cpid)+' ho cmd').read().split('/')[-2]
+        if component in components:
+            print "Found running sensor for %-18s: %6s, Shutting Down!"%(component,sensorPid)
+            sarPid = os.popen('ps --ppid '+str(sensorPid)+' ho pid,cmd | grep sar').read().split()[0]
+            sadcPid = os.popen('ps --ppid '+str(sarPid)+' ho pid,cmd | grep sadc').read().split()[0]
+            os.kill(int(sensorPid), 9)
+            os.kill(int(sarPid),9)
+            os.kill(int(sadcPid),9)
+            components.remove(component)
+    for component in components:
+        print "sensor for %s is NOT running"%component
+
+
+def OldShutdown():
+    for component in components:
+        running, pid, pgid, sensorPidFile = OldisSensorRunning(component)
+        if running:
+            print "Shutting Down!"
+            os.killpg(int(pgid), 9)
+            os.remove(sensorPidFile)
+
+
+if command == "start":
+    startup()
+    sys.exit(0)
+elif command == "shutdown":
+    shutdown()
+    sys.exit(0)
+elif command == "status":
+    status()
+    sys.exit(0)
+elif command == "restart":
+    shutdown()
+    startup()
+    sys.exit(0)
