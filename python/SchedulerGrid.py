@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.82 2008/10/30 16:25:24 ewv Exp $"
-__version__ = "$Revision: 1.82 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.83 2008/11/06 16:56:29 spiga Exp $"
+__version__ = "$Revision: 1.83 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -49,15 +49,16 @@ class SchedulerGrid(Scheduler):
 
         self.role = cfg_params.get("EDG.role", None)
 
+        removeT1bL = cfg_params.get("EDG.remove_default_blacklist", 0 )
+        
         T1_BL = ["fnal.gov, gridka.de" ,"w-ce01.grid.sinica.edu.tw", "w-ce02.grid.sinica.edu.tw", "lcg00125.grid.sinica.edu.tw",\
                   "gridpp.rl.ac.uk" , "cclcgceli03.in2p3.fr","cclcgceli04.in2p3.fr" , "pic.es, cnaf"]
+        if removeT1bL == 1: T1_BL = []
         self.EDG_ce_black_list = cfg_params.get('EDG.ce_black_list',None)
         if (self.EDG_ce_black_list): 
-            self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',')
-            self.EDG_ce_black_list=self.EDG_ce_black_list + T1_BL
+            self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',') + T1_BL
         else :
-            self.EDG_ce_black_list = T1_BL
-
+            if removeT1bL == 0: self.EDG_ce_black_list = T1_BL
         self.EDG_ce_white_list = cfg_params.get('EDG.ce_white_list',None)
         if (self.EDG_ce_white_list): self.EDG_ce_white_list = string.split(self.EDG_ce_white_list,',')
    
