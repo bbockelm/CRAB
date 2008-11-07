@@ -58,8 +58,7 @@ class CrabRunFailureHandler(HandlerInterface):
         self.localEMFileName = "ErrorHandlerMatrix.txt"
 
         ### TEMPORARY
-        self.url = "http://www.pd.infn.it/~lacaprar/test/"
-        #url = "https://cmsweb.cern.ch/crabconf/files/"
+        self.url = "https://cmsweb.cern.ch/crabconf/files/"
         self.initializeActions()
         self.cacheLocation = '' # where the cached ErrorMatrix will be put
 
@@ -117,8 +116,8 @@ class CrabRunFailureHandler(HandlerInterface):
         if (not os.path.exists(self.localEMFileNameWithPath)): return True
         statinfo = os.stat(self.localEMFileNameWithPath)
         ## if the file is older then 12 hours it is re-downloaded to update the configuration
-        oldness = 120
-        #oldness = 24*3600
+        #oldness = 120
+        oldness = 24*3600
         import time
         if (time.time() - statinfo.st_ctime) > oldness:
             return True
