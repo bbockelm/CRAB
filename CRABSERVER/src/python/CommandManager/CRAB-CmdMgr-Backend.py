@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.30 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.30 2008/10/30 14:39:06 mcinquil Exp $"
+__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.31 2008/11/06 14:10:03 spiga Exp $"
 
 import os
 import time
@@ -25,8 +25,8 @@ class CRAB_AS_beckend:
     _CRABProxyGateway_
 
     Gateway class from the WS CRAB-AS front-end to the server back-end messaging system
-    
-    """    
+
+    """
     def __init__(self):
         # load balancing feature. Use an integer, useful for future developments
         self.args = {}
@@ -41,7 +41,7 @@ class CRAB_AS_beckend:
 
         self.args['ComponentDir'] = os.path.expandvars(self.args['ComponentDir'])
         self.wdir = self.args['ComponentDir']
-        
+
         if self.args['dropBoxPath']:
             self.wdir = self.args['dropBoxPath']
 
@@ -62,18 +62,18 @@ class CRAB_AS_beckend:
         pass
 
 ################################
-#   Initialization Methods      
+#   Initialization Methods
 ################################
 
     def initArgs(self):
         """
-        Read the XML configuration of the server and parse the required data        
+        Read the XML configuration of the server and parse the required data
         """
 
         try:
             config = loadProdAgentConfiguration()
             self.args.update( config.getConfig("CommandManager") )
-            self.args.update( config.getConfig("CrabServerConfigurations") )            
+            self.args.update( config.getConfig("CrabServerConfigurations") )
         except StandardError, ex:
             msg = "Error reading configuration:\n"
             msg += str(ex)
@@ -87,15 +87,15 @@ class CRAB_AS_beckend:
         """
         Initialize the logging system
         """
-        
+
         # Logging system init
         self.log = logging
 
         logging.info("CRABProxyGateway allocating ...")
         logging.info("Component arguments parsed")
-        logging.info("Logging system initialized")     
+        logging.info("Logging system initialized")
         pass
-    
+
     def initWLoadJabber(self):
         """
         This method creates a thread that monitors the front-end load with respect to the
@@ -130,7 +130,7 @@ class CRAB_AS_beckend:
 
         self.log.debug("Available configuration files:")
         self.log.debug("\t edg(VO):\t%s (%s)\n\t glite:\t%s\n"%(existsUIcfgRB, existsUIcfgWMS, existsUIcfgRBVO))
-        
+
         if existsUIcfgRB and existsUIcfgWMS and existsUIcfgRBVO:
             return
 
@@ -138,10 +138,10 @@ class CRAB_AS_beckend:
         self.log.info("Some configuration files are missing: downloading ...")
         for sched in schedList:
             # build the cfgFile filename
-            fileName = sched + '_wms_' + self.args['resourceBroker'] + '.conf' 
+            fileName = sched + '_wms_' + self.args['resourceBroker'] + '.conf'
             if sched == "edg":
                fileName = sched + '_wl_ui_cmd_var.conf.CMS_' + self.args['resourceBroker']
-               
+
             # get data from http channel and save locally
             try:
                 f = urllib.urlopen( basicUrl + fileName )
@@ -156,7 +156,7 @@ class CRAB_AS_beckend:
         pass
 
 ###############################
-#   Service Logic Methods      
+#   Service Logic Methods
 ###############################
 
     def gway_transferTaskAndSubmit(self, taskDescriptor="", cmdDescriptor="", taskUniqName=""):
@@ -168,18 +168,18 @@ class CRAB_AS_beckend:
             11  error during MessageService sending
             14  draining
            102
-            33 client compatibility 
+            33 client compatibility
         """
-       
+
         skipClientCheck = 0
         allowedClient = self.args.get('acceptableClient',None)
         if allowedClient:
-            ClientList=[]  
+            ClientList=[]
             if str(allowedClient).find(','):
                 [ ClientList.append(x.strip()) for x in str(allowedClient).split(',')]
-            else:   
-                ClientList.append(allowedClient) 
-        else : 
+            else:
+                ClientList.append(allowedClient)
+        else :
             # ONLY to help the deplyment ServerSide
             skipClientCheck = 1
 
@@ -194,25 +194,25 @@ class CRAB_AS_beckend:
             # check for too large submissions
             xmlCmd = minidom.parseString(cmdDescriptor).getElementsByTagName("TaskCommand")[0]
             cmdRng = str(xmlCmd.getAttribute('Range'))
-            # ONLY to guarantee BackComp  ClientSide  
+            # ONLY to guarantee BackComp  ClientSide
             cmdToTjobs = -1
-            if xmlCmd.getAttribute('TotJob')  : cmdToTjobs = xmlCmd.getAttribute('TotJob') 
+            if xmlCmd.getAttribute('TotJob')  : cmdToTjobs = xmlCmd.getAttribute('TotJob')
             if len(eval(cmdRng, {}, {})) > 5000:
                 self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
                 return 101
-            # ONLY to guarantee BackComp  ClientSide  
+            # ONLY to guarantee BackComp  ClientSide
             if not xmlCmd.getAttribute('ClientVersion'): skipClientCheck = 1
             if skipClientCheck == 0 :
                 if xmlCmd.getAttribute('ClientVersion') not in ClientList :
                     self.log.info("Task %s refused since generated by uncompatible client version: %s"\
                                  %( taskUniqName,xmlCmd.getAttribute('ClientVersion')))
-                    return 33 
- 
+                    return 33
+
             dirName = self.prepareTaskDir(taskDescriptor, cmdDescriptor, taskUniqName)
             if dirName is None:
-                self.log.info('Unable to create directory tree for task %s'%taskUniqName) 
+                self.log.info('Unable to create directory tree for task %s'%taskUniqName)
                 return 11
-              
+
             self.ms.publish("CRAB_Cmd_Mgr:NewTask",'%s::%s::%s'%( taskUniqName,cmdToTjobs,cmdRng ) )
             self.ms.commit()
 
@@ -222,7 +222,7 @@ class CRAB_AS_beckend:
                 msg = "%s::%s::%s"%(taskUniqName, notifDict['eMail'], notifDict.get('threshold',100) )
                 self.ms.publish("CRAB_Cmd_Mgr:MailReference", msg)
                 self.ms.commit()
-            
+
         except Exception, e:
             self.log.info( traceback.format_exc() )
             return 11
@@ -237,7 +237,7 @@ class CRAB_AS_beckend:
             0 success (CrabServerProxy:NewCommand)
             20 error while publishing the message
         """
-        
+
         # TODO? # Fabio
         # Put here some routing for the messages 'submit'->CW, 'kill'->CW+JK, ...
         # Postponed
@@ -248,7 +248,7 @@ class CRAB_AS_beckend:
             if not os.path.exists(self.wdir + '/' + taskUniqName + '_spec'):
                 self.log.info("Task spec location missing %s "%taskUniqName)
                 return 20
- 
+
             if os.path.exists(cmdName):
                 os.rename(cmdName, cmdName+'.%s'%time.time())
 
@@ -261,10 +261,10 @@ class CRAB_AS_beckend:
             cmdRng = str(xmlCmd.getAttribute('Range'))
 
             # TODO not yet used, but available
-            cmdFlavour = str(xmlCmd.getAttribute('Flavour')) 
+            cmdFlavour = str(xmlCmd.getAttribute('Flavour'))
             cmdType = str(xmlCmd.getAttribute('Type'))
 
-           
+
 
             msg = '%s::%s::%s::%s'%(taskUniqName, str(self.cmdAttempts), str(cmdRng), str(cmdKind))
             self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
@@ -276,7 +276,7 @@ class CRAB_AS_beckend:
                 if len( eval(cmdRng, {}, {}) ) > 5000:
                     self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
                     return 101
-                # send submission directive 
+                # send submission directive
                 return 0
 
             # getoutput
@@ -292,24 +292,24 @@ class CRAB_AS_beckend:
                 # prepare the killTask payload with the proper range
                 # old killer payload format (as adopted by the killer)
 
-                # WARNING: the field proxy is not needed for BossLite, 
+                # WARNING: the field proxy is not needed for BossLite,
                 #    as it is included in the task object
-                msg = taskUniqName + ':' + 'fake_proxy' + ':' + cmdRng 
+                msg = taskUniqName + ':' + 'fake_proxy' + ':' + cmdRng
                 self.ms.publish("KillTask", msg)
 
 
                 self.ms.commit()
                 self.log.info("NewCommand Kill "+taskUniqName)
                 return 0
- 
-            # complete here with additional message classes           
+
+            # complete here with additional message classes
 
         except Exception, e:
             self.log.info( traceback.format_exc() )
 
         # unknown message
         return 20
-    
+
     def gway_getTaskStatus(self, statusType="status", taskUniqName=""):
         """
         Transfer the task status description to the client
@@ -332,7 +332,7 @@ class CRAB_AS_beckend:
             prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/internalog.xml"
         else:
             prjUName_fRep = None
-            retStatus = "Error: unrecognized kind of status information required"  
+            retStatus = "Error: unrecognized kind of status information required"
 
         # collect the information from source
         if prjUName_fRep:
@@ -345,7 +345,7 @@ class CRAB_AS_beckend:
                     f.close()
                 except Exception, e:
                     self.log.debug( traceback.format_exc() )
-        
+
         # return the document
         retStatus = "".join(retStatus)
         handledStatus = base64.urlsafe_b64encode(zlib.compress(retStatus))
@@ -362,11 +362,12 @@ class CRAB_AS_beckend:
         create the task directory storing the commodity files for the task
 
         """
-        taskDir = self.wdir + '/' + taskUniqName + '_spec' 
+        taskDir = self.wdir + '/' + taskUniqName + '_spec'
 
         if not os.path.exists(taskDir):
             try:
                 os.mkdir(taskDir)
+                os.chmod(taskDir,0755)
             except Exception, e:
                 self.log.info("Error crating directories %s"%taskDir)
                 self.log.info( traceback.format_exc() )
@@ -382,7 +383,7 @@ class CRAB_AS_beckend:
             f.close()
         except Exception, e:
             self.log.info("Error saving xml files for task %s"%taskUniqName)
-            self.log.info( traceback.format_exc() )  
+            self.log.info( traceback.format_exc() )
             return None
 
         return taskDir
