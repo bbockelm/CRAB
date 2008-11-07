@@ -23,7 +23,6 @@ from ErrorHandler.TimeConvert import convertSeconds
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.Database import Session
-from ProdAgent.WorkflowEntities.JobState import doNotAllowMoreSubmissions
 
 
 class CrabRunFailureHandler(HandlerInterface):
@@ -49,10 +48,146 @@ class CrabRunFailureHandler(HandlerInterface):
     """
 
     def __init__(self):
-         HandlerInterface.__init__(self)
-         self.args={}
-         self.blDBsession = None
-         
+        HandlerInterface.__init__(self)
+        self.args={}
+        self.blDBsession = None
+
+        # Here we define the error matrix
+        self.ErrorMatrix = {}
+        # print os.getcwd()
+        self.localEMFileName = "ErrorHandlerMatrix.txt"
+
+        ### TEMPORARY
+        self.url = "http://www.pd.infn.it/~lacaprar/test/"
+        #url = "https://cmsweb.cern.ch/crabconf/files/"
+        self.initializeActions()
+        self.cacheLocation = '' # where the cached ErrorMatrix will be put
+
+    def NoResubmission(self):
+        " No resubmission: do nothing "
+        from ProdAgent.WorkflowEntities.JobState import doNotAllowMoreSubmissions
+        try:
+            doNotAllowMoreSubmissions([self.jobId])
+            ## logger human readble message
+            textmsg = "Do not allowing more resubmission"
+        except ProdAgentException, ex:
+            msg = "Updating max racers fields failed for job %s\n" % self.jobId
+            logging.error(msg)
+        return textmsg
+
+    def DelayedResubmission(self):
+        " resubmit with a delay of X seconds "
+        delay = 120 # seconds
+        delay = convertSeconds(delay) 
+        logging.info(">CrabRunFailureHandler<: re-submitting with delay (h:m:s) "+ str(delay))
+        payload = str(self.taskId)+'::'+str(self.jobId) 
+        logging.info("--->>> payload = " + payload)         
+        self.publishEvent("ResubmitJob",payload,delay)
+        ## logger human readble message
+        return "Resubmitting with (h:m:s) %s delay" %(str(delay))
+
+    def ResubmitElsewhere(self):
+        " resubmit blacklisting the latest CE used "
+        task = self.bliteSession.load(self.taskId,self.jobId)
+        ce = str(task.jobs[0].runningJob['destination'])
+        ce_temp = ce.split(':')
+
+        # fix to avoid empty ce names # Fabio
+        if len(ce_temp[0])>0:
+            ce_name = ce_temp[0] 
+        else:
+            ce_name = "#fake_ce#"
+
+        logging.info("--->>> ce = " + str(ce))
+        logging.info("--->>> ce_name = " + str(ce_name))
+        logging.info(">CrabRunFailureHandler<: re-submitting banning the ce "+ str(ce_name))
+        payload = str(self.taskId) + '::' + str(self.jobId) + '::' + str(ce_name)  
+        logging.info("--->>> payload = " + payload)         
+        self.publishEvent("ResubmitJob",payload)
+        ## logger human readble message
+        return "Resubmitting banning [%s] ce" %(str(ce_name))
+
+    def updateLocalFile(self):
+        """
+        if the local file is older than 24 ours (or does not exist): return True
+        if not, return False
+        """
+        import os
+
+        if (not os.path.exists(self.localEMFileNameWithPath)): return True
+        statinfo = os.stat(self.localEMFileNameWithPath)
+        ## if the file is older then 12 hours it is re-downloaded to update the configuration
+        oldness = 120
+        #oldness = 24*3600
+        import time
+        if (time.time() - statinfo.st_ctime) > oldness:
+            return True
+        return False
+
+    def downloadErrorMatrix(self):
+        """
+        Download the error matrix definition and overwrite the local cache
+        """
+        logging.info("Downloading %s to %s  "%((self.url+self.localEMFileName),self.cacheLocation))
+        import urllib
+        EMFile = urllib.urlopen(self.url+self.localEMFileName)
+        localEMFile = open(self.localEMFileNameWithPath, 'w')
+        localEMFile.write(EMFile.read())
+        localEMFile.close()
+        EMFile.close()
+
+    def initializeActions(self):
+        """ 
+        Define possible actions 
+        """
+        # define matrix of possible actions
+        self.Actions={
+            0 : self.NoResubmission ,
+            1 : self.DelayedResubmission,
+            2 : self.ResubmitElsewhere
+        }
+
+        # the default action is Do not resubmit
+        self.defaultAction = self.NoResubmission
+
+    def defineErrorMatrix(self):
+        """
+        Here define the error matrix: a dictionary of dictionaly, in the following format:
+        ErrorMatrix = { ExecutableExitStatus : { WrapperExitStatus : Action } }
+        """
+        self.cacheLocation = str(self.args['ComponentDir'])
+        self.localEMFileNameWithPath = self.cacheLocation+"/"+self.localEMFileName
+
+        # get (if needed) error matrix definition from web
+        if (not self.updateLocalFile()): return
+
+        self.downloadErrorMatrix()
+
+        # now open ErrorMatrix file
+        EMFile = open(self.localEMFileNameWithPath, 'r')
+
+        # read file and fill erro matrix
+        for line in EMFile.readlines():
+            line = line.strip()
+            # Skip comments
+            if len(line)==0 or (line[0]=="#"): continue
+            elif (len(line.split())==3):
+                ExeExitCode, WrapperExitCode, Action = line.split()
+                if int(Action) not in self.Actions.keys():
+                    logging.info("Action %s. unknown "%Action)
+                    continue
+                    
+                # for new key, define dict
+                if not self.ErrorMatrix.has_key(ExeExitCode):
+                    self.ErrorMatrix[ExeExitCode] = {}
+
+                self.ErrorMatrix[ExeExitCode][WrapperExitCode]=self.Actions[int(Action)]
+            else:
+                logging.info("Wrong syntax %s. "%line)
+            pass
+        logging.info("ErrorMatrix Loaded %s"%(str(self.ErrorMatrix)))
+
+        EMFile.close()
 
     def infoLogger(self, taskname, jobid, diction):
         """
@@ -71,43 +206,17 @@ class CrabRunFailureHandler(HandlerInterface):
         self.publishEvent( message, payload )
         logging.info("Registering information:\n%s"%str(diction))
 
-
-    def parseFinalReport(self, input):
-        """
-        Parses the FJR produced by job in order to retrieve
-        the WrapperExitCode and ExeExitCode.
-        Updates the BossDB with these values.
-        """
-        codeValue = {}
-        jobReport = readJobReport(input)[0]
-        exit_status = ''
-        ##### temporary fix for FJR incomplete ####
-        fjr = open (input)
-        len_fjr = len(fjr.readlines())
-        if (len_fjr <= 6):
-            codeValue["applicationReturnCode"] = str(50115)
-            codeValue["wrapperReturnCode"] = str(50115)
-        #####
-        if len(jobReport.errors) != 0 :
-            for error in jobReport.errors:
-                if error['Type'] == 'WrapperExitCode':
-                    codeValue["wrapperReturnCode"] = error['ExitStatus']
-                elif error['Type'] == 'ExeExitCode':
-                    codeValue["applicationReturnCode"] = error['ExitStatus']
-                else:
-                    continue
-        if not codeValue.has_key('wrapperReturnCode'):
-            codeValue["wrapperReturnCode"] = '' 
-        if not codeValue.has_key('applicationReturnCode'):
-            codeValue["applicationReturnCode"] = ''
-        return codeValue
-         
-
     def handleError(self,payload):
         """
         The payload of a job failure is a url to the job report
         """
-        ## pictionary where to put the information to logs
+        # logging.info("Args %s "%(str(self.args)))
+        # logging.info("Params %s "%(str(self.parameters)))
+
+        # Check if cached matrix is fresh enough and get it if not
+        self.defineErrorMatrix()
+
+        ## dictionary where to put the information to logs
         loggindict = {}
         textmsg = "No action defined"
 
@@ -116,129 +225,46 @@ class CrabRunFailureHandler(HandlerInterface):
         logging.info(">CrabRunFailureHandler<:payload %s " % payload)
         jobReportUrl = payload
          
-        #### split of payload to obtain taskId and jobId ####
-        tmp = payload.split("BossJob")
-        tmp_1 = tmp[1]
-        tmp_2 = tmp_1.split('/')
-        numbers = tmp_2[0]
-        numbers_tmp = numbers.split('_')
-        taskId = numbers_tmp[1]
-        logging.info("--->>> taskId = " + str(taskId))         
-        jobId = numbers_tmp[2]
-        logging.info("--->>> jobId = " + str(jobId))        
- 
-        # prepare to retrieve the job report file.
-        # NOTE: we assume that the report file has a relative unique name
-        # NOTE: if that is not the case we need to add a unique identifier to it.
-        slash = jobReportUrl.rfind('/')
-        fileName = jobReportUrl[slash+1:]
-        ### to test if correct !!
-        urllib.urlretrieve(jobReportUrl, self.args['jobReportLocation']+'/'+fileName)
-        logging.info(">CrabRunFailureHandler<:Retrieving job report from %s " % jobReportUrl)
- 
-        jobReport=readJobReport(self.args['jobReportLocation']+'/'+fileName)
-        logging.info("--->>> " + self.args['jobReportLocation']+'/'+fileName)
-         
-        ### Retrieving wrapper and application exit code from fjr #### 
-        input = self.args['jobReportLocation']+'/'+fileName
-        logging.info("--->>> input = " + input)         
-        
-        listCode = []
-        if os.path.exists(input):
-            codeValue = self.parseFinalReport(input)
+        import re
+        r = re.compile("BossJob_(\d+)_(\d+)/")
+        m= r.search(payload)
+        if (m):
+            self.taskId,self.jobId=m.groups()
         else:
-            msg = ">CrabRunFailureHandler<:Problems with "+str(input)+". File not available.\n"
-            logging.info(msg)
-        logging.info("--->>> wrapperReturnCode = " + str(codeValue["wrapperReturnCode"]))
-        logging.info("--->>> applicationReturnCode = " + str(codeValue["applicationReturnCode"]))
+            logging.info(">CrabRunFailureHandler<:Cannot parse payload! %s " % payload)
+            return
 
-        ### Updating the boss DB with wrapper and application exit code #### 
-        task = self.bliteSession.load(taskId,jobId)
-        if (codeValue["applicationReturnCode"] != '' ):
-            task.jobs[0].runningJob['applicationReturnCode']=int(codeValue["applicationReturnCode"])
-        if (codeValue["wrapperReturnCode"] != ''): 
-            task.jobs[0].runningJob['wrapperReturnCode']=int(codeValue["wrapperReturnCode"])
-        self.bliteSession.updateDB(task)
+        #### parse payload to obtain taskId and jobId ####
+        logging.info("--->>> taskId = " + str(self.taskId))
+        logging.info("--->>> jobId = " + str(self.jobId))        
         
-        wrapperReturnCode=task.jobs[0].runningJob['wrapperReturnCode']
-        applicationReturnCode=task.jobs[0].runningJob['applicationReturnCode']
+        task = self.bliteSession.load(self.taskId,self.jobId)
+        wrapperReturnCode=str(task.jobs[0].runningJob['wrapperReturnCode'])
+        applicationReturnCode=str(task.jobs[0].runningJob['applicationReturnCode'])
         loggindict.setdefault
 
         logging.info("--->>> wrapperReturnCode = " + str(wrapperReturnCode))         
         logging.info("--->>> applicationReturnCode = " + str(applicationReturnCode))
 
-        #### if both codes are empty and the job has been killed or aborted
-        #### the job will be resubmit with delay
-        #### add a control about the number of resubmission ####
-
-        if ((wrapperReturnCode is None) and ( applicationReturnCode is None)):
-            if (task.jobs[0].runningJob['status'] == 'K'):# or (task.jobs[0].runningJob['status'] == 'A')):
-                ### to check if correct 
-                if (task.jobs[0].runningJob['submission'] >= 2):
-                    try:
-                        doNotAllowMoreSubmissions([jobId])
-                        ## logger human readble message
-                        textmsg = "Do not allowing more resubmission"
-                    except ProdAgentException, ex:
-                        msg = "Updating max racers fields failed for job %s\n" % jobId
-                        logging.error(msg)
-                else:
-                    ### or check the statusReason or postmortem to get the failure reason
-                    ### wait 2 minutes before resubmitting
-                    delay = 120
-                    delay=convertSeconds(delay) 
-                    logging.info(">CrabRunFailureHandler<: re-submitting with delay (h:m:s) "+ str(delay))
-                    payload = str(taskId)+'::'+str(jobId) 
-                    logging.info("--->>> payload = " + payload)         
-                    self.publishEvent("ResubmitJob",payload,delay)
-                    ## logger human readble message
-                    textmsg = "Resubmitting with (h:m:s) %s delay" %(str(delay))
-            elif (task.jobs[0].runningJob['status'] == 'A'):
-                try:
-                    doNotAllowMoreSubmissions([jobId])
-                    ## logger human readble message
-                    textmsg = "Do not allowing more resubmission"
-                except ProdAgentException, ex:
-                    msg = "Updating max racers fields failed for job %s\n" % jobId
-                    logging.error(msg)
+        # first check if the case is handled
+        if applicationReturnCode not in self.ErrorMatrix.keys():
+            # if not, do default action (NoResubmission)
+            #Do default 
+            logging.info("Do default action %s"%(str(applicationReturnCode)))
+            textmsg = self.defaultAction()
+        else:
+            if ('ANY' in self.ErrorMatrix[applicationReturnCode].keys()):  wrapperReturnCode = 'ANY'
+        
+            if (wrapperReturnCode not in  self.ErrorMatrix[applicationReturnCode].keys()) :
+                #Do default 
+                logging.info("Do default action %s"%(str(wrapperReturnCode)))
+                textmsg = self.defaultAction()
             else:
-                logging.info("--->>> status = " + task.jobs[0].runningJob['status'])
-                ## logger human readble message
-                textmsg = "No action taken"
-
-        #### if wrapper code is not null and different from 60303 (file already exists in the SE) and 
-        #### from 70000 (output too big), the job will be resubmit banning the site where it previously run
-
-        if ((wrapperReturnCode is not None) and (wrapperReturnCode != 50117) and (wrapperReturnCode != 60303) and (wrapperReturnCode != 70000) and (wrapperReturnCode != 0)):
-            ce = str(task.jobs[0].runningJob['destination'])
-            ce_temp = task.jobs[0].runningJob['destination'].split(':')
-
-            # fix to avoid empty ce names # Fabio
-            if len(ce_temp[0])>0:
-                ce_name = ce_temp[0] 
-            else:
-                ce_name = "#fake_ce#"
-
-            logging.info("--->>> ce = " + str(ce))
-            logging.info("--->>> ce_name = " + str(ce_name))
-            logging.info(">CrabRunFailureHandler<: re-submitting banning the ce "+ str(ce_name))
-            payload = str(taskId) + '::' + str(jobId) + '::' + str(ce_name)  
-            logging.info("--->>> payload = " + payload)         
-            self.publishEvent("ResubmitJob",payload)
-            ## logger human readble message
-            textmsg = "Resubmitting bunning [%s] ce" %(str(ce_name))
-         
-        #### if wrapper code is 60303 (file already exists in the SE) or 70000 (output too big),
-        #### the job will be not resubmitted
-
-        if ((wrapperReturnCode == 50117) or (wrapperReturnCode == 60303) or (wrapperReturnCode == 70000)):
-            try:
-                doNotAllowMoreSubmissions([jobId])
-                ## logger human readble message
-                textmsg = "Do not allowing more resubmission"
-            except ProdAgentException, ex:
-                msg = "Updating max racers fields failed for job %s\n" % jobId
-                logging.error(msg)
+                # else do as defined in errorMatrix
+                textmsg = self.ErrorMatrix[applicationReturnCode][wrapperReturnCode]()
+            pass # check wrapperReturnCode
+        pass # check applicationReturnCode
+        logging.info(textmsg)
 
         ## prepare dictionary for logging.info
         loggindict.setdefault("ev", "Error handling with: [%s]" %(str(self.__class__.__name__)))
