@@ -181,7 +181,7 @@ class cmscp:
             return self.updateReport('', '-1', str(ex))
 
         # create remote dir
-        if protocol in ['gridftp','rfio']:
+        if protocol in ['gridftp','rfio','srmv2']:
             try:
                 self.createDir( Destination_SE, protocol )
             except Exception, ex:
