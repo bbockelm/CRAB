@@ -79,7 +79,7 @@ class cmscp:
            self.finalReport(results)
         # Local interaction with SE
         else:
-           results = self.copy(self.params['inputFilesList'], self.params['protocol'], self.params['option'] )
+           results = self.copy(self.params['inputFileList'], self.params['protocol'], self.params['option'] )
            return results
 
     def setProtocol( self, middleware ):
