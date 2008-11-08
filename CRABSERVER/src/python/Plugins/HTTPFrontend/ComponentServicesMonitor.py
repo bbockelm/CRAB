@@ -91,8 +91,6 @@ class ShowCompStatus:
         return
 
     def index(self):
-        delegPID = API.getPIDof("delegation-server")
-        gftpPID = API.getPIDof("globus-gridftp-server")
         run , not_run = status()
 
         html = """
@@ -137,11 +135,28 @@ class ShowCompStatus:
             html += "</small></td></tr>\n"
 
           
-        html += "</table><br/>\n"
-        html += "<table>\n"
-        html += " <tr><th>Services </th><th>ProcessID</th></tr>\n"
-        html += "<tr><td align=\"left\">GridFTP server</td><td><b>%s</b></td></tr>\n"%str(gftpPID)
-        html += "<tr><td align=\"left\">delegation service</td><td><b>%s</b></td></tr>\n"%str(delegPID)
+#        html += "</table><br/>\n"
+#        html += "<table>\n"
+
+        html += " <tr><th>&nbsp; </th><th>&nbsp;</th></tr>\n"
+        html += "<tr><th align=\"left\">Services</th><th align=\"left\" style=\"text-indent: 16px\">Process ID</th><th align=\"left\" style=\"text-indent: 16px\">CPU sensor</th></tr>\n"
+        for serv in AllServices.keys():
+            cpid = API.getPIDof(AllServices[serv])
+            spid = API.isSensorRunning(AllServices[serv])
+            html += "<tr><td align=\"left\"><a href=\"%s/?Component=%s&length=12&span=hours\">%s</a></td><td style=\"text-indent: 16px\"><b>%s</b></td>\n"%(
+                self.compcpu,serv,serv,cpid
+                )
+            html += "<td align=\"left\" style=\"text-indent: 16px\"><small>"
+            sensorOn, spid, cpid = API.isSensorRunning(AllServices[serv])
+            if sensorOn:
+                html += "sensor %s is attached to %s"%(spid,cpid)
+            else:
+                sensorDaemonOn, spid = API.isSensorDaemonRunning(serv)
+                if sensorDaemonOn:
+                    html += "sensor %s is going to attach service %s... retry in a minute"%(spid,serv)
+                else:
+                    html += "<b>no CPU sensor found for service %s...!</b>"%(serv)
+            html += "</small></td></tr>\n"
         html += "</table>\n"
         html += "</body></html>"
 
