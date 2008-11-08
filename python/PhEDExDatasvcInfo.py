@@ -29,16 +29,11 @@ class PhEDExDatasvcInfo:
         self.datasetpath = cfg_params.get("CMSSW.datasetpath")
         self.publish_data_name = cfg_params.get('USER.publish_data_name','')
 
-        self.user_lfn = cfg_params.get("USER.lfn",'')
-        if self.user_lfn:
-            if ( self.user_lfn[-1] != '/' ) : self.user_lfn = self.user_lfn + '/'
-            
         self.user_port = cfg_params.get("USER.storage_port",'8443')
         self.user_se_path = cfg_params.get("USER.storage_path",'')
         if self.user_se_path:
             if ( self.user_se_path[-1] != '/' ) : self.user_se_path = self.user_se_path + '/'
                                                     
-       
         #check if using "private" Storage
         self.usePhedex = True 
         stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabFaq#How_to_store_output_with_CRAB_2'
@@ -47,10 +42,32 @@ class PhEDExDatasvcInfo:
             msg +='      For further information please visit : %s'%stage_out_faq 
             raise CrabException(msg)
         if (self.node.find('T1_') + self.node.find('T2_')+self.node.find('T3_')) == -3: self.usePhedex = False 
-        if not self.usePhedex and ( self.user_lfn == '' or self.user_se_path == '' ):
+        if not self.usePhedex :
+             self.user_lfn = cfg_params.get("USER.lfn",'')
+             if self.user_lfn:
+                 if ( self.user_lfn[-1] != '/' ) : self.user_lfn = self.user_lfn + '/'
+                 if ( self.user_lfn[1] != '/' ) : self.user_lfn = '/' + self.user_lfn 
+                 if self.user_remote_dir:
+                     if ( self.user_remote_dir[-1] != '/' ) : self.user_remote_dir = self.user_remote_dir + '/'
+                     if ( self.user_remote_dir[1] != '/' ) : self.user_remote_dir = '/' + self.user_remote_dir 
+                     if self.user_remote_dir == self.user_lfn :
+                         msg =  'WARINING: In your crab.cfg you are specifying both lfn and user_remote_dir parameters.\n'
+                         msg += '\t lfn is now deprecated. Please use only user_remote_dir removing lfn from your crab.cfg'
+                         common.logger.message(msg)
+                     else:
+                         msg =  'ERROR: In your crab.cfg you are specifying both lfn and user_remote_dir parameters giving different values. \n'
+                         msg += '\t lfn is now deprecated. Please use only user_remote_dir removing lfn from your crab.cfg'
+                         raise CrabException(msg)
+                 else: 
+                     msg =  'WARINING: In your crab.cfg you are using "lfn" which is now a deprecating parameter.\n'
+                     msg += '\t Please use user_remote_dir removing lfn from your crab.cfg'
+                     common.logger.message(msg)
+                     self.user_remote_dir = self.user_lfn
+
+        if not self.usePhedex and ( self.user_remote_dir == '' or self.user_se_path == '' ):
             msg = 'You are asking to stage out without using CMS Storage Name convention. In this case you \n' 
-            msg += '      must specify both lfn and storage_path in the crab.cfg section [USER].\n '
-            msg += '      For further information please visit : %s'%stage_out_faq
+            msg += '\t must specify both user_remote_dir and storage_path in the crab.cfg section [USER].\n '
+            msg += '\t For further information please visit : %s'%stage_out_faq
             raise CrabException(msg)
         self.sched = common.scheduler.name().upper() 
         self.protocol = self.srm_version
@@ -58,7 +75,7 @@ class PhEDExDatasvcInfo:
 
         self.forced_path = '/store/user/'
         if not self.usePhedex: 
-            self.forced_path = self.user_lfn
+            self.forced_path = self.user_remote_dir
         return
  
     def getEndpoint(self):   
@@ -97,7 +114,7 @@ class PhEDExDatasvcInfo:
             USER = (query.split('user')[1]).split('/')[1]
         else:
             SE = self.node
-            SE_PATH = self.user_se_path + self.user_lfn
+            SE_PATH = self.user_se_path + self.user_remote_dir 
             try:
                 USER = (self.lfn.split('user')[1]).split('/')[1]
             except:
@@ -117,7 +134,7 @@ class PhEDExDatasvcInfo:
             ## check if storage_name is a T2 (siteDB query)
             ## if yes :match self.user_lfn with LFNBaseName...
             ##     if NOT : raise (you are using a T2. It's not allowed stage out into self.user_path+self.user_lfn)   
-            lfn = self.user_lfn
+            lfn = self.user_remote_dir
             return lfn
 	if self.publish_data_name == '' and int(self.publish_data) == 1:
             msg = "Eeror. The [USER] section does not have 'publish_data_name'"
