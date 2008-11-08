@@ -462,7 +462,7 @@ If you want to copy the output in a not_official_CMS remote site you have to spe
 =item B<user_remote_dir>
 
 To be used with <copy_data>=1 and <storage_element> official CMS sites.
-This is the directory where your output will be stored. This directory will be created under the mountpoint of the official CMS storage Element. The mountpoint is discovered by CRAB. 
+This is the directory or tree of directories where your output will be stored. This directory will be created under the mountpoint ( which will be discover by CRAB if an official CMS storage Element has been used, or taken from the crab.cfg as specified by the user). B<NOTE> This part of the path will be used as logical file name of your files in the case of publication without using an official CMS storage Element.
 
 =item B<storage_path>
 
@@ -472,7 +472,7 @@ This is the full path of the Storage Element writeable by all, the mountpoint of
 =item B<lfn>
 
 To be used with <copy_data>=1 and <storage_element> not official CMS sites.
-This is the directory or tree of directories that CRAB will create under the storage path of the SE. Here your produced output will be stored.This part of the path will be used as logical file name of your files in the case of publication
+This is the directory or tree of directories that CRAB will create under the storage path of the SE. Here your produced output will be stored.This part of the path will be used as logical file name of your files in the case of publication. B<DEPRECATED>
 
 =item B<storage_pool>
 
@@ -583,6 +583,10 @@ All the SE (Storage Element) whose name contains the following strings (comma se
 =item B<SE_white_list>
 
 Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.It works only if a datasetpath is specified. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place. You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
+
+=item B<remove_default_blacklist>
+
+CRAB enforce the T1s Computing Eelements Black List. By default it is appended to the user defined I<CE_black_list>. To remove the enforced T1 black lists set I<remove_default_blacklist>=1.  
 
 =item B<virtual_organization>
 
