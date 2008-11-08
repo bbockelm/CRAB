@@ -7,9 +7,15 @@ pid=0;
 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` " * * * start sensord for component ${CSC}" >> ${PRODAGENT_WORKDIR}/HTTPFrontend/sensors/${CSC}-pidstat.log ;
 until false; do
     until false; do
-        currentpid=`crabServer-cmpPid --component ${CSC}`;
+        if echo mySQL GridFTP | grep -qw $CSC; then
+            target="service";
+            currentpid=`crabServer-svcPid --${target} ${CSC}`;
+        else
+            target="component";
+            currentpid=`crabServer-cmpPid --{target} ${CSC}`;
+        fi
         if [ "$currentpid" == "" ]; then 
-            printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "component ${CSC} not running, will retry in a minute...";
+            printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "${target} ${CSC} not running, will retry in a minute...";
             if [ $pid -gt 0 ]; then
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${pid}";
                 ps -C sar wwho pid,cmd | grep "sar -X $pid " | awk '{print $1}' | xargs kill -9
@@ -20,18 +26,18 @@ until false; do
         fi
         if ! [ $currentpid -eq $pid ]; then
             if [ $pid -gt 0 ]; then
-                printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "component ${CSC} was restarted:";
+                printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "${target} ${CSC} was restarted:";
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${pid}";
                 ps -C sar wwho pid,cmd | grep "sar -X $pid " | awk '{print $1}' | xargs kill -9
                 ps -C sadc wwho pid,cmd | grep " -X $pid" | awk '{print $1}' | xargs kill -9
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "new pid to be monitored: ${currentpid}";
             else
-                printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "searching for already running sar sensor for component ${CSC}...";
+                printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "searching for already running sar sensor for ${target} ${CSC}...";
                 printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
                 ps -C nocommand o pid,cmd
                 printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
                 if ps -C sar wwho pid,cmd | grep "sar -X $currentpid " ; then
-                    printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "sar sensor fo component ${CSC} already running (see above)! restarting";
+                    printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "sar sensor fo ${target} ${CSC} already running (see above)! restarting";
                     printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${currentpid}";
                     ps -C sar wwho pid,cmd | grep "sar -X $currentpid " | awk '{print $1}' | xargs kill -9
                     ps -C sadc wwho pid,cmd | grep " -X $currentpid" | awk '{print $1}' | xargs kill -9
@@ -48,7 +54,7 @@ until false; do
 
 
     if [ $pid -gt 0 ]; then
-        printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "starting sar sensor for component ${CSC}=${pid}, see: ";
+        printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "starting sar sensor for ${target} ${CSC}=${pid}, see: ";
         /usr/bin/sar -X $pid 60 0 | grep --line-buffered $pid | awk '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "      " $6 "   " $7 "   " ($6+$7); fflush()}'  1>> ${PRODAGENT_WORKDIR}/HTTPFrontend/sensors/${CSC}-pidstat.dat 2>/dev/null & 
         sleep 1
         printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;

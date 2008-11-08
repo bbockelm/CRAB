@@ -22,6 +22,7 @@ from ProdAgentCore.Configuration import loadProdAgentConfiguration
 import Sites
 from ComponentServicesMonitor import status
 
+AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
 
 def gatherHWData(logFilename,Nbins):
         user = {}
@@ -90,12 +91,18 @@ class ComponentCpuPlot:
 
         if int(length) <= 0:
                 page.append("Unable to process request for %s %s<br/>Please ask for a strictly positive period of time..."%(length,span))
-        elif Component == 'All':
+        elif Component == 'All components':
                 for Comp in status(True):
                         pngfile = os.path.join(self.workingDir, "%s-%s-%s_pidstat.png" % (Comp,length,span))
                         pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
                         page += "<a href=\"%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Comp,length,span,pngfileUrl)
                         draw_TimeComponentCpuGraph(Comp,self.sensorsDir,pngfile,length,span,'small')
+        elif Component == 'All services':
+                for Serv in AllServices.keys():
+                        pngfile = os.path.join(self.workingDir, "%s-%s-%s_pidstat.png" % (Serv,length,span))
+                        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+                        page += "<a href=\"%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Serv,length,span,pngfileUrl)
+                        draw_TimeComponentCpuGraph(Serv,self.sensorsDir,pngfile,length,span,'small')
         else:
                 pngfile = os.path.join(self.workingDir, "%s-%s-%s_pidstat.png" % (Component,length,span))
                 pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)

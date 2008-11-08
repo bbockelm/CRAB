@@ -37,11 +37,16 @@ def usage():
 
            You can optionally specify the crabServer components list with
            --components=<comp> otherwise it will act on all component
-           listed in the crabServer Config file 
+           listed in the crabServer Config file and all services
 
-           --start starts up the crabServer component(s) SysStat sensor
-           --shutdown shutsdown the crabServer component(s) SysStat sensor
-           --status prints the status of the crabServer component(s) SysStat sensor
+           You can optionally specify the crabServer services list with
+           --services=<serv> otherwise it will act on all component 
+           listed in the crabServer Config file and all services
+           Available services are: GridFTP and mySQL
+
+           --start starts up the SysStat sensors
+           --shutdown shutsdown the SysStat sensors
+           --status prints the status of the SysStat sensors
     """
     print usage
 
@@ -49,7 +54,8 @@ def usage():
 # # # #
 
 valid = ['config=', 'start', 'shutdown', 'status', 'restart',
-         'components=']
+         'services=', 'components=']
+AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
@@ -61,6 +67,7 @@ except getopt.GetoptError, ex:
 config = None
 command = None
 componentsList = None
+servicesList = None
 
 for opt, arg in opts:
     if opt == "--config":
@@ -100,6 +107,13 @@ for opt, arg in opts:
             if item.strip == "":
                 continue
             componentsList.append(item)
+    if opt == "--services":
+        srvcList = arg.split(',')
+        servicesList = []
+        for item in srvcList:
+            if item.strip == "":
+                continue
+            servicesList.append(item)
             
 if config == None:            
     configFile = os.environ.get("PRODAGENT_CONFIG", None)
@@ -129,7 +143,21 @@ if componentsList != None:
     print msg
     components = componentsList
 else:
-    components = cfgObject.listComponents()
+    if servicesList == None:
+        components = cfgObject.listComponents()
+    else:
+        components = []
+
+if servicesList != None:
+    msg = "Services List Specified:\n"
+    msg += str(servicesList).replace('\'', '')
+    print msg
+    services = servicesList
+else:
+    if componentsList == None:
+        services = AllServices.keys()
+    else:
+        services = []
 
 def getComponentDir(component):
     compCfg = cfgObject.getConfig(component)
@@ -144,47 +172,6 @@ def getComponentDir(component):
         sys.exit(1)
     compDir = os.path.expandvars(compDir)
     return compDir
-
-def readPids(PidsFile):
-    file = open(PidsFile, 'r')
-    pid = int(file.readline());
-    pgid = int(file.readline());
-    file.close()
-    return pid, pgid
-
-def writePids(PidsFile,pid,pgid):
-    pid = "%i\n" % pid
-    pgid = "%i\n" % pgid
-    file = open(PidsFile, 'w')
-    file.write(pid)
-    file.write(pgid)
-    file.close()
-
-
-def OldisSensorRunning(component):
-    HTTPFeDir = getComponentDir("HTTPFrontend")
-    sensorPidFile = "sensorsLogs/"+component+"-sensord.ids"
-    sensorPidFile = os.path.join(HTTPFeDir, sensorPidFile)
-    if not os.path.exists(sensorPidFile):
-        print "sensor for %s is NOT running" % component
-        return False
-    pid, pgid = readPids(sensorPidFile)
-    sensorPidProcFile = "/proc/"+str(pid)+"/status"
-    if not os.path.exists(sensorPidProcFile):
-        print "sensor for %s is NOT running (process %s not found...)" % (component,pid)
-        print "for safety, removing file %s"%sensorPidFile
-        os.remove(sensorPidFile)
-        return False
-    file = open(sensorPidProcFile, 'r')
-    name = file.readline();
-    file.close()
-    if not re.search("sensord",name):
-        print "%s do not seems to be a sensor process, it says: %s" % (sensorPidProcFile, name)
-        print "for safety, removing file %s"%sensorPidFile
-        os.remove(sensorPidFile)
-        return False
-    print "%s sensor running with pid:%i and pgid=%i" % (component, pid, pgid)
-    return True, pid, pgid, sensorPidFile
 
 def isSensorRunning(comp):
     # get all sensors pids with their component pid
@@ -225,29 +212,39 @@ def startup():
             else:
                 subprocess.Popen(["sensord",component])
                 print "sensor for component %s(%s) started" % (component,daemon['ProcessID'])
+    for service in services:
+        print str(service)
 
-
-def Oldatus():
-    for component in components:
-        OldisSensorRunning(component)
-
+        
 
 def status():
+    componentsL = components[:]
+    servicesL = []
+    servicesK = {}
+    for service in services:
+        servicesL.append(AllServices[service])
+        servicesK[AllServices[service]] = service
     sensors = os.popen('ps -C sar wwho pid,cmd').readlines()
     for sensor in sensors:
         spid,cpid = sensor.split()[0:4:3]
-        component = os.popen('ps -p '+str(cpid)+' wwho cmd').read()
-        if component != "":
-            component = component.split('/')[-2]
+        process = os.popen('ps -p '+str(cpid)+' wwho cmd').read()
+        if process != "":
+            component = process.split('/')[-2]
+            service = process.split()[0].split('/')[-1]
         if component in components:
             print "Found running sensor for %6s, %-18s: %8s"%(cpid,component,spid)
-            components.remove(component)
-    for component in components:
+            componentsL.remove(component)
+        if service in servicesL:
+            print "Found running sensor for %6s, %-18s: %8s"%(cpid,servicesK[service],spid)
+            servicesL.remove(service)
+    for component in componentsL:
         srun, cpid = isSensorDaemonRunning(component)
         if srun:
             print "sensor %s is going to attach component %-18s"%(cpid,component)
         else:
             print "sensor for %-18s is not running"%component
+    for service in servicesL:
+        print "sensor for %-18s is not running"%service
 
 
 def shutdown():
@@ -273,16 +270,8 @@ def shutdown():
             componentsL.remove(component)
     for component in componentsL:
         print "sensor for %s is NOT running"%component
-
-
-def OldShutdown():
-    for component in components:
-        running, pid, pgid, sensorPidFile = OldisSensorRunning(component)
-        if running:
-            print "Shutting Down!"
-            os.killpg(int(pgid), 9)
-            os.remove(sensorPidFile)
-
+    for service in services:
+        print str(service)
 
 if command == "start":
     startup()

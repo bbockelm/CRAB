@@ -10,6 +10,8 @@ import API
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 from ProdAgentCore.DaemonDetails import DaemonDetails
 
+AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
+
 
 class CompServMonitor:
 
@@ -47,7 +49,7 @@ class CompServMonitor:
         html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
         html += 'Show CPU plot for  '
         html += ' <select name="Component" style="width:140px">'
-        html += '<option>All</option>'
+        html += '<option>All components</option>'
         for components in status(True):
             html += '<option>'+components+'</option>'
         html += '</select>'
@@ -59,6 +61,22 @@ class CompServMonitor:
         html += '</form>'
         html += "</table>\n"
 
+        html += "<table>\n"
+        html += "<br/><br/><i> Display services CPU usage:</i><br/><br/>"
+        html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
+        html += 'Show CPU plot for  '
+        html += ' <select name="Component" style="width:140px">'
+        html += '<option>All services</option>'
+        for service in AllServices.keys():
+            html += '<option>'+service+'</option>'
+        html += '</select>'
+        html += ' for last  '
+        html += ' <input type="text" name="length" size=4 value=0> '
+        html += ' <select name="span" style="width:80px"><option>hours</option><option>days</option></select> '
+        html += ' <input type="submit" value="Show Plot"/> '
+        html += '</select>'
+        html += '</form>'
+        html += "</table>\n"
 
         html += """</body></html>"""
 
@@ -73,9 +91,8 @@ class ShowCompStatus:
         return
 
     def index(self):
-        delegation = API.getpidof("delegation", "Delegation Service")
-        gridftp = API.getpidof("gridftp-server","Globus GridFtp")
-
+        delegPID = API.getPIDof("delegation-server")
+        gftpPID = API.getPIDof("globus-gridftp-server")
         run , not_run = status()
 
         html = """
@@ -94,7 +111,7 @@ class ShowCompStatus:
         for r in run:
             comp = str(r[0])
             cpid = str(r[1])
-            html += "<tr><td align=\"left\"><a href=\"%s/?Component=%s&length=12&span=hours\">%s</a></td><td style=\"text-indent: 16px\">%s</td>\n"%(
+            html += "<tr><td align=\"left\"><a href=\"%s/?Component=%s&length=12&span=hours\">%s</a></td><td style=\"text-indent: 16px\"><b>%s</b></td>\n"%(
                 self.compcpu,comp,comp,cpid
                 )
             html += "<td align=\"left\" style=\"text-indent: 16px\"><small>"
@@ -122,9 +139,9 @@ class ShowCompStatus:
           
         html += "</table><br/>\n"
         html += "<table>\n"
-        html += " <tr><th>Services </th><th>Status</th></tr>\n"
-        html += "<tr><td align=\"left\">%s: </td><td><b>%s</b></td></tr>\n"%(str(gridftp[0]),str(gridftp[1]))
-        html += "<tr><td align=\"left\">%s: </td><td><b>%s</b></td></tr>\n"%(str(delegation[0]),str(delegation[1]))
+        html += " <tr><th>Services </th><th>ProcessID</th></tr>\n"
+        html += "<tr><td align=\"left\">GridFTP server</td><td><b>%s</b></td></tr>\n"%str(gftpPID)
+        html += "<tr><td align=\"left\">delegation service</td><td><b>%s</b></td></tr>\n"%str(delegPID)
         html += "</table>\n"
         html += "</body></html>"
 

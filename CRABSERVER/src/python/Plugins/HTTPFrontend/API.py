@@ -283,6 +283,13 @@ def getpidof(procname,service):
 
     return msg
     
+def getPIDof(procname):
+    pid = os.popen("ps -C %s ho pid"%procname).read()
+    if re.match('\s*[0-9]+\s*',str(pid)):
+        return pid.rstrip()
+    else:
+        return "Not Running"
+
                                     
 def isSensorRunning(comp):
     # get all sensors pids with their component pid
