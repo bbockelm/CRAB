@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.62 2008/09/10 14:41:00 ewv Exp $"
-__version__ = "$Revision: 1.62 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.63 2008/10/17 10:52:33 slacapra Exp $"
+__version__ = "$Revision: 1.63 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_logger import Logger
@@ -35,7 +35,7 @@ class SchedulerGlite(SchedulerGrid):
             cfg_params['EDG.rb']='CERN'
         self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
         self.wms_service=cfg_params.get("EDG.wms_service",'')
-        self.skipWMSAuth=cfg_params.get("EDG.skipwmsauth",0)
+        self.skipWMSAuth=cfg_params.get("EDG.skipwmsauth",1)
         params = { 'service' : self.wms_service, \
                    'config' : self.rb_param_file, \
                    'skipWMSAuth' : self.skipWMSAuth
