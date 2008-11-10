@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.126.2.3 2008/11/04 16:07:28 ewv Exp $"
-__version__ = "$Revision: 1.126.2.3 $"
+__revision__ = "$Id: FatWorker.py,v 1.126.2.4 2008/11/04 16:25:25 ewv Exp $"
+__version__ = "$Revision: 1.126.2.4 $"
 import string
 import sys, os
 import time
@@ -100,6 +100,7 @@ class FatWorker(Thread):
 
         self.log.info("FatWorker %s allocating submission system session"%self.myName)
         if not self.allocateBossLiteSchedulerSession(taskObj) == 0:
+            self.log.info("Scheduler allocation failed")
             return
 
         self.log.info('FatWorker %s preparing submission'%self.myName)
@@ -196,6 +197,7 @@ class FatWorker(Thread):
         self.bossSchedName = {'GLITE':'SchedulerGLiteAPI',
                               'GLITECOLL':'SchedulerGLiteAPI',
                               'CONDOR_G':'SchedulerCondorG',
+                              'GLIDEIN' :'SchedulerGlidein',
                               'ARC':'arc',
                               'LSF':'SchedulerLsf',
                               'CAF':'SchedulerLsf'}[self.schedName]
@@ -207,7 +209,6 @@ class FatWorker(Thread):
             if self.wmsEndpoint:
                 schedulerConfig['service'] = self.wmsEndpoint
         elif schedulerConfig['name'] in ['SchedulerGlidein', 'SchedulerCondorG']:
-            # FIXME: Get rid of "condorTemp" directory
             condorTemp = os.path.join(self.wdir, self.taskName+'_spec')
             self.log.info('Condor will use %s for temporary files' % condorTemp)
             schedulerConfig['tmpDir'] = condorTemp
@@ -527,8 +528,10 @@ class FatWorker(Thread):
 
         for id_job in jobs_to_match:
             tags = ''
-            if self.bossSchedName == 'SchedulerCondorG':
+            if self.bossSchedName in ['SchedulerCondorG']:
                 requirements.append( self.sched_parameter_CondorG(id_job, taskObj) )
+            if self.bossSchedName in ['SchedulerGlidein']:
+                requirements.append( self.sched_parameter_Glidein(id_job, taskObj) )
             elif self.bossSchedName == 'SchedulerLsf':
                 requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
             elif self.bossSchedName == 'SchedulerGLiteAPI':
@@ -539,7 +542,8 @@ class FatWorker(Thread):
                 continue
 
             # Perform listMatching
-            if self.bossSchedName in ['SchedulerCondorG', 'SchedulerLsf']:
+            if self.bossSchedName in ['SchedulerCondorG', 'SchedulerGlidein',
+                                      'SchedulerLsf']:
                 matched.append(sel)
             else:
                 cleanedList = None
@@ -610,7 +614,7 @@ class FatWorker(Thread):
 
         for job in task.jobs:
             jj, jobId, localId , jid = (job['jobId'], '', '', str(job.runningJob['schedulerId']) )
-            if self.bossSchedName == 'SchedulerCondorG':
+            if self.bossSchedName in ['SchedulerCondorG', 'SchedulerGlidein']:
                 hash = self.cfg_params['cfgFileNameCkSum'] #makeCksum(common.work_space.cfgFileName())
                 rb = 'OSG'
                 jobId = str(jj) + '_' + hash + '_' + jid
@@ -681,6 +685,50 @@ class FatWorker(Thread):
             schedParam += 'globusrsl = (maxWalltime=%s); ' % \
                           self.cfg_params['EDG.max_wall_time']
 
+        return schedParam
+
+
+    def sched_parameter_Glidein(self, i, task):
+        """
+        Parameters specific to CondorG scheduler
+        """
+        from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
+
+        # shift due to BL ranges
+        i = i - 1
+        if i < 0:
+            i = 0
+
+        # Unpack CMSSW version and architecture from gLite style-string
+        [verFrag, archFrag] = task['jobType'].split(',')[0:2]
+        version = verFrag.split('-')[-1]
+        arch = archFrag.split('-')[-1]
+        version = version.replace('"','')
+        arch = arch.replace('"','')
+
+        # Get list of SEs and clean according to white/black list
+        seList = task.jobs[i]['dlsDestination']
+        seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL,
+                                          self.log)
+        seDest   = seParser.cleanForBlackWhiteList(seList, 'list')
+
+        # Convert to list of CEs and clean according to white/black list
+        onlyOSG = False
+        availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
+        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
+                                          self.log)
+        ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
+        ceString = ','.join(ceDest)
+        schedParam  = '+DESIRED_Gatekeepers = "' + ceString + '"; '
+        schedParam += '+DESIRED_Archs = "INTEL,X86_64"; '
+        schedParam += "Requirements = stringListMember(GLIDEIN_Gatekeeper,DESIRED_Gatekeepers) &&  stringListMember(Arch,DESIRED_Archs); "
+
+        if self.cfg_params['EDG.max_wall_time']:
+            schedParam += '+MaxWallTimeMins = %s; ' % \
+                          self.cfg_params['EDG.max_wall_time']
+        else:
+             schedParam += '+MaxWallTimeMins = 120; '
+       
         return schedParam
 
 
