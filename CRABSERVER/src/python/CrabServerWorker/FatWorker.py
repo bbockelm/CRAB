@@ -6,13 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-<<<<<<< FatWorker.py
-__revision__ = "$Id: FatWorker.py,v 1.136 2008/11/10 11:22:40 spiga Exp $"
-__version__ = "$Revision: 1.136 $"
-=======
-__revision__ = "$Id: FatWorker.py,v 1.126.2.5 2008/11/10 15:12:36 ewv Exp $"
-__version__ = "$Revision: 1.126.2.5 $"
->>>>>>> 1.126.2.5
+__revision__ = "$Id: FatWorker.py,v 1.137 2008/11/10 15:19:16 ewv Exp $"
+__version__ = "$Revision: 1.137 $"
 import string
 import sys, os
 import time
@@ -23,7 +18,7 @@ import traceback
 import copy
 import re
 
-# CW DB API 
+# CW DB API
 from CrabWorkerAPI import CrabWorkerAPI
 
 # BossLite import
@@ -81,7 +76,7 @@ class FatWorker(Thread):
             self.start()
         except Exception, e:
             logMsg = 'FatWorker exception : %s\n'%self.myName
-            logMsg +=  traceback.format_exc() 
+            logMsg +=  traceback.format_exc()
             self.log.info(logMsg)
         self.apmon.free()
 
@@ -100,8 +95,8 @@ class FatWorker(Thread):
         except Exception, e:
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
-            logMsg = "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName) 
-            self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), logMsg, e, exc, True ) 
+            logMsg = "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName)
+            self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), logMsg, e, exc, True )
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
             return
 
@@ -119,10 +114,10 @@ class FatWorker(Thread):
         except Exception, e:
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
-            logMsg = "WorkerError %s. Task %s. preSubmissionCheck."%(self.myName, self.taskName) 
+            logMsg = "WorkerError %s. Task %s. preSubmissionCheck."%(self.myName, self.taskName)
             self.sendResult(errStatus, errMsg, logMsg, e, "", True)
             return
-                
+
         try:
             sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
             if len(matched)==0:
@@ -130,7 +125,7 @@ class FatWorker(Thread):
         except Exception, e:
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
-            logMsg = "WorkerError %s. Task %s. listMatch."%(self.myName, self.taskName) 
+            logMsg = "WorkerError %s. Task %s. listMatch."%(self.myName, self.taskName)
             self.sendResult(errStatus, errMsg, logMsg, e, "", True)
 
         self.log.info("FatWorker %s performing submission"%self.myName)
@@ -139,7 +134,7 @@ class FatWorker(Thread):
         except Exception, e:
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
-            logMsg = "WorkerError %s. Task %s."%(self.myName, self.taskName) 
+            logMsg = "WorkerError %s. Task %s."%(self.myName, self.taskName)
             self.sendResult(errStatus, errMsg, logMsg, e, exc, True)
             return
 
@@ -150,7 +145,7 @@ class FatWorker(Thread):
         except Exception, e:
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
-            logMsg = "WorkerError %s. Task %s. postSubmission."%(self.myName, self.taskName) 
+            logMsg = "WorkerError %s. Task %s. postSubmission."%(self.myName, self.taskName)
             self.sendResult(errStatus, errMsg, logMsg, e, exc, True)
             return
         self.log.info("FatWorker %s finished %s"%(self.myName, self.taskName) )
@@ -234,7 +229,7 @@ class FatWorker(Thread):
 
         if schedulerConfig['name'] in ['SchedulerGLiteAPI']:
             schedulerConfig['config'] = self.wdir + '/glite_wms_%s.conf' % self.configs['rb']
-            schedulerConfig['skipWMSAuth'] = 1 
+            schedulerConfig['skipWMSAuth'] = 1
             if self.wmsEndpoint:
                 schedulerConfig['service'] = self.wmsEndpoint
         elif schedulerConfig['name'] in ['SchedulerGlidein', 'SchedulerCondorG']:
@@ -315,7 +310,7 @@ class FatWorker(Thread):
             try:
                 self.blDBsession.updateDB(task)
             except Exception, e:
-                logMsg = "Worker %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName) 
+                logMsg = "Worker %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
                 logMsg += str(e)
                 self.log.info( logMsg )
                 return [], self.cmdRng
@@ -334,7 +329,7 @@ class FatWorker(Thread):
                         skippedSubmissions.append(j['jobId'])
                 except Exception, e:
                     logMsg = "Worker %s. Problem inspecting task %s job %s. Won't be submitted"%(self.myName, \
-                                self.taskName, j['name']) 
+                                self.taskName, j['name'])
                     logMsg += str(e)
                     self.log.info( logMsg )
                     self.log.debug( traceback.format_exc() )
@@ -401,8 +396,8 @@ class FatWorker(Thread):
 
         resubmissionList = list( set(submittableRange).difference(set(submittedJobs)) )
         logMsg = "Worker. Task %s summary: \n "%self.taskName
-        logMsg +="\t\t  (%d jobs), submitted %d unmatched %d notSubmitted %d skipped %d"%( 
-            len(submittableRange), len(submittedJobs), len(unmatchedJobs), len(nonSubmittedJobs), len(skippedJobs) )    
+        logMsg +="\t\t  (%d jobs), submitted %d unmatched %d notSubmitted %d skipped %d"%(
+            len(submittableRange), len(submittedJobs), len(unmatchedJobs), len(nonSubmittedJobs), len(skippedJobs) )
         self.log.info( logMsg )
         self.log.debug("Task %s\n"%self.myName + "jobs : %s \nsubmitted %s \nunmatched %s\nnotSubmitted %s\nskipped %s"%(str(submittableRange), \
             str(submittedJobs), str(unmatchedJobs), str(nonSubmittedJobs), str(skippedJobs) )   )
@@ -418,7 +413,7 @@ class FatWorker(Thread):
             for j in taskObj.jobs:
                 if j['jobId'] in submittedJobs:
                     state_we_job = ""
-                    try: 
+                    try:
                         ## get internal server job status (not blite status)
                         state_we_job = self.cwdb.getWEStatus( j['name'] )
                     except Exception, ex:
@@ -468,14 +463,14 @@ class FatWorker(Thread):
                     try:
                         self.cwdb.updateWEStatus(jId, 'reallyFinished')
                     except Exception, e:
-                        logMsg = "Problem updating WE status:\n" 
-                        logMsg +=  traceback.format_exc() 
-                        self.log.info (logMsg) 
+                        logMsg = "Problem updating WE status:\n"
+                        logMsg +=  traceback.format_exc()
+                        self.log.info (logMsg)
                         continue
             except Exception,e:
                 logMsg = "Unable to mark failed jobs in WorkFlow Entities \n "
                 logMsg +=  traceback.format_exc()
-                self.log.info (logMsg) 
+                self.log.info (logMsg)
             # Give up message
             reason = "Worker %s has no more attempts: give up with task %s"%(self.myName, self.taskName)
             self.log.info( reason )
@@ -733,7 +728,7 @@ class FatWorker(Thread):
                           self.cfg_params['EDG.max_wall_time']
         else:
              schedParam += '+MaxWallTimeMins = 120; '
-       
+
         return schedParam
 
 
