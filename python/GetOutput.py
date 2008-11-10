@@ -242,6 +242,9 @@ class GetOutput(Actor):
             else: 
                 codeValue["applicationReturnCode"] = ''
             
+        else:
+            if codeValue.has_key('applicationReturnCodeOrig'):
+                codeValue.pop("applicationReturnCodeOrig")
         return codeValue
 
     def moveOutput(self,id, max_id,path,file):
