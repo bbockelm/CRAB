@@ -197,7 +197,7 @@ class MultiCrab:
                 options[tmp]=self.cfg_params_dataset[sec][opt]
             # add section to storage_path if exist in crab.cfg
             if self.storage_path:
-                options["-USER.storage_path"]=self.storage_path+"/"+sec
+                options["-USER.user_remote_dir"]=self.storage_path+"/"+sec
             # Input options (command)
             for opt in self.opts:
                 options[opt]=self.opts[opt]
