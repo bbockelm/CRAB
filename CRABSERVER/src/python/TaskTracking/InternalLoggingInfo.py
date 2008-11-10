@@ -66,7 +66,7 @@ class InternalLoggingInfo:
            eve.initialize( values )
 
        ## updating keys of event entries
-       keytag = values.keys()
+       keytag = eve.fields.keys()
        oldtag = loadxml.getFirstElementOf("Keys")
        oldkeytag = eval(oldtag.getAttribute("tags"))
        updtag = oldkeytag
