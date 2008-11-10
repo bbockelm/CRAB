@@ -66,9 +66,9 @@ class CrabRunFailureHandler(HandlerInterface):
         " No resubmission: do nothing "
         from ProdAgent.WorkflowEntities.JobState import doNotAllowMoreSubmissions
         try:
-            doNotAllowMoreSubmissions([self.jobId])
+            doNotAllowMoreSubmissions([self.JobSpecId])
             ## logger human readble message
-            textmsg = "Do not allowing more resubmission"
+            textmsg = "Do not allowing more resubmission %s"%self.JobSpecId
         except ProdAgentException, ex:
             msg = "Updating max racers fields failed for job %s\n" % self.jobId
             logging.error(msg)
@@ -232,6 +232,9 @@ class CrabRunFailureHandler(HandlerInterface):
         else:
             logging.info(">CrabRunFailureHandler<:Cannot parse payload! %s " % payload)
             return
+        for x in payload.split('/'):
+            if str(x).find('_spec') > 0: temp_specId=x
+        self.JobSpecId = temp_specId.replace('_spec','_job%s'%self.jobId)
 
         #### parse payload to obtain taskId and jobId ####
         logging.info("--->>> taskId = " + str(self.taskId))
