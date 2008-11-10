@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.137 2008/11/10 15:19:16 ewv Exp $"
-__version__ = "$Revision: 1.137 $"
+__revision__ = "$Id: FatWorker.py,v 1.138 2008/11/10 15:20:25 ewv Exp $"
+__version__ = "$Revision: 1.138 $"
 import string
 import sys, os
 import time
@@ -530,7 +530,7 @@ class FatWorker(Thread):
             tags = ''
             if self.bossSchedName in ['SchedulerCondorG']:
                 requirements.append( self.sched_parameter_CondorG(id_job, taskObj) )
-            if self.bossSchedName in ['SchedulerGlidein']:
+            elif self.bossSchedName in ['SchedulerGlidein']:
                 requirements.append( self.sched_parameter_Glidein(id_job, taskObj) )
             elif self.bossSchedName == 'SchedulerLsf':
                 requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
