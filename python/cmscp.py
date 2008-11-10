@@ -26,7 +26,7 @@ class cmscp:
         """
 
         #set default
-        self.params = {"source":'', "destination":'', "inputFileList":'', "outputFileList":'', \
+        self.params = {"source":'', "destination":'','destinationDir':'', "inputFileList":'', "outputFileList":'', \
                            "protocol":'', "option":'', "middleware":'', "srm_version":'srmv2'}
         self.debug = 0
 
@@ -321,7 +321,8 @@ class cmscp:
         if self.params['source'] == '' and path == '':
             source_file = os.path.abspath(filetocopy)
         elif self.params['destination'] =='':
-            dest_file = os.path.join(os.getcwd(),file_name)
+            destDir = self.params.get('destinationDir',os.getcwd())
+            dest_file = os.path.join(destDir,file_name)
         elif self.params['source'] != '' and self.params['destination'] != '' :
             source_file = file_name
 
@@ -344,7 +345,7 @@ class cmscp:
                 msg += str(ex.output)+'\n'
             msg += "Problem copying %s file" % filetocopy
             ErCode = '60307'
-        if ErCode == '0' and protocol.find('srm') == 0:
+        if ErCode == '0' and protocol.find('srmv') == 0:
             remote_file_size = -1 
             local_file_size = os.path.getsize( source_file ) 
             try:
