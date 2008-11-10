@@ -250,6 +250,13 @@ class ServerCommunicator:
         node.setAttribute("Type", str(type) ) 
         node.setAttribute("ClientVersion", str(ver) ) 
 
+        ## Only Temporary. it should be at Server level
+        removeT1bL = self.cfg_params.get("EDG.remove_default_blacklist", 0 )
+        T1_BL = "fnal.gov, gridka.de ,w-ce01.grid.sinica.edu.tw, w-ce02.grid.sinica.edu.tw, \
+                 lcg00125.grid.sinica.edu.tw, \
+                 gridpp.rl.ac.uk, cclcgceli03.in2p3.fr, cclcgceli04.in2p3.fr, pic.es, cnaf"
+        if removeT1bL == '1': T1_BL = ''
+
         # create a mini-cfg to be transfered to the server
         miniCfg = {}
 
@@ -258,9 +265,9 @@ class ServerCommunicator:
         if 'EDG.ce_white_list' in self.cfg_params:
             miniCfg['EDG.ce_white_list'] = str( self.cfg_params['EDG.ce_white_list'] )
 
-        miniCfg['EDG.ce_black_list'] = ""
+        miniCfg['EDG.ce_black_list'] = T1_BL
         if 'EDG.ce_black_list' in self.cfg_params:
-            miniCfg['EDG.ce_black_list'] = str( self.cfg_params['EDG.ce_black_list'] )
+            miniCfg['EDG.ce_black_list'] += str( self.cfg_params['EDG.ce_black_list'] )
 
         miniCfg['EDG.se_white_list'] = ""
         if 'EDG.se_white_list' in self.cfg_params:
