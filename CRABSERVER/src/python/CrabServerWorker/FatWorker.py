@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.134 2008/11/05 14:02:43 spiga Exp $"
-__version__ = "$Revision: 1.134 $"
+__revision__ = "$Id: FatWorker.py,v 1.135 2008/11/06 09:49:44 mcinquil Exp $"
+__version__ = "$Revision: 1.135 $"
 import string
 import sys, os
 import time
@@ -196,7 +196,7 @@ class FatWorker(Thread):
             # ce related
             if 'EDG.ce_white_list' in self.cfg_params:
                 for ceW in str(self.cfg_params['EDG.ce_white_list']).split(","):
-                    if seW:
+                    if ceW:
                         self.ce_whiteL.append(ceW.strip())
             if 'EDG.ce_black_list' in self.cfg_params:
                 for ceB in self.cfg_params['EDG.ce_black_list'].split(","):
