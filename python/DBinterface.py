@@ -334,10 +334,10 @@ class DBinterface:
                     rForJ = r
                     break
             ## Check the submission number and create new running jobs on the client side          
-            if rForJ.getAttribute('resubmit') != 'None' and (rForJ.getAttribute('status') not in ['Killed','Done']) :
+            if rForJ.getAttribute('resubmit') != 'None' and (rForJ.getAttribute('status') not in ['Killed','Done','Done (Failed)']) :
                 if int(job.runningJob['submission']) < int(rForJ.getAttribute('resubmit')) + 1:
                     nj_list.append(id)
-                    self.newRunJobs(nj_list)
+            if len(nj_list) > 0: self.newRunJobs(nj_list)
 
         task_new = self.getTask()
 
