@@ -15,8 +15,10 @@ class CopyData(Actor):
         if (cfg_params.get('USER.copy_data',0) == '0') :
             raise CrabException("Cannot copy output locally if it has not \
                                  been stored to SE via USER.copy_data=1")
+
         # update local DB
-        #StatusObj.query(display=False)
+        if StatusObj:# this is to avoid a really strange segv
+            StatusObj.query(display=False)
 
         self.destinationTier = None
         self.destinationDir= None

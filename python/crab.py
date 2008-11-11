@@ -667,9 +667,9 @@ class Crab:
                     from StatusServer import StatusServer
                     status = StatusServer(self.cfg_params)
                 else:
-                    from Status import Status
-                    status = Status(self.cfg_params)
- 
+                 #   from Status import Status
+                 #   status = Status(self.cfg_params)
+                    status=None  
                 from CopyData import CopyData
                 self.actions[opt] = CopyData(self.cfg_params, jobs,status)
 
