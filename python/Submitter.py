@@ -224,14 +224,17 @@ class Submitter(Actor):
         #msg += common.taskDB.dict("jobtype")+' version: '+common.taskDB.dict("codeVersion")+'\n'
         #msg += '(Hint: please check if '+common.taskDB.dict("jobtype")+' is available at the Sites)\n'
         if self.cfg_params.has_key('EDG.se_white_list'):
-            msg += 'SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
+            msg += '\tSE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
         if self.cfg_params.has_key('EDG.se_black_list'):
-            msg += 'SE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
+            msg += '\tSE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
         if self.cfg_params.has_key('EDG.ce_white_list'):
-            msg += 'CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
+            msg += '\tCE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
         if self.cfg_params.has_key('EDG.ce_black_list'):
-            msg += 'CE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
-        msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\nPlease check if the dataset is available at this site!)\n'
+            msg += '\tCE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
+        msg += '\t(Hint: By whitelisting you force the job to run at this particular site(s).\n'
+        msg += '\tPlease check if :\n'
+        msg += '\t\t -- the dataset is available at this site!\n'
+        msg += '\t\t -- the CMSSW version is available at this site!)\n'
         common.logger.message(msg)
 
         return
