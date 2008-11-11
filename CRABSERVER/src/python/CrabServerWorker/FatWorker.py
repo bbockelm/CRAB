@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.138 2008/11/10 15:20:25 ewv Exp $"
-__version__ = "$Revision: 1.138 $"
+__revision__ = "$Id: FatWorker.py,v 1.139 2008/11/10 15:21:46 ewv Exp $"
+__version__ = "$Revision: 1.139 $"
 import string
 import sys, os
 import time
@@ -780,6 +780,12 @@ class FatWorker(Thread):
         seDest   = seParser.cleanForBlackWhiteList(dest, 'list')
 
         req = ''
+        try:
+            seDest.remove('') 
+        except Exception,ex:
+            msg =  'se_list: problem removing blank from seDest list\n'
+            msg += str(ex)
+            self.log.info(msg) 
         if len(seDest) > 0:
             reqtmp = [ ' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ' for arg in seDest]
             req += " && (" + '||'.join(reqtmp) + ") "
