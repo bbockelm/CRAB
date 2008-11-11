@@ -41,7 +41,6 @@ class CopyData(Actor):
     def run(self):
  
         results = self.copyLocal() 
-        results = {}  
         self.parseResults( results )          
 
         return 
@@ -50,20 +49,20 @@ class CopyData(Actor):
         """
         prepare to copy the pre staged output to local
         """
-        InfileList = self.checkAvailableList()
+        # FIXME DS. we'll use the proper DB info once filled..
+        # output files to be returned via sandbox or copied to SE
+        output_file = []
+        tmp = self.cfg_params.get('CMSSW.output_file',None)
+        if tmp.find(',') >= 0:
+            [output_file.append(x.strip()) for x in tmp.split(',')]
+        else: output_file.append( tmp.strip() )
+
+        InfileList = self.checkAvailableList(output_file)
 
         from PhEDExDatasvcInfo import PhEDExDatasvcInfo
 
         stageout = PhEDExDatasvcInfo(self.cfg_params)
         endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
-
-        # FIXME DS. we'll use the proper DB info once filled..
-        # output files to be returned via sandbox or copied to SE
-        self.output_file = []
-        tmp = self.cfg_params.get('CMSSW.output_file',None)
-        if tmp.find(',') >= 0:
-            [self.output_file.append(x.strip()) for x in tmp.split(',')]
-        else: self.output_file.append( tmp.strip() )
 
         if not self.destinationTURL:
             self.destinationTURL = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
@@ -109,7 +108,7 @@ class CopyData(Actor):
         '''
         return  results
 
-    def checkAvailableList(self):
+    def checkAvailableList(self, output_file):
         '''
         check if asked list of jobs 
         already produce output to move  
@@ -122,7 +121,7 @@ class CopyData(Actor):
         for job in task.jobs:
             id_job = job['jobId'] 
             if ( job.runningJob['status'] in ['E','UE'] and job.runningJob[ 'wrapperReturnCode'] == 0):
-                for of in self.output_file:
+                for of in output_file:
                     a,b=of.split('.')
                     InfileList += '%s_%s.%s%s'%(a,id_job,b,',')
             elif ( job.runningJob['status'] in ['E','UE'] and job.runningJob['wrapperReturnCode'] != 0):
