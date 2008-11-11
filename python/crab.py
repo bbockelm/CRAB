@@ -832,10 +832,12 @@ if __name__ == '__main__':
         crab = Crab(options)
         crab.run()
         common.apmon.free()
+        common.logger.__del__()
     except CrabException, e:
         print '\n' + common.prog_name + ': ' + str(e) + '\n'
         if common.logger:
             common.logger.write('ERROR: '+str(e)+'\n')
+            common.logger.__del__()
             pass
         pass
 
