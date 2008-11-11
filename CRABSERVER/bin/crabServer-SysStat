@@ -222,8 +222,14 @@ def startup():
             if running:
                 print "sensor for component %s(%s) already running with pid %s" % (component,cpid,spid)
             else:
-                subprocess.Popen(["sensord",component])
-                print "sensor for component %s(%s) started" % (component,daemon['ProcessID'])
+                sdaemon = subprocess.Popen(["sensord",component])
+                time.sleep(1)
+                sdaemon.poll()
+                if sdaemon.returncode is None:
+                    print "sensor for component %s(%s) started" % (component,daemon['ProcessID'])
+                else:
+                    print "ERROR while starting sensor for component %s(%s)" % (component,daemon['ProcessID'])
+                    sys.exit(1)
     for service in services:
         if not isServiceRunning(service):
             print "Service %s (%s) is not running, sensor will NOT be activated" %(service,AllServices[service])
@@ -233,8 +239,15 @@ def startup():
         if running:
             print "sensor for service %s (%s) already running with pid %s" % (service,cpid,spid)
         else:
-            subprocess.Popen(["sensord",service])
-            print "sensor for service %s(%s) started" % (service,AllServices[service])
+            sdaemon = subprocess.Popen(["sensord",service])
+            time.sleep(1)
+            sdaemon.poll()
+            if sdaemon.returncode is None:
+                print "sensor for service %s(%s) started" % (service,AllServices[service])
+            else:
+                print "ERROR while starting sensor for service %s(%s)" %  (service,AllServices[service])
+                sys.exit(1)
+
 
         
 

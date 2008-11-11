@@ -62,8 +62,9 @@ until false; do
             printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
             ps -C sar wwho pid,cmd | grep "X $pid "
         else
-            printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "SysStat package (sar) not installed: aborting";
-            exit;
+            echo "SysStat package (sar) not installed: aborting" >&2;
+            printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "SysStat package (sar) not installed: aborting" 
+            exit 1;
         fi
     fi
 done >> ${PRODAGENT_WORKDIR}/HTTPFrontend/sensors/${CSC}-pidstat.log
