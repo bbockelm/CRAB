@@ -284,9 +284,11 @@ def getpidof(procname,service):
     return msg
     
 def getPIDof(procname):
-    pid = os.popen("ps -C %s ho pid"%procname).read()
-    if re.match('\s*[0-9]+\s*',str(pid)):
-        return pid.rstrip()
+    pids = os.popen("ps -C %s ho pgid,pid"%procname).read()
+    if re.match('\s*[0-9]+\s*[0-9]+\s*',str(pids)):
+        pgid, pid = str(pids).split()[0:2]
+        if pid == pgid:
+            return pid.rstrip()
     else:
         return "Not Running"
 
