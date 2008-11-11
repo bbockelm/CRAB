@@ -231,6 +231,9 @@ class Submitter(Actor):
             msg += '\tCE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
         if self.cfg_params.has_key('EDG.ce_black_list'):
             msg += '\tCE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
+        removeDefBL = self.cfg_params.get('EDG.remove_default_blacklist',0)
+        if removeDefBL == '0':
+            msg += '\tNote:  All CMS T1s are BlackListed by default \n'
         msg += '\t(Hint: By whitelisting you force the job to run at this particular site(s).\n'
         msg += '\tPlease check if :\n'
         msg += '\t\t -- the dataset is available at this site!\n'
