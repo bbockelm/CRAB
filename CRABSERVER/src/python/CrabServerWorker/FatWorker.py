@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.139 2008/11/10 15:21:46 ewv Exp $"
-__version__ = "$Revision: 1.139 $"
+__revision__ = "$Id: FatWorker.py,v 1.140 2008/11/11 14:41:58 spiga Exp $"
+__version__ = "$Revision: 1.140 $"
 import string
 import sys, os
 import time
@@ -118,6 +118,7 @@ class FatWorker(Thread):
             self.sendResult(errStatus, errMsg, logMsg, e, "", True)
             return
 
+        self.log.info('FatWorker %s performing list-match operation'%self.myName)
         try:
             sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
             if len(matched)==0:
