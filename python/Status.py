@@ -25,16 +25,16 @@ class Status(Actor):
         common.logger.write("Status Time: "+str(stop - start))
         pass
 
-    def query(self):
+    def query(self,display=True):
         """
         compute the status
         """
         common.logger.message("Checking the status of all jobs: please wait")
         task = common._db.getTask()
         upTask = common.scheduler.queryEverything(task['id'])
-        self.compute(upTask)
+        self.compute(upTask,display)
 
-    def compute(self, up_task):
+    def compute(self, up_task, display=True ):
 
         toPrint=[]
         taskId = uniqueTaskName(up_task['name'])
@@ -62,7 +62,7 @@ class Status(Actor):
         header = ''
         header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','#SUB')
 
-        displayReport(self,header,toPrint,self.xml)
+        if display: displayReport(self,header,toPrint,self.xml)
 
         return
 

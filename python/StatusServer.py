@@ -23,12 +23,12 @@ class StatusServer(Status):
 
         return
 
-    def query(self):
+    def query(self,display=True):
 
         self.resynchClientSide()
         
         upTask = common._db.getTask()  
-        self.compute(upTask)
+        self.compute(upTask,display)
 
     def resynchClientSide(self):
         """
