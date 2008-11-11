@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.140 2008/11/11 14:41:58 spiga Exp $"
-__version__ = "$Revision: 1.140 $"
+__revision__ = "$Id: FatWorker.py,v 1.141 2008/11/11 17:18:56 mcinquil Exp $"
+__version__ = "$Revision: 1.141 $"
 import string
 import sys, os
 import time
@@ -550,8 +550,9 @@ class FatWorker(Thread):
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
                     seList = distinct_dests[sel]
-                    seParser = SEBlackWhiteListParser('', '', self.log)
+                    seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL, self.log)
                     cleanedList = seParser.cleanForBlackWhiteList(seList, 'list')
+                    if '' in cleanedList :cleanedList.remove('')
                 sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL)
                 if len(sites) > 0: matched.append(sel)
                 else: unmatched.append(sel)
@@ -781,12 +782,9 @@ class FatWorker(Thread):
         seDest   = seParser.cleanForBlackWhiteList(dest, 'list')
 
         req = ''
-        try:
-            seDest.remove('') 
-        except Exception,ex:
-            msg =  'se_list: problem removing blank from seDest list\n'
-            msg += str(ex)
-            self.log.info(msg) 
+
+        if '' in seDest : seDest.remove('') 
+
         if len(seDest) > 0:
             reqtmp = [ ' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ' for arg in seDest]
             req += " && (" + '||'.join(reqtmp) + ") "
