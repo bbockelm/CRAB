@@ -36,7 +36,7 @@ class Crab:
                              '-resubmit' , '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-createJdl','-printJdl', '-publish',
-                             '-copyLocal', '-renewProxy', '-extend' ]
+                             '-copyData', '-renewProxy', '-extend' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -656,14 +656,22 @@ class Crab:
                 from Publisher import Publisher
                 self.actions[opt] = Publisher(self.cfg_params)
 
-            elif ( opt == '-copyLocal' ):
+            elif ( opt == '-copyData' ):
+                print val
                 if val =='all' or val == None or val == '':
                     jobs = common._db.nJobs("list")
                 else:
                     jobs = self.parseRange_(val)
-                pass
-                from CopyLocal import CopyLocal
-                self.actions[opt] = CopyLocal(self.cfg_params, jobs)
+                
+                if (self.UseServer== 1):
+                    from StatusServer import StatusServer
+                    status = StatusServer(self.cfg_params)
+                else:
+                    from Status import Status
+                    status = Status(self.cfg_params)
+ 
+                from CopyData import CopyData
+                self.actions[opt] = CopyData(self.cfg_params, jobs,status)
 
             elif ( opt == '-renewProxy' ):
                 if (self.UseServer== 1):
