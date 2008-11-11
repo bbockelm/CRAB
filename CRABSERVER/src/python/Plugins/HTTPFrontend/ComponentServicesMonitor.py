@@ -45,7 +45,8 @@ class CompServMonitor:
         html += "</table>\n"
 
         html += "<table>\n"
-        html += "<br/><br/><i> Display components CPU usage:</i><br/><br/>"
+        html += "<br/><br/><small style=\"color:red\">(Work in progress)</small><br/>\n"
+        html += "<i> Display components CPU usage:</i><br/><br/>"
         html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
         html += 'Show CPU plot for  '
         html += ' <select name="Component" style="width:140px">'
@@ -62,7 +63,8 @@ class CompServMonitor:
         html += "</table>\n"
 
         html += "<table>\n"
-        html += "<br/><br/><i> Display services CPU usage:</i><br/><br/>"
+        html += "<br/><br/><small style=\"color:red\">(Work in progress)</small><br/>\n"
+        html += "<i> Display services CPU usage:</i><br/><br/>"
         html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
         html += 'Show CPU plot for  '
         html += ' <select name="Component" style="width:140px">'
@@ -92,7 +94,14 @@ class ShowCompStatus:
 
     def index(self):
         run , not_run = status()
-
+        
+        tableHeader = "<tr><th>%s</th><th>Process ID</th><th>Plots<span style=\"color:red\">*</span></th><th>CPU sensor status<span style=\"color:red\">*</span></th></tr>\n"
+        plotLink = "<td><small><a href=\"%s/?Component=%s&length=12&span=hours\">last 12h</a></small></td>"
+        nameNpid = "<tr><td>%s</td><td><b>%s</b></td>\n"
+        sensorFound =  "sensor %s is attached to %s"
+        sensorReady = "sensor %s is going to attach %s %s%s"
+        sensorMissing = "<b>no CPU sensor found for %s %s...!</b>"
+        
         html = """
         <html><head><style type=\"text/css\">
         th, td { text-indent:16px; text-align:left}
@@ -101,62 +110,64 @@ class ShowCompStatus:
         </head>
         """
         html += "<body><h2>Components and Services State<br/>\n"
-        html += "<small>(Work in progress)</small></h2>\n"
+        html += "<small style=\"color:red; font-weight:normal;\">* Work in progress</small><br/></h2>\n"
 
         html += "<table>\n"
-        html += "<tr><th align=\"left\">Components</th><th align=\"left\" style=\"text-indent: 16px\">Process ID</th><th align=\"left\" style=\"text-indent: 16px\">CPU sensor</th></tr>\n"
+#        html += "<tr><th></th><th></th><th colspan=2><small style=\"color:red;\">work in progress</th></tr>\n"
+        html += tableHeader%"Components"
 
         for r in run:
             comp = str(r[0])
             cpid = str(r[1])
-            html += "<tr><td align=\"left\"><a href=\"%s/?Component=%s&length=12&span=hours\">%s</a></td><td style=\"text-indent: 16px\"><b>%s</b></td>\n"%(
-                self.compcpu,comp,comp,cpid
-                )
-            html += "<td align=\"left\" style=\"text-indent: 16px\"><small>"
+            html += nameNpid%(comp,cpid)
+            html += plotLink%(self.compcpu,comp)
+            html += "<td><small>"
             sensorOn, spid, cpid = API.isSensorRunning(comp)
             if sensorOn:
-                html += "sensor %s is attached to %s"%(spid,cpid)
+                html += sensorFound%(spid,cpid)
             else:
                 sensorDaemonOn, spid = API.isSensorDaemonRunning(comp)
                 if sensorDaemonOn:
-                    html += "sensor %s is going to attach component %s... retry in a minute"%(spid,comp)
+                    html += sensorReady%(spid,"component",comp,"... retry in a minute.")
                 else:
-                    html += "<b>no CPU sensor found for component %s...!</b>"%(comp)
+                    html += sensorMissing%("component",comp)
             html += "</small></td></tr>\n"
 
         for n in not_run:
-            html  += "<tr><td align=\"left\"><a href=\"%s/?Component=%s&length=12&span=hours\">%s</a></td><td style=\"text-indent: 16px\"><b>Not Running </b></td>\n"%(self.compcpu,str(n),str(n))
-            html += "<td align=\"left\" style=\"text-indent: 16px\"><small>"
+            html  += nameNpid%(str(n),"Not Running")
+            html += plotLink%(self.compcpu,str(n))
+            html += "<td><small>"
             sensorDaemonOn, spid = API.isSensorDaemonRunning(n)
             if sensorDaemonOn:
-                html += "sensor %s will attach component %s when it will start"%(spid,n)
+                html += sensorReady%(spid,"component",n,"when it will be (re)started")
             else:
-                html += "<b>no CPU sensor found for component %s!</b>"%(n)
+                html += sensorMissing%("component",n)
             html += "</small></td></tr>\n"
 
-          
-#        html += "</table><br/>\n"
-#        html += "<table>\n"
-
         html += " <tr><th>&nbsp; </th><th>&nbsp;</th></tr>\n"
-        html += "<tr><th align=\"left\">Services</th><th align=\"left\" style=\"text-indent: 16px\">Process ID</th><th align=\"left\" style=\"text-indent: 16px\">CPU sensor</th></tr>\n"
+        html += tableHeader%"Services"
+
         for serv in AllServices.keys():
             cpid = API.getPIDof(AllServices[serv])
             spid = API.isSensorRunning(AllServices[serv])
-            html += "<tr><td align=\"left\"><a href=\"%s/?Component=%s&length=12&span=hours\">%s</a></td><td style=\"text-indent: 16px\"><b>%s</b></td>\n"%(
-                self.compcpu,serv,serv,cpid
-                )
-            html += "<td align=\"left\" style=\"text-indent: 16px\"><small>"
+            html += nameNpid%(serv,cpid)
+            html += plotLink%(self.compcpu,serv)
+            html += "<td><small>"
             sensorOn, spid, cpid = API.isSensorRunning(AllServices[serv])
             if sensorOn:
-                html += "sensor %s is attached to %s"%(spid,cpid)
+                html += sensorFound%(spid,cpid)
             else:
                 sensorDaemonOn, spid = API.isSensorDaemonRunning(serv)
                 if sensorDaemonOn:
-                    html += "sensor %s is going to attach service %s... retry in a minute"%(spid,serv)
+                    html += sensorReady%(spid,"service",serv,"... retry in a minute.")
                 else:
-                    html += "<b>no CPU sensor found for service %s...!</b>"%(serv)
+                    html += sensorMissing%("service",serv)
             html += "</small></td></tr>\n"
+
+        cpid = API.getPIDof("delegation-server")
+        html += nameNpid%("Delegation",cpid)
+        html += "<td></td><td></td>"
+        
         html += "</table>\n"
         html += "</body></html>"
 
