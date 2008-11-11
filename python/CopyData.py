@@ -48,6 +48,8 @@ class CopyData(Actor):
         """
         prepare to copy the pre staged output to local
         """
+        InfileList = self.checkAvailableList()
+
         from PhEDExDatasvcInfo import PhEDExDatasvcInfo
 
         stageout = PhEDExDatasvcInfo(self.cfg_params)
@@ -60,8 +62,6 @@ class CopyData(Actor):
         if tmp.find(',') >= 0:
             [self.output_file.append(x.strip()) for x in tmp.split(',')]
         else: self.output_file.append( tmp.strip() )
-
-        InfileList = self.checkAvailableList()
 
         if not self.destinationTURL:
             self.destinationTURL = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
