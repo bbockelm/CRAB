@@ -481,7 +481,8 @@ if __name__ == '__main__' :
     import getopt
 
     allowedOpt = ["source=", "destination=", "inputFileList=", "outputFileList=", \
-                  "protocol=","option=", "middleware=", "srm_version=", "debug", "help"]
+                  "protocol=","option=", "middleware=", "srm_version=", \
+                  "destinationDir=","debug", "help"]
     try:
         opts, args = getopt.getopt( sys.argv[1:], "", allowedOpt )
     except getopt.GetoptError, err:
