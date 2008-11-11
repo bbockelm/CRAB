@@ -26,7 +26,7 @@ The most useful general options (use '-h' to get complete help):
   -publish [dbs_url]  -- after the getouput, publish the data user in a local DBS instance.
   -kill [range]       -- kill submitted jobs.
   -resubmit [range]   -- resubmit killed/aborted/retrieved jobs.
-  -copyLocal [range]  -- copy locally the output stored on remote SE.
+  -copyData [range]  -- copy locally the output stored on remote SE.
   -renewProxy         -- renew the proxy on the server.
   -clean              -- gracefully cleanup the directory of a task.
   -testJdl [range]    -- check if resources exist which are compatible with jdl.
@@ -248,9 +248,9 @@ Create new jobs for an existing task, checking if new blocks are available for t
 
 Kill (cancel) jobs which have been submitted to the scheduler. A range B<must> be used in all cases, no default value is set.
 
-=item B<-copyLocal [range]>
+=item B<-copyData [range]>
 
-Copy locally (on current working directory) the output previously stored on remote SE by the jobs. Of course, only if copy_data option has been set. Uses I<lcg-cp>
+Copy locally (on current working directory) the output previously stored on remote SE by the jobs. Of course, only if copy_data option has been set. 
 
 =item B<-renewProxy >
 
