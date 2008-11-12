@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.12 2008/10/28 10:47:42 mcinquil Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.13 2008/11/07 20:28:19 ewv Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import string
 import sys, os
@@ -77,6 +77,8 @@ class RegisterWorker(Thread):
         if reconstructedTask is None:
             self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
             return
+        else:
+            reconstructedTask = self.alterPath(reconstructedTask)
 
         # register jobs of the task object on the server (we_job)
         registeredTask = self.registerTask(reconstructedTask)
@@ -150,7 +152,7 @@ class RegisterWorker(Thread):
                 tmpTask = None
 
             if tmpTask is not None:
-                self.log.info("Task %s already registered in BossLite"%self.taskName)
+                self.log.info("Worker %s - Task %s already registered in BossLite"%(self.myName,self.taskName) )
                 return tmpTask
 
             taskObj = self.blDBsession.declare(taskSpecFile, self.proxy)
@@ -161,9 +163,6 @@ class RegisterWorker(Thread):
             self.sendResult(status, reason, reason)
             self.log.info( traceback.format_exc() )
             return None
-
-        if taskObj is not None:
-            taskObj = self.alterPath(taskObj)
 
         # all done
         return taskObj

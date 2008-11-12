@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.8 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.8 2008/10/22 16:34:27 mcinquil Exp $"
+__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.9 2008/11/06 14:12:12 spiga Exp $"
 
 import os
 import pickle
@@ -147,6 +147,7 @@ class TaskRegisterComponent:
                 self.__call__(type, payload)
         except Exception, e:
             logging.error(e)
+            logging.info(traceback.format_exc())
 
         return
 
@@ -189,6 +190,7 @@ class TaskRegisterComponent:
             self.ms.commit()
             return
 
+        logging.info("Checking it: %s"%(str(payload)) )
         taskUniqName, TotJobs, cmdRng =  payload.split('::')  
         thrName = self.availWorkersIds.pop(0)
         self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewTask", taskUniqName)
