@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.141 2008/11/11 17:18:56 mcinquil Exp $"
-__version__ = "$Revision: 1.141 $"
+__revision__ = "$Id: FatWorker.py,v 1.142 2008/11/11 22:02:15 spiga Exp $"
+__version__ = "$Revision: 1.142 $"
 import string
 import sys, os
 import time
@@ -423,8 +423,9 @@ class FatWorker(Thread):
                         self.log.info(logMsg)
                     try:
                         # update the job status properly
-                        if state_we_job == 'Submitting':
-                            self.cwdb.updateWEStatus( j['name'], 'inProgress' )
+                        #commenting pointless condition
+                        ###if state_we_job == 'Submitting':
+                        self.cwdb.updateWEStatus( j['name'], 'inProgress' )
                     except Exception, ex:
                         logMsg = "Problem changing status to "+str(j['name'])+"\n"
                         logMsg +=  traceback.format_exc()
