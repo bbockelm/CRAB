@@ -10,7 +10,7 @@ import API
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 from ProdAgentCore.DaemonDetails import DaemonDetails
 
-AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
+AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld_safe'}
 
 
 class CompServMonitor:
