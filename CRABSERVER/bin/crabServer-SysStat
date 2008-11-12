@@ -55,7 +55,7 @@ def usage():
 
 valid = ['config=', 'start', 'shutdown', 'status', 'restart',
          'services=', 'components=']
-AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld_safe'}
+AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)

@@ -44,7 +44,7 @@ for opt, arg in opts:
     if opt == "--service":
         service = arg
 
-AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld_safe'}
+AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
 
 if service in AllServices.keys():
     print "%s" %str(getPIDof(AllServices[service]))
