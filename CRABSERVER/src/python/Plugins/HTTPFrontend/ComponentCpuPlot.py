@@ -22,7 +22,7 @@ from ProdAgentCore.Configuration import loadProdAgentConfiguration
 import Sites
 from ComponentServicesMonitor import status
 
-AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld_safe'}
+AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
 
 def gatherHWData(logFilename,Nbins):
         user = {}
