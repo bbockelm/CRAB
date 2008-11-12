@@ -14,7 +14,7 @@ until false; do
             target="component";
             currentpid=`crabServer-cmpPid --${target} ${CSC}`;
         fi
-        if ! echo $currentpid | grep -v [a-zA-Z] | grep -qe [0-9]; then 
+        if ! echo $currentpid | grep -v [a-zA-Z] | grep -qe [0-9]; then
             printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "${target} ${CSC} not running, will retry in a minute...";
             if [ $pid -gt 0 ]; then
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${pid}";
@@ -55,7 +55,11 @@ until false; do
     if [ $pid -gt 0 ]; then
         if SAR=`which sar 2>/dev/null`; then
             printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "starting ${SAR} sensor for ${target} ${CSC}=${pid}, see: ";
-            ${SAR} -X $pid 60 0 | grep --line-buffered $pid | awk '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "      " $6 "   " $7 "   " ($6+$7); fflush()}'  1>> ${PRODAGENT_WORKDIR}/HTTPFrontend/sensors/${CSC}-pidstat.dat 2>/dev/null & 
+	    if echo ${CSC} | grep -qo mySQL; then
+		${SAR} -x $pid 60 0 | grep --line-buffered $pid | awk '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "      " $6 "   " $7 "   " ($6+$7); fflush()}'  1>> ${PRODAGENT_WORKDIR}/HTTPFrontend/sensors/${CSC}-pidstat.dat 2>/dev/null & 
+	    else
+		${SAR} -X $pid 60 0 | grep --line-buffered $pid | awk '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "      " $6 "   " $7 "   " ($6+$7); fflush()}'  1>> ${PRODAGENT_WORKDIR}/HTTPFrontend/sensors/${CSC}-pidstat.dat 2>/dev/null & 
+	    fi
             sleep 1
             printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
             ps -C nocommand o pid,cmd

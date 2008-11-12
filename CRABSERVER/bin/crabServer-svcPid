@@ -30,7 +30,10 @@ except getopt.GetoptError, ex:
     sys.exit(1)
 
 def getPIDof(procname):
-    pids = os.popen("ps -C %s ho pgid,pid"%procname).read()
+    if procname == 'mysqld':
+        pids = os.popen("ps -C %s wwho pid,pid"%procname).read()
+    else:
+        pids = os.popen("ps -C %s wwho pgid,pid"%procname).read()
     if re.match('\s*[0-9]+\s*[0-9]+\s*',str(pids)):
         pgid, pid = str(pids).split()[0:2]
         if pid == pgid:
@@ -44,7 +47,7 @@ for opt, arg in opts:
     if opt == "--service":
         service = arg
 
-AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld_safe'}
+AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
 
 if service in AllServices.keys():
     print "%s" %str(getPIDof(AllServices[service]))

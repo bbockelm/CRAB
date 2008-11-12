@@ -284,7 +284,10 @@ def getpidof(procname,service):
     return msg
     
 def getPIDof(procname):
-    pids = os.popen("ps -C %s ho pgid,pid"%procname).read()
+    if procname == 'mysqld':
+        pids = os.popen("ps -C %s wwho pid,pid"%procname).read()
+    else:
+        pids = os.popen("ps -C %s wwho pgid,pid"%procname).read()
     if re.match('\s*[0-9]+\s*[0-9]+\s*',str(pids)):
         pgid, pid = str(pids).split()[0:2]
         if pid == pgid:

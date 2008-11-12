@@ -55,7 +55,7 @@ def usage():
 
 valid = ['config=', 'start', 'shutdown', 'status', 'restart',
          'services=', 'components=']
-AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld_safe'}
+AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
@@ -188,7 +188,7 @@ def isSensorRunning(comp):
     sensors = os.popen('ps -C sar wwho pid,cmd').readlines()
     for sensor in sensors:
         [spid,dummy,type,cpid] = sensor.split()[0:4]
-        if not re.match('-X',type):
+        if not (re.match('-X',type) or re.match('-x',type)):
             continue
         Rcomp = os.popen('ps -p '+str(cpid)+' wwho cmd').read()  #.split('/')[-2]
         if re.search(comp,Rcomp):
@@ -199,8 +199,8 @@ def isSensorDaemonRunning(comp):
     # get all sensors pids with their component pid
     sensors = os.popen('ps -C sensord wwho pid,cmd').readlines()
     for sensor in sensors:
-        spid = sensor.split()[0]
-        if re.search(comp,sensor):
+        spid,Rcomp = sensor.split()[0:4:3]
+        if re.search(comp,Rcomp):
             return True, spid
     return False, 0
 
@@ -263,7 +263,7 @@ def status():
     sensors = os.popen('ps -C sar wwho pid,cmd').readlines()
     for sensor in sensors:
         [spid,dummy,type,cpid] = sensor.split()[0:4]
-        if re.match('-X',type):
+        if re.match('-X',type) or re.match('-x',type):
             process = os.popen('ps -p '+str(cpid)+' wwho cmd').read()
             component = cRE.search(process)
             service = sRE.search(process)
