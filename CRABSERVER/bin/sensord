@@ -14,7 +14,7 @@ until false; do
             target="component";
             currentpid=`crabServer-cmpPid --${target} ${CSC}`;
         fi
-        if [ "$currentpid" == "" ]; then 
+        if ! echo $currentpid | grep -v [a-zA-Z] | grep -qe [0-9]; then 
             printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "${target} ${CSC} not running, will retry in a minute...";
             if [ $pid -gt 0 ]; then
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${pid}";
