@@ -185,7 +185,7 @@ def isServiceRunning(service):
 
 def isSensorRunning(comp):
     # get all sensors pids with their component pid
-    sensors = os.popen('ps -C sar ho pid,cmd').readlines()
+    sensors = os.popen('ps -C sar wwho pid,cmd').readlines()
     for sensor in sensors:
         [spid,dummy,type,cpid] = sensor.split()[0:4]
         if not re.match('-X',type):
@@ -197,10 +197,10 @@ def isSensorRunning(comp):
 
 def isSensorDaemonRunning(comp):
     # get all sensors pids with their component pid
-    sensors = os.popen('ps -C sensord ho pid,cmd').readlines()
+    sensors = os.popen('ps -C sensord wwho pid,cmd').readlines()
     for sensor in sensors:
-        spid,Rcomp = sensor.split()[0:4:3]
-        if re.search(comp,Rcomp):
+        spid = sensor.split()[0]
+        if re.search(comp,sensor):
             return True, spid
     return False, 0
 
