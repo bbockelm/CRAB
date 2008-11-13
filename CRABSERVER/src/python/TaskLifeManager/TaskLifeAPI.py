@@ -16,7 +16,7 @@ class TaskLifeAPI:
         proxyList = []
 
         sqlStr="SELECT distinct(proxy) FROM js_taskInstance " + \
-               "WHERE notificationSent < 2 and (proxy <> NULL OR proxy <> '');"
+               "WHERE notificationSent < 2 and (proxy <> NULL OR proxy <> '') and status <> 'arrived' and status <> 'submitting';"
         tuple = dbSession.select(sqlStr)
         if tuple != None:
             for tupla in tuple:

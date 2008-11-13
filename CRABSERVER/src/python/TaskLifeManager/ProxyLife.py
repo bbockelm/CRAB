@@ -214,6 +214,8 @@ class ProxyLife:
                     timeleft = int(cred.checkValidity())
                 except Exception, exc:
                     logging.info("Problem checking proxy validity: %s"% str(exc))
+                    import traceback
+                    logging.info( str(traceback.format_exc()) )
                     continue
 
                 ## credentialt expired ##

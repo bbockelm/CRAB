@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.35 2008/10/09 14:35:38 mcinquil Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.36 2008/10/30 16:29:38 mcinquil Exp $"
+__version__ = "$Revision: 1.36 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -210,7 +210,7 @@ class TaskLifeManagerComponent:
         # inserting on task queue
         if event == "CRAB_Cmd_Mgr:NewTask" or \
                event == "TaskLifeManager::TaskToMange":
-            self.insertTaskWrp( payload )
+            self.insertTaskWrp( payload.split("::")[0] )
             return            #
         #######################
          
