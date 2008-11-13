@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.123 2008/10/29 22:38:27 mcinquil Exp $"
-__version__ = "$Revision: 1.123 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.127 2008/11/06 15:17:54 mcinquil Exp $"
+__version__ = "$Revision: 1.127 $"
 
 import os
 import time
@@ -275,7 +275,7 @@ class TaskTrackingComponent:
         if event == "CrabServerWorkerComponent:SubmitNotSucceeded":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, str(event.split(":")[1]) + ": %s" % payload)
-                taskName, taskStatus, reason, jobid = payload.split("::")
+                taskName, taskStatus, reason = payload.split("::")
 	        _loginfo.setdefault('txt', str(reason)) 	 
 	        _loginfo.setdefault('code', str(taskStatus))
                 self.__appendDbgInfo(taskName, _loginfo) #, jobid)
