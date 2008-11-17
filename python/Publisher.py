@@ -6,6 +6,7 @@ from crab_util import *
 from crab_logger import Logger
 from crab_exceptions import *
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
+from ProdCommon.FwkJobRep.ReportState import checkSuccess
 from ProdCommon.MCPayloads.WorkflowSpec import WorkflowSpec
 from ProdCommon.DataMgmt.DBS.DBSWriter import DBSWriter
 from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
@@ -133,6 +134,11 @@ class Publisher(Actor):
         datasets=fileinfo.dataset 
         common.logger.debug(6,"FileInfo = " + str(fileinfo))
         common.logger.debug(6,"DatasetInfo = " + str(datasets))
+        if len(datasets)<=0:
+           self.exit_status = '1'
+           msg = "Error: No info about dataset in the xml file "+file
+           common.logger.message(msg)
+           return self.exit_status
         for dataset in datasets:
             #### for production data
             self.processedData = dataset['ProcessedDataset']
@@ -221,6 +227,14 @@ class Publisher(Actor):
         """
         
         file_list = glob.glob(self.resDir+"crab_fjr*.xml")
+        ## Select only those fjr that are succesfull
+        good_list=[]
+        for fjr in file_list:
+            reports = readJobReport(fjr)
+            if reports[0].status == "Success":
+               good_list.append(fjr)
+        file_list=good_list
+        ##
         common.logger.debug(6, "file_list = "+str(file_list))
         common.logger.debug(6, "len(file_list) = "+str(len(file_list)))
             
