@@ -125,6 +125,7 @@ componentFields = {
     "taskLife": "168:00:00",
     "eMailAdmin": None,
     "pollingTimeCheck": 10*60,
+    "checkProxy": "on",
     },
 
     ## impored from PA
