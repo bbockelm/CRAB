@@ -105,39 +105,39 @@ class cmscp:
             ## maybe some local schedulers need something dedicated
             pass
         return supported_protocol
-
-###    def checkCopy(self, copy_results, list_files):
-#        """
-#        """
-#        #results={}
-#        list_retry = []
-#        list_existing = []
-#        list_ok = []
-#        if copy_results.keys() == '':
-#            self.results.update(copy_results)
-#        else:
-#            for file, dict in copy_results.iteritems():
-#                er_code = dict['erCode']
-#                if er_code == '0':
-#                    list_ok.append(file)
-#                    reason = 'Copy succedeed with %s utils'%prot
-#                    upDict = self.updateReport(file, er_code, reason)
-#                    copy_results.update(upDict)
-#                elif er_code == '60303': list_existing.append( file )
-#                else: list_retry.append( file )
-#            results.update(copy_results)
-#            if len(list_ok) != 0:
-#                msg = 'Copy of %s succedeed with %s utils\n'%(str(list_ok),prot)
-#                if self.debug : print msg
-#            if len(list_ok) == len(list_files) :
-#                msg = 'Copy of  all files succedeed\n'
-#                #break
-#            else:
-#                if self.debug : print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
-#                #if len(list_retry): list_files = list_retry
-#        return list_retry, results        
-
-
+   """
+   def checkCopy(self, copy_results, list_files):
+       """
+       """
+       #results={}
+       list_retry = []
+       list_existing = []
+       list_ok = []
+       if copy_results.keys() == '':
+           self.results.update(copy_results)
+       else:
+           for file, dict in copy_results.iteritems():
+               er_code = dict['erCode']
+               if er_code == '0':
+                   list_ok.append(file)
+                   reason = 'Copy succedeed with %s utils'%prot
+                   upDict = self.updateReport(file, er_code, reason)
+                   copy_results.update(upDict)
+               elif er_code == '60303': list_existing.append( file )
+               else: list_retry.append( file )
+           results.update(copy_results)
+           if len(list_ok) != 0:
+               msg = 'Copy of %s succedeed with %s utils\n'%(str(list_ok),prot)
+               if self.debug : print msg
+           if len(list_ok) == len(list_files) :
+               msg = 'Copy of  all files succedeed\n'
+               #break
+           else:
+               if self.debug : print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
+               #if len(list_retry): list_files = list_retry
+       return list_retry, results        
+ 
+    """ 
     def stager( self, middleware, list_files ):
         """
         Implement the logic for remote stage out
@@ -178,54 +178,53 @@ class cmscp:
                     if self.debug : print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
                     if len(list_retry): list_files = list_retry
                     else: break
-                    
-            #if len(list_retry):
-            #   list_files = list_retry
-            ##def backupCopy(list_retry)
-            #   print "in backup"
-            #   self.params['inputFilesList']=list_files
-            #   ### copy backup
-            #   from ProdCommon.FwkJobRep.SiteLocalConfig import loadSiteLocalConfig
-            #   siteCfg = loadSiteLocalConfig()
-            #   #print siteCfg
-            #   seName = siteCfg.localStageOut.get("se-name", None)
-            #   #print  "seName = ", seName
-            #   self.params['destination']=seName
-            #   #catalog = siteCfg.localStageOut.get("catalog", None)
-            #   #print "catalog = ", catalog
-            #   implName = siteCfg.localStageOut.get("command", None)
-            #   print "implName = ", implName
-            #   if (implName == 'srm'):
-            #      implName='srmv2'
-            #   self.params['protocol']=implName
-            #   tfc = siteCfg.trivialFileCatalog()
-            #   #print "tfc = ", tfc
-            #   print " self.params['inputFilesList'] = ", self.params['inputFilesList']
-            #   file_backup=[]
-            #   for input in self.params['inputFilesList']:
-            #       ### to add the correct lfn, passed as argument of cmscp function (--lfn xxxx)
-            #       file = '/store/'+input
-            #       pfn = tfc.matchLFN(tfc.preferredProtocol, file)
-            #       print "pfn = ", pfn
-            #       file_backup.append(pfn)
-            #   self.params['inputFilesList'] = file_backup
-            #   print "#########################################"
-            #   print "self.params['inputFilesList'] = ", self.params['inputFilesList'] 
-            #   print "self.params['protocol'] = ", self.params['protocol'] 
-            #   print "self.params['option'] = ", self.params['option'] 
-            #   self.copy(self.params['inputFilesList'], self.params['protocol'], self.params['option'])
-            #   print "#########################################"
-            #   ###list_retry, self.results = checkCopy(copy_results)
-            #       #check is something fails and created related dict
-            #       #        backup = self.analyzeResults(results)
-            #       #        if backup :
-            #       #            msg = 'WARNING: backup logic is under implementation\n'
-            #       #            #backupDict = self.backup()
-            #       #            ### NOTE: IT MUST RETURN a DICT contains also LFN and SE Name
-            #       #            results.update(backupDict)
-            #       #            print msg
-                   
-
+            """
+            if len(list_retry):
+               list_files = list_retry
+            #def backupCopy(list_retry)
+               print "in backup"
+               self.params['inputFilesList']=list_files
+               ### copy backup
+               from ProdCommon.FwkJobRep.SiteLocalConfig import loadSiteLocalConfig
+               siteCfg = loadSiteLocalConfig()
+               #print siteCfg
+               seName = siteCfg.localStageOut.get("se-name", None)
+               #print  "seName = ", seName
+               self.params['destination']=seName
+               #catalog = siteCfg.localStageOut.get("catalog", None)
+               #print "catalog = ", catalog
+               implName = siteCfg.localStageOut.get("command", None)
+               print "implName = ", implName
+               if (implName == 'srm'):
+                  implName='srmv2'
+               self.params['protocol']=implName
+               tfc = siteCfg.trivialFileCatalog()
+               #print "tfc = ", tfc
+               print " self.params['inputFilesList'] = ", self.params['inputFilesList']
+               file_backup=[]
+               for input in self.params['inputFilesList']:
+                   ### to add the correct lfn, passed as argument of cmscp function (--lfn xxxx)
+                   file = '/store/'+input
+                   pfn = tfc.matchLFN(tfc.preferredProtocol, file)
+                   print "pfn = ", pfn
+                   file_backup.append(pfn)
+               self.params['inputFilesList'] = file_backup
+               print "#########################################"
+               print "self.params['inputFilesList'] = ", self.params['inputFilesList'] 
+               print "self.params['protocol'] = ", self.params['protocol'] 
+               print "self.params['option'] = ", self.params['option'] 
+               self.copy(self.params['inputFilesList'], self.params['protocol'], self.params['option'])
+               print "#########################################"
+               ###list_retry, self.results = checkCopy(copy_results)
+                   #check is something fails and created related dict
+                   #        backup = self.analyzeResults(results)
+                   #        if backup :
+                   #            msg = 'WARNING: backup logic is under implementation\n'
+                   #            #backupDict = self.backup()
+                   #            ### NOTE: IT MUST RETURN a DICT contains also LFN and SE Name
+                   #            results.update(backupDict)
+                   #            print msg
+            """
         #### TODO Daniele
         #check is something fails and created related dict
   #      backup = self.analyzeResults(results)
@@ -294,11 +293,6 @@ class cmscp:
                 msg = str(ex)  
             if ErCode == '0':
                 ErCode, msg = self.makeCopy( sbi, filetocopy , options, protocol,sbi_dest )
-            if ErCode != '0':
-                try :
-                    self.removeFile( sbi_dest, filetocopy )
-                except Exception, ex:
-                    msg += '\n'+str(ex)  
             if self.debug : print 'Copy results for %s is %s'%( os.path.basename(filetocopy), ErCode)
             results.update( self.updateReport(filetocopy, ErCode, msg))
         return results
@@ -454,6 +448,11 @@ class cmscp:
                 msg = "File size dosn't match: local size = %s ; remote size = %s " % (local_file_size, remote_file_size)
                 ErCode = '60307'
 
+        if ErCode != '0':
+            try :
+                self.removeFile( sbi_dest, dest_file )
+            except Exception, ex:
+                msg += '\n'+str(ex)  
         return ErCode, msg
 
     def removeFile( self, sbi_dest, filetocopy ):
