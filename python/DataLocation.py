@@ -32,17 +32,23 @@ class DataLocation:
         """
         Contact DLS
         """
-        countblock=0
         dlstype='' 
  
         ##### temporary for deploy : to be removed
         dlsPhed=self.cfg_params.get('CMSSW.dls_phedex_url',None)
+        blockSites = {}
         if dlsPhed:
             dlstype='phedex'
+            DLS_type="DLS_TYPE_%s"%dlstype.upper()
+            dls=DLSInfo(DLS_type,self.cfg_params)
+            blockSites = dls.getReplicasBulk(self.Listfileblocks)
         else:
             dlstype='dbs'
+            DLS_type="DLS_TYPE_%s"%dlstype.upper()
+            dls=DLSInfo(DLS_type,self.cfg_params)
+            blockSites = self.PrepareDict(dls)
         ####
-        # the following will be the defaul     
+        # the following will be the default     
         """      
         privateData = self.cfg_params.get('CMSSW.dbs_url',None)
         if privateData:
@@ -50,16 +56,15 @@ class DataLocation:
         else:
             dlstype='phedex'
         """
-        DLS_type="DLS_TYPE_%s"%dlstype.upper()
+        self.SelectedSites = blockSites
 
+    def PrepareDict(self,dls):
         ## find the replicas for each block
-        blockSites = {}
         failCount = 0
-        ## here we should add the support for bulk query.   
+        countblock=0
+        blockSites = {}
         for fileblocks in self.Listfileblocks:
             countblock=countblock+1
-
-            dls=DLSInfo(DLS_type,self.cfg_params)
             try:
                 replicas=dls.getReplicas(fileblocks)
                 common.logger.debug(5,"sites are %s"%replicas)
@@ -80,9 +85,7 @@ class DataLocation:
         if countblock == failCount:
             msg = "All data blocks encountered a DLS error.  Quitting."
             raise DataLocationError(msg)
-
-        self.SelectedSites = blockSites
-
+        return blockSites
 # #######################################################################
     def getSites(self):
         """

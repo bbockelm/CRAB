@@ -61,6 +61,26 @@ class DLSInfo:
             #print msg
             raise CrabException(msg)
  
+
+    def getReplicasBulk(self,fileblocks):
+        """
+        query DLS to get replicas
+        """
+        ##
+        try:
+            entryList=self.api.getLocations(fileblocks,longList=True)
+        except dlsApi.DlsApiError, inst:
+            raise DLSNoReplicas(fileblocks)
+        results = {} 
+        for entry in entryList: 
+            ListSites=[] 
+            for loc in entry.locations:
+                ListSites.append(str(loc.host))
+            if len(ListSites)<=0:
+                raise DLSNoReplicas(fileblocks)
+            results[entry.fileBlock.name]=ListSites
+
+        return results         
 # ####################################
     def getReplicas(self,fileblocks):
         """
