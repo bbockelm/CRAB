@@ -107,6 +107,7 @@ class FatWorker(Thread):
 
         self.log.info('FatWorker %s preparing submission'%self.myName)
         errStatus, errMsg = (66, "Worker exception. Free-resource message")
+        newRange, skippedJobs = None, None
         try:
             newRange, skippedJobs = self.preSubmissionCheck(taskObj)
             if len(newRange) == 0 :
@@ -115,10 +116,11 @@ class FatWorker(Thread):
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s. preSubmissionCheck."%(self.myName, self.taskName)
-            self.sendResult(errStatus, errMsg, logMsg, e, "", True)
+            self.sendResult(errStatus, errMsg, logMsg, e, "", True, newRange)
             return
 
         self.log.info('FatWorker %s performing list-match operation'%self.myName)
+        sub_jobs, reqs_jobs, matched, unmatched = None, None, None, None
         try:
             sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
             if len(matched)==0:
@@ -127,7 +129,7 @@ class FatWorker(Thread):
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s. listMatch."%(self.myName, self.taskName)
-            self.sendResult(errStatus, errMsg, logMsg, e, "", True)
+            self.sendResult(errStatus, errMsg, logMsg, e, "", True, newRange)
 
         self.log.info("FatWorker %s performing submission"%self.myName)
         try:
@@ -136,7 +138,7 @@ class FatWorker(Thread):
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s."%(self.myName, self.taskName)
-            self.sendResult(errStatus, errMsg, logMsg, e, exc, True)
+            self.sendResult(errStatus, errMsg, logMsg, e, exc, True, newRange)
             return
 
         self.log.info("FatWorker %s evaluating submission outcomes"%self.myName)
@@ -147,12 +149,12 @@ class FatWorker(Thread):
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s. postSubmission."%(self.myName, self.taskName)
-            self.sendResult(errStatus, errMsg, logMsg, e, exc, True)
+            self.sendResult(errStatus, errMsg, logMsg, e, exc, True, newRange)
             return
         self.log.info("FatWorker %s finished %s"%(self.myName, self.taskName) )
         return
 
-    def sendResult(self, status, reason, logMsg, error = '', exc = '', loggable = False):
+    def sendResult(self, status, reason, logMsg, error = '', exc = '', loggable = False, range = []):
         self.log.info(logMsg)
         self.log.info(str(error))
         timespent = time.time() - self.tInit
@@ -164,7 +166,8 @@ class FatWorker(Thread):
                          "ev": self.__class__.__name__, \
                          "reason": logMsg,              \
                          "txt": str(reason),            \
-                         "time": str(timespent)         \
+                         "time": str(timespent),        \
+                         "range": str(range)            \
                         }
             if len(str(error)) > 0:
                 infotolog.setdefault("error", str(error))
@@ -423,8 +426,7 @@ class FatWorker(Thread):
                         self.log.info(logMsg)
                     try:
                         # update the job status properly
-                        #commenting pointless condition
-                        ###if state_we_job == 'Submitting':
+                        #if state_we_job == 'Submitting':
                         self.cwdb.updateWEStatus( j['name'], 'inProgress' )
                     except Exception, ex:
                         logMsg = "Problem changing status to "+str(j['name'])+"\n"
