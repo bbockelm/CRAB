@@ -18,8 +18,8 @@ until false; do
             printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "${target} ${CSC} not running, will retry in a minute...";
             if [ $pid -gt 0 ]; then
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${pid}";
-                ps -C sar wwho pid,cmd | grep "sar -X $pid " | awk '{print $1}' | xargs kill -9
-                ps -C sadc wwho pid,cmd | grep " -X $pid" | awk '{print $1}' | xargs kill -9
+                ps -C sar wwho pid,cmd | grep -i "sar -X $pid " | awk '{print $1}' | xargs kill -9
+                ps -C sadc wwho pid,cmd | grep -i " -X $pid" | awk '{print $1}' | xargs kill -9
             fi
             pid=0
             break;
@@ -28,19 +28,19 @@ until false; do
             if [ $pid -gt 0 ]; then
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "${target} ${CSC} was restarted:";
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${pid}";
-                ps -C sar wwho pid,cmd | grep "sar -X $pid " | awk '{print $1}' | xargs kill -9
-                ps -C sadc wwho pid,cmd | grep " -X $pid" | awk '{print $1}' | xargs kill -9
+                ps -C sar wwho pid,cmd | grep -i "sar -X $pid " | awk '{print $1}' | xargs kill -9
+                ps -C sadc wwho pid,cmd | grep -i " -X $pid" | awk '{print $1}' | xargs kill -9
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "new pid to be monitored: ${currentpid}";
             else
                 printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "searching for already running sar sensor for ${target} ${CSC}...";
                 printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
                 ps -C nocommand o pid,cmd 
                 printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
-                if ps -C sar wwho pid,cmd | grep "sar -X $currentpid " ; then
+                if ps -C sar wwho pid,cmd | grep -i "sar -X $currentpid " ; then
                     printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "sar sensor fo ${target} ${CSC} already running (see above)! restarting";
                     printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "now killing old sar monitoring for old pid ${currentpid}";
-                    ps -C sar wwho pid,cmd | grep "sar -X $currentpid " | awk '{print $1}' | xargs kill -9
-                    ps -C sadc wwho pid,cmd | grep " -X $currentpid" | awk '{print $1}' | xargs kill -9
+                    ps -C sar wwho pid,cmd | grep -i "sar -X $currentpid " | awk '{print $1}' | xargs kill -9
+                    ps -C sadc wwho pid,cmd | grep -i " -X $currentpid" | awk '{print $1}' | xargs kill -9
                 else
                     echo "not found"
                 fi
@@ -55,7 +55,7 @@ until false; do
     if [ $pid -gt 0 ]; then
         if SAR=`which sar 2>/dev/null`; then
             printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "starting ${SAR} sensor for ${target} ${CSC}=${pid}, see: ";
-	    if echo ${CSC} | grep -qo mySQL; then
+	    if echo ${CSC} | grep -Eqwo mySQL\|TaskTracking\|HTTPFrontend\|TaskLifeManager\|ErrorHandler\|CommandManager\|AdminControl\|Notification; then
 		${SAR} -x $pid 60 0 | grep --line-buffered $pid | awk '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "      " $6 "   " $7 "   " ($6+$7); fflush()}'  1>> ${PRODAGENT_WORKDIR}/HTTPFrontend/sensors/${CSC}-pidstat.dat 2>/dev/null & 
 	    else
 		${SAR} -X $pid 60 0 | grep --line-buffered $pid | awk '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "      " $6 "   " $7 "   " ($6+$7); fflush()}'  1>> ${PRODAGENT_WORKDIR}/HTTPFrontend/sensors/${CSC}-pidstat.dat 2>/dev/null & 
@@ -64,7 +64,7 @@ until false; do
             printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
             ps -C nocommand o pid,cmd
             printf "%s   %s: " `date +%m/%d/%y#%H:%M:%S\ %s`;
-            ps -C sar wwho pid,cmd | grep "X $pid "
+            ps -C sar wwho pid,cmd | grep -i "X $pid "
         else
             echo "SysStat package (sar) not installed: aborting" >&2;
             printf "%s   %s: %s\n" `date +%m/%d/%y#%H:%M:%S\ %s` "SysStat package (sar) not installed: aborting" 
