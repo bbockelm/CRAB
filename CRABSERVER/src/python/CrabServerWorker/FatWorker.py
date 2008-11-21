@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.142 2008/11/11 22:02:15 spiga Exp $"
-__version__ = "$Revision: 1.142 $"
+__revision__ = "$Id: FatWorker.py,v 1.144 2008/11/18 12:04:24 mcinquil Exp $"
+__version__ = "$Revision: 1.144 $"
 import string
 import sys, os
 import time
@@ -72,6 +72,24 @@ class FatWorker(Thread):
         ## CW DB init
         self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
 
+        ## extending field for info to log
+        self.infotolog = {
+                            "ev":       "Submission",       \
+                            "reason":   None,               \
+                            "error":    None,               \
+                            "time":     None,               \
+                            "range":    str(self.cmdRng),   \
+                            "exc":      None,               \
+                            "SE-Black": None,               \
+                            "SE-White": None,               \
+                            "CE-Black": None,               \
+                            "CE-White": None,               \
+                            "submittedJobs": None,          \
+                            "unmatchedJobs": None,          \
+                            "notSubmittedJobs": None,       \
+                            "skippedJobs": None     
+                         }
+
         try:
             self.start()
         except Exception, e:
@@ -96,7 +114,8 @@ class FatWorker(Thread):
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName)
-            self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), logMsg, e, exc, True )
+            self.preLog(mess = "Pre-submission failure", err = logMsg, exc = exc)
+            self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), logMsg, e)
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
             return
 
@@ -116,7 +135,8 @@ class FatWorker(Thread):
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s. preSubmissionCheck."%(self.myName, self.taskName)
-            self.sendResult(errStatus, errMsg, logMsg, e, "", True, newRange)
+            self.preLog(mess = "Failure in pre-submission check", err = logMsg, exc = exc)
+            self.sendResult(errStatus, errMsg, logMsg, e)
             return
 
         self.log.info('FatWorker %s performing list-match operation'%self.myName)
@@ -129,7 +149,8 @@ class FatWorker(Thread):
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s. listMatch."%(self.myName, self.taskName)
-            self.sendResult(errStatus, errMsg, logMsg, e, "", True, newRange)
+            self.preLog(mess = "Failure in pre-submission init", err = logMsg, exc = exc)
+            self.sendResult(errStatus, errMsg, logMsg, e)
 
         self.log.info("FatWorker %s performing submission"%self.myName)
         try:
@@ -138,7 +159,8 @@ class FatWorker(Thread):
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s."%(self.myName, self.taskName)
-            self.sendResult(errStatus, errMsg, logMsg, e, exc, True, newRange)
+            self.preLog(mess = "Failure during jobs submission", err = logMsg, exc = exc)
+            self.sendResult(errStatus, errMsg, logMsg, e)
             return
 
         self.log.info("FatWorker %s evaluating submission outcomes"%self.myName)
@@ -149,31 +171,19 @@ class FatWorker(Thread):
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s. postSubmission."%(self.myName, self.taskName)
-            self.sendResult(errStatus, errMsg, logMsg, e, exc, True, newRange)
+            self.preLog(mess = "Post-submission check failure", err = logMsg, exc = exc)
+            self.sendResult(errStatus, errMsg, logMsg, e)
             return
         self.log.info("FatWorker %s finished %s"%(self.myName, self.taskName) )
         return
 
-    def sendResult(self, status, reason, logMsg, error = '', exc = '', loggable = False, range = []):
+    def sendResult(self, status, reason, logMsg, error = ''):
         self.log.info(logMsg)
         self.log.info(str(error))
         timespent = time.time() - self.tInit
         msg = self.myName + "::" + self.taskName + "::"
         msg += str(status) + "::" + reason + "::" + str(timespent)
         self.local_queue.put((self.myName, "CrabServerWorkerComponent:FatWorkerResult", msg))
-        if loggable:
-            infotolog = {
-                         "ev": self.__class__.__name__, \
-                         "reason": logMsg,              \
-                         "txt": str(reason),            \
-                         "time": str(timespent),        \
-                         "range": str(range)            \
-                        }
-            if len(str(error)) > 0:
-                infotolog.setdefault("error", str(error))
-            if len(str(exc)) > 0:
-                infotolog.setdefault("exc", str(exc))
-            self.infoLogger( self.taskName, infotolog)
 
     def parseCommandXML(self):
         status = 0
@@ -410,6 +420,8 @@ class FatWorker(Thread):
         if len(resubmissionList) == 0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs) == 0:
             messagelog = "Successful complete submission for task %s"%self.taskName
             self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. %s"%messagelog )
+            self.detailLog( jtodo = submittableRange, jdone = submittedJobs, jnotm = unmatchedJobs, jskip = skippedJobs)
+            self.preLog(mess = messagelog)
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName+"::"+messagelog))
 
             onDemandRegDone = False
@@ -480,6 +492,8 @@ class FatWorker(Thread):
             self.log.info( reason )
             status = "10"
             payload = "%s::%s::%s::%s"%(self.taskName, status, reason, "-1")
+            self.detailLog( jtodo = submittableRange, jdone = submittedJobs, jnotm = unmatchedJobs, jskip = skippedJobs)
+            self.preLog(mess = reason)
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
         return
 
@@ -836,6 +850,37 @@ class FatWorker(Thread):
         req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
         return req
 
+    def detailLog( jtodo = [], jdone = 0, jnotm = 0, jskip = 0):
+        """
+        _detailLog_
+        """
+        if len(jtodo) > 0:
+            self.infotolog['submittableRange'] = str(jtodo)
+        if jtodo > 0:
+            self.infotolog['submittedJobs'] = str(jdone)
+        if jtodo > 0:
+            self.infotolog['nonSubmittedJobs'] = str(jnotm)
+        if jtodo > 0:
+            self.infotolog['skippedJobs'] = str(jskip)
+
+    def preLog(self, mess = None, err = None, time = None, exc = None):
+        """
+        _preLog_
+        """
+        self.infotolog['reason']    = mess
+        self.infotolog['error']     = err
+        self.infotolog['time']      = time
+        self.infotolog['exc']       = exc
+        if len(self.se_blackL) > 0:
+            self.infotolog["SE-Black"] = str(self.se_blackL)
+        if len(self.se_whiteL) > 0:
+            self.infotolog["SE-White"] = str(self.se_whiteL)
+        if len(self.ce_blackL) > 0:
+            self.infotolog["CE-Black"] = str(self.ce_blackL)
+        if len(self.ce_whiteL) > 0:
+            self.infotolog["CE-White"] = str(self.ce_whiteL)
+
+        self.infoLogger(self.taskName, self.infotolog)
 
     def infoLogger(self, taskname, diction, jobid = -1):
         """
