@@ -45,24 +45,10 @@ class PhEDExDatasvcInfo:
         if not self.usePhedex :
              self.user_lfn = cfg_params.get("USER.lfn",'')
              if self.user_lfn:
-                 if ( self.user_lfn[-1] != '/' ) : self.user_lfn = self.user_lfn + '/'
-                 if ( self.user_lfn[1] != '/' ) : self.user_lfn = '/' + self.user_lfn 
                  if self.user_remote_dir:
-                     if ( self.user_remote_dir[-1] != '/' ) : self.user_remote_dir = self.user_remote_dir + '/'
-                     if ( self.user_remote_dir[1] != '/' ) : self.user_remote_dir = '/' + self.user_remote_dir 
-                     if self.user_remote_dir == self.user_lfn :
-                         msg =  'WARINING: In your crab.cfg you are specifying both lfn and user_remote_dir parameters.\n'
-                         msg += '\t lfn is now deprecated. Please use only user_remote_dir removing lfn from your crab.cfg'
-                         common.logger.message(msg)
-                     else:
                          msg =  'ERROR: In your crab.cfg you are specifying both lfn and user_remote_dir parameters giving different values. \n'
                          msg += '\t lfn is now deprecated. Please use only user_remote_dir removing lfn from your crab.cfg'
                          raise CrabException(msg)
-                 else: 
-                     msg =  'WARINING: In your crab.cfg you are using "lfn" which is now a deprecating parameter.\n'
-                     msg += '\t Please use user_remote_dir removing lfn from your crab.cfg'
-                     common.logger.message(msg)
-                     self.user_remote_dir = self.user_lfn
 
         if not self.usePhedex and ( self.user_remote_dir == '' or self.user_se_path == '' ):
             msg = 'You are asking to stage out without using CMS Storage Name convention. In this case you \n' 
