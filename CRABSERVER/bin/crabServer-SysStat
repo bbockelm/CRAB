@@ -54,8 +54,9 @@ def usage():
 # # # #
 
 valid = ['config=', 'start', 'shutdown', 'status', 'restart',
-         'services=', 'components=']
+         'services=', 'components=', 'resources=']
 AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
+AllResources = {'CPU':'-u','MEM':'-r', 'SWAP':'-W'}
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
@@ -68,6 +69,7 @@ config = None
 command = None
 componentsList = None
 servicesList = None
+resourcesList = None
 
 for opt, arg in opts:
     if opt == "--config":
@@ -114,6 +116,14 @@ for opt, arg in opts:
             if item.strip == "":
                 continue
             servicesList.append(item)
+    if opt == "--resources":
+        rsrcList = arg.split(',')
+        resourcesList = []
+        for item in rsrcList:
+            if item.strip == "":
+                continue
+            resourcesList.append(item)
+
             
 if config == None:            
     configFile = os.environ.get("PRODAGENT_CONFIG", None)
@@ -143,7 +153,7 @@ if componentsList != None:
     print msg
     components = componentsList
 else:
-    if servicesList == None:
+    if servicesList == None and resourcesList == None:
         components = cfgObject.listComponents()
     else:
         components = []
@@ -154,10 +164,23 @@ if servicesList != None:
     print msg
     services = servicesList
 else:
-    if componentsList == None:
+    if componentsList == None and resourcesList == None:
         services = AllServices.keys()
     else:
         services = []
+
+
+if resourcesList != None:
+    msg = "Resources List Specified:\n"
+    msg += str(resourcesList).replace('\'', '')
+    print msg
+    resources = resourcesList
+else:
+    if componentsList == None and servicesList == None:
+        resources = AllResources.keys()
+    else:
+        resources = []
+
 
 def getComponentDir(component):
     compCfg = cfgObject.getConfig(component)
@@ -183,15 +206,18 @@ def isServiceRunning(service):
         return False
 
 
-def isSensorRunning(comp):
+def isSensorRunning(target):
     # get all sensors pids with their component pid
     sensors = os.popen('ps -C sar wwho pid,cmd').readlines()
     for sensor in sensors:
         [spid,dummy,type,cpid] = sensor.split()[0:4]
         if not (re.match('-X',type) or re.match('-x',type)):
-            continue
+            if re.match(target,type):
+                return True, spid, 0
+            else:
+                continue
         Rcomp = os.popen('ps -p '+str(cpid)+' wwho cmd').read()  #.split('/')[-2]
-        if re.search(comp,Rcomp):
+        if re.search(target,Rcomp):
             return True, spid, cpid
     return False, 0, 0
 
@@ -207,6 +233,12 @@ def isSensorDaemonRunning(comp):
 
 def startup():
     HTTPFeDir = getComponentDir("HTTPFrontend")
+    awkPRG = {}
+    grepCMD = {}
+    grepCMD['CPU'] = ['grep', '--line-buffered', 'all']
+    grepCMD['MEM'] = ['grep', '--line-buffered', '-v', 'kbmemfree']
+    awkPRG['CPU'] = '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "        " $4 "    " $5 "    " $6 "    " $7 "    " $8; fflush()}'+"\n"
+    awkPRG['MEM'] = '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "        " $3 "    " $4 "    " $5 "    " $6 "    " $7 "    " $8 "    " $9 "    " $10 "    " $11; fflush()}  '+"\n"
     for component in components:
         compDir = getComponentDir(component)
         daemonXml = os.path.join(compDir, "Daemon.xml")
@@ -246,6 +278,30 @@ def startup():
                 print "sensor for service %s(%s) started" % (service,AllServices[service])
             else:
                 print "ERROR while starting sensor for service %s(%s)" %  (service,AllServices[service])
+                sys.exit(1)
+    for resource in resources:
+        running, spid, dummy = isSensorRunning(AllResources[resource])
+        if running:
+            print "sensor for resource %s (sar %s) already running with pid %s" % (resource,AllResources[resource],spid)
+        else:
+            sarCMD = ["sar", AllResources[resource], str(60), str(0)]
+            awkPRGfilename="%s/sensors/%s-awk.prg"%(HTTPFeDir,resource)
+            FILE = open(awkPRGfilename,"w")
+            FILE.writelines(awkPRG[resource])
+            FILE.close()
+            awkCMD = ['awk', "--file", awkPRGfilename]
+            sensordOUT="%s/sensors/%s-pidstat.dat"%(HTTPFeDir,resource)
+            FILE = open(sensordOUT,"a")
+            sarP = subprocess.Popen(sarCMD,bufsize=1,stdout=subprocess.PIPE);
+            grepP = subprocess.Popen(grepCMD[resource],bufsize=1,stdin=sarP.stdout,stdout=subprocess.PIPE)
+            sdaemon = subprocess.Popen(awkCMD,bufsize=1,stdin=grepP.stdout,stdout=FILE)
+            print "a few seconds please..."
+            time.sleep(3)
+            sdaemon.poll()
+            if sdaemon.returncode is None:
+                print "sensor for resource %s (sar %s) started" % (resource,AllResources[resource])
+            else:
+                print "ERROR while starting sensor for resource %s (sar %s): return code: " % (resource,AllResources[resource],str(sdaemon.returncode))
                 sys.exit(1)
 
 
