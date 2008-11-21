@@ -314,3 +314,16 @@ def isSensorDaemonRunning(comp):
         if re.search(comp,Rcomp):
             return True, spid
     return False, 0
+
+##### grid status #####
+def jobsByWMS(timer1="", timer2=""):
+    condquery = ""
+    if len(timer1) > 0:
+         condquery += " submission_time > '%s' and " %timer1
+    if len(timer2) > 0:
+         condquery += " submission_time < '%s' and " %timer2
+    queryString = "SELECT service, status_scheduler, count(status) FROM bl_runningjob " +\
+                  "WHERE %s service <> 'NULL' GROUP BY service, status ORDER BY service;" %condquery
+    results = queryMethod(queryString)
+    return results
+

@@ -11,10 +11,11 @@ import API, Sites
 
 class JobMonitor:
 
-    def __init__(self,  graphJobStCum = None, graphdestination = None, graphstatusdest = None  ):
+    def __init__(self,  graphJobStCum = None, graphdestination = None, graphstatusdest = None, jobwms = None  ):
         self.graphjobstcum  =graphJobStCum
         self.graphdestination = graphdestination
         self.graphstatusdest = graphstatusdest
+        self.jobwms = jobwms
     
     def index(self):
 
@@ -67,6 +68,28 @@ class JobMonitor:
         html += template
         html += template1
         html += '</select>'
+        html += '</form>'
+        html += "</table>\n"
+
+        from time import gmtime, strftime
+        curryear  = strftime("%Y", gmtime())
+        currmonth = strftime("%Y", gmtime())
+        currday   = strftime("%d", gmtime())
+
+        days   = "".join(["<option>%s</option>"%(str(obj)) for obj in xrange(1,32)])
+        months = "".join(["<option>%s</option>"%(str(obj)) for obj in xrange(1,13)])
+        years  = "<option>%s</option><option>%s</option>"%(str(curryear),str(int(curryear)-1))
+        html += "<table>\n"
+        html += "<br/><br/>"
+        html += '<form action=\"%s"\ method="get">' % (self.jobwms)
+        html += '<i>Status per Destination Sites</i>'
+        html += '&nbsp from &nbsp<select name="fromy" style="width:80px">%s</select>'%years
+        html += '<select name="fromm" style="width:80px">%s</select>'%months
+        html += '<select name="fromd" style="width:80px">%s</select>'%days
+        html += '&nbsp to &nbsp<select name="toy" style="width:80px">%s</select>'%years
+        html += '<select name="tom" style="width:80px">%s</select>'%months
+        html += '<select name="tod" style="width:80px">%s</select>'%days
+        html += '&nbsp<input type="submit" value="Show Plot"/> '
         html += '</form>'
         html += "</table>\n"
 
@@ -313,3 +336,55 @@ class StatusPerDest:
         return html
         
     index.exposed = True
+
+
+class PlotByWMS:
+
+    def __init__(self, imageUrl, imageDir):
+        self.imageServer = imageUrl
+        self.workingDir = imageDir
+
+
+    def TypePlot(self, data, wms):
+        """
+        """
+        errHtml = "<html><body><h2>No Graph Tools installed!!!</h2>\n "
+        errHtml += "</body></html>"
+        try:
+            from graphtool.graphs.common_graphs import PieGraph
+        except ImportError:
+            return errHtml
+
+        pngfile = os.path.join(self.workingDir, "JobStatusByWMS_%s_.png"%str(wms))
+        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+        metadata = {'title':'Job Status for [%s] WMS'%str(wms)}
+        Graph = PieGraph()
+        coords = Graph( data, pngfile, metadata )
+
+        html = "<img src=\"%s\">" % pngfileUrl
+
+        return html
+
+    def index(self, fromy = "", fromm ="", fromd = "", toy = "", tom = "", tod = ""):
+
+        fromdata = fromy+"-"+fromm+"-"+fromd
+        todata   = toy+"-"+tom+"-"+tod
+        data = API.jobsByWMS(fromdata, todata)
+        dictofdict = {}
+        for wms,status,count in data:
+            if dictofdict.has_key(str(wms)):
+                dictofdict[str(wms)].setdefault(str(status), int(count))
+            else:
+                dictofdict.setdefault(wms,{str(status):int(count)})
+
+        html = "<html><body>"
+        for key, val in dictofdict.iteritems():
+            wms = str(key).split("https://")[1].split(":")[0]
+            html += self.TypePlot(val, wms) + "<br><br>"
+        html += "</body></html>"
+            
+
+        return html
+
+    index.exposed = True
+
