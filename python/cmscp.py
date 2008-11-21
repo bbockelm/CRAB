@@ -105,39 +105,38 @@ class cmscp:
             ## maybe some local schedulers need something dedicated
             pass
         return supported_protocol
-   """
-   def checkCopy(self, copy_results, list_files):
-       """
-       """
-       #results={}
-       list_retry = []
-       list_existing = []
-       list_ok = []
-       if copy_results.keys() == '':
-           self.results.update(copy_results)
-       else:
-           for file, dict in copy_results.iteritems():
-               er_code = dict['erCode']
-               if er_code == '0':
-                   list_ok.append(file)
-                   reason = 'Copy succedeed with %s utils'%prot
-                   upDict = self.updateReport(file, er_code, reason)
-                   copy_results.update(upDict)
-               elif er_code == '60303': list_existing.append( file )
-               else: list_retry.append( file )
-           results.update(copy_results)
-           if len(list_ok) != 0:
-               msg = 'Copy of %s succedeed with %s utils\n'%(str(list_ok),prot)
-               if self.debug : print msg
-           if len(list_ok) == len(list_files) :
-               msg = 'Copy of  all files succedeed\n'
-               #break
-           else:
-               if self.debug : print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
-               #if len(list_retry): list_files = list_retry
-       return list_retry, results        
- 
-    """ 
+
+ #   def checkCopy(self, copy_results, list_files):
+        """
+        #results={}
+        list_retry = []
+        list_existing = []
+        list_ok = []
+        if copy_results.keys() == '':
+            self.results.update(copy_results)
+        else:
+            for file, dict in copy_results.iteritems():
+                er_code = dict['erCode']
+                if er_code == '0':
+                    list_ok.append(file)
+                    reason = 'Copy succedeed with %s utils'%prot
+                    upDict = self.updateReport(file, er_code, reason)
+                    copy_results.update(upDict)
+                elif er_code == '60303': list_existing.append( file )
+                else: list_retry.append( file )
+            results.update(copy_results)
+            if len(list_ok) != 0:
+                msg = 'Copy of %s succedeed with %s utils\n'%(str(list_ok),prot)
+                if self.debug : print msg
+            if len(list_ok) == len(list_files) :
+                msg = 'Copy of  all files succedeed\n'
+                #break
+            else:
+                if self.debug : print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
+                #if len(list_retry): list_files = list_retry
+        return list_retry, results        
+        
+        """ 
     def stager( self, middleware, list_files ):
         """
         Implement the logic for remote stage out
@@ -365,7 +364,6 @@ class cmscp:
             ErCode = '60302'
             msg = "ERROR file %s do not exist"%os.path.basename(filetocopy)
             return ErCode, msg
-
         f_tocopy=filetocopy
         if self.dest_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
         try:
