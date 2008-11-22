@@ -469,10 +469,6 @@ This is the directory or tree of directories where your output will be stored. T
 To be used with <copy_data>=1 and <storage_element> not official CMS sites.
 This is the full path of the Storage Element writeable by all, the mountpoint of SE (i.e /srm/managerv2?SFN=/pnfs/se.xxx.infn.it/yyy/zzz/)
 
-=item B<lfn>
-
-To be used with <copy_data>=1 and <storage_element> not official CMS sites.
-This is the directory or tree of directories that CRAB will create under the storage path of the SE. Here your produced output will be stored.This part of the path will be used as logical file name of your files in the case of publication. B<DEPRECATED>
 
 =item B<storage_pool>
 
@@ -514,6 +510,10 @@ To use the automate namespace definition (perfomed by CRAB) it is possible to se
 =item B<debug_wrapper>
 
 To enable the higer verbose level on wrapper specify I<debug_wrapper> = True. The Pset contents before and after the CRAB maipulation will be written together with other useful infos.
+
+=item B<deep_debug>
+
+To be used in case of unexpected job crash when the sdtout and stderr files are lost. Submitting again the same jobs specifying I<deep_debug> = 1 these files will be reported back. NOTE: it works only on standalone mode for debugging purpose. 
 
 =item B<dontCheckSpaceLeft>
 
