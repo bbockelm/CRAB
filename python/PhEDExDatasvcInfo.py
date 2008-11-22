@@ -15,17 +15,26 @@ class PhEDExDatasvcInfo:
         self.datasvc_url = cfg_params.get("USER.datasvc_url",url)
 
         self.FacOps_savannah = 'https://savannah.cern.ch/support/?func=additem&group=cmscompinfrasup'
-
+        stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabFaq#How_to_store_output_with_CRAB_2'
+        self.dataPub_faq = 'https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabForPublication'
 
         self.srm_version = cfg_params.get("USER.srm_version",'srmv2')
         self.node = cfg_params.get('USER.storage_element',None)
         
+
+
+        self.user_lfn = cfg_params.get("USER.lfn",'')
         self.publish_data = cfg_params.get("USER.publish_data",0)
         self.usenamespace = cfg_params.get("USER.usenamespace",0)
         self.user_remote_dir = cfg_params.get("USER.user_remote_dir",'')
         if self.user_remote_dir:
             if ( self.user_remote_dir[-1] != '/' ) : self.user_remote_dir = self.user_remote_dir + '/'
-            
+        if self.user_lfn:    
+            msg  = 'Warning: lfn has been deprecated, CRAB will ignore it.\n'
+            msg += '\t Please use only user_remote_dir removing lfn from your crab.cfg\n'
+            msg += '\t For further information please visit : \n\t%s'%stage_out_faq 
+            common.logger.message(msg)
+          
         self.datasetpath = cfg_params.get("CMSSW.datasetpath")
         self.publish_data_name = cfg_params.get('USER.publish_data_name','')
 
@@ -36,24 +45,16 @@ class PhEDExDatasvcInfo:
                                                     
         #check if using "private" Storage
         self.usePhedex = True 
-        stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabFaq#How_to_store_output_with_CRAB_2'
         if not self.node :
             msg = 'Please specify the storage_element name in your crab.cfg section [USER].\n'
-            msg +='      For further information please visit : %s'%stage_out_faq 
+            msg +='\tFor further information please visit : %s'%stage_out_faq 
             raise CrabException(msg)
         if (self.node.find('T1_') + self.node.find('T2_')+self.node.find('T3_')) == -3: self.usePhedex = False 
-        if not self.usePhedex :
-             self.user_lfn = cfg_params.get("USER.lfn",'')
-             if self.user_lfn:
-                 if self.user_remote_dir:
-                         msg =  'ERROR: In your crab.cfg you are specifying both lfn and user_remote_dir parameters giving different values. \n'
-                         msg += '\t lfn is now deprecated. Please use only user_remote_dir removing lfn from your crab.cfg'
-                         raise CrabException(msg)
 
         if not self.usePhedex and ( self.user_remote_dir == '' or self.user_se_path == '' ):
             msg = 'You are asking to stage out without using CMS Storage Name convention. In this case you \n' 
             msg += '\t must specify both user_remote_dir and storage_path in the crab.cfg section [USER].\n '
-            msg += '\t For further information please visit : %s'%stage_out_faq
+            msg += '\t For further information please visit : \n\t%s'%stage_out_faq
             raise CrabException(msg)
         self.sched = common.scheduler.name().upper() 
         self.protocol = self.srm_version
@@ -123,7 +124,8 @@ class PhEDExDatasvcInfo:
             lfn = self.user_remote_dir
             return lfn
 	if self.publish_data_name == '' and int(self.publish_data) == 1:
-            msg = "Eeror. The [USER] section does not have 'publish_data_name'"
+            msg = "Error. The [USER] section does not have 'publish_data_name'\n"
+            msg += '\tFor further information please visit : \n\t%s'%self.dataPub_faq
             raise CrabException(msg)
         if self.publish_data_name == '' and int(self.usenamespace) == 1:
            self.publish_data_name = "DefaultDataset"
