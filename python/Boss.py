@@ -27,6 +27,12 @@ class Boss:
 
     def configure(self,cfg_params):
         self.cfg_params = cfg_params
+        self.deep_debug= self.cfg_params.get("USER.deep_debug",'0')
+        server_check =  self.cfg_params.get("CRAB.server_name",None)
+        if self.deep_debug == '1' and server_check != None :
+            msg =  'You are asking the deep_debug, but it cannot works using the server.\n'
+            msg =+ '\t The functionality will not have effect.'
+            common.logger.message(msg) 
         self.schedulerName =  self.cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
         self.rb_param_file=''
         if (not cfg_params.has_key('EDG.rb')):
@@ -87,8 +93,9 @@ class Boss:
             stderr = base +'_'+ str(id)+'.stderr'
             jobs.append(id)
             out=task.jobs[id-1]['outputFiles']
-         #   out.append(stdout)
-         #   out.append(stderr)
+            if self.deep_debug == '1':
+                out.append(stdout)
+                out.append(stderr)
          #   out.append('.BrokerInfo')
             ## To be better understood if it is needed
             out.append('crab_fjr_'+str(id)+'.xml')
