@@ -327,12 +327,12 @@ class cmscp:
                 msg += str(ex.detail)+'\n'
                 msg += str(ex.output)+'\n'
             msg += "ERROR: problem with the directory creation using %s protocol \n"%protocol
-            raise Exceptions(msg)
+            raise Exception(msg)
         except OperationException, ex:
             msg = str(ex)
             if self.debug : msg += str(ex.detail)+'\n'
             msg += "ERROR: problem with the directory creation using %s protocol \n"%protocol
-
+            raise Exception(msg)
         return msg
 
     def checkFileExist( self, sbi_source, sbi_dest, filetocopy ):
