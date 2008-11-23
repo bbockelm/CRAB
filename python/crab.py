@@ -36,7 +36,7 @@ class Crab:
                              '-resubmit' , '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-createJdl','-printJdl', '-publish',
-                             '-copyData', '-renewProxy', '-extend' ]
+                             '-copyData', '-renewProxy', '-extend','-validateCfg' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -671,6 +671,10 @@ class Crab:
                     status=None  
                 from CopyData import CopyData
                 self.actions[opt] = CopyData(self.cfg_params, jobs,status)
+  
+            elif ( opt == '-validateCfg' ):
+                from ValidateCfg import ValidateCfg     
+                self.actions[opt] = ValidateCfg(self.cfg_params)
 
             elif ( opt == '-renewProxy' ):
                 if (self.UseServer== 1):
