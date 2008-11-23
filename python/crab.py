@@ -674,7 +674,10 @@ class Crab:
   
             elif ( opt == '-validateCfg' ):
                 from ValidateCfg import ValidateCfg     
-                self.actions[opt] = ValidateCfg(self.cfg_params)
+                config= {'pset' : self.cfg_params.get('CMSSW.pset','None')}
+                if val :
+                    config['pset']=val
+                self.actions[opt] = ValidateCfg(config)
 
             elif ( opt == '-renewProxy' ):
                 if (self.UseServer== 1):
