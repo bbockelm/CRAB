@@ -26,7 +26,7 @@ class ValidateCfg:
         """
         Read in Pset object
         """
-        common.logger.message( "Importing .py file %s"%self.pset)
+        common.logger.message( "Importing file %s"%self.pset)
         handle = open(self.pset, 'r')
 
         try:     
