@@ -23,12 +23,14 @@ class SubmitterServer( Submitter ):
         self.credentialType = 'Proxy' 
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.credentialType = 'Token' 
-        try:
-            from StatusServer import StatusServer
-            stat = StatusServer(self.cfg_params)
-            stat.resynchClientSide()
-        except:
-            pass    
+
+        ## Not refreshing status before submitting
+        #try:
+        #    from StatusServer import StatusServer
+        #    stat = StatusServer(self.cfg_params)
+        #    stat.resynchClientSide()
+        #except:
+        #    pass    
 
         Submitter.__init__(self, cfg_params, parsed_range, val)      
     
@@ -260,8 +262,21 @@ class SubmitterServer( Submitter ):
         if subOutcome != 0:
             msg = "ClientServer ERROR: %d raised during the communication.\n"%subOutcome
             raise CrabException(msg)
+        elif firstSubmission is True:
+            self.markSubmitting(firstSubmission)
 
         del csCommunicator
 
         return
+
+
+    def markSubmitting(self, firstSubmission):
+        """
+        _markSubmitting_
+        sign local db for jobs sent -submitted- to the server
+        (just for the first submission)
+        """
+        common.logger.debug(4, "Updating submitting jobs %s"%str(self.submitRange))
+        updlist = [{'statusScheduler':'Submitting', 'status':'CS'}] * len(self.submitRange)
+        common._db.updateRunJob_(self.submitRange, updlist)
 

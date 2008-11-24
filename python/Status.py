@@ -4,6 +4,7 @@ import string, os, time
 import sha
 from crab_util import *
 
+
 class Status(Actor):
     def __init__(self, *args):
         self.cfg_params = args[0]
@@ -18,8 +19,11 @@ class Status(Actor):
         common.logger.debug(5, "Status::run() called")
 
         start = time.time()
+
         self.query()
         self.PrintReport_()
+        self.showWebMon()
+
         stop = time.time()
         common.logger.debug(1, "Status Time: "+str(stop - start))
         common.logger.write("Status Time: "+str(stop - start))
@@ -178,3 +182,6 @@ class Status(Actor):
             output = output[:-1]
         return output
 
+
+    def showWebMon(self):
+        pass
