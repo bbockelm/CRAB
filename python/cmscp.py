@@ -71,8 +71,8 @@ class cmscp:
         Check if running on UI (no $middleware) or
         on WN (on the Grid), and take different action
         """
-
         self.processOptions()
+        if self.debug: print 'calling run() : \n'
         # stage out from WN
         if self.params['middleware'] :
            results = self.stager(self.params['middleware'],self.params['inputFileList'])
@@ -97,7 +97,7 @@ class cmscp:
         supported_protocol = None
         if middleware.lower() in ['osg','lcg','condor']:
             supported_protocol = [('srm-lcg',lcgOpt[self.params['srm_version']]),\
-                                  (self.params['srm_version'],srmOpt[self.params['srm_version']])]
+                                 (self.params['srm_version'],srmOpt[self.params['srm_version']])]
         elif middleware.lower() in ['lsf','caf']:
             supported_protocol = [('rfio',rfioOpt)]
         else:
@@ -141,13 +141,14 @@ class cmscp:
         """
         Implement the logic for remote stage out
         """
+ 
+        if self.debug: print 'stager() :\n'
         results={}
         for prot, opt in self.setProtocol( middleware ):
-            if self.debug: print 'Trying stage out with %s utils \n'%prot
+            if self.debug: print '\tTrying the stage out with %s utils \n'%prot
             copy_results = self.copy( list_files, prot, opt )
             ######## to define a new function checkCopy ################
             #list_retry, self.results = self.checkCopy(copy_results, list_files)
-            
         #def checkCopy (self, copy_results):
         #    """
         #    """
@@ -155,7 +156,7 @@ class cmscp:
             list_retry = []
             list_existing = []
             list_ok = []
-            if copy_results.keys() == '':
+            if copy_results.keys() == [''] or copy_results.keys() == '' :
                 results.update(copy_results)
             else:
                 for file, dict in copy_results.iteritems():
@@ -165,18 +166,19 @@ class cmscp:
                         reason = 'Copy succedeed with %s utils'%prot
                         upDict = self.updateReport(file, er_code, reason)
                         copy_results.update(upDict)
-                    elif er_code == '60303': list_existing.append( file )
+                    elif er_code in ['60303','60302']: list_existing.append( file )
                     else: list_retry.append( file )
                 results.update(copy_results)
+                msg = ''
                 if len(list_ok) != 0:
-                    msg = 'Copy of %s succedeed with %s utils\n'%(str(list_ok),prot)
-                    if self.debug : print msg
+                    msg += '\tCopy of %s succedeed with %s utils\n'%(str(list_ok),prot)
                 if len(list_ok) == len(list_files) :
                     break
                 else:
-                    if self.debug : print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
+                    if self.debug: msg += '\tCopy of %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
                     if len(list_retry): list_files = list_retry
                     else: break
+                if self.debug : print msg
             """
             if len(list_retry):
                list_files = list_retry
@@ -240,6 +242,7 @@ class cmscp:
         """
         Instantiate storage interface
         """
+        if self.debug : print 'initializeApi() :\n'  
         self.source_prot = protocol
         self.dest_prot = protocol
         if not self.params['source'] : self.source_prot = 'local'
@@ -248,8 +251,8 @@ class cmscp:
         Destination_SE = self.storageInterface( self.params['destination'], self.dest_prot )
 
         if self.debug :
-            print '(source=%s,  protocol=%s)'%(self.params['source'], self.source_prot)
-            print '(destination=%s,  protocol=%s)'%(self.params['destination'], self.dest_prot)
+            msg  = '\t(source=%s,  protocol=%s)'%(self.params['source'], self.source_prot)
+            msg += '\t(destination=%s,  protocol=%s)'%(self.params['destination'], self.dest_prot)
 
         return Source_SE, Destination_SE
 
@@ -258,7 +261,9 @@ class cmscp:
         Make the real file copy using SE API
         """
         if self.debug :
-            print 'copy(): using %s protocol'%protocol
+            msg  = 'copy() :\n'
+            msg += '\tusing %s protocol\n'%protocol
+            print msg
         try:
             Source_SE, Destination_SE = self.initializeApi( protocol )
         except Exception, ex:
@@ -277,14 +282,14 @@ class cmscp:
             sbi_dest = SBinterface(Destination_SE)
             sbi_source = SBinterface(Source_SE)
         except ProtocolMismatch, ex:
-            msg = str(ex)+'\n'
-            msg += "ERROR : Unable to create SBinterface with %s protocol\n"%protocol
-            return self.updateReport('', '-1', str(ex))
+            msg  = "ERROR : Unable to create SBinterface with %s protocol"%protocol
+            msg += str(ex)
+            return self.updateReport('', '-1', msg)
 
         results = {}
         ## loop over the complete list of files
         for filetocopy in list_file:
-            if self.debug : print 'start real copy for %s'%filetocopy
+            if self.debug : print '\tStart real copy for %s'%filetocopy
             try :
                 ErCode, msg = self.checkFileExist( sbi_source, sbi_dest, filetocopy )
             except Exception, ex:
@@ -292,7 +297,7 @@ class cmscp:
                 msg = str(ex)  
             if ErCode == '0':
                 ErCode, msg = self.makeCopy( sbi, filetocopy , options, protocol,sbi_dest )
-            if self.debug : print 'Copy results for %s is %s'%( os.path.basename(filetocopy), ErCode)
+            if self.debug : print '\tCopy results for %s is %s'%( os.path.basename(filetocopy), ErCode)
             results.update( self.updateReport(filetocopy, ErCode, msg))
         return results
 
@@ -301,12 +306,12 @@ class cmscp:
         """
         Create the storage interface.
         """
+        if self.debug : print 'storageInterface():\n'
         try:
             interface = SElement( FullPath(endpoint), protocol )
         except ProtocolUnknown, ex:
-            msg = ''
-            if self.debug : msg = str(ex)+'\n'
-            msg += "ERROR : Unable to create interface with %s protocol\n"%protocol
+            msg  = "ERROR : Unable to create interface with %s protocol"%protocol
+            msg += str(ex)
             raise Exception(msg)
 
         return interface
@@ -316,22 +321,24 @@ class cmscp:
         Create remote dir for gsiftp REALLY TEMPORARY
         this should be transparent at SE API level.
         """
+        if self.debug : print 'createDir():\n'
         msg = ''
         try:
             action = SBinterface( Destination_SE )
             action.createDir()
-            if self.debug: msg+= "The directory has been created using protocol %s\n"%protocol
+            if self.debug: print "\tThe directory has been created using protocol %s"%protocol
         except TransferException, ex:
-            msg = str(ex)
+            msg  = "ERROR: problem with the directory creation using %s protocol "%protocol
+            msg += str(ex)
             if self.debug :
-                msg += str(ex.detail)+'\n'
-                msg += str(ex.output)+'\n'
-            msg += "ERROR: problem with the directory creation using %s protocol \n"%protocol
+                dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                dbgmsg += '\t'+str(ex.output)+'\n'
+                print dbgmsg 
             raise Exception(msg)
         except OperationException, ex:
-            msg = str(ex)
-            if self.debug : msg += str(ex.detail)+'\n'
-            msg += "ERROR: problem with the directory creation using %s protocol \n"%protocol
+            msg  = "ERROR: problem with the directory creation using %s protocol "%protocol
+            msg += str(ex)
+            if self.debug : print '\t'+msg+'\n\t'+str(ex.detail)+'\n'
             raise Exception(msg)
         return msg
 
@@ -340,25 +347,29 @@ class cmscp:
         Check both if source file exist AND 
         if destination file ALREADY exist. 
         """
+        if self.debug : print 'checkFileExist():\n'
         ErCode = '0'
         msg = ''
         f_tocopy=filetocopy
         if self.source_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
         try:
             checkSource = sbi_source.checkExists( f_tocopy )
+            if self.debug : print '\tCheck for local file %s exist succeded \n'%f_tocopy  
         except OperationException, ex:
-            msg = str(ex)
+            msg  ='ERROR: problems checkig if source file %s exist'%filetocopy
+            msg += str(ex)
             if self.debug :
-                msg += str(ex.detail)+'\n'
-                msg += str(ex.output)+'\n'
-            msg +='ERROR: problems checkig if source file %s exist'%filetocopy
+                dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                dbgmsg += '\t'+str(ex.output)+'\n'
+                print dbgmsg 
             raise Exception(msg)
         except WrongOption, ex:
-            msg = str(ex)
+            msg  ='ERROR problems checkig if source file % exist'%filetocopy
+            msg += str(ex)
             if self.debug :
-                msg += str(ex.detail)+'\n'
-                msg += str(ex.output)+'\n'
-            msg +='ERROR problems checkig if source file % exist'%filetocopy
+                dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                dbgmsg += '\t'+str(ex.output)+'\n'
+                print dbgmsg 
             raise Exception(msg)
         if not checkSource :
             ErCode = '60302'
@@ -368,19 +379,21 @@ class cmscp:
         if self.dest_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
         try:
             check = sbi_dest.checkExists( f_tocopy )
+            if self.debug : print '\tCheck for remote file %s exist succeded \n'%f_tocopy  
         except OperationException, ex:
-            msg = str(ex)
+            msg  = 'ERROR: problems checkig if file %s already exist'%filetocopy
+            msg += str(ex)
             if self.debug :
-                msg += str(ex.detail)+'\n'
-                msg += str(ex.output)+'\n'
-            msg +='ERROR: problems checkig if file %s already exist'%filetocopy
+                dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                dbgmsg += '\t'+str(ex.output)+'\n'
+                print dbgmsg
             raise Exception(msg)
         except WrongOption, ex:
-            msg = str(ex)
+            msg  = 'ERROR problems checkig if file % already exist'%filetocopy
+            msg += str(ex)
             if self.debug :
-                msg += str(ex.detail)+'\n'
-                msg += str(ex.output)+'\n'
-            msg +='ERROR problems checkig if file % already exist'%filetocopy
+                msg += '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                msg += '\t'+str(ex.output)+'\n'
             raise Exception(msg)
         if check :
             ErCode = '60303'
@@ -392,6 +405,7 @@ class cmscp:
         """
         call the copy API.
         """
+        if self.debug : print 'makeCopy():\n'
         path = os.path.dirname(filetocopy)
         file_name =  os.path.basename(filetocopy)
         source_file = filetocopy
@@ -410,37 +424,42 @@ class cmscp:
         try:
             sbi.copy( source_file , dest_file , opt = option)
         except TransferException, ex:
-            msg = str(ex)
+            msg  = "Problem copying %s file" % filetocopy
+            msg += str(ex)
             if self.debug :
-                msg += str(ex.detail)+'\n'
-                msg += str(ex.output)+'\n'
-            msg += "Problem copying %s file" % filetocopy
+                dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                dbgmsg += '\t'+str(ex.output)+'\n'
+                print dbsmsg 
             ErCode = '60307'
         except WrongOption, ex:
-            msg = str(ex)
+            msg  = "Problem copying %s file" % filetocopy
+            msg += str(ex)
             if self.debug :
-                msg += str(ex.detail)+'\n'
-                msg += str(ex.output)+'\n'
-            msg += "Problem copying %s file" % filetocopy
+                dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                dbgmsg += '\t'+str(ex.output)+'\n'
+                print dbsmsg 
             ErCode = '60307'
         if ErCode == '0' and protocol.find('srmv') == 0:
             remote_file_size = -1 
             local_file_size = os.path.getsize( source_file ) 
             try:
                 remote_file_size = sbi_dest.getSize( dest_file )
+                if self.debug : print '\t Check of remote size succeded for file %s\n'%dest_file
             except TransferException, ex:
-                msg = str(ex)
+                msg  = "Problem checking the size of %s file" % filetocopy
+                msg += str(ex)
                 if self.debug :
-                    msg += str(ex.detail)+'\n'
-                    msg += str(ex.output)+'\n'
-                msg += "Problem checking the size of %s file" % filetocopy
+                    dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                    dbgmsg += '\t'+str(ex.output)+'\n'
+                    print dbgmsg
                 ErCode = '60307'
             except WrongOption, ex:
-                msg = str(ex)
+                msg  = "Problem checking the size of %s file" % filetocopy
+                msg += str(ex)
                 if self.debug :
-                    msg += str(ex.detail)+'\n'
-                    msg += str(ex.output)+'\n'
-                msg += "Problem checking the size of %s file" % filetocopy
+                    dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                    dbgmsg += '\t'+str(ex.output)+'\n'
+                    print dbgmsg
                 ErCode = '60307'
             if local_file_size != remote_file_size:
                 msg = "File size dosn't match: local size = %s ; remote size = %s " % (local_file_size, remote_file_size)
@@ -454,17 +473,21 @@ class cmscp:
         return ErCode, msg
 
     def removeFile( self, sbi_dest, filetocopy ):
-
+        """  
+        """  
+        if self.debug : print 'removeFile():\n'
         f_tocopy=filetocopy
         if self.dest_prot != 'local':f_tocopy = os.path.basename(filetocopy)
         try:
             sbi_dest.delete( f_tocopy )
+            if self.debug : '\t deletion of file %s succeeded\n'%str(filetocopy)
         except OperationException, ex:
-            msg = str(ex)
+            msg  ='ERROR: problems removing partially staged file %s'%filetocopy
+            msg += str(ex)
             if self.debug :
-                msg += str(ex.detail)+'\n'
-                msg += str(ex.output)+'\n'
-            msg +='ERROR: problems removing partially staged file %s'%filetocopy
+                dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                dbgmsg += '\t'+str(ex.output)+'\n'
+                print dbgmsg
             raise Exception(msg)
 
         return 
@@ -516,6 +539,7 @@ class cmscp:
                     cmscp_exit_status = dict['erCode']
                     cmscp_exit_status = dict['erCode']
             else:
+                txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
                 cmscp_exit_status = dict['erCode']
                 cmscp_exit_status = dict['erCode']
         txt += '\n'
