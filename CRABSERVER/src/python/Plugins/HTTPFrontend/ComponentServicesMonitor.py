@@ -11,6 +11,7 @@ from ProdAgentCore.Configuration import ProdAgentConfiguration
 from ProdAgentCore.DaemonDetails import DaemonDetails
 
 AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
+AllResources = {'CPU':'-u','MEM':'-r', 'SWAP':'-W', 'LOAD':'-q'}
 
 
 class CompServMonitor:
@@ -37,8 +38,8 @@ class CompServMonitor:
         html += ' <form action=\"%s"\ method="get"> ' % (self.complog)
         html += 'Show logs for  '
         html += ' <select name="comp_name" style="width:140px">'
-        for components in status(True):
-            html += '<option>'+components+'</option>'
+        for component in status(True):
+            html += '<option>'+component+'</option>'
         html += '</select>'
         html += '<input type="submit" value="Show logs"/>'
         html += '</form>'
@@ -56,15 +57,15 @@ class CompServMonitor:
         html += '</form>'
         html += "</table>\n"
 
-        html += "<table>\n"
-        html += "<br/><br/><small style=\"color:red\">(Work in progress)</small><br/>\n"
-        html += "<i> Display components CPU usage:</i><br/><br/>"
+        html += "<table><br/>\n"
+        html += "<small style=\"color:red\">(Work in progress)</small><br/><br/>\n"
+        html += "<i> Display components CPU usage:</i><br/>"
         html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
         html += 'Show CPU plot for  '
         html += ' <select name="Component" style="width:140px">'
         html += '<option>All components</option>'
-        for components in status(True):
-            html += '<option>'+components+'</option>'
+        for component in status(True):
+            html += '<option>'+component+'</option>'
         html += '</select>'
         html += ' for last  '
         html += ' <input type="text" name="length" size=4 value=0> '
@@ -74,15 +75,33 @@ class CompServMonitor:
         html += '</form>'
         html += "</table>\n"
 
-        html += "<table>\n"
-        html += "<br/><br/><small style=\"color:red\">(Work in progress)</small><br/>\n"
-        html += "<i> Display services CPU usage:</i><br/><br/>"
+        html += "<table><br/>\n"
+        html += "<i> Display services CPU usage:</i><br/>"
         html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
         html += 'Show CPU plot for  '
         html += ' <select name="Component" style="width:140px">'
         html += '<option>All services</option>'
         for service in AllServices.keys():
             html += '<option>'+service+'</option>'
+        html += '</select>'
+        html += ' for last  '
+        html += ' <input type="text" name="length" size=4 value=0> '
+        html += ' <select name="span" style="width:80px"><option>hours</option><option>days</option></select> '
+        html += ' <input type="submit" value="Show Plot"/> '
+        html += '</select>'
+        html += '</form>'
+        html += "</table>\n"
+
+        html += "<table><br/>\n"
+        html += "<i> Display resources usage:</i><br/>"
+        html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
+        html += 'Show plot for '
+        html += ' <select name="Component" style="width:140px">'
+        html += '<option>All resources</option>'
+        ks = AllResources.keys(); ks.sort()
+        for resource in ks:
+            html += '<option>'+resource+'</option>'
+        html += '<option>SWAPPING</option>'
         html += '</select>'
         html += ' for last  '
         html += ' <input type="text" name="length" size=4 value=0> '
