@@ -15,13 +15,13 @@ AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
 
 class CompServMonitor:
 
-    def __init__(self, compStatus = None, compLog = None, compCpu = None):
+    def __init__(self, compStatus = None, compLog = None, compCpu = None, compMsg = None):
         self.compstatus = compStatus
         self.complog = compLog
         self.compcpu = compCpu
+        self.compmsg = compMsg
     
     def index(self):
-
  
         html = """<html><body><h2>CrabServer Components and Services Monitoring</h2>\n """
         html += "<table>\n"
@@ -31,7 +31,7 @@ class CompServMonitor:
         html += ' <input type="submit" value="Show report"/>'
         html += '</form>'
         html += "</table>\n"
-
+        
         html += "<table>\n"
         html += "<br/><br/><i> Allow to access components logs through web:</i><br/><br/>"
         html += ' <form action=\"%s"\ method="get"> ' % (self.complog)
@@ -39,8 +39,20 @@ class CompServMonitor:
         html += ' <select name="comp_name" style="width:140px">'
         for components in status(True):
             html += '<option>'+components+'</option>'
-        html += '<input type="submit" value="Show logs"/>'
         html += '</select>'
+        html += '<input type="submit" value="Show logs"/>'
+        html += '</form>'
+        html += "</table>\n"
+
+        html += "<table>\n"
+        html += "<br/><br/><i> Watch message queue by component:</i><br/><br/>"
+        html += ' <form action=\"%s"\ method="get"> ' % (self.compmsg)
+        html += 'Show message queue for  '
+        html += ' <select name="comp_name" style="width:140px">'
+        for components in status(True):
+            html += '<option>'+components+'</option>'
+        html += '</select>'
+        html += '<input type="submit" value="Show"/>'
         html += '</form>'
         html += "</table>\n"
 
@@ -268,3 +280,35 @@ def CompDIR(comp_name):
     cfgObject.loadFromFile(config)
     compCfg = cfgObject.getConfig(comp_name)
     return compCfg['ComponentDir']
+
+
+class MsgByComponent:
+
+    def __init__(self):
+        pass
+
+    def index(self, comp_name):
+
+        query, data = API.messageListing(comp_name)
+        dictofdict = {}
+        for id, ev, fro, to, time, delay in data:
+            if dictofdict.has_key(str(to)):
+                listval = [str(ev), str(fro), str(time), str(delay)]
+                dictofdict[str(to)].setdefault(id, listval)
+            else:
+                tempdict = {id: [str(ev), str(fro), str(time), str(delay)]}
+                dictofdict.setdefault(str(to), tempdict)
+
+        if dictofdict.has_key(comp_name):
+            html = "<html><body><h2> %s </h2>\n "%("Showing %s message in queue for %s"%(str(len(dictofdict[comp_name])),str(comp_name)))
+            html += "<table border='2' cellspacing='2' cellpadding='5'>"
+            html += "<tr><th>Message</th><th>From</th><th>Time</th><th>Delay</th></tr>"
+            for key, val in dictofdict.iteritems():
+                for key2, val2 in val.iteritems():
+                    html += "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"%(val2[0],val2[1],val2[2],val2[3])
+            html += """</body></html>"""
+        else:
+            html = "<html><body><h2> %s </h2>\n "%("%s has no message in queue"%(comp_name))
+        return html
+    index.exposed = True
+
