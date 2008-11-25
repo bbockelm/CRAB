@@ -56,15 +56,17 @@ def usage():
 valid = ['config=', 'start', 'shutdown', 'status', 'restart',
          'services=', 'components=', 'resources=']
 AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
-AllResources = {'CPU':'-u','MEM':'-r', 'SWAP':'-W'}
+AllResources = {'CPU':'-u','MEM':'-r', 'SWAP':'-W', 'LOAD':'-q'}
 awkPRG = {}
 grepCMD = {}
 grepCMD['CPU'] = ['grep', '--line-buffered', 'all']
 grepCMD['MEM'] = ['grep', '--line-buffered', '-v', 'kbmemfree\|Linux\|^$']
 grepCMD['SWAP'] = ['grep', '--line-buffered', '-v', 'pswpin\|Linux\|^$']
+grepCMD['LOAD'] = ['grep', '--line-buffered', '-v', 'ldavg\|Linux\|^$']
 awkPRG['CPU'] = '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "        " $4 "    " $5 "    " $6 "    " $7 "    " $8; fflush()}'+"\n"
-awkPRG['MEM'] = '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "        " $3 "    " $4 "    " $5 "    " $6 "    " $7 "    " $8 "    " $9 "    " $10 "    " $11; fflush()}  '+"\n"
+awkPRG['MEM'] = '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "        " $6 "    " $7 "    " ($4-$6-$7) "    " $10; fflush()}  '+"\n"
 awkPRG['SWAP']= '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "        " $3 "    " $4; fflush()}  '+"\n"
+awkPRG['LOAD']= '{ print strftime("%m/%d/%y#%H:%M:%S   %s") "        " $5 "    " $6 "    " $7; fflush()}'+"\n"
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
