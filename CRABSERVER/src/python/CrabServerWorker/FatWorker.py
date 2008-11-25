@@ -420,7 +420,7 @@ class FatWorker(Thread):
         if len(resubmissionList) == 0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs) == 0:
             messagelog = "Successful complete submission for task %s"%self.taskName
             self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. %s"%messagelog )
-            self.detailLog( jtodo = submittableRange, jdone = submittedJobs, jnotm = unmatchedJobs, jskip = skippedJobs)
+            self.detailLog( submittableRange, submittedJobs, unmatchedJobs, skippedJobs )
             self.preLog(mess = messagelog)
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName+"::"+messagelog))
 
@@ -492,7 +492,7 @@ class FatWorker(Thread):
             self.log.info( reason )
             status = "10"
             payload = "%s::%s::%s::%s"%(self.taskName, status, reason, "-1")
-            self.detailLog( jtodo = submittableRange, jdone = submittedJobs, jnotm = unmatchedJobs, jskip = skippedJobs)
+            self.detailLog( submittableRange, submittedJobs, unmatchedJobs, skippedJobs)
             self.preLog(mess = reason)
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
         return
@@ -850,7 +850,7 @@ class FatWorker(Thread):
         req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
         return req
 
-    def detailLog( jtodo = [], jdone = 0, jnotm = 0, jskip = 0):
+    def detailLog( self,jtodo,jdone,jnotm,jskip ):
         """
         _detailLog_
         """
