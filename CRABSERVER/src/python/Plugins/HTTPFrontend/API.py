@@ -334,7 +334,7 @@ def messageListing(compName):
     query = "SELECT ms_message.messageid as id,ms_type.name as event,source.name as source,target.name as dest,ms_message.time,ms_message.delay "\
             "FROM ms_type,ms_message,ms_process as source,ms_process as target "\
             "WHERE ms_type.typeid=ms_message.type AND source.procid=ms_message.source AND target.procid=ms_message.dest %s "\
-            "ORDER BY dest;"%which
+            "ORDER BY ms_message.time;"%which
     results = queryMethod(query)
     return query, results
 

@@ -16,11 +16,12 @@ AllResources = {'CPU':'-u','MEM':'-r', 'SWAP':'-W', 'LOAD':'-q'}
 
 class CompServMonitor:
 
-    def __init__(self, compStatus = None, compLog = None, compCpu = None, compMsg = None):
+    def __init__(self, compStatus = None, compLog = None, compCpu = None, compMsg = None, msgBalance = None):
         self.compstatus = compStatus
         self.complog = compLog
         self.compcpu = compCpu
         self.compmsg = compMsg
+        self.msgblnc = msgBalance
     
     def index(self):
  
@@ -53,6 +54,13 @@ class CompServMonitor:
         for components in status(True):
             html += '<option>'+components+'</option>'
         html += '</select>'
+        html += '<input type="submit" value="Show"/>'
+        html += '</form>'
+        html += "</table>\n"
+
+        html += "<table>\n"
+        html += "<br><i>or whatch message balance between all the component:</i>&nbsp"
+        html += ' <form action=\"%s"\ method="get"> ' % (self.msgblnc)
         html += '<input type="submit" value="Show"/>'
         html += '</form>'
         html += "</table>\n"
@@ -329,5 +337,50 @@ class MsgByComponent:
         else:
             html = "<html><body><h2> %s </h2>\n "%("%s has no message in queue"%(comp_name))
         return html
+    index.exposed = True
+
+class MsgBalance:
+
+    def __init__(self, imageUrl, imageDir):
+        self.imageServer = imageUrl
+        self.workingDir = imageDir
+
+    def index(self):
+
+        query, data = API.messageListing("")
+        dictofdict = {}
+        for id, ev, fro, to, time, delay in data:
+            if dictofdict.has_key(str(to)):
+                listval = [str(ev), str(fro), str(time), str(delay)]
+                dictofdict[str(to)].setdefault(id, listval)
+            else:
+                tempdict = {id: [str(ev), str(fro), str(time), str(delay)]}
+                dictofdict.setdefault(str(to), tempdict)
+
+        goodone = {}
+
+        for key, val in dictofdict.iteritems():
+            goodone.setdefault(key, len(val))
+
+        html = "<html><body><h2> %s </h2>\n "%("Showing message pie chart balance")
+
+        errHtml = "<html><body><h2>No Graph Tools installed!!!</h2>\n "
+        errHtml += "</body></html>"
+        try:
+            from graphtool.graphs.common_graphs import PieGraph
+        except ImportError:
+            return errHtml
+
+        pngfile = os.path.join(self.workingDir, "MsgBalance.png")
+        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+        metadata = {'title':'Message queue balance'}
+        Graph = PieGraph()
+        coords = Graph( goodone, pngfile, metadata )
+
+        html += "<img src=\"%s\">" % pngfileUrl
+
+        html += """</body></html>"""
+        return html
+
     index.exposed = True
 

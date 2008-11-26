@@ -15,7 +15,7 @@ from cherrypy.lib.static import serve_file
 
 from Plugins.HTTPFrontend.TaskMon import TaskMonitor,TaskGraph, CumulativeTaskGraph,DatasetInfos,DatasetDetails,UserGraph
 from Plugins.HTTPFrontend.JobMon import JobMonitor,CumulativeJobStatGraph, DestinationSitesMonitor, StatusPerDest, PlotByWMS
-from Plugins.HTTPFrontend.ComponentServicesMonitor import CompServMonitor, ShowCompStatus, ShowCompLogs, WriteLog, MsgByComponent
+from Plugins.HTTPFrontend.ComponentServicesMonitor import CompServMonitor, ShowCompStatus, ShowCompLogs, WriteLog, MsgByComponent, MsgBalance
 from Plugins.HTTPFrontend.UserMonitoring import TaskLogVisualizer,TaskLogMonitor, ListTaskForUser
 from  Plugins.HTTPFrontend.ComponentCpuPlot import ComponentCpuPlot 
 
@@ -158,6 +158,10 @@ def installer(**args):
         "%s/compcpu" % baseUrl
         )
     root.compmsg = MsgByComponent()
+    root.msgblnc = MsgBalance(
+        "%s/images" % baseUrl,
+        args['StaticDir']
+        )
     root.complog = ShowCompLogs( 
         "%s/writelog" % baseUrl)
     root.compcpu = ComponentCpuPlot(
@@ -170,7 +174,8 @@ def installer(**args):
         "%s/compstatus" % baseUrl,
         "%s/complog" % baseUrl,
         "%s/compcpu" % baseUrl,
-        "%s/compmsg" % baseUrl
+        "%s/compmsg" % baseUrl,
+        "%s/msgblnc" % baseUrl
         )
 
     root.visualog = TaskLogVisualizer()
