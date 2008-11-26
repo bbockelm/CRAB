@@ -13,8 +13,9 @@ class CopyData(Actor):
         self.cfg_params = cfg_params
         self.nj_list = nj_list
         if (cfg_params.get('USER.copy_data',0) == '0') :
-            raise CrabException("Cannot copy output locally if it has not \
-                                 been stored to SE via USER.copy_data=1")
+            msg  = 'Cannot copy output locally if it has not \n'
+            msg += '\tbeen stored to SE via USER.copy_data=1'
+            raise CrabException(msg)
 
         # update local DB
         if StatusObj:# this is to avoid a really strange segv
@@ -122,7 +123,9 @@ class CopyData(Actor):
             id_job = job['jobId'] 
             if ( job.runningJob['status'] in ['E','UE'] and job.runningJob[ 'wrapperReturnCode'] == 0):
                 for of in output_file:
-                    a,b=of.split('.')
+                    b=of.split('.')[-1:]
+                    b = b[0]
+                    a=of.split('.%s'%b)[0]
                     InfileList += '%s_%s.%s%s'%(a,id_job,b,',')
             elif ( job.runningJob['status'] in ['E','UE'] and job.runningJob['wrapperReturnCode'] != 0):
                 common.logger.message("Not possible copy outputs of Job # %s : Wrapper Exit Code is %s" \
@@ -133,7 +136,7 @@ class CopyData(Actor):
             pass
 
         if (InfileList == '') :
-            raise CrabException("No files to be copyed")
+            raise CrabException("No files to copy")
           
         return InfileList[:-1] 
 
