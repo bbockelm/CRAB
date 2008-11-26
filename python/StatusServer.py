@@ -73,5 +73,7 @@ class StatusServer(Status):
         return 
 
     def showWebMon(self):
-        common.logger.message("Web status at: http://%s:8888/logginfo\n"%self.server_name)
+        msg  = 'You can also check jobs status at: http://%s:8888/logginfo\n'%self.server_name
+        msg += '\t( Your task name is: %s )\n'%common._db.queryTask('name') 
+        common.logger.message(msg)
         #common.logger.message("Web status at: http://%s:8888/visualog/?taskname=%s&logtype=Status\n"%(self.server_name,self.task_unique_name))
