@@ -9,19 +9,19 @@ class ValidateCfg:
     def __init__(self, args):
 
         self.pset = args.get('pset','0')
-        if self.pset == '0' or self.pset.upper() == 'NONE' : 
-            msg = 'Error: Any configuration file has been specified.'
+        if self.pset == '0' or self.pset.upper() == 'NONE' :
+            msg = 'Error: No configuration file has been specified in your crab.cfg file.'
             raise CrabException(msg)
 
     def run(self):
-          
+
         if self.pset.endswith('py'):
-            self.DumpPset()   
-        else:   
+            self.DumpPset()
+        else:
             self.IncludePset()
 
-        return        
-  
+        return
+
     def ImportFile( self ):
         """
         Read in Pset object
@@ -29,46 +29,55 @@ class ValidateCfg:
         common.logger.message( "Importing file %s"%self.pset)
         handle = open(self.pset, 'r')
 
-        try:     
+        try:
             cfo = imp.load_source("pycfg", self.pset, handle)
             cmsProcess = cfo.process
         except Exception, ex:
             goodcfg = False
-            msg = "%s file is not valid python: %s" % (self.pset,str(ex))
+            msg = "%s file is not valid python: %s" % \
+                (self.pset,str(traceback.format_exc()))
+            msg += "\n\nPlease post on the EDM hypernews if this " + \
+                   "information doesn't help solve this problem."
             raise CrabException( msg )
         handle.close()
-        return cmsProcess   
+        return cmsProcess
 
-    def DumpPset( self ):        
-        """ 
-        """ 
+    def DumpPset( self ):
+        """
+        """
         cmsProcess = self.ImportFile()
 
         common.logger.message( 'Starting the dump.....' )
-        try:      
+        try:
             cmsProcess.dumpPython()
-        except Exception, ex:      
-            msg = "....dumpPython failed : \n\t%s" % str(traceback.format_exc())
+        except Exception, ex:
+            msg = "Python parsing failed: \n\n%s" % \
+                str(traceback.format_exc())
+            msg += "\n\nPlease post on the EDM hypernews if this " + \
+                   "information doesn't help solve this problem."
             raise CrabException( msg )
-        msg = "....dumpPython succeded\n"
+        msg = "Python parsing succeeded. File is valid.\n"
         common.logger.message( msg )
 
-    def IncludePset(self):    
-        """ 
-        """ 
+    def IncludePset(self):
+        """
+        """
         from FWCore.ParameterSet.Config import include
         common.logger.message( 'Starting include.....' )
         try:
             cfo = include(self.pset)
         except Exception, ex:
-            msg = '....include failed with error: \n\t %s'%str(traceback.format_exc())   
+            msg = "Python parsing failed: \n\n%s" % \
+                str(traceback.format_exc())
+            msg += "\n\nPlease post on the EDM hypernews if this " + \
+                   "information doesn't help solve this problem."
             raise CrabException(msg)
-        msg = "....include succeded\n"
+        msg = "Python parsing succeeded. File is valid.\n"
         common.logger.message( msg )
 
 
 if __name__ == '__main__' :
 
     pset = sys.argv[1]
-    check = CheckPset(pset)
-    check.Dump()
+    check = ValidateCfg({'pset':pset})
+    check.run()
