@@ -1,10 +1,12 @@
 #
 # CRAB-Proxy makefile
-# $Id: Makefile,v 1.3 2008/04/18 14:11:46 farinafa Exp $
+# $Id: Makefile,v 1.4 2008/07/08 14:26:59 farinafa Exp $
 # Fabio Farina 2007/12/10 
 
 O_NAME = CRAB-CmdMgr-Frontend
-PYHOME = /home/crab/sw_area/slc4_ia32_gcc345/external/python/2.4.3
+
+#PYHOME = /home/crab/sw_area/slc4_ia32_gcc345/external/python/2.4.3
+PYHOME = $(PYTHON_ROOT)
 
 CFLAGS=-Wall -g -DWITH_OPENSSL -pthread -fPIC #-DSOAP_DEBUG #-DSOAP_MEM_DEBUG #-DGLITE_FUNCS #-DSOAP_DEBUG
 IFLAGS=-I/opt/glite/include -I/usr/kerberos/include -I/usr/include/libxml2 -I$(PYHOME)/include/python2.4 
