@@ -362,7 +362,8 @@ int ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatusType *getTask
         char* statusFamilyType;
         char* UUID;
         PyObject *pResult, *locTemp;
-	char res[ 8192*16 ];
+        // FIX TO AVOID PROBLEM DUE TO STATIC DIMENSION --> using malloc
+	char* res; //[ 8192*16 ];
         time_t rawtime;
 
         locTemp = pInstance;
@@ -391,33 +392,37 @@ int ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatusType *getTask
 		} 
 		else 
 		{
-			long len;
-			len =  strlen( PyString_AsString(pResult) );
-			// res = (char*)malloc( sizeof(char) * len );
+			long len =  strlen( PyString_AsString(pResult) );
+			res = (char*)malloc( sizeof(char) * len );
 			strncpy(res, PyString_AsString(pResult), len);
                         res[len+1] = '\0';
                         Py_XDECREF(pResult);
                 }
 	}
 
-	// constuct response
+	// construct response
 	if (res != NULL)
 	{
 		_param_3->getTaskStatusResponse = (char*)malloc( sizeof(char) * strlen(res) );
 		if ( _param_3->getTaskStatusResponse != NULL)
         	{
                 	strncpy( _param_3->getTaskStatusResponse , res, strlen(res) );
-	                // free(res);
+	                //free(res);
         	}
 	        else
 	        {
         	        fprintf(stderr, "Error while allocating return code location\n");
 	        }
+                //free(res);
 	}
 	else
 	{
                 fprintf(stderr, "Error while allocating result message location\n");
 	}
+
+        // FREE EACH TIME THE DYNAMIC ALLOCATED MEMORY --> shouldn't cause problem if NULL
+        fprintf(stdout, "Free memory...");
+        free(res);
 
         pthread_mutex_unlock(&status_cs); //TODO
 
