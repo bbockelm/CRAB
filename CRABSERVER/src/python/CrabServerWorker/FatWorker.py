@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.144 2008/11/18 12:04:24 mcinquil Exp $"
-__version__ = "$Revision: 1.144 $"
+__revision__ = "$Id: FatWorker.py,v 1.146 2008/11/25 10:00:09 mcinquil Exp $"
+__version__ = "$Revision: 1.146 $"
 import string
 import sys, os
 import time
@@ -296,7 +296,7 @@ class FatWorker(Thread):
                                 else:
                                     self.log.debug("No need to back up osb")
                             except Exception, ex:
-                                logMsg = "Worker %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
+                                logMsg = "Worker %s. Backup problem OSB for job %s of task %s.\n"%(self.myName, \
                                 j['name'], self.taskName)
                                 logMsg += str(ex)
                                 self.log.info( logMsg )
@@ -385,8 +385,11 @@ class FatWorker(Thread):
                 logMsg += str(e.description())
                 self.log.info( logMsg )
                 errorTrace = str( BossLiteLogger( task, e ) )
-                self.log.debug(errorTrace)
-                pass
+                self.log.info(errorTrace)
+                try:
+                    self.preLog(logMsg, str(e.description()), 0, errorTrace)
+                except Exception, ee:
+                    self.log.error("Problem logging information: [%s]"%str(ee))
 
             # check if submitted
             if len(errorTrace) == 0:
