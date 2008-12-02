@@ -164,7 +164,7 @@ class MultiCrab:
 
         # read crab.cfg file and search for storage_path
         cfg_params = loadConfig(self.cfg,{})
-        self.storage_path = cfg_params.get("USER.storage_path",None)
+        self.user_remote_dir = cfg_params.get("USER.user_remote_dir",None)
         return
 
     def loadMultiConfig(self, file):
@@ -196,8 +196,8 @@ class MultiCrab:
                 tmp="-"+string.upper(opt.split(".")[0])+"."+opt.split(".")[1]
                 options[tmp]=self.cfg_params_dataset[sec][opt]
             # add section to storage_path if exist in crab.cfg
-            if self.storage_path:
-                options["-USER.user_remote_dir"]=self.storage_path+"/"+sec
+            if self.user_remote_dir:
+                options["-USER.user_remote_dir"]=self.user_remote_dir+"/"+sec
             # Input options (command)
             for opt in self.opts:
                 options[opt]=self.opts[opt]
@@ -206,6 +206,7 @@ class MultiCrab:
                 crab = Crab(options)
                 crab.run()
                 common.apmon.free()
+                del crab
             except CrabException, e:
                 print '\n' + common.prog_name + ': ' + str(e) + '\n'
                 if common.logger:
