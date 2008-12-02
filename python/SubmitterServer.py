@@ -13,7 +13,6 @@ from ServerCommunicator import ServerCommunicator
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 
-from CredentialAPI import CredentialAPI  
  
 class SubmitterServer( Submitter ):
     def __init__(self, cfg_params, parsed_range, val):
@@ -23,14 +22,6 @@ class SubmitterServer( Submitter ):
         self.credentialType = 'Proxy' 
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.credentialType = 'Token' 
-
-        ## Not refreshing status before submitting
-        #try:
-        #    from StatusServer import StatusServer
-        #    stat = StatusServer(self.cfg_params)
-        #    stat.resynchClientSide()
-        #except:
-        #    pass    
 
         Submitter.__init__(self, cfg_params, parsed_range, val)      
     
@@ -99,21 +90,15 @@ class SubmitterServer( Submitter ):
         ### it should not be there... To move into SE API. DS
 
         # create remote dir for gsiftp 
+        opt = ''
         if self.storage_proto in ['gridftp','rfio']:
+            if self.storage_proto == 'rfio': opt = '777' # REMOVE me 
             try:
                 action = SBinterface( seEl )  
-                action.createDir( self.remotedir)
+                action.createDir( self.remotedir, opt )
             except Exception, ex:
                 common.logger.debug(1, str(ex))
                 msg = "ERROR : Unable to create project destination on the Storage Element \n"
-                msg +="Project "+ self.taskuuid +" not Submitted \n"
-                raise CrabException(msg)
-        if self.storage_proto in ['rfio']:
-            try:
-                action.setGrant( self.remotedir, '777')
-            except Exception, ex:
-                common.logger.debug(1, str(ex))
-                msg = "ERROR : Unable to change permission on the Storage Element \n"
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
 
@@ -142,90 +127,59 @@ class SubmitterServer( Submitter ):
         """
         Prepare configuration and Call credential API 
         """
+        common.logger.message("Registering a valid proxy to the server:")
         # only for temporary back-comp. 
-        if  self.credentialType == 'Token': 
-             common.scheduler.checkProxy(deep=1)
-             common.logger.message("Registering a valid proxy to the server:")
-
+        if  self.credentialType == 'Proxy': 
+             # for proxy all works as before....
+             self.moveProxy()
+             # myProxyMoveProxy() # check within the API ( Proxy.py ) 
+        else:
+             from ProdCommon.Credential.CredentialAPI import CredentialAPI
              myproxyserver = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
              configAPI = {'credential' : self.credentialType, \
                           'myProxySvr' : myproxyserver,\
                           'serverDN'   : self.server_dn,\
                           'shareDir'   : common.work_space.shareDir() ,\
-                          'userName'   : UnixUserName()\
+                          'userName'   : UnixUserName(),\
+                          'serverName' : self.server_name \
                           }
-             #vomsesPath = str('/afs/cern.ch/project/gd/LCG-share/current/glite/etc/vomses/')### ??? not clear why
              try:
                  CredAPI =  CredentialAPI( configAPI )            
              except Exception, err : 
                  common.logger.debug(3, "Configuring Credential API: " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
              try:
-                 dict = CredAPI.registerCredential(self.server_name) 
+                 dict = CredAPI.registerCredential('submit') 
              except Exception, err:
                  common.logger.debug(3, "Configuring Credential API: " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
-        
              self.cfg_params['EDG.proxyInfos'] = dict
-        else: 
-             # for proxy all works as before....
-             self.moveProxy()
-	return
-    ## TOREMOVE
-    def myProxyMoveProxy(self,dontMove):
 
-	WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
-        if dontMove == True:
-            msg = 'Submittig to local resources...proxy not needed.\n'
-            common.logger.debug(5, msg)
-        else:
-            ## register proxy ##
-            common.scheduler.checkProxy(deep=1)
-            common.logger.message("Registering a valid proxy to the server:")
-
-            from myproxyDelegation import myProxyDelegationClientside as myproxyDeleg
-            myproxySrv = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
-            cSrvDN = str(self.srvCfg['serverDN']) # TODO. This field must be added to the server configuration dictionary got from HTTP
-            vomsesPath = str('/afs/cern.ch/project/gd/LCG-share/current/glite/etc/vomses/')
-
-            try:
-                delegClient = myproxyDeleg(myproxySrv, cSrvDN, vomsesPath)
-                if not delegClient.delegate() == 0:
-                    raise CrabException("ERROR: Unable to delegate proxy to the myproxy server %s\n"%myproxySrv)
-                self.cfg_params['EDG.proxyInfos'] = delegClient.pInfos
-            except Exception, e:
-                traceback.format_exc()
-
+        common.logger.message("Proxy successfully delegated to the server.\n")
 	return
     # TO REMOVE
-    def moveProxy(self,dontMove=False):
+    def moveProxy( self ):
         WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
-        if dontMove == True:
-            msg = 'Submittig to local resources...proxy not needed.\n'
-            common.logger.debug(5, msg)
-        else:
-            common.scheduler.checkProxy(deep=1)
-            try:
-                common.logger.message("Registering a valid proxy to the server:")
-                flag = " --myproxy"
-                cmd = 'asap-user-register --server '+str(self.server_name) + flag
-                attempt = 3
-                while attempt:
-                    common.logger.debug(3, " executing:\n    " + cmd)
-                    status, outp = commands.getstatusoutput(cmd)
-                    common.logger.debug(3, outp)
-                    if status == 0:
-                        common.logger.message("Proxy successfully delegated to the server.\n")
-                        break
-                    else:
-                        attempt = attempt - 1
-                    if (attempt == 0):
-                        raise CrabException("ASAP ERROR: Unable to ship a valid proxy to the server "+str(self.server_name)+"\n")
-            except:
-                msg = "ASAP ERROR: Unable to ship a valid proxy to the server \n"
-                msg +="Project "+str(self.taskuuid)+" not Submitted \n"
-                raise CrabException(msg)
-                return None
+        common.scheduler.checkProxy(Time=100)
+        try:
+            common.logger.message("Registering a valid proxy to the server:")
+            flag = " --myproxy"
+            cmd = 'asap-user-register --server '+str(self.server_name) + flag
+            attempt = 3
+            while attempt:
+                common.logger.debug(3, " executing:\n    " + cmd)
+                status, outp = commands.getstatusoutput(cmd)
+                common.logger.debug(3, outp)
+                if status == 0:
+                    break
+                else:
+                    attempt = attempt - 1
+                if (attempt == 0):
+                    raise CrabException("ASAP ERROR: Unable to ship a valid proxy to the server "+str(self.server_name)+"\n")
+        except:
+            msg = "ASAP ERROR: Unable to ship a valid proxy to the server \n"
+            msg +="Project "+str(self.taskuuid)+" not Submitted \n"
+            raise CrabException(msg)
         return
 
     def performSubmission(self, firstSubmission=True):
