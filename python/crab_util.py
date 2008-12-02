@@ -138,44 +138,6 @@ def parseRange2(range):
     return result
 
 ###########################################################################
-def crabJobStatusToString(crab_status):
-    """
-    Convert one-letter crab job status into more readable string.
-    """
-    status={
-           'C':'Created',
-           'D':'Done',
-           'H':'Hold',
-           'U':'Ready',
-           'I':'Scheduled',
-           'X':'Canceled',
-           'W':'Created',
-           'R':'Running',
-           'SC':'Checkpointed',
-           'SS':'Scheduled',
-           'SR':'Ready',
-           'RE':'Ready',
-           'SW':'Waiting',
-           'SU':'Submitted',
-           'S' :'Submitted (Boss)',
-           'UN':'Undefined',
-           'SD':'Done (Success)',
-           'SA':'Aborted',
-           'DA':'Done (Aborted)',
-           'SE':'Cleared',
-           'OR':'Done (Success)',
-           'A?':'Aborted',
-           'K':'Killed',
-           'E':'Cleared',
-           'Z':'Cleared (Corrupt)',
-           'NA':'Unknown',
-           'I?':'Idle',
-           'O?':'Done',
-           'R?':'Running'
-           }
-    return status[crab_status]
-
-###########################################################################
 def findLastWorkDir(dir_prefix, where = None):
 
     if not where: where = os.getcwd() + '/'
