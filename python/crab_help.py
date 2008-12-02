@@ -484,7 +484,7 @@ To choose the storage port specify I<storage_port> = N (default is 8443) .
 
 To be used with <copy_data>=1
 To publish your produced output in a local istance of DBS set publish_data = 1
-All the details about how to use this functionality are written in https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo.
+All the details about how to use this functionality are written in https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabForPublication
 N.B 1) if you are using an official CMS site to stored data, the remote dir will be not considered. The directory where data will be stored is decided by CRAB, following the CMS policy in order to be able to re-read published data. 
 2) if you are using a not official CMS site to store data, you have to check the <lfn>, that will be part of the logical file name of you published files, in order to be able to re-read the data. 
 
