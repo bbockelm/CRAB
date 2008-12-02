@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.9 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.9 2008/11/06 14:12:12 spiga Exp $"
+__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.10 2008/11/12 18:03:56 mcinquil Exp $"
 
 import os
 import pickle
@@ -37,7 +37,6 @@ class TaskRegisterComponent:
 #   Standard Component Core Methods      
 ################################
     def __init__(self, **args):
-        logging.info(" [TaskRegisterComponent starting...]")
         self.args = {}
         
         self.args.setdefault('Logfile', None)
@@ -68,7 +67,6 @@ class TaskRegisterComponent:
         logging.getLogger().setLevel(logging.INFO)
 
         ## persistent properties
-        self.taskPool = {}  # for data persistence
         self.subTimes = []  # moving average for submission delays
 
         self.killingRequestes = {} # fastKill request track
@@ -82,7 +80,12 @@ class TaskRegisterComponent:
 
         # shared sessions and queue
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, makePool=True)
+        self.sessionPool = self.blDBsession.bossLiteDB.getPool()
+
         self.sharedQueue = Queue.Queue()
+
+        logging.info(" ")
+        logging.info("Starting component...")
         pass
     
     def startComponent(self):
@@ -98,53 +101,52 @@ class TaskRegisterComponent:
         self.ms.subscribeTo("TaskRegisterComponent:EndDebug")
         self.ms.subscribeTo("KillTask")
 
-        self.dematerializeStatus()
+        #self.dematerializeStatus()
         #
         # non blocking call event handler loop
         # this allows us to perform actions even if there are no messages
         #
         try:  
             while True:
-                type, payload = self.ms.get( wait = False )
-
                 # dispatch loop for Queued messages
                 while True:
                     try:
                         senderId, evt, pload = self.sharedQueue.get_nowait()
-
-                        if senderId in self.taskPool:
-                            taskUniqName = self.taskPool[senderId][1]
-                        else:
-                            logging.info("Feedback message from an unknown worker. It will be ignored")
+                        taskUniqName = pload.split("::")[0]
 
                         # free resource if no more needed
                         if evt in ["TaskRegisterComponent:NewTaskRegistered"] and taskUniqName not in self.killingRequestes:
-                                del self.taskPool[senderId]
                                 self.availWorkersIds.append(senderId)
                                 self.ms.publish(evt, pload)
-                                logging.debug("Publish Event: %s %s" % (evt, pload))
+                                logging.info("Publish Event: %s %s" % (evt, pload))
+                                self.ms.commit()
                         elif evt in ["RegisterWorkerComponent:RegisterWorkerFailed"]:
-                                del self.taskPool[senderId]
                                 logging.info("Task %s failed"%taskUniqName)
                                 self.markTaskAsNotSubmitted(taskUniqName, 'all')
-                        else:
-                            if taskUniqName in self.killingRequestes:
+                        elif taskUniqName in self.killingRequestes:
                                 logging.info("Task %s killed by user"%taskUniqName)
                                 self.markTaskAsNotSubmitted(taskUniqName, self.killingRequestes[taskUniqName])
                                 del self.killingRequestes[taskUniqName]
-                        
                     except Queue.Empty, e:
                         logging.debug("Queue empty: " + str(e))
                         break
                     except Exception, exc:
                         logging.error("'Generic' problem: " + str(exc))
+                        logging.error( str(traceback.format_exc()) )
 
-                self.ms.commit()
-                self.materializeStatus()
-                if type is None:
-                    time.sleep( self.ms.pollTime )
-                    continue
-                self.__call__(type, payload)
+                if len(self.availWorkersIds) > 0:
+                    try:
+                        type, payload = self.ms.get( wait = False )
+
+                        if type is None:
+                            time.sleep( self.ms.pollTime )
+                            continue
+                        else:
+                            self.__call__(type, payload)
+                            self.ms.commit()
+                    except Exception, exc:
+                        logging.error("ERROR: Problem managing message...")
+                        logging.error(str(exc))
         except Exception, e:
             logging.error(e)
             logging.info(traceback.format_exc())
@@ -172,7 +174,7 @@ class TaskRegisterComponent:
             logging.getLogger().setLevel(logging.INFO)
         else:
             logging.info('Unknown message received %s + %s'%(event,payload))
-        return 
+        return True
 
 ################################
     def newTaskRegistration(self, payload):
@@ -180,20 +182,10 @@ class TaskRegisterComponent:
         Task Registration. Prepares the data structures needed by the server-side to enact
         the real tasks submissions and triggers the RegisterWorker threads.
         """
-       
-        if len(self.availWorkersIds) <= 0:
-            # calculate resub delay by using average completion time
-            dT = sum(self.subTimes)/(len(self.subTimes) + 1.0)
-            dT = int(dT)
-            comp_time = '%s:%s:%s'%(str(dT/3600).zfill(2), str((dT/60)%60).zfill(2), str(dT%60).zfill(2))
-            self.ms.publish("CRAB_Cmd_Mgr:NewTask", payload, comp_time)
-            self.ms.commit()
-            return
-
+ 
         logging.info("Checking it: %s"%(str(payload)) )
-        taskUniqName, TotJobs, cmdRng =  payload.split('::')  
+        taskUniqName, TotJobs, cmdRng =  payload.split('::')
         thrName = self.availWorkersIds.pop(0)
-        self.taskPool[thrName] = ("CRAB_Cmd_Mgr:NewTask", taskUniqName)
         
         actionType = "registerNewTask"
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName, actionType)
@@ -204,7 +196,7 @@ class TaskRegisterComponent:
         except Exception, e:
             logging.info('Unable to allocate registration thread: %s'%thrName)
             logging.info(traceback.format_exc())
-        return
+        return True
 
 ################################
     def markTaskAsNotSubmitted(self, taskUniqName, cmdRng):
@@ -216,7 +208,7 @@ class TaskRegisterComponent:
         except TaskError, te:
             logging.error("Problem loading task '%s': %s" %(taskUniqName,str(te)))
         except Exception, exc:
-            logging.error("Generic exception when loadin task from blite: %s" %str(exc))
+            logging.error("Generic exception when loading task from blite: %s" %str(exc))
 
         try:
             cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
@@ -286,40 +278,6 @@ class TaskRegisterComponent:
 #   Auxiliary Methods      
 ################################
 
-    def materializeStatus(self):
-        ldump = self.taskPool
-        try:
-            f = open(self.wdir+"/reg_status.set", 'w')
-            pickle.dump(ldump, f)
-            f.close()
-        except Exception, e:
-            logging.error("Error while materializing component status\n"+str(e))
-        return
-
-    def dematerializeStatus(self):
-        try:
-            f = open(self.wdir+"/reg_status.set", 'r')
-            ldump = pickle.load(f)
-            f.close()
-            self.taskPool = ldump
-        except Exception, e:
-            logging.error("Failed to open reg_status.set. Building a new status\n" + str(e) )
-            self.taskPool = {}
-            self.materializeStatus()
-            return
-
-        # cold restart for crashes
-        delay = -1
-        for t in self.taskPool:
-            type, payload = self.taskPool[t]
-            delay += 1
-            dT = delay/float(self.maxThreads)
-            waitTime = '%s:%s:%s'%(str(dT/3600).zfill(2), str((dT/60)%60).zfill(2), str(dT%60).zfill(2))
-            self.ms.publish(type, payload, waitTime)
-            self.ms.commit()
-        self.taskPool = {}
-        return
-
     def prepareWorkerBaseStatus(self, taskUniqName, workerId, actionType = "standardSubmission"):
         workerCfg = {}        
         workerCfg['wdir'] = self.wdir
@@ -332,7 +290,7 @@ class TaskRegisterComponent:
         workerCfg['retries'] = int( self.args.get('maxRetries', 0) )
 
         workerCfg['messageQueue'] = self.sharedQueue
-        workerCfg['blSessionPool'] = self.blDBsession.bossLiteDB.getPool()
+        workerCfg['blSessionPool'] = self.sessionPool
 
         workerCfg['allow_anonymous'] = int( self.args.setdefault('allow_anonymous', 0) )
         return workerCfg

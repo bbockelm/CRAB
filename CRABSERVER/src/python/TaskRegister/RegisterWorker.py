@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.13 2008/11/07 20:28:19 ewv Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.14 2008/11/12 18:03:56 mcinquil Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import string
 import sys, os
@@ -40,7 +40,7 @@ class RegisterWorker(Thread):
         self.wdir = self.configs['wdir']
 
         # derived attributes
-        self.blDBsession = BossLiteAPI('MySQL', dbConfig, pool=self.configs['blSessionPool'])
+        self.blDBsession = BossLiteAPI('MySQL', pool=self.configs['blSessionPool'])
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
         self.local_queue = self.configs['messageQueue']
 
@@ -161,6 +161,7 @@ class RegisterWorker(Thread):
             status = 6
             reason = "Error while declaring task %s, it will not be processed"%self.taskName
             self.sendResult(status, reason, reason)
+            self.log.info( str(e) )
             self.log.info( traceback.format_exc() )
             return None
 
@@ -275,7 +276,7 @@ class RegisterWorker(Thread):
         return 0
 
     def inputFileCheck(self, task):
-        self.log.info('Worker %s checking input sanbox'%self.myName)
+        self.log.info('Worker %s checking input sandbox'%self.myName)
         sbList = task['globalSandbox'].split(',')
         if len(sbList)==0: return True
 
