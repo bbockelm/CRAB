@@ -1522,7 +1522,7 @@ class Cmssw(JobType):
             nd[e]=0
         return nd.keys()
 
-    def outList(self):
+    def outList(self,list=False):
         """
         check the dimension of the output files
         """
@@ -1544,4 +1544,5 @@ class Cmssw(JobType):
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
         txt += 'export filesToCheck\n'
+        if list : return self.output_file
         return txt

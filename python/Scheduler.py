@@ -9,6 +9,11 @@ from crab_exceptions import *
 from crab_util import *
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 
+ 
+from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
+from ProdCommon.Storage.SEAPI.SBinterface import * 
+from ProdCommon.Storage.SEAPI.Exceptions import *
+
 #
 #  Naming convention:
 #  methods starting with 'ws' are responsible to provide
@@ -85,6 +90,28 @@ class Scheduler :
         output checks and management.
         """
         return ''
+
+    def checkRemoteDir(self, endpoint, fileList):
+        """
+        protocol = 'srm-lcg'
+        try:
+            Storage = SElement( FullPath(endpoint), protocol )
+        except ProtocolUnknown, ex:
+            msg  = 'ERROR : %s '% str(ex)
+            common.logger.message(msg)
+        try:
+            action = SBinterface( Storage )
+        except Exception, ex:
+            msg  = 'ERROR : %s '% str(ex)
+            common.logger.message(msg)
+        try:
+            remoteListTmp = action.listDir()
+        except Exception, ex:
+            msg  = 'ERROR : %s '% str(ex)
+            common.logger.message(msg)
+        """
+        #to be done 
+        return
 
     def checkProxy(self, deep=0):
         """
