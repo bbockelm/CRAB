@@ -123,7 +123,7 @@ class CopyData(Actor):
             id_job = job['jobId'] 
             if ( job.runningJob['status'] in ['E','UE'] and job.runningJob[ 'wrapperReturnCode'] == 0):
                 for of in output_file:
-                    InfileList += numberFile(file, id_job)
+                    InfileList += '%s,'%numberFile(of, id_job)
             elif ( job.runningJob['status'] in ['E','UE'] and job.runningJob['wrapperReturnCode'] != 0):
                 common.logger.message("Not possible copy outputs of Job # %s : Wrapper Exit Code is %s" \
                                       %(str(job['jobId']),str(job.runningJob['wrapperReturnCode'])))
