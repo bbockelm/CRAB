@@ -33,29 +33,19 @@ class DataLocation:
         Contact DLS
         """
         dlstype='' 
- 
-        ##### temporary for deploy : to be removed
-        dlsPhed=self.cfg_params.get('CMSSW.dls_phedex_url',None)
-        blockSites = {}
-        if dlsPhed:
-            dlstype='phedex'
-            DLS_type="DLS_TYPE_%s"%dlstype.upper()
-            dls=DLSInfo(DLS_type,self.cfg_params)
-            blockSites = dls.getReplicasBulk(self.Listfileblocks)
-        else:
+
+        useDBS = self.cfg_params.get('CMSSW.dbs_url',None)
+        if useDBS:
             dlstype='dbs'
             DLS_type="DLS_TYPE_%s"%dlstype.upper()
             dls=DLSInfo(DLS_type,self.cfg_params)
             blockSites = self.PrepareDict(dls)
-        ####
-        # the following will be the default     
-        """      
-        privateData = self.cfg_params.get('CMSSW.dbs_url',None)
-        if privateData:
-            dlstype='dbs'
         else:
             dlstype='phedex'
-        """
+            DLS_type="DLS_TYPE_%s"%dlstype.upper()
+            dls=DLSInfo(DLS_type,self.cfg_params)
+            blockSites = dls.getReplicasBulk(self.Listfileblocks)
+
         self.SelectedSites = blockSites
 
     def PrepareDict(self,dls):

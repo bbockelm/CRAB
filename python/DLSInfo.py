@@ -38,17 +38,26 @@ class DLSInfo:
     def __init__(self, type, cfg_params):
         self.cfg_params = cfg_params
         self.showCAF = False
+
+        phedexURL='http://cmsweb.cern.ch/phedex/datasvc/xml/prod/'
+        global_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+        caf_url = "http://cmsdbsprod.cern.ch/cms_dbs_caf_analysis_01/servlet/DBSServlet"
+        dbs_url_map  =   {'glite':    global_url,
+                          'glitecoll':global_url,\
+                          'condor':   global_url,\
+                          'condor_g': global_url,\
+                          'glidein':  global_url,\
+                          'lsf':      global_url,\
+                          'caf':      caf_url,\
+                          'sge':      global_url
+                          }
+        dbs_url_default = dbs_url_map[(common.scheduler.name()).lower()]
+
         if type=="DLS_TYPE_DBS":
             # use dbs_url as dls_endpoint if dls_type is dbs
-            try:
-                endpoint=self.cfg_params['CMSSW.dbs_url']
-            except KeyError:
-                endpoint="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+            endpoint=self.cfg_params.get('CMSSW.dbs_url', dbs_url_default) 
         elif type=="DLS_TYPE_PHEDEX":
-            try:
-                endpoint=self.cfg_params['CMSSW.dls_phedex_url']
-            except KeyError:
-                endpoint='http://cmsweb.cern.ch/phedex/datasvc/xml/prod/' 
+            endpoint=self.cfg_params.get('CMSSW.dls_phedex_url',phedexURL)
             if self.cfg_params['CRAB.scheduler'].upper() == 'CAF':  self.showCAF = True
         else:
             msg = "DLS type %s not among the supported DLS ( DLS_TYPE_DLI and DLS_TYPE_MYSQL ) "%type
@@ -68,7 +77,7 @@ class DLSInfo:
         """
         ##
         try:
-            entryList=self.api.getLocations(fileblocks,longList=True)
+            entryList=self.api.getLocations(fileblocks,longList=True,showCAF=self.showCAF)
         except dlsApi.DlsApiError, inst:
             raise DLSNoReplicas(fileblocks)
         results = {} 
