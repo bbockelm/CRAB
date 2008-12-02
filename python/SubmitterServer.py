@@ -127,14 +127,15 @@ class SubmitterServer( Submitter ):
         """
         Prepare configuration and Call credential API 
         """
-        common.logger.message("Registering a valid proxy to the server:")
+        common.logger.message("Registering credential to the server")
         # only for temporary back-comp. 
         if  self.credentialType == 'Proxy': 
              # for proxy all works as before....
              self.moveProxy()
              # myProxyMoveProxy() # check within the API ( Proxy.py ) 
         else:
-             from ProdCommon.Credential.CredentialAPI import CredentialAPI
+             #from ProdCommon.Credential.CredentialAPI import CredentialAPI
+             from CredentialAPI import CredentialAPI
              myproxyserver = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
              configAPI = {'credential' : self.credentialType, \
                           'myProxySvr' : myproxyserver,\
@@ -155,7 +156,7 @@ class SubmitterServer( Submitter ):
                  raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
              self.cfg_params['EDG.proxyInfos'] = dict
 
-        common.logger.message("Proxy successfully delegated to the server.\n")
+        common.logger.message("Credential successfully delegated to the server.\n")
 	return
     # TO REMOVE
     def moveProxy( self ):
