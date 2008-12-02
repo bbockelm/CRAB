@@ -340,6 +340,14 @@ class cmscp:
             msg += str(ex)
             if self.debug : print '\t'+msg+'\n\t'+str(ex.detail)+'\n'
             raise Exception(msg)
+        except MissingDestination, ex:
+            msg  = "ERROR: problem with the directory creation using %s protocol "%protocol
+            msg += str(ex)
+            if self.debug : print '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+            raise Exception(msg)
+        except AlreadyExistsException, ex:
+            if self.debug: print "\tThe directory already exist"
+            pass             
         return msg
 
     def checkFileExist( self, sbi_source, sbi_dest, filetocopy ):
@@ -371,6 +379,11 @@ class cmscp:
                 dbgmsg += '\t'+str(ex.output)+'\n'
                 print dbgmsg 
             raise Exception(msg)
+        except MissingDestination, ex:
+            msg  ='ERROR problems checkig if source file % exist'%filetocopy
+            msg += str(ex)
+            if self.debug : print '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+            raise Exception(msg)
         if not checkSource :
             ErCode = '60302'
             msg = "ERROR file %s do not exist"%os.path.basename(filetocopy)
@@ -394,6 +407,11 @@ class cmscp:
             if self.debug :
                 msg += '\t'+msg+'\n\t'+str(ex.detail)+'\n'
                 msg += '\t'+str(ex.output)+'\n'
+            raise Exception(msg)
+        except MissingDestination, ex:
+            msg  ='ERROR problems checkig if source file % exist'%filetocopy
+            msg += str(ex)
+            if self.debug : print '\t'+msg+'\n\t'+str(ex.detail)+'\n'
             raise Exception(msg)
         if check :
             ErCode = '60303'
