@@ -22,11 +22,49 @@ class CredentialAPI:
             raise e.__class__.__name__, str(e)
 
 
-    def registerCredential( self, serverName ):
+    def getCredential( self ):
         """
         """
 
-        self.credObj.registerCredential(serverName)
+        #self.credObj
  
         return
+      
+    def checkCredential( self, credential=None ):
+        """
+        """
+        try: 
+            self.credObj.checkCredential(credential)
+        except Exception, ex:
+            print str(ex)
+        return
+
+    def registerCredential( self, command=None ):
+        """
+        """
+
+        self.credObj.registerCredential(command)
  
+        return
+
+    def getSubject(self, credential=None):
+        """   
+        """   
+        sub = ''   
+        try: 
+            sub = self.credObj.getSubject(credential)
+        except Exception, ex:
+            print str(ex)
+        return sub
+
+    def getUserName(self, credential=None):
+        """   
+        """   
+        uName = ''   
+        try: 
+            uName = self.credObj.getSubject(credential)
+        except Exception, ex:
+            print str(ex)
+        return uName
+
+
