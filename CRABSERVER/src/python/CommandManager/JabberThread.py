@@ -1,7 +1,7 @@
 import sys
 from threading import Thread
 from random import Random
-import time
+#import time
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -31,7 +31,7 @@ class JabberThread(Thread):
         If the time exceeds too much the requirements (+10% to avoid fluctuations) then stop accepting
         new tasks.
         """
-        self.logsys.debug("Starting JabberThread")
+        self.logsys.info("Starting JabberThread")
 
         self.ms = MessageService()
         self.ms.registerAs("CRAB_CmdMgr_jabber")
@@ -40,6 +40,7 @@ class JabberThread(Thread):
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewCommand")
 
+        import time
         tPre = time.time()
         self.go_on_accepting_load = 1
         if self.thr == 0:
@@ -49,8 +50,16 @@ class JabberThread(Thread):
         count = 0
         while True:
             # get messages
-            type, payload = self.ms.get()
-            self.ms.commit()
+            type, payload = None, None
+            try:
+                type, payload = self.ms.get()
+                self.ms.commit()
+            except Exception, exc:
+                self.logsys.error("ERROR: problem interacting with the message service")
+                self.logsys.error(str(exc))
+                time.sleep(2)
+                continue
+
             self.logsys.debug("JabberThread: %s %s" %(type, payload) )
 
             tPost = time.time()
