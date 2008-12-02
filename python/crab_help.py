@@ -34,7 +34,7 @@ The most useful general options (use '-h' to get complete help):
   -postMortem [range]       -- provide a file with information useful for post-mortem analysis of the jobs.
   -printId [range]          -- print the job SID or Task Unique ID while using the server.
   -createJdl [range]        -- provide files with a complete Job Description (JDL).
-  -validateCfg [fname]      -- parse the ParameterSet using the framework's Python API.   
+  -validateCfg [fname]      -- parse the ParameterSet using the framework's Python API.
   -continue|-c [dir]        -- Apply command to task stored in [dir].
   -h [format]               -- Detailed help. Formats: man (default), tex, html, txt.
   -cfg fname                -- Configuration file name. Default is 'crab.cfg'.
@@ -251,7 +251,7 @@ Kill (cancel) jobs which have been submitted to the scheduler. A range B<must> b
 
 =item B<-copyData [range]>
 
-Copy locally (on current working directory) the output previously stored on remote SE by the jobs. Of course, only if copy_data option has been set. 
+Copy locally (on current working directory) the output previously stored on remote SE by the jobs. Of course, only if copy_data option has been set.
 
 =item B<-renewProxy >
 
@@ -392,7 +392,7 @@ See also I<preserve_seeds>. Seeds not listed in I<increment_seeds> or I<preserve
 
 =item B<preserve_seeds>
 
-Specifies a comma separated list of seeds to which CRAB will not change from their values in the user 
+Specifies a comma separated list of seeds to which CRAB will not change from their values in the user
 CMSSW config file. I<preserve_seeds=sourceSeed,g4SimHits> will leave the Pythia and GEANT seeds the same for every job.
 
 See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserve_seeds> are randomly set for each job.
@@ -400,6 +400,10 @@ See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserv
 =item B<first_run>
 
 First run to be generated in a generation jobs. Relevant only for no-input workflow.
+
+=item B<generator>
+Name of the generator your MC job is using. Some generators require CRAB to manage SkipEvents, others do not.
+Possible values are madgraph and pythia.
 
 =item B<executable>
 
@@ -423,7 +427,7 @@ Any additional input file you want to ship to WN: comma separated list. IMPORTAN
 
 =item B<script_exe>
 
-A user script that will be run on WN (instead of default cmsrun). It is up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (e.g. scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The user must ensure that a job report named crab_fjr.xml will be written. This can be guaranteed by passing the arguments "-j crab_fjr.xml" to cmsRun in the script. The script itself will be added automatically to the input sandbox so user MUST NOT add it within the B<USER.additional_input_files>.  
+A user script that will be run on WN (instead of default cmsrun). It is up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (e.g. scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.cfg . The user must ensure that a job report named crab_fjr.xml will be written. This can be guaranteed by passing the arguments "-j crab_fjr.xml" to cmsRun in the script. The script itself will be added automatically to the input sandbox so user MUST NOT add it within the B<USER.additional_input_files>.
 
 =item B<ui_working_dir>
 
@@ -458,7 +462,7 @@ The output (only that produced by the executable, not the std-out and err) is co
 To be used with <copy_data>=1
 If you want to copy the output of your analysis in a official CMS Tier2 or Tier3, you have to write the CMS Site Name of the site, as written in the SiteDB https://cmsweb.cern.ch/sitedb/reports/showReport?reportid=se_cmsname_map.ini (i.e T2_IT_legnaro). You have also to specify the <remote_dir>(see below)
 
-If you want to copy the output in a not_official_CMS remote site you have to specify the complete storage element name (i.e se.xxx.infn.it).You have also to specify the <storage_path> and the <storage_port> if you do not use the default one(see below).  
+If you want to copy the output in a not_official_CMS remote site you have to specify the complete storage element name (i.e se.xxx.infn.it).You have also to specify the <storage_path> and the <storage_port> if you do not use the default one(see below).
 
 =item B<user_remote_dir>
 
@@ -485,8 +489,8 @@ To choose the storage port specify I<storage_port> = N (default is 8443) .
 To be used with <copy_data>=1
 To publish your produced output in a local istance of DBS set publish_data = 1
 All the details about how to use this functionality are written in https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabForPublication
-N.B 1) if you are using an official CMS site to stored data, the remote dir will be not considered. The directory where data will be stored is decided by CRAB, following the CMS policy in order to be able to re-read published data. 
-2) if you are using a not official CMS site to store data, you have to check the <lfn>, that will be part of the logical file name of you published files, in order to be able to re-read the data. 
+N.B 1) if you are using an official CMS site to stored data, the remote dir will be not considered. The directory where data will be stored is decided by CRAB, following the CMS policy in order to be able to re-read published data.
+2) if you are using a not official CMS site to store data, you have to check the <lfn>, that will be part of the logical file name of you published files, in order to be able to re-read the data.
 
 =item B<publish_data_name>
 
@@ -514,7 +518,7 @@ To enable the higer verbose level on wrapper specify I<debug_wrapper> = True. Th
 
 =item B<deep_debug>
 
-To be used in case of unexpected job crash when the sdtout and stderr files are lost. Submitting again the same jobs specifying I<deep_debug> = 1 these files will be reported back. NOTE: it works only on standalone mode for debugging purpose. 
+To be used in case of unexpected job crash when the sdtout and stderr files are lost. Submitting again the same jobs specifying I<deep_debug> = 1 these files will be reported back. NOTE: it works only on standalone mode for debugging purpose.
 
 =item B<dontCheckSpaceLeft>
 
@@ -587,7 +591,7 @@ Only the SE (Storage Element) whose name contains the following strings (comma s
 
 =item B<remove_default_blacklist>
 
-CRAB enforce the T1s Computing Eelements Black List. By default it is appended to the user defined I<CE_black_list>. To remove the enforced T1 black lists set I<remove_default_blacklist>=1.  
+CRAB enforce the T1s Computing Eelements Black List. By default it is appended to the user defined I<CE_black_list>. To remove the enforced T1 black lists set I<remove_default_blacklist>=1.
 
 =item B<virtual_organization>
 

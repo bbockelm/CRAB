@@ -13,7 +13,6 @@ class Cmssw(JobType):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
         self.skip_blocks = skip_blocks
-
         self.argsList = []
 
         self._params = {}
@@ -89,6 +88,8 @@ class Cmssw(JobType):
         self.debug_wrapper = cfg_params.get('USER.debug_wrapper',False)
         if self.debug_wrapper: self.debugWrap='--debug'
         ## now the application
+        self.managedGenerators = ['madgraph']
+        self.generator = cfg_params.get('CMSSW.generator','pythia').lower()
         self.executable = cfg_params.get('CMSSW.executable','cmsRun')
         log.debug(6, "CMSSW::CMSSW(): executable = "+self.executable)
 
@@ -825,8 +826,14 @@ class Cmssw(JobType):
             if (self.firstRun):
                 ## pythia first run
                 args.append(str(self.firstRun)+str(i))
+            if (self.generator in self.managedGenerators):
+                eventsRemaining = self.total_number_of_events - i*self.eventsPerJob
+                if (eventsRemaining < self.eventsPerJob):
+                    args.append(str(eventsRemaining))
+                else:
+                    args.append(str(self.eventsPerJob))
+                args.append(str(i*self.eventsPerJob))
             self.list_of_args.append(args)
-
         return
 
 
@@ -1119,13 +1126,21 @@ class Cmssw(JobType):
                 txt += 'echo "MaxEvents:<$MaxEvents>"\n'
                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
             else:  # pythia like job
+                argNum = 1
                 txt += 'PreserveSeeds='  + ','.join(self.preserveSeeds)  + '; export PreserveSeeds\n'
                 txt += 'IncrementSeeds=' + ','.join(self.incrementSeeds) + '; export IncrementSeeds\n'
                 txt += 'echo "PreserveSeeds: <$PreserveSeeds>"\n'
                 txt += 'echo "IncrementSeeds:<$IncrementSeeds>"\n'
                 if (self.firstRun):
-                    txt += 'FirstRun=${args[1]}; export FirstRun\n'
+                    txt += 'export FirstRun=${args[%s]}\n' % argNum
                     txt += 'echo "FirstRun: <$FirstRun>"\n'
+                    argNum += 1
+                if (self.generator in self.managedGenerators):
+                    txt += 'export MaxEvents=${args[%s]}\n' % argNum
+                    txt += 'export SkipEvents=${args[%s]}\n' % (argNum + 1)
+                    txt += 'echo "MaxEvents:<$MaxEvents>"\n'
+                    txt += 'echo "SkipEvents:<$SkipEvents>"\n'
+                    argNum += 2
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
 
