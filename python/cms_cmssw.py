@@ -933,6 +933,7 @@ class Cmssw(JobType):
                     pass
 
             ## Now get the libraries: only those in local working area
+            tar.dereference=True
             libDir = 'lib'
             lib = swArea+'/' +libDir
             common.logger.debug(5,"lib "+lib+" to be tarred")
@@ -944,6 +945,7 @@ class Cmssw(JobType):
             module = swArea + '/' + moduleDir
             if os.path.isdir(module):
                 tar.add(module,moduleDir)
+            tar.dereference=False
 
             ## Now check if any data dir(s) is present
             self.dataExist = False
