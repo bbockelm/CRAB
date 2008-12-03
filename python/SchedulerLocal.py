@@ -28,6 +28,7 @@ class SchedulerLocal(Scheduler) :
         self.return_data = int(cfg_params.get('USER.return_data',0))
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
 
+        self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',0))
 
         if ( self.return_data == 0 and self.copy_data == 0 ):
            msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
@@ -115,11 +116,16 @@ class SchedulerLocal(Scheduler) :
         Write a CopyResults part of a job script, e.g.
         to copy produced output into a storage element.
         """
+        index = int(common._db.nJobs())
+        job = common.job_list[index-1]
+        jbt = job.type()
         txt = '\n'
         if int(self.copy_data) == 1:
 
             stageout = PhEDExDatasvcInfo(self.cfg_params)
             endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
+            if self.check_RemoteDir == 1 : 
+                self.checkRemoteDir(endpoint,jbt.outList('list') )
 
             txt += '#\n'
             txt += '# COPY OUTPUT FILE TO '+SE_PATH+ '\n'

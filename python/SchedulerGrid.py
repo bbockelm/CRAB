@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.85 2008/11/10 11:16:25 spiga Exp $"
-__version__ = "$Revision: 1.85 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.86 2008/11/25 22:24:23 ewv Exp $"
+__version__ = "$Revision: 1.86 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -110,6 +110,8 @@ class SchedulerGrid(Scheduler):
         self.debug_wrapper = cfg_params.get('USER.debug_wrapper',False)
         self.debugWrap=''
         if self.debug_wrapper: self.debugWrap='--debug'
+
+        self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',0))
 
         # Add EDG_WL_LOCATION to the python path
 
@@ -252,6 +254,10 @@ class SchedulerGrid(Scheduler):
         Write a CopyResults part of a job script, e.g.
         to copy produced output into a storage element.
         """
+        index = int(common._db.nJobs())
+        job = common.job_list[index-1]
+        jbt = job.type()
+
         txt = '\n'
 
         txt += '#\n'
@@ -261,7 +267,8 @@ class SchedulerGrid(Scheduler):
         if int(self.copy_data) == 1:
             stageout = PhEDExDatasvcInfo(self.cfg_params)
             endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
-
+            if self.check_RemoteDir == 1 : 
+                self.checkRemoteDir(endpoint,jbt.outList('list') )
             txt += 'export SE='+SE+'\n'
             txt += 'echo "SE = $SE"\n'
             txt += 'export SE_PATH='+SE_PATH+'\n'
