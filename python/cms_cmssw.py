@@ -1136,11 +1136,9 @@ class Cmssw(JobType):
                     txt += 'echo "FirstRun: <$FirstRun>"\n'
                     argNum += 1
                 if (self.generator in self.managedGenerators):
-                    txt += 'export MaxEvents=${args[%s]}\n' % argNum
-                    txt += 'export SkipEvents=${args[%s]}\n' % (argNum + 1)
-                    txt += 'echo "MaxEvents:<$MaxEvents>"\n'
-                    txt += 'echo "SkipEvents:<$SkipEvents>"\n'
-                    argNum += 2
+                    txt += 'export FirstEvent=${args[%s]}\n' % argNum
+                    txt += 'echo "FirstEvent:<$FirstEvent>"\n'
+                    argNum += 1
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
 
