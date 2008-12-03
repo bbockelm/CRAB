@@ -20,7 +20,14 @@ class CopyData(Actor):
         # update local DB
         if StatusObj:# this is to avoid a really strange segv
             StatusObj.query(display=False)
-
+      
+        protocolDict = { 'CAF'      : 'rfio' , \
+                         'LSF'      : 'rfio' , \
+                         'CONDOR_G' : 'srmv2' , \
+                         'GLITE'    : 'srm-lcg' , \
+                         'CONDOR'    : 'srmv2'  \
+                       }  
+        self.protocol = protocolDict[common.scheduler.name().upper()]  
         self.destinationTier = None
         self.destinationDir= None
         self.destinationTURL = None
@@ -72,7 +79,7 @@ class CopyData(Actor):
                         "source": endpoint,
                         "destinationDir": self.destinationTURL,
                         "inputFileList": InfileList,
-                        "protocol": 'srm-lcg',
+                        "protocol": self.protocol,
                         "option": '-b -D srmv2  -t 2400 --verbose'
                       }  
 
