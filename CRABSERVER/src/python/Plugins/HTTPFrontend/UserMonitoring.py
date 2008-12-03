@@ -114,7 +114,7 @@ class TaskLogVisualizer:
         try:
             config  = loadProdAgentConfiguration()
             compCfg = config.getConfig("CrabServerConfigurations")
-            dbox    = compCfg["dropBoxPath"]
+            dbox    = compCfg["CacheDir"]
         except Exception, exc:
             logging.error( str(exc) )
             raise Exception("Problem loading server configuration info " + str(exc))

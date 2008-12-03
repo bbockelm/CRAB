@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.10 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.10 2008/11/12 18:03:56 mcinquil Exp $"
+__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.11 2008/12/02 11:03:59 mcinquil Exp $"
 
 import os
 import pickle
@@ -40,7 +40,7 @@ class TaskRegisterComponent:
         self.args = {}
         
         self.args.setdefault('Logfile', None)
-        self.args.setdefault('dropBoxPath', None)
+        self.args.setdefault('CacheDir', None)
         self.args.setdefault('ProxiesDir', None)
 
         # SE support parameters
@@ -49,7 +49,7 @@ class TaskRegisterComponent:
         self.args.setdefault('Protocol', '')
         self.args.setdefault('storageName', 'localhost')
         self.args.setdefault('storagePort', '')
-        self.args.setdefault('storagePath', self.args["dropBoxPath"])
+        self.args.setdefault('storagePath', self.args["CacheDir"])
 
         self.args.update(args)
         
@@ -73,7 +73,7 @@ class TaskRegisterComponent:
 
         ## volatile properties
         self.wdir = self.args['ComponentDir']
-        if self.args['dropBoxPath']: self.wdir = self.args['dropBoxPath']
+        if self.args['CacheDir']: self.wdir = self.args['CacheDir']
         self.maxThreads = int( self.args.get('maxThreads', 5) )
         self.availWorkersIds = [ "worker_%d"%mId for mId in xrange(self.maxThreads) ]
         self.workerSet = {} # thread collection

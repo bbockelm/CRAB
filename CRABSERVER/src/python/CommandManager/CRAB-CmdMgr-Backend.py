@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.31 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.31 2008/11/06 14:10:03 spiga Exp $"
+__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.32 2008/11/07 19:29:37 ewv Exp $"
 
 import os
 import time
@@ -42,8 +42,8 @@ class CRAB_AS_beckend:
         self.args['ComponentDir'] = os.path.expandvars(self.args['ComponentDir'])
         self.wdir = self.args['ComponentDir']
 
-        if self.args['dropBoxPath']:
-            self.wdir = self.args['dropBoxPath']
+        if self.args['CacheDir']:
+            self.wdir = self.args['CacheDir']
 
         self.initLogging()
         self.log.debug("wdir: %s, attempts: %s commands"%(self.wdir, self.cmdAttempts))

@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.127 2008/11/06 15:17:54 mcinquil Exp $"
-__version__ = "$Revision: 1.127 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.128 2008/11/13 16:33:56 mcinquil Exp $"
+__version__ = "$Revision: 1.128 $"
 
 import os
 import time
@@ -81,13 +81,13 @@ class TaskTrackingComponent:
         self.args = {}
         self.args.setdefault("PollInterval", 5 )
         self.args.setdefault("Logfile", None)
-        self.args.setdefault("dropBoxPath", None)
+        self.args.setdefault("CacheDir", None)
         self.args.setdefault("Thread", 5)
         self.args.setdefault("allow_anonymous", "0")
         
         # update parameters
         self.args.update(args)
-        logging.info("Using "+str(self.args['dropBoxPath'])+" as DropBox")
+        logging.info("Using "+str(self.args['CacheDir'])+" as DropBox")
 
         # define log file
         if self.args['Logfile'] == None:
@@ -160,12 +160,12 @@ class TaskTrackingComponent:
         #path of the logging info file
         filepath = None
         if jobid == "-1":
-            filepath = os.path.join( self.args['dropBoxPath'], \
+            filepath = os.path.join( self.args['CacheDir'], \
                                      taskName+self.workAdd,    \
                                      'internalog.xml'          \
                                    )
         else:
-            filepath = os.path.join( self.args['dropBoxPath'], \
+            filepath = os.path.join( self.args['CacheDir'], \
                                      taskName+self.workAdd,    \
                                      'internalog_'+jobid+'.xml'\
                                    )
@@ -583,7 +583,7 @@ class TaskTrackingComponent:
         ttdb = TaskStateAPI()
 	ttdb.updatingNotifiedPA( taskName, 2 )
         if status == self.taskState[2]:
-            self.taskNotSubmitted( os.path.join( self.args['dropBoxPath'], \
+            self.taskNotSubmitted( os.path.join( self.args['CacheDir'], \
                                                  (taskName + self.workAdd), \
                                                  self.xmlReportFileName), \
                                    taskName )
@@ -706,7 +706,7 @@ class TaskTrackingComponent:
             numJobs = len(taskObj.jobs)
             status, uuid, email, user_name = ttdb.getStatusUUIDEmail( taskName, mySession.bossLiteDB )
             dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot)
-            pathToWrite = os.path.join(str(self.args['dropBoxPath']), (taskName + self.workAdd))
+            pathToWrite = os.path.join(str(self.args['CacheDir']), (taskName + self.workAdd))
             if os.path.exists( pathToWrite ):
                 self.prepareReport( taskName, uuid, email, user_name, 0, 0, dictStateTot, numJobs, 1 )
                 self.undiscoverXmlFile( pathToWrite, self.tempxmlReportFile, self.xmlReportFileName )
@@ -719,7 +719,7 @@ class TaskTrackingComponent:
         _prepareReport_
         """
         ttutil = TaskTrackingUtil(self.args['allow_anonymous'])
-        pathToWrite = os.path.join( self.args['dropBoxPath'], \
+        pathToWrite = os.path.join( self.args['CacheDir'], \
                                     (taskName + self.workAdd) )
 
         if os.path.exists( pathToWrite ):
@@ -772,7 +772,7 @@ class TaskTrackingComponent:
         Starting managing by TaskLifeManager component
         """
         logBuf = ""
-        pathToWrite = os.path.join(self.args['dropBoxPath'], taskName)
+        pathToWrite = os.path.join(self.args['CacheDir'], taskName)
         if os.path.exists( pathToWrite ):
             try:
                 ms_sem.acquire()
@@ -1024,7 +1024,7 @@ class TaskTrackingComponent:
                                        dictReportTot['JobFailed']
 			    try:
 			        percentage = (100 * endedJob) / numJobs
-			        pathToWrite = os.path.join( str(self.args['dropBoxPath']), \
+			        pathToWrite = os.path.join( str(self.args['CacheDir']), \
                                                             str(taskName+self.workAdd)
                                                           )
 

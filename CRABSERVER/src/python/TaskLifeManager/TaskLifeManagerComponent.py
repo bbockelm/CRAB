@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.36 2008/10/30 16:29:38 mcinquil Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.37 2008/11/13 16:31:59 mcinquil Exp $"
+__version__ = "$Revision: 1.37 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -108,11 +108,11 @@ class TaskLifeManagerComponent:
         ## args constraints ##
         #####################
         # which dbox ?!?
-        if self.args['dropBoxPath'] == None:
-            self.args['dropBoxPath'] = self.args['ComponentDir']
+        if self.args['CacheDir'] == None:
+            self.args['CacheDir'] = self.args['ComponentDir']
         if self.args['storagePath'] == None:
-            self.args['storagePath'] = self.args['dropBoxPath']
-        logging.info("Using drop "  +str(self.args['dropBoxPath']) )
+            self.args['storagePath'] = self.args['CacheDir']
+        logging.info("Using cache "  +str(self.args['CacheDir']) )
         logging.info("Using storage " +str(self.args['storagePath']) )
 
         # minimum space available
@@ -171,7 +171,7 @@ class TaskLifeManagerComponent:
                     "port": self.args["storagePort"], \
                     "base": self.args['storagePath'], \
                     "mail": self.args['eMailAdmin'],  \
-                    "drop": self.args['dropBoxPath']
+                    "drop": self.args['CacheDir']
                   }
 
         ## instance the proxy's object to clean proxies
@@ -267,7 +267,7 @@ class TaskLifeManagerComponent:
         """
         own = " "
         mail = " " 
-        taskPath = self.args['dropBoxPath'] + "/" + taskName + "_spec"
+        taskPath = self.args['CacheDir'] + "/" + taskName + "_spec"
         try:
             import xml.dom.minidom
             import xml.dom.ext
@@ -469,7 +469,7 @@ class TaskLifeManagerComponent:
         else:
             logging.error("Task not found: " + str(taskName))
             logging.info(" trying safe delete backup...")
-            proxy = join( self.args['dropBoxPath'], taskName + "_spec", "userProxy")
+            proxy = join( self.args['CacheDir'], taskName + "_spec", "userProxy")
             taskPath = join(self.args['storagePath'] , taskName)
             jobList = eval(strJobs)
             for idjob in jobList:
@@ -622,7 +622,7 @@ class TaskLifeManagerComponent:
 
 
     ##########################################################################
-    # work on dropBox  disk space management
+    # work on cache dir  disk space management
     ##########################################################################
 
     def buildDropBox( self ):

@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.78 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.78 2008/10/29 22:37:59 mcinquil Exp $"
+__version__ = "$Revision: 1.79 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.79 2008/11/06 14:10:49 spiga Exp $"
 
 import os, pickle, time, copy
 
@@ -43,7 +43,7 @@ class CrabServerWorkerComponent:
         self.args = {}
         
         self.args.setdefault('Logfile', None)
-        self.args.setdefault('dropBoxPath', None)
+        self.args.setdefault('CacheDir', None)
         self.args.setdefault('ProxiesDir', None)
         
         # SE support parameters
@@ -52,7 +52,7 @@ class CrabServerWorkerComponent:
         self.args.setdefault('Protocol', '')
         self.args.setdefault('storageName', 'localhost')
         self.args.setdefault('storagePort', '')
-        self.args.setdefault('storagePath', self.args["dropBoxPath"])
+        self.args.setdefault('storagePath', self.args["CacheDir"])
         self.args.update(args)
         
         # define log file
@@ -70,7 +70,7 @@ class CrabServerWorkerComponent:
 
         # component resources
         if self.args['storagePath'] == None and self.args['Protocol'] == 'local': 
-            self.args['storagePath'] = self.args["dropBoxPath"]
+            self.args['storagePath'] = self.args["CacheDir"]
             
         ## persistent properties
         self.taskPool = {}  # for data persistence
@@ -79,8 +79,8 @@ class CrabServerWorkerComponent:
  
         ## volatile properties
         self.wdir = self.args['ComponentDir']
-        if self.args['dropBoxPath']:
-            self.wdir = self.args['dropBoxPath']
+        if self.args['CacheDir']:
+            self.wdir = self.args['CacheDir']
 
         self.maxAttempts = int( self.args.get('maxRetries', 3) )
         self.maxThreads = int( self.args.get('maxThreads', 5) )
