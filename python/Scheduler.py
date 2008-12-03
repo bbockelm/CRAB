@@ -2,6 +2,7 @@
 import os
 import time
 import string
+import traceback
 
 import common
 from Boss import Boss
@@ -35,6 +36,12 @@ class Scheduler :
         Scheduler._instance = self
         self._name = string.lower(name)
         self._boss = Boss()
+        self.protocolDict = { 'CAF'      : 'rfio' , \
+                              'LSF'      : 'rfio' , \
+                              'CONDOR_G' : 'srmv2' , \
+                              'GLITE'    : 'srm-lcg' , \
+                              'CONDOR'    : 'srmv2'  \
+                            }  
         return
 
     def name(self):
@@ -93,25 +100,62 @@ class Scheduler :
 
     def checkRemoteDir(self, endpoint, fileList):
         """
-        protocol = 'srm-lcg'
+        """
+        remoteListTmp = self.listRemoteDir(endpoint) 
+        if remoteListTmp == -1: 
+            msg =  'Problems trying remote dir check... \n'
+            msg += '\tPlease check stage out configuration parameters.\n'
+            raise CrabException(msg)   
+        if remoteListTmp:
+            listJob = common._db.nJobs('list')
+            remoteList = [] 
+            for f_path in remoteListTmp:
+                remoteList.append(str(os.path.basename(f_path)))  
+            metaList = []
+            for id in listJob:
+                for file in fileList :
+                    metaList.append('%s'%numberFile(file,id))
+            for i in remoteList:
+                if i in metaList : 
+                    msg  = 'Warning: You are asking to stage out on a remote directory \n' 
+                    msg += '\twhich already contains files with same name.\n' 
+                    msg += '\tPlease change directory or remove the actual content.\n' 
+                    raise CrabException(msg)   
+        else: 
+            msg = 'Remote is empty or not existis\n'
+            common.logger.debug(5,msg)      
+        return
+
+    def listRemoteDir(self, endpoint):
+        """
+        """
+        protocol = self.protocolDict[common.scheduler.name().upper()]  
         try:
             Storage = SElement( FullPath(endpoint), protocol )
         except ProtocolUnknown, ex:
-            msg  = 'ERROR : %s '% str(ex)
+            remoteList = -1  
+            msg  = 'Warning : %s '% str(ex)
             common.logger.message(msg)
+            dbgMsg = traceback.format_exc()
+            common.logger.debug(5,dgbMsg)
         try:
             action = SBinterface( Storage )
         except Exception, ex:
-            msg  = 'ERROR : %s '% str(ex)
+            remoteList = -1  
+            msg  = 'Warinig : %s '% str(ex)
             common.logger.message(msg)
+            dbgMsg = traceback.format_exc()
+            common.logger.debug(5,dgbMsg)
         try:
-            remoteListTmp = action.listDir()
+            remoteList = action.dirContent()
         except Exception, ex:
-            msg  = 'ERROR : %s '% str(ex)
+            remoteList = -1  
+            msg  = 'Warning : %s '% str(ex)
             common.logger.message(msg)
-        """
-        #to be done 
-        return
+            dbgMsg = traceback.format_exc()
+            common.logger.debug(5,dgbMsg)
+
+        return remoteList 
 
     def checkProxy(self, deep=0):
         """
