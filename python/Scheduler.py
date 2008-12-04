@@ -137,7 +137,7 @@ class Scheduler :
             msg  = 'Warning : %s '% str(ex)
             common.logger.message(msg)
             dbgMsg = traceback.format_exc()
-            common.logger.debug(5,dgbMsg)
+            common.logger.debug(5,dbgMsg)
         try:
             action = SBinterface( Storage )
         except Exception, ex:
@@ -145,7 +145,7 @@ class Scheduler :
             msg  = 'Warinig : %s '% str(ex)
             common.logger.message(msg)
             dbgMsg = traceback.format_exc()
-            common.logger.debug(5,dgbMsg)
+            common.logger.debug(5,dbgMsg)
         try:
             remoteList = action.dirContent()
         except Exception, ex:
@@ -153,11 +153,11 @@ class Scheduler :
             msg  = 'Warning : %s '% str(ex)
             common.logger.message(msg)
             dbgMsg = traceback.format_exc()
-            common.logger.debug(5,dgbMsg)
+            common.logger.debug(5,dbgMsg)
 
         return remoteList 
 
-    def checkProxy(self, deep=0):
+    def checkProxy(self, minTime=10):
         """
         Function to check the Globus proxy.
         """
@@ -167,88 +167,23 @@ class Scheduler :
         if (self.dontCheckProxy==1):
             self.proxyValid=1
             return
-        if deep == 0 :
-            minTimeLeft=10*3600 # in seconds
-        else:
-            minTimeLeft=100*3600 # in seconds
+        CredAPI_config =  { 'credential':'Proxy',\
+                            'myProxySvr': self.proxyServer \
+                          }   
+        from CredentialAPI import  CredentialAPI
+        CredAPI = CredentialAPI(CredAPI_config)
 
-        mustRenew = 0
-        timeLeftLocal = runCommand('voms-proxy-info -timeleft 2>/dev/null')
-        ## if no valid proxy
-        if timeLeftLocal == None:
-            mustRenew = 1
-        ## if valid check how long
-        elif int(timeLeftLocal)<minTimeLeft :
-            mustRenew = 1
-
-        ## check first attribute
-        att=runCommand('voms-proxy-info -fqan 2>/dev/null | head -1')
-        reg="/%s/"%self.VO
-        if self.group:
-            reg+=self.group
-        if self.role:
-            reg+="/Role=%s"%self.role
-        ## you always have at least  /cms/Role=NULL/Capability=NULL
-        if not re.compile(r"^"+reg).search(att):
-            if not mustRenew:
-                common.logger.message( "Valid proxy found, but with wrong VO group/role.\n")
-            mustRenew = 1
-        ######
-
-
-        if mustRenew:
-            common.logger.message( "No valid proxy found or remaining time of validity of already existing proxy shorter than 10 hours!\n Creating a user proxy with default length of 192h\n")
-            cmd = 'voms-proxy-init -voms '+self.VO
-            if self.group:
-                cmd += ':/'+self.VO+'/'+self.group
-            if self.role:
-                cmd += '/role='+self.role
-            cmd += ' -valid 192:00'
+        if not CredAPI.checkCredential(Time=int(minTime)) or \
+           not CredAPI.checkAttribute(group=self.group, role=self.role):
             try:
-                # SL as above: damn it!
-                common.logger.debug(10,cmd)
-                out = os.system(cmd)
-                if (out>0): raise CrabException("Unable to create a valid proxy!\n")
-            except:
-                msg = "Unable to create a valid proxy!\n"
-                raise CrabException(msg)
-            pass
-
-        ## now I do have a voms proxy valid, and I check the myproxy server
-        renewProxy = 0
-        cmd = 'myproxy-info -d -s '+self.proxyServer
-        cmd_out = runCommand(cmd,0,20)
-        if not cmd_out:
-            common.logger.message('No credential delegated to myproxy server '+self.proxyServer+' will do now')
-            renewProxy = 1
-        else:
-            ## minimum time: 5 days
-            minTime = 4 * 24 * 3600
-            ## regex to extract the right information
-            myproxyRE = re.compile("timeleft: (?P<hours>[\\d]*):(?P<minutes>[\\d]*):(?P<seconds>[\\d]*)")
-            for row in cmd_out.split("\n"):
-                g = myproxyRE.search(row)
-                if g:
-                    hours = g.group("hours")
-                    minutes = g.group("minutes")
-                    seconds = g.group("seconds")
-                    timeleft = int(hours)*3600 + int(minutes)*60 + int(seconds)
-                    if timeleft < minTime:
-                        renewProxy = 1
-                        common.logger.message('Your proxy will expire in:\n\t'+hours+' hours '+minutes+' minutes '+seconds+' seconds\n')
-                        common.logger.message('Need to renew it:')
-                    pass
-                pass
-            pass
-
-        # if not, create one.
-        if renewProxy:
-            cmd = 'myproxy-init -d -n -s '+self.proxyServer
-            out = os.system(cmd)
-            if (out>0):
-                raise CrabException("Unable to delegate the proxy to myproxyserver "+self.proxyServer+" !\n")
-            pass
-
+                CredAPI.ManualRenewCredential() 
+            except Exception, ex:
+                raise CrabException(str(ex))   
+        if not CredAPI.checkMyProxy():
+            try:
+                CredAPI.ManualRenewMyProxy()
+            except Exception, ex:
+                raise CrabException(str(ex))   
         # cache proxy validity
         self.proxyValid=1
         return
