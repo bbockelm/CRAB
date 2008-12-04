@@ -11,8 +11,11 @@ from ProdAgentCore.Configuration import ProdAgentConfiguration
 from ProdAgentCore.DaemonDetails import DaemonDetails
 
 AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
-AllResources = {'CPU':'-u','MEM':'-r', 'SWAP':'-W', 'LOAD':'-q'}
-
+AllResources = ['CPU','LOAD','LOAD-5m','LOAD-15m','MEM','SWAP','SWAPPING']
+disks = os.popen('ls -1 /dev/?d[a-z]').readlines()
+disks = map(lambda x:x.split('/')[2].rstrip(),disks)
+for disk in disks:
+        AllResources.append(disk)
 
 class CompServMonitor:
 
@@ -106,10 +109,9 @@ class CompServMonitor:
         html += 'Show plot for '
         html += ' <select name="Component" style="width:140px">'
         html += '<option>All resources</option>'
-        ks = AllResources.keys(); ks.sort()
-        for resource in ks:
+#        ks = AllResources.keys(); ks.sort()
+        for resource in AllResources:
             html += '<option>'+resource+'</option>'
-        html += '<option>SWAPPING</option>'
         html += '</select>'
         html += ' for last  '
         html += ' <input type="text" name="length" size=4 value=0> '
