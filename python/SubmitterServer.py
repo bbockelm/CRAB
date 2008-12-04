@@ -12,6 +12,7 @@ from ServerCommunicator import ServerCommunicator
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
+from ProdCommon.Storage.SEAPI.Exceptions import *
 
  
 class SubmitterServer( Submitter ):
@@ -90,17 +91,28 @@ class SubmitterServer( Submitter ):
         ### it should not be there... To move into SE API. DS
 
         # create remote dir for gsiftp 
-        opt = ''
         if self.storage_proto in ['gridftp','rfio']:
-            if self.storage_proto == 'rfio': opt = '777' # REMOVE me 
             try:
                 action = SBinterface( seEl )  
-                action.createDir( self.remotedir, opt )
-            except Exception, ex:
+                action.createDir( self.remotedir )
+            except AlreadyExistsException, ex:
+                msg = "Project %s already exist on the Storage Element \n"%self.taskuuid 
+                msg +='\t%s'%str(ex)
+                common.logger.debug(1, msg)
+            except OperationException, ex:
                 common.logger.debug(1, str(ex))
                 msg = "ERROR : Unable to create project destination on the Storage Element \n"
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
+            if self.storage_proto == 'rfio':
+                opt = '777' # REMOVE me 
+                try:
+                    action.setGrant( self.remotedir, opt)
+                except Exception, ex:
+                    common.logger.debug(1, str(ex))
+                    msg = "ERROR : Unable to change permission on the Storage Element \n"
+                    msg +="Project "+ self.taskuuid +" not Submitted \n"
+                    raise CrabException(msg)
 
         ## copy ISB ##
         sbi = SBinterface( loc, seEl )
