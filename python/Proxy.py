@@ -2,7 +2,7 @@ import os,sys
 import commands
 import traceback
 import time
-
+import re
 from ProdCommon.BossLite.Common.System import executeCommand
 
 class Proxy:
@@ -37,7 +37,6 @@ class Proxy:
             msg = ('Error %s in getUserProxy search\n' %str(ex))
             if self.debug : msg += traceback.format_exc()
             raise Exception(msg)
-
         return proxy.strip() 
 
     def getSubject(self, proxy = None):
@@ -82,16 +81,19 @@ class Proxy:
         if proxy == None: proxy=self.getUserProxy()
         minTimeLeft=int(Time)*3600 # in seconds
 
-        cmd = 'voms-proxy-info -file '+proxy+' -timeleft '
+        cmd = 'voms-proxy-info -file '+proxy+' -timeleft 2>/dev/null'
  
-        out, ret
-
-        timeLeftLocal = 
-
+        timeLeftLocal,  ret = self.ExecuteCommand(cmd)
+       
+        if ret != 0 and ret != 1:
+            msg = "Error while checking proxy timeleft for %s"%proxy
+            raise Exception(msg)
+        
         ## if no valid proxy
-        if timeLeftLocal == None or int(timeLeftLocal)<minTimeLeft :
+        if not timeLeftLocal :
             valid = False
-      
+        elif int(timeLeftLocal)<minTimeLeft :
+            valid = False
         return valid 
 
     def renewCredential( self, proxy=None ): 
@@ -105,59 +107,73 @@ class Proxy:
             pass
         return 
 
-    def checkAttribute( self, proxy=None ): 
+    def checkAttribute( self, proxy=None, vo='cms', group=None, role=None): 
         """
         """
+        valid = True
         if proxy == None: proxy=self.getUserProxy()
 
         ## check first attribute
-      #  cmd = 'voms-proxy-info -fqan | head -1'
+        cmd = 'export X509_USER_PROXY=%s; voms-proxy-info -fqan 2>/dev/null | head -1'%proxy
 
-      #  reg="/%s/"%self.VO
-      #  if self.group:
-      #      reg+=self.group
-      #  if self.role:
-      #      reg+="/Role=%s"%self.role
+        reg="/%s/"%vo
+        if group:
+            reg+=group
+        if role:
+            reg+="/Role=%s"%role
 
-        return 
+        att, ret = self.ExecuteCommand(cmd)
 
-    def ManualRenewCredential( self, VO='cms', group=None, role=None ):
+        if ret != 0 :
+            msg = "Error while checking proxy timeleft for %s"%proxy
+            raise Exception(msg)
+ 
+       ## you always have at least  /cms/Role=NULL/Capability=NULL
+        if not re.compile(r"^"+reg).search(att):
+            if self.debug: print "\tWrong VO group/role.\n"
+            valid = False
+        return valid 
+
+    def ManualRenewCredential( self, proxy=None, vo='cms', group=None, role=None ):
         """
         """
-   #     ## you always have at least  /cms/Role=NULL/Capability=NULL
-   #     if not re.compile(r"^"+reg).search(att):
-   #         if not mustRenew:
-   #             common.logger.message( "Valid proxy found, but with wrong VO group/role.\n")
-   #         mustRenew = 1
-        ######
 
-        if not self.checkCredential:
-            cmd = 'voms-proxy-init -voms '+VO
-            if group:
-                cmd += ':/'+VO+'/'+group
-            if role:
-                cmd += '/role='+role
-            cmd += ' -valid 192:00'
-            try:
-                out = os.system(cmd)
-                if (out>0): raise Exception("Unable to create a valid proxy!\n")
-            except:
-                msg = "Unable to create a valid proxy!\n"
-                raise Exception(msg)
+        cmd = 'voms-proxy-init -voms %s'%vo
 
-    def checkMyProxy( self, proxyServer ):
+        if group:
+            cmd += ':/'+vo+'/'+group
+        if role:
+            cmd += '/role='+role
+        cmd += ' -valid 192:00'
+        print cmd
+        try:
+            out = os.system(cmd)
+            if (out>0): raise Exception("Unable to create a valid proxy!\n")
+        except:
+            msg = "Unable to create a valid proxy!\n"
+            raise Exception(msg)
+
+    def checkMyProxy( self , proxy=None, Time=4 ):
         """
         """
+        if proxy == None: proxy=self.getUserProxy()
         ## check the myproxy server
         valid = True
-        cmd = 'myproxy-info -d -s %s'%proxyServer
+
+        #cmd = 'export X509_USER_PROXY=%s; myproxy-info -d -s %s 2>/dev/null'%(proxy,self.myproxyServer)
+        cmd = 'myproxy-info -d -s %s 2>/dev/null'%(self.myproxyServer)
+
+        out, ret = self.ExecuteCommand(cmd)
+        if ret != 0 and ret != 1 :
+            msg = "Error while checking myproxy timeleft for %s"%proxy
+            raise Exception(msg)
 
         if not out:
-            print 'No credential delegated to myproxy server %s will do now'%proxyServer
+            if self.debug: print '\tNo credential delegated to myproxy server %s will do now'%self.myproxyServer
             valid = False
         else:
             ## minimum time: 5 days
-            minTime = 4 * 24 * 3600
+            minTime = int(Time) * 24 * 3600
             ## regex to extract the right information
             myproxyRE = re.compile("timeleft: (?P<hours>[\\d]*):(?P<minutes>[\\d]*):(?P<seconds>[\\d]*)")
             for row in out.split("\n"):
@@ -168,19 +184,17 @@ class Proxy:
                     seconds = g.group("seconds")
                     timeleft = int(hours)*3600 + int(minutes)*60 + int(seconds)
                     if timeleft < minTime:
-                        print 'Your proxy will expire in:\n\t%s hours %s minutes %s seconds\n'%(hours,minutes,seconds)
+                        if self.debug: print '\tYour proxy will expire in:\n\t%s hours %s minutes %s seconds\n'%(hours,minutes,seconds)
                         valid = False
         return valid    
 
     def ManualRenewMyProxy( self ): 
         """
         """
-        if not self.checkMyProxy:
-            cmd = 'myproxy-init -d -n -s '+self.proxyServer
-            out = os.system(cmd)
-            if (out>0):
-                raise CrabException("Unable to delegate the proxy to myproxyserver "+self.proxyServer+" !\n")
-            pass
+        cmd = 'myproxy-init -d -n -s %s'%self.myproxyServer
+        out = os.system(cmd)
+        if (out>0):
+            raise Exception("Unable to delegate the proxy to myproxyserver %s"%self.myproxyServer+" !\n")
         return
   
     def logonProxy( self ):

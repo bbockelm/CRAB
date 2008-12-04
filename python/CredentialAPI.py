@@ -30,14 +30,25 @@ class CredentialAPI:
  
         return
       
-    def checkCredential( self, credential=None ):
+    def checkCredential( self, credential=None, Time=10 ):
         """
         """
+        valid = None 
+        valid = self.credObj.checkCredential(credential,Time)
         try: 
-            self.credObj.checkCredential(credential)
+            valid = self.credObj.checkCredential(credential,Time)
         except Exception, ex:
-            print str(ex)
-        return
+            raise Exception(str(ex))
+        
+        return valid
+
+    def ManualRenewCredential(self, credential=None, vo='cms', group=None, role=None):
+        """   
+        """   
+        try:    
+            self.credObj.ManualRenewCredential(credential,vo,group,role)
+        except Exception, ex:
+            raise Exception( str(ex))
 
     def registerCredential( self, command=None ):
         """
@@ -54,7 +65,7 @@ class CredentialAPI:
         try: 
             sub = self.credObj.getSubject(credential)
         except Exception, ex:
-            print str(ex)
+            raise Exception(str(ex))
         return sub
 
     def getUserName(self, credential=None):
@@ -64,7 +75,38 @@ class CredentialAPI:
         try: 
             uName = self.credObj.getSubject(credential)
         except Exception, ex:
-            print str(ex)
+            raise Exception(str(ex))
         return uName
 
 
+### Special stuff For Proxy
+    def checkMyProxy(self, credential=None, Time=4 ):
+        """   
+        """   
+        valid = None
+        try:  
+            valid = self.credObj.checkMyProxy(credential,Time)
+        except Exception, ex:
+            raise Exception(str(ex))
+         
+        return valid
+
+         
+    def checkAttribute(self, credential=None, vo='cms', group=None, role=None ):
+        """   
+        """   
+        valid = None
+        try:  
+            valid = self.credObj.checkAttribute(credential,vo,group,role)
+        except Exception, ex:
+            raise Exception(str(ex))
+         
+        return valid
+
+    def ManualRenewMyProxy(self, credential=None):
+        """   
+        """   
+        try:    
+            self.credObj.ManualRenewMyProxy()
+        except Exception, ex:
+            raise Exception( str(ex))
