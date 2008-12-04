@@ -827,7 +827,7 @@ class Cmssw(JobType):
                 ## pythia first run
                 args.append(str(self.firstRun)+str(i))
             if (self.generator in self.managedGenerators):
-                args.append(str((i-1)*self.eventsPerJob))
+                args.append(str(i*self.eventsPerJob))
             self.list_of_args.append(args)
         return
 
