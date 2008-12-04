@@ -161,8 +161,8 @@ class SubmitterServer( Submitter ):
     # TO REMOVE
     def moveProxy( self ):
         WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
-        #common.scheduler.checkProxy(Time=100)
-        common.scheduler.checkProxy(deep=1)
+        ## Temporary... to remove soon  
+        common.scheduler.checkProxy(minTime=100)
         try:
             common.logger.message("Registering a valid proxy to the server:")
             flag = " --myproxy"
