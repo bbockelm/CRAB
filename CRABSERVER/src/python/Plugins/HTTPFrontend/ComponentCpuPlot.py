@@ -165,8 +165,9 @@ class ComponentCpuPlot:
                 page+="load average: <b>%s</b> (1m, 5m, 15m)<br/>"%os.popen("uptime|awk -F'average:' '{ print $2}'").readlines()[0].rstrip().lstrip()
                 page+="         mem: <b>%s, %s, %s</b> (used, buff'd, cached)<br/>"%(Mused,Mbuff,Mcached)
                 page+="       disks: "
-                page+="<b>/dev/%s</b>"%disks.pop()
-                for disk in disks:
+                disksL = disks[:]
+                page+="<b>/dev/%s</b>"%disksL.pop()
+                for disk in disksL:
                         page+=", <b>/dev/%s</b>"%disk
                 page+="<br/>"
                 page+="</pre></td></tr></table>"
