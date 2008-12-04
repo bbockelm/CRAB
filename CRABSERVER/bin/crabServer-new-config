@@ -68,8 +68,8 @@ if  homeDir == None:
 crabServerConfiguration = {
     'resourceBroker':'CERN',
     'WMSserviceList':'', 
-    'dropBoxPath':'',
-    'allow_anonymous':'0',
+    'CacheDir':'',
+    'credentialType':'Proxy',
     'ProxiesDir':'/tmp/del_proxies/',
     'crabServerschemaLocation' : "$CRAB_SERVER_ROOT/share/CrabServerDB.sql",
     'storageName':'localhost',
