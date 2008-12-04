@@ -290,26 +290,26 @@ def isSensorRunning(target):
                 T = 'C'
             else:
                 T = 'S'
-            if re.match(All[T][target],Rtarget):
+            if re.search(All[T][target],Rtarget):
                 return True, spid, tpid
     return False, 0, 0
 
 def Cstartup():
     for component in List['C']:
         if not isComponentRunning(component):
-            print "its sensor will NOT be activated"
+            print "\033[0;31mits sensor will NOT be activated\033[m"
         else:
             srunning, spid, tpid = isSensorRunning(component)
             if srunning:
-                print "sensor for component %s (%s) already running with pid %s" % (component,tpid,spid)
+                print "sensor for component %s (%s) \033[0;33malready running\033[m with pid %s" % (component,tpid,spid)
             else:
                 sdaemon = subprocess.Popen(["sensord",component])
                 time.sleep(1)
                 sdaemon.poll()
                 if sdaemon.returncode is None:
-                    print "sensor for component %s started" % (component)
+                    print "sensor for component %s \033[0;32mstarted\033[m" % (component)
                 else:
-                    print "ERROR while starting sensor for component %s" % (component)
+                    print "\033[0;31mERROR\033[m while starting sensor for component %s" % (component)
 
 def Sstartup():
     for service in List['S']:
@@ -318,15 +318,15 @@ def Sstartup():
             continue
         srunning, spid, tpid = isSensorRunning(service)
         if srunning:
-            print "sensor for service %s (%s) already running with pid %s" % (service,tpid,spid)
+            print "sensor for service %s (%s) \033[0;33malready running\033[m with pid %s" % (service,tpid,spid)
         else:
             sdaemon = subprocess.Popen(["sensord",service])
             time.sleep(1)
             sdaemon.poll()
             if sdaemon.returncode is None:
-                print "sensor for service %s(%s) started" % (service,All['S'][service])
+                print "sensor for service %s(%s) \033[0;32mstarted\033[m" % (service,All['S'][service])
             else:
-                print "ERROR while starting sensor for service %s(%s)" %  (service,All['S'][service])
+                print "\033[0;31mERROR\033[m while starting sensor for service %s(%s)" %  (service,All['S'][service])
 
 def RnDLaunch(target):
     HTTPFeDir = getComponentDir("HTTPFrontend")
@@ -352,17 +352,17 @@ def Rstartup():
     for resource in List['R']:
         running, spid, devs = isSensorRunning(resource) # isSensorRunning(All['R'][resource])
         if running:
-            print "sensor for resource %s (sar %s) already running with pid %s" % (resource,All['R'][resource],spid)
+            print "sensor for resource %s (sar %s) \033[0;33malready running\033[m with pid %s" % (resource,All['R'][resource],spid)
         else:
             pid, returncode = RnDLaunch(resource)
             if returncode is None:
-                print "sensor for resource %s (%s %s) started with pid %s" % (
+                print "sensor for resource %s (%s %s) \033[0;32mstarted\033[m with pid %s" % (
                     resource,
                     shell['sensor'][resource][0],
                     shell['sensor'][resource][1],
                     str(pid))
             else:
-                print "ERROR while starting sensor for resource %s (%s %s): return code: %s" % (
+                print "\033[0;31mERROR\033[m while starting sensor for resource %s (%s %s): return code: %s" % (
                     resource,shell['sensor'][resource][0],
                     shell['sensor'][resource][1],
                     str(returncode)
@@ -375,14 +375,14 @@ def Dstartup():
     sensors = os.popen('ps -C iostat wwho pid,cmd').readlines()
     for sensor in sensors:
         spid, dev = sensor.split()[0:4:3]
-        print "sensor for disk %s already running with pid %s" % (dev,spid)
+        print "sensor for disk %s \033[0;33malready\033[m running with pid %s" % (dev,spid)
         diskL.remove(dev)
     for dev in diskL:
         pid, returncode = RnDLaunch(dev)
         if returncode is None:
-            print "sensor for disk %s started with pid %s"%(dev,str(pid))
+            print "sensor for disk %s \033[0;32mstarted\033[m with pid %s"%(dev,str(pid))
         else:
-            print "ERROR while starting sensor for disk %s: return code: %s"%(dev,str(returncode))
+            print "\033[0;31mERROR\033[m while starting sensor for disk %s: return code: %s"%(dev,str(returncode))
 
    
 
@@ -399,14 +399,14 @@ def Cstatus():
             if component:                    # if search matched (search return None or a MatchObject)
                 component=component.group()  # return what is matched, i.e. the component name itself
                 if component in List['C']:
-                    print "Running sensor for%8s, %-19s:%8s"%(tpid,component,spid)
+                    print "Running sensor for%8s, \033[0;32m%-19s\033[m:%8s"%(tpid,component,spid)
                     componentsL.remove(component)
     for component in componentsL:
         srun, tpid = isSensorDaemonRunning(component)
         if srun:
-            print "sensor  is ready to attach: %-18s :%8s"%(component,tpid)
+            print "sensor  is ready to attach: \033[0;33m%-18s\033[m :%8s"%(component,tpid)
         else:
-            print "WARN: sensor for component: %-18s : NOT RUNNING"%component
+            print "WARN: sensor for component: \033[0;31m%-18s\033[m : NOT RUNNING"%component
 
 
 def Sstatus():
@@ -425,10 +425,10 @@ def Sstatus():
             if service:                 # if search matched (search return None or a MatchObject)
                 service=service.group() # return what is matched, i.e. the service process name itself
                 if service in servicesL:
-                    print "Running sensor for%8s, %-19s:%8s"%(tpid,servicesK[service],spid) #,service)
+                    print "Running sensor for%8s, \033[0;32m%-19s\033[m:%8s"%(tpid,servicesK[service],spid) #,service)
                     servicesL.remove(service)
     for service in servicesL:
-        print "WARN:  sensor  for service: %-18s : NOT RUNNING"%(servicesK[service]) #,service)
+        print "WARN:  sensor  for service: \033[0;31m%-18s\033[m : NOT RUNNING"%(servicesK[service]) #,service)
 
 def Rstatus():
     resourcesL = List['R'][:] 
@@ -437,10 +437,10 @@ def Rstatus():
         [spid,dummy,type,tpid] = sensor.split()[0:4]
         for resource in List['R']:
             if re.match(All['R'][resource],type):
-                print "Running sensor for:         %-19s:%8s"%(resource,spid)
+                print "Running sensor for:         \033[0;32m%-19s\033[m:%8s"%(resource,spid)
                 resourcesL.remove(resource)
     for resource in resourcesL:
-        print "WARN:  sensor  for:         %-19s: NOT RUNNING"%(resource)
+        print "WARN:  sensor  for:         \033[0;31m%-19s\033[m: NOT RUNNING"%(resource)
 
 def Dstatus():
     disksL = List['D'][:] 
@@ -449,11 +449,11 @@ def Dstatus():
         [spid, dev] = sensor.split()[0:4:3]
         for disk in disksL:
             if re.match(disk,dev):
-                print "Running iostat sensor for:  %-19s:%8s" % (dev,spid)
+                print "Running iostat sensor for:  \033[0;32m%-19s\033[m:%8s" % (dev,spid)
                 disksL.remove(dev)
                 break
     for disk in disksL:
-        print "WARN: iostat sensor for:    %-19s: NOT running"%disk
+        print "WARN: iostat sensor for:    \033[0;31m%-19s\033[m: NOT running"%disk
 
 
 banner = {
