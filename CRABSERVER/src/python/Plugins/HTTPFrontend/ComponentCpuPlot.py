@@ -156,16 +156,20 @@ class ComponentCpuPlot:
                 Mcached = "%.0f%%"%(100*float(M[6])/float(M[1]))
                 P = os.popen("cat /proc/cpuinfo | grep processor | wc -l").readlines()[0].rstrip()
                 F = os.popen("cat /proc/cpuinfo  | grep 'cpu MHz' | awk -F\: 'BEGIN {s=0; i=0} {s+=$2;i++} END {print s/i}'").readlines()[0].rstrip().lstrip()
-                page+="<table border=0 span=0 margin=0><tr valign=top><td width='400px'><pre>"
+                page+="<table border=0 span=0 margin=0><tr valign=top>"
+                page+="<td width='400px'><pre>"
+                page+="  local time: <b>%s</b><br/>"%os.popen("date").readlines()[0].rstrip()
+                page+="  CrabServer: <b>%s</b><br/>"%os.environ['HOSTNAME']
                 page+="  processors: <b>%s</b> @ <b>%s</b>MHz<br/>"%(P,F)
+                page+="</pre></td><td><pre>"
                 page+="load average: <b>%s</b> (1m, 5m, 15m)<br/>"%os.popen("uptime|awk -F'average:' '{ print $2}'").readlines()[0].rstrip().lstrip()
                 page+="         mem: <b>%s, %s, %s</b> (used, buff'd, cached)<br/>"%(Mused,Mbuff,Mcached)
-                page+="<td width='400px'><pre>"
-                page+="  CrabServer: <b>%s</b><br/>"%os.environ['HOSTNAME']
-                page+="  local time: <b>%s</b><br/>"%os.popen("date").readlines()[0].rstrip()
-                page+="</pre></td><td><pre>"
+                page+="       disks: "
+                page+="<b>/dev/%s</b>"%disks.pop()
+                for disk in disks:
+                        page+=", <b>/dev/%s</b>"%disk
+                page+="<br/>"
                 page+="</pre></td></tr></table>"
-                page+="</pre></div>"
                 sk=MainResourcesPlot.keys(); sk.sort()
                 for Res in sk:
                         pngfile = os.path.join(self.workingDir, "%s-%s-%s-%s_pidstat.png" % (Res,length,span,'small'))
