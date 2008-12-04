@@ -21,14 +21,15 @@ import API
 from ProdAgentCore.Configuration import loadProdAgentConfiguration
 import Sites
 from ComponentServicesMonitor import status
+import copy
 
 AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
-AllResourcesPlot = {
+MainResourcesPlot = {
         'CPU'     : [ 'CPU',
                       ['user (%)','nice (%)','system (%)','iowait (%)' ]
                       ],
         'LOAD'    : [ 'LOAD',
-                      ['1m-average','5m-average', '15m-average']
+                      ['1m-average'] # ,'5m-average', '15m-average']
                       ],
         'MEM'     : [ 'MEM',
                       ['buffered (kBi)','cached (kBi)', 'used (kBi)']
@@ -40,7 +41,23 @@ AllResourcesPlot = {
                       ['swap pages brought in (Hz)','swap pages brought out (Hz)']
                       ]
         }
-                                                                                                                                                                        
+disks = os.popen('ls -1 /dev/?d[a-z]').readlines()
+disks = map(lambda x:x.split('/')[2].rstrip(),disks)
+for disk in disks:
+        MainResourcesPlot[disk] = [disk,
+                                   ['read kB/s','wrtn kB/s']
+                                   ]
+        
+AllResourcesPlot = copy.deepcopy(MainResourcesPlot)
+
+AllResourcesPlot['LOAD-5m'] = [ 'LOAD',
+                             [None,'5m-average']
+                             ]
+AllResourcesPlot['LOAD-15m'] = [ 'LOAD',
+                             [None,None,'15m-average']
+                             ]
+
+
 
 def gatherHWData(logFilename,Nbins):
         logLines = open(logFilename,'r').readlines()
@@ -122,22 +139,42 @@ class ComponentCpuPlot:
                         pngfile = os.path.join(self.workingDir, "%s-%s-%s-%s_pidstat.png" % (Comp,length,span,'small'))
                         pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
                         page += "<a href=\"%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Comp,length,span,pngfileUrl)
-                        title = Comp+' CPU usage'
+                        title = Comp+' CPU (%) usage'
                         draw_TimeComponentCpuGraph(Comp,self.sensorsDir,pngfile,length,span,'small',labels,title)
         elif Component == 'All services':
                 for Serv in AllServices.keys():
                         pngfile = os.path.join(self.workingDir, "%s-%s-%s-%s_pidstat.png" % (Serv,length,span,'small'))
                         pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
                         page += "<a href=\"%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Serv,length,span,pngfileUrl)
-                        title = Serv+' CPU usage' # ,'History plot of CPU usage for '+Serv]
+                        title = Serv+' CPU (%) usage' # ,'History plot of CPU usage for '+Serv]
                         draw_TimeComponentCpuGraph(Serv,self.sensorsDir,pngfile,length,span,'small',labels,title)
         elif Component == 'All resources':
-                sk=AllResourcesPlot.keys(); sk.sort()
+                mem = os.popen("free").readlines()
+                M = mem[1].split()
+                Mused = "%.0f%%"%(100*(float(M[2])-float(M[5])-float(M[6]))/float(M[1]))
+                Mbuff = "%.0f%%"%(100*float(M[5])/float(M[1]))
+                Mcached = "%.0f%%"%(100*float(M[6])/float(M[1]))
+                P = os.popen("cat /proc/cpuinfo | grep processor | wc -l").readlines()[0].rstrip()
+                F = os.popen("cat /proc/cpuinfo  | grep 'cpu MHz' | awk -F\: 'BEGIN {s=0; i=0} {s+=$2;i++} END {print s/i}'").readlines()[0].rstrip().lstrip()
+                page+="<table border=0 span=0 margin=0><tr valign=top><td width='400px'><pre>"
+                page+="  processors: <b>%s</b> @ <b>%s</b>MHz<br/>"%(P,F)
+                page+="load average: <b>%s</b> (1m, 5m, 15m)<br/>"%os.popen("uptime|awk -F'average:' '{ print $2}'").readlines()[0].rstrip().lstrip()
+                page+="         mem: <b>%s, %s, %s</b> (used, buff'd, cached)<br/>"%(Mused,Mbuff,Mcached)
+                page+="<td width='400px'><pre>"
+                page+="  CrabServer: <b>%s</b><br/>"%os.environ['HOSTNAME']
+                page+="  local time: <b>%s</b><br/>"%os.popen("date").readlines()[0].rstrip()
+                page+="</pre></td><td><pre>"
+                page+="</pre></td></tr></table>"
+                page+="</pre></div>"
+                sk=MainResourcesPlot.keys(); sk.sort()
                 for Res in sk:
                         pngfile = os.path.join(self.workingDir, "%s-%s-%s-%s_pidstat.png" % (Res,length,span,'small'))
                         pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
                         page += "<a href=\"%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Res,length,span,pngfileUrl)
-                        title = Res
+                        if Res == 'CPU':
+                                title = 'CPU (%)'
+                        else:
+                                title = Res
                         draw_TimeComponentCpuGraph(AllResourcesPlot[Res][0],self.sensorsDir,pngfile,length,span,'small',AllResourcesPlot[Res][1],title)
         else:
                 if Component in AllResourcesPlot.keys():
@@ -145,7 +182,7 @@ class ComponentCpuPlot:
                         title = 'History plot for '+Component
                         Component = AllResourcesPlot[Component][0]
                 else:
-                        title = 'History plot of CPU usage for '+Component
+                        title = 'History plot of CPU (%) usage for '+Component
                 pngfile = os.path.join(self.workingDir, "%s-%s-%s-%s_pidstat.png" % (Component,length,span,'big'))
                 pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
                 page += "<img src=\"%s\">" % pngfileUrl
