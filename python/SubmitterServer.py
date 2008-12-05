@@ -163,7 +163,7 @@ class SubmitterServer( Submitter ):
              try:
                  dict = CredAPI.registerCredential('submit') 
              except Exception, err:
-                 common.logger.debug(3, "Configuring Credential API: " +str(traceback.format_exc()))
+                 common.logger.debug(3, "Registering Credentials : " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
              self.cfg_params['EDG.proxyInfos'] = dict
 
