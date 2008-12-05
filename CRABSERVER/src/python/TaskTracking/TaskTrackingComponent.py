@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.128 2008/11/13 16:33:56 mcinquil Exp $"
-__version__ = "$Revision: 1.128 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.129 2008/12/03 13:49:36 spiga Exp $"
+__version__ = "$Revision: 1.129 $"
 
 import os
 import time
@@ -450,27 +450,28 @@ class TaskTrackingComponent:
         mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
         taskObj = None
         ttdb = TaskStateAPI()
-        ttutil = TaskTrackingUtil(self.args['allow_anonymous']) 
-
+        from ProdCommon.Credential.CredentialAPI import CredentialAPI
+        CredAPI = CredentialAPI({'credential':self.args['credentialType']})
+ 
         try:
             taskObj = mySession.loadTaskByName( taskName )
         except TaskError, te:
             logBuf = self.__log(logBuf,"  Requested task [%s] does not exist."%(taskName) )
 	    logBuf = self.__log(logBuf,"  %s"%(str(te)))
 	if not taskObj is None:
-	    proxy = taskObj['user_proxy']
+	    credential = taskObj['user_proxy']
             userName = ""
             try:
-	        userName = ttutil.cnSplitter(ttutil.getNameFromProxy(proxy))
+	        userName = CredAPI.getUserName(credential)
             except Exception, ex:
                 userName = taskName.split("_")[0]
 	    try:
-                if len(userName) == 1:
-                    ttdb.updateProxyUname(mySession.bossLiteDB, taskName, \
-                                          proxy, userName[0])
-                else:
-                    ttdb.updateProxyUname(mySession.bossLiteDB, taskName, \
-                                          proxy, userName[-1])
+             #   if len(userName) == 1:
+                ttdb.updateProxyUname(mySession.bossLiteDB, taskName, \
+                                          credential, userName)
+             #   else:
+             #       ttdb.updateProxyUname(mySession.bossLiteDB, taskName, \
+             #                             credential, userName[-1])
             except Exception, ex:
                 logBuf = self.__log(logBuf, "ERROR while updating the task " + str(taskName) )
                 logBuf = self.__log(logBuf, "      "+str(ex))
@@ -574,7 +575,7 @@ class TaskTrackingComponent:
 	_prepareTaskFailed_
 	
 	"""
-        ttutil = TaskTrackingUtil(self.args['allow_anonymous'])
+        ttutil = TaskTrackingUtil()
 	origTaskName = ttutil.getOriginalTaskName(taskName, uuid)
 	eMaiList = ttutil.getMoreMails(eMail)
 	strEmail = ""
@@ -718,7 +719,7 @@ class TaskTrackingComponent:
         """
         _prepareReport_
         """
-        ttutil = TaskTrackingUtil(self.args['allow_anonymous'])
+        ttutil = TaskTrackingUtil()
         pathToWrite = os.path.join( self.args['CacheDir'], \
                                     (taskName + self.workAdd) )
 
@@ -870,7 +871,7 @@ class TaskTrackingComponent:
         _computeJobStatus_
         """
         ttdb = TaskStateAPI()
-        ttutil = TaskTrackingUtil(self.args['allow_anonymous'])
+        ttutil = TaskTrackingUtil()
 
         countNotSubmitted = 0
 
