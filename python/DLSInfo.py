@@ -17,7 +17,7 @@ class DLSError:
 
 class DLSNoReplicas(exceptions.Exception):
     def __init__(self, FileBlock):
-        self.args ="No replicas exists for fileblock: "+FileBlock+"\n"
+        self.args ="No replicas exists for fileblock: %s \n"%str(FileBlock)
         exceptions.Exception.__init__(self, self.args)
         pass
 
@@ -73,8 +73,8 @@ class DLSInfo:
 
     def getReplicasBulk(self,fileblocks):
         """
-        query DLS to get replicas
-        """
+        query DLS to g    et replicas
+        """               
         ##
         try:
             entryList=self.api.getLocations(fileblocks,longList=True,showCAF=self.showCAF)
@@ -86,7 +86,8 @@ class DLSInfo:
             for loc in entry.locations:
                 ListSites.append(str(loc.host))
             if len(ListSites)<=0:
-                raise DLSNoReplicas(fileblocks)
+                msg ="No replicas exists for fileblock: %s \n"%str(fileblocks)
+                raise CrabException(msg)
             results[entry.fileBlock.name]=ListSites
 
         return results         
