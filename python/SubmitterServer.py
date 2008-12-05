@@ -146,8 +146,7 @@ class SubmitterServer( Submitter ):
              self.moveProxy()
              # myProxyMoveProxy() # check within the API ( Proxy.py ) 
         else:
-             #from ProdCommon.Credential.CredentialAPI import CredentialAPI
-             from CredentialAPI import CredentialAPI
+             from ProdCommon.Credential.CredentialAPI import CredentialAPI
              myproxyserver = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
              configAPI = {'credential' : self.credentialType, \
                           'myProxySvr' : myproxyserver,\

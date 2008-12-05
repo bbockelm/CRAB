@@ -170,7 +170,7 @@ class Scheduler :
         CredAPI_config =  { 'credential':'Proxy',\
                             'myProxySvr': self.proxyServer \
                           }   
-        from CredentialAPI import  CredentialAPI
+        from ProdCommon.Credential.CredentialAPI import CredentialAPI 
         CredAPI = CredentialAPI(CredAPI_config)
 
         if not CredAPI.checkCredential(Time=int(minTime)) or \
