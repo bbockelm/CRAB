@@ -4,9 +4,9 @@ import re
 
 class TaskTrackingUtil:
 
-    def __init__(self, auth):
-        self.allow_anonymous = str(auth)
-
+    def __init__(self):
+ #       self.allow_anonymous = str(auth)
+        pass
     def convertStatus( self, status ):
         """
         _convertStatus_
