@@ -73,12 +73,19 @@ class JobMonitor:
 
         from time import gmtime, strftime
         curryear  = strftime("%Y", gmtime())
-        currmonth = strftime("%Y", gmtime())
+        currmonth = strftime("%m", gmtime())
         currday   = strftime("%d", gmtime())
 
-        days   = "".join(["<option>%s</option>"%(str(obj)) for obj in xrange(1,32)])
-        months = "".join(["<option>%s</option>"%(str(obj)) for obj in xrange(1,13)])
-        years  = "<option>%s</option><option>%s</option>"%(str(curryear),str(int(curryear)-1))
+        days   = "".join(["<option>%s</option>"%(str(obj)) for obj in xrange(1,int(currday))])
+        days  += "<option selected='selected'>%s</option>"%str(currday)
+        days  += "".join(["<option>%s</option>"%(str(obj)) for obj in xrange(int(currday)+1,32)])
+
+        months = "".join(["<option>%s</option>"%(str(obj)) for obj in xrange(1,int(currmonth))])
+        months+= "<option selected='selected'>%s</option>"%str(currmonth)
+        months+= "".join(["<option>%s</option>"%(str(obj)) for obj in xrange(int(currmonth)+1,13)])
+
+        years  = "<option selected='selected'>%s</option><option>%s</option>"%(str(curryear),str(int(curryear)-1))
+
         html += "<table>\n"
         html += "<br/><br/>"
         html += '<form action=\"%s"\ method="get">' % (self.jobwms)
