@@ -190,7 +190,7 @@ class TaskRegisterComponent:
         actionType = "registerNewTask"
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName, actionType)
         workerCfg['ProxiesDir'] = self.args['ProxiesDir']
-        workerCfg['allow_anonymous'] = self.args['allow_anonymous']
+        workerCfg['credentialType'] = self.args['credentialType']
         try:
             self.workerSet[thrName] = RegisterWorker(logging, thrName, workerCfg)
         except Exception, e:
@@ -291,8 +291,8 @@ class TaskRegisterComponent:
 
         workerCfg['messageQueue'] = self.sharedQueue
         workerCfg['blSessionPool'] = self.sessionPool
-
-        workerCfg['allow_anonymous'] = int( self.args.setdefault('allow_anonymous', 0) )
+        workerCfg['credentialType'] = self.args.setdefault('credentialType',None ) 
+        workerCfg['single_user'] = self.args.setdefault('singleUser',None ) 
         return workerCfg
         
     def getRangeFromXml(self, wdir, taskName):

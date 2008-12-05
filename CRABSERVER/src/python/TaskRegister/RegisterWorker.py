@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.14 2008/11/12 18:03:56 mcinquil Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.15 2008/12/02 11:03:59 mcinquil Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import string
 import sys, os
@@ -20,6 +20,7 @@ from xml.dom import minidom
 from MessageService.MessageService import MessageService
 from ProdAgentDB.Config import defaultConfig as dbConfig
 
+from ProdCommon.Credential.CredentialAPI import CredentialAPI
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 
@@ -45,7 +46,7 @@ class RegisterWorker(Thread):
         self.local_queue = self.configs['messageQueue']
 
         self.cfg_params = {}
-        self.proxy = "anonymous"
+        self.CredAPI = CredentialAPI({'credential':self.configs['credentialType']}) 
         self.cmdRng = "[]"
 
         # run the worker
@@ -68,7 +69,7 @@ class RegisterWorker(Thread):
             return
 
         # pair proxy to task
-        if not self.associateProxyToTask() == 0 or len(self.proxy)==0:
+        if not self.associateProxyToTask() == 0 :
             self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
             return
 
@@ -127,7 +128,7 @@ class RegisterWorker(Thread):
 
             self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
             self.cmdRng =  str( cmdXML.getAttribute('Range') )
-            self.proxySubject = str( cmdXML.getAttribute('Subject') )
+            self.owner = str( cmdXML.getAttribute('Subject') )
 
             self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
 
@@ -141,6 +142,8 @@ class RegisterWorker(Thread):
         return status
 
     def declareAndLocalizeTask(self):
+        """
+        """
         taskObj = None
         self.log.info('Worker %s declaring new task'%self.myName)
         taskSpecFile = os.path.join(self.wdir, self.taskName + '_spec/task.xml' )
@@ -155,8 +158,8 @@ class RegisterWorker(Thread):
                 self.log.info("Worker %s - Task %s already registered in BossLite"%(self.myName,self.taskName) )
                 return tmpTask
 
-            taskObj = self.blDBsession.declare(taskSpecFile, self.proxy)
-            taskObj['user_proxy'] = self.proxy
+            taskObj = self.blDBsession.declare(taskSpecFile, self.credential)
+            taskObj['user_proxy'] = self.credential
         except Exception, e:
             status = 6
             reason = "Error while declaring task %s, it will not be processed"%self.taskName
@@ -165,7 +168,6 @@ class RegisterWorker(Thread):
             self.log.info( traceback.format_exc() )
             return None
 
-        # all done
         return taskObj
 
     def alterPath(self, taskObj):
@@ -194,7 +196,7 @@ class RegisterWorker(Thread):
                 # get TURL for WMS bypass and manage paths
                 self.log.info('Worker %s getting TURL (Scheduler Name %s)  '%(self.myName, self.schedName))
                 turlFileCandidate = remoteSBlist[0]
-                self.preamble = SBinterface(self.seEl).getTurl( turlFileCandidate, self.proxy )
+                self.preamble = SBinterface(self.seEl).getTurl( turlFileCandidate, self.credential )
                 self.preamble = self.preamble.split(remoteSBlist[0])[0]
             elif self.schedName in ['LSF', 'CAF', 'CONDOR_G', 'ARC', 'GLIDEIN']:
                 self.log.info('Worker %s  NO TURL needed (Scheduler Name %s)  '%(self.myName, self.schedName))
@@ -236,6 +238,8 @@ class RegisterWorker(Thread):
 
 
     def registerTask(self, taskArg):
+        """  
+        """  
 
         taskName = taskArg['name']
 
@@ -279,6 +283,11 @@ class RegisterWorker(Thread):
         self.log.info('Worker %s checking input sandbox'%self.myName)
         sbList = task['globalSandbox'].split(',')
         if len(sbList)==0: return True
+        ###VERY Termporary: FIXME
+        username=''
+        if self.schedName.upper() in ['LSF','CAF']: 
+            username='%s::'%task['name'].split('_')[0]
+        ###VERY Termporary: FIXME
 
         try:
             for f in sbList:
@@ -288,7 +297,9 @@ class RegisterWorker(Thread):
                 fileFound = False
                 while (checkCount > 0):
                     sbi = SBinterface( self.seEl )
-                    fileFound = sbi.checkExists(remoteFile, self.proxy)
+                    ###VERY Termporary: FIXME
+                    fileFound = sbi.checkExists(remoteFile, username+self.credential)
+                    ###VERY Termporary: FIXME
                     if fileFound == True: break
                     checkCount -= 1
                     self.log.info("Worker %s. Checking file %s"%(self.myName, remoteFile))
@@ -314,54 +325,49 @@ class RegisterWorker(Thread):
         Check whether there are macroscopic conditions that prevent the task to be submitted.
         At the same time performs the proxy <--> task association.
         """
-        self.proxy = ""
         self.log.info('Worker %s pairing task and proxy'%self.myName)
-        if int(self.configs['allow_anonymous']) != 0: # and (subj=='anonymous'):
-            self.proxy = 'anonymous'
-            return 0
+        #if int(self.configs['allow_anonymous']) != 0: # and (subj=='anonymous'):
+        #    self.proxy = 'anonymous'
+        #    return 0
 
         try:
-            assocFile = self.getProxyFile()
+            self.credential = self.getProxyFile()
             #assocFile = self.getProxyFileMyProxy()
-            if assocFile is not None:
-                self.proxy = str(assocFile)
-                self.log.info("Project -> Task association: %s -> %s"%(self.taskName, assocFile) )
-                return 0
         except Exception, e:
             reason = "Warning: error while linking the proxy file for task %s."%self.taskName
             self.log.info(reason)
             self.log.info( traceback.format_exc() )
 
-        status = 20
-        reason = "Unable to locate a proper proxy for the task %s"%(self.taskName)
-        self.sendResult(status, reason, reason)
-        return 2
+        if  self.credential :
+            self.log.info("Project -> Task association: %s -> %s"%(self.taskName, self.credential) )
+            status = 0
+        else:
+            status = 20
+            reason = "Unable to locate a proper proxy for the task %s"%(self.taskName)
+            self.sendResult(status, reason, reason)
+        return status
 
     def getProxyFile(self):
-        proxySubject = str(self.proxySubject)
+        """
+        """
+        file = None  
+        #if  self.configs['single_mode'] : 
+           ## To be implemented in order to support single mode 
+           # file = self.CredAPI.getCredential() 
+           # return 0
+           # pass
+        #else: 
         proxyDir = self.configs['ProxiesDir']
         pfList = [ os.path.join(proxyDir, q)  for q in os.listdir(proxyDir) if q[0]!="." ]
-
+        ps = '' 
         for pf in pfList:
-            exitCode = -1
-            cmd = 'openssl x509 -in '+pf+' -subject -noout'
             try:
-                exitCode, ps = commands.getstatusoutput(cmd)
+                ps = self.CredAPI.getSubject(pf)
             except Exception, e:
-                self.log.info("Error while summoning %s: %s"%(cmd, str(e) ))
-                exitCode = -1
-                pass
-
-            if exitCode != 0:
-                self.log.info("Error while checking proxy subject for %s"%pf)
-                continue
-
-            ps = ps.split('\n')
-            if len(ps)>0:
-                ps = str(ps[0]).strip()
-                if proxySubject in ps or ps in proxySubject:
-                    return pf
-        return None
+                self.log.info( traceback.format_exc() )
+            if str(self.owner) == ps :
+                file=pf
+        return file
 
     def getProxyFileMyProxy(self):
         from CrabServer.myproxyDelegation import myProxyDelegationServerside as myproxyService
