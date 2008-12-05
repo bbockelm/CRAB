@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.15 2008/12/02 11:03:59 mcinquil Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.16 2008/12/05 10:51:34 spiga Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import string
 import sys, os
@@ -365,8 +365,10 @@ class RegisterWorker(Thread):
                 ps = self.CredAPI.getSubject(pf)
             except Exception, e:
                 self.log.info( traceback.format_exc() )
-            if str(self.owner) == ps :
+                continue
+            if self.owner in ps :
                 file=pf
+                break  
         return file
 
     def getProxyFileMyProxy(self):
