@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.147 2008/12/01 17:42:09 mcinquil Exp $"
-__version__ = "$Revision: 1.147 $"
+__revision__ = "$Id: FatWorker.py,v 1.148 2008/12/03 11:29:52 spiga Exp $"
+__version__ = "$Revision: 1.148 $"
 import string
 import sys, os
 import time
@@ -190,12 +190,21 @@ class FatWorker(Thread):
         cmdSpecFile = os.path.join(self.wdir, self.taskName + '_spec/cmd.xml' )
         try:
             doc = minidom.parse(cmdSpecFile)
+        except Exception, e:
+            status = 6
+            reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
+            self.sendResult(status, reason, reason)
+            self.log.info( traceback.format_exc() )
+            pload = self.taskName + "::" + str(status) + "::" + reason
+            self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", pload))
+
+        if status == 0:       
             cmdXML = doc.getElementsByTagName("TaskCommand")[0]
             self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
             ## already set in the message
             # self.cmdRng =  eval( cmdXML.getAttribute('Range'), {}, {} )
             ##
-            self.proxySubject = str( cmdXML.getAttribute('Subject') )
+            self.owner = str( cmdXML.getAttribute('Subject') )
             self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
 
             # se related
@@ -217,20 +226,13 @@ class FatWorker(Thread):
                 for ceB in self.cfg_params['EDG.ce_black_list'].split(","):
                     if ceB:
                         self.ce_blackL.append(ceB.strip())
-
-        except Exception, e:
-            status = 6
-            reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
-            self.sendResult(status, reason, reason)
-            self.log.info( traceback.format_exc() )
-            pload = self.taskName + "::" + str(status) + "::" + reason
-            self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", pload))
         return status
 
     def allocateBossLiteSchedulerSession(self, taskObj):
         """
         Set scheduler specific parameters and allocate the Scheduler Session
         """
+        status = 0
 
         self.bossSchedName = {'GLITE':'SchedulerGLiteAPI',
                               'GLITECOLL':'SchedulerGLiteAPI',
@@ -256,6 +258,7 @@ class FatWorker(Thread):
         elif schedulerConfig['name'] in ['SchedulerLsf']:
             schedulerConfig['cpCmd']   = self.cpCmd
             schedulerConfig['rfioSer'] = self.rfioServer
+            schedulerConfig['userToken'] = '%s/Token_%s'%(os.path.dirname(taskObj['user_proxy']),self.owner)
 
         try:
             self.blSchedSession = BossLiteAPISched(self.blDBsession, schedulerConfig)
@@ -264,8 +267,7 @@ class FatWorker(Thread):
             status = 6
             reason = "Unable to create a BossLite Session because of the following error: \n "
             self.sendResult(status, reason, reason, e, exc, True)
-            return 1
-        return 0
+        return status
 
 ####################################
     # Submission methods
@@ -279,34 +281,49 @@ class FatWorker(Thread):
         # closed running jobs regeneration and osb manipulation
         needUpd = False
         backupFiles = []
-        for j in task.jobs:
-            if j['jobId'] in self.cmdRng:
-                try:
-                    if j.runningJob['closed'] == 'Y':
-                        # backup for job output (tgz files only, less load)
-                        bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
-                        basePath = task['outputDirectory']
-                        if task['startDirectory'] != '': basePath = task['outputDirectory'].split(task['startDirectory'])[1]
-                        for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
-                            try:
-                                if bk_sbi.checkExists(source=orig) is True:
-                                    bk_sbi.move( source=orig, dest=orig+'.'+str(j['submissionNumber']), proxy=task['user_proxy'])
-                                    # track succesfully replicated files
-                                    backupFiles.append( os.path.basename(orig) )
-                                else:
-                                    self.log.debug("No need to back up osb")
-                            except Exception, ex:
-                                logMsg = "Worker %s. Backup problem OSB for job %s of task %s.\n"%(self.myName, \
-                                j['name'], self.taskName)
-                                logMsg += str(ex)
-                                self.log.info( logMsg )
-                                continue
+        try:
+            bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
+        except Exception, ex:
+            logMsg = "Worker %s. Problem creating SE Api interface %s.\n"%self.myName 
+            logMsg += str(ex)
+          #  self.log.info( logMsg )
+            raise Exception(logMsg) 
 
-                        # reproduce closed runningJob instances
-                        self.blDBsession.getNewRunningInstance(j)
-                        j.runningJob['status'] = 'C'
-                        j.runningJob['statusScheduler'] = 'Created'
-                        needUpd = True
+        credential = task['user_proxy']
+        if self.schedName.upper() in ['LSF','CAF']:
+            username = task['name'].split('_')[0]
+            credential = '%s::%s'%(username,credential)  
+        basePath = task['outputDirectory']
+        if task['startDirectory'] != '': basePath = task['outputDirectory'].split(task['startDirectory'])[1]
+        for j in task.jobs:
+            if j['jobId'] in self.cmdRng and j.runningJob['closed'] == 'Y':
+                # backup for job output (tgz files only, less load)
+                for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
+                    try:
+                        check=bk_sbi.checkExists(source=orig) 
+                    except Exception, ex:
+                        logMsg = "Worker %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
+                        j['name'], self.taskName)
+                        logMsg += str(ex)
+                        self.log.info( logMsg )
+                        continue
+                    if check:
+                        try:
+                            bk_sbi.move( source=orig, dest=orig+'.'+str(j['submissionNumber']), proxy=task['user_proxy'])
+                        except Exception, ex:
+                            logMsg = "Worker %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
+                            j['name'], self.taskName)
+                            logMsg += str(ex)
+                            self.log.info( logMsg )
+                            continue
+                        # track succesfully replicated files
+                        backupFiles.append( os.path.basename(orig) )
+                    else:
+                        self.log.debug("No need to back up osb")
+
+                # reproduce closed runningJob instances
+                try: 
+                    self.blDBsession.getNewRunningInstance(j)
                 except Exception, e:
                     logMsg = ("Worker %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
                             self.taskName, j['name']) )
@@ -316,6 +333,9 @@ class FatWorker(Thread):
                     newRange.remove(j['jobId'])
                     skippedSubmissions.append(j['jobId'])
                     continue
+                j.runningJob['status'] = 'C'
+                j.runningJob['statusScheduler'] = 'Created'
+                needUpd = True
 
         if len(backupFiles) > 0:
             self.log.info("Backup copy created for %s: %s"%(self.myName, str(backupFiles) ))
@@ -327,29 +347,19 @@ class FatWorker(Thread):
                 logMsg = "Worker %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
                 logMsg += str(e)
                 self.log.info( logMsg )
-                return [], self.cmdRng
+                newRange=[], self.cmdRng
 
         # consider only those jobs that are in a submittable status
         for j in task.jobs:
             if j['jobId'] in newRange:
-                try:
-                    # do not submit already running or scheduled jobs
-                    if j.runningJob['status'] in doNotSubmitStatusMask:
-                        newRange.remove(j['jobId'])
-                        continue
-                    # trace unknown state jobs and skip them from submission
-                    if j.runningJob['status'] not in tryToSubmitMask:
-                        newRange.remove(j['jobId'])
-                        skippedSubmissions.append(j['jobId'])
-                except Exception, e:
-                    logMsg = "Worker %s. Problem inspecting task %s job %s. Won't be submitted"%(self.myName, \
-                                self.taskName, j['name'])
-                    logMsg += str(e)
-                    self.log.info( logMsg )
-                    self.log.debug( traceback.format_exc() )
+                # do not submit already running or scheduled jobs
+                if j.runningJob['status'] in doNotSubmitStatusMask:
+                    newRange.remove(j['jobId'])
+                    continue
+                # trace unknown state jobs and skip them from submission
+                if j.runningJob['status'] not in tryToSubmitMask:
                     newRange.remove(j['jobId'])
                     skippedSubmissions.append(j['jobId'])
-                    continue
         return newRange, skippedSubmissions
 
     def submitTaskBlocks(self, task, sub_jobs, reqs_jobs, matched):

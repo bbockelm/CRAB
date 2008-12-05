@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.79 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.79 2008/11/06 14:10:49 spiga Exp $"
+__version__ = "$Revision: 1.80 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.80 2008/12/03 13:45:26 spiga Exp $"
 
 import os, pickle, time, copy
 
@@ -214,7 +214,7 @@ class CrabServerWorkerComponent:
         workerCfg['submissionRange'] = eval( cmdRng, {}, {} )
         workerCfg['retries'] = resubCount
         workerCfg['maxRetries'] = self.maxAttempts 
-        workerCfg['se_dynBList'] = [] # TODO does have sense to black-list SEs dynamically?
+        workerCfg['se_dynBList'] = []
         workerCfg['ce_dynBList'] = []
         if siteToBan : workerCfg['ce_dynBList'].append(siteToBan)
         workerCfg['cpCmd'] = self.args.get('cpCmd', 'cp')
@@ -428,6 +428,6 @@ class CrabServerWorkerComponent:
         workerCfg['messageQueue'] = self.fwResultsQ
         workerCfg['blSessionPool'] = self.blDBsession.bossLiteDB.getPool() 
         
-        workerCfg['allow_anonymous'] = int( self.args.setdefault('allow_anonymous', 0) )
+        workerCfg['credentialType'] = self.args['credentialType']
         return workerCfg
         
