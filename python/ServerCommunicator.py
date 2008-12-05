@@ -30,38 +30,26 @@ class ServerCommunicator:
 
         self.ServerTwiki = 'https://twiki.cern.ch/twiki/bin/view/CMS/CrabServer#Server_available_for_users'
        
-        self.dontMoveProxy = False
-        if string.lower(cfg_params.get("CRAB.scheduler")) in ['lsf','caf']:
-            self.dontMoveProxy = True
-  
         self.asSession = C_AS_Session(serverName, serverPort)
         self.cfg_params = cfg_params
         self.userSubj = ''
         self.serverName = serverName
-
+        credentialType = 'Proxy'
+        if common.scheduler.name().upper() in ['CAF','LSF']: 
+            credentialType = 'Token'
         CliServerParams(self)
         self.crab_task_name = common.work_space.topDir().split('/')[-2] # nice task name "crab_0_..."
 
-        x509 = proxyPath
-        if self.dontMoveProxy == False:  
-            if 'X509_USER_PROXY' in os.environ:
-                x509 = os.environ['X509_USER_PROXY']
-            else:
-                exitCode, x509 = commands.getstatusoutput('ls /tmp/x509up_u`id -u`').strip()
-                if exitCode != 0:
-                    raise CrabException("Error while locating the user proxy file")
-                    return
-
-            exitCode, self.userSubj = commands.getstatusoutput('openssl x509 -in %s -subject -noout'%x509)
-            if exitCode != 0:
-                raise CrabException("Error while getting the subject from the user proxy")  
-                return
-            self.userSubj = str(self.userSubj).strip()
-        else:
-            x509 = '' 
-            self.userSubj = str(os.environ['USER'])
-        pass
-
+        from ProdCommon.Credential.CredentialAPI import CredentialAPI
+        configAPI = {'credential' : credentialType }
+         
+        CredAPI =  CredentialAPI( configAPI )            
+        try:
+            self.userSubj = CredAPI.getSubject() 
+        except Exception, err:
+            common.logger.debug(3, "Getting Credential Subject: " +str(traceback.format_exc()))
+            raise CrabException("Error Getting Credential Subject")
+ 
 ###################################################
     # Interactions with the server
 ###################################################
@@ -115,7 +103,7 @@ class ServerCommunicator:
         elif ret == 14:
              # Draining 
              logMsg  = 'Error The server %s refused to accept the task %s because it is Draining out\n'%(self.serverName, self.crab_task_name)
-             logMsg  = '\t remaining jobs due to scheduled maintainence\n'
+             logMsg += '\t remaining jobs due to scheduled maintainence\n'
              logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
         elif ret == 101:
              # overlaod
