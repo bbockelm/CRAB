@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.149 2008/12/05 11:01:40 spiga Exp $"
-__version__ = "$Revision: 1.149 $"
+__revision__ = "$Id: FatWorker.py,v 1.150 2008/12/05 17:24:05 spiga Exp $"
+__version__ = "$Revision: 1.150 $"
 import string
 import sys, os
 import time
@@ -613,7 +613,7 @@ class FatWorker(Thread):
         reTask = re.compile('.*?_crab_0_\d{6}_\d{6}')
         isDefault = reTask.match(taskId)
         if not isDefault:
-            taskId = "-".join(nativeTaskName.split('-')[:-4])
+            taskId = "-".join(reTask.split('-')[:-4])
         gridName = self.owner
         gridName = '/'+"/".join(gridName.split('/')[1:-1])
         VO = self.cfg_params['VO']
