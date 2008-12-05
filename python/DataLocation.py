@@ -9,7 +9,7 @@ class DataLocationError(exceptions.Exception):
         self.args=errorMessage
         exceptions.Exception.__init__(self, self.args)
         pass
-                                                                                      
+
     def getErrorMessage(self):
         """ Return exception error """
         return "%s" % (self.args)
@@ -32,9 +32,13 @@ class DataLocation:
         """
         Contact DLS
         """
-        dlstype='' 
+        dlstype=''
 
-        useDBS = self.cfg_params.get('CMSSW.dbs_url',None)
+        useDBS    = self.cfg_params.get('CMSSW.dbs_url',None)
+        scheduler = self.cfg_params.get('CRAB.scheduler',None).lower()
+        global_url = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+        if not useDBS and scheduler in ['condor']:
+            useDBS = global_url
         if useDBS:
             dlstype='dbs'
             DLS_type="DLS_TYPE_%s"%dlstype.upper()
@@ -79,10 +83,10 @@ class DataLocation:
 # #######################################################################
     def getSites(self):
         """
-        get the sites hosting all the needed data 
+        get the sites hosting all the needed data
         """
         return self.SelectedSites
-    
+
 #######################################################################
     def uniquelist(self, old):
         """
