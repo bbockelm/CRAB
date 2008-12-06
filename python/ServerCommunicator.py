@@ -255,6 +255,8 @@ class ServerCommunicator:
 
         miniCfg['EDG.ce_black_list'] = T1_BL
         if 'EDG.ce_black_list' in self.cfg_params:
+            if len(T1_BL) > 0:
+                miniCfg['EDG.ce_black_list'] += ", "
             miniCfg['EDG.ce_black_list'] += str( self.cfg_params['EDG.ce_black_list'] )
 
         miniCfg['EDG.se_white_list'] = ""
