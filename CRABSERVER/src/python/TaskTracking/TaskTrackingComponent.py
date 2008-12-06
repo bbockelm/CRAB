@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.129 2008/12/03 13:49:36 spiga Exp $"
-__version__ = "$Revision: 1.129 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.130 2008/12/05 11:08:55 spiga Exp $"
+__version__ = "$Revision: 1.130 $"
 
 import os
 import time
@@ -115,7 +115,7 @@ class TaskTrackingComponent:
         self.xmlReportFileName = "xmlReportFile.xml"
         self.tempxmlReportFile = ".tempxmlReportFileName"
 
-	self.taskState = [\
+        self.taskState = [\
                            "arrived", \
                            "submitting", \
                            "not submitted", \
@@ -202,7 +202,7 @@ class TaskTrackingComponent:
 
         # new task to insert
         if event == "CRAB_Cmd_Mgr:NewTask":
-	    if payload != None or payload != "" or len(payload) > 0:
+            if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "NewTask: %s" % taskName)
                 logBuf = self.__log(logBuf, taskName)
                 taskName, totjobs, templistsubmit = payload.split("::")
@@ -223,7 +223,7 @@ class TaskTrackingComponent:
                 taskName, eMail, threshold = payload.split("::")
                 logBuf = self.__log(logBuf, "E-mail %s and threshold %s arrived for task %s" %(str(eMail),str(threshold),taskName))
                 self.updateEmailThresh(taskName, eMail, threshold)
-	        logBuf = self.__log(logBuf, "     db updated.")
+                logBuf = self.__log(logBuf, "     db updated.")
             else:
                 logBuf = self.__log(logBuf, "ERROR: wrong payload from [" +event+ "]!!!!")
             logging.info(logBuf)
@@ -231,7 +231,7 @@ class TaskTrackingComponent:
 
         # task registered in the db
         if event == "TaskRegisterComponent:NewTaskRegistered":
-	    if payload != None or payload != "" or len(payload) > 0:
+            if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "Submitting Task: %s" % str(taskName) )
                 taskname, maxtry, listjob = payload.split("::")
                 self.updateTaskStatus( taskname, self.taskState[1] )
@@ -249,7 +249,7 @@ class TaskTrackingComponent:
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "CrabWorkPerformed: %s" % payload)
                 taskName, textreason = payload.split("::")
-		self.updateTaskStatus( taskName, self.taskState[3])
+                self.updateTaskStatus( taskName, self.taskState[3])
                 self.updateProxyName(taskName)
                 self.processSubmitted(taskName)
                 logBuf = self.__log(logBuf, "               task updated.")
@@ -265,7 +265,7 @@ class TaskTrackingComponent:
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "CrabWorkFailed: %s" % payload)
                 self.updateProxyName(taskName)
-		self.updateTaskStatus(taskName, self.taskState[2])
+                self.updateTaskStatus(taskName, self.taskState[2])
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
             logging.info(logBuf)
@@ -276,8 +276,8 @@ class TaskTrackingComponent:
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, str(event.split(":")[1]) + ": %s" % payload)
                 taskName, taskStatus, reason = payload.split("::")
-	        _loginfo.setdefault('txt', str(reason)) 	 
-	        _loginfo.setdefault('code', str(taskStatus))
+                _loginfo.setdefault('txt', str(reason))  
+                _loginfo.setdefault('code', str(taskStatus))
                 self.__appendDbgInfo(taskName, _loginfo) #, jobid)
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
@@ -457,16 +457,17 @@ class TaskTrackingComponent:
             taskObj = mySession.loadTaskByName( taskName )
         except TaskError, te:
             logBuf = self.__log(logBuf,"  Requested task [%s] does not exist."%(taskName) )
-	    logBuf = self.__log(logBuf,"  %s"%(str(te)))
-	if not taskObj is None:
-	    credential = taskObj['user_proxy']
+            logBuf = self.__log(logBuf,"  %s"%(str(te)))
+        if not taskObj is None:
+            credential = taskObj['user_proxy']
             userName = ""
             try:
-	        userName = CredAPI.getUserName(credential)
+                userName = CredAPI.getUserName(credential)
             except Exception, ex:
                 userName = taskName.split("_")[0]
-	    try:
+            try:
              #   if len(userName) == 1:
+                logging.info("[%s] [%s]"%(str(credential),str(userName)))
                 ttdb.updateProxyUname(mySession.bossLiteDB, taskName, \
                                           credential, userName)
              #   else:
@@ -480,15 +481,15 @@ class TaskTrackingComponent:
         del taskObj, mySession
 
     def updateTaskStatus(self, payload, status):
-	"""
+        """
         _updateTaskStatus_
 
         update the status of a task
-	"""
-	logBuf = ""	
-	ttdb = TaskStateAPI()
-	try:
-	    ttdb.updateStatus( payload, status )
+        """
+        logBuf = ""
+        ttdb = TaskStateAPI()
+        try:
+            ttdb.updateStatus( payload, status )
         except Exception, ex:
             logBuf = self.__log(logBuf, "ERROR while updating the task " + str(payload) )
             logBuf = self.__log(logBuf, "      "+str(ex))
@@ -503,7 +504,7 @@ class TaskTrackingComponent:
                 valuess = ttdb.getStatusUUIDEmail( payload )
                 if valuess != None:
                     status = valuess[0]
-		    uuid = valuess[1]
+                    uuid = valuess[1]
                     eMail = valuess[2]
                     ## XML report file
                     if status == self.taskState[2]:
@@ -572,17 +573,16 @@ class TaskTrackingComponent:
 
     def prepareTaskFailed( self, taskName, uuid, eMail, status, userName ):
         """
-	_prepareTaskFailed_
-	
-	"""
+        _prepareTaskFailed_
+        """
         ttutil = TaskTrackingUtil()
-	origTaskName = ttutil.getOriginalTaskName(taskName, uuid)
-	eMaiList = ttutil.getMoreMails(eMail)
-	strEmail = ""
-	for mail in eMaiList:
-	    strEmail += str(mail) + ","
-        ttdb = TaskStateAPI()
-	ttdb.updatingNotifiedPA( taskName, 2 )
+        origTaskName = ttutil.getOriginalTaskName(taskName, uuid)
+        eMaiList = ttutil.getMoreMails(eMail)
+        strEmail = ""
+        for mail in eMaiList:
+            strEmail += str(mail) + ","
+            ttdb = TaskStateAPI()
+            ttdb.updatingNotifiedPA( taskName, 2 )
         if status == self.taskState[2]:
             self.taskNotSubmitted( os.path.join( self.args['CacheDir'], \
                                                  (taskName + self.workAdd), \
@@ -590,7 +590,7 @@ class TaskTrackingComponent:
                                    taskName )
         else:
             self.taskFailed(origTaskName, strEmail[0:len(strEmail)-1], userName, taskName)
-	 
+ 
 
     def updateTaskKilled ( self, taskName, status ):
         """
@@ -878,22 +878,22 @@ class TaskTrackingComponent:
         for jobbe in taskObj.jobs:
             try:
                 mySession.getRunningInstance(jobbe)
-	    except JobError, ex:
-	        logging.error('Problem loading job running info')
-	        break
-	    job   = jobbe.runningJob['jobId']
-  	    stato = jobbe.runningJob['status']
-	    sId   = jobbe.runningJob['schedulerId']
-	    jec   = str( jobbe.runningJob['wrapperReturnCode'] )
-	    eec   = str( jobbe.runningJob['applicationReturnCode'] )
-	    joboff = str( jobbe.runningJob['closed'] )
-	    site  = ""
-	    if jobbe.runningJob['destination'] != None and \
+            except JobError, ex:
+                logging.error('Problem loading job running info')
+                break
+            job   = jobbe.runningJob['jobId']
+            stato = jobbe.runningJob['status']
+            sId   = jobbe.runningJob['schedulerId']
+            jec   = str( jobbe.runningJob['wrapperReturnCode'] )
+            eec   = str( jobbe.runningJob['applicationReturnCode'] )
+            joboff = str( jobbe.runningJob['closed'] )
+            site  = ""
+            if jobbe.runningJob['destination'] != None and \
                jobbe.runningJob['destination'] != '':
-	        site  = jobbe.runningJob['destination'].split(":")[0]
-	    del jobbe
- 
-	    resubmitting, MaxResub, Resub, internalstatus = \
+                site  = jobbe.runningJob['destination'].split(":")[0]
+            del jobbe
+
+            resubmitting, MaxResub, Resub, internalstatus = \
                         ttdb.checkNSubmit(mySession.bossLiteDB, taskName, job)
             vect = []
             if eec == "NULL" and jec == "NULL":
@@ -981,12 +981,12 @@ class TaskTrackingComponent:
                 else:
                     taskId = task[0][0]
                     taskName = task[0][1]
-		    eMail = task[0][2]
-		    notified = int(task[0][4])
-		    thresholdLevel = task[0][3]
-		    endedLevel = task[0][5]
-		    status = task[0][6]
-		    uuid = task[0][7]
+                    eMail = task[0][2]
+                    notified = int(task[0][4])
+                    thresholdLevel = task[0][3]
+                    endedLevel = task[0][5]
+                    status = task[0][6]
+                    uuid = task[0][7]
                     userName = task[0][8]
 
                     if status == self.taskState[2] and notified < 2:
@@ -1006,26 +1006,26 @@ class TaskTrackingComponent:
                             logBuf = self.__log(logBuf, " - - - - - - - ")
                             logBuf = self.__log(logBuf, " [" + str(taskObj['id']) + "] *" + taskName + "*:")
 
-			    pathToWrite = ""
-			    dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
-			    dictStateTot = {}
+                            pathToWrite = ""
+                            dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
+                            dictStateTot = {}
                             numJobs = len(taskObj.jobs)
                             dictStateTot, dictReportTot, countNotSubmitted = \
                                  self.computeJobStatus( taskName, mySession, \
                                                         taskObj, dictStateTot, \
                                                         dictReportTot )
-			    for state in dictReportTot:
+                            for state in dictReportTot:
                                 logBuf = self.__log(logBuf, state + " : " + \
                                                       str(dictReportTot[state]))
-			    if countNotSubmitted > 0:
+                            if countNotSubmitted > 0:
                                 logBuf = self.__log(logBuf, " -not submitted: "\
                                                       + str(countNotSubmitted))
 
-			    endedJob = dictReportTot['JobSuccess'] + \
+                            endedJob = dictReportTot['JobSuccess'] + \
                                        dictReportTot['JobFailed']
-			    try:
-			        percentage = (100 * endedJob) / numJobs
-			        pathToWrite = os.path.join( str(self.args['CacheDir']), \
+                            try:
+                                percentage = (100 * endedJob) / numJobs
+                                pathToWrite = os.path.join( str(self.args['CacheDir']), \
                                                             str(taskName+self.workAdd)
                                                           )
 
@@ -1037,13 +1037,13 @@ class TaskTrackingComponent:
                                     logBuf = self.__log(logBuf, "Error: The path " + pathToWrite + " does not exist!\n")
 
                                 succexo = 0
-			        if percentage != endedLevel or \
-			           (percentage == 0 and status == self.taskState[3] ) or \
-			           (percentage == 0 and status == self.taskState[1] ) or \
-			           (notified < 2 and endedLevel == 100):
+                                if percentage != endedLevel or \
+                                  (percentage == 0 and status == self.taskState[3] ) or \
+                                  (percentage == 0 and status == self.taskState[1] ) or \
+                                  (notified < 2 and endedLevel == 100):
 
-		 	            ###  updating endedLevel  ###
-				    if percentage == 100:
+                                    ###  updating endedLevel  ###
+                                    if percentage == 100:
                                         msg = ttdb.updatingEndedPA( mySession.bossLiteDB, \
                                                                     taskName, str(percentage), \
                                                                     self.taskState[5])
@@ -1052,19 +1052,20 @@ class TaskTrackingComponent:
                                             self.taskEnded(taskName)
                                             notified = 2
                                             succexo = 1
-				    elif percentage != endedLevel:
-				        msg = ttdb.updatingEndedPA( mySession.bossLiteDB, \
+                                    elif percentage != endedLevel:
+                                        msg = ttdb.updatingEndedPA( mySession.bossLiteDB, \
                                                                     taskName, str(percentage), \
                                                                     status)
                                         logBuf = self.__log(logBuf, msg)
                                         if percentage >= thresholdLevel:
-					    if percentage == 100:
+                                            ## correct this logic TODO ##
+                                            if percentage == 100:
                                                 succexo = 1
                                                 self.taskEnded(taskName)
-					        notified = 2
-					    elif notified <= 0:
+                                                notified = 2
+                                            elif notified <= 0:
                                                 succexo = 1
-					        notified = 1
+                                                notified = 1
 
                                 self.undiscoverXmlFile(pathToWrite,\
                                                        self.tempxmlReportFile, \
@@ -1075,7 +1076,7 @@ class TaskTrackingComponent:
                                     _loginfo.setdefault('txt', "publishing task success (sending e-mail to %s)"%(str(eMail)))
                                     msg = ttdb.updatingNotifiedPA( taskName, notified )
                                     logBuf = self.__log(logBuf, msg)
- 			    except ZeroDivisionError, detail:
+                            except ZeroDivisionError, detail:
                                 logBuf = self.__log(logBuf, "WARNING: No jobs in the task " + taskName)
                                 logBuf = self.__log(logBuf, "         deatil: " + str(detail))
                            
@@ -1160,8 +1161,8 @@ class TaskTrackingComponent:
 
         nMaxThreads = int(self.args['Thread']) + 1
         # start polling threads
-	for i in xrange(1, nMaxThreads):
-	    pollingThread = PollThread(self.pollTasks, "pollingThread_" + str(i))
+        for i in xrange(1, nMaxThreads):
+            pollingThread = PollThread(self.pollTasks, "pollingThread_" + str(i))
             pollingThread.start()
 
         # wait for messages
