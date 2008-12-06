@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.37 2008/11/13 16:31:59 mcinquil Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.38 2008/12/03 13:47:45 spiga Exp $"
+__version__ = "$Revision: 1.38 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -446,9 +446,11 @@ class TaskLifeManagerComponent:
         task = self.taskQueue.getbyName( taskName )
         if task != None:
             proxy = str(task.getProxy())
+            logging.info("[%s]"%str(proxy))
             if len(proxy) == 0:
                 ttdb = TaskStateAPI()
                 proxy = ttdb.getProxy(taskName)
+                logging.info("[%s]"%str(proxy))
                 task.setProxy(str(proxy))
             from os.path import join
             taskPath = join(self.args['storagePath'] , taskName)
@@ -629,12 +631,16 @@ class TaskLifeManagerComponent:
         """
         _buildDropBox_
         """
-        tasks = self.SeSbI.getList(self.args['storagePath'])
+        #tasks = self.SeSbI.dirContent(self.args['CacheDir'])
+        import commands
+        status, output = commands.getstatusoutput("ls -1 %s"%str(self.args['CacheDir']))
+        tasks = output.split("\n")
         logging.info( "   building the drop_box directory..." )
         if tasks != None and tasks != []:
             for task in tasks:
                 if task.find("crab_") != -1:
-                    self.insertTaskWrp( task )
+                    self.insertTaskWrp( task[:-5] )
+                    logging.info(str(task[:-5]))    
             self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
 
     ##########################################################################
