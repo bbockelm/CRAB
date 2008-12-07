@@ -452,7 +452,6 @@ class TaskTrackingComponent:
         ttdb = TaskStateAPI()
         from ProdCommon.Credential.CredentialAPI import CredentialAPI
         CredAPI = CredentialAPI({'credential':self.args['credentialType']})
- 
         try:
             taskObj = mySession.loadTaskByName( taskName )
         except TaskError, te:
@@ -466,13 +465,9 @@ class TaskTrackingComponent:
             except Exception, ex:
                 userName = taskName.split("_")[0]
             try:
-             #   if len(userName) == 1:
                 logging.info("[%s] [%s]"%(str(credential),str(userName)))
                 ttdb.updateProxyUname(mySession.bossLiteDB, taskName, \
                                           credential, userName)
-             #   else:
-             #       ttdb.updateProxyUname(mySession.bossLiteDB, taskName, \
-             #                             credential, userName[-1])
             except Exception, ex:
                 logBuf = self.__log(logBuf, "ERROR while updating the task " + str(taskName) )
                 logBuf = self.__log(logBuf, "      "+str(ex))
@@ -914,13 +909,13 @@ class TaskTrackingComponent:
                     dictStateTot[job][3] = 1
                 else:
                     dictReportTot['JobInProgress'] += 1
-            elif stato == "Done (Failed)" or stato == "K":
+            elif stato in ["Done (Failed)", "K", "A"]:
                 if not resubmitting:
                     dictReportTot['JobFailed'] += 1
                 else:
                     dictReportTot['JobInProgress'] += 1
-            elif stato == "A":
-                    dictReportTot['JobFailed'] += 1
+            #elif stato == "A":
+            #        dictReportTot['JobFailed'] += 1
             elif (not resubmitting) and joboff == 'Y' and internalstatus != "Killing":
                 dictReportTot['JobFailed'] += 1
                 dictStateTot[job][3] = 1
