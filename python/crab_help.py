@@ -27,7 +27,7 @@ The most useful general options (use '-h' to get complete help):
   -kill [range]             -- kill submitted jobs.
   -resubmit [range]         -- resubmit killed/aborted/retrieved jobs.
   -copyData [range]         -- copy locally the output stored on remote SE.
-  -renewProxy               -- renew the proxy on the server.
+  -renewCredential          -- renew credential on the server.
   -clean                    -- gracefully cleanup the directory of a task.
   -testJdl [range]          -- check if resources exist which are compatible with jdl.
   -list [range]             -- show technical job details.
@@ -253,9 +253,9 @@ Kill (cancel) jobs which have been submitted to the scheduler. A range B<must> b
 
 Copy locally (on current working directory) the output previously stored on remote SE by the jobs. Of course, only if copy_data option has been set.
 
-=item B<-renewProxy >
+=item B<-renewCredential >
 
-If using the server modality, this command allows to delegate a valid long proxy to the server associated with the task.
+If using the server modality, this command allows to delegate a valid credential (proxy/token) to the server associated with the task.
 
 =item B<-testJdl [range]>
 
