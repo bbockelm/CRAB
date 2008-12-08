@@ -309,7 +309,7 @@ class Submitter(Actor):
                 jobId = str(jj) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(jj)
                 common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
             elif common.scheduler.name().upper() in ['LSF', 'CAF']:
-                jobId="https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(str(task['name']),"_","-")
+                jobId= str(jj) + "_https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(str(task['name']),"_","-")
                 common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
                 rb = common.scheduler.name()
                 localId = jid
