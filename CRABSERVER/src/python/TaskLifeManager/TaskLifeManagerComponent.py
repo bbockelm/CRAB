@@ -74,7 +74,7 @@ class TaskLifeManagerComponent:
         self.args.setdefault("storageName", "localhost")
         self.args.setdefault("storagePort", None)
         self.args.setdefault("ProxiesDir", "/tmp/del_proxies")
-        self.args.setdefault("allow_anonymous", "0")
+        self.args.setdefault("credentialType", "Proxy")
         self.args.setdefault("checkProxy", "off")
         # update parameters
         self.args.update(args)
@@ -173,11 +173,13 @@ class TaskLifeManagerComponent:
                     "mail": self.args['eMailAdmin'],  \
                     "drop": self.args['CacheDir']
                   }
+        self.credentialCfg = {
+                        "credential": self.args['credentialType']
+                        }
 
         ## instance the proxy's object to clean proxies
-        self.procheck = None
-        if self.args['allow_anonymous'] != "1" and str(self.args['checkProxy']) == 'on':
-            self.procheck = ProxyLife(self.bossCfgDB, self.proxypath, dictSE)
+   #     if self.args['allow_anonymous'] != "1" and str(self.args['checkProxy']) == 'on':
+        self.procheck = ProxyLife(self.bossCfgDB, self.proxypath, dictSE)
 
     ##########################################################################
     # handle events
@@ -455,6 +457,10 @@ class TaskLifeManagerComponent:
             from os.path import join
             taskPath = join(self.args['storagePath'] , taskName)
             jobList = eval(strJobs)
+            #####  TEMPORARY DS FIXME
+            if self.args['Protocol'].upper() == 'RFIO':
+                proxy = '%s::%s'%(taskName.split('_')[0],proxy)
+            #####
             for idjob in jobList:
                 baseToDelete = [ \
                                  "out_files_"+str(idjob)+".tgz"]#, \
@@ -469,24 +475,7 @@ class TaskLifeManagerComponent:
                         logging.debug( str(traceback.format_exc()) )
                         logging.info( "problems deleting osb for job " + str(idjob) )
         else:
-            logging.error("Task not found: " + str(taskName))
-            logging.info(" trying safe delete backup...")
-            proxy = join( self.args['CacheDir'], taskName + "_spec", "userProxy")
-            taskPath = join(self.args['storagePath'] , taskName)
-            jobList = eval(strJobs)
-            for idjob in jobList:
-                baseToDelete = [ \
-                                 "out_files_"+str(idjob)+".tgz"]#, \
-                               #  "crab_fjr_"+str(idjob)+".xml" \
-                               #]
-                for file in baseToDelete:
-                    try:
-                        self.SeSbI.delete( join(taskPath, file), proxy )
-                    except Exception, ex:
-                        import traceback
-                        logging.error( "Exception raised: " + str(ex) )
-                        logging.error( str(traceback.format_exc()) )
-                        logging.info( "problems deleting osb for job " + str(idjob) )
+            logging.error("ERROR: Task %s not found "%str(taskName))
 
 
     ##########################################################################
@@ -677,6 +666,10 @@ class TaskLifeManagerComponent:
         for index in range( toDelete ):
             task = self.taskDeleteQueue.getCurrentSwitch()
             proxy = task.getProxy()
+            #####  TEMPORARY DS FIXME
+            if self.args['Protocol'].upper() == 'RFIO':
+                proxy = '%s::%s'%(task.getName().split('_')[0],proxy)
+            #####
             logging.info ( "task life expired " + task.getName() )
             summ = self.cleanTask( task.getName(), proxy )
             if summ > 0:
@@ -729,7 +722,8 @@ class TaskLifeManagerComponent:
             if len(valuess) > 1:
                 uuid = valuess[1]
                 owner = valuess[3]
-            ttutil = TaskTrackingUtil( self.args['allow_anonymous'] )
+            #ttutil = TaskTrackingUtil( self.args['allow_anonymous'] )
+            ttutil = TaskTrackingUtil( )
             origTaskName = ttutil.getOriginalTaskName(taskName)
 
             payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ str(owner) +"::"+ str(mails) +"::"+ taskName
@@ -739,7 +733,6 @@ class TaskLifeManagerComponent:
             self.ms.publish( mexage, payload )
         else:
             logging.error(" Task not existsing: %s... Can not send %s message."%(taskName,mexage) )
-
 
     ##########################################################################
     # start component execution
@@ -761,7 +754,7 @@ class TaskLifeManagerComponent:
         if self.procheck != None:
             ## checks and manages proxies 
             try:
-                self.procheck.pollProxies()
+                self.procheck.pollProxies(self.credentialCfg)
             except Exception, ex:
                 import traceback
                 logging.error("Problem on polling proxies: \n" + str(ex) )
