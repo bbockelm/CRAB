@@ -386,8 +386,12 @@ class PlotByWMS:
 
         html = "<html><body>"
         for key, val in dictofdict.iteritems():
-            wms = str(key).split("https://")[1].split(":")[0]
-            html += self.TypePlot(val, wms) + "<br><br>"
+            if str(key).find("https://") != -1:
+                wms = str(key).split("https://")[1].split(":")[0]
+                html += self.TypePlot(val, wms) + "<br><br>"
+            else:
+                html += self.TypePlot(val, str(key))
+
         html += "</body></html>"
             
 
