@@ -151,6 +151,12 @@ class SubmitterServer( Submitter ):
              except Exception, err : 
                  common.logger.debug(3, "Configuring Credential API: " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
+             if not CredAPI.checkCredential(Time=100) :
+                common.logger.message("Please renew the token:\n")
+                try:
+                    CredAPI.ManualRenewCredential()
+                except Exception, ex:
+                    raise CrabException(str(ex))
              try:
                  dict = CredAPI.registerCredential('submit') 
              except Exception, err:
