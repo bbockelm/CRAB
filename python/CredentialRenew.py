@@ -1,0 +1,48 @@
+from Actor import *
+from crab_util import *
+import common
+from ProdCommon.Credential.CredentialAPI import CredentialAPI
+
+class CredentialRenew(Actor):
+
+    def __init__(self, cfg_params):
+
+        self.credentialType = 'Proxy'
+        if common.scheduler.name().upper() in ['LSF', 'CAF']:
+            self.credentialType = 'Token'
+
+    def run(self):
+        """
+        """
+        common.logger.debug(5, "CredentialRenew::run() called")
+        self.renewer()    
+        common.logger.message("Credential successfully delegated to the server.\n")
+        return
+
+    def renewer(self):
+        """
+        """
+        myproxyserver = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
+        configAPI = {'credential' : self.credentialType, \
+                     'myProxySvr' : myproxyserver,\
+                     'serverDN'   : self.server_dn,\
+                     'shareDir'   : common.work_space.shareDir() ,\
+                     'userName'   : UnixUserName(),\
+                     'serverName' : self.server_name \
+                     }
+        try:
+            CredAPI =  CredentialAPI( configAPI )            
+        except Exception, err : 
+            common.logger.debug(3, "Configuring Credential API: " +str(traceback.format_exc()))
+            raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
+        if not CredAPI.checkCredential(Time=100) :
+           common.logger.message("Please renew your %s :\n"%self.credentialType)
+           try:
+               CredAPI.ManualRenewCredential()
+           except Exception, ex:
+               raise CrabException(str(ex))
+        try:
+            dict = CredAPI.registerCredential(sub) 
+        except Exception, err:
+            common.logger.debug(3, "Registering Credentials : " +str(traceback.format_exc()))
+            raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
