@@ -333,7 +333,7 @@ class DBinterface:
                 if r.getAttribute('id') in [ id, 'all']:
                     rForJ = r
                     break
-            ## Check the submission number and create new running jobs on the client side          
+            ## Check the submission number and create new running jobs on the client side
             if rForJ.getAttribute('resubmit') != 'None' and (rForJ.getAttribute('status') not in ['Cleared','Killed','Done','Done (Failed)']) :
                 if int(job.runningJob['submission']) < int(rForJ.getAttribute('resubmit')) + 1:
                     nj_list.append(id)
@@ -348,7 +348,7 @@ class DBinterface:
             for r in reportList:
                 if r.getAttribute('id') in [ id, 'all']:
                     rForJ = r
-                    break 
+                    break
                    
             # Data alignment
             if rForJ.getAttribute('status') not in ['Created', 'Unknown']: 
@@ -372,6 +372,9 @@ class DBinterface:
               
                 job.runningJob['wrapperReturnCode'] = str( rForJ.getAttribute('job_exit') )
                 job_exit_code = str(job.runningJob['wrapperReturnCode'])
+
+                ## unsing 'standardInput' field for 'ended' tag ['Y','N']
+                job['standardInput'] = str( rForJ.getAttribute('ended') )
           
             #if str( rForJ.getAttribute('resubmit') ).isdigit():
             #    job['submissionNumber'] = int(rForJ.getAttribute('resubmit'))
