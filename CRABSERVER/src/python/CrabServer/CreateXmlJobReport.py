@@ -25,12 +25,13 @@ class JobXml:
         self.EXITSTATUS     = "exe_exit"
         self.JOBEXIT        = "job_exit"
         self.JOBREPORT      = "Job"
-	self.JOBCLEARED     = "cleared"
+        self.JOBCLEARED     = "cleared"
         self.ALLOWED_STATES = ("Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killing","Killed","Submitting","Done (Failed)", "Created")
         self.SITE           = "site"
         self.RESUB          = "resubmit" 
         self.STATCODE       = "sched_status"
         self.SCHEDID        = "sched_id"
+        self.ENDED          = "ended" 
 
         self.jobid      = ""
         self.status     = ""
@@ -41,21 +42,23 @@ class JobXml:
         self.resub      = ""
         self.statcode   = ""
         self.sId        = ""
+        self.ended      = ""
         
         self.doc            = xml.dom.minidom.Document()
 	#self.root           = self.doc.createElement( self.ROOTNAME )
 	#self.init           = False
         
     #------------------------------------------------------------------------
-    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site, sched_status, sId = "" ):
+    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site, sched_status, sId = "", ended = "" ):
         self.jobid      = jobid
         self.status     = status
         self.exitstatus = exe_exit
         self.jobexit    = job_exit
-	self.jobcleared = job_cleared
+        self.jobcleared = job_cleared
         self.statcode   = sched_status
         self.sId        = sId
- 
+        self.ended      = ended
+
         jobrep = self.doc.createElement(self.JOBREPORT)
         jobrep.setAttribute(self.JOBID, str(self.jobid))
 
@@ -68,11 +71,12 @@ class JobXml:
         jobrep.setAttribute(self.STATUS, self.status)
         jobrep.setAttribute(self.EXITSTATUS, str(self.exitstatus))
         jobrep.setAttribute(self.JOBEXIT, str(self.jobexit))
-	jobrep.setAttribute(self.JOBCLEARED, str(self.jobcleared))
+        jobrep.setAttribute(self.JOBCLEARED, str(self.jobcleared))
         jobrep.setAttribute(self.SITE, str(site))
         jobrep.setAttribute(self.RESUB, str(resub))
         jobrep.setAttribute(self.STATCODE, str(self.statcode))
         jobrep.setAttribute(self.SCHEDID, str(self.sId))
+        jobrep.setAttribute(self.ENDED, str(self.ended))
 
         self.report = jobrep
         return self
@@ -133,7 +137,8 @@ class JobXml:
                  self.SITE, \
                  self.RESUB, \
                  self.STATCODE, \
-                 self.SCHEDID \
+                 self.SCHEDID, \
+                 self.ENDED \
                ]
 
 ##-------------------------------------------------------------------------------------------------------

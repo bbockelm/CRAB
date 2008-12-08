@@ -734,6 +734,7 @@ class TaskTrackingComponent:
                         c.initialize( origTaskName, eMaiList[0], str(userName), percentage, thresholdLevel, nJobs, taskstatus)
 
             for singleJob in dictReportTot:
+                """
                 st  = dictReportTot[singleJob][0]
                 eec = dictReportTot[singleJob][2]
                 jec = dictReportTot[singleJob][1]
@@ -742,8 +743,21 @@ class TaskTrackingComponent:
                 sit = ttutil.getListEl(dictReportTot[singleJob], 5)
                 sst = ttutil.getListEl(dictReportTot[singleJob], 6)
                 sid = ttutil.getListEl(dictReportTot[singleJob], 9)
+                end = ttutil.getListEl(dictReportTot[singleJob], 8)
+                """
                 J = JobXml()
-                J.initialize( singleJob, st, eec, jec, cle, res, sit, sst, sid)
+                J.initialize( \
+                              singleJob, \
+                              dictReportTot[singleJob][0], \
+                              dictReportTot[singleJob][2], \
+                              dictReportTot[singleJob][1], \
+                              dictReportTot[singleJob][3], \
+                              ttutil.getListEl(dictReportTot[singleJob], 4), \
+                              ttutil.getListEl(dictReportTot[singleJob], 5), \
+                              ttutil.getListEl(dictReportTot[singleJob], 6), \
+                              ttutil.getListEl(dictReportTot[singleJob], 9), \
+                              ttutil.getListEl(dictReportTot[singleJob], 8)  \
+                            )
                 c.addJob( J )
 
             c.toXml()
@@ -903,34 +917,43 @@ class TaskTrackingComponent:
                 if (eec == "0" or eec == "" or eec == "NULL") and jec == "0":
                     dictReportTot['JobSuccess'] += 1
                     dictStateTot[job][3] = 1
+                    dictStateTot[job][8] = 'Y'
                 elif not resubmitting:
                     dictReportTot['JobFailed'] += 1
                     dictStateTot[job][0] = "Done (Failed)"
                     dictStateTot[job][3] = 1
+                    dictStateTot[job][8] = 'Y'
                 else:
                     dictReportTot['JobInProgress'] += 1
+                    dictStateTot[job][8] = 'N'
             elif stato in ["Done (Failed)", "K", "A"]:
                 if not resubmitting:
                     dictReportTot['JobFailed'] += 1
+                    dictStateTot[job][8] = 'Y'
                 else:
                     dictReportTot['JobInProgress'] += 1
+                    dictStateTot[job][8] = 'N'
             #elif stato == "A":
             #        dictReportTot['JobFailed'] += 1
             elif (not resubmitting) and joboff == 'Y' and internalstatus != "Killing":
                 dictReportTot['JobFailed'] += 1
                 dictStateTot[job][3] = 1
+                dictStateTot[job][8] = 'Y'
             elif stato == "C":
                 if (internalstatus in ["failed", "finished"] and not resubmitting) \
                   or internalstatus == "reallyFinished":
                    countNotSubmitted += 1
                    dictReportTot['JobFailed'] += 1
                    dictStateTot[job][0] = "NotSubmitted"
+                   dictStateTot[job][8] = 'Y'
                 else:
                    countNotSubmitted += 1
                    dictReportTot['JobInProgress'] += 1
                    range = []
+                   dictStateTot[job][8] = 'N'
             else:
                 dictReportTot['JobInProgress'] += 1
+                dictStateTot[job][8] = 'N'
 
             ## case for killing jobs:
             if (not stato in ['K', 'A']) and internalstatus == "Killing":
