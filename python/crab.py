@@ -36,7 +36,7 @@ class Crab:
                              '-resubmit' , '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-createJdl','-printJdl', '-publish',
-                             '-copyData', '-renewProxy', '-extend','-validateCfg' ]
+                             '-copyData', '-renewCredential', '-extend','-validateCfg' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -679,10 +679,10 @@ class Crab:
                     config['pset']=val
                 self.actions[opt] = ValidateCfg(config)
 
-            elif ( opt == '-renewProxy' ):
+            elif ( opt == '-renewCredential' ):
                 if (self.UseServer== 1):
-                    from ProxyRenewServer import ProxyRenewServer
-                    self.actions[opt] = ProxyRenewServer(self.cfg_params)
+                    from CredentialRenew import CredentialRenew
+                    self.actions[opt] = CredentialRenew(self.cfg_params)
                 else:
                     msg = "The option [-renewProxy] can be used only with the server modality!"
                     raise CrabException(msg)
