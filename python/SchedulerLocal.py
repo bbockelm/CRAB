@@ -1,7 +1,7 @@
 from Scheduler import Scheduler
 from crab_exceptions import *
 from crab_logger import Logger
-from crab_util import getLocalDomain 
+from crab_util import getLocalDomain, uniqueTaskName
 import common
 from PhEDExDatasvcInfo import PhEDExDatasvcInfo
 
@@ -22,8 +22,6 @@ class SchedulerLocal(Scheduler) :
         self.res = cfg_params.get(name+'.resource',None)
 
         if (cfg_params.has_key(self.name()+'.env_id')): self.environment_unique_identifier = cfg_params[self.name()+'.env_id']
-
-        self._taskId=str("_".join(common._db.queryTask('name').split('_')[:-1]))
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
@@ -69,6 +67,7 @@ class SchedulerLocal(Scheduler) :
         """
         Returns part of a job script which does scheduler-specific work.
         """
+        taskId = uniqueTaskName(common._db.queryTask('name'))
         if not self.environment_unique_identifier:
             raise CrabException('environment_unique_identifier not set')
 
@@ -94,7 +93,7 @@ class SchedulerLocal(Scheduler) :
 
         txt += 'SyncGridJobId=`echo '+self.environment_unique_identifier+'`\n'
         txt += 'MonitorJobID=`echo ${NJob}_${SyncGridJobId}`\n'
-        txt += 'MonitorID=`echo ' + self._taskId + '`\n'
+        txt += 'MonitorID=`echo ' + taskId + '`\n'
 
         txt += 'echo "MonitorJobID=`echo $MonitorJobID`" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'echo "SyncGridJobId=`echo $SyncGridJobId`" | tee -a $RUNTIME_AREA/$repo \n'

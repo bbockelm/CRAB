@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.87 2008/12/03 15:03:04 spiga Exp $"
-__version__ = "$Revision: 1.87 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.88 2008/12/05 12:06:50 spiga Exp $"
+__version__ = "$Revision: 1.88 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -125,7 +125,6 @@ class SchedulerGrid(Scheduler):
         libPath=os.path.join(path, "lib", "python")
         sys.path.append(libPath)
 
-        self._taskId       = uniqueTaskName(common._db.queryTask('name'))
         self.jobtypeName   = cfg_params.get('CRAB.jobtype','')
         self.schedulerName = cfg_params.get('CRAB.scheduler','')
 
@@ -176,6 +175,7 @@ class SchedulerGrid(Scheduler):
         """
         Returns part of a job script which does scheduler-specific work.
         """
+        taskId = uniqueTaskName(common._db.queryTask('name'))
         index = int(common._db.nJobs())
         job = common.job_list[index-1]
         jbt = job.type()
@@ -200,7 +200,7 @@ class SchedulerGrid(Scheduler):
 
         txt += 'MonitorJobID=${NJob}_'+self.environment_unique_identifier+'\n'
         txt += 'SyncGridJobId='+self.environment_unique_identifier+'\n'
-        txt += 'MonitorID='+self._taskId+'\n'
+        txt += 'MonitorID='+taskId+'\n'
         txt += 'echo "MonitorJobID=$MonitorJobID" > $RUNTIME_AREA/$repo \n'
         txt += 'echo "SyncGridJobId=$SyncGridJobId" >> $RUNTIME_AREA/$repo \n'
         txt += 'echo "MonitorID=$MonitorID" >> $RUNTIME_AREA/$repo\n'
