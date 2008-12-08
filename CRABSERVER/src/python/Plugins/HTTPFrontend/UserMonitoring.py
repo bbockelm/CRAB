@@ -235,7 +235,7 @@ class TaskLogVisualizer:
             if ended == 'Y':
                 ended = 'Yes'
             elif ended == 'N':
-                ended = 'Not'
+                ended = 'No'
 
             html += "<tr>"
             html += "<td align='left'>%s</td>"%(jobid)
