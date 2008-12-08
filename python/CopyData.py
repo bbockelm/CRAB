@@ -79,9 +79,14 @@ class CopyData(Actor):
                         "source": endpoint,
                         "destinationDir": self.destinationTURL,
                         "inputFileList": InfileList,
-                        "protocol": self.protocol,
-                        "option": '-b -D srmv2  -t 2400 --verbose'
+                        "protocol": self.protocol
                       }  
+        if self.protocol is "srmv2":
+            cmscpConfig.setdefault("option", "-retry_timeout 480000 -retry_num 3")
+        elif self.protocol is "srm-lcg":
+            cmscpConfig.setdefault("option", "-b -D srmv2  -t 2400 --verbose")
+        elif self.protocol is "rfio":
+            pass
 
         results = self.performCopy(cmscpConfig)
      
@@ -150,8 +155,9 @@ class CopyData(Actor):
         call the cmscp class and do the copy
         """
         from cmscp import cmscp
-
         doCopy = cmscp(dict)
+
+        common.logger.message("Starting copy...")
 
         start = time.time()
         results = doCopy.run()
@@ -167,12 +173,11 @@ class CopyData(Actor):
         take the results dictionary and
         print the results 
         '''
-
         for file, dict in results.items() : 
             if file:
                 txt = 'success' 
                 if dict['erCode'] != '0': txt = 'failed'
                 msg = 'Copy %s for file: %s \n'%(txt,file)
                 if txt == 'failed': msg += 'Copy failed because : %s'%dict['reason']
-            common.logger.message( msg )
+                common.logger.message( msg )
         return 

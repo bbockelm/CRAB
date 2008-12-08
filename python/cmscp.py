@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+##!/usr/bin/env python
 
 import sys, os
 from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
@@ -253,6 +253,7 @@ class cmscp:
         if self.debug :
             msg  = '\t(source=%s,  protocol=%s)'%(self.params['source'], self.source_prot)
             msg += '\t(destination=%s,  protocol=%s)'%(self.params['destination'], self.dest_prot)
+            print msg
 
         return Source_SE, Destination_SE
 
@@ -270,9 +271,9 @@ class cmscp:
             return self.updateReport('', '-1', str(ex))
 
         # create remote dir
-        if protocol in ['gridftp','rfio','srmv2']:
+        if Destination_SE.protocol in ['gridftp','rfio','srmv2']:
             try:
-                self.createDir( Destination_SE, protocol )
+                self.createDir( Destination_SE, Destination_SE.protocol )
             except Exception, ex:
                 return self.updateReport('', '60316', str(ex))
 
@@ -447,7 +448,7 @@ class cmscp:
             if self.debug :
                 dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
                 dbgmsg += '\t'+str(ex.output)+'\n'
-                print dbsmsg 
+                print dbgmsg 
             ErCode = '60307'
         except WrongOption, ex:
             msg  = "Problem copying %s file" % filetocopy
