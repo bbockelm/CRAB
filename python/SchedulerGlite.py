@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.63 2008/10/17 10:52:33 slacapra Exp $"
-__version__ = "$Revision: 1.63 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.64 2008/11/08 11:57:03 spiga Exp $"
+__version__ = "$Revision: 1.64 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_logger import Logger
@@ -12,6 +12,7 @@ from crab_util import *
 from GliteConfig import *
 import EdgLoggingInfo
 import common
+from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser
 
 import os, sys, time
 
@@ -59,9 +60,13 @@ class SchedulerGlite(SchedulerGrid):
         """
         Returns string with requirement CE related
         """
+        ceParser = CEBlackWhiteListParser(self.EDG_ce_white_list,
+                                          self.EDG_ce_black_list, common.logger)
         req = ''
+        ce_white_list = []
+        ce_black_list = []
         if self.EDG_ce_white_list:
-            ce_white_list = self.EDG_ce_white_list
+            ce_white_list = ceParser.whiteList()
             tmpCe=[]
             concString = '&&'
             for ce in ce_white_list:
@@ -80,7 +85,7 @@ class SchedulerGlite(SchedulerGrid):
                     req += ") "
 
         if self.EDG_ce_black_list:
-            ce_black_list = self.EDG_ce_black_list
+            ce_black_list = ceParser.blackList()
             tmpCe=[]
             concString = '&&'
             for ce in ce_black_list:
@@ -90,7 +95,7 @@ class SchedulerGlite(SchedulerGrid):
         # requirement added to skip gliteCE
         req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
 
-        return req,self.EDG_ce_white_list,self.EDG_ce_black_list
+        return req, ','.join(ce_white_list), ','.join(ce_black_list)
 
     def se_list(self, dest):
         """
