@@ -184,6 +184,7 @@ class TaskLogVisualizer:
         html = "<html><body><h2>Internal server logging for task: " + str(self.taskname) + "</h2>\n "
         html += '<table cellspacing="10">\n'
 
+        textcolor = ""
         for item in nodiparam:
             if item.attrs.has_key('ev'):
                 html += '<tr><td colspan="2">Event: <b>'+item.attrs.get('ev')+'</b></td></tr>\n'
@@ -192,7 +193,11 @@ class TaskLogVisualizer:
             for key in tags:
                 value = item.attrs.get(key)
                 if key is not 'ev' and value is not None and len(str(value)) > 0:
-                    html += '<tr> <td align="right">'+key+': </td><td>'+value+'</td></tr>\n'
+                    if key in ['exc', 'error']:
+                        textcolor = "<font color='FF0000'>%s<font>"%(value)
+                    else:
+                        textcolor = value
+                    html += '<tr> <td align="right">%s: </td><td>%s</td></tr>\n'%(key,textcolor)
 
         html += "</table>"
         html += "</body>"
@@ -214,7 +219,7 @@ class TaskLogVisualizer:
         html = "<html><body><h2>Staus of task : " + str(self.taskname) + "</h2>\n "
         html += '<table cellspacing="10">\n'
 
-        st = ['Job','Status','Destination','Job_exit_code','Exe_exit_code','Submission Number']
+        st = ['Job','Status','Destination','Job_exit_code','Exe_exit_code','Ended']
         html += "<tr>"
         for s in st:
             html += '<th align="left">%s</b></th>\n'%s
@@ -223,10 +228,14 @@ class TaskLogVisualizer:
         for item in nodiparam:
             status   = item.attrs.get("status")
             site     = item.attrs.get("site")
-            resubmit = item.attrs.get("resubmit")
+            ended    = item.attrs.get("ended")
             jec      = item.attrs.get("job_exit")
             eec      = item.attrs.get("exe_exit")
             jobid    = item.attrs.get("id")
+            if ended == 'Y':
+                ended = 'Yes'
+            elif ended == 'N':
+                ended = 'Not'
 
             html += "<tr>"
             html += "<td align='left'>%s</td>"%(jobid)
@@ -240,7 +249,7 @@ class TaskLogVisualizer:
                 html += "<td align='left'>%s</td>"%(eec)
             else:
                 html += "<td align='left'>&nbsp</td>"
-            html += "<td align='left'>%s</td>"%(resubmit)
+            html += "<td align='left'>%s</td>"%(ended)
             html += "</tr>"
 
         html += "</table>"
