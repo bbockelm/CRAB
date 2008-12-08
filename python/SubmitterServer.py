@@ -104,15 +104,6 @@ class SubmitterServer( Submitter ):
                 msg = "ERROR : Unable to create project destination on the Storage Element \n"
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
-            if self.storage_proto == 'rfio':
-                opt = '777' # REMOVE me 
-                try:
-                    action.setGrant( self.remotedir, opt)
-                except Exception, ex:
-                    common.logger.debug(1, str(ex))
-                    msg = "ERROR : Unable to change permission on the Storage Element \n"
-                    msg +="Project "+ self.taskuuid +" not Submitted \n"
-                    raise CrabException(msg)
 
         ## copy ISB ##
         sbi = SBinterface( loc, seEl )
