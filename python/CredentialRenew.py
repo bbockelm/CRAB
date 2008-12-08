@@ -3,6 +3,7 @@ from crab_util import *
 import common
 import traceback
 from ProdCommon.Credential.CredentialAPI import CredentialAPI
+from SubmitterServer import SubmitterServer
 
 
 class CredentialRenew(Actor):
@@ -20,7 +21,12 @@ class CredentialRenew(Actor):
         """
         """
         common.logger.debug(5, "CredentialRenew::run() called")
-        self.renewer()    
+        ## TEMPORARY FIXME  
+        if self.credentialType == 'Proxy':
+            subServer = SubmitterServer(self.cfg_params, None, "all")
+            subServer.moveProxy()
+        else: 
+            self.renewer()    
         common.logger.message("Credential successfully delegated to the server.\n")
         return
 
