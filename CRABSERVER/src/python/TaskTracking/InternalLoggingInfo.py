@@ -35,6 +35,7 @@ class InternalLoggingInfo:
            import os
            os.remove(pkl)
        except Exception, ex:
+           os.system("rm -f %s"%str(pkl) )
            pass
        return eve
 
