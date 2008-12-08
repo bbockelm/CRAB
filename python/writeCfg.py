@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.13 2008/08/18 15:30:43 ewv Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: writeCfg.py,v 1.14 2008/12/03 17:51:04 ewv Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import sys, getopt
 import imp
@@ -90,6 +90,7 @@ def main(argv) :
     maxEvents  = int(os.environ.get('MaxEvents', '0'))
     skipEvents = int(os.environ.get('SkipEvents','0'))
     firstEvent = int(os.environ.get('FirstEvent','0'))
+    compHEPFirstEvent = int(os.environ.get('CompHEPFirstEvent','0'))
     firstRun   = int(os.environ.get('FirstRun',  '0'))
     nJob       = int(os.environ.get('NJob',      '0'))
 
@@ -133,6 +134,8 @@ def main(argv) :
         inModule.setSkipEvents(skipEvents)
     if firstEvent:
         cmsProcess.source.firstEvent = CfgTypes.untracked(CfgTypes.uint32(firstEvent))
+    if compHEPFirstEvent:
+        cmsProcess.source.CompHEPFirstEvent = CfgTypes.int32(compHEPFirstEvent)
     if inputFiles:
         inputFiles = inputFiles.replace('\\','')
         inputFiles = inputFiles.replace('"','')

@@ -88,7 +88,7 @@ class Cmssw(JobType):
         self.debug_wrapper = cfg_params.get('USER.debug_wrapper',False)
         if self.debug_wrapper: self.debugWrap='--debug'
         ## now the application
-        self.managedGenerators = ['madgraph']
+        self.managedGenerators = ['madgraph','comphep']
         self.generator = cfg_params.get('CMSSW.generator','pythia').lower()
         self.executable = cfg_params.get('CMSSW.executable','cmsRun')
         log.debug(6, "CMSSW::CMSSW(): executable = "+self.executable)
@@ -827,7 +827,11 @@ class Cmssw(JobType):
                 ## pythia first run
                 args.append(str(self.firstRun)+str(i))
             if (self.generator in self.managedGenerators):
-                args.append(str(i*self.eventsPerJob))
+                if (self.generator == 'comphep' and i == 0):
+                    # COMPHEP is brain-dead and wants event #'s like 1,100,200,300
+                    args.append('1')
+                else:
+                    args.append(str(i*self.eventsPerJob))
             self.list_of_args.append(args)
         return
 
@@ -1130,9 +1134,13 @@ class Cmssw(JobType):
                     txt += 'export FirstRun=${args[%s]}\n' % argNum
                     txt += 'echo "FirstRun: <$FirstRun>"\n'
                     argNum += 1
-                if (self.generator in self.managedGenerators):
+                if (self.generator == 'madgraph'):
                     txt += 'export FirstEvent=${args[%s]}\n' % argNum
                     txt += 'echo "FirstEvent:<$FirstEvent>"\n'
+                    argNum += 1
+                elif (self.generator == 'comphep'):
+                    txt += 'export CompHEPFirstEvent=${args[%s]}\n' % argNum
+                    txt += 'echo "CompHEPFirstEvent:<$CompHEPFirstEvent>"\n'
                     argNum += 1
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'

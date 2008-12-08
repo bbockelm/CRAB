@@ -402,8 +402,9 @@ See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserv
 First run to be generated in a generation jobs. Relevant only for no-input workflow.
 
 =item B<generator>
-Name of the generator your MC job is using. Some generators require CRAB to manage SkipEvents, others do not.
-Possible values are madgraph and pythia.
+
+Name of the generator your MC job is using. Some generators require CRAB to skip events, others do not.
+Possible values are pythia, comphep, and madgraph. This will skip events in your generator input file.
 
 =item B<executable>
 
