@@ -31,7 +31,7 @@ class ProxyLife:
         self.ms = MessageService()
         self.ms.registerAs("TaskLifeManager")
 
-        ## preserv proxyes notified for expiring
+        # preserv proxyes notified for expiring
         self.__allproxies = []
 
         ## preserv proxy nitified for cleaning
@@ -125,7 +125,7 @@ class ProxyLife:
         ttdb = TaskStateAPI()
         for task in tasklist:
             uuid = ttdb.getStatusUUIDEmail( task )[1]
-            ttuid = TaskTrackingUtil("0")
+            ttuid = TaskTrackingUtil()
             towrite.append( ttuid.getOriginalTaskName(task, uuid) )
         import time
         filename = "tasklist_"+str(time.time())
@@ -188,14 +188,16 @@ class ProxyLife:
     ###############################################
     ######     PUBLIC CALLABLE METHODS       ######
 
-    def pollProxies(self):
+    def pollProxies(self,credConfig):
         """
         __pollProxies__
 
         loops on the proxies and makes related actions
         """
         logging.info( "Start proxy's polling...." )
-
+        from ProdCommon.Credential.CredentialAPI import CredentialAPI
+        CredAPI = CredentialAPI( credConfig )
+         
         mySession = BossLiteAPI("MySQL", self.bossCfgDB)
         tlapi = TaskLifeAPI()
 
@@ -208,10 +210,12 @@ class ProxyLife:
                 ## get the remaining proxy life time
                 logging.info("Checking proxy [%s]"% str(proxyfull))
                 timeleft = 0
-                cred = None
+              #  cred = None
+                ## DS 
                 try:
-                    cred = Credential( proxyfull )
-                    timeleft = int(cred.checkValidity())
+	            timeleft = CredAPI.getTimeLeft( proxyfull )
+                   # cred = Credential( proxyfull )
+                   # timeleft = int(cred.checkValidity())
                 except Exception, exc:
                     logging.info("Problem checking proxy validity: %s"% str(exc))
                     import traceback
@@ -232,8 +236,9 @@ class ProxyLife:
                             ## append for hand clean
                             allTasks.append(task)
 
-                    if cred != None:
-                        cred.cleanMe()
+	            CredAPI.destroyCredential( proxyfull )
+              #      if cred != None:
+              #          cred.cleanMe()
 
                     ## if not already asked notify the admin to hand-clean
                     if not self.cleanasked(proxyfull):
@@ -273,8 +278,9 @@ class ProxyLife:
         logging.info( "Proxy's polling ended." )
 
 ###########
+"""
 class Credential(object):
-    """Credential class"""
+#    Credential class
 
     def __init__(self, path, minlen = 60*60*24*3):
         if not os.path.exists(path) and path != "/":
@@ -288,6 +294,7 @@ class Credential(object):
         return outp
 
     def checkValidity(self):
+        ### DS     
         proxiescmd = 'voms-proxy-info -timeleft -file ' + str(self._path)
         output = self.executeCommand( proxiescmd )
         return output
@@ -296,4 +303,4 @@ class Credential(object):
         logging.info(self._path)
         self.executeCommand( "rm " + str(self._path) )
         logging.debug("Executed command: " + str("rm " + str(self._path)))
-
+"""
