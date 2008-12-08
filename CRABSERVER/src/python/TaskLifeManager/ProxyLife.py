@@ -210,12 +210,8 @@ class ProxyLife:
                 ## get the remaining proxy life time
                 logging.info("Checking proxy [%s]"% str(proxyfull))
                 timeleft = 0
-              #  cred = None
-                ## DS 
                 try:
 	            timeleft = CredAPI.getTimeLeft( proxyfull )
-                   # cred = Credential( proxyfull )
-                   # timeleft = int(cred.checkValidity())
                 except Exception, exc:
                     logging.info("Problem checking proxy validity: %s"% str(exc))
                     import traceback
@@ -237,9 +233,7 @@ class ProxyLife:
                             allTasks.append(task)
 
 	            CredAPI.destroyCredential( proxyfull )
-              #      if cred != None:
-              #          cred.cleanMe()
-
+                    
                     ## if not already asked notify the admin to hand-clean
                     if not self.cleanasked(proxyfull):
                         self.notifyToClean(allTasks)
@@ -277,30 +271,3 @@ class ProxyLife:
 
         logging.info( "Proxy's polling ended." )
 
-###########
-"""
-class Credential(object):
-#    Credential class
-
-    def __init__(self, path, minlen = 60*60*24*3):
-        if not os.path.exists(path) and path != "/":
-            raise Exception("Credential not found!")
-        self._path = path
-        self._minimumlen = minlen
-
-    def executeCommand(self, command):
-        import commands
-        status, outp = commands.getstatusoutput(command)
-        return outp
-
-    def checkValidity(self):
-        ### DS     
-        proxiescmd = 'voms-proxy-info -timeleft -file ' + str(self._path)
-        output = self.executeCommand( proxiescmd )
-        return output
-
-    def cleanMe(self):
-        logging.info(self._path)
-        self.executeCommand( "rm " + str(self._path) )
-        logging.debug("Executed command: " + str("rm " + str(self._path)))
-"""
