@@ -683,9 +683,9 @@ class TaskTrackingComponent:
         dictionaryReport =  {}
         for job in xrange(1, int(totjobs)+1):
             if job in listsubmit:
-                dictionaryReport.setdefault(job, ["Submitting", "", "", 0, 0, '', 'CS'])
+                dictionaryReport.setdefault(job, ["Submitting", "", "", 0, 0, '', 'CS', '', 'N'])
             else:
-                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'C'])
+                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'C', '', ' '])
         self.prepareReport( taskName, "", "", "", 0, 0, dictionaryReport, int(totjobs), 0, taskstatus )
 
     def singleTaskPoll(self, taskObj, ttdb, taskName, mySession):
