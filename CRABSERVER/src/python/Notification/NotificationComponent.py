@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.21 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.21 2008/09/26 07:35:02 spiga Exp $"
+__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.23 2008/10/31 09:55:17 mcinquil Exp $"
 
 import os
 import socket
@@ -618,8 +618,8 @@ class NotificationComponent:
                     for taskname in taskslist:
                         stringtask += str(taskname) + "\n\t"
   
-                    mailMess = "Your proxy will expires in " + timeMsg + ". You can renew it doing:\n"
-                    mailMess += "\t crab -renewProxy\n\n"
+                    mailMess = "Your credential will expires in " + timeMsg + ". You can renew it doing:\n"
+                    mailMess += "\t crab -renewCredential\n\n"
                     mailMess += "Your active tasks:\n" + stringtask
                     mailMess += "\non the server:\n\t" + self.serverName
                 
@@ -627,7 +627,7 @@ class NotificationComponent:
                     logging.info( txt )
 
                     import socket
-                    completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Expiring Proxy!"\n\n' + mailMess
+                    completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Expiring Credential!"\n\n' + mailMess
                     try:
                         self.mailer.SendMail(emaillist, completeMessage)
                     except RuntimeError, mess:
