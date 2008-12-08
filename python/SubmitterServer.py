@@ -100,8 +100,13 @@ class SubmitterServer( Submitter ):
                 msg +='\t%s'%str(ex)
                 common.logger.debug(1, msg)
             except OperationException, ex:
-                common.logger.debug(1, str(ex))
-                msg = "ERROR : Unable to create project destination on the Storage Element \n"
+                common.logger.debug(1, str(ex.detail))
+                msg = "ERROR: Unable to create project destination on the Storage Element %s\n"%str(ex)
+                msg +="Project "+ self.taskuuid +" not Submitted \n"
+                raise CrabException(msg)
+            except AuthorizationException, ex:
+                common.logger.debug(1, str(ex.detail))
+                msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
 
@@ -114,9 +119,14 @@ class SubmitterServer( Submitter ):
             common.logger.debug(1, "Sending "+ os.path.basename(filetocopy) +" to "+ self.storage_name)
             try:
                 sbi.copy( source, dest)
+            except AuthorizationException, ex:
+                common.logger.debug(1, str(ex.detail))
+                msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
+                msg +="Project "+ self.taskuuid +" not Submitted \n"
+                raise CrabException(msg)
             except Exception, ex:
                 common.logger.debug(1, str(ex))
-                msg = "ERROR : Unable to ship the project to the server \n"
+                msg = "ERROR : Unable to ship the project to the server %s\n"%str(ex)
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
 
@@ -157,6 +167,7 @@ class SubmitterServer( Submitter ):
                     CredAPI.ManualRenewCredential()
                 except Exception, ex:
                     raise CrabException(str(ex))
+
              try:
                  dict = CredAPI.registerCredential('submit') 
              except Exception, err:
