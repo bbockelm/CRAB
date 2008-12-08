@@ -207,8 +207,11 @@ class DBinterface:
         lines=[]
         task = self.getTask()
         if server_mode == 1:
+            # init client server params...
+            CliServerParams(self)       
             headerTask= "Task Id = %-40s " %(task['name'])
             displayReport(self,headerTask,lines)
+            commmon.logger.message(showWebMon(self.server_name))
         if (jid ) or (server_mode == 0):
             for job in task.jobs: 
                 toPrint=''

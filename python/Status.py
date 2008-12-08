@@ -9,7 +9,8 @@ class Status(Actor):
     def __init__(self, *args):
         self.cfg_params = args[0]
         self.xml = self.cfg_params.get("USER.xml_report",'')
-
+        self.server_name = ''
+ 
         return
 
     def run(self):
@@ -22,7 +23,9 @@ class Status(Actor):
 
         self.query()
         self.PrintReport_()
-        self.showWebMon()
+        ## TEMPORARY FIXME Ds
+        msg = showWebMon(self.server_name)
+        common.logger.debug(1, msg)
 
         stop = time.time()
         common.logger.debug(1, "Status Time: "+str(stop - start))
@@ -183,7 +186,3 @@ class Status(Actor):
         if output[-1] == ',' :
             output = output[:-1]
         return output
-
-
-    def showWebMon(self):
-        pass

@@ -591,6 +591,14 @@ def getGZSize(gzipfile):
     f.seek(-4, 2)
     return struct.unpack("<i", f.read())[0] 
 
+def showWebMon(server_name):
+    msg = ''
+    if server_name != '' :  
+        msg += 'You can also check jobs status at: http://%s:8888/logginfo\n'%server_name
+        msg += '\t( Your task name is: %s )\n'%common._db.queryTask('name')
+    return msg
+
+
 ####################################
 if __name__ == '__main__':
     print 'sys.argv[1] =',sys.argv[1]
