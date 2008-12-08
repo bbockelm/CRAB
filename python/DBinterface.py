@@ -211,7 +211,7 @@ class DBinterface:
             CliServerParams(self)       
             headerTask= "Task Id = %-40s " %(task['name'])
             displayReport(self,headerTask,lines)
-            commmon.logger.message(showWebMon(self.server_name))
+            common.logger.message(showWebMon(self.server_name))
         if (jid ) or (server_mode == 0):
             for job in task.jobs: 
                 toPrint=''

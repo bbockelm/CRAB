@@ -1,15 +1,20 @@
 from Actor import *
 from crab_util import *
 import common
+import traceback
 from ProdCommon.Credential.CredentialAPI import CredentialAPI
+
 
 class CredentialRenew(Actor):
 
     def __init__(self, cfg_params):
-
+        self.cfg_params=cfg_params
         self.credentialType = 'Proxy'
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.credentialType = 'Token'
+         
+        # init client server params...
+        CliServerParams(self)       
 
     def run(self):
         """
@@ -42,7 +47,7 @@ class CredentialRenew(Actor):
            except Exception, ex:
                raise CrabException(str(ex))
         try:
-            dict = CredAPI.registerCredential(sub) 
+            dict = CredAPI.registerCredential() 
         except Exception, err:
             common.logger.debug(3, "Registering Credentials : " +str(traceback.format_exc()))
             raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
