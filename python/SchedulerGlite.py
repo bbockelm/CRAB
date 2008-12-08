@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.64 2008/11/08 11:57:03 spiga Exp $"
-__version__ = "$Revision: 1.64 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.65 2008/12/08 17:53:32 ewv Exp $"
+__version__ = "$Revision: 1.65 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_logger import Logger
@@ -94,8 +94,14 @@ class SchedulerGlite(SchedulerGrid):
 
         # requirement added to skip gliteCE
         req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
+        retWL = ','.join(ce_white_list)
+        retBL = ','.join(ce_black_list)
+        if not retWL:
+            retWL = None
+        if not retBL:
+            retBL = None
 
-        return req, ','.join(ce_white_list), ','.join(ce_black_list)
+        return req, retWL, retBL
 
     def se_list(self, dest):
         """
