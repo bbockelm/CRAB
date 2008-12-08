@@ -58,7 +58,9 @@ class PhEDExDatasvcInfo:
             raise CrabException(msg)
         self.sched = common.scheduler.name().upper() 
         self.protocol = self.srm_version
-        if self.sched in ['CAF','LSF']:self.protocol = 'direct'
+        if self.sched in ['CAF','LSF']:
+            self.protocol = 'direct'
+            self.SE = {'CAF':'caf.cern.ch', 'LSF':''}
 
         self.forced_path = '/store/user/'
         if not self.usePhedex: 
@@ -90,7 +92,7 @@ class PhEDExDatasvcInfo:
             if self.protocol == 'direct':
                 query=endpoint
                 SE_PATH = endpoint
-                SE = self.sched
+                SE = self.SE[self.sched]
             else: 
                 url = 'http://'+endpoint.split('://')[1]
                 # python > 2.4
