@@ -66,7 +66,7 @@ class Status(Actor):
         if len(ended) > 0:
             header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
         else:
-            header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
+            header+= "%-6s %-18s %-36s %-13s %-16s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
 
         if display: displayReport(self,header,toPrint,self.xml)
 
