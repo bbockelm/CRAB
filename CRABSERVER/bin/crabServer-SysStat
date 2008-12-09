@@ -332,7 +332,6 @@ def RnDLaunch(target):
     HTTPFeDir = getComponentDir("HTTPFrontend")
     awkPRGfilename="%s/sensors/%s-awk.prg"%(HTTPFeDir,target)
     FILE = open(awkPRGfilename,"w")
-    #FILE.writelines(awkPRG[target])
     FILE.writelines(shell['select'][target])
     FILE.close()
     awkCMD = ['awk', "--file", awkPRGfilename]
@@ -350,7 +349,7 @@ def RnDLaunch(target):
 def Rstartup():
     HTTPFeDir = getComponentDir("HTTPFrontend")
     for resource in List['R']:
-        running, spid, devs = isSensorRunning(resource) # isSensorRunning(All['R'][resource])
+        running, spid, devs = isSensorRunning(resource) 
         if running:
             print "sensor for resource %s (sar %s) \033[0;33malready running\033[m with pid %s" % (resource,All['R'][resource],spid)
         else:
@@ -425,10 +424,10 @@ def Sstatus():
             if service:                 # if search matched (search return None or a MatchObject)
                 service=service.group() # return what is matched, i.e. the service process name itself
                 if service in servicesL:
-                    print "Running sensor for%8s, \033[0;32m%-19s\033[m:%8s"%(tpid,servicesK[service],spid) #,service)
+                    print "Running sensor for%8s, \033[0;32m%-19s\033[m:%8s"%(tpid,servicesK[service],spid) 
                     servicesL.remove(service)
     for service in servicesL:
-        print "WARN:  sensor  for service: \033[0;31m%-18s\033[m : NOT RUNNING"%(servicesK[service]) #,service)
+        print "WARN:  sensor  for service: \033[0;31m%-18s\033[m : NOT RUNNING"%(servicesK[service]) 
 
 def Rstatus():
     resourcesL = List['R'][:] 
@@ -554,7 +553,7 @@ def Dshutdown():
                 disksL.remove(dev)
                 break
     for disk in disksL:
-        if resource in All['D'].keys():
+        if disk in All['D'].keys():
             print "WARN: iostat sensor for:    %-19s: NOT running"%disk
 
 
