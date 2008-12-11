@@ -374,8 +374,8 @@ class PlotByWMS:
 
     def index(self, fromy = "", fromm ="", fromd = "", toy = "", tom = "", tod = ""):
 
-        fromdata = fromy+"-"+fromm+"-"+fromd
-        todata   = toy+"-"+tom+"-"+tod
+        fromdata = fromy+"-"+fromm+"-"+fromd+" 00:00:00"
+        todata   = toy+"-"+tom+"-"+tod+" 23:59:59"
         data = API.jobsByWMS(fromdata, todata)
         dictofdict = {}
         for wms,status,count in data:
