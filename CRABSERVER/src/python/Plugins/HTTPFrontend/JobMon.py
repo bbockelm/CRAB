@@ -89,7 +89,7 @@ class JobMonitor:
         html += "<table>\n"
         html += "<br/><br/>"
         html += '<form action=\"%s"\ method="get">' % (self.jobwms)
-        html += '<i>Status per Destination Sites</i>'
+        html += '<i>Status per service (WMS)</i>'
         html += '&nbsp from &nbsp<select name="fromy" style="width:80px">%s</select>'%years
         html += '<select name="fromm" style="width:80px">%s</select>'%months
         html += '<select name="fromd" style="width:80px">%s</select>'%days
@@ -364,7 +364,7 @@ class PlotByWMS:
 
         pngfile = os.path.join(self.workingDir, "JobStatusByWMS_%s_.png"%str(wms))
         pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
-        metadata = {'title':'Job Status for [%s] WMS'%str(wms)}
+        metadata = {'title':'Job Status for servce [%s]'%str(wms)}
         Graph = PieGraph()
         coords = Graph( data, pngfile, metadata )
 
