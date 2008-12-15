@@ -31,7 +31,7 @@ class Boss:
         server_check =  self.cfg_params.get("CRAB.server_name",None)
         if self.deep_debug == '1' and server_check != None :
             msg =  'You are asking the deep_debug, but it cannot works using the server.\n'
-            msg =+ '\t The functionality will not have effect.'
+            msg += '\t The functionality will not have effect.'
             common.logger.message(msg) 
         self.schedulerName =  self.cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
         self.rb_param_file=''
