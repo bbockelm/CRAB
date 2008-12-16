@@ -94,10 +94,16 @@ class Crab:
 
         self.processOptions_(opts)
 
-        srvName = opts.get('-server_name', None)
-        if srvName == 'None':
-            srvName = None
-        self.UseServer = int( srvName is not None ) # cast bool to int
+        srvName = 'default'
+        if opts.has_key('-use_server'):
+            self.UseServer = opts['-use_server']
+            if self.UseServer:
+                opts['-server_name']='default'
+        if opts.has_key('-server_name'):
+            srvName = opts.get('-server_name', None)
+            if srvName == 'None':
+                srvName = None
+            self.UseServer = int( srvName is not None ) # cast bool to int
 
         common._db = DBinterface(self.cfg_params)
 
@@ -304,6 +310,10 @@ class Crab:
                 continue
 
             elif ( opt == '-server_name' ):
+                # TODO
+                pass
+
+            elif ( opt == '-use_server' ):
                 # TODO
                 pass
 

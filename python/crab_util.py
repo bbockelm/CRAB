@@ -356,24 +356,26 @@ def CliServerParams(self):
     Init client-server interactions
     """
     self.srvCfg = {}
-    try:
+    if self.cfg_params.has_key('CRAB.use_server'):
+        self.srvCfg = ServerConfig('default').config()
+    elif self.cfg_params.has_key('CRAB.server_name'):
         self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
-
-        self.server_admin = str(self.srvCfg['serverAdmin'])
-        self.server_dn = str(self.srvCfg['serverDN'])
-
-        self.server_name = str(self.srvCfg['serverName'])
-        self.server_port = int(self.srvCfg['serverPort'])
-
-        self.storage_name = str(self.srvCfg['storageName'])
-        self.storage_path = str(self.srvCfg['storagePath'])
-        self.storage_proto = str(self.srvCfg['storageProtocol'])
-        self.storage_port = str(self.srvCfg['storagePort'])
-    except KeyError:
-        msg = 'No server selected or port specified.'
-        msg = msg + 'Please specify a server in the crab cfg file'
+    else:
+        msg = 'No server selected or port specified.\n'
+        msg += 'Please specify a server in the crab cfg file'
         raise CrabException(msg)
         return
+
+    self.server_admin = str(self.srvCfg['serverAdmin'])
+    self.server_dn = str(self.srvCfg['serverDN'])
+
+    self.server_name = str(self.srvCfg['serverName'])
+    self.server_port = int(self.srvCfg['serverPort'])
+
+    self.storage_name = str(self.srvCfg['storageName'])
+    self.storage_path = str(self.srvCfg['storagePath'])
+    self.storage_proto = str(self.srvCfg['storageProtocol'])
+    self.storage_port = str(self.srvCfg['storagePort'])
 
 def bulkControl(self,list):
     """

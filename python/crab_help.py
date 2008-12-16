@@ -329,9 +329,14 @@ The type of the job to be executed: I<cmssw> jobtypes are supported
 The scheduler to be used: I<glitecoll> is the more efficient grid scheduler and should be used. Other choice are I<glite>, same as I<glitecoll> but without bulk submission (and so slower) or I<condor_g> (see specific paragraph) or I<edg> which is the former Grid scheduler, which will be dismissed in some future
 From version 210, also local scheduler are supported, for the time being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities.
 
+=item B<use_server>
+
+To use the server for job handling (recommended) 0=no (default), 1=true. The server to be used will be found automatically from a list of available ones: it can also be specified explicitly by using I<server_name> (see below)
+
 =item B<server_name>
 
-To use the CRAB-server support it is needed to fill this key with server name as <Server_DOMAIN> (e.g. cnaf,fnal). If I<server_name=None> crab works in standalone way.
+To use the CRAB-server support it is needed to fill this key with server name as <Server_DOMAIN> (e.g. cnaf,fnal). If this is set, I<use_server> is set to true automatically.
+If I<server_name=None> crab works in standalone way, same as using I<use_server=0> and no I<server_name>.
 The server available to users can be found from CRAB web page.
 
 =back
