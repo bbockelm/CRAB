@@ -323,6 +323,7 @@ class Cmssw(JobType):
         try:
             dataloc=DataLocation.DataLocation(self.filesbyblock.keys(),cfg_params)
             dataloc.fetchDLSInfo()
+
         except DataLocation.DataLocationError , ex:
             msg = 'ERROR ***: failed Data Location in DLS \n %s '%ex.getErrorMessage()
             raise CrabException(msg)
@@ -860,6 +861,9 @@ class Cmssw(JobType):
 
         njobs = self.total_number_of_jobs
         arglist = self.list_of_args
+        if njobs==0:
+            raise CrabException("Ask to split "+str(njobs)+" jobs: aborting")
+
         # create the empty structure
         for i in range(njobs):
             jobParams.append("")
@@ -974,7 +978,6 @@ class Cmssw(JobType):
             if not self.pset is None:
                 cfg_file = common.work_space.jobDir()+self.configFilename()
                 tar.add(cfg_file,self.configFilename())
-                common.logger.debug(5,"File added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
 
             ## Add ProdCommon dir to tar
@@ -984,27 +987,24 @@ class Cmssw(JobType):
                            'ProdCommon/Core', 'ProdCommon/MCPayloads', 'IMProv', 'ProdCommon/Storage']
             for file in neededStuff:
                 tar.add(prodcommonPath+file,prodcommonDir+file)
-            common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             ##### ML stuff
             ML_file_list=['report.py', 'DashboardAPI.py', 'Logger.py', 'ProcInfo.py', 'apmon.py']
             path=os.environ['CRABDIR'] + '/python/'
             for file in ML_file_list:
                 tar.add(path+file,file)
-            common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             ##### Utils
             Utils_file_list=['parseCrabFjr.py','writeCfg.py', 'fillCrabFjr.py','cmscp.py']
             for file in Utils_file_list:
                 tar.add(path+file,file)
-            common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             ##### AdditionalFiles
             tar.dereference=True
             for file in self.additional_inbox_files:
                 tar.add(file,string.split(file,'/')[-1])
             tar.dereference=False
-            common.logger.debug(5,"Files added to "+self.tgzNameWithPath+" : "+str(tar.getnames()))
+            common.logger.debug(5,"Files in "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
         except IOError, exc:
