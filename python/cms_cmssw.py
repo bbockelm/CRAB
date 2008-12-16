@@ -330,6 +330,12 @@ class Cmssw(JobType):
 
 
         sites = dataloc.getSites()
+        if len(sites)==0:
+            msg = 'ERROR ***: no location for any of the blocks of this dataset: \n %s \n'%datasetPath
+            msg += "Maybe the dataset is located only at T1's, where analysis jobs are not allowed\n"
+            msg += "Please check DataDiscovery page https://cmsweb.cern.ch/dbs_discovery/\n"
+            raise CrabException(msg)
+
         allSites = []
         listSites = sites.values()
         for listSite in listSites:
