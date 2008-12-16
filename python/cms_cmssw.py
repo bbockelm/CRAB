@@ -257,6 +257,7 @@ class Cmssw(JobType):
                     # Reset later for data jobs by writeCFG which does all modifications
                     PsetEdit.addCrabFJR(self.fjrFileName) # FUTURE: Job report addition not needed by CMSSW>1.5
                     PsetEdit.maxEvent(self.eventsPerJob)
+                    PsetEdit.skipEvent(0)
                     PsetEdit.psetWriter(self.configFilename())
                     ## If present, add TFileService to output files
                     if not int(cfg_params.get('CMSSW.skip_TFileService_output',0)):

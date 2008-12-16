@@ -55,6 +55,13 @@ class PsetManipulator:
         self.cfg.maxEvents.setMaxEventsInput(maxEv)
         return
 
+    def skipEvent(self, skipEv):
+        """
+        Set max event in the standalone untracked module
+        """
+        self.cfg.inputSource.setSkipEvents(skipEv)
+        return
+
     def psetWriter(self, name):
         """
         Write out modified CMSSW.cfg
