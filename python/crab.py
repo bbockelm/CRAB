@@ -95,6 +95,7 @@ class Crab:
         self.processOptions_(opts)
 
         srvName = 'default'
+        self.UseServer = False
         if opts.has_key('-use_server'):
             self.UseServer = opts['-use_server']
             if self.UseServer:

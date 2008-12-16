@@ -73,7 +73,7 @@ class DLSInfo:
 
     def getReplicasBulk(self,fileblocks):
         """
-        query DLS to g    et replicas
+        query DLS to get replicas
         """               
         ##
         try:
