@@ -19,7 +19,6 @@ class ServerConfig:
             # get a list of available servers 
             serverListFileName ='AvalableServerList'
             serverListFile = self.getConfig_(serverListFileName)
-            #f = urllib.urlopen('http://www.pd.infn.it/~lacaprar/Computing/'+serverListFileName)
             # parse the localCfg file
             f = open(serverListFile, 'r')
             tmp = f.readlines()
@@ -28,7 +27,7 @@ class ServerConfig:
                 msg = 'List of avalable Server '+serverListFileName+' from '+self.url+' is empty\n'
                 msg += 'Please report to CRAB feedback hypernews'
                 raise CrabException(msg)
-            # clean up empty lines and "\n"
+            # clean up empty lines and comments
             serverList=[]
             [serverList.append(string.strip(it)) for it in tmp if (it.strip() and not it.strip()[0]=="#")]
 
