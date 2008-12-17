@@ -91,7 +91,7 @@ class cmscp:
         lcgOpt={'srmv1':'-b -D srmv1  -t 2400 --verbose',
                 'srmv2':'-b -D srmv2  -t 2400 --verbose'}
         srmOpt={'srmv1':' -report ./srmcp.report -retry_timeout 480000 -retry_num 3 -streams_num=1 ',
-                'srmv2':' -report ./srmcp.report -retry_timeout 480000 -retry_num 3 '}
+                'srmv2':' -report=./srmcp.report -retry_timeout=480000 -retry_num=3 '}
         rfioOpt=''
 
         supported_protocol = None
