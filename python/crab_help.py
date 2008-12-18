@@ -263,7 +263,7 @@ Check if the job can find compatible resources. It is equivalent of doing I<edg-
 
 =item B<-printId [range]>
 
-Just print the job identifier, which can be the SID (Grid job identifier) of the job(s) or the taskId if you are using CRAB with the server or local scheduler Id.
+Just print the job identifier, which can be the SID (Grid job identifier) of the job(s) or the taskId if you are using CRAB with the server or local scheduler Id. If [range] is "full", the the SID of all the jobs are printed, also in the case of submission with server.
 
 =item B<-printJdl [range]>
 
