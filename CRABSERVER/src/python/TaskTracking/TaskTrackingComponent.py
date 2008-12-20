@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.130 2008/12/05 11:08:55 spiga Exp $"
-__version__ = "$Revision: 1.130 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.134 2008/12/08 21:41:48 mcinquil Exp $"
+__version__ = "$Revision: 1.134 $"
 
 import os
 import time
@@ -661,7 +661,7 @@ class TaskTrackingComponent:
                     if jobbe['jobId'] in jobList:
                         if jobbe.runningJob['status'] in ["D","E", "DA", "SD"]:
                             jobbe.runningJob['status'] = "UE"
-                            if jobbe.runningJob['processStatus'] in ["handled", "not handled"]:
+                            if jobbe.runningJob['processStatus'] in ["created", "handled", "not handled"]:
                                 jobbe.runningJob['processStatus'] = "output_requested"
                 mySession.updateDB(taskObj)
                 self.singleTaskPoll(taskObj, TaskStateAPI(), taskName, mySession)
@@ -913,14 +913,15 @@ class TaskTrackingComponent:
                          stato, joboff, resubmitting, sId]
             dictStateTot.setdefault(job, vect)
 
-            if stato == "E":
+            if stato in ["E","UE"]:
                 if (eec == "0" or eec == "" or eec == "NULL") and jec == "0":
                     dictReportTot['JobSuccess'] += 1
                     dictStateTot[job][3] = 1
                     dictStateTot[job][8] = 'Y'
                 elif not resubmitting:
                     dictReportTot['JobFailed'] += 1
-                    dictStateTot[job][0] = "Done (Failed)"
+                    if stato == "E":
+                        dictStateTot[job][0] = "Done (Failed)"
                     dictStateTot[job][3] = 1
                     dictStateTot[job][8] = 'Y'
                 else:
