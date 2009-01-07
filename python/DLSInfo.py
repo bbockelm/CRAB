@@ -39,6 +39,8 @@ class DLSInfo:
         self.cfg_params = cfg_params
         self.showCAF = False
 
+        self.showProd = self.cfg_params.get('CMSSW.show_prod', False) 
+
         phedexURL='http://cmsweb.cern.ch/phedex/datasvc/xml/prod/'
         global_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
         caf_url = "http://cmsdbsprod.cern.ch/cms_dbs_caf_analysis_01/servlet/DBSServlet"
@@ -69,7 +71,6 @@ class DLSInfo:
             msg = "Error when binding the DLS interface: %s  Server %s"%(str(inst),endpoint)
             #print msg
             raise CrabException(msg)
- 
 
     def getReplicasBulk(self,fileblocks):
         """
@@ -77,7 +78,7 @@ class DLSInfo:
         """               
         ##
         try:
-            entryList=self.api.getLocations(fileblocks,longList=True,showCAF=self.showCAF)
+            entryList=self.api.getLocations(fileblocks,longList=True,showCAF=self.showCAF,showProd=self.showProd)
         except dlsApi.DlsApiError, inst:
             raise DLSNoReplicas(fileblocks)
         results = {} 
