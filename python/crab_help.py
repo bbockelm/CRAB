@@ -18,28 +18,28 @@ def usage():
 
 The most useful general options (use '-h' to get complete help):
 
-  -create                   -- Create all the jobs.
-  -submit n                 -- Submit the first n available jobs. Default is all.
-  -status [range]           -- check status of all jobs.
-  -getoutput|-get [range]   -- get back the output of all jobs: if range is defined, only of selected jobs.
-  -extend                   -- Extend an existing task to run on new fileblocks if there.
-  -publish [dbs_url]        -- after the getouput, publish the data user in a local DBS instance.
-  -kill [range]             -- kill submitted jobs.
-  -resubmit [range]         -- resubmit killed/aborted/retrieved jobs.
-  -copyData [range]         -- copy locally the output stored on remote SE.
-  -renewCredential          -- renew credential on the server.
-  -clean                    -- gracefully cleanup the directory of a task.
-  -testJdl [range]          -- check if resources exist which are compatible with jdl.
-  -list [range]             -- show technical job details.
-  -postMortem [range]       -- provide a file with information useful for post-mortem analysis of the jobs.
-  -printId [range]          -- print the job SID or Task Unique ID while using the server.
-  -createJdl [range]        -- provide files with a complete Job Description (JDL).
-  -validateCfg [fname]      -- parse the ParameterSet using the framework's Python API.
-  -continue|-c [dir]        -- Apply command to task stored in [dir].
-  -h [format]               -- Detailed help. Formats: man (default), tex, html, txt.
-  -cfg fname                -- Configuration file name. Default is 'crab.cfg'.
-  -debug N                  -- set the verbosity level to N.
-  -v                        -- Print version and exit.
+  -create                    -- Create all the jobs.
+  -submit n                  -- Submit the first n available jobs. Default is all.
+  -status [range]            -- check status of all jobs.
+  -getoutput|-get [range]    -- get back the output of all jobs: if range is defined, only of selected jobs.
+  -extend                    -- Extend an existing task to run on new fileblocks if there.
+  -publish [dbs_url]         -- after the getouput, publish the data user in a local DBS instance.
+  -kill [range]              -- kill submitted jobs.
+  -resubmit [range]          -- resubmit killed/aborted/retrieved jobs.
+  -copyData [range]          -- copy locally the output stored on remote SE.
+  -renewCredential           -- renew credential on the server.
+  -clean                     -- gracefully cleanup the directory of a task.
+  -match|-testJdl [range]    -- check if resources exist which are compatible with jdl.
+  -list [range]              -- show technical job details.
+  -postMortem [range]        -- provide a file with information useful for post-mortem analysis of the jobs.
+  -printId [range]           -- print the job SID or Task Unique ID while using the server.
+  -createJdl [range]         -- provide files with a complete Job Description (JDL).
+  -validateCfg [fname]       -- parse the ParameterSet using the framework's Python API.
+  -continue|-c [dir]         -- Apply command to task stored in [dir].
+  -h [format]                -- Detailed help. Formats: man (default), tex, html, txt.
+  -cfg fname                 -- Configuration file name. Default is 'crab.cfg'.
+  -debug N                   -- set the verbosity level to N.
+  -v                         -- Print version and exit.
 
   "range" has syntax "n,m,l-p" which correspond to [n,m,l,l+1,...,p-1,p] and all possible combination
 
@@ -256,7 +256,7 @@ Copy locally (on current working directory) the output previously stored on remo
 
 If using the server modality, this command allows to delegate a valid credential (proxy/token) to the server associated with the task.
 
-=item B<-testJdl [range]>
+=item B<-match|-testJdl [range]>
 
 Check if the job can find compatible resources. It is equivalent of doing I<edg-job-list-match> on edg.
 
