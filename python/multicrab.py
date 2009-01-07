@@ -116,9 +116,10 @@ class MultiCrab:
 
         # Load cfg-file
 
+        cfg_params = {}
         if self.cfg_fname != None:
             if os.path.exists(self.cfg_fname):
-                self.cfg_params = self.loadMultiConfig(self.cfg_fname)
+                cfg_params = self.loadMultiConfig(self.cfg_fname)
                 pass
             else:
                 msg = 'cfg-file '+self.cfg_fname+' not found.'
@@ -129,12 +130,12 @@ class MultiCrab:
         # process the [CRAB] section
 
         lhp = len('MULTICRAB.')
-        for k in self.cfg_params.keys():
+        for k in cfg_params.keys():
             if len(k) >= lhp and k[:lhp] == 'MULTICRAB.':
                 opt = '-'+k[lhp:]
                 if len(opt) >= 3 and opt[:3] == '-__': continue
                 if opt not in opts.keys():
-                    opts[opt] = self.cfg_params[k]
+                    opts[opt] = cfg_params[k]
                     pass
                 pass
             pass
@@ -142,19 +143,19 @@ class MultiCrab:
         self.cfg_params_dataset = {}
         common_opts = {}
         # first get common sections
-        for sec in self.cfg_params:
+        for sec in cfg_params:
             if sec in ['MULTICRAB']:
-                cfg_common=self.cfg_params[sec]
+                cfg_common=cfg_params[sec]
                 continue
             if sec in ['COMMON']:
-                common_opts=self.cfg_params[sec]
+                common_opts=cfg_params[sec]
                 continue
             pass
 
         # then Dataset's specific
-        for sec in self.cfg_params:
+        for sec in cfg_params:
             if sec in ['MULTICRAB', 'COMMON']: continue
-            self.cfg_params_dataset[sec]=self.cfg_params[sec]
+            self.cfg_params_dataset[sec]=cfg_params[sec]
             # add common to all dataset
             for key in common_opts:
                 self.cfg_params_dataset[sec][key]=common_opts[key]
@@ -163,11 +164,11 @@ class MultiCrab:
         self.cfg=cfg_common['cfg']
 
         # read crab.cfg file and search for storage_path
-        cfg_params = loadConfig(self.cfg,{})
-        if self.cfg_params.has_key("COMMON"):
-            self.user_remote_dir = self.cfg_params["COMMON"].get("user.user_remote_dir", cfg_params.get("USER.user_remote_dir",None))
+        crab_cfg_params = loadConfig(self.cfg,{})
+        if cfg_params.has_key("COMMON"):
+            self.user_remote_dir = cfg_params["COMMON"].get("user.user_remote_dir", crab_cfg_params.get("USER.user_remote_dir",None))
         else:
-            self.user_remote_dir = cfg_params.get("USER.user_remote_dir",None)
+            self.user_remote_dir = crab_cfg_params.get("USER.user_remote_dir",None)
         return
 
     def loadMultiConfig(self, file):
@@ -203,9 +204,11 @@ class MultiCrab:
                 options["-USER.user_remote_dir"]=self.user_remote_dir+"/"+sec
             # Input options (command)
             for opt in self.opts:
+                # remove -cfg
+                if opt=='-cfg': continue
                 options[opt]=self.opts[opt]
             try:
-                #print options
+                # print options
                 crab = Crab(options)
                 crab.run()
                 common.apmon.free()
