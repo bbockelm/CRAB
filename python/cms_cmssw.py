@@ -235,14 +235,15 @@ class Cmssw(JobType):
         if self.datasetPath:
             blockSites = self.DataDiscoveryAndLocation(cfg_params)
         #DBSDLS-end
-
+     
+        noBboundary = int(cfg_params.get('CMSSW.no_block_boundary',0))
         ## Select Splitting
         if self.selectNoInput:
             if self.pset == None:
                 self.jobSplittingForScript()
             else:
                 self.jobSplittingNoInput()
-        elif (cfg_params.get('CMSSW.noblockboundary',0)):
+        elif noBboundary == 1:
             self.jobSplittingNoBlockBoundary(blockSites)
         else:
             self.jobSplittingByBlocks(blockSites)
