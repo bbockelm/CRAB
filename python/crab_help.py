@@ -422,7 +422,11 @@ The URL of the DBS query page. For expert only.
 
 =item B<show_prod>
 
-To enable CRAB to show data hosted on Tier1s sites specify I<show_prod> = True. By default those data are masked. 
+To enable CRAB to show data hosted on Tier1s sites specify I<show_prod> = 1. By default those data are masked. 
+
+=item B<no_block_boundary>
+
+To remove fileblock boundaries in job splitting specify I<no_block_boundary> = 1.  
 
 =back
 
