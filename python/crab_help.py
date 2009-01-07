@@ -420,6 +420,10 @@ The name of the executable to be run on remote WN. The default is cmsrun. The ex
 
 The URL of the DBS query page. For expert only.
 
+=item B<show_prod>
+
+To enable CRAB to show data hosted on Tier1s sites specify I<show_prod> = True. By default those data are masked. 
+
 =back
 
 B<[USER]>
