@@ -203,12 +203,22 @@ class Scheduler :
         """ Return the number of differente sites matching the actual requirements """
         start = time.time()
         tags=self.tags()
+        ####  fede #####
+        whiteL=[]
+        blackL=[]
 
         if len(dest)!=0: dest = self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')
-
-        whiteL=self.ce_list()[1]
-        blackL=self.ce_list()[2]
-
+       
+        ###  fede: whiteList is a string and not a list!! ### 
+        whiteList=self.ce_list()[1]
+        if whiteList != None:  
+            [whiteL.append(x.strip()) for x in whiteList.split(',')]
+        
+        ###  fede: blackList is a string and not a list!! ### 
+        blackList=self.ce_list()[2]
+        if blackList != None:
+            [blackL.append(x.strip()) for x in blackList.split(',')]
+            
         sites= self.boss().listMatch(tags, dest , whiteL, blackL, full)
         stop = time.time()
 
