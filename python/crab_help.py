@@ -239,7 +239,6 @@ Publish user output in a local DBS instance after retrieving of output. By defau
 =item B<-resubmit [range]>
 
 Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax.
-The resubmit option can be used only with CRAB without server. For the server this option will be implemented as soon as possible
 
 =item B<-extend>
 
