@@ -38,8 +38,10 @@ class DLSInfo:
     def __init__(self, type, cfg_params):
         self.cfg_params = cfg_params
         self.showCAF = False
+        self.showProd = False
 
-        self.showProd = self.cfg_params.get('CMSSW.show_prod', False) 
+        showProd = int(self.cfg_params.get('CMSSW.show_prod', 0)) 
+        if showProd == 1: self.showProd = True
 
         phedexURL='http://cmsweb.cern.ch/phedex/datasvc/xml/prod/'
         global_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
