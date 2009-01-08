@@ -13,6 +13,9 @@ class JdlWriter( Actor ):
         seWhiteList = cfg_params.get('EDG.se_white_list',[])
         seBlackList = cfg_params.get('EDG.se_black_list',[])
         self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
+        self.datasetpath=self.cfg_params['CMSSW.datasetpath']
+        if string.lower(self.datasetpath)=='none':
+            self.datasetpath = None
 
         return
 
@@ -48,7 +51,7 @@ class JdlWriter( Actor ):
         count=0
         for distDest in distinct_dests: 
             dest = self.blackWhiteListParser.cleanForBlackWhiteList(distDest)
-            if not dest: 
+            if not dest and self.datasetpath: 
                 common.logger.message('No destination available: will not create jdl \n' )
                 continue
             all_jobs.append(common._db.queryAttrJob({'dlsDestination':distDest},'jobId'))
