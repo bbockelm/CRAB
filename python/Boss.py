@@ -114,20 +114,7 @@ class Boss:
         """
         try:
             ## passing list for white-listing and black-listing
-            blackList = None
-            if blackL != None:
-                if blackL.find(",") != -1:
-                    blackList = [sitex for sitex in blackL.split(',') if len(sitex) > 0]
-                else:
-                    blackList = [blackL]
-            whiteList = None
-            if whiteL != None:
-                if whiteL.find(",") != -1:
-                    whiteList = [sitex for sitex in whiteL.split(',') if len(sitex) > 0]
-                else:
-                    whiteList = [whiteL]
-            ## ##
-            sites = self.schedSession().lcgInfo(tags, seList=dest, blacklist=blackList, whitelist=whiteList, full=isFull)
+            sites = self.schedSession().lcgInfo(tags, seList=dest, blacklist=blackL, whitelist=whiteL, full=isFull)
         except SchedulerError, err :
             common.logger.message("Warning: List Match operation failed with message: " +str(err))
             common.logger.debug(3, "List Match failed: " +str(traceback.format_exc()))
