@@ -23,9 +23,15 @@ class Checker(Actor):
         
         task=common._db.getTask(self.nj_list)
         allMatch={}
+        # datasetpath=self.cfg_params['CMSSW.datasetpath']
+        # if string.lower(datasetpath)=='none':
+        #     datasetpath = None
+
         for job in task.jobs:
             id_job = job['jobId'] 
-            dest = self.blackWhiteListParser.cleanForBlackWhiteList(job['dlsDestination'])
+            jobDest = job['dlsDestination']
+            if not jobDest: jobDest=[]
+            dest = self.blackWhiteListParser.cleanForBlackWhiteList(jobDest, True)
 
             if dest in allMatch.keys():
                 common.logger.message("As previous job: "+str(allMatch[dest]))
