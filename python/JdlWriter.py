@@ -9,6 +9,11 @@ class JdlWriter( Actor ):
     def __init__(self, cfg_params, jobs):
         self.cfg_params = cfg_params
         self.nj_list = jobs 
+        from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
+        seWhiteList = cfg_params.get('EDG.se_white_list',[])
+        seBlackList = cfg_params.get('EDG.se_black_list',[])
+        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
+
         return
 
     def run(self):
@@ -42,6 +47,10 @@ class JdlWriter( Actor ):
         all_jobs=[] 
         count=0
         for distDest in distinct_dests: 
+            dest = self.blackWhiteListParser.cleanForBlackWhiteList(distDest)
+            if not dest: 
+                common.logger.message('No destination available: will not create jdl \n' )
+                continue
             all_jobs.append(common._db.queryAttrJob({'dlsDestination':distDest},'jobId'))
             sub_jobs_temp=[]
             for i in self.nj_list:
@@ -55,6 +64,9 @@ class JdlWriter( Actor ):
         """
         Materialize JDL into file  
         """
+        if len(list)==0:
+            common.logger.message('No destination available for any job: will not create jdl \n' )
+        
         task = common._db.getTask() 
         c1 = 1
         c2 = 1
