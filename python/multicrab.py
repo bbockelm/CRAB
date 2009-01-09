@@ -99,7 +99,9 @@ class MultiCrab:
             if ( opt == '-cfg' ):
                 if self.flag_continue:
                     raise CrabException('-continue and -cfg cannot coexist.')
-                if opts[opt] : self.cfg_fname = opts[opt]
+                if opts[opt] :
+                    self.cfg_fname = opts[opt]
+                    opts.remove[opt]
                 else : processHelpOptions()
                 pass
             pass
@@ -145,12 +147,16 @@ class MultiCrab:
         # first get common sections
         for sec in cfg_params:
             if sec in ['MULTICRAB']:
-                cfg_common=cfg_params[sec]
+                if 'cfg' in cfg_params[sec]:
+                    common_opts['cfg']=cfg_params[sec]['cfg']
                 continue
             if sec in ['COMMON']:
-                common_opts=cfg_params[sec]
+                common_opts.update(cfg_params[sec])
                 continue
             pass
+
+        crab_cfg='crab.cfg'
+        if common_opts.has_key('cfg') : crab_cfg=common_opts['cfg']
 
         # then Dataset's specific
         for sec in cfg_params:
@@ -161,10 +167,8 @@ class MultiCrab:
                 self.cfg_params_dataset[sec][key]=common_opts[key]
             pass
 
-        self.cfg=cfg_common['cfg']
-
         # read crab.cfg file and search for storage_path
-        crab_cfg_params = loadConfig(self.cfg,{})
+        crab_cfg_params = loadConfig(crab_cfg,{})
         if cfg_params.has_key("COMMON"):
             self.user_remote_dir = cfg_params["COMMON"].get("user.user_remote_dir", crab_cfg_params.get("USER.user_remote_dir",None))
         else:
@@ -197,18 +201,18 @@ class MultiCrab:
             options['-USER.ui_working_dir']=sec
             # options from multicrab.cfg
             for opt in self.cfg_params_dataset[sec]:
-                tmp="-"+string.upper(opt.split(".")[0])+"."+opt.split(".")[1]
+                tmp = "-"+str(opt)
+                if len(opt.split("."))==2:
+                    tmp="-"+string.upper(opt.split(".")[0])+"."+opt.split(".")[1]
+                
                 options[tmp]=self.cfg_params_dataset[sec][opt]
             # add section to storage_path if exist in crab.cfg
             if not self.cfg_params_dataset.has_key("USER.user_remote_dir") and self.user_remote_dir:
                 options["-USER.user_remote_dir"]=self.user_remote_dir+"/"+sec
             # Input options (command)
             for opt in self.opts:
-                # remove -cfg
-                if opt=='-cfg': continue
                 options[opt]=self.opts[opt]
             try:
-                # print options
                 crab = Crab(options)
                 crab.run()
                 common.apmon.free()
