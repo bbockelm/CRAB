@@ -231,8 +231,9 @@ class Publisher(Actor):
         good_list=[]
         for fjr in file_list:
             reports = readJobReport(fjr)
-            if reports[0].status == "Success":
-               good_list.append(fjr)
+            if len(reports)>0:
+               if reports[0].status == "Success":
+                  good_list.append(fjr)
         file_list=good_list
         ##
         common.logger.debug(6, "file_list = "+str(file_list))
