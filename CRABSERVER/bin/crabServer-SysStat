@@ -466,7 +466,7 @@ banner = {
 
 def Cshutdown():
     componentsL = List['C'][:]
-    sensors = os.popen('ps -C sensord wwho pid,cmd').readlines()
+    sensors = os.popen('ps -C python wwho pid,cmd | grep sensord').readlines()
     for sensor in sensors:
         sensorPid,target= sensor.split()[0:4:3]
         if target in List['C']:
@@ -484,7 +484,6 @@ def Cshutdown():
             if sadcPid != "":
                 Kill(int(sadcPid),9)
             componentsL.remove(target)
-            break
     for component in componentsL:
         print "sensor for %s is NOT running"%component
 
@@ -494,7 +493,7 @@ def Sshutdown():
     for service in List['S']:
         servicesL.append(All['S'][service])
         servicesK[All['S'][service]] = service
-    sensors = os.popen('ps -C sensord wwho pid,cmd').readlines()
+    sensors = os.popen('ps -C python wwho pid,cmd | grep sensord').readlines()
     for sensor in sensors:
         sensorPid,target= sensor.split()[0:4:3]
         if target in List['S']:
@@ -512,7 +511,6 @@ def Sshutdown():
             if sadcPid != "":
                 Kill(int(sadcPid),9)
             servicesL.remove(All['S'][target])
-            break
     for service in servicesL:
         print "sensor for %s is NOT running"%service
 
