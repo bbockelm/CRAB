@@ -38,20 +38,16 @@ class Root:
         html += "<table>\n"
         html += "<tr><th>Service</th><th>Description</th></tr>\n"
 
-        html += "<tr><td><a href=\"%s/tasks\">Tasks</a></td>\n" % (
-            self.myUrl,)
+        html += "<tr><td><a href=\"tasks\">Tasks</a></td>\n"
         html += "<td>Tasks entities data in this CrabServer</td></td>\n"
 
-        html += "<tr><td><a href=\"%s/jobs\">Jobs</a></td>\n" % (
-            self.myUrl,)
+        html += "<tr><td><a href=\"jobs\">Jobs</a></td>\n"
         html += "<td>Jobs entities data in this CrabServer</td></td>\n"
 
-        html += "<tr><td><a href=\"%s/compsermon\">Component Monitor</a></td>\n" % (
-            self.myUrl,)
+        html += "<tr><td><a href=\"compsermon\">Component Monitor</a></td>\n" 
         html += "<td>Component and Sevice status in this CrabServer</td></td>\n"
 
-        html += "<tr><td><a href=\"%s/logginfo\">User Monitoring</a></td>\n" % (
-            self.myUrl,)
+        html += "<tr><td><a href=\"logginfo\">User Monitoring</a></td>\n" 
         html += "<td>User task and job log information</td></tr>\n"
 
         html += """</table></body></html>"""
@@ -106,85 +102,115 @@ def installer(**args):
     root.images = ImageServer(args['StaticDir'])
 
     root.datasetdetails = DatasetDetails(
-        "%s/images" % baseUrl,
+#        "%s/images" % baseUrl,
+        "images", 
         args["StaticDir"] ) 
     root.datasetinfos = DatasetInfos(
-        "%s/images" % baseUrl,
+#        "%s/images" % baseUrl,
+        "images",
         args["StaticDir"],
-        "%s/datasetdetails" % baseUrl ) 
+        "datasetdetails")
+#        "%s/datasetdetails" % baseUrl ) 
     root.cumulativetaskgraph = CumulativeTaskGraph(
-        "%s/images" % baseUrl,
+#        "%s/images" % baseUrl,
+        "images",
         args["StaticDir"])
     root.taskgraph = TaskGraph(
-        "%s/images" % baseUrl,
+#        "%s/images" % baseUrl,
+        "images",
         args["StaticDir"])
     root.usergraph = UserGraph(
-        "%s/images" % baseUrl,
+#        "%s/images" % baseUrl,
+        "images",
         args['StaticDir'])
     root.tasks = TaskMonitor(
-        "%s/taskgraph" % baseUrl,
-        "%s/cumulativetaskgraph" % baseUrl,
-        "%s/datasetinfos" % baseUrl,
-        "%s/usergraph" % baseUrl
+        "../taskgraph" ,
+        "../cumulativetaskgraph",
+        "../datasetinfos",
+        "../usergraph" 
+#        "%s/taskgraph" % baseUrl,
+#        "%s/cumulativetaskgraph" % baseUrl,
+#        "%s/datasetinfos" % baseUrl,
+#        "%s/usergraph" % baseUrl
         )
  
     root.graphdest = DestinationSitesMonitor(
-        "%s/images" % baseUrl,
+#        "%s/images" % baseUrl,
+        "images",
         args['StaticDir']
         )
     root.graphstatus = StatusPerDest(
-        "%s/images" % baseUrl,
+#        "%s/images" % baseUrl,
+        "images" ,
         args['StaticDir'])
     root.graphjobstcum = CumulativeJobStatGraph(
-        "%s/images" % baseUrl,
+#        "%s/images" % baseUrl,
+        "images" ,
         args["StaticDir"]
         )
 
 
     root.jobwms = PlotByWMS(
-        "%s/images" % baseUrl,
+#        "%s/images" % baseUrl,
+        "images" ,
         args['StaticDir']
         )
 
 
     root.jobs = JobMonitor(
-        "%s/graphjobstcum" % baseUrl,
-        "%s/graphdest" % baseUrl,
-        "%s/graphstatus" % baseUrl,
-        "%s/jobwms" % baseUrl
+#        "%s/graphjobstcum" % baseUrl,
+        "graphjobstcum" ,
+#        "%s/graphdest" % baseUrl,
+        "graphdest" ,
+#        "%s/graphstatus" % baseUrl,
+        "graphstatus" ,
+#        "%s/jobwms" % baseUrl
+        "jobwms" 
         )
     root.writelog = WriteLog()
     root.compstatus = ShowCompStatus(
-        "%s/compcpu" % baseUrl
+#        "%s/compcpu" % baseUrl
+        "compcpu"
         )
     root.compmsg = MsgByComponent()
     root.msgblnc = MsgBalance(
-        "%s/images" % baseUrl,
+        "images" ,
         args['StaticDir']
         )
     root.complog = ShowCompLogs( 
-        "%s/writelog" % baseUrl)
+#        "%s/writelog" % baseUrl)
+        "writelog"  )
     root.compcpu = ComponentCpuPlot(
-        "%s/images" % baseUrl,
+#        "%s/images" % baseUrl,
+        "images"  ,
         args["StaticDir"],
         args["ComponentDir"],
-        "%s/compcpu" % baseUrl
+#        "%s/compcpu" % baseUrl
+        "compcpu"  
         )
     root.compsermon = CompServMonitor(
-        "%s/compstatus" % baseUrl,
-        "%s/complog" % baseUrl,
-        "%s/compcpu" % baseUrl,
-        "%s/compmsg" % baseUrl,
-        "%s/msgblnc" % baseUrl
+#        "%s/compstatus" % baseUrl,
+        "compstatus"  ,
+#        "%s/complog" % baseUrl,
+        "complog"  ,
+#        "%s/compcpu" % baseUrl,
+        "compcpu"  ,
+#        "%s/compmsg" % baseUrl,
+        "compmsg"  ,
+#        "%s/msgblnc" % baseUrl
+        "msgblnc"  
         )
 
     root.visualog = TaskLogVisualizer()
     root.usertask = ListTaskForUser(
-        "%s/visualog" % baseUrl
+#        "%s/visualog" % baseUrl
+        "visualog"  
         )
     root.logginfo = TaskLogMonitor(
-        "%s/visualog" % baseUrl,
-        "%s/usertask" % baseUrl
+#        "%s/visualog" % baseUrl,
+        "visualog"  ,
+#        "%s/usertask" % baseUrl
+        "usertask"  
         )
 
     return root

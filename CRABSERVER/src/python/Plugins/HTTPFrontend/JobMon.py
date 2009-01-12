@@ -40,7 +40,7 @@ class JobMonitor:
 
         html += "<table>\n"
         html += "<br/><br/>"
-        html += '<form action=\"%s"\ method="get">' % (self.graphjobstcum)
+        html += '<form action=\"../%s"\ method="get">' % (self.graphjobstcum)
         html += 'Cumulative plot of jobs status '
         html += ' for last  '
         html += ' <input type="text" name="length" size=4 value=0> '
@@ -53,7 +53,7 @@ class JobMonitor:
         html += "<table>\n"
         html += "<br/><br/>"
         html += "<i>Current job destination pie for job submitted in the last period:</i><br/>"
-        html += '<form action=\"%s"\ method="get">' % (self.graphdestination)
+        html += '<form action=\"../%s"\ method="get">' % (self.graphdestination)
         html += 'Job Destionation sites '
         html += template
         html += template1
@@ -63,7 +63,7 @@ class JobMonitor:
         html += "<table>\n"
         html += "<br/><br/>"
         html += "<i>Current per-site job status distribution for jobs submitted in the last period:</i><br/>"
-        html += '<form action=\"%s"\ method="get">' % (self.graphstatusdest)
+        html += '<form action=\"../%s"\ method="get">' % (self.graphstatusdest)
         html += 'Status per Destination Sites '
         html += template
         html += template1
@@ -88,8 +88,8 @@ class JobMonitor:
 
         html += "<table>\n"
         html += "<br/><br/>"
-        html += '<form action=\"%s"\ method="get">' % (self.jobwms)
-        html += '<i>Status per service (WMS)</i>'
+        html += '<form action=\"../%s"\ method="get">' % (self.jobwms)
+        html += '<i>Status per service (eg: WMS)</i>'
         html += '&nbsp from &nbsp<select name="fromy" style="width:80px">%s</select>'%years
         html += '<select name="fromm" style="width:80px">%s</select>'%months
         html += '<select name="fromd" style="width:80px">%s</select>'%days
@@ -165,7 +165,7 @@ class CumulativeJobStatGraph:
         cum = CumulativeGraph()
         coords = cum.run( data, pngfile, metadata )
 
-        html = "<html><body><img src=\"%s\"></body></html>" % pngfileUrl
+        html = "<html><body><img src=\"../%s\"></body></html>" % pngfileUrl
  
         return html
         
@@ -190,7 +190,7 @@ class DestinationSitesMonitor:
             return errHtml
  
         pngfile = os.path.join(self.workingDir, "%s-%s-%s-Site.png" % (span, length, site))
-        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+        pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
         data = sites
         metadata = {'title':'Destination Sites Distribution'}
         Graph = PieGraph()
@@ -276,7 +276,7 @@ class StatusPerDest:
             return errHtml
         
         pngfile = os.path.join(self.workingDir, "%s-%s-%s-Status.png" % (span, length, site))
-        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+        pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
         metadata = {'title':'Job status per Sites Distribution'}
         Graph = StackedBarGraph()
         coords = Graph( data, pngfile, metadata )
@@ -363,8 +363,8 @@ class PlotByWMS:
             return errHtml
 
         pngfile = os.path.join(self.workingDir, "JobStatusByWMS_%s_.png"%str(wms))
-        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
-        metadata = {'title':'Job Status for servce [%s]'%str(wms)}
+        pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
+        metadata = {'title':'Job Status for [%s] WMS'%str(wms)}
         Graph = PieGraph()
         coords = Graph( data, pngfile, metadata )
 
@@ -374,8 +374,8 @@ class PlotByWMS:
 
     def index(self, fromy = "", fromm ="", fromd = "", toy = "", tom = "", tod = ""):
 
-        fromdata = fromy+"-"+fromm+"-"+fromd+" 00:00:00"
-        todata   = toy+"-"+tom+"-"+tod+" 23:59:59"
+        fromdata = fromy+"-"+fromm+"-"+fromd
+        todata   = toy+"-"+tom+"-"+tod
         data = API.jobsByWMS(fromdata, todata)
         dictofdict = {}
         for wms,status,count in data:

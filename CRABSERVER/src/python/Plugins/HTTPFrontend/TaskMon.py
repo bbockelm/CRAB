@@ -160,7 +160,7 @@ class TaskGraph:
             return errHtml
 
         pngfile = os.path.join(self.workingDir, "%s-Task.png" % tasktype)
-        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+        pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
 
         metadata = {"title" : "%s Task  : " % tasktype }
         pie = PieGraph()
@@ -222,7 +222,7 @@ class CumulativeTaskGraph:
             num_stat += 1 
 
         pngfile = os.path.join(self.workingDir, "%s-TaskCumulative.png" % (length) )
-        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+        pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
        
         data = binning  
 
@@ -301,7 +301,7 @@ class DatasetInfos:
             return errHtml
         
         pngfile = os.path.join(self.workingDir, "%s-dataset.png" % length)
-        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+        pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
         
         metadata = {"title" : "Datests"}
         pie = PieGraph()
@@ -490,7 +490,7 @@ class UserGraph:
                 binning[i]= count
  
             pngfile = os.path.join(self.workingDir, "%s-%s-User.png" % (span, length))
-            pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+            pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
  
             data={'User': binning }
 

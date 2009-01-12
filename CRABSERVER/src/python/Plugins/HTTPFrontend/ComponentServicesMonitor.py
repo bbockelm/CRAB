@@ -31,7 +31,7 @@ class CompServMonitor:
         html = """<html><body><h2>CrabServer Components and Services Monitoring</h2>\n """
         html += "<table>\n"
         html += "<i> Diplay the status of components and active service in this CrabServer: </i><br/><br/>"
-        html += '<form action=\"%s"\ method="get" >' % (self.compstatus)
+        html += '<form action=\"../%s"\ method="get" >' % (self.compstatus)
         html += ' Status of all components and external services of this CrabServer '
         html += ' <input type="submit" value="Show report"/>'
         html += '</form>'
@@ -39,7 +39,7 @@ class CompServMonitor:
         
         html += "<table>\n"
         html += "<br/><br/><i> Allow to access components logs through web:</i><br/><br/>"
-        html += ' <form action=\"%s"\ method="get"> ' % (self.complog)
+        html += ' <form action=\"../%s"\ method="get"> ' % (self.complog)
         html += 'Show logs for  '
         html += ' <select name="comp_name" style="width:140px">'
         for component in status(True):
@@ -51,7 +51,7 @@ class CompServMonitor:
 
         html += "<table>\n"
         html += "<br/><br/><i> Watch message queue by component:</i><br/><br/>"
-        html += ' <form action=\"%s"\ method="get"> ' % (self.compmsg)
+        html += ' <form action=\"../%s"\ method="get"> ' % (self.compmsg)
         html += 'Show message queue for  '
         html += ' <select name="comp_name" style="width:140px">'
         for components in status(True):
@@ -63,7 +63,7 @@ class CompServMonitor:
 
         html += "<table>\n"
         html += "<br><i>or whatch message balance between all the component:</i>&nbsp"
-        html += ' <form action=\"%s"\ method="get"> ' % (self.msgblnc)
+        html += ' <form action=\"../%s"\ method="get"> ' % (self.msgblnc)
         html += '<input type="submit" value="Show"/>'
         html += '</form>'
         html += "</table>\n"
@@ -71,7 +71,7 @@ class CompServMonitor:
         html += "<table><br/>\n"
         html += "<small style=\"color:red\">(Work in progress)</small><br/><br/>\n"
         html += "<i> Display components CPU usage:</i><br/>"
-        html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
+        html += ' <form action=\"../%s"\ method="get"> ' % (self.compcpu)
         html += 'Show CPU plot for  '
         html += ' <select name="Component" style="width:140px">'
         html += '<option>All components</option>'
@@ -88,7 +88,7 @@ class CompServMonitor:
 
         html += "<table><br/>\n"
         html += "<i> Display services CPU usage:</i><br/>"
-        html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
+        html += ' <form action=\"../%s"\ method="get"> ' % (self.compcpu)
         html += 'Show CPU plot for  '
         html += ' <select name="Component" style="width:140px">'
         html += '<option>All services</option>'
@@ -105,7 +105,7 @@ class CompServMonitor:
 
         html += "<table><br/>\n"
         html += "<i> Display resources usage:</i><br/>"
-        html += ' <form action=\"%s"\ method="get"> ' % (self.compcpu)
+        html += ' <form action=\"../%s"\ method="get"> ' % (self.compcpu)
         html += 'Show plot for '
         html += ' <select name="Component" style="width:140px">'
         html += '<option>All resources</option>'
@@ -268,7 +268,7 @@ class ShowCompLogs:
         html += "<table>\n"
         for f in LogFiles:
             to_read=os.path.join(comp_name,f) 
-            html += "<li><a href=\"%s?to_read=%s\">%s</a></li>\n" % (
+            html += "<li><a href=\"../%s?to_read=%s\">%s</a></li>\n" % (
                 self.writecomp, to_read,f )
         html += "</ul>\n"
 
@@ -374,7 +374,7 @@ class MsgBalance:
             return errHtml
 
         pngfile = os.path.join(self.workingDir, "MsgBalance.png")
-        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+        pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
         metadata = {'title':'Message queue balance'}
         Graph = PieGraph()
         coords = Graph( goodone, pngfile, metadata )

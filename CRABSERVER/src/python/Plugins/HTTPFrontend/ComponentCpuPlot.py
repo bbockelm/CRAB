@@ -137,15 +137,15 @@ class ComponentCpuPlot:
         elif Component == 'All components':
                 for Comp in status(True):
                         pngfile = os.path.join(self.workingDir, "%s-%s-%s-%s_pidstat.png" % (Comp,length,span,'small'))
-                        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
-                        page += "<a href=\"%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Comp,length,span,pngfileUrl)
+                        pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
+                        page += "<a href=\"../%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Comp,length,span,pngfileUrl)
                         title = Comp+' CPU (%) usage'
                         draw_TimeComponentCpuGraph(Comp,self.sensorsDir,pngfile,length,span,'small',labels,title)
         elif Component == 'All services':
                 for Serv in AllServices.keys():
                         pngfile = os.path.join(self.workingDir, "%s-%s-%s-%s_pidstat.png" % (Serv,length,span,'small'))
-                        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
-                        page += "<a href=\"%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Serv,length,span,pngfileUrl)
+                        pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
+                        page += "<a href=\"../%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Serv,length,span,pngfileUrl)
                         title = Serv+' CPU (%) usage' # ,'History plot of CPU usage for '+Serv]
                         draw_TimeComponentCpuGraph(Serv,self.sensorsDir,pngfile,length,span,'small',labels,title)
         elif Component == 'All resources':
@@ -174,8 +174,8 @@ class ComponentCpuPlot:
                 sk=MainResourcesPlot.keys(); sk.sort()
                 for Res in sk:
                         pngfile = os.path.join(self.workingDir, "%s-%s-%s-%s_pidstat.png" % (Res,length,span,'small'))
-                        pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
-                        page += "<a href=\"%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Res,length,span,pngfileUrl)
+                        pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
+                        page += "<a href=\"../%s?Component=%s&length=%s&span=%s\"><img border=0 src=\"%s\"></a>" % (self.compcpu,Res,length,span,pngfileUrl)
                         if Res == 'CPU':
                                 title = 'CPU (%)'
                         else:
@@ -189,7 +189,7 @@ class ComponentCpuPlot:
                 else:
                         title = 'History plot of CPU (%) usage for '+Component
                 pngfile = os.path.join(self.workingDir, "%s-%s-%s-%s_pidstat.png" % (Component,length,span,'big'))
-                pngfileUrl = "%s?filepath=%s" % (self.imageServer, pngfile)
+                pngfileUrl = "../%s?filepath=%s" % (self.imageServer, pngfile)
                 page += "<img src=\"%s\">" % pngfileUrl
                 draw_TimeComponentCpuGraph(Component,self.sensorsDir,pngfile,length,span,'big',labels,title)
                 

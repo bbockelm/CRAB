@@ -22,7 +22,7 @@ class TaskLogMonitor:
 
         html += "<table>\n"
         html += "<i>Filling the field with the string resulting from 'crab -printId' allow to check both staus and logging: </i><br/><br/>"
-        html += '<form action=\"%s"\ method="get">' % (self.visualize)
+        html += '<form action=\"../%s"\ method="get">' % (self.visualize)
         html += 'Task unique name&nbsp;'
         html += ' <input type="text" name="taskname" size=50>&nbsp; '
         html += ' <select name="logtype" style="width:80px"><option>Status</option><option>Logging</option></select>&nbsp;'
@@ -32,7 +32,7 @@ class TaskLogMonitor:
 
         html += "<br><br><table>\n"
         html += "<i>Select the user name to see all his tasks on the server</i><br/><br/>"
-        html += '<form action=\"%s"\ method="get" >' % (self.usertasks)
+        html += '<form action=\"../%s"\ method="get" >' % (self.usertasks)
         html += 'User&nbsp;'
         html += ' <select name="username" style="width:150px"><option>All</option>%s</select>&nbsp;'%(self.__prepareSelect(users))
         html += '&nbsp;status of&nbsp;'
