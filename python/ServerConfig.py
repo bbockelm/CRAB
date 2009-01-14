@@ -10,7 +10,7 @@ class ServerConfig:
     def __init__(self, serverName):
         import string
         serverName = string.lower(serverName)
-        common.logger.debug(5,'Calling ServerConfig')
+        common.logger.debug(5,'Calling ServerConfig '+serverName)
 #        self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
 
         self.url ='https://cmsweb.cern.ch/crabconf/files/'
@@ -51,6 +51,7 @@ class ServerConfig:
         if not l:
             l = str('{}') 
         self.theConfig = eval(l)
+        self.theConfig['serverGenericName']=serverName
         pass
         
     def config(self):

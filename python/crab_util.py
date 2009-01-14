@@ -356,13 +356,20 @@ def CliServerParams(self):
     Init client-server interactions
     """
     self.srvCfg = {}
+    ## First I have to check if the decision has been already taken...
+    task = common._db.getTask()
+    if task['serverName']!=None:
+        self.cfg_params['CRAB.server_name']=task['serverName']
     if self.cfg_params.has_key('CRAB.use_server'):
         if self.cfg_params.has_key('CRAB.server_name'):
             serverName=self.cfg_params['CRAB.server_name']
         else:
             serverName='default'
         self.srvCfg = ServerConfig(serverName).config()
-        self.cfg_params['CRAB.server_name']=self.srvCfg['serverName']
+        # save the serverName for future use
+        opsToBeSaved={}
+        opsToBeSaved['serverName']=self.srvCfg['serverGenericName']
+        common._db.updateTask_(opsToBeSaved)
     elif self.cfg_params.has_key('CRAB.server_name'):
         self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
     else:
