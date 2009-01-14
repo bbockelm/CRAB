@@ -176,7 +176,7 @@ class Scheduler :
         if not CredAPI.checkCredential(Time=int(minTime)) or \
            not CredAPI.checkAttribute(group=self.group, role=self.role):
             try:
-                CredAPI.ManualRenewCredential() 
+                CredAPI.ManualRenewCredential(group=self.group, role=self.role) 
             except Exception, ex:
                 raise CrabException(str(ex))   
         if not CredAPI.checkMyProxy():
@@ -209,12 +209,10 @@ class Scheduler :
 
         if len(dest)!=0: dest = self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')
        
-        ###  fede: whiteList is a string and not a list!! ### 
         whiteList=self.ce_list()[1]
         if whiteList != None:  
             [whiteL.append(x.strip()) for x in whiteList.split(',')]
         
-        ###  fede: blackList is a string and not a list!! ### 
         blackList=self.ce_list()[2]
         if blackList != None:
             [blackL.append(x.strip()) for x in blackList.split(',')]
