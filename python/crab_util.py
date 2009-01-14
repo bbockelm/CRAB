@@ -357,7 +357,12 @@ def CliServerParams(self):
     """
     self.srvCfg = {}
     if self.cfg_params.has_key('CRAB.use_server'):
-        self.srvCfg = ServerConfig('default').config()
+        if self.cfg_params.has_key('CRAB.server_name'):
+            serverName=self.cfg_params['CRAB.server_name']
+        else:
+            serverName='default'
+        self.srvCfg = ServerConfig(serverName).config()
+        self.cfg_params['CRAB.server_name']=self.srvCfg['serverName']
     elif self.cfg_params.has_key('CRAB.server_name'):
         self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
     else:
