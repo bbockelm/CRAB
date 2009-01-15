@@ -18,6 +18,7 @@ def LFNBase(forced_path, PrimaryDataset='',ProcessedDataset='',merged=True,Local
         #lfnbase = os.path.join(lfnbase,"tmp")
     if (PrimaryDataset == 'null'):
         PrimaryDataset = ProcessedDataset
+    if ( PrimaryDataset[0] == '/' ):  PrimaryDataset=PrimaryDataset[1:]  
    # lfnbase = os.path.join(lfnbase, "user", getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset )
     lfnbase = os.path.join(forced_path, getUserName(LocalUser=LocalUser), PrimaryDataset, ProcessedDataset)
 
