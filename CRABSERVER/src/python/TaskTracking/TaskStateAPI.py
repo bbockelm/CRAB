@@ -286,6 +286,60 @@ class TaskStateAPI:
 	    raise
 
 
+    def checkArchived( self, conn, dbCur, taskName ):
+        """
+        _checkArchived_
+
+        call this ONLY from inside a TRANSACTION
+        """
+        sqlStr = ""
+        try:
+            sqlStr='SELECT notificationSent from js_taskInstance '\
+                   'WHERE taskName="%s" and notificationSent=2;'%(str(taskName))
+            dbCur.execute("START TRANSACTION")
+            try:
+                dbCur.execute(sqlStr)
+            except Exception,ex:
+                raise ProdAgentException("Task not found in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+            row = dbCur.fetchall()
+            dbCur.execute("COMMIT")
+            if len(row) == 1:
+                return True
+            return False
+        except Exception, ex:
+            logging.info( ex )
+             
+            logging.info("Task not found: " +str(taskName) )
+        return False
+        
+
+    def updateStatusNotif( self, taskName, status, notif ):
+        """ 
+        __updateStatusNotif__
+        """
+        logging.info( "   -> updating the task table for task: " + taskName )
+
+        ## opening connection with PA's DB
+        conn, dbCur = self.openConnPA()
+        try:
+            dbCur.execute("START TRANSACTION")
+            if self.checkArchived(conn, dbCur, taskName) is True:
+                sqlStr='UPDATE js_taskInstance '\
+                       'SET status="%s", notificationSent=%s '\
+                       'WHERE taskName="%s";'%( str(status), str(notif), str(taskName) )
+                dbCur.execute(sqlStr)
+            else:
+                logging.error( "Task: '" + str(taskName) + "' already active.")
+            dbCur.execute("COMMIT")
+            ## closing connection with PA's DB
+            self.closeConnPA( dbCur, conn )
+        except:
+            dbCur.execute("ROLLBACK")
+            ## closing connection with PA's DB
+            self.closeConnPA( dbCur, conn )
+            raise
+
+
     def findTaskPA( self, taskName):
         """
         _findTaskPA_
@@ -304,19 +358,19 @@ class TaskStateAPI:
             except Exception,ex:
                 raise ProdAgentException("Task not found in js_taskInstance. TaskName: '" + str(taskName) + "'.")
             row = dbCur.fetchall()
-	    dbCur.execute("COMMIT")
+            dbCur.execute("COMMIT")
             ## closing connection with PA's DB
             self.closeConnPA( dbCur, conn )
-	    if len(row) > 0:
-	        return row[0]
-	    else:
-	        return None
+            if len(row) > 0:
+                return row[0]
+            else:
+                return None
         except:
-	    dbCur.execute("ROLLBACK")
+            dbCur.execute("ROLLBACK")
             ## closing connection with PA's DB
             self.closeConnPA( dbCur, conn )
-	    logging.error( "Error quering PA DB! Method: " + self.findTaskPA.__name__ )
-	    raise
+            logging.error( "Error quering PA DB! Method: " + self.findTaskPA.__name__ )
+            raise
 
 
     def queryMethod( self, strQuery, taskName ):

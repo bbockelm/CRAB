@@ -306,6 +306,7 @@ class TaskTrackingComponent:
                     self.transientTaskJob(taskName, listjob, "Killing")
                 elif str(cmnd) == "submit":
                     self.transientTaskJob(taskName, listjob, "Submitting")
+                    self.reviveTask(taskName)
                 elif str(cmnd) == "outputRetrieved":
                     self.setCleared(taskName, eval(listjob))
                 else:
@@ -512,6 +513,23 @@ class TaskTrackingComponent:
             logBuf = self.__log(logBuf, "ERROR while reporting info about the task " + str(payload) )
             logBuf = self.__log(logBuf, "      "+str(ex))
             logging.info(logBuf)
+
+
+    def reviveTask(self, taskName):
+        """
+        _reviveTask_
+        """
+        logBuf = ""
+        ttdb = TaskStateAPI()
+        try:
+            ttdb.updateStatusNotif( taskName, "submitted", "0" )
+        except Exception, ex:
+            logBuf = self.__log(logBuf, "ERROR while updating the task " + str(taskName) )
+            logBuf = self.__log(logBuf, "      "+str(ex))
+            logging.info(logBuf)
+            logBuf = ""
+        logging.info(logBuf)
+
 
     def transientTaskJob(self, taskName, range, status, reverse = False):
         """
