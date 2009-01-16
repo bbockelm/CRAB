@@ -292,7 +292,7 @@ class cmscp:
         for filetocopy in list_file:
             if self.debug : print '\tStart real copy for %s'%filetocopy
             try :
-                ErCode, msg = self.checkFileExist( sbi_source, sbi_dest, filetocopy )
+                ErCode, msg = self.checkFileExist( sbi_source, sbi_dest, filetocopy, options )
             except Exception, ex:
                 ErCode = -1
                 msg = str(ex)  
@@ -351,7 +351,7 @@ class cmscp:
             pass             
         return msg
 
-    def checkFileExist( self, sbi_source, sbi_dest, filetocopy ):
+    def checkFileExist( self, sbi_source, sbi_dest, filetocopy, option ):
         """
         Check both if source file exist AND 
         if destination file ALREADY exist. 
@@ -362,7 +362,7 @@ class cmscp:
         f_tocopy=filetocopy
         if self.source_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
         try:
-            checkSource = sbi_source.checkExists( f_tocopy )
+            checkSource = sbi_source.checkExists( f_tocopy , opt=option )
             if self.debug : print '\tCheck for local file %s exist succeded \n'%f_tocopy  
         except OperationException, ex:
             msg  ='ERROR: problems checkig if source file %s exist'%filetocopy
@@ -392,7 +392,7 @@ class cmscp:
         f_tocopy=filetocopy
         if self.dest_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
         try:
-            check = sbi_dest.checkExists( f_tocopy )
+            check = sbi_dest.checkExists( f_tocopy, opt=option )
             if self.debug : print '\tCheck for remote file %s exist succeded \n'%f_tocopy  
         except OperationException, ex:
             msg  = 'ERROR: problems checkig if file %s already exist'%filetocopy
@@ -462,7 +462,7 @@ class cmscp:
             remote_file_size = -1 
             local_file_size = os.path.getsize( source_file ) 
             try:
-                remote_file_size = sbi_dest.getSize( dest_file )
+                remote_file_size = sbi_dest.getSize( dest_file, opt=option )
                 if self.debug : print '\t Check of remote size succeded for file %s\n'%dest_file
             except TransferException, ex:
                 msg  = "Problem checking the size of %s file" % filetocopy
@@ -486,19 +486,19 @@ class cmscp:
 
         if ErCode != '0':
             try :
-                self.removeFile( sbi_dest, dest_file )
+                self.removeFile( sbi_dest, dest_file, option )
             except Exception, ex:
                 msg += '\n'+str(ex)  
         return ErCode, msg
 
-    def removeFile( self, sbi_dest, filetocopy ):
+    def removeFile( self, sbi_dest, filetocopy, option ):
         """  
         """  
         if self.debug : print 'removeFile():\n'
         f_tocopy=filetocopy
         if self.dest_prot != 'local':f_tocopy = os.path.basename(filetocopy)
         try:
-            sbi_dest.delete( f_tocopy )
+            sbi_dest.delete( f_tocopy, opt=option )
             if self.debug : '\t deletion of file %s succeeded\n'%str(filetocopy)
         except OperationException, ex:
             msg  ='ERROR: problems removing partially staged file %s'%filetocopy
