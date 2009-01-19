@@ -103,18 +103,12 @@ class GetOutputServer( GetOutput, StatusServer ):
 
         # retrieve them from SE
         filesAndJodId = {}
-        sourceList = []
-        destList = []
         for i in xrange(len(osbFiles)):
             source = osbFiles[i]
             dest = destFiles[i]
-            common.logger.debug(3, "Adding file to transfer: "+ str(source) +" - "+ str(dest) )
+            common.logger.debug(1, "retrieving "+ str(source) +" to "+ str(dest) )
             try:
-                if self.storage_proto == "gridftp":
-                    sourceList.append(source)
-                    destList.append(dest)
-                else:
-                    sbi.copy( source, dest)
+                sbi.copy( source, dest)
                 if i < len(filesToRetrieve):
                     filesAndJodId[ filesToRetrieve[i] ] = dest
             except Exception, ex:
@@ -122,16 +116,6 @@ class GetOutputServer( GetOutput, StatusServer ):
                 msg += str(ex)
                 common.logger.debug(1,msg)
                 continue
-
-        if self.storage_proto == "gridftp":
-            try:
-                sbi.copy( sourceList, destList)
-            except Exception, ex:
-                msg = "WARNING: Unable to retrieve output file %s \n" % osbFiles[i]
-                msg += str(ex)
-                common.logger.message(msg)
-                import traceback
-                common.logger.debug( 1, str(traceback.format_exc()) )
 
         return filesAndJodId
 
