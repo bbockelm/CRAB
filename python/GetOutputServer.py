@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.35 2008/10/01 15:21:33 slacapra Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.36 2008/10/04 13:11:18 spiga Exp $"
+__version__ = "$Revision: 1.36 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -103,12 +103,18 @@ class GetOutputServer( GetOutput, StatusServer ):
 
         # retrieve them from SE
         filesAndJodId = {}
+        sourceList = []
+        destList = []
         for i in xrange(len(osbFiles)):
             source = osbFiles[i]
             dest = destFiles[i]
-            common.logger.debug(1, "retrieving "+ str(source) +" to "+ str(dest) )
+            common.logger.debug(3, "Adding file to transfer: "+ str(source) +" - "+ str(dest) )
             try:
-                sbi.copy( source, dest)
+                if self.storage_proto == "gridftp":
+                    sourceList.append(source)
+                    destList.append(dest)
+                else:
+                    sbi.copy( source, dest)
                 if i < len(filesToRetrieve):
                     filesAndJodId[ filesToRetrieve[i] ] = dest
             except Exception, ex:
@@ -116,6 +122,16 @@ class GetOutputServer( GetOutput, StatusServer ):
                 msg += str(ex)
                 common.logger.debug(1,msg)
                 continue
+
+        if self.storage_proto == "gridftp":
+            try:
+                sbi.copy( sourceList, destList)
+            except Exception, ex:
+                msg = "WARNING: Unable to retrieve output file %s \n" % osbFiles[i]
+                msg += str(ex)
+                common.logger.message(msg)
+                import traceback
+                common.logger.debug( 1, str(traceback.format_exc()) )
 
         return filesAndJodId
 
