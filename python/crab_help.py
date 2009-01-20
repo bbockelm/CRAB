@@ -527,7 +527,7 @@ To use the automate namespace definition (perfomed by CRAB) it is possible to se
 
 =item B<debug_wrapper>
 
-To enable the higer verbose level on wrapper specify I<debug_wrapper> = True. The Pset contents before and after the CRAB maipulation will be written together with other useful infos.
+To enable the higer verbose level on wrapper specify I<debug_wrapper> = 1. The Pset contents before and after the CRAB maipulation will be written together with other useful infos.
 
 =item B<deep_debug>
 
