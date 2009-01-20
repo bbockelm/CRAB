@@ -25,7 +25,7 @@ class Publisher(Actor):
         """
 
         try:
-            userprocessedData = cfg_params['USER.publish_data_name'] 
+            self.userprocessedData = cfg_params['USER.publish_data_name'] 
             self.processedData = None
         except KeyError:
             raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
@@ -143,8 +143,10 @@ class Publisher(Actor):
             #### for production data
             self.processedData = dataset['ProcessedDataset']
             if (dataset['PrimaryDataset'] == 'null'):
-                dataset['PrimaryDataset'] = dataset['ProcessedDataset']
-            else: # add parentage from input dataset
+                #dataset['PrimaryDataset'] = dataset['ProcessedDataset']
+                dataset['PrimaryDataset'] = self.userprocessedData
+            #else: # add parentage from input dataset
+            elif self.datasetpath.upper() != 'NONE':
                 dataset['ParentDataset']= self.datasetpath
     
             dataset['PSetContent']=self.content
@@ -196,12 +198,10 @@ class Publisher(Actor):
                     # lumi info are now in run hash
                     file.runs = {}
                     for ds in file.dataset:
-                        ### FEDE FOR NEW LFN ###
-                        #ds['ProcessedDataset']=procdataset
-                        ########################
                         ### Fede for production
                         if (ds['PrimaryDataset'] == 'null'):
-                            ds['PrimaryDataset']=procdataset
+                            #ds['PrimaryDataset']=procdataset
+                            ds['PrimaryDataset']=self.userprocessedData
                     filestopublish.append(file)
                 else:
                     self.noEventsFiles.append(file['LFN'])
