@@ -38,23 +38,19 @@ class cmscp:
         """
         check command line parameter
         """
-        msg = ''
         if 'help' in self.params.keys(): HelpOptions()
         if 'debug' in self.params.keys(): self.debug = 1
 
         # source and dest cannot be undefined at same time
         if not self.params['source']  and not self.params['destination'] :
-           # HelpOptions()
-            msg += 'ERROR: Nor source neither destination are defined\n'  
+            HelpOptions()
         # if middleware is not defined --> protocol cannot be empty
         if not self.params['middleware'] and not self.params['protocol'] :
-            msg += 'ERROR: Nor middleware neither protocol are defined\n'  
             HelpOptions()
 
         # input file must be defined
         if not self.params['inputFileList'] : 
-            #HelpOptions()
-            msg += 'ERROR: Input File List is not defined\n'
+            HelpOptions()
         else:
             file_to_copy=[]
             if self.params['inputFileList'].find(','):
@@ -75,16 +71,14 @@ class cmscp:
         on WN (on the Grid), and take different action
         """
         OptRes = self.processOptions()
-        if OptRes != '':
-            result = self.updateReport( '','60307', OptRes )   
         if self.debug: print 'calling run() : \n'
         # stage out from WN
         if self.params['middleware'] :
-            if OptRes == '':  results = self.stager(self.params['middleware'],self.params['inputFileList'])
+            results = self.stager(self.params['middleware'],self.params['inputFileList'])
             self.finalReport(results)
         # Local interaction with SE
         else:
-            if OptRes == '': results = self.copy(self.params['inputFileList'], self.params['protocol'], self.params['option'] )
+            results = self.copy(self.params['inputFileList'], self.params['protocol'], self.params['option'] )
             return results
 
     def setProtocol( self, middleware ):
