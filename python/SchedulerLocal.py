@@ -50,9 +50,9 @@ class SchedulerLocal(Scheduler) :
             common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
         else:
             common.logger.message("Your se_white_list is set to "+str(cfg_params['EDG.se_white_list'])+": only local dataset will be considered")
-        self.debug_wrapper = cfg_params.get('USER.debug_wrapper',False)
-        self.debugWrap=''
-        if self.debug_wrapper: self.debugWrap='--debug'
+        self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
+        self.debugWrap==''
+        if self.debug_wrapper==1: self.debugWrap='--debug'
 
         Scheduler.configure(self,cfg_params)
         return
@@ -149,23 +149,30 @@ class SchedulerLocal(Scheduler) :
             txt += 'copy_exit_status=0\n'
             txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'"\n'
             txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
-            if self.debug_wrapper: 
+            if self.debug_wrapper==1: 
                 txt += '########### details of SE interaction\n'
                 txt += 'if [ -f .SEinteraction.log ] ;then\n'
                 txt += '    cat .SEinteraction.log\n'
                 txt += 'else\n'
                 txt += '    echo ".SEinteraction.log file not found"\n'
+                txt += 'fi\n'
                 txt += '########### \n'
-            txt += 'source cmscpReport.sh\n'
+            txt += 'if [ -f cmscpReport.sh ] ;then\n'
+            txt += '    source cmscpReport.sh\n'
+            txt += 'else\n'
+            txt += '    echo "cmscpReport.sh file not found"\n' 
+            txt += '    StageOutExitStatus=60307\n'
+            txt += 'fi\n'
             txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'
             txt += '    echo "Problem copying file to $SE $SE_PATH"\n'
             txt += '    copy_exit_status=$StageOutExitStatus \n'
-            if not self.debug_wrapper: 
+            if not self.debug_wrapper==1: 
                 txt += '    ########### details of SE interaction\n'
-                txt += 'if [ -f .SEinteraction.log ] ;then\n'
-                txt += '    cat .SEinteraction.log\n'
-                txt += 'else\n'
-                txt += '    echo ".SEinteraction.log file not found"\n'
+                txt += '    if [ -f .SEinteraction.log ] ;then\n'
+                txt += '        cat .SEinteraction.log\n'
+                txt += '    else\n'
+                txt += '        echo ".SEinteraction.log file not found"\n'
+                txt += '    fi\n'
                 txt += '    ########### \n'
             txt += '    job_exit_code=$StageOutExitStatus\n'
             txt += 'fi\n'

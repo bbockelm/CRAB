@@ -108,9 +108,9 @@ class SchedulerGrid(Scheduler):
         # Default minimum CPU time to >= 130 minutes
         self.EDG_cpu_time = cfg_params.get('EDG.max_cpu_time', '130')
 
-        self.debug_wrapper = cfg_params.get('USER.debug_wrapper',False)
+        self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
         self.debugWrap=''
-        if self.debug_wrapper: self.debugWrap='--debug'
+        if self.debug_wrapper==1: self.debugWrap='--debug'
 
         self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',0))
 
@@ -286,7 +286,7 @@ class SchedulerGrid(Scheduler):
             txt += 'copy_exit_status=0\n'
             txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'"\n'
             txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
-            if self.debug_wrapper:
+            if self.debug_wrapper==1:
                 txt += 'echo "which lcg-ls"\n'
                 txt += 'which lcg-ls\n'
                 txt += 'echo ########### details of SE interaction\n'
@@ -294,19 +294,26 @@ class SchedulerGrid(Scheduler):
                 txt += '    cat .SEinteraction.log\n'
                 txt += 'else\n'
                 txt += '    echo ".SEinteraction.log file not found"\n'
+                txt += 'fi\n'
 		txt += 'echo ########### contents of cmscpReport\n'
                 txt += 'cat cmscpReport.sh\n'
                 txt += 'echo ########### \n'
-            txt += 'source cmscpReport.sh\n'
+            txt += 'if [ -f cmscpReport.sh ] ;then\n'
+            txt += '    source cmscpReport.sh\n'
+            txt += 'else\n'
+            txt += '    echo "cmscpReport.sh file not found"\n' 
+            txt += '    StageOutExitStatus=60307\n'
+            txt += 'fi\n'
             txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'
             txt += '    echo "Problem copying file to $SE $SE_PATH"\n'
             txt += '    copy_exit_status=$StageOutExitStatus \n'
-            if not self.debug_wrapper:
+            if not self.debug_wrapper==1:
                 txt += 'echo ########### details of SE interaction\n'
                 txt += 'if [ -f .SEinteraction.log ] ;then\n'
                 txt += '    cat .SEinteraction.log\n'
                 txt += 'else\n'
                 txt += '    echo ".SEinteraction.log file not found"\n'
+                txt += 'fi\n'
                 txt += 'echo ########### \n'
           #  txt += '    SE=""\n'
           #  txt += '    SE_PATH=""\n'
