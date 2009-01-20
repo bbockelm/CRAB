@@ -1555,6 +1555,10 @@ class Cmssw(JobType):
         listOutFiles = []
         stdout = 'CMSSW_$NJob.stdout'
         stderr = 'CMSSW_$NJob.stderr'
+        if len(self.output_file) <= 0:
+            msg ="WARNING: no output files name have been defined!!\n"
+            msg+="\tno output files will be reported back/staged\n"
+            common.logger.message(msg)
         if (self.return_data == 1):
             for file in (self.output_file+self.output_file_sandbox):
                 listOutFiles.append(numberFile(file, '$NJob'))
@@ -1568,5 +1572,6 @@ class Cmssw(JobType):
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
         txt += 'export filesToCheck\n'
+        
         if list : return self.output_file
         return txt
