@@ -206,7 +206,7 @@ class Scheduler :
         ####  fede #####
         whiteL=[]
         blackL=[]
-
+        voTags=['cms']
         if len(dest)!=0: dest = self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')
        
         whiteList=self.ce_list()[1]
@@ -216,8 +216,8 @@ class Scheduler :
         blackList=self.ce_list()[2]
         if blackList != None:
             [blackL.append(x.strip()) for x in blackList.split(',')]
-            
-        sites= self.boss().listMatch(tags, dest , whiteL, blackL, full)
+        if self.role: voTags.append('VOMS:/cms/Role=%s'%self.role)    
+        sites= self.boss().listMatch(tags, voTags, dest , whiteL, blackL, full)
         stop = time.time()
 
         return sites

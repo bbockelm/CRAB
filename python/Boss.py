@@ -108,13 +108,13 @@ class Boss:
 
         return
 
-    def listMatch(self, tags, dest, whiteL, blackL, isFull):
+    def listMatch(self, tags, voTags, dest, whiteL, blackL, isFull):
         """
         Check the compatibility of available resources
         """
         try:
             ## passing list for white-listing and black-listing
-            sites = self.schedSession().lcgInfo(tags, seList=dest, blacklist=blackL, whitelist=whiteL, full=isFull)
+            sites = self.schedSession().getSchedulerInterface().lcgInfo(tags, voTags, seList=dest, blacklist=blackL, whitelist=whiteL, full=isFull)
         except SchedulerError, err :
             common.logger.message("Warning: List Match operation failed with message: " +str(err))
             common.logger.debug(3, "List Match failed: " +str(traceback.format_exc()))
