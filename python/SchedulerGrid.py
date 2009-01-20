@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.89 2008/12/08 16:30:31 spiga Exp $"
-__version__ = "$Revision: 1.89 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.90 2009/01/07 11:37:28 spiga Exp $"
+__version__ = "$Revision: 1.90 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -290,8 +290,11 @@ class SchedulerGrid(Scheduler):
                 txt += 'echo "which lcg-ls"\n'
                 txt += 'which lcg-ls\n'
                 txt += 'echo ########### details of SE interaction\n'
-                txt += 'cat .SEinteraction.log\n'
-                txt += 'echo ########### contents of cmscpReport\n'
+                txt += 'if [ -f .SEinteraction.log ] ;then\n'
+                txt += '    cat .SEinteraction.log\n'
+                txt += 'else\n'
+                txt += '    echo ".SEinteraction.log file not found"\n'
+		txt += 'echo ########### contents of cmscpReport\n'
                 txt += 'cat cmscpReport.sh\n'
                 txt += 'echo ########### \n'
             txt += 'source cmscpReport.sh\n'
@@ -300,7 +303,10 @@ class SchedulerGrid(Scheduler):
             txt += '    copy_exit_status=$StageOutExitStatus \n'
             if not self.debug_wrapper:
                 txt += 'echo ########### details of SE interaction\n'
+                txt += 'if [ -f .SEinteraction.log ] ;then\n'
                 txt += '    cat .SEinteraction.log\n'
+                txt += 'else\n'
+                txt += '    echo ".SEinteraction.log file not found"\n'
                 txt += 'echo ########### \n'
           #  txt += '    SE=""\n'
           #  txt += '    SE_PATH=""\n'
