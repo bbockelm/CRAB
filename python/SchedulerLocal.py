@@ -51,7 +51,7 @@ class SchedulerLocal(Scheduler) :
         else:
             common.logger.message("Your se_white_list is set to "+str(cfg_params['EDG.se_white_list'])+": only local dataset will be considered")
         self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
-        self.debugWrap==''
+        self.debugWrap=''
         if self.debug_wrapper==1: self.debugWrap='--debug'
 
         Scheduler.configure(self,cfg_params)
