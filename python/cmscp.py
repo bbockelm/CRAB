@@ -63,14 +63,13 @@ class cmscp:
         #### add check for outFiles
         #### add map {'inFileNAME':'outFileNAME'} to change out name
 
-        return msg
 
     def run( self ):
         """
         Check if running on UI (no $middleware) or
         on WN (on the Grid), and take different action
         """
-        OptRes = self.processOptions()
+        self.processOptions()
         if self.debug: print 'calling run() : \n'
         # stage out from WN
         if self.params['middleware'] :
@@ -260,6 +259,7 @@ class cmscp:
         """
         Make the real file copy using SE API
         """
+        msg = ""
         if self.debug :
             msg  = 'copy() :\n'
             msg += '\tusing %s protocol\n'%protocol
