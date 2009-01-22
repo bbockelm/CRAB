@@ -212,6 +212,8 @@ class MultiCrab:
             # Input options (command)
             for opt in self.opts:
                 options[opt]=self.opts[opt]
+                if self.flag_continue and options.has_key("-cfg"):
+                    del options['-cfg']
             try:
                 crab = Crab(options)
                 crab.run()
