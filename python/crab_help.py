@@ -586,19 +586,19 @@ Maximum CPU time needed to finish one job. It will be used to select a suitable 
 
 Same as previous, but with real time, and not CPU one.
 
-=item B<CE_black_list>
+=item B<ce_black_list>
 
 All the CE (Computing Element) whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 
-=item B<CE_white_list>
+=item B<ce_white_list>
 
 Only the CE (Computing Element) whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). You may use hostnames or CMS Site names (T2_DE_DESY) or substrings. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place.
 
-=item B<SE_black_list>
+=item B<se_black_list>
 
 All the SE (Storage Element) whose name contains the following strings (comma separated list) will not be considered for submission.It works only if a datasetpath is specified. You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 
-=item B<SE_white_list>
+=item B<se_white_list>
 
 Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.It works only if a datasetpath is specified. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place. You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 
