@@ -30,6 +30,7 @@ The most useful general options (use '-h' to get complete help):
   -renewCredential           -- renew credential on the server.
   -clean                     -- gracefully cleanup the directory of a task.
   -match|-testJdl [range]    -- check if resources exist which are compatible with jdl.
+  -report                    -- print a short report about the task
   -list [range]              -- show technical job details.
   -postMortem [range]        -- provide a file with information useful for post-mortem analysis of the jobs.
   -printId [range]           -- print the job SID or Task Unique ID while using the server.
@@ -275,6 +276,10 @@ Try to collect more information of the job from the scheduler point of view.
 =item B<-list [range]>
 
 Dump technical information about jobs: for developers only.
+
+=item B<-report>
+
+Print a short report about the task, namely the total number of events and files processed/requested/available, the name of the datasetpath, a summary of the status of the jobs, the list of runs and lumi sections, and so on. In principle it should contain all the info needed for analysis. Work in progress.
 
 =item B<-clean [dir]>
 

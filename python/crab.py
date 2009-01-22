@@ -36,7 +36,8 @@ class Crab:
                              '-resubmit' , '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-createJdl','-printJdl', '-publish',
-                             '-copyData', '-renewCredential', '-extend','-validateCfg' ]
+                             '-copyData', '-renewCredential', '-extend','-validateCfg',
+                             '-report' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -697,6 +698,10 @@ class Crab:
                 else:
                     msg = "The option [-renewProxy] can be used only with the server modality!"
                     raise CrabException(msg)
+            elif ( opt == '-report' ):
+                from Reporter import Reporter     
+                self.actions[opt] = Reporter(self.cfg_params)
+
             pass
         return
 
