@@ -62,9 +62,9 @@ class Consumer(Thread):
     
     def setParams(self, _jobList, _tasklist, per_job, per_task):
     	self.jobList    =  _jobList
-	self.taskList   =  _tasklist
-	self.per_job    =  per_job
-	self.per_task   =  per_task
+        self.taskList   =  _tasklist
+        self.per_job    =  per_job
+        self.per_task   =  per_task
     
     def run(self):
         while(True):
@@ -170,25 +170,27 @@ class Consumer(Thread):
     def NotifyTasks(self, tasklist):
         
         listToRemove = [];
-            
-	for task in tasklist:
-		message = task.getTaskReport() 
+        for task in tasklist:
+            message = task.getTaskReport() 
+            emails = task.getUserMail()
 
-                emails = task.getUserMail()
+            msg = "Notification.Consumer.Notify: Sending mail to [" + str(emails) + "]"
+            logging.info( msg )
 
-		emailAddr = ",".join( emails )
+            subject = str(self.serverName)+" Notification: The task ["+ task.getTaskname() + "] " + task.getTaskOutcome()
 
-                
-                msg = "Notification.Consumer.Notify: Sending mail to [" + emailAddr + "]"
-        	logging.info( msg )
+            try:
+                self.mailer.SendMail( emails, subject, message )
+                listToRemove.append( task )
+                self.taskList.removeTasks(listToRemove)
+            except RuntimeError, mex:
+                logging.error("ERROR: %s"%mex)
+                import traceback
+                logging.error(str(traceback.format_exc()))
+                logging.error(mex)
+            except Exception, mex:
+                logging.error("ERROR: %s"%mex)
+                import traceback
+                logging.error(str(traceback.format_exc()))
+                logging.error(mex)
 
-                completeMessage = "Subject:\""+str(self.serverName)+" Notification: The task ["+ task.getTaskname() + "] " + task.getTaskOutcome() + "\n\n" + message
-
-                try:
-                    self.mailer.SendMail( emails, completeMessage )
-                    listToRemove.append( task )
-                    self.taskList.removeTasks(listToRemove)
-                except RuntimeError, mex:
-                    import traceback
-                    logging.error(str(traceback.format_exc()))
-                    logging.error(mex)

@@ -50,26 +50,70 @@ class Mailer:
         logging.info( msg )
         
     ##--------------------------------------------------------------------------
-    def SendMail(self, toList, message):
-        
-        try:
-            server = smtplib.SMTP( self.smtpServer )
-            server.set_debuglevel( self.smtpDbgLvl )
-            server.ehlo()
-            server.starttls()
-            server.ehlo() 
-            server.login(self.senderName, self.senderPwd);
+    def SendMail(self, toList, subject, message):
+        if str(self.smtpServer).strip() != "localhost":
+            logging.info("Sending through '%s'" %str(self.smtpServer))
+            try:
+                emailaddr = ",".join( toList )
+                server = smtplib.SMTP( self.smtpServer )
+                server.set_debuglevel( self.smtpDbgLvl )
+                server.ehlo()
+                server.starttls()
+                server.ehlo() 
+                server.login(self.senderName, self.senderPwd);
  
-            flag = 1
-            for mailt in toList:
-                if mailt ==  None or len(str(mailt)) < 1:
-                    flag = -1
-            if flag == 1:
-                server.sendmail(self.senderName, toList, message)
-            else: 
-                logging.error("Not sending: NO e-mail address specified...")
-            server.quit()
-            
-        except SMTPException, ex:
-            errmsg = "SMTP ERROR! " + str(ex)
-            raise RuntimeError, errmsg
+                flag = 1
+                for mailt in emailaddr:
+                    if mailt ==  None or len(str(mailt)) < 1:
+                        flag = -1
+                if flag == 1:
+                    complMsg = "Subject:\""+str(subject)+"\n\n" + message
+                    server.sendmail(self.senderName, toList, complMsg)
+                else: 
+                    logging.error("Not sending: NO e-mail address specified...")
+                server.quit()
+            except SMTPException, ex:
+                errmsg = "SMTP ERROR! " + str(ex)
+                raise RuntimeError, errmsg
+            except Exception, ex:
+                errmsg = "Generic ERROR!" + str(ex)
+                raise Exception, errmsg
+
+        else:
+            import time, os
+            infoFile = "/tmp/crabNotifInfoFile." + str(time.time())
+
+            try:
+                os.remove(infoFile)
+            except OSError:
+                pass
+
+            FILE = open(infoFile,"w")
+            FILE.write(message)
+            FILE.close()
+
+            mainEmail = toList.pop(0)
+            CCRecipients = ",".join( toList )
+
+            if len(toList) >=2:
+                cmd = "mail -s \"%s\" "%str(subject)
+                cmd += mainEmail + " -c " + CCRecipients + " < " + infoFile
+            else:
+                cmd = "mail -s \"%s\" "%str(subject)
+                cmd += mainEmail + " < " + infoFile
+
+            msg = "Notification.Consumer.Notify: Sending mail to [" + str(toList) + "]"
+            logging.info( msg )
+            logging.info( cmd )
+                
+            retCode = os.system( cmd )
+
+            if(retCode != 0):
+                errmsg = "ERROR! Command ["+cmd+"] FAILED!"
+                logging.error(errmsg)
+
+            try:
+                os.remove(infoFile)
+            except OSError:
+                pass
+
