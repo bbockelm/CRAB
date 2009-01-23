@@ -17,9 +17,22 @@ class Reporter(Actor):
         """
         common.logger.debug(5, "Reporter::run() called")
         task = common._db.getTask()
-        #print task
+        #print self.cfg_params
         print "\n----------------------------\n"
         print "Dataset: ",task['dataset']
+        if self.cfg_params.has_key('USER.copy_data') and int(self.cfg_params['USER.copy_data'])==1:
+            print "Remote output :"
+            ## TODO: SL should come from jobDB!
+            from PhEDExDatasvcInfo import PhEDExDatasvcInfo
+            stageout = PhEDExDatasvcInfo(self.cfg_params)
+            endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
+            #print endpoint, lfn, SE, SE_PATH, user
+
+            print "SE:",self.cfg_params['USER.storage_element'],SE," srmPath:",endpoint
+            
+        else:
+            print "Local output: ",task['outputDirectory']
+        #print task
         from ProdCommon.FwkJobRep.ReportParser import readJobReport
         possible_status = [ 'Created',
                             'Undefined',
@@ -39,8 +52,11 @@ class Reporter(Actor):
                             'retrieved'
                             ]
         eventsRead=0
+        eventsRequired=0
         filesRead=0
+        filesRequired=0
         for job in task.getJobs():
+            #print job
             # get FJR filename
             fjr=task['outputDirectory']+job['outputFiles'][-1]
             #print fjr
@@ -58,10 +74,10 @@ class Reporter(Actor):
                     
                 #print jobReport[0].inputFiles,'\n'
             else:
-                print 'no FJR avaialble'
+                print 'no FJR avaialble for job #%s'%job['jobId']
             #print "--------------------------"
-        print "Total Events read: ",eventsRead     
-        print "Total Files read: ",filesRead     
+        print "Total Events read: ",eventsRead," required: ",eventsRequired
+        print "Total Files read: ",filesRead," required: ",filesRequired
         print "Total Jobs : ",len(task.getJobs())
         list_ID={}
         for st in possible_status:
