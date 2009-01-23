@@ -145,11 +145,11 @@ class GetOutput(Actor):
                 self.max_id = runningJob['submission']
                 if self.max_id > 1:
                     for f in os.listdir(self.outDir):
-                        if (f.find(str(id)) != -1 ) and (f != file) and f.find('Submission_'+str(id)) == -1: 
+                        if (f.find('_'+str(id)+'.') != -1 ) and (f != file) and f.find('Submission_'+str(id)) == -1: 
                             self.moveOutput(id, self.max_id, self.outDir, f)
                     if self.log==1:
                         for f in os.listdir(self.logDir):
-                            if f.find(str(id)) != -1 and f.find('Submission_'+str(id)) == -1:
+                            if f.find('_'+str(id)+'.') != -1 and f.find('Submission_'+str(id)) == -1:
                                 self.moveOutput(id, self.max_id, self.logDir, f)
                             pass
                         pass
