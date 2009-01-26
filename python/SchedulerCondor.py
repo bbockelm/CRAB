@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.14 2008/10/10 19:24:44 ewv Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.15 2008/11/25 22:24:23 ewv Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -85,6 +85,7 @@ class SchedulerCondor(SchedulerLocal) :
             self.VO    = cfg_params.get('EDG.virtual_organization', 'cms')
 
             self.checkProxy()
+        self.role  = None
 
         return
 
@@ -121,10 +122,7 @@ class SchedulerCondor(SchedulerLocal) :
         Check the compatibility of available resources
         """
 
-        if self.selectNoInput:
-            return [True]
-        else:
-            return SchedulerLocal.listMatch(self, seList, full)
+        return [True]
 
 
     def decodeLogInfo(self, fileName):
