@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.80 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.80 2008/12/03 13:45:26 spiga Exp $"
+__version__ = "$Revision: 1.81 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.81 2008/12/05 11:01:40 spiga Exp $"
 
 import os, pickle, time, copy
 
@@ -45,6 +45,9 @@ class CrabServerWorkerComponent:
         self.args.setdefault('Logfile', None)
         self.args.setdefault('CacheDir', None)
         self.args.setdefault('ProxiesDir', None)
+
+        self.args.setdefault('uiConfigWMS', None) 
+        self.args.setdefault('configFileName', None)
         
         # SE support parameters
         # Protocol = local cannot be the default. Any default allowd 
@@ -54,7 +57,7 @@ class CrabServerWorkerComponent:
         self.args.setdefault('storagePort', '')
         self.args.setdefault('storagePath', self.args["CacheDir"])
         self.args.update(args)
-        
+
         # define log file
         if self.args['Logfile'] == None:
             self.args['Logfile'] = os.path.join(self.args['ComponentDir'],
@@ -101,6 +104,7 @@ class CrabServerWorkerComponent:
         logging.info("-----------------------------------------")
         logging.info("CrabServerWorkerComponent ver2 Started...")
         logging.info("Component dropbox working directory: %s\n"%self.wdir)        
+
         pass
     
     def startComponent(self):
@@ -163,6 +167,12 @@ class CrabServerWorkerComponent:
             
         # enqueue task submissions and perform them
         if event in ["TaskRegisterComponent:NewTaskRegistered", "ResubmitJob", "CRAB_Cmd_Mgr:NewCommand"]: 
+            try:
+                self.initUiConfigs()
+            except Exception, exc:
+                logging.info(str(exc))
+                logging.info(traceback.format_exc())
+
             self.enqueueForSubmission(event, payload) 
         
         # fast-kill tasks
@@ -218,7 +228,6 @@ class CrabServerWorkerComponent:
         workerCfg['ce_dynBList'] = []
         if siteToBan : workerCfg['ce_dynBList'].append(siteToBan)
         workerCfg['cpCmd'] = self.args.get('cpCmd', 'cp')
-        workerCfg['rb'] = self.args.get('resourceBroker', 'CERN')
         workerCfg['rfioServer'] = self.args.get('rfioServer', '') 
         workerCfg['EDG_retry_count'] = int(self.args.get('EDG_retry_count', 3) ) 
         workerCfg['EDG_shallow_retry_count'] = int(self.args.get('EDG_shallow_retry_count', 3) ) 
@@ -422,6 +431,12 @@ class CrabServerWorkerComponent:
         workerCfg['SEport'] = self.args['storagePort']
 
         workerCfg['taskname'] = taskUniqName
+
+        if self.args['uiConfigWMS'] != "" and self.args['uiConfigWMS'] != None:
+            workerCfg['serviceFile'] = self.args['uiConfigWMS']
+        elif self.args['configFileName'] != "" and self.args['configFileName'] != None:
+            workerCfg['serviceFile'] = os.path.join( self.wdir, self.args['configFileName'] )
+
         workerCfg['actionType'] = actionType
         workerCfg['retries'] = int( self.args.get('maxRetries', 3) )
 
@@ -431,3 +446,36 @@ class CrabServerWorkerComponent:
         workerCfg['credentialType'] = self.args['credentialType']
         return workerCfg
         
+################################
+#   Auxiliary Methods      
+################################
+
+    def initUiConfigs(self):
+        """
+        Download the UI Configuration files for the different Schedulers
+        These files will be used by Submitting threads to address to correct Brokers
+        """
+
+        if self.args['uiConfigWMS'] != "" and self.args['uiConfigWMS'] != None:
+            ## file not to be downloaded - manually mantained
+            if not os.path.exists( self.args['uiConfigWMS'] ):
+                logging.info("WARNING: configuration file '%s' not found!"%(self.args['uiConfigWMS']))
+        elif self.args["baseConfUrl"] != "" and self.args["baseConfUrl"] != None:
+            ## periodic download of configuration file
+            from WMCore.Services.Service import Service
+            wmcorecache = {}
+            wmcorecache['logger'] = logging.getLogger()
+            wmcorecache['endpoint'] = self.args["baseConfUrl"]
+            wmcorecache['cachepath'] = self.wdir   ## cache area
+            wmcorecache['cacheduration'] = 0.5     ## half an hour
+            wmcorecache['timeout'] = 20            ## seconds
+            wmcorecache['type'] = "txt/csv"        ## ??
+            if self.args['configFileName'] != "" and self.args['configFileName'] != None:
+                logging.info("Downloading configuration...")
+                servo = Service( wmcorecache )
+                servo.refreshCache(self.args['configFileName'], self.args['configFileName'])
+            else:
+                logging.info("WARNING: configuration file name not found!")
+        else:
+            logging.info("WARNING: service configuration not found!")
+

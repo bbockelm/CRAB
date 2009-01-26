@@ -244,7 +244,8 @@ class FatWorker(Thread):
         schedulerConfig = {'name': self.bossSchedName, 'user_proxy':taskObj['user_proxy']}
 
         if schedulerConfig['name'] in ['SchedulerGLiteAPI']:
-            schedulerConfig['config'] = self.wdir + '/glite_wms_%s.conf' % self.configs['rb']
+            schedulerConfig['config'] = self.configs['serviceFile']
+            ##self.wdir + '/glite_wms_%s.conf' % self.configs['rb'] ## TODO
             schedulerConfig['skipWMSAuth'] = 1
             if self.wmsEndpoint:
                 schedulerConfig['service'] = self.wmsEndpoint
