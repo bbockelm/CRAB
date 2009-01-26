@@ -66,8 +66,9 @@ if  homeDir == None:
 # core fields not associated to components
   
 crabServerConfiguration = {
-    'resourceBroker':'CERN',
     'WMSserviceList':'', 
+    'baseConfUrl': '',
+    'configFileName': '',
     'CacheDir':'',
     'credentialType':'Proxy',
     'ProxiesDir':'/tmp/del_proxies/',
@@ -93,9 +94,6 @@ componentFields = {
 
     "CommandManager": {
     'ComponentDir':None,
-    'uiConfigRB':'',
-    'uiConfigRBVO':'',
-    'uiConfigWMS':'',
     'acceptableThroughput':'-1',
     'acceptableClient':'',
     'Port':'20081',
