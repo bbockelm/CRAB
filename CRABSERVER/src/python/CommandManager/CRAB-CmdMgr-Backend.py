@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.32 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.32 2008/11/07 19:29:37 ewv Exp $"
+__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.33 2008/12/03 13:44:40 spiga Exp $"
 
 import os
 import time
@@ -53,7 +53,6 @@ class CRAB_AS_beckend:
         self.log.info("Front-end message service created")
 
         self.initWLoadJabber()
-        self.initUiConfigs()
 
         self.log.info("Python gateway loaded ...")
         self.log.info("CRAB Server gateway service working directory: %s"%self.wdir)
@@ -110,49 +109,6 @@ class CRAB_AS_beckend:
         ## DISABLED FOR DEBUG
         self.log.debug("Create Jabber: thsLevel %d"%int(self.args['acceptableThroughput']) )
         self.jabber = JabberThread(self, self.log, int(self.args['acceptableThroughput']) )
-        pass
-
-    def initUiConfigs(self):
-        """
-        Download the UI Configuration files for the different Schedulers
-        These files will be used by Submitting threads to address to correct Brokers
-        """
-        #### Adapted from Mattia contributions to old ProxyTar Component
-
-        # Configuration files parameters
-        schedList = ["edg", "glite"]    ## as well as above
-        basicUrl = 'https://cmsweb.cern.ch/crabconf/files/'
-
-        # Check if everything is already on the server
-        existsUIcfgRB = os.path.exists( self.args['uiConfigRB'] )
-        existsUIcfgWMS = os.path.exists( self.args['uiConfigWMS'] )
-        existsUIcfgRBVO = os.path.exists( self.args['uiConfigRBVO'] )
-
-        self.log.debug("Available configuration files:")
-        self.log.debug("\t edg(VO):\t%s (%s)\n\t glite:\t%s\n"%(existsUIcfgRB, existsUIcfgWMS, existsUIcfgRBVO))
-
-        if existsUIcfgRB and existsUIcfgWMS and existsUIcfgRBVO:
-            return
-
-        # Get the missing configurations
-        self.log.info("Some configuration files are missing: downloading ...")
-        for sched in schedList:
-            # build the cfgFile filename
-            fileName = sched + '_wms_' + self.args['resourceBroker'] + '.conf'
-            if sched == "edg":
-               fileName = sched + '_wl_ui_cmd_var.conf.CMS_' + self.args['resourceBroker']
-
-            # get data from http channel and save locally
-            try:
-                f = urllib.urlopen( basicUrl + fileName )
-                ff = open(os.path.join( self.wdir, fileName ), 'w')
-                ff.write(f.read())
-                ff.close()
-            except Exception, e:
-                self.log.info( "Error while downloading configuration file %s:%s"%(fileName, e) )
-                continue
-            self.log.debug(basicUrl + fileName + " downloaded into: " + os.path.join( self.wdir, fileName ) )
-        self.log.info('Download ended.')
         pass
 
 ###############################
