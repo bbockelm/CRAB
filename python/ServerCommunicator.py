@@ -267,6 +267,14 @@ class ServerCommunicator:
         if 'EDG.se_black_list' in self.cfg_params:
             miniCfg['EDG.se_black_list'] = str( self.cfg_params['EDG.se_black_list'] )
 
+        miniCfg['EDG.group'] = ""
+        if 'EDG.group' in self.cfg_params:
+            miniCfg['EDG.group'] = str( self.cfg_params['EDG.group'] )
+
+        miniCfg['EDG.role'] = ""
+        if 'EDG.role' in self.cfg_params:
+            miniCfg['EDG.role'] = str( self.cfg_params['EDG.role'] )
+
         miniCfg['cfgFileNameCkSum'] = makeCksum(common.work_space.cfgFileName()) 
         if 'cfgFileNameCkSum' in self.cfg_params:
             miniCfg['cfgFileNameCkSum'] = str(self.cfg_params['cfgFileNameCkSum'])
