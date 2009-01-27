@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.152 2008/12/08 17:55:39 spiga Exp $"
-__version__ = "$Revision: 1.152 $"
+__revision__ = "$Id: FatWorker.py,v 1.154 2009/01/26 10:42:40 mcinquil Exp $"
+__version__ = "$Revision: 1.154 $"
 import string
 import sys, os
 import time
@@ -59,6 +59,8 @@ class FatWorker(Thread):
         self.ce_whiteL = []
         self.wmsEndpoint = self.configs['wmsEndpoint']
         self.local_queue = self.configs['messageQueue']
+        self.role = ''          
+        self.group = ''          
 
         ##Initialization to allow lsf@caf
         self.cpCmd = self.configs['cpCmd']
@@ -226,6 +228,10 @@ class FatWorker(Thread):
                 for ceB in self.cfg_params['EDG.ce_black_list'].split(","):
                     if ceB:
                         self.ce_blackL.append(ceB.strip())
+            if 'EDG.role' in self.cfg_params:
+                self.role = self.cfg_params['EDG.role']
+            if 'EDG.group' in self.cfg_params:
+                self.group = self.cfg_params['EDG.group']
         return status
 
     def allocateBossLiteSchedulerSession(self, taskObj):
@@ -584,7 +590,9 @@ class FatWorker(Thread):
                     seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL, self.log)
                     cleanedList = seParser.cleanForBlackWhiteList(seList, 'list')
                     if '' in cleanedList :cleanedList.remove('')
-                sites = self.blSchedSession.lcgInfo(tags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL)
+                voTags=['cms']
+                if self.role != '': voTags.append('VOMS:/cms/Role=%s'%self.role)
+                sites = self.blSchedSession.getSchedulerInterface().lcgInfo(tags, voTags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL)
                 if len(sites) > 0: matched.append(sel)
                 else: unmatched.append(sel)
             sel += 1
@@ -831,11 +839,14 @@ class FatWorker(Thread):
         """
         ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
                                           self.log)
+
+        self.ce_whiteL = ceParser.whiteList()
+        self.ce_blackL = ceParser.blackList()
         req = ''
         if self.ce_whiteL:
             tmpCe = []
             concString = '&&'
-            for ce in ceParser.whiteList():
+            for ce in self.ce_whiteL:
                 ce = str(ce).strip()
                 if len(ce)==0:
                     continue
@@ -856,7 +867,7 @@ class FatWorker(Thread):
         if self.ce_blackL:
             tmpCe = []
             concString = '&&'
-            for ce in ceParser.blackList():
+            for ce in self.ce_blackL:
                 ce = str(ce).strip()
                 if len(ce)==0:
                     continue
