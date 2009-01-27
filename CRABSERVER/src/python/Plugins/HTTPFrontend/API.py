@@ -285,15 +285,15 @@ def getpidof(procname,service):
     
 def getPIDof(procname):
     if procname == 'mysqld':
-        pids = os.popen("ps -C %s wwho pid,pid"%procname).read()
+        pids = os.popen("ps -C %s wwho pid,pid"%procname).readlines()
     else:
-        pids = os.popen("ps -C %s wwho pgid,pid"%procname).read()
-    if re.match('\s*[0-9]+\s*[0-9]+\s*',str(pids)):
-        pgid, pid = str(pids).split()[0:2]
-        if pid == pgid:
-            return pid.rstrip()
-    else:
-        return "Not Running"
+        pids = os.popen("ps -C %s wwho pgid,pid"%procname).readlines()
+    for eachpid in pids:
+        if re.match('\s*[0-9]+\s*[0-9]+\s*',str(eachpid)):
+            pgid, pid = str(eachpid).split()[0:2]
+            if pid == pgid:
+                return pid.rstrip()
+    return "Not Running"
 
                                     
 def isSensorRunning(comp):
