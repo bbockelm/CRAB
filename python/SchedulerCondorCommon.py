@@ -19,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.29 2008/10/24 16:02:48 ewv Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.30 2008/10/30 16:25:24 ewv Exp $"
+__version__ = "$Revision: 1.30 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -50,11 +50,11 @@ class SchedulerCondorCommon(SchedulerGrid):
         cmdOut = runCommand(cmd)
         if cmdOut != None :
             pass
-#             tmp = cmdOut.find('CondorVersion') + 15
-#             version = cmdOut[tmp:tmp+6].split('.')
-#             version_master = int(version[0])
-#             version_major  = int(version[1])
-#             version_minor  = int(version[2])
+            #tmp = cmdOut.find('CondorVersion') + 15
+            #version = cmdOut[tmp:tmp+6].split('.')
+            #version_master = int(version[0])
+            #version_major  = int(version[1])
+            #version_minor  = int(version[2])
         else :
             msg  = self.msgPre + 'condor_version was not able to determine the installed condor version.\n'
             msg += self.msgPre + 'Please use a machine with a properly installed condor\n'
@@ -257,13 +257,6 @@ class SchedulerCondorCommon(SchedulerGrid):
         ceDest = self.ceBlackWhiteListParser.cleanForBlackWhiteList(uniqCEs, "list")
 
         return ceDest
-
-    def userName(self):
-        """
-        return the user name
-        """
-
-        return runCommand("voms-proxy-info -identity")
 
     def ce_list(self):
         """
