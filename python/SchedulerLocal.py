@@ -147,8 +147,9 @@ class SchedulerLocal(Scheduler) :
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
-            txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'"\n'
-            txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
+            txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+' --lfn $LFNBaseName "\n'
+            txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+' --lfn $LFNBaseName \n'
+            #txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
             if self.debug_wrapper==1: 
                 txt += '########### details of SE interaction\n'
                 txt += 'if [ -f .SEinteraction.log ] ;then\n'
