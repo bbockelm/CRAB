@@ -51,6 +51,12 @@ class Mailer:
         
     ##--------------------------------------------------------------------------
     def SendMail(self, toList, subject, message):
+        if len(toList) < 1:
+            logging.error("1: No e-mail address specified")
+            return
+        elif len(toList[0]) < 1:
+            logging.error("2: No e-mail address specified")
+            return 
         if str(self.smtpServer).strip() != "localhost":
             logging.info("Sending through '%s'" %str(self.smtpServer))
             try:
