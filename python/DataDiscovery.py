@@ -131,7 +131,7 @@ class DataDiscovery:
  
         api = DBSAPI.dbsApi.DbsApi(args)
 
-        self.files = self.queryDbs(api,path=self.datasetPath,runNumber=runselection,useParent=useparent)
+        self.files = self.queryDbs(api,path=self.datasetPath,runselection=runselection,useParent=useparent)
 
         anFileBlocks = []
         if self.skipBlocks: anFileBlocks = readTXTfile(self, fileBlocks_FileName) 
@@ -182,7 +182,7 @@ class DataDiscovery:
 
 ###########################
 
-    def queryDbs(self,api,path=None,runNumber=None,useParent=None):
+    def queryDbs(self,api,path=None,runselection=None,useParent=None):
  
         allowedRetriveValue = [#'retrive_parent', 
                                'retrive_block',
@@ -190,7 +190,7 @@ class DataDiscovery:
                                'retrive_run'
                                ]
         try:
-            if not runNumber :
+            if len(runselection) <=0 :
                 if useParent==1 or self.splitByRun==1 :
                     if self.ads==1 :           
                         files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue) 
