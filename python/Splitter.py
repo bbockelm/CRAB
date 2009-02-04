@@ -393,7 +393,7 @@ class JobSplitter:
                     parString += '\\\"' + file + '\\\"\,'
                 fullString = parString[:-2]
                 list_of_lists.append([fullString,str(-1),str(0)])     
-                # sto assumendo che i jobs siano tutti locati insieme
+                #need to check single file location
                 jobDestination.append(res['locations'])   
                 count +=1
         #print jobDestination 
