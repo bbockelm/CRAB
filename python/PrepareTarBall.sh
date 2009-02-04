@@ -89,6 +89,9 @@ cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
 cvs co -r ${WMCOREtag} -d WMCore               COMP/WMCORE/src/python/WMCore/__init__.py
 cvs co -r ${WMCOREtag} -d WMCore/SiteScreening COMP/WMCORE/src/python/WMCore/SiteScreening
 cvs co -r ${WMCOREtag} -d WMCore/Services      COMP/WMCORE/src/python/WMCore/Services
+cvs co -r ${WMCOREtag} -d WMCore/JobSplitting      COMP/WMCORE/src/python/WMCore/JobSplitting
+cvs co -r ${WMCOREtag} -d WMCore/DataStructs       COMP/WMCORE/src/python/WMCore/DataStructs 
+
 
 #cvs co -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
 #cvs co -d IMProv COMP/PRODCOMMON/src/python/IMProv
