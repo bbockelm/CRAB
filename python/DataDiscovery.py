@@ -111,6 +111,11 @@ class DataDiscovery:
         if (self.cfg_params.has_key('CMSSW.runselection')):
             runselection = parseRange2(self.cfg_params['CMSSW.runselection'])
 
+
+        self.splitByRun = int(self.cfg_params.get('CMSSW.split_by_run', 0))
+          
+        self.ads = int(self.cfg_params.get('CMSSW.ads', 0))
+
         common.logger.debug(6,"runselection is: %s"%runselection)
         ## service API
         args = {}
@@ -118,54 +123,28 @@ class DataDiscovery:
         args['level']   = 'CRITICAL'
 
         ## check if has been requested to use the parent info
-        useParent = self.cfg_params.get('CMSSW.use_parent',False)
+        useparent = int(self.cfg_params.get('CMSSW.use_parent',0))
 
         ## check if has been asked for a non default file to store/read analyzed fileBlocks   
         defaultName = common.work_space.shareDir()+'AnalyzedBlocks.txt'  
         fileBlocks_FileName = os.path.abspath(self.cfg_params.get('CMSSW.fileblocks_file',defaultName))
  
         api = DBSAPI.dbsApi.DbsApi(args)
-        allowedRetriveValue = ['retrive_parent', 
-                               'retrive_block',
-                               'retrive_lumi',
-                               'retrive_run'
-                               ]
-        try:
-            if len(runselection) <= 0 :
-                if useParent:
-                    files = api.listFiles(path=self.datasetPath, retriveList=allowedRetriveValue)
-                    common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
-                    common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
-                else:
-                    files = api.listDatasetFiles(self.datasetPath)
-            else :
-                files=[]
-                for arun in runselection:
-                    try:
-                        filesinrun = api.listFiles(path=self.datasetPath,retriveList=allowedRetriveValue,runNumber=arun)
-                        files.extend(filesinrun)
-                    except:
-                        msg="WARNING: problem extracting info from DBS for run %s "%arun
-                        common.logger.message(msg)
-                        pass
 
-        except DbsBadRequest, msg:
-            raise DataDiscoveryError(msg)
-        except DBSError, msg:
-            raise DataDiscoveryError(msg)
+        self.files = self.queryDbs(api,path=self.datasetPath,runNumber=runselection,useParent=useparent)
 
         anFileBlocks = []
         if self.skipBlocks: anFileBlocks = readTXTfile(self, fileBlocks_FileName) 
 
         # parse files and fill arrays
-        for file in files :
+        for file in self.files :
             parList = []
             # skip already analyzed blocks
             fileblock = file['Block']['Name']
             if fileblock not in anFileBlocks :
                 filename = file['LogicalFileName']
                 # asked retry the list of parent for the given child 
-                if useParent: parList = [x['LogicalFileName'] for x in file['ParentList']] 
+                if useparent==1: parList = [x['LogicalFileName'] for x in file['ParentList']] 
                 self.parent[filename] = parList 
                 if filename.find('.dat') < 0 :
                     events    = file['NumberOfEvents']
@@ -201,6 +180,46 @@ class DataDiscovery:
                                             % self.datasetPath)
 
 
+###########################
+
+    def queryDbs(self,api,path=None,runNumber=None,useParent=None):
+ 
+        allowedRetriveValue = [#'retrive_parent', 
+                               'retrive_block',
+                               #'retrive_lumi',
+                               'retrive_run'
+                               ]
+        try:
+            if not runNumber :
+                if useParent==1 or self.splitByRun==1 :
+                    if self.ads==1 :           
+                        files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue) 
+                    else :
+                        files = api.listFiles(path=path, retriveList=allowedRetriveValue) 
+                    common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
+                    common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
+                else:
+                    print 'MALE2'
+                    files = api.listDatasetFiles(self.datasetPath)
+            else :
+                files=[]
+                for arun in runselection:
+                    try:
+                        if self.ads==1 : filesinrun = api.listFiles(analysisDataset=path,retriveList=allowedRetriveValue,runNumber=arun)
+                        else: filesinrun = api.listFiles(path=path,retriveList=allowedRetriveValue,runNumber=arun)
+                        files.extend(filesinrun)
+                    except:
+                        msg="WARNING: problem extracting info from DBS for run %s "%arun
+                        common.logger.message(msg)
+                        pass
+
+        except DbsBadRequest, msg:
+            raise DataDiscoveryError(msg)
+        except DBSError, msg:
+            raise DataDiscoveryError(msg)
+
+        return files
+
 # #################################################
     def getMaxEvents(self):
         """
@@ -235,5 +254,12 @@ class DataDiscovery:
         return parent grouped by file 
         """
         return self.parent        
+
+# #################################################
+    def getListFiles(self):
+        """
+        return parent grouped by file 
+        """
+        return self.files        
 
 ########################################################################
