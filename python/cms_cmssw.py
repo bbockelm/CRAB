@@ -2,9 +2,9 @@ from JobType import JobType
 from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
-from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 import common
 import Scram
+from Splitter import JobSplitter
 
 import os, string, glob
 
@@ -17,11 +17,6 @@ class Cmssw(JobType):
 
         self._params = {}
         self.cfg_params = cfg_params
-
-        # init BlackWhiteListParser
-        seWhiteList = cfg_params.get('EDG.se_white_list',[])
-        seBlackList = cfg_params.get('EDG.se_black_list',[])
-        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
 
         ### Temporary patch to automatically skip the ISB size check:
         server=self.cfg_params.get('CRAB.server_name',None)
@@ -63,9 +58,6 @@ class Cmssw(JobType):
 
         ### collect Data cards
 
-        if not cfg_params.has_key('CMSSW.datasetpath'):
-            msg = "Error: datasetpath not defined "
-            raise CrabException(msg)
 
         ### Temporary: added to remove input file control in the case of PU
         self.dataset_pu = cfg_params.get('CMSSW.dataset_pu', None)
@@ -133,7 +125,7 @@ class Cmssw(JobType):
             raise CrabException(msg)
 
         # use parent files...
-        self.useParent = self.cfg_params.get('CMSSW.use_parent',False)
+        self.useParent = int(self.cfg_params.get('CMSSW.use_parent',0))
 
         ## additional input files
         if cfg_params.has_key('USER.additional_input_files'):
@@ -159,41 +151,6 @@ class Cmssw(JobType):
             common.logger.debug(5,"Additional input files: "+str(self.additional_inbox_files))
         pass
 
-        ## Events per job
-        if cfg_params.has_key('CMSSW.events_per_job'):
-            self.eventsPerJob =int( cfg_params['CMSSW.events_per_job'])
-            self.selectEventsPerJob = 1
-        else:
-            self.eventsPerJob = -1
-            self.selectEventsPerJob = 0
-
-        ## number of jobs
-        if cfg_params.has_key('CMSSW.number_of_jobs'):
-            self.theNumberOfJobs =int( cfg_params['CMSSW.number_of_jobs'])
-            self.selectNumberOfJobs = 1
-        else:
-            self.theNumberOfJobs = 0
-            self.selectNumberOfJobs = 0
-
-        if cfg_params.has_key('CMSSW.total_number_of_events'):
-            self.total_number_of_events = int(cfg_params['CMSSW.total_number_of_events'])
-            self.selectTotalNumberEvents = 1
-            if self.selectNumberOfJobs  == 1:
-                if (self.total_number_of_events != -1) and int(self.total_number_of_events) < int(self.theNumberOfJobs):
-                    msg = 'Must specify at least one event per job. total_number_of_events > number_of_jobs '
-                    raise CrabException(msg)
-        else:
-            self.total_number_of_events = 0
-            self.selectTotalNumberEvents = 0
-
-        if self.pset != None:
-             if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
-                 msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
-                 raise CrabException(msg)
-        else:
-             if (self.selectNumberOfJobs == 0):
-                 msg = 'Must specify  number_of_jobs.'
-                 raise CrabException(msg)
 
         ## New method of dealing with seeds
         self.incrementSeeds = []
@@ -209,21 +166,15 @@ class Cmssw(JobType):
                 tmp.strip()
                 self.incrementSeeds.append(tmp)
 
-        ## FUTURE: Can remove in CRAB 2.4.0
-        self.sourceSeed    = cfg_params.get('CMSSW.pythia_seed',None)
-        self.sourceSeedVtx = cfg_params.get('CMSSW.vtx_seed',None)
-        self.sourceSeedG4  = cfg_params.get('CMSSW.g4_seed',None)
-        self.sourceSeedMix = cfg_params.get('CMSSW.mix_seed',None)
-        if self.sourceSeed or self.sourceSeedVtx or self.sourceSeedG4 or self.sourceSeedMix:
-            msg = 'pythia_seed, vtx_seed, g4_seed, and mix_seed are no longer valid settings. You must use increment_seeds or preserve_seeds'
-            raise CrabException(msg)
-
         self.firstRun = cfg_params.get('CMSSW.first_run',None)
 
         # Copy/return
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
         self.return_data = int(cfg_params.get('USER.return_data',0))
-
+        
+        self.conf = {}   
+        self.conf['pubdata'] = None 
+        # number of jobs requested to be created, limit obj splitting DD
         #DBSDLS-start
         ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code
         self.maxEvents=0  # max events available   ( --> check the requested nb. of evts in Creator.py)
@@ -235,18 +186,24 @@ class Cmssw(JobType):
         if self.datasetPath:
             blockSites = self.DataDiscoveryAndLocation(cfg_params)
         #DBSDLS-end
-     
-        noBboundary = int(cfg_params.get('CMSSW.no_block_boundary',0))
+        self.conf['blockSites']=blockSites
+
         ## Select Splitting
+        splitByRun = int(cfg_params.get('CMSSW.split_by_run',0))
+
         if self.selectNoInput:
             if self.pset == None:
-                self.jobSplittingForScript()
+                self.algo = 'ForScript'   
             else:
-                self.jobSplittingNoInput()
-        elif noBboundary == 1:
-            self.jobSplittingNoBlockBoundary(blockSites)
+                self.algo = 'NoInput'   
+        elif splitByRun ==1: 
+            self.algo = 'RunBased' 
         else:
-            self.jobSplittingByBlocks(blockSites)
+            self.algo = 'EventBased'   
+            
+#        self.algo = 'LumiBased'   
+        splitter = JobSplitter(self.cfg_params,self.conf) 
+        self.dict = splitter.Algos()[self.algo]()
 
         # modify Pset only the first time
         if isNew:
@@ -257,7 +214,7 @@ class Cmssw(JobType):
                     # Add FrameworkJobReport to parameter-set, set max events.
                     # Reset later for data jobs by writeCFG which does all modifications
                     PsetEdit.addCrabFJR(self.fjrFileName) # FUTURE: Job report addition not needed by CMSSW>1.5
-                    PsetEdit.maxEvent(self.eventsPerJob)
+                    PsetEdit.maxEvent(-1)#self.eventsPerJob) ## TO BE Checked Daniele
                     PsetEdit.skipEvent(0)
                     PsetEdit.psetWriter(self.configFilename())
                     ## If present, add TFileService to output files
@@ -314,9 +271,7 @@ class Cmssw(JobType):
             raise CrabException(msg)
 
         self.filesbyblock=self.pubdata.getFiles()
-        self.eventsbyblock=self.pubdata.getEventsPerBlock()
-        self.eventsbyfile=self.pubdata.getEventsPerFile()
-        self.parentFiles=self.pubdata.getParent()
+        self.conf['pubdata']=self.pubdata
 
         ## get max number of events
         self.maxEvents=self.pubdata.getMaxEvents()
@@ -350,525 +305,13 @@ class Cmssw(JobType):
 
         return sites
 
-    def jobSplittingByBlocks(self, blockSites):
-        """
-        Perform job splitting. Jobs run over an integer number of files
-        and no more than one block.
-        ARGUMENT: blockSites: dictionary with blocks as keys and list of host sites as values
-        REQUIRES: self.selectTotalNumberEvents, self.selectEventsPerJob, self.selectNumberofJobs,
-                  self.total_number_of_events, self.eventsPerJob, self.theNumberOfJobs,
-                  self.maxEvents, self.filesbyblock
-        SETS: self.jobDestination - Site destination(s) for each job (a list of lists)
-              self.total_number_of_jobs - Total # of jobs
-              self.list_of_args - File(s) job will run on (a list of lists)
-        """
-
-        # ---- Handle the possible job splitting configurations ---- #
-        if (self.selectTotalNumberEvents):
-            totalEventsRequested = self.total_number_of_events
-        if (self.selectEventsPerJob):
-            eventsPerJobRequested = self.eventsPerJob
-            if (self.selectNumberOfJobs):
-                totalEventsRequested = self.theNumberOfJobs * self.eventsPerJob
-
-        # If user requested all the events in the dataset
-        if (totalEventsRequested == -1):
-            eventsRemaining=self.maxEvents
-        # If user requested more events than are in the dataset
-        elif (totalEventsRequested > self.maxEvents):
-            eventsRemaining = self.maxEvents
-            common.logger.message("Requested "+str(self.total_number_of_events)+ " events, but only "+str(self.maxEvents)+" events are available.")
-        # If user requested less events than are in the dataset
-        else:
-            eventsRemaining = totalEventsRequested
-
-        # If user requested more events per job than are in the dataset
-        if (self.selectEventsPerJob and eventsPerJobRequested > self.maxEvents):
-            eventsPerJobRequested = self.maxEvents
-
-        # For user info at end
-        totalEventCount = 0
-
-        if (self.selectTotalNumberEvents and self.selectNumberOfJobs):
-            eventsPerJobRequested = int(eventsRemaining/self.theNumberOfJobs)
-
-        if (self.selectNumberOfJobs):
-            common.logger.message("May not create the exact number_of_jobs requested.")
-
-        if ( self.ncjobs == 'all' ) :
-            totalNumberOfJobs = 999999999
-        else :
-            totalNumberOfJobs = self.ncjobs
-
-        blocks = blockSites.keys()
-        blockCount = 0
-        # Backup variable in case self.maxEvents counted events in a non-included block
-        numBlocksInDataset = len(blocks)
-
-        jobCount = 0
-        list_of_lists = []
-
-        # list tracking which jobs are in which jobs belong to which block
-        jobsOfBlock = {}
-
-        # ---- Iterate over the blocks in the dataset until ---- #
-        # ---- we've met the requested total # of events    ---- #
-        while ( (eventsRemaining > 0) and (blockCount < numBlocksInDataset) and (jobCount < totalNumberOfJobs)):
-            block = blocks[blockCount]
-            blockCount += 1
-            if block not in jobsOfBlock.keys() :
-                jobsOfBlock[block] = []
-
-            if self.eventsbyblock.has_key(block) :
-                numEventsInBlock = self.eventsbyblock[block]
-                common.logger.debug(5,'Events in Block File '+str(numEventsInBlock))
-
-                files = self.filesbyblock[block]
-                numFilesInBlock = len(files)
-                if (numFilesInBlock <= 0):
-                    continue
-                fileCount = 0
-
-                # ---- New block => New job ---- #
-                parString = ""
-                # counter for number of events in files currently worked on
-                filesEventCount = 0
-                # flag if next while loop should touch new file
-                newFile = 1
-                # job event counter
-                jobSkipEventCount = 0
-
-                # ---- Iterate over the files in the block until we've met the requested ---- #
-                # ---- total # of events or we've gone over all the files in this block  ---- #
-                pString=''
-                while ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) and (jobCount < totalNumberOfJobs) ):
-                    file = files[fileCount]
-                    if self.useParent:
-                        parent = self.parentFiles[file]
-                        for f in parent :
-                            pString += '\\\"' + f + '\\\"\,'
-                        common.logger.debug(6, "File "+str(file)+" has the following parents: "+str(parent))
-                        common.logger.write("File "+str(file)+" has the following parents: "+str(parent))
-                    if newFile :
-                        try:
-                            numEventsInFile = self.eventsbyfile[file]
-                            common.logger.debug(6, "File "+str(file)+" has "+str(numEventsInFile)+" events")
-                            # increase filesEventCount
-                            filesEventCount += numEventsInFile
-                            # Add file to current job
-                            parString += '\\\"' + file + '\\\"\,'
-                            newFile = 0
-                        except KeyError:
-                            common.logger.message("File "+str(file)+" has unknown number of events: skipping")
-
-                    eventsPerJobRequested = min(eventsPerJobRequested, eventsRemaining)
-                    # if less events in file remain than eventsPerJobRequested
-                    if ( filesEventCount - jobSkipEventCount < eventsPerJobRequested):
-                        # if last file in block
-                        if ( fileCount == numFilesInBlock-1 ) :
-                            # end job using last file, use remaining events in block
-                            # close job and touch new file
-                            fullString = parString[:-2]
-                            if self.useParent:
-                                fullParentString = pString[:-2]
-                                list_of_lists.append([fullString,fullParentString,str(-1),str(jobSkipEventCount)])
-                            else:
-                                list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
-                            common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
-                            self.jobDestination.append(blockSites[block])
-                            common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
-                            # fill jobs of block dictionary
-                            jobsOfBlock[block].append(jobCount+1)
-                            # reset counter
-                            jobCount = jobCount + 1
-                            totalEventCount = totalEventCount + filesEventCount - jobSkipEventCount
-                            eventsRemaining = eventsRemaining - filesEventCount + jobSkipEventCount
-                            jobSkipEventCount = 0
-                            # reset file
-                            pString = ""
-                            parString = ""
-                            filesEventCount = 0
-                            newFile = 1
-                            fileCount += 1
-                        else :
-                            # go to next file
-                            newFile = 1
-                            fileCount += 1
-                    # if events in file equal to eventsPerJobRequested
-                    elif ( filesEventCount - jobSkipEventCount == eventsPerJobRequested ) :
-                        # close job and touch new file
-                        fullString = parString[:-2]
-                        if self.useParent:
-                            fullParentString = pString[:-2]
-                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        else:
-                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
-                        self.jobDestination.append(blockSites[block])
-                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
-                        jobsOfBlock[block].append(jobCount+1)
-                        # reset counter
-                        jobCount = jobCount + 1
-                        totalEventCount = totalEventCount + eventsPerJobRequested
-                        eventsRemaining = eventsRemaining - eventsPerJobRequested
-                        jobSkipEventCount = 0
-                        # reset file
-                        pString = ""
-                        parString = ""
-                        filesEventCount = 0
-                        newFile = 1
-                        fileCount += 1
-
-                    # if more events in file remain than eventsPerJobRequested
-                    else :
-                        # close job but don't touch new file
-                        fullString = parString[:-2]
-                        if self.useParent:
-                            fullParentString = pString[:-2]
-                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        else:
-                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
-                        self.jobDestination.append(blockSites[block])
-                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
-                        jobsOfBlock[block].append(jobCount+1)
-                        # increase counter
-                        jobCount = jobCount + 1
-                        totalEventCount = totalEventCount + eventsPerJobRequested
-                        eventsRemaining = eventsRemaining - eventsPerJobRequested
-                        # calculate skip events for last file
-                        # use filesEventCount (contains several files), jobSkipEventCount and eventsPerJobRequest
-                        jobSkipEventCount = eventsPerJobRequested - (filesEventCount - jobSkipEventCount - self.eventsbyfile[file])
-                        # remove all but the last file
-                        filesEventCount = self.eventsbyfile[file]
-                        if self.useParent:
-                            for f in parent : pString += '\\\"' + f + '\\\"\,'
-                        parString = '\\\"' + file + '\\\"\,'
-                    pass # END if
-                pass # END while (iterate over files in the block)
-        pass # END while (iterate over blocks in the dataset)
-        self.ncjobs = self.total_number_of_jobs = jobCount
-        if (eventsRemaining > 0 and jobCount < totalNumberOfJobs ):
-            common.logger.message("Could not run on all requested events because some blocks not hosted at allowed sites.")
-        common.logger.message(str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
-
-        # screen output
-        screenOutput = "List of jobs and available destination sites:\n\n"
-
-        # keep trace of block with no sites to print a warning at the end
-        noSiteBlock = []
-        bloskNoSite = []
-
-        blockCounter = 0
-        for block in blocks:
-            if block in jobsOfBlock.keys() :
-                blockCounter += 1
-                screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),
-                    ','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)))
-                if len(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],block),block)) == 0:
-                    noSiteBlock.append( spanRanges(jobsOfBlock[block]) )
-                    bloskNoSite.append( blockCounter )
-
-        common.logger.message(screenOutput)
-        if len(noSiteBlock) > 0 and len(bloskNoSite) > 0:
-            msg = 'WARNING: No sites are hosting any part of data for block:\n                '
-            virgola = ""
-            if len(bloskNoSite) > 1:
-                virgola = ","
-            for block in bloskNoSite:
-                msg += ' ' + str(block) + virgola
-            msg += '\n               Related jobs:\n                 '
-            virgola = ""
-            if len(noSiteBlock) > 1:
-                virgola = ","
-            for range_jobs in noSiteBlock:
-                msg += str(range_jobs) + virgola
-            msg += '\n               will not be submitted and this block of data can not be analyzed!\n'
-            if self.cfg_params.has_key('EDG.se_white_list'):
-                msg += 'WARNING: SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
-                msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\n'
-                msg += 'Please check if the dataset is available at this site!)\n'
-            if self.cfg_params.has_key('EDG.ce_white_list'):
-                msg += 'WARNING: CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
-                msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\n'
-                msg += 'Please check if the dataset is available at this site!)\n'
-
-            common.logger.message(msg)
-
-        self.list_of_args = list_of_lists
-        return
-
-    def jobSplittingNoBlockBoundary(self,blockSites):
-        """
-        """
-        # ---- Handle the possible job splitting configurations ---- #
-        if (self.selectTotalNumberEvents):
-            totalEventsRequested = self.total_number_of_events
-        if (self.selectEventsPerJob):
-            eventsPerJobRequested = self.eventsPerJob
-            if (self.selectNumberOfJobs):
-                totalEventsRequested = self.theNumberOfJobs * self.eventsPerJob
-
-        # If user requested all the events in the dataset
-        if (totalEventsRequested == -1):
-            eventsRemaining=self.maxEvents
-        # If user requested more events than are in the dataset
-        elif (totalEventsRequested > self.maxEvents):
-            eventsRemaining = self.maxEvents
-            common.logger.message("Requested "+str(self.total_number_of_events)+ " events, but only "+str(self.maxEvents)+" events are available.")
-        # If user requested less events than are in the dataset
-        else:
-            eventsRemaining = totalEventsRequested
-
-        # If user requested more events per job than are in the dataset
-        if (self.selectEventsPerJob and eventsPerJobRequested > self.maxEvents):
-            eventsPerJobRequested = self.maxEvents
-
-        # For user info at end
-        totalEventCount = 0
-
-        if (self.selectTotalNumberEvents and self.selectNumberOfJobs):
-            eventsPerJobRequested = int(eventsRemaining/self.theNumberOfJobs)
-
-        if (self.selectNumberOfJobs):
-            common.logger.message("May not create the exact number_of_jobs requested.")
-
-        if ( self.ncjobs == 'all' ) :
-            totalNumberOfJobs = 999999999
-        else :
-            totalNumberOfJobs = self.ncjobs
-
-        blocks = blockSites.keys()
-        blockCount = 0
-        # Backup variable in case self.maxEvents counted events in a non-included block
-        numBlocksInDataset = len(blocks)
-
-        jobCount = 0
-        list_of_lists = []
-
-        #AF
-        #AF do not reset input files and event count on block boundary
-        #AF
-        parString=""
-        filesEventCount = 0
-        #AF
-
-        # list tracking which jobs are in which jobs belong to which block
-        jobsOfBlock = {}
-        while ( (eventsRemaining > 0) and (blockCount < numBlocksInDataset) and (jobCount < totalNumberOfJobs)):
-            block = blocks[blockCount]
-            blockCount += 1
-            if block not in jobsOfBlock.keys() :
-                jobsOfBlock[block] = []
-
-            if self.eventsbyblock.has_key(block) :
-                numEventsInBlock = self.eventsbyblock[block]
-                common.logger.debug(5,'Events in Block File '+str(numEventsInBlock))
-                files = self.filesbyblock[block]
-                numFilesInBlock = len(files)
-                if (numFilesInBlock <= 0):
-                    continue
-                fileCount = 0
-                #AF
-                #AF do not reset input files and event count of block boundary
-                #AF
-                ## ---- New block => New job ---- #
-                #parString = ""
-                # counter for number of events in files currently worked on
-                #filesEventCount = 0
-                #AF
-                # flag if next while loop should touch new file
-                newFile = 1
-                # job event counter
-                jobSkipEventCount = 0
-
-                # ---- Iterate over the files in the block until we've met the requested ---- #
-                # ---- total # of events or we've gone over all the files in this block  ---- #
-                pString=''
-                while ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) and (jobCount < totalNumberOfJobs) ):
-                    file = files[fileCount]
-                    if self.useParent:
-                        parent = self.parentFiles[file]
-                        for f in parent :
-                            pString += '\\\"' + f + '\\\"\,'
-                        common.logger.debug(6, "File "+str(file)+" has the following parents: "+str(parent))
-                        common.logger.write("File "+str(file)+" has the following parents: "+str(parent))
-                    if newFile :
-                        try:
-                            numEventsInFile = self.eventsbyfile[file]
-                            common.logger.debug(6, "File "+str(file)+" has "+str(numEventsInFile)+" events")
-                            # increase filesEventCount
-                            filesEventCount += numEventsInFile
-                            # Add file to current job
-                            parString += '\\\"' + file + '\\\"\,'
-                            newFile = 0
-                        except KeyError:
-                            common.logger.message("File "+str(file)+" has unknown number of events: skipping")
-                    eventsPerJobRequested = min(eventsPerJobRequested, eventsRemaining)
-                    #common.logger.message("AF filesEventCount %s - jobSkipEventCount %s "%(filesEventCount,jobSkipEventCount))
-                    # if less events in file remain than eventsPerJobRequested
-                    if ( filesEventCount - jobSkipEventCount < eventsPerJobRequested):
-                      #AF
-                      #AF skip fileboundary part
-                      #AF
-                            # go to next file
-                            newFile = 1
-                            fileCount += 1
-                    # if events in file equal to eventsPerJobRequested
-                    elif ( filesEventCount - jobSkipEventCount == eventsPerJobRequested ) :
-                        # close job and touch new file
-                        fullString = parString[:-2]
-                        if self.useParent:
-                            fullParentString = pString[:-2]
-                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        else:
-                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
-                        self.jobDestination.append(blockSites[block])
-                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
-                        jobsOfBlock[block].append(jobCount+1)
-                        # reset counter
-                        jobCount = jobCount + 1
-                        totalEventCount = totalEventCount + eventsPerJobRequested
-                        eventsRemaining = eventsRemaining - eventsPerJobRequested
-                        jobSkipEventCount = 0
-                        # reset file
-                        pString = ""
-                        parString = ""
-                        filesEventCount = 0
-                        newFile = 1
-                        fileCount += 1
-
-                    # if more events in file remain than eventsPerJobRequested
-                    else :
-                        # close job but don't touch new file
-                        fullString = parString[:-2]
-                        if self.useParent:
-                            fullParentString = pString[:-2]
-                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        else:
-                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
-                        self.jobDestination.append(blockSites[block])
-                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
-                        jobsOfBlock[block].append(jobCount+1)
-                        # increase counter
-                        jobCount = jobCount + 1
-                        totalEventCount = totalEventCount + eventsPerJobRequested
-                        eventsRemaining = eventsRemaining - eventsPerJobRequested
-                        # calculate skip events for last file
-                        # use filesEventCount (contains several files), jobSkipEventCount and eventsPerJobRequest
-                        jobSkipEventCount = eventsPerJobRequested - (filesEventCount - jobSkipEventCount - self.eventsbyfile[file])
-                        # remove all but the last file
-                        filesEventCount = self.eventsbyfile[file]
-                        if self.useParent:
-                            for f in parent : pString += '\\\"' + f + '\\\"\,'
-                        parString = '\\\"' + file + '\\\"\,'
-                    pass # END if
-                pass # END while (iterate over files in the block)
-        pass # END while (iterate over blocks in the dataset)
-        self.ncjobs = self.total_number_of_jobs = jobCount
-        if (eventsRemaining > 0 and jobCount < totalNumberOfJobs ):
-            common.logger.message("eventsRemaining "+str(eventsRemaining))
-            common.logger.message("jobCount "+str(jobCount))
-            common.logger.message(" totalNumberOfJobs "+str(totalNumberOfJobs))
-            common.logger.message("Could not run on all requested events because some blocks not hosted at allowed sites.")
-        common.logger.message(str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
-
-        # screen output
-        screenOutput = "List of jobs and available destination sites:\n\n"
-
-        #AF
-        #AF   skip check on  block with no sites
-        #AF
-        self.list_of_args = list_of_lists
-
-        return
-
-
-
-    def jobSplittingNoInput(self):
-        """
-        Perform job splitting based on number of event per job
-        """
-        common.logger.debug(5,'Splitting per events')
-
-        if (self.selectEventsPerJob):
-            common.logger.message('Required '+str(self.eventsPerJob)+' events per job ')
-        if (self.selectNumberOfJobs):
-            common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
-        if (self.selectTotalNumberEvents):
-            common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
-
-        if (self.total_number_of_events < 0):
-            msg='Cannot split jobs per Events with "-1" as total number of events'
-            raise CrabException(msg)
-
-        if (self.selectEventsPerJob):
-            if (self.selectTotalNumberEvents):
-                self.total_number_of_jobs = int(self.total_number_of_events/self.eventsPerJob)
-            elif(self.selectNumberOfJobs) :
-                self.total_number_of_jobs =self.theNumberOfJobs
-                self.total_number_of_events =int(self.theNumberOfJobs*self.eventsPerJob)
-
-        elif (self.selectNumberOfJobs) :
-            self.total_number_of_jobs = self.theNumberOfJobs
-            self.eventsPerJob = int(self.total_number_of_events/self.total_number_of_jobs)
-
-        common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
-
-        # is there any remainder?
-        check = int(self.total_number_of_events) - (int(self.total_number_of_jobs)*self.eventsPerJob)
-
-        common.logger.debug(5,'Check  '+str(check))
-
-        common.logger.message(str(self.total_number_of_jobs)+' jobs can be created, each for '+str(self.eventsPerJob)+' for a total of '+str(self.total_number_of_jobs*self.eventsPerJob)+' events')
-        if check > 0:
-            common.logger.message('Warning: asked '+str(self.total_number_of_events)+' but can do only '+str(int(self.total_number_of_jobs)*self.eventsPerJob))
-
-        # argument is seed number.$i
-        self.list_of_args = []
-        for i in range(self.total_number_of_jobs):
-            ## Since there is no input, any site is good
-            self.jobDestination.append([""]) #must be empty to write correctly the xml
-            args=[]
-            if (self.firstRun):
-                ## pythia first run
-                args.append(str(self.firstRun)+str(i))
-            if (self.generator in self.managedGenerators):
-                if (self.generator == 'comphep' and i == 0):
-                    # COMPHEP is brain-dead and wants event #'s like 1,100,200,300
-                    args.append('1')
-                else:
-                    args.append(str(i*self.eventsPerJob))
-            self.list_of_args.append(args)
-        return
-
-
-    def jobSplittingForScript(self):
-        """
-        Perform job splitting based on number of job
-        """
-        common.logger.debug(5,'Splitting per job')
-        common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
-
-        self.total_number_of_jobs = self.theNumberOfJobs
-
-        common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
-
-        common.logger.message(str(self.total_number_of_jobs)+' jobs can be created')
-
-        # argument is seed number.$i
-        self.list_of_args = []
-        for i in range(self.total_number_of_jobs):
-            self.jobDestination.append([""])
-            self.list_of_args.append([str(i)])
-        return
 
     def split(self, jobParams,firstJobID):
+          
+        arglist = self.dict['args']
+        njobs = self.dict['njobs']
+        self.jobDestination = self.dict['jobDestination']
 
-        njobs = self.total_number_of_jobs
-        arglist = self.list_of_args
         if njobs==0:
             raise CrabException("Ask to split "+str(njobs)+" jobs: aborting")
 
@@ -899,7 +342,7 @@ class Cmssw(JobType):
         return
 
     def numberOfJobs(self):
-        return self.total_number_of_jobs
+        return self.dict['njobs']
 
     def getTarBall(self, exe):
         """
@@ -1121,7 +564,7 @@ class Cmssw(JobType):
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
             if (self.datasetPath): # standard job
                 txt += 'InputFiles=${args[1]}; export InputFiles\n'
-                if (self.useParent):
+                if (self.useParent==1):
                     txt += 'ParentFiles=${args[2]}; export ParentFiles\n'
                     txt += 'MaxEvents=${args[3]}; export MaxEvents\n'
                     txt += 'SkipEvents=${args[4]}; export SkipEvents\n'
@@ -1129,7 +572,7 @@ class Cmssw(JobType):
                     txt += 'MaxEvents=${args[2]}; export MaxEvents\n'
                     txt += 'SkipEvents=${args[3]}; export SkipEvents\n'
                 txt += 'echo "Inputfiles:<$InputFiles>"\n'
-                if (self.useParent): txt += 'echo "ParentFiles:<$ParentFiles>"\n'
+                if (self.useParent==1): txt += 'echo "ParentFiles:<$ParentFiles>"\n'
                 txt += 'echo "MaxEvents:<$MaxEvents>"\n'
                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
             else:  # pythia like job
@@ -1488,7 +931,7 @@ class Cmssw(JobType):
           #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
         txt += '    if [ $executable_exit_status -eq 0 ];then\n'
         txt += '      echo ">>> Executable succeded  $executable_exit_status"\n'
-        if (self.datasetPath and not (self.dataset_pu or self.useParent)) :
+        if (self.datasetPath and not (self.dataset_pu or self.useParent==1)) :
           # VERIFY PROCESSED DATA
             txt += '      echo ">>> Verify list of processed files:"\n'
             txt += '      echo $InputFiles |tr -d \'\\\\\' |tr \',\' \'\\n\'|tr -d \'"\' > input-files.txt\n'
