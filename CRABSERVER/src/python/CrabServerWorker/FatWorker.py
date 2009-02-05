@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.154 2009/01/26 10:42:40 mcinquil Exp $"
-__version__ = "$Revision: 1.154 $"
+__revision__ = "$Id: FatWorker.py,v 1.155 2009/01/27 18:23:03 spiga Exp $"
+__version__ = "$Revision: 1.155 $"
 import string
 import sys, os
 import time
@@ -494,7 +494,6 @@ class FatWorker(Thread):
                     if j['jobId'] in toMarkAsFailed:
                         jobSpecId.append(j['name'])
 
-                self.cwdb.stopResubmission(jobSpecId)
                 for jId in jobSpecId:
                     try:
                         self.cwdb.updateWEStatus(jId, 'reallyFinished')
