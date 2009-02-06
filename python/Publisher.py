@@ -31,9 +31,12 @@ class Publisher(Actor):
             raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
 
         try:
-            if (int(cfg_params['USER.copy_data']) != 1): raise KeyError
+            if (int(cfg_params['USER.copy_data']) != 1):
+                raise KeyError
         except KeyError:
-            raise CrabException('You can not publish data because you did not selected *** copy_data = 1  *** in the crab.cfg file')
+            msg  = 'You can not publish data because you did not selected \n'
+            msg += '\t*** copy_data = 1 or publish_data = 1  *** in the crab.cfg file'
+            raise CrabException(msg)
         try:
             self.pset = cfg_params['CMSSW.pset']
         except KeyError:
@@ -94,6 +97,7 @@ class Publisher(Actor):
             msg += "Source DBS: %s\n" % globalDBS
             msg += "Destination DBS: %s\n" % self.DBSURL
             common.logger.message(msg)
+            common.logger.write(str(ex))
             return 1
         return 0
           
