@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.92 2009/01/20 19:39:12 spiga Exp $"
-__version__ = "$Revision: 1.92 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.93 2009/01/30 13:23:56 fanzago Exp $"
+__version__ = "$Revision: 1.93 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -286,20 +286,22 @@ class SchedulerGrid(Scheduler):
             txt += 'copy_exit_status=0\n'
             txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'--lfn $LFNBaseName"\n'
             txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+' --lfn $LFNBaseName\n'
-            #txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'\n'
             if self.debug_wrapper==1:
                 txt += 'echo "which lcg-ls"\n'
                 txt += 'which lcg-ls\n'
-                txt += 'echo ########### details of SE interaction\n'
+                txt += 'echo "########### details of SE interaction"\n'
                 txt += 'if [ -f .SEinteraction.log ] ;then\n'
                 txt += '    cat .SEinteraction.log\n'
                 txt += 'else\n'
                 txt += '    echo ".SEinteraction.log file not found"\n'
                 txt += 'fi\n'
-		txt += 'echo ########### contents of cmscpReport\n'
-                txt += 'cat cmscpReport.sh\n'
-                txt += 'echo ########### \n'
+                txt += 'echo "###########"\n'
+
             txt += 'if [ -f cmscpReport.sh ] ;then\n'
+            txt += '    echo ">>>> cat di cmscpReport"\n'
+            txt += '    cat cmscpReport.sh\n'
+            txt += '    echo "###########"\n'
+            txt += '    echo ">>>> source di cmscpReport"\n'
             txt += '    source cmscpReport.sh\n'
             txt += 'else\n'
             txt += '    echo "cmscpReport.sh file not found"\n' 
@@ -316,8 +318,6 @@ class SchedulerGrid(Scheduler):
                 txt += '    echo ".SEinteraction.log file not found"\n'
                 txt += 'fi\n'
                 txt += 'echo ########### \n'
-          #  txt += '    SE=""\n'
-          #  txt += '    SE_PATH=""\n'
             txt += '    job_exit_code=$StageOutExitStatus\n'
             txt += 'fi\n'
             txt += 'export TIME_STAGEOUT_END=`date +%s` \n'
