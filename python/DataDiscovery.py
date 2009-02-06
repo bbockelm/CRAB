@@ -199,7 +199,6 @@ class DataDiscovery:
                     common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
                     common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
                 else:
-                    print 'MALE2'
                     files = api.listDatasetFiles(self.datasetPath)
             else :
                 files=[]
