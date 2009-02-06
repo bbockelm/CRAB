@@ -603,13 +603,14 @@ class cmscp:
                     lfn = dict['lfn']+os.path.basename(file)
                     se = dict['se']
                 #dict['lfn'] # to be implemented
-                txt +=  'echo "Report for File: '+file+'"\n'
-                txt +=  'echo "LFN: '+lfn+'"\n'
-                txt +=  'echo "StorageElement: '+se+'"\n'
+                txt += 'echo "Report for File: '+file+'"\n'
+                txt += 'echo "LFN: '+lfn+'"\n'
+                txt += 'echo "StorageElement: '+se+'"\n'
                 txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
                 txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
+                txt += 'export LFNBaseName='+lfn+'\n'
+                txt += 'export SE='+se+'\n'
                 if dict['erCode'] != '0':
-                    cmscp_exit_status = dict['erCode']
                     cmscp_exit_status = dict['erCode']
             else:
                 txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
