@@ -271,6 +271,7 @@ class Cmssw(JobType):
             raise CrabException(msg)
 
         self.filesbyblock=self.pubdata.getFiles()
+        #print self.filesbyblock
         self.conf['pubdata']=self.pubdata
 
         ## get max number of events
@@ -286,7 +287,20 @@ class Cmssw(JobType):
             raise CrabException(msg)
 
 
-        sites = dataloc.getSites()
+        unsorted_sites = dataloc.getSites()
+        #print "Unsorted :",unsorted_sites
+        sites = self.filesbyblock.fromkeys(self.filesbyblock,'')
+        for lfn in self.filesbyblock.keys():
+            #print lfn
+            if unsorted_sites.has_key(lfn):
+                #print "Found ",lfn
+                sites[lfn]=unsorted_sites[lfn]
+            else:
+                #print "Not Found ",lfn
+                sites[lfn]=[]
+        #print sites
+
+        #print "Sorted :",sites
         if len(sites)==0:
             msg = 'ERROR ***: no location for any of the blocks of this dataset: \n\t %s \n'%datasetPath
             msg += "\tMaybe the dataset is located only at T1's (or at T0), where analysis jobs are not allowed\n"
