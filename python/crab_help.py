@@ -353,13 +353,17 @@ B<[CMSSW]>
 
 the path of processed dataset as defined on the DBS. It comes with the format I</PrimaryDataset/DataTier/Process> . In case no input is needed I<None> must be specified.
 
+=item B<ads *>
+
+you may want to run over an AnalysisDataSet. After define the related path in I<datasetpath>, take care to specify ads=1.   
+
 =item B<runselection *>
 
 within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 .
 
 =item B<use_parent *>
 
-within a dataset you can ask to run over the related parent files too. E.g., this will give you access to the RAW data while running over a RECO sample. Setting use_parent=True CRAB determines the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
+within a dataset you can ask to run over the related parent files too. E.g., this will give you access to the RAW data while running over a RECO sample. Setting use_parent=1 CRAB determines the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
 
 =item B<pset *>
 
@@ -378,6 +382,10 @@ number of events to be accessed by each job. Since a job cannot cross the bounda
 =item B<number_of_jobs *>
 
 Define the number of job to be run for the task. The number of event for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input.
+
+=item B<split_by_run *>
+
+to activate the split run based (each job will access a different run) use I<split_by_run>=1. You can definfe also I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not yet available.  
 
 =item B<output_file *>
 
