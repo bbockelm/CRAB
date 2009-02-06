@@ -85,6 +85,9 @@ echo ">> downloading PRODCOMMON tag ${PRODCOMMONtag} from CVS PRODCOMMON"
 #cd ProdCommon
 cvs co -r ${PRODCOMMONtag} -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
 cvs co -r ${PRODCOMMONtag} -d IMProv COMP/PRODCOMMON/src/python/IMProv
+## Use the Head
+#cvs co -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
+#cvs co -d IMProv COMP/PRODCOMMON/src/python/IMProv
 
 cvs co -r ${WMCOREtag} -d WMCore               COMP/WMCORE/src/python/WMCore/__init__.py
 cvs co -r ${WMCOREtag} -d WMCore/SiteScreening COMP/WMCORE/src/python/WMCore/SiteScreening
@@ -92,9 +95,13 @@ cvs co -r ${WMCOREtag} -d WMCore/Services      COMP/WMCORE/src/python/WMCore/Ser
 cvs co -r ${WMCOREtag} -d WMCore/JobSplitting      COMP/WMCORE/src/python/WMCore/JobSplitting
 cvs co -r ${WMCOREtag} -d WMCore/DataStructs       COMP/WMCORE/src/python/WMCore/DataStructs 
 
+## Use the Head
+#cvs co  -d WMCore               COMP/WMCORE/src/python/WMCore/__init__.py
+#cvs co  -d WMCore/SiteScreening COMP/WMCORE/src/python/WMCore/SiteScreening
+#cvs co  -d WMCore/Services      COMP/WMCORE/src/python/WMCore/Services
+#cvs co  -d WMCore/JobSplitting      COMP/WMCORE/src/python/WMCore/JobSplitting
+#cvs co  -d WMCore/DataStructs       COMP/WMCORE/src/python/WMCore/DataStructs 
 
-#cvs co -d ProdCommon COMP/PRODCOMMON/src/python/ProdCommon
-#cvs co -d IMProv COMP/PRODCOMMON/src/python/IMProv
 #cd ..
 ## exit from external
 cd ../..
