@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.155 2009/01/27 18:23:03 spiga Exp $"
-__version__ = "$Revision: 1.155 $"
+__revision__ = "$Id: FatWorker.py,v 1.156 2009/02/05 13:39:49 mcinquil Exp $"
+__version__ = "$Revision: 1.156 $"
 import string
 import sys, os
 import time
@@ -265,8 +265,6 @@ class FatWorker(Thread):
         elif schedulerConfig['name'] in ['SchedulerLsf']:
             schedulerConfig['cpCmd']   = self.cpCmd
             schedulerConfig['rfioSer'] = self.rfioServer
-            schedulerConfig['userToken'] = '%s/Token_%s'%(os.path.dirname(taskObj['user_proxy']),self.owner)
-
         try:
             self.blSchedSession = BossLiteAPISched(self.blDBsession, schedulerConfig)
         except Exception, e:
