@@ -169,7 +169,7 @@ class SubmitterServer( Submitter ):
                     raise CrabException(str(ex))
 
              try:
-                 dict = CredAPI.registerCredential('submit') 
+                 dict = CredAPI.registerCredential() 
              except Exception, err:
                  common.logger.debug(3, "Registering Credentials : " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
