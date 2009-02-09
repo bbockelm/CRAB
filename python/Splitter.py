@@ -64,8 +64,8 @@ class JobSplitter:
             msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
             raise CrabException(msg)
  
-        blockSites = args['blockSites'] 
-        pubdata = args['pubdata']
+        blockSites = self.args['blockSites'] 
+        pubdata = self.args['pubdata']
         filesbyblock=pubdata.getFiles()
 
         self.eventsbyblock=pubdata.getEventsPerBlock()
@@ -139,7 +139,7 @@ class JobSplitter:
                 numEventsInBlock = self.eventsbyblock[block]
                 common.logger.debug(5,'Events in Block File '+str(numEventsInBlock))
 
-                files = self.filesbyblock[block]
+                files = filesbyblock[block]
                 numFilesInBlock = len(files)
                 if (numFilesInBlock <= 0):
                     continue
@@ -344,8 +344,8 @@ class JobSplitter:
         from WMCore.DataStructs.Run import Run 
 
         self.checkUserSettings()
-        blockSites = args['blockSites'] 
-        pubdata = args['pubdata']
+        blockSites = self.args['blockSites'] 
+        pubdata = self.args['pubdata']
 
         if self.selectNumberOfJobs == 0 :
             self.theNumberOfJobs = 9999999
