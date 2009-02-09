@@ -195,7 +195,9 @@ class Cmssw(JobType):
             if self.pset == None:
                 self.algo = 'ForScript'   
             else:
-                self.algo = 'NoInput'   
+                self.algo = 'NoInput'
+                self.conf['managedGenerators']=self.managedGenerators    
+                self.conf['generator']=self.generator    
         elif splitByRun ==1: 
             self.algo = 'RunBased' 
         else:
