@@ -197,18 +197,17 @@ class Publisher(Actor):
             elif (file['LFN'] == ''):
                 self.noLFN.append(file['PFN'])
             else:
-                if int(file['TotalEvents']) != 0 :
-                    #file.lumisections = {}
+                ### Fede removed check about number of events
+                #if int(file['TotalEvents']) != 0 :
                     # lumi info are now in run hash
-                    file.runs = {}
-                    for ds in file.dataset:
-                        ### Fede for production
-                        if (ds['PrimaryDataset'] == 'null'):
-                            #ds['PrimaryDataset']=procdataset
-                            ds['PrimaryDataset']=self.userprocessedData
-                    filestopublish.append(file)
-                else:
-                    self.noEventsFiles.append(file['LFN'])
+                file.runs = {}
+                for ds in file.dataset:
+                    ### Fede for production
+                    if (ds['PrimaryDataset'] == 'null'):
+                        ds['PrimaryDataset']=self.userprocessedData
+                filestopublish.append(file)
+                #else:
+                #    self.noEventsFiles.append(file['LFN'])
         jobReport.files = filestopublish
         ### if all files of FJR have number of events = 0
         if (len(filestopublish) == 0):
