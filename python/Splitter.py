@@ -7,10 +7,8 @@ from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 class JobSplitter:
     def __init__( self, cfg_params,  args ):
         self.cfg_params = cfg_params
-        self.blockSites = args['blockSites'] 
-        self.pubdata = args['pubdata']
+        self.args=args
         #self.maxEvents
-        self.jobDestination=[]  # Site destination(s) for each job (list of lists)
         # init BlackWhiteListParser
         seWhiteList = cfg_params.get('EDG.se_white_list',[])
         seBlackList = cfg_params.get('EDG.se_black_list',[])
@@ -55,24 +53,27 @@ class JobSplitter:
         REQUIRES: self.selectTotalNumberEvents, self.selectEventsPerJob, self.selectNumberofJobs,
                   self.total_number_of_events, self.eventsPerJob, self.theNumberOfJobs,
                   self.maxEvents, self.filesbyblock
-        SETS: self.jobDestination - Site destination(s) for each job (a list of lists)
+        SETS: jobDestination - Site destination(s) for each job (a list of lists)
               self.total_number_of_jobs - Total # of jobs
               self.list_of_args - File(s) job will run on (a list of lists)
         """
 
+        jobDestination=[]  
         self.checkUserSettings()
         if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
             msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
             raise CrabException(msg)
  
-        self.filesbyblock=self.pubdata.getFiles()
+        blockSites = args['blockSites'] 
+        pubdata = args['pubdata']
+        filesbyblock=pubdata.getFiles()
 
-        self.eventsbyblock=self.pubdata.getEventsPerBlock()
-        self.eventsbyfile=self.pubdata.getEventsPerFile()
-        self.parentFiles=self.pubdata.getParent()
+        self.eventsbyblock=pubdata.getEventsPerBlock()
+        self.eventsbyfile=pubdata.getEventsPerFile()
+        self.parentFiles=pubdata.getParent()
 
         ## get max number of events
-        self.maxEvents=self.pubdata.getMaxEvents()
+        self.maxEvents=pubdata.getMaxEvents()
 
         self.useParent = int(self.cfg_params.get('CMSSW.use_parent',0))
         noBboundary = int(self.cfg_params.get('CMSSW.no_block_boundary',0))
@@ -112,7 +113,7 @@ class JobSplitter:
         # old... to remove Daniele
         totalNumberOfJobs = 999999999
 
-        blocks = self.blockSites.keys()
+        blocks = blockSites.keys()
         blockCount = 0
         # Backup variable in case self.maxEvents counted events in a non-included block
         numBlocksInDataset = len(blocks)
@@ -194,8 +195,8 @@ class JobSplitter:
                                 else:
                                     list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
                                 common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
-                                self.jobDestination.append(self.blockSites[block])
-                                common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
+                                jobDestination.append(blockSites[block])
+                                common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
                                 # fill jobs of block dictionary
                                 jobsOfBlock[block].append(jobCount+1)
                                 # reset counter
@@ -223,8 +224,8 @@ class JobSplitter:
                         else:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
-                        self.jobDestination.append(self.blockSites[block])
-                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
+                        jobDestination.append(blockSites[block])
+                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
                         jobsOfBlock[block].append(jobCount+1)
                         # reset counter
                         jobCount = jobCount + 1
@@ -248,8 +249,8 @@ class JobSplitter:
                         else:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
-                        self.jobDestination.append(self.blockSites[block])
-                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(self.jobDestination[jobCount]))
+                        jobDestination.append(blockSites[block])
+                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
                         jobsOfBlock[block].append(jobCount+1)
                         # increase counter
                         jobCount = jobCount + 1
@@ -277,7 +278,7 @@ class JobSplitter:
        # prepare dict output
         dictOut = {}
         dictOut['args'] = list_of_lists
-        dictOut['jobDestination'] = self.jobDestination
+        dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
 
         return dictOut
@@ -295,8 +296,8 @@ class JobSplitter:
             if block in jobsOfBlock.keys() :
                 blockCounter += 1
                 screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),
-                    ','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(self.blockSites[block],block),block)))
-                if len(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(self.blockSites[block],block),block)) == 0:
+                    ','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],[block]),[block])))
+                if len(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],[block]),[block])) == 0:
                     noSiteBlock.append( spanRanges(jobsOfBlock[block]) )
                     bloskNoSite.append( blockCounter )
 
@@ -343,24 +344,26 @@ class JobSplitter:
         from WMCore.DataStructs.Run import Run 
 
         self.checkUserSettings()
+        blockSites = args['blockSites'] 
+        pubdata = args['pubdata']
 
         if self.selectNumberOfJobs == 0 :
             self.theNumberOfJobs = 9999999
         blocks = {}
         runList = [] 
         thefiles = Fileset(name='FilesToSplit')
-        fileList = self.pubdata.getListFiles()
+        fileList = pubdata.getListFiles()
         for f in fileList:
            # print f 
             block = f['Block']['Name']
           #  if not blocks.has_key(block):
           #      blocks[block] = reader.listFileBlockLocation(block)
             try: 
-                f['Block']['StorageElementList'].extend(self.blockSites[block])
+                f['Block']['StorageElementList'].extend(blockSites[block])
             except:
                 continue
             wmbsFile = File(f['LogicalFileName'])
-            [ wmbsFile['locations'].add(x) for x in self.blockSites[block] ]
+            [ wmbsFile['locations'].add(x) for x in blockSites[block] ]
             wmbsFile['block'] = block
             runNum = f['RunsList'][0]['RunNumber']
             runList.append(runNum) 
@@ -428,6 +431,15 @@ class JobSplitter:
         Perform job splitting based on number of event per job
         """
         common.logger.debug(5,'Splitting per events')
+        self.checkUserSettings()
+        jobDestination=[]
+        if (self.selectNumberOfJobs == 0):
+            msg = 'Must specify  number_of_jobs.'
+            raise CrabException(msg)
+
+        managedGenerators =self.args['managedGenerators']
+        generator = self.args['generator']
+        firstRun = self.cfg_params.get('CMSSW.first_run',None)
 
         if (self.selectEventsPerJob):
             common.logger.message('Required '+str(self.eventsPerJob)+' events per job ')
@@ -466,13 +478,13 @@ class JobSplitter:
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
             ## Since there is no input, any site is good
-            self.jobDestination.append([""]) #must be empty to write correctly the xml
+            jobDestination.append([""]) #must be empty to write correctly the xml
             args=[]
-            if (self.firstRun):
+            if (firstRun):
                 ## pythia first run
-                args.append(str(self.firstRun)+str(i))
-            if (self.generator in self.managedGenerators):
-                if (self.generator == 'comphep' and i == 0):
+                args.append(str(firstRun)+str(i))
+            if (generator in managedGenerators):
+                if (generator == 'comphep' and i == 0):
                     # COMPHEP is brain-dead and wants event #'s like 1,100,200,300
                     args.append('1')
                 else:
@@ -481,7 +493,7 @@ class JobSplitter:
        # prepare dict output
         dictOut = {}
         dictOut['args'] = self.list_of_args
-        dictOut['jobDestination'] = self.jobDestination
+        dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
 
         return dictOut
@@ -492,10 +504,10 @@ class JobSplitter:
         Perform job splitting based on number of job
         """
         self.checkUserSettings()
-        if (self.selectnumberofjobs == 0):
+        if (self.selectNumberOfJobs == 0):
             msg = 'must specify  number_of_jobs.'
             raise crabexception(msg)
-
+        jobDestination = []
         common.logger.debug(5,'Splitting per job')
         common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
 
@@ -508,13 +520,13 @@ class JobSplitter:
         # argument is seed number.$i
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
-            self.jobDestination.append([""])
+            jobDestination.append([""])
             self.list_of_args.append([str(i)])
 
        # prepare dict output
         dictOut = {}
         dictOut['args'] = self.list_of_args
-        dictOut['jobDestination'] = []
+        dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
         return dictOut
  
