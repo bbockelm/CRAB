@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.134 2008/12/08 21:41:48 mcinquil Exp $"
-__version__ = "$Revision: 1.134 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.137 2009/01/28 16:02:33 mcinquil Exp $"
+__version__ = "$Revision: 1.137 $"
 
 import os
 import time
@@ -1131,7 +1131,10 @@ class TaskTrackingComponent:
                     self.__appendDbgInfo(taskName, _loginfo)
 
         except Exception, ex:
-            logBuf = self.__log(logBuf, "ERROR: " + str(traceback.format_exc()))
+            logBuf = self.__log(logBuf, "ERROR: %s \n %s"%(str(ex),str(traceback.format_exc())) )
+        except ProdException, pexc:
+            logBuf = self.__log(logBuf, "ERROR: %s \n %s"%(str(pexc),str(traceback.format_exc())) )
+            raise Exception(str(pexc))
 
         logging.info(logBuf)
 
@@ -1173,7 +1176,7 @@ class TaskTrackingComponent:
         except Exception, ex:
             logging.error("Problem registering component\n [%s]"%str(ex))
             logging.error(str(traceback.format_exc()))
-            exit
+            sys.exit(1)
 
         # subscribe to messages
         self.ms.subscribeTo("TaskTracking:StartDebug")
