@@ -273,7 +273,7 @@ class JobSplitter:
         common.logger.message(str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
  
         # skip check on  block with no sites  DD
-        if noBboundary == 0 : self.checkBlockNoSite(blocks,jobsOfBlock)
+        if noBboundary == 0 : self.checkBlockNoSite(blocks,jobsOfBlock,blockSites)
 
        # prepare dict output
         dictOut = {}
@@ -285,7 +285,7 @@ class JobSplitter:
 
         # keep trace of block with no sites to print a warning at the end
 
-    def checkBlockNoSite(self,blocks,jobsOfBlock):   
+    def checkBlockNoSite(self,blocks,jobsOfBlock,blockSites):   
         # screen output
         screenOutput = "List of jobs and available destination sites:\n\n"
         noSiteBlock = []
