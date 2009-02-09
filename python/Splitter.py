@@ -433,8 +433,8 @@ class JobSplitter:
         common.logger.debug(5,'Splitting per events')
         self.checkUserSettings()
         jobDestination=[]
-        if (self.selectNumberOfJobs == 0):
-            msg = 'Must specify  number_of_jobs.'
+        if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
+            msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
             raise CrabException(msg)
 
         managedGenerators =self.args['managedGenerators']
