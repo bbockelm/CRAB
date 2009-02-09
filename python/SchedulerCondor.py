@@ -2,15 +2,16 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.15 2008/11/25 22:24:23 ewv Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.16 2009/01/26 19:43:48 ewv Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
 
 import common
 import os
-
+import socket
+import sha
 
 class SchedulerCondor(SchedulerLocal) :
     """
@@ -34,8 +35,9 @@ class SchedulerCondor(SchedulerLocal) :
         """
 
         SchedulerLocal.configure(self, cfg_params)
-        self.environment_unique_identifier = '${HOSTNAME}_${CONDOR_ID}_' \
-                                             + common._db.queryTask('name')
+        taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+        self.environment_unique_identifier = "https://" + socket.gethostname() + \
+                                              '/' + taskHash + "/${NJob}"
 
         try:
             tmp =  cfg_params['CMSSW.datasetpath']

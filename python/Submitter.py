@@ -5,6 +5,8 @@ from ApmonIf import ApmonIf
 #from random import random
 import time
 import sha
+import socket
+
 from ProgressBar import ProgressBar
 from TerminalController import TerminalController
 
@@ -313,6 +315,11 @@ class Submitter(Actor):
                 common.logger.debug(5,'JobID for ML monitoring is created for LSF scheduler:'+jobId)
                 rb = common.scheduler.name()
                 localId = jid
+            elif common.scheduler.name().upper() in ['CONDOR']:
+                taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+                jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
+                common.logger.debug(5,'JobID for ML monitoring is created for CONDOR scheduler:'+jobId)
+                rb = common.scheduler.name()
             else:
                 jobId = str(jj) + '_' + str(jid)
                 common.logger.debug(5,'JobID for ML monitoring is created for gLite scheduler'+jobId)
