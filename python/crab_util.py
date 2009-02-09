@@ -467,6 +467,12 @@ def writeTXTfile(self, outFileName, args):
     return
 
 def readableList(self,rawList):
+    """
+    Turn a list of numbers into a string like 1-5,7,9,12-20
+    """
+    if not rawList:
+        return ''
+
     listString = str(rawList[0])
     endRange = ''
     for i in range(1,len(rawList)):
@@ -481,7 +487,7 @@ def readableList(self,rawList):
     if endRange:
         listString += '-' + endRange
         endRange = ''
-    
+
     return listString
 
 def getLocalDomain(self):
@@ -603,11 +609,11 @@ def getGZSize(gzipfile):
     if f.read(2) != "\x1f\x8b":
         raise IOError("not a gzip file")
     f.seek(-4, 2)
-    return struct.unpack("<i", f.read())[0] 
+    return struct.unpack("<i", f.read())[0]
 
 def showWebMon(server_name):
     msg = ''
-    if server_name != '' :  
+    if server_name != '' :
         msg += 'You can also check jobs status at: http://%s:8888/logginfo\n'%server_name
         msg += '\t( Your task name is: %s )\n'%common._db.queryTask('name')
     return msg
