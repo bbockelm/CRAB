@@ -46,6 +46,7 @@ class Status(Actor):
         toPrint=[]
         taskId = uniqueTaskName(up_task['name'])
         task_unique_name = up_task['name']
+        ended = ''
 
         self.wrapErrorList = []
         for job in up_task.jobs :
