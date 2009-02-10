@@ -6,7 +6,7 @@ from ApmonIf import ApmonIf
 import time
 import sha
 import socket
-
+import Scram
 from ProgressBar import ProgressBar
 from TerminalController import TerminalController
 
@@ -83,6 +83,7 @@ class Submitter(Actor):
 
 
         self.nj_list = nj_list
+        self.scram = Scram.Scram(cfg_params)
         return
 
     def run(self):
@@ -265,6 +266,7 @@ class Submitter(Actor):
                   'tool_ui': os.environ.get('HOSTNAME',''),
                   'scheduler': common.scheduler.name(),
                   'GridName': gridName,
+                  'ApplicationVersion': self.scram.getSWVersion(),
                   'taskType': taskType,
                   'vo': VO,
                   'user': os.environ.get('USER',''),
