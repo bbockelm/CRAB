@@ -101,7 +101,7 @@ class cmscp:
         rfioOpt=''
 
         supported_protocol = None
-        if middleware.lower() in ['osg','lcg','condor']:
+        if middleware.lower() in ['osg','lcg','condor','sge']:
             supported_protocol = [('srm-lcg',lcgOpt[self.params['srm_version']]),\
                                  (self.params['srm_version'],srmOpt[self.params['srm_version']])]
         elif middleware.lower() in ['lsf','caf']:

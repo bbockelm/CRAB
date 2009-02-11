@@ -40,7 +40,8 @@ class Scheduler :
                               'LSF'      : 'rfio' , \
                               'CONDOR_G' : 'srmv2' , \
                               'GLITE'    : 'srm-lcg' , \
-                              'CONDOR'    : 'srmv2'  \
+                              'CONDOR'    : 'srmv2',  \
+                              'SGE'      : 'srmv2' \
                             }  
         return
 

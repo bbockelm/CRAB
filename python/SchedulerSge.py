@@ -27,6 +27,13 @@ class SchedulerSge(SchedulerLocal) :
         self.environment_unique_identifier = "https://"+common.scheduler.name()+":/${JOB_ID}-"+ \
             string.replace(common._db.queryTask('name'),"_","-")
 
+        #self.role = cfg_params.get("EDG.role", None)
+        self.role = None
+        
+        self.pool = cfg_params.get('USER.storage_pool',None)
+        ## default is 48 hours CPU time, 2G memrory
+        self.cpu = cfg_params.get('USER.cpu',172800)
+        self.vmem = cfg_params.get('USER.vmem',2)
         return
 
     def realSchedParams(self,cfg_params):
@@ -51,8 +58,14 @@ class SchedulerSge(SchedulerLocal) :
                 if (self.res): sched_param += ' -R '+self.res +' '
             pass
 
-        #request 2G memory and 48 hours CPU time
-        sched_param += ' -l h_vmem=2G -l h_cpu=172800 '
+        #default is request 2G memory and 48 hours CPU time
+        #sched_param += ' -V -l h_vmem=2G -l h_cpu=172800 '
+        sched_param += ' -V -l h_vmem='
+        sched_param += self.vmem.__str__()
+        sched_param += 'G -l h_cpu='
+        sched_param += self.cpu.__str__()
+        sched_param += ' '
+
         return sched_param
 
     def loggingInfo(self, id):
@@ -80,3 +93,28 @@ class SchedulerSge(SchedulerLocal) :
 
         return txt
 
+    def listMatch(self, dest, full):
+        """
+        """ 
+        #if len(dest)!=0: 
+        sites = [self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')]
+        #else:     
+        #    sites = [str(getLocalDomain(self))]  
+        return sites    
+
+    def wsCopyOutput(self):
+        txt=self.wsCopyOutput_comm(self.pool)
+        return txt
+
+    def userName(self):
+        """ return the user name """
+
+        ## hack for german naf
+        import pwd,getpass
+        tmp=pwd.getpwnam(getpass.getuser())[4]
+        tmp=tmp.rstrip(',')
+        tmp=tmp.rstrip(',')
+        tmp=tmp.rstrip(',')
+
+            
+        return "/CN="+tmp.strip()
