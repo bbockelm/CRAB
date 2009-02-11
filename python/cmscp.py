@@ -112,37 +112,123 @@ class cmscp:
             pass
         return supported_protocol
 
- #   def checkCopy(self, copy_results, list_files):
+
+    def checkCopy (self, copy_results, len_list_files, prot, lfn='', se=''):
         """
-        #results={}
+        Checks the status of copy and update result dictionary
+        """
         list_retry = []
-        list_existing = []
+        list_not_existing = []
         list_ok = []
-        if copy_results.keys() == '':
-            self.results.update(copy_results)
-        else:
-            for file, dict in copy_results.iteritems():
-                er_code = dict['erCode']
-                if er_code == '0':
-                    list_ok.append(file)
-                    reason = 'Copy succedeed with %s utils'%prot
-                    upDict = self.updateReport(file, er_code, reason)
-                    copy_results.update(upDict)
-                elif er_code == '60303': list_existing.append( file )
-                else: list_retry.append( file )
-            results.update(copy_results)
-            if len(list_ok) != 0:
-                msg = 'Copy of %s succedeed with %s utils\n'%(str(list_ok),prot)
-                if self.debug : print msg
-            if len(list_ok) == len(list_files) :
-                msg = 'Copy of  all files succedeed\n'
-                #break
-            else:
-                if self.debug : print 'Copy of files %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
-                #if len(list_retry): list_files = list_retry
-        return list_retry, results        
-        """
         
+        if self.debug: 
+            print 'in checkCopy() :\n'
+        for file, dict in copy_results.iteritems():
+            er_code = dict['erCode']
+            if er_code == '0':
+                list_ok.append(file)
+                reason = 'Copy succedeed with %s utils'%prot
+                dict['reason'] = reason
+            elif er_code == '60302': 
+                list_not_existing.append( file )
+            else:
+                list_retry.append( file )
+                
+            if self.debug:
+                print "\t file %s \n"%file
+                print "\t dict['erCode'] %s \n"%dict['erCode']
+                print "\t dict['reason'] %s \n"%dict['reason']
+                
+            if (lfn != '') and (se != ''):
+                upDict = self.updateReport(file, er_code, dict['reason'], lfn, se)
+            else:
+                upDict = self.updateReport(file, er_code, dict['reason'])
+
+            copy_results.update(upDict)
+        
+        msg = ''
+        if len(list_ok) != 0:
+            msg += '\tCopy of %s succedeed with %s utils\n'%(str(list_ok),prot)
+        if len(list_ok) != len_list_files :
+            msg += '\tCopy of %s failed using %s for files \n'%(str(list_retry),prot)
+            msg += '\tCopy of %s failed using %s : files not found \n'%(str(list_not_existing),prot)
+        if self.debug : print msg
+        
+        return copy_results, list_ok, list_retry
+        
+    def backupCopy(self, list_retry, results):
+        """
+        Tries the backup copy of output to the CloseSE
+        """
+        if self.debug: 
+            print 'in backup() :\n'
+            print '\t list_retry %s utils \n'%list_retry
+            print '\t len(list_retry) %s \n'%len(list_retry)
+                
+        list_files = list_retry   
+        self.params['inputFilesList']=list_files
+         
+        ### copy backup
+        from ProdCommon.FwkJobRep.SiteLocalConfig import loadSiteLocalConfig
+        siteCfg = loadSiteLocalConfig()
+        seName = siteCfg.localStageOut.get("se-name", None)
+        catalog = siteCfg.localStageOut.get("catalog", None)
+        implName = siteCfg.localStageOut.get("command", None)
+        if (implName == 'srm'):
+           implName='srmv1'
+           self.params['srm_version']=implName
+        ##### to be improved ###############
+        if (implName == 'rfcp'):
+            self.params['middleware']='lsf'
+        ####################################    
+                   
+        self.params['protocol']=implName
+        tfc = siteCfg.trivialFileCatalog()
+            
+        if self.debug:
+            print '\t siteCFG %s \n'%siteCfg
+            print '\t seName %s \n'%seName 
+            print '\t catalog %s \n'%catalog 
+            print "\t self.params['protocol'] %s \n"%self.params['protocol']            
+            print '\t tfc %s '%tfc
+            print "\t self.params['inputFilesList'] %s \n"%self.params['inputFilesList']
+                
+        file_backup=[]
+        for input in self.params['inputFilesList']:
+            file = self.params['lfn'] + os.path.basename(input)
+            surl = tfc.matchLFN(tfc.preferredProtocol, file)
+            file_backup.append(surl)
+            if self.debug:
+                print '\t lfn %s \n'%self.params['lfn']
+                print '\t file %s \n'%file
+                print '\t surl %s \n'%surl
+                    
+        destination=os.path.dirname(file_backup[0])
+        self.params['destination']=destination
+            
+        if self.debug:
+            print "\t self.params['destination']%s \n"%self.params['destination']
+            print "\t self.params['protocol'] %s \n"%self.params['protocol']
+            print "\t self.params['option']%s \n"%self.params['option']
+              
+        for prot, opt in self.setProtocol( self.params['middleware'] ):
+            if self.debug: print '\tIn backup trying the stage out with %s utils \n'%prot
+            backup_results = self.copy( self.params['inputFileList'], prot, opt )
+            if backup_results.keys() == [''] or backup_results.keys() == '' :
+                results.update(backup_results)
+            else:
+                backup_results, list_ok, list_retry = self.checkCopy(backup_results, len(list_files), prot, self.params['lfn'], seName)
+                results.update(backup_results)
+                if len(list_ok) == len(list_files) :
+                    break
+                if len(list_retry): 
+                    list_files = list_retry
+                else: break
+            if self.debug:
+                print "\t backup_results = %s \n"%backup_results
+        
+        return results        
+
     def stager( self, middleware, list_files ):
         """
         Implement the logic for remote stage out
@@ -157,136 +243,20 @@ class cmscp:
         for prot, opt in self.setProtocol( middleware ):
             if self.debug: print '\tTrying the stage out with %s utils \n'%prot
             copy_results = self.copy( list_files, prot, opt )
-            ######## to define a new function checkCopy ################
-            #list_retry, self.results = self.checkCopy(copy_results, list_files)
-        #def checkCopy (self, copy_results):
-        #    """
-        #    """
-        #    results={}
-            list_retry = []
-            list_existing = []
-            list_ok = []
             if copy_results.keys() == [''] or copy_results.keys() == '' :
                 results.update(copy_results)
             else:
-                for file, dict in copy_results.iteritems():
-                    er_code = dict['erCode']
-                    if er_code == '0':
-                        list_ok.append(file)
-                        reason = 'Copy succedeed with %s utils'%prot
-                        upDict = self.updateReport(file, er_code, reason)
-                        copy_results.update(upDict)
-                    # Fede: we can do the backup copy also for already existing files..... ##    
-                    #elif er_code in ['60303','60302']: list_existing.append( file )
-                    elif er_code == '60302': list_existing.append( file )
-                    ####
-                    else: list_retry.append( file )
+                copy_results, list_ok, list_retry = self.checkCopy(copy_results, len(list_files), prot)
                 results.update(copy_results)
-                msg = ''
-                if len(list_ok) != 0:
-                    msg += '\tCopy of %s succedeed with %s utils\n'%(str(list_ok),prot)
                 if len(list_ok) == len(list_files) :
                     break
-                else:
-                    if self.debug: msg += '\tCopy of %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
-                    if len(list_retry): 
-                       list_files = list_retry
-                    else: break
-                if self.debug : print msg
-        ###  this part is related to backup copy
-        ###  it shoud became a separated function
-        ###  work in progress
-        
+                if len(list_retry): 
+                    list_files = list_retry
+                else: break
+                
         if len(list_retry):
-            list_files = list_retry
-            if self.debug: 
-                print '\t list_retry %s utils \n'%list_retry
-                print '\t len(list_retry) %s \n'%len(list_retry)
-
-            #def backupCopy(list_retry)
-            if self.debug: print 'in backup() :\n'
+            results = self.backupCopy(list_retry, results)
             
-            self.params['inputFilesList']=list_files
-            
-            ### copy backup
-            from ProdCommon.FwkJobRep.SiteLocalConfig import loadSiteLocalConfig
-            siteCfg = loadSiteLocalConfig()
-            seName = siteCfg.localStageOut.get("se-name", None)
-            catalog = siteCfg.localStageOut.get("catalog", None)
-            implName = siteCfg.localStageOut.get("command", None)
-            if (implName == 'srm'):
-               implName='srmv1'
-               self.params['srm_version']=implName
-               
-               
-            ##### to change ########
-            if (implName == 'rfcp'):
-                self.params['middleware']='lsf'
-            #####    
-                   
-            self.params['protocol']=implName
-            tfc = siteCfg.trivialFileCatalog()
-            
-            if self.debug:
-                print '\t siteCFG %s \n'%siteCfg
-                print '\t seName %s \n'%seName 
-                print '\t catalog %s \n'%catalog 
-                print "\t self.params['protocol'] %s \n"%self.params['protocol']            
-                print '\t tfc %s '%tfc
-                print "\t self.params['inputFilesList'] %s \n"%self.params['inputFilesList']
-                
-            file_backup=[]
-            for input in self.params['inputFilesList']:
-                file = self.params['lfn'] + os.path.basename(input)
-                surl = tfc.matchLFN(tfc.preferredProtocol, file)
-                file_backup.append(surl)
-                if self.debug:
-                    print '\t lfn %s \n'%self.params['lfn']
-                    print '\t file %s \n'%file
-                    print '\t surl %s \n'%surl
-                    
-            destination=os.path.dirname(file_backup[0])
-            self.params['destination']=destination
-            
-            if self.debug:
-                print "\t self.params['destination']%s \n"%self.params['destination']
-                print "\t self.params['protocol'] %s \n"%self.params['protocol']
-                print "\t self.params['option']%s \n"%self.params['option']
-                
-            for prot, opt in self.setProtocol( self.params['middleware'] ):
-                if self.debug: print '\tIn backup trying the stage out with %s utils \n'%prot
-                backup_results = self.copy( self.params['inputFileList'], prot, opt )
-            ######## to define a new function checkCopy ################
-            #list_retry, self.results = self.checkCopy(copy_results, list_files)
-        #def checkCopy (self, copy_results):
-        #    results={}
-                list_retry = []
-                list_existing = []
-                list_ok = []
-                if backup_results.keys() == [''] or copy_results.keys() == '' :
-                    results.update(backup_results)
-                else:
-                    for file, dict in backup_results.iteritems():
-                        er_code = dict['erCode']
-                        if er_code == '0':
-                            list_ok.append(file)
-                            reason = 'Copy succedeed with %s utils'%prot
-                            upDict = self.updateReport(file, er_code, reason, self.params['lfn'], seName)
-                            backup_results.update(upDict)
-                            if self.debug: print '\tIn backup backup_results %s \n'%backup_results
-                        elif er_code in ['60303','60302']: list_existing.append( file )
-                        else: list_retry.append( file )
-                    results.update(backup_results)
-                    msg = ''
-                    if len(list_ok) != 0:
-                        msg += '\tCopy of %s succedeed with %s utils\n'%(str(list_ok),prot)
-                       
-                    if len(list_ok) == len(list_files) :
-                        msg += '\tCopy ok for all files\n'
-                        break
-                    else:
-                        if self.debug: msg += '\tCopy of %s failed using %s...\n'%(str(list_retry)+str(list_existing),prot)
-                    if self.debug : print msg
         if self.debug:
             print "\t results %s \n"%results
         return results
@@ -602,6 +572,7 @@ class cmscp:
                 else:
                     lfn = dict['lfn']+os.path.basename(file)
                     se = dict['se']
+                    
                 #dict['lfn'] # to be implemented
                 txt += 'echo "Report for File: '+file+'"\n'
                 txt += 'echo "LFN: '+lfn+'"\n'
@@ -610,6 +581,7 @@ class cmscp:
                 txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
                 txt += 'export LFNBaseName='+lfn+'\n'
                 txt += 'export SE='+se+'\n'
+                
                 if dict['erCode'] != '0':
                     cmscp_exit_status = dict['erCode']
             else:
