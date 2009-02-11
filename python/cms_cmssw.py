@@ -216,7 +216,7 @@ class Cmssw(JobType):
                     # Add FrameworkJobReport to parameter-set, set max events.
                     # Reset later for data jobs by writeCFG which does all modifications
                     PsetEdit.addCrabFJR(self.fjrFileName) # FUTURE: Job report addition not needed by CMSSW>1.5
-                    PsetEdit.maxEvent(-1)#self.eventsPerJob) ## TO BE Checked Daniele
+                    PsetEdit.maxEvent(-1)
                     PsetEdit.skipEvent(0)
                     PsetEdit.psetWriter(self.configFilename())
                     ## If present, add TFileService to output files
@@ -609,6 +609,7 @@ class Cmssw(JobType):
                     txt += 'export CompHEPFirstEvent=${args[%s]}\n' % argNum
                     txt += 'echo "CompHEPFirstEvent:<$CompHEPFirstEvent>"\n'
                     argNum += 1
+                txt += 'MaxEvents=${args[%s]}; export MaxEvents\n' % argNum
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
 

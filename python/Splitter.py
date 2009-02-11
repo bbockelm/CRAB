@@ -489,6 +489,7 @@ class JobSplitter:
                     args.append('1')
                 else:
                     args.append(str(i*self.eventsPerJob))
+            args.append(str(self.eventsPerJob))
             self.list_of_args.append(args)
        # prepare dict output
         dictOut = {}
