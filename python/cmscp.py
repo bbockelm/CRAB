@@ -579,7 +579,7 @@ class cmscp:
                 txt += 'echo "StorageElement: '+se+'"\n'
                 txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
                 txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
-                txt += 'export LFNBaseName='+lfn+'\n'
+                #txt += 'export LFNBaseName='+lfn+'\n'
                 txt += 'export SE='+se+'\n'
                 
                 if dict['erCode'] != '0':
