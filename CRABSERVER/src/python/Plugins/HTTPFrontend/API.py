@@ -65,14 +65,14 @@ def getQueues(destination = 'all'):
     return queues
 
 # # #
-#  js_taskInstance
+#  tt_taskInstance
 #
 
 def getTimeStatusTask( time ):
     dateCondition= '' 
     dateCondition = " and land_time  > DATE_SUB(Now(),INTERVAL "+str(time)+"  SECOND)"
  
-    queryString = "SELECT status,land_time  FROM js_taskInstance where 1 "+dateCondition +"  ORDER by status;"
+    queryString = "SELECT status,land_time  FROM tt_taskInstance where 1 "+dateCondition +"  ORDER by status;"
     taskCheck = queryMethod(queryString)
     return taskCheck
 
@@ -84,7 +84,7 @@ def getTasks(from_time, ended=''):
     dateCondition= ''
     dateCondition = " and land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND)"
     
-    queryString = "SELECT taskName, status FROM js_taskInstance where 1 "+notif+" "+dateCondition +" ORDER by land_time;"
+    queryString = "SELECT task_name, status FROM tt_taskInstance where 1 "+notif+" "+dateCondition +" ORDER by land_time;"
     print queryString 
     taskCheck = queryMethod(queryString)
     return taskCheck
@@ -99,7 +99,7 @@ def getUserTasks(username='', from_time='', ended=''):
     notif = ended
     if ended == True: notif = " and notificationSent > 1"
     elif ended == False: notif =" and notificationSent < 2"
-    queryString = "SELECT taskName, status, endedLevel FROM js_taskInstance " +\
+    queryString = "SELECT task_name, status, ended_level FROM tt_taskInstance " +\
                   "WHERE 1 %s %s %s ORDER BY land_time DESC;"%(user, notif, timer)
     taskCheck = queryMethod(queryString)
     return taskCheck
@@ -111,7 +111,7 @@ def getNumTask(from_time, ended=''):
     dateCondition= '' 
     dateCondition = " and land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND)"
  
-    queryString = "SELECT count(status),status  FROM js_taskInstance where 1 "+notif+" "+dateCondition +"  group by status ORDER by status;"
+    queryString = "SELECT count(status),status  FROM tt_taskInstance where 1 "+notif+" "+dateCondition +"  group by status ORDER by status;"
     print queryString 
     taskCheck = queryMethod(queryString)
     return taskCheck
@@ -157,8 +157,8 @@ def getTimeStatusJob( time ) :
 def getKeyNum_task(key,destination='all',from_time='all'):
     dateCondition =  " and land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) "
     dest_condition = composeDestinationCondition(destination);
-    queryString = "select count("+key+"),"+key+" from bl_task  bl_task join js_taskInstance on\
-                    bl_task.name=js_taskInstance.taskName  where 1 "+dateCondition+" "+dest_condition+" group by "+key+" "
+    queryString = "select count("+key+"),"+key+" from bl_task  bl_task join tt_taskInstance on\
+                    bl_task.name=tt_taskInstance.task_name  where 1 "+dateCondition+" "+dest_condition+" group by "+key+" "
     taskCheck = queryMethod(queryString)
     
     return taskCheck
@@ -167,8 +167,8 @@ def getKeyNum_task(key,destination='all',from_time='all'):
 def countTasks(key,from_time='all'):
     datasetCondition =  " where dataset='%s' "%key 
     dateCondition =  " and land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) "
-    queryString = "select count(bl_task.id) from bl_task bl_task join js_taskInstance on \
-                   bl_task.name=js_taskInstance.taskName "+datasetCondition+" "+dateCondition+";"
+    queryString = "select count(bl_task.id) from bl_task bl_task join tt_taskInstance on \
+                   bl_task.name=tt_taskInstance.task_name "+datasetCondition+" "+dateCondition+";"
     taskCheck = queryMethod(queryString)[0][0]
     
     return taskCheck
@@ -185,8 +185,8 @@ def countJobs(key,from_time='all'):
 def countUsers(key,from_time='all'):
     datasetCondition =  " where dataset='%s' "%key 
     dateCondition =  " and land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) "
-    queryString = "select count(distinct(user_name)) from js_taskInstance js_taskInstance join bl_task on \
-                   bl_task.name=js_taskInstance.taskName "+datasetCondition+" "+dateCondition+";"
+    queryString = "select count(distinct(user_name)) from tt_taskInstance tt_taskInstance join bl_task on \
+                   bl_task.name=tt_taskInstance.task_name "+datasetCondition+" "+dateCondition+";"
     taskCheck = queryMethod(queryString)[0][0]
     
     return taskCheck
@@ -204,7 +204,7 @@ def getTaskNameList(dataset,from_time):
 
     datasetCondition =  " where dataset='%s' "%dataset            
     dateCondition =  " and land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) "
-    queryString = "select taskName,user_name from js_taskInstance join bl_task on (js_taskInstance.taskName=bl_task.name) "+datasetCondition+" "+dateCondition+";"
+    queryString = "select task_name,user_name from tt_taskInstance join bl_task on (tt_taskInstance.task_name=bl_task.name) "+datasetCondition+" "+dateCondition+";"
     taskCheck = queryMethod(queryString)
     return taskCheck
 
@@ -212,7 +212,7 @@ def getUserNameList(dataset,from_time):
 
     datasetCondition =  " where dataset='%s' "%dataset            
     dateCondition =  " and land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) "
-    queryString = "select count(user_name),user_name from js_taskInstance join bl_task on (js_taskInstance.taskName=bl_task.name) "\
+    queryString = "select count(user_name),user_name from tt_taskInstance join bl_task on (tt_taskInstance.task_name=bl_task.name) "\
                    +datasetCondition+" "+dateCondition+"group by user_name;"
     taskCheck = queryMethod(queryString)
     return taskCheck
@@ -245,13 +245,13 @@ def getApplExit(dataset,from_time):
 
 # Statistics users
 def getUserName(from_time):
-    queryString = "select user_name,land_time from js_taskInstance "+\
+    queryString = "select user_name,land_time from tt_taskInstance "+\
                   "where land_time  > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND) and user_name <> ''  group by proxy ORDER by land_time ;"
     taskCheck = queryMethod(queryString)
     return taskCheck
 
 def getAllUserName():
-    queryString = "select distinct(user_name) from js_taskInstance ORDER BY user_name;"
+    queryString = "select distinct(user_name) from tt_taskInstance ORDER BY user_name;"
     taskCheck = queryMethod(queryString)
     return taskCheck
 
@@ -285,15 +285,15 @@ def getpidof(procname,service):
     
 def getPIDof(procname):
     if procname == 'mysqld':
-        pids = os.popen("ps -C %s wwho pid,pid"%procname).readlines()
+        pids = os.popen("ps -C %s wwho pid,pid"%procname).read()
     else:
-        pids = os.popen("ps -C %s wwho pgid,pid"%procname).readlines()
-    for eachpid in pids:
-        if re.match('\s*[0-9]+\s*[0-9]+\s*',str(eachpid)):
-            pgid, pid = str(eachpid).split()[0:2]
-            if pid == pgid:
-                return pid.rstrip()
-    return "Not Running"
+        pids = os.popen("ps -C %s wwho pgid,pid"%procname).read()
+    if re.match('\s*[0-9]+\s*[0-9]+\s*',str(pids)):
+        pgid, pid = str(pids).split()[0:2]
+        if pid == pgid:
+            return pid.rstrip()
+    else:
+        return "Not Running"
 
                                     
 def isSensorRunning(comp):

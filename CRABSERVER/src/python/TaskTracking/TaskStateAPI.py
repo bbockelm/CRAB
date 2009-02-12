@@ -120,8 +120,8 @@ class TaskStateAPI:
     def getProxy( self, taskName ):
         conn, dbCur = self.openConnPA()
         try:
-            sqlStr="SELECT proxy from js_taskInstance " + \
-                   "WHERE taskName = '"+ str(taskName) +"';"
+            sqlStr="SELECT proxy from tt_taskInstance " + \
+                   "WHERE task_name = '"+ str(taskName) +"';"
             dbCur.execute("START TRANSACTION")
             dbCur.execute(sqlStr)
             row = dbCur.fetchall()
@@ -155,7 +155,7 @@ class TaskStateAPI:
         ## opening connection with PA's DB
         conn, dbCur = self.openConnPA()
         try:
-            sqlStr="INSERT INTO js_taskInstance (id, taskName, eMail, tresholdLevel, notificationSent, endedLevel, proxy, uuid, status, work_status) "\
+            sqlStr="INSERT INTO tt_taskInstance (id, task_name, e_mail, treshold_level, notification_sent, ended_level, proxy, uuid, status, work_status) "\
                    "VALUES('','"+taskName+"','"+eMail+"','"+str(tresholdLevel)+"','"+str(notificationSent)+"',\
 	                                           '"+str(endedLevel)+"','"+proxy+"','"+uuid+"','"+status+"', 0);"
             dbCur.execute("START TRANSACTION")
@@ -183,12 +183,12 @@ class TaskStateAPI:
         try:
             dbCur.execute("START TRANSACTION")
             if self.checkExistPA(conn, dbCur, taskName):
-	        sqlStr='UPDATE js_taskInstance SET eMail="'+eMail+'", tresholdLevel="'+str(tresholdLevel)+'", status="'+status+'", proxy="'+proxy+'", uuid="'+uuid+'"\
-                        WHERE taskName="'+taskName+'";'
+	        sqlStr='UPDATE tt_taskInstance SET e_mail="'+eMail+'", treshold_level="'+str(tresholdLevel)+'", status="'+status+'", proxy="'+proxy+'", uuid="'+uuid+'"\
+                        WHERE task_name="'+taskName+'";'
                 try:
                     rowModified=dbCur.execute(sqlStr)
                 except Exception,ex:
-                    raise ProdAgentException("Error updating 'endedLevel' in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+                    raise ProdAgentException("Error updating 'ended_level' in tt_taskInstance. TaskName: '" + str(taskName) + "'.")
             dbCur.execute("COMMIT")
             ## closing connection with PA's DB
             self.closeConnPA( dbCur, conn )
@@ -206,11 +206,11 @@ class TaskStateAPI:
         try:
             dbCur.execute("START TRANSACTION")
             if self.checkExistPA(conn, dbCur, taskName):
-                sqlStr='UPDATE js_taskInstance SET proxy="'+proxy+'"\
-                        WHERE taskName="'+taskName+'";'
+                sqlStr='UPDATE tt_taskInstance SET proxy="'+proxy+'"\
+                        WHERE task_name="'+taskName+'";'
                 dbCur.execute(sqlStr)
             else:
-                logging.error( "Error updating 'proxy' to '"+proxy+"' in js_taskInstance. TaskName: '" + str(taskName) + "': task not found.")
+                logging.error( "Error updating 'proxy' to '"+proxy+"' in tt_taskInstance. TaskName: '" + str(taskName) + "': task not found.")
             dbCur.execute("COMMIT")
             ## closing connection with PA's DB
             self.closeConnPA( dbCur, conn )
@@ -225,12 +225,12 @@ class TaskStateAPI:
         
         try:
             if self.checkExistPA(None, None, taskName, dbSession):
-                sqlStr='UPDATE js_taskInstance '+\
+                sqlStr='UPDATE tt_taskInstance '+\
                        'SET proxy="'+proxy+'" , user_name="'+username+'" '+\
-                       'WHERE taskName="'+taskName+'";'
+                       'WHERE task_name="'+taskName+'";'
                 dbSession.modify(sqlStr)
             else:
-                logging.error( "Error updating in js_taskInstance. TaskName: '"\
+                logging.error( "Error updating in tt_taskInstance. TaskName: '"\
                                 + str(taskName) + "': task not found.")
         except:
             raise Exception("Problem updating database for %s method " \
@@ -244,11 +244,11 @@ class TaskStateAPI:
         try:
             dbCur.execute("START TRANSACTION")
             if self.checkExistPA(conn, dbCur, taskName):
-                sqlStr='UPDATE js_taskInstance SET eMail="'+email+'", tresholdLevel="'+threshold+'"\
-                        WHERE taskName="'+taskName+'";'
+                sqlStr='UPDATE tt_taskInstance SET e_mail="'+email+'", treshold_level="'+threshold+'"\
+                        WHERE task_name="'+taskName+'";'
                 dbCur.execute(sqlStr)
             else:
-                logging.error( "Error updating 'eMail' to '"+email+"' in js_taskInstance. TaskName: '" + str(taskName) + "': task not found.")
+                logging.error( "Error updating 'e_mail' to '"+email+"' in tt_taskInstance. TaskName: '" + str(taskName) + "': task not found.")
             dbCur.execute("COMMIT")
             ## closing connection with PA's DB
             self.closeConnPA( dbCur, conn )
@@ -271,11 +271,11 @@ class TaskStateAPI:
         try:
             dbCur.execute("START TRANSACTION")
             if self.checkExistPA(conn, dbCur, taskName):
-	        sqlStr='UPDATE js_taskInstance SET status="'+status+'"\
-                        WHERE taskName="'+taskName+'";'
+	        sqlStr='UPDATE tt_taskInstance SET status="'+status+'"\
+                        WHERE task_name="'+taskName+'";'
                 dbCur.execute(sqlStr)
             else:
-                logging.error( "Error updating 'status' to '"+status+"' in js_taskInstance. TaskName: '" + str(taskName) + "': task not found.")
+                logging.error( "Error updating 'status' to '"+status+"' in tt_taskInstance. TaskName: '" + str(taskName) + "': task not found.")
             dbCur.execute("COMMIT")
             ## closing connection with PA's DB
             self.closeConnPA( dbCur, conn )
@@ -294,15 +294,16 @@ class TaskStateAPI:
         """
         sqlStr = ""
         try:
-            sqlStr='SELECT notificationSent from js_taskInstance '\
-                   'WHERE taskName="%s" and notificationSent=2;'%(str(taskName))
+            sqlStr='SELECT notification_sent from tt_taskInstance '\
+                   'WHERE task_name="%s" and notification_sent=2;'%(str(taskName))
             dbCur.execute("START TRANSACTION")
             try:
                 dbCur.execute(sqlStr)
             except Exception,ex:
-                raise ProdAgentException("Task not found in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+                raise ProdAgentException("Task not found in tt_taskInstance. TaskName: '" + str(taskName) + "'.")
             row = dbCur.fetchall()
             dbCur.execute("COMMIT")
+
             if len(row) == 1:
                 return True
             return False
@@ -324,13 +325,17 @@ class TaskStateAPI:
         try:
             dbCur.execute("START TRANSACTION")
             if self.checkArchived(conn, dbCur, taskName) is True:
-                sqlStr='UPDATE js_taskInstance '\
-                       'SET status="%s", notificationSent=%s '\
-                       'WHERE taskName="%s";'%( str(status), str(notif), str(taskName) )
+                sqlStr='UPDATE tt_taskInstance '\
+                       'SET status="%s", notification_sent=%s '\
+                       'WHERE task_name="%s";'%( str(status), str(notif), str(taskName) )
                 dbCur.execute(sqlStr)
             else:
                 logging.error( "Task: '" + str(taskName) + "' already active.")
             dbCur.execute("COMMIT")
+
+            ## updating ended time
+            self.endedUpdated(conn, dbCur, taskName, notif)
+
             ## closing connection with PA's DB
             self.closeConnPA( dbCur, conn )
         except:
@@ -350,13 +355,13 @@ class TaskStateAPI:
         ## opening connection with PA's DB
         conn, dbCur = self.openConnPA()
         try:
-            sqlStr='SELECT eMail,tresholdLevel,notificationSent,endedLevel from js_taskInstance WHERE taskName="'+taskName+'" AND endedLevel <> 100;'
+            sqlStr='SELECT e_mail,treshold_level,notification_sent,ended_level from tt_taskInstance WHERE task_name="'+taskName+'" AND ended_level <> 100;'
 
             dbCur.execute("START TRANSACTION")
             try:
                 dbCur.execute(sqlStr)
             except Exception,ex:
-                raise ProdAgentException("Task not found in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+                raise ProdAgentException("Task not found in tt_taskInstance. TaskName: '" + str(taskName) + "'.")
             row = dbCur.fetchall()
             dbCur.execute("COMMIT")
             ## closing connection with PA's DB
@@ -388,7 +393,7 @@ class TaskStateAPI:
                     try:
 		        dbCur.execute(strQuery)
 	            except Exception,ex:
-	                raise ProdAgentException("Task not found in js_taskInstance.")
+	                raise ProdAgentException("Task not found in tt_taskInstance.")
    	            rows = dbCur.fetchall()
 	        else:
 	            dbCur.execute("COMMIT")
@@ -398,7 +403,7 @@ class TaskStateAPI:
                 try:
 	            dbCur.execute(strQuery)
    	        except Exception,ex:
-	            raise ProdAgentException("Task not found in js_taskInstance.")
+	            raise ProdAgentException("Task not found in tt_taskInstance.")
 	        rows = dbCur.fetchall()
             dbCur.execute("COMMIT")
             ## closing connection with PA's DB
@@ -419,7 +424,7 @@ class TaskStateAPI:
           number of rows affected, 0 or 1.
         - work: take first task not locked and not finished is one exist and lock it
         """
-        sql = "UPDATE js_taskInstance "+\
+        sql = "UPDATE tt_taskInstance "+\
               "SET work_status=0 "\
               "WHERE work_status = 1 AND ID = " + str(taskId) + ";"
  
@@ -451,7 +456,7 @@ class TaskStateAPI:
         - output:
         - work: set all work_status to 0
         """
-        sql = "UPDATE js_taskInstance "+\
+        sql = "UPDATE tt_taskInstance "+\
               "SET work_status=0 "\
               "WHERE work_status <> 0;"
 
@@ -481,9 +486,9 @@ class TaskStateAPI:
         - work: unlock the task
         """
         #take first task not locked and lock it.
-        sql = "UPDATE js_taskInstance "+\
+        sql = "UPDATE tt_taskInstance "+\
               "SET work_status=0 "\
-              "WHERE work_status = 1 AND TaskName = '" + taskName + "';"
+              "WHERE work_status = 1 AND task_name = '" + taskName + "';"
 
         conn, dbCur = self.openConnPA()
   
@@ -545,16 +550,16 @@ class TaskStateAPI:
             try:
                 try:
                     dbCur.execute("START TRANSACTION")
-                    sql = 'SELECT COUNT(*) FROM js_taskInstance WHERE TaskName = "' + taskName + '" AND (work_status = 0 OR work_status = 2)'
+                    sql = 'SELECT COUNT(*) FROM tt_taskInstance WHERE task_name = "' + taskName + '" AND (work_status = 0 OR work_status = 2)'
                     dbCur.execute(sql)
                     rows = dbCur.fetchall()
                     count = int(rows[0][0])
                     if count > 0:
-                        sql = 'UPDATE js_taskInstance '+\
+                        sql = 'UPDATE tt_taskInstance '+\
                               'SET work_status = 1 '\
-                             'WHERE TaskName = "' + taskName + '";'
+                             'WHERE task_name = "' + taskName + '";'
                         dbCur.execute(sql)
-                        sql = 'SELECT COUNT(*) FROM js_taskInstance WHERE TaskName = "' + taskName + '" AND work_status = 1'
+                        sql = 'SELECT COUNT(*) FROM tt_taskInstance WHERE task_name = "' + taskName + '" AND work_status = 1'
                         dbCur.execute(sql)
                         rows = dbCur.fetchall()
                         count = int(rows[0][0])
@@ -562,7 +567,7 @@ class TaskStateAPI:
                             rowsAffected = 1
                     else:
                         #check if task still exist
-                        sql = 'SELECT COUNT(*) FROM js_taskInstance WHERE TaskName = "' + taskName + '"'
+                        sql = 'SELECT COUNT(*) FROM tt_taskInstance WHERE task_name = "' + taskName + '"'
                         dbCur.execute(sql)
                         rows = dbCur.fetchall()
                         count = int(rows[0][0])
@@ -626,10 +631,10 @@ class TaskStateAPI:
          a row if one exist
        - work: take first task not locked and not finished
        """
-       sql = "SELECT ID, taskName,eMail,tresholdLevel,notificationSent,endedLevel,status,uuid,user_name "+\
-             "FROM js_taskInstance "+\
+       sql = "SELECT ID, task_name,e_mail,treshold_level,notification_sent,ended_level,status,uuid,user_name "+\
+             "FROM tt_taskInstance "+\
              "WHERE (work_status = 0) "+\
-             "AND (notificationSent < 2 ) "+\
+             "AND (notification_sent < 2 ) "+\
              "ORDER BY ID "+\
              "LIMIT 1;"
        tupla = dbSession.select(sql)
@@ -648,13 +653,13 @@ class TaskStateAPI:
         - work: try to lock the task by work_status = 1
         """
         #TODO: need to refactor the recordAffected value ^^
-        sql = "UPDATE js_taskInstance "\
+        sql = "UPDATE tt_taskInstance "\
               "SET work_status=1 "\
               "WHERE ID = " + str(taskId) + " AND work_status = 0"
         dbSession.modify(sql)
         rowsAffected = 1
         sql = "SELECT work_status "+\
-              "FROM js_taskInstance "+\
+              "FROM tt_taskInstance "+\
               "WHERE id = '" + str(taskId) + "';"
         row = dbSession.select(sql)
         if len(row) == 1:
@@ -671,7 +676,7 @@ class TaskStateAPI:
         - output: none
         - work: set to work_status = 0 all the task with work_status = 2
         """
-        sql = "SELECT work_status FROM js_taskInstance "\
+        sql = "SELECT work_status FROM tt_taskInstance "\
               "WHERE ID = " + str(taskId)
         dbCur.execute(sql)
         row = dbCur.fetchall()
@@ -688,7 +693,7 @@ class TaskStateAPI:
         - output: none
         - work: set to work_status = 0 all the task with work_status = 2
         """
-        sql = "UPDATE js_taskInstance "\
+        sql = "UPDATE tt_taskInstance "\
               "SET work_status = 0 "\
               "WHERE (work_status = 2)"
         dbSession.modify(sql)
@@ -701,7 +706,7 @@ class TaskStateAPI:
         - output: none
         - work: set to work_status = 2
         """
-        sql = "UPDATE js_taskInstance "\
+        sql = "UPDATE tt_taskInstance "\
               "SET work_status = 2 "\
               "WHERE ID = " + str(taskId)
         dbSession.modify(sql)
@@ -710,8 +715,8 @@ class TaskStateAPI:
         """
         _getStatus_
         """
-        queryString =  "SELECT status, uuid, eMail, user_name " +\
-                       "FROM js_taskInstance WHERE taskName = '"+taskName+"';"
+        queryString =  "SELECT status, uuid, e_mail, user_name " +\
+                       "FROM tt_taskInstance WHERE task_name = '"+taskName+"';"
         task2Check = None
         if dbSession is None:
             task2Check = self.queryMethod(queryString,taskName)
@@ -724,7 +729,7 @@ class TaskStateAPI:
         """
         _getEmail_
         """
-        queryString =  "SELECT status from js_taskInstance where taskName = '"+taskName+"';"
+        queryString =  "SELECT status from tt_taskInstance where task_name = '"+taskName+"';"
         task2Check = self.queryMethod(queryString, taskName)
 
         return task2Check
@@ -737,12 +742,12 @@ class TaskStateAPI:
         """
         if dbSession == None:
             try:
-                sqlStr='SELECT eMail from js_taskInstance WHERE taskName="'+taskName+'";'
+                sqlStr='SELECT e_mail from tt_taskInstance WHERE task_name="'+taskName+'";'
                 dbCur.execute("START TRANSACTION")
                 try:
                     dbCur.execute(sqlStr)
                 except Exception,ex:
-                    raise ProdAgentException("Task not found in js_taskInstance. TaskName: '" + str(taskName) + "'.")
+                    raise ProdAgentException("Task not found in tt_taskInstance. TaskName: '" + str(taskName) + "'.")
                 row = dbCur.fetchall()
                 dbCur.execute("COMMIT")
                 if len(row) == 1:
@@ -753,13 +758,14 @@ class TaskStateAPI:
                 logging.debug("Task not found: " +str(taskName) )
         else:
             try:
-                sqlStr='SELECT eMail from js_taskInstance WHERE taskName="'+taskName+'";'
+                sqlStr='SELECT e_mail from tt_taskInstance WHERE task_name="'+taskName+'";'
                 tupla = dbSession.select(sqlStr)
                 if len(tupla) == 1:
                     return 1
                 return 0
-            except:
-                logging.debug("Task not found: " +str(taskName) )
+            except Exception, exc:
+                logging.info("Task not found: " +str(exc) )
+                logging.debug("err: " + str(str(traceback.format_exc())) )
 
         return 0
 
@@ -769,18 +775,63 @@ class TaskStateAPI:
         """
         msg = ""
         msg += "   -> updating task: " + taskName
-        msg += "        setting endedLevel at '" + newPercentage +"'"
+        msg += "        setting ended_level at '" + newPercentage +"'"
         msg += "        setting status  at    '" + status +"'"
    
         try:
             if self.checkExistPA(None, None, taskName, dbSession):
-                sqlStr='UPDATE js_taskInstance SET endedLevel="'+newPercentage+'", status="'+status+'"\
-                        WHERE taskName="'+taskName+'";'
+                sqlStr='UPDATE tt_taskInstance SET ended_level="'+newPercentage+'", status="'+status+'"\
+                        WHERE task_name="'+taskName+'";'
                 rowModified=dbSession.modify(sqlStr)
         except:
-	    raise
-
+            raise
         return msg;
+
+
+    def statusUpdated( self, dbSession, taskName ):
+        """
+        _statusUpdated_
+        """
+        try:
+            import time
+            sqlStr='UPDATE tt_taskInstance SET lastupdate_time="'+time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(time.time()))+'"\
+                    WHERE task_name="'+taskName+'";'
+            rowModified=dbSession.modify(sqlStr)
+        except Exception, exc:
+            logging.error(str(exc))
+
+    def endedUpdated( self, conn, dbCur, taskName, notif, dbSession = None ):
+        """
+        _endedUpdated_
+        """
+
+        if notif < 2:
+            return None
+
+        if dbSession == None:
+            try:
+                import time
+                sqlStr='UPDATE tt_taskInstance SET ended_time="'+time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(time.time()))+'"\
+                        WHERE task_name="'+taskName+'";'
+                logging.info(sqlStr)
+                dbCur.execute("START TRANSACTION")
+                try:
+                    dbCur.execute(sqlStr)
+                except Exception,ex:
+                    raise ProdAgentException("Task not found in tt_taskInstance. TaskName: '" + str(taskName) + "'.")
+                dbCur.execute("COMMIT")
+            except Exception, ex:
+                dbCur.execute("ROLLBACK")
+                logging.error("Task not found: " +str(ex) )
+        else:
+            try:
+                import time
+                sqlStr='UPDATE tt_taskInstance SET ended_time="'+time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(time.time()))+'"\
+                        WHERE task_name="'+taskName+'";'
+                rowModified=dbSession.modify(sqlStr)
+            except Exception, exc:
+                logging.error(str(exc))
+
 
     def updatingNotifiedPA( self, taskName, sended):
         """
@@ -789,19 +840,23 @@ class TaskStateAPI:
         msg = ""
         sendFlag = str(sended)
         msg += "   -> updating the task table for task: " + taskName
-        msg += "      setting the field notificationSend at '" + sendFlag +"'"
+        msg += "      setting the field notification_sent at '" + sendFlag +"'"
 
         ## opening connection with PA's DB
         conn, dbCur = self.openConnPA()
         try:
             ## opening connection with PA's DB
             conn, dbCur = self.openConnPA()
-	    dbCur.execute("START TRANSACTION")
+            dbCur.execute("START TRANSACTION")
             if self.checkExistPA(conn, dbCur, taskName):
-	         sqlStr='UPDATE js_taskInstance SET notificationSent="'+sendFlag+'"\
-		         WHERE taskName="'+taskName+'";'
+                 sqlStr='UPDATE tt_taskInstance SET notification_sent="'+sendFlag+'"\
+	                     WHERE task_name="'+taskName+'";'
                  rowModified=dbCur.execute(sqlStr)
             dbCur.execute("COMMIT")
+
+            ## updating ended time
+            self.endedUpdated(conn, dbCur, taskName, sended)
+
             ## closing connection with PA's DB
             self.closeConnPA( dbCur, conn )
         except:
@@ -823,12 +878,16 @@ class TaskStateAPI:
         ## opening connection with PA's DB
         conn, dbCur = self.openConnPA()
         try:
-	    dbCur.execute("START TRANSACTION")
-	    if self.checkExistPA(conn, dbCur, taskName):
-	         sqlStr='UPDATE js_taskInstance SET status="'+status+'", notificationSent="'+str(notification)+'"\
-		         WHERE taskName="'+taskName+'";'
-                 rowModified=dbCur.execute(sqlStr)
-	    dbCur.execute("COMMIT")
+            dbCur.execute("START TRANSACTION")
+            if self.checkExistPA(conn, dbCur, taskName):
+                sqlStr='UPDATE tt_taskInstance SET status="'+status+'", notification_sent="'+str(notification)+'"\
+                        WHERE task_name="'+taskName+'";'
+                rowModified=dbCur.execute(sqlStr)
+                dbCur.execute("COMMIT")
+
+            ## updating ended time
+            self.endedUpdated(conn, dbCur, taskName, notification)
+
             ## closing connection with PA's DB
             self.closeConnPA( dbCur, conn )
         except:
@@ -853,11 +912,11 @@ class TaskStateAPI:
         try:
             dbCur.execute("START TRANSACTION")
             if self.checkExistPA(conn, dbCur, taskName):
-	        sqlStr='DELETE from js_taskInstance WHERE taskName="'+taskName+'";'
+	        sqlStr='DELETE from tt_taskInstance WHERE task_name="'+taskName+'";'
                 try:
                     rowModified=dbCur.execute(sqlStr)
                 except Exception,ex:
-                    raise ProdAgentException("Error cleaning js_taskInstance for task: '" + str(taskName) + "'.")
+                    raise ProdAgentException("Error cleaning tt_taskInstance for task: '" + str(taskName) + "'.")
             dbCur.execute("COMMIT")
             ## closing connection with PA's DB
             self.closeConnPA( dbCur, conn )

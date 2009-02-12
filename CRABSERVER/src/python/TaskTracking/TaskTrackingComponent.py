@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.137 2009/01/28 16:02:33 mcinquil Exp $"
-__version__ = "$Revision: 1.137 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.138 2009/02/09 10:38:45 mcinquil Exp $"
+__version__ = "$Revision: 1.138 $"
 
 import os
 import time
@@ -983,6 +983,8 @@ class TaskTrackingComponent:
             if stato in ['C'] and internalstatus == "Submitting":
                 dictStateTot[job][0] = "Submitting"
                 dictStateTot[job][6] = "CS"
+
+        ttdb.statusUpdated(mySession.bossLiteDB, taskName)
 
         return dictStateTot, dictReportTot, countNotSubmitted
 

@@ -15,8 +15,8 @@ class TaskLifeAPI:
         """
         proxyList = []
 
-        sqlStr="SELECT distinct(proxy) FROM js_taskInstance " + \
-               "WHERE notificationSent < 2 and (proxy <> NULL OR proxy <> '') and status <> 'arrived' and status <> 'submitting';"
+        sqlStr="SELECT distinct(proxy) FROM tt_taskInstance " + \
+               "WHERE notification_sent < 2 and (proxy <> NULL OR proxy <> '') and status <> 'arrived' and status <> 'submitting';"
         tuple = dbSession.select(sqlStr)
         if tuple != None:
             for tupla in tuple:
@@ -28,8 +28,8 @@ class TaskLifeAPI:
         dictionary = {}
 
         ## get active tasks for proxy 'proxy'
-        sqlStr="SELECT taskName, eMail FROM js_taskInstance " + \
-               "WHERE proxy = '"+str(proxy)+"' AND notificationSent < 2;"
+        sqlStr="SELECT task_name, e_mail FROM tt_taskInstance " + \
+               "WHERE proxy = '"+str(proxy)+"' AND notification_sent < 2;"
         tuple = dbSession.select(sqlStr)
         if tuple != None:
             for tupla in tuple:
