@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.23 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.23 2008/10/31 09:55:17 mcinquil Exp $"
+__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.24 2008/12/08 21:11:24 mcinquil Exp $"
 
 import os
 import socket
@@ -394,9 +394,9 @@ class NotificationComponent:
                     txt = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                     logging.info( txt )
 
-                    completeMessage = 'Subject:"'+str(self.serverName)+' Notification: Task Cleaning"\n\n' + mailMess
+                    subj = str(self.serverName)+' Notification: Task Cleaning"' ## mailMess
                     try:
-                        self.mailer.SendMail(emaillist, completeMessage)
+                        self.mailer.SendMail(emaillist, subj, mailMess)
                     except RuntimeError, mess:
                         ## info to log ##
                         import traceback 
@@ -472,9 +472,9 @@ class NotificationComponent:
                 msg = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                 logging.info( msg )
 
-                completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Space Management"\n\n' + mailMess
+                subj = str(self.serverName)+' Server Notification: Space Management"' ## mailMess
                 try:
-                    self.mailer.SendMail(emaillist, completeMessage)
+                    self.mailer.SendMail(emaillist, subj, mailMess)
                 except RuntimeError, mess:
                         ## info to log ##
                         import traceback
@@ -539,10 +539,10 @@ class NotificationComponent:
                     txt = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                     logging.info( txt )
    
-                    completeMessage = "Subject:\""+str(self.serverName)+" Server Notification: Task Failed! \"\n\n" + mailMess
+                    subj = str(self.serverName)+" Server Notification: Task Failed! " ## mailMess
                   
                     try:
-                        self.mailer.SendMail(emaillist, completeMessage)
+                        self.mailer.SendMail(emaillist, subj, mailMess)
                     except RuntimeError, mess:
                         ## info to log ##
                         import traceback
@@ -627,9 +627,9 @@ class NotificationComponent:
                     logging.info( txt )
 
                     import socket
-                    completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Expiring Credential!"\n\n' + mailMess
+                    subj = str(self.serverName)+' Server Notification: Expiring Credential!' ## mailMess
                     try:
-                        self.mailer.SendMail(emaillist, completeMessage)
+                        self.mailer.SendMail(emaillist, subj, mailMess)
                     except RuntimeError, mess:
                         ## info to log ##
                         import traceback
@@ -694,9 +694,9 @@ class NotificationComponent:
                
 
                 import socket
-                completeMessage = 'Subject:"'+str(self.serverName)+' Server Notification: Clean Storage Area!"\n\n' + mailMess
+                subj = str(self.serverName)+' Server Notification: Clean Storage Area!"'
                 try:
-                    self.mailer.SendMail(emaillist, completeMessage)
+                    self.mailer.SendMail(emaillist, subj, mailMess)
                 except RuntimeError, mess:
                         ## info to log ##
                         import traceback
