@@ -262,6 +262,7 @@ class Submitter(Actor):
         VO = self.cfg_params.get('EDG.virtual_organization','cms')
 
         params = {'tool': common.prog_name,
+                  'SubmissionType':'direct', 
                   'JSToolVersion': common.prog_version_str,
                   'tool_ui': os.environ.get('HOSTNAME',''),
                   'scheduler': common.scheduler.name(),
