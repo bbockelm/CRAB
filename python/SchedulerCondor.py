@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.16 2009/01/26 19:43:48 ewv Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.17 2009/02/09 21:16:34 ewv Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -53,6 +53,7 @@ class SchedulerCondor(SchedulerLocal) :
 
         self.return_data = cfg_params.get('USER.return_data', 0)
         self.copy_data   = cfg_params.get("USER.copy_data", 0)
+        self.backup_copy = cfg_params.get('USER.backup_copy',0)
 
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
             msg = 'Error: return_data and copy_data cannot be set both to 0\n'
@@ -70,12 +71,22 @@ class SchedulerCondor(SchedulerLocal) :
             common.logger.message(msg)
             raise CrabException(msg)
 
+        if ( int(self.copy_data) == 0 and int(self.backup_copy) == 1 ):
+            msg = 'Error: copy_data = 0 and backup_data = 1 ==> to use the backup_copy function, the copy_data value has to be = 1\n'
+            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
+            raise CrabException(msg)
+
         if int(self.copy_data) == 1:
             self.SE = cfg_params.get('USER.storage_element', None)
             if not self.SE:
                 msg = "Error. The [USER] section has no 'storage_element'"
                 common.logger.message(msg)
                 raise CrabException(msg)
+                
+        if ( int(self.backup_copy) == 1 and int(self.publish_data) == 1 ):
+            msg = 'Warning: currently the publication is not supported with the backup copy. Work in progress....\n'
+            common.logger.message(msg)
+            raise CrabException(msg)
 
             self.proxyValid = 0
             self.dontCheckProxy = int(cfg_params.get("EDG.dont_check_proxy",0))

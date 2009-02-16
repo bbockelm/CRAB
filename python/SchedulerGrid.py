@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.94 2009/02/06 16:04:02 fanzago Exp $"
-__version__ = "$Revision: 1.94 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.95 2009/02/11 17:00:17 fanzago Exp $"
+__version__ = "$Revision: 1.95 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -78,6 +78,8 @@ class SchedulerGrid(Scheduler):
                 common.logger.message(msg)
                 raise CrabException(msg)
 
+        self.backup_copy = cfg_params.get("USER.backup_copy",0)
+        
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
             msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
             msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n'
@@ -88,9 +90,19 @@ class SchedulerGrid(Scheduler):
             msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
             raise CrabException(msg)
 
+        if ( int(self.copy_data) == 0 and int(self.backup_copy) == 1 ):
+            msg = 'Error: copy_data = 0 and backup_data = 1 ==> to use the backup_copy function, the copy_data value has to be = 1\n'
+            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
+            raise CrabException(msg)
+            
         if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
             msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
             msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
+            common.logger.message(msg)
+            raise CrabException(msg)
+            
+        if ( int(self.backup_copy) == 1 and int(self.publish_data) == 1 ):
+            msg = 'Warning: currently the publication is not supported with the backup copy. Work in progress....\n'
             common.logger.message(msg)
             raise CrabException(msg)
 
@@ -111,6 +123,10 @@ class SchedulerGrid(Scheduler):
         self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
         self.debugWrap=''
         if self.debug_wrapper==1: self.debugWrap='--debug'
+        self.backup=''
+        if ( int(self.backup_copy) == 1 ): 
+            self.debugWrap='--debug'
+            self.backup='--backup'
 
         self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',0))
 
@@ -284,8 +300,10 @@ class SchedulerGrid(Scheduler):
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
-            txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'--lfn $LFNBaseName"\n'
-            txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+' --lfn $LFNBaseName\n'
+            #txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'--lfn $LFNBaseName"\n'
+            #txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+' --lfn $LFNBaseName\n'
+            txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'--lfn $LFNBaseName '+self.backup+' "\n'
+            txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+' --lfn $LFNBaseName '+self.backup+' \n'
             if self.debug_wrapper==1:
                 txt += 'echo "which lcg-ls"\n'
                 txt += 'which lcg-ls\n'

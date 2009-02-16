@@ -41,6 +41,7 @@ class cmscp:
         """
         if 'help' in self.params.keys(): HelpOptions()
         if 'debug' in self.params.keys(): self.debug = 1
+        if 'backup' in self.params.keys(): self.backup = 1
 
         # source and dest cannot be undefined at same time
         if not self.params['source']  and not self.params['destination'] :
@@ -254,8 +255,9 @@ class cmscp:
                     list_files = list_retry
                 else: break
                 
-        if len(list_retry):
-            results = self.backupCopy(list_retry, results)
+        if self.backup:
+            if len(list_retry):
+                results = self.backupCopy(list_retry, results)
             
         if self.debug:
             print "\t results %s \n"%results
