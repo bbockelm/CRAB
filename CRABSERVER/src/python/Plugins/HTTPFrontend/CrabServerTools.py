@@ -204,7 +204,7 @@ def installer(**args):
     root.visualog = TaskLogVisualizer()
     root.usertask = ListTaskForUser(
 #        "%s/visualog" % baseUrl
-        "visualog"  
+        "../visualog"  
         )
     root.logginfo = TaskLogMonitor(
 #        "%s/visualog" % baseUrl,
