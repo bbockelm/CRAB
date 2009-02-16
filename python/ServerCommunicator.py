@@ -12,7 +12,8 @@ from crab_exceptions import *
 from crab_util import *
 from crab_logger import Logger
 import common
-
+import Scram
+from ProdCommon.Credential.CredentialAPI import CredentialAPI
 from CRAB_Server_API import CRAB_Server_Session as C_AS_Session
 # from CRAB_Server_fastAPI import CRAB_Server_https as C_AS_Session
 from xml.dom import minidom
@@ -40,7 +41,6 @@ class ServerCommunicator:
         CliServerParams(self)
         self.crab_task_name = common.work_space.topDir().split('/')[-2] # nice task name "crab_0_..."
 
-        from ProdCommon.Credential.CredentialAPI import CredentialAPI
         configAPI = {'credential' : credentialType }
          
         CredAPI =  CredentialAPI( configAPI )            
@@ -49,7 +49,8 @@ class ServerCommunicator:
         except Exception, err:
             common.logger.debug(3, "Getting Credential Subject: " +str(traceback.format_exc()))
             raise CrabException("Error Getting Credential Subject")
- 
+
+        self.scram=Scram.Scram(cfg_params)
 ###################################################
     # Interactions with the server
 ###################################################
@@ -299,6 +300,8 @@ class ServerCommunicator:
         miniCfg['eMail'] = self.cfg_params.get('USER.email', None)
         miniCfg['threshold'] = self.cfg_params.get('USER.thresholdlevel', 100)
 
+        miniCfg['CMSSW_version'] = self.scram.getSWVersion()
+        
         ## put here other fields if needed
         node.setAttribute("CfgParamDict", str(miniCfg) )
         cfile.appendChild(node)
