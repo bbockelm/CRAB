@@ -15,7 +15,7 @@ class TaskLogMonitor:
             html += "<option>%s</option>"%(str(data[0]))
         return html
 
-    def index(self):
+    def index(self, **rest):
         users = API.getAllUserName()
 
         html = """<html><body><h2>CrabServer Tasks: internal server logging</h2>\n """
@@ -57,7 +57,7 @@ class ListTaskForUser:
     def __init__(self, showusertask = None):
         self.visualize = showusertask
 
-    def index( self, username, length, span, tasktype ):
+    def index( self, username, length, span, tasktype, **rest ):
         try:
             _span=3600
             if span == 'days': _span=24*3600
@@ -120,7 +120,7 @@ class TaskLogVisualizer:
             raise Exception("Problem loading server configuration info " + str(exc))
         return dbox
 
-    def index(self, taskname, logtype):
+    def index(self, taskname, logtype, **rest):
         self.taskname = taskname 
         dbox = self.getDbox()
 

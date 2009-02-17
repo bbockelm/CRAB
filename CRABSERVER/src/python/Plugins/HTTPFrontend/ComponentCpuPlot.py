@@ -113,7 +113,7 @@ class ComponentCpuPlot:
         self.sensorsDir =  os.path.join(compDir,'sensors')
         self.compcpu = compcpu
 
-    def index(self, length, span, Component):
+    def index(self, length, span, Component, **rest):
         
 	_header = """
                                 <html>

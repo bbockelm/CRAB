@@ -26,7 +26,7 @@ class CompServMonitor:
         self.compmsg = compMsg
         self.msgblnc = msgBalance
     
-    def index(self):
+    def index(self, **rest):
  
         html = """<html><body><h2>CrabServer Components and Services Monitoring</h2>\n """
         html += "<table>\n"
@@ -133,7 +133,7 @@ class ShowCompStatus:
         self.compcpu = compCpu
         return
 
-    def index(self):
+    def index(self, **rest):
         run , not_run = status()
         
         tableHeader = "<tr><th>%s</th><th>Process ID</th><th>Plots<span style=\"color:red\">*</span></th><th>CPU sensor status<span style=\"color:red\">*</span></th></tr>\n"
@@ -253,7 +253,7 @@ class ShowCompLogs:
     def __init__(self, writeComp ):
         self.writecomp = writeComp
 
-    def index(self, comp_name):
+    def index(self, comp_name, **rest):
         html = """<html><body><h2>List of Available Components logs </h2>\n """
         compDir=CompDIR(comp_name)
 
@@ -284,7 +284,7 @@ class WriteLog:
     def __init__(self):
         return
 
-    def index(self, to_read):
+    def index(self, to_read, **rest):
 
         compDir = CompDIR(str(to_read).split('/')[0])
         html = """<html><body><h2> %s </h2>\n """%os.path.basename(to_read)
@@ -316,7 +316,7 @@ class MsgByComponent:
     def __init__(self):
         pass
 
-    def index(self, comp_name):
+    def index(self, comp_name, **rest):
 
         query, data = API.messageListing(comp_name)
         dictofdict = {}
@@ -347,7 +347,7 @@ class MsgBalance:
         self.imageServer = imageUrl
         self.workingDir = imageDir
 
-    def index(self):
+    def index(self, **rest):
 
         query, data = API.messageListing("")
         dictofdict = {}

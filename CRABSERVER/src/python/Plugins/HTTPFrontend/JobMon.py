@@ -17,7 +17,7 @@ class JobMonitor:
         self.graphstatusdest = graphstatusdest
         self.jobwms = jobwms
     
-    def index(self):
+    def index(self, **rest):
 
 
         template = ' for last '
@@ -111,7 +111,7 @@ class CumulativeJobStatGraph:
         self.imageServer = imageUrl
         self.workingDir = imageDir
 
-    def index( self, length, span ):
+    def index( self, length, span, **rest ):
 
         _span=3600 
         if span == 'days': _span=24*3600
@@ -226,7 +226,7 @@ class DestinationSitesMonitor:
          
         return html
 
-    def index(self, length, span, type, site ):
+    def index(self, length, span, type, site, **rest ):
 
         _span=3600 
         if span == 'days': _span=24*3600
@@ -311,7 +311,7 @@ class StatusPerDest:
          
         return html
 
-    def index(self, length, span, type, site ):
+    def index(self, length, span, type, site, **rest ):
 
         _span=3600 
         if span == 'days': _span=24*3600
@@ -372,7 +372,7 @@ class PlotByWMS:
 
         return html
 
-    def index(self, fromy = "", fromm ="", fromd = "", toy = "", tom = "", tod = ""):
+    def index(self, fromy = "", fromm ="", fromd = "", toy = "", tom = "", tod = "", **rest):
 
         fromdata = fromy+"-"+fromm+"-"+fromd
         todata   = toy+"-"+tom+"-"+tod

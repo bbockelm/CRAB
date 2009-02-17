@@ -30,7 +30,7 @@ class Root:
     def __init__(self, myUrl):
         self.myUrl = myUrl
 
-    def index(self):
+    def index(self, **rest):
         html = """<html><body><h2>CrabServer Instance: %s </h2>\n """ % (
 
             prodAgentName(), )
@@ -65,7 +65,7 @@ class Downloader:
     def __init__(self, rootDir):
         self.rootDir = rootDir
 
-    def index(self, filepath):
+    def index(self, filepath, **rest):
         """
         _index_
 
@@ -84,7 +84,7 @@ class ImageServer:
     def __init__(self, rootDir):
         self.rootDir = rootDir
 
-    def index(self, filepath):
+    def index(self, filepath, **rest):
         pathInCache = os.path.join(self.rootDir, filepath)
         logging.debug("ImageServer serving file: %s" % pathInCache)
         return serve_file(pathInCache, content_type="image/png")

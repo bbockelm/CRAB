@@ -18,7 +18,7 @@ class TaskMonitor:
         self.datasetrelated = datasetRelated
         self.graphuser = graphuser
     
-    def index(self):
+    def index(self, **rest):
 
         html = """<html><body><h2>CrabServer Tasks Entities</h2>\n """
         html += "<table>\n"
@@ -103,7 +103,7 @@ class TaskGraph:
         self.imageServer = imageUrl
         self.workingDir = imageDir
 
-    def index( self, length, span, tasktype, type ):
+    def index( self, length, span, tasktype, type, **rest):
 
         _span=3600 
         if span == 'days': _span=24*3600
@@ -176,7 +176,7 @@ class CumulativeTaskGraph:
         self.imageServer = imageUrl
         self.workingDir = imageDir
 
-    def index( self, length, span ):
+    def index( self, length, span, **rest ):
 
         _span=3600 
         if span == 'days': _span=24*3600
@@ -310,7 +310,7 @@ class DatasetInfos:
         html = "<html><body><img src=\"%s\"></body></html>" % pngfileUrl
         return html
        
-    def index(self, length , span, type):
+    def index(self, length , span, type, **rest):
 
         _span=3600
         if span == 'days': _span=24*3600
@@ -367,7 +367,7 @@ class DatasetDetails:
         return html
 
 
-    def index(self,user=None,task=None,eff=None):
+    def index(self,user=None,task=None,eff=None, **rest):
 
         if user : string = user 
         elif task: string=task
@@ -451,7 +451,7 @@ class UserGraph:
         self.workingDir = imageDir
 
 
-    def index(self, length, span, type ):
+    def index(self, length, span, type, **rest ):
 
         _span=3600 
         if span == 'days': _span=24*3600
