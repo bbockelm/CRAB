@@ -46,7 +46,7 @@ class Status(Actor):
         toPrint=[]
         taskId = uniqueTaskName(up_task['name'])
         task_unique_name = up_task['name']
-        ended = ''
+        ended = None
 
         self.wrapErrorList = []
         for job in up_task.jobs :
@@ -67,7 +67,7 @@ class Status(Actor):
             if jobStatus is not None:
                 self.dataToDash(job,id,taskId,task_unique_name,dest,jobStatus)
         header = ''
-        if len(ended) > 0:
+        if ended != None and len(ended) > 0:
             header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
         else:
             header+= "%-6s %-18s %-36s %-13s %-16s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
