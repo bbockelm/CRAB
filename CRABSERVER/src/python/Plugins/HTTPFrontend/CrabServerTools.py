@@ -109,7 +109,7 @@ def installer(**args):
 #        "%s/images" % baseUrl,
         "images",
         args["StaticDir"],
-        "datasetdetails")
+        "../datasetdetails")
 #        "%s/datasetdetails" % baseUrl ) 
     root.cumulativetaskgraph = CumulativeTaskGraph(
 #        "%s/images" % baseUrl,
@@ -206,6 +206,7 @@ def installer(**args):
 #        "%s/visualog" % baseUrl
         "../visualog"  
         )
+
     root.logginfo = TaskLogMonitor(
 #        "%s/visualog" % baseUrl,
         "visualog"  ,
