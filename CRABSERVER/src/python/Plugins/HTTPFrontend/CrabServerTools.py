@@ -170,7 +170,7 @@ def installer(**args):
     root.writelog = WriteLog()
     root.compstatus = ShowCompStatus(
 #        "%s/compcpu" % baseUrl
-        "compcpu"
+        "../compcpu"
         )
     root.compmsg = MsgByComponent()
     root.msgblnc = MsgBalance(
