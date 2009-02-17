@@ -83,36 +83,48 @@ class ProxyLife:
         "from ProdCommon.Storage.SEAPI.Exceptions import *\n" + \
         "import os\n" + \
         "import sys\n\n" + \
-        "print 'Initializing...'\n" + \
-        "proxy = ''\n" + \
-        "if len(sys.argv) == 2:\n" + \
-        "    proxy = sys.argv[1]\n" + \
-        "    if not os.path.exists(proxy):\n" + \
-        "        print ('Proxy not existing!')\n" + \
-        "        import sys\n" + \
-        "        sys.exit(1)\n" + \
-        "elif len(sys.argv) < 2:\n" + \
-        "    print ('Pass the complete path of a valid proxy.')\n" + \
-        "    import sys\n" + \
-        "    sys.exit(1)\n" + \
-        "else:\n" + \
-        "    print ('Pass just the complete path of a valid proxy.')\n" + \
-        "    import sys\n" + \
-        "    sys.exit(1)\n" + \
-        "storage = SElement('"+self.dictSE['SE']+"', '"+self.dictSE['prot']+"', '"+self.dictSE['port']+"')\n" + \
+        "print 'Initializing...'\n"+\
+        "proxy = None\n"+\
+        "storage = ''\n"+\
+        "opt = ''\n"+\
+        'msg  = """ \n'+\
+        "Usage:\n"+\
+        "python delete_* local\n"+\
+        "python delete_* remote <full path of the proxy>\n"+\
+        '"""\n'+\
+        "if len(sys.argv) < 2 or sys.argv[1] not in ['local','remote']:\n"+\
+        "    print msg\n"+\
+        "    sys.exit(1)\n"+\
+        "elif sys.argv[1]=='local':\n"+\
+        "    storage = SElement('','local')\n"+\
+        "    opt='-rf'\n"+\
+        "elif sys.argv[1]=='remote':\n"+\
+        "    if len(sys.argv) != 2:\n"+\
+        "        print ('Pass just the complete path of a valid proxy.')\n"+\
+        "        print msg\n"+\
+        "        sys.exit(1)\n"+\
+        "    else:\n"+\
+        "        proxy = sys.argv[2]\n"+\
+        "        if not os.path.exists(proxy): \n"+\
+        "            print ('Proxy not existing!')\n"+\
+        "            sys.exit(1)\n"+\
+        "        else:\n"+\
+        "             storage = SElement('"+self.dictSE['SE']+"', '"+self.dictSE['prot']+"', '"+self.dictSE['port']+"')\n" + \
+        "else:\n"+\
+        "    print msg\n"+\
         "SeSbI = SBinterface(storage)\n" + \
         "tasks = "+taskstring+"\n\n" + \
         "print 'Start cleaning...\\n\'\n" + \
         "for taskpath in tasks:\n" + \
         "    try:\n" + \
         "        if taskpath != '':\n " + \
-        "            SeSbI.deleteRec( taskpath, proxy )\n" + \
+        "            SeSbI.deleteRec( taskpath, proxy, opt=opt )\n" + \
         "    except OperationException, ex:\n" + \
         "        print 'Problem deleting task: [' + taskpath + ']'\n" + \
         "        for error in ex.detail:\n" + \
         "            print error\n" + \
         "        print ex.output\n" + \
-        "print '\\n...done!'\n"
+        "print '\\n...done'\n"
         logging.debug("\n\n " + pythonscript + " \n\n")
         file(scriptpath, 'w').write(pythonscript)
 
