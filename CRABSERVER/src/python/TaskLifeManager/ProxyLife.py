@@ -38,8 +38,8 @@ class ProxyLife:
         self.__cleanproxies = []
 
         ## clean script
-        logging.info("Cleaning old script...")
-        self.delOldScript()
+        #logging.info("Cleaning old script...")
+        #self.delOldScript()
 
     ###############################################
     ######       SYSTEM  INTERACTIONS        ######
