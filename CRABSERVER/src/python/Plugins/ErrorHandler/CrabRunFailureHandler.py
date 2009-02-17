@@ -58,7 +58,7 @@ class CrabRunFailureHandler(HandlerInterface):
         self.localEMFileName = "ErrorHandlerMatrix.txt"
 
         ### TEMPORARY
-        self.url = "https://cmsweb.cern.ch/crabconf/files/"
+        self.url = "https://cmsweb.cern.ch/crabconf/"
         self.initializeActions()
         self.cacheLocation = '' # where the cached ErrorMatrix will be put
 
