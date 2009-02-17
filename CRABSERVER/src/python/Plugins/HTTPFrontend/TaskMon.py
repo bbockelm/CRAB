@@ -74,22 +74,22 @@ class TaskMonitor:
         html += '</select>'
         html += '</form>'
 
-        """
-        html += "<table>\n"
-        html += "<b>Users related infos </b><br/><br/>"
-        ## numb task
-        ## numb dataset
-        html += '<form action=\"%s"\ method="get" >' % (self.usersrelated)
-        html += 'Cumulative plot of tasks status '
-        html += ' for last  '
-        html += '<input type="text" name="length" size=4 value=0>'
-        html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
-        html += '<input type="submit" value="Show Summary"/>'
-        html += '</select>'
-        html += '</form>'
+        
+#         html += "<table>\n"
+#         html += "<b>Users related infos </b><br/><br/>"
+#         ## numb task
+#         ## numb dataset
+#         html += '<form action=\"%s"\ method="get" >' % (self.usersrelated)
+#         html += 'Cumulative plot of tasks status '
+#         html += ' for last  '
+#         html += '<input type="text" name="length" size=4 value=0>'
+#         html += '<select name="span" style="width:80px"><option>hours</option><option>days</option></select>'
+#         html += '<input type="submit" value="Show Summary"/>'
+#         html += '</select>'
+#         html += '</form>'
+#         html += "</table>\n"
         html += "</table>\n"
-        html += "</table>\n"
-        """
+        
 
         html += """</body></html>"""
 
@@ -103,15 +103,26 @@ class TaskGraph:
         self.imageServer = imageUrl
         self.workingDir = imageDir
 
-    def index( self, length, span, tasktype, type, **rest):
-
+    def index( self, length=12, span='hours', tasktype='All', type='list', **rest):
+        allowed = {
+            'span':['hours','days'],
+            'tasktype':_tasktype.keys()
+            }
+        if tasktype not in allowed['tasktype']:
+            tasktype = 'All'
+        try:
+            length = int(length)
+        except ValueError, ve:
+            length = 12
+        
         _span=3600 
         if span == 'days': _span=24*3600
+        else: span = 'hours'
 
         query_time = int(length)*_span
         end_time = time.time() - time.altzone
         start_time = end_time - query_time
-       
+
         tasks = API.getNumTask( query_time, _tasktype[tasktype] )
         
         data={}
