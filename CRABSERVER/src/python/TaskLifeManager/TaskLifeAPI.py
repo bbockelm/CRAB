@@ -40,6 +40,28 @@ class TaskLifeAPI:
 
         return dictionary
 
+    def getTaskEndedFrom(self, from_time, dbSession)
+        taskList = [] 
+        sqlStr="SELECT task_name FROM tt_taskInstance " + \
+               "WHERE ended_time > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND);"
+        tuple = dbSession.select(sqlStr)
+        if tuple != None:
+            for tupla in tuple:
+                taskList.append(tupla[0])
+
+        return taskList
+
+    def getTaskiArrivedFrom(self, from_time, dbSession)
+        taskList = []
+        sqlStr="SELECT task_name FROM tt_taskInstance " + \
+               "WHERE landed_time > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND);"
+        tuple = dbSession.select(sqlStr)
+        if tuple != None:
+            for tupla in tuple:
+                taskList.append(tupla[0])
+
+        return taskList
+
     def archiveBliteTask(self, mySession, taskname):
         logging.info( "Archiving blite task: " + str(taskname) )
         taskObj = None
