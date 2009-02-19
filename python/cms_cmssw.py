@@ -44,6 +44,7 @@ class Cmssw(JobType):
         self.fjrFileName = 'crab_fjr.xml'
 
         self.version = self.scram.getSWVersion()
+        common.logger.write("CMSSW version is: "+str(self.version))
         version_array = self.version.split('_')
         self.CMSSW_major = 0
         self.CMSSW_minor = 0
