@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.11 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.11 2008/12/02 11:03:59 mcinquil Exp $"
+__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.13 2008/12/05 10:51:34 spiga Exp $"
 
 import os
 import pickle
@@ -191,6 +191,7 @@ class TaskRegisterComponent:
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName, actionType)
         workerCfg['ProxiesDir'] = self.args['ProxiesDir']
         workerCfg['credentialType'] = self.args['credentialType']
+        workerCfg['storagePath'] = self.args['storagePath']
         try:
             self.workerSet[thrName] = RegisterWorker(logging, thrName, workerCfg)
         except Exception, e:
