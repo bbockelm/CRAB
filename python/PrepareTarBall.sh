@@ -19,7 +19,7 @@ WMCOREtag="WMCORE_0_1_1_pre3"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
-repo_url="https://cmsweb.cern.ch/crabconf/"
+repo_url="https://cmsweb.cern.ch/crabconf"
 
 ## download CRAB from CVS and cleanup the code a bit
 echo ">> downloading CRAB tag $CRABtag from CVS CRAB"

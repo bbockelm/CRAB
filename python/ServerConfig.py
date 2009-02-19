@@ -13,7 +13,7 @@ class ServerConfig:
         common.logger.debug(5,'Calling ServerConfig '+serverName)
 #        self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
 
-        self.url ='https://cmsweb.cern.ch/crabconf/files/'
+        self.url ='https://cmsweb.cern.ch/crabconf/'
         if 'default' in  serverName:
             common.logger.debug(5,'getting serverlist from web')
             # get a list of available servers 
