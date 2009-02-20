@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.17 2008/12/05 17:23:26 spiga Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.18 2009/02/19 17:07:58 mcinquil Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import string
 import sys, os
@@ -194,7 +194,7 @@ class RegisterWorker(Thread):
         #if self.cfg_params['CRAB.se_remote_dir'] == "":
         #    remoteSBlist = [ os.path.join( '/'+self.cfg_params['CRAB.se_remote_dir'], f ) for f in remoteSBlist ]
         #else:
-        remoteSBlist = [ os.path.join( os.path.join(self.configs['storagePath'] + self.taskName), f ) for f in remoteSBlist ]
+        remoteSBlist = [ os.path.join( os.path.join(self.configs['storagePath'], self.taskName), f ) for f in remoteSBlist ]
         self.log.info(str(remoteSBlist))
 
         if len(remoteSBlist) > 0:
