@@ -26,6 +26,7 @@ class PsetManipulator:
         #convert Pset
         from FWCore.ParameterSet.Config import include
         common.logger.debug(3,"PsetManipulator::__init__: PSet file = "+self.pset)
+        # FUTURE: Can drop cfg mode for CMSSW < 2_1_x
         if self.pset.endswith('py'):
             handle = open(self.pset, 'r')
             try:   # Nested form for Python < 2.5

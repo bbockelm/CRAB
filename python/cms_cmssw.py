@@ -57,6 +57,16 @@ class Cmssw(JobType):
             msg = "Cannot parse CMSSW version string: " + self.version + " for major and minor release number!"
             raise CrabException(msg)
 
+        if self.CMSSW_major < 1 or (self.CMSSW_major == 1 and self.CMSSW_minor < 5):
+            msg = "CRAB supports CMSSW >= 1_5_x only. Use an older CRAB version."
+            raise CrabException(msg)
+            """
+            As CMSSW versions are dropped we can drop more code:
+            1.X dropped: drop support for running .cfg on WN
+            2.0 dropped: drop all support for cfg here and in writeCfg
+            2.0 dropped: Recheck the random number seed support
+            """
+
         ### collect Data cards
 
 
@@ -172,9 +182,9 @@ class Cmssw(JobType):
         # Copy/return
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
         self.return_data = int(cfg_params.get('USER.return_data',0))
-        
-        self.conf = {}   
-        self.conf['pubdata'] = None 
+
+        self.conf = {}
+        self.conf['pubdata'] = None
         # number of jobs requested to be created, limit obj splitting DD
         #DBSDLS-start
         ## Initialize the variables that are extracted from DBS/DLS and needed in other places of the code
@@ -194,18 +204,18 @@ class Cmssw(JobType):
 
         if self.selectNoInput:
             if self.pset == None:
-                self.algo = 'ForScript'   
+                self.algo = 'ForScript'
             else:
                 self.algo = 'NoInput'
-                self.conf['managedGenerators']=self.managedGenerators    
-                self.conf['generator']=self.generator    
-        elif splitByRun ==1: 
-            self.algo = 'RunBased' 
+                self.conf['managedGenerators']=self.managedGenerators
+                self.conf['generator']=self.generator
+        elif splitByRun ==1:
+            self.algo = 'RunBased'
         else:
-            self.algo = 'EventBased'   
-            
-#        self.algo = 'LumiBased'   
-        splitter = JobSplitter(self.cfg_params,self.conf) 
+            self.algo = 'EventBased'
+
+#        self.algo = 'LumiBased'
+        splitter = JobSplitter(self.cfg_params,self.conf)
         self.dict = splitter.Algos()[self.algo]()
 
         # modify Pset only the first time
@@ -216,7 +226,6 @@ class Cmssw(JobType):
                 try:
                     # Add FrameworkJobReport to parameter-set, set max events.
                     # Reset later for data jobs by writeCFG which does all modifications
-                    PsetEdit.addCrabFJR(self.fjrFileName) # FUTURE: Job report addition not needed by CMSSW>1.5
                     PsetEdit.maxEvent(-1)
                     PsetEdit.skipEvent(0)
                     PsetEdit.psetWriter(self.configFilename())
@@ -324,7 +333,7 @@ class Cmssw(JobType):
 
 
     def split(self, jobParams,firstJobID):
-          
+
         arglist = self.dict['args']
         njobs = self.dict['njobs']
         self.jobDestination = self.dict['jobDestination']
@@ -499,6 +508,7 @@ class Cmssw(JobType):
         Returns part of a job script which prepares
         the execution environment for the job 'nj'.
         """
+        # FUTURE: Drop support for .cfg when possible
         if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
             psetName = 'pset.py'
         else:
@@ -708,15 +718,12 @@ class Cmssw(JobType):
 
     def executableArgs(self):
         # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
-        if self.scriptExe:#CarlosDaniele
-            return   self.scriptExe + " $NJob"
+        if self.scriptExe:
+            return self.scriptExe + " $NJob"
         else:
             ex_args = ""
-            # FUTURE: This tests the CMSSW version. Can remove code as versions deprecated
-            # Framework job report
-            if (self.CMSSW_major >= 1 and self.CMSSW_minor >= 5) or (self.CMSSW_major >= 2):
-                ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
-            # Type of config file
+            ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
+            # Type of config file depends on CMSSW version
             if self.CMSSW_major >= 2 :
                 ex_args += " -p pset.py"
             else:
@@ -1033,6 +1040,6 @@ class Cmssw(JobType):
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
         txt += 'export filesToCheck\n'
-        
+
         if list : return self.output_file
         return txt
