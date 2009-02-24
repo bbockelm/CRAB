@@ -85,33 +85,6 @@ class PsetManipulator:
 
         return
 
-    def addCrabFJR(self,name):
-        """
-        _addCrabFJR_
-        add CRAB specific FrameworkJobReport (FJR)
-        if a FJR already exists in input CMSSW parameter-set, add a second one.
-        This code is not needed for CMSSW >= 1.5.x and is non-functional in CMSSW >= 1.7.x.
-        It should be removed at some point in the future.
-        """
-
-        # Check if MessageLogger service already exists in configuration. If not, add it
-        svcs = self.cfg.data.services
-        if not svcs.has_key('MessageLogger'):
-            self.cfg.data.add_(CfgModules.Service("MessageLogger"))
-
-        messageLogger = self.cfg.data.services['MessageLogger']
-
-        # Add fwkJobReports to Message logger if it doesn't exist
-        if "fwkJobReports" not in messageLogger.parameterNames_():
-            messageLogger.fwkJobReports = CfgTypes.untracked(CfgTypes.vstring())
-
-        # should figure out how to remove "name" if it is there.
-
-        if name not in messageLogger.fwkJobReports:
-            messageLogger.fwkJobReports.append(name)
-
-        return
-
     def getTFileService(self):
         """ Get Output filename from TFileService and return it. If not existing, return None """
         if not self.cfg.data.services.has_key('TFileService'):
