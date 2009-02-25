@@ -13,8 +13,9 @@ CREATE TABLE tt_taskInstance (
      work_status TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '0=free task; 1=busy task; 2:controlled task' CHECK(VALUE>=0 AND VALUE<=2),
      user_name varchar(255) NOT NULL DEFAULT '',
      lastupdate_time TIMESTAMP DEFAULT 0 COMMENT 'updated when task is polled',
-     ended_time TIMESTAMP DEFAULT 0 COMMENT 'updated whentask archived',
+     ended_time TIMESTAMP DEFAULT 0 COMMENT 'updated when task archived',
      land_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'written @first insert, never updated',
+     cleaned_time TIMESTAMP DEFAULT 0 COMMENT 'updated when task files are cleaned',
      primary key(id),
      unique(task_name),
      key(task_name)
