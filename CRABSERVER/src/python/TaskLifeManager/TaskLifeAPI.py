@@ -51,7 +51,7 @@ class TaskLifeAPI:
 
         return taskList
 
-    def getTaskiArrivedFrom(self, from_time, dbSession)
+    def getTaskArrivedFrom(self, from_time, dbSession)
         taskList = []
         sqlStr="SELECT task_name FROM tt_taskInstance " + \
                "WHERE landed_time > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND);"
@@ -61,6 +61,23 @@ class TaskLifeAPI:
                 taskList.append(tupla[0])
 
         return taskList
+
+    def taskCleaned( self, dbSession, taskName ):
+        """
+        _taskCleaned_
+
+        set the related field with the actual time
+        """
+        try:
+            import time
+            sqlStr='UPDATE tt_taskInstance SET cleaned_time="'+time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(time.time()))+'"\
+                    WHERE task_name="'+taskName+'";'
+            rowModified=dbSession.modify(sqlStr)
+        except Exception, exc:
+            logging.error(str(exc))
+            return False
+        return True
+
 
     def archiveBliteTask(self, mySession, taskname):
         logging.info( "Archiving blite task: " + str(taskname) )
