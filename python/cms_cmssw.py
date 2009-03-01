@@ -546,7 +546,7 @@ class Cmssw(JobType):
         txt += '    func_exit\n'
         txt += 'fi \n'
         txt += 'cd '+self.version+'\n'
-        txt += 'SOFTWARE_DIR=`pwd`\n'
+        txt += 'SOFTWARE_DIR=`pwd`; export SOFTWARE_DIR\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'eval `'+scram+' runtime -sh | grep -v SCRAMRT_LSB_JOBNAME`\n'
         txt += 'if [ $? != 0 ] ; then\n'

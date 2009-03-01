@@ -41,6 +41,7 @@ remove_working_dir() {
 #CRAB initial_environment
 
 RUNTIME_AREA=`pwd`
+export RUNTIME_AREA
 
 echo "Today is `date`"
 echo "Job submitted on host `hostname`"
