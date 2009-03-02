@@ -123,7 +123,8 @@ class TaskTrackingComponent:
                            "killed", \
                            "ended", \
                            "partially submitted", \
-                           "partially killed"
+                           "partially killed", \
+                           "resubmitting" \
                          ]
 
         self.bossCfgDB = {\
@@ -244,7 +245,7 @@ class TaskTrackingComponent:
             self.__appendDbgInfo(taskname, _loginfo)
             return
 
-        # submission performed
+        # submission performed ##HERE
         if event == "CrabServerWorkerComponent:CrabWorkPerformed":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "CrabWorkPerformed: %s" % payload)
@@ -260,7 +261,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
-        # submission failed
+        # submission failed ##HERE
         if event == "CrabServerWorkerComponent:CrabWorkFailed":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "CrabWorkFailed: %s" % payload)
@@ -271,7 +272,7 @@ class TaskTrackingComponent:
             logging.info(logBuf)
             return
 
-        # submission failed
+        # submission failed ##HERE
         if event == "CrabServerWorkerComponent:SubmitNotSucceeded":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, str(event.split(":")[1]) + ": %s" % payload)
@@ -522,7 +523,10 @@ class TaskTrackingComponent:
         logBuf = ""
         ttdb = TaskStateAPI()
         try:
-            ttdb.updateStatusNotif( taskName, "submitted", "0" )
+            #stat, notif = ttdb.getStatusArchived( taskName )
+            #logging.info(str(stat) + " - " + str(notif))
+            #if int(notif) == 2:
+            ttdb.updateStatusNotif( taskName, "resubmitting", "0" )
         except Exception, ex:
             logBuf = self.__log(logBuf, "ERROR while updating the task " + str(taskName) )
             logBuf = self.__log(logBuf, "      "+str(ex))
@@ -1077,10 +1081,11 @@ class TaskTrackingComponent:
                                     logBuf = self.__log(logBuf, "Error: The path " + pathToWrite + " does not exist!\n")
 
                                 succexo = 0
-                                if percentage != endedLevel or \
+                                if status != "resubmitting" and \
+                                  (percentage != endedLevel or \
                                   (percentage == 0 and status == self.taskState[3] ) or \
                                   (percentage == 0 and status == self.taskState[1] ) or \
-                                  (notified < 2 and endedLevel == 100):
+                                  (notified < 2 and endedLevel == 100) ):
 
                                     ###  updating endedLevel  ###
                                     if percentage == 100:

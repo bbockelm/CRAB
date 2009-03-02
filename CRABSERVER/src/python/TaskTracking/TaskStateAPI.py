@@ -713,7 +713,7 @@ class TaskStateAPI:
 
     def getStatusUUIDEmail( self, taskName, dbSession = None ):
         """
-        _getStatus_
+        _getStatusUUIDEmail_
         """
         queryString =  "SELECT status, uuid, e_mail, user_name " +\
                        "FROM tt_taskInstance WHERE task_name = '"+taskName+"';"
@@ -733,6 +733,21 @@ class TaskStateAPI:
         task2Check = self.queryMethod(queryString, taskName)
 
         return task2Check
+
+    def getStatusArchived( self, taskName, dbSession = None ):
+        """
+        _getStatusArchived_
+        """
+        queryString =  "SELECT status, notification_sent " +\
+                       "FROM tt_taskInstance WHERE task_name = '"+taskName+"';"
+        task2Check = None
+        if dbSession is None:
+            task2Check = self.queryMethod(queryString,taskName)
+            return task2Check[0]
+        else:
+            task2Check = dbSession.select(queryString)
+            return task2Check[0]
+
 
     def checkExistPA( self, conn, dbCur, taskName, dbSession = None):
         """
