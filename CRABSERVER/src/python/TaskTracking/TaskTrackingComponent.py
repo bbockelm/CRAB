@@ -277,6 +277,7 @@ class TaskTrackingComponent:
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, str(event.split(":")[1]) + ": %s" % payload)
                 taskName, taskStatus, reason = payload.split("::")
+                self.unsetResubmitting(taskName)
                 _loginfo.setdefault('txt', str(reason))  
                 _loginfo.setdefault('code', str(taskStatus))
                 self.__appendDbgInfo(taskName, _loginfo) #, jobid)
@@ -512,6 +513,20 @@ class TaskTrackingComponent:
                         self.prepareReport( payload, uuid, eMail, valuess[3], 0, 0, dictionaryReport, 0, 0 )
         except Exception, ex:
             logBuf = self.__log(logBuf, "ERROR while reporting info about the task " + str(payload) )
+            logBuf = self.__log(logBuf, "      "+str(ex))
+            logging.info(logBuf)
+
+
+    def unsetResubmitting(self, taskname):
+        """
+        _unsetResubmitting_
+        """
+        ttdb = TaskStateAPI()
+        try:
+            if str(ttdb.getStatus( taskname )) == "resubmitting":
+                ttdb.updateStatus( taskname, "submitted" )
+        except Exception, ex:
+            logBuf = self.__log(logBuf, "ERROR while updating the task " + str(payload) )
             logBuf = self.__log(logBuf, "      "+str(ex))
             logging.info(logBuf)
 

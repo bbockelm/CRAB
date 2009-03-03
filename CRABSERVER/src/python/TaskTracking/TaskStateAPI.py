@@ -732,7 +732,7 @@ class TaskStateAPI:
         queryString =  "SELECT status from tt_taskInstance where task_name = '"+taskName+"';"
         task2Check = self.queryMethod(queryString, taskName)
 
-        return task2Check
+        return task2Check[0][0]
 
     def getStatusArchived( self, taskName, dbSession = None ):
         """
