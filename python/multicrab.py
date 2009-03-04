@@ -219,6 +219,7 @@ class MultiCrab:
                 crab.run()
                 common.apmon.free()
                 del crab
+                print '\n##############################  E N D  ####################################\n'
             except CrabException, e:
                 print '\n' + common.prog_name + ': ' + str(e) + '\n'
                 if common.logger:

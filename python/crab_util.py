@@ -616,6 +616,8 @@ def showWebMon(server_name):
     if server_name != '' :
         msg += 'You can also check jobs status at: http://%s:8888/logginfo\n'%server_name
         msg += '\t( Your task name is: %s )\n'%common._db.queryTask('name')
+    msg +='You can also follow the status of this task on CMS dashboard:'
+    msg +='\thttp://dashb-cms-sam.cern.ch/dashboard/request.py/taskmonitoring'
     return msg
 
 

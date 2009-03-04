@@ -38,6 +38,7 @@ class Reporter(Actor):
                             'Undefined',
                             'Submitting',
                             'Submitted',
+                            'NotSubmitted',
                             'Waiting',
                             'Ready',
                             'Scheduled',
@@ -56,7 +57,7 @@ class Reporter(Actor):
         filesRead=0
         filesRequired=0
         for job in task.getJobs():
-            #print job
+            if (job.runningJob['applicationReturnCode']>0 or job.runningJob['wrapperReturnCode']>0): continue
             # get FJR filename
             fjr=task['outputDirectory']+job['outputFiles'][-1]
             #print fjr
@@ -74,7 +75,8 @@ class Reporter(Actor):
                     
                 #print jobReport[0].inputFiles,'\n'
             else:
-                print 'no FJR avaialble for job #%s'%job['jobId']
+                pass
+                #print 'no FJR avaialble for job #%s'%job['jobId']
             #print "--------------------------"
         print "Total Events read: ",eventsRead," required: ",eventsRequired
         print "Total Files read: ",filesRead," required: ",filesRequired

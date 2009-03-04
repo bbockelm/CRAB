@@ -25,7 +25,7 @@ class Status(Actor):
         self.PrintReport_()
         ## TEMPORARY FIXME Ds
         msg = showWebMon(self.server_name)
-        common.logger.debug(1, msg)
+        common.logger.message(msg)
 
         stop = time.time()
         common.logger.debug(1, "Status Time: "+str(stop - start))
@@ -125,6 +125,12 @@ class Status(Actor):
                             print "          List of jobs: %s \n" % readableList(self,list_ID)
                         else   :
                             print ">>>>>>>>> %i Jobs %s \n " % (len(list_ID), str(st))
+                            print "          List of jobs %s: %s \n" % (str(st),readableList(self,list_ID))
+                        pass
+                    pass
+                pass
+            pass
+        return
 
     def reportCodes(self,code): 
         """
