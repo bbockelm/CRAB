@@ -42,8 +42,7 @@ class JabberThread(Thread):
 
         import time
         tPre = time.time()
-        self.go_on_accepting_load = 1
-        if self.thr == 0:
+        if int(self.thr) == 0:
             self.go_on_accepting_load = 2
             self.logsys.info("Stopping accepting load")
 
@@ -75,11 +74,12 @@ class JabberThread(Thread):
                 continue
 
             # alter the guard on the proxy service
-            if deltaT > 1.1 * self.thr:
-                self.go_on_accepting_load = 0 #False
-                self.logsys.info("Stopping accepting load")  
-            else:
-                self.go_on_accepting_load = 1 #True
+            if  int(self.thr) != 0:
+                if deltaT > 1.1 * self.thr:
+                    self.go_on_accepting_load = 0 #False
+                    self.logsys.info("Stopping accepting load")  
+                else:
+                    self.go_on_accepting_load = 1 #True
         pass
         
     
