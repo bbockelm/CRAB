@@ -40,9 +40,9 @@ class TaskLifeAPI:
 
         return dictionary
 
-    def getTaskEndedFrom(self, from_time, dbSession)
+    def getTaskEndedFrom(self, from_time, dbSession):
         taskList = [] 
-        sqlStr="SELECT task_name FROM tt_taskInstance " + \
+        sqlStr="SELECT task_name, land_time, ended_time FROM tt_taskInstance " + \
                "WHERE ended_time > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND);"
         tuple = dbSession.select(sqlStr)
         if tuple != None:
@@ -51,14 +51,21 @@ class TaskLifeAPI:
 
         return taskList
 
-    def getTaskArrivedFrom(self, from_time, dbSession)
+    def getTaskArrivedFrom(self, from_time, cleaned, dbSession):
         taskList = []
-        sqlStr="SELECT task_name FROM tt_taskInstance " + \
-               "WHERE landed_time > DATE_SUB(Now(),INTERVAL "+str(from_time)+"  SECOND);"
+        cleantxt = ""
+        if cleaned is True:
+            cleantxt = " AND cleaned_time = 0"
+        sqlStr="SELECT task_name, land_time, ended_time, notification_sent, proxy " + \
+               "FROM tt_taskInstance " + \
+               "WHERE land_time <= DATE_SUB(Now(),INTERVAL %s SECOND) %s ;" \
+               %(str(from_time), cleantxt)
+         
         tuple = dbSession.select(sqlStr)
+
         if tuple != None:
             for tupla in tuple:
-                taskList.append(tupla[0])
+                taskList.append( tupla )
 
         return taskList
 
