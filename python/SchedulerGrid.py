@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.95 2009/02/11 17:00:17 fanzago Exp $"
-__version__ = "$Revision: 1.95 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.96 2009/02/16 23:24:34 fanzago Exp $"
+__version__ = "$Revision: 1.96 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -313,13 +313,10 @@ class SchedulerGrid(Scheduler):
                 txt += 'else\n'
                 txt += '    echo ".SEinteraction.log file not found"\n'
                 txt += 'fi\n'
-                txt += 'echo "###########"\n'
+                txt += 'echo "#####################################"\n'
 
             txt += 'if [ -f cmscpReport.sh ] ;then\n'
-            txt += '    echo ">>>> cat di cmscpReport"\n'
             txt += '    cat cmscpReport.sh\n'
-            txt += '    echo "###########"\n'
-            txt += '    echo ">>>> source di cmscpReport"\n'
             txt += '    source cmscpReport.sh\n'
             txt += 'else\n'
             txt += '    echo "cmscpReport.sh file not found"\n' 
