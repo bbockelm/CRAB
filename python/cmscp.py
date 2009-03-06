@@ -41,7 +41,7 @@ class cmscp:
         """
         if 'help' in self.params.keys(): HelpOptions()
         if 'debug' in self.params.keys(): self.debug = 1
-        if 'backup' in self.params.keys(): self.backup = 1
+        if 'local_stage' in self.params.keys(): self.local_stage = 1
 
         # source and dest cannot be undefined at same time
         if not self.params['source']  and not self.params['destination'] :
@@ -157,12 +157,12 @@ class cmscp:
         
         return copy_results, list_ok, list_retry
         
-    def backupCopy(self, list_retry, results):
+    def LocalCopy(self, list_retry, results):
         """
-        Tries the backup copy of output to the CloseSE
+        Tries the stage out to the CloseSE
         """
         if self.debug: 
-            print 'in backup() :\n'
+            print 'in LocalCopy() :\n'
             print '\t list_retry %s utils \n'%list_retry
             print '\t len(list_retry) %s \n'%len(list_retry)
                 
@@ -213,20 +213,20 @@ class cmscp:
             print "\t self.params['option']%s \n"%self.params['option']
               
         for prot, opt in self.setProtocol( self.params['middleware'] ):
-            if self.debug: print '\tIn backup trying the stage out with %s utils \n'%prot
-            backup_results = self.copy( self.params['inputFileList'], prot, opt )
-            if backup_results.keys() == [''] or backup_results.keys() == '' :
-                results.update(backup_results)
+            if self.debug: print '\tIn LocalCopy trying the stage out with %s utils \n'%prot
+            localCopy_results = self.copy( self.params['inputFileList'], prot, opt )
+            if localCopy_results.keys() == [''] or localCopy_results.keys() == '' :
+                results.update(localCopy_results)
             else:
-                backup_results, list_ok, list_retry = self.checkCopy(backup_results, len(list_files), prot, self.params['lfn'], seName)
-                results.update(backup_results)
+                localCopy_results, list_ok, list_retry = self.checkCopy(localCopy_results, len(list_files), prot, self.params['lfn'], seName)
+                results.update(localCopy_results)
                 if len(list_ok) == len(list_files) :
                     break
                 if len(list_retry): 
                     list_files = list_retry
                 else: break
             if self.debug:
-                print "\t backup_results = %s \n"%backup_results
+                print "\t localCopy_results = %s \n"%localCopy_results
         
         return results        
 
@@ -238,7 +238,7 @@ class cmscp:
         if self.debug: 
             print 'stager() :\n'
             print '\tmiddleware %s\n'%middleware
-            print '\list_files %s\n'%list_files
+            print '\tlist_files %s\n'%list_files
         
         results={}
         for prot, opt in self.setProtocol( middleware ):
@@ -255,9 +255,9 @@ class cmscp:
                     list_files = list_retry
                 else: break
                 
-        if self.backup:
+        if self.local_stage:
             if len(list_retry):
-                results = self.backupCopy(list_retry, results)
+                results = self.LocaCopy(list_retry, results)
             
         if self.debug:
             print "\t results %s \n"%results
@@ -543,14 +543,6 @@ class cmscp:
             raise Exception(msg)
 
         return 
-
-    def backup(self):
-        """
-        Check infos from TFC using existing api obtaining:
-        1)destination
-        2)protocol
-        """
-        return
 
     def updateReport(self, file, erCode, reason, lfn='', se='' ):
         """
