@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.18 2009/02/16 23:24:34 fanzago Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.19 2009/02/19 21:15:01 ewv Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -25,10 +25,8 @@ class SchedulerCondor(SchedulerLocal) :
         SchedulerLocal.__init__(self,"CONDOR")
         self.datasetPath   = None
         self.selectNoInput = None
-        self.backup        = ''
         self.return_data   = 0
         self.copy_data     = 0
-        self.backup_copy   = 0
 
         self.environment_unique_identifier = None
         return
@@ -58,7 +56,6 @@ class SchedulerCondor(SchedulerLocal) :
 
         self.return_data = cfg_params.get('USER.return_data', 0)
         self.copy_data   = cfg_params.get("USER.copy_data", 0)
-        self.backup_copy = cfg_params.get('USER.backup_copy', 0)
 
         if int(self.return_data) == 0 and int(self.copy_data) == 0:
             msg =  'Error: return_data and copy_data cannot both be set to 0\n'
@@ -73,18 +70,6 @@ class SchedulerCondor(SchedulerLocal) :
         if int(self.copy_data) == 0 and int(self.publish_data) == 1:
             msg =  'Warning: publish_data=1 must be used with copy_data=1\n'
             msg += 'Please modify the copy_data value in your crab.cfg file\n'
-            common.logger.message(msg)
-            raise CrabException(msg)
-
-        if int(self.copy_data) == 0 and int(self.backup_copy) == 1:
-            msg =  'Error: copy_data = 0 and backup_data = 1 ==> to use the '
-            msg += 'backup_copy function, the copy_data value has to be = 1\n'
-            msg += 'Please modify copy_data value in your crab.cfg file\n'
-            raise CrabException(msg)
-
-        if int(self.backup_copy) == 1 and int(self.publish_data) == 1:
-            msg =  'Warning: currently the publication is not supported '
-            msg += 'with the backup copy. Work in progress....\n'
             common.logger.message(msg)
             raise CrabException(msg)
 
@@ -105,9 +90,6 @@ class SchedulerCondor(SchedulerLocal) :
             self.VO    = cfg_params.get('EDG.virtual_organization', 'cms')
 
             self.checkProxy()
-
-        if int(self.backup_copy) == 1:
-            self.backup = '--backup'
 
         self.role  = None
 
