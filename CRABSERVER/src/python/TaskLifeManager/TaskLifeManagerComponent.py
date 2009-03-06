@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.38 2008/12/03 13:47:45 spiga Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.40 2008/12/08 13:03:00 spiga Exp $"
+__version__ = "$Revision: 1.40 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -14,15 +14,6 @@ from MessageService.MessageService import MessageService
 import logging
 from logging.handlers import RotatingFileHandler
 
-# module fro task and task queue management
-from Task import *
-from TaskQueue import *
-
-# module from TaskTracking component
-from TaskTracking.TaskTrackingUtil import TaskTrackingUtil
-from TaskTracking.TaskStateAPI import TaskStateAPI
-# findTaskPA, getStatusUUIDEmail
-
 from ProxyLife import ProxyLife
 
 # SE_API
@@ -30,10 +21,16 @@ from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.Exceptions import OperationException
 
+# Blite API import
+from ProdCommon.BossLite.API.BossLiteAPI import  BossLiteAPI
+from ProdCommon.BossLite.Common.Exceptions import TaskError
+
+# API modules
+from TaskLifeAPI import TaskLifeAPI
+from TaskTracking.TaskStateAPI import TaskStateAPI
+
 import os
 import time
-import pickle
-
 
 
 ##############################################################################
@@ -66,9 +63,8 @@ class TaskLifeManagerComponent:
         self.args = {}
         self.args.setdefault("Logfile", None)
         self.args.setdefault("storagePath", None)
-	self.args.setdefault("levelAvailable", 15)
         self.args.setdefault("taskLife", "360:00:00")
-	self.args.setdefault("eMailAdmin", os.environ['USER'])
+        self.args.setdefault("eMailAdmin", os.environ['USER'])
         self.args.setdefault("pollingTimeCheck", 10*60)
         self.args.setdefault("Protocol", "local")
         self.args.setdefault("storageName", "localhost")
@@ -115,43 +111,14 @@ class TaskLifeManagerComponent:
         logging.info("Using cache "  +str(self.args['CacheDir']) )
         logging.info("Using storage " +str(self.args['storagePath']) )
 
-        # minimum space available
-        if int(self.args['levelAvailable']) < 5:
-	    logging.info("Configuration porblem")
-            logging.info("  Too high value for [levelAvailable];")
-            logging.info("  setting to default (15%).")
-            self.args['levelAvailable'] = 15
-
         logging.info(" Setting task life time at: "\
-                          + self.args['taskLife'].split(":", 1)[0] + "hours "\
-                          + self.args['taskLife'].split(":", 2)[1] + "mins "\
-                          + self.args['taskLife'].split(":", 2)[2] + "secs" )
+                          + self.args['taskLife'].split(":", 1)[0] + "days "\
+                          + self.args['taskLife'].split(":", 2)[1] + "hours "\
+                          + self.args['taskLife'].split(":", 2)[2] + "mins" )
+
         # minimum time polling
         if int(self.args['pollingTimeCheck'] < 3):
             self.args['pollingTimeCheck'] = 3 * 60
-
-        #####################
-        ###    Queues    ###
-        ###################
-        ## contains all tasks arrived in the dbox
-        self.taskQueue = TaskQueue()
-            ## its pickle
-        self.taskQueuePKL = "buildDropBox.pkl"
-        ## groups tasks to be removed from the dbox
-        self.taskDeleteQueue = TaskQueue()
-            ## its pickle
-        self.taskDeletePKL = "toDelete.pkl"
-        ## groups tasks completely ended but yet "fresh"
-        self.taskEndedQueue = TaskQueue()
-            ## its pickle
-        self.taskEndedPKL = "ended.pkl"
-
-        ###################################
-        ### checks dbox & fills queues ###
-        #################################
-        self.loadFromPickle()
-        #self.buildDropBox()
-
 
         #####################################################
         ### parameters for blite connection of ProxyLife ###
@@ -177,8 +144,6 @@ class TaskLifeManagerComponent:
                         "credential": self.args['credentialType']
                         }
 
-        ## instance the proxy's object to clean proxies
-   #     if self.args['allow_anonymous'] != "1" and str(self.args['checkProxy']) == 'on':
         self.procheck = ProxyLife(self.bossCfgDB, self.proxypath, dictSE)
 
     ##########################################################################
@@ -203,33 +168,9 @@ class TaskLifeManagerComponent:
         #######################
         # Automessage 4 polling
         if event == "TaskLifeManager::poll":
-            self.pollDropBox()
+            self.pollingCycle()
             return            #
         #######################
-
-        #######################
-        # New Task Arrival
-        # inserting on task queue
-        if event == "CRAB_Cmd_Mgr:NewTask" or \
-               event == "TaskLifeManager::TaskToMange":
-            self.insertTaskWrp( payload.split("::")[0] )
-            return            #
-        #######################
-         
-        #######################
-        # Task Finished
-        # updating ended time on object
-        if event == "TaskTracking:TaskEnded":
-            self.insertEndedWrp( payload )
-            return            #
-        #######################
-
-        if event == "TaskLifeManager::PrintTaskInfo":
-            if payload != "" and payload != None:
-                self.printTaskInfo( payload )
-            else:
-                logging.error("No task specified for " + str(event) )
-            return
 
         if event == "CRAB_Cmd_Mgr:GetOutputNotification":
             taskname, jobstr = payload.split('::')
@@ -244,7 +185,7 @@ class TaskLifeManagerComponent:
                 logging.info( "problems deleting osb for job " + str(jobstr) )
             return
 
-	# start debug event
+        # start debug event
         if event == "TaskLifeManager:StartDebug":
             logging.getLogger().setLevel(logging.DEBUG)
             return
@@ -260,496 +201,124 @@ class TaskLifeManagerComponent:
         logging.info("")
 
     ##########################################################################
-    # utilty methods (user, time, convert)
+    # clean old tasks
     ##########################################################################
 
-    def checkInfoUser( self, taskName):
-        """
-        _checkInfoUser_
-        """
-        own = " "
-        mail = " " 
-        taskPath = self.args['CacheDir'] + "/" + taskName + "_spec"
-        try:
-            import xml.dom.minidom
-            import xml.dom.ext
-            from os.path import join, exists
-            if exists( join(taskPath, "xmlReportFile.xml")):
-                fileXml = None
-                try:
-                    fileXml = open( join(taskPath, "xmlReportFile.xml"), "r")
-                    doc  = xml.dom.minidom.parse( \
-                                        join(taskPath, "xmlReportFile.xml") \
-                                                 )
-                    own  = doc.childNodes[0].childNodes[1].getAttribute("owner")
-                    mail = doc.childNodes[0].childNodes[1].getAttribute("email")
-                    fileXml.close()
-                    return own, mail
-                except Exception, ex:
-                    import traceback
-                    logging.error( "Exception raised: " + str(ex) ) 
-                    logging.error( str(traceback.format_exc()) )
-                    fileXml.close()
-            else:
-                return None, None
-
-        except Exception, ex:
-            import traceback
-            logging.error( str(traceback.format_exc()) )
-
-        return own, mail
-
-
-    def setVal(self, val):
-        """
-        _setVal
-        """
-        if len(str(val)) == 1:
-            return ("0" + str(val))
-        return str(val)
-
-    def calcFromSeconds(self, totSec):
-        """
-        _calcFromSeconds_
-        """
-         
-        secondi = totSec % 60
-        temp = int(totSec / 60)
-        minuti = temp % 60
-        ore = int(temp / 60)
-
-        return ( self.setVal(ore) + ":" +\
-                 self.setVal(minuti) + ":" +\
-                 self.setVal(secondi) )
 
     def totSeconds(self, timeStr):
         """
         _totSeconds_
         """
-        hh, mm, ss = timeStr.split(":")
-        return ((int(hh)*60) + int(mm))*60 + int(ss)
-
-
-    ##########################################################################
-    # os level work
-    ##########################################################################
-
-    def getDirSpace( self, taskPath ):
-        """
-        _getDirSpace_
-        """
-        try:
-            return self.SeSbI.getDirSpace(taskPath)
-        except Exception, ex:
-            import traceback
-            logging.error( "Exception raised: " +str(ex) )
-            logging.error( str(traceback.format_exc()) )
-            return 0
-
-
-    def checkGlobalSpace( self ):
-        """
-        _checkGlobalSpace_
-        """
-        out = self.SeSbI.getGlobalSpace(self.args['storagePath'])
-        numberUsed = int(out[0].split("%")[0])
-        spaceAvail = int(out[1])
-        spaceUsed = int(out[2])
-        tmpAvail = 100-numberUsed
-        logging.info (" [Used Space is " + str(numberUsed) + "%]")
-        logging.info (" [Avail Space is " + str(tmpAvail) + "%]")
-
-        lev = int(self.args['levelAvailable'])
-
-        toliberate = 0
-        if  tmpAvail <= lev:
-            percentagetoliber = lev - tmpAvail
-            toliberate = (spaceAvail+spaceUsed)*percentagetoliber/100
-
-            logging.info(" [Need to clean " + str(toliberate) + "]")
-            logging.info("   [" + str(percentagetoliber) + "%]")
-         
-            return 1, numberUsed, toliberate
-        else:
-            return 0, numberUsed, toliberate
-
-
-    def deleteTask( self, taskPath, proxy ):
-        """
-        _deleteTask_
-
-        recurisvely delete all the files and dirs in [taskPath]
-        """
-        summ = 0
-        if taskPath != "/" and taskPath != self.args['storagePath'] \
-           and self.SeSbI.checkExists( taskPath, proxy ):
-            try:
-                baseToDelete = [ \
-                                 "CMSSW.sh", \
-                                 "default.tgz" \
-                               ]
-                for file in baseToDelete:
-                    try:
-                        self.SeSbI.delete( join(taskPath, file), proxy )
-                    except Exception, ex: 
-                        import traceback
-                        logging.debug( "Exception raised: " + str(ex) )
-                        logging.debug( str(traceback.format_exc()) )
-                        logging.info( "problems deleting isb for task " + str(taskPath) )
-                summ = self.SeSbI.getDirSpace(taskPath, proxy)
-                self.SeSbI.delete( taskPath, proxy )
-            except OperationException, ex:
-                logging.info(str(ex))
-                return 0
-            except Exception, ex: ### 2 IMPROVE!!!! ##
-                import traceback
-                logging.error( str(traceback.format_exc()) )
-                logging.error("Error removing path: " + str(taskPath) )
-                logging.error("                     " + str(ex) )
-                return 0
-        else:
-            logging.error( "Task already removed or wrong task name" )
-            logging.error( "  path: " +str(taskPath) )
-
-        return summ
-
-
-    def cleanTask( self, taskName, proxy ):
-        """
-        _cleanTask_
-        """
-        dBox = self.args['storagePath']
-        from os.path import join
-        pathTask = join(dBox, taskName)
-        try:
-            if self.SeSbI.checkExists( pathTask, proxy ):
-                logging.info("removing task '" + pathTask + "' ...")
-                summ = self.deleteTask( pathTask, proxy )
-                if not self.SeSbI.checkExists( pathTask, proxy ):
-                    logging.debug( "removed " + str(summ) + " bytes.")
-                    return summ
-                else:
-                    logging.error( "could not remove task ["+taskName+"]!")
-            else:
-                logging.error("The path [" + pathTask +"] does not exists!")
-        except Exception, ex:
-            import traceback
-            logging.error( "Exception rasied: " +str(ex) )
-            logging.error( str(traceback.format_exc()) )
-            logging.error("Not able to delete the task [" + taskName +\
-                          "] in the path [" + dBox +"]")
-        return 0
+        dd, hh, mm = timeStr.split(":")
+        return (((int(dd)*24) + int(hh))*60 + int(mm))*60
 
     def deleteRetrievedOSB( self, taskName, strJobs ):
         """
         deleting OSB
         """
         from os.path import join
-        task = self.taskQueue.getbyName( taskName )
-        if task != None:
-            proxy = str(task.getProxy())
-            logging.info("[%s]"%str(proxy))
-            if len(proxy) == 0:
-                ttdb = TaskStateAPI()
-                proxy = ttdb.getProxy(taskName)
-                logging.info("[%s]"%str(proxy))
-                task.setProxy(str(proxy))
-            from os.path import join
-            taskPath = join(self.args['storagePath'] , taskName)
-            jobList = eval(strJobs)
-            #####  TEMPORARY DS FIXME
-            if self.args['Protocol'].upper() == 'RFIO':
-                proxy = '%s::%s'%(taskName.split('_')[0],proxy)
-            #####
-            for idjob in jobList:
-                baseToDelete = [ \
-                                 "out_files_"+str(idjob)+".tgz"]#, \
-                               #  "crab_fjr_"+str(idjob)+".xml" \
-                               #]
-                for file in baseToDelete:
-                    try:
-                        self.SeSbI.delete( join(taskPath, file), proxy )
-                    except Exception, ex: 
-                        import traceback
-                        logging.info( "Exception raised: " + str(ex) )
-                        logging.debug( str(traceback.format_exc()) )
-                        logging.info( "problems deleting osb for job " + str(idjob) )
-        else:
-            logging.error("ERROR: Task %s not found "%str(taskName))
-
-
-    ##########################################################################
-    # task queue functionalities
-    ##########################################################################
-
-    def insertTaskWrp( self, taskName, endedTime = 0 ):
-        """
-        _insertTaskWrp_
-
-        adding the new arrived task to the queue
-        """
-        ## checks if already is in the queue
-        if not self.taskQueue.exists( taskName ):
-            from os.path import join
-            taskPath = join( self.args['storagePath'], taskName )
-            ## getting user info
-            owner, mail = self.checkInfoUser( taskName )
-            taskObj = Task(\
-                            taskName, \
-                            owner, \
-                            mail, \
-                            self.totSeconds(self.args['taskLife']), \
-                            endedTime, \
-                            0, \
-                            self.getDirSpace(taskPath) \
-                          )
-            self.taskQueue.insert( taskObj )
-            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
-            ############################
-        else:
-            logging.info("Task " + str(taskName) + " already in queue")
-
-    def insertEndedWrp( self, taskName ):
-        """
-        _insertEndedWrp_
-
-        updates the info for an ended task
-        """
-        ## checks if already is in the queue
-        if not self.taskQueue.exists( taskName ):
-            ## inserting with the ended time updated
-            self.insertTaskWrp( taskName, time.time() )
-        else:
-            from os.path import join
-            taskPath = join( self.args['storagePath'], taskName)# + "_spec" )
-            ## retrieving the object from the queue
-            task = self.taskQueue.getbyName( taskName )
-            ## updating the endedtime for the object
-            task.updateEndedTime()
-            ## updating pickle
-            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
-
-    def printTaskInfo( self, taskName ):
-        """
-        _printTaskInfo_
-        """
-        taskObj = self.taskQueue.getbyName( taskName )
-        logging.info("\n Task:    " + str(taskObj.getName()) + \
-                     "\n user:    " + str(taskObj.getOwner()) + \
-                     "\n size:    " + str(taskObj.getSize()) + \
-                     "\n to live: " + str(taskObj.toLive()) + \
-                     "\n e-mail:  " + str(taskObj.getOwnerMail()) \
-                    )
-
-    ##########################################################################
-    # pickling functionalities
-    ##########################################################################
-
-    def dumPickle( self, workQueue, workData ):
-        """
-        _dumPickle_
-        """
-        from os.path import join
-        try:
-            workQueueTemp = workQueue + ".temp"
-            output = open( workQueueTemp, 'w')
-            pickle.dump( workData, output, -1 )
-            output.close()
-            cmd = "mv " + join( self.args['ComponentDir'], workQueueTemp )+ \
-                   " " + join( self.args['ComponentDir'], workQueue )
-            os.popen( cmd )
-        except:
-            workQueueTemp = workQueue + ".temp"
-            output = open( workQueueTemp, 'w')
-            pickle.dump( workData, output, -1 )
-            output.close()
-            cmd = "mv " + join( self.args['ComponentDir'], workQueueTemp )+ \
-                   " " + join( self.args['ComponentDir'], workQueue )
-            os.popen( cmd )
-
-
-    def loadFromPickle( self ):
-        """
-        _loadFromPickle_
-
-        loading the pickle dictionary
-             recreating the Task objects
-                   and putting on the queue
-        """
-        if os.path.exists(self.taskQueuePKL):
-            queueTasks = {}
-            try:
-                inputF = open(self.taskQueuePKL, 'r')
-                queueTasks = pickle.load(inputF)
-                inputF.close()
-                logging.info("status loaded from file")
-            except IOError, ex:
-                import traceback
-                logging.error( "Exception raised: " + str(ex) )
-                logging.error( str(traceback.format_exc()) )
-                logging.info( "problems re-loading status..." )
-                return None
-
-            for valu3, k3y in queueTasks.iteritems():
-                if not self.taskQueue.exists(k3y['taskName']):
-                    notif = False
-                    try:
-                        notif = k3y['notified']
-                    except:
-                        pass
-                    ##k3y['proxy']
-                    taskObj = Task(\
-                                     k3y['taskName'], \
-                                     k3y['owner'], \
-                                     k3y['mail'], \
-                                     k3y['lifetime'], \
-                                     k3y['endedtime'], \
-                                     k3y['heretime'], \
-                                     k3y['size'], \
-                                     notif \
-                                 )
-                    self.taskQueue.insert( taskObj )
-        return None
-
-
-    ##########################################################################
-    # work on cache dir  disk space management
-    ##########################################################################
-
-    def buildDropBox( self ):
-        """
-        _buildDropBox_
-        """
-        #tasks = self.SeSbI.dirContent(self.args['CacheDir'])
-        import commands
-        status, output = commands.getstatusoutput("ls -1 %s"%str(self.args['CacheDir']))
-        tasks = output.split("\n")
-        logging.info( "   building the drop_box directory..." )
-        if tasks != None and tasks != []:
-            for task in tasks:
-                if task.find("crab_") != -1:
-                    self.insertTaskWrp( task[:-5] )
-                    logging.info(str(task[:-5]))    
-            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
-
-    ##########################################################################
-    # checks over the queues
-    ##########################################################################
-
-    def checkDelete( self ):
-        sign = 0
-        for index in range( self.taskQueue.getHowMany() ):
-            task = self.taskQueue.getCurrentSwitch()
-            #logging.info(str(task.getAll()))
-            if task.toLive() < (60*60*24): ## twentyfour hours
-                if not task.getNotified():
-                    self.notifyCleaning( task.getName(), task.toLive(), task.getOwner(), task.getOwnerMail() )
-                    logging.info("       - notified: "+str(task.getNotified()))
-                    task.notify()
-                    logging.info("       - notified: "+str(task.getNotified()))
-                    sign = 1
-                if task.toLive() < (60*60*10): ## ten hours
-                    if task.toLive() >= 0:
-                        logging.info ( "task ("+str(index)+") ["+task.getName()+"] " + \
-                                       "still living for: " + str(task.toLive()) )
-                    else:
-                        logging.info ( "task ("+str(index)+") ["+task.getName()+"] " + \
-                                       "dead from: " + str(task.toLive()) )
-                        self.taskDeleteQueue.insert(task)
-        if sign == 1:
-            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
-
-    def deleteTasks( self ):
-        from os.path import join
-        toDelete = self.taskDeleteQueue.getHowMany()
-        totFreeSpace = 0
-        for index in range( toDelete ):
-            task = self.taskDeleteQueue.getCurrentSwitch()
-            proxy = task.getProxy()
-            #####  TEMPORARY DS FIXME
-            if self.args['Protocol'].upper() == 'RFIO':
-                proxy = '%s::%s'%(task.getName().split('_')[0],proxy)
-            #####
-            logging.info ( "task life expired " + task.getName() )
-            summ = self.cleanTask( task.getName(), proxy )
-            if summ > 0:
-                logging.debug( "  -- deleted " + str(summ) + " bytes --" )
-            self.taskDeleteQueue.remove( task )
-            self.taskEndedQueue.remove( task )
-            self.taskQueue.remove( task )
-            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
-            totFreeSpace += summ
-        if toDelete > 0:
-            logging.info( str(toDelete) + " tasks removed" )
-            logging.info( str(totFreeSpace/1024) + " KB cleaned")
-            logging.info( "" )
-            self.dumPickle( self.taskQueuePKL, self.taskQueue.getAll() )
- 
-    ##########################################################################
-    # component publish
-    ##########################################################################
-
-    def spaceOverNotify( self, levelReached ):
-        """
-	_spaceOverNotify_
-
-	Transmit the event "OverAvailableSpace" to the Notification Component
-	
-	"""
-
-       	mexage = "TaskLifeManager:OverAvailableSpace"
-	payload = str(levelReached) + "::" + self.args['eMailAdmin']
-
-	logging.info(" Publishing ['"+ mexage +"']")
-        logging.info("   payload = " + payload )
-        self.ms.publish( mexage, payload )
-        self.ms.commit()
-
-    def notifyCleaning( self, taskName, toLive, owner, mails ):
-        """
-        __
-
-        Trasmit the event "TaskLifeManager:TaskNotifyLife"
-        """
-        #taskName lifetime userName email
-
-        mexage = "TaskLifeManager:TaskNotifyLife"
-        uuid = ""
-        owner = ""
         ttdb = TaskStateAPI()
-        if ttdb.findTaskPA(taskName) != None:
-            valuess = ttdb.getStatusUUIDEmail( taskName )
-            if len(valuess) > 1:
-                uuid = valuess[1]
-                owner = valuess[3]
-            #ttutil = TaskTrackingUtil( self.args['allow_anonymous'] )
-            ttutil = TaskTrackingUtil( )
-            origTaskName = ttutil.getOriginalTaskName(taskName)
+        proxy = ttdb.getProxy(taskName)
+        logging.info("[%s]"%str(proxy))
+        taskPath = join(self.args['storagePath'] , taskName)
+        jobList = eval(strJobs)
+        #####  TEMPORARY DS FIXME
+        #if self.args['Protocol'].upper() == 'RFIO':
+        #    proxy = '%s::%s'%(taskName.split('_')[0],proxy)
+        #####
+        for idjob in jobList:
+            baseToDelete = [ \
+                             "out_files_"+str(idjob)+".tgz", \
+                             "crab_fjr_"+str(idjob)+".xml" \
+                           ]
+            for file in baseToDelete:
+                try:
+                    self.SeSbI.delete( join(taskPath, file), proxy )
+                except Exception, ex:
+                    import traceback
+                    logging.info( "Exception raised: " + str(ex) )
+                    logging.debug( str(traceback.format_exc()) )
+                    logging.info( "problems deleting osb for job " + str(idjob) )
 
-            payload = origTaskName +"::"+ self.calcFromSeconds(toLive) +"::"+ str(owner) +"::"+ str(mails) +"::"+ taskName
 
-            logging.info(" Publishing ['"+ mexage +"']")
-            logging.info("   payload = " + payload )
-            self.ms.publish( mexage, payload )
-        else:
-            logging.error(" Task not existsing: %s... Can not send %s message."%(taskName,mexage) )
+    def pollOldTask(self, oldness = ''):
+        """
+        _pollOldTask_
+        """
+        from os.path import join
+        logging.info( "Start oldness polling..." )
+         
+        mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+        tlapi = TaskLifeAPI()
+
+        ## not cleaned task here
+        notcleanedll = []
+
+        ## get not cleaned task ('True') older then 'oldness'
+        taskll = tlapi.getTaskArrivedFrom( oldness, True, mySession.bossLiteDB )
+        for taskx in taskll:
+            # name - arrived - ended - archived - proxy
+            logging.info( "Procesing [%s] task" %str(taskx[0]) )
+            if int(taskx[3]) < 2:
+                logging.info("Archiving task/jobs...")
+                tlapi.archiveBliteTask(mySession, taskx[0])
+                tlapi.archiveServerTask(taskx[0], mySession.bossLiteDB)
+            logging.info("Cleaning task file on the storage...")
+            ## list directory content
+            filell = []
+            try:
+                filell = self.SeSbI.dirContent( join(self.args['storagePath'], \
+                                                     taskx[0]),\
+                                                taskx[4] )
+            except OperationException, exc:
+                logging.error("..problem on cleaning: %s" %str(exc))
+                notcleanedll.append( taskx[0] )
+            ## delete each file in the task directory
+            for filex in filell:
+                try:
+                    self.SeSbI.delete( filex, taskx[4] )
+                except OperationException, exc:
+                    logging.error("..problem on cleaning: %s" %str(exc))
+                    ## if delete fails: add to notify list
+                    if not taskx[0] in notcleanedll:
+                        notcleanedll.append( taskx[0] )
+            ## directory content deleted: delete the dir
+            if not taskx[0] in notcleanedll:
+                try:
+                    self.SeSbI.delete( join(self.args['storagePath'], taskx[0]),\
+                                       taskx[4])
+                except OperationException, exc:
+                    logging.error("..problem on cleaning: %s" %str(exc))
+                    ## if delete fails: add to notify list
+                    notcleanedll.append( taskx[0] )
+
+            ## set cleaned time
+            tlapi.taskCleaned( mySession.bossLiteDB, taskx[0] )
+
+        if len(notcleanedll) > 0:
+            if self.procheck != None:
+                ## checks and manages proxies 
+                try:
+                    self.procheck.notifyToClean(notcleanedll)
+                except  Exception, ex:
+                    import traceback
+                    logging.error("Problem on polling proxies: \n" + str(ex) )
+                    logging.error(" details: \n" + str(traceback.format_exc()) )
+
+        logging.info("Oldness polling ended.")
+
 
     ##########################################################################
     # start component execution
     ##########################################################################
 
-    def pollDropBox( self ):
+    def pollingCycle( self ):
         """
-	_pollDropBox_
+        _pollingCycle_
 
-	"""
-        if self.args["Protocol"] == 'local': 
-            value, numberUsed, spacetoAvail = self.checkGlobalSpace()
-            if value:
-                self.spaceOverNotify( numberUsed )
+        """
 
-        self.checkDelete()
-        self.deleteTasks()
+        self.pollOldTask( self.totSeconds(self.args['taskLife']) )
 
         if self.procheck != None:
             ## checks and manages proxies 
@@ -790,14 +359,7 @@ class TaskLifeManagerComponent:
         self.ms.subscribeTo("TaskLifeManager:StartDebug")
         self.ms.subscribeTo("TaskLifeManager:EndDebug")
         self.ms.subscribeTo("TaskLifeManager::poll")
-	self.ms.subscribeTo("TaskTracking:TaskEnded")
-        self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:GetOutputNotification")
-        self.ms.subscribeTo("TaskLifeManager::TaskToMange")
-        self.ms.subscribeTo("TaskLifeManager::PrintTaskInfo")
-
-        # load dBox tasks
-        self.buildDropBox()
 
         # generate first polling cycle
         self.ms.remove("TaskLifeManager::poll")
@@ -807,17 +369,17 @@ class TaskLifeManagerComponent:
         # wait for messages
         while True:
             msType, payload = self.ms.get()
-	    if payload != None:
+            if payload != None:
                 logging.info( "Got ms: ['"+str(msType)+"', '"+str(payload)+"']")
                 try:
                     self.__call__(msType, payload)
+                    logging.info( "Ms exe: ['"+str(msType)+"', '"+str(payload)+"']")
                 except Exception, ex:
                     logging.error("Problem managing message %s with payload %s" %(msType, payload))
+                    logging.error(str(ex))
                     continue
-                logging.info( "Ms exe: ['"+str(msType)+"', '"+str(payload)+"']")
-	    else:
- 	        logging.error(" ")
+            else:
                 logging.error("ERROR: empty payload - " + str(msType) )
                 logging.error(" ")
             self.ms.commit()
-	
+
