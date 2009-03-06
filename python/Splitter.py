@@ -354,10 +354,7 @@ class JobSplitter:
         thefiles = Fileset(name='FilesToSplit')
         fileList = pubdata.getListFiles()
         for f in fileList:
-           # print f 
             block = f['Block']['Name']
-          #  if not blocks.has_key(block):
-          #      blocks[block] = reader.listFileBlockLocation(block)
             try: 
                 f['Block']['StorageElementList'].extend(blockSites[block])
             except:
@@ -399,7 +396,6 @@ class JobSplitter:
                 #need to check single file location
                 jobDestination.append(res['locations'])   
                 count +=1
-        #print jobDestination 
        # prepare dict output
         dictOut = {}
         dictOut['args'] = list_of_lists
