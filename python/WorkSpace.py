@@ -1,7 +1,8 @@
 from crab_exceptions import *
 #from threading import RLock
 import common
-import os, shutil, string, time, commands 
+import os, shutil, string, time
+from crab_util import getUserName
 #from crab_logger import Logger
 
 class WorkSpace:
@@ -30,7 +31,18 @@ class WorkSpace:
         #self._pathForTgz = string.split(top_dir, '/')[-1]
         self._pathForTgz = self._share_dir
 
-        self.uuid = commands.getoutput('uuidgen')
+        self.uuid = self.uuidGen()
+ 
+    def uuidGen(self):
+        import random
+
+        letters = "abcdefghijklmnopqrstuvwxyz"
+        numbers = "0123456789"
+        genid_bits = random.sample(letters, 3) + random.sample(numbers, 3)
+        random.shuffle(genid_bits)
+        combination = ''.join(genid_bits)
+
+        return combination   
 
     def create(self):
         # Matteo change in order to ban only "data" in "CMSSW" dir and 
@@ -118,7 +130,9 @@ class WorkSpace:
         
     def taskName(self):
 
-        self.taskName_=os.environ['USER'] + '_' + string.split(common.work_space.topDir(),'/')[-2]+'_'+self.uuid
+        user_name = getUserName()
+        self.taskName_= user_name + '_' + string.split(common.work_space.topDir(),'/')[-2]+'_'+self.uuid
+
         return self.taskName_
 
     def setResDir(self, dir):
