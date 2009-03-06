@@ -58,6 +58,54 @@ class Scheduler :
         seWhiteList = cfg_params.get('EDG.se_white_list',[])
         seBlackList = cfg_params.get('EDG.se_black_list',[])
         self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
+
+        self.return_data = int(cfg_params.get('USER.return_data',0))
+        self.copy_data = int(cfg_params.get('USER.copy_data',0))
+        self.local_stage = int(cfg_params.get('USER.local_stage_out',0))
+        self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',0))
+
+        if int(self.copy_data) == 1:
+            self.SE = cfg_params.get('USER.storage_element',None)
+            if not self.SE:
+                msg = "Error. The [USER] section does not have 'storage_element'"
+                common.logger.message(msg)
+                raise CrabException(msg)
+
+        if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
+            msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
+            msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n'
+            raise CrabException(msg)
+
+        if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
+            msg = 'Error: return_data and copy_data cannot be set both to 1\n'
+            msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
+            raise CrabException(msg)
+
+        if ( int(self.copy_data) == 0 and int(self.local_stage) == 1 ):
+            msg = 'Error: copy_data = 0 and local_stage_out = 1.\n'
+            msg += 'To enable local stage out the copy_data value has to be = 1\n'
+            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
+            raise CrabException(msg)
+            
+        if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
+            msg = 'Error: publish_data = 1 must be used with copy_data = 1\n'
+            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
+            common.logger.message(msg)
+            raise CrabException(msg)
+            
+        if ( int(self.local_stage) == 1 and int(self.publish_data) == 1 ):
+            msg = 'Error: currently the publication is not supported with the local stage out. Work in progress....\n'
+            common.logger.message(msg)
+            raise CrabException(msg)
+
+        self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
+        self.debugWrap=''
+        if self.debug_wrapper==1: self.debugWrap='--debug'
+        self.loc_stage_out = ''
+        if ( int(self.local_stage) == 1 ): 
+            self.debugWrap='--debug'
+            self.loc_stage_out='--local_stage'
+
         return
 
     def boss(self):
