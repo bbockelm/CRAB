@@ -271,22 +271,6 @@ def makeCksum(filename) :
     return cksum
 
 
-def uniqueTaskName(nativeTaskName):
-    """
-    For task names that don't follow USER_crab_0_YYMMDD_HHMMSS, generate a new one that includes
-    part of the internal BossLite taskId
-    """
-
-    import re
-    taskName = "_".join(nativeTaskName.split('_')[:-1])
-    reTask = re.compile('.*?_crab_0_\d{6}_\d{6}')
-    isDefault = reTask.match(taskName)
-    if not isDefault:
-        taskName = "-".join(nativeTaskName.split('-')[:-4])
-
-    return str(taskName)   # By default is unicode, ML needs standard string
-
-
 def spanRanges(jobArray):
     """
     take array of job numbers and concatenate 1,2,3 to 1-3
