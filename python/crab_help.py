@@ -550,6 +550,10 @@ To be used in case of unexpected job crash when the sdtout and stderr files are 
 
 Set it to 1 to skip the check of free space left on your working directory before attempting to get the output back. Default is 0 (=False)
 
+
+=item B<local_stage_out>
+ To use the local stage out (local to the closeSE) in case of remote stage out failure set I<local_stage_out> = 1 .
+
 =back
 
 B<[EDG]>
