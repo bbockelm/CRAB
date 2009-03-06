@@ -103,10 +103,10 @@ class PhEDExDatasvcInfo:
             USER = (query.split('user')[1]).split('/')[1]
         else:
             #### to test #####
-            #url = 'http://'+endpoint.split('://')[1]
-            #scheme, host, path, params, query, fragment = urlparse(url)
-            #SE = host.split(':')[0]
-            #SE_PATH = endpoint.split(host)[1]
+           # url = 'http://'+endpoint.split('://')[1]
+           # scheme, host, path, params, query, fragment = urlparse(url)
+           # SE = host.split(':')[0]
+           # SE_PATH = endpoint.split(host)[1]
             SE = self.node
             SE_PATH = self.user_se_path + self.user_remote_dir 
             try:
@@ -139,10 +139,10 @@ class PhEDExDatasvcInfo:
         if int(self.publish_data) == 1 or int(self.usenamespace) == 1:
             if self.sched in ['CAF']: l_User=True 
             primaryDataset = self.computePrimaryDataset()
-            lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name, LocalUser=l_User)  + '/${PSETHASH}/'    
+            lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name)  + '/${PSETHASH}/'    
         else:
             if self.sched in ['CAF','LSF']: l_User=True 
-            lfn = LFNBase(self.forced_path,self.user_remote_dir,LocalUser=l_User)
+            lfn = LFNBase(self.forced_path,self.user_remote_dir)
         return lfn
  
     def computePrimaryDataset(self):

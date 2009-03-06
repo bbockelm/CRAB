@@ -153,7 +153,7 @@ class SubmitterServer( Submitter ):
                           'myProxySvr' : myproxyserver,\
                           'serverDN'   : self.server_dn,\
                           'shareDir'   : common.work_space.shareDir() ,\
-                          'userName'   : UnixUserName(),\
+                          'userName'   : getUserName(),\
                           'serverName' : self.server_name \
                           }
              try:
