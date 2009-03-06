@@ -167,20 +167,6 @@ def importName(module_name, name):
     module = __import__(module_name, globals(), locals(), [name])
     return vars(module)[name]
 
-
-###########################################################################
-
-### WARNING This Function become USELESS after Boss API implementation
-def runBossCommand(cmd, printout=0, timeout=3600):
-    """
-    Cd to correct directory before running a boss command
-    """
-    cwd = os.getcwd()
-    os.chdir(common.work_space.shareDir())
-    out = runCommand(cmd, printout, timeout)
-    os.chdir(cwd)
-    return out
-
 ###########################################################################
 def readable(fd):
     return bool(select.select([fd], [], [], 0))
@@ -410,9 +396,21 @@ def bulkControl(self,list):
         sub_bulk.append(list)
 
     return sub_bulk
+###########################################################################
 
+def getUserName(self):
+    """
+    extract user name from either SiteDB or Unix
+    """
+    if common.scheduler.name().upper() in ['LSF', 'CAF']:
+       common.logger.debug(10,"Using as username the Unix user name")
+       UserName=getUnixUserName()
+    else :
+       UserName=gethnUserName()
 
-def UnixUserName():
+    return UserName
+
+def UnixUserName(self):
     """
     extract username from whoami
     """
@@ -423,6 +421,70 @@ def UnixUserName():
         msg = "Error. Problem with whoami command"
         raise CrabException(msg)
     return UserName
+
+def getDN(self):
+    """
+    extract DN from user proxy's identity
+    """
+    try:
+        userdn = runCommand("voms-proxy-info -identity")
+        userdn = string.strip(userdn)
+        #search for a / to avoid picking up warning messages
+        userdn = userdn[userdn.find('/'):]
+    except:
+        msg = "Error. Problem with voms-proxy-info -identity command"
+        raise CrabException(msg)
+    return userdn.split('\n')[0]
+
+def gethnUserNameFromSiteDB(self):
+    """
+    extract user name from SiteDB
+    """
+    from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
+    hnUserName = None
+    userdn = 
+    mySiteDB = SiteDBJSON()
+    try:
+        hnUserName = mySiteDB.dnUserName(dn=userdn)
+    except:
+        msg = "Error. Problem extracting user name from SiteDB"
+        msg += "\n Check that you are registered in SiteDB, see https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB"
+        raise CrabException(msg)
+    if not hnUserName:
+        msg = "Error. There is no user name associated to DN %s in SiteDB. You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB" % userdn
+        raise CrabException(msg)
+    return hnUserName
+
+def gethnUserName(self):
+    """
+    cache the username extracted from SiteDB for 24hours
+    """
+    userconfigFileName="SiteDBusername.conf"
+    if not os.path.exists(userconfigFileName):
+        common.logger.debug(5,"Downloading from SiteDB username into %s"%userconfigFileName)
+        nameuser = gethnUserNameFromSiteDB()
+        userfile = open(userconfigFileName, 'w')
+        userfile.write(nameuser)
+        userfile.close()
+    else:
+        statinfo = os.stat(userconfigFileName)
+        ## if the file is older then 24 hours it is re-downloaded to update the configuration
+        oldness = 24*3600
+        if (time.time() - statinfo.st_ctime) > oldness:
+           common.logger.debug(5,"Downloading from SiteDB username into %s"%userconfigFileName)
+           nameuser = gethnUserNameFromSiteDB()
+           userfile = open(userconfigFileName, 'w')
+           userfile.write(nameuser)
+           userfile.close()
+        else:
+           userfile = open(userconfigFileName, 'r')
+           for line in userfile.readlines():
+               nameuser = line
+           userfile.close()
+           nameuser = string.strip(nameuser)
+    return nameuser
+###################################################################33
+
 def numberFile(file, txt):
     """
     append _'txt' before last extension of a file
