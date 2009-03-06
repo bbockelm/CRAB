@@ -32,12 +32,9 @@ class SchedulerGrid(Scheduler):
 
     def configure(self, cfg_params):
         self.cfg_params = cfg_params
+        self.jobtypeName   = cfg_params.get('CRAB.jobtype','')
+        self.schedulerName = cfg_params.get('CRAB.scheduler','')
         Scheduler.configure(self,cfg_params)
-
-        # init BlackWhiteListParser
-        seWhiteList = cfg_params.get('EDG.se_white_list',[])
-        seBlackList = cfg_params.get('EDG.se_black_list',[])
-        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
 
         self.proxyValid=0
         self.dontCheckProxy=int(cfg_params.get("EDG.dont_check_proxy",0))
@@ -46,7 +43,6 @@ class SchedulerGrid(Scheduler):
         common.logger.debug(5,'Setting myproxy server to '+self.proxyServer)
 
         self.group = cfg_params.get("EDG.group", None)
-
         self.role = cfg_params.get("EDG.role", None)
 
         removeT1bL = cfg_params.get("EDG.remove_default_blacklist", 0 )
@@ -63,75 +59,20 @@ class SchedulerGrid(Scheduler):
         self.EDG_ce_white_list = cfg_params.get('EDG.ce_white_list',None)
         if (self.EDG_ce_white_list): self.EDG_ce_white_list = string.split(self.EDG_ce_white_list,',')
 
-
         self.VO = cfg_params.get('EDG.virtual_organization','cms')
-
-        self.return_data = cfg_params.get('USER.return_data',0)
-
-        self.publish_data = cfg_params.get("USER.publish_data",0)
-
-        self.copy_data = cfg_params.get("USER.copy_data",0)
-        if int(self.copy_data) == 1:
-            self.SE = cfg_params.get('USER.storage_element',None)
-            if not self.SE:
-                msg = "Error. The [USER] section does not have 'storage_element'"
-                common.logger.message(msg)
-                raise CrabException(msg)
-
-        self.backup_copy = cfg_params.get("USER.backup_copy",0)
-        
-        if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
-            msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
-            msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n'
-            raise CrabException(msg)
-
-        if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
-            msg = 'Error: return_data and copy_data cannot be set both to 1\n'
-            msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
-            raise CrabException(msg)
-
-        if ( int(self.copy_data) == 0 and int(self.backup_copy) == 1 ):
-            msg = 'Error: copy_data = 0 and backup_data = 1 ==> to use the backup_copy function, the copy_data value has to be = 1\n'
-            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
-            raise CrabException(msg)
-            
-        if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
-            msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
-            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
-            common.logger.message(msg)
-            raise CrabException(msg)
-            
-        if ( int(self.backup_copy) == 1 and int(self.publish_data) == 1 ):
-            msg = 'Warning: currently the publication is not supported with the backup copy. Work in progress....\n'
-            common.logger.message(msg)
-            raise CrabException(msg)
-
         self.EDG_requirements = cfg_params.get('EDG.requirements',None)
-
         self.EDG_addJdlParam = cfg_params.get('EDG.additional_jdl_parameters',None)
+
         if (self.EDG_addJdlParam): self.EDG_addJdlParam = string.split(self.EDG_addJdlParam,';')
 
         self.EDG_retry_count = cfg_params.get('EDG.retry_count',0)
-
         self.EDG_shallow_retry_count= cfg_params.get('EDG.shallow_retry_count',-1)
-
         self.EDG_clock_time = cfg_params.get('EDG.max_wall_clock_time',None)
 
         # Default minimum CPU time to >= 130 minutes
         self.EDG_cpu_time = cfg_params.get('EDG.max_cpu_time', '130')
 
-        self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
-        self.debugWrap=''
-        if self.debug_wrapper==1: self.debugWrap='--debug'
-        self.backup=''
-        if ( int(self.backup_copy) == 1 ): 
-            self.debugWrap='--debug'
-            self.backup='--backup'
-
-        self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',0))
-
         # Add EDG_WL_LOCATION to the python path
-
         if not os.environ.has_key('EDG_WL_LOCATION'):
             msg = "Error: the EDG_WL_LOCATION variable is not set."
             raise CrabException(msg)
@@ -141,9 +82,6 @@ class SchedulerGrid(Scheduler):
         sys.path.append(libPath)
         libPath=os.path.join(path, "lib", "python")
         sys.path.append(libPath)
-
-        self.jobtypeName   = cfg_params.get('CRAB.jobtype','')
-        self.schedulerName = cfg_params.get('CRAB.scheduler','')
 
         self.checkProxy()
         return
@@ -300,10 +238,10 @@ class SchedulerGrid(Scheduler):
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
-            #txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'--lfn $LFNBaseName"\n'
-            #txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+' --lfn $LFNBaseName\n'
-            txt += 'echo "python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+'--lfn $LFNBaseName '+self.backup+' "\n'
-            txt += 'python cmscp.py --destination $endpoint --inputFileList $file_list --middleware $middleware '+self.debugWrap+' --lfn $LFNBaseName '+self.backup+' \n'
+            cmscp_args = ' --destination $endpoint --inputFileList $file_list \
+                           --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
+            txt += 'echo "python cmscp.py %s "\n'%cmscp_args
+            txt += 'python cmscp.py %s \n'%cmscp_args
             if self.debug_wrapper==1:
                 txt += 'echo "which lcg-ls"\n'
                 txt += 'which lcg-ls\n'
