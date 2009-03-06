@@ -250,7 +250,7 @@ class Submitter(Actor):
         Prepare DashBoard information
         """
 
-        taskId = uniqueTaskName(common._db.queryTask('name'))
+        taskId = common._db.queryTask('name')
         gridName = string.strip(common.scheduler.userName())
         common.logger.debug(5, "GRIDNAME: "+gridName)
         taskType = 'analysis'
@@ -270,7 +270,8 @@ class Submitter(Actor):
                   'ApplicationVersion': self.scram.getSWVersion(),
                   'taskType': taskType,
                   'vo': VO,
-                  'user': os.environ.get('USER',''),
+                  'CMSUser': getUserName(),
+                  'user': getUserName(),
                   'taskId': taskId,
                   'datasetFull': self.datasetPath,
                   'exe': self.executable }
