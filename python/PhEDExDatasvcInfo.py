@@ -103,12 +103,12 @@ class PhEDExDatasvcInfo:
             USER = (query.split('user')[1]).split('/')[1]
         else:
             #### to test #####
-            url = 'http://'+endpoint.split('://')[1]
-            scheme, host, path, params, query, fragment = urlparse(url)
-            SE = host.split(':')[0]
-            SE_PATH = endpoint.split(host)[1]
-            #SE = self.node
-            #SE_PATH = self.user_se_path + self.user_remote_dir 
+            #url = 'http://'+endpoint.split('://')[1]
+            #scheme, host, path, params, query, fragment = urlparse(url)
+            #SE = host.split(':')[0]
+            #SE_PATH = endpoint.split(host)[1]
+            SE = self.node
+            SE_PATH = self.user_se_path + self.user_remote_dir 
             try:
                 USER = (self.lfn.split('user')[1]).split('/')[1]
             except:
