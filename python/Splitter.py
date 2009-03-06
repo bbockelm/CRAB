@@ -419,7 +419,7 @@ class JobSplitter:
                 for loc in file['locations']:
                     if tmp_check < 1 :
                         locations.append(loc)
-                    tmp_check = tmp_check + 1 
+                tmp_check = tmp_check + 1 
                 ### qui va messo il check per la locations 
         res['lfns'] = lfns 
         res['locations'] = locations 
