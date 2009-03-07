@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.20 2009/03/06 16:49:55 spiga Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.21 2009/03/06 16:54:42 spiga Exp $"
+__version__ = "$Revision: 1.21 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -38,9 +38,6 @@ class SchedulerCondor(SchedulerLocal) :
         """
 
         SchedulerLocal.configure(self, cfg_params)
-        taskHash = sha.new(common._db.queryTask('name')).hexdigest()
-        self.environment_unique_identifier = "https://" + \
-            socket.gethostname() + '/' + taskHash + "/${NJob}"
 
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
@@ -74,6 +71,10 @@ class SchedulerCondor(SchedulerLocal) :
 
         return
 
+    def Env_uniqueId(self):
+        taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+        id = "https://" + socket.gethostname() + '/' + taskHash + "/${NJob}"
+        return id
 
     def sched_parameter(self, i, task):
         """

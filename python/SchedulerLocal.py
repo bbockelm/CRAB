@@ -1,7 +1,7 @@
 from Scheduler import Scheduler
 from crab_exceptions import *
 from crab_logger import Logger
-from crab_util import getLocalDomain, uniqueTaskName
+from crab_util import getLocalDomain
 import common
 from PhEDExDatasvcInfo import PhEDExDatasvcInfo
 
@@ -12,7 +12,7 @@ import os,string
 class SchedulerLocal(Scheduler) :
 
     def configure(self, cfg_params):
-
+        self.environment_unique_identifier = None
         self.cfg_params = cfg_params
         Scheduler.configure(self,cfg_params)
         self.jobtypeName = cfg_params['CRAB.jobtype']
@@ -30,7 +30,6 @@ class SchedulerLocal(Scheduler) :
             common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
         else:
             common.logger.message("Your se_white_list is set to "+str(cfg_params['EDG.se_white_list'])+": only local dataset will be considered")
-
         return
 
     def userName(self):
@@ -39,14 +38,20 @@ class SchedulerLocal(Scheduler) :
         tmp=pwd.getpwnam(getpass.getuser())[4]
         return "/CN="+tmp.strip()
 
+    def Env_uniqueId(self):
+        return
+
     def wsSetupEnvironment(self):
         """
         Returns part of a job script which does scheduler-specific work.
         """
-        taskId = uniqueTaskName(common._db.queryTask('name'))
+        taskId = common._db.queryTask('name')
         if not self.environment_unique_identifier:
-            raise CrabException('environment_unique_identifier not set')
-
+            try :
+                self.environment_unique_identifier = self.Env_uniqueId()
+            except : 
+                raise CrabException('environment_unique_identifier not set')
+        print self.environment_unique_identifier  
         index = int(common._db.nJobs())
         job = common.job_list[index-1]
         jbt = job.type()

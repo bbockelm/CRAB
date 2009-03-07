@@ -24,8 +24,6 @@ class SchedulerSge(SchedulerLocal) :
 
     def configure(self, cfg_params):
         SchedulerLocal.configure(self, cfg_params)
-        self.environment_unique_identifier = "https://"+common.scheduler.name()+":/${JOB_ID}-"+ \
-            string.replace(common._db.queryTask('name'),"_","-")
 
         #self.role = cfg_params.get("EDG.role", None)
         self.role = None
@@ -35,6 +33,11 @@ class SchedulerSge(SchedulerLocal) :
         self.cpu = cfg_params.get('USER.cpu',172800)
         self.vmem = cfg_params.get('USER.vmem',2)
         return
+
+    def Env_uniqueId(self):
+        id = "https://"+common.scheduler.name()+":/${JOB_ID}-"+ \
+            string.replace(common._db.queryTask('name'),"_","-")
+        return id
 
     def realSchedParams(self,cfg_params):
         """

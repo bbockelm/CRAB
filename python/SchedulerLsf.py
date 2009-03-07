@@ -24,11 +24,14 @@ class SchedulerLsf(SchedulerLocal) :
     def configure(self, cfg_params):
         SchedulerLocal.configure(self, cfg_params)
         self.outputDir = cfg_params.get('USER.outputdir' ,common.work_space.resDir())
-        self.environment_unique_identifier = "https://"+common.scheduler.name()+":/${LSB_BATCH_JID}-"+ \
-            string.replace(common._db.queryTask('name'),"_","-")
 
         self.pool = cfg_params.get('USER.storage_pool',None)
         return
+    
+    def Env_uniqueId(self):
+        id = "https://"+common.scheduler.name()+":/${LSB_BATCH_JID}-"+ \
+            string.replace(common._db.queryTask('name'),"_","-")
+        return id
 
     def realSchedParams(self,cfg_params):
         """
