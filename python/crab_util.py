@@ -382,19 +382,19 @@ def bulkControl(self,list):
     return sub_bulk
 ###########################################################################
 
-def getUserName(self):
+def getUserName():
     """
     extract user name from either SiteDB or Unix
     """
     if common.scheduler.name().upper() in ['LSF', 'CAF']:
        common.logger.debug(10,"Using as username the Unix user name")
-       UserName=getUnixUserName(self)
+       UserName=getUnixUserName()
     else :
-       UserName=gethnUserName(self)
+       UserName=gethnUserName()
 
     return UserName
 
-def UnixUserName(self):
+def UnixUserName():
     """
     extract username from whoami
     """
@@ -406,7 +406,7 @@ def UnixUserName(self):
         raise CrabException(msg)
     return UserName
 
-def getDN(self):
+def getDN():
     """
     extract DN from user proxy's identity
     """
@@ -420,13 +420,13 @@ def getDN(self):
         raise CrabException(msg)
     return userdn.split('\n')[0]
 
-def gethnUserNameFromSiteDB(self):
+def gethnUserNameFromSiteDB():
     """
     extract user name from SiteDB
     """
     from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
     hnUserName = None
-    userdn = getDN(self)
+    userdn = getDN()
     mySiteDB = SiteDBJSON()
     try:
         hnUserName = mySiteDB.dnUserName(dn=userdn)
@@ -439,7 +439,7 @@ def gethnUserNameFromSiteDB(self):
         raise CrabException(msg)
     return hnUserName
 
-def gethnUserName(self):
+def gethnUserName():
     """
     cache the username extracted from SiteDB for 24hours
     """
