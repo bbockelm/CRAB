@@ -61,6 +61,7 @@ class Scheduler :
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
+        self.publish_data = cfg_params.get("USER.publish_data",0)
         self.local_stage = int(cfg_params.get('USER.local_stage_out',0))
         self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',0))
 
