@@ -123,8 +123,6 @@ class Crab:
                     optsToBeSavedDB[it[1:]]=opts[it]
                     optsToBeSaved[it]=opts[it]
                     if self.UseServer==0: optsToBeSavedDB['server_name']= srvName
-            common._db.createTask_(optsToBeSavedDB)
-
             parsToBeSaved={}
             for it in self.cfg_params.keys():
                 sec,act = string.split(it,".")
@@ -150,7 +148,8 @@ class Crab:
         common.apmon = ApmonIf()
 
         self.createScheduler_()
-
+        if not self.flag_continue:
+            common._db.createTask_(optsToBeSavedDB)
         common.logger.debug(6, 'Used properties:')
         if (common.logger.debugLevel()<6 ):
             if isCreating :
