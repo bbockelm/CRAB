@@ -2,8 +2,6 @@ from crab_exceptions import *
 #from threading import RLock
 import common
 import os, shutil, string, time
-from crab_util import getUserName
-#from crab_logger import Logger
 
 class WorkSpace:
     def __init__(self, top_dir, cfg_params):
@@ -128,12 +126,8 @@ class WorkSpace:
     def pathForTgz(self):
         return self._pathForTgz + '/'
         
-    def taskName(self):
-
-        user_name = getUserName()
-        self.taskName_= user_name + '_' + string.split(common.work_space.topDir(),'/')[-2]+'_'+self.uuid
-
-        return self.taskName_
+    def task_uuid(self):
+        return self.uuid
 
     def setResDir(self, dir):
         self._res_dir = dir
