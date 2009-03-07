@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.96 2009/02/16 23:24:34 fanzago Exp $"
-__version__ = "$Revision: 1.96 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.98 2009/03/06 16:52:56 spiga Exp $"
+__version__ = "$Revision: 1.98 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -130,7 +130,7 @@ class SchedulerGrid(Scheduler):
         """
         Returns part of a job script which does scheduler-specific work.
         """
-        taskId = uniqueTaskName(common._db.queryTask('name'))
+        taskId =common._db.queryTask('name')
         index = int(common._db.nJobs())
         job = common.job_list[index-1]
         jbt = job.type()

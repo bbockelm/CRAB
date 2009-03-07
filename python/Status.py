@@ -44,7 +44,7 @@ class Status(Actor):
     def compute(self, up_task, display=True ):
 
         toPrint=[]
-        taskId = uniqueTaskName(up_task['name'])
+        taskId = up_task['name']
         task_unique_name = up_task['name']
         ended = None
 
