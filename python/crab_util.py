@@ -388,9 +388,9 @@ def getUserName(self):
     """
     if common.scheduler.name().upper() in ['LSF', 'CAF']:
        common.logger.debug(10,"Using as username the Unix user name")
-       UserName=getUnixUserName()
+       UserName=getUnixUserName(self)
     else :
-       UserName=gethnUserName()
+       UserName=gethnUserName(self)
 
     return UserName
 
@@ -426,7 +426,7 @@ def gethnUserNameFromSiteDB(self):
     """
     from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
     hnUserName = None
-    userdn = 
+    userdn = getDN(self)
     mySiteDB = SiteDBJSON()
     try:
         hnUserName = mySiteDB.dnUserName(dn=userdn)
@@ -456,7 +456,7 @@ def gethnUserName(self):
         oldness = 24*3600
         if (time.time() - statinfo.st_ctime) > oldness:
            common.logger.debug(5,"Downloading from SiteDB username into %s"%userconfigFileName)
-           nameuser = gethnUserNameFromSiteDB()
+           nameuser = gethnUserNameFromSiteDB(self)
            userfile = open(userconfigFileName, 'w')
            userfile.write(nameuser)
            userfile.close()
