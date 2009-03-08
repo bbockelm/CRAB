@@ -272,7 +272,7 @@ class Submitter(Actor):
                   'vo': VO,
                   'CMSUser': getUserName(),
                   'user': getUserName(),
-                  'taskId': taskId,
+                  'taskId': str(taskId),
                   'datasetFull': self.datasetPath,
                   'exe': self.executable }
 
