@@ -388,7 +388,7 @@ def getUserName():
     """
     if common.scheduler.name().upper() in ['LSF', 'CAF']:
        common.logger.debug(10,"Using as username the Unix user name")
-       UserName=getUnixUserName()
+       UserName=UnixUserName()
     else :
        UserName=gethnUserName()
 
