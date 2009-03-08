@@ -51,7 +51,6 @@ class SchedulerLocal(Scheduler) :
                 self.environment_unique_identifier = self.Env_uniqueId()
             except : 
                 raise CrabException('environment_unique_identifier not set')
-        print self.environment_unique_identifier  
         index = int(common._db.nJobs())
         job = common.job_list[index-1]
         jbt = job.type()
