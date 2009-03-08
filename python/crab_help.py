@@ -552,7 +552,8 @@ Set it to 1 to skip the check of free space left on your working directory befor
 
 
 =item B<local_stage_out>
- To use the local stage out (local to the closeSE) in case of remote stage out failure set I<local_stage_out> = 1 .
+
+ To use the local stage out (i.e. to the closeSE), in case of remote stage out failure, set I<local_stage_out> = 1 .
 
 =back
 
