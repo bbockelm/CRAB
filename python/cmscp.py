@@ -10,8 +10,7 @@ class cmscp:
     def __init__(self, args):
         """
         cmscp
-
-        safe copy of local file in current directory to remote SE via lcg_cp/srmcp,
+        safe copy of local file  to/from remote SE via lcg_cp/srmcp,
         including success checking  version also for CAF using rfcp command to copy the output to SE
         input:
            $1 middleware (CAF, LSF, LCG, OSG)
@@ -30,7 +29,7 @@ class cmscp:
         self.params = {"source":'', "destination":'','destinationDir':'', "inputFileList":'', "outputFileList":'', \
                            "protocol":'', "option":'', "middleware":'', "srm_version":'srmv2', "lfn":'' }
         self.debug = 0
-
+        self.local_stage = 0
         self.params.update( args )
 
         return
@@ -61,8 +60,7 @@ class cmscp:
                 file_to_copy.append(self.params['inputFileList'])
             self.params['inputFileList'] = file_to_copy
 
-        
-        if not self.params['lfn'] : HelpOptions()
+        if not self.params['lfn'] and self.local_stage == 1 : HelpOptions()
         
         ## TO DO:
         #### add check for outFiles
@@ -257,7 +255,7 @@ class cmscp:
                 
         if self.local_stage:
             if len(list_retry):
-                results = self.LocaCopy(list_retry, results)
+                results = self.LocalCopy(list_retry, results)
             
         if self.debug:
             print "\t results %s \n"%results
@@ -600,14 +598,30 @@ class cmscp:
 def usage():
 
     msg="""
-    required parameters:
-    --source        :: REMOTE           :
-    --destination   :: REMOTE           :
-    --debug             :
-    --inFile :: absPath : or name NOT RELATIVE PATH
-    --outFIle :: onlyNAME : NOT YET SUPPORTED
+    cmscp:
+        safe copy of local file  to/from remote SE via lcg_cp/srmcp,
+        including success checking  version also for CAF using rfcp command to copy the output to SE
 
-    optional parameters
+    accepted parameters:
+       source           =
+       destination      =
+       inputFileList    =
+       outputFileList   =
+       protocol         =
+       option           =
+       middleware       =  
+       srm_version      =
+       destinationDir   = 
+       lfn=             = 
+       local_stage      =  activate stage fall back  
+       debug            =  activate verbose print out 
+       help             =  print on line man and exit   
+    
+    mandatory:
+       * "source" and/or "destination" must always be defined 
+       * either "middleware" or "protocol" must always be defined 
+       * "inputFileList" must always be defined
+       * if "local_stage" = 1 also  "lfn" must be defined 
     """
     print msg
 
@@ -636,7 +650,7 @@ if __name__ == '__main__' :
 
     allowedOpt = ["source=", "destination=", "inputFileList=", "outputFileList=", \
                   "protocol=","option=", "middleware=", "srm_version=", \
-                  "destinationDir=","debug", "help", "lfn="]
+                  "destinationDir=", "lfn=", "local_stage", "debug", "help"]
     try:
         opts, args = getopt.getopt( sys.argv[1:], "", allowedOpt )
     except getopt.GetoptError, err:
