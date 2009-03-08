@@ -128,8 +128,8 @@ class SchedulerLocal(Scheduler) :
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
-            cmscp_args = '--destination $endpoint --inputFileList $file_list \
-                          --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out, self.debugWrap)
+            cmscp_args = ' --destination $endpoint --inputFileList $file_list'
+            cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
             txt += 'echo "python cmscp.py %s "\n'%cmscp_args
             txt += 'python cmscp.py %s \n'%cmscp_args
             if self.debug_wrapper==1: 
