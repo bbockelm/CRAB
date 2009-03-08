@@ -456,7 +456,7 @@ def gethnUserName():
         oldness = 24*3600
         if (time.time() - statinfo.st_ctime) > oldness:
            common.logger.debug(5,"Downloading from SiteDB username into %s"%userconfigFileName)
-           nameuser = gethnUserNameFromSiteDB(self)
+           nameuser = gethnUserNameFromSiteDB()
            userfile = open(userconfigFileName, 'w')
            userfile.write(nameuser)
            userfile.close()
@@ -659,11 +659,11 @@ def getGZSize(gzipfile):
 
 def showWebMon(server_name):
     msg = ''
+    msg +='You can also follow the status of this task on :\n'
+    msg +='\tCMS Dashboard: http://dashb-cms-sam.cern.ch/dashboard/request.py/taskmonitoring\n'
     if server_name != '' :
-        msg += 'You can also check jobs status at: http://%s:8888/logginfo\n'%server_name
-        msg += '\t( Your task name is: %s )\n'%common._db.queryTask('name')
-    msg +='You can also follow the status of this task on CMS dashboard:'
-    msg +='\thttp://dashb-cms-sam.cern.ch/dashboard/request.py/taskmonitoring'
+        msg += '\tServer page: http://%s:8888/logginfo\n'%server_name
+    msg += '\tYour task name is: %s \n'%common._db.queryTask('name')
     return msg
 
 
