@@ -38,7 +38,7 @@ class SchedulerLocal(Scheduler) :
         tmp=pwd.getpwnam(getpass.getuser())[4]
         return "/CN="+tmp.strip()
 
-    def Env_uniqueId(self):
+    def envUniqueID(self):
         return
 
     def wsSetupEnvironment(self):
@@ -48,8 +48,8 @@ class SchedulerLocal(Scheduler) :
         taskId = common._db.queryTask('name')
         if not self.environment_unique_identifier:
             try :
-                self.environment_unique_identifier = self.Env_uniqueId()
-            except : 
+                self.environment_unique_identifier = self.envUniqueID()
+            except :
                 raise CrabException('environment_unique_identifier not set')
         index = int(common._db.nJobs())
         job = common.job_list[index-1]
@@ -103,7 +103,7 @@ class SchedulerLocal(Scheduler) :
 
             stageout = PhEDExDatasvcInfo(self.cfg_params)
             endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
-            if self.check_RemoteDir == 1 : 
+            if self.check_RemoteDir == 1 :
                 self.checkRemoteDir(endpoint,jbt.outList('list') )
 
             txt += '#\n'
@@ -123,7 +123,7 @@ class SchedulerLocal(Scheduler) :
             ### Needed i.e. for caf
             if (pool) and (pool != 'None'):
                 txt += 'export STAGE_SVCCLASS='+str(pool)+'\n'
-                
+
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
@@ -131,7 +131,7 @@ class SchedulerLocal(Scheduler) :
             cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
             txt += 'echo "python cmscp.py %s "\n'%cmscp_args
             txt += 'python cmscp.py %s \n'%cmscp_args
-            if self.debug_wrapper==1: 
+            if self.debug_wrapper==1:
                 txt += 'if [ -f .SEinteraction.log ] ;then\n'
                 txt += '########### details of SE interaction\n'
                 txt += '    cat .SEinteraction.log\n'
@@ -143,13 +143,13 @@ class SchedulerLocal(Scheduler) :
             txt += '    cat cmscpReport.sh\n'
             txt += '    source cmscpReport.sh\n'
             txt += 'else\n'
-            txt += '    echo "cmscpReport.sh file not found"\n' 
+            txt += '    echo "cmscpReport.sh file not found"\n'
             txt += '    StageOutExitStatus=60307\n'
             txt += 'fi\n'
             txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'
             txt += '    echo "Problem copying file to $SE $SE_PATH"\n'
             txt += '    copy_exit_status=$StageOutExitStatus \n'
-            if not self.debug_wrapper==1: 
+            if not self.debug_wrapper==1:
                 txt += '    ########### details of SE interaction\n'
                 txt += '    if [ -f .SEinteraction.log ] ;then\n'
                 txt += '        cat .SEinteraction.log\n'
@@ -176,7 +176,7 @@ class SchedulerLocal(Scheduler) :
         txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --errorcode $job_exit_code $executable_exit_status \n'
         txt += '       fi\n'
         txt += '    fi\n'
-        txt += '    cd $RUNTIME_AREA  \n'   
+        txt += '    cd $RUNTIME_AREA  \n'
         txt += '    for file in $filesToCheck ; do\n'
         txt += '        if [ -e $file ]; then\n'
         txt += '            echo "tarring file $file in  $out_files"\n'
@@ -192,7 +192,7 @@ class SchedulerLocal(Scheduler) :
         txt += '       else \n'
         # call timing FJR filling
         txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --timing $TIME_WRAP $TIME_EXE $TIME_STAGEOUT \n'
-        txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n' 
+        txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n'
         txt += '           if [ $TIME_STAGEOUT -lt 0 ]; then \n'
         txt += '               export TIME_STAGEOUT=NULL \n'
         txt += '           fi\n'

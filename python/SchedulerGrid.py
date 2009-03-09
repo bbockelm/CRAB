@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.99 2009/03/07 16:37:15 spiga Exp $"
-__version__ = "$Revision: 1.99 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.100 2009/03/08 10:11:39 spiga Exp $"
+__version__ = "$Revision: 1.100 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -135,7 +135,10 @@ class SchedulerGrid(Scheduler):
         job = common.job_list[index-1]
         jbt = job.type()
         if not self.environment_unique_identifier:
-            raise CrabException('environment_unique_identifier not set')
+            try :
+                self.environment_unique_identifier = self.envUniqueID()
+            except :
+                raise CrabException('environment_unique_identifier not set')
 
         # start with wrapper timing
         txt  = 'export TIME_WRAP_INI=`date +%s` \n'
@@ -222,7 +225,7 @@ class SchedulerGrid(Scheduler):
         if int(self.copy_data) == 1:
             stageout = PhEDExDatasvcInfo(self.cfg_params)
             endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
-            if self.check_RemoteDir == 1 : 
+            if self.check_RemoteDir == 1 :
                 self.checkRemoteDir(endpoint,jbt.outList('list') )
             txt += 'export SE='+SE+'\n'
             txt += 'echo "SE = $SE"\n'
@@ -257,7 +260,7 @@ class SchedulerGrid(Scheduler):
             txt += '    cat cmscpReport.sh\n'
             txt += '    source cmscpReport.sh\n'
             txt += 'else\n'
-            txt += '    echo "cmscpReport.sh file not found"\n' 
+            txt += '    echo "cmscpReport.sh file not found"\n'
             txt += '    StageOutExitStatus=60307\n'
             txt += 'fi\n'
             txt += 'if [ $StageOutExitStatus -ne 0 ]; then\n'

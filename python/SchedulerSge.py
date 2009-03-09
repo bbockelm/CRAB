@@ -27,22 +27,22 @@ class SchedulerSge(SchedulerLocal) :
 
         #self.role = cfg_params.get("EDG.role", None)
         self.role = None
-        
+
         self.pool = cfg_params.get('USER.storage_pool',None)
         ## default is 48 hours CPU time, 2G memrory
         self.cpu = cfg_params.get('USER.cpu',172800)
         self.vmem = cfg_params.get('USER.vmem',2)
         return
 
-    def Env_uniqueId(self):
+    def envUniqueID(self):
         id = "https://"+common.scheduler.name()+":/${JOB_ID}-"+ \
             string.replace(common._db.queryTask('name'),"_","-")
         return id
 
     def realSchedParams(self,cfg_params):
         """
-        Return dictionary with specific parameters, to use 
-        with real scheduler  
+        Return dictionary with specific parameters, to use
+        with real scheduler
         """
         params = {}
         return  params
@@ -89,7 +89,7 @@ class SchedulerSge(SchedulerLocal) :
         txt += self.wsExitFunc_common()
 
         txt += '    cp ${SGE_STDOUT_PATH} CMSSW_${NJob}.stdout \n'
-        txt += '    cp ${SGE_STDERR_PATH} CMSSW_${NJob}.stderr \n'         
+        txt += '    cp ${SGE_STDERR_PATH} CMSSW_${NJob}.stderr \n'
         txt += '    tar zcvf ${out_files}.tgz  ${filesToCheck}\n'
         txt += '    exit $job_exit_code\n'
         txt += '}\n'
@@ -98,12 +98,12 @@ class SchedulerSge(SchedulerLocal) :
 
     def listMatch(self, dest, full):
         """
-        """ 
-        #if len(dest)!=0: 
+        """
+        #if len(dest)!=0:
         sites = [self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')]
-        #else:     
-        #    sites = [str(getLocalDomain(self))]  
-        return sites    
+        #else:
+        #    sites = [str(getLocalDomain(self))]
+        return sites
 
     def wsCopyOutput(self):
         txt=self.wsCopyOutput_comm(self.pool)
@@ -119,5 +119,5 @@ class SchedulerSge(SchedulerLocal) :
         tmp=tmp.rstrip(',')
         tmp=tmp.rstrip(',')
 
-            
+
         return "/CN="+tmp.strip()

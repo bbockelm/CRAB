@@ -18,7 +18,7 @@ class SchedulerLsf(SchedulerLocal) :
 
     def __init__(self):
         Scheduler.__init__(self,"LSF")
-        
+
         return
 
     def configure(self, cfg_params):
@@ -27,18 +27,18 @@ class SchedulerLsf(SchedulerLocal) :
 
         self.pool = cfg_params.get('USER.storage_pool',None)
         return
-    
-    def Env_uniqueId(self):
+
+    def envUniqueID(self):
         id = "https://"+common.scheduler.name()+":/${LSB_BATCH_JID}-"+ \
             string.replace(common._db.queryTask('name'),"_","-")
         return id
 
     def realSchedParams(self,cfg_params):
         """
-        Return dictionary with specific parameters, to use 
-        with real scheduler  
+        Return dictionary with specific parameters, to use
+        with real scheduler
         """
-        ### use by the BossLite script 
+        ### use by the BossLite script
         self.cpCmd  =  cfg_params.get(self.name().upper()+'.cp_command','cp')
         self.rfioName =  cfg_params.get(self.name().upper()+'.rfio_server','')
 
@@ -59,15 +59,15 @@ class SchedulerLsf(SchedulerLocal) :
 
         # sched_param+='-cwd '+ str(self.outputDir)  + ' '
         return sched_param
-   
+
     def listMatch(self, dest, full):
         """
-        """ 
-        if len(dest)!=0: 
+        """
+        if len(dest)!=0:
             sites = [self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')]
-        else:     
-            sites = [str(getLocalDomain(self))]  
-        return sites    
+        else:
+            sites = [str(getLocalDomain(self))]
+        return sites
 
     def loggingInfo(self, id, fname):
         """ return logging info about job nj """

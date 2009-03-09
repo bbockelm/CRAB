@@ -19,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.31 2009/01/30 16:22:24 ewv Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.32 2009/03/09 09:42:50 spiga Exp $"
+__version__ = "$Revision: 1.32 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -29,6 +29,7 @@ class SchedulerCondorCommon(SchedulerGrid):
 
     def __init__(self, name):
         SchedulerGrid.__init__(self, name)
+        self.environment_unique_identifier = None
 
         # check for locally running condor scheduler
         cmd = 'ps xau | grep -i condor_schedd | grep -v grep'
@@ -194,10 +195,10 @@ class SchedulerCondorCommon(SchedulerGrid):
 
         return
 
-    def Env_uniqueId(self):
+    def envUniqueID(self):
         taskHash = sha.new(common._db.queryTask('name')).hexdigest()
         id = 'https://' + self.name() + '/' + taskHash + '/${NJob}'
-        msg = 'JobID for ML monitoring is created for OSG scheduler: %s'%id 
+        msg = 'JobID for ML monitoring is created for OSG scheduler: %s'%id
         common.logger.debug(5, msg)
         return id
 
