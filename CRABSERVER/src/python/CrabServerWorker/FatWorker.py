@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.158 2009/02/16 17:51:18 spiga Exp $"
-__version__ = "$Revision: 1.158 $"
+__revision__ = "$Id: FatWorker.py,v 1.159 2009/03/06 18:41:26 spiga Exp $"
+__version__ = "$Revision: 1.159 $"
 import string
 import sys, os
 import time
@@ -552,8 +552,8 @@ class FatWorker(Thread):
             # select match candidate
             if len(sub_jobs_temp)>0:
                 sub_jobs.append(sub_jobs_temp)
-                jobs_to_match.append(sub_jobs[count][0])
-                count += 1
+                jobs_to_match.append(sub_jobs_temp[0])
+            count += 1
             pass
 
         # ListMatch
