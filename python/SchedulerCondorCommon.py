@@ -19,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.30 2008/10/30 16:25:24 ewv Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.31 2009/01/30 16:22:24 ewv Exp $"
+__version__ = "$Revision: 1.31 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -178,12 +178,6 @@ class SchedulerCondorCommon(SchedulerGrid):
         except KeyError:
             self.batchsystem = ''
 
-        taskHash = sha.new(common._db.queryTask('name')).hexdigest()
-        self.environment_unique_identifier = \
-            'https://' + self.name() + '/' + taskHash + '/${NJob}'
-        msg = 'JobID for ML monitoring is created for OSG scheduler: ' \
-            + self.environment_unique_identifier
-        common.logger.debug(5, msg)
         self.datasetPath = ''
 
         try:
@@ -200,6 +194,12 @@ class SchedulerCondorCommon(SchedulerGrid):
 
         return
 
+    def Env_uniqueId(self):
+        taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+        id = 'https://' + self.name() + '/' + taskHash + '/${NJob}'
+        msg = 'JobID for ML monitoring is created for OSG scheduler: %s'%id 
+        common.logger.debug(5, msg)
+        return id
 
     def realSchedParams(self, cfgParams):
         """
