@@ -658,12 +658,13 @@ def getGZSize(gzipfile):
     return struct.unpack("<i", f.read())[0]
 
 def showWebMon(server_name):
+    taskName = common._db.queryTask('name')
     msg = ''
     msg +='You can also follow the status of this task on :\n'
-    msg +='\tCMS Dashboard: http://dashb-cms-sam.cern.ch/dashboard/request.py/taskmonitoring\n'
+    msg +='\tCMS Dashboard: http://dashb-cms-job-task.cern.ch/taskmon.html#task=%s\n'%(taskName)
     if server_name != '' :
         msg += '\tServer page: http://%s:8888/logginfo\n'%server_name
-    msg += '\tYour task name is: %s \n'%common._db.queryTask('name')
+    msg += '\tYour task name is: %s \n'%taskName
     return msg
 
 
