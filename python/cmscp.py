@@ -298,7 +298,7 @@ class cmscp:
         if Destination_SE.protocol in ['gridftp','rfio','srmv2']:
             try:
                 self.createDir( Destination_SE, Destination_SE.protocol )
-            except Exception, ex:
+            except OperationException, ex:
                 return self.updateReport('', '60316', str(ex))
 
         ## prepare for real copy  ##
