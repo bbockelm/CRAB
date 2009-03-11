@@ -526,6 +526,10 @@ You produced output will be published in your local DBS with dataset name <prima
 
 Specify the URL of your local DBS istance where CRAB has to publish the output files
 
+=item B<pubilish_zero_event>
+
+T0 force zero event files publication specify I<pubilish_zero_event> = 1
+
 =item B<srm_version>
 
 To choose the srm version specify I<srm_version> =  (srmv1 or srmv2).

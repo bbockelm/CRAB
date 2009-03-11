@@ -75,7 +75,9 @@ class Publisher(Actor):
                 dataset=string.strip(dataset)
                 self.dataset_to_import.append(dataset)
         ###        
-                
+            
+        self.skipOcheck=cfg_params.get('CMSSW.pubilish_zero_event',0)
+    
         self.SEName=''
         self.CMSSW_VERSION=''
         self.exit_status=''
@@ -197,17 +199,28 @@ class Publisher(Actor):
             elif (file['LFN'] == ''):
                 self.noLFN.append(file['PFN'])
             else:
-                ### Fede removed check about number of events
-                #if int(file['TotalEvents']) != 0 :
-                    # lumi info are now in run hash
-                file.runs = {}
-                for ds in file.dataset:
-                    ### Fede for production
-                    if (ds['PrimaryDataset'] == 'null'):
-                        ds['PrimaryDataset']=self.userprocessedData
-                filestopublish.append(file)
-                #else:
-                #    self.noEventsFiles.append(file['LFN'])
+                if  self.skipOcheck==0:
+                    if int(file['TotalEvents']) != 0:
+                        #file.lumisections = {}
+                        # lumi info are now in run hash
+                        file.runs = {}
+                        for ds in file.dataset:
+                            ### Fede for production
+                            if (ds['PrimaryDataset'] == 'null'):
+                                #ds['PrimaryDataset']=procdataset
+                                ds['PrimaryDataset']=self.userprocessedData
+                        filestopublish.append(file)
+                    else:
+                        self.noEventsFiles.append(file['LFN'])
+                else:
+                    file.runs = {}
+                    for ds in file.dataset:
+                        ### Fede for production
+                        if (ds['PrimaryDataset'] == 'null'):
+                            #ds['PrimaryDataset']=procdataset
+                            ds['PrimaryDataset']=self.userprocessedData
+                    filestopublish.append(file)
+       
         jobReport.files = filestopublish
         ### if all files of FJR have number of events = 0
         if (len(filestopublish) == 0):
