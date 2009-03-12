@@ -428,14 +428,16 @@ def gethnUserNameFromSiteDB():
     hnUserName = None
     userdn = getDN()
     mySiteDB = SiteDBJSON()
+    msg_ = "there is no user name associated to DN %s in SiteDB. You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB" % userdn
     try:
         hnUserName = mySiteDB.dnUserName(dn=userdn)
     except:
         msg = "Error. Problem extracting user name from SiteDB"
-        msg += "\n Check that you are registered in SiteDB, see https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB"
+        msg += "\n Check that you are registered in SiteDB, see https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB\n"
+        msg += 'or %s'%msg_
         raise CrabException(msg)
     if not hnUserName:
-        msg = "Error. There is no user name associated to DN %s in SiteDB. You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB" % userdn
+        msg = "Error. %s"%msg_
         raise CrabException(msg)
     return hnUserName
 
