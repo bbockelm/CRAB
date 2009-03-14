@@ -83,7 +83,7 @@ class CopyData(Actor):
                         "protocol": self.protocol
                       }  
         if self.protocol is "srmv2":
-            cmscpConfig.setdefault("option", "-b -retry_timeout=480000 -retry_num=3")
+            cmscpConfig.setdefault("option", " -retry_timeout=480000 -retry_num=3 ")
         elif self.protocol is "srm-lcg":
             cmscpConfig.setdefault("option", "-b -D srmv2  -t 2400 --verbose")
         elif self.protocol is "rfio":
