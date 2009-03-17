@@ -51,7 +51,8 @@ class Boss:
                     'glidein':  'SchedulerGlidein',\
                     'lsf':      'SchedulerLsf',\
                     'caf':      'SchedulerLsf',\
-                    'sge':      'SchedulerSge'
+                    'sge':      'SchedulerSge',
+                    'arc':      'SchedulerARC'
                     }
 
         self.schedulerConfig = common.scheduler.realSchedParams(cfg_params)
