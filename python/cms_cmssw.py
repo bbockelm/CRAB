@@ -973,7 +973,7 @@ class Cmssw(JobType):
             txt += '        echo "----------------------"\n'
             txt += '        cat processed-files.txt\n'
             txt += '        echo "----------------------"\n'
-            txt += '        diff -q input-files.txt processed-files.txt\n'
+            txt += '        diff -qbB input-files.txt processed-files.txt\n'
             txt += '        fileverify_status=$?\n'
             txt += '        if [ $fileverify_status -ne 0 ]; then\n'
             txt += '            executable_exit_status=30001\n'
