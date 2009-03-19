@@ -986,7 +986,7 @@ class Cmssw(JobType):
         txt += '    echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."\n'
         txt += 'fi\n'
         txt += '\n'
-        txt += 'if [ $executable_exit_status -ne 0 ] && [ $executable_exit_status -ne 50015 ] && [ $executable_exit_status -ne 50017 ];then\n'
+        txt += 'if [ $executable_exit_status -ne 0 ] && [ $executable_exit_status -ne 50115 ] && [ $executable_exit_status -ne 50117 ] && [ $executable_exit_status -ne 30001 ];then\n'
         txt += '    echo ">>> Executable failed  $executable_exit_status"\n'
         txt += '    echo "ExeExitCode=$executable_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"\n'
