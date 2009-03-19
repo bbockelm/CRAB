@@ -222,20 +222,11 @@ class SchedulerArc(SchedulerGrid):
                 se_list.append(se)
         # FIXME: Check that se_list contains at least one SE!
 
-        ce_infoSys = self.listMatch(se_list, 'False')
-        blah, ce_white, ce_black = self.ce_list()
-
-        ce_list = []
-        for ce in ce_infoSys:
-            if ce_white:
-                if ce in ce_white: ce_list.append(ce)
-            elif ce_black:
-                if ce not in ce_black: ce_list.append(ce)
-            else:
-                ce_list.append(ce)
+        ce_list = self.listMatch(se_list, 'False')
 
         s = ""
         if len(ce_list) > 0:
+
             # A ce-list with more than one element must be an OR:ed
             # list: (|(cluster=ce1)(cluster=ce2)...)
             if len(ce_list) > 1:
