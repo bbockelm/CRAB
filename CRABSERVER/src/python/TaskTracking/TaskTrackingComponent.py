@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.138 2009/02/09 10:38:45 mcinquil Exp $"
-__version__ = "$Revision: 1.138 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.141 2009/03/03 11:14:12 mcinquil Exp $"
+__version__ = "$Revision: 1.141 $"
 
 import os
 import time
@@ -371,6 +371,9 @@ class TaskTrackingComponent:
                                             " for task " + str(taskName) )
                 try:
                     self.setCleared(taskName, eval(jobstr))
+
+                    ### set jobs as cleared
+
                 except Exception, ex:
                     logBuf = self.__log(logBuf, "Exception raised: " + str(ex) )
                     logBuf = self.__log(logBuf, str(traceback.format_exc()) )
@@ -696,6 +699,7 @@ class TaskTrackingComponent:
                     except JobError, ex:
                         logging.error('Problem loading job running info')
                     if jobbe['jobId'] in jobList:
+                        jobbe.runningJob['state'] = "Cleared"
                         if jobbe.runningJob['status'] in ["D","E", "DA", "SD"]:
                             jobbe.runningJob['status'] = "UE"
                             if jobbe.runningJob['processStatus'] in ["created", "handled", "not handled"]:
@@ -720,9 +724,9 @@ class TaskTrackingComponent:
         dictionaryReport =  {}
         for job in xrange(1, int(totjobs)+1):
             if job in listsubmit:
-                dictionaryReport.setdefault(job, ["Submitting", "", "", 0, 0, '', 'CS', '', 'N'])
+                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'CS', '', 'N', 'SubmissionReq'])
             else:
-                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'C', '', ' '])
+                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'C', '', ' ', 'Created'])
         self.prepareReport( taskName, "", "", "", 0, 0, dictionaryReport, int(totjobs), 0, taskstatus )
 
     def singleTaskPoll(self, taskObj, ttdb, taskName, mySession):
@@ -781,6 +785,7 @@ class TaskTrackingComponent:
                 sst = ttutil.getListEl(dictReportTot[singleJob], 6)
                 sid = ttutil.getListEl(dictReportTot[singleJob], 9)
                 end = ttutil.getListEl(dictReportTot[singleJob], 8)
+                act = ttutil.getListEl(dictReportTot[singleJob], 10)
                 """
                 J = JobXml()
                 J.initialize( \
@@ -793,7 +798,8 @@ class TaskTrackingComponent:
                               ttutil.getListEl(dictReportTot[singleJob], 5), \
                               ttutil.getListEl(dictReportTot[singleJob], 6), \
                               ttutil.getListEl(dictReportTot[singleJob], 9), \
-                              ttutil.getListEl(dictReportTot[singleJob], 8)  \
+                              ttutil.getListEl(dictReportTot[singleJob], 8), \
+                              ttutil.getListEl(dictReportTot[singleJob], 10) \
                             )
                 c.addJob( J )
 
@@ -929,10 +935,12 @@ class TaskTrackingComponent:
                 break
             job   = jobbe.runningJob['jobId']
             stato = jobbe.runningJob['status']
+            sstat = jobbe.runningJob['statusScheduler']
             sId   = jobbe.runningJob['schedulerId']
             jec   = str( jobbe.runningJob['wrapperReturnCode'] )
             eec   = str( jobbe.runningJob['applicationReturnCode'] )
             joboff = str( jobbe.runningJob['closed'] )
+            action = jobbe.runningJob['state']
             site  = ""
             if jobbe.runningJob['destination'] != None and \
                jobbe.runningJob['destination'] != '':
@@ -943,11 +951,11 @@ class TaskTrackingComponent:
                         ttdb.checkNSubmit(mySession.bossLiteDB, taskName, job)
             vect = []
             if eec == "NULL" and jec == "NULL":
-                vect = [ ttutil.convertStatus(stato), "", "", 0, Resub, site, \
-                         stato, joboff, resubmitting, sId]
+                vect = [ sstat, "", "", 0, Resub, site, \
+                         stato, joboff, resubmitting, sId, action ]
             else:
-                vect = [ ttutil.convertStatus(stato), eec, jec, 0, Resub, site, \
-                         stato, joboff, resubmitting, sId]
+                vect = [ sstat, eec, jec, 0, Resub, site, \
+                         stato, joboff, resubmitting, sId, action ]
             dictStateTot.setdefault(job, vect)
 
             if stato in ["E","UE"]:
@@ -1050,6 +1058,7 @@ class TaskTrackingComponent:
 
                     if status == self.taskState[2] and notified < 2:
                         ######### Taskfailed is prepared now
+                        logging.info("Taskfailed is prepared now")
                         self.prepareTaskFailed( taskName, uuid, eMail, status, userName)
                     else:
                         ## lite task load in memory

@@ -32,6 +32,7 @@ class JobXml:
         self.STATCODE       = "sched_status"
         self.SCHEDID        = "sched_id"
         self.ENDED          = "ended" 
+        self.ACTION         = 'action'
 
         self.jobid      = ""
         self.status     = ""
@@ -43,13 +44,14 @@ class JobXml:
         self.statcode   = ""
         self.sId        = ""
         self.ended      = ""
+        self.action     = ""
         
         self.doc            = xml.dom.minidom.Document()
 	#self.root           = self.doc.createElement( self.ROOTNAME )
 	#self.init           = False
         
     #------------------------------------------------------------------------
-    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site, sched_status, sId = "", ended = "" ):
+    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site, sched_status, sId = "", ended = "", act = "" ):
         self.jobid      = jobid
         self.status     = status
         self.exitstatus = exe_exit
@@ -58,6 +60,7 @@ class JobXml:
         self.statcode   = sched_status
         self.sId        = sId
         self.ended      = ended
+        self.action     = act
 
         jobrep = self.doc.createElement(self.JOBREPORT)
         jobrep.setAttribute(self.JOBID, str(self.jobid))
@@ -77,6 +80,7 @@ class JobXml:
         jobrep.setAttribute(self.STATCODE, str(self.statcode))
         jobrep.setAttribute(self.SCHEDID, str(self.sId))
         jobrep.setAttribute(self.ENDED, str(self.ended))
+        jobrep.setAttribute(self.ACTION, str(self.action))
 
         self.report = jobrep
         return self
@@ -138,7 +142,8 @@ class JobXml:
                  self.RESUB, \
                  self.STATCODE, \
                  self.SCHEDID, \
-                 self.ENDED \
+                 self.ENDED, \
+                 self.ACTION \
                ]
 
 ##-------------------------------------------------------------------------------------------------------
@@ -166,39 +171,40 @@ class CreateXmlJobReport:
     
     #------------------------------------------------------------------------
     def __init__(self):
-    	self.ROOTNAME       = "TaskTracking"
-	self.TASKREPORT     = "TaskReport"
-	self.EMAIL          = "email"
-	self.OWNER	    = "owner"
-	self.TASKNAME       = "taskName"
-	self.ENDED          = "ended"
-	self.THRESHOLDREQ   = "thresholdRequested"
+        self.ROOTNAME       = "TaskTracking"
+        self.TASKREPORT     = "TaskReport"
+        self.EMAIL          = "email"
+        self.OWNER	    = "owner"
+        self.TASKNAME       = "taskName"
+        self.ENDED          = "ended"
+        self.THRESHOLDREQ   = "thresholdRequested"
         self.TOTJOB         = "totJob"
         self.ALLOWED_STATES = ("Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed","Submitting", "Done (Failed)", "Created")
-	self.COUNT          = 'count'
+        self.COUNT          = 'count'
         self.SITE           = "site"
         self.RESUB          = "resubmit"
         self.STATCODE       = "sched_status"
         self.SCHEDID        = "sched_id"
-	self.TASKSTATUS     = "TaskStatus"
+        self.TASKSTATUS     = "TaskStatus"
+        self.ACTION         = "action"
 
-	self.doc            = xml.dom.minidom.Document()
-	self.root           = self.doc.createElement( self.ROOTNAME )
-	self.init           = False
+        self.doc            = xml.dom.minidom.Document()
+        self.root           = self.doc.createElement( self.ROOTNAME )
+        self.init           = False
 	
-	self.statusHash     = {}
+        self.statusHash     = {}
 
     #------------------------------------------------------------------------
     def initialize(self, tname, email, owner, percent_ended, threshold, totjob, process = "Processed"):
     	#root = self.doc.createElementNS(self.NS,"TaskReport")
 	#taskrep =  self.doc.createElementNS(self.NS,"TaskReport")
-	taskrep =  self.doc.createElement(self.TASKREPORT)
+        taskrep =  self.doc.createElement(self.TASKREPORT)
         #taskrep.setAttributeNS(self.NS,"taskName",tname)#
         #taskrep.setAttributeNS(self.NS,"email",email)#
         #taskrep.setAttributeNS(self.NS,"ended",str(percent_ended))#
 	
-	taskrep.setAttribute(self.TASKNAME,     tname)
-	email = email.strip()
+        taskrep.setAttribute(self.TASKNAME,     tname)
+        email = email.strip()
 
         # remove leading and traling spaces
         email = email.strip()
@@ -212,14 +218,14 @@ class CreateXmlJobReport:
             
         taskrep.setAttribute(self.EMAIL,        email)
         taskrep.setAttribute(self.ENDED,        str(percent_ended) )
-	taskrep.setAttribute(self.THRESHOLDREQ, str(threshold) )
-	taskrep.setAttribute(self.OWNER,	owner)
-	taskrep.setAttribute(self.TOTJOB,       str(totjob) )
-	taskrep.setAttribute(self.TASKSTATUS,   str(process) )
+        taskrep.setAttribute(self.THRESHOLDREQ, str(threshold) )
+        taskrep.setAttribute(self.OWNER,	owner)
+        taskrep.setAttribute(self.TOTJOB,       str(totjob) )
+        taskrep.setAttribute(self.TASKSTATUS,   str(process) )
         
         self.root.appendChild(taskrep)
         self.doc.appendChild(self.root)
-	self.init = True
+        self.init = True
 
     #------------------------------------------------------------------------
     def addJob(self, jobid, status, jobexit, exeexit, cleared, resub, site):
@@ -249,42 +255,42 @@ class CreateXmlJobReport:
         element = self.doc.getElementsByTagName(self.TASKREPORT)[0]
         currentMail = element.getAttribute( self.EMAIL )
         
-	currentMail += " " + email
-	currentMail = currentMail.strip(  )
+        currentMail += " " + email
+        currentMail = currentMail.strip(  )
         element.setAttribute( self.EMAIL, currentMail )
 
     #------------------------------------------------------------------------
     def toXml(self):
-	return self.doc.toxml()
+        return self.doc.toxml()
 
     #------------------------------------------------------------------------
     def printMe(self):
     	if not self.init:
-		raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
+            raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
 	
-	xml.dom.ext.PrettyPrint(self.doc)
+        xml.dom.ext.PrettyPrint(self.doc)
 
 
     #------------------------------------------------------------------------
     def getTaskname( self ):
     	if not self.init:
-		raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
-	element = self.doc.getElementsByTagName( self.TASKREPORT )[0]
+            raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
+        element = self.doc.getElementsByTagName( self.TASKREPORT )[0]
         return element.getAttribute( self.TASKNAME )
 	
     #------------------------------------------------------------------------
     def getUserMail( self ):
     	if not self.init:
-		raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
+            raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
 
-	element = self.doc.getElementsByTagName(self.TASKREPORT )[0]
+        element = self.doc.getElementsByTagName(self.TASKREPORT )[0]
         mailArray = element.getAttribute(self.EMAIL).split( " " )
-	return mailArray
+        return mailArray
     
     #------------------------------------------------------------------------
     def getPercentTaskCompleted( self ):
     	if not self.init:
-		raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
+            raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
 	
         element = self.doc.getElementsByTagName(self.TASKREPORT )[0]
         return element.getAttribute( self.ENDED )
