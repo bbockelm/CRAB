@@ -378,6 +378,8 @@ class DBinterface:
 
                 ## unsing 'standardInput' field for 'ended' tag ['Y','N']
                 job['standardInput'] = str( rForJ.getAttribute('ended') )
+
+                job.runningJob['state'] = str( rForJ.getAttribute('action') )
           
             #if str( rForJ.getAttribute('resubmit') ).isdigit():
             #    job['submissionNumber'] = int(rForJ.getAttribute('resubmit'))
