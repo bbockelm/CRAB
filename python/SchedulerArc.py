@@ -295,12 +295,6 @@ class SchedulerArc(SchedulerGrid):
         return txt
 
 
-    def loggingInfo(self,list_id,outfile ):
-        """ return logging info about job nj """
-        return self.boss().LoggingInfo(list_id,outfile)
-
-
-
     def tags(self):
         sys.stderr.write("python/SchedulerArc.tags\n")
         return ''
