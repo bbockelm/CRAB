@@ -10,6 +10,7 @@ from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser, \
                                                       SEBlackWhiteListParser
 
 import sys
+import sha # Good for python 2.4, replaced with hashlib in 2.5
 
 #
 #  Naming convention:
@@ -24,6 +25,13 @@ class SchedulerArc(SchedulerGrid):
         self.OSBsize = 55000000
         return
 
+    def envUniqueID(self):
+        taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+        id = 'https://' + self.name() + '/' + taskHash + '/${NJob}'
+        msg = 'JobID for ML monitoring is created for ARC scheduler: %s' % id
+        common.logger.debug(5, msg)
+        return id
+
     def realSchedParams(self,cfg_params):
         """
         """
@@ -37,13 +45,7 @@ class SchedulerArc(SchedulerGrid):
         self.cfg_params = cfg_params
         Scheduler.configure(self,cfg_params)
 
-        # environment_unique_identifier will be used to set $MonitorJobID
-        # in the job. 
-        #
-        # FIXME: I'm not sure if this will work.  Maybe the identifier
-        # should adhere to some special format?  Is it OK to rely on SGE
-        # specific things like $SGE_O_HOST ?
-        self.environment_unique_identifier = '${SGE_O_HOST}-${HOME##*/}'
+        self.environment_unique_identifier = None
 
         # init BlackWhiteListParser
         seWhiteList = cfg_params.get('EDG.se_white_list',[])
