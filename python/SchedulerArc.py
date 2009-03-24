@@ -37,118 +37,17 @@ class SchedulerArc(SchedulerGrid):
         sys.stderr.write("python/SchedulerArc.realSchedParams\n")
         return {}
 
-    def configure(self, cfg_params):
-        print "python/SchedulerArc.configure - in"
-        print "cfg_params:", cfg_params
 
-        self.cfg_params = cfg_params
-        Scheduler.configure(self,cfg_params)
+    def configure(self,cfg_params):
 
+        if not os.environ.has_key('EDG_WL_LOCATION'):
+            # This is an ugly hack needed for SchedulerGrid.configure() to
+            # work!
+            os.environ['EDG_WL_LOCATION'] = ''
+
+        SchedulerGrid.configure(self, cfg_params)
         self.environment_unique_identifier = None
 
-        # init BlackWhiteListParser
-        seWhiteList = cfg_params.get('EDG.se_white_list',[])
-        seBlackList = cfg_params.get('EDG.se_black_list',[])
-        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
-
-        self.proxyValid=0
-        self.dontCheckProxy=int(cfg_params.get("EDG.dont_check_proxy",0))
-
-        self.proxyServer = cfg_params.get("EDG.proxy_server",'myproxy.cern.ch')
-        common.logger.debug(5,'Setting myproxy server to '+self.proxyServer)
-
-        self.group = cfg_params.get("EDG.group", None)
-
-        self.role = cfg_params.get("EDG.role", None)
-
-        removeT1bL = cfg_params.get("EDG.remove_default_blacklist", 0 )
-
-        T1_BL = ["fnal.gov", "gridka.de" ,"w-ce01.grid.sinica.edu.tw", "w-ce02.grid.sinica.edu.tw", "lcg00125.grid.sinica.edu.tw",\
-                  "gridpp.rl.ac.uk" , "cclcgceli03.in2p3.fr","cclcgceli04.in2p3.fr" , "pic.es", "cnaf"]
-        if int(removeT1bL) == 1:
-            T1_BL = []
-        self.EDG_ce_black_list = cfg_params.get('EDG.ce_black_list',None)
-        if (self.EDG_ce_black_list):
-            self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',') + T1_BL
-        else :
-            if int(removeT1bL) == 0: self.EDG_ce_black_list = T1_BL
-        self.EDG_ce_white_list = cfg_params.get('EDG.ce_white_list',None)
-        if (self.EDG_ce_white_list): self.EDG_ce_white_list = string.split(self.EDG_ce_white_list,',')
-
-
-        self.VO = cfg_params.get('EDG.virtual_organization','cms')
-
-        self.return_data = cfg_params.get('USER.return_data',0)
-
-        self.publish_data = cfg_params.get("USER.publish_data",0)
-
-        self.copy_data = cfg_params.get("USER.copy_data",0)
-        if int(self.copy_data) == 1:
-            self.SE = cfg_params.get('USER.storage_element',None)
-            if not self.SE:
-                msg = "Error. The [USER] section does not have 'storage_element'"
-                common.logger.message(msg)
-                raise CrabException(msg)
-
-        if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
-            msg = 'Error: return_data = 0 and copy_data = 0 ==> your exe output will be lost\n'
-            msg = msg + 'Please modify return_data and copy_data value in your crab.cfg file\n'
-            raise CrabException(msg)
-
-        if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
-            msg = 'Error: return_data and copy_data cannot be set both to 1\n'
-            msg = msg + 'Please modify return_data or copy_data value in your crab.cfg file\n'
-            raise CrabException(msg)
-
-        if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
-            msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
-            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
-            common.logger.message(msg)
-            raise CrabException(msg)
-
-        self.EDG_requirements = cfg_params.get('EDG.requirements',None)
-
-        self.EDG_addJdlParam = cfg_params.get('EDG.additional_jdl_parameters',None)
-        if (self.EDG_addJdlParam): self.EDG_addJdlParam = string.split(self.EDG_addJdlParam,';')
-
-        self.EDG_retry_count = cfg_params.get('EDG.retry_count',0)
-
-        self.EDG_shallow_retry_count= cfg_params.get('EDG.shallow_retry_count',-1)
-
-        self.EDG_clock_time = cfg_params.get('EDG.max_wall_clock_time',None)
-
-        # Default minimum CPU time to >= 130 minutes
-        self.EDG_cpu_time = cfg_params.get('EDG.max_cpu_time', '130')
-
-        self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
-        self.debugWrap=''
-        if self.debug_wrapper==1: self.debugWrap='--debug'
-
-        self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',0))
-
-        ## Add EDG_WL_LOCATION to the python path
-        #
-        #if not os.environ.has_key('EDG_WL_LOCATION'):
-        #    msg = "Error: the EDG_WL_LOCATION variable is not set."
-        #    raise CrabException(msg)
-        #path = os.environ['EDG_WL_LOCATION']
-        path = ''
-
-        libPath=os.path.join(path, "lib")
-        sys.path.append(libPath)
-        libPath=os.path.join(path, "lib", "python")
-        sys.path.append(libPath)
-
-        self.jobtypeName   = cfg_params.get('CRAB.jobtype','')
-        self.schedulerName = cfg_params.get('CRAB.scheduler','')
-
-        self.checkProxy()
-        return
-
-
-    #def rb_configure(self, RB):
-        # Since ARC doesn't have RB:s, parent's 'None'
-        # returning implementation ought to be fine for us.
 
     def ce_list(self):
         """
