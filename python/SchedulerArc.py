@@ -22,7 +22,6 @@ class SchedulerArc(SchedulerGrid):
     def __init__(self, name='ARC'):
         sys.stderr.write("python/SchedulerArc.__init__\n")
         SchedulerGrid.__init__(self,name)
-        self.OSBsize = 55000000
         return
 
     def envUniqueID(self):
@@ -266,23 +265,6 @@ class SchedulerArc(SchedulerGrid):
         # hack -- the "good" solution would be to add ARC-knowledge to
         # self.wsExitFunc_common())
         txt += "    final_list=${final_list%.BrokerInfo}\n" 
-
-        ### specific Glite check for OSB
-        txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
-        txt += '    tmp_size=`ls -gGrta ${out_files}.tgz | awk \'{ print $3 }\'`\n'
-        txt += '    rm ${out_files}.tgz\n'
-        txt += '    size=`expr $tmp_size`\n'
-        txt += '    echo "Total Output dimension: $size"\n'
-        txt += '    limit='+str(self.OSBsize) +' \n'
-        txt += '    echo "WARNING: output files size limit is set to: $limit"\n'
-        txt += '    if [ "$limit" -lt "$size" ]; then\n'
-        txt += '        exceed=1\n'
-        txt += '        job_exit_code=70000\n'
-        txt += '        echo "Output Sanbox too big. Produced output is lost "\n'
-        txt += '    else\n'
-        txt += '        exceed=0\n'
-        txt += '        echo "Total Output dimension $size is fine."\n'
-        txt += '    fi\n'
 
         txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
         txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
