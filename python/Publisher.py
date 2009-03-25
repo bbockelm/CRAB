@@ -234,7 +234,7 @@ class Publisher(Actor):
             Blocks=dbswriter.insertFiles(jobReport)
             common.logger.message("Inserting file in blocks = %s"%Blocks)
         except DBSWriterError, ex:
-            common.logger.error("Insert file error: %s"%ex)
+            common.logger.message("Insert file error: %s"%ex)
         return Blocks
 
     def run(self):
