@@ -65,7 +65,7 @@ if path == None:
 os.system("mkdir -p %s"%path)
 
 def log(target,msg):
-    logfilename = "%s-pidstatDBG.log"%target
+    logfilename = "%s-pidstat.log"%target
     path = "%s/HTTPFrontend/sensors"%os.environ.get("PRODAGENT_WORKDIR", None)
     FILE = open("%s/%s"%(path,logfilename),"a")
     FILE.writelines("%s   %s: %s\n"%(time.strftime('%d/%m/%y#%H:%M:%S'),int(time.time()),msg))
@@ -167,7 +167,7 @@ while True:
         FILE.writelines('{ print strftime("%m/%d/%y#%H:%M:%S   %s") "      " $6 "   " $7 "   " ($6+$7); fflush()}')
         FILE.close()
         awkCMD = ['awk', "--file", awkPRGfilename]
-        sensordOUT="%s/%s-pidstatDBG.dat"%(path,target)
+        sensordOUT="%s/%s-pidstat.dat"%(path,target)
         FILE = open(sensordOUT,"a")
         log(target,"%s | %s | %s >> %s"%(' '.join(sarCMD),' '.join(grepCMD),' '.join(awkCMD),sensordOUT))
         sarP = subprocess.Popen(sarCMD,bufsize=1,stdout=subprocess.PIPE);
