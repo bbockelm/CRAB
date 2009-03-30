@@ -390,7 +390,7 @@ def getUserName():
        common.logger.debug(10,"Using as username the Unix user name")
        UserName=UnixUserName()
     else :
-       UserName=gethnUserName()
+       UserName=gethnUserNameFromSiteDB() 
 
     return UserName
 
@@ -441,34 +441,6 @@ def gethnUserNameFromSiteDB():
         raise CrabException(msg)
     return hnUserName
 
-def gethnUserName():
-    """
-    cache the username extracted from SiteDB for 24hours
-    """
-    userconfigFileName="SiteDBusername.conf"
-    if not os.path.exists(userconfigFileName):
-        common.logger.debug(5,"Downloading from SiteDB username into %s"%userconfigFileName)
-        nameuser = gethnUserNameFromSiteDB()
-        userfile = open(userconfigFileName, 'w')
-        userfile.write(nameuser)
-        userfile.close()
-    else:
-        statinfo = os.stat(userconfigFileName)
-        ## if the file is older then 24 hours it is re-downloaded to update the configuration
-        oldness = 24*3600
-        if (time.time() - statinfo.st_ctime) > oldness:
-           common.logger.debug(5,"Downloading from SiteDB username into %s"%userconfigFileName)
-           nameuser = gethnUserNameFromSiteDB()
-           userfile = open(userconfigFileName, 'w')
-           userfile.write(nameuser)
-           userfile.close()
-        else:
-           userfile = open(userconfigFileName, 'r')
-           for line in userfile.readlines():
-               nameuser = line
-           userfile.close()
-           nameuser = string.strip(nameuser)
-    return nameuser
 ###################################################################33
 
 def numberFile(file, txt):
