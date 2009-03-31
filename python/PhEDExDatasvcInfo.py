@@ -58,11 +58,13 @@ class PhEDExDatasvcInfo:
             raise CrabException(msg)
         self.sched = common.scheduler.name().upper() 
         self.protocol = self.srm_version
+
+        self.forced_path = '/store/user/'
         if self.sched in ['CAF','LSF']:
             self.protocol = 'direct'
             self.SE = {'CAF':'caf.cern.ch', 'LSF':''}
-
-        self.forced_path = '/store/user/'
+            if self.sched == 'CAF': self.forced_path = '/store/caf/user/'
+            
         if not self.usePhedex: 
             self.forced_path = self.user_remote_dir
         return
