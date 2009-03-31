@@ -238,7 +238,7 @@ class Cmssw(JobType):
                             else:
                                 outfileflag = True #output found
                                 self.output_file.append(tfsOutput)
-                                common.logger.message("Adding "+tfsOutput+" to output files (from TFileService)")
+                                common.logger.message("Adding "+tfsOutput+" (from TFileService) to list of output files")
                             pass
                         pass
                     ## If present and requested, add PoolOutputModule to output files
@@ -249,7 +249,7 @@ class Cmssw(JobType):
                                 common.logger.debug(5,"Output from PoolOutputModule "+edmOutput+" already in output files")
                             else:
                                 self.output_file.append(edmOutput)
-                                common.logger.message("Adding "+edmOutput+" to output files (from PoolOutputModule)")
+                                common.logger.message("Adding "+edmOutput+" (from PoolOutputModule) to list of output files")
                             pass
                         pass
                 except CrabException:
