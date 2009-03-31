@@ -185,11 +185,8 @@ class DataDiscovery:
 
     def queryDbs(self,api,path=None,runselection=None,useParent=None):
  
-        allowedRetriveValue = [#'retrive_parent', 
-                               'retrive_block',
-                               #'retrive_lumi',
-                               'retrive_run'
-                               ]
+        allowedRetriveValue = ['retrive_block', 'retrive_run']
+        if useParent==1 : allowedRetriveValue = allowedRetriveValue + ['retrive_parent']
         try:
             if len(runselection) <=0 :
                 if useParent==1 or self.splitByRun==1 :
