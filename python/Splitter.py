@@ -290,11 +290,13 @@ class JobSplitter:
         screenOutput = "List of jobs and available destination sites:\n\n"
         noSiteBlock = []
         bloskNoSite = []
+        allBlock = []
 
         blockCounter = 0
         for block in blocks:
             if block in jobsOfBlock.keys() :
                 blockCounter += 1
+                allBlock.append( blockCounter )
                 screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),
                     ','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],[block]),[block])))
                 if len(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],[block]),[block])) == 0:
@@ -326,6 +328,9 @@ class JobSplitter:
                 msg += 'Please check if the dataset is available at this site!)\n'
 
             common.logger.message(msg)
+
+        if bloskNoSite == allBlock:
+            raise CrabException('No jobs created') 
 
         return
 
