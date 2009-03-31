@@ -140,7 +140,7 @@ class SubmitterServer( Submitter ):
         """
         Prepare configuration and Call credential API 
         """
-        common.logger.message("Registering credential to the server")
+        common.logger.message("Registering credential to the server : %s"%self.server_name)
         # only for temporary back-comp. 
         if  self.credentialType == 'Proxy': 
              # for proxy all works as before....
@@ -183,7 +183,6 @@ class SubmitterServer( Submitter ):
         ## Temporary... to remove soon  
         common.scheduler.checkProxy(minTime=100)
         try:
-            common.logger.message("Registering a valid proxy to the server:")
             flag = " --myproxy"
             cmd = 'asap-user-register --server '+str(self.server_name) + flag
             attempt = 3
