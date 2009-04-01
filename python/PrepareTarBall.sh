@@ -15,7 +15,7 @@ CRABtag=$tag
 DBSAPItag="DBS_2_0_6_pre8"
 DLSAPItag="DLS_1_1_0_IN2P3_XT"
 PRODCOMMONtag="PRODCOMMON_0_12_14_CRAB_2"
-WMCOREtag="WMCORE_0_1_1_pre5"
+WMCOREtag="WMCORE_0_1_1_pre6"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
