@@ -98,7 +98,7 @@ wget -nv -O ${MYTESTAREA}/CA_RPM_list.html http://glitesoft.cern.ch/LCG-CAs/curr
 CA_RPM_list=`grep rpm ${MYTESTAREA}/CA_RPM_list.html | sed 's/.*[^A-Za-z0-9\.\_\-]\(.*\.rpm\)[^A-Za-z0-9\.\_\-].*/\1/'`;
 rm -f ${MYTESTAREA}/CA_RPM_list.html
 
-LCG_RPM_list="lcg-vomscerts-5.1.0-1.noarch.rpm"
+LCG_RPM_list="lcg-vomscerts-5.4.0-1.noarch.rpm"
 VDT_RPM_list="vdt_globus_essentials-VDT1.6.0x86_rhas_4-1.i386.rpm myproxy-VDT1.6.0x86_rhas_4-1.i386.rpm"
 API2_RPM_list="glite-security-voms-api-c-1.8.3-4.slc4.i386.rpm"
 #API_RPM_list="glite-security-voms-api-c-1.7.16-2.slc4.i386.rpm gridsite-shared-1.1.18.1-1.i386.rpm"
@@ -128,7 +128,8 @@ done
 
 echo "*** Downloading to $MYTESTAREA/RPMs the RPMs :"; echo $API2_RPM_list;
 for arpm in $API2_RPM_list; do
-    wget -nv -O $MYTESTAREA/RPMs/$arpm http://grid-it.cnaf.infn.it/mrepo/glite-cert_sl4-x86_64/RPMS.wn-updates/$arpm
+#    wget -nv -O $MYTESTAREA/RPMs/$arpm http://grid-it.cnaf.infn.it/mrepo/glite-cert_sl4-x86_64/RPMS.wn-updates/$arpm
+    wget -nv -O $MYTESTAREA/RPMs/$arpm http://linuxsoft.cern.ch/EGEE/gLite/R3.1/glite-WMS/sl4/i386/RPMS.updates/$arpm
 done
 
 echo "*** Downloading to $MYTESTAREA/RPMs the RPMs :"; echo $API_RPM_list;
