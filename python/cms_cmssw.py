@@ -890,32 +890,40 @@ class Cmssw(JobType):
         """
         insert the part of the script that modifies the FrameworkJob Report
         """
-        txt = '\n#Written by cms_cmssw::wsModifyReport\n'
-        publish_data = int(self.cfg_params.get('USER.publish_data',0))
-        if (publish_data == 1):
 
-            processedDataset = self.cfg_params['USER.publish_data_name']
+        txt = ''
+        if (self.copy_data == 1):
+            txt = '\n#Written by cms_cmssw::wsModifyReport\n'
+            publish_data = int(self.cfg_params.get('USER.publish_data',0))
+        
 
             txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'
             txt += '    FOR_LFN=$LFNBaseName\n'
             txt += 'else\n'
             txt += '    FOR_LFN=/copy_problems/ \n'
-            txt += '    SE=""\n'
-            txt += '    SE_PATH=""\n'
+            #txt += '    func_exit\n'
+            #txt += '    SE=""\n'
+            #txt += '    SE_PATH=""\n'
             txt += 'fi\n'
 
             txt += 'echo ">>> Modify Job Report:" \n'
             txt += 'chmod a+x $RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
-            txt += 'ProcessedDataset='+processedDataset+'\n'
-            #txt += 'ProcessedDataset=$procDataset \n'
-            txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
             txt += 'echo "SE = $SE"\n'
             txt += 'echo "SE_PATH = $SE_PATH"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-            args = '$RUNTIME_AREA/crab_fjr_$NJob.xml $NJob $FOR_LFN $PrimaryDataset $DataTier ' \
-                   '$USER-$ProcessedDataset-$PSETHASH $ApplicationFamily '+ \
-                    '  $executable $CMSSW_VERSION $PSETHASH $SE $SE_PATH'
+
+            txt += 'echo "cat dell xml"\n'
+            txt += 'cat $RUNTIME_AREA/crab_fjr_$NJob.xml \n'
+            txt += 'echo "fine cat xml" \n'
+
+            args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH'
+            if (publish_data == 1):
+                processedDataset = self.cfg_params['USER.publish_data_name']
+                txt += 'ProcessedDataset='+processedDataset+'\n'
+                txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
+                args += ' UserProcessedDataset $USER-$ProcessedDataset-$PSETHASH'
+
             txt += 'echo "$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)+'"\n'
             txt += '$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)+'\n'
             txt += 'modifyReport_result=$?\n'
@@ -928,7 +936,7 @@ class Cmssw(JobType):
             txt += '    mv NewFrameworkJobReport.xml $RUNTIME_AREA/crab_fjr_$NJob.xml\n'
             txt += 'fi\n'
         return txt
-
+        
     def wsParseFJR(self):
         """
         Parse the FrameworkJobReport to obtain useful infos
