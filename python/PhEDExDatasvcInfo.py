@@ -15,7 +15,7 @@ class PhEDExDatasvcInfo:
         self.datasvc_url = cfg_params.get("USER.datasvc_url",url)
 
         self.FacOps_savannah = 'https://savannah.cern.ch/support/?func=additem&group=cmscompinfrasup'
-        stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabFaq#How_to_store_output_with_CRAB_2'
+        stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo#Stageout_and_publication' 
         self.dataPub_faq = 'https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabForPublication'
 
         self.srm_version = cfg_params.get("USER.srm_version",'srmv2')
