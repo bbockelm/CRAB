@@ -85,7 +85,7 @@ The CRAB commands are exactly the same in both cases.
 
 CRAB web page is available at
 
-I<http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/>
+I<https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrab>
 
 =head1 HOW TO RUN CRAB FOR THE IMPATIENT USER
 
@@ -142,6 +142,39 @@ The most important parameters are the following (see below for complete descript
 You must have a valid voms-enabled Grid proxy. See CRAB web page for details.
 
 =back
+
+=head1 RUNNING MULTICRAB
+
+MultiCRAB is a CRAB extension to submit the same job to multiple datasets in one go. 
+
+The use case for multicrab is when you have your analysis code that you want to run on several datasets, typically some signals plus some backgrounds (for MC studies) 
+or on different streams/configuration/runs for real data taking. You want to run exactly the same code, and also the crab.cfg are different only for few keys:
+for sure datasetpath but also other keys, such as eg total_number_of_events, in case you want to run on all signals but only a fraction of background, or anything else. 
+So far, you would have to create a set of crab.cfg, one for each dataset you want to access, and submit several instances of CRAB, saving the output to different locations.
+Multicrab is meant to automatize this procedure.
+In addition to the usual crab.cfg, there is a new configuration file called multicrab.cfg. The syntax is very similar to that of crab.cfg, namely
+[SECTION]   <crab.cfg Section>.Key=Value
+
+Please note that it is mandatory to add explicitly the crab.cfg [SECTION] in front of [KEY].
+The role of multicrab.cfg is to apply modification to the template crab.cfg, some which are common to all tasks, and some which are task specific.
+
+=head2  So there are two sections:
+
+=over 2
+
+=item B<[COMMON]> 
+
+section: which applies to all task, and which is fully equivalent to modify directly the template crab.cfg
+
+=item B<[DATASET]> 
+
+section: there could be an arbitrary number of sections, one for each dataset you want to run. The names are free (but COMMON and MULTICRAB), and they will be used as ui_working_dir for the task as well as an appendix to the user_remote_dir in case of output copy to remote SE. So, the task corresponding to section, say [SIGNAL] will be placed in directory SIGNAL, and the output will be put on /SIGNAL/, so SIGNAL will be added as last subdir in the user_remote_dir. 
+
+=back
+
+For further details please visit
+
+I<https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMultiCrab>
 
 =head1 HOW TO RUN ON CONDOR-G
 
@@ -630,7 +663,7 @@ CRAB enforce the T1s Computing Eelements Black List. By default it is appended t
 
 =item B<virtual_organization>
 
-You don\'t want to change this: it\'s cms!
+You do not want to change this: it is cms!
 
 =item B<retry_count>
 
