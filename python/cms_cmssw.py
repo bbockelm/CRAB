@@ -518,7 +518,7 @@ class Cmssw(JobType):
         txt += 'echo ">>> setup environment"\n'
         txt += 'if [ $middleware == LCG ]; then \n'
         txt += self.wsSetupCMSLCGEnvironment_()
-        txt += 'elif [ $middleware == OSG ]; then\n'
+        txt += 'if [ $middleware == OSG ]; then\n'
         txt += '    WORKING_DIR=`/bin/mktemp  -d $OSG_WN_TMP/cms_XXXXXXXXXXXX`\n'
         txt += '    if [ ! $? == 0 ] ;then\n'
         txt += '        echo "ERROR ==> OSG $WORKING_DIR could not be created on WN `hostname`"\n'
@@ -531,6 +531,10 @@ class Cmssw(JobType):
         txt += '    cd $WORKING_DIR\n'
         txt += '    echo ">>> current directory (WORKING_DIR): $WORKING_DIR"\n'
         txt += self.wsSetupCMSOSGEnvironment_()
+        #Setup SGE Environment
+        txt += 'elif [ $middleware == SGE ]; then\n' 
+        txt += self.wsSetupCMSLCGEnvironment_()
+
         txt += 'fi\n'
 
         # Prepare JobType-specific part

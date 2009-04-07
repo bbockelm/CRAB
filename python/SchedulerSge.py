@@ -1,359 +1,171 @@
-#!/usr/bin/env python
-"""
-basic SGE CLI interaction class
-"""
+from Scheduler import Scheduler
+from SchedulerLocal import SchedulerLocal
+from crab_exceptions import *
+from crab_util import *
+from crab_logger import Logger
+import common
 
-__revision__ = "$Id: SchedulerSge.py,v 1.5 2009/01/20 18:49:45 gcodispo Exp $"
-__version__ = "$Revision: 1.5 $"
+import os,string
 
-import re, os
+#
+#  Naming convention:
+#  methods starting with 'ws' are responsible to provide
+#  corresponding part of the job script ('ws' stands for 'write script').
+#
+# Author: Hartmut Stadie <stadie@mail.desy.de> Inst. f. Experimentalphysik; Universitaet Hamburg
+#
 
-from ProdCommon.BossLite.Scheduler.SchedulerInterface import SchedulerInterface
-from ProdCommon.BossLite.Common.Exceptions import SchedulerError
-from ProdCommon.BossLite.DbObjects.Job import Job
-from ProdCommon.BossLite.DbObjects.Task import Task
-from ProdCommon.BossLite.DbObjects.RunningJob import RunningJob
+class SchedulerSge(SchedulerLocal) :
 
-class SchedulerSge (SchedulerInterface) :
-    """
-    basic class to handle sge jobs
-    """
-    def __init__( self, **args):
-
-        # call super class init method
-        super(SchedulerSge, self).__init__(**args)
-        self.statusMap = {
-            'd':'K',
-            'E':'DA',
-            'h':'R',
-            'r':'R',
-            'R':'R',
-            's':'R',
-            'S':'R',
-            't':'SS',
-            'T':'R',
-            'w':'R',
-            'qw':'R',
-            'Eqw':'K',
-            'DONE':'SD'
-            }
-  
-        
-    def checkUserProxy( self, cert='' ):
+    def __init__(self):
+        Scheduler.__init__(self,"SGE")
+        self.datasetPath   = None
+        self.selectNoInput = None
         return
 
-    def jobDescription ( self, obj, requirements='', config='', service = '' ):
-        """
-        retrieve scheduler specific job description
-        return it as a string
-        """
-        args='' 
-        if type(obj) == RunningJob or type(obj) == Job:
-            return self.decode(obj, requirements)
-        elif type(obj) == Task :
-            task = obj
-            for job in task.getJobs() :
-                args += self.decode(job, task, requirements)+'  \n'
-            return args 
+    def configure(self, cfg_params):
+        SchedulerLocal.configure(self, cfg_params)
 
-
-    def submit ( self, obj, requirements='', config='', service = '' ) :
-        """
-        set up submission parameters and submit
-
-        return jobAttributes, bulkId, service
-
-        - jobAttributs is a map of the format
-              jobAttributes[ 'name' : 'schedulerId' ]
-        - bulkId is an eventual bulk submission identifier
-        - service is a endpoit to connect withs (such as the WMS)
-        """
-
-        #print "config"+config
-        if type(obj) == RunningJob or type(obj) == Job:
-            return self.submitJob(obj, requirements)
-        elif type(obj) == Task :
-            return self.submitTask (obj, requirements ) 
-
-    def submitTask ( self, task, requirements=''):
-        ret_map={}
-        for job in task.getJobs() :
-            map, taskId, queue = self.submitJob(job, task, requirements)
-            ret_map.update(map)
-
-        return ret_map, taskId, queue
-
-    def submitJob ( self, job, task=None, requirements=''):
-        """Need to copy the inputsandbox to WN before submitting a job"""
-        
-        arg = self.decode(job, task, requirements )
-
-        command = "qsub " + arg 
-        #print command + "\n"
-        out, ret = self.ExecuteCommand(command)
-        #print "out:" + out + "\n"
-        r = re.compile("Your job (\d+) .* has been submitted")
-
-        m= r.search(out)
-        if m is not None:
-            jobId =m.group(1)
-            command = "qstat -j " +  jobId
-            #out, ret = self.ExecuteCommand(command)
-            #print "out:" + out + "\n"
-            #queue = m.group(2)
-            queue = "all"
-        else:
-            #rNot = re.compile("Job not submitted.*<(\w+)>")
-            #m= rNot.search(out)
-            #if m is not None:
-            #    print m
-            #    print "Job NOT submitted"
-            #    print out
-            raise SchedulerError('error', out)
-        taskId = None 
-        #print "Your job identifier is: ", taskId, queue
-        map={ job[ 'name' ] : jobId }
-        return map, taskId, queue
-
-
-    def decode (self, job, task=None, requirements='' , config ='', service='' ):
-        """
-        prepare file for submission
-        """
-
-        txt = "#batch script for SGE jobs\n"
-        txt += "MYTMPDIR=$TMP/$JOB_NAME\n"
-        txt += "mkdir -p $MYTMPDIR \n"
-        txt += "cd $MYTMPDIR\n"
-        # Need to copy InputSandBox to WN
-        if task:
-            subDir=task[ 'startDirectory' ]
-            for inpFile in task[ 'globalSandbox' ].split(','):
-                #txt += "cp "+subDir+inpFile+" . \n"
-                txt += "cp "+inpFile+" . \n"
-        ## Job specific ISB
-        #for inpFile in job[ 'inputFiles' ]:
-        #    if inpFile != '': txt += self.cpCmd+" "+self.rfioSer+"/"+inpFile+" . \n"
-
-        ## Now the actual wrapper
-        args = job[ 'arguments' ]
-        exe = job[ 'executable' ]
-        txt += "./"+os.path.basename(exe)+" "+args+"\n"
-        
-        ## And finally copy back the output
-        outputDir=task['outputDirectory']
-        for outFile in job['outputFiles']:
-            #print "outputFile:"+outFile
-            txt += "cp "+outFile+" "+outputDir+"/. \n"
-
-        txt += "cd $SGE_O_HOME\n"
-        txt += "rm -rf $MYTMPDIR\n"
-        arg = ""
-        if job[ 'standardInput' ] != '':
-            arg += ' -i %s ' % job[ 'standardInput' ]
-            
-        #delete old log files as SGE will append to the file     
-        if os.path.exists(job[ 'standardOutput' ]):
-            os.remove(job[ 'standardOutput' ])
-            
-        if os.path.exists(job[ 'standardError' ]):
-            os.remove(job[ 'standardError' ])
-            
-        arg += ' -o %s ' % job[ 'standardOutput' ]
-        arg += ' -e %s ' % job[ 'standardError' ]
-
- #       jobrundir = outputDir
- #       jobrundir += "/%s" % job['id']
- #       if not os.path.exists(jobrundir):
- #           os.mkdir(jobrundir)
-            
-        arg +='-wd '+outputDir+ ' '
- #       txt += "rm -rf "+jobrundir+"\n"
-        # blindly append user requirements
-        arg += requirements
-        arg += '-N '+task[ 'name' ]+' '
-        #create job script
-        f = open(outputDir+'/batchscript', 'wc')
-        f.write("#!/bin/sh\n")
-        f.write(txt)
-        f.close()
-        
-        # and finally the wrapper
-        #arg +=  '  %s ' % txt
-        arg += outputDir+"/batchscript"
-        return arg 
-
-
-    ##########################################################################
-    def query(self, obj, service='', objType='node') :
-        """
-        query status and eventually other scheduler related information
-        """
-
-        # the object passed is a Task:
-        #   check whether parent id are provided, make a list of ids
-        #     and check the status
-        if type(obj) == Task :
-            schedIds = []
-
-            # query performed through single job ids
-            if objType == 'node' :
-                for job in obj.jobs :
-                    if self.valid( job.runningJob ) and \
-                           job.runningJob['status'] != 'SD':
-                        schedIds.append( job.runningJob['schedulerId'] )
-                jobAttributes = self.queryLocal( schedIds, objType )
-
-            # query performed through a bulk id
-            elif objType == 'parent' :
-                for job in obj.jobs :
-                    if self.valid( job.runningJob ) \
-                      and job.runningJob['status'] != 'SD' \
-                      and job.runningJob['schedulerParentId'] not in schedIds:
-                        schedIds.append( job.runningJob['schedulerParentId'] )
-                jobAttributes = self.queryLocal( schedIds, objType )
-
-            # status association
-            for job in obj.jobs :
-                try:
-                    valuesMap = jobAttributes[ job.runningJob['schedulerId'] ]
-                except:
-                    continue
-                for key, value in valuesMap.iteritems() :
-                    job.runningJob[key] = value
-
-        # unknown object type
-        else:
-            raise SchedulerError('wrong argument type', str( type(obj) ))
-
-
-
-    def queryLocal(self, schedIdList, objType='node' ) :
-
-        """
-        query status and eventually other scheduler related information
-        It may use single 'node' scheduler id or bulk id for association
-        
-        return jobAttributes
-
-        where jobAttributes is a map of the format:
-           jobAttributes[ schedId :
-                                    [ key : val ]
-                        ]
-           where key can be any parameter of the Job object and at least status
-                        
-        """
-        ret_map={}
-        #print schedIdList, service, objType
-        r = re.compile("(\d+) .* "+os.getlogin()+" \W+(\w+) .* (\S+)@(\w+)")
-        rnohost = re.compile("(\d+) .* "+os.getlogin()+" \W+(\w+) ")
-        cmd='qstat -u '+os.getlogin()
-        #print cmd
-        out, ret = self.ExecuteCommand(cmd)
-        #print "<"+out+">"
-        for line in out.split('\n'):
-            #print line
-            queue=None
-            host=None
-            id=None
-            st=None
-            mfull= r.search(line)
-            if (mfull):
-                #print "matched"
-                id,st,queue,host=mfull.groups()
+        try:
+            tmp =  cfg_params['CMSSW.datasetpath']
+            if tmp.lower() == 'none':
+                self.datasetPath = None
+                self.selectNoInput = 1
             else:
-                mnohost = rnohost.search(line)
-                if (mnohost):
-                    id,st = mnohost.groups()
-                    pass
-                pass
-            #print "got id %s" % id
-            if(id) and (id in schedIdList):
-                map={}
-                map[ 'status' ] = self.statusMap[st]
-                map[ 'statusScheduler' ] = st
-                if (host): map[ 'destination' ] = host
-                ret_map[id]=map
-                #print "set state to "+map['statusScheduler']
-                pass
+                self.datasetPath = tmp
+                self.selectNoInput = 0
+        except KeyError:
+            msg = "Error: datasetpath not defined "
+            raise CrabException(msg)
+
+        self.return_data = cfg_params.get('USER.return_data', 0)
+        self.copy_data   = cfg_params.get("USER.copy_data", 0)
+
+        if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
+            msg = 'Error: return_data and copy_data cannot be set both to 0\n'
+            msg = msg + 'Please modify your crab.cfg file\n'
+            raise CrabException(msg)
+
+        if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
+            msg = 'Error: return_data and copy_data cannot be set both to 1\n'
+            msg = msg + 'Please modify your crab.cfg file\n'
+            raise CrabException(msg)
+
+        if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
+            msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
+            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
+            common.logger.message(msg)
+            raise CrabException(msg)
+
+        if int(self.copy_data) == 1:
+            self.SE = cfg_params.get('USER.storage_element', None)
+            if not self.SE:
+                msg = "Error. The [USER] section has no 'storage_element'"
+                common.logger.message(msg)
+                raise CrabException(msg)
+
+            self.proxyValid = 0
+            self.dontCheckProxy = int(cfg_params.get("EDG.dont_check_proxy",0))
+            self.proxyServer = cfg_params.get("EDG.proxy_server",'myproxy.cern.ch')
+            common.logger.debug(5,'Setting myproxy server to ' + self.proxyServer)
+
+            self.group = cfg_params.get("EDG.group", None)
+            self.role  = cfg_params.get("EDG.role", None)
+            self.VO    = cfg_params.get('EDG.virtual_organization', 'cms')
+
+            self.checkProxy()
+
+        self.role = None
+
+        self.pool = cfg_params.get('USER.storage_pool',None)
+#        self.cpu = cfg_params.get('USER.cpu',172800)
+#        self.vmem = cfg_params.get('USER.vmem',2)
+        return
+
+    def envUniqueID(self):
+        id = "https://"+common.scheduler.name()+":/${JOB_ID}-"+ \
+            string.replace(common._db.queryTask('name'),"_","-")
+        return id
+
+    def realSchedParams(self,cfg_params):
+        """
+        Return dictionary with specific parameters, to use
+        with real scheduler
+        """
+        params = {}
+        return  params
+
+    def sched_parameter(self,i,task):
+        """
+        Returns parameter scheduler-specific, to use with BOSS .
+        """
+        index = int(common._db.nJobs()) - 1
+        sched_param= ''
+
+        for i in range(index): # Add loop DS
+            sched_param= ''
+            if (self.queue):
+                sched_param += '-q '+self.queue +' '
+                if (self.res): sched_param += ' -l '+self.res +' '
             pass
-        
-        #set all missing jobs to done
-        for jobid in schedIdList:
-            jobid = jobid.strip()
-            if not jobid in ret_map:
-                #print "job "+jobid+" not found in qstat list setting to DONE"
-                id = jobid
-                st = "DONE"
-                map={}
-                map[ 'status' ] = self.statusMap[st]
-                map[ 'statusScheduler' ]= st
-                ret_map[id]=map
-                pass
-            pass
-        
-        return ret_map
-    
 
-    def getOutput( self, obj, outdir):
-        """
-        retrieve output or just put it in the destination directory
+        #default is request 2G memory and 48 hours CPU time
+        #sched_param += ' -V -l h_vmem=2G -l h_cpu=172800 '
+#        sched_param += ' -V -l h_vmem='
+#        sched_param += self.vmem.__str__()
+#        sched_param += 'G -l h_cpu='
+#        sched_param += self.cpu.__str__()
+#        sched_param += ' '
 
-        does not return
-        """
-        #output ends up in the wrong location with a user defined
-        #output directory...Thus we have to move it to the correct
-        #directory here....
-        #print "SchedulerSGE:getOutput called!"
-            
-        if type(obj) == Task :
-            oldoutdir=obj[ 'outputDirectory' ]
-            if(outdir != oldoutdir):
-                for job in obj.jobs:
-                    jobid = job[ 'id' ];
-                    #print "job:"+str(jobid)
-                    if self.valid( job.runningJob ):
-                        #print "is valid"                       
-                        for outFile in job['outputFiles']:
-                            #print "outputFile:"+outFile
-                            command = "mv "+oldoutdir+"/"+outFile+" "+outdir+"/. \n"
-                            #print command
-                            out, ret = self.ExecuteCommand(command)
-                            if (out!=""):
-                                raise SchedulerError('unable to move file', out)
-                                #raise SchedulerError("unable to move file "+oldoutdir+"/"+outFile+" ",out)
-                            pass
-                        pass
-                    pass
-                pass
-            pass
-        
+        return sched_param
 
-    def kill( self, obj ):
-        """
-        kill the job instance
+    def loggingInfo(self, id):
+        """ return logging info about job nj """
+        print "Warning: SchedulerSge::loggingInfo not implemented!"
+        return ""
 
-        does not return
+    def wsExitFunc(self):
         """
-        r = re.compile("has registered the job (\d+) for deletion")
-        rFinished = re.compile("Job <(\d+)>: Job has already finished")
-        # for jobid in schedIdList:
-        for job in obj.jobs:
-            if not self.valid( job.runningJob ):
-                continue
-            jobid = str( job.runningJob[ 'schedulerId' ] ).strip()
-            cmd='qdel '+str(jobid)
-            out, ret = self.ExecuteCommand(cmd)
-            #print "kill:"+out
-            mKilled= r.search(out)
-            if not mKilled:
-                raise SchedulerError ( "Unable to kill job "+jobid+" . Reason: ", out )
-            pass
-        pass
+        """
+        txt = '\n'
 
-    def postMortem ( self, schedIdList, outfile, service ) :
-        """
-        execute any post mortem command such as logging-info
-        and write it in outfile
-        """
+        txt += '#\n'
+        txt += '# EXECUTE THIS FUNCTION BEFORE EXIT \n'
+        txt += '#\n\n'
 
+        txt += 'func_exit() { \n'
+        txt += self.wsExitFunc_common()
+
+        txt += '    cp ${SGE_STDOUT_PATH} CMSSW_${NJob}.stdout \n'
+        txt += '    cp ${SGE_STDERR_PATH} CMSSW_${NJob}.stderr \n'
+        txt += '    tar zcvf ${out_files}.tgz  ${filesToCheck}\n'
+        txt += '    exit $job_exit_code\n'
+        txt += '}\n'
+
+        return txt
+
+    def listMatch(self, dest, full):
+        """
+        """
+        #if len(dest)!=0:
+        sites = [self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')]
+        #else:
+        #    sites = [str(getLocalDomain(self))]
+        return sites
+
+    def wsCopyOutput(self):
+        txt=self.wsCopyOutput_comm(self.pool)
+        return txt
+
+    def userName(self):
+        """ return the user name """
+
+        ## hack for german naf
+        import pwd,getpass
+        tmp=pwd.getpwnam(getpass.getuser())[4]
+        tmp=tmp.rstrip(',')
+        tmp=tmp.rstrip(',')
+        tmp=tmp.rstrip(',')
+
+
+        return "/CN="+tmp.strip()
