@@ -518,7 +518,7 @@ class Cmssw(JobType):
         txt += 'echo ">>> setup environment"\n'
         txt += 'if [ $middleware == LCG ]; then \n'
         txt += self.wsSetupCMSLCGEnvironment_()
-        txt += 'if [ $middleware == OSG ]; then\n'
+        txt += 'elif [ $middleware == OSG ]; then\n'
         txt += '    WORKING_DIR=`/bin/mktemp  -d $OSG_WN_TMP/cms_XXXXXXXXXXXX`\n'
         txt += '    if [ ! $? == 0 ] ;then\n'
         txt += '        echo "ERROR ==> OSG $WORKING_DIR could not be created on WN `hostname`"\n'
@@ -532,7 +532,7 @@ class Cmssw(JobType):
         txt += '    echo ">>> current directory (WORKING_DIR): $WORKING_DIR"\n'
         txt += self.wsSetupCMSOSGEnvironment_()
         #Setup SGE Environment
-        txt += 'elif [ $middleware == SGE ]; then\n' 
+        txt += 'elif [ $middleware == SGE ]; then\n'
         txt += self.wsSetupCMSLCGEnvironment_()
 
         txt += 'fi\n'
@@ -899,7 +899,7 @@ class Cmssw(JobType):
         if (self.copy_data == 1):
             txt = '\n#Written by cms_cmssw::wsModifyReport\n'
             publish_data = int(self.cfg_params.get('USER.publish_data',0))
-        
+
 
             txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'
             txt += '    FOR_LFN=$LFNBaseName\n'
@@ -940,7 +940,7 @@ class Cmssw(JobType):
             txt += '    mv NewFrameworkJobReport.xml $RUNTIME_AREA/crab_fjr_$NJob.xml\n'
             txt += 'fi\n'
         return txt
-        
+
     def wsParseFJR(self):
         """
         Parse the FrameworkJobReport to obtain useful infos
