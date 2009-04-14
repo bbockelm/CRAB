@@ -21,6 +21,10 @@ pthread_cond_t queue_cv;
 
 pthread_mutex_t status_cs;
 
+// Fix:synchronize access of threads to shared ressources on backend  
+pthread_mutex_t shared_rs;
+
+
 // global var for backend loading
 PyObject *pClass;
 PyObject *pInstance;
@@ -109,6 +113,11 @@ int run_service(int port, char* logFile)
 
 	pthread_mutex_init(&queue_cs, NULL); 
 	pthread_cond_init(&queue_cv, NULL); 
+
+
+        // Fix
+        pthread_mutex_init(&shared_rs, NULL);
+
 	for (i = 0; i < MAX_THR; i++) 
 	{ 
 		soap_thr[i] = soap_copy(&soap); 
@@ -168,6 +177,10 @@ int run_service(int port, char* logFile)
 
 	pthread_mutex_destroy(&queue_cs); 
 	pthread_cond_destroy(&queue_cv); 
+
+        //Fix
+        pthread_mutex_destroy(&shared_rs);
+
 	soap_done(&soap); 
 	fclose(wslog);
 	return 0; 
@@ -257,33 +270,51 @@ int ns1__transferTaskAndSubmit(struct soap *soap, struct ns1__transferTaskType *
         int res;
 	time_t rawtime;
 
+
+
         locTemp = pInstance;
 
+        
         // Parse input data
 	taskDescriptor = transferTaskAndSubmitRequest->taskDescriptor;
 	cmdDescriptor = transferTaskAndSubmitRequest->cmdDescriptor;
 	UUID = transferTaskAndSubmitRequest->uuid;
+
+        // fprintf(stdout, "DEBUG -----TaskSubmit %s \n", UUID );
 
 	if (locTemp == NULL)
 	{
                 PyErr_Print();
                 fprintf(stderr, "Error while instantiating gway_transferTaskAndSubmit\n");
                 res = -1;
+ 
 	}
 	else
 	{
+                //Fix
+                pthread_mutex_lock(&shared_rs);
 		pResult = PyObject_CallMethod(locTemp, "gway_transferTaskAndSubmit", "(sss)", taskDescriptor, cmdDescriptor, UUID);
+
+
+                //Fix
+                pthread_mutex_unlock(&shared_rs);
+
        		if (pResult == NULL)
 	        {
 			PyErr_Print();
 			fprintf(stderr, "Error while calling gway_transferTaskAndSubmit\n");
 			res = -1;
+
        		} 
 		else 
 		{
+
                 	res = PyInt_AsLong(pResult);
 			Py_XDECREF(pResult);
+
 		}
+
+
 	}
 
 	// parse back the response code to SOAP
@@ -300,6 +331,7 @@ int ns1__transferTaskAndSubmit(struct soap *soap, struct ns1__transferTaskType *
 
         time(&rawtime);
 	fprintf(stdout, "TransferTaskAndSubmit RPC (%s) TStamp: %s", _param_1->transferTaskAndSubmitResponse, asctime(localtime(&rawtime)) );
+
 	return SOAP_OK;
 }
 
@@ -319,6 +351,8 @@ int ns1__sendCommand(struct soap *soap, struct ns1__sendCommandType *sendCommand
 	cmdDescriptor = sendCommandRequest->cmdDescriptor;
 	UUID = sendCommandRequest->uuid;
 
+        // fprintf(stdout, "DEBUG -----sendCommand %s \n", UUID );
+
         if (locTemp == NULL)
         {
                 PyErr_Print();
@@ -327,7 +361,12 @@ int ns1__sendCommand(struct soap *soap, struct ns1__sendCommandType *sendCommand
         }
 	else
 	{
+                // Fix 
+                pthread_mutex_lock(&shared_rs);
 		pResult = PyObject_CallMethod(locTemp, "gway_sendCommand", "(ss)", cmdDescriptor, UUID);
+                // Fix
+                pthread_mutex_unlock(&shared_rs);
+
 		if (pResult == NULL)
 		{
 			PyErr_Print();
@@ -353,6 +392,7 @@ int ns1__sendCommand(struct soap *soap, struct ns1__sendCommandType *sendCommand
 
 	time(&rawtime);
         fprintf(stdout, "SendCommand RPC (%s) TStamp: %s", _param_2->sendCommandResponse, asctime(localtime(&rawtime)) );
+
         return SOAP_OK;
 }
 
@@ -366,6 +406,8 @@ int ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatusType *getTask
 	char* res; //[ 8192*16 ];
         time_t rawtime;
 
+
+   
         locTemp = pInstance;
 	//res = NULL;
         pthread_mutex_lock(&status_cs); //TODO
@@ -373,7 +415,7 @@ int ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatusType *getTask
         statusFamilyType = getTaskStatusRequest->statusType;
         UUID = getTaskStatusRequest->uuid;
 
-        //fprintf(stdout, "DEBUG ----- %s %s", statusFamilyType, UUID );
+        //fprintf(stdout, "DEBUG ----- TaskStatus %s %s\n", statusFamilyType, UUID );
 
 	if (locTemp == NULL)
 	{
@@ -383,12 +425,18 @@ int ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatusType *getTask
         }
         else
         {
+                //Fix
+                pthread_mutex_lock(&shared_rs);
 		pResult = PyObject_CallMethod(locTemp, "gway_getTaskStatus", "(ss)", statusFamilyType, UUID);
+                //Fix
+                pthread_mutex_unlock(&shared_rs);
+
 		if (pResult == NULL)
 		{
 			PyErr_Print();
 			fprintf(stderr, "Error while calling gway_getTaskStatus\n");
 			strcpy(res , "\n");
+                        
 		} 
 		else 
 		{
@@ -397,6 +445,7 @@ int ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatusType *getTask
 			strncpy(res, PyString_AsString(pResult), len);
                         res[len+1] = '\0';
                         Py_XDECREF(pResult);
+                        
                 }
 	}
 
@@ -421,13 +470,15 @@ int ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatusType *getTask
 	}
 
         // FREE EACH TIME THE DYNAMIC ALLOCATED MEMORY --> shouldn't cause problem if NULL
-        fprintf(stdout, "Free memory...");
+        fprintf(stdout, "Free memory...\n");
         free(res);
 
         pthread_mutex_unlock(&status_cs); //TODO
 
 	time(&rawtime);
 	fprintf(stdout, "GetTaskStatus RPC (len=%d) TStamp: %s", strlen(_param_3->getTaskStatusResponse), asctime(localtime(&rawtime)) );
+
+
 	return SOAP_OK;
 }
 
