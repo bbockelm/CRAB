@@ -917,9 +917,6 @@ class Cmssw(JobType):
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
 
-            txt += 'echo "cat dell xml"\n'
-            txt += 'cat $RUNTIME_AREA/crab_fjr_$NJob.xml \n'
-            txt += 'echo "fine cat xml" \n'
 
             args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH'
             if (publish_data == 1):
