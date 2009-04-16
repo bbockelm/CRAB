@@ -156,7 +156,7 @@ class ScriptWriter:
         args = job.type().executableArgs()
 
         txt  = ''
-        txt += 'CRAB_EXE_CPU_TIME=-1 \n'
+        txt += 'CPU_INFOS=-1 \n'
         # NO carriage return for this line #Fabio 
         txt += '/usr/bin/time -f \"%U %S %P\" -o cpu_timing.txt '
         txt += '$executable '+args+'\n'
