@@ -87,9 +87,8 @@ class Cmssw(JobType):
             self.selectNoInput = 0
 
         self.dataTiers = []
-        self.debugWrap = ''
-        self.debug_wrapper = cfg_params.get('USER.debug_wrapper',False)
-        if self.debug_wrapper: self.debugWrap='--debug'
+        self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
+        if self.debug_wrapper == 1: self.debugWrap='--debug'
         ## now the application
         self.managedGenerators = ['madgraph','comphep']
         self.generator = cfg_params.get('CMSSW.generator','pythia').lower()
@@ -632,7 +631,7 @@ class Cmssw(JobType):
         if self.pset != None:
             # FUTURE: Can simply for 2_1_x and higher
             txt += '\n'
-            if self.debug_wrapper==True:
+            if self.debug_wrapper == 1:
                 txt += 'echo "***** cat ' + psetName + ' *********"\n'
                 txt += 'cat ' + psetName + '\n'
                 txt += 'echo "****** end ' + psetName + ' ********"\n'
@@ -656,7 +655,7 @@ class Cmssw(JobType):
         if os.path.isfile(self.tgzNameWithPath):
             txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
             txt += 'tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
-            if  self.debug_wrapper:
+            if  self.debug_wrapper==1 :
                 txt += 'tar tzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
                 txt += 'ls -Al \n'
             txt += 'untar_status=$? \n'
@@ -765,7 +764,7 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsRenameOutput\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
-        if self.debug_wrapper:
+        if self.debug_wrapper==1:
             txt += 'ls -Al\n'
         txt += '\n'
 
@@ -797,7 +796,7 @@ class Cmssw(JobType):
         txt += '\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
-        if self.debug_wrapper:
+        if self.debug_wrapper==1:
             txt += 'ls -Al\n'
         txt += '\n'
         txt += 'cd $RUNTIME_AREA\n'
@@ -947,7 +946,7 @@ class Cmssw(JobType):
         txt += 'if [ -s $RUNTIME_AREA/crab_fjr_$NJob.xml ]; then\n'
         txt += '    if [ -s $RUNTIME_AREA/parseCrabFjr.py ]; then\n'
         txt += '        cmd_out=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --dashboard $MonitorID,$MonitorJobID '+self.debugWrap+'`\n'
-        if self.debug_wrapper :
+        if self.debug_wrapper==1 :
             txt += '        echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"\n'
         txt += '        executable_exit_status=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --exitcode`\n'
         txt += '        if [ $executable_exit_status -eq 50115 ];then\n'

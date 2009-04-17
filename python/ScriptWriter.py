@@ -44,9 +44,8 @@ class ScriptWriter:
             self.CMSSW_patch = int(parts[3])
         except:
             raise CrabException("Could not determine CMSSW version")
-        self.debug_wrapper=''
-        debug = cfg_params.get('USER.debug_wrapper',False)
-        if debug: self.debug_wrapper='--debug'
+        debug = int(cfg_params.get('USER.debug_wrapper',0))
+        if debug==1 : self.debug_wrapper='--debug'
 
         self.scriptName = cfg_params.get('CRAB.jobtype').upper()+'.sh'  
 
