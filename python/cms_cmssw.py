@@ -636,9 +636,13 @@ class Cmssw(JobType):
                 txt += 'cat ' + psetName + '\n'
                 txt += 'echo "****** end ' + psetName + ' ********"\n'
                 txt += '\n'
-            if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
-                txt += 'PSETHASH=`edmConfigHash ' + psetName + '` \n'
-            else:
+                txt += 'echo "***********************" \n'
+                txt += 'which edmConfigHash \n'
+                txt += 'echo "***********************" \n'
+             if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
+                txt += 'edmConfigHash ' + psetName + ' \n'
+                 txt += 'PSETHASH=`edmConfigHash ' + psetName + '` \n'
+             else:
                 txt += 'PSETHASH=`edmConfigHash < ' + psetName + '` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
             txt += '\n'
@@ -895,18 +899,17 @@ class Cmssw(JobType):
         """
 
         txt = ''
-        if (self.copy_data == 1):
+        publish_data = int(self.cfg_params.get('USER.publish_data',0))
+        if (publish_data == 1):
+        #if (self.copy_data == 1):
             txt = '\n#Written by cms_cmssw::wsModifyReport\n'
-            publish_data = int(self.cfg_params.get('USER.publish_data',0))
+            #publish_data = int(self.cfg_params.get('USER.publish_data',0))
 
 
             txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'
             txt += '    FOR_LFN=$LFNBaseName\n'
             txt += 'else\n'
             txt += '    FOR_LFN=/copy_problems/ \n'
-            #txt += '    func_exit\n'
-            #txt += '    SE=""\n'
-            #txt += '    SE_PATH=""\n'
             txt += 'fi\n'
 
             txt += 'echo ">>> Modify Job Report:" \n'
@@ -918,11 +921,11 @@ class Cmssw(JobType):
 
 
             args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH'
-            if (publish_data == 1):
-                processedDataset = self.cfg_params['USER.publish_data_name']
-                txt += 'ProcessedDataset='+processedDataset+'\n'
-                txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
-                args += ' UserProcessedDataset $USER-$ProcessedDataset-$PSETHASH'
+            #if (publish_data == 1):
+            processedDataset = self.cfg_params['USER.publish_data_name']
+            txt += 'ProcessedDataset='+processedDataset+'\n'
+            txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
+            args += ' UserProcessedDataset $USER-$ProcessedDataset-$PSETHASH'
 
             txt += 'echo "$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)+'"\n'
             txt += '$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)+'\n'
