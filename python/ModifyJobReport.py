@@ -13,8 +13,6 @@ import popen2
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
 
 
-
-
 def readCksum(filename):
     """
     _readCksum_
@@ -62,7 +60,7 @@ def addFileStats(file):
     return
 
 
-def modifyFile(file, n_job, seName):
+def modifyFile(file):
     """
     _modifyFile_
     
@@ -72,36 +70,21 @@ def modifyFile(file, n_job, seName):
     str.split(str(file['PFN']), '.root')
     pref =  str.split(str(file['PFN']), '.root')[0]
     suff = str.split(str(file['PFN']), pref)[1]
-    if (seName == ''):
-         newPfn = pref + '_' + n_job + suff
-    else:
-         newPfn = seName + path + pref + '_' + n_job + suff
+    
+    newPfn = diz['se_name'] + diz['se_path'] + pref + '_' + diz['n_job'] + suff
     print "newPfn = ", newPfn
 
-    newLfn = for_lfn + pref + '_' + n_job + suff
+    newLfn = diz['for_lfn'] + pref + '_' + diz['n_job'] + suff
     print "newLfn = ", newLfn
 
-## remove parsing based on "."
-#    str.split(str(file['PFN']), '.')
-#    pref =  str.split(str(file['PFN']), '.')[0]
-#    suff = str.split(str(file['PFN']), '.')[1]
-#    if (seName == ''):
-#        newPfn = pref + '_' + n_job + '.' + suff
-#    else:    
-#        newPfn = seName + path + pref + '_' + n_job + '.' + suff
-#    print "newPfn = ", newPfn  
-#
-#    newLfn = for_lfn + pref + '_' + n_job + '.' + suff 
-#    print "newLfn = ", newLfn
-
-    updatePFN(file, file['LFN'], newPfn, seName)
+    updatePFN(file, file['LFN'], newPfn)
 
     updateLFN(file, file['LFN'], newLfn)
 
     return
 
 
-def updatePFN(file, lfn, newPFN, seName):
+def updatePFN(file, lfn, newPFN):
     """
     _updatePFN_
 
@@ -111,7 +94,7 @@ def updatePFN(file, lfn, newPFN, seName):
         return
 
     file['PFN'] = newPFN
-    file['SEName'] = seName
+    file['SEName'] = diz['se_name']
     return
 
 
@@ -132,84 +115,48 @@ if __name__ == '__main__':
     # Example:  Load the report, update the file stats, pretend to do a stage out
     # and update the information for the stage out
 
-    inputReport = sys.argv[1]
-    reports = readJobReport(inputReport)
+
+    L = sys.argv[1:]
+    if len(L) < 20:
+        print "Error: wrong number of arguments passed to the ModifyJobreport. Please check your script"
+        sys.exit(1)
+    diz={}
     
-    # report is an instance of FwkJobRep.FwkJobReport class
-    # can be N in a file, so a list is always returned
-    # by for readJobReport, here I am assuming just one report per file for simplicity
-    try:   
-        report = reports[-1]
-    except IndexError:
-        print "Error: No file to publish in xml file"
+    i = 0
+    while i < len(L):
+        diz[L[i]] = L[i+1]
+        i = i + 2
+
+    if diz.has_key('fjr'):
+        inputReport = diz['fjr']
+        reports = readJobReport(inputReport)
+    
+        # report is an instance of FwkJobRep.FwkJobReport class
+        # can be N in a file, so a list is always returned
+        # by for readJobReport, here I am assuming just one report per file for simplicity
+        try:   
+            report = reports[-1]
+        except IndexError:
+            print "Error: No file to publish in xml file"
+            sys.exit(1)
+    else:
+        print "no crab fjr found"
         sys.exit(1)
 
-    #print "report.files[0] = ", report.files[0]     
 
     # ARGs parameters
-    try:
-        n_job = sys.argv[2]   # NJob
-    except:
+    if diz.has_key('n_job'):
+        n_job = diz['n_job'] 
+    else:
         print "it is necessary to specify the job number" 
-        pass
-    print "n_job = ", n_job
-
-    try: 
-        for_lfn = sys.argv[3]   # User_dataset_cmssw
-    except:
-        for_lfn=''
-        pass 
-    print "for_lfn = ", for_lfn
-    try: 
-        PrimaryDataset = sys.argv[4]
-    except:
-        PrimaryDataset=''
-        pass 
-    try: 
-        #DataTier = sys.argv[5]
-        DataTier = 'USER'
-    except:
-        Datatier=''
-        pass 
-    try: 
-        ProcessedDataset = sys.argv[6]
-    except:
-        ProcessedDataset=''
-        pass 
-    try: 
-        ApplicationFamily = sys.argv[7]
-    except:
-        ApplicationFamily=''
-        pass 
-    try: 
-        ApplicationName = sys.argv[8]
-    except:
-        ApplicationName=''
-        pass 
-    try: 
-        CMSSW_VERSION = sys.argv[9]
-    except:
-        CMSSW_VERSION=''
-        pass 
-    try: 
-        PSETHASH = sys.argv[10]
-    except:
-        PSETHASH=''
-        pass 
-    try:  
-        seName = sys.argv[11] # LCG SE name
-    except:
-        seName=''
-        pass
-    print "seName = ", seName
-
-    try: 
-        path = sys.argv[12]   # LCG SE path
-    except:
-        path=''
-        pass 
-    print "path = ", path
-
+        sys.exit(1)
+        
+    if diz.has_key('UserProcessedDataset'): 
+        UserProcessedDataset = diz['UserProcessedDataset']
+    else:
+        UserProcessedDataset=''
+    print "UserProcessedDataset = ", UserProcessedDataset
+    
     if (len(report.files) == 0):
        print "no output file to modify"
        sys.exit(1)
@@ -218,31 +165,27 @@ if __name__ == '__main__':
             if (string.find(f['PFN'], ':') != -1):
                 tmp_path = string.split(f['PFN'], ':')
                 f['PFN'] = tmp_path[1]
-                #print f['PFN']
             if not os.path.exists(f['PFN']):
                 print "Error: Cannot find file: %s " % f['PFN']
                 sys.exit(1)
-                #continue
             #Generate per file stats
             addFileStats(f)
 
             datasetinfo=f.newDataset()
-            datasetinfo['PrimaryDataset'] = PrimaryDataset 
-            datasetinfo['DataTier'] = DataTier 
-            datasetinfo['ProcessedDataset'] = ProcessedDataset 
-            datasetinfo['ApplicationFamily'] = ApplicationFamily 
-            datasetinfo['ApplicationName'] = ApplicationName 
-            datasetinfo['ApplicationVersion'] = CMSSW_VERSION 
-            datasetinfo['PSetHash'] = PSETHASH
+            datasetinfo['PrimaryDataset'] = diz['PrimaryDataset'] 
+            datasetinfo['DataTier'] = "USER" 
+            datasetinfo['ProcessedDataset'] = UserProcessedDataset 
+            datasetinfo['ApplicationFamily'] = diz['ApplicationFamily'] 
+            datasetinfo['ApplicationName'] = diz['ApplicationName'] 
+            datasetinfo['ApplicationVersion'] = diz['cmssw_version'] 
+            datasetinfo['PSetHash'] = diz['psethash']
             datasetinfo['PSetContent'] = "TOBEADDED"
-            #  //
-            # // Fake stage out to somese.host.com/path 
-            #//
-
+            
             ### to check if the job output is composed by more files
-            modifyFile(f, n_job, seName)    
+            modifyFile(f)    
 
     # After modifying the report, you can then save it to a file.
     report.write("NewFrameworkJobReport.xml")
+    
 
 
