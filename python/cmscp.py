@@ -564,6 +564,7 @@ class cmscp:
         cmscp_exit_status = 0
         txt = ''
         for file, dict in results.iteritems():
+            reason="'%s'"%dict['reason']
             if file:
                 if dict['lfn']=='':
                     lfn = '$LFNBaseName/'+os.path.basename(file)
@@ -576,7 +577,7 @@ class cmscp:
                 txt += 'echo "Report for File: '+file+'"\n'
                 txt += 'echo "LFN: '+lfn+'"\n'
                 txt += 'echo "StorageElement: '+se+'"\n'
-                txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
+                txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
                 #txt += 'export LFNBaseName='+lfn+'\n'
                 txt += 'export SE='+se+'\n'
@@ -584,7 +585,7 @@ class cmscp:
                 if dict['erCode'] != '0':
                     cmscp_exit_status = dict['erCode']
             else:
-                txt += 'echo "StageOutExitStatusReason ='+dict['reason']+'" | tee -a $RUNTIME_AREA/$repo\n'
+                txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 cmscp_exit_status = dict['erCode']
                 cmscp_exit_status = dict['erCode']
         txt += '\n'
