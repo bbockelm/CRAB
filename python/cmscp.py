@@ -480,14 +480,14 @@ class cmscp:
             if self.debug :
                 dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
                 dbgmsg += '\t'+str(ex.output)+'\n'
-                print dbsmsg 
+                print dbgmsg 
         except SizeZeroException, ex:
             msg  = "Problem copying %s file" % filetocopy
             msg += str(ex)
             if self.debug :
                 dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
                 dbgmsg += '\t'+str(ex.output)+'\n'
-                print dbsmsg 
+                print dbgmsg 
             ErCode = '60307'
         if ErCode == '0' and protocol.find('srmv') == 0:
             remote_file_size = -1 
