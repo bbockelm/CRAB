@@ -87,6 +87,8 @@ class Cmssw(JobType):
             self.selectNoInput = 0
 
         self.dataTiers = []
+        
+        self.debugWrap=''
         self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
         if self.debug_wrapper == 1: self.debugWrap='--debug'
         ## now the application
