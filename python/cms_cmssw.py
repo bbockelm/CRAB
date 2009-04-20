@@ -639,10 +639,10 @@ class Cmssw(JobType):
                 txt += 'echo "***********************" \n'
                 txt += 'which edmConfigHash \n'
                 txt += 'echo "***********************" \n'
-             if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
+            if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
                 txt += 'edmConfigHash ' + psetName + ' \n'
-                 txt += 'PSETHASH=`edmConfigHash ' + psetName + '` \n'
-             else:
+                txt += 'PSETHASH=`edmConfigHash ' + psetName + '` \n'
+            else:
                 txt += 'PSETHASH=`edmConfigHash < ' + psetName + '` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
             txt += '\n'
