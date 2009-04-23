@@ -130,8 +130,11 @@ class cmscp:
                 dict['reason'] = reason
             elif er_code == '60302': 
                 list_not_existing.append( file )
-            else:
+            elif er_code == '10041':
                 list_retry.append( file )
+            ## WHAT TO DO IN GENERAL FAILURE CONDITION
+            #else:
+            #    list_retry.append( file )
                 
             if self.debug:
                 print "\t file %s \n"%file
@@ -300,6 +303,10 @@ class cmscp:
                 self.createDir( Destination_SE, Destination_SE.protocol )
             except OperationException, ex:
                 return self.updateReport('', '60316', str(ex))
+            ## when the client commands are not found (wrong env or really missing)
+            except MissingCommand, ex:
+                msg = "ERROR %s %s" %(str(ex), str(ex.detail))
+                return self.updateReport('', '10041', msg)
 
         ## prepare for real copy  ##
         try :
@@ -409,6 +416,11 @@ class cmscp:
             msg += str(ex)
             if self.debug : print '\t'+msg+'\n\t'+str(ex.detail)+'\n'
             raise Exception(msg)
+        ## when the client commands are not found (wrong env or really missing)
+        except MissingCommand, ex:
+            ErCode = '10041'
+            msg = "ERROR %s %s" %(str(ex), str(ex.detail))
+            return ErCode, msg
         if not checkSource :
             ErCode = '60302'
             msg = "ERROR file %s do not exist"%os.path.basename(filetocopy)
@@ -438,6 +450,11 @@ class cmscp:
             msg += str(ex)
             if self.debug : print '\t'+msg+'\n\t'+str(ex.detail)+'\n'
             raise Exception(msg)
+        ## when the client commands are not found (wrong env or really missing)
+        except MissingCommand, ex:
+            ErCode = '10041'
+            msg = "ERROR %s %s" %(str(ex), str(ex.detail))
+            return ErCode, msg
         if check :
             ErCode = '60303'
             msg = "file %s already exist"%os.path.basename(filetocopy)
@@ -489,6 +506,15 @@ class cmscp:
                 dbgmsg += '\t'+str(ex.output)+'\n'
                 print dbgmsg 
             ErCode = '60307'
+        ## when the client commands are not found (wrong env or really missing)
+        except MissingCommand, ex:
+            ErCode = '10041'
+            msg  = "Problem copying %s file" % filetocopy
+            msg += str(ex)
+            if self.debug :
+                dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                dbgmsg += '\t'+str(ex.output)+'\n'
+                print dbgmsg
         if ErCode == '0' and protocol.find('srmv') == 0:
             remote_file_size = -1 
             local_file_size = os.path.getsize( source_file ) 
