@@ -144,18 +144,13 @@ def findLastWorkDir(dir_prefix, where = None):
     # dir_prefix usually has the form 'crab_0_'
     pattern = re.compile(dir_prefix)
 
-    file_list = []
-    for fl in os.listdir(where):
-        if pattern.match(fl):
-            file_list.append(fl)
-            pass
-        pass
+    file_list = [f for f in os.listdir(where) if os.path.isdir(f) and pattern.match(f)]
 
     if len(file_list) == 0: return None
 
     file_list.sort()
 
-    wdir = where + file_list[len(file_list)-1]
+    wdir = where + file_list[-1]
     return wdir
 
 ###########################################################################

@@ -101,7 +101,7 @@ class MultiCrab:
                     raise CrabException('-continue and -cfg cannot coexist.')
                 if opts[opt] :
                     self.cfg_fname = opts[opt]
-                    opts.remove[opt]
+                    del opts[opt] # do not pass cfg further on
                 else : processHelpOptions()
                 pass
             pass
