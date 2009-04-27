@@ -20,7 +20,6 @@ import sha # Good for python 2.4, replaced with hashlib in 2.5
 
 class SchedulerArc(SchedulerGrid):
     def __init__(self, name='ARC'):
-        sys.stderr.write("python/SchedulerArc.__init__\n")
         SchedulerGrid.__init__(self,name)
         return
 
@@ -34,7 +33,6 @@ class SchedulerArc(SchedulerGrid):
     def realSchedParams(self,cfg_params):
         """
         """
-        sys.stderr.write("python/SchedulerArc.realSchedParams\n")
         return {}
 
 
@@ -53,8 +51,6 @@ class SchedulerArc(SchedulerGrid):
         """
         Returns string with requirement CE related
         """
-        sys.stderr.write("python/SchedulerArc.ce_list\n")
-
         ceParser = CEBlackWhiteListParser(self.EDG_ce_white_list,
                                           self.EDG_ce_black_list, common.logger)
         req = ''
@@ -93,13 +89,10 @@ class SchedulerArc(SchedulerGrid):
         if not retBL:
             retBL = None
 
-        sys.stderr.write("ce_list: %s, %s, %s\n" % (req, str(retWL), str(retBL)))
-
         return req, retWL, retBL
 
 
     def se_list(self, id, dest):
-        sys.stderr.write("python/SchedulerArc.se_list\n")
         se_white = self.blackWhiteListParser.whiteList()
         se_black = self.blackWhiteListParser.blackList()
         return '', se_white, se_black
@@ -144,8 +137,10 @@ class SchedulerArc(SchedulerGrid):
 
         return s
 
+
 #    def wsInitialEnvironment(self):
 #        return ''
+
 
     def wsExitFunc(self):
         """
@@ -181,12 +176,11 @@ class SchedulerArc(SchedulerGrid):
 
 
     def tags(self):
-        sys.stderr.write("python/SchedulerArc.tags\n")
         return ''
+
 
     def submit(self,list,task):
         """ submit to scheduler a list of jobs """
-        sys.stderr.write("python/SchedulerArc.submit\n")
         if (not len(list)):
             common.logger.message("No sites where to submit jobs")
         req=str(self.sched_parameter(list[0],task))
