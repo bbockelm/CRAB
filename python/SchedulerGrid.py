@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.100 2009/03/08 10:11:39 spiga Exp $"
-__version__ = "$Revision: 1.100 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.101 2009/03/09 15:56:26 ewv Exp $"
+__version__ = "$Revision: 1.101 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -175,7 +175,10 @@ class SchedulerGrid(Scheduler):
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "source OSG GRID setup script" \n'
         txt += '    source $OSG_GRID/setup.sh \n'
-
+        txt += 'elif [ $NORDUGRID_CE ]; then \n' # We look for $NORDUGRID_CE before $VO_CMS_SW_DIR, 
+        txt += '    middleware=ARC \n'           # because the latter is defined for ARC too
+        txt += '    echo "SyncCE=$NORDUGRID_CE" >> $RUNTIME_AREA/$repo \n'
+        txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'elif [ $VO_CMS_SW_DIR ]; then \n'
         txt += '    middleware=LCG \n'
         txt += '    echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
@@ -203,6 +206,8 @@ class SchedulerGrid(Scheduler):
         txt += '        job_exit_code=10099\n'
         txt += '        func_exit\n'
         txt += '    fi \n'
+        txt += 'elif [ $middleware == ARC ]; then \n'
+        txt += '    echo "CE = $NORDUGRID_CE"\n'
         txt += 'fi \n'
 
         return txt

@@ -144,8 +144,10 @@ class SchedulerArc(SchedulerGrid):
 
         return s
 
+#    def wsInitialEnvironment(self):
+#        return ''
 
-    def  wsExitFunc(self):
+    def wsExitFunc(self):
         """
         Returns part of a job script which does scheduler-specific
         output checks and management.

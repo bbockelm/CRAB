@@ -536,6 +536,9 @@ class Cmssw(JobType):
         txt += 'elif [ $middleware == SGE ]; then\n'
         txt += self.wsSetupCMSLCGEnvironment_()
 
+        txt += 'elif [ $middleware == ARC ]; then\n'
+        txt += self.wsSetupCMSLCGEnvironment_()
+
         txt += 'fi\n'
 
         # Prepare JobType-specific part
