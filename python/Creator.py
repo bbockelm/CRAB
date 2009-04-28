@@ -96,7 +96,9 @@ class Creator(Actor):
         listField=[]
         listRunField=[]
         run_jobToSave = {'status' :'C', \
-                         'statusScheduler' : 'Created'  }
+                         'statusScheduler' : 'Created', \
+                         'state' : "Created"  }
+
         for nj in range(self.total_njobs):
             nj=nj+self.first_jobID
             output=[]

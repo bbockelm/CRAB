@@ -55,7 +55,7 @@ class GetOutput(Actor):
         self.list_id=[]
         self.all_id =[]    
         for job in self.up_task.jobs:
-            if job.runningJob['status'] in ['SD','DA']:
+            if job.runningJob['status'] in ['SD','DA'] and job.runningJob['state'] in ['SubSuccess']:
                 list_id_done.append(job['jobId'])  
             self.all_id.append(job['jobId'])  
         check = -1 

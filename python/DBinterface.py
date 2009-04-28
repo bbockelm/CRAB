@@ -337,7 +337,7 @@ class DBinterface:
                     rForJ = r
                     break
             ## Check the submission number and create new running jobs on the client side
-            if rForJ.getAttribute('resubmit') != 'None' and (rForJ.getAttribute('status') not in ['Cleared','Killed','Done','Done (Failed)','Not Submitted']) :
+            if rForJ.getAttribute('resubmit') != 'None' and (rForJ.getAttribute('status') not in ['Cleared','Killed','Done','Done (Failed)','Not Submitted', 'Cancelled by user']) :
                 if int(job.runningJob['submission']) < int(rForJ.getAttribute('resubmit')) + 1:
                     nj_list.append(id)
             if len(nj_list) > 0: self.newRunJobs(nj_list)
@@ -379,8 +379,7 @@ class DBinterface:
                 ## unsing 'standardInput' field for 'ended' tag ['Y','N']
                 job['standardInput'] = str( rForJ.getAttribute('ended') )
 
-            ## for release > 251  
-            #    job.runningJob['state'] = str( rForJ.getAttribute('action') )
+                job.runningJob['state'] = str( rForJ.getAttribute('action') )
           
             #if str( rForJ.getAttribute('resubmit') ).isdigit():
             #    job['submissionNumber'] = int(rForJ.getAttribute('resubmit'))

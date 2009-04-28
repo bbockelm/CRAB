@@ -219,9 +219,11 @@ class SubmitterServer( Submitter ):
 
             # first time submit
             try:
+                self.submissionRequest( self.submitRange, "SubRequested" )
                 taskXML += common._db.serializeTask( common._db.getTask() )
                 common.logger.debug(5, taskXML)
             except Exception, e:
+                self.submissionRequestReverse( self.submitRange, "Created" )
                 msg = "BossLite ERROR: Unable to serialize task object\n"
                 msg +="Project "+str(self.taskuuid)+" not Submitted \n"
                 msg += str(e)
@@ -231,20 +233,27 @@ class SubmitterServer( Submitter ):
             subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,TotJob)
         else:
             # subsequent submissions and resubmit
-            subOutcome = csCommunicator.subsequentJobSubmit(self.taskuuid, self.submitRange)
+            self.submissionRequest( self.submitRange, "SubRequested" )
+            try:
+                subOutcome = csCommunicator.subsequentJobSubmit(self.taskuuid, self.submitRange)
+            except Exception, ex: ##change to specific exception
+                ## clean sub. requested status
+                self.submissionRequestReverse( self.submitRange, "Created" )
+
 
         if subOutcome != 0:
             msg = "ClientServer ERROR: %d raised during the communication.\n"%subOutcome
+            self.submissionRequestReverse( self.submitRange, "Created" )
             raise CrabException(msg)
-        elif firstSubmission is True:
-            self.markSubmitting(firstSubmission)
+#        elif firstSubmission is True:
+#            self.markSubmitting()
 
         del csCommunicator
 
         return
 
 
-    def markSubmitting(self, firstSubmission):
+    def markSubmitting(self):
         """
         _markSubmitting_
         sign local db for jobs sent -submitted- to the server
@@ -253,4 +262,13 @@ class SubmitterServer( Submitter ):
         common.logger.debug(4, "Updating submitting jobs %s"%str(self.submitRange))
         updlist = [{'statusScheduler':'Submitting', 'status':'CS'}] * len(self.submitRange)
         common._db.updateRunJob_(self.submitRange, updlist)
+
+
+    def submissionRequest(self, subrange, action):
+        """
+        sign local db for jobs sent -submitted- to the server
+        """
+        common.logger.debug(4, "Updating submitting jobs %s"%str(subrange))
+        updlist = [{'state': action}] * len(subrange)
+        common._db.updateRunJob_(subrange, updlist)
 
