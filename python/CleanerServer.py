@@ -44,7 +44,8 @@ class CleanerServer(Actor):
         """
         msg=''  
         msg+='functionality not yet available for the server. Work in progres \n' 
-        msg+='planned for CRAB_2_5_0'
+        msg+='only local worling directory will be removed'
+        #msg+='planned for CRAB_2_5_0'
         common.logger.message(msg) 
         common.work_space.delete()
         print 'directory '+common.work_space.topDir()+' removed'
