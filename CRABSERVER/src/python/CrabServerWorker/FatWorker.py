@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.162 2009/03/14 14:05:53 ewv Exp $"
-__version__ = "$Revision: 1.162 $"
+__revision__ = "$Id: FatWorker.py,v 1.161 2009/03/10 16:16:21 spiga Exp $"
+__version__ = "$Revision: 1.161 $"
 import string
 import sys, os
 import time
@@ -59,8 +59,8 @@ class FatWorker(Thread):
         self.ce_whiteL = []
         self.wmsEndpoint = self.configs['wmsEndpoint']
         self.local_queue = self.configs['messageQueue']
-        self.role = ''
-        self.group = ''
+        self.role = ''          
+        self.group = ''          
 
         ##Initialization to allow lsf@caf
         self.cpCmd = self.configs['cpCmd']
@@ -89,7 +89,7 @@ class FatWorker(Thread):
                             "submittedJobs": None,          \
                             "unmatchedJobs": None,          \
                             "notSubmittedJobs": None,       \
-                            "skippedJobs": None
+                            "skippedJobs": None     
                          }
 
         try:
@@ -157,9 +157,13 @@ class FatWorker(Thread):
         self.log.info("FatWorker %s performing submission"%self.myName)
         try:
             submittedJobs, nonSubmittedJobs, errorTrace = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
+
+            #if len(nonSubmittedJobs) > 0:
+            #    self.setAction(taskObj, nonSubmittedJobs, "SubFailed")
+
         except Exception, e:
             exc = str( traceback.format_exc() )
-            self.log.debug( exc )
+            self.log.info( exc )
             logMsg = "WorkerError %s. Task %s."%(self.myName, self.taskName)
             self.preLog(mess = "Failure during jobs submission", err = logMsg, exc = exc)
             self.sendResult(errStatus, errMsg, logMsg, e)
@@ -200,7 +204,7 @@ class FatWorker(Thread):
             pload = self.taskName + "::" + str(status) + "::" + reason
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", pload))
 
-        if status == 0:
+        if status == 0:       
             cmdXML = doc.getElementsByTagName("TaskCommand")[0]
             self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
             ## already set in the message
@@ -274,6 +278,21 @@ class FatWorker(Thread):
             self.sendResult(status, reason, reason, e, exc, True)
         return status
 
+
+    def setAction(self, task, joblist, action):
+        """
+        _setAction_
+        """
+        for j in task.jobs:
+            if j['jobId'] in joblist:
+                try:
+                    self.blDBsession.getRunningInstance(j)
+                except Exception, exc: ## TODO handle proper exception
+                    self.log.error("Problem extracting running job for %s: '%s'"%(str(j),str(exc)))
+                j.runningJob['state'] = action
+        self.blDBsession.updateDB( task )
+
+
 ####################################
     # Submission methods
 ####################################
@@ -289,15 +308,15 @@ class FatWorker(Thread):
         try:
             bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
         except Exception, ex:
-            logMsg = "Worker %s. Problem creating SE Api interface %s.\n"%self.myName
+            logMsg = "Worker %s. Problem creating SE Api interface %s.\n"%self.myName 
             logMsg += str(ex)
           #  self.log.info( logMsg )
-            raise Exception(logMsg)
+            raise Exception(logMsg) 
 
         credential = task['user_proxy']
         if self.schedName.upper() in ['LSF','CAF']:
             username = task['name'].split('_')[0]
-            credential = '%s::%s'%(username,credential)
+            credential = '%s::%s'%(username,credential)  
         basePath = task['outputDirectory']
         if task['startDirectory'] != '': basePath = task['outputDirectory'].split(task['startDirectory'])[1]
         for j in task.jobs:
@@ -305,7 +324,7 @@ class FatWorker(Thread):
                 # backup for job output (tgz files only, less load)
                 for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
                     try:
-                        check=bk_sbi.checkExists(source=orig)
+                        check=bk_sbi.checkExists(source=orig) 
                     except Exception, ex:
                         logMsg = "Worker %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
                         j['name'], self.taskName)
@@ -327,7 +346,7 @@ class FatWorker(Thread):
                         self.log.debug("No need to back up osb")
 
                 # reproduce closed runningJob instances
-                try:
+                try: 
                     self.blDBsession.getNewRunningInstance(j)
                 except Exception, e:
                     logMsg = ("Worker %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
@@ -416,10 +435,12 @@ class FatWorker(Thread):
                         if j['jobId'] in unsubmitted: unsubmitted.remove(j['jobId'])
                         j.runningJob['status'] = 'S'
                         j.runningJob['statusScheduler'] = 'Submitted'
+                        j.runningJob['state'] = 'SubSuccess'
                         parentIds.append( j.runningJob['schedulerParentId'] )
                 self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
-                self.blDBsession.updateDB( task )
+#                self.blDBsession.updateDB( task )
                 self.SendMLpost( task, sub_jobs[ii] )
+        self.blDBsession.updateDB( task )
         return submitted, unsubmitted, errorTrace
 
 
@@ -491,6 +512,14 @@ class FatWorker(Thread):
                 for j in taskObj.jobs:
                     if j['jobId'] in toMarkAsFailed:
                         jobSpecId.append(j['name'])
+                        try:
+                            self.blDBsession.getRunningInstance(j)
+                        except Exception, exc: ## TODO handle proper exception
+                            self.log.error("Problem extracting running job for %s: '%s'"%(str(j),str(exc)))
+                        self.log.info("Changing status for %s "%str(j['jobId']))
+                        j.runningJob['state'] = "SubFailed"
+                self.blDBsession.updateDB( taskObj )
+
 
                 for jId in jobSpecId:
                     try:
@@ -560,15 +589,13 @@ class FatWorker(Thread):
         sel = 0
         matched = []
         unmatched = []
-        schedParam = ''
 
         for id_job in jobs_to_match:
             tags = ''
             if self.bossSchedName in ['SchedulerCondorG']:
                 requirements.append( self.sched_parameter_CondorG(id_job, taskObj) )
             elif self.bossSchedName in ['SchedulerGlidein']:
-                schedParam, sites = self.sched_parameter_Glidein(id_job, taskObj)
-                requirements.append(schedParam)
+                requirements.append( self.sched_parameter_Glidein(id_job, taskObj) )
             elif self.bossSchedName == 'SchedulerLsf':
                 requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
             elif self.bossSchedName == 'SchedulerGLiteAPI':
@@ -579,14 +606,9 @@ class FatWorker(Thread):
                 continue
 
             # Perform listMatching
-            if self.bossSchedName in ['SchedulerCondorG',
+            if self.bossSchedName in ['SchedulerCondorG', 'SchedulerGlidein',
                                       'SchedulerLsf']:
                 matched.append(sel)
-            elif self.bossSchedName in ['SchedulerGlidein']:
-                if len(sites) > 0:
-                    matched.append(sel)
-                else:
-                    unmatched.append(sel)
             else:
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
@@ -621,10 +643,8 @@ class FatWorker(Thread):
         """
         Prepare DashBoard information
         """
-        taskId = ""
-
-        # Minor Patch For ML reporting
-        if str(taskObj['name']).split('_')[-1].find('-') >= 0:
+        # Minor Patch For ML reporting 
+        if str(taskObj['name']).split('_')[-1].find('-') >= 0:       
             cmsuser=''
             taskId=str("_".join(str(taskObj['name']).split('_')[:-1]))
             # rebuild flat gridName string (pruned from SSL print and delegation adds)
@@ -632,9 +652,9 @@ class FatWorker(Thread):
             isDefault = reTask.match(taskId)
             if not isDefault:
                 taskId = "-".join(str(taskObj['name']).split('-')[:-4])
-        else:
+        else: 
             taskId = self.taskName
-            cmsuser = self.taskName.split('_')[0]
+            cmsuser = self.taskName.split('_')[0] 
         gridName = self.owner
         gridName = '/'+"/".join(gridName.split('/')[1:-1])
         VO = self.cfg_params['VO']
@@ -654,7 +674,7 @@ class FatWorker(Thread):
                   'vo': VO, \
                   'user': self.taskName.split('_')[0], \
                   'vo': VO, \
-                  'taskId': taskId, \
+                  'user': self.taskName.split('_')[0], \
                   'datasetFull': datasetPath, \
                   'ApplicationVersion':appVersion , \
                   'exe': executable }
@@ -774,10 +794,7 @@ class FatWorker(Thread):
 
         # Convert to list of CEs and clean according to white/black list
         onlyOSG = False
-        if (seList == ['']) or (not seList):
-            availCEs = listAllCEs(version, arch, onlyOSG=onlyOSG)
-        else:
-            availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
+        availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
         ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
                                           self.log)
         ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
@@ -792,7 +809,7 @@ class FatWorker(Thread):
         else:
              schedParam += '+MaxWallTimeMins = 120; '
 
-        return schedParam, ceDest
+        return schedParam
 
 
     def sched_parameter_Lsf(self, i, task):
@@ -844,7 +861,7 @@ class FatWorker(Thread):
 
         req = ''
 
-        if '' in seDest : seDest.remove('')
+        if '' in seDest : seDest.remove('') 
 
         if len(seDest) > 0:
             reqtmp = [ ' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ' for arg in seDest]

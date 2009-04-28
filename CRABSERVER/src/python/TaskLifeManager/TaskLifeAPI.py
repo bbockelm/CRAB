@@ -96,6 +96,14 @@ class TaskLifeAPI:
             taskObj = None
         if taskObj != None:
             try:
+
+                ### set jobs status here
+                for jobbe in taskObj.jobs:
+                    try:
+                        mySession.getRunningInstance(jobbe)
+                    except JobError, ex:
+                        logging.error('Problem loading job running info')
+                    jobbe.runningJob['state'] = "Cleaned"
                 mySession.archive( taskObj )
             except TaskError, te:
                 logging.error( "Problem archiving task: " + str(taskObj['name']) )

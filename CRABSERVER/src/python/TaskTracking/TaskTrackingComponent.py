@@ -700,10 +700,10 @@ class TaskTrackingComponent:
                         logging.error('Problem loading job running info')
                     if jobbe['jobId'] in jobList:
                         jobbe.runningJob['state'] = "Cleared"
-                        if jobbe.runningJob['status'] in ["D","E", "DA", "SD"]:
-                            jobbe.runningJob['status'] = "UE"
-                            if jobbe.runningJob['processStatus'] in ["created", "handled", "not handled"]:
-                                jobbe.runningJob['processStatus'] = "output_requested"
+                        #if jobbe.runningJob['status'] in ["D","E", "DA", "SD"]:
+                            #jobbe.runningJob['status'] = "UE"
+                            #if jobbe.runningJob['processStatus'] in ["created", "handled", "not handled"]:
+                                #jobbe.runningJob['processStatus'] = "output_requested"
                 mySession.updateDB(taskObj)
                 self.singleTaskPoll(taskObj, TaskStateAPI(), taskName, mySession)
         except Exception, ex:
