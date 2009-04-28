@@ -517,7 +517,7 @@ class Cmssw(JobType):
         # Prepare JobType-independent part
         txt = '\n#Written by cms_cmssw::wsSetupEnvironment\n'
         txt += 'echo ">>> setup environment"\n'
-        txt += 'if [ $middleware == LCG ]; then \n'
+        txt += 'if [ $middleware == LCG ] || [ $middleware == CAF ] || [ $middleware == LSF ]; then \n'
         txt += self.wsSetupCMSLCGEnvironment_()
         txt += 'elif [ $middleware == OSG ]; then\n'
         txt += '    WORKING_DIR=`/bin/mktemp  -d $OSG_WN_TMP/cms_XXXXXXXXXXXX`\n'
