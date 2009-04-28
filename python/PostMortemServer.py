@@ -72,7 +72,8 @@ class PostMortemServer(PostMortem):
                 else:
                     common.logger.message('Logging info for job '+ str(id) +' not retrieved')
             else:
-                common.logger.message('Warning: job # ' + str(id) + ' not killed or aborted! Not possible to ask for postMortem ')
+                common.logger.message('Warning: job # ' + str(id) + ' not killed or aborted! Will get loggingInfo manually ')
+                PostMortem.collectLogging(self)
         return
 
 

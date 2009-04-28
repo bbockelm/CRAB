@@ -25,10 +25,14 @@ class PostMortem(Actor):
 
 
     def collectLogging(self):
+        self.up_task = common._db.getTask( self.nj_list )
         for id in self.nj_list:
-            if id not in self.all_jobs:
+            job=self.up_task.getJob(id)
+            if not job: #id not in self.all_jobs:
                 common.logger.message('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
                 continue
+            elif job.runningJob['status'] == 'C':
+                common.logger.message('Warning: job # ' + str(id) + ' just Created ! Not possible to ask for postMortem ')
             else:  
                 fname = self.fname_base + str(id) + '.LoggingInfo'
                 if os.path.exists(fname):
