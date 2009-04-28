@@ -326,6 +326,9 @@ def CliServerParams(self):
     if task['serverName']!=None:
         self.cfg_params['CRAB.server_name']=task['serverName']
     if self.cfg_params.has_key('CRAB.use_server'):
+        print 'CRAB.use_server',self.cfg_params.get('CRAB.use_server')
+        serverName=self.cfg_params.get('CRAB.server_name','default')
+        print serverName
         if self.cfg_params.has_key('CRAB.server_name'):
             serverName=self.cfg_params['CRAB.server_name']
         else:

@@ -13,7 +13,8 @@ class ServerConfig:
         common.logger.debug(5,'Calling ServerConfig '+serverName)
 #        self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
 
-        self.url ='https://cmsweb.cern.ch/crabconf/'
+        # self.url ='https://cmsweb.cern.ch/crabconf/'
+        self.url ='http://www.pd.infn.it/~lacaprar/Computing/'
         if 'default' in  serverName:
             common.logger.debug(5,'getting serverlist from web')
             # get a list of available servers 
@@ -29,13 +30,35 @@ class ServerConfig:
                 raise CrabException(msg)
             # clean up empty lines and comments
             serverList=[]
-            [serverList.append(string.strip(it)) for it in tmp if (it.strip() and not it.strip()[0]=="#")]
+            [serverList.append(string.split(string.strip(it))) for it in tmp if (it.strip() and not it.strip()[0]=="#")]
+            common.logger.debug(5,'All avaialble servers: '+str(serverList))
 
+            # select servers from client version
+            compatibleServerList=[]
+            for s in serverList:
+                vv=string.split(s[1],'-')
+                if len(vv[0])==0: vv[0]='0.0.0'
+                if len(vv[1])==0: vv[1]='99.99.99'
+                for i in 0,1:
+                    tmp=[]
+                    [tmp.append(int(t)) for t in vv[i].split('.')]
+                    vv[i]=tuple(tmp)
+                #[vv.append(tuple(t.split('.'))) for t in string.split(s[1],'-')]
+
+                common.prog_version
+                
+                #print vv[0],common.prog_version,vv[1]
+                if vv[0]<=common.prog_version and common.prog_version<=vv[1]: compatibleServerList.append(s[0])
+            common.logger.debug(5,'All avaialble servers compatible with %s: '%common.prog_version_str +str(serverList))
+            if len(compatibleServerList)==0: 
+                msg = "No compatible server available with client version %s\n"%common.prog_version_str
+                msg += "Exiting"
+                raise CrabException(msg)
             # if more than one, pick up a random one, waiting for something smarter (SiteDB)
             import random
-            serverName = random.choice(serverList)
-            common.logger.debug(5,'Avaialble servers: '+str(serverList)+' choosen: '+serverName)
-            common.logger.write('Avaialble servers: '+str(serverList)+' choosen: '+serverName)
+            serverName = random.choice(compatibleServerList)
+            common.logger.debug(5,'Avaialble servers: '+str(compatibleServerList)+' choosen: '+serverName)
+            common.logger.write('Avaialble servers: '+str(compatibleServerList)+' choosen: '+serverName)
         if 'server_' in serverName:
             configFileName = '%s.conf'%serverName
         else: 
