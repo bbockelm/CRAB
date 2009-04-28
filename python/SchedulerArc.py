@@ -46,6 +46,13 @@ class SchedulerArc(SchedulerGrid):
             # work!
             os.environ['EDG_WL_LOCATION'] = ''
 
+        if not os.environ.has_key('X509_USER_PROXY'):
+            # Set X509_USER_PROXY to the default location.  We'll do this
+            # because in functions called by Scheduler.checkProxy()
+            # voms-proxy-info will be called with '-file $X509_USER_PROXY',
+            # so if X509_USER_PROXY isn't set, it won't work.
+            os.environ['X509_USER_PROXY'] = '/tmp/x509up_u' + str(os.getuid())
+
         SchedulerGrid.configure(self, cfg_params)
         self.environment_unique_identifier = None
 
