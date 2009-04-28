@@ -30,8 +30,11 @@ class SchedulerArc(SchedulerGrid):
         common.logger.debug(5, msg)
         return id
 
+
     def realSchedParams(self,cfg_params):
         """
+        Return dictionary with specific parameters, to use
+        with real scheduler
         """
         return {}
 
@@ -48,48 +51,11 @@ class SchedulerArc(SchedulerGrid):
 
 
     def ce_list(self):
-        """
-        Returns string with requirement CE related
-        """
         ceParser = CEBlackWhiteListParser(self.EDG_ce_white_list,
                                           self.EDG_ce_black_list, common.logger)
-        req = ''
-        ce_white_list = []
-        ce_black_list = []
-
-        if self.EDG_ce_white_list:
-            ce_white_list = ceParser.whiteList()
-            tmpCe=[]
-            for ce in ce_white_list:
-                tmpCe.append('RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId)')
-            if len(tmpCe) == 1:
-                req +=  " && ( " + tmpCe[0] + " ) "
-            elif len(tmpCe) > 1:
-                concString = ") || ("
-                req += " && ( (" + concString.join(tmpCe) +") )"
-                # Do we need all those parentesis above? Or could we do:
-                #concString = " || "
-                #req += " && ( " + concString.join(tmpCe) +" )"
-
-        if self.EDG_ce_black_list:
-            ce_black_list = ceParser.blackList()
-            tmpCe=[]
-            concString = '&&'
-            for ce in ce_black_list:
-                tmpCe.append('(!RegExp("' + string.strip(ce) + '", other.GlueCEUniqueId))')
-            if len(tmpCe): req += " && (" + concString.join(tmpCe) + ") "
-
-        ## requirement added to skip gliteCE
-        #req += '&& (!RegExp("blah", other.GlueCEUniqueId))'
-
-        retWL = ','.join(ce_white_list)
-        retBL = ','.join(ce_black_list)
-        if not retWL:
-            retWL = None
-        if not retBL:
-            retBL = None
-
-        return req, retWL, retBL
+        wl = ','.join(ceParser.whiteList()) or None
+        bl = ','.join(ceParser.blackList()) or None
+        return '', wl, bl
 
 
     def se_list(self, id, dest):
@@ -101,6 +67,25 @@ class SchedulerArc(SchedulerGrid):
     def sched_parameter(self,i,task):
         """
         Returns parameter scheduler-specific, to use with BOSS .
+        """
+        return self.runtimeXrsl(i, task) + self.clusterXrsl(i, task)
+
+
+    def runtimeXrsl(self,i,task):
+        """
+        Return an xRSL-code snippet with required runtime environments
+        """
+        xrsl = "(runTimeEnvironment=\"APPS/HEP/CMSSW-PA\")"
+        for s in task['jobType'].split('&&'):
+            if re.match('Member\(".*", .*RunTimeEnvironment', s):
+                rte = re.sub(", .*", "", re.sub("Member\(", "", s))
+                xrsl += "(runTimeEnvironment=%s)" % rte
+        return xrsl
+
+
+    def clusterXrsl(self,i,task):
+        """
+        Return an xRSL-code snippet to select a CE ("cluster", in ARC parlance)
         """
         se_dls = task.jobs[i-1]['dlsDestination']
         blah, se_white, se_black = self.se_list(i, se_dls)
@@ -117,25 +102,25 @@ class SchedulerArc(SchedulerGrid):
 
         ce_list = self.listMatch(se_list, 'False')
 
-        s = ""
+        xrsl = ""
         if len(ce_list) > 0:
 
             # A ce-list with more than one element must be an OR:ed
             # list: (|(cluster=ce1)(cluster=ce2)...)
             if len(ce_list) > 1:
-                s += '(|'
+                xrsl += '(|'
             for ce in ce_list:
-                s += '(cluster=%s)' % ce
+                xrsl += '(cluster=%s)' % ce
             if len(ce_list) > 1:
-                s += ')'
+                xrsl += ')'
 
-        # FIXME: If len(ce_list) == 0  ==>  s = ""  ==>  we'll submit
+        # FIXME: If ce_list == []  ==>  xrsl = ""  ==>  we'll submit
         # "anywhere", which is completely contrary behaviour to what we want!
-        # len(ce_list) == 0 means there were _no_ CE in ce_infoSys that
+        # ce_list == [] means there were _no_ CE in ce_infoSys that
         # survived the white- and black-list filter, so we shouldn't submit
         # at all!
 
-        return s
+        return xrsl
 
 
 #    def wsInitialEnvironment(self):
@@ -191,6 +176,7 @@ class SchedulerArc(SchedulerGrid):
         for sub_list in new_list:
             self.boss().submit(task['id'],sub_list,req)
         return
+
         
     def queryEverything(self,taskid):
         """
@@ -206,16 +192,19 @@ class SchedulerArc(SchedulerGrid):
         self._boss.cancel(ids)
         return
 
+
     def decodeLogInfo(self, file):
         """
         Parse logging info file and return main info
         """
         return
 
+
     def writeJDL(self, list, task):
         """
         Materialize JDL for a list of jobs
         """
+        # FIXME: Is this function being used?
         req=str(self.sched_parameter(list[0],task))
         new_list = bulkControl(self,list)
         jdl=[]
