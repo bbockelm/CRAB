@@ -11,10 +11,9 @@ class ServerConfig:
         import string
         serverName = string.lower(serverName)
         common.logger.debug(5,'Calling ServerConfig '+serverName)
-#        self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
 
-        # self.url ='https://cmsweb.cern.ch/crabconf/'
-        self.url ='http://www.pd.infn.it/~lacaprar/Computing/'
+        self.url ='https://cmsweb.cern.ch/crabconf/'
+        # self.url ='http://www.pd.infn.it/~lacaprar/Computing/'
         if 'default' in  serverName:
             common.logger.debug(5,'getting serverlist from web')
             # get a list of available servers 
