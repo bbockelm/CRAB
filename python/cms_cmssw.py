@@ -646,6 +646,11 @@ class Cmssw(JobType):
             else:
                 txt += 'PSETHASH=`edmConfigHash < ' + psetName + '` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
+            #### FEDE temporary fix for noEdm files #####
+            txt += 'if [ -z "$PSETHASH" ]; then \n'
+            txt += '   export PSETHASH=null\n'
+            txt += 'fi \n'
+            #############################################
             txt += '\n'
         return txt
 
@@ -901,10 +906,10 @@ class Cmssw(JobType):
 
         txt = ''
         publish_data = int(self.cfg_params.get('USER.publish_data',0))
-        if (publish_data == 1):
-        #if (self.copy_data == 1):
+        #if (publish_data == 1):
+        if (self.copy_data == 1):
             txt = '\n#Written by cms_cmssw::wsModifyReport\n'
-            #publish_data = int(self.cfg_params.get('USER.publish_data',0))
+            publish_data = int(self.cfg_params.get('USER.publish_data',0))
 
 
             txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'
@@ -922,11 +927,11 @@ class Cmssw(JobType):
 
 
             args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH'
-            #if (publish_data == 1):
-            processedDataset = self.cfg_params['USER.publish_data_name']
-            txt += 'ProcessedDataset='+processedDataset+'\n'
-            txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
-            args += ' UserProcessedDataset $USER-$ProcessedDataset-$PSETHASH'
+            if (publish_data == 1):
+                processedDataset = self.cfg_params['USER.publish_data_name']
+                txt += 'ProcessedDataset='+processedDataset+'\n'
+                txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
+                args += ' UserProcessedDataset $USER-$ProcessedDataset-$PSETHASH'
 
             txt += 'echo "$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)+'"\n'
             txt += '$RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py '+str(args)+'\n'

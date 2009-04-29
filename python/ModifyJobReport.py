@@ -157,10 +157,12 @@ if __name__ == '__main__':
         UserProcessedDataset=''
     print "UserProcessedDataset = ", UserProcessedDataset
     
-    if (len(report.files) == 0):
-       print "no output file to modify"
+    #### FEDE ####
+    if (len(report.files) == 0) and (len(report.analysisFiles) == 0):
+       print "no EDM_output file or NO_EDM_output to modify"
        sys.exit(1)
-    else:
+    ####
+    if (len(report.files) != 0):
         for f in report.files:
             if (string.find(f['PFN'], ':') != -1):
                 tmp_path = string.split(f['PFN'], ':')
@@ -184,6 +186,10 @@ if __name__ == '__main__':
             ### to check if the job output is composed by more files
             modifyFile(f)    
 
+    if (len(report.analysisFiles) != 0):
+        for aFile in report.analysisFiles:
+            aFile['PFN'] = os.path.basename(aFile['FileName'])
+            modifyFile(aFile)
     # After modifying the report, you can then save it to a file.
     report.write("NewFrameworkJobReport.xml")
     
