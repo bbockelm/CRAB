@@ -45,14 +45,8 @@ class Cmssw(JobType):
 
         self.version = self.scram.getSWVersion()
         common.logger.write("CMSSW version is: "+str(self.version))
-        version_array = self.version.split('_')
-        self.CMSSW_major = 0
-        self.CMSSW_minor = 0
-        self.CMSSW_patch = 0
         try:
-            self.CMSSW_major = int(version_array[1])
-            self.CMSSW_minor = int(version_array[2])
-            self.CMSSW_patch = int(version_array[3])
+            type, self.CMSSW_major, self.CMSSW_minor, self.CMSSW_patch = tuple(self.version.split('_'))
         except:
             msg = "Cannot parse CMSSW version string: " + self.version + " for major and minor release number!"
             raise CrabException(msg)
@@ -91,6 +85,7 @@ class Cmssw(JobType):
         self.debugWrap=''
         self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
         if self.debug_wrapper == 1: self.debugWrap='--debug'
+
         ## now the application
         self.managedGenerators = ['madgraph','comphep']
         self.generator = cfg_params.get('CMSSW.generator','pythia').lower()
@@ -325,7 +320,8 @@ class Cmssw(JobType):
         for listSite in listSites:
             for oneSite in listSite:
                 allSites.append(oneSite)
-        allSites = self.uniquelist(allSites)
+        [allSites.append(it) for it in allSites if not allSites.count(it)]
+        
 
         # screen output
         common.logger.message("Requested dataset: " + datasetPath + " has " + str(self.maxEvents) + " events in " + str(len(self.filesbyblock.keys())) + " blocks.\n")
@@ -1020,15 +1016,6 @@ class Cmssw(JobType):
 
     def getParams(self):
         return self._params
-
-    def uniquelist(self, old):
-        """
-        remove duplicates from a list
-        """
-        nd={}
-        for e in old:
-            nd[e]=0
-        return nd.keys()
 
     def outList(self,list=False):
         """
