@@ -305,26 +305,13 @@ class TaskTrackingComponent:
                 _loginfo.setdefault('count', str(count))
                 _loginfo.setdefault('range', str(listjob))
                 if str(cmnd) == "kill":
-                    self.transientTaskJob(taskName, listjob, "Killing")
+                    self.setActionStatus(taskName, eval(listjob), "KillRequest")
                 elif str(cmnd) == "submit":
-                    self.transientTaskJob(taskName, listjob, "Submitting")
                     self.reviveTask(taskName)
                 elif str(cmnd) == "outputRetrieved":
-                    self.setCleared(taskName, eval(listjob))
+                    self.setActionStatus(taskName, eval(listjob), "Cleared") 
                 else:
                     _loginfo.setdefault('exc', "Unknown operation [%s]"%str(cmnd) )
-            else:
-                logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
-            self.__appendDbgInfo(taskName, _loginfo)
-            logging.info(logBuf)
-            return
-
-        # kill asked
-        if event == "KillTask":
-            if payload != None or payload != "" or len(payload) > 0:
-                logBuf = self.__log(logBuf, event + ": " + str(payload) )
-                taskName, fake_proxy, range = payload.split(":")
-                _loginfo.setdefault('range', str(range))
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
             self.__appendDbgInfo(taskName, _loginfo)
@@ -342,7 +329,7 @@ class TaskTrackingComponent:
                     self.updateTaskKilled( taskName, self.taskState[4] )
                 else:
                     self.updateTaskKilled( taskName, self.taskState[7] )
-                self.transientTaskJob(taskName, rangeKillJobs, "", True)
+                self.setActionStatus(taskName, eval(listjob), "KillSuccess")
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
             logging.info(logBuf)
@@ -355,7 +342,7 @@ class TaskTrackingComponent:
                 if payload.find("::") != -1:
                     taskName, rangeKillJobs = payload.split("::")
                 logBuf = self.__log(logBuf, "   Error killing task: %s" % taskName)
-                self.transientTaskJob(taskName, rangeKillJobs, "", True)
+                self.setActionStatus(taskName, eval(listjob), "KillFailed")
                 _loginfo.setdefault('range', str(rangeKillJobs))
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
@@ -370,10 +357,7 @@ class TaskTrackingComponent:
                 logBuf = self.__log(logBuf, "Cleared jobs: " + str(jobstr) + \
                                             " for task " + str(taskName) )
                 try:
-                    self.setCleared(taskName, eval(jobstr))
-
-                    ### set jobs as cleared
-
+                    self.setActionStatus(taskName, eval(listjob), "Cleared")
                 except Exception, ex:
                     logBuf = self.__log(logBuf, "Exception raised: " + str(ex) )
                     logBuf = self.__log(logBuf, str(traceback.format_exc()) )
@@ -553,59 +537,6 @@ class TaskTrackingComponent:
         logging.info(logBuf)
 
 
-    def transientTaskJob(self, taskName, range, status, reverse = False):
-        """
-        _transientTaskJob_
-        """
-        mySession = None
-        taskObj = None
-        joblist = eval(range)
-
-        ## bossLite session
-        try:
-            mySession = BossLiteAPI("MySQL", pool=self.sessionPool)
-        except Exception, ex:
-            logging.info(str(ex))
-            return 0
-
-        ## loading blite task, jobs, runnning jobs
-        try:
-            try:
-                taskObj = mySession.loadTaskByName( taskName )
-            except TaskError, te:
-                taskObj = None
-            if taskObj is None:
-                raise Exception("Unable to load task [%s]."%(taskName))
-            else:
-                for jobbe in taskObj.jobs:
-                    try:
-                        mySession.getRunningInstance(jobbe)
-                    except JobError, ex:
-                        logging.error('Problem loading job running info')
-                        continue
-        except Exception, ex:
-            import traceback
-            logging.error( "Exception raised: " + str(ex) )
-            logging.error( str(traceback.format_exc()) )
-
-        ## updating internal server status for job in joblist
-        try:
-            if reverse:
-                status = "inProgress"
-            ttdb = TaskStateAPI()
-            for jobid in joblist:
-                ttdb.updateStatusServer(mySession.bossLiteDB, taskName, jobid, status)
-            if taskObj is not None:
-                self.singleTaskPoll(taskObj, ttdb, taskName, mySession)
-        except Exception, ex:
-            import traceback
-            logging.error( "Exception raised: " + str(ex) )
-            logging.error( str(traceback.format_exc()) )
-        mySession.bossLiteDB.close()
-        del taskObj
-        del mySession
-
-
     def prepareTaskFailed( self, taskName, uuid, eMail, status, userName ):
         """
         _prepareTaskFailed_
@@ -670,10 +601,9 @@ class TaskTrackingComponent:
         mySession.bossLiteDB.close()
         del mySession
 
-
-    def setCleared (self, taskName, jobList):
+    def setActionStatus(self, taskname, joblist, value):
         """
-        _setCleared_
+        setActionStatus
         """
         taskObj = None
         mySession = None
@@ -684,8 +614,9 @@ class TaskTrackingComponent:
         except Exception, ex:
             logging.info(str(ex))
             return 0
+
         try:
-        ## lite task load in memory
+            ## load lite task in memory
             try:
                 taskObj = mySession.loadTaskByName( taskName )
             except TaskError, te:
@@ -699,11 +630,7 @@ class TaskTrackingComponent:
                     except JobError, ex:
                         logging.error('Problem loading job running info')
                     if jobbe['jobId'] in jobList:
-                        jobbe.runningJob['state'] = "Cleared"
-                        #if jobbe.runningJob['status'] in ["D","E", "DA", "SD"]:
-                            #jobbe.runningJob['status'] = "UE"
-                            #if jobbe.runningJob['processStatus'] in ["created", "handled", "not handled"]:
-                                #jobbe.runningJob['processStatus'] = "output_requested"
+                        jobbe.runningJob['state'] = value
                 mySession.updateDB(taskObj)
                 self.singleTaskPoll(taskObj, TaskStateAPI(), taskName, mySession)
         except Exception, ex:
