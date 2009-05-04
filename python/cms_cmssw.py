@@ -14,7 +14,7 @@ class Cmssw(JobType):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
         self.skip_blocks = skip_blocks
-        self.argsList = []
+        self.argsList = 0 
 
         self._params = {}
         self.cfg_params = cfg_params
@@ -379,7 +379,9 @@ class Cmssw(JobType):
             if exist==False: self.CreateXML()
             self.addEntry(listDictions)
         common._db.updateJob_(listID,listField)
-        self.argsList = (len(jobParams[0])+1)
+        # to be removed.... Daniele
+        self.argsList = 1 #(len(jobParams[0])+1)
+        # to be improved.... Daniele
         self.tgzNameWithPath = self.getTarBall(self.executable)
         return
 
