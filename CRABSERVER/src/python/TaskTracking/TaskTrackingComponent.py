@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.141 2009/03/03 11:14:12 mcinquil Exp $"
-__version__ = "$Revision: 1.141 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.144 2009/04/30 12:46:14 mcinquil Exp $"
+__version__ = "$Revision: 1.144 $"
 
 import os
 import time
@@ -669,7 +669,7 @@ class TaskTrackingComponent:
             #numJobs = ttdb.countServerJob(mySession.bossLiteDB, taskName)
             numJobs = len(taskObj.jobs)
             status, uuid, email, user_name = ttdb.getStatusUUIDEmail( taskName, mySession.bossLiteDB )
-            dictStateTot, dictReportTot, countNotSubmitted = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot)
+            dictStateTot, dictReportTot, countNotSubmitted, countCreated = self.computeJobStatus(taskName, mySession, taskObj, dictStateTot, dictReportTot)
             pathToWrite = os.path.join(str(self.args['CacheDir']), (taskName + self.workAdd))
             if os.path.exists( pathToWrite ):
                 self.prepareReport( taskName, uuid, email, user_name, 0, 0, dictStateTot, numJobs, 1 )
@@ -853,6 +853,7 @@ class TaskTrackingComponent:
         ttutil = TaskTrackingUtil()
 
         countNotSubmitted = 0
+        countCreated = 0
 
         for jobbe in taskObj.jobs:
             try:
@@ -921,7 +922,7 @@ class TaskTrackingComponent:
                    dictStateTot[job][0] = "NotSubmitted"
                    dictStateTot[job][8] = 'Y'
                 else:
-                   countNotSubmitted += 1
+                   countCreated += 1
                    dictReportTot['JobInProgress'] += 1
                    range = []
                    dictStateTot[job][8] = 'N'
@@ -940,7 +941,7 @@ class TaskTrackingComponent:
 
         ttdb.statusUpdated(mySession.bossLiteDB, taskName)
 
-        return dictStateTot, dictReportTot, countNotSubmitted
+        return dictStateTot, dictReportTot, countNotSubmitted, countCreated
 
     def pollTasks(self, threadName):
         """
@@ -1005,7 +1006,7 @@ class TaskTrackingComponent:
                             dictReportTot = {'JobSuccess': 0, 'JobFailed': 0, 'JobInProgress': 0}
                             dictStateTot = {}
                             numJobs = len(taskObj.jobs)
-                            dictStateTot, dictReportTot, countNotSubmitted = \
+                            dictStateTot, dictReportTot, countNotSubmitted, countCreated = \
                                  self.computeJobStatus( taskName, mySession, \
                                                         taskObj, dictStateTot, \
                                                         dictReportTot )
@@ -1013,8 +1014,8 @@ class TaskTrackingComponent:
                                 logBuf = self.__log(logBuf, state + " : " + \
                                                       str(dictReportTot[state]))
                             if countNotSubmitted > 0:
-                                logBuf = self.__log(logBuf, " -not submitted: "\
-                                                      + str(countNotSubmitted))
+                                logBuf = self.__log(logBuf, " not sub.: %s | created: %s"\
+                                                    %(str(countNotSubmitted),str(countCreated)))
 
                             endedJob = dictReportTot['JobSuccess'] + \
                                        dictReportTot['JobFailed']
