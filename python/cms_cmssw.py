@@ -14,7 +14,7 @@ class Cmssw(JobType):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
         self.skip_blocks = skip_blocks
-        self.argsList = 0 
+        self.argsList = 0
 
         self._params = {}
         self.cfg_params = cfg_params
@@ -82,7 +82,7 @@ class Cmssw(JobType):
             self.selectNoInput = 0
 
         self.dataTiers = []
-        
+
         self.debugWrap=''
         self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
         if self.debug_wrapper == 1: self.debugWrap='--debug'
@@ -231,7 +231,7 @@ class Cmssw(JobType):
         try:
             # Add FrameworkJobReport to parameter-set, set max events.
             # Reset later for data jobs by writeCFG which does all modifications
-            PsetEdit.maxEvent(-1)
+            PsetEdit.maxEvent(1)
             PsetEdit.skipEvent(0)
             PsetEdit.psetWriter(self.configFilename())
             ## If present, add TFileService to output files
@@ -329,7 +329,7 @@ class Cmssw(JobType):
             for oneSite in listSite:
                 allSites.append(oneSite)
         [allSites.append(it) for it in allSites if not allSites.count(it)]
-        
+
 
         # screen output
         common.logger.message("Requested dataset: " + datasetPath + " has " + str(self.maxEvents) + " events in " + str(len(self.filesbyblock.keys())) + " blocks.\n")
@@ -362,20 +362,20 @@ class Cmssw(JobType):
             argu=''
             str_argu = str(job+1)
             if len(jobParams[id]):
-                argu = {'JobID': job+1}    
+                argu = {'JobID': job+1}
                 for i in range(len(jobParams[id])):
                     argu[self.dict['params'][i]]=jobParams[id][i]
-                # just for debug 
+                # just for debug
                 str_argu += concString.join(jobParams[id])
             listDictions.append(argu)
             job_ToSave['arguments']= str(job+1)# +' '+argu
             job_ToSave['dlsDestination']= self.jobDestination[id]
             listField.append(job_ToSave)
-            msg="Job  %s  Arguments:  %s\n"%(str(job+1),str_argu)  
+            msg="Job  %s  Arguments:  %s\n"%(str(job+1),str_argu)
             msg+="\t  Destination: %s "%(str(self.jobDestination[id]))
             common.logger.debug(5,msg)
         # write xml
-        if len(listDictions):  
+        if len(listDictions):
             if exist==False: self.CreateXML()
             self.addEntry(listDictions)
         common._db.updateJob_(listID,listField)
@@ -387,15 +387,15 @@ class Cmssw(JobType):
 
     def CreateXML(self):
         """
-        """  
+        """
         result = IMProvNode( self.rootname )
         outfile = file( self.filepath, 'w').write(str(result))
-        return 
+        return
 
     def addEntry(self, listDictions):
         """
         _addEntry_
-      
+
         add an entry to the xml file
         """
         from IMProv.IMProvLoader import loadIMProvFile
@@ -523,7 +523,7 @@ class Cmssw(JobType):
                 tar.add(file,string.split(file,'/')[-1])
             tar.dereference=False
             common.logger.debug(5,"Files in "+self.tgzNameWithPath+" : "+str(tar.getnames()))
-            
+
             if (os.path.exists(self.filepath)):
                 tar.add(self.filepath,'arguments.xml')
 
@@ -641,45 +641,41 @@ class Cmssw(JobType):
             txt += '\n'
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
 ### Daniele
-"""
-            if (self.datasetPath): # standard job
-                txt += 'InputFiles=${args[1]}; export InputFiles\n'
-                if (self.useParent==1):
-                    txt += 'ParentFiles=${args[2]}; export ParentFiles\n'
-                    txt += 'MaxEvents=${args[3]}; export MaxEvents\n'
-                    txt += 'SkipEvents=${args[4]}; export SkipEvents\n'
-                else:
-                    txt += 'MaxEvents=${args[2]}; export MaxEvents\n'
-                    txt += 'SkipEvents=${args[3]}; export SkipEvents\n'
-                txt += 'echo "Inputfiles:<$InputFiles>"\n'
-                if (self.useParent==1): txt += 'echo "ParentFiles:<$ParentFiles>"\n'
-                txt += 'echo "MaxEvents:<$MaxEvents>"\n'
-                txt += 'echo "SkipEvents:<$SkipEvents>"\n'
-            else:  # pythia like job
-                argNum = 1
-"""
-### Daniele 
-                txt += 'PreserveSeeds='  + ','.join(self.preserveSeeds)  + '; export PreserveSeeds\n'
-                txt += 'IncrementSeeds=' + ','.join(self.incrementSeeds) + '; export IncrementSeeds\n'
-                txt += 'echo "PreserveSeeds: <$PreserveSeeds>"\n'
-                txt += 'echo "IncrementSeeds:<$IncrementSeeds>"\n'
-### Daniele 
-"""
-                if (self.firstRun):
-                    txt += 'export FirstRun=${args[%s]}\n' % argNum
-                    txt += 'echo "FirstRun: <$FirstRun>"\n'
-                    argNum += 1
-                if (self.generator == 'madgraph'):
-                    txt += 'export FirstEvent=${args[%s]}\n' % argNum
-                    txt += 'echo "FirstEvent:<$FirstEvent>"\n'
-                    argNum += 1
-                elif (self.generator == 'comphep'):
-                    txt += 'export CompHEPFirstEvent=${args[%s]}\n' % argNum
-                    txt += 'echo "CompHEPFirstEvent:<$CompHEPFirstEvent>"\n'
-                    argNum += 1
-                txt += 'MaxEvents=${args[%s]}; export MaxEvents\n' % argNum
-"""
-### Daniele 
+#             if (self.datasetPath): # standard job
+#                 txt += 'InputFiles=${args[1]}; export InputFiles\n'
+#                 if (self.useParent==1):
+#                     txt += 'ParentFiles=${args[2]}; export ParentFiles\n'
+#                     txt += 'MaxEvents=${args[3]}; export MaxEvents\n'
+#                     txt += 'SkipEvents=${args[4]}; export SkipEvents\n'
+#                 else:
+#                     txt += 'MaxEvents=${args[2]}; export MaxEvents\n'
+#                     txt += 'SkipEvents=${args[3]}; export SkipEvents\n'
+#                 txt += 'echo "Inputfiles:<$InputFiles>"\n'
+#                 if (self.useParent==1): txt += 'echo "ParentFiles:<$ParentFiles>"\n'
+#                 txt += 'echo "MaxEvents:<$MaxEvents>"\n'
+#                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
+#             else:  # pythia like job
+#                 argNum = 1
+### Daniele
+            txt += 'PreserveSeeds='  + ','.join(self.preserveSeeds)  + '; export PreserveSeeds\n'
+            txt += 'IncrementSeeds=' + ','.join(self.incrementSeeds) + '; export IncrementSeeds\n'
+            txt += 'echo "PreserveSeeds: <$PreserveSeeds>"\n'
+            txt += 'echo "IncrementSeeds:<$IncrementSeeds>"\n'
+### Daniele
+#                 if (self.firstRun):
+#                     txt += 'export FirstRun=${args[%s]}\n' % argNum
+#                     txt += 'echo "FirstRun: <$FirstRun>"\n'
+#                     argNum += 1
+#                 if (self.generator == 'madgraph'):
+#                     txt += 'export FirstEvent=${args[%s]}\n' % argNum
+#                     txt += 'echo "FirstEvent:<$FirstEvent>"\n'
+#                     argNum += 1
+#                 elif (self.generator == 'comphep'):
+#                     txt += 'export CompHEPFirstEvent=${args[%s]}\n' % argNum
+#                     txt += 'echo "CompHEPFirstEvent:<$CompHEPFirstEvent>"\n'
+#                     argNum += 1
+#                 txt += 'MaxEvents=${args[%s]}; export MaxEvents\n' % argNum
+### Daniele
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
 

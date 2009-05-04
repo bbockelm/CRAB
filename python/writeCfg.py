@@ -4,12 +4,13 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.15 2008/12/08 21:57:20 ewv Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: writeCfg.py,v 1.16 2009/03/05 16:49:56 spiga Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import sys, getopt
 import imp
 import os
+import pickle
 from random import SystemRandom
 
 from ProdCommon.CMSConfigTools.ConfigAPI.CfgInterface import CfgInterface
@@ -217,9 +218,11 @@ def main(argv) :
     outFile = open(outFileName,"w")
     if outFileName.endswith('py'):
         outFile.write("import FWCore.ParameterSet.Config as cms\n")
-        outFile.write(cmsProcess.dumpPython())
+        outFile.write("import pickle\n")
+        outFile.write("pickledCfg=\"\"\"%s\"\"\"\n" % pickle.dumps(cmsProcess))
+        outFile.write("process = pickle.loads(pickledCfg)\n")
         if (debug):
-            print "writeCfg output:"
+            print "writeCfg output (May not be exact):"
             print "import FWCore.ParameterSet.Config as cms"
             print cmsProcess.dumpPython()
     else:
