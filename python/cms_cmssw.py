@@ -6,6 +6,7 @@ import common
 import Scram
 from Splitter import JobSplitter
 
+from IMProv.IMProvNode import IMProvNode
 import os, string, glob
 
 class Cmssw(JobType):
@@ -214,45 +215,52 @@ class Cmssw(JobType):
         splitter = JobSplitter(self.cfg_params,self.conf)
         self.dict = splitter.Algos()[self.algo]()
 
+        self.filepath= '%s/arguments.xml'%common.work_space.shareDir()
+        self.rootname= 'arguments'
         # modify Pset only the first time
         if isNew:
-            if self.pset != None:
-                import PsetManipulator as pp
-                PsetEdit = pp.PsetManipulator(self.pset)
-                try:
-                    # Add FrameworkJobReport to parameter-set, set max events.
-                    # Reset later for data jobs by writeCFG which does all modifications
-                    PsetEdit.maxEvent(-1)
-                    PsetEdit.skipEvent(0)
-                    PsetEdit.psetWriter(self.configFilename())
-                    ## If present, add TFileService to output files
-                    if not int(cfg_params.get('CMSSW.skip_TFileService_output',0)):
-                        tfsOutput = PsetEdit.getTFileService()
-                        if tfsOutput:
-                            if tfsOutput in self.output_file:
-                                common.logger.debug(5,"Output from TFileService "+tfsOutput+" already in output files")
-                            else:
-                                outfileflag = True #output found
-                                self.output_file.append(tfsOutput)
-                                common.logger.message("Adding "+tfsOutput+" (from TFileService) to list of output files")
-                            pass
-                        pass
-                    ## If present and requested, add PoolOutputModule to output files
-                    if int(cfg_params.get('CMSSW.get_edm_output',0)):
-                        edmOutput = PsetEdit.getPoolOutputModule()
-                        if edmOutput:
-                            if edmOutput in self.output_file:
-                                common.logger.debug(5,"Output from PoolOutputModule "+edmOutput+" already in output files")
-                            else:
-                                self.output_file.append(edmOutput)
-                                common.logger.message("Adding "+edmOutput+" (from PoolOutputModule) to list of output files")
-                            pass
-                        pass
-                except CrabException:
-                    msg='Error while manipulating ParameterSet: exiting...'
-                    raise CrabException(msg)
+            # modify Pset only the first time
+            if self.pset != None: self.ModifyPset()
+
             ## Prepare inputSandbox TarBall (only the first time)
-            self.tgzNameWithPath = self.getTarBall(self.executable)
+#            self.tgzNameWithPath = self.getTarBall(self.executable)
+
+    def ModifyPset(self):
+        import PsetManipulator as pp
+        PsetEdit = pp.PsetManipulator(self.pset)
+        try:
+            # Add FrameworkJobReport to parameter-set, set max events.
+            # Reset later for data jobs by writeCFG which does all modifications
+            PsetEdit.maxEvent(-1)
+            PsetEdit.skipEvent(0)
+            PsetEdit.psetWriter(self.configFilename())
+            ## If present, add TFileService to output files
+            if not int(self.cfg_params.get('CMSSW.skip_TFileService_output',0)):
+                tfsOutput = PsetEdit.getTFileService()
+                if tfsOutput:
+                    if tfsOutput in self.output_file:
+                        common.logger.debug(5,"Output from TFileService "+tfsOutput+" already in output files")
+                    else:
+                        outfileflag = True #output found
+                        self.output_file.append(tfsOutput)
+                        common.logger.message("Adding "+tfsOutput+" (from TFileService) to list of output files")
+                    pass
+                pass
+            ## If present and requested, add PoolOutputModule to output files
+            if int(self.cfg_params.get('CMSSW.get_edm_output',0)):
+                edmOutput = PsetEdit.getPoolOutputModule()
+                if edmOutput:
+                    if edmOutput in self.output_file:
+                        common.logger.debug(5,"Output from PoolOutputModule "+edmOutput+" already in output files")
+                    else:
+                        self.output_file.append(edmOutput)
+                        common.logger.message("Adding "+edmOutput+" (from PoolOutputModule) to list of output files")
+                    pass
+                pass
+        except CrabException:
+            msg='Error while manipulating ParameterSet: exiting...'
+            raise CrabException(msg)
+
 
     def DataDiscoveryAndLocation(self, cfg_params):
 
@@ -331,7 +339,7 @@ class Cmssw(JobType):
 
     def split(self, jobParams,firstJobID):
 
-        arglist = self.dict['args']
+        jobParams = self.dict['args']
         njobs = self.dict['njobs']
         self.jobDestination = self.dict['jobDestination']
 
@@ -344,24 +352,58 @@ class Cmssw(JobType):
 
         listID=[]
         listField=[]
+        listDictions=[]
+        exist= os.path.exists(self.filepath)
         for id in range(njobs):
             job = id + int(firstJobID)
-            jobParams[id] = arglist[id]
             listID.append(job+1)
             job_ToSave ={}
             concString = ' '
             argu=''
+            str_argu = str(job+1)
             if len(jobParams[id]):
-                argu +=   concString.join(jobParams[id] )
-            job_ToSave['arguments']= str(job+1)+' '+argu
+                argu = {'JobID': job+1}    
+                for i in range(len(jobParams[id])):
+                    argu[self.dict['params'][i]]=jobParams[id][i]
+                # just for debug 
+                str_argu += concString.join(jobParams[id])
+            listDictions.append(argu)
+            job_ToSave['arguments']= str(job+1)# +' '+argu
             job_ToSave['dlsDestination']= self.jobDestination[id]
             listField.append(job_ToSave)
-            msg="Job "+str(job)+" Arguments:   "+str(job+1)+" "+argu+"\n"  \
-            +"                     Destination: "+str(self.jobDestination[id])
+            msg="Job  %s  Arguments:  %s\n"%(str(job+1),str_argu)  
+            msg+="\t  Destination: %s "%(str(self.jobDestination[id]))
             common.logger.debug(5,msg)
+        # write xml
+        if len(listDictions):  
+            if exist==False: self.CreateXML()
+            self.addEntry(listDictions)
         common._db.updateJob_(listID,listField)
         self.argsList = (len(jobParams[0])+1)
+        self.tgzNameWithPath = self.getTarBall(self.executable)
+        return
 
+    def CreateXML(self):
+        """
+        """  
+        result = IMProvNode( self.rootname )
+        outfile = file( self.filepath, 'w').write(str(result))
+        return 
+
+    def addEntry(self, listDictions):
+        """
+        _addEntry_
+      
+        add an entry to the xml file
+        """
+        from IMProv.IMProvLoader import loadIMProvFile
+        ## load xml
+        improvDoc = loadIMProvFile(self.filepath)
+        entrname= 'Job'
+        for dictions in listDictions:
+           report = IMProvNode(entrname , None, **dictions)
+           improvDoc.addNode(report)
+        outfile = file( self.filepath, 'w').write(str(improvDoc))
         return
 
     def numberOfJobs(self):
@@ -479,6 +521,9 @@ class Cmssw(JobType):
                 tar.add(file,string.split(file,'/')[-1])
             tar.dereference=False
             common.logger.debug(5,"Files in "+self.tgzNameWithPath+" : "+str(tar.getnames()))
+            
+            if (os.path.exists(self.filepath)):
+                tar.add(self.filepath,'arguments.xml')
 
             tar.close()
         except IOError, exc:
@@ -593,6 +638,8 @@ class Cmssw(JobType):
             pset = os.path.basename(job.configFilename())
             txt += '\n'
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
+### Daniele
+"""
             if (self.datasetPath): # standard job
                 txt += 'InputFiles=${args[1]}; export InputFiles\n'
                 if (self.useParent==1):
@@ -608,10 +655,14 @@ class Cmssw(JobType):
                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
             else:  # pythia like job
                 argNum = 1
+"""
+### Daniele 
                 txt += 'PreserveSeeds='  + ','.join(self.preserveSeeds)  + '; export PreserveSeeds\n'
                 txt += 'IncrementSeeds=' + ','.join(self.incrementSeeds) + '; export IncrementSeeds\n'
                 txt += 'echo "PreserveSeeds: <$PreserveSeeds>"\n'
                 txt += 'echo "IncrementSeeds:<$IncrementSeeds>"\n'
+### Daniele 
+"""
                 if (self.firstRun):
                     txt += 'export FirstRun=${args[%s]}\n' % argNum
                     txt += 'echo "FirstRun: <$FirstRun>"\n'
@@ -625,6 +676,8 @@ class Cmssw(JobType):
                     txt += 'echo "CompHEPFirstEvent:<$CompHEPFirstEvent>"\n'
                     argNum += 1
                 txt += 'MaxEvents=${args[%s]}; export MaxEvents\n' % argNum
+"""
+### Daniele 
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
 

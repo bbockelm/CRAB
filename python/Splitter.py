@@ -162,7 +162,7 @@ class JobSplitter:
                     if self.useParent==1:
                         parent = self.parentFiles[file]
                         for f in parent :
-                            pString += '\\\"' + f + '\\\"\,'
+                            pString +=  f + ','
                         common.logger.debug(6, "File "+str(file)+" has the following parents: "+str(parent))
                         common.logger.write("File "+str(file)+" has the following parents: "+str(parent))
                     if newFile :
@@ -172,7 +172,7 @@ class JobSplitter:
                             # increase filesEventCount
                             filesEventCount += numEventsInFile
                             # Add file to current job
-                            parString += '\\\"' + file + '\\\"\,'
+                            parString +=  file + ','
                             newFile = 0
                         except KeyError:
                             common.logger.message("File "+str(file)+" has unknown number of events: skipping")
@@ -188,9 +188,9 @@ class JobSplitter:
                             if ( fileCount == numFilesInBlock-1 ) :
                                 # end job using last file, use remaining events in block
                                 # close job and touch new file
-                                fullString = parString[:-2]
+                                fullString = parString[:-1]
                                 if self.useParent==1:
-                                    fullParentString = pString[:-2]
+                                    fullParentString = pString[:-1]
                                     list_of_lists.append([fullString,fullParentString,str(-1),str(jobSkipEventCount)])
                                 else:
                                     list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
@@ -217,9 +217,9 @@ class JobSplitter:
                     # if events in file equal to eventsPerJobRequested
                     elif ( filesEventCount - jobSkipEventCount == eventsPerJobRequested ) :
                         # close job and touch new file
-                        fullString = parString[:-2]
+                        fullString = parString[:-1]
                         if self.useParent==1:
-                            fullParentString = pString[:-2]
+                            fullParentString = pString[:-1]
                             list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         else:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
@@ -242,9 +242,9 @@ class JobSplitter:
                     # if more events in file remain than eventsPerJobRequested
                     else :
                         # close job but don't touch new file
-                        fullString = parString[:-2]
+                        fullString = parString[:-1]
                         if self.useParent==1:
-                            fullParentString = pString[:-2]
+                            fullParentString = pString[:-1]
                             list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         else:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
@@ -262,8 +262,8 @@ class JobSplitter:
                         # remove all but the last file
                         filesEventCount = self.eventsbyfile[file]
                         if self.useParent==1:
-                            for f in parent : pString += '\\\"' + f + '\\\"\,'
-                        parString = '\\\"' + file + '\\\"\,'
+                            for f in parent : pString +=  f + ','
+                        parString =  file + ','
                     pass # END if
                 pass # END while (iterate over files in the block)
         pass # END while (iterate over blocks in the dataset)
@@ -277,6 +277,8 @@ class JobSplitter:
 
        # prepare dict output
         dictOut = {}
+        dictOut['params']= ['InputFiles','MaxEvents','SkipEvents']
+        if self.useParent: dictOut['params']= ['InputFiles','ParentFiles','MaxEvents','SkipEvents']
         dictOut['args'] = list_of_lists
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
@@ -395,14 +397,15 @@ class JobSplitter:
                 res = self.getJobInfo(jobfactory())
                 parString = '' 
                 for file in res['lfns']:
-                    parString += '\\\"' + file + '\\\"\,'
-                fullString = parString[:-2]
+                    parString += file + ','
+                fullString = parString[:-1]
                 list_of_lists.append([fullString,str(-1),str(0)])     
                 #need to check single file location
                 jobDestination.append(res['locations'])   
                 count +=1
        # prepare dict output
         dictOut = {}
+        dictOut['params']= ['InputFiles','MaxEvents','SkipEvents']
         dictOut['args'] = list_of_lists
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=count
@@ -493,7 +496,14 @@ class JobSplitter:
             args.append(str(self.eventsPerJob))
             self.list_of_args.append(args)
        # prepare dict output
+
         dictOut = {}
+        dictOut['params'] = ['MaxEvents']
+        if (firstRun):
+            dictOut['params'] = ['FirstRun','MaxEvents']
+            if ( generator in managedGenerators ) : ['FirstRun', 'FirstEvent', 'MaxEvents'] 
+        else:  
+            if (generator in managedGenerators) : ['FirstEvent', 'MaxEvents']
         dictOut['args'] = self.list_of_args
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
@@ -520,14 +530,14 @@ class JobSplitter:
         common.logger.message(str(self.total_number_of_jobs)+' jobs can be created')
 
         # argument is seed number.$i
-        self.list_of_args = []
+        #self.list_of_args = []
         for i in range(self.total_number_of_jobs):
             jobDestination.append([""])
-            self.list_of_args.append([str(i)])
+        #   self.list_of_args.append([str(i)])
 
        # prepare dict output
         dictOut = {}
-        dictOut['args'] = self.list_of_args
+        dictOut['args'] = [] # self.list_of_args
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
         return dictOut
