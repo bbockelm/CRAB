@@ -4,13 +4,16 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.16 2009/03/05 16:49:56 spiga Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: writeCfg.py,v 1.17 2009/05/04 19:10:17 ewv Exp $"
+__version__ = "$Revision: 1.17 $"
 
-import sys, getopt
+import getopt
 import imp
 import os
 import pickle
+import sys
+import xml.dom.minidom
+
 from random import SystemRandom
 
 from ProdCommon.CMSConfigTools.ConfigAPI.CfgInterface import CfgInterface
@@ -86,19 +89,37 @@ def main(argv) :
         print main.__doc__
         sys.exit()
 
-  # Optional Parameters
+  # Read in XML and get optional Parameters
 
-    maxEvents  = int(os.environ.get('MaxEvents', '0'))
-    skipEvents = int(os.environ.get('SkipEvents','0'))
-    firstEvent = int(os.environ.get('FirstEvent','-1'))
-    compHEPFirstEvent = int(os.environ.get('CompHEPFirstEvent','0'))
-    firstRun   = int(os.environ.get('FirstRun',  '0'))
     nJob       = int(os.environ.get('NJob',      '0'))
 
-    inputFiles     = os.environ.get('InputFiles','')
-    parentFiles    = os.environ.get('ParentFiles','')
-    preserveSeeds  = os.environ.get('PreserveSeeds','')
-    incrementSeeds = os.environ.get('IncrementSeeds','')
+  # Defaults
+
+    maxEvents  = 0
+    skipEvents = 0
+    firstEvent = -1
+    compHEPFirstEvent = 0
+    firstRun   = 0
+
+    dom = xml.dom.minidom.parse(os.environ['RUNTIME_AREA']+'/arguments.xml')
+
+    for elem in dom.getElementsByTagName("Job"):
+        if nJob == int(elem.getAttribute("JobID")):
+            if elem.getAttribute("MaxEvents"):
+                maxEvents = int(elem.getAttribute("MaxEvents"))
+            if elem.getAttribute("SkipEvents"):
+                skipEvents = int(elem.getAttribute("SkipEvents"))
+            if elem.getAttribute("FirstEvent"):
+                firstEvent = int(elem.getAttribute("FirstEvent"))
+            if elem.getAttribute("CompHEPFirstEvent"):
+                compHEPFirstEvent = int(elem.getAttribute("CompHEPFirstEvent"))
+            if elem.getAttribute("FirstRun"):
+                firstRun = int(elem.getAttribute("FirstRun"))
+
+            inputFiles     = str(elem.getAttribute('InputFiles'))
+            parentFiles    = str(elem.getAttribute('ParentFiles'))
+            preserveSeeds  = str(elem.getAttribute('PreserveSeeds'))
+            incrementSeeds = str(elem.getAttribute('IncrementSeeds'))
 
   # Read Input cfg or python cfg file, FUTURE: Get rid cfg mode
 
@@ -138,15 +159,11 @@ def main(argv) :
     if compHEPFirstEvent:
         cmsProcess.source.CompHEPFirstEvent = CfgTypes.int32(compHEPFirstEvent)
     if inputFiles:
-        inputFiles = inputFiles.replace('\\','')
-        inputFiles = inputFiles.replace('"','')
         inputFileNames = inputFiles.split(',')
         inModule.setFileNames(*inputFileNames)
 
     # handle parent files if needed
     if parentFiles:
-        parentFiles = parentFiles.replace('\\','')
-        parentFiles = parentFiles.replace('"','')
         parentFileNames = parentFiles.split(',')
         inModule.setSecondaryFileNames(*parentFileNames)
 
