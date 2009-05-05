@@ -213,6 +213,7 @@ class Submitter(Actor):
                         common.logger.debug(5,"Submitted job # "+ str(self.sub_jobs[ii][j]))
                         njs += 1
                 common._db.updateRunJob_(listId, listRunField)
+                self.stateChange(listId,"SubSuccess")
                 self.SendMLpost(self.sub_jobs[ii])
 
         else:
@@ -353,4 +354,12 @@ class Submitter(Actor):
             common.apmon.sendToML(params)
         return
 
+
+    def stateChange(self, subrange, action):
+        """
+        _stateChange_
+        """
+        common.logger.debug(4, "Updating [%s] state "%str(subrange))
+        updlist = [{'state': action}] * len(subrange)
+        common._db.updateRunJob_(subrange, updlist)
 
