@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.17 2009/05/04 19:10:17 ewv Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: writeCfg.py,v 1.18 2009/05/04 21:45:43 ewv Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import getopt
 import imp
@@ -89,9 +89,11 @@ def main(argv) :
         print main.__doc__
         sys.exit()
 
-  # Read in XML and get optional Parameters
+  # Read in Environment, XML and get optional Parameters
 
     nJob       = int(os.environ.get('NJob',      '0'))
+    preserveSeeds  = os.environ.get('PreserveSeeds','')
+    incrementSeeds = os.environ.get('IncrementSeeds','')
 
   # Defaults
 
@@ -118,8 +120,6 @@ def main(argv) :
 
             inputFiles     = str(elem.getAttribute('InputFiles'))
             parentFiles    = str(elem.getAttribute('ParentFiles'))
-            preserveSeeds  = str(elem.getAttribute('PreserveSeeds'))
-            incrementSeeds = str(elem.getAttribute('IncrementSeeds'))
 
   # Read Input cfg or python cfg file, FUTURE: Get rid cfg mode
 
