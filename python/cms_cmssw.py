@@ -14,7 +14,7 @@ class Cmssw(JobType):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug(3,'CMSSW::__init__')
         self.skip_blocks = skip_blocks
-        self.argsList = 0
+        self.argsList = 1
 
         self._params = {}
         self.cfg_params = cfg_params
@@ -379,8 +379,6 @@ class Cmssw(JobType):
             if exist==False: self.CreateXML()
             self.addEntry(listDictions)
         common._db.updateJob_(listID,listField)
-        # to be removed.... Daniele
-        self.argsList = 1 #(len(jobParams[0])+1)
         # to be improved.... Daniele
         self.tgzNameWithPath = self.getTarBall(self.executable)
         return
@@ -640,42 +638,11 @@ class Cmssw(JobType):
             pset = os.path.basename(job.configFilename())
             txt += '\n'
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
-### Daniele
-#             if (self.datasetPath): # standard job
-#                 txt += 'InputFiles=${args[1]}; export InputFiles\n'
-#                 if (self.useParent==1):
-#                     txt += 'ParentFiles=${args[2]}; export ParentFiles\n'
-#                     txt += 'MaxEvents=${args[3]}; export MaxEvents\n'
-#                     txt += 'SkipEvents=${args[4]}; export SkipEvents\n'
-#                 else:
-#                     txt += 'MaxEvents=${args[2]}; export MaxEvents\n'
-#                     txt += 'SkipEvents=${args[3]}; export SkipEvents\n'
-#                 txt += 'echo "Inputfiles:<$InputFiles>"\n'
-#                 if (self.useParent==1): txt += 'echo "ParentFiles:<$ParentFiles>"\n'
-#                 txt += 'echo "MaxEvents:<$MaxEvents>"\n'
-#                 txt += 'echo "SkipEvents:<$SkipEvents>"\n'
-#             else:  # pythia like job
-#                 argNum = 1
-### Daniele
+
             txt += 'PreserveSeeds='  + ','.join(self.preserveSeeds)  + '; export PreserveSeeds\n'
             txt += 'IncrementSeeds=' + ','.join(self.incrementSeeds) + '; export IncrementSeeds\n'
             txt += 'echo "PreserveSeeds: <$PreserveSeeds>"\n'
             txt += 'echo "IncrementSeeds:<$IncrementSeeds>"\n'
-### Daniele
-#                 if (self.firstRun):
-#                     txt += 'export FirstRun=${args[%s]}\n' % argNum
-#                     txt += 'echo "FirstRun: <$FirstRun>"\n'
-#                     argNum += 1
-#                 if (self.generator == 'madgraph'):
-#                     txt += 'export FirstEvent=${args[%s]}\n' % argNum
-#                     txt += 'echo "FirstEvent:<$FirstEvent>"\n'
-#                     argNum += 1
-#                 elif (self.generator == 'comphep'):
-#                     txt += 'export CompHEPFirstEvent=${args[%s]}\n' % argNum
-#                     txt += 'echo "CompHEPFirstEvent:<$CompHEPFirstEvent>"\n'
-#                     argNum += 1
-#                 txt += 'MaxEvents=${args[%s]}; export MaxEvents\n' % argNum
-### Daniele
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
 
@@ -1024,6 +991,8 @@ class Cmssw(JobType):
           #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
         txt += '    if [ $executable_exit_status -eq 0 ];then\n'
         txt += '        echo ">>> Executable succeded  $executable_exit_status"\n'
+        ## This cannot more work given the changes on the Job argumentsJob   
+        """
         if (self.datasetPath and not (self.dataset_pu or self.useParent==1)) :
           # VERIFY PROCESSED DATA
             txt += '        echo ">>> Verify list of processed files:"\n'
@@ -1049,6 +1018,7 @@ class Cmssw(JobType):
             txt += '            echo "      ==> list of processed files from crab_fjr.xml differs from list in pset.cfg"\n'
             txt += '            echo "      ==> diff input-files.txt processed-files.txt"\n'
             txt += '        fi\n'
+        """
         txt += '    fi\n'
         txt += 'else\n'
         txt += '    echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."\n'
