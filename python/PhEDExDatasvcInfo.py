@@ -167,9 +167,12 @@ class PhEDExDatasvcInfo:
         params = {'node' : self.node , 'lfn': self.lfn , 'protocol': self.protocol}
         params = urllib.urlencode(params)
         datasvc_lfn2pfn="%s/lfn2pfn"%self.datasvc_url
-        urlresults = urllib.urlopen(datasvc_lfn2pfn, params)
         try:
+            urlresults = urllib.urlopen(datasvc_lfn2pfn, params)
             urlresults = parse(urlresults)
+        except IOError:
+            msg="Unable to access PhEDEx Data Service at %s"%datasvc_lfn2pfn
+            raise CrabException(msg)
         except:
             urlresults = None
 
