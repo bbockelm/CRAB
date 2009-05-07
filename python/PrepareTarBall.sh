@@ -94,6 +94,7 @@ cvs co -r ${WMCOREtag} -d WMCore/SiteScreening COMP/WMCORE/src/python/WMCore/Sit
 cvs co -r ${WMCOREtag} -d WMCore/Services      COMP/WMCORE/src/python/WMCore/Services
 cvs co -r ${WMCOREtag} -d WMCore/JobSplitting      COMP/WMCORE/src/python/WMCore/JobSplitting
 cvs co -r ${WMCOREtag} -d WMCore/DataStructs       COMP/WMCORE/src/python/WMCore/DataStructs 
+cvs co -r ${WMCOREtag} -d WMCore/Algorithms       COMP/WMCORE/src/python/WMCore/Algorithms 
 
 ## Use the Head
 #cvs co  -d WMCore               COMP/WMCORE/src/python/WMCore/__init__.py
@@ -101,6 +102,7 @@ cvs co -r ${WMCOREtag} -d WMCore/DataStructs       COMP/WMCORE/src/python/WMCore
 #cvs co  -d WMCore/Services      COMP/WMCORE/src/python/WMCore/Services
 #cvs co  -d WMCore/JobSplitting      COMP/WMCORE/src/python/WMCore/JobSplitting
 #cvs co  -d WMCore/DataStructs       COMP/WMCORE/src/python/WMCore/DataStructs 
+#cvs co  -d WMCore/Algorithms       COMP/WMCORE/src/python/WMCore/Algorithms 
 
 #cd ..
 ## exit from external
