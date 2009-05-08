@@ -139,6 +139,8 @@ class Status(Actor):
         if len(list_ID)>0:
             print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(code))
             print "          List of jobs: %s" % readableList(self,list_ID)
+            if (code!=0):
+                print "          See https://twiki.cern.ch/twiki/bin/view/CMS/JobExitCodes for Exit Code meaning"
             print " "
 
         return
