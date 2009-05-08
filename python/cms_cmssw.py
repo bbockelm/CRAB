@@ -257,8 +257,19 @@ class Cmssw(JobType):
                         common.logger.message("Adding "+edmOutput+" (from PoolOutputModule) to list of output files")
                     pass
                 pass
-        except CrabException:
-            msg='Error while manipulating ParameterSet: exiting...'
+            # not required: check anyhow if present, to avoid accidental T2 overload
+            else:
+                edmOutput = PsetEdit.getPoolOutputModule()
+                if edmOutput and (edmOutput not in self.output_file):
+                    msg = "ERROR: a PoolOutputModule is present in your ParameteSet %s \n"%self.pset
+                    msg +="         but the file produced ( %s ) is not in the list of output files\n"%edmOutput
+                    msg += "WARNING: please remove it or, if you wan to keep it, add the file to output_files or use CMSSW.get_edm_output\n"
+                    raise CrabException(msg)
+                pass
+            pass
+        except CrabException, msg:
+            common.logger.message(str(msg))
+            msg='Error while manipulating ParameterSet (see previous message, if any): exiting...'
             raise CrabException(msg)
 
 
