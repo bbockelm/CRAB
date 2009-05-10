@@ -379,7 +379,7 @@ class Cmssw(JobType):
                 # just for debug
                 str_argu += concString.join(jobParams[id])
             listDictions.append(argu)
-            job_ToSave['arguments']= str(job+1)# +' '+argu
+            job_ToSave['arguments']= str(job+1)
             job_ToSave['dlsDestination']= self.jobDestination[id]
             listField.append(job_ToSave)
             msg="Job  %s  Arguments:  %s\n"%(str(job+1),str_argu)
@@ -511,7 +511,8 @@ class Cmssw(JobType):
             prodcommonDir = './'
             prodcommonPath = os.environ['CRABDIR'] + '/' + 'external/'
             neededStuff = ['ProdCommon/__init__.py','ProdCommon/FwkJobRep', 'ProdCommon/CMSConfigTools', \
-                           'ProdCommon/Core', 'ProdCommon/MCPayloads', 'IMProv', 'ProdCommon/Storage']
+                           'ProdCommon/Core', 'ProdCommon/MCPayloads', 'IMProv', 'ProdCommon/Storage', \
+                           'WMCore/__init__.py','WMCore/Algorithms']
             for file in neededStuff:
                 tar.add(prodcommonPath+file,prodcommonDir+file)
 
