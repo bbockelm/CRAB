@@ -501,9 +501,9 @@ class JobSplitter:
         dictOut['params'] = ['MaxEvents']
         if (firstRun):
             dictOut['params'] = ['FirstRun','MaxEvents']
-            if ( generator in managedGenerators ) : ['FirstRun', 'FirstEvent', 'MaxEvents'] 
+            if ( generator in managedGenerators ) : dictOut['params'] = ['FirstRun', 'FirstEvent', 'MaxEvents'] 
         else:  
-            if (generator in managedGenerators) : ['FirstEvent', 'MaxEvents']
+            if (generator in managedGenerators) : dictOut['params'] = ['FirstEvent', 'MaxEvents']
         dictOut['args'] = self.list_of_args
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
