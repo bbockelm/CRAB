@@ -3,7 +3,11 @@ from crab_exceptions import *
 from crab_util import *
 import common
 
-import urllib2
+import urllib
+class MyUrlOpener(urllib.FancyURLopener):
+    def http_error_default(*args, **kwargs):
+        return urllib.URLopener.http_error_default(*args, **kwargs)
+
 import os, time
 
 class GliteConfig:
@@ -11,7 +15,7 @@ class GliteConfig:
         common.logger.debug(5,'Calling GliteConfig')
        # self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
         self.url ='https://cmsweb.cern.ch/crabconf/'
-        self.configFileName = 'glite_wms_'+str(RB)+'.conf'
+        self.configFileName = 'glite_wms_'+str(RB)+'.confcacca'
         self.theConfig = self.getConfig_()
         pass
         
@@ -20,13 +24,13 @@ class GliteConfig:
 
     def downloadFile(self, url, destination):
         try:
-            f = urllib2.urlopen(url)
+            urllib._urlopener = MyUrlOpener()
+            f = urllib.urlopen(url)
             ff = open(destination, 'w')
             ff.write(f.read())
             ff.close()
-        except urllib2.HTTPError:
-            # print 'Cannot access URL: '+url
-            raise CrabException('Cannot download config file '+destination+' from '+self.url)
+        except IOError, msg:
+            raise CrabException('Cannot download config file '+destination+' from '+self.url+'\n'+str(msg))
 
     def getConfig_(self):
         if not os.path.exists(self.configFileName):
