@@ -263,7 +263,7 @@ class Cmssw(JobType):
                 if edmOutput and (edmOutput not in self.output_file):
                     msg = "ERROR: a PoolOutputModule is present in your ParameteSet %s \n"%self.pset
                     msg +="         but the file produced ( %s ) is not in the list of output files\n"%edmOutput
-                    msg += "WARNING: please remove it or, if you wan to keep it, add the file to output_files or use CMSSW.get_edm_output\n"
+                    msg += "WARNING: please remove it. If you want to keep it, add the file to output_files or use CMSSW.get_edm_output\n"
                     raise CrabException(msg)
                 pass
             pass
