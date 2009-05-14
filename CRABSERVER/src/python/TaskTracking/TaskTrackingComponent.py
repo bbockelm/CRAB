@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.144 2009/04/30 12:46:14 mcinquil Exp $"
-__version__ = "$Revision: 1.144 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.145 2009/05/04 09:37:48 mcinquil Exp $"
+__version__ = "$Revision: 1.145 $"
 
 import os
 import time
@@ -618,11 +618,11 @@ class TaskTrackingComponent:
         try:
             ## load lite task in memory
             try:
-                taskObj = mySession.loadTaskByName( taskName )
+                taskObj = mySession.loadTaskByName( taskname )
             except TaskError, te:
                 taskObj = None
             if taskObj is None:
-                logging.info("Unable to load task [%s]."%(taskName))
+                logging.info("Unable to load task [%s]."%(taskname))
             else:
                 for jobbe in taskObj.jobs:
                     try:
@@ -632,7 +632,7 @@ class TaskTrackingComponent:
                     if jobbe['jobId'] in jobList:
                         jobbe.runningJob['state'] = value
                 mySession.updateDB(taskObj)
-                self.singleTaskPoll(taskObj, TaskStateAPI(), taskName, mySession)
+                self.singleTaskPoll(taskObj, TaskStateAPI(), taskname, mySession)
         except Exception, ex:
             logging.error( "Exception raised: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
