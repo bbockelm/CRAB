@@ -321,9 +321,9 @@ class TaskTrackingComponent:
         # successfully killed
         if event == "TaskKilled":
             if payload != None or payload != "" or len(payload) > 0:
-                rangeKillJobs = "all"
+                listjob = "all"
                 if payload.find("::") != -1:
-                    taskName, rangeKillJobs = payload.split("::")
+                    taskName, listjob = payload.split("::")
                 logBuf = self.__log(logBuf, "   Killed task: %s" % taskName)
                 if rangeKillJobs == "all":
                     self.updateTaskKilled( taskName, self.taskState[4] )
@@ -338,9 +338,9 @@ class TaskTrackingComponent:
         # problems killing
         if event == "TaskKilledFailed":
             if payload != None or payload != "" or len(payload) > 0: 
-                rangeKillJobs = "all"
+                listjob = "all"
                 if payload.find("::") != -1:
-                    taskName, rangeKillJobs = payload.split("::")
+                    taskName, listjob = payload.split("::")
                 logBuf = self.__log(logBuf, "   Error killing task: %s" % taskName)
                 self.setActionStatus(taskName, eval(listjob), "KillFailed")
                 _loginfo.setdefault('range', str(rangeKillJobs))
@@ -353,7 +353,7 @@ class TaskTrackingComponent:
         # get output performed
         if event == "CRAB_Cmd_Mgr:GetOutputNotification":
             if payload != "" and payload != None:
-                taskName, jobstr = payload.split('::')
+                taskName, listjob = payload.split('::')
                 logBuf = self.__log(logBuf, "Cleared jobs: " + str(jobstr) + \
                                             " for task " + str(taskName) )
                 try:
@@ -598,7 +598,7 @@ class TaskTrackingComponent:
         except Exception, ex:
             logging.error( "Exception raised: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
-        mySession.bossLiteDB.close()
+        ySession.bossLiteDB.close()
         del mySession
 
     def setActionStatus(self, taskname, joblist, value):
@@ -629,7 +629,7 @@ class TaskTrackingComponent:
                         mySession.getRunningInstance(jobbe)
                     except JobError, ex:
                         logging.error('Problem loading job running info')
-                    if jobbe['jobId'] in jobList:
+                    if jobbe['jobId'] in joblist or joblist =="all":
                         jobbe.runningJob['state'] = value
                 mySession.updateDB(taskObj)
                 self.singleTaskPoll(taskObj, TaskStateAPI(), taskname, mySession)
@@ -1151,7 +1151,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CRAB_Cmd_Mgr:MailReference")
         ## new for logging task info
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewCommand")
-        self.ms.subscribeTo("KillTask")
+        #self.ms.subscribeTo("KillTask")
         self.ms.subscribeTo("TTXmlLogging")
 
 
