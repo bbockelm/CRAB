@@ -325,7 +325,7 @@ class TaskTrackingComponent:
                 if payload.find("::") != -1:
                     taskName, listjob = payload.split("::")
                 logBuf = self.__log(logBuf, "   Killed task: %s" % taskName)
-                if rangeKillJobs == "all":
+                if listjob == "all":
                     self.updateTaskKilled( taskName, self.taskState[4] )
                 else:
                     self.updateTaskKilled( taskName, self.taskState[7] )
@@ -343,7 +343,7 @@ class TaskTrackingComponent:
                     taskName, listjob = payload.split("::")
                 logBuf = self.__log(logBuf, "   Error killing task: %s" % taskName)
                 self.setActionStatus(taskName, eval(listjob), "KillFailed")
-                _loginfo.setdefault('range', str(rangeKillJobs))
+                _loginfo.setdefault('range', str(listjob))
             else:
                 logBuf = self.__log(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
             logging.info(logBuf)
