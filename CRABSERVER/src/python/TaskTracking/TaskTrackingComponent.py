@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.145 2009/05/04 09:37:48 mcinquil Exp $"
-__version__ = "$Revision: 1.145 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.148 2009/05/14 15:10:09 mcinquil Exp $"
+__version__ = "$Revision: 1.148 $"
 
 import os
 import time
@@ -598,7 +598,7 @@ class TaskTrackingComponent:
         except Exception, ex:
             logging.error( "Exception raised: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
-        ySession.bossLiteDB.close()
+        mySession.bossLiteDB.close()
         del mySession
 
     def setActionStatus(self, taskname, joblist, value):
