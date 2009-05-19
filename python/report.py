@@ -27,6 +27,26 @@ if __name__ == '__main__' :
            args.append(line.strip())
 #        print args
 #        print "********************"
+    if len(args)>0 :
+         argstring=' '.join(args)
+         mytmp=argstring.split('=')
+         mystring=''
+         newkey=''
+         if len(mytmp)>0 :
+          for i in range(0, len(mytmp)-1):
+              mytmp[i]=mytmp[i].strip()
+              mytmp[i+1]=mytmp[i+1].strip()
+              if  newkey=='':
+                  ckey=mytmp[i]
+              else :
+                  ckey=newkey
+              if i< len(mytmp)-2 :  
+                  cvalue=' '.join(mytmp[i+1].split(' ')[:-1])+","
+              else:
+                  cvalue= mytmp[-1]    
+              newkey=mytmp[i+1].split(' ')[-1]
+              mystring=mystring+ckey.replace(" ",'')+"="+cvalue
+          args=mystring.split(',')  
     report(args)
 #    print "***"
 #    print opts
