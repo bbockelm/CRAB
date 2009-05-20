@@ -19,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.33 2009/03/09 15:56:26 ewv Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.34 2009/05/20 19:04:10 ewv Exp $"
+__version__ = "$Revision: 1.34 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -30,6 +30,7 @@ class SchedulerCondorCommon(SchedulerGrid):
     def __init__(self, name):
         SchedulerGrid.__init__(self, name)
         self.environment_unique_identifier = None
+        self.msgPre = '[Condor-G Scheduler]: '
 
         return
 
@@ -41,7 +42,7 @@ class SchedulerCondorCommon(SchedulerGrid):
         # FIXME: Get rid of try/except and use get() instead
 
         SchedulerGrid.configure(self, cfgParams)
-        if not cfgParams.get('CRAB.server',None):
+        if not cfgParams.get('CRAB.server_name',None):
             self.checkCondorSetup()
 
         # init BlackWhiteListParser
@@ -197,11 +198,10 @@ class SchedulerCondorCommon(SchedulerGrid):
         """
         Check the local machine for a properly set up and running condor install
         """
-			
+
         # check for locally running schedd
         cmd = 'ps xau | grep -i condor_schedd | grep -v grep'
         cmdOut = runCommand(cmd)
-        self.msgPre = '[Condor-G Scheduler]: '
         if cmdOut == None:
             msg  = self.msgPre + 'condor_schedd is not running on this machine.\n'
             msg += self.msgPre + 'Please use a machine with condor installed and running\n'
