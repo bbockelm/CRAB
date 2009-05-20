@@ -19,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.32 2009/03/09 09:42:50 spiga Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.33 2009/03/09 15:56:26 ewv Exp $"
+__version__ = "$Revision: 1.33 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -31,123 +31,8 @@ class SchedulerCondorCommon(SchedulerGrid):
         SchedulerGrid.__init__(self, name)
         self.environment_unique_identifier = None
 
-        # check for locally running condor scheduler
-        cmd = 'ps xau | grep -i condor_schedd | grep -v grep'
-        cmdOut = runCommand(cmd)
-        self.msgPre = '[Condor-G Scheduler]: '
-        if cmdOut == None:
-            msg  = self.msgPre + 'condor_schedd is not running on this machine.\n'
-            msg += self.msgPre + 'Please use a machine with condor installed and running\n'
-            msg += self.msgPre + 'condor_schedd or change the Scheduler in your crab.cfg.'
-            common.logger.debug(2, msg)
-            raise CrabException(msg)
-
-        self.checkExecutableInPath('condor_q')
-        self.checkExecutableInPath('condor_submit')
-        self.checkExecutableInPath('condor_version')
-
-        # get version number
-        cmd = 'condor_version'
-        cmdOut = runCommand(cmd)
-        if cmdOut != None :
-            pass
-            #tmp = cmdOut.find('CondorVersion') + 15
-            #version = cmdOut[tmp:tmp+6].split('.')
-            #version_master = int(version[0])
-            #version_major  = int(version[1])
-            #version_minor  = int(version[2])
-        else :
-            msg  = self.msgPre + 'condor_version was not able to determine the installed condor version.\n'
-            msg += self.msgPre + 'Please use a machine with a properly installed condor\n'
-            msg += self.msgPre + 'or change the Scheduler in your crab.cfg.'
-            common.logger.debug(2, msg)
-            raise CrabException(msg)
-
-        self.checkExecutableInPath('condor_config_val')
-        self.checkCondorVariablePointsToFile('GRIDMANAGER')
-        self.checkCondorVariablePointsToFile('GT2_GAHP', alternateName='GAHP')
-        self.checkCondorVariablePointsToFile('GRID_MONITOR')
-        self.checkCondorVariableIsTrue('ENABLE_GRID_MONITOR')
-
-        maxSubmit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE', 100).strip()
-        maxPending = self.queryCondorVariable('GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE', 'Unlimited').strip()
-
-        msg  = '[Condor-G Scheduler]\n'
-        msg += 'Maximum number of jobs submitted to the grid   : '
-        msg += 'GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE  = ' + maxSubmit + '\n'
-        msg += 'Maximum number of parallel submits to the grid : '
-        msg += 'GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE = ' + maxPending + '\n'
-        msg += 'Increase these variables to enable more jobs to be executed on the grid in parallel.\n'
-        common.logger.debug(2, msg)
-
         return
 
-    def checkExecutableInPath(self, name):
-        """
-        check if executable is in PATH
-        """
-
-        cmd = 'which '+name
-        cmdOut = runCommand(cmd)
-        if cmdOut == None:
-            msg  = self.msgPre + name + ' is not in the $PATH on this machine.\n'
-            msg += self.msgPre + 'Please use a machine with a properly installed condor\n'
-            msg += self.msgPre + 'or change the Scheduler in your crab.cfg.'
-            common.logger.debug(2, msg)
-            raise CrabException(msg)
-
-    def checkCondorVariablePointsToFile(self, name, alternateName=None):
-        """
-        check for condor variable
-        """
-
-        cmd = 'condor_config_val ' + name
-        cmdOut = runCommand(cmd)
-        if alternateName and not cmdOut:
-            cmd = 'condor_config_val ' + alternateName
-            cmdOut = runCommand(cmd)
-        if cmdOut:
-            cmdOut = cmdOut.strip()
-        if not cmdOut or not os.path.isfile(cmdOut) :
-            msg  = self.msgPre + 'the variable ' + name
-            msg += ' is not properly set for the condor installation.\n'
-            msg += self.msgPre + 'Please ask the administrator of the local condor '
-            msg += 'installation  to set the variable ' + name + ' properly, '
-            msg += 'use another machine with a properly installed condor\n'
-            msg += 'or change the Scheduler in your crab.cfg.'
-            common.logger.debug(2, msg)
-            raise CrabException(msg)
-
-    def checkCondorVariableIsTrue(self, name):
-        """
-        check for condor variable
-        """
-
-        cmd = 'condor_config_val '+name
-        cmdOut = runCommand(cmd)
-        if cmdOut == 'TRUE' :
-            msg  = self.msgPre + 'the variable ' + name
-            msg += ' is not set to true for the condor installation.\n'
-            msg += self.msgPre + 'Please ask the administrator of the local condor installation '
-            msg += 'to set the variable ' + name + ' to true, '
-            msg += 'use another machine with a properly installed condor or '
-            msg += 'change the Scheduler in your crab.cfg.'
-            common.logger.debug(2, msg)
-            raise CrabException(msg)
-
-    def queryCondorVariable(self, name, default):
-        """
-        check for condor variable
-        """
-
-        cmd = 'condor_config_val '+name
-        out = popen2.Popen3(cmd, 1)
-        exitCode = out.wait()
-        cmdOut = out.fromchild.readline().strip()
-        if exitCode != 0 :
-            cmdOut = str(default)
-
-        return cmdOut
 
     def configure(self, cfgParams):
         """
@@ -156,6 +41,8 @@ class SchedulerCondorCommon(SchedulerGrid):
         # FIXME: Get rid of try/except and use get() instead
 
         SchedulerGrid.configure(self, cfgParams)
+        if not cfgParams.get('CRAB.server',None):
+            self.checkCondorSetup()
 
         # init BlackWhiteListParser
         ceWhiteList = cfgParams.get('EDG.ce_white_list',[])
@@ -304,3 +191,128 @@ class SchedulerCondorCommon(SchedulerGrid):
         txt += '    exit $job_exit_code\n'
         txt += '}\n'
         return txt
+
+
+    def checkCondorSetup(self):
+        """
+        Check the local machine for a properly set up and running condor install
+        """
+			
+        # check for locally running schedd
+        cmd = 'ps xau | grep -i condor_schedd | grep -v grep'
+        cmdOut = runCommand(cmd)
+        self.msgPre = '[Condor-G Scheduler]: '
+        if cmdOut == None:
+            msg  = self.msgPre + 'condor_schedd is not running on this machine.\n'
+            msg += self.msgPre + 'Please use a machine with condor installed and running\n'
+            msg += self.msgPre + 'condor_schedd or change the Scheduler in your crab.cfg.'
+            common.logger.debug(2, msg)
+            raise CrabException(msg)
+
+        self.checkExecutableInPath('condor_q')
+        self.checkExecutableInPath('condor_submit')
+        self.checkExecutableInPath('condor_version')
+
+        # get version number
+        cmd = 'condor_version'
+        cmdOut = runCommand(cmd)
+        if cmdOut != None :
+            pass
+            #tmp = cmdOut.find('CondorVersion') + 15
+            #version = cmdOut[tmp:tmp+6].split('.')
+            #version_master = int(version[0])
+            #version_major  = int(version[1])
+            #version_minor  = int(version[2])
+        else :
+            msg  = self.msgPre + 'condor_version was not able to determine the installed condor version.\n'
+            msg += self.msgPre + 'Please use a machine with a properly installed condor\n'
+            msg += self.msgPre + 'or change the Scheduler in your crab.cfg.'
+            common.logger.debug(2, msg)
+            raise CrabException(msg)
+
+        self.checkExecutableInPath('condor_config_val')
+        self.checkCondorVariablePointsToFile('GRIDMANAGER')
+        self.checkCondorVariablePointsToFile('GT2_GAHP', alternateName='GAHP')
+        self.checkCondorVariablePointsToFile('GRID_MONITOR')
+        self.checkCondorVariableIsTrue('ENABLE_GRID_MONITOR')
+
+        maxSubmit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE', 100).strip()
+        maxPending = self.queryCondorVariable('GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE', 'Unlimited').strip()
+
+        msg  = '[Condor-G Scheduler]\n'
+        msg += 'Maximum number of jobs submitted to the grid   : '
+        msg += 'GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE  = ' + maxSubmit + '\n'
+        msg += 'Maximum number of parallel submits to the grid : '
+        msg += 'GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE = ' + maxPending + '\n'
+        msg += 'Increase these variables to enable more jobs to be executed on the grid in parallel.\n'
+        common.logger.debug(2, msg)
+
+        return
+
+    def checkExecutableInPath(self, name):
+        """
+        check if executable is in PATH
+        """
+
+        cmd = 'which '+name
+        cmdOut = runCommand(cmd)
+        if cmdOut == None:
+            msg  = self.msgPre + name + ' is not in the $PATH on this machine.\n'
+            msg += self.msgPre + 'Please use a machine with a properly installed condor\n'
+            msg += self.msgPre + 'or change the Scheduler in your crab.cfg.'
+            common.logger.debug(2, msg)
+            raise CrabException(msg)
+
+    def checkCondorVariablePointsToFile(self, name, alternateName=None):
+        """
+        check for condor variable
+        """
+
+        cmd = 'condor_config_val ' + name
+        cmdOut = runCommand(cmd)
+        if alternateName and not cmdOut:
+            cmd = 'condor_config_val ' + alternateName
+            cmdOut = runCommand(cmd)
+        if cmdOut:
+            cmdOut = cmdOut.strip()
+        if not cmdOut or not os.path.isfile(cmdOut) :
+            msg  = self.msgPre + 'the variable ' + name
+            msg += ' is not properly set for the condor installation.\n'
+            msg += self.msgPre + 'Please ask the administrator of the local condor '
+            msg += 'installation  to set the variable ' + name + ' properly, '
+            msg += 'use another machine with a properly installed condor\n'
+            msg += 'or change the Scheduler in your crab.cfg.'
+            common.logger.debug(2, msg)
+            raise CrabException(msg)
+
+    def checkCondorVariableIsTrue(self, name):
+        """
+        check for condor variable
+        """
+
+        cmd = 'condor_config_val '+name
+        cmdOut = runCommand(cmd)
+        if cmdOut == 'TRUE' :
+            msg  = self.msgPre + 'the variable ' + name
+            msg += ' is not set to true for the condor installation.\n'
+            msg += self.msgPre + 'Please ask the administrator of the local condor installation '
+            msg += 'to set the variable ' + name + ' to true, '
+            msg += 'use another machine with a properly installed condor or '
+            msg += 'change the Scheduler in your crab.cfg.'
+            common.logger.debug(2, msg)
+            raise CrabException(msg)
+
+    def queryCondorVariable(self, name, default):
+        """
+        check for condor variable
+        """
+
+        cmd = 'condor_config_val '+name
+        out = popen2.Popen3(cmd, 1)
+        exitCode = out.wait()
+        cmdOut = out.fromchild.readline().strip()
+        if exitCode != 0 :
+            cmdOut = str(default)
+
+        return cmdOut
+
