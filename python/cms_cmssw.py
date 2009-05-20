@@ -248,8 +248,8 @@ class Cmssw(JobType):
                     pass
                 pass
             ## If present and requested, add PoolOutputModule to output files
+            edmOutput = PsetEdit.getPoolOutputModule()
             if int(self.cfg_params.get('CMSSW.get_edm_output',0)):
-                edmOutput = PsetEdit.getPoolOutputModule()
                 if edmOutput:
                     if edmOutput in self.output_file:
                         common.logger.debug(5,"Output from PoolOutputModule "+edmOutput+" already in output files")
@@ -260,7 +260,6 @@ class Cmssw(JobType):
                 pass
             # not required: check anyhow if present, to avoid accidental T2 overload
             else:
-                edmOutput = PsetEdit.getPoolOutputModule()
                 if edmOutput and (edmOutput not in self.output_file):
                     msg = "ERROR: a PoolOutputModule is present in your ParameteSet %s \n"%self.pset
                     msg +="         but the file produced ( %s ) is not in the list of output files\n"%edmOutput
@@ -268,6 +267,11 @@ class Cmssw(JobType):
                     raise CrabException(msg)
                 pass
             pass
+
+            if (PsetEdit.getBadFilesSetting()):
+                msg = "WARNING: You have set skipBadFiles to True. This will continue processing on some errors and you may not be notified."
+                common.logger.message(msg)
+
         except CrabException, msg:
             common.logger.message(str(msg))
             msg='Error while manipulating ParameterSet (see previous message, if any): exiting...'
@@ -1017,7 +1021,7 @@ class Cmssw(JobType):
           #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
         txt += '    if [ $executable_exit_status -eq 0 ];then\n'
         txt += '        echo ">>> Executable succeded  $executable_exit_status"\n'
-        ## This cannot more work given the changes on the Job argumentsJob   
+        ## This cannot more work given the changes on the Job argumentsJob
         """
         if (self.datasetPath and not (self.dataset_pu or self.useParent==1)) :
           # VERIFY PROCESSED DATA

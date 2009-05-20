@@ -100,3 +100,11 @@ class PsetManipulator:
         for out in poolOutputModule:
             return poolOutputModule[out].fileName.value()
 
+    def getBadFilesSetting(self):
+        setting = False
+        try:
+            if self.cfg.data.source.skipBadFiles.value():
+                setting = True
+        except AttributeError:
+            pass # Either no source or no setting of skipBadFiles
+        return setting
