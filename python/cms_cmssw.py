@@ -36,11 +36,13 @@ class Cmssw(JobType):
         self.scriptExe = ''
         self.executable = ''
         self.executable_arch = self.scram.getArch()
-        self.tgz_name = 'default.tgz'
+        self.tgz_name = 'default.tar.gz'
+        self.tar_name = 'default.tar'
         self.scriptName = 'CMSSW.sh'
         self.pset = ''
         self.datasetPath = ''
 
+        self.tgzNameWithPath = common.work_space.pathForTgz()+self.tgz_name
         # set FJR file name
         self.fjrFileName = 'crab_fjr.xml'
 
@@ -215,15 +217,14 @@ class Cmssw(JobType):
         splitter = JobSplitter(self.cfg_params,self.conf)
         self.dict = splitter.Algos()[self.algo]()
 
-        self.filepath= '%s/arguments.xml'%common.work_space.shareDir()
-        self.rootname= 'arguments'
+        self.argsFile= '%s/arguments.xml'%common.work_space.shareDir()
+        self.rootArgsFilename= 'arguments'
         # modify Pset only the first time
-        if isNew:
-            # modify Pset only the first time
-            if self.pset != None: self.ModifyPset()
+        if (isNew and self.pset != None): self.ModifyPset()
 
-            ## Prepare inputSandbox TarBall (only the first time)
-#            self.tgzNameWithPath = self.getTarBall(self.executable)
+        ## Prepare inputSandbox TarBall (only the first time)
+        self.tarNameWithPath = self.getTarBall(self.executable)
+
 
     def ModifyPset(self):
         import PsetManipulator as pp
@@ -364,7 +365,7 @@ class Cmssw(JobType):
         listID=[]
         listField=[]
         listDictions=[]
-        exist= os.path.exists(self.filepath)
+        exist= os.path.exists(self.argsFile)
         for id in range(njobs):
             job = id + int(firstJobID)
             listID.append(job+1)
@@ -389,16 +390,28 @@ class Cmssw(JobType):
         if len(listDictions):
             if exist==False: self.CreateXML()
             self.addEntry(listDictions)
+            self.addXMLfile()
         common._db.updateJob_(listID,listField)
-        # to be improved.... Daniele
-        self.tgzNameWithPath = self.getTarBall(self.executable)
+        self.zipTarFile()
         return
+      
+    def addXMLfile(self):
 
+        import tarfile
+       # try:
+        print self.argsFile 
+        tar = tarfile.open(self.tarNameWithPath, "a")
+        tar.add(self.argsFile, os.path.basename(self.argsFile))
+        tar.close()
+       ## except:
+       #     pass
+
+  
     def CreateXML(self):
         """
         """
-        result = IMProvNode( self.rootname )
-        outfile = file( self.filepath, 'w').write(str(result))
+        result = IMProvNode( self.rootArgsFilename )
+        outfile = file( self.argsFile, 'w').write(str(result))
         return
 
     def addEntry(self, listDictions):
@@ -409,12 +422,12 @@ class Cmssw(JobType):
         """
         from IMProv.IMProvLoader import loadIMProvFile
         ## load xml
-        improvDoc = loadIMProvFile(self.filepath)
+        improvDoc = loadIMProvFile(self.argsFile)
         entrname= 'Job'
         for dictions in listDictions:
            report = IMProvNode(entrname , None, **dictions)
            improvDoc.addNode(report)
-        outfile = file( self.filepath, 'w').write(str(improvDoc))
+        outfile = file( self.argsFile, 'w').write(str(improvDoc))
         return
 
     def numberOfJobs(self):
@@ -424,14 +437,14 @@ class Cmssw(JobType):
         """
         Return the TarBall with lib and exe
         """
-        self.tgzNameWithPath = common.work_space.pathForTgz()+self.tgz_name
-        if os.path.exists(self.tgzNameWithPath):
-            return self.tgzNameWithPath
+        self.tarNameWithPath = common.work_space.pathForTgz()+self.tar_name
+        if os.path.exists(self.tarNameWithPath):
+            return self.tarNameWithPath
 
         # Prepare a tar gzipped file with user binaries.
         self.buildTar_(exe)
 
-        return string.strip(self.tgzNameWithPath)
+        return string.strip(self.tarNameWithPath)
 
     def buildTar_(self, executable):
 
@@ -446,7 +459,8 @@ class Cmssw(JobType):
 
         import tarfile
         try: # create tar ball
-            tar = tarfile.open(self.tgzNameWithPath, "w:gz")
+            #tar = tarfile.open(self.tgzNameWithPath, "w:gz")
+            tar = tarfile.open(self.tarNameWithPath, "w")
             ## First find the executable
             if (self.executable != ''):
                 exeWithPath = self.scram.findFile_(executable)
@@ -532,20 +546,21 @@ class Cmssw(JobType):
             for file in self.additional_inbox_files:
                 tar.add(file,string.split(file,'/')[-1])
             tar.dereference=False
-            common.logger.debug(5,"Files in "+self.tgzNameWithPath+" : "+str(tar.getnames()))
-
-            if (os.path.exists(self.filepath)):
-                tar.add(self.filepath,'arguments.xml')
+            common.logger.debug(5,"Files in "+self.tarNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
         except IOError, exc:
             common.logger.write(str(exc))
-            raise CrabException('Could not create tar-ball '+self.tgzNameWithPath)
+            raise CrabException('Could not create tar-ball '+self.tarNameWithPath)
         except tarfile.TarError, exc:
             common.logger.write(str(exc))
-            raise CrabException('Could not create tar-ball '+self.tgzNameWithPath)
+            raise CrabException('Could not create tar-ball '+self.tarNameWithPath)
+  
+    def zipTarFile(self):  
 
-        ## check for tarball size
+        cmd = "gzip -c %s > %s "%(self.tarNameWithPath,self.tgzNameWithPath) 
+        res=runCommand(cmd)
+
         tarballinfo = os.stat(self.tgzNameWithPath)
         if ( tarballinfo.st_size > self.MaxTarBallSize*1024*1024 ) :
             msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + str(self.MaxTarBallSize) \
@@ -694,9 +709,8 @@ class Cmssw(JobType):
 
         if os.path.isfile(self.tgzNameWithPath):
             txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
-            txt += 'tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'tar zxvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
             if  self.debug_wrapper==1 :
-                txt += 'tar tzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
                 txt += 'ls -Al \n'
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
