@@ -57,6 +57,33 @@ class SchedulerArc(SchedulerGrid):
         self.environment_unique_identifier = None
 
 
+    def checkProxy(self, minTime=10):
+        """
+        Function to check the Globus proxy.
+        """
+        if (self.proxyValid): return
+
+        ### Just return if asked to do so
+        if (self.dontCheckProxy==1):
+            self.proxyValid=1
+            return
+        CredAPI_config =  { 'credential':'Proxy',\
+                            'myProxySvr': self.proxyServer \
+                          }   
+        from ProdCommon.Credential.CredentialAPI import CredentialAPI 
+        CredAPI = CredentialAPI(CredAPI_config)
+
+        if not CredAPI.checkCredential(Time=int(minTime)) or \
+           not CredAPI.checkAttribute(group=self.group, role=self.role):
+            try:
+                CredAPI.ManualRenewCredential(group=self.group, role=self.role) 
+            except Exception, ex:
+                raise CrabException(str(ex))   
+        # cache proxy validity
+        self.proxyValid=1
+        return
+
+
     def ce_list(self):
         ceParser = CEBlackWhiteListParser(self.EDG_ce_white_list,
                                           self.EDG_ce_black_list, common.logger)
