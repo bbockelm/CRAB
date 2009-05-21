@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.148 2009/05/14 15:10:09 mcinquil Exp $"
-__version__ = "$Revision: 1.148 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.145 2009/05/04 09:37:48 mcinquil Exp $"
+__version__ = "$Revision: 1.145 $"
 
 import os
 import time
@@ -854,6 +854,7 @@ class TaskTrackingComponent:
 
         countNotSubmitted = 0
         countCreated = 0
+        updateState = [] 
 
         for jobbe in taskObj.jobs:
             try:
@@ -874,6 +875,9 @@ class TaskTrackingComponent:
                jobbe.runningJob['destination'] != '':
                 site  = jobbe.runningJob['destination'].split(":")[0]
             del jobbe
+
+            if action in ["SubSuccess"] and stato in ["SD","E","DA"]:
+                updateState.append(job)
 
             resubmitting, MaxResub, Resub, internalstatus = \
                         ttdb.checkNSubmit(mySession.bossLiteDB, taskName, job)
@@ -940,6 +944,8 @@ class TaskTrackingComponent:
                 dictStateTot[job][6] = "CS"
 
         ttdb.statusUpdated(mySession.bossLiteDB, taskName)
+        if len(updateState) > 0:
+            self.setActionStatus(taskName, updateState, "Terminated")
 
         return dictStateTot, dictReportTot, countNotSubmitted, countCreated
 
