@@ -500,7 +500,7 @@ class Crab:
                                        self.cfg_params,
                                        ncjobs, skip_blocks, isNew, firstJob)
                 self.actions[opt] = self.creator
-
+                 
                 # create jobs in the DB
                 common._db.createJobs_(self.creator.nJobsL(),isNew)
 
@@ -760,7 +760,7 @@ class Crab:
         """
         header = common.prog_name + ' (version ' + common.prog_version_str + \
              ') running on ' + \
-             time.ctime(time.time())+'\n\n' + \
+             time.ctime(time.time())+' '+ time.tzname[0]+'\n\n' + \
              common.prog_name+'. Working options:\n'
         header = header +\
                  '  scheduler           ' + self.cfg_params['CRAB.scheduler'] + '\n'+\
