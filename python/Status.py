@@ -61,6 +61,7 @@ class Status(Actor):
             if dest == 'None' :  dest = ''
             if exe_exit_code == 'None' :  exe_exit_code = ''
             if job_exit_code == 'None' :  job_exit_code = ''
+            if job.runningJob['state'] == 'Terminated' : jobStatus = 'Done'
             printline+="%-6s %-18s %-36s %-13s %-16s %-4s" % (id,jobStatus,dest,exe_exit_code,job_exit_code,ended)
             toPrint.append(printline)
 
