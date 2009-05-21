@@ -758,9 +758,12 @@ class Crab:
         Creates a string describing program options either given in
         the command line or their default values.
         """
+        local = time.ctime(time.time())
+        UTC = time.asctime(time.gmtime()).split(' ')[3]
+        tzone = time.tzname[0]
         header = common.prog_name + ' (version ' + common.prog_version_str + \
              ') running on ' + \
-             time.ctime(time.time())+' '+ time.tzname[0]+'\n\n' + \
+             local+' '+ tzone+ ' ('+UTC+' UTC)'+'\n\n' + \
              common.prog_name+'. Working options:\n'
         header = header +\
                  '  scheduler           ' + self.cfg_params['CRAB.scheduler'] + '\n'+\
