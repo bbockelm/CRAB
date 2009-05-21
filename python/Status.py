@@ -48,6 +48,10 @@ class Status(Actor):
         task_unique_name = str(up_task['name'])
         ended = None
 
+        run_jobToSave = {'state' :'Terminated'}
+        listId=[]
+        listRunField=[]
+
         self.wrapErrorList = []
         for job in up_task.jobs :
             id = str(job.runningJob['jobId'])
@@ -62,11 +66,16 @@ class Status(Actor):
             if exe_exit_code == 'None' :  exe_exit_code = ''
             if job_exit_code == 'None' :  job_exit_code = ''
             if job.runningJob['state'] == 'Terminated' : jobStatus = 'Done'
+            if job.runningJob['state'] == 'SubRequested' : jobStatus = 'Submitting'
+            if job.runningJob['status'] in ['SD','DA'] :
+                listId.append(id)
+                listRunField.append(run_jobToSave)
             printline+="%-6s %-18s %-36s %-13s %-16s %-4s" % (id,jobStatus,dest,exe_exit_code,job_exit_code,ended)
             toPrint.append(printline)
 
             if jobStatus is not None:
                 self.dataToDash(job,id,taskId,task_unique_name,dest,jobStatus)
+        if len(listId) > 0 : common._db.updateRunJob_(listId, listRunField)
         header = ''
         if ended != None and len(ended) > 0:
             header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
