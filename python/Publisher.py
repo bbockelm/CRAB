@@ -92,7 +92,8 @@ class Publisher(Actor):
         dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
         
         try:
-            dbsWriter.importDatasetWithoutParentage(globalDBS, self.datasetpath, self.DBSURL) 
+            #dbsWriter.importDatasetWithoutParentage(globalDBS, self.datasetpath, self.DBSURL) 
+            dbsWriter.importDataset(globalDBS, self.datasetpath, self.DBSURL)
         except DBSWriterError, ex:
             msg = "Error importing dataset to be processed into local DBS\n"
             msg += "Source Dataset: %s\n" % datasetpath
