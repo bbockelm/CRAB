@@ -229,11 +229,12 @@ class Scheduler :
                 CredAPI.ManualRenewCredential(group=self.group, role=self.role) 
             except Exception, ex:
                 raise CrabException(str(ex))   
-        if not CredAPI.checkMyProxy():
-            try:
-                CredAPI.ManualRenewMyProxy()
-            except Exception, ex:
-                raise CrabException(str(ex))   
+        if (self.dontCheckMyProxy!=1):
+            if not CredAPI.checkMyProxy():
+                try:
+                    CredAPI.ManualRenewMyProxy()
+                except Exception, ex:
+                    raise CrabException(str(ex))   
         # cache proxy validity
         self.proxyValid=1
         return

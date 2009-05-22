@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.101 2009/03/09 15:56:26 ewv Exp $"
-__version__ = "$Revision: 1.101 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.102 2009/04/27 08:18:36 edelmann Exp $"
+__version__ = "$Revision: 1.102 $"
 
 from Scheduler import Scheduler
 from crab_logger import Logger
@@ -38,6 +38,7 @@ class SchedulerGrid(Scheduler):
 
         self.proxyValid=0
         self.dontCheckProxy=int(cfg_params.get("EDG.dont_check_proxy",0))
+        self.dontCheckMyProxy=int(cfg_params.get("EDG.dont_check_myproxy",0))
 
         self.proxyServer = cfg_params.get("EDG.proxy_server",'myproxy.cern.ch')
         common.logger.debug(5,'Setting myproxy server to '+self.proxyServer)
