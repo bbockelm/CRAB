@@ -758,6 +758,8 @@ class Crab:
         Creates a string describing program options either given in
         the command line or their default values.
         """
+        server= 'OFF' 
+        if self.UseServer==1: server = 'ON' 
         local = time.ctime(time.time())
         UTC = time.asctime(time.gmtime()).split(' ')[3]
         tzone = time.tzname[0]
@@ -768,6 +770,7 @@ class Crab:
         header = header +\
                  '  scheduler           ' + self.cfg_params['CRAB.scheduler'] + '\n'+\
                  '  job type            ' + self.job_type_name + '\n'+\
+                 '  server              ' + server + '\n'+\
                  '  working directory   ' + common.work_space.topDir()\
                  + '\n'
         return header
