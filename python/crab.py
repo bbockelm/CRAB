@@ -867,5 +867,7 @@ if __name__ == '__main__':
             common.logger.__del__()
             pass
         pass
+        sys.exit(1)
 
+    sys.exit(0)
     pass
