@@ -71,6 +71,13 @@ class Logger :
         self.lock.release()
         return
 
+    def info(self,msg):
+        """
+        wrap message method 
+        """  
+        self.message(msg)
+        return
+
     def message(self, msg):
         """
         Prints the given message on a screen and stores it into log-file.
@@ -101,9 +108,14 @@ class Logger :
         self.debug_level = level
         return
 
-    def debug(self, level, msg):
+    def debug(self, level=None, msg='' ):
+        import types 
+        if type(level) != types.IntType: 
+            msg=level
+            level=1
+            if self.debug_level==0:self.write(msg)
         self.lock.acquire()
-        if level <= self.debug_level: self.message(msg)
+        if (level <= self.debug_level): self.message(msg)
         self.lock.release()
         return
     
