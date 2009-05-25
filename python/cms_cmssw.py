@@ -678,29 +678,6 @@ class Cmssw(JobType):
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
 
 
-        if self.pset != None:
-            # FUTURE: Can simply for 2_1_x and higher
-            txt += '\n'
-            if self.debug_wrapper == 1:
-                txt += 'echo "***** cat ' + psetName + ' *********"\n'
-                txt += 'cat ' + psetName + '\n'
-                txt += 'echo "****** end ' + psetName + ' ********"\n'
-                txt += '\n'
-                txt += 'echo "***********************" \n'
-                txt += 'which edmConfigHash \n'
-                txt += 'echo "***********************" \n'
-            if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
-                txt += 'edmConfigHash ' + psetName + ' \n'
-                txt += 'PSETHASH=`edmConfigHash ' + psetName + '` \n'
-            else:
-                txt += 'PSETHASH=`edmConfigHash < ' + psetName + '` \n'
-            txt += 'echo "PSETHASH = $PSETHASH" \n'
-            #### FEDE temporary fix for noEdm files #####
-            txt += 'if [ -z "$PSETHASH" ]; then \n'
-            txt += '   export PSETHASH=null\n'
-            txt += 'fi \n'
-            #############################################
-            txt += '\n'
         return txt
 
     def wsUntarSoftware(self, nj=0):
@@ -768,6 +745,29 @@ class Cmssw(JobType):
         txt += 'fi\n'
         txt += '\n'
 
+        if self.pset != None:
+            # FUTURE: Can simply for 2_1_x and higher
+            txt += '\n'
+            if self.debug_wrapper == 1:
+                txt += 'echo "***** cat ' + psetName + ' *********"\n'
+                txt += 'cat ' + psetName + '\n'
+                txt += 'echo "****** end ' + psetName + ' ********"\n'
+                txt += '\n'
+                txt += 'echo "***********************" \n'
+                txt += 'which edmConfigHash \n'
+                txt += 'echo "***********************" \n'
+            if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
+                txt += 'edmConfigHash ' + psetName + ' \n'
+                txt += 'PSETHASH=`edmConfigHash ' + psetName + '` \n'
+            else:
+                txt += 'PSETHASH=`edmConfigHash < ' + psetName + '` \n'
+            txt += 'echo "PSETHASH = $PSETHASH" \n'
+            #### FEDE temporary fix for noEdm files #####
+            txt += 'if [ -z "$PSETHASH" ]; then \n'
+            txt += '   export PSETHASH=null\n'
+            txt += 'fi \n'
+            #############################################
+            txt += '\n'
         return txt
 
 
