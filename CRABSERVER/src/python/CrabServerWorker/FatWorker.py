@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.161 2009/03/10 16:16:21 spiga Exp $"
-__version__ = "$Revision: 1.161 $"
+__revision__ = "$Id: FatWorker.py,v 1.164 2009/04/28 12:49:02 mcinquil Exp $"
+__version__ = "$Revision: 1.164 $"
 import string
 import sys, os
 import time
@@ -643,18 +643,6 @@ class FatWorker(Thread):
         """
         Prepare DashBoard information
         """
-        # Minor Patch For ML reporting 
-        if str(taskObj['name']).split('_')[-1].find('-') >= 0:       
-            cmsuser=''
-            taskId=str("_".join(str(taskObj['name']).split('_')[:-1]))
-            # rebuild flat gridName string (pruned from SSL print and delegation adds)
-            reTask = re.compile('.*?_crab_0_\d{6}_\d{6}')
-            isDefault = reTask.match(taskId)
-            if not isDefault:
-                taskId = "-".join(str(taskObj['name']).split('-')[:-4])
-        else: 
-            taskId = self.taskName
-            cmsuser = self.taskName.split('_')[0] 
         gridName = self.owner
         gridName = '/'+"/".join(gridName.split('/')[1:-1])
         VO = self.cfg_params['VO']
@@ -673,8 +661,7 @@ class FatWorker(Thread):
                   'taskType': taskType, \
                   'vo': VO, \
                   'user': self.taskName.split('_')[0], \
-                  'vo': VO, \
-                  'user': self.taskName.split('_')[0], \
+                  'taskId': self.taskName, \
                   'datasetFull': datasetPath, \
                   'ApplicationVersion':appVersion , \
                   'exe': executable }
