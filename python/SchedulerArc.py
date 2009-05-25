@@ -109,11 +109,14 @@ class SchedulerArc(SchedulerGrid):
         """
         Return an xRSL-code snippet with required runtime environments
         """
-        xrsl = "(runTimeEnvironment=\"APPS/HEP/CMSSW-PA\")"
-        for s in task['jobType'].split('&&'):
-            if re.match('Member\(".*", .*RunTimeEnvironment', s):
-                rte = re.sub(", .*", "", re.sub("Member\(", "", s))
-                xrsl += "(runTimeEnvironment=%s)" % rte
+        xrsl = ""
+        for t in self.tags():
+            xrsl += "(runTimeEnvironment=%s)" % t
+        #xrsl = "(runTimeEnvironment=\"APPS/HEP/CMSSW-PA\")"
+        #for s in task['jobType'].split('&&'):
+        #    if re.match('Member\(".*", .*RunTimeEnvironment', s):
+        #        rte = re.sub(", .*", "", re.sub("Member\(", "", s))
+        #        xrsl += "(runTimeEnvironment=%s)" % rte
         return xrsl
 
 
@@ -195,7 +198,14 @@ class SchedulerArc(SchedulerGrid):
 
 
     def tags(self):
-        return ''
+        task=common._db.getTask()
+        tags = ["APPS/HEP/CMSSW-PA"]
+        for s in task['jobType'].split('&&'):
+            if re.match('Member\(".*", .*RunTimeEnvironment', s):
+                rte = re.sub(", .*", "", re.sub("Member\(", "", s))
+                rte = re.sub("\"", "", rte)
+                tags.append(rte)
+        return tags
 
 
     def submit(self,list,task):
