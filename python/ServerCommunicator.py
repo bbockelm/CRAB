@@ -248,31 +248,31 @@ class ServerCommunicator:
         miniCfg = {}
 
         ## migrate CE/SE infos
-        miniCfg['GRID.ce_white_list'] = ""
+        miniCfg['EDG.ce_white_list'] = ""
         if 'GRID.ce_white_list' in self.cfg_params:
-            miniCfg['GRID.ce_white_list'] = str( self.cfg_params['GRID.ce_white_list'] )
+            miniCfg['EDG.ce_white_list'] = str( self.cfg_params['GRID.ce_white_list'] )
 
-        miniCfg['GRID.ce_black_list'] = T1_BL
+        miniCfg['EDG.ce_black_list'] = T1_BL
         if 'GRID.ce_black_list' in self.cfg_params:
             if len(T1_BL) > 0:
-                miniCfg['GRID.ce_black_list'] += ", "
-            miniCfg['GRID.ce_black_list'] += str( self.cfg_params['GRID.ce_black_list'] )
+                miniCfg['EDG.ce_black_list'] += ", "
+            miniCfg['EDG.ce_black_list'] += str( self.cfg_params['GRID.ce_black_list'] )
 
-        miniCfg['GRID.se_white_list'] = ""
+        miniCfg['EDG.se_white_list'] = ""
         if 'GRID.se_white_list' in self.cfg_params:
-            miniCfg['GRID.se_white_list'] = str( self.cfg_params['GRID.se_white_list'] )
+            miniCfg['EDG.se_white_list'] = str( self.cfg_params['GRID.se_white_list'] )
 
-        miniCfg['GRID.se_black_list'] = ""
+        miniCfg['EDG.se_black_list'] = ""
         if 'GRID.se_black_list' in self.cfg_params:
-            miniCfg['GRID.se_black_list'] = str( self.cfg_params['GRID.se_black_list'] )
+            miniCfg['EDG.se_black_list'] = str( self.cfg_params['GRID.se_black_list'] )
 
-        miniCfg['GRID.group'] = ""
+        miniCfg['EDG.group'] = ""
         if 'GRID.group' in self.cfg_params:
-            miniCfg['GRID.group'] = str( self.cfg_params['GRID.group'] )
+            miniCfg['EDG.group'] = str( self.cfg_params['GRID.group'] )
 
-        miniCfg['GRID.role'] = ""
+        miniCfg['EDG.role'] = ""
         if 'GRID.role' in self.cfg_params:
-            miniCfg['GRID.role'] = str( self.cfg_params['GRID.role'] )
+            miniCfg['EDG.role'] = str( self.cfg_params['GRID.role'] )
 
         miniCfg['cfgFileNameCkSum'] = makeCksum(common.work_space.cfgFileName()) 
         if 'cfgFileNameCkSum' in self.cfg_params:
@@ -283,13 +283,13 @@ class ServerCommunicator:
             miniCfg['CRAB.se_remote_dir'] = str(self.cfg_params['CRAB.se_remote_dir']) 
 
         ## JDL requirements specific data. Scheduler dependant
-        miniCfg['GRID.max_wall_time'] = self.cfg_params.get('GRID.max_wall_clock_time', None)
-        miniCfg['GRID.max_cpu_time'] = self.cfg_params.get('GRID.max_cpu_time', '130')
+        miniCfg['EDG.max_wall_time'] = self.cfg_params.get('GRID.max_wall_clock_time', None)
+        miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('GRID.max_cpu_time', '130')
         miniCfg['proxyServer'] = self.cfg_params.get('GRID.proxy_server', 'myproxy.cern.ch')
         miniCfg['VO'] = self.cfg_params.get('GRID.virtual_organization', 'cms')
-        miniCfg['GRID_retry_count'] = self.cfg_params.get('GRID.retry_count',0)
-        miniCfg['GRID_shallow_retry_count'] = self.cfg_params.get('GRID.shallow_retry_count',-1)
-        miniCfg['GRID.proxyInfos'] = self.cfg_params.get('GRID.proxyInfos',{}) #TODO activate this when using MyProxy-based delegation 
+        miniCfg['EDG_retry_count'] = self.cfg_params.get('GRID.retry_count',0)
+        miniCfg['EDG_shallow_retry_count'] = self.cfg_params.get('GRID.shallow_retry_count',-1)
+        miniCfg['EDG.proxyInfos'] = self.cfg_params.get('GRID.proxyInfos',{}) #TODO activate this when using MyProxy-based delegation 
 
         ## Additional field for DashBoard
         miniCfg['CMSSW.datasetpath'] = self.cfg_params.get('CMSSW.datasetpath', 'None')
