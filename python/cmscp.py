@@ -1,5 +1,4 @@
-##!/usr/bin/env python
-
+#!/usr/bin/env python
 import sys, os
 from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
 from ProdCommon.Storage.SEAPI.SBinterface import *
