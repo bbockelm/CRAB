@@ -777,15 +777,14 @@ class Crab:
         local = time.ctime(time.time())
         UTC = time.asctime(time.gmtime()).split(' ')[3]
         tzone = time.tzname[0]
-        header = common.prog_name + ' (version ' + common.prog_version_str + \
-             ') running on ' + \
+        header = 'Version ' + common.prog_version_str + ' running on ' + \
              local+' '+ tzone+ ' ('+UTC+' UTC)'+'\n\n' + \
              common.prog_name+'. Working options:\n'
         header = header +\
-                 '  scheduler           ' + self.cfg_params['CRAB.scheduler'] + '\n'+\
-                 '  job type            ' + self.job_type_name + '\n'+\
-                 '  server              ' + server + '\n'+\
-                 '  working directory   ' + common.work_space.topDir()\
+                 '\tscheduler           ' + self.cfg_params['CRAB.scheduler'] + '\n'+\
+                 '\tjob type            ' + self.job_type_name + '\n'+\
+                 '\tserver              ' + server + '\n'+\
+                 '\tworking directory   ' + common.work_space.topDir()\
                  + '\n'
         return header
 
