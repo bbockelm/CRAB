@@ -56,10 +56,13 @@ def loadConfig(file, config):
     cp = ConfigParser.ConfigParser()
     cp.read(file)
     for sec in cp.sections():
-        # print 'Section',sec
         for opt in cp.options(sec):
-            #print 'config['+sec+'.'+opt+'] = '+string.strip(cp.get(sec,opt))
-            config[sec+'.'+opt] = string.strip(cp.get(sec,opt))
+            ## temporary check. Allow compatibility
+            new_sec = sec 
+            if sec == 'EDG':
+                print ('\t WARNING: The [EDG] section is now deprecated. \nPlease remove it and use [GRID] instead.\n')
+                new_sec = 'GRID'   
+            config[new_sec+'.'+opt] = string.strip(cp.get(sec,opt))
     return config
 
 ###########################################################################
