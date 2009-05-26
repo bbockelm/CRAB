@@ -176,7 +176,7 @@ class Submitter(Actor):
         njs=0
 
         ### Progress Bar indicator, deactivate for debug
-        if not common.logger.debugLevel() :
+        if common.debugLevel == 0 :
             term = TerminalController()
 
         if len(matched)>0:
@@ -189,14 +189,14 @@ class Submitter(Actor):
                 except CrabException:
                     raise CrabException("Job not submitted")
 
-                if not common.logger.debugLevel() :
+                if not common.debugLevel == 0 :
                     try: pbar = ProgressBar(term, 'Submitting '+str(len(self.sub_jobs[ii]))+' jobs')
                     except: pbar = None
-                if not common.logger.debugLevel():
+                if not common.debugLevel == 0:
                     if pbar :
                         pbar.update(float(ii+1)/float(len(self.sub_jobs)),'please wait')
                 ### check the if the submission succeded Maybe not neede
-                if not common.logger.debugLevel():
+                if not common.debugLevel == 0:
                     if pbar :
                         pbar.update(float(ii+1)/float(len(self.sub_jobs)),'please wait')
 
