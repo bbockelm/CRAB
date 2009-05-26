@@ -194,7 +194,7 @@ Due to the nature of B<Condor-G> submission, the B<Condor-G> mode is restricted 
 
 for authentication via Grid certificate proxies ("voms-proxy-init -voms cms" should result in valid proxy)
 
-=item set the environment variable EDG_WL_LOCATION to the edg directory of the local LCG or OSG UI installation
+=item set the environment variable GRID_WL_LOCATION to the edg directory of the local LCG or OSG UI installation
 
 =back
 
@@ -594,14 +594,14 @@ Set it to 1 to skip the check of free space left on your working directory befor
 
 =back
 
-B<[EDG]>
+B<[GRID]>
 
 =over 4
 
 =item B<RB>
 
-Which RB you want to use instead of the default one, as defined in the configuration of your UI. The ones available for CMS are I<CERN> and I<CNAF>. They are actually identical, being a collection of all RB/WMS available for CMS: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used.
-You can use any other RB which is available, if you provide the proper configuration files. E.g., for RB XYZ, you should provide I<edg_wl_ui.conf.CMS_XYZ> and I<edg_wl_ui_cmd_var.conf.CMS_XYZ> for EDG RB, or I<glite.conf.CMS_XYZ> for glite WMS. These files are searched for in the current working directory, and, if not found, on crab web page. So, if you put your private configuration files in the working directory, they will be used, even if they are not available on crab web page.
+Which RB you want to use instead of the default one, as defined in the configuration of your UI. The ones available for CMS are I<CERN> and I<CNAF>. They are actually identical, being a collection of all WMSes available for CMS: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used.
+You can use any other RB which is available, if you provide the proper configuration files. E.g., for gLite WMS XYZ, you should provide I<glite.conf.CMS_XYZ>. These files are searched for in the current working directory, and, if not found, on crab web page. So, if you put your private configuration files in the working directory, they will be used, even if they are not available on crab web page.
 Please get in contact with crab team if you wish to provide your RB or WMS as a service to the CMS community.
 
 =item B<proxy_server>
