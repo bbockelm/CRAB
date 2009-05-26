@@ -19,7 +19,7 @@ for more information about setting up your environment.
 ## actual import session
 from crab_util import *
 from crab_exceptions import *
-from crab_logger import Logger
+import logging
 from WorkSpace import WorkSpace
 from DBinterface import DBinterface ## added to interface with DB BL--DS
 from JobList import JobList
@@ -67,7 +67,7 @@ class Crab:
         # quiet mode, i.e. no output on screen
         self.flag_quiet = 0
         # produce more output
-        self.debug_level = 0
+        common.debugLevel = 0
 
 
         self.initialize_(opts)
@@ -150,15 +150,15 @@ class Crab:
         self.createScheduler_()
         if not self.flag_continue:
             common._db.createTask_(optsToBeSavedDB)
-        common.logger.debug(6, 'Used properties:')
-        if (common.logger.debugLevel()<6 ):
+        common.logger.log(10-1, 'Used properties:')
+        if (common.debugLevel > 2 ):
             if isCreating :
-                common.logger.write('Used properties:')
+                common.logger.log(10-1,'Used properties:')
                 self.UserCfgProperties()
-                common.logger.write('End of used properties.\n')
+                common.logger.log(10-1, 'End of used properties.\n')
         else:
             self.UserCfgProperties()
-        common.logger.debug(6, 'End of used properties.\n')
+        common.logger.log(10-1, 'End of used properties.\n')
 
         self.initializeActions_(opts)
         return
@@ -171,15 +171,15 @@ class Crab:
         keys.sort()
         for k in keys:
             if self.cfg_params[k]:
-                common.logger.debug(6, '   '+k+' : '+str(self.cfg_params[k]))
-                if (common.logger.debugLevel()<6 ):
-                    common.logger.write('   '+k+' : '+str(self.cfg_params[k]))
-                pass
+                common.logger.log(10-1, '   '+k+' : '+str(self.cfg_params[k]))
+            #    if (common.logger.debugLevel()<6 ):
+            #        common.logger.write('   '+k+' : '+str(self.cfg_params[k]))
+            #    pass
             else:
-                common.logger.debug(6, '   '+k+' : ')
-                if (common.logger.debugLevel()<6 ):
-                    common.logger.write('   '+k+' : ')
-                pass
+                common.logger.log(10-1, '   '+k+' : ')
+           #     if (common.logger.debugLevel()<6 ):
+           #         common.logger.write('   '+k+' : ')
+           #     pass
             pass
         return
 
@@ -335,8 +335,8 @@ class Crab:
                 pass
 
             elif ( opt == '-debug' ):
-                if val: self.debug_level = int(val)
-                else: self.debug_level = 1
+                if val: common.debugLevel = int(val)
+                else: common.debugLevel = 1
                 pass
 
             elif ( opt == '-scheduler' ):
@@ -373,7 +373,7 @@ class Crab:
         """
         result = []
 
-        common.logger.debug(5,"parseRange_ "+str(aRange))
+        common.logger.debug("parseRange_ "+str(aRange))
         if aRange=='all' or aRange==None or aRange=='':
             result=range(1,common._db.nJobs()+1)
             return result
@@ -387,7 +387,7 @@ class Crab:
         if self.checkUniqueness_(result):
             return result
         else:
-            common.logger.message( "Error " +str(result) )
+            common.logger.info( "Error " +str(result) )
             return []
 
     def checkUniqueness_(self, list):
@@ -417,7 +417,7 @@ class Crab:
             if isInt(aRange) and int(aRange)>0 :
                 result.append(int(aRange))
             else:
-                common.logger.message("parseSimpleRange_  ERROR "+aRange)
+                common.logger.info("parseSimpleRange_  ERROR "+aRange)
                 processHelpOptions()
                 raise CrabException("parseSimpleRange_ ERROR "+aRange)
                 pass
@@ -428,7 +428,6 @@ class Crab:
             if isInt(start) and isInt(end) and int(start)>0 and int(start)<int(end):
                 result=range(int(start), int(end)+1)
             else:
-                common.logger.write("parseSimpleRange_ ERROR "+start+end)
                 processHelpOptions()
                 raise CrabException("parseSimpleRange_ ERROR "+start+end)
 
@@ -452,9 +451,9 @@ class Crab:
                     raise CrabException(msg)
                 if val and val != 'all':
                     msg  = 'Per default, CRAB will create all jobs as specified in the crab.cfg file, not the command line!'
-                    common.logger.message(msg)
+                    common.logger.info(msg)
                     msg  = 'Submission will still take into account the number of jobs specified on the command line!\n'
-                    common.logger.message(msg)
+                    common.logger.info(msg)
                 ncjobs = 'all'
 
                 from Creator import Creator
@@ -487,7 +486,7 @@ class Crab:
                     self.parseRange_(val)
                     msg  = 'Per default, CRAB will extend the task with all jobs as specified in the crab.cfg file, not the command line!'
                     msg  += 'Submission will still take into account the command line\n'
-                    common.logger.message(msg)
+                    common.logger.info(msg)
 
                 skip_blocks = True
                 ncjobs = 'all'
@@ -606,8 +605,8 @@ class Crab:
                         from Resubmitter import Resubmitter
                         self.actions[opt] = Resubmitter(self.cfg_params, jobs)
                 else:
-                    common.logger.message("Warning: with '-resubmit' you _MUST_ specify a job range or 'all'")
-                    common.logger.message("WARNING: _all_ job specified in the range will be resubmitted!!!")
+                    common.logger.info("Warning: with '-resubmit' you _MUST_ specify a job range or 'all'")
+                    common.logger.info("WARNING: _all_ job specified in the range will be resubmitted!!!")
                     pass
                 pass
 
@@ -654,7 +653,7 @@ class Crab:
                 """
                 ## Temporary:
                 if opt == '-printJdl':
-                    common.logger.message("WARNING: -printJdl option is deprecated : please use -createJdl \n")
+                    common.logger.info("WARNING: -printJdl option is deprecated : please use -createJdl \n")
                 if val =='all' or val == None or val == '':
                     jobs = common._db.nJobs("list")
                 else:
@@ -737,13 +736,34 @@ class Crab:
 
     def createLogger_(self, args):
 
-        log = Logger()
-        log.quiet(self.flag_quiet)
-        log.setDebugLevel(self.debug_level)
-        log.write(args+'\n')
-        log.message(self.headerString_())
-        log.flush()
-        common.logger = log
+        logging.DEBUG_1 = logging.DEBUG - 1
+        logging.addLevelName(logging.DEBUG_1,'debug_1')
+        logging.root.setLevel([logging.DEBUG_1, logging.DEBUG, logging.INFO, \
+                               logging.WARNING,logging.ERROR, logging.CRITICAL])
+        logger = logging.getLogger()
+        logger = logging.getLogger("crab:")
+        logger.setLevel(logging.DEBUG_1)
+        logger.setLevel(logging.DEBUG)
+        log_fname =common.work_space.logDir()+common.prog_name+'.log'
+        fh=logging.FileHandler(log_fname)
+        fh_formatter = logging.Formatter("%(asctime)s  %(name)s [%(levelname)s]  %(message)s")
+        ch=logging.StreamHandler()
+        ch_formatter = logging.Formatter("%(name)s  %(message)s")
+        fh_level=logging.DEBUG
+        ch_level=logging.INFO
+        if common.debugLevel > 0:ch_level=logging.DEBUG
+        elif common.debugLevel > 2: 
+            fh_level=logging.DEBUG_1
+            ch_level=logging.DEBUG_1
+        fh.setLevel(fh_level)
+        ch.setLevel(ch_level)
+        fh.setFormatter(fh_formatter)
+        ch.setFormatter(ch_formatter)
+        logger.addHandler(ch)
+        logger.addHandler(fh)
+        logger.debug('%s\n'%args)
+        logger.info(self.headerString_())
+        common.logger = logger
         return
 
     def updateHistory_(self, args):
@@ -859,12 +879,12 @@ if __name__ == '__main__':
         crab = Crab(options)
         crab.run()
         common.apmon.free()
-        common.logger.__del__()
+        #common.logger.__del__()
     except CrabException, e:
         print '\n' + common.prog_name + ': ' + str(e) + '\n'
         if common.logger:
-            common.logger.write('ERROR: '+str(e)+'\n')
-            common.logger.__del__()
+            common.logger.debug('ERROR: '+str(e)+'\n')
+           # common.logger.__del__()
             pass
         pass
         sys.exit(1)
