@@ -124,7 +124,7 @@ class Submitter(Actor):
         task=common._db.getTask()
         for job in task.jobs:
             if job.runningJob['status'] in ['C','RC'] \
-               and job.runningJob['statusScheduler'] == 'Created':totalCreatedJobs +=1
+               and job.runningJob['state'] == 'Created':totalCreatedJobs +=1
 
         if (totalCreatedJobs==0):
               common.logger.info("No jobs to be submitted: first create them")
