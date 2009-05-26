@@ -140,7 +140,7 @@ class SubmitterServer( Submitter ):
         """
         Prepare configuration and Call credential API 
         """
-        common.logger.info("Registering credential to the server : %s"%self.server_name
+        common.logger.info("Registering credential to the server : %s"%self.server_name)
         # only for temporary back-comp. 
         if  self.credentialType == 'Proxy': 
              # for proxy all works as before....
