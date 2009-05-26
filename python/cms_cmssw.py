@@ -746,6 +746,11 @@ class Cmssw(JobType):
         txt += '\n'
 
         if self.pset != None:
+            # FUTURE: Drop support for .cfg when possible
+            if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
+                psetName = 'pset.py'
+            else:
+                psetName = 'pset.cfg'
             # FUTURE: Can simply for 2_1_x and higher
             txt += '\n'
             if self.debug_wrapper == 1:
