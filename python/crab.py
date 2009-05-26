@@ -69,7 +69,6 @@ class Crab:
         # produce more output
         common.debugLevel = 0
 
-
         self.initialize_(opts)
 
         return
@@ -142,7 +141,6 @@ class Crab:
         args = string.join(sys.argv,' ')
 
         self.updateHistory_(args)
-
         self.createLogger_(args)
 
         common.apmon = ApmonIf()
@@ -151,13 +149,12 @@ class Crab:
         if not self.flag_continue:
             common._db.createTask_(optsToBeSavedDB)
         common.logger.log(10-1, 'Used properties:')
-        if (common.debugLevel > 2 ):
-            if isCreating :
-                common.logger.log(10-1,'Used properties:')
-                self.UserCfgProperties()
-                common.logger.log(10-1, 'End of used properties.\n')
-        else:
+        if isCreating :
+            common.logger.debug('Used properties:')
             self.UserCfgProperties()
+            common.logger.debug('End of used properties.\n')
+        else:
+            if common.debugLevel > 2: self.UserCfgProperties()
         common.logger.log(10-1, 'End of used properties.\n')
 
         self.initializeActions_(opts)
@@ -171,16 +168,9 @@ class Crab:
         keys.sort()
         for k in keys:
             if self.cfg_params[k]:
-                common.logger.log(10-1, '   '+k+' : '+str(self.cfg_params[k]))
-            #    if (common.logger.debugLevel()<6 ):
-            #        common.logger.write('   '+k+' : '+str(self.cfg_params[k]))
-            #    pass
+                common.logger.debug( '   '+k+' : '+str(self.cfg_params[k]))
             else:
-                common.logger.log(10-1, '   '+k+' : ')
-           #     if (common.logger.debugLevel()<6 ):
-           #         common.logger.write('   '+k+' : ')
-           #     pass
-            pass
+                common.logger.debug('   '+k+' : ')
         return
 
     def processContinueOption_(self,opts):
@@ -841,7 +831,6 @@ class Crab:
 ###########################################################################
 def processHelpOptions(opts={}):
     from crab_help import usage, help
-
     if len(opts):
         for opt in opts.keys():
             if opt in ('-v', '-version', '--version') :
@@ -851,9 +840,10 @@ def processHelpOptions(opts={}):
                 if opts[opt] : help(opts[opt])
                 else:          help()
                 return 1
+            if opt == '-debug' :
+                if opts[opt] == None: opts[opt] = str(1)
     else:
         usage()
-
     return 0
 
 ###########################################################################
@@ -879,12 +869,12 @@ if __name__ == '__main__':
         crab = Crab(options)
         crab.run()
         common.apmon.free()
-        #common.logger.__del__()
+        print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
     except CrabException, e:
         print '\n' + common.prog_name + ': ' + str(e) + '\n'
         if common.logger:
             common.logger.debug('ERROR: '+str(e)+'\n')
-           # common.logger.__del__()
+            print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
             pass
         pass
         sys.exit(1)
