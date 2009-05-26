@@ -51,8 +51,8 @@ class Submitter(Actor):
             tmp_jList = chosenJobsList
         # build job list
         from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
-        seWhiteList = cfg_params.get('EDG.se_white_list',[])
-        seBlackList = cfg_params.get('EDG.se_black_list',[])
+        seWhiteList = cfg_params.get('GRID.se_white_list',[])
+        seBlackList = cfg_params.get('GRID.se_black_list',[])
         self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
         for job in common._db.getTask(tmp_jList).jobs:
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(job['dlsDestination'])
@@ -226,15 +226,15 @@ class Submitter(Actor):
         ### TODO_ DS--BL
         #msg += common.taskDB.dict("jobtype")+' version: '+common.taskDB.dict("codeVersion")+'\n'
         #msg += '(Hint: please check if '+common.taskDB.dict("jobtype")+' is available at the Sites)\n'
-        if self.cfg_params.has_key('EDG.se_white_list'):
-            msg += '\tSE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
-        if self.cfg_params.has_key('EDG.se_black_list'):
-            msg += '\tSE Black List: '+self.cfg_params['EDG.se_black_list']+'\n'
-        if self.cfg_params.has_key('EDG.ce_white_list'):
-            msg += '\tCE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
-        if self.cfg_params.has_key('EDG.ce_black_list'):
-            msg += '\tCE Black List: '+self.cfg_params['EDG.ce_black_list']+'\n'
-        removeDefBL = self.cfg_params.get('EDG.remove_default_blacklist',0)
+        if self.cfg_params.has_key('GRID.se_white_list'):
+            msg += '\tSE White List: '+self.cfg_params['GRID.se_white_list']+'\n'
+        if self.cfg_params.has_key('GRID.se_black_list'):
+            msg += '\tSE Black List: '+self.cfg_params['GRID.se_black_list']+'\n'
+        if self.cfg_params.has_key('GRID.ce_white_list'):
+            msg += '\tCE White List: '+self.cfg_params['GRID.ce_white_list']+'\n'
+        if self.cfg_params.has_key('GRID.ce_black_list'):
+            msg += '\tCE Black List: '+self.cfg_params['GRID.ce_black_list']+'\n'
+        removeDefBL = self.cfg_params.get('GRID.remove_default_blacklist',0)
         if removeDefBL == '0':
             msg += '\tNote:  All CMS T1s are BlackListed by default \n'
         msg += '\t(Hint: By whitelisting you force the job to run at this particular site(s).\n'
@@ -259,7 +259,7 @@ class Submitter(Actor):
         if string.lower(self.datasetPath)=='none':
             self.datasetPath = None
         self.executable = self.cfg_params.get('CMSSW.executable','cmsRun')
-        VO = self.cfg_params.get('EDG.virtual_organization','cms')
+        VO = self.cfg_params.get('GRID.virtual_organization','cms')
 
         params = {'tool': common.prog_name,
                   'SubmissionType':'direct', 

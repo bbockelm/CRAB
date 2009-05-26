@@ -64,13 +64,13 @@ class SchedulerSge(SchedulerLocal) :
                 raise CrabException(msg)
 
             self.proxyValid = 0
-            self.dontCheckProxy = int(cfg_params.get("EDG.dont_check_proxy",0))
-            self.proxyServer = cfg_params.get("EDG.proxy_server",'myproxy.cern.ch')
+            self.dontCheckProxy = int(cfg_params.get("GRID.dont_check_proxy",0))
+            self.proxyServer = cfg_params.get("GRID.proxy_server",'myproxy.cern.ch')
             common.logger.debug('Setting myproxy server to ' + self.proxyServer)
 
-            self.group = cfg_params.get("EDG.group", None)
-            self.role  = cfg_params.get("EDG.role", None)
-            self.VO    = cfg_params.get('EDG.virtual_organization', 'cms')
+            self.group = cfg_params.get("GRID.group", None)
+            self.role  = cfg_params.get("GRID.role", None)
+            self.VO    = cfg_params.get('GRID.virtual_organization', 'cms')
 
             self.checkProxy()
 

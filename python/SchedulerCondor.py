@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.24 2009/05/05 15:01:03 ewv Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.25 2009/05/26 10:23:01 spiga Exp $"
+__version__ = "$Revision: 1.25 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -55,13 +55,13 @@ class SchedulerCondor(SchedulerLocal) :
         self.copy_data   = cfg_params.get("USER.copy_data", 0)
 
         self.proxyValid = 0
-        self.dontCheckProxy = int(cfg_params.get("EDG.dont_check_proxy", 0))
-        self.proxyServer = cfg_params.get("EDG.proxy_server", 'myproxy.cern.ch')
+        self.dontCheckProxy = int(cfg_params.get("GRID.dont_check_proxy", 0))
+        self.proxyServer = cfg_params.get("GRID.proxy_server", 'myproxy.cern.ch')
         common.logger.debug('Setting myproxy server to ' + self.proxyServer)
 
-        self.group = cfg_params.get("EDG.group", None)
-        self.role  = cfg_params.get("EDG.role", None)
-        self.VO    = cfg_params.get('EDG.virtual_organization', 'cms')
+        self.group = cfg_params.get("GRID.group", None)
+        self.role  = cfg_params.get("GRID.role", None)
+        self.VO    = cfg_params.get('GRID.virtual_organization', 'cms')
 
         self.checkProxy()
 

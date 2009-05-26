@@ -55,8 +55,8 @@ class Scheduler :
 
     def configure(self, cfg_params):
         self._boss.configure(cfg_params)
-        seWhiteList = cfg_params.get('EDG.se_white_list',[])
-        seBlackList = cfg_params.get('EDG.se_black_list',[])
+        seWhiteList = cfg_params.get('GRID.se_white_list',[])
+        seBlackList = cfg_params.get('GRID.se_black_list',[])
         self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
 
         self.return_data = int(cfg_params.get('USER.return_data',0))

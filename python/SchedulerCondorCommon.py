@@ -19,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.35 2009/05/20 20:25:58 ewv Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.36 2009/05/26 10:23:01 spiga Exp $"
+__version__ = "$Revision: 1.36 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -46,8 +46,8 @@ class SchedulerCondorCommon(SchedulerGrid):
             self.checkCondorSetup()
 
         # init BlackWhiteListParser
-        ceWhiteList = cfgParams.get('EDG.ce_white_list',[])
-        ceBlackList = cfgParams.get('EDG.ce_black_list',[])
+        ceWhiteList = cfgParams.get('GRID.ce_white_list',[])
+        ceBlackList = cfgParams.get('GRID.ce_black_list',[])
         self.ceBlackWhiteListParser = \
             CEBlackWhiteListParser(ceWhiteList, ceBlackList, common.logger)
 

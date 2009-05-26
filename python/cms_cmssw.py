@@ -23,7 +23,7 @@ class Cmssw(JobType):
         size = 9.5
         if server or common.scheduler.name().upper() in ['LSF','CAF']: size = 99999
         ### D.S.
-        self.MaxTarBallSize = float(self.cfg_params.get('EDG.maxtarballsize',size))
+        self.MaxTarBallSize = float(self.cfg_params.get('GRID.maxtarballsize',size))
 
         # number of jobs requested to be created, limit obj splitting
         self.ncjobs = ncjobs

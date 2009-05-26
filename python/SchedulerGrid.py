@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.103 2009/05/22 12:51:38 spiga Exp $"
-__version__ = "$Revision: 1.103 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.104 2009/05/26 10:23:01 spiga Exp $"
+__version__ = "$Revision: 1.104 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -36,41 +36,41 @@ class SchedulerGrid(Scheduler):
         Scheduler.configure(self,cfg_params)
 
         self.proxyValid=0
-        self.dontCheckProxy=int(cfg_params.get("EDG.dont_check_proxy",0))
-        self.dontCheckMyProxy=int(cfg_params.get("EDG.dont_check_myproxy",0))
+        self.dontCheckProxy=int(cfg_params.get("GRID.dont_check_proxy",0))
+        self.dontCheckMyProxy=int(cfg_params.get("GRID.dont_check_myproxy",0))
 
-        self.proxyServer = cfg_params.get("EDG.proxy_server",'myproxy.cern.ch')
+        self.proxyServer = cfg_params.get("GRID.proxy_server",'myproxy.cern.ch')
         common.logger.debug('Setting myproxy server to '+self.proxyServer)
 
-        self.group = cfg_params.get("EDG.group", None)
-        self.role = cfg_params.get("EDG.role", None)
+        self.group = cfg_params.get("GRID.group", None)
+        self.role = cfg_params.get("GRID.role", None)
 
-        removeT1bL = cfg_params.get("EDG.remove_default_blacklist", 0 )
+        removeT1bL = cfg_params.get("GRID.remove_default_blacklist", 0 )
 
         T1_BL = ["fnal.gov", "gridka.de" ,"w-ce01.grid.sinica.edu.tw", "w-ce02.grid.sinica.edu.tw", "lcg00125.grid.sinica.edu.tw",\
                   "gridpp.rl.ac.uk" , "cclcgceli03.in2p3.fr","cclcgceli04.in2p3.fr" , "pic.es", "cnaf"]
         if int(removeT1bL) == 1:
             T1_BL = []
-        self.EDG_ce_black_list = cfg_params.get('EDG.ce_black_list',None)
-        if (self.EDG_ce_black_list):
-            self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',') + T1_BL
+        self.EDG_ce_black_list = cfg_params.get('GRID.ce_black_list',None)
+        if (self.GRID_ce_black_list):
+            self.EDG_ce_black_list = string.split(self.GRID_ce_black_list,',') + T1_BL
         else :
             if int(removeT1bL) == 0: self.EDG_ce_black_list = T1_BL
-        self.EDG_ce_white_list = cfg_params.get('EDG.ce_white_list',None)
+        self.EDG_ce_white_list = cfg_params.get('GRID.ce_white_list',None)
         if (self.EDG_ce_white_list): self.EDG_ce_white_list = string.split(self.EDG_ce_white_list,',')
 
-        self.VO = cfg_params.get('EDG.virtual_organization','cms')
-        self.EDG_requirements = cfg_params.get('EDG.requirements',None)
-        self.EDG_addJdlParam = cfg_params.get('EDG.additional_jdl_parameters',None)
+        self.VO = cfg_params.get('GRID.virtual_organization','cms')
+        self.EDG_requirements = cfg_params.get('GRID.requirements',None)
+        self.EDG_addJdlParam = cfg_params.get('GRID.additional_jdl_parameters',None)
 
         if (self.EDG_addJdlParam): self.EDG_addJdlParam = string.split(self.EDG_addJdlParam,';')
 
-        self.EDG_retry_count = cfg_params.get('EDG.retry_count',0)
-        self.EDG_shallow_retry_count= cfg_params.get('EDG.shallow_retry_count',-1)
-        self.EDG_clock_time = cfg_params.get('EDG.max_wall_clock_time',None)
+        self.EDG_retry_count = cfg_params.get('GRID.retry_count',0)
+        self.EDG_shallow_retry_count= cfg_params.get('GRID.shallow_retry_count',-1)
+        self.EDG_clock_time = cfg_params.get('GRID.max_wall_clock_time',None)
 
         # Default minimum CPU time to >= 130 minutes
-        self.EDG_cpu_time = cfg_params.get('EDG.max_cpu_time', '130')
+        self.EDG_cpu_time = cfg_params.get('GRID.max_cpu_time', '130')
 
         # Add EDG_WL_LOCATION to the python path
         if not os.environ.has_key('EDG_WL_LOCATION'):

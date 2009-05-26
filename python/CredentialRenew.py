@@ -33,7 +33,7 @@ class CredentialRenew(Actor):
     def renewer(self):
         """
         """
-        myproxyserver = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
+        myproxyserver = self.cfg_params.get('GRID.proxy_server', 'myproxy.cern.ch')
         configAPI = {'credential' : self.credentialType, \
                      'myProxySvr' : myproxyserver,\
                      'serverDN'   : self.server_dn,\

@@ -34,10 +34,10 @@ class Boss:
             common.logger.info(msg) 
         self.schedulerName =  self.cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
         self.rb_param_file=''
-        if (not cfg_params.has_key('EDG.rb')):
-            cfg_params['EDG.rb']='CERN'
-        self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
-        self.wms_service=cfg_params.get("EDG.wms_service",'')
+        if (not cfg_params.has_key('GRID.rb')):
+            cfg_params['GRID.rb']='CERN'
+        self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("GRID.rb"))
+        self.wms_service=cfg_params.get("GRID.wms_service",'')
 
         self.wrapper = cfg_params.get('CRAB.jobtype').upper()+'.sh'
 

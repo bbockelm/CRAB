@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.66 2008/12/08 21:41:42 ewv Exp $"
-__version__ = "$Revision: 1.66 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.67 2009/05/26 10:23:01 spiga Exp $"
+__version__ = "$Revision: 1.67 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -31,11 +31,11 @@ class SchedulerGlite(SchedulerGrid):
         with real scheduler
         """
         self.rb_param_file=''
-        if (not cfg_params.has_key('EDG.rb')):
-            cfg_params['EDG.rb']='CERN'
-        self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("EDG.rb"))
-        self.wms_service=cfg_params.get("EDG.wms_service",'')
-        self.skipWMSAuth=cfg_params.get("EDG.skipwmsauth",1)
+        if (not cfg_params.has_key('GRID.rb')):
+            cfg_params['GRID.rb']='CERN'
+        self.rb_param_file=common.scheduler.rb_configure(cfg_params.get("GRID.rb"))
+        self.wms_service=cfg_params.get("GRID.wms_service",'')
+        self.skipWMSAuth=cfg_params.get("GRID.skipwmsauth",1)
         params = { 'service' : self.wms_service, \
                    'config' : self.rb_param_file, \
                    'skipWMSAuth' : self.skipWMSAuth

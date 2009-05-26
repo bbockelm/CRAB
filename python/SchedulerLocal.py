@@ -24,11 +24,11 @@ class SchedulerLocal(Scheduler) :
         if (cfg_params.has_key(self.name()+'.env_id')): self.environment_unique_identifier = cfg_params[self.name()+'.env_id']
         ## is this ok?
         localDomainName = getLocalDomain(self)
-        if not cfg_params.has_key('EDG.se_white_list'):
-            cfg_params['EDG.se_white_list']=localDomainName
+        if not cfg_params.has_key('GRID.se_white_list'):
+            cfg_params['GRID.se_white_list']=localDomainName
             common.logger.info("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
         else:
-            common.logger.info("Your se_white_list is set to "+str(cfg_params['EDG.se_white_list'])+": only local dataset will be considered")
+            common.logger.info("Your se_white_list is set to "+str(cfg_params['GRID.se_white_list'])+": only local dataset will be considered")
         return
 
     def userName(self):

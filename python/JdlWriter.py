@@ -10,8 +10,8 @@ class JdlWriter( Actor ):
         self.cfg_params = cfg_params
         self.nj_list = jobs 
         from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
-        seWhiteList = cfg_params.get('EDG.se_white_list',[])
-        seBlackList = cfg_params.get('EDG.se_black_list',[])
+        seWhiteList = cfg_params.get('GRID.se_white_list',[])
+        seBlackList = cfg_params.get('GRID.se_black_list',[])
         self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
         self.datasetpath=self.cfg_params['CMSSW.datasetpath']
         if string.lower(self.datasetpath)=='none':

@@ -238,7 +238,7 @@ class ServerCommunicator:
         node.setAttribute("ClientVersion", str(ver) ) 
 
         ## Only Temporary. it should be at Server level
-        removeT1bL = self.cfg_params.get("EDG.remove_default_blacklist", 0 )
+        removeT1bL = self.cfg_params.get("GRID.remove_default_blacklist", 0 )
         T1_BL = "fnal.gov, gridka.de ,w-ce01.grid.sinica.edu.tw, w-ce02.grid.sinica.edu.tw, \
                  lcg00125.grid.sinica.edu.tw, \
                  gridpp.rl.ac.uk, cclcgceli03.in2p3.fr, cclcgceli04.in2p3.fr, pic.es, cnaf"
@@ -248,31 +248,31 @@ class ServerCommunicator:
         miniCfg = {}
 
         ## migrate CE/SE infos
-        miniCfg['EDG.ce_white_list'] = ""
-        if 'EDG.ce_white_list' in self.cfg_params:
-            miniCfg['EDG.ce_white_list'] = str( self.cfg_params['EDG.ce_white_list'] )
+        miniCfg['GRID.ce_white_list'] = ""
+        if 'GRID.ce_white_list' in self.cfg_params:
+            miniCfg['GRID.ce_white_list'] = str( self.cfg_params['GRID.ce_white_list'] )
 
-        miniCfg['EDG.ce_black_list'] = T1_BL
-        if 'EDG.ce_black_list' in self.cfg_params:
+        miniCfg['GRID.ce_black_list'] = T1_BL
+        if 'GRID.ce_black_list' in self.cfg_params:
             if len(T1_BL) > 0:
-                miniCfg['EDG.ce_black_list'] += ", "
-            miniCfg['EDG.ce_black_list'] += str( self.cfg_params['EDG.ce_black_list'] )
+                miniCfg['GRID.ce_black_list'] += ", "
+            miniCfg['GRID.ce_black_list'] += str( self.cfg_params['GRID.ce_black_list'] )
 
-        miniCfg['EDG.se_white_list'] = ""
-        if 'EDG.se_white_list' in self.cfg_params:
-            miniCfg['EDG.se_white_list'] = str( self.cfg_params['EDG.se_white_list'] )
+        miniCfg['GRID.se_white_list'] = ""
+        if 'GRID.se_white_list' in self.cfg_params:
+            miniCfg['GRID.se_white_list'] = str( self.cfg_params['GRID.se_white_list'] )
 
-        miniCfg['EDG.se_black_list'] = ""
-        if 'EDG.se_black_list' in self.cfg_params:
-            miniCfg['EDG.se_black_list'] = str( self.cfg_params['EDG.se_black_list'] )
+        miniCfg['GRID.se_black_list'] = ""
+        if 'GRID.se_black_list' in self.cfg_params:
+            miniCfg['GRID.se_black_list'] = str( self.cfg_params['GRID.se_black_list'] )
 
-        miniCfg['EDG.group'] = ""
-        if 'EDG.group' in self.cfg_params:
-            miniCfg['EDG.group'] = str( self.cfg_params['EDG.group'] )
+        miniCfg['GRID.group'] = ""
+        if 'GRID.group' in self.cfg_params:
+            miniCfg['GRID.group'] = str( self.cfg_params['GRID.group'] )
 
-        miniCfg['EDG.role'] = ""
-        if 'EDG.role' in self.cfg_params:
-            miniCfg['EDG.role'] = str( self.cfg_params['EDG.role'] )
+        miniCfg['GRID.role'] = ""
+        if 'GRID.role' in self.cfg_params:
+            miniCfg['GRID.role'] = str( self.cfg_params['GRID.role'] )
 
         miniCfg['cfgFileNameCkSum'] = makeCksum(common.work_space.cfgFileName()) 
         if 'cfgFileNameCkSum' in self.cfg_params:
@@ -283,13 +283,13 @@ class ServerCommunicator:
             miniCfg['CRAB.se_remote_dir'] = str(self.cfg_params['CRAB.se_remote_dir']) 
 
         ## JDL requirements specific data. Scheduler dependant
-        miniCfg['EDG.max_wall_time'] = self.cfg_params.get('EDG.max_wall_clock_time', None)
-        miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('EDG.max_cpu_time', '130')
-        miniCfg['proxyServer'] = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
-        miniCfg['VO'] = self.cfg_params.get('EDG.virtual_organization', 'cms')
-        miniCfg['EDG_retry_count'] = self.cfg_params.get('EDG.retry_count',0)
-        miniCfg['EDG_shallow_retry_count'] = self.cfg_params.get('EDG.shallow_retry_count',-1)
-        miniCfg['EDG.proxyInfos'] = self.cfg_params.get('EDG.proxyInfos',{}) #TODO activate this when using MyProxy-based delegation 
+        miniCfg['GRID.max_wall_time'] = self.cfg_params.get('GRID.max_wall_clock_time', None)
+        miniCfg['GRID.max_cpu_time'] = self.cfg_params.get('GRID.max_cpu_time', '130')
+        miniCfg['proxyServer'] = self.cfg_params.get('GRID.proxy_server', 'myproxy.cern.ch')
+        miniCfg['VO'] = self.cfg_params.get('GRID.virtual_organization', 'cms')
+        miniCfg['GRID_retry_count'] = self.cfg_params.get('GRID.retry_count',0)
+        miniCfg['GRID_shallow_retry_count'] = self.cfg_params.get('GRID.shallow_retry_count',-1)
+        miniCfg['GRID.proxyInfos'] = self.cfg_params.get('GRID.proxyInfos',{}) #TODO activate this when using MyProxy-based delegation 
 
         ## Additional field for DashBoard
         miniCfg['CMSSW.datasetpath'] = self.cfg_params.get('CMSSW.datasetpath', 'None')

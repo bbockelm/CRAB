@@ -9,8 +9,8 @@ class JobSplitter:
         self.args=args
         #self.maxEvents
         # init BlackWhiteListParser
-        seWhiteList = cfg_params.get('EDG.se_white_list',[])
-        seBlackList = cfg_params.get('EDG.se_black_list',[])
+        seWhiteList = cfg_params.get('GRID.se_white_list',[])
+        seBlackList = cfg_params.get('GRID.se_black_list',[])
         self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
 
 
@@ -318,12 +318,12 @@ class JobSplitter:
             for range_jobs in noSiteBlock:
                 msg += str(range_jobs) + virgola
             msg += '\n               will not be submitted and this block of data can not be analyzed!\n'
-            if self.cfg_params.has_key('EDG.se_white_list'):
-                msg += 'WARNING: SE White List: '+self.cfg_params['EDG.se_white_list']+'\n'
+            if self.cfg_params.has_key('GRID.se_white_list'):
+                msg += 'WARNING: SE White List: '+self.cfg_params['GRID.se_white_list']+'\n'
                 msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\n'
                 msg += 'Please check if the dataset is available at this site!)\n'
-            if self.cfg_params.has_key('EDG.ce_white_list'):
-                msg += 'WARNING: CE White List: '+self.cfg_params['EDG.ce_white_list']+'\n'
+            if self.cfg_params.has_key('GRID.ce_white_list'):
+                msg += 'WARNING: CE White List: '+self.cfg_params['GRID.ce_white_list']+'\n'
                 msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\n'
                 msg += 'Please check if the dataset is available at this site!)\n'
 

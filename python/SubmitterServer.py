@@ -148,7 +148,7 @@ class SubmitterServer( Submitter ):
              # myProxyMoveProxy() # check within the API ( Proxy.py ) 
         else:
              from ProdCommon.Credential.CredentialAPI import CredentialAPI
-             myproxyserver = self.cfg_params.get('EDG.proxy_server', 'myproxy.cern.ch')
+             myproxyserver = self.cfg_params.get('GRID.proxy_server', 'myproxy.cern.ch')
              configAPI = {'credential' : self.credentialType, \
                           'myProxySvr' : myproxyserver,\
                           'serverDN'   : self.server_dn,\
@@ -173,7 +173,7 @@ class SubmitterServer( Submitter ):
              except Exception, err:
                  common.logger.debug("Registering Credentials : " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
-             self.cfg_params['EDG.proxyInfos'] = dict
+             self.cfg_params['GRID.proxyInfos'] = dict
 
         common.logger.info("Credential successfully delegated to the server.\n")
 	return
