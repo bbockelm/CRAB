@@ -24,7 +24,7 @@ class ServerConfig:
             f.close()
             if not tmp:
                 msg = 'List of avalable Server '+serverListFileName+' from '+self.url+' is empty\n'
-                msg += 'Please report to CRAB feedback hypernews'
+                msg += 'Please report to CRAB feedback hypernews hn-cms-crabFeedback@cern.ch'
                 raise CrabException(msg)
             # clean up empty lines and comments
             serverList=[]
@@ -42,11 +42,11 @@ class ServerConfig:
                     [tmp.append(int(t)) for t in vv[i].split('.')]
                     vv[i]=tuple(tmp)
                 #[vv.append(tuple(t.split('.'))) for t in string.split(s[1],'-')]
-
-                common.prog_version
                 
                 #print vv[0],common.prog_version,vv[1]
-                if vv[0]<=common.prog_version and common.prog_version<=vv[1]: compatibleServerList.append(s[0])
+                if vv[0]<=common.prog_version and common.prog_version<=vv[1] and common.scheduler.name()==string.lower(s[2]):
+                    compatibleServerList.append(s[0])
+
             common.logger.debug('All avaialble servers compatible with %s: '%common.prog_version_str +str(serverList))
             if len(compatibleServerList)==0: 
                 msg = "No compatible server available with client version %s\n"%common.prog_version_str
