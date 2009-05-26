@@ -1,4 +1,4 @@
-###########################################################################
+##########################################################################
 #
 #   C O N V E N I E N C E    F U N C T I O N S
 #
@@ -60,7 +60,7 @@ def loadConfig(file, config):
             ## temporary check. Allow compatibility
             new_sec = sec 
             if sec == 'EDG':
-                print ('\t WARNING: The [EDG] section is now deprecated. \nPlease remove it and use [GRID] instead.\n')
+                print ('\tWARNING: The [EDG] section is now deprecated.\n\tPlease remove it and use [GRID] instead.\n')
                 new_sec = 'GRID'   
             config[new_sec+'.'+opt] = string.strip(cp.get(sec,opt))
     return config
