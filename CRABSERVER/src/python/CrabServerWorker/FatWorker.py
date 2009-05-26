@@ -6,8 +6,9 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.164 2009/04/28 12:49:02 mcinquil Exp $"
-__version__ = "$Revision: 1.164 $"
+__revision__ = "$Id: FatWorker.py,v 1.165 2009/05/25 16:32:08 spiga Exp $"
+__version__ = "$Revision: 1.165 $"
+
 import string
 import sys, os
 import time
@@ -59,8 +60,8 @@ class FatWorker(Thread):
         self.ce_whiteL = []
         self.wmsEndpoint = self.configs['wmsEndpoint']
         self.local_queue = self.configs['messageQueue']
-        self.role = ''          
-        self.group = ''          
+        self.role = ''
+        self.group = ''
 
         ##Initialization to allow lsf@caf
         self.cpCmd = self.configs['cpCmd']
@@ -89,7 +90,7 @@ class FatWorker(Thread):
                             "submittedJobs": None,          \
                             "unmatchedJobs": None,          \
                             "notSubmittedJobs": None,       \
-                            "skippedJobs": None     
+                            "skippedJobs": None
                          }
 
         try:
@@ -204,7 +205,7 @@ class FatWorker(Thread):
             pload = self.taskName + "::" + str(status) + "::" + reason
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", pload))
 
-        if status == 0:       
+        if status == 0:
             cmdXML = doc.getElementsByTagName("TaskCommand")[0]
             self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
             ## already set in the message
@@ -308,15 +309,15 @@ class FatWorker(Thread):
         try:
             bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
         except Exception, ex:
-            logMsg = "Worker %s. Problem creating SE Api interface %s.\n"%self.myName 
+            logMsg = "Worker %s. Problem creating SE Api interface %s.\n"%self.myName
             logMsg += str(ex)
           #  self.log.info( logMsg )
-            raise Exception(logMsg) 
+            raise Exception(logMsg)
 
         credential = task['user_proxy']
         if self.schedName.upper() in ['LSF','CAF']:
             username = task['name'].split('_')[0]
-            credential = '%s::%s'%(username,credential)  
+            credential = '%s::%s'%(username,credential)
         basePath = task['outputDirectory']
         if task['startDirectory'] != '': basePath = task['outputDirectory'].split(task['startDirectory'])[1]
         for j in task.jobs:
@@ -324,7 +325,7 @@ class FatWorker(Thread):
                 # backup for job output (tgz files only, less load)
                 for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
                     try:
-                        check=bk_sbi.checkExists(source=orig) 
+                        check=bk_sbi.checkExists(source=orig)
                     except Exception, ex:
                         logMsg = "Worker %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
                         j['name'], self.taskName)
@@ -346,7 +347,7 @@ class FatWorker(Thread):
                         self.log.debug("No need to back up osb")
 
                 # reproduce closed runningJob instances
-                try: 
+                try:
                     self.blDBsession.getNewRunningInstance(j)
                 except Exception, e:
                     logMsg = ("Worker %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
@@ -589,13 +590,15 @@ class FatWorker(Thread):
         sel = 0
         matched = []
         unmatched = []
+        schedParam = ''
 
         for id_job in jobs_to_match:
             tags = ''
             if self.bossSchedName in ['SchedulerCondorG']:
                 requirements.append( self.sched_parameter_CondorG(id_job, taskObj) )
             elif self.bossSchedName in ['SchedulerGlidein']:
-                requirements.append( self.sched_parameter_Glidein(id_job, taskObj) )
+                schedParam, sites = self.sched_parameter_Glidein(id_job, taskObj)
+                requirements.append(schedParam)
             elif self.bossSchedName == 'SchedulerLsf':
                 requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
             elif self.bossSchedName == 'SchedulerGLiteAPI':
@@ -606,9 +609,14 @@ class FatWorker(Thread):
                 continue
 
             # Perform listMatching
-            if self.bossSchedName in ['SchedulerCondorG', 'SchedulerGlidein',
+            if self.bossSchedName in ['SchedulerCondorG',
                                       'SchedulerLsf']:
                 matched.append(sel)
+            elif self.bossSchedName in ['SchedulerGlidein']:
+                if len(sites) > 0:
+                    matched.append(sel)
+                else:
+                    unmatched.append(sel)
             else:
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
@@ -781,7 +789,10 @@ class FatWorker(Thread):
 
         # Convert to list of CEs and clean according to white/black list
         onlyOSG = False
-        availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
+        if (seList == ['']) or (not seList):
+            availCEs = listAllCEs(version, arch, onlyOSG=onlyOSG)
+        else:
+            availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
         ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
                                           self.log)
         ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
@@ -796,7 +807,7 @@ class FatWorker(Thread):
         else:
              schedParam += '+MaxWallTimeMins = 120; '
 
-        return schedParam
+        return schedParam, ceDest
 
 
     def sched_parameter_Lsf(self, i, task):
@@ -848,7 +859,7 @@ class FatWorker(Thread):
 
         req = ''
 
-        if '' in seDest : seDest.remove('') 
+        if '' in seDest : seDest.remove('')
 
         if len(seDest) > 0:
             reqtmp = [ ' Member("'+arg+'" , other.GlueCESEBindGroupSEUniqueID) ' for arg in seDest]
