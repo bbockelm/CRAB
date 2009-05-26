@@ -1,7 +1,7 @@
 from crab_exceptions import *
-#from threading import RLock
+import logging
 import common
-import os, shutil, string, time
+import os, string, time
 
 class WorkSpace:
     def __init__(self, top_dir, cfg_params):
@@ -94,14 +94,10 @@ class WorkSpace:
         """
         delete the whole workspace without doing any test!!!
         """
-        common.logger.quiet(1)
-        common.logger.close()
+        logging.shutdown()
         if os.path.exists(self._top_dir):
-#            shutil.rmtree(self._top_dir)
-            # os.system("/usr/sbin/lsof %s/crab.log" % self._log_dir ) 
-            os.system("rm -rf %s" % self._top_dir ) 
-            # SL For some obscure reason the lgo dir is not removed at the first try
-            os.system("rm -rf %s" % self._top_dir )
+            import shutil
+            shutil.rmtree(self._top_dir)
             pass
         return
 
