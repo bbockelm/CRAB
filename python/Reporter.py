@@ -15,7 +15,7 @@ class Reporter(Actor):
         """
         The main method of the class: report status of a task
         """
-        common.logger.debug(5, "Reporter::run() called")
+        common.logger.debug( "Reporter::run() called")
         task = common._db.getTask()
         #print self.cfg_params
         print "\n----------------------------\n"

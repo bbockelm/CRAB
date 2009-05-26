@@ -1,7 +1,6 @@
 from WorkSpace import WorkSpace
 from JobList import JobList
 from Scheduler import Scheduler
-from crab_logger import Logger
 from crab_exceptions import *
 import common
 import Scram

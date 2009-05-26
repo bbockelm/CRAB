@@ -1,5 +1,4 @@
 import common
-from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
@@ -92,7 +91,7 @@ class JobSplitter:
         # If user requested more events than are in the dataset
         elif (totalEventsRequested > self.maxEvents):
             eventsRemaining = self.maxEvents
-            common.logger.message("Requested "+str(self.total_number_of_events)+ " events, but only "+str(self.maxEvents)+" events are available.")
+            common.logger.info("Requested "+str(self.total_number_of_events)+ " events, but only "+str(self.maxEvents)+" events are available.")
         # If user requested less events than are in the dataset
         else:
             eventsRemaining = totalEventsRequested
@@ -108,7 +107,7 @@ class JobSplitter:
             eventsPerJobRequested = int(eventsRemaining/self.theNumberOfJobs)
 
         if (self.selectNumberOfJobs):
-            common.logger.message("May not create the exact number_of_jobs requested.")
+            common.logger.info("May not create the exact number_of_jobs requested.")
 
         # old... to remove Daniele
         totalNumberOfJobs = 999999999
@@ -137,7 +136,7 @@ class JobSplitter:
 
             if self.eventsbyblock.has_key(block) :
                 numEventsInBlock = self.eventsbyblock[block]
-                common.logger.debug(5,'Events in Block File '+str(numEventsInBlock))
+                common.logger.debug('Events in Block File '+str(numEventsInBlock))
 
                 files = filesbyblock[block]
                 numFilesInBlock = len(files)
@@ -163,19 +162,18 @@ class JobSplitter:
                         parent = self.parentFiles[file]
                         for f in parent :
                             pString +=  f + ','
-                        common.logger.debug(6, "File "+str(file)+" has the following parents: "+str(parent))
-                        common.logger.write("File "+str(file)+" has the following parents: "+str(parent))
+                        common.logger.log(10-1, "File "+str(file)+" has the following parents: "+str(parent))
                     if newFile :
                         try:
                             numEventsInFile = self.eventsbyfile[file]
-                            common.logger.debug(6, "File "+str(file)+" has "+str(numEventsInFile)+" events")
+                            common.logger.log(10-1, "File "+str(file)+" has "+str(numEventsInFile)+" events")
                             # increase filesEventCount
                             filesEventCount += numEventsInFile
                             # Add file to current job
                             parString +=  file + ','
                             newFile = 0
                         except KeyError:
-                            common.logger.message("File "+str(file)+" has unknown number of events: skipping")
+                            common.logger.info("File "+str(file)+" has unknown number of events: skipping")
 
                     eventsPerJobRequested = min(eventsPerJobRequested, eventsRemaining)
                     # if less events in file remain than eventsPerJobRequested
@@ -194,9 +192,9 @@ class JobSplitter:
                                     list_of_lists.append([fullString,fullParentString,str(-1),str(jobSkipEventCount)])
                                 else:
                                     list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
-                                common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
+                                common.logger.debug("Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
                                 jobDestination.append(blockSites[block])
-                                common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
+                                common.logger.debug("Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
                                 # fill jobs of block dictionary
                                 jobsOfBlock[block].append(jobCount+1)
                                 # reset counter
@@ -223,9 +221,9 @@ class JobSplitter:
                             list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         else:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
+                        common.logger.debug("Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         jobDestination.append(blockSites[block])
-                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
+                        common.logger.debug("Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
                         jobsOfBlock[block].append(jobCount+1)
                         # reset counter
                         jobCount = jobCount + 1
@@ -248,9 +246,9 @@ class JobSplitter:
                             list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         else:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        common.logger.debug(3,"Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
+                        common.logger.debug("Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
                         jobDestination.append(blockSites[block])
-                        common.logger.debug(5,"Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
+                        common.logger.debug("Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
                         jobsOfBlock[block].append(jobCount+1)
                         # increase counter
                         jobCount = jobCount + 1
@@ -269,8 +267,8 @@ class JobSplitter:
         pass # END while (iterate over blocks in the dataset)
         self.ncjobs = self.total_number_of_jobs = jobCount
         if (eventsRemaining > 0 and jobCount < totalNumberOfJobs ):
-            common.logger.message("Could not run on all requested events because some blocks not hosted at allowed sites.")
-        common.logger.message(str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
+            common.logger.info("Could not run on all requested events because some blocks not hosted at allowed sites.")
+        common.logger.info(str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
  
         # skip check on  block with no sites  DD
         if noBboundary == 0 : self.checkBlockNoSite(blocks,jobsOfBlock,blockSites)
@@ -305,7 +303,7 @@ class JobSplitter:
                     noSiteBlock.append( spanRanges(jobsOfBlock[block]) )
                     bloskNoSite.append( blockCounter )
 
-        common.logger.message(screenOutput)
+        common.logger.info(screenOutput)
         if len(noSiteBlock) > 0 and len(bloskNoSite) > 0:
             msg = 'WARNING: No sites are hosting any part of data for block:\n                '
             virgola = ""
@@ -329,7 +327,7 @@ class JobSplitter:
                 msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\n'
                 msg += 'Please check if the dataset is available at this site!)\n'
 
-            common.logger.message(msg)
+            common.logger.info(msg)
 
         if bloskNoSite == allBlock:
             raise CrabException('No jobs created') 
@@ -434,7 +432,7 @@ class JobSplitter:
         """
         Perform job splitting based on number of event per job
         """
-        common.logger.debug(5,'Splitting per events')
+        common.logger.debug('Splitting per events')
         self.checkUserSettings()
         jobDestination=[]
         if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
@@ -446,11 +444,11 @@ class JobSplitter:
         firstRun = self.cfg_params.get('CMSSW.first_run',None)
 
         if (self.selectEventsPerJob):
-            common.logger.message('Required '+str(self.eventsPerJob)+' events per job ')
+            common.logger.info('Required '+str(self.eventsPerJob)+' events per job ')
         if (self.selectNumberOfJobs):
-            common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
+            common.logger.info('Required '+str(self.theNumberOfJobs)+' jobs in total ')
         if (self.selectTotalNumberEvents):
-            common.logger.message('Required '+str(self.total_number_of_events)+' events in total ')
+            common.logger.info('Required '+str(self.total_number_of_events)+' events in total ')
 
         if (self.total_number_of_events < 0):
             msg='Cannot split jobs per Events with "-1" as total number of events'
@@ -467,16 +465,16 @@ class JobSplitter:
             self.total_number_of_jobs = self.theNumberOfJobs
             self.eventsPerJob = int(self.total_number_of_events/self.total_number_of_jobs)
 
-        common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
+        common.logger.debug('N jobs  '+str(self.total_number_of_jobs))
 
         # is there any remainder?
         check = int(self.total_number_of_events) - (int(self.total_number_of_jobs)*self.eventsPerJob)
 
-        common.logger.debug(5,'Check  '+str(check))
+        common.logger.debug('Check  '+str(check))
 
-        common.logger.message(str(self.total_number_of_jobs)+' jobs can be created, each for '+str(self.eventsPerJob)+' for a total of '+str(self.total_number_of_jobs*self.eventsPerJob)+' events')
+        common.logger.info(str(self.total_number_of_jobs)+' jobs can be created, each for '+str(self.eventsPerJob)+' for a total of '+str(self.total_number_of_jobs*self.eventsPerJob)+' events')
         if check > 0:
-            common.logger.message('Warning: asked '+str(self.total_number_of_events)+' but can do only '+str(int(self.total_number_of_jobs)*self.eventsPerJob))
+            common.logger.info('Warning: asked '+str(self.total_number_of_events)+' but can do only '+str(int(self.total_number_of_jobs)*self.eventsPerJob))
 
         # argument is seed number.$i
         self.list_of_args = []
@@ -520,14 +518,14 @@ class JobSplitter:
             msg = 'must specify  number_of_jobs.'
             raise crabexception(msg)
         jobDestination = []
-        common.logger.debug(5,'Splitting per job')
-        common.logger.message('Required '+str(self.theNumberOfJobs)+' jobs in total ')
+        common.logger.debug('Splitting per job')
+        common.logger.info('Required '+str(self.theNumberOfJobs)+' jobs in total ')
 
         self.total_number_of_jobs = self.theNumberOfJobs
 
-        common.logger.debug(5,'N jobs  '+str(self.total_number_of_jobs))
+        common.logger.debug('N jobs  '+str(self.total_number_of_jobs))
 
-        common.logger.message(str(self.total_number_of_jobs)+' jobs can be created')
+        common.logger.info(str(self.total_number_of_jobs)+' jobs can be created')
 
         # argument is seed number.$i
         #self.list_of_args = []

@@ -17,7 +17,7 @@ class Status(Actor):
         """
         The main method of the class: compute the status and print a report
         """
-        common.logger.debug(5, "Status::run() called")
+        common.logger.debug( "Status::run() called")
 
         start = time.time()
 
@@ -25,18 +25,17 @@ class Status(Actor):
         self.PrintReport_()
         ## TEMPORARY FIXME Ds
         msg = showWebMon(self.server_name)
-        common.logger.message(msg)
+        common.logger.info(msg)
 
         stop = time.time()
-        common.logger.debug(1, "Status Time: "+str(stop - start))
-        common.logger.write("Status Time: "+str(stop - start))
+        common.logger.debug( "Status Time: "+str(stop - start))
         pass
 
     def query(self,display=True):
         """
         compute the status
         """
-        common.logger.message("Checking the status of all jobs: please wait")
+        common.logger.info("Checking the status of all jobs: please wait")
         task = common._db.getTask()
         upTask = common.scheduler.queryEverything(task['id'])
         self.compute(upTask,display)
@@ -163,18 +162,18 @@ class Status(Actor):
             WMS = 'OSG'
             taskHash = sha.new(common._db.queryTask('name')).hexdigest()
             jobId = str(id) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(id)
-            common.logger.debug(5,'JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+            common.logger.debug('JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
         elif common.scheduler.name().upper() in ['LSF','CAF']:
             WMS = common.scheduler.name()
             jobId=str(id)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(task_unique_name,"_","-")
-            common.logger.debug(5,'JobID for ML monitoring is created for Local scheduler:'+jobId)
+            common.logger.debug('JobID for ML monitoring is created for Local scheduler:'+jobId)
         else:
             jobId = str(id) + '_' + str(jid)
             WMS = job.runningJob['service']
-            common.logger.debug(5,'JobID for ML monitoring is created for gLite scheduler:'+jobId)
+            common.logger.debug('JobID for ML monitoring is created for gLite scheduler:'+jobId)
         pass
 
-        common.logger.debug(5,"sending info to ML")
+        common.logger.debug("sending info to ML")
         params = {}
         if WMS != None:
             params = {'taskId': taskId, \
@@ -193,7 +192,7 @@ class Status(Actor):
             'StatusValue': jobStatus, \
             'StatusEnterTime': job_last_time, \
             'StatusDestination': dest }
-        common.logger.debug(5,str(params))
+        common.logger.debug(str(params))
         common.apmon.sendToML(params)
 
         return

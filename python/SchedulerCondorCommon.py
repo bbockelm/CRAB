@@ -19,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.34 2009/05/20 19:04:10 ewv Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.35 2009/05/20 20:25:58 ewv Exp $"
+__version__ = "$Revision: 1.35 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -63,7 +63,7 @@ class SchedulerCondorCommon(SchedulerGrid):
         try:
             self.batchsystem = cfgParams['CONDORG.batchsystem']
             msg = self.msgPre + 'batchsystem overide specified in your crab.cfg'
-            common.logger.debug(2, msg)
+            common.logger.debug(msg)
         except KeyError:
             self.batchsystem = ''
 
@@ -87,7 +87,7 @@ class SchedulerCondorCommon(SchedulerGrid):
         taskHash = sha.new(common._db.queryTask('name')).hexdigest()
         id = 'https://' + self.name() + '/' + taskHash + '/${NJob}'
         msg = 'JobID for ML monitoring is created for OSG scheduler: %s'%id
-        common.logger.debug(5, msg)
+        common.logger.debug( msg)
         return id
 
     def realSchedParams(self, cfgParams):
@@ -206,7 +206,7 @@ class SchedulerCondorCommon(SchedulerGrid):
             msg  = self.msgPre + 'condor_schedd is not running on this machine.\n'
             msg += self.msgPre + 'Please use a machine with condor installed and running\n'
             msg += self.msgPre + 'condor_schedd or change the Scheduler in your crab.cfg.'
-            common.logger.debug(2, msg)
+            common.logger.debug( msg)
             raise CrabException(msg)
 
         self.checkExecutableInPath('condor_q')
@@ -227,7 +227,7 @@ class SchedulerCondorCommon(SchedulerGrid):
             msg  = self.msgPre + 'condor_version was not able to determine the installed condor version.\n'
             msg += self.msgPre + 'Please use a machine with a properly installed condor\n'
             msg += self.msgPre + 'or change the Scheduler in your crab.cfg.'
-            common.logger.debug(2, msg)
+            common.logger.debug( msg)
             raise CrabException(msg)
 
         self.checkExecutableInPath('condor_config_val')
@@ -245,7 +245,7 @@ class SchedulerCondorCommon(SchedulerGrid):
         msg += 'Maximum number of parallel submits to the grid : '
         msg += 'GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE = ' + maxPending + '\n'
         msg += 'Increase these variables to enable more jobs to be executed on the grid in parallel.\n'
-        common.logger.debug(2, msg)
+        common.logger.debug( msg)
 
         return
 
@@ -260,7 +260,7 @@ class SchedulerCondorCommon(SchedulerGrid):
             msg  = self.msgPre + name + ' is not in the $PATH on this machine.\n'
             msg += self.msgPre + 'Please use a machine with a properly installed condor\n'
             msg += self.msgPre + 'or change the Scheduler in your crab.cfg.'
-            common.logger.debug(2, msg)
+            common.logger.debug( msg)
             raise CrabException(msg)
 
     def checkCondorVariablePointsToFile(self, name, alternateName=None):
@@ -282,7 +282,7 @@ class SchedulerCondorCommon(SchedulerGrid):
             msg += 'installation  to set the variable ' + name + ' properly, '
             msg += 'use another machine with a properly installed condor\n'
             msg += 'or change the Scheduler in your crab.cfg.'
-            common.logger.debug(2, msg)
+            common.logger.debug( msg)
             raise CrabException(msg)
 
     def checkCondorVariableIsTrue(self, name):
@@ -299,7 +299,7 @@ class SchedulerCondorCommon(SchedulerGrid):
             msg += 'to set the variable ' + name + ' to true, '
             msg += 'use another machine with a properly installed condor or '
             msg += 'change the Scheduler in your crab.cfg.'
-            common.logger.debug(2, msg)
+            common.logger.debug( msg)
             raise CrabException(msg)
 
     def queryCondorVariable(self, name, default):

@@ -1,4 +1,3 @@
-from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
@@ -10,12 +9,12 @@ class ServerConfig:
     def __init__(self, serverName):
         import string
         serverName = string.lower(serverName)
-        common.logger.debug(5,'Calling ServerConfig '+serverName)
+        common.logger.debug('Calling ServerConfig '+serverName)
 
         self.url ='https://cmsweb.cern.ch/crabconf/'
         # self.url ='http://www.pd.infn.it/~lacaprar/Computing/'
         if 'default' in  serverName:
-            common.logger.debug(5,'getting serverlist from web')
+            common.logger.debug('getting serverlist from web')
             # get a list of available servers 
             serverListFileName ='AvalableServerList'
             serverListFile = self.getConfig_(serverListFileName)
@@ -30,7 +29,7 @@ class ServerConfig:
             # clean up empty lines and comments
             serverList=[]
             [serverList.append(string.split(string.strip(it))) for it in tmp if (it.strip() and not it.strip()[0]=="#")]
-            common.logger.debug(5,'All avaialble servers: '+str(serverList))
+            common.logger.debug('All avaialble servers: '+str(serverList))
 
             # select servers from client version
             compatibleServerList=[]
@@ -48,7 +47,7 @@ class ServerConfig:
                 
                 #print vv[0],common.prog_version,vv[1]
                 if vv[0]<=common.prog_version and common.prog_version<=vv[1]: compatibleServerList.append(s[0])
-            common.logger.debug(5,'All avaialble servers compatible with %s: '%common.prog_version_str +str(serverList))
+            common.logger.debug('All avaialble servers compatible with %s: '%common.prog_version_str +str(serverList))
             if len(compatibleServerList)==0: 
                 msg = "No compatible server available with client version %s\n"%common.prog_version_str
                 msg += "Exiting"
@@ -56,8 +55,7 @@ class ServerConfig:
             # if more than one, pick up a random one, waiting for something smarter (SiteDB)
             import random
             serverName = random.choice(compatibleServerList)
-            common.logger.debug(5,'Avaialble servers: '+str(compatibleServerList)+' choosen: '+serverName)
-            common.logger.write('Avaialble servers: '+str(compatibleServerList)+' choosen: '+serverName)
+            common.logger.debug('Avaialble servers: '+str(compatibleServerList)+' choosen: '+serverName)
         if 'server_' in serverName:
             configFileName = '%s.conf'%serverName
         else: 
@@ -95,14 +93,14 @@ class ServerConfig:
     def getConfig_(self, configFileName):
         url = self.url+configFileName
         if not os.path.exists(configFileName):
-            common.logger.message('Downloading config files for '+url)
+            common.logger.info('Downloading config files for '+url)
             self.downloadFile( url, configFileName)
         else:
             statinfo = os.stat(configFileName)
             ## if the file is older then 12 hours it is re-downloaded to update the configuration
             oldness = 12*3600
             if (time.time() - statinfo.st_ctime) > oldness:
-                common.logger.message('Downloading config files for '+url)
+                common.logger.info('Downloading config files for '+url)
                 self.downloadFile( url, configFileName)
             pass
         return os.getcwd()+'/'+configFileName

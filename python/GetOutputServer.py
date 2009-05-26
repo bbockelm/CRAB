@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.36 2008/10/04 13:11:18 spiga Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.38 2009/01/19 15:09:38 mcinquil Exp $"
+__version__ = "$Revision: 1.38 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -43,7 +43,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         filesAndJodId = { }
 
         filesAndJodId.update( self.retrieveFiles(self.list_id) )
-        common.logger.debug(5, "Files to be organized and notified " + str(filesAndJodId))
+        common.logger.debug( "Files to be organized and notified " + str(filesAndJodId))
 
         # load updated task       
         task = common._db.getTask()
@@ -59,7 +59,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         """
 
         self.taskuuid = str(common._db.queryTask('name'))
-        common.logger.debug(3, "Task name: " + self.taskuuid)
+        common.logger.debug( "Task name: " + self.taskuuid)
 
         # create the list with the actual filenames
         remotedir = os.path.join(self.storage_path, self.taskuuid)
@@ -72,7 +72,7 @@ class GetOutputServer( GetOutput, StatusServer ):
             osbFiles.extend([osbTemplate % str(jid) for jid in filesToRetrieve])
             osbTemplate = remotedir + '/CMSSW_%s.stderr'
             osbFiles.extend([osbTemplate % str(jid) for jid in filesToRetrieve])
-        common.logger.debug(3, "List of OSB files: " +str(osbFiles) )
+        common.logger.debug( "List of OSB files: " +str(osbFiles) )
 
         copyHere = self.outDir
         destTemplate = copyHere+'/out_files_%s.tgz'
@@ -83,18 +83,18 @@ class GetOutputServer( GetOutput, StatusServer ):
             destTemplate = copyHere + '/CMSSW_%s.stderr'
             destFiles.extend([destTemplate % str(jid) for jid in filesToRetrieve])
 
-        common.logger.message("Starting retrieving output from server "+str(self.storage_name)+"...")
+        common.logger.info("Starting retrieving output from server "+str(self.storage_name)+"...")
 
         try:
             seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
         except Exception, ex:
-            common.logger.debug(1, str(ex))
+            common.logger.debug( str(ex))
             msg = "ERROR : Unable to create SE source interface \n"
             raise CrabException(msg)
         try:
             loc = SElement("localhost", "local")
         except Exception, ex:
-            common.logger.debug(1, str(ex))
+            common.logger.debug( str(ex))
             msg = "ERROR : Unable to create destination  interface \n"
             raise CrabException(msg)
 
@@ -106,7 +106,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         for i in xrange(len(osbFiles)):
             source = osbFiles[i]
             dest = destFiles[i]
-            common.logger.debug(1, "retrieving "+ str(source) +" to "+ str(dest) )
+            common.logger.debug( "retrieving "+ str(source) +" to "+ str(dest) )
             try:
                 sbi.copy( source, dest)
                 if i < len(filesToRetrieve):
@@ -114,7 +114,7 @@ class GetOutputServer( GetOutput, StatusServer ):
             except Exception, ex:
                 msg = "WARNING: Unable to retrieve output file %s \n" % osbFiles[i]
                 msg += str(ex)
-                common.logger.debug(1,msg)
+                common.logger.debug(msg)
                 continue
 
         return filesAndJodId
@@ -127,7 +127,7 @@ class GetOutputServer( GetOutput, StatusServer ):
                 # it means the file has been untarred
                 retrievedFilesJodId.append(jid)
 
-        common.logger.debug(5, "List of retrieved files notified to server: %s"%str(retrievedFilesJodId) )
+        common.logger.debug( "List of retrieved files notified to server: %s"%str(retrievedFilesJodId) )
 
         # notify to the server that output have been retrieved successfully. proxy from StatusServer
         if len(retrievedFilesJodId) > 0:

@@ -1,6 +1,5 @@
 from Actor import *
 from crab_exceptions import *
-from crab_logger import Logger
 from Status import Status
 import common
 import string

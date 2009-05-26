@@ -24,13 +24,8 @@ def LFNBase(forced_path, PrimaryDataset='',ProcessedDataset='',merged=True,publi
 if __name__ == '__main__' :
     """
     """
-    from crab_logger import Logger
-    from WorkSpace import *
-    continue_dir = os.path.expanduser("~")
-    cfg_params={'USER.logdir' : continue_dir }
-    common.work_space = WorkSpace(continue_dir, cfg_params)
-    log = Logger()
-    common.logger = log
+    import logging 
+    common.logger = logging
 
     print "xx %s xx"%getUserName()
     baselfn = LFNBase("datasetstring")

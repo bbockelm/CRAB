@@ -1,7 +1,5 @@
 from Actor import *
 from crab_util import *
-#import EdgLoggingInfo
-#import CondorGLoggingInfo
 import common
 import string, os
 
@@ -19,7 +17,7 @@ class PostMortem(Actor):
         """
         The main method of the class.
         """
-        common.logger.debug(5, "PostMortem::run() called")
+        common.logger.debug( "PostMortem::run() called")
 
         self.collectLogging()
 
@@ -29,21 +27,21 @@ class PostMortem(Actor):
         for id in self.nj_list:
             job=self.up_task.getJob(id)
             if not job: #id not in self.all_jobs:
-                common.logger.message('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
+                common.logger.info('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
                 continue
             elif job.runningJob['status'] == 'C':
-                common.logger.message('Warning: job # ' + str(id) + ' just Created ! Not possible to ask for postMortem ')
+                common.logger.info('Warning: job # ' + str(id) + ' just Created ! Not possible to ask for postMortem ')
             else:  
                 fname = self.fname_base + str(id) + '.LoggingInfo'
                 if os.path.exists(fname):
-                    common.logger.message('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
+                    common.logger.info('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
                     continue
                 common.scheduler.loggingInfo(id,fname)
                 fl = open(fname, 'r')
                 out = "".join(fl.readlines())  
                 fl.close()
                 reason = self.decodeLogging(out)
-                common.logger.message('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
+                common.logger.info('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
         return
         
     def decodeLogging(self, out):

@@ -3,7 +3,6 @@ from WorkSpace import WorkSpace
 from JobList import JobList
 from ScriptWriter import ScriptWriter
 from Scheduler import Scheduler
-from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
@@ -25,11 +24,11 @@ class Creator(Actor):
         self.isNew = isNew
 
         self.createJobTypeObject(ncjobs,skip_blocks,self.isNew)
-        common.logger.debug(5, __name__+": JobType "+self.job_type.name()+" created")
+        common.logger.debug( __name__+": JobType "+self.job_type.name()+" created")
 
 
         self.total_njobs = self.job_type.numberOfJobs();
-        common.logger.debug(5, __name__+": total # of jobs = "+`self.total_njobs`)
+        common.logger.debug( __name__+": total # of jobs = "+`self.total_njobs`)
 
         self.ncjobs = ncjobs
         if ncjobs == 'all' : self.ncjobs = self.total_njobs
@@ -37,7 +36,7 @@ class Creator(Actor):
         
         self.job_type_name = self.job_type.name()
  
-        common.logger.debug(5, "Creator constructor finished")
+        common.logger.debug( "Creator constructor finished")
         return
 
     def writeJobsSpecsToDB(self, first_jobID=0):
@@ -84,7 +83,7 @@ class Creator(Actor):
         The main method of the class.
         """
 
-        common.logger.debug(5, "Creator::run() called")
+        common.logger.debug( "Creator::run() called")
         start = time.time()
         # Instantiate ScriptWriter
         script_writer = ScriptWriter(self.cfg_params,'crab_template.sh')
@@ -104,7 +103,7 @@ class Creator(Actor):
             output=[]
             if njc == self.ncjobs : break
 
-            common.logger.debug(1,"Creating job # "+`(nj+1)`)
+            common.logger.debug("Creating job # "+`(nj+1)`)
             listRunField.append(run_jobToSave)
 
             # Prepare configuration file
@@ -139,15 +138,14 @@ class Creator(Actor):
         common.scheduler.declare(listID) 
        
         stop = time.time()
-        common.logger.message('Creating '+str(self.total_njobs)+' jobs, please wait...')
+        common.logger.info('Creating '+str(self.total_njobs)+' jobs, please wait...')
 
         stop = time.time()
-        common.logger.debug(2, "Creation Time: "+str(stop - start))
-        common.logger.write("Creation Time: "+str(stop - start))
+        common.logger.debug( "Creation Time: "+str(stop - start))
 
         msg = '\nTotal of %d jobs created'%njc
         if njc != self.ncjobs: msg = msg + ' from %d requested'%self.ncjobs
         msg = msg + '.\n'
-        common.logger.message(msg)
+        common.logger.info(msg)
         
         return

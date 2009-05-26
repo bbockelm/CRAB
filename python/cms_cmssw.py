@@ -1,5 +1,4 @@
 from JobType import JobType
-from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
@@ -12,7 +11,7 @@ import os, string, glob
 class Cmssw(JobType):
     def __init__(self, cfg_params, ncjobs,skip_blocks, isNew):
         JobType.__init__(self, 'CMSSW')
-        common.logger.debug(3,'CMSSW::__init__')
+        common.logger.debug('CMSSW::__init__')
         self.skip_blocks = skip_blocks
         self.argsList = 1
 
@@ -47,7 +46,7 @@ class Cmssw(JobType):
         self.fjrFileName = 'crab_fjr.xml'
 
         self.version = self.scram.getSWVersion()
-        common.logger.write("CMSSW version is: "+str(self.version))
+        common.logger.log(10-1,"CMSSW version is: "+str(self.version))
         try:
             type, self.CMSSW_major, self.CMSSW_minor, self.CMSSW_patch = tuple(self.version.split('_'))
         except:
@@ -158,7 +157,7 @@ class Cmssw(JobType):
                     self.additional_inbox_files.append(string.strip(file))
                 pass
             pass
-            common.logger.debug(5,"Additional input files: "+str(self.additional_inbox_files))
+            common.logger.debug("Additional input files: "+str(self.additional_inbox_files))
         pass
 
 
@@ -240,11 +239,11 @@ class Cmssw(JobType):
                 tfsOutput = PsetEdit.getTFileService()
                 if tfsOutput:
                     if tfsOutput in self.output_file:
-                        common.logger.debug(5,"Output from TFileService "+tfsOutput+" already in output files")
+                        common.logger.debug("Output from TFileService "+tfsOutput+" already in output files")
                     else:
                         outfileflag = True #output found
                         self.output_file.append(tfsOutput)
-                        common.logger.message("Adding "+tfsOutput+" (from TFileService) to list of output files")
+                        common.logger.info("Adding "+tfsOutput+" (from TFileService) to list of output files")
                     pass
                 pass
             ## If present and requested, add PoolOutputModule to output files
@@ -252,10 +251,10 @@ class Cmssw(JobType):
             if int(self.cfg_params.get('CMSSW.get_edm_output',0)):
                 if edmOutput:
                     if edmOutput in self.output_file:
-                        common.logger.debug(5,"Output from PoolOutputModule "+edmOutput+" already in output files")
+                        common.logger.debug("Output from PoolOutputModule "+edmOutput+" already in output files")
                     else:
                         self.output_file.append(edmOutput)
-                        common.logger.message("Adding "+edmOutput+" (from PoolOutputModule) to list of output files")
+                        common.logger.info("Adding "+edmOutput+" (from PoolOutputModule) to list of output files")
                     pass
                 pass
             # not required: check anyhow if present, to avoid accidental T2 overload
@@ -270,10 +269,10 @@ class Cmssw(JobType):
 
             if (PsetEdit.getBadFilesSetting()):
                 msg = "WARNING: You have set skipBadFiles to True. This will continue processing on some errors and you may not be notified."
-                common.logger.message(msg)
+                common.logger.info(msg)
 
         except CrabException, msg:
-            common.logger.message(str(msg))
+            common.logger.info(str(msg))
             msg='Error while manipulating ParameterSet (see previous message, if any): exiting...'
             raise CrabException(msg)
 
@@ -282,12 +281,12 @@ class Cmssw(JobType):
 
         import DataDiscovery
         import DataLocation
-        common.logger.debug(10,"CMSSW::DataDiscoveryAndLocation()")
+        common.logger.log(10-1,"CMSSW::DataDiscoveryAndLocation()")
 
         datasetPath=self.datasetPath
 
         ## Contact the DBS
-        common.logger.message("Contacting Data Discovery Services ...")
+        common.logger.info("Contacting Data Discovery Services ...")
         try:
             self.pubdata=DataDiscovery.DataDiscovery(datasetPath, cfg_params,self.skip_blocks)
             self.pubdata.fetchDBSInfo()
@@ -348,7 +347,7 @@ class Cmssw(JobType):
 
 
         # screen output
-        common.logger.message("Requested dataset: " + datasetPath + " has " + str(self.maxEvents) + " events in " + str(len(self.filesbyblock.keys())) + " blocks.\n")
+        common.logger.info("Requested dataset: " + datasetPath + " has " + str(self.maxEvents) + " events in " + str(len(self.filesbyblock.keys())) + " blocks.\n")
 
         return sites
 
@@ -389,7 +388,7 @@ class Cmssw(JobType):
             listField.append(job_ToSave)
             msg="Job  %s  Arguments:  %s\n"%(str(job+1),str_argu)
             msg+="\t  Destination: %s "%(str(self.jobDestination[id]))
-            common.logger.debug(5,msg)
+            common.logger.debug(msg)
         # write xml
         if len(listDictions):
             if exist==False: self.CreateXML()
@@ -458,7 +457,7 @@ class Cmssw(JobType):
 
         ## check if working area is release top
         if swReleaseTop == '' or swArea == swReleaseTop:
-            common.logger.debug(3,"swArea = "+swArea+" swReleaseTop ="+swReleaseTop)
+            common.logger.debug("swArea = "+swArea+" swReleaseTop ="+swReleaseTop)
             return
 
         import tarfile
@@ -474,7 +473,7 @@ class Cmssw(JobType):
                 ## then check if it's private or not
                 if exeWithPath.find(swReleaseTop) == -1:
                     # the exe is private, so we must ship
-                    common.logger.debug(5,"Exe "+exeWithPath+" to be tarred")
+                    common.logger.debug("Exe "+exeWithPath+" to be tarred")
                     path = swArea+'/'
                     # distinguish case when script is in user project area or given by full path somewhere else
                     if exeWithPath.find(path) >= 0 :
@@ -491,7 +490,7 @@ class Cmssw(JobType):
             tar.dereference=True
             libDir = 'lib'
             lib = swArea+'/' +libDir
-            common.logger.debug(5,"lib "+lib+" to be tarred")
+            common.logger.debug("lib "+lib+" to be tarred")
             if os.path.exists(lib):
                 tar.add(lib,libDir)
 
@@ -514,7 +513,7 @@ class Cmssw(JobType):
                     todo_list += [(entryPath + i, i) for i in  os.listdir(swArea+"/src/"+entry)]
                     if name == 'data':
                         self.dataExist=True
-                        common.logger.debug(5,"data "+entry+" to be tarred")
+                        common.logger.debug("data "+entry+" to be tarred")
                         tar.add(swArea+"/src/"+entry,"src/"+entry)
                     pass
                 pass
@@ -550,15 +549,17 @@ class Cmssw(JobType):
             for file in self.additional_inbox_files:
                 tar.add(file,string.split(file,'/')[-1])
             tar.dereference=False
-            common.logger.debug(5,"Files in "+self.tarNameWithPath+" : "+str(tar.getnames()))
+            common.logger.debug("Files in "+self.tarNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
         except IOError, exc:
-            common.logger.write(str(exc))
-            raise CrabException('Could not create tar-ball '+self.tarNameWithPath)
+            msg = 'Could not create tar-ball %s \n'%self.tarNameWithPath
+            msg += str(exc)
+            raise CrabException(msg)
         except tarfile.TarError, exc:
-            common.logger.write(str(exc))
-            raise CrabException('Could not create tar-ball '+self.tarNameWithPath)
+            msg = 'Could not create tar-ball %s \n'%self.tarNameWithPath
+            msg += str(exc)
+            raise CrabException(msg)
   
     def zipTarFile(self):  
 
@@ -1090,7 +1091,7 @@ class Cmssw(JobType):
         if len(self.output_file) <= 0:
             msg ="WARNING: no output files name have been defined!!\n"
             msg+="\tno output files will be reported back/staged\n"
-            common.logger.message(msg)
+            common.logger.info(msg)
         if (self.return_data == 1):
             for file in (self.output_file+self.output_file_sandbox):
                 listOutFiles.append(numberFile(file, '$NJob'))

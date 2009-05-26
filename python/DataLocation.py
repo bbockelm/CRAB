@@ -61,7 +61,7 @@ class DataLocation:
             countblock=countblock+1
             try:
                 replicas=dls.getReplicas(fileblocks)
-                common.logger.debug(5,"sites are %s"%replicas)
+                common.logger.debug("sites are %s"%replicas)
                 if len(replicas)!=0:
                     blockSites[fileblocks] = replicas
                 else:
@@ -69,8 +69,8 @@ class DataLocation:
                     blockSites[fileblocks] = ''
 
             except DLSNoReplicas, ex:
-                common.logger.debug(5,str(ex.getErrorMessage()))
-                common.logger.debug(5,"Block not hosted by any site, continuing.\n")
+                common.logger.debug(str(ex.getErrorMessage()))
+                common.logger.debug("Block not hosted by any site, continuing.\n")
                 blockSites[fileblocks] = ''
                 failCount = failCount + 1
             except:

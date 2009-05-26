@@ -7,7 +7,6 @@ import pickle
 
 from crab_util import *
 from crab_exceptions import *
-from crab_logger import Logger
 
 from ProdCommon.CMSConfigTools.ConfigAPI.CfgInterface import CfgInterface
 from FWCore.ParameterSet.DictTypes import SortedKeysDict
@@ -26,7 +25,7 @@ class PsetManipulator:
         self.pset = pset
         #convert Pset
         from FWCore.ParameterSet.Config import include
-        common.logger.debug(3,"PsetManipulator::__init__: PSet file = "+self.pset)
+        common.logger.debug("PsetManipulator::__init__: PSet file = "+self.pset)
         # FUTURE: Can drop cfg mode for CMSSW < 2_1_x
         if self.pset.endswith('py'):
             handle = open(self.pset, 'r')

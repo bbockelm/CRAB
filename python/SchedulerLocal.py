@@ -1,6 +1,5 @@
 from Scheduler import Scheduler
 from crab_exceptions import *
-from crab_logger import Logger
 from crab_util import getLocalDomain
 import common
 from PhEDExDatasvcInfo import PhEDExDatasvcInfo
@@ -27,9 +26,9 @@ class SchedulerLocal(Scheduler) :
         localDomainName = getLocalDomain(self)
         if not cfg_params.has_key('EDG.se_white_list'):
             cfg_params['EDG.se_white_list']=localDomainName
-            common.logger.message("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
+            common.logger.info("Your domain name is "+str(localDomainName)+": only local dataset will be considered")
         else:
-            common.logger.message("Your se_white_list is set to "+str(cfg_params['EDG.se_white_list'])+": only local dataset will be considered")
+            common.logger.info("Your se_white_list is set to "+str(cfg_params['EDG.se_white_list'])+": only local dataset will be considered")
         return
 
     def userName(self):

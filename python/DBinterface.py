@@ -1,4 +1,3 @@
-from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
@@ -58,7 +57,7 @@ class DBinterface:
         try:
             task = common.bossSession.load(1,jobsList)
         except Exception, e :
-            common.logger.debug(3, "Error while getting task : " +str(traceback.format_exc()))
+            common.logger.debug( "Error while getting task : " +str(traceback.format_exc()))
             raise CrabException('Error while getting task '+str(e))
         return task
 
@@ -69,7 +68,7 @@ class DBinterface:
         try:
             task = common.bossSession.load(1,str(n))
         except Exception, e :
-            common.logger.debug(3, "Error while getting job : " +str(traceback.format_exc()))
+            common.logger.debug( "Error while getting job : " +str(traceback.format_exc()))
             raise CrabException('Error while getting job '+str(e))
         return task
 
@@ -86,8 +85,6 @@ class DBinterface:
         try:
             common.bossSession.saveTask( task )
         except Exception, e :
-           # common.logger.debug(3, "Error creating task : " +str(traceback.format_exc()))
-           # raise CrabException('Error creating task '+str(e))
             raise CrabException('Error creating task '+str(traceback.format_exc()))
             
         return 
@@ -211,7 +208,7 @@ class DBinterface:
             CliServerParams(self)       
             headerTask= "Task Id = %-40s " %(task['name'])
             displayReport(self,headerTask,lines)
-            common.logger.message(showWebMon(self.server_name))
+            common.logger.info(showWebMon(self.server_name))
         if (jid ) or (server_mode == 0):
             for job in task.jobs: 
                 toPrint=''
@@ -260,7 +257,7 @@ class DBinterface:
         try:
             task = common.bossSession.loadJobDist( 1, attr ) 
         except Exception, e :
-            common.logger.debug(3, "Error loading Jobs By distinct Attr : " +str(traceback.format_exc()))
+            common.logger.debug( "Error loading Jobs By distinct Attr : " +str(traceback.format_exc()))
             raise CrabException('Error loading Jobs By distinct Attr '+str(e))
 
         for i in task: distAttr.append(i[attr])   
@@ -274,7 +271,7 @@ class DBinterface:
         try:
             task = common.bossSession.loadJobDistAttr( 1, attr_1, attr_2, list ) 
         except Exception, e :
-            common.logger.debug(3, "Error loading Jobs By distinct Attr : " +str(traceback.format_exc()))
+            common.logger.debug( "Error loading Jobs By distinct Attr : " +str(traceback.format_exc()))
             raise CrabException('Error loading Jobs By distinct Attr '+str(e))
 
         for i in task: distAttr.append(i[attr_1])  
@@ -288,7 +285,7 @@ class DBinterface:
         try:
             task = common.bossSession.loadJobsByAttr(attr ) 
         except Exception, e :
-            common.logger.debug(3, "Error loading Jobs By Attr : " +str(traceback.format_exc()))
+            common.logger.debug( "Error loading Jobs By Attr : " +str(traceback.format_exc()))
             raise CrabException('Error loading Jobs By Attr '+str(e))
         for i in task:
             matched.append(i[field])
@@ -303,7 +300,7 @@ class DBinterface:
         try:
             task = common.bossSession.loadJobsByRunningAttr(attr)
         except Exception, e :
-            common.logger.debug(3, "Error loading Jobs By Running Attr : " +str(traceback.format_exc()))
+            common.logger.debug( "Error loading Jobs By Running Attr : " +str(traceback.format_exc()))
             raise CrabException('Error loading Jobs By Running Attr '+str(e))
         for i in task:
             matched.append(i.runningJob[field])
@@ -356,7 +353,7 @@ class DBinterface:
             # Data alignment
             if rForJ.getAttribute('status') not in ['Created', 'Unknown']: 
                    # update the status  
-                common.logger.debug(3,"Updating DB status for job: " + str(id) + " @: " \
+                common.logger.debug("Updating DB status for job: " + str(id) + " @: " \
                                       + str(rForJ.getAttribute('status')) )
                 job.runningJob['statusScheduler'] = str( rForJ.getAttribute('status') )
                 if (rForJ.getAttribute('status') == 'Done' or rForJ.getAttribute('status') == 'Done (Failed)')\

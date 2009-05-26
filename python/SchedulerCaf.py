@@ -1,7 +1,6 @@
 from Scheduler import Scheduler
 from SchedulerLsf import SchedulerLsf
 from crab_exceptions import *
-from crab_logger import Logger
 import common
 
 import os,string

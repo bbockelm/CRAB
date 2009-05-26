@@ -38,7 +38,7 @@ class EdgLoggingInfo:
         try:
             file = open(filename)
         except IOError:
-            common.logger.message('Could not open file: '+filename)
+            common.logger.info('Could not open file: '+filename)
             return ''
 
         return self.decodeReason(file.readlines())

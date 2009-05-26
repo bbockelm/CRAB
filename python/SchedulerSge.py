@@ -2,7 +2,6 @@ from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
 from crab_exceptions import *
 from crab_util import *
-from crab_logger import Logger
 import common
 
 import os,string
@@ -54,20 +53,20 @@ class SchedulerSge(SchedulerLocal) :
         if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
             msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
             msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
-            common.logger.message(msg)
+            common.logger.info(msg)
             raise CrabException(msg)
 
         if int(self.copy_data) == 1:
             self.SE = cfg_params.get('USER.storage_element', None)
             if not self.SE:
                 msg = "Error. The [USER] section has no 'storage_element'"
-                common.logger.message(msg)
+                common.logger.info(msg)
                 raise CrabException(msg)
 
             self.proxyValid = 0
             self.dontCheckProxy = int(cfg_params.get("EDG.dont_check_proxy",0))
             self.proxyServer = cfg_params.get("EDG.proxy_server",'myproxy.cern.ch')
-            common.logger.debug(5,'Setting myproxy server to ' + self.proxyServer)
+            common.logger.debug('Setting myproxy server to ' + self.proxyServer)
 
             self.group = cfg_params.get("EDG.group", None)
             self.role  = cfg_params.get("EDG.role", None)

@@ -27,7 +27,7 @@ class SchedulerArc(SchedulerGrid):
         taskHash = sha.new(common._db.queryTask('name')).hexdigest()
         id = 'https://' + self.name() + '/' + taskHash + '/${NJob}'
         msg = 'JobID for ML monitoring is created for ARC scheduler: %s' % id
-        common.logger.debug(5, msg)
+        common.logger.debug( msg)
         return id
 
 
@@ -211,7 +211,7 @@ class SchedulerArc(SchedulerGrid):
     def submit(self,list,task):
         """ submit to scheduler a list of jobs """
         if (not len(list)):
-            common.logger.message("No sites where to submit jobs")
+            common.logger.info("No sites where to submit jobs")
         req=str(self.sched_parameter(list[0],task))
 
         ### reduce collection size...if needed

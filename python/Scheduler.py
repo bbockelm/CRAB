@@ -69,7 +69,7 @@ class Scheduler :
             self.SE = cfg_params.get('USER.storage_element',None)
             if not self.SE:
                 msg = "Error. The [USER] section does not have 'storage_element'"
-                common.logger.message(msg)
+                common.logger.info(msg)
                 raise CrabException(msg)
 
         if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
@@ -91,12 +91,12 @@ class Scheduler :
         if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
             msg = 'Error: publish_data = 1 must be used with copy_data = 1\n'
             msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
-            common.logger.message(msg)
+            common.logger.info(msg)
             raise CrabException(msg)
             
         if ( int(self.local_stage) == 1 and int(self.publish_data) == 1 ):
             msg = 'Error: currently the publication is not supported with the local stage out. Work in progress....\n'
-            common.logger.message(msg)
+            common.logger.info(msg)
             raise CrabException(msg)
 
         self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
@@ -173,7 +173,7 @@ class Scheduler :
                     raise CrabException(msg)   
         else: 
             msg = 'Remote is empty or not existis\n'
-            common.logger.debug(5,msg)      
+            common.logger.debug(msg)      
         return
 
     def listRemoteDir(self, endpoint):
@@ -185,25 +185,25 @@ class Scheduler :
         except ProtocolUnknown, ex:
             remoteList = -1  
             msg  = 'Warning : %s '% str(ex)
-            common.logger.message(msg)
+            common.logger.info(msg)
             dbgMsg = traceback.format_exc()
-            common.logger.debug(5,dbgMsg)
+            common.logger.debug(dbgMsg)
         try:
             action = SBinterface( Storage )
         except Exception, ex:
             remoteList = -1  
             msg  = 'Warinig : %s '% str(ex)
-            common.logger.message(msg)
+            common.logger.info(msg)
             dbgMsg = traceback.format_exc()
-            common.logger.debug(5,dbgMsg)
+            common.logger.debug(dbgMsg)
         try:
             remoteList = action.dirContent()
         except Exception, ex:
             remoteList = -1  
             msg  = 'Warning : %s '% str(ex)
-            common.logger.message(msg)
+            common.logger.info(msg)
             dbgMsg = traceback.format_exc()
-            common.logger.debug(5,dbgMsg)
+            common.logger.debug(dbgMsg)
 
         return remoteList 
 
@@ -275,7 +275,7 @@ class Scheduler :
 
     def submit(self,list,task):
         """ submit to scheduler a list of jobs """
-        if (not len(list)): common.logger.message("No sites where to submit jobs")
+        if (not len(list)): common.logger.info("No sites where to submit jobs")
         req=str(self.sched_parameter(list[0],task))
 
         ### reduce collection size...if needed

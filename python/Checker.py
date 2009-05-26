@@ -19,10 +19,10 @@ class Checker(Actor):
         """
         The main method of the class.
         """
-        common.logger.debug(5, "Checker::run() called")
+        common.logger.debug( "Checker::run() called")
 
         if len(self.nj_list)==0:
-            common.logger.debug(5, "No jobs to check")
+            common.logger.debug( "No jobs to check")
             return
         
         task=common._db.getTask(self.nj_list)
@@ -37,16 +37,16 @@ class Checker(Actor):
             # only if some dest i s available or if dataset is None
             if len(dest) > 0 or not self.datasetpath: 
                 if ','.join(dest) in allMatch.keys():
-                    common.logger.message("As previous job: "+str(allMatch[','.join(dest)]))
+                    common.logger.info("As previous job: "+str(allMatch[','.join(dest)]))
                 else:
                     match = common.scheduler.listMatch(dest, True)
                     allMatch[','.join(dest)] = match 
                     if len(match)>0:
-                        common.logger.message("Found "+str(len(match))+" compatible site(s) for job "+str(id_job)+" : "+str(match))
+                        common.logger.info("Found "+str(len(match))+" compatible site(s) for job "+str(id_job)+" : "+str(match))
                     else:
-                        common.logger.message("No compatible site found, will not submit jobs "+str(id_job))
+                        common.logger.info("No compatible site found, will not submit jobs "+str(id_job))
                     pass
                 pass
             else:
-                common.logger.message("No compatible site found, will not submit jobs "+str(id_job))
+                common.logger.info("No compatible site found, will not submit jobs "+str(id_job))
         return

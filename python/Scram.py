@@ -1,6 +1,5 @@
 import common
 import os, os.path
-from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 
@@ -51,8 +50,8 @@ class Scram:
         else:
             msg = 'Did you do cmsenv from your working area ?\n'
             raise CrabException(msg)
-        common.logger.debug(5, "Scram::Scram() version is "+str(self.scramVersion))
-        common.logger.debug(6, "Scram::Scram() area is "+self.scramArea)
+        common.logger.debug("Scram::Scram() version is "+str(self.scramVersion))
+        common.logger.log(10-1, "Scram::Scram() area is "+self.scramArea)
         pass
 
     def commandName(self):

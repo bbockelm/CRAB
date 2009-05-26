@@ -38,13 +38,12 @@ class GetOutput(Actor):
         The main method of the class: Check destination dirs and 
         perform the get output
         """
-        common.logger.debug(5, "GetOutput::run() called")
+        common.logger.debug( "GetOutput::run() called")
 
         start = time.time()
         self.getOutput()
         stop = time.time()
-        common.logger.debug(1, "GetOutput Time: "+str(stop - start))
-        common.logger.write("GetOutput Time: "+str(stop - start))
+        common.logger.debug( "GetOutput Time: "+str(stop - start))
         pass
 
     def checkBeforeGet(self):
@@ -73,7 +72,7 @@ class GetOutput(Actor):
                     msg = '\nOnly %d jobs will be retrieved '% (len(self.list_id))
                     msg += ' from %d requested.\n'%(len(self.up_task.jobs))
                     msg += ' (for details: crab -status)' 
-                    common.logger.message(msg)
+                    common.logger.info(msg)
             else:
                 for id in self.jobs:
                     if id in list_id_done: self.list_id.append(id)   
@@ -81,7 +80,7 @@ class GetOutput(Actor):
                     msg = '\nOnly %d jobs will be retrieved '% (len(self.list_id))
                     msg += ' from %d requested.\n'%(len(self.jobs))
                     msg += ' (for details: crab -status)' 
-                    common.logger.message(msg)
+                    common.logger.info(msg)
         if not os.path.isdir(self.logDir) or not os.path.isdir(self.outDir):
             msg =  ' Output or Log dir not found!! check '+self.logDir+' and '+self.outDir
             raise CrabException(msg)
@@ -162,13 +161,13 @@ class GetOutput(Actor):
                     #cmd_2 ='rm out_files_'+ str(id)+'.tgz'
                     cmd_out2 = runCommand(cmd_2)
                     msg = 'Results of Jobs # '+str(id)+' are in '+self.outDir
-                    common.logger.message(msg)
+                    common.logger.info(msg)
                 except IOError, eio:
-                    common.logger.message("Output files for job "+ str(id) +" seems corrupted.\n")
+                    common.logger.info("Output files for job "+ str(id) +" seems corrupted.\n")
                     continue
             else:  
                 msg ="Output files for job "+ str(id) +" not available.\n"
-                common.logger.debug(1,msg)
+                common.logger.debug(msg)
                 continue   
             input = 'crab_fjr_' + str(id) + '.xml'
             if os.path.exists(self.outDir + input):
@@ -177,7 +176,7 @@ class GetOutput(Actor):
                 listCode.append(codeValue)
             else:
                 msg = "Problems with "+str(input)+". File not available.\n"
-                common.logger.message(msg) 
+                common.logger.info(msg) 
             success_ret +=1 
         #os.chdir( cwd )
         common._db.updateRunJob_(job_id , listCode)
@@ -189,9 +188,9 @@ class GetOutput(Actor):
                     cmd_out =os.system(cmd)
                 except:
                     msg = 'Problem with copy of job results'
-                    common.logger.message(msg)
+                    common.logger.info(msg)
             msg = 'Results of Jobs # '+str(list_id)+' are in '+self.outDir+' (log files are in '+self.logDir+')'
-            common.logger.message(msg)
+            common.logger.info(msg)
         return size
 
     def parseFinalReport(self, input):
@@ -210,7 +209,7 @@ class GetOutput(Actor):
         if len(jreports) <= 0 :
             codeValue["applicationReturnCode"] = str(50115)
             codeValue["wrapperReturnCode"] = str(50115)
-            common.logger.debug(5,"Empty FWkobreport: error code assigned is 50115 ")
+            common.logger.debug("Empty FWkobreport: error code assigned is 50115 ")
             return codeValue
 
         jobReport = jreports[0]
@@ -262,17 +261,14 @@ class GetOutput(Actor):
             if not os.path.isdir( Dir_Base + str(i) + '/'):
                 cmd=('mkdir '+ Dir_Base + str(i) + '/  >& /dev/null')
                 cmd_out = runCommand(cmd)   
-                common.logger.write(str(cmd_out))
-                common.logger.debug(3,str(cmd_out))
+                common.logger.debug(str(cmd_out))
         cmd='mv '+ path + file + ' ' + Dir_Base + str(max_id -1) + '/  >& /dev/null' 
         
         try:
             cmd_out = runCommand(cmd) 
-            common.logger.write(cmd_out)
-            common.logger.debug(3,cmd_out)
+            common.logger.debug(cmd_out)
         except:
             msg = 'no output to move for job '+str(id)
-            common.logger.write(msg)
-            common.logger.debug(3,msg)
+            common.logger.debug(msg)
             pass
         return

@@ -51,23 +51,23 @@ class StatusServer(Status):
             handledXML += "="*( len(handledXML)%8 )  
             reportXML = zlib.decompress( base64.urlsafe_b64decode(handledXML) )
         except Exception, e:
-            common.logger.debug(1,"WARNING: Problem while decompressing fresh status from the server.")
-            common.logger.debug(2, str(e))
-            common.logger.debug(3, traceback.format_exc() )
+            common.logger.debug("WARNING: Problem while decompressing fresh status from the server.")
+            common.logger.debug( str(e))
+            common.logger.debug( traceback.format_exc() )
             return
 
         try:
             reportList = minidom.parseString(reportXML).getElementsByTagName('Job')
             common._db.deserXmlStatus(reportList)
         except ExpatError, experr:
-            common.logger.debug(1,"ERROR: %s"%str(experr))
-            common.logger.debug(2, str(experr))
-            common.logger.debug(3, traceback.format_exc() )
+            common.logger.debug("ERROR: %s"%str(experr))
+            common.logger.debug( str(experr))
+            common.logger.debug( traceback.format_exc() )
         #    raise CrabException(str(experr))
         except TypeError, e:
-            common.logger.debug(1,"WARNING: Problem while retrieving fresh status from the server.")
-            common.logger.debug(2, str(e))
-            common.logger.debug(3, traceback.format_exc() ) 
+            common.logger.debug("WARNING: Problem while retrieving fresh status from the server.")
+            common.logger.debug( str(e))
+            common.logger.debug( traceback.format_exc() ) 
             return
 
         return 
@@ -75,5 +75,5 @@ class StatusServer(Status):
     def showWebMon(self):
         msg  = 'You can also check jobs status at: http://%s:8888/logginfo\n'%self.server_name
         msg += '\t( Your task name is: %s )\n'%common._db.queryTask('name') 
-        common.logger.debug(1,msg)
-        #common.logger.message("Web status at: http://%s:8888/visualog/?taskname=%s&logtype=Status\n"%(self.server_name,self.task_unique_name))
+        common.logger.debug(msg)
+        #common.logger.info("Web status at: http://%s:8888/visualog/?taskname=%s&logtype=Status\n"%(self.server_name,self.task_unique_name))

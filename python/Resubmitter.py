@@ -12,7 +12,7 @@ class Resubmitter(Submitter):
         nj_list = self.checkAlowedJob(jobs,nj_list)
 
 
-        common.logger.message('Jobs '+str(nj_list)+' will be resubmitted')
+        common.logger.info('Jobs '+str(nj_list)+' will be resubmitted')
         Submitter.__init__(self, cfg_params, nj_list, 'range')
 
         return
@@ -27,11 +27,11 @@ class Resubmitter(Submitter):
             if st in ['K','A','SE','E','UE','DA','NS']:
                 nj_list.append(int(nj))
             elif st == 'C':
-                common.logger.message('Job #'+`int(nj)`+' has status '+str(job.runningJob['statusScheduler'])+' not yet submitted!!!')
+                common.logger.info('Job #'+`int(nj)`+' has status '+str(job.runningJob['statusScheduler'])+' not yet submitted!!!')
             elif st in ['SD','D']:
-                common.logger.message('Job #'+`int(nj)`+' has status '+str(job.runningJob['statusScheduler'])+' must be retrieved before resubmission')
+                common.logger.info('Job #'+`int(nj)`+' has status '+str(job.runningJob['statusScheduler'])+' must be retrieved before resubmission')
             else:
-                common.logger.message('Job #'+`nj`+' has status '+str(job.runningJob['statusScheduler'])+' must be "killed" before resubmission')
+                common.logger.info('Job #'+`nj`+' has status '+str(job.runningJob['statusScheduler'])+' must be "killed" before resubmission')
 
         if len(nj_list) == 0 :
             msg='No jobs to resubmit'

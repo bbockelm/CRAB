@@ -41,7 +41,7 @@ class SubmitterServer( Submitter ):
 	"""
 	The main method of the class: submit jobs in range self.nj_list
 	"""
-	common.logger.debug(5, "SubmitterServer::run() called")
+	common.logger.debug("SubmitterServer::run() called")
 
         self.submitRange = self.nj_list
      
@@ -59,22 +59,22 @@ class SubmitterServer( Submitter ):
 	    self.performSubmission(isFirstSubmission)
         
             msg = '\nTotal of %d jobs submitted'%len(self.submitRange) 
-            common.logger.message(msg)
+            common.logger.info(msg)
  
 	return
 
     def moveISB_SEAPI(self):
         ## get task info from BL ##
-        common.logger.debug(3, "Task name: " + self.taskuuid)
+        common.logger.debug("Task name: " + self.taskuuid)
         isblist = common._db.queryTask('globalSandbox').split(',')
-        common.logger.debug(3, "List of ISB files: " +str(isblist) )
+        common.logger.debug("List of ISB files: " +str(isblist) )
         
         # init SE interface
-        common.logger.message("Starting sending the project to the storage "+str(self.storage_name)+"...")
+        common.logger.info("Starting sending the project to the storage "+str(self.storage_name)+"...")
         try:  
             seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
         except Exception, ex:
-            common.logger.debug(1, str(ex))
+            common.logger.debug(str(ex))
             msg = "ERROR : Unable to create SE destination interface \n"
             msg +="Project "+ self.taskuuid +" not Submitted \n"
             raise CrabException(msg)
@@ -82,7 +82,7 @@ class SubmitterServer( Submitter ):
         try:  
             loc = SElement("localhost", "local")
         except Exception, ex:
-            common.logger.debug(1, str(ex))
+            common.logger.debug(str(ex))
             msg = "ERROR : Unable to create SE source interface \n"
             msg +="Project "+ self.taskuuid +" not Submitted \n"
             raise CrabException(msg)
@@ -98,14 +98,14 @@ class SubmitterServer( Submitter ):
             except AlreadyExistsException, ex:
                 msg = "Project %s already exist on the Storage Element \n"%self.taskuuid 
                 msg +='\t%s'%str(ex)
-                common.logger.debug(1, msg)
+                common.logger.debug(msg)
             except OperationException, ex:
-                common.logger.debug(1, str(ex.detail))
+                common.logger.debug(str(ex.detail))
                 msg = "ERROR: Unable to create project destination on the Storage Element %s\n"%str(ex)
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
             except AuthorizationException, ex:
-                common.logger.debug(1, str(ex.detail))
+                common.logger.debug(str(ex.detail))
                 msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
@@ -116,23 +116,23 @@ class SubmitterServer( Submitter ):
         for filetocopy in isblist:
             source = os.path.abspath(filetocopy) 
             dest = os.path.join(self.remotedir, os.path.basename(filetocopy))
-            common.logger.debug(1, "Sending "+ os.path.basename(filetocopy) +" to "+ self.storage_name)
+            common.logger.debug("Sending "+ os.path.basename(filetocopy) +" to "+ self.storage_name)
             try:
                 sbi.copy( source, dest)
             except AuthorizationException, ex:
-                common.logger.debug(1, str(ex.detail))
+                common.logger.debug(str(ex.detail))
                 msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
             except Exception, ex:
-                common.logger.debug(1, str(ex))
+                common.logger.debug(str(ex))
                 msg = "ERROR : Unable to ship the project to the server %s\n"%str(ex)
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
 
         ## if here then project submitted ##
         msg = 'Project '+ self.taskuuid +' files successfully submitted to the supporting storage element.\n'
-        common.logger.debug(3,msg)
+        common.logger.debug(msg)
         return
 
 
@@ -140,7 +140,7 @@ class SubmitterServer( Submitter ):
         """
         Prepare configuration and Call credential API 
         """
-        common.logger.message("Registering credential to the server : %s"%self.server_name)
+        common.logger.info("Registering credential to the server : %s"%self.server_name
         # only for temporary back-comp. 
         if  self.credentialType == 'Proxy': 
              # for proxy all works as before....
@@ -159,10 +159,10 @@ class SubmitterServer( Submitter ):
              try:
                  CredAPI =  CredentialAPI( configAPI )            
              except Exception, err : 
-                 common.logger.debug(3, "Configuring Credential API: " +str(traceback.format_exc()))
+                 common.logger.debug("Configuring Credential API: " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
              if not CredAPI.checkCredential(Time=12) :
-                common.logger.message("Please renew the token:\n")
+                common.logger.info("Please renew the token:\n")
                 try:
                     CredAPI.ManualRenewCredential()
                 except Exception, ex:
@@ -171,11 +171,11 @@ class SubmitterServer( Submitter ):
              try:
                  dict = CredAPI.registerCredential() 
              except Exception, err:
-                 common.logger.debug(3, "Registering Credentials : " +str(traceback.format_exc()))
+                 common.logger.debug("Registering Credentials : " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
              self.cfg_params['EDG.proxyInfos'] = dict
 
-        common.logger.message("Credential successfully delegated to the server.\n")
+        common.logger.info("Credential successfully delegated to the server.\n")
 	return
     # TO REMOVE
     def moveProxy( self ):
@@ -183,14 +183,14 @@ class SubmitterServer( Submitter ):
         ## Temporary... to remove soon  
         common.scheduler.checkProxy(minTime=100)
         try:
-            common.logger.debug(5, "Registering a valid proxy to the server:")
+            common.logger.debug("Registering a valid proxy to the server:")
             flag = " --myproxy"
             cmd = 'asap-user-register --server '+str(self.server_name) + flag
             attempt = 3
             while attempt:
-                common.logger.debug(3, " executing:\n    " + cmd)
+                common.logger.debug(" executing:\n    " + cmd)
                 status, outp = commands.getstatusoutput(cmd)
-                common.logger.debug(3, outp)
+                common.logger.debug(outp)
                 if status == 0:
                     break
                 else:
@@ -222,7 +222,7 @@ class SubmitterServer( Submitter ):
             try:
                 self.stateChange( self.submitRange, "SubRequested" )
                 taskXML += common._db.serializeTask( common._db.getTask() )
-                common.logger.debug(5, taskXML)
+                common.logger.debug(taskXML)
             except Exception, e:
                 self.stateChange( self.submitRange, "Created" )
                 msg = "BossLite ERROR: Unable to serialize task object\n"
@@ -260,7 +260,7 @@ class SubmitterServer( Submitter ):
         sign local db for jobs sent -submitted- to the server
         (just for the first submission)
         """
-        common.logger.debug(4, "Updating submitting jobs %s"%str(self.submitRange))
+        common.logger.debug("Updating submitting jobs %s"%str(self.submitRange))
         updlist = [{'statusScheduler':'Submitting', 'status':'CS'}] * len(self.submitRange)
         common._db.updateRunJob_(self.submitRange, updlist)
 

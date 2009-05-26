@@ -1,7 +1,6 @@
 from Actor import *
 from crab_util import *
 from crab_exceptions import *
-from crab_logger import Logger
 import common
 import string
 
@@ -138,10 +137,10 @@ class CopyData(Actor):
                 for of in output_file:
                     InfileList += '%s,'%numberFile(of, id_job)
             elif ( job.runningJob['status'] in ['E','UE'] and job.runningJob['wrapperReturnCode'] != 0):
-                common.logger.message("Not possible copy outputs of Job # %s : Wrapper Exit Code is %s" \
+                common.logger.info("Not possible copy outputs of Job # %s : Wrapper Exit Code is %s" \
                                       %(str(job['jobId']),str(job.runningJob['wrapperReturnCode'])))
             else: 
-                common.logger.message("Not possible copy outputs of Job # %s : Status is %s" \
+                common.logger.info("Not possible copy outputs of Job # %s : Status is %s" \
                                        %(str(job['jobId']),str(job.runningJob['statusScheduler'])))
             pass
 
@@ -158,14 +157,13 @@ class CopyData(Actor):
         from cmscp import cmscp
         doCopy = cmscp(dict)
 
-        common.logger.message("Starting copy...")
+        common.logger.info("Starting copy...")
 
         start = time.time()
         results = doCopy.run()
         stop = time.time()
 
-        common.logger.debug(1, "CopyLocal Time: "+str(stop - start))
-        common.logger.write("CopyLocal time :"+str(stop - start))
+        common.logger.debug("CopyLocal Time: "+str(stop - start))
 
         return results
 
@@ -180,5 +178,5 @@ class CopyData(Actor):
                 if dict['erCode'] != '0': txt = 'failed'
                 msg = 'Copy %s for file: %s \n'%(txt,file)
                 if txt == 'failed': msg += 'Copy failed because : %s'%dict['reason']
-                common.logger.message( msg )
+                common.logger.info( msg )
         return 

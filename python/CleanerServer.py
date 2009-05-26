@@ -1,6 +1,5 @@
 from Actor import *
 from crab_exceptions import *
-from crab_logger import Logger
 import common
 import string
 
@@ -40,12 +39,12 @@ class CleanerServer(Actor):
             common.work_space.delete()
             print ( 'crab. directory '+tempWorkSpace+' removed' )
         else:
-            common.logger.message ( 'Impossible to remove: not all jobs are yet finished\n      (you maight kill these jobs and then clean the task)')
+            common.logger.info ( 'Impossible to remove: not all jobs are yet finished\n      (you maight kill these jobs and then clean the task)')
         """
         msg=''  
         msg+='functionality not yet available for the server. Work in progres \n' 
         msg+='only local worling directory will be removed'
         #msg+='planned for CRAB_2_5_0'
-        common.logger.message(msg) 
+        common.logger.info(msg) 
         common.work_space.delete()
         print 'directory '+common.work_space.topDir()+' removed'

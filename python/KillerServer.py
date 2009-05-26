@@ -23,7 +23,7 @@ class KillerServer(Actor):
         """
         The main method of the class: kill a complete task
         """
-        common.logger.debug(5, "Killer::run() called")
+        common.logger.debug( "Killer::run() called")
 
         # get updated status from server #inherited from StatusServer
         try:
@@ -39,7 +39,7 @@ class KillerServer(Actor):
            if job.runningJob['status'] not in ['C','E','KK','K','SU','SA','NS']: # commented for fast-kill at registration ,'SSE']:
                toBeKilled.append(job['jobId'])
            else:
-               common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
+               common.logger.info("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
            pass
 
         if len(toBeKilled)>0:
@@ -55,7 +55,7 @@ class KillerServer(Actor):
                 raise CrabException(msg)
  
             # printout the command result
-            common.logger.message("Kill request for %d jobs succesfully sent to the server\n"%len(toBeKilled) ) 
+            common.logger.info("Kill request for %d jobs succesfully sent to the server\n"%len(toBeKilled) ) 
 
         return
                 

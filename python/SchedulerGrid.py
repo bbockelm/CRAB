@@ -2,11 +2,10 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.102 2009/04/27 08:18:36 edelmann Exp $"
-__version__ = "$Revision: 1.102 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.103 2009/05/22 12:51:38 spiga Exp $"
+__version__ = "$Revision: 1.103 $"
 
 from Scheduler import Scheduler
-from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
@@ -41,7 +40,7 @@ class SchedulerGrid(Scheduler):
         self.dontCheckMyProxy=int(cfg_params.get("EDG.dont_check_myproxy",0))
 
         self.proxyServer = cfg_params.get("EDG.proxy_server",'myproxy.cern.ch')
-        common.logger.debug(5,'Setting myproxy server to '+self.proxyServer)
+        common.logger.debug('Setting myproxy server to '+self.proxyServer)
 
         self.group = cfg_params.get("EDG.group", None)
         self.role = cfg_params.get("EDG.role", None)
@@ -123,7 +122,7 @@ class SchedulerGrid(Scheduler):
                 sites.append(site)
             pass
         if full == True: matching='full'
-        common.logger.write("list of available site ( "+str(matching) +" matching ) : "+str(sites))
+        common.logger.debug("list of available site ( "+str(matching) +" matching ) : "+str(sites))
         return sites
 
 

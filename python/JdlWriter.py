@@ -23,7 +23,7 @@ class JdlWriter( Actor ):
         """
         The main method of the class: write JDL for jobs in range self.nj_list
         """
-        common.logger.debug(5, "JdlWriter::run() called")
+        common.logger.debug( "JdlWriter::run() called")
        
         start = time.time()
 
@@ -33,7 +33,7 @@ class JdlWriter( Actor ):
      
         stop = time.time()
 
-        common.logger.write("JDL writing time :"+str(stop - start))
+        common.logger.log(10-1,"JDL writing time :"+str(stop - start))
       
         return
 
@@ -52,7 +52,7 @@ class JdlWriter( Actor ):
         for distDest in distinct_dests: 
             dest = self.blackWhiteListParser.cleanForBlackWhiteList(distDest)
             if not dest and self.datasetpath: 
-                common.logger.message('No destination available: will not create jdl \n' )
+                common.logger.info'No destination available: will not create jdl \n' )
                 continue
             all_jobs.append(common._db.queryAttrJob({'dlsDestination':distDest},'jobId'))
             sub_jobs_temp=[]
@@ -68,7 +68,7 @@ class JdlWriter( Actor ):
         Materialize JDL into file  
         """
         if len(list)==0:
-            common.logger.message('No destination available for any job: will not create jdl \n' )
+            common.logger.info('No destination available for any job: will not create jdl \n' )
         
         task = common._db.getTask() 
         c1 = 1
@@ -85,6 +85,6 @@ class JdlWriter( Actor ):
                 c2 += 1
             c1 += 1
 
-        common.logger.message('JDL files are  written to '+str(common.work_space.shareDir())+'File-*.jdl \n' )
+        common.logger.info('JDL files are  written to '+str(common.work_space.shareDir())+'File-*.jdl \n' )
 
         return

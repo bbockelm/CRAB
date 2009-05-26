@@ -2,11 +2,10 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.65 2008/12/08 17:53:32 ewv Exp $"
-__version__ = "$Revision: 1.65 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.66 2008/12/08 21:41:42 ewv Exp $"
+__version__ = "$Revision: 1.66 $"
 
 from SchedulerGrid import SchedulerGrid
-from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 from GliteConfig import *

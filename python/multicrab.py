@@ -223,7 +223,7 @@ class MultiCrab:
             except CrabException, e:
                 print '\n' + common.prog_name + ': ' + str(e) + '\n'
                 if common.logger:
-                    common.logger.write('ERROR: '+str(e)+'\n')
+                    common.logger.debug('ERROR: '+str(e)+'\n')
                     pass
                 pass
             pass

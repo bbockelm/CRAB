@@ -10,7 +10,6 @@ __author__ = "farinafa@cern.ch"
 
 from crab_exceptions import *
 from crab_util import *
-from crab_logger import Logger
 import common
 import Scram
 from ProdCommon.Credential.CredentialAPI import CredentialAPI
@@ -47,7 +46,7 @@ class ServerCommunicator:
         try:
             self.userSubj = CredAPI.getSubject() 
         except Exception, err:
-            common.logger.debug(3, "Getting Credential Subject: " +str(traceback.format_exc()))
+            common.logger.debug("Getting Credential Subject: " +str(traceback.format_exc()))
             raise CrabException("Error Getting Credential Subject")
 
         self.scram=Scram.Scram(cfg_params)
@@ -85,7 +84,7 @@ class ServerCommunicator:
         if ret == 0:
              # success
              logMsg = 'Task %s successfully submitted to server %s'%(self.crab_task_name, self.serverName)
-             common.logger.message(logMsg+'\n')
+             common.logger.info(logMsg+'\n')
         else:
              self.checkServerResponse(ret)    
 
@@ -131,7 +130,6 @@ class ServerCommunicator:
 
         # print loggings
         if logMsg != '':
-            common.logger.write(logMsg+'\n')
             raise CrabException(logMsg) 
         return ret
          

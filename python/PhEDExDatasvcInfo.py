@@ -2,7 +2,6 @@ from Actor import *
 import urllib
 from xml.dom.minidom import parse
 from crab_exceptions import *
-from crab_logger import Logger
 from WorkSpace import *
 from urlparse import urlparse 
 from LFNBaseName import *
@@ -33,7 +32,7 @@ class PhEDExDatasvcInfo:
             msg  = 'Warning: lfn has been deprecated, CRAB will ignore it.\n'
             msg += '\t Please use only user_remote_dir removing lfn from your crab.cfg\n'
             msg += '\t For further information please visit : \n\t%s'%stage_out_faq 
-            common.logger.message(msg)
+            common.logger.info(msg)
           
         self.datasetpath = cfg_params.get("CMSSW.datasetpath")
         self.publish_data_name = cfg_params.get('USER.publish_data_name','')

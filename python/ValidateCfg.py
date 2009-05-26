@@ -2,7 +2,6 @@ import imp, sys
 import traceback
 import common
 from crab_exceptions import *
-from crab_logger import Logger
 
 
 class ValidateCfg:
@@ -26,7 +25,7 @@ class ValidateCfg:
         """
         Read in Pset object
         """
-        common.logger.message( "Importing file %s"%self.pset)
+        common.logger.info( "Importing file %s"%self.pset)
         handle = open(self.pset, 'r')
 
         try:
@@ -47,7 +46,7 @@ class ValidateCfg:
         """
         cmsProcess = self.ImportFile()
 
-        common.logger.message( 'Starting the dump.....' )
+        common.logger.info( 'Starting the dump.....' )
         try:
             cmsProcess.dumpPython()
         except Exception, ex:
@@ -57,13 +56,13 @@ class ValidateCfg:
                    "information doesn't help solve this problem."
             raise CrabException( msg )
         msg = "Python parsing succeeded. File is valid.\n"
-        common.logger.message( msg )
+        common.logger.info( msg )
 
     def IncludePset(self):
         """
         """
         from FWCore.ParameterSet.Config import include
-        common.logger.message( 'Starting include.....' )
+        common.logger.info( 'Starting include.....' )
         try:
             cfo = include(self.pset)
         except Exception, ex:
@@ -73,7 +72,7 @@ class ValidateCfg:
                    "information doesn't help solve this problem."
             raise CrabException(msg)
         msg = "Python parsing succeeded. File is valid.\n"
-        common.logger.message( msg )
+        common.logger.info( msg )
 
 
 if __name__ == '__main__' :

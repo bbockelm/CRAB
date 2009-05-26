@@ -12,16 +12,16 @@ class Killer(Actor):
         """
         The main method of the class: kill a complete task
         """
-        common.logger.debug(5, "Killer::run() called")
+        common.logger.debug( "Killer::run() called")
         task = common._db.getTask(self.range)
         toBeKilled = []
         for job  in task.jobs:
            if ( job.runningJob['status'] in ['SU','SS','R','S','SR','SW']):
                toBeKilled.append(job['jobId'])
            else:
-               common.logger.message("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
+               common.logger.info("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
            pass
 
         if len(toBeKilled)>0:
             common.scheduler.cancel(toBeKilled)
-            common.logger.message("Jobs killed "+str(toBeKilled))
+            common.logger.info("Jobs killed "+str(toBeKilled))

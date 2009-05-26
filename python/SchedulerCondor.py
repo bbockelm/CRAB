@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.23 2009/03/09 15:56:26 ewv Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.24 2009/05/05 15:01:03 ewv Exp $"
+__version__ = "$Revision: 1.24 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -57,7 +57,7 @@ class SchedulerCondor(SchedulerLocal) :
         self.proxyValid = 0
         self.dontCheckProxy = int(cfg_params.get("EDG.dont_check_proxy", 0))
         self.proxyServer = cfg_params.get("EDG.proxy_server", 'myproxy.cern.ch')
-        common.logger.debug(5,'Setting myproxy server to ' + self.proxyServer)
+        common.logger.debug('Setting myproxy server to ' + self.proxyServer)
 
         self.group = cfg_params.get("EDG.group", None)
         self.role  = cfg_params.get("EDG.role", None)

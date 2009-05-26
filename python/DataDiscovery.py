@@ -105,7 +105,7 @@ class DataDiscovery:
 
         dbs_url_default = dbs_url_map[(common.scheduler.name()).lower()]
         dbs_url=  self.cfg_params.get('CMSSW.dbs_url', dbs_url_default)
-        common.logger.debug(3,"Accessing DBS at: "+dbs_url)
+        common.logger.debug("Accessing DBS at: "+dbs_url)
 
         ## check if runs are selected
         runselection = []
@@ -117,7 +117,7 @@ class DataDiscovery:
           
         self.ads = int(self.cfg_params.get('CMSSW.ads', 0))
 
-        common.logger.debug(6,"runselection is: %s"%runselection)
+        common.logger.log(10-1,"runselection is: %s"%runselection)
         ## service API
         args = {}
         args['url']     = dbs_url
@@ -172,7 +172,7 @@ class DataDiscovery:
         saveFblocks='' 
         for block in self.eventsPerBlock.keys() :
             saveFblocks += str(block)+'\n' 
-            common.logger.debug(6,"DBSInfo: total nevts %i in block %s "%(self.eventsPerBlock[block],block))
+            common.logger.log(10-1,"DBSInfo: total nevts %i in block %s "%(self.eventsPerBlock[block],block))
         writeTXTfile(self, fileBlocks_FileName , saveFblocks) 
                       
         if len(self.eventsPerBlock) <= 0:
@@ -194,8 +194,7 @@ class DataDiscovery:
                         files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue) 
                     else :
                         files = api.listFiles(path=path, retriveList=allowedRetriveValue) 
-                    common.logger.debug(5,"Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
-                    common.logger.write("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
+                    common.logger.debug("Set of input parameters used for DBS query : \n"+str(allowedRetriveValue)) 
                 else:
                     files = api.listDatasetFiles(self.datasetPath)
             else :
@@ -207,7 +206,7 @@ class DataDiscovery:
                         files.extend(filesinrun)
                     except:
                         msg="WARNING: problem extracting info from DBS for run %s "%arun
-                        common.logger.message(msg)
+                        common.logger.info(msg)
                         pass
 
         except DbsBadRequest, msg:

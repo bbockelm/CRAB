@@ -35,13 +35,13 @@ class PostMortemServer(PostMortem):
         try:  
             seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
         except Exception, ex:
-            common.logger.debug(1, str(ex))
+            common.logger.debug( str(ex))
             msg = "ERROR: Unable to create SE source interface \n"
             raise CrabException(msg)
         try:
             loc = SElement("localhost", "local")
         except Exception, ex:
-            common.logger.debug(1, str(ex))
+            common.logger.debug( str(ex))
             msg = "ERROR: Unable to create destination interface \n"
             raise CrabException(msg)
 
@@ -54,12 +54,12 @@ class PostMortemServer(PostMortem):
         ## iter over each asked job and print warning if not in skimmed list
         for id in self.nj_list:
             if id not in self.all_jobs:
-                common.logger.message('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
+                common.logger.info('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
                 continue
             elif id in logginable:  
                 fname = self.fname_base + str(id) + '.LoggingInfo'
                 if os.path.exists(fname):
-                    common.logger.message('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
+                    common.logger.info('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
                     continue
                 ## retrieving & processing logging info
                 if self.retrieveFile( sbi, id, fname):
@@ -68,11 +68,11 @@ class PostMortemServer(PostMortem):
                     out = "".join(fl.readlines())  
                     fl.close()
                     reason = self.decodeLogging(out)
-                    common.logger.message('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
+                    common.logger.info('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
                 else:
-                    common.logger.message('Logging info for job '+ str(id) +' not retrieved')
+                    common.logger.info('Logging info for job '+ str(id) +' not retrieved')
             else:
-                common.logger.message('Warning: job # ' + str(id) + ' not killed or aborted! Will get loggingInfo manually ')
+                common.logger.info('Warning: job # ' + str(id) + ' not killed or aborted! Will get loggingInfo manually ')
                 PostMortem.collectLogging(self)
         return
 
@@ -96,31 +96,31 @@ class PostMortemServer(PostMortem):
         retrieves logging.info file from the server storage area
         """
         self.taskuuid = str(common._db.queryTask('name'))
-        common.logger.debug(3, "Task name: " + self.taskuuid)
+        common.logger.debug( "Task name: " + self.taskuuid)
 
         # full remote dir 
         remotedir = os.path.join(self.storage_path, self.taskuuid)
         remotelog = remotedir + '/loggingInfo_'+str(jobid)+'.log'
 
-        common.logger.message("Starting retrieving logging-info from server " \
+        common.logger.info("Starting retrieving logging-info from server " \
                                + str(self.storage_name) + " for job " \
                                + str(jobid) + "...")
 
         # retrieve logging info from storage
-        common.logger.debug(1, "retrieving "+ str(remotelog) +" to "+ str(destlog) )
+        common.logger.debug( "retrieving "+ str(remotelog) +" to "+ str(destlog) )
         try:
             sbi.copy( remotelog, destlog)
         except Exception, ex:
             msg = "WARNING: Unable to retrieve logging-info file %s \n"%remotelog
             msg += str(ex)
-            common.logger.debug(1,msg)
+            common.logger.debug(msg)
             return False
         # cleaning remote logging info file 
         try:
-            common.logger.debug(5, "Cleaning remote file [%s] " + str(remotelog) )
+            common.logger.debug( "Cleaning remote file [%s] " + str(remotelog) )
             sbi.delete(remotelog)
         except Exception, ex:
             msg = "WARNING: Unable to clean remote logging-info file %s \n"%remotelog
             msg += str(ex)
-            common.logger.debug(5,msg)
+            common.logger.debug(msg)
         return True

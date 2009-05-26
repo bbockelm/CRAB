@@ -1,4 +1,3 @@
-from crab_logger import Logger
 from crab_exceptions import *
 from crab_util import *
 import common
@@ -32,7 +31,7 @@ class Boss:
         if self.deep_debug == '1' and server_check != None :
             msg =  'You are asking the deep_debug, but it cannot works using the server.\n'
             msg += '\t The functionality will not have effect.'
-            common.logger.message(msg) 
+            common.logger.info(msg) 
         self.schedulerName =  self.cfg_params.get("CRAB.scheduler",'') # this should match with the bosslite requirements
         self.rb_param_file=''
         if (not cfg_params.has_key('EDG.rb')):
@@ -72,7 +71,7 @@ class Boss:
             try:
                 self.session =  BossLiteAPISched( common.bossSession, self.schedulerConfig)
             except Exception, e :
-                common.logger.debug(3, "Istantiate SchedSession: " +str(traceback.format_exc()))
+                common.logger.debug("Istantiate SchedSession: " +str(traceback.format_exc()))
                 raise CrabException('Scheduler Session: '+str(e))
         return self.session
 
@@ -118,8 +117,8 @@ class Boss:
             ## passing list for white-listing and black-listing
             sites = self.schedSession().getSchedulerInterface().lcgInfo(tags, voTags, seList=dest, blacklist=blackL, whitelist=whiteL, full=isFull)
         except SchedulerError, err :
-            common.logger.message("Warning: List Match operation failed with message: " +str(err))
-            common.logger.debug(3, "List Match failed: " +str(traceback.format_exc()))
+            common.logger.info("Warning: List Match operation failed with message: " +str(err))
+            common.logger.debug( "List Match failed: " +str(traceback.format_exc()))
 
         return sites
 
@@ -134,11 +133,10 @@ class Boss:
             collId = task_sub.jobs[0].runningJob['schedulerParentId']   
             msg = 'WMS : ' +str(wms)+'\n'
             msg+= 'Collection ID : ' +str(collId)
-            common.logger.write(msg)
-            common.logger.debug(5,msg)
+            common.logger.debug(msg)
         except SchedulerError, err :
-            common.logger.message("Submit: " +str(err))
-            common.logger.debug(3, "Submit: " +str(traceback.format_exc()))
+            common.logger.info("Submit: " +str(err))
+            common.logger.debug("Submit: " +str(traceback.format_exc()))
             raise CrabException('Submit: '+str(err))
 
         return
@@ -151,8 +149,8 @@ class Boss:
         try:
             statusRes =  self.schedSession().query( str(taskid))
         except SchedulerError, err :
-            common.logger.message("Status Query : " +str(err))
-            common.logger.debug(3, "Status Query : " +str(traceback.format_exc()))
+            common.logger.info("Status Query : " +str(err))
+            common.logger.debug( "Status Query : " +str(traceback.format_exc()))
             raise CrabException('Status Query : '+str(err))
 
         return statusRes
@@ -164,8 +162,8 @@ class Boss:
         try:
             task = self.schedSession().getOutput( taskId, jobRange, outdir )
         except SchedulerError, err :
-            common.logger.message("GetOutput : " +str(err))
-            common.logger.debug(3, "GetOutput : " +str(traceback.format_exc()))
+            common.logger.info("GetOutput : " +str(err))
+            common.logger.debug( "GetOutput : " +str(traceback.format_exc()))
             raise CrabException('GetOutput : '+str(err))
 
         return task
@@ -178,8 +176,8 @@ class Boss:
         try:
             self.schedSession().kill( task, list)
         except SchedulerError, err :
-            common.logger.message("Kill: " +str(err))
-            common.logger.debug(3, "Kill: " +str(traceback.format_exc()))
+            common.logger.info("Kill: " +str(err))
+            common.logger.debug( "Kill: " +str(traceback.format_exc()))
             raise CrabException('Kill: '+str(err))
         return
 
@@ -191,8 +189,8 @@ class Boss:
         try:
             self.schedSession().postMortem(1,list_id,outfile)
         except SchedulerError, err :
-            common.logger.message("logginginfo: " +str(err))
-            common.logger.debug(3, "logginginfo: " +str(traceback.format_exc()))
+            common.logger.info("logginginfo: " +str(err))
+            common.logger.debug( "logginginfo: " +str(traceback.format_exc()))
             raise CrabException('logginginfo: '+str(err))
         return
 
@@ -203,8 +201,8 @@ class Boss:
         try:
             jdl = self.schedSession().jobDescription( taskId,jobsList,req )
         except SchedulerError, err :
-            common.logger.message("writeJDL: " +str(err))
-            common.logger.debug(3, "writeJDL: " +str(traceback.format_exc()))
+            common.logger.info("writeJDL: " +str(err))
+            common.logger.debug( "writeJDL: " +str(traceback.format_exc()))
             raise CrabException('writeJDL: '+str(err))
 
         return jdl

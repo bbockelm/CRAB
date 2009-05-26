@@ -2,7 +2,6 @@ from Scheduler import Scheduler
 from SchedulerLocal import SchedulerLocal
 from crab_exceptions import *
 from crab_util import *
-from crab_logger import Logger
 import common
 from LFNBaseName import *
 

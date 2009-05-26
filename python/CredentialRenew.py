@@ -20,14 +20,14 @@ class CredentialRenew(Actor):
     def run(self):
         """
         """
-        common.logger.debug(5, "CredentialRenew::run() called")
+        common.logger.debug("CredentialRenew::run() called")
         ## TEMPORARY FIXME  
         if self.credentialType == 'Proxy':
             subServer = SubmitterServer(self.cfg_params, None, "all")
             subServer.moveProxy()
         else: 
             self.renewer()    
-        common.logger.message("Credential successfully delegated to the server.\n")
+        common.logger.info("Credential successfully delegated to the server.\n")
         return
 
     def renewer(self):
@@ -44,10 +44,10 @@ class CredentialRenew(Actor):
         try:
             CredAPI =  CredentialAPI( configAPI )            
         except Exception, err : 
-            common.logger.debug(3, "Configuring Credential API: " +str(traceback.format_exc()))
+            common.logger.debug( "Configuring Credential API: " +str(traceback.format_exc()))
             raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
         if not CredAPI.checkCredential(Time=100) :
-           common.logger.message("Please renew your %s :\n"%self.credentialType)
+           common.logger.info("Please renew your %s :\n"%self.credentialType)
            try:
                CredAPI.ManualRenewCredential()
            except Exception, ex:
@@ -55,5 +55,5 @@ class CredentialRenew(Actor):
         try:
             dict = CredAPI.registerCredential() 
         except Exception, err:
-            common.logger.debug(3, "Registering Credentials : " +str(traceback.format_exc()))
+            common.logger.debug( "Registering Credentials : " +str(traceback.format_exc()))
             raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
