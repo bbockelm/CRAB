@@ -184,10 +184,9 @@ def runCommand(cmd, printout=0, timeout=-1):
     """
 
     if printout:
-        common.logger.message(cmd)
+        common.logger.info(cmd)
     else:
-        common.logger.debug(10,cmd)
-        common.logger.write(cmd)
+        common.logger.log(10-1,cmd)
         pass
 
     child = popen2.Popen3(cmd, 1) # capture stdout and stderr from command
@@ -222,7 +221,7 @@ def runCommand(cmd, printout=0, timeout=-1):
         select.select([],[],[],.01) # give a little time for buffers to fill
     if err == -1:
         # kill the pid
-        common.logger.message('killing process '+(cmd)+' with timeout '+str(timeout))
+        common.logger.info('killing process '+(cmd)+' with timeout '+str(timeout))
         os.kill (child.pid, 9)
         err = child.wait()
 
@@ -230,21 +229,20 @@ def runCommand(cmd, printout=0, timeout=-1):
     cmd_err = string.join(errdata,"")
 
     if err:
-        common.logger.message('`'+cmd+'`\n   failed with exit code '
+        common.logger.info('`'+cmd+'`\n   failed with exit code '
                            +`err`+'='+`(err&0xff)`+'(signal)+'
                            +`(err>>8)`+'(status)')
-        common.logger.message(cmd_out)
-        common.logger.message(cmd_err)
+        common.logger.info(cmd_out)
+        common.logger.info(cmd_err)
         return None
 
 #    cmd_out = string.join(outdata,"")
 #    cmd_err = string.join(errdata,"")
     cmd_out = cmd_out + cmd_err
     if printout:
-        common.logger.message(cmd_out)
+        common.logger.info(cmd_out)
     else:
-        common.logger.debug(10,cmd_out)
-        common.logger.write(cmd_out)
+        common.logger.log(10-1,cmd_out)
         pass
     #print "<"+cmd_out+">"
     return cmd_out
@@ -310,7 +308,7 @@ def displayReport(self, header, lines, xml=''):
         fileName = common.work_space.shareDir() + xml
         task = common._db.getTask()
         taskXML = common._db.serializeTask(task)
-        common.logger.debug(5, taskXML)
+        common.logger.debug( taskXML)
         f = open(fileName, 'w')
         f.write(taskXML)
         f.close()
@@ -385,7 +383,7 @@ def getUserName():
     extract user name from either SiteDB or Unix
     """
     if common.scheduler.name().upper() in ['LSF', 'CAF']:
-       common.logger.debug(10,"Using as username the Unix user name")
+       common.logger.log(10-1,"Using as username the Unix user name")
        UserName=UnixUserName()
     else :
        UserName=gethnUserNameFromSiteDB() 
@@ -425,7 +423,8 @@ def gethnUserNameFromSiteDB():
     from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
     hnUserName = None
     userdn = getDN()
-    dict={ 'cacheduration' : 24 } 
+    dict={ 'cacheduration' : 24, \
+           'logger' : common.logger } 
     mySiteDB = SiteDBJSON(dict)
     msg_ = "there is no user name associated to DN %s in SiteDB. You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB" % userdn
     try:
