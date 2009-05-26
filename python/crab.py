@@ -35,7 +35,7 @@ class Crab:
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput','-get',
                              '-resubmit' , '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
-                             '-printId', '-createJdl','-printJdl', '-publish',
+                             '-printId', '-createJdl','-printJdl', '-publish', '-checkPublication',
                              '-copyData', '-renewCredential', '-extend','-validateCfg',
                              '-report' ]
 
@@ -655,6 +655,10 @@ class Crab:
             elif ( opt == '-publish' ):
                 from Publisher import Publisher
                 self.actions[opt] = Publisher(self.cfg_params)
+            
+            elif ( opt == '-checkPublication' ):
+                from InspectDBS import InspectDBS
+                self.actions[opt] = InspectDBS(self.cfg_params)
 
             elif ( opt == '-copyData' ):
                 if val =='all' or val == None or val == '':

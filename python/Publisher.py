@@ -23,6 +23,8 @@ class Publisher(Actor):
         - publishes output data on DBS and DLS
         """
 
+        self.cfg_params=cfg_params
+       
         try:
             self.userprocessedData = cfg_params['USER.publish_data_name'] 
             self.processedData = None
@@ -160,6 +162,7 @@ class Publisher(Actor):
             common.logger.info("PrimaryDataset = %s"%dataset['PrimaryDataset'])
             common.logger.info("ProcessedDataset = %s"%dataset['ProcessedDataset'])
             common.logger.info("<User Dataset Name> = /"+dataset['PrimaryDataset']+"/"+dataset['ProcessedDataset']+"/USER")
+            self.dataset_to_check="/"+dataset['PrimaryDataset']+"/"+dataset['ProcessedDataset']+"/USER"
             
             common.logger.log(10-1,"--->>> Inserting primary: %s processed : %s"%(dataset['PrimaryDataset'],dataset['ProcessedDataset']))
             
@@ -299,7 +302,11 @@ class Publisher(Actor):
                 for lfn in self.problemFiles:
                     common.logger.info("------ LFN: %s"%lfn)
             common.logger.info("--->>> End files publication")
-            common.logger.info("--->>> To check data publication please use: InspectDBS2.py --DBSURL=<dbs_url_for_publication> --datasetPath=<User Dataset Name>")
+           
+            self.cfg_params['USER.dataset_to_check']=self.dataset_to_check
+            from InspectDBS import InspectDBS
+            check=InspectDBS(self.cfg_params)
+            check.checkPublication()
             return self.exit_status
 
         else:
