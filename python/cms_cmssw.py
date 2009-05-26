@@ -47,6 +47,7 @@ class Cmssw(JobType):
 
         self.version = self.scram.getSWVersion()
         common.logger.log(10-1,"CMSSW version is: "+str(self.version))
+        
         try:
             type, self.CMSSW_major, self.CMSSW_minor, self.CMSSW_patch = tuple(self.version.split('_'))
         except:
@@ -70,7 +71,7 @@ class Cmssw(JobType):
         self.dataset_pu = cfg_params.get('CMSSW.dataset_pu', None)
 
         tmp =  cfg_params['CMSSW.datasetpath']
-        log.debug(6, "CMSSW::CMSSW(): datasetPath = "+tmp)
+        common.logger.log(10-1, "CMSSW::CMSSW(): datasetPath = "+tmp)
 
         if tmp =='':
             msg = "Error: datasetpath not defined "
@@ -92,12 +93,12 @@ class Cmssw(JobType):
         self.managedGenerators = ['madgraph','comphep']
         self.generator = cfg_params.get('CMSSW.generator','pythia').lower()
         self.executable = cfg_params.get('CMSSW.executable','cmsRun')
-        log.debug(6, "CMSSW::CMSSW(): executable = "+self.executable)
+        common.logger.log(10-1, "CMSSW::CMSSW(): executable = "+self.executable)
 
         if not cfg_params.has_key('CMSSW.pset'):
             raise CrabException("PSet file missing. Cannot run cmsRun ")
         self.pset = cfg_params['CMSSW.pset']
-        log.debug(6, "Cmssw::Cmssw(): PSet file = "+self.pset)
+        common.logger.log(10-1, "Cmssw::Cmssw(): PSet file = "+self.pset)
         if self.pset.lower() != 'none' :
             if (not os.path.exists(self.pset)):
                 raise CrabException("User defined PSet file "+self.pset+" does not exist")
@@ -319,19 +320,13 @@ class Cmssw(JobType):
 
 
         unsorted_sites = dataloc.getSites()
-        #print "Unsorted :",unsorted_sites
         sites = self.filesbyblock.fromkeys(self.filesbyblock,'')
         for lfn in self.filesbyblock.keys():
-            #print lfn
             if unsorted_sites.has_key(lfn):
-                #print "Found ",lfn
                 sites[lfn]=unsorted_sites[lfn]
             else:
-                #print "Not Found ",lfn
                 sites[lfn]=[]
-        #print sites
 
-        #print "Sorted :",sites
         if len(sites)==0:
             msg = 'ERROR ***: no location for any of the blocks of this dataset: \n\t %s \n'%datasetPath
             msg += "\tMaybe the dataset is located only at T1's (or at T0), where analysis jobs are not allowed\n"
@@ -401,14 +396,18 @@ class Cmssw(JobType):
     def addXMLfile(self):
 
         import tarfile
-       # try:
-        print self.argsFile 
-        tar = tarfile.open(self.tarNameWithPath, "a")
-        tar.add(self.argsFile, os.path.basename(self.argsFile))
-        tar.close()
-       ## except:
-       #     pass
-
+        try:
+            tar = tarfile.open(self.tarNameWithPath, "a")
+            tar.add(self.argsFile, os.path.basename(self.argsFile))
+            tar.close()
+        except IOError, exc:
+            msg = 'Could not add %s to %s \n'%(self.argsFile,self.tarNameWithPath)
+            msg += str(exc)
+            raise CrabException(msg)
+        except tarfile.TarError, exc:
+            msg = 'Could not add %s to %s \n'%(self.argsFile,self.tarNameWithPath)
+            msg += str(exc)
+            raise CrabException(msg)
   
     def CreateXML(self):
         """
