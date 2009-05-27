@@ -10,9 +10,9 @@ from crab_exceptions import *
 from crab_util import *
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 
- 
+
 from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
-from ProdCommon.Storage.SEAPI.SBinterface import * 
+from ProdCommon.Storage.SEAPI.SBinterface import *
 from ProdCommon.Storage.SEAPI.Exceptions import *
 
 #
@@ -42,7 +42,7 @@ class Scheduler :
                               'GLITE'    : 'srm-lcg' , \
                               'CONDOR'    : 'srmv2',  \
                               'SGE'      : 'srmv2' \
-                            }  
+                            }
         return
 
     def name(self):
@@ -57,6 +57,7 @@ class Scheduler :
         self._boss.configure(cfg_params)
         seWhiteList = cfg_params.get('GRID.se_white_list',[])
         seBlackList = cfg_params.get('GRID.se_black_list',[])
+        self.dontCheckMyProxy=int(cfg_params.get("GRID.dont_check_myproxy",0))
         self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
@@ -87,13 +88,13 @@ class Scheduler :
             msg += 'To enable local stage out the copy_data value has to be = 1\n'
             msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
             raise CrabException(msg)
-            
+
         if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
             msg = 'Error: publish_data = 1 must be used with copy_data = 1\n'
             msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
             common.logger.info(msg)
             raise CrabException(msg)
-            
+
         if ( int(self.local_stage) == 1 and int(self.publish_data) == 1 ):
             msg = 'Error: currently the publication is not supported with the local stage out. Work in progress....\n'
             common.logger.info(msg)
@@ -103,7 +104,7 @@ class Scheduler :
         self.debugWrap=''
         if self.debug_wrapper==1: self.debugWrap='--debug'
         self.loc_stage_out = ''
-        if ( int(self.local_stage) == 1 ): 
+        if ( int(self.local_stage) == 1 ):
             self.debugWrap='--debug'
             self.loc_stage_out='--local_stage'
 
@@ -151,39 +152,39 @@ class Scheduler :
     def checkRemoteDir(self, endpoint, fileList):
         """
         """
-        remoteListTmp = self.listRemoteDir(endpoint) 
-        if remoteListTmp == -1: 
+        remoteListTmp = self.listRemoteDir(endpoint)
+        if remoteListTmp == -1:
             msg =  'Problems trying remote dir check... \n'
             msg += '\tPlease check stage out configuration parameters.\n'
-            raise CrabException(msg)   
+            raise CrabException(msg)
         if remoteListTmp:
             listJob = common._db.nJobs('list')
-            remoteList = [] 
+            remoteList = []
             for f_path in remoteListTmp:
-                remoteList.append(str(os.path.basename(f_path)))  
+                remoteList.append(str(os.path.basename(f_path)))
             metaList = []
             for id in listJob:
                 for file in fileList :
                     metaList.append('%s'%numberFile(file,id))
             for i in remoteList:
-                if i in metaList : 
-                    msg  = 'Warning: You are asking to stage out on a remote directory \n' 
-                    msg += '\twhich already contains files with same name.\n' 
-                    msg += '\tPlease change directory or remove the actual content.\n' 
-                    raise CrabException(msg)   
-        else: 
+                if i in metaList :
+                    msg  = 'Warning: You are asking to stage out on a remote directory \n'
+                    msg += '\twhich already contains files with same name.\n'
+                    msg += '\tPlease change directory or remove the actual content.\n'
+                    raise CrabException(msg)
+        else:
             msg = 'Remote is empty or not existis\n'
-            common.logger.debug(msg)      
+            common.logger.debug(msg)
         return
 
     def listRemoteDir(self, endpoint):
         """
         """
-        protocol = self.protocolDict[common.scheduler.name().upper()]  
+        protocol = self.protocolDict[common.scheduler.name().upper()]
         try:
             Storage = SElement( FullPath(endpoint), protocol )
         except ProtocolUnknown, ex:
-            remoteList = -1  
+            remoteList = -1
             msg  = 'Warning : %s '% str(ex)
             common.logger.info(msg)
             dbgMsg = traceback.format_exc()
@@ -191,7 +192,7 @@ class Scheduler :
         try:
             action = SBinterface( Storage )
         except Exception, ex:
-            remoteList = -1  
+            remoteList = -1
             msg  = 'Warinig : %s '% str(ex)
             common.logger.info(msg)
             dbgMsg = traceback.format_exc()
@@ -199,13 +200,13 @@ class Scheduler :
         try:
             remoteList = action.dirContent()
         except Exception, ex:
-            remoteList = -1  
+            remoteList = -1
             msg  = 'Warning : %s '% str(ex)
             common.logger.info(msg)
             dbgMsg = traceback.format_exc()
             common.logger.debug(dbgMsg)
 
-        return remoteList 
+        return remoteList
 
     def checkProxy(self, minTime=10):
         """
@@ -219,22 +220,22 @@ class Scheduler :
             return
         CredAPI_config =  { 'credential':'Proxy',\
                             'myProxySvr': self.proxyServer \
-                          }   
-        from ProdCommon.Credential.CredentialAPI import CredentialAPI 
+                          }
+        from ProdCommon.Credential.CredentialAPI import CredentialAPI
         CredAPI = CredentialAPI(CredAPI_config)
 
         if not CredAPI.checkCredential(Time=int(minTime)) or \
            not CredAPI.checkAttribute(group=self.group, role=self.role):
             try:
-                CredAPI.ManualRenewCredential(group=self.group, role=self.role) 
+                CredAPI.ManualRenewCredential(group=self.group, role=self.role)
             except Exception, ex:
-                raise CrabException(str(ex))   
+                raise CrabException(str(ex))
         if (self.dontCheckMyProxy!=1):
             if not CredAPI.checkMyProxy():
                 try:
                     CredAPI.ManualRenewMyProxy()
                 except Exception, ex:
-                    raise CrabException(str(ex))   
+                    raise CrabException(str(ex))
         # cache proxy validity
         self.proxyValid=1
         return
@@ -259,15 +260,15 @@ class Scheduler :
         blackL=[]
         voTags=['cms']
         if len(dest)!=0: dest = self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')
-       
+
         whiteList=self.ce_list()[1]
-        if whiteList != None:  
+        if whiteList != None:
             [whiteL.append(x.strip()) for x in whiteList.split(',')]
-        
+
         blackList=self.ce_list()[2]
         if blackList != None:
             [blackL.append(x.strip()) for x in blackList.split(',')]
-        if self.role: voTags.append('VOMS:/cms/Role=%s'%self.role)    
+        if self.role: voTags.append('VOMS:/cms/Role=%s'%self.role)
         sites= self.boss().listMatch(tags, voTags, dest , whiteL, blackL, full)
         stop = time.time()
 
@@ -370,10 +371,10 @@ class Scheduler :
         txt += '           echo "WARNING: it is not possible to create crab_fjr.xml to final report" \n'
         txt += '       else \n'
         # call timing FJR filling
-        txt += '           set -- $CPU_INFOS \n' 
-        txt += '           echo "CrabUserCpuTime=$1" >>  $RUNTIME_AREA/$repo \n'   
-        txt += '           echo "CrabSysCpuTime=$2" >>  $RUNTIME_AREA/$repo \n'    
-        txt += '           echo "CrabCpuPercentage=$3" >>  $RUNTIME_AREA/$repo \n' 
+        txt += '           set -- $CPU_INFOS \n'
+        txt += '           echo "CrabUserCpuTime=$1" >>  $RUNTIME_AREA/$repo \n'
+        txt += '           echo "CrabSysCpuTime=$2" >>  $RUNTIME_AREA/$repo \n'
+        txt += '           echo "CrabCpuPercentage=$3" >>  $RUNTIME_AREA/$repo \n'
         txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --timing $TIME_WRAP $TIME_EXE $TIME_STAGEOUT \\\"$CPU_INFOS\\\" \n'
         txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n'
         txt += '           if [ $TIME_STAGEOUT -lt 0 ]; then \n'

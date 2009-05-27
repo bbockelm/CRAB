@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.106 2009/05/26 17:20:18 spiga Exp $"
-__version__ = "$Revision: 1.106 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.107 2009/05/27 15:32:04 fanzago Exp $"
+__version__ = "$Revision: 1.107 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -37,7 +37,6 @@ class SchedulerGrid(Scheduler):
 
         self.proxyValid=0
         self.dontCheckProxy=int(cfg_params.get("GRID.dont_check_proxy",0))
-        self.dontCheckMyProxy=int(cfg_params.get("GRID.dont_check_myproxy",0))
 
         self.proxyServer = cfg_params.get("GRID.proxy_server",'myproxy.cern.ch')
         common.logger.debug('Setting myproxy server to '+self.proxyServer)
@@ -175,7 +174,7 @@ class SchedulerGrid(Scheduler):
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "source OSG GRID setup script" \n'
         txt += '    source $OSG_GRID/setup.sh \n'
-        txt += 'elif [ $NORDUGRID_CE ]; then \n' # We look for $NORDUGRID_CE before $VO_CMS_SW_DIR, 
+        txt += 'elif [ $NORDUGRID_CE ]; then \n' # We look for $NORDUGRID_CE before $VO_CMS_SW_DIR,
         txt += '    middleware=ARC \n'           # because the latter is defined for ARC too
         txt += '    echo "SyncCE=$NORDUGRID_CE" >> $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
