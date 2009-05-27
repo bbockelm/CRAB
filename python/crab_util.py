@@ -324,28 +324,27 @@ def CliServerParams(self):
     self.srvCfg = {}
     ## First I have to check if the decision has been already taken...
     task = common._db.getTask()
-    if task['serverName']!=None:
+    if task['serverName']!=None and task['serverName']!="":
         self.cfg_params['CRAB.server_name']=task['serverName']
-    if self.cfg_params.has_key('CRAB.use_server'):
-        print 'CRAB.use_server',self.cfg_params.get('CRAB.use_server')
+
+    if self.cfg_params.has_key('CRAB.server_name'):
+        self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
+    elif self.cfg_params.has_key('CRAB.use_server'):
         serverName=self.cfg_params.get('CRAB.server_name','default')
-        print serverName
         if self.cfg_params.has_key('CRAB.server_name'):
             serverName=self.cfg_params['CRAB.server_name']
         else:
             serverName='default'
         self.srvCfg = ServerConfig(serverName).config()
-        # save the serverName for future use
-        opsToBeSaved={}
-        opsToBeSaved['serverName']=self.srvCfg['serverGenericName']
-        common._db.updateTask_(opsToBeSaved)
-    elif self.cfg_params.has_key('CRAB.server_name'):
-        self.srvCfg = ServerConfig(self.cfg_params['CRAB.server_name']).config()
     else:
         msg = 'No server selected or port specified.\n'
         msg += 'Please specify a server in the crab cfg file'
         raise CrabException(msg)
         return
+    # save the serverName for future use
+    opsToBeSaved={}
+    opsToBeSaved['serverName']=self.srvCfg['serverGenericName']
+    common._db.updateTask_(opsToBeSaved)
 
     self.server_admin = str(self.srvCfg['serverAdmin'])
     self.server_dn = str(self.srvCfg['serverDN'])

@@ -97,39 +97,42 @@ class ServerCommunicator:
         
         logMsg = ''
         if ret == 10:
-             # overlaod
-             logMsg = 'Error The server %s refused to accept the task %s because it is overloaded\n'%(self.serverName, self.crab_task_name)
-             logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
+            # overlaod
+            logMsg = 'Error The server %s refused to accept the task %s because it is overloaded\n'%(self.serverName, self.crab_task_name)
+            logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
         elif ret == 14:
-             # Draining 
-             logMsg  = 'Error The server %s refused to accept the task %s because it is Draining out\n'%(self.serverName, self.crab_task_name)
-             logMsg += '\t remaining jobs due to scheduled maintainence\n'
-             logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
+            # Draining 
+            logMsg  = 'Error The server %s refused to accept the task %s because it is Draining out\n'%(self.serverName, self.crab_task_name)
+            logMsg += '\t remaining jobs due to scheduled maintainence\n'
+            logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
         elif ret == 101:
-             # overlaod
-             logMsg = 'Error The server %s refused the submission %s because you asked a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
+            # overlaod
+            logMsg = 'Error The server %s refused the submission %s because you asked a too large task. Please submit by range'%(self.serverName, self.crab_task_name)
         elif ret == 11:
-             # failed to push message in DB
-             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
+            # failed to push message in DB
+            logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
         elif ret == 12:
-             # failed SOAP communication
-             logMsg = 'Error The server %s refused to accept the task %s. It could be under maintainance. \n'%(self.serverName, self.crab_task_name)
-             logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
+            # failed SOAP communication
+            logMsg = 'Error The server %s refused to accept the task %s. It could be under maintainance. \n'%(self.serverName, self.crab_task_name)
+            logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
         elif ret == 20:
-             # failed to push message in PA
-             logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
+            # failed to push message in PA
+            logMsg = 'Backend unable to release messages to trigger the computation of task %s'%self.crab_task_name
         elif ret == 22:
-             # failed SOAP communication
-             logMsg = 'Error during SOAP communication with server %s'%self.serverName
+            # failed SOAP communication
+            logMsg = 'Error during SOAP communication with server %s'%self.serverName
         elif ret == 33:
-             # uncompatible client version
-             logMsg  = 'Error You are using a wrong client version for server: %s\n'%self.serverName
-             logMsg += '\t For further informations about "Servers available for users" please check here:\n \t%s '%self.ServerTwiki
+            # uncompatible client version
+            logMsg  = 'Error You are using a wrong client version for server: %s\n'%self.serverName
+            logMsg += '\t For further informations about "Servers available for users" please check here:\n \t%s '%self.ServerTwiki
         else:
-             logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret) 
+            logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret) 
 
         # print loggings
         if logMsg != '':
+            # reset server choice
+            opsToBeSaved={'serverName' : '' }
+            common._db.updateTask_(opsToBeSaved)
             raise CrabException(logMsg) 
         return ret
          
