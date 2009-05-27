@@ -23,7 +23,9 @@ The most useful general options (use '-h' to get complete help):
   -status [range]            -- check status of all jobs.
   -getoutput|-get [range]    -- get back the output of all jobs: if range is defined, only of selected jobs.
   -extend                    -- Extend an existing task to run on new fileblocks if there.
-  -publish [dbs_url]         -- after the getouput, publish the data user in a local DBS instance.
+  -publish [-USER.dbs_url_for_publication=dbs_url] -- after the getouput, publish the data user in a local DBS instance.
+  -checkPublication [-USER.dbs_url_for_publication=dbs_url -USER.dataset_to_check=datasetpath -debug] -- checks if a dataset
+                                is published in a DBS. This option is automaticaly called at the end of publication step.
   -kill [range]              -- kill submitted jobs.
   -resubmit [range]          -- resubmit killed/aborted/retrieved jobs.
   -copyData [range]          -- copy locally the output stored on remote SE.
@@ -266,9 +268,13 @@ Check the status of the jobs, in all states. All the info (e.g. application and 
 
 Retrieve the output declared by the user via the output sandbox. By default the output will be put in task working dir under I<res> subdirectory. This can be changed via config parameters. B<Be extra sure that you have enough free space>. See I<range> below for syntax.
 
-=item B<-publish [dbs_url]>
+=item B<-publish [-USER.dbs_url_for_publication=dbs_url]>
 
 Publish user output in a local DBS instance after retrieving of output. By default the publish uses the dbs_url_for_publication specified in the crab.cfg file, otherwise you can write it as argument of this option.
+
+=item B<-checkPublication [-USER.dbs_url_for_publication=dbs_url -USER.dataset_to_check=datasetpath -debug]>
+
+Check if a dataset is published in a DBS. This option is automaticaly called at the end of publication step, but it can be also used as standalone command. By default it reads the parameters (USER.dbs_url_for_publication and USER.dataset_to_check) written in your crab.cfg. You can overwrite the default written in crab.cfg passing these parameters as option. Using the -debug option, you can have detailed info about files of published blocks.
 
 =item B<-resubmit [range]>
 
