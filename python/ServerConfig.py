@@ -41,9 +41,7 @@ class ServerConfig:
                     tmp=[]
                     [tmp.append(int(t)) for t in vv[i].split('.')]
                     vv[i]=tuple(tmp)
-                #[vv.append(tuple(t.split('.'))) for t in string.split(s[1],'-')]
                 
-                #print vv[0],common.prog_version,vv[1]
                 if vv[0]<=common.prog_version and common.prog_version<=vv[1] and common.scheduler.name()==string.lower(s[2]):
                     compatibleServerList.append(s[0])
 

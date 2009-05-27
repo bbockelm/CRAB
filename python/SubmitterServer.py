@@ -17,7 +17,7 @@ from ProdCommon.Storage.SEAPI.Exceptions import *
  
 class SubmitterServer( Submitter ):
     def __init__(self, cfg_params, parsed_range, val):
-	self.srvCfg = {}
+        self.srvCfg = {}
         self.cfg_params = cfg_params
         self.submitRange = []
         self.credentialType = 'Proxy' 
@@ -41,7 +41,7 @@ class SubmitterServer( Submitter ):
 	"""
 	The main method of the class: submit jobs in range self.nj_list
 	"""
-	common.logger.debug("SubmitterServer::run() called")
+        common.logger.debug("SubmitterServer::run() called")
 
         self.submitRange = self.nj_list
      
