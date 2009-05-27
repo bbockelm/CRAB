@@ -52,7 +52,7 @@ class JdlWriter( Actor ):
         for distDest in distinct_dests: 
             dest = self.blackWhiteListParser.cleanForBlackWhiteList(distDest)
             if not dest and self.datasetpath: 
-                common.logger.info'No destination available: will not create jdl \n' )
+                common.logger.info('No destination available: will not create jdl \n' )
                 continue
             all_jobs.append(common._db.queryAttrJob({'dlsDestination':distDest},'jobId'))
             sub_jobs_temp=[]
