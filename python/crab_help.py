@@ -25,7 +25,7 @@ The most useful general options (use '-h' to get complete help):
   -extend                    -- Extend an existing task to run on new fileblocks if there.
   -publish [-USER.dbs_url_for_publication=dbs_url] -- after the getouput, publish the data user in a local DBS instance.
   -checkPublication [-USER.dbs_url_for_publication=dbs_url -USER.dataset_to_check=datasetpath -debug] -- checks if a dataset
-                                is published in a DBS. This option is automaticaly called at the end of publication step.
+                                is published in a DBS. This option is automaticaly called at the end of the publication step.
   -kill [range]              -- kill submitted jobs.
   -resubmit [range]          -- resubmit killed/aborted/retrieved jobs.
   -copyData [range]          -- copy locally the output stored on remote SE.
@@ -147,11 +147,11 @@ You must have a valid voms-enabled Grid proxy. See CRAB web page for details.
 
 =head1 RUNNING MULTICRAB
 
-MultiCRAB is a CRAB extension to submit the same job to multiple datasets in one go. 
+MultiCRAB is a CRAB extension to submit the same job to multiple datasets in one go.
 
-The use case for multicrab is when you have your analysis code that you want to run on several datasets, typically some signals plus some backgrounds (for MC studies) 
+The use case for multicrab is when you have your analysis code that you want to run on several datasets, typically some signals plus some backgrounds (for MC studies)
 or on different streams/configuration/runs for real data taking. You want to run exactly the same code, and also the crab.cfg are different only for few keys:
-for sure datasetpath but also other keys, such as eg total_number_of_events, in case you want to run on all signals but only a fraction of background, or anything else. 
+for sure datasetpath but also other keys, such as eg total_number_of_events, in case you want to run on all signals but only a fraction of background, or anything else.
 So far, you would have to create a set of crab.cfg, one for each dataset you want to access, and submit several instances of CRAB, saving the output to different locations.
 Multicrab is meant to automatize this procedure.
 In addition to the usual crab.cfg, there is a new configuration file called multicrab.cfg. The syntax is very similar to that of crab.cfg, namely
@@ -164,13 +164,13 @@ The role of multicrab.cfg is to apply modification to the template crab.cfg, som
 
 =over 2
 
-=item B<[COMMON]> 
+=item B<[COMMON]>
 
 section: which applies to all task, and which is fully equivalent to modify directly the template crab.cfg
 
-=item B<[DATASET]> 
+=item B<[DATASET]>
 
-section: there could be an arbitrary number of sections, one for each dataset you want to run. The names are free (but COMMON and MULTICRAB), and they will be used as ui_working_dir for the task as well as an appendix to the user_remote_dir in case of output copy to remote SE. So, the task corresponding to section, say [SIGNAL] will be placed in directory SIGNAL, and the output will be put on /SIGNAL/, so SIGNAL will be added as last subdir in the user_remote_dir. 
+section: there could be an arbitrary number of sections, one for each dataset you want to run. The names are free (but COMMON and MULTICRAB), and they will be used as ui_working_dir for the task as well as an appendix to the user_remote_dir in case of output copy to remote SE. So, the task corresponding to section, say [SIGNAL] will be placed in directory SIGNAL, and the output will be put on /SIGNAL/, so SIGNAL will be added as last subdir in the user_remote_dir.
 
 =back
 
@@ -251,14 +251,14 @@ See also I<-continue>.
 
 =item B<-submit [range]>
 
-Submit n jobs: 'n' is either a positive integer or 'all' or a [range]. Default is all.
-If 'n' is passed as argument, the first 'n' suitable jobs will be submitted. Please note that this is behaviour is different from other commands, where -command N means act the command to the job N, and not to the first N jobs. If a [range] is passed, the selected jobs will be submitted.
-This option must be used in conjunction with -create (to create and submit immediately) or with -continue (which is assumed by default), to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.  See also I<-continue>.
+Submit n jobs: 'n' is either a positive integer or 'all' or a [range]. The default is all.
+If 'n' is passed as an argument, the first 'n' suitable jobs will be submitted. Please note that this is behaviour is different from other commands, where -command N means act the command to the job N, and not to the first N jobs. If a [range] is passed, the selected jobs will be submitted.
+This option may be used in conjunction with -create (to create and submit immediately) or with -continue (which is assumed by default) to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.  See also I<-continue>.
 
 =item B<-continue [dir] | -c [dir]>
 
-Apply the action on the task stored on directory [dir]. If the task directory is the standard one (crab_0_date_time), the more recent in time is taken. Any other directory must be specified.
-Basically all commands (but -create) need -continue, so it is automatically assumed. Of course, the standard task directory is used in this case.
+Apply the action on the task stored in directory [dir]. If the task directory is the standard one (crab_0_date_time), the most recent in time is assumed. Any other directory must be specified.
+Basically all commands (except -create) need -continue, so it is automatically assumed. Of course, the standard task directory is used in this case.
 
 =item B<-status>
 
@@ -270,11 +270,11 @@ Retrieve the output declared by the user via the output sandbox. By default the 
 
 =item B<-publish [-USER.dbs_url_for_publication=dbs_url]>
 
-Publish user output in a local DBS instance after retrieving of output. By default the publish uses the dbs_url_for_publication specified in the crab.cfg file, otherwise you can write it as argument of this option.
+Publish user output in a local DBS instance after the retrieval of output. By default publish uses the dbs_url_for_publication specified in the crab.cfg file, otherwise you can supply it as an argument of this option.
 
 =item B<-checkPublication [-USER.dbs_url_for_publication=dbs_url -USER.dataset_to_check=datasetpath -debug]>
 
-Check if a dataset is published in a DBS. This option is automaticaly called at the end of publication step, but it can be also used as standalone command. By default it reads the parameters (USER.dbs_url_for_publication and USER.dataset_to_check) written in your crab.cfg. You can overwrite the default written in crab.cfg passing these parameters as option. Using the -debug option, you can have detailed info about files of published blocks.
+Check if a dataset is published in a DBS. This option is automaticaly called at the end of the publication step, but it can be also used as a standalone command. By default it reads the parameters (USER.dbs_url_for_publication and USER.dataset_to_check) in your crab.cfg. You can overwrite the defaults in crab.cfg by passing these parameters as option. Using the -debug option, you will get detailed info about the files of published blocks.
 
 =item B<-resubmit [range]>
 
@@ -394,7 +394,7 @@ the path of processed dataset as defined on the DBS. It comes with the format I<
 
 =item B<ads *>
 
-you may want to run over an AnalysisDataSet. After define the related path in I<datasetpath>, take care to specify ads=1.   
+you may want to run over an AnalysisDataSet. After define the related path in I<datasetpath>, take care to specify ads=1.
 
 =item B<runselection *>
 
@@ -424,7 +424,7 @@ Define the number of job to be run for the task. The number of event for each jo
 
 =item B<split_by_run *>
 
-to activate the split run based (each job will access a different run) use I<split_by_run>=1. You can definfe also I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not yet available.  
+to activate the split run based (each job will access a different run) use I<split_by_run>=1. You can definfe also I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not yet available.
 
 =item B<output_file *>
 
@@ -474,11 +474,11 @@ The URL of the DBS query page. For expert only.
 
 =item B<show_prod>
 
-To enable CRAB to show data hosted on Tier1s sites specify I<show_prod> = 1. By default those data are masked. 
+To enable CRAB to show data hosted on Tier1s sites specify I<show_prod> = 1. By default those data are masked.
 
 =item B<no_block_boundary>
 
-To remove fileblock boundaries in job splitting specify I<no_block_boundary> = 1.  
+To remove fileblock boundaries in job splitting specify I<no_block_boundary> = 1.
 
 =back
 
