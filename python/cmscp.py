@@ -589,7 +589,10 @@ class cmscp:
         cmscp_exit_status = 0
         txt = ''
         for file, dict in results.iteritems():
-            reason="'%s'"%dict['reason']
+            reason = str(dict['reason'])
+            if str(reason).find("'") > -1:
+                reason = " ".join(reason.split("'"))
+            reason="'%s'"%reason
             if file:
                 if dict['lfn']=='':
                     lfn = '$LFNBaseName/'+os.path.basename(file)
@@ -597,7 +600,6 @@ class cmscp:
                 else:
                     lfn = dict['lfn']+os.path.basename(file)
                     se = dict['se']
-                    
                 #dict['lfn'] # to be implemented
                 txt += 'echo "Report for File: '+file+'"\n'
                 txt += 'echo "LFN: '+lfn+'"\n'
