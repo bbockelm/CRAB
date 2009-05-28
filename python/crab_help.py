@@ -18,31 +18,30 @@ def usage():
 
 The most useful general options (use '-h' to get complete help):
 
-  -create                    -- Create all the jobs.
-  -submit n                  -- Submit the first n available jobs. Default is all.
-  -status [range]            -- check status of all jobs.
-  -getoutput|-get [range]    -- get back the output of all jobs: if range is defined, only of selected jobs.
-  -extend                    -- Extend an existing task to run on new fileblocks if there.
-  -publish [-USER.dbs_url_for_publication=dbs_url] -- after the getouput, publish the data user in a local DBS instance.
-  -checkPublication [-USER.dbs_url_for_publication=dbs_url -USER.dataset_to_check=datasetpath -debug] -- checks if a dataset
-                                is published in a DBS. This option is automaticaly called at the end of the publication step.
-  -kill [range]              -- kill submitted jobs.
-  -resubmit [range]          -- resubmit killed/aborted/retrieved jobs.
-  -copyData [range]          -- copy locally the output stored on remote SE.
-  -renewCredential           -- renew credential on the server.
-  -clean                     -- gracefully cleanup the directory of a task.
-  -match|-testJdl [range]    -- check if resources exist which are compatible with jdl.
-  -report                    -- print a short report about the task
-  -list [range]              -- show technical job details.
-  -postMortem [range]        -- provide a file with information useful for post-mortem analysis of the jobs.
-  -printId [range]           -- print the job SID or Task Unique ID while using the server.
-  -createJdl [range]         -- provide files with a complete Job Description (JDL).
-  -validateCfg [fname]       -- parse the ParameterSet using the framework's Python API.
-  -continue|-c [dir]         -- Apply command to task stored in [dir].
-  -h [format]                -- Detailed help. Formats: man (default), tex, html, txt.
-  -cfg fname                 -- Configuration file name. Default is 'crab.cfg'.
-  -debug N                   -- set the verbosity level to N.
-  -v                         -- Print version and exit.
+  -create                                 -- Create all the jobs.
+  -submit n                               -- Submit the first n available jobs. Default is all.
+  -status [range]                         -- check status of all jobs.
+  -getoutput|-get [range]                 -- get back the output of all jobs: if range is defined, only of selected jobs.
+  -extend                                 -- Extend an existing task to run on new fileblocks if there.
+  -publish                                -- after the getouput, publish the data user in a local DBS instance.
+  -checkPublication [dbs_url datasetpath] -- checks if a dataset is published in a DBS. 
+  -kill [range]                           -- kill submitted jobs.
+  -resubmit [range]                       -- resubmit killed/aborted/retrieved jobs.
+  -copyData [range]                       -- copy locally the output stored on remote SE.
+  -renewCredential                        -- renew credential on the server.
+  -clean                                  -- gracefully cleanup the directory of a task.
+  -match|-testJdl [range]                 -- check if resources exist which are compatible with jdl.
+  -report                                 -- print a short report about the task
+  -list [range]                           -- show technical job details.
+  -postMortem [range]                     -- provide a file with information useful for post-mortem analysis of the jobs.
+  -printId [range]                        -- print the job SID or Task Unique ID while using the server.
+  -createJdl [range]                      -- provide files with a complete Job Description (JDL).
+  -validateCfg [fname]                    -- parse the ParameterSet using the framework's Python API.
+  -continue|-c [dir]                      -- Apply command to task stored in [dir].
+  -h [format]                             -- Detailed help. Formats: man (default), tex, html, txt.
+  -cfg fname                              -- Configuration file name. Default is 'crab.cfg'.
+  -debug N                                -- set the verbosity level to N.
+  -v                                      -- Print version and exit.
 
   "range" has syntax "n,m,l-p" which correspond to [n,m,l,l+1,...,p-1,p] and all possible combination
 
@@ -268,7 +267,7 @@ Check the status of the jobs, in all states. All the info (e.g. application and 
 
 Retrieve the output declared by the user via the output sandbox. By default the output will be put in task working dir under I<res> subdirectory. This can be changed via config parameters. B<Be extra sure that you have enough free space>. See I<range> below for syntax.
 
-=item B<-publish [-USER.dbs_url_for_publication=dbs_url]>
+=item B<-publish>
 
 Publish user output in a local DBS instance after the retrieval of output. By default publish uses the dbs_url_for_publication specified in the crab.cfg file, otherwise you can supply it as an argument of this option.
 
