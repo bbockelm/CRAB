@@ -189,17 +189,12 @@ class Submitter(Actor):
                 except CrabException:
                     raise CrabException("Job not submitted")
 
-                if not common.debugLevel == 0 :
+                if common.debugLevel == 0 :
                     try: pbar = ProgressBar(term, 'Submitting '+str(len(self.sub_jobs[ii]))+' jobs')
                     except: pbar = None
-                if not common.debugLevel == 0:
+                if common.debugLevel == 0:
                     if pbar :
                         pbar.update(float(ii+1)/float(len(self.sub_jobs)),'please wait')
-                ### check the if the submission succeded Maybe not neede
-                if not common.debugLevel == 0:
-                    if pbar :
-                        pbar.update(float(ii+1)/float(len(self.sub_jobs)),'please wait')
-
                 ### check the if the submission succeded Maybe not needed or at least simplified
                 sched_Id = common._db.queryRunJob('schedulerId', self.sub_jobs[ii])
                 listId=[]
