@@ -171,9 +171,10 @@ class GetOutput(Actor):
                 continue   
             input = 'crab_fjr_' + str(id) + '.xml'
             if os.path.exists(self.outDir + input):
-                codeValue = self.parseFinalReport(self.outDir + input)
+                FiledToUpdate = self.parseFinalReport(self.outDir + input)
+                FiledToUpdate['state']= 'Cleared'
                 job_id.append(id)
-                listCode.append(codeValue)
+                listCode.append(FiledToUpdate)
             else:
                 msg = "Problems with "+str(input)+". File not available.\n"
                 common.logger.info(msg) 
