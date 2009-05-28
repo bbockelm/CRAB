@@ -383,7 +383,7 @@ class Cmssw(JobType):
             listField.append(job_ToSave)
             msg="Job  %s  Arguments:  %s\n"%(str(job+1),str_argu)
             msg+="\t  Destination: %s "%(str(self.jobDestination[id]))
-            common.logger.debug(msg)
+            common.logger.log(10-1,msg)
         # write xml
         if len(listDictions):
             if exist==False: self.CreateXML()
