@@ -50,7 +50,7 @@ class Reporter(Actor):
                             'Unknown',
                             'Done (Failed)',
                             'Cleared',
-                            'retrieved'
+                            'Retrieved'
                             ]
         eventsRead=0
         eventsRequired=0
