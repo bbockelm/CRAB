@@ -77,7 +77,7 @@ class Publisher(Actor):
                 self.dataset_to_import.append(dataset)
         ###        
             
-        self.skipOcheck=cfg_params.get('CMSSW.pubilish_zero_event',0)
+        self.skipOcheck=cfg_params.get('CMSSW.publish_zero_event',0)
     
         self.SEName=''
         self.CMSSW_VERSION=''
