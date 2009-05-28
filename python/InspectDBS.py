@@ -57,7 +57,7 @@ class InspectDBS(Actor):
             procds=self.dataset_to_check.split('/')[2]
             tier=self.dataset_to_check.split('/')[3]
             datasets=dbsreader.matchProcessedDatasets(primds,tier,procds)
-            if common.logger.debugLevel():
+            if common.debugLevel:
                 print "PrimaryDataset = ", primds
                 print "ProcessedDataset = ", procds
                 print "DataTier = ", tier
@@ -82,7 +82,7 @@ class InspectDBS(Actor):
                         print "      Number of files: %s"%block['NumberOfFiles']
                         print "      Number of Bytes: %s"%block['BlockSize']
                         print "      Number of Events: %s"%block['NumberOfEvents']
-                        if common.logger.debugLevel():
+                        if common.debugLevel:
                             print "--------- info about files --------"
                             print " Size \t Events \t LFN \t FileStatus "
                             files=dbsreader.listFilesInBlock(block['Name'])
@@ -90,7 +90,7 @@ class InspectDBS(Actor):
                                 print "%s %s %s %s"%(file['FileSize'],file['NumberOfEvents'],file['LogicalFileName'],file['Status'])
                         nevttot = nevttot + block['NumberOfEvents']
                     print "\n total events: %s in dataset: %s\n"%(nevttot,datasetpath)
-        if not common.logger.debugLevel():
+        if not common.debugLevel:
             common.logger.info('You can obtain more info about files of the dataset using: crab -checkPublication -USER.dataset_to_check='+self.dataset_to_check+' -USER.dbs_url_for_publication='+self.DBSURL+' -debug')
         
     def run(self):
