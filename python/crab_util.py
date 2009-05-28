@@ -299,13 +299,13 @@ def displayReport(self, header, lines, xml=''):
     counter = 0
     printline = ''
     printline+= header
-    print printline
-    print '---------------------------------------------------------------------------------------------------'
+    msg = '\n%s\n'%printline
+    msg+=  '---------------------------------------------------------------------------------------------------\n'
 
     for i in range(len(lines)):
         if counter != 0 and counter%10 == 0 :
-            print '---------------------------------------------------------------------------------------------------'
-        print lines[i]
+            msg += '---------------------------------------------------------------------------------------------------\n'
+        msg+=  '%s\n'%lines[i]
         counter += 1
     if xml != '' :
         fileName = common.work_space.shareDir() + xml
@@ -316,6 +316,7 @@ def displayReport(self, header, lines, xml=''):
         f.write(taskXML)
         f.close()
         pass
+    common.logger.info(msg)
 
 def CliServerParams(self):
     """

@@ -104,14 +104,12 @@ class Status(Actor):
                          'Unknown',
                          'Done (Failed)',
                          'Cleared',
-                         'retrieved'
+                         'Retrieved'
                           ]
 
         jobs = common._db.nJobs('list')
         WrapExitCode = list(set(self.wrapErrorList))
-        print ''
-        print ">>>>>>>>> %i Total Jobs " % (len(jobs))
-        print ''
+        msg=  " %i Total Jobs \n" % (len(jobs))
         list_ID=[]
         for c in WrapExitCode:
             if c != 'None':
@@ -121,24 +119,21 @@ class Status(Actor):
                     list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
                     if len(list_ID)>0:
                         if st == 'killed':
-                            print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
-                            print "          You can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>"
-                            print "          List of jobs: %s \n" % readableList(self,list_ID)
+                            msg+=  ">>>>>>>>> %i Jobs %s \n" % (len(list_ID), str(st))
+                            msg+=  "\tYou can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>\n"
+                            msg+=  "\tList of jobs: %s \n" % readableList(self,list_ID)
                         elif st == 'Aborted':
-                            print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
-                            print "          You can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>"
-                            print "          List of jobs: %s \n" % readableList(self,list_ID)
+                            msg+=  ">>>>>>>>> %i Jobs %s\n " % (len(list_ID), str(st))
+                            msg+=  "\tYou can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>\n"
+                            msg+=  "\tList of jobs: %s \n" % readableList(self,list_ID)
                         elif st == 'Done' or st == 'Done (Failed)' :
-                            print ">>>>>>>>> %i Jobs %s  " % (len(list_ID), str(st))
-                            print "          Retrieve them with: crab -getoutput <List of jobs>"
-                            print "          List of jobs: %s \n" % readableList(self,list_ID)
+                            msg+=  ">>>>>>>>> %i Jobs %s\n " % (len(list_ID), str(st))
+                            msg+=  "\tRetrieve them with: crab -getoutput <List of jobs>\n"
+                            msg+=  "\tList of jobs: %s \n" % readableList(self,list_ID)
                         else   :
-                            print ">>>>>>>>> %i Jobs %s \n " % (len(list_ID), str(st))
-                            print "          List of jobs %s: %s \n" % (str(st),readableList(self,list_ID))
-                        pass
-                    pass
-                pass
-            pass
+                            msg+=  ">>>>>>>>> %i Jobs %s \n " % (len(list_ID), str(st))
+                            msg+=  "\tList of jobs %s: %s \n" % (str(st),readableList(self,list_ID))
+        common.logger.info(msg)
         return
 
     def reportCodes(self,code): 
@@ -146,12 +141,13 @@ class Status(Actor):
         """
         list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':code},'jobId')
         if len(list_ID)>0:
-            print ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s " % (len(list_ID), str(code))
-            print "          List of jobs: %s" % readableList(self,list_ID)
+            msg = 'ExitCodes Summary\n'
+            msg +=  ">>>>>>>>> %i Jobs with Wrapper Exit Code : %s \n " % (len(list_ID), str(code))
+            msg +=  "\t List of jobs: %s \n" % readableList(self,list_ID)
             if (code!=0):
-                print "          See https://twiki.cern.ch/twiki/bin/view/CMS/JobExitCodes for Exit Code meaning"
-            print " "
+                msg +=  "\tSee https://twiki.cern.ch/twiki/bin/view/CMS/JobExitCodes for Exit Code meaning\n"
 
+        common.logger.info(msg)
         return
  
     def dataToDash(self,job,id,taskId,task_unique_name,dest,jobStatus):
