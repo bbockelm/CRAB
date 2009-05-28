@@ -143,7 +143,7 @@ class Creator(Actor):
         stop = time.time()
         common.logger.debug( "Creation Time: "+str(stop - start))
 
-        msg = '\nTotal of %d jobs created'%njc
+        msg = 'Total of %d jobs created'%njc
         if njc != self.ncjobs: msg = msg + ' from %d requested'%self.ncjobs
         msg = msg + '.\n'
         common.logger.info(msg)

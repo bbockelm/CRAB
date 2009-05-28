@@ -105,7 +105,7 @@ class Submitter(Actor):
             stop = time.time()
             common.logger.debug("Submission Time: "+str(stop - start))
 
-            msg = '\nTotal of %d jobs submitted'%njs
+            msg = 'Total of %d jobs submitted'%njs
             if njs != len(self.nj_list) :
                 msg += ' (from %d requested).'%(len(self.nj_list))
             else:
