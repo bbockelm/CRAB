@@ -740,7 +740,7 @@ class Crab:
         logger.setLevel(logging.DEBUG)
         log_fname =common.work_space.logDir()+common.prog_name+'.log'
         fh=logging.FileHandler(log_fname)
-        fh_formatter = logging.Formatter("%(asctime)s  %(name)s [%(levelname)s]  %(message)s")
+        fh_formatter = logging.Formatter("%(asctime)s [%(levelname)s] \t%(message)s")
         ch=logging.StreamHandler()
         ch_formatter = logging.Formatter("%(name)s  %(message)s")
         fh_level=logging.DEBUG
