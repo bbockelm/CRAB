@@ -245,9 +245,8 @@ class SubmitterServer( Submitter ):
         if subOutcome != 0:
             msg = "ClientServer ERROR: %d raised during the communication.\n"%subOutcome
             self.stateChange( self.submitRange, "Created" )
-            raise CrabException(msg)
-#        elif firstSubmission is True:
-#            self.markSubmitting()
+            common.logger.debug(msg) 
+            raise CrabException('ERROR Jobs NOT submitted.')
 
         del csCommunicator
 

@@ -133,7 +133,7 @@ class ServerCommunicator:
             # reset server choice
             opsToBeSaved={'serverName' : '' }
             common._db.updateTask_(opsToBeSaved)
-            raise CrabException(logMsg) 
+            common.logger.info(logMsg) 
         return ret
          
     def subsequentJobSubmit(self, blTaskName, rng):
