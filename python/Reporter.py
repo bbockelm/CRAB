@@ -82,13 +82,6 @@ class Reporter(Actor):
         msg+=  "Total Jobs : %s \n"%len(task.getJobs())
         list_ID={}
         task = common.scheduler.queryEverything(task['id'])
-        for job in task.jobs :
-            id = str(job.runningJob['jobId'])
-            jobStatus =  str(job.runningJob['statusScheduler'])
-            jobStatus_1 =  str(job.runningJob['status'])
-            jobStatus_2 =  str(job.runningJob['state'])
-            ended = str(job['standardInput'])  
-            print '%s %s %s %s %s'%(str(id),str(jobStatus),str(jobStatus_1),str(jobStatus_2),str(ended))         
         for st in possible_status:
             list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
             if (len(list_ID)>0):
