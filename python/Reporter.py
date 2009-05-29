@@ -16,13 +16,15 @@ class Reporter(Actor):
         The main method of the class: report status of a task
         """
         common.logger.debug( "Reporter::run() called")
-        task = common.scheduler.queryEverything(1)
+        task = common._db.getTask()
+
         msg= "--------------------\n"
         msg +=  "Dataset: %s\n"%str(task['dataset'])
         if self.cfg_params.has_key('USER.copy_data') and int(self.cfg_params['USER.copy_data'])==1:
             msg+=  "Remote output :\n"
             ## TODO: SL should come from jobDB!
             from PhEDExDatasvcInfo import PhEDExDatasvcInfo
+
             stageout = PhEDExDatasvcInfo(self.cfg_params)
             endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
             #print endpoint, lfn, SE, SE_PATH, user
@@ -59,7 +61,6 @@ class Reporter(Actor):
             if (job.runningJob['applicationReturnCode']>0 or job.runningJob['wrapperReturnCode']>0): continue
             # get FJR filename
             fjr=task['outputDirectory']+job['outputFiles'][-1]
-            #print fjr
             jobReport = readJobReport(fjr)
             if len(jobReport)>0:
                 inputFiles=jobReport[0].inputFiles
@@ -71,7 +72,6 @@ class Reporter(Actor):
                     #     print "Run",run,": lumi sections",runs[run]
                     filesRead+=1
                     eventsRead+=int(inputFile['EventsRead'])
-                    
                 #print jobReport[0].inputFiles,'\n'
             else:
                 pass
@@ -81,6 +81,7 @@ class Reporter(Actor):
         msg+=  "Total Files read: %s reuired: %s\n"%(filesRead,filesRequired)
         msg+=  "Total Jobs : %s \n"%len(task.getJobs())
         list_ID={}
+        upTask = common.scheduler.queryEverything(task['id'])
         for st in possible_status:
             list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
             if (len(list_ID)>0):
@@ -89,3 +90,5 @@ class Reporter(Actor):
         msg+=  "\n----------------------------\n"
         common.logger.info(msg)   
         return      
+
+                   
