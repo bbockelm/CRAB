@@ -316,6 +316,7 @@ class DBinterface:
             common.bossSession.getNewRunningInstance(job)
             job.runningJob['status'] = 'C'
             job.runningJob['statusScheduler'] = 'Created'
+            job.runningJob['state'] = 'Created'
         common.bossSession.updateDB(task)     
         return        
 
