@@ -148,19 +148,22 @@ class Crab:
         self.createScheduler_()
         if not self.flag_continue:
             common._db.createTask_(optsToBeSavedDB)
-        common.logger.log(10-1, 'Used properties:')
-        if isCreating :
-            common.logger.debug('Used properties:')
-            self.UserCfgProperties()
-            common.logger.debug('End of used properties.\n')
+        nsg=''
+        msg = ('Used properties:\n')
+        if isCreating and common.debugLevel < 2 :
+            msg = ('Used properties:\n')
+            msg += self.UserCfgProperties(msg)
+            msg += 'End of used properties.\n'
+            common.logger.debug( msg)
         else:
-            if common.debugLevel > 2: self.UserCfgProperties()
-        common.logger.log(10-1, 'End of used properties.\n')
+            msg += self.UserCfgProperties(msg)
+            msg += 'End of used properties.\n'
+            common.logger.log(10-1, msg)
 
         self.initializeActions_(opts)
         return
 
-    def UserCfgProperties(self):
+    def UserCfgProperties(self,msg):
         """
         print user configuration parameters
         """
@@ -168,10 +171,10 @@ class Crab:
         keys.sort()
         for k in keys:
             if self.cfg_params[k]:
-                common.logger.debug( '   '+k+' : '+str(self.cfg_params[k]))
+                msg += '   %s : %s\n'%(str(k),str(self.cfg_params[k]))
             else:
-                common.logger.debug('   '+k+' : ')
-        return
+                msg += '   %s : \n'%str(k)
+        return msg
 
     def processContinueOption_(self,opts):
 
@@ -691,6 +694,14 @@ class Crab:
                     msg = "The option [-renewProxy] can be used only with the server modality!"
                     raise CrabException(msg)
             elif ( opt == '-report' ):
+                if (self.UseServer== 1):
+                    from StatusServer import StatusServer
+                    StatusServer(self.cfg_params).query(display=False)
+                else:
+                    # cause a core dump....
+                    #from Status import Status
+                    #Status(self.cfg_params).query(display=False)
+                    pass
                 from Reporter import Reporter     
                 self.actions[opt] = Reporter(self.cfg_params)
 
@@ -730,14 +741,13 @@ class Crab:
 
     def createLogger_(self, args):
 
-        logging.DEBUG_1 = logging.DEBUG - 1
-        logging.addLevelName(logging.DEBUG_1,'debug_1')
-        logging.root.setLevel([logging.DEBUG_1, logging.DEBUG, logging.INFO, \
+        logging.DEBUG_VERBOSE = logging.DEBUG - 1
+        logging.addLevelName(logging.DEBUG_VERBOSE,'debug_verbose')
+        logging.root.setLevel([logging.DEBUG_VERBOSE, logging.DEBUG, logging.INFO, \
                                logging.WARNING,logging.ERROR, logging.CRITICAL])
         logger = logging.getLogger()
         logger = logging.getLogger("crab:")
-        logger.setLevel(logging.DEBUG_1)
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.DEBUG_VERBOSE)
         log_fname =common.work_space.logDir()+common.prog_name+'.log'
         fh=logging.FileHandler(log_fname)
         fh_formatter = logging.Formatter("%(asctime)s [%(levelname)s] \t%(message)s")
@@ -746,9 +756,9 @@ class Crab:
         fh_level=logging.DEBUG
         ch_level=logging.INFO
         if common.debugLevel > 0:ch_level=logging.DEBUG
-        elif common.debugLevel > 2: 
-            fh_level=logging.DEBUG_1
-            ch_level=logging.DEBUG_1
+        if common.debugLevel > 2: 
+            fh_level=logging.DEBUG_VERBOSE
+            ch_level=logging.DEBUG_VERBOSE
         fh.setLevel(fh_level)
         ch.setLevel(ch_level)
         fh.setFormatter(fh_formatter)
