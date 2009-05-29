@@ -78,7 +78,7 @@ class Reporter(Actor):
                 #print 'no FJR avaialble for job #%s'%job['jobId']
             #print "--------------------------"
         msg+=  "Total Events read: %s required: %s\n"%(eventsRead,eventsRequired)
-        msg+=  "Total Files read: %s reuired: %s\n"%(filesRead,filesRequired)
+        msg+=  "Total Files read: %s required: %s\n"%(filesRead,filesRequired)
         msg+=  "Total Jobs : %s \n"%len(task.getJobs())
         list_ID={}
         upTask = common.scheduler.queryEverything(task['id'])
