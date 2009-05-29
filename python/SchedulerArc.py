@@ -1,4 +1,11 @@
-
+# -*- coding: utf-8 -*-
+# 
+# Scheduler for the Nordugrid ARC middleware.
+#
+# Maintainers:
+# Erik Edelmann <erik.edelmann@csc.fi>
+# Jesper Koivumäki <jesper.koivumaki@hip.fi>
+# 
 from SchedulerGrid import SchedulerGrid
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -27,7 +34,7 @@ class SchedulerArc(SchedulerGrid):
         taskHash = sha.new(common._db.queryTask('name')).hexdigest()
         id = 'https://' + self.name() + '/' + taskHash + '/${NJob}'
         msg = 'JobID for ML monitoring is created for ARC scheduler: %s' % id
-        common.logger.debug( msg)
+        common.logger.debug(msg)
         return id
 
 
@@ -112,11 +119,6 @@ class SchedulerArc(SchedulerGrid):
         xrsl = ""
         for t in self.tags():
             xrsl += "(runTimeEnvironment=%s)" % t
-        #xrsl = "(runTimeEnvironment=\"APPS/HEP/CMSSW-PA\")"
-        #for s in task['jobType'].split('&&'):
-        #    if re.match('Member\(".*", .*RunTimeEnvironment', s):
-        #        rte = re.sub(", .*", "", re.sub("Member\(", "", s))
-        #        xrsl += "(runTimeEnvironment=%s)" % rte
         return xrsl
 
 
@@ -187,11 +189,7 @@ class SchedulerArc(SchedulerGrid):
         txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
         txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '    if [ $exceed -ne 1 ]; then\n'
-        txt += '        tar zcvf ${out_files}.tgz  ${final_list}\n'
-        txt += '    else\n'
-        txt += '        tar zcvf ${out_files}.tgz CMSSW_${NJob}.stdout CMSSW_${NJob}.stderr\n'
-        txt += '    fi\n'
+        txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
         txt += '    exit $job_exit_code\n'
         txt += '}\n'
         return txt
