@@ -52,6 +52,7 @@ class Status(Actor):
         listRunField=[]
 
         self.wrapErrorList = []
+        msg='\n'
         for job in up_task.jobs :
             id = str(job.runningJob['jobId'])
             jobStatus =  str(job.runningJob['statusScheduler'])
@@ -73,7 +74,8 @@ class Status(Actor):
             toPrint.append(printline)
 
             if jobStatus is not None:
-                self.dataToDash(job,id,taskId,task_unique_name,dest,jobStatus)
+                msg += self.dataToDash(job,id,taskId,task_unique_name,dest,jobStatus)
+        common.logger.log(10-1,msg)
         if len(listId) > 0 : common._db.updateRunJob_(listId, listRunField)
         header = ''
         if ended != None and len(ended) > 0:
@@ -154,22 +156,23 @@ class Status(Actor):
         jid = job.runningJob['schedulerId']
         job_status_reason = str(job.runningJob['statusReason'])
         job_last_time = str(job.runningJob['startTime'])
+        msg = '' 
         if common.scheduler.name().upper() in ['CONDOR_G','GLIDEIN']:
             WMS = 'OSG'
             taskHash = sha.new(common._db.queryTask('name')).hexdigest()
             jobId = str(id) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(id)
-            common.logger.debug('JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+            msg += ('JobID for ML monitoring is created for CONDOR_G scheduler: %s\n'%jobId)
         elif common.scheduler.name().upper() in ['LSF','CAF']:
             WMS = common.scheduler.name()
             jobId=str(id)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(task_unique_name,"_","-")
-            common.logger.debug('JobID for ML monitoring is created for Local scheduler:'+jobId)
+            msg += ('JobID for ML monitoring is created for Local scheduler: %s\n'%jobId)
         else:
             jobId = str(id) + '_' + str(jid)
             WMS = job.runningJob['service']
-            common.logger.debug('JobID for ML monitoring is created for gLite scheduler:'+jobId)
+            msg += ('JobID for ML monitoring is created for gLite scheduler: %s'%jobId)
         pass
 
-        common.logger.debug("sending info to ML")
+        msg += ("sending info to ML\n")
         params = {}
         if WMS != None:
             params = {'taskId': taskId, \
@@ -188,10 +191,10 @@ class Status(Actor):
             'StatusValue': jobStatus, \
             'StatusEnterTime': job_last_time, \
             'StatusDestination': dest }
-        common.logger.debug(str(params))
+        msg += ('%s\n'%str(params))
         common.apmon.sendToML(params)
 
-        return
+        return msg
 
     def joinIntArray_(self,array) :
         output = ''

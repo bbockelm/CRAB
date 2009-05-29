@@ -156,6 +156,7 @@ class JobSplitter:
                 # ---- Iterate over the files in the block until we've met the requested ---- #
                 # ---- total # of events or we've gone over all the files in this block  ---- #
                 pString=''
+                msg='\n'
                 while ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) and (jobCount < totalNumberOfJobs) ):
                     file = files[fileCount]
                     if self.useParent==1:
@@ -192,9 +193,9 @@ class JobSplitter:
                                     list_of_lists.append([fullString,fullParentString,str(-1),str(jobSkipEventCount)])
                                 else:
                                     list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
-                                common.logger.debug("Job "+str(jobCount+1)+" can run over "+str(filesEventCount - jobSkipEventCount)+" events (last file in block).")
+                                msg += "Job %s can run over %s  events (last file in block).\n"%(str(jobCount+1), str(filesEventCount - jobSkipEventCount))
                                 jobDestination.append(blockSites[block])
-                                common.logger.debug("Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
+                                msg += "Job %s Destination: %s\n"%(str(jobCount+1),str(jobDestination[jobCount]))
                                 # fill jobs of block dictionary
                                 jobsOfBlock[block].append(jobCount+1)
                                 # reset counter
@@ -221,9 +222,9 @@ class JobSplitter:
                             list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         else:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        common.logger.debug("Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
+                        msg += "Job %s can run over %s events.\n"%(str(jobCount+1),str(eventsPerJobRequested))
                         jobDestination.append(blockSites[block])
-                        common.logger.debug("Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
+                        msg+= "Job %s Destination: %s\n"%(str(jobCount+1),str(jobDestination[jobCount]))
                         jobsOfBlock[block].append(jobCount+1)
                         # reset counter
                         jobCount = jobCount + 1
@@ -246,9 +247,9 @@ class JobSplitter:
                             list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         else:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
-                        common.logger.debug("Job "+str(jobCount+1)+" can run over "+str(eventsPerJobRequested)+" events.")
+                        msg += "Job %s can run over %s events.\n"%(str(jobCount+1),str(eventsPerJobRequested))
                         jobDestination.append(blockSites[block])
-                        common.logger.debug("Job "+str(jobCount+1)+" Destination: "+str(jobDestination[jobCount]))
+                        msg+= "Job %s Destination: %s\n"%(str(jobCount+1),str(jobDestination[jobCount]))
                         jobsOfBlock[block].append(jobCount+1)
                         # increase counter
                         jobCount = jobCount + 1
@@ -265,6 +266,7 @@ class JobSplitter:
                     pass # END if
                 pass # END while (iterate over files in the block)
         pass # END while (iterate over blocks in the dataset)
+        common.logger.debug(msg)
         self.ncjobs = self.total_number_of_jobs = jobCount
         if (eventsRemaining > 0 and jobCount < totalNumberOfJobs ):
             common.logger.info("Could not run on all requested events because some blocks not hosted at allowed sites.")

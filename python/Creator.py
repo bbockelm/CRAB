@@ -98,12 +98,13 @@ class Creator(Actor):
                          'statusScheduler' : 'Created', \
                          'state' : "Created"  }
 
+        msg = ("Creating jobs :\n")
         for nj in range(self.total_njobs):
             nj=nj+self.first_jobID
             output=[]
             if njc == self.ncjobs : break
 
-            common.logger.debug("Creating job # "+`(nj+1)`)
+            msg += "... job # %s "%str(nj+1)
             listRunField.append(run_jobToSave)
 
             # Prepare configuration file
@@ -115,7 +116,7 @@ class Creator(Actor):
             listID.append(nj+1)
             njc = njc + 1
             pass
- 
+        common.logger.log(10-1,msg) 
        # ## Not clear why here.. DS
        # self.job_type.setArgsList()
         common._db.updateRunJob_(listID , listRunField ) 

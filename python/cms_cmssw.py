@@ -548,7 +548,7 @@ class Cmssw(JobType):
             for file in self.additional_inbox_files:
                 tar.add(file,string.split(file,'/')[-1])
             tar.dereference=False
-            common.logger.debug("Files in "+self.tarNameWithPath+" : "+str(tar.getnames()))
+            common.logger.log(10-1,"Files in "+self.tarNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
         except IOError, exc:
