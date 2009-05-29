@@ -78,10 +78,17 @@ class Reporter(Actor):
                 #print 'no FJR avaialble for job #%s'%job['jobId']
             #print "--------------------------"
         msg+=  "Total Events read: %s required: %s\n"%(eventsRead,eventsRequired)
-        msg+=  "Total Files read: %s required: %s\n"%(filesRead,filesRequired)
+        msg+=  "Total Files read: %s reuired: %s\n"%(filesRead,filesRequired)
         msg+=  "Total Jobs : %s \n"%len(task.getJobs())
         list_ID={}
-        upTask = common.scheduler.queryEverything(task['id'])
+        task = common.scheduler.queryEverything(task['id'])
+        for job in task.jobs :
+            id = str(job.runningJob['jobId'])
+            jobStatus =  str(job.runningJob['statusScheduler'])
+            jobStatus_1 =  str(job.runningJob['status'])
+            jobStatus_2 =  str(job.runningJob['state'])
+            ended = str(job['standardInput'])  
+            print '%s %s %s %s %s'%(str(id),str(jobStatus),str(jobStatus_1),str(jobStatus_2),str(ended))         
         for st in possible_status:
             list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
             if (len(list_ID)>0):
