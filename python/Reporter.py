@@ -16,22 +16,21 @@ class Reporter(Actor):
         The main method of the class: report status of a task
         """
         common.logger.debug( "Reporter::run() called")
-        task = common._db.getTask()
-        #print self.cfg_params
-        print "\n----------------------------\n"
-        print "Dataset: ",task['dataset']
+        task = common.scheduler.queryEverything(1)
+        msg= "--------------------\n"
+        msg +=  "Dataset: %s\n"%str(task['dataset'])
         if self.cfg_params.has_key('USER.copy_data') and int(self.cfg_params['USER.copy_data'])==1:
-            print "Remote output :"
+            msg+=  "Remote output :\n"
             ## TODO: SL should come from jobDB!
             from PhEDExDatasvcInfo import PhEDExDatasvcInfo
             stageout = PhEDExDatasvcInfo(self.cfg_params)
             endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
             #print endpoint, lfn, SE, SE_PATH, user
 
-            print "SE:",self.cfg_params['USER.storage_element'],SE," srmPath:",endpoint
+            msg+=  "SE: %s %s  srmPath: %s\n"%(self.cfg_params['USER.storage_element'],SE,endpoint)
             
         else:
-            print "Local output: ",task['outputDirectory']
+            msg+=  "Local output: %s"%task['outputDirectory']
         #print task
         from ProdCommon.FwkJobRep.ReportParser import readJobReport
         possible_status = [ 'Created',
@@ -78,15 +77,15 @@ class Reporter(Actor):
                 pass
                 #print 'no FJR avaialble for job #%s'%job['jobId']
             #print "--------------------------"
-        print "Total Events read: ",eventsRead," required: ",eventsRequired
-        print "Total Files read: ",filesRead," required: ",filesRequired
-        print "Total Jobs : ",len(task.getJobs())
+        msg+=  "Total Events read: %s required: %s\n"%(eventsRead,eventsRequired)
+        msg+=  "Total Files read: %s reuired: %s\n"%(filesRead,filesRequired)
+        msg+=  "Total Jobs : %s \n"%len(task.getJobs())
         list_ID={}
         for st in possible_status:
             list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
             if (len(list_ID)>0):
-                print "   # Jobs:",str(st),":",len(list_ID)
+                msg+=  "   # Jobs: %s:%s\n"%(str(st),len(list_ID))
             pass
-        print "\n----------------------------\n"
-    
+        msg+=  "\n----------------------------\n"
+        common.logger.info(msg)   
         return      
