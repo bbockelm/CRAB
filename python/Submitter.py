@@ -247,7 +247,7 @@ class Submitter(Actor):
 
         taskId = common._db.queryTask('name')
         gridName = string.strip(common.scheduler.userName())
-        common.logger.debug("GRIDNAME: "+gridName)
+        common.logger.debug("GRIDNAME: %s "%gridName)
         taskType = 'analysis'
 
         self.datasetPath =  self.cfg_params['CMSSW.datasetpath']
@@ -283,7 +283,7 @@ class Submitter(Actor):
 
         common.apmon.sendToML(params)
 
-        common.logger.debug('Submission DashBoard Pre-Submission report: '+str(params))
+        common.logger.debug('Submission DashBoard Pre-Submission report: %s'%str(params))
 
         return
 
@@ -297,7 +297,7 @@ class Submitter(Actor):
         for k,v in self.collect_MLInfo().iteritems():
             params[k] = v
 
-
+        msg = ''  
         Sub_Type = 'Direct'
         for job in task.jobs:
             jj = job['jobId']
@@ -308,20 +308,20 @@ class Submitter(Actor):
                 rb = 'OSG'
                 taskHash = sha.new(common._db.queryTask('name')).hexdigest()
                 jobId = str(jj) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(jj)
-                common.logger.debug('JobID for ML monitoring is created for CONDOR_G scheduler:'+jobId)
+                msg += ('JobID for ML monitoring is created for CONDOR_G scheduler: %s \n'%str(jobId))
             elif common.scheduler.name().upper() in ['LSF', 'CAF']:
                 jobId= str(jj) + "_https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(str(task['name']),"_","-")
-                common.logger.debug('JobID for ML monitoring is created for LSF scheduler:'+jobId)
+                msg += ('JobID for ML monitoring is created for LSF scheduler: %s\n'%str(jobId))
                 rb = common.scheduler.name()
                 localId = jid
             elif common.scheduler.name().upper() in ['CONDOR']:
                 taskHash = sha.new(common._db.queryTask('name')).hexdigest()
                 jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
-                common.logger.debug('JobID for ML monitoring is created for CONDOR scheduler:'+jobId)
+                msg += ('JobID for ML monitoring is created for CONDOR scheduler: %s\n'%str(jobId))
                 rb = common.scheduler.name()
             else:
                 jobId = str(jj) + '_' + str(jid)
-                common.logger.debug('JobID for ML monitoring is created for gLite scheduler'+jobId)
+                msg += ('JobID for ML monitoring is created for gLite scheduler %s\n'%str(jobId))
                 rb = str(job.runningJob['service'])
 
             dlsDest = job['dlsDestination']
@@ -344,8 +344,9 @@ class Submitter(Actor):
             for k,v in infos.iteritems():
                 params[k] = v
 
-            common.logger.debug('Submission DashBoard report: '+str(params))
+            msg +=('Submission DashBoard report: %s\n'%str(params))
             common.apmon.sendToML(params)
+        common.logger.log(10-1,msg)
         return
 
 
