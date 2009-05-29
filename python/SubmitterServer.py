@@ -58,7 +58,7 @@ class SubmitterServer( Submitter ):
 	    # standard submission to the server
 	    self.performSubmission(isFirstSubmission)
         
-            msg = '\nTotal of %d jobs submitted'%len(self.submitRange) 
+            msg = 'Total of %d jobs submitted'%len(self.submitRange) 
             common.logger.info(msg)
  
 	return
