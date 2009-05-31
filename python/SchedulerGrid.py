@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.107 2009/05/27 15:32:04 fanzago Exp $"
-__version__ = "$Revision: 1.107 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.108 2009/05/27 16:13:36 ewv Exp $"
+__version__ = "$Revision: 1.108 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -179,8 +179,12 @@ class SchedulerGrid(Scheduler):
         txt += '    echo "SyncCE=$NORDUGRID_CE" >> $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'elif [ $VO_CMS_SW_DIR ]; then \n'
-        txt += '    middleware=LCG \n'
-        txt += '    echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
+        txt += '    middleware=LCG \n'         
+        txt += '    if  [ $GLIDEIN_Gatekeeper ]; then \n'
+        txt += '        echo "SyncCE=`echo $GLIDEIN_Gatekeeper | sed -e s/:2119//`" >> $RUNTIME_AREA/$repo \n'
+        txt += '    else \n'
+        txt += '        echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
+        txt += '    fi \n'
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'else \n'
         txt += '    echo "ERROR ==> GridFlavour not identified" \n'
