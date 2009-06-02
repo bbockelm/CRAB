@@ -521,7 +521,12 @@ class Cmssw(JobType):
             if not self.pset is None:
                 cfg_file = common.work_space.jobDir()+self.configFilename()
                 tar.add(cfg_file,self.configFilename())
-
+           
+            try:
+                crab_cfg_file = common.work_space.shareDir()+'/crab.cfg'
+                tar.add(crab_cfg_file,'crab.cfg')
+            except:
+                pass
 
             ## Add ProdCommon dir to tar
             prodcommonDir = './'
