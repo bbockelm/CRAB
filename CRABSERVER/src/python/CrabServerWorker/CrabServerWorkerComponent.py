@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.81 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.81 2008/12/05 11:01:40 spiga Exp $"
+__version__ = "$Revision: 1.82 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.82 2009/01/26 10:42:40 mcinquil Exp $"
 
 import os, pickle, time, copy
 
@@ -32,26 +32,27 @@ from CrabWorkerAPI import CrabWorkerAPI
 class CrabServerWorkerComponent:
     """
     _CrabServerWorkerComponentV2_
-    
+
     """
-    
+
 ################################
-#   Standard Component Core Methods      
+#   Standard Component Core Methods
 ################################
     def __init__(self, **args):
         logging.info(" [CrabServerWorker Ver2 starting...]")
         self.args = {}
-        
+
         self.args.setdefault('Logfile', None)
         self.args.setdefault('CacheDir', None)
         self.args.setdefault('ProxiesDir', None)
 
-        self.args.setdefault('uiConfigWMS', None) 
+        self.args.setdefault('uiConfigWMS', None)
         self.args.setdefault('configFileName', None)
-        
+        self.args.setdefault('glexecPath', None)
+
         # SE support parameters
-        # Protocol = local cannot be the default. Any default allowd 
-        # for this parameter... it must be defined from config file. 
+        # Protocol = local cannot be the default. Any default allowd
+        # for this parameter... it must be defined from config file.
         self.args.setdefault('Protocol', '')
         self.args.setdefault('storageName', 'localhost')
         self.args.setdefault('storagePort', '')
@@ -72,14 +73,14 @@ class CrabServerWorkerComponent:
         logging.getLogger().setLevel(logging.INFO)
 
         # component resources
-        if self.args['storagePath'] == None and self.args['Protocol'] == 'local': 
+        if self.args['storagePath'] == None and self.args['Protocol'] == 'local':
             self.args['storagePath'] = self.args["CacheDir"]
-            
+
         ## persistent properties
         self.taskPool = {}  # for data persistence
         self.subTimes = []  # moving average for submission delays
         self.subStats = {'succ':0, 'retry':0, 'fail':0}
- 
+
         ## volatile properties
         self.wdir = self.args['ComponentDir']
         if self.args['CacheDir']:
@@ -89,7 +90,7 @@ class CrabServerWorkerComponent:
         self.maxThreads = int( self.args.get('maxThreads', 5) )
 
         # pre-allocate pool instances that will be passed to the workers
-        # optimize the overhead for the allocation 
+        # optimize the overhead for the allocation
         self.availWorkersIds = [ "worker_%d"%mId for mId in xrange(self.maxThreads) ]
         self.workerSet = {} # thread collection
 
@@ -97,16 +98,16 @@ class CrabServerWorkerComponent:
         self.swSchedQ = scheduleRequests
         self.swDeschedQ = descheduleRequests
         self.fwResultsQ = Queue.Queue()
-                
+
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, makePool=True)
         self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
 
         logging.info("-----------------------------------------")
         logging.info("CrabServerWorkerComponent ver2 Started...")
-        logging.info("Component dropbox working directory: %s\n"%self.wdir)        
+        logging.info("Component dropbox working directory: %s\n"%self.wdir)
 
         pass
-    
+
     def startComponent(self):
         """
         _startComponent_
@@ -120,18 +121,18 @@ class CrabServerWorkerComponent:
 
         self.ms.subscribeTo("CrabServerWorkerComponent:Submission")
         self.ms.subscribeTo("CrabServerWorkerComponent:FatWorkerResult")
-     
+
         self.ms.subscribeTo("KillTask")
         self.ms.subscribeTo("ResubmitJob")
-        
+
         self.ms.subscribeTo("CrabServerWorkerComponent:StartDebug")
         self.ms.subscribeTo("CrabServerWorkerComponent:EndDebug")
-        
-        # initialize the local message services pool and schedule logic
-        self.schedLogic = SchedulingLogic(self.maxThreads, logging, self.fwResultsQ, 360) 
-        # no parametric for now: 10*self.ms.pollTime. a deterministic deadline time seem to be properly set around 5-6 minutes 
 
-        self.dematerializeStatus()   
+        # initialize the local message services pool and schedule logic
+        self.schedLogic = SchedulingLogic(self.maxThreads, logging, self.fwResultsQ, 360)
+        # no parametric for now: 10*self.ms.pollTime. a deterministic deadline time seem to be properly set around 5-6 minutes
+
+        self.dematerializeStatus()
         try:
             while True:
                 type, payload = self.ms.get( wait = False )
@@ -146,8 +147,8 @@ class CrabServerWorkerComponent:
                         self.ms.publish(evt, pload)
                         logging.debug("Publish Event: %s %s" % (evt, pload))
                     except Queue.Empty, e: break
-                
-                # standard event handler  
+
+                # standard event handler
                 self.ms.commit()
                 if type is None:
                     time.sleep( self.ms.pollTime )
@@ -164,28 +165,28 @@ class CrabServerWorkerComponent:
         Define response to events
         """
         logging.debug("Event: %s %s" % (event, payload))
-            
+
         # enqueue task submissions and perform them
-        if event in ["TaskRegisterComponent:NewTaskRegistered", "ResubmitJob", "CRAB_Cmd_Mgr:NewCommand"]: 
+        if event in ["TaskRegisterComponent:NewTaskRegistered", "ResubmitJob", "CRAB_Cmd_Mgr:NewCommand"]:
             try:
                 self.initUiConfigs()
             except Exception, exc:
                 logging.info(str(exc))
                 logging.info(traceback.format_exc())
 
-            self.enqueueForSubmission(event, payload) 
-        
+            self.enqueueForSubmission(event, payload)
+
         # fast-kill tasks
         elif event == "KillTask":
             self.forceDequeuing(payload)
 
         elif event == "CrabServerWorkerComponent:Submission":
             self.triggerSubmissionWorker(payload)
-        
+
         # worker feedbacks
         elif event == "CrabServerWorkerComponent:FatWorkerResult":
             self.handleWorkerResults(payload)
-        
+
         # usual stuff
         elif event == "CrabServerWorkerComponent:StartDebug":
             logging.getLogger().setLevel(logging.DEBUG)
@@ -194,18 +195,18 @@ class CrabServerWorkerComponent:
         else:
             logging.info('Unknown message received %s'%event)
 
-        return 
+        return
 
 ################################
 #   CWver2 business-logic Methods
 ################################
-        
+
     def triggerSubmissionWorker(self, payload):
         """
         Submission Command Handler. Triggers the FatWorker threads that perform the
         interactions with the Grid/Local schedulers.
         """
-        
+
         if len(self.availWorkersIds) <= 0:
             self.ms.publish("CrabServerWorkerComponent:Submission", payload, "00:01:00")
             self.ms.commit()
@@ -215,7 +216,7 @@ class CrabServerWorkerComponent:
         taskUniqName, resubCount, cmdRng = items[0:3]
         siteToBan = ''
         if len(items) == 4: siteToBan = items[3]
-        
+
         thrName = self.availWorkersIds.pop(0)
         self.taskPool[thrName] = ("CrabServerWorkerComponent:Submission", payload)
         self.materializeStatus()
@@ -223,23 +224,24 @@ class CrabServerWorkerComponent:
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName)
         workerCfg['submissionRange'] = eval( cmdRng, {}, {} )
         workerCfg['retries'] = resubCount
-        workerCfg['maxRetries'] = self.maxAttempts 
+        workerCfg['maxRetries'] = self.maxAttempts
         workerCfg['se_dynBList'] = []
         workerCfg['ce_dynBList'] = []
         if siteToBan : workerCfg['ce_dynBList'].append(siteToBan)
         workerCfg['cpCmd'] = self.args.get('cpCmd', 'cp')
-        workerCfg['rfioServer'] = self.args.get('rfioServer', '') 
-        workerCfg['EDG_retry_count'] = int(self.args.get('EDG_retry_count', 3) ) 
-        workerCfg['EDG_shallow_retry_count'] = int(self.args.get('EDG_shallow_retry_count', 3) ) 
-        
+        workerCfg['rfioServer'] = self.args.get('rfioServer', '')
+        workerCfg['EDG_retry_count'] = int(self.args.get('EDG_retry_count', 3) )
+        workerCfg['EDG_shallow_retry_count'] = int(self.args.get('EDG_shallow_retry_count', 3) )
+        workerCfg['glexec'] = self.args.get('glexecPath', '')
+
         # Specific WMS choice
         workerCfg['wmsEndpoint'] = ''
         customWmsList = str( self.args.get('WMSserviceList', '') ).split(',')
-        customWmsList = [ c for c in customWmsList if len(c.strip())>0] 
+        customWmsList = [ c for c in customWmsList if len(c.strip())>0]
         if len(customWmsList)>0:
             outcomeCounter = sum( self.subStats.values() )
-            workerCfg['wmsEndpoint'] = customWmsList[ outcomeCounter % len(customWmsList) ] 
-        
+            workerCfg['wmsEndpoint'] = customWmsList[ outcomeCounter % len(customWmsList) ]
+
         # Worker Factory
         try:
             self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
@@ -255,9 +257,9 @@ class CrabServerWorkerComponent:
     def handleWorkerResults(self, payload):
         workerName, taskUniqName, status, reason, timing = payload.split('::')
         status = int(status)
-        
+
         ## Free submission resources
-        if len(workerName)>0: 
+        if len(workerName)>0:
             # useful to discriminate message from - to the main component (eg. resub failure feedback)
             self.availWorkersIds.append(workerName)
 
@@ -271,18 +273,18 @@ class CrabServerWorkerComponent:
         successfulCodes = [0, -2] # full and partial submissions
         retryItCodes = [20, 21, 30, 31, -1] # temporary failure conditions mainly
         giveUpCodes = [10, 11, 66, 6] # severe failure conditions
- 
+
         if status in successfulCodes:
-            self.subStats['succ'] += 1 
+            self.subStats['succ'] += 1
             if status == -2: self.subStats['retry'] += 1
             self.subTimes.append(float(timing))
             if len(self.subTimes) > 64: self.subTimes.pop(0)
-  
-        elif status in retryItCodes: 
+
+        elif status in retryItCodes:
             self.subStats['retry'] += 1
         elif status in giveUpCodes:
             self.subStats['fail'] += 1
-        else: 
+        else:
             logging.info('Unknown status for worker message %s'%payload)
 
         outcomeCounter = sum( self.subStats.values() )
@@ -292,14 +294,14 @@ class CrabServerWorkerComponent:
 
 
 ################################
-#   New Methods given by the CW factorization       
+#   New Methods given by the CW factorization
 ################################
 
     def enqueueForSubmission(self, event, payload):
         items = payload.split('::')
         taskName, cmdRng, siteToBan, retryCounter = ('', '[]', '', '2')
-        command = ''        
-       
+        command = ''
+
         if event == 'TaskRegisterComponent:NewTaskRegistered':
             taskName, retryCounter, cmdRng = items[0:3]
         if (event == 'CRAB_Cmd_Mgr:NewCommand') and (items[3] in ['submit','resubmit']):
@@ -334,7 +336,7 @@ class CrabServerWorkerComponent:
                 logging.info("Error while getting WF-Entities for job %s"%job['name'])
 
             if retryCounter <= 0:
-                # no more re-submission attempts, give up. 
+                # no more re-submission attempts, give up.
                 try:
                    self.cwdb.updateWEStatus( job['name'], 'reallyFinished' )
                 except Exception, e:
@@ -346,17 +348,17 @@ class CrabServerWorkerComponent:
                 status, reason = ("6", "Command for job %s has no more attempts. Give up."%job['name'])
                 payload = "%s::%s::%s"%(taskName, status, reason)
                 self.fwResultsQ.put(('', "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
-                return 
+                return
 
         if len(taskName) > 0 :
             self.swSchedQ.put( (event, taskName, cmdRng, str(retryCounter), siteToBan) )
         else:
-            if command != '' :            
+            if command != '' :
                 MsgLog  = "Empty task name. Bad format scheduling request. Task will be skipped"
                 MsgLog += "\t\t event = %s, payload =  %s"%(str(event), str(items))
                 logging.info( MgLog )
         return
-    
+
     def forceDequeuing(self, payload):
         # FAST-KILL
         try:
@@ -372,7 +374,7 @@ class CrabServerWorkerComponent:
         # drive the SchedulingWorker to deschedule the task if needed
         self.swDeschedQ.put(taskUniqName)
 
-        # check whether the task has been previously registered        
+        # check whether the task has been previously registered
         taskObj = None
         try:
             taskObj = self.blDBsession.loadTaskByName(taskUniqName)
@@ -380,9 +382,9 @@ class CrabServerWorkerComponent:
             logging.info('Error while loading %s for fast kill'%taskUniqName )
 
         return
-    
+
 ################################
-#   Auxiliary Methods      
+#   Auxiliary Methods
 ################################
 
     def materializeStatus(self):
@@ -424,7 +426,7 @@ class CrabServerWorkerComponent:
         return
 
     def prepareWorkerBaseStatus(self, taskUniqName, workerId, actionType = "standardSubmission"):
-        workerCfg = {}        
+        workerCfg = {}
         workerCfg['wdir'] = self.wdir
         workerCfg['SEproto'] = self.args['Protocol']
         workerCfg['SEurl'] = self.args['storageName']
@@ -441,13 +443,13 @@ class CrabServerWorkerComponent:
         workerCfg['retries'] = int( self.args.get('maxRetries', 3) )
 
         workerCfg['messageQueue'] = self.fwResultsQ
-        workerCfg['blSessionPool'] = self.blDBsession.bossLiteDB.getPool() 
-        
+        workerCfg['blSessionPool'] = self.blDBsession.bossLiteDB.getPool()
+
         workerCfg['credentialType'] = self.args['credentialType']
         return workerCfg
-        
+
 ################################
-#   Auxiliary Methods      
+#   Auxiliary Methods
 ################################
 
     def initUiConfigs(self):
