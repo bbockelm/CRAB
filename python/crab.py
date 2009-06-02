@@ -785,10 +785,10 @@ class Crab:
         server= 'OFF' 
         if self.UseServer==1: server = 'ON' 
         local = time.ctime(time.time())
-        UTC = time.asctime(time.gmtime()).split(' ')[3]
+        UTC = time.asctime(time.gmtime()).split(' ')[:-1]
         tzone = time.tzname[0]
         header = 'Version ' + common.prog_version_str + ' running on ' + \
-             local+' '+ tzone+ ' ('+UTC+' UTC)'+'\n\n' + \
+             local+' '+ tzone+ ' ('+UTC[-1:][0]+' UTC)'+'\n\n' + \
              common.prog_name+'. Working options:\n'
         header = header +\
                  '\tscheduler           ' + self.cfg_params['CRAB.scheduler'] + '\n'+\
