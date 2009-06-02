@@ -71,10 +71,13 @@ class ProxyLife:
         scriptname = "deleteSB_"+str(time.time())+"_.py"
         scriptpath = os.path.join(os.getcwd(), scriptname)
         taskstring = "["
+        logstring = "["
         for task in tasklist:
             if task != "" and task != None:
                 taskstring += "'" + os.path.join( self.dictSE['base'], task) + "',"
+                logstring += "'" + os.path.join( self.dictSE['drop'], task) + "_spec',"
         taskstring += " '']"
+        logstring += " '']"
         logging.debug(taskstring)
 
         pythonscript = "\n" + \
@@ -112,18 +115,29 @@ class ProxyLife:
         "             storage = SElement('"+self.dictSE['SE']+"', '"+self.dictSE['prot']+"', '"+self.dictSE['port']+"')\n" + \
         "else:\n"+\
         "    print msg\n"+\
+        "storage_logs = SElement('','local')\n"+\
+        "SeSbI_logs = SBinterface(storage_logs)\n" + \
         "SeSbI = SBinterface(storage)\n" + \
         "tasks = "+taskstring+"\n\n" + \
+        "logs = "+logstring+"\n\n" + \
         "print 'Start cleaning...\\n\'\n" + \
-        "for taskpath in tasks:\n" + \
-        "    try:\n" + \
-        "        if taskpath != '':\n " + \
-        "            SeSbI.deleteRec( taskpath, proxy, opt=opt )\n" + \
-        "    except OperationException, ex:\n" + \
-        "        print 'Problem deleting task: [' + taskpath + ']'\n" + \
-        "        for error in ex.detail:\n" + \
-        "            print error\n" + \
-        "        print ex.output\n" + \
+        "for i in range(len(tasks)):\n" + \
+        "   if tasks[i] != '':\n" + \
+        "        try:\n" + \
+        "            SeSbI.deleteRec( tasks[i], proxy, opt=opt )\n" + \
+        "        except OperationException, ex:\n" + \
+        "            print 'Problem deleting task: [' + tasks[i] + ']'\n" + \
+        "            for error in ex.detail:\n" + \
+        "                print error\n" + \
+        "            print ex.output\n" + \
+        "   if logs[i] != '':\n" + \
+        "        try:\n" + \
+        "            SeSbI_logs.deleteRec( logs[i], proxy, opt=opt )\n" + \
+        "        except OperationException, ex:\n" + \
+        "            print 'Problem deleting task: [' + logs[i] + ']'\n" + \
+        "            for error in ex.detail:\n" + \
+        "                print error\n" + \
+        "            print ex.output\n" + \
         "print '\\n...done'\n"
         logging.debug("\n\n " + pythonscript + " \n\n")
         file(scriptpath, 'w').write(pythonscript)
