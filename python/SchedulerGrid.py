@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.108 2009/05/27 16:13:36 ewv Exp $"
-__version__ = "$Revision: 1.108 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.109 2009/05/31 13:19:41 spiga Exp $"
+__version__ = "$Revision: 1.109 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -195,12 +195,17 @@ class SchedulerGrid(Scheduler):
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
         txt += '\n\n'
 
+
         txt += 'export VO='+self.VO+'\n'
         txt += 'if [ $middleware == LCG ]; then\n'
-        txt += '    CloseCEs=`glite-brokerinfo getCE`\n'
-        txt += '    echo "CloseCEs = $CloseCEs"\n'
-        txt += '    CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
-        txt += '    echo "CE = $CE"\n'
+        txt += '   if  [ $GLIDEIN_Gatekeeper ]; then\n'
+        txt += '       CloseCEs=$GLIDEIN_Gatekeeper \n'
+        txt += '   else\n'
+        txt += '       CloseCEs=`glite-brokerinfo getCE`\n'
+        txt += '   fi\n'
+        txt += '   echo "CloseCEs = $CloseCEs"\n'
+        txt += '   CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
+        txt += '   echo "CE = $CE"\n'
         txt += 'elif [ $middleware == OSG ]; then \n'
         txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
         txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
