@@ -124,6 +124,7 @@ class JobSplitter:
         jobsOfBlock = {}
 
         parString = ""
+        pString = ""
         filesEventCount = 0
 
         # ---- Iterate over the blocks in the dataset until ---- #
@@ -146,6 +147,7 @@ class JobSplitter:
                 if noBboundary == 0: # DD
                     # ---- New block => New job ---- #
                     parString = ""
+                    pString=""
                     # counter for number of events in files currently worked on
                     filesEventCount = 0
                 # flag if next while loop should touch new file
@@ -155,14 +157,11 @@ class JobSplitter:
 
                 # ---- Iterate over the files in the block until we've met the requested ---- #
                 # ---- total # of events or we've gone over all the files in this block  ---- #
-                pString=''
                 msg='\n'
                 while ( (eventsRemaining > 0) and (fileCount < numFilesInBlock) and (jobCount < totalNumberOfJobs) ):
                     file = files[fileCount]
                     if self.useParent==1:
                         parent = self.parentFiles[file]
-                        for f in parent :
-                            pString +=  f + ','
                         common.logger.log(10-1, "File "+str(file)+" has the following parents: "+str(parent))
                     if newFile :
                         try:
@@ -172,6 +171,9 @@ class JobSplitter:
                             filesEventCount += numEventsInFile
                             # Add file to current job
                             parString +=  file + ','
+                            if self.useParent==1:
+                                for f in parent :
+                                    pString += f  + ','
                             newFile = 0
                         except KeyError:
                             common.logger.info("File "+str(file)+" has unknown number of events: skipping")
@@ -260,8 +262,10 @@ class JobSplitter:
                         jobSkipEventCount = eventsPerJobRequested - (filesEventCount - jobSkipEventCount - self.eventsbyfile[file])
                         # remove all but the last file
                         filesEventCount = self.eventsbyfile[file]
+                        pString_tmp=''
                         if self.useParent==1:
-                            for f in parent : pString +=  f + ','
+                            for f in parent : pString_tmp +=  f + ','
+                        pString =  pString_tmp 
                         parString =  file + ','
                     pass # END if
                 pass # END while (iterate over files in the block)
