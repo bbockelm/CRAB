@@ -394,11 +394,10 @@ class JobSplitter:
         set = Set(runList)
         list_of_lists = []
         jobDestination = []
-
         count = 0
-        for i in list(set):
+        for jobGroup in  jobfactory():
             if count <  self.theNumberOfJobs:
-                res = self.getJobInfo(jobfactory())
+                res = self.getJobInfo(jobGroup)
                 parString = '' 
                 for file in res['lfns']:
                     parString += file + ','
