@@ -516,6 +516,14 @@ class cmscp:
                 dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
                 dbgmsg += '\t'+str(ex.output)+'\n'
                 print dbgmsg
+        except AuthorizationException, ex:
+            ErCode = '60307'
+            msg  = "Problem copying %s file" % filetocopy
+            msg += str(ex)
+            if self.debug :
+                dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                dbgmsg += '\t'+str(ex.output)+'\n'
+                print dbgmsg
         if ErCode == '0' and protocol.find('srmv') == 0:
             remote_file_size = -1 
             local_file_size = os.path.getsize( source_file ) 
