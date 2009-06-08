@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+usr/bin/env python
 import sys, os
 from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
 from ProdCommon.Storage.SEAPI.SBinterface import *
@@ -118,6 +118,7 @@ class cmscp:
         Checks the status of copy and update result dictionary
         """
         list_retry = []
+        list_retry_localSE = []
         list_not_existing = []
         list_ok = []
         
@@ -134,8 +135,8 @@ class cmscp:
             elif er_code == '10041':
                 list_retry.append( file )
             ## WHAT TO DO IN GENERAL FAILURE CONDITION
-            #else:
-            #    list_retry.append( file )
+            else:
+                list_retry_localSE.append( file )
                 
             if self.debug:
                 print "\t file %s \n"%file
@@ -157,7 +158,7 @@ class cmscp:
             msg += '\tCopy of %s failed using %s : files not found \n'%(str(list_not_existing),prot)
         if self.debug : print msg
         
-        return copy_results, list_ok, list_retry
+        return copy_results, list_ok, list_retry, list_retry_localSE
         
     def LocalCopy(self, list_retry, results):
         """
@@ -220,7 +221,7 @@ class cmscp:
             if localCopy_results.keys() == [''] or localCopy_results.keys() == '' :
                 results.update(localCopy_results)
             else:
-                localCopy_results, list_ok, list_retry = self.checkCopy(localCopy_results, len(list_files), prot, self.params['lfn'], seName)
+                localCopy_results, list_ok, list_retry, list_retry_localSE = self.checkCopy(localCopy_results, len(list_files), prot, self.params['lfn'], seName)
                 results.update(localCopy_results)
                 if len(list_ok) == len(list_files) :
                     break
@@ -249,7 +250,7 @@ class cmscp:
             if copy_results.keys() == [''] or copy_results.keys() == '' :
                 results.update(copy_results)
             else:
-                copy_results, list_ok, list_retry = self.checkCopy(copy_results, len(list_files), prot)
+                copy_results, list_ok, list_retry, list_retry_localSE = self.checkCopy(copy_results, len(list_files), prot)
                 results.update(copy_results)
                 if len(list_ok) == len(list_files) :
                     break
@@ -258,8 +259,8 @@ class cmscp:
                 else: break
                 
         if self.local_stage:
-            if len(list_retry):
-                results = self.LocalCopy(list_retry, results)
+            if len(list_retry_localSE):
+                results = self.LocalCopy(list_retry_localSE, results)
             
         if self.debug:
             print "\t results %s \n"%results
