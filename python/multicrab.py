@@ -214,17 +214,16 @@ class MultiCrab:
                 options[opt]=self.opts[opt]
                 if self.flag_continue and options.has_key("-cfg"):
                     del options['-cfg']
+                pass
             try:
                 crab = Crab(options)
                 crab.run()
-                common.apmon.free()
                 del crab
+                common.apmon.free()
+                print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
                 print '\n##############################  E N D  ####################################\n'
             except CrabException, e:
                 print '\n' + common.prog_name + ': ' + str(e) + '\n'
-                if common.logger:
-                    common.logger.debug('ERROR: '+str(e)+'\n')
-                    pass
                 pass
             pass
         pass

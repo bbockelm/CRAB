@@ -73,6 +73,17 @@ class Crab:
 
         return
 
+    def __del__(self):
+
+        if self.fh:
+            self.fh.flush()
+            self.fh.close()
+            common.logger.removeHandler(self.fh)
+        if self.ch:
+            self.ch.flush()
+            self.ch.close()
+            common.logger.removeHandler(self.ch)
+
     def version():
         return common.prog_version_str
 
@@ -749,9 +760,9 @@ class Crab:
         logger = logging.getLogger("crab:")
         logger.setLevel(logging.DEBUG_VERBOSE)
         log_fname =common.work_space.logDir()+common.prog_name+'.log'
-        fh=logging.FileHandler(log_fname)
+        self.fh=logging.FileHandler(log_fname)
         fh_formatter = logging.Formatter("%(asctime)s [%(levelname)s] \t%(message)s")
-        ch=logging.StreamHandler()
+        self.ch=logging.StreamHandler()
         ch_formatter = logging.Formatter("%(name)s  %(message)s")
         fh_level=logging.DEBUG
         ch_level=logging.INFO
@@ -759,12 +770,12 @@ class Crab:
         if common.debugLevel > 2: 
             fh_level=logging.DEBUG_VERBOSE
             ch_level=logging.DEBUG_VERBOSE
-        fh.setLevel(fh_level)
-        ch.setLevel(ch_level)
-        fh.setFormatter(fh_formatter)
-        ch.setFormatter(ch_formatter)
-        logger.addHandler(ch)
-        logger.addHandler(fh)
+        self.fh.setLevel(fh_level)
+        self.ch.setLevel(ch_level)
+        self.fh.setFormatter(fh_formatter)
+        self.ch.setFormatter(ch_formatter)
+        logger.addHandler(self.ch)
+        logger.addHandler(self.fh)
         logger.debug('%s\n'%args)
         logger.info(self.headerString_())
         common.logger = logger
