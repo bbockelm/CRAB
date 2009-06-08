@@ -94,7 +94,15 @@ class WorkSpace:
         """
         delete the whole workspace without doing any test!!!
         """
-        logging.shutdown()
+        x = logging._handlers.copy()
+        for i in x:
+            common.logger.removeHandler(i)
+            i.flush()
+            i.close()
+            del i
+        #common.logger=None
+        logging._handlers.clear()
+        
         if os.path.exists(self._top_dir):
             import shutil
             shutil.rmtree(self._top_dir)

@@ -68,21 +68,26 @@ class Crab:
         self.flag_quiet = 0
         # produce more output
         common.debugLevel = 0
+        self.fh=None
+        self.ch=None
 
         self.initialize_(opts)
 
         return
 
     def __del__(self):
+        self.delete()
 
-        if self.fh:
-            self.fh.flush()
-            self.fh.close()
+    def delete(self):
+
+        if (common.apmon): common.apmon.free()
+        if common.logger:
             common.logger.removeHandler(self.fh)
-        if self.ch:
-            self.ch.flush()
-            self.ch.close()
             common.logger.removeHandler(self.ch)
+        if self.fh in logging._handlers :
+            del logging._handlers[self.fh]
+        if self.ch in logging._handlers :
+            del logging._handlers[self.ch]
 
     def version():
         return common.prog_version_str
@@ -752,6 +757,7 @@ class Crab:
 
     def createLogger_(self, args):
 
+        print 'LOGGER',logging._handlers
         logging.DEBUG_VERBOSE = logging.DEBUG - 1
         logging.addLevelName(logging.DEBUG_VERBOSE,'debug_verbose')
         logging.root.setLevel([logging.DEBUG_VERBOSE, logging.DEBUG, logging.INFO, \
@@ -892,7 +898,7 @@ if __name__ == '__main__':
     try:
         crab = Crab(options)
         crab.run()
-        common.apmon.free()
+        del crab
         print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
     except CrabException, e:
         print '\n' + common.prog_name + ': ' + str(e) + '\n'
