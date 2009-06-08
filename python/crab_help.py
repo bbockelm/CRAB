@@ -531,7 +531,7 @@ If you want to copy the output in a not_official_CMS remote site you have to spe
 =item B<user_remote_dir>
 
 To be used with <copy_data>=1 and <storage_element> official CMS sites.
-This is the directory or tree of directories where your output will be stored. This directory will be created under the mountpoint ( which will be discover by CRAB if an official CMS storage Element has been used, or taken from the crab.cfg as specified by the user). B<NOTE> This part of the path will be used as logical file name of your files in the case of publication without using an official CMS storage Element.
+This is the directory or tree of directories where your output will be stored. This directory will be created under the mountpoint ( which will be discover by CRAB if an official CMS storage Element has been used, or taken from the crab.cfg as specified by the user). B<NOTE> This part of the path will be used as logical file name of your files in the case of publication without using an official CMS storage Element. Generally it should start with "/store".  
 
 =item B<storage_path>
 
@@ -547,6 +547,10 @@ The default is cmscafuser. If you do not want to use the default, you can overwr
 =item B<storage_port>
 
 To choose the storage port specify I<storage_port> = N (default is 8443) .
+
+=item B<local_stage_out *>
+
+This option enables the local stage out of produced output to the "close storage element" where the job is running, in case of failure of the remote copy to the Storage element decided by the user in che crab.cfg. It has to be used with the copy_data option. In the case of backup copy, the publication of data is forbidden. Set I<local_stage_out> = 1   
 
 =item B<publish_data*>
 
@@ -564,9 +568,9 @@ You produced output will be published in your local DBS with dataset name <prima
 
 Specify the URL of your local DBS istance where CRAB has to publish the output files
 
-=item B<pubilish_zero_event>
+=item B<publish_zero_event>
 
-T0 force zero event files publication specify I<pubilish_zero_event> = 1
+T0 force zero event files publication specify I<publish_zero_event> = 1
 
 =item B<srm_version>
 
@@ -591,11 +595,6 @@ To be used in case of unexpected job crash when the sdtout and stderr files are 
 =item B<dontCheckSpaceLeft>
 
 Set it to 1 to skip the check of free space left on your working directory before attempting to get the output back. Default is 0 (=False)
-
-
-=item B<local_stage_out>
-
- To use the local stage out (i.e. to the closeSE), in case of remote stage out failure, set I<local_stage_out> = 1 .
 
 =back
 
