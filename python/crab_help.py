@@ -20,7 +20,7 @@ The most useful general options (use '-h' to get complete help):
 
   -create                                 -- Create all the jobs.
   -submit n                               -- Submit the first n available jobs. Default is all.
-  -status [range]                         -- check status of all jobs.
+  -status                                 -- check status of all jobs.
   -getoutput|-get [range]                 -- get back the output of all jobs: if range is defined, only of selected jobs.
   -extend                                 -- Extend an existing task to run on new fileblocks if there.
   -publish                                -- after the getouput, publish the data user in a local DBS instance.
@@ -259,13 +259,13 @@ This option may be used in conjunction with -create (to create and submit immedi
 Apply the action on the task stored in directory [dir]. If the task directory is the standard one (crab_0_date_time), the most recent in time is assumed. Any other directory must be specified.
 Basically all commands (except -create) need -continue, so it is automatically assumed. Of course, the standard task directory is used in this case.
 
-=item B<-status>
+=item B<-status [v|verbose]>
 
-Check the status of the jobs, in all states. All the info (e.g. application and wrapper exit codes)  will be available only after the output retrieval.
+Check the status of the jobs, in all states. With the server, the full status, including  application and wrapper exit codes, is available as soon as the jobs end. In StandAlone mode it is necessary to retrieve (-get) the job output first. With B<v|verbose> some more information is displayed.
 
 =item B<-getoutput|-get [range]>
 
-Retrieve the output declared by the user via the output sandbox. By default the output will be put in task working dir under I<res> subdirectory. This can be changed via config parameters. B<Be extra sure that you have enough free space>. See I<range> below for syntax.
+Retrieve the output declared by the user via the output sandbox. By default the output will be put in task working dir under I<res> subdirectory. This can be changed via config parameters. B<Be extra sure that you have enough free space>. From version 2_3_x, the available free space is checked in advance. See I<range> below for syntax.
 
 =item B<-publish>
 

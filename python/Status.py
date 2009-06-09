@@ -8,6 +8,7 @@ from crab_util import *
 class Status(Actor):
     def __init__(self, *args):
         self.cfg_params = args[0]
+        self.verbose = (str(self.cfg_params.get("CRAB.status",'')) in ('verbose','v'))
         self.xml = self.cfg_params.get("USER.xml_report",'')
         self.server_name = ''
  
@@ -56,6 +57,7 @@ class Status(Actor):
         for job in up_task.jobs :
             id = str(job.runningJob['jobId'])
             jobStatus =  str(job.runningJob['statusScheduler'])
+            jobState =  str(job.runningJob['state'])
             dest = str(job.runningJob['destination']).split(':')[0]
             exe_exit_code = str(job.runningJob['applicationReturnCode'])
             job_exit_code = str(job.runningJob['wrapperReturnCode'])
@@ -70,7 +72,8 @@ class Status(Actor):
             if job.runningJob['status'] in ['SD','DA'] :
                 listId.append(id)
                 listRunField.append(run_jobToSave)
-            printline+="%-6s %-18s %-36s %-13s %-16s %-4s" % (id,jobStatus,dest,exe_exit_code,job_exit_code,ended)
+            if (self.verbose) :printline+="%-6s %-18s %-14s %-36s %-13s %-16s %-4s" % (id,jobStatus,jobState,dest,exe_exit_code,job_exit_code,ended)
+            else: printline+="%-6s %-18s %-36s %-13s %-16s %-4s" % (id,jobStatus,dest,exe_exit_code,job_exit_code,ended)
             toPrint.append(printline)
 
             if jobStatus is not None:
@@ -79,9 +82,11 @@ class Status(Actor):
         if len(listId) > 0 : common._db.updateRunJob_(listId, listRunField)
         header = ''
         if ended != None and len(ended) > 0:
-            header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
+            if (self.verbose): header+= "%-6s %-18s %-14s %-36s %-13s %-16s %-4s" % ('ID','STATUS','LAST_ACTION','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
+            else: header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
         else:
-            header+= "%-6s %-18s %-36s %-13s %-16s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
+            if (self.verbose): header+= "%-6s %-18s %-14s %-36s %-13s %-16s" % ('ID','STATUS','LAST_ACTION','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
+            else: header+= "%-6s %-18s %-36s %-13s %-16s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
 
         if display: displayReport(self,header,toPrint,self.xml)
 
