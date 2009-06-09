@@ -24,11 +24,12 @@ from WorkSpace import WorkSpace
 from DBinterface import DBinterface ## added to interface with DB BL--DS
 from JobList import JobList
 from ApmonIf import ApmonIf
+from CrabLogger import CrabLogger
 import common
 
 ###########################################################################
 class Crab:
-    def __init__(self, opts):
+    def __init__(self):
         ## test_tag
         # The order of main_actions is important !
         self.main_actions = [ '-create', '-submit' ]
@@ -68,26 +69,12 @@ class Crab:
         self.flag_quiet = 0
         # produce more output
         common.debugLevel = 0
-        self.fh=None
-        self.ch=None
-
-        self.initialize_(opts)
 
         return
 
     def __del__(self):
-        self.delete()
-
-    def delete(self):
-
+        if (common.logger): common.logger.delete()
         if (common.apmon): common.apmon.free()
-        if common.logger:
-            common.logger.removeHandler(self.fh)
-            common.logger.removeHandler(self.ch)
-        if self.fh in logging._handlers :
-            del logging._handlers[self.fh]
-        if self.ch in logging._handlers :
-            del logging._handlers[self.ch]
 
     def version():
         return common.prog_version_str
@@ -157,7 +144,8 @@ class Crab:
         args = string.join(sys.argv,' ')
 
         self.updateHistory_(args)
-        self.createLogger_(args)
+        common.logger = CrabLogger(args)
+        common.logger.info(self.headerString_())
 
         common.apmon = ApmonIf()
 
@@ -178,6 +166,27 @@ class Crab:
 
         self.initializeActions_(opts)
         return
+
+    def headerString_(self):
+        """
+        Creates a string describing program options either given in
+        the command line or their default values.
+        """
+        server= 'OFF' 
+        if self.UseServer==1: server = 'ON' 
+        local = time.ctime(time.time())
+        UTC = time.asctime(time.gmtime()).split(' ')[:-1]
+        tzone = time.tzname[0]
+        header = 'Version ' + common.prog_version_str + ' running on ' + \
+             local+' '+ tzone+ ' ('+UTC[-1:][0]+' UTC)'+'\n\n' + \
+             common.prog_name+'. Working options:\n'
+        header = header +\
+                 '\tscheduler           ' + self.cfg_params['CRAB.scheduler'] + '\n'+\
+                 '\tjob type            ' + self.job_type_name + '\n'+\
+                 '\tserver              ' + server + '\n'+\
+                 '\tworking directory   ' + common.work_space.topDir()\
+                 + '\n'
+        return header
 
     def UserCfgProperties(self,msg):
         """
@@ -755,65 +764,12 @@ class Crab:
         # Return updated options
         return save_opts
 
-    def createLogger_(self, args):
-
-        print 'LOGGER',logging._handlers
-        logging.DEBUG_VERBOSE = logging.DEBUG - 1
-        logging.addLevelName(logging.DEBUG_VERBOSE,'debug_verbose')
-        logging.root.setLevel([logging.DEBUG_VERBOSE, logging.DEBUG, logging.INFO, \
-                               logging.WARNING,logging.ERROR, logging.CRITICAL])
-        logger = logging.getLogger()
-        logger = logging.getLogger("crab:")
-        logger.setLevel(logging.DEBUG_VERBOSE)
-        log_fname =common.work_space.logDir()+common.prog_name+'.log'
-        self.fh=logging.FileHandler(log_fname)
-        fh_formatter = logging.Formatter("%(asctime)s [%(levelname)s] \t%(message)s")
-        self.ch=logging.StreamHandler()
-        ch_formatter = logging.Formatter("%(name)s  %(message)s")
-        fh_level=logging.DEBUG
-        ch_level=logging.INFO
-        if common.debugLevel > 0:ch_level=logging.DEBUG
-        if common.debugLevel > 2: 
-            fh_level=logging.DEBUG_VERBOSE
-            ch_level=logging.DEBUG_VERBOSE
-        self.fh.setLevel(fh_level)
-        self.ch.setLevel(ch_level)
-        self.fh.setFormatter(fh_formatter)
-        self.ch.setFormatter(ch_formatter)
-        logger.addHandler(self.ch)
-        logger.addHandler(self.fh)
-        logger.debug('%s\n'%args)
-        logger.info(self.headerString_())
-        common.logger = logger
-        return
-
     def updateHistory_(self, args):
         history_fname = common.prog_name+'.history'
         history_file = open(history_fname, 'a')
         history_file.write(self.current_time+': '+args+'\n')
         history_file.close()
         return
-
-    def headerString_(self):
-        """
-        Creates a string describing program options either given in
-        the command line or their default values.
-        """
-        server= 'OFF' 
-        if self.UseServer==1: server = 'ON' 
-        local = time.ctime(time.time())
-        UTC = time.asctime(time.gmtime()).split(' ')[:-1]
-        tzone = time.tzname[0]
-        header = 'Version ' + common.prog_version_str + ' running on ' + \
-             local+' '+ tzone+ ' ('+UTC[-1:][0]+' UTC)'+'\n\n' + \
-             common.prog_name+'. Working options:\n'
-        header = header +\
-                 '\tscheduler           ' + self.cfg_params['CRAB.scheduler'] + '\n'+\
-                 '\tjob type            ' + self.job_type_name + '\n'+\
-                 '\tserver              ' + server + '\n'+\
-                 '\tworking directory   ' + common.work_space.topDir()\
-                 + '\n'
-        return header
 
     def createScheduler_(self):
         """
@@ -895,12 +851,14 @@ if __name__ == '__main__':
     if processHelpOptions(options) : sys.exit(0)
 
     # Create, initialize, and run a Crab object
+    crab = Crab()
     try:
-        crab = Crab(options)
+        crab.initialize_(options)
         crab.run()
         del crab
         print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
     except CrabException, e:
+        del crab
         print '\n' + common.prog_name + ': ' + str(e) + '\n'
         if common.logger:
             common.logger.debug('ERROR: '+str(e)+'\n')

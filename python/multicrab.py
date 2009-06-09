@@ -25,7 +25,6 @@ class MultiCrab:
         print self.prog_name + ' running on ' +  time.ctime(time.time())
         print '  working directory   ' + self.continue_dir
 
-        crabs=[]
 
     def processContinueOption_(self,opts):
 
@@ -215,18 +214,19 @@ class MultiCrab:
                 if self.flag_continue and options.has_key("-cfg"):
                     del options['-cfg']
                 pass
-            crab = None
+            crab = Crab()
             try:
-                crab = Crab(options)
+                crab.initialize_(options)
                 crab.run()
-                crab.delete()
+                del crab
                 print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
                 print '\n##############################  E N D  ####################################\n'
             except CrabException, e:
-                crab.delete()
+                del crab
                 print '\n' + common.prog_name + ': ' + str(e) + '\n'
                 pass
             pass
+            if (common.logger): common.logger.delete()
         pass
         
 
