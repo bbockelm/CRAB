@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.145 2009/05/04 09:37:48 mcinquil Exp $"
-__version__ = "$Revision: 1.145 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.150 2009/05/21 11:16:11 mcinquil Exp $"
+__version__ = "$Revision: 1.150 $"
 
 import os
 import time
@@ -308,6 +308,7 @@ class TaskTrackingComponent:
                     self.setActionStatus(taskName, eval(listjob), "KillRequest")
                 elif str(cmnd) == "submit":
                     self.reviveTask(taskName)
+                    self.setActionStatus(taskName, eval(listjob), "SubRequest")
                 elif str(cmnd) == "outputRetrieved":
                     self.setActionStatus(taskName, eval(listjob), "Cleared") 
                 else:
