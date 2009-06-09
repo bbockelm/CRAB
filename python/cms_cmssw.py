@@ -28,8 +28,6 @@ class Cmssw(JobType):
         # number of jobs requested to be created, limit obj splitting
         self.ncjobs = ncjobs
 
-        log = common.logger
-
         self.scram = Scram.Scram(cfg_params)
         self.additional_inbox_files = []
         self.scriptExe = ''

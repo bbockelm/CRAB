@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.67 2009/05/26 10:23:01 spiga Exp $"
-__version__ = "$Revision: 1.67 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.68 2009/05/26 16:53:23 spiga Exp $"
+__version__ = "$Revision: 1.68 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -60,7 +60,7 @@ class SchedulerGlite(SchedulerGrid):
         Returns string with requirement CE related
         """
         ceParser = CEBlackWhiteListParser(self.EDG_ce_white_list,
-                                          self.EDG_ce_black_list, common.logger)
+                                          self.EDG_ce_black_list, common.logger())
         req = ''
         ce_white_list = []
         ce_black_list = []

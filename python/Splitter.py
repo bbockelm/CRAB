@@ -11,7 +11,7 @@ class JobSplitter:
         # init BlackWhiteListParser
         seWhiteList = cfg_params.get('GRID.se_white_list',[])
         seBlackList = cfg_params.get('GRID.se_black_list',[])
-        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
+        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger())
 
 
     def checkUserSettings(self):

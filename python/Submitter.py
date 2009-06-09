@@ -53,7 +53,7 @@ class Submitter(Actor):
         from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
         seWhiteList = cfg_params.get('GRID.se_white_list',[])
         seBlackList = cfg_params.get('GRID.se_black_list',[])
-        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
+        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger())
         for job in common._db.getTask(tmp_jList).jobs:
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(job['dlsDestination'])
             if (cleanedBlackWhiteList != '') or (datasetpath == None):

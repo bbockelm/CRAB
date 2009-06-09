@@ -58,7 +58,7 @@ class Scheduler :
         seWhiteList = cfg_params.get('GRID.se_white_list',[])
         seBlackList = cfg_params.get('GRID.se_black_list',[])
         self.dontCheckMyProxy=int(cfg_params.get("GRID.dont_check_myproxy",0))
-        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
+        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger())
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
         self.copy_data = int(cfg_params.get('USER.copy_data',0))

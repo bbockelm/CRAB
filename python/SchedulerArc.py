@@ -93,7 +93,7 @@ class SchedulerArc(SchedulerGrid):
 
     def ce_list(self):
         ceParser = CEBlackWhiteListParser(self.EDG_ce_white_list,
-                                          self.EDG_ce_black_list, common.logger)
+                                          self.EDG_ce_black_list, common.logger())
         wl = ','.join(ceParser.whiteList()) or None
         bl = ','.join(ceParser.blackList()) or None
         return '', wl, bl

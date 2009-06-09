@@ -12,7 +12,7 @@ class JdlWriter( Actor ):
         from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
         seWhiteList = cfg_params.get('GRID.se_white_list',[])
         seBlackList = cfg_params.get('GRID.se_black_list',[])
-        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger)
+        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger())
         self.datasetpath=self.cfg_params['CMSSW.datasetpath']
         if string.lower(self.datasetpath)=='none':
             self.datasetpath = None

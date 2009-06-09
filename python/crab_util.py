@@ -427,7 +427,7 @@ def gethnUserNameFromSiteDB():
     hnUserName = None
     userdn = getDN()
     dict={ 'cacheduration' : 24, \
-           'logger' : common.logger } 
+           'logger' : common.logger() } 
     mySiteDB = SiteDBJSON(dict)
     msg_ = "there is no user name associated to DN %s in SiteDB. You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB" % userdn
     try:
