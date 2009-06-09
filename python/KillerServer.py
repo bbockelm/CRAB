@@ -56,7 +56,7 @@ class KillerServer(Actor):
  
             # printout the command result
             common.scheduler.cancel(toBeKilled)
-            common._db.updateRunJob_(toBeKilled, [{'state':'KillRequest'}])
+            common._db.updateRunJob_(toBeKilled, [{'state':'KillRequest'}]*len(toBeKilled))
 
             common.logger.info("Kill request for %d jobs succesfully sent to the server\n"%len(toBeKilled) ) 
 

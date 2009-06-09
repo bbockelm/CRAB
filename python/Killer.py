@@ -24,6 +24,6 @@ class Killer(Actor):
 
         if len(toBeKilled)>0:
             common.scheduler.cancel(toBeKilled)
-            common._db.updateRunJob_(toBeKilled, [{'state':'KillSuccess'}])
+            common._db.updateRunJob_(toBeKilled, [{'state':'KillSuccess'}]*len(toBeKilled))
             common.logger.info("Jobs killed "+str(toBeKilled))
  
