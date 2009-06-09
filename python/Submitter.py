@@ -354,7 +354,7 @@ class Submitter(Actor):
         """
         _stateChange_
         """
-        common.logger.debug( "Updating [%s] state "%str(subrange))
+        common.logger.debug( "Updating [%s] state %s"%(str(subrange),action))
         updlist = [{'state': action}] * len(subrange)
         common._db.updateRunJob_(subrange, updlist)
 
