@@ -494,7 +494,7 @@ class TaskTrackingComponent:
                     eMail = valuess[2]
                     ## XML report file
                     if status == self.taskState[2]:
-                        dictionaryReport =  {"all": ["NotSubmitted", "", "", 0, '', 'C']}
+                        dictionaryReport =  {"all": ["CannotSubmit", "", "", 0, '', 'C']}
                         self.prepareReport( payload, uuid, eMail, valuess[3], 0, 0, dictionaryReport, 0, 0 )
                     elif status == self.taskState[4]:
                         dictionaryReport =  {"all": ["Killed", "", "", 0, '', 'C']}
@@ -817,7 +817,7 @@ class TaskTrackingComponent:
         finally:
             ms_sem.release()
 
-        logBuf = self.__log(logBuf, "==> [NotSubmitted] %s" % taskPath)
+        logBuf = self.__log(logBuf, "==> [CannotSubmit] %s" % taskPath)
         self.taskEnded(taskName)
         logging.info(logBuf)
 
@@ -855,7 +855,8 @@ class TaskTrackingComponent:
 
         countNotSubmitted = 0
         countCreated = 0
-        updateState = [] 
+        updateStateTerminated = [] 
+        updateStateAborted    = []
 
         for jobbe in taskObj.jobs:
             try:
@@ -877,8 +878,11 @@ class TaskTrackingComponent:
                 site  = jobbe.runningJob['destination'].split(":")[0]
             del jobbe
 
-            if action in ["SubSuccess"] and stato in ["SD","E","DA"]:
-                updateState.append(job)
+            if action in ["SubSuccess", "KillFailed"]:
+                if stato in ["SD","E","DA"]:
+                    updateStateTerminated.append(job)
+                elif stato in ["A"]:
+                    updateStateAborted.append(job)
 
             resubmitting, MaxResub, Resub, internalstatus = \
                         ttdb.checkNSubmit(mySession.bossLiteDB, taskName, job)
@@ -924,7 +928,7 @@ class TaskTrackingComponent:
                    countNotSubmitted += 1
                    dictStateTot[job][6] = "NS"
                    dictReportTot['JobFailed'] += 1
-                   dictStateTot[job][0] = "NotSubmitted"
+                   dictStateTot[job][0] = "CannotSubmit"
                    dictStateTot[job][8] = 'Y'
                 else:
                    countCreated += 1
@@ -935,18 +939,21 @@ class TaskTrackingComponent:
                 dictReportTot['JobInProgress'] += 1
                 dictStateTot[job][8] = 'N'
 
-            ## case for killing jobs:
-            if (not stato in ['K', 'A']) and internalstatus == "Killing":
-                dictStateTot[job][0] = "Killing"
-                dictStateTot[job][6] = "KK"
-            ## case for submitting jobs
-            if stato in ['C'] and internalstatus == "Submitting":
-                dictStateTot[job][0] = "Submitting"
-                dictStateTot[job][6] = "CS"
+         #   ## case for killing jobs:
+         #   if (not stato in ['K', 'A']) and internalstatus == "Killing":
+         #       dictStateTot[job][0] = "Killing"
+         #       dictStateTot[job][6] = "KK"
+         #   ## case for submitting jobs
+         #   if stato in ['C'] and internalstatus == "Submitting":
+         #       dictStateTot[job][0] = "Submitting"
+         #       dictStateTot[job][6] = "CS"
 
         ttdb.statusUpdated(mySession.bossLiteDB, taskName)
-        if len(updateState) > 0:
-            self.setActionStatus(taskName, updateState, "Terminated")
+        if len(updateStateTerminated) > 0:
+            self.setActionStatus(taskName, updateStateTerminated, "Terminated")
+        if len(updateStateAborted) > 0:
+            self.setActionStatus(taskName, updateStateAborted, "Aborted")
+
 
         return dictStateTot, dictReportTot, countNotSubmitted, countCreated
 
