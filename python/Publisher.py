@@ -33,7 +33,8 @@ class Publisher(Actor):
         if (not cfg_params.has_key('USER.copy_data') or int(cfg_params['USER.copy_data']) != 1 ) or \
             (not cfg_params.has_key('USER.publish_data') or int(cfg_params['USER.publish_data']) != 1 ):
             msg  = 'You can not publish data because you did not selected \n'
-            msg += '\t*** copy_data = 1 or publish_data = 1  *** in the crab.cfg file'
+            msg += '\t*** copy_data = 1 and publish_data = 1  *** in the crab.cfg file'
+            raise CrabException(msg)
 
         if not cfg_params.has_key('CMSSW.pset'):
             raise CrabException('Cannot publish output data, because you did not specify the psetname in [CMSSW] of your crab.cfg file')
