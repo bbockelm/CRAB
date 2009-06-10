@@ -26,37 +26,34 @@ class Publisher(Actor):
         self.cfg_params=cfg_params
        
         try:
-            self.userprocessedData = cfg_params['USER.publish_data_name'] 
-            self.processedData = None
-        except KeyError:
+        if not cfg_params.has_key('USER.publish_data_name')
             raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
+        self.userprocessedData = cfg_params['USER.publish_data_name'] 
+        self.processedData = None
 
-        try:
-            if (int(cfg_params['USER.copy_data']) != 1):
-                raise KeyError
-        except KeyError:
+        if (not cfg_params.has_key('USER.copy_data') or int(cfg_params['USER.copy_data']) != 1 ) or \
+            (not cfg_params.has_key('USER.publish_data') or int(cfg_params['USER.publish_data']) != 1 ):
             msg  = 'You can not publish data because you did not selected \n'
             msg += '\t*** copy_data = 1 or publish_data = 1  *** in the crab.cfg file'
-            raise CrabException(msg)
-        try:
-            self.pset = cfg_params['CMSSW.pset']
-        except KeyError:
-            raise CrabException('Cannot publish output data, because you did not specify the psetname in [CMSSW] of your crab.cfg file')
-        try:
-            self.globalDBS=cfg_params['CMSSW.dbs_url']
-        except KeyError:
-            self.globalDBS="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
-        try:
-            self.DBSURL=cfg_params['USER.dbs_url_for_publication']
-            common.logger.info('<dbs_url_for_publication> = '+self.DBSURL)
-            if (self.DBSURL == "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet") or (self.DBSURL == "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"):
-                msg = "You can not publish your data in the globalDBS = " + self.DBSURL + "\n" 
-                msg = msg + "Please write your local one in the [USER] section 'dbs_url_for_publication'"
-                raise CrabException(msg)
-        except KeyError:
+
+        # try:
+        #     self.pset = cfg_params['CMSSW.pset']
+        # except KeyError:
+        #     raise CrabException('Cannot publish output data, because you did not specify the psetname in [CMSSW] of your crab.cfg file')
+
+        self.globalDBS=cfg_params.get('CMSSW.dbs_url',"http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+
+        if not cfg_params.has_key('USER.dbs_url_for_publication'):
             msg = "Warning. The [USER] section does not have 'dbs_url_for_publication'"
             msg = msg + " entry, necessary to publish the data.\n"
             msg = msg + "Use the command **crab -publish -USER.dbs_url_for_publication=dbs_url_for_publication*** \nwhere dbs_url_for_publication is your local dbs instance."
+            raise CrabException(msg)
+
+        self.DBSURL=cfg_params['USER.dbs_url_for_publication']
+        common.logger.info('<dbs_url_for_publication> = '+self.DBSURL)
+        if (self.DBSURL == "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet") or (self.DBSURL == "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"):
+            msg = "You can not publish your data in the globalDBS = " + self.DBSURL + "\n" 
+            msg = msg + "Please write your local one in the [USER] section 'dbs_url_for_publication'"
             raise CrabException(msg)
             
         self.content=file(self.pset).read()
