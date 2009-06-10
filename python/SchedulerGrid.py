@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.109 2009/05/31 13:19:41 spiga Exp $"
-__version__ = "$Revision: 1.109 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.110 2009/06/05 14:35:13 spiga Exp $"
+__version__ = "$Revision: 1.110 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -154,9 +154,15 @@ class SchedulerGrid(Scheduler):
         txt += "out_files=out_files_${NJob}; export out_files\n"
         txt += "echo $out_files\n"
         txt += jbt.outList()
-
-        txt += 'MonitorJobID=${NJob}_'+self.environment_unique_identifier+'\n'
-        txt += 'SyncGridJobId='+self.environment_unique_identifier+'\n'
+         
+        txt += 'if [ $JobRunCount ] && [ `expr $JobRunCount - 1` -gt 0 ]; then \n'
+        txt += '   attempt=`expr $JobRunCount - 1` \n'
+        txt += '   MonitorJobID=${NJob}_'+self.environment_unique_identifier+'_${attempt}\n'
+        txt += '   SyncGridJobId='+self.environment_unique_identifier+'_${attempt}\n'
+        txt += 'else \n'
+        txt += '   MonitorJobID=${NJob}_'+self.environment_unique_identifier+'\n'
+        txt += '   SyncGridJobId='+self.environment_unique_identifier+'\n'
+        txt += 'fi\n'
         txt += 'MonitorID='+taskId+'\n'
         txt += 'echo "MonitorJobID=$MonitorJobID" > $RUNTIME_AREA/$repo \n'
         txt += 'echo "SyncGridJobId=$SyncGridJobId" >> $RUNTIME_AREA/$repo \n'
