@@ -36,10 +36,13 @@ class KillerServer(Actor):
         task = common._db.getTask(self.range)
         toBeKilled = []
         for job  in task.jobs:
-           if job.runningJob['status'] not in ['C','E','KK','K','SU','SA','NS']: # commented for fast-kill at registration ,'SSE']:
+           #if job.runningJob['status'] not in ['C','E','KK','K','SU','SA','NS']: # commented for fast-kill at registration ,'SSE']:
+           if job.runningJob['state'] in ['SubSuccess','SubRequest']:
                toBeKilled.append(job['jobId'])
            else:
-               common.logger.info("Not possible to kill Job #"+str(job['jobId'])+" : Status is "+str(job.runningJob['statusScheduler']))
+               common.logger.info("Not possible to kill Job #"+str(job['jobId'])+\
+                       " : Last action was: "+str(job.runningJob['state'])+\
+                       " Status is "+str(job.runningJob['statusScheduler']))
            pass
 
         if len(toBeKilled)>0:

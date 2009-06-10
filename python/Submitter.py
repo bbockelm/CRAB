@@ -57,8 +57,8 @@ class Submitter(Actor):
         for job in common._db.getTask(tmp_jList).jobs:
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(job['dlsDestination'])
             if (cleanedBlackWhiteList != '') or (datasetpath == None):
-                if ( job.runningJob['status'] in ['C','RC'] and \
-                  job.runningJob['statusScheduler'] in ['Created',None]):
+                #if ( job.runningJob['status'] in ['C','RC'] and job.runningJob['statusScheduler'] in ['Created',None]):
+                if ( job.runningJob['state'] in ['Created']):
                     jobSetForSubmission +=1
                     nj_list.append(job['id'])
                 else:
@@ -123,12 +123,11 @@ class Submitter(Actor):
         totalCreatedJobs = 0
         task=common._db.getTask()
         for job in task.jobs:
-            if job.runningJob['status'] in ['C','RC'] \
-               and job.runningJob['state'] == 'Created':totalCreatedJobs +=1
+            if job.runningJob['state'] == 'Created': totalCreatedJobs +=1
 
         if (totalCreatedJobs==0):
-              common.logger.info("No jobs to be submitted: first create them")
-              code = 1
+            common.logger.info("No jobs to be submitted: first create them")
+            code = 1
         return code
 
 
@@ -354,12 +353,4 @@ class Submitter(Actor):
         common.logger.log(10-1,msg)
         return
 
-
-    def stateChange(self, subrange, action):
-        """
-        _stateChange_
-        """
-        common.logger.debug( "Updating [%s] state %s"%(str(subrange),action))
-        updlist = [{'state': action}] * len(subrange)
-        common._db.updateRunJob_(subrange, updlist)
 

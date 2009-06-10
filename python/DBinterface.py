@@ -391,8 +391,7 @@ class DBinterface:
     # FIXME temporary method to verify what kind of submission to perform towards the server
     def checkIfNeverSubmittedBefore(self):
         for j in self.getTask().jobs:
-            if j.runningJob['submission'] > 1 or j.runningJob['status'] != 'C' or \
-                    j.runningJob['statusScheduler'] != 'Created':
+            if j.runningJob['submission'] > 1 or j.runningJob['state'] != 'Created':
                 return False
         return True
 

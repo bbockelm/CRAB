@@ -20,19 +20,24 @@ class Cleaner(Actor):
         upTask = common.scheduler.queryEverything(task['id'])
         self.status.compute(upTask) # compute the status
 
-        countSub  = len(common._db.queryAttrRunJob({'status':'S'},'status'))
-        countDone = len(common._db.queryAttrRunJob({'status':'SD'},'status'))
+        jobTerm=[]
+        jobSub=[]
+        for job  in task.jobs:
+            st=job.runningJob['state']
+            if st not in ['KillSuccess', 'SubFailed', 'Created', 'Aborted', 'Cleared', 'Cleaned']:
+                if st in ['Terminated']: jobTerm.append(job['jobId'])
+                if st in ['SubSuccess']: jobSub.append(job['jobId'])
+            pass
 
-        if countSub or countDone:
+        if len(jobTerm)>0 or len(jobSub):
             msg = "There are still "
             if countSub:
-                msg= msg+str(countSub)+" jobs submitted. Kill them '-kill' before '-clean'"
+                msg= msg+" jobs submitted. Kill them '-kill %s' before '-clean'"%readableList(self,jobSub))
             if (countSub and countDone):
                 msg = msg + "and \nalso"
             if countDone:
-                msg= msg+str(countDone)+" jobs Done. Get their outputs '-getoutput' before '-clean'"
+                msg= msg+" jobs Done. Get their outputs '-get %s' before '-clean'"%readableList(self,jobTerm))
             raise CrabException(msg)
-
         pass
 
     def run(self):

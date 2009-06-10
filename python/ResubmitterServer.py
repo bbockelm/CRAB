@@ -17,7 +17,7 @@ class ResubmitterServer(SubmitterServer, Resubmitter):
         except:
             pass
 
-        nj_list = self.checkAlowedJob(jobs,nj_list)
+        nj_list = self.checkAllowedJob(jobs,nj_list)
        
         SubmitterServer.__init__(self, cfg_params, nj_list, 'range')
  

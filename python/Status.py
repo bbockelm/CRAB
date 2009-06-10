@@ -69,6 +69,7 @@ class Status(Actor):
             if job_exit_code == 'None' :  job_exit_code = ''
             if job.runningJob['state'] == 'Terminated' : jobStatus = 'Done'
             if job.runningJob['state'] == 'SubRequested' : jobStatus = 'Submitting'
+            #TODO 09-Jun-2009 SL Not sure this is needed at all...
             if job.runningJob['status'] in ['SD','DA'] :
                 listId.append(id)
                 listRunField.append(run_jobToSave)
@@ -79,6 +80,7 @@ class Status(Actor):
             if jobStatus is not None:
                 msg += self.dataToDash(job,id,taskId,task_unique_name,dest,jobStatus)
         common.logger.log(10-1,msg)
+        #TODO 09-Jun-2009 SL Not sure this is needed at all...
         if len(listId) > 0 : common._db.updateRunJob_(listId, listRunField)
         header = ''
         if ended != None and len(ended) > 0:
