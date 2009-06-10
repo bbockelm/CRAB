@@ -152,12 +152,13 @@ class SchedulerArc(SchedulerGrid):
                 xrsl += '(cluster=%s)' % ce
             if len(ce_list) > 1:
                 xrsl += ')'
-
-        # FIXME: If ce_list == []  ==>  xrsl = ""  ==>  we'll submit
-        # "anywhere", which is completely contrary behaviour to what we want!
-        # ce_list == [] means there were _no_ CE in ce_infoSys that
-        # survived the white- and black-list filter, so we shouldn't submit
-        # at all!
+        else:
+            common.logger.debug("clusterXrsl: No suitable CE found !?")
+            # FIXME: If ce_list == []  ==>  xrsl = ""  ==>  we'll submit
+            # "anywhere", which is completely contrary behaviour to what we want!
+            # ce_list == [] means there were _no_ CE in ce_infoSys that
+            # survived the white- and black-list filter, so we shouldn't submit
+            # at all!
 
         return xrsl
 
