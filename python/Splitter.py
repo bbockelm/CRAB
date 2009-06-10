@@ -197,7 +197,11 @@ class JobSplitter:
                                     list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
                                 msg += "Job %s can run over %s  events (last file in block).\n"%(str(jobCount+1), str(filesEventCount - jobSkipEventCount))
                                 jobDestination.append(blockSites[block])
-                                msg += "Job %s Destination: %s\n"%(str(jobCount+1),str(jobDestination[jobCount]))
+                                msg += "Job %s Destination: %s\n"%(str(jobCount+1),str(destinationCMS(jobDestination[jobCount])))
+                                from ProdCommon.SiteDB.CmsSiteMapper import CmsSEMap
+                                cms_se = CmsSEMap()
+                                SEDestination = [cms_se[dest] for dest in jobDestination[jobCount]]
+                                msg+="\t  CMSDestination: %s "%(str(SEDestination))
                                 # fill jobs of block dictionary
                                 jobsOfBlock[block].append(jobCount+1)
                                 # reset counter
@@ -226,7 +230,7 @@ class JobSplitter:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         msg += "Job %s can run over %s events.\n"%(str(jobCount+1),str(eventsPerJobRequested))
                         jobDestination.append(blockSites[block])
-                        msg+= "Job %s Destination: %s\n"%(str(jobCount+1),str(jobDestination[jobCount]))
+                        msg+= "Job %s Destination: %s\n"%(str(jobCount+1),str(destinationCMS(jobDestination[jobCount])))
                         jobsOfBlock[block].append(jobCount+1)
                         # reset counter
                         jobCount = jobCount + 1
@@ -251,7 +255,7 @@ class JobSplitter:
                             list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
                         msg += "Job %s can run over %s events.\n"%(str(jobCount+1),str(eventsPerJobRequested))
                         jobDestination.append(blockSites[block])
-                        msg+= "Job %s Destination: %s\n"%(str(jobCount+1),str(jobDestination[jobCount]))
+                        msg+= "Job %s Destination: %s\n"%(str(jobCount+1),str(destinationCMS(jobDestination[jobCount])))
                         jobsOfBlock[block].append(jobCount+1)
                         # increase counter
                         jobCount = jobCount + 1
@@ -303,9 +307,10 @@ class JobSplitter:
             if block in jobsOfBlock.keys() :
                 blockCounter += 1
                 allBlock.append( blockCounter )
+                sites=self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],[block]),[block])
                 screenOutput += "Block %5i: jobs %20s: sites: %s\n" % (blockCounter,spanRanges(jobsOfBlock[block]),
-                    ','.join(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],[block]),[block])))
-                if len(self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(blockSites[block],[block]),[block])) == 0:
+                    ', '.join(destinationCMS(sites)))
+                if len(sites) == 0:
                     noSiteBlock.append( spanRanges(jobsOfBlock[block]) )
                     bloskNoSite.append( blockCounter )
 

@@ -379,8 +379,12 @@ class Cmssw(JobType):
             job_ToSave['arguments']= str(job+1)
             job_ToSave['dlsDestination']= self.jobDestination[id]
             listField.append(job_ToSave)
+            from ProdCommon.SiteDB.CmsSiteMapper import CmsSEMap
+            cms_se = CmsSEMap()
             msg="Job  %s  Arguments:  %s\n"%(str(job+1),str_argu)
             msg+="\t  Destination: %s "%(str(self.jobDestination[id]))
+            SEDestination = [cms_se[dest] for dest in self.jobDestination[id]]
+            msg+="\t  CMSDestination: %s "%(str(SEDestination))
             common.logger.log(10-1,msg)
         # write xml
         if len(listDictions):
