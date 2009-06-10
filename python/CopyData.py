@@ -25,7 +25,8 @@ class CopyData(Actor):
                          'CONDOR_G' : 'srmv2' , \
                          'GLITE'    : 'srm-lcg' , \
                          'CONDOR'    : 'srmv2',  \
-                         'SGE'      : 'srmv2' \
+                         'SGE'      : 'srmv2', \
+                         'ARC'      : 'srmv2' \
                        }  
         self.protocol = protocolDict[common.scheduler.name().upper()]  
         self.destinationTier = None

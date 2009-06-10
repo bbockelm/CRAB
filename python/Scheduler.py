@@ -41,7 +41,8 @@ class Scheduler :
                               'CONDOR_G' : 'srmv2' , \
                               'GLITE'    : 'srm-lcg' , \
                               'CONDOR'    : 'srmv2',  \
-                              'SGE'      : 'srmv2' \
+                              'SGE'      : 'srmv2', \
+                              'ARC'      : 'srmv2'
                             }
         return
 

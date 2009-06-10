@@ -171,6 +171,11 @@ class Status(Actor):
             WMS = common.scheduler.name()
             jobId=str(id)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(task_unique_name,"_","-")
             msg += ('JobID for ML monitoring is created for Local scheduler: %s\n'%jobId)
+        elif common.scheduler.name().upper() in ['ARC']:
+            taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+            jobId = str(id) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(id)
+            msg += ('JobID for ML monitoring is created for ARC scheduler: %s\n'%jobId)
+            WMS = 'ARC'
         else:
             jobId = str(id) + '_' + str(jid)
             WMS = job.runningJob['service']
