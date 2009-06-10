@@ -642,7 +642,7 @@ def showWebMon(server_name):
     msg += '\tYour task name is: %s \n'%taskName
     return msg
 
-def destinationCMS(dests):
+def SE2CMS(dests):
     """
     Trasnsform a list of SE grid name into a list SE according to CMS naming convention
     input: array of SE grid names
@@ -652,6 +652,17 @@ def destinationCMS(dests):
     se_cms = SECmsMap()
     SEDestination = [se_cms[d] for d in dests]
     return SEDestination
+
+def CE2CMS(dests):
+    """
+    Trasnsform a list of CE grid name into a list SE according to CMS naming convention
+    input: array of CE grid names
+    output: array of CE CMS names
+    """
+    from ProdCommon.SiteDB.CmsSiteMapper import CECmsMap
+    ce_cms = CECmsMap()
+    CEDestination = [ce_cms[d] for d in dests]
+    return CEDestination
 
 ####################################
 if __name__ == '__main__':
