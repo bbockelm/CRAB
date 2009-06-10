@@ -564,16 +564,12 @@ class Crab:
                 common._db.queryID(self.UseServer,jid)
 
             elif ( opt == '-status' ):
-                from Status import Status
                 if (self.UseServer== 1):
                     from StatusServer import StatusServer
                     self.actions[opt] = StatusServer(self.cfg_params)
                 else:
-                    jobs = self.parseRange_(val)
-
-                    if len(jobs) != 0:
-                        self.actions[opt] = Status(self.cfg_params)
-                    pass
+                    from Status import Status
+                    self.actions[opt] = Status(self.cfg_params)
 
             elif ( opt == '-kill' ):
 
