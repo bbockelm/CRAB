@@ -35,10 +35,9 @@ class Publisher(Actor):
             msg  = 'You can not publish data because you did not selected \n'
             msg += '\t*** copy_data = 1 or publish_data = 1  *** in the crab.cfg file'
 
-        # try:
-        #     self.pset = cfg_params['CMSSW.pset']
-        # except KeyError:
-        #     raise CrabException('Cannot publish output data, because you did not specify the psetname in [CMSSW] of your crab.cfg file')
+        if not cfg_params.has_key('CMSSW.pset'):
+            raise CrabException('Cannot publish output data, because you did not specify the psetname in [CMSSW] of your crab.cfg file')
+        self.pset = cfg_params['CMSSW.pset']
 
         self.globalDBS=cfg_params.get('CMSSW.dbs_url',"http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
 
