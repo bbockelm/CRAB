@@ -25,7 +25,7 @@ class Publisher(Actor):
 
         self.cfg_params=cfg_params
        
-        if not cfg_params.has_key('USER.publish_data_name')
+        if not cfg_params.has_key('USER.publish_data_name'):
             raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
         self.userprocessedData = cfg_params['USER.publish_data_name'] 
         self.processedData = None
