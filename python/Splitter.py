@@ -126,6 +126,7 @@ class JobSplitter:
         parString = ""
         pString = ""
         filesEventCount = 0
+        msg='' 
 
         # ---- Iterate over the blocks in the dataset until ---- #
         # ---- we've met the requested total # of events    ---- #
