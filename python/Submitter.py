@@ -37,9 +37,9 @@ class Submitter(Actor):
 
         self.seWhiteList = cfg_params.get('GRID.se_white_list',[])
         self.seBlackList = cfg_params.get('GRID.se_black_list',[])
-        datasetpath=self.cfg_params['CMSSW.datasetpath']
-        if string.lower(datasetpath)=='none':
-            datasetpath = None
+        self.datasetPath=self.cfg_params['CMSSW.datasetpath']
+        if string.lower(self.datasetPath)=='none':
+            self.datasetPath = None
         self.scram = Scram.Scram(cfg_params)
         return
 
@@ -60,7 +60,7 @@ class Submitter(Actor):
             tmp_jList = self.chosenJobsList
         for job in common._db.getTask(tmp_jList).jobs:
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(job['dlsDestination'])
-            if (cleanedBlackWhiteList != '') or (datasetpath == None):
+            if (cleanedBlackWhiteList != '') or (self.datasetPath == None):
                 #if ( job.runningJob['status'] in ['C','RC'] and job.runningJob['statusScheduler'] in ['Created',None]):
                 if ( job.runningJob['state'] in ['Created']):
                     jobSetForSubmission +=1
@@ -251,14 +251,11 @@ class Submitter(Actor):
         common.logger.debug("GRIDNAME: %s "%gridName)
         taskType = 'analysis'
 
-        self.datasetPath =  self.cfg_params['CMSSW.datasetpath']
-        if string.lower(self.datasetPath)=='none':
-            self.datasetPath = None
         self.executable = self.cfg_params.get('CMSSW.executable','cmsRun')
         VO = self.cfg_params.get('GRID.virtual_organization','cms')
 
         params = {'tool': common.prog_name,
-                  'SubmissionType':'direct', 
+                  'SubmissionType':'direct',
                   'JSToolVersion': common.prog_version_str,
                   'tool_ui': os.environ.get('HOSTNAME',''),
                   'scheduler': common.scheduler.name(),
@@ -298,7 +295,7 @@ class Submitter(Actor):
         for k,v in self.collect_MLInfo().iteritems():
             params[k] = v
 
-        msg = ''  
+        msg = ''
         Sub_Type = 'Direct'
         for job in task.jobs:
             jj = job['jobId']
