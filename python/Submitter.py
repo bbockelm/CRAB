@@ -15,19 +15,19 @@ class Submitter(Actor):
         self.cfg_params = cfg_params
 
         # get user request
-        nsjobs = -1
-        chosenJobsList = None
+        self.nsjobs = -1
+        self.chosenJobsList = None
         if val:
             if val=='range':  # for Resubmitter
-                chosenJobsList = parsed_range
+                self.chosenJobsList = parsed_range
             elif val=='all':
                 pass
             elif (type(eval(val)) is int) and eval(val) > 0:
                 # positive number
-                nsjobs = eval(val)
+                self.nsjobs = eval(val)
             elif (type(eval(val)) is tuple)or( type(eval(val)) is int and eval(val)<0 ) :
-                chosenJobsList = parsed_range
-                nsjobs = len(chosenJobsList)
+                self.chosenJobsList = parsed_range
+                self.nsjobs = len(chosenJobsList)
             else:
                 msg = 'Bad submission option <'+str(val)+'>\n'
                 msg += '      Must be an integer or "all"'
@@ -35,25 +35,29 @@ class Submitter(Actor):
                 raise CrabException(msg)
             pass
 
-        common.logger.debug('nsjobs '+str(nsjobs))
+        self.seWhiteList = cfg_params.get('GRID.se_white_list',[])
+        self.seBlackList = cfg_params.get('GRID.se_black_list',[])
+        datasetpath=self.cfg_params['CMSSW.datasetpath']
+        if string.lower(datasetpath)=='none':
+            datasetpath = None
+        self.scram = Scram.Scram(cfg_params)
+        return
+
+    def BuildJobList(self):
         # total jobs
         nj_list = []
+        # build job list
+        from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
+        self.blackWhiteListParser = SEBlackWhiteListParser(self.seWhiteList, self.seBlackList, common.logger())
+        common.logger.debug('nsjobs '+str(self.nsjobs))
         # get the first not already submitted
         self.complete_List = common._db.nJobs('list')
         common.logger.debug('Total jobs '+str(len(self.complete_List)))
         jobSetForSubmission = 0
         jobSkippedInSubmission = []
-        datasetpath=self.cfg_params['CMSSW.datasetpath']
-        if string.lower(datasetpath)=='none':
-            datasetpath = None
         tmp_jList = self.complete_List
-        if chosenJobsList != None:
-            tmp_jList = chosenJobsList
-        # build job list
-        from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
-        seWhiteList = cfg_params.get('GRID.se_white_list',[])
-        seBlackList = cfg_params.get('GRID.se_black_list',[])
-        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger())
+        if self.chosenJobsList != None:
+            tmp_jList = self.chosenJobsList
         for job in common._db.getTask(tmp_jList).jobs:
             cleanedBlackWhiteList = self.blackWhiteListParser.cleanForBlackWhiteList(job['dlsDestination'])
             if (cleanedBlackWhiteList != '') or (datasetpath == None):
@@ -65,25 +69,22 @@ class Submitter(Actor):
                     continue
             else :
                 jobSkippedInSubmission.append( job['id'] )
-            if nsjobs >0 and nsjobs == jobSetForSubmission:
+            if self.nsjobs >0 and self.nsjobs == jobSetForSubmission:
                 break
             pass
-        if nsjobs>jobSetForSubmission:
-            common.logger.info('asking to submit '+str(nsjobs)+' jobs, but only '+\
+        if self.nsjobs>jobSetForSubmission:
+            common.logger.info('asking to submit '+str(self.nsjobs)+' jobs, but only '+\
                                   str(jobSetForSubmission)+' left: submitting those')
         if len(jobSkippedInSubmission) > 0 :
             mess =""
             for jobs in jobSkippedInSubmission:
                 mess += str(jobs) + ","
-            common.logger.info("Jobs:  " +str(mess) + "\n      skipped because no sites are hosting this data\n")
+            common.logger.info("Jobs:  " +str(mess) + "\n\tskipped because no sites are hosting this data\n")
             self.submissionError()
             pass
         # submit N from last submitted job
         common.logger.debug('nj_list '+str(nj_list))
-
-
         self.nj_list = nj_list
-        self.scram = Scram.Scram(cfg_params)
         return
 
     def run(self):
@@ -93,6 +94,8 @@ class Submitter(Actor):
         common.logger.debug("Submitter::run() called")
 
         start = time.time()
+
+        self.BuildJobList()
 
         check = self.checkIfCreate()
 
@@ -157,7 +160,6 @@ class Submitter(Actor):
         matched=[]
 
         task=common._db.getTask()
-
         for id_job in jobs_to_match :
             match = common.scheduler.listMatch(distinct_dests[sel], False)
             if len(match)>0:

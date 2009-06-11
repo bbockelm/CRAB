@@ -43,6 +43,10 @@ class SubmitterServer( Submitter ):
 	"""
         common.logger.debug("SubmitterServer::run() called")
 
+        start = time.time()
+
+        self.BuildJobList()
+
         self.submitRange = self.nj_list
      
         check = self.checkIfCreate() 
@@ -58,6 +62,9 @@ class SubmitterServer( Submitter ):
 	    # standard submission to the server
 	    self.performSubmission(isFirstSubmission)
         
+            stop = time.time()
+            common.logger.debug("Submission Time: "+str(stop - start))
+
             msg = 'Total of %d jobs submitted'%len(self.submitRange) 
             common.logger.info(msg)
  
