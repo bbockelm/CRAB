@@ -42,6 +42,9 @@ cd ..
 # sh style
 cat > crab.sh <<EOF
 #! /bin/sh
+# first check if CRAB env has already been defined
+[ ! -z "\$CRABDIR" ] && ( echo 'CRAB environemnt already defined: exiting' ; exit 1 ; )
+
 # CRAB related Stuff
 export CRABDIR=$TopDir
 export EXTERNALDIR=$ExtDir
@@ -98,6 +101,11 @@ EOF
 # csh style
 cat > crab.csh <<EOF
 #! /bin/csh
+# first check if CRAB env has already been defined
+if ( \$?CRABDIR ) then
+   echo 'CRAB environemnt already defined: exiting' 
+   exit 1
+endif
 # CRAB related Stuff
 setenv CRABDIR $TopDir
 setenv EXTERNALDIR $ExtDir
