@@ -19,18 +19,6 @@ class GetOutput(Actor):
 
         self.dontCheckSpaceLeft = int(self.cfg_params.get('USER.dontCheckSpaceLeft' ,0))
 
-        self.possible_status = {
-                         'UN': 'Unknown', 
-                         'SU': 'Submitted',
-                         'SW': 'Waiting',
-                         'SS': 'Scheduled',
-                         'R': 'Running',
-                         'SD': 'Done',
-                         'K': 'Killed',
-                         'SA': 'Aborted',
-                         'SE': 'Cleared',
-                         'E': 'Cleared'
-                          }
         return
 
     def run(self):

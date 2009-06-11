@@ -69,8 +69,8 @@ class Status(Actor):
             if job_exit_code == 'None' :  job_exit_code = ''
             if job.runningJob['state'] == 'Terminated' : jobStatus = 'Done'
             if job.runningJob['state'] == 'SubRequested' : jobStatus = 'Submitting'
-            #TODO 09-Jun-2009 SL Not sure this is needed at all...
-            if job.runningJob['status'] in ['SD','DA'] :
+            #This is needed for StandAlone
+            if job.runningJob['status'] in ['SD','DA'] : 
                 listId.append(id)
                 listRunField.append(run_jobToSave)
             if (self.verbose) :printline+="%-6s %-18s %-14s %-36s %-13s %-16s %-4s" % (id,jobStatus,jobState,dest,exe_exit_code,job_exit_code,ended)
@@ -80,14 +80,14 @@ class Status(Actor):
             if jobStatus is not None:
                 msg += self.dataToDash(job,id,taskId,task_unique_name,dest,jobStatus)
         common.logger.log(10-1,msg)
-        #TODO 09-Jun-2009 SL Not sure this is needed at all...
+        #This is needed for StandAlone
         if len(listId) > 0 : common._db.updateRunJob_(listId, listRunField)
         header = ''
         if ended != None and len(ended) > 0:
-            if (self.verbose): header+= "%-6s %-18s %-14s %-36s %-13s %-16s %-4s" % ('ID','STATUS','LAST_ACTION','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
+            if (self.verbose): header+= "%-6s %-18s %-14s %-36s %-13s %-16s %-4s" % ('ID','STATUS','ACTION','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
             else: header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
         else:
-            if (self.verbose): header+= "%-6s %-18s %-14s %-36s %-13s %-16s" % ('ID','STATUS','LAST_ACTION','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
+            if (self.verbose): header+= "%-6s %-18s %-14s %-36s %-13s %-16s" % ('ID','STATUS','ACTION','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
             else: header+= "%-6s %-18s %-36s %-13s %-16s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
 
         if display: displayReport(self,header,toPrint,self.xml)
