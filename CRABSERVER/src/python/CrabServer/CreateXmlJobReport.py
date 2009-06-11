@@ -26,7 +26,7 @@ class JobXml:
         self.JOBEXIT        = "job_exit"
         self.JOBREPORT      = "Job"
         self.JOBCLEARED     = "cleared"
-        self.ALLOWED_STATES = ("Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killing","Killed","Submitting","Done (Failed)", "Created", "Cancelled by user")
+        self.ALLOWED_STATES = ("Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "CannotSubmit","Killing","Killed","Submitting","Done (Failed)", "Created", "Cancelled by user")
         self.SITE           = "site"
         self.RESUB          = "resubmit" 
         self.STATCODE       = "sched_status"
@@ -179,7 +179,7 @@ class CreateXmlJobReport:
         self.ENDED          = "ended"
         self.THRESHOLDREQ   = "thresholdRequested"
         self.TOTJOB         = "totJob"
-        self.ALLOWED_STATES = ("Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "NotSubmitted","Killed","Submitting", "Done (Failed)", "Created", "Cancelled by user")
+        self.ALLOWED_STATES = ("Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "CannotSubmit","Killed","Submitting", "Done (Failed)", "Created", "Cancelled by user")
         self.COUNT          = 'count'
         self.SITE           = "site"
         self.RESUB          = "resubmit"
@@ -303,7 +303,7 @@ class CreateXmlJobReport:
         #print "Report for single Job: "
         allJobs = self.root.getElementsByTagName( JobXml().getJobTagName() )
         #print "len=%d\n" % len(allJobs)
-        if allJobs[0].getAttribute( JobXml().getStatusTagName())=="NotSubmitted":
+        if allJobs[0].getAttribute( JobXml().getStatusTagName())=="CannotSubmit":
             report = " has not been submitted by the server.\nPlease, check your log files and try to execute the command 'crab -testJdl' to verify if there are sites that can satisfy your requirements."
             #return report
 
@@ -323,7 +323,7 @@ class CreateXmlJobReport:
             outcome = ""
             allJobs = self.root.getElementsByTagName( JobXml().getJobTagName() )
             
-            if allJobs[0].getAttribute( JobXml().getStatusTagName())=="NotSubmitted":
+            if allJobs[0].getAttribute( JobXml().getStatusTagName())=="CannotSubmit":
                 outcome = " has not been submitted by the server."
                 
             if allJobs[0].getAttribute( JobXml().getStatusTagName())=="Killed":
