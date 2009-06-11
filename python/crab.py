@@ -19,7 +19,6 @@ for more information about setting up your environment.
 ## actual import session
 from crab_util import *
 from crab_exceptions import *
-import logging
 from WorkSpace import WorkSpace
 from DBinterface import DBinterface ## added to interface with DB BL--DS
 from JobList import JobList
