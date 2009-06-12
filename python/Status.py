@@ -49,8 +49,10 @@ class Status(Actor):
         ended = None
 
         run_jobToSave = {'state' :'Terminated'}
+        jobToSave = {'closed' :'Y'}
         listId=[]
         listRunField=[]
+        listJobField=[]
 
         self.wrapErrorList = []
         msg='\n'
@@ -73,6 +75,7 @@ class Status(Actor):
             if job.runningJob['status'] in ['SD','DA'] : 
                 listId.append(id)
                 listRunField.append(run_jobToSave)
+                listJobField.append(jobToSave)
             if (self.verbose) :printline+="%-6s %-18s %-14s %-36s %-13s %-16s %-4s" % (id,jobStatus,jobState,dest,exe_exit_code,job_exit_code,ended)
             else: printline+="%-6s %-18s %-36s %-13s %-16s " % (id,jobStatus,dest,exe_exit_code,job_exit_code)
             toPrint.append(printline)
@@ -81,7 +84,9 @@ class Status(Actor):
                 msg += self.dataToDash(job,id,taskId,task_unique_name,dest,jobStatus)
         common.logger.log(10-1,msg)
         #This is needed for StandAlone
-        if len(listId) > 0 : common._db.updateRunJob_(listId, listRunField)
+        if len(listId) > 0 : 
+            common._db.updateRunJob_(listId, listRunField)
+            common._db.updateJob_(listId, listJobField)
         header = ''
        
         if (self.verbose):

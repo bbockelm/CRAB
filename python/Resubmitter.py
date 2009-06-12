@@ -40,6 +40,7 @@ class Resubmitter(Submitter):
             msg='No jobs to resubmit'
             raise CrabException(msg)
 
+        common._db.updateJob_(nj_list, [{'closed':'N'}]*len(nj_list))
         # Get new running instances
         common._db.newRunJobs(nj_list)
 
