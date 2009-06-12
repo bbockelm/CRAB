@@ -206,7 +206,8 @@ class DBinterface:
         if server_mode == 1:
             # init client server params...
             CliServerParams(self)       
-            headerTask= "Task Id = %-40s " %(task['name'])
+            headerTask = "Task Id = %-40s\n" %(task['name'])
+            headerTask+=  '--------------------------------------------------------------------------------------------\n'
             displayReport(self,headerTask,lines)
             common.logger.info(showWebMon(self.server_name))
         if (jid ) or (server_mode == 0):
@@ -215,7 +216,8 @@ class DBinterface:
                 common.bossSession.getRunningInstance(job)
                 toPrint = "%-5s %-50s " % (job['jobId'],job.runningJob['schedulerId'])
                 lines.append(toPrint)
-            header+= "%-5s %-50s " % ('Job:','ID' ) 
+            header+= "%-5s %-50s\n " % ('Job:','ID' ) 
+            header+=  '--------------------------------------------------------------------------------------------\n'
             displayReport(self,header,lines)
         return   
 
@@ -374,8 +376,7 @@ class DBinterface:
                 job.runningJob['wrapperReturnCode'] = str( rForJ.getAttribute('job_exit') )
                 job_exit_code = str(job.runningJob['wrapperReturnCode'])
 
-                ## unsing 'standardInput' field for 'ended' tag ['Y','N']
-                job['standardInput'] = str( rForJ.getAttribute('ended') )
+                job['closed'] = str( rForJ.getAttribute('ended') )
 
                 job.runningJob['state'] = str( rForJ.getAttribute('action') )
           
