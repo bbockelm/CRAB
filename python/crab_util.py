@@ -299,8 +299,7 @@ def displayReport(self, header, lines, xml=''):
     counter = 0
     printline = ''
     printline+= header
-    msg = '\n%s\n'%printline
-    msg+=  '------------------------------------------------------------------------------------------------------\n'
+    msg = '\n%s'%printline
 
     for i in range(len(lines)):
         if counter != 0 and counter%10 == 0 :
@@ -311,7 +310,7 @@ def displayReport(self, header, lines, xml=''):
         fileName = common.work_space.shareDir() + xml
         task = common._db.getTask()
         taskXML = common._db.serializeTask(task)
-        common.logger.debug( taskXML)
+        common.logger.log(10-1, taskXML)
         f = open(fileName, 'w')
         f.write(taskXML)
         f.close()
