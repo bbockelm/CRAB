@@ -62,7 +62,7 @@ class Status(Actor):
             exe_exit_code = str(job.runningJob['applicationReturnCode'])
             job_exit_code = str(job.runningJob['wrapperReturnCode'])
             self.wrapErrorList.append(job_exit_code)
-            ended = str(job['standardInput'])  
+            ended = str(job['closed'])  
             printline=''
             if dest == 'None' :  dest = ''
             if exe_exit_code == 'None' :  exe_exit_code = ''
@@ -74,7 +74,7 @@ class Status(Actor):
                 listId.append(id)
                 listRunField.append(run_jobToSave)
             if (self.verbose) :printline+="%-6s %-18s %-14s %-36s %-13s %-16s %-4s" % (id,jobStatus,jobState,dest,exe_exit_code,job_exit_code,ended)
-            else: printline+="%-6s %-18s %-36s %-13s %-16s %-4s" % (id,jobStatus,dest,exe_exit_code,job_exit_code,ended)
+            else: printline+="%-6s %-18s %-36s %-13s %-16s " % (id,jobStatus,dest,exe_exit_code,job_exit_code)
             toPrint.append(printline)
 
             if jobStatus is not None:
@@ -83,12 +83,13 @@ class Status(Actor):
         #This is needed for StandAlone
         if len(listId) > 0 : common._db.updateRunJob_(listId, listRunField)
         header = ''
-        if ended != None and len(ended) > 0:
-            if (self.verbose): header+= "%-6s %-18s %-14s %-36s %-13s %-16s %-4s" % ('ID','STATUS','ACTION','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
-            else: header+= "%-6s %-18s %-36s %-13s %-16s %-4s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
-        else:
-            if (self.verbose): header+= "%-6s %-18s %-14s %-36s %-13s %-16s" % ('ID','STATUS','ACTION','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
-            else: header+= "%-6s %-18s %-36s %-13s %-16s" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
+       
+        if (self.verbose):
+            header+= "%-6s %-18s %-14s %-36s %-13s %-16s %-4s\n" % ('ID','STATUS','ACTION','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
+            header+=  '------------------------------------------------------------------------------------------------------------------\n'
+        else: 
+            header+= "%-6s %-18s %-36s %-13s %-16s\n" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
+            header+=  '--------------------------------------------------------------------------------------------\n'
 
         if display: displayReport(self,header,toPrint,self.xml)
 
