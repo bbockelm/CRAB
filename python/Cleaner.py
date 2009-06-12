@@ -3,6 +3,7 @@ from crab_exceptions import *
 from Status import Status
 import common
 import string
+from crab_util import *
 
 class Cleaner(Actor):
     def __init__(self, cfg_params):
@@ -29,14 +30,14 @@ class Cleaner(Actor):
                 if st in ['SubSuccess']: jobSub.append(job['jobId'])
             pass
 
-        if len(jobTerm)>0 or len(jobSub):
+        if len(jobTerm)>0 or len(jobSub)>0:
             msg = "There are still "
-            if countSub:
-                msg= msg+" jobs submitted. Kill them '-kill %s' before '-clean'"%readableList(self,jobSub))
-            if (countSub and countDone):
+            if len(jobSub)>0:
+                msg= msg+" jobs submitted. Kill them '-kill %s' before '-clean'"%readableList(self,jobSub)
+            if (len(jobTerm)>0 or len(jobSub)>0):
                 msg = msg + "and \nalso"
-            if countDone:
-                msg= msg+" jobs Done. Get their outputs '-get %s' before '-clean'"%readableList(self,jobTerm))
+            if len(jobTerm)>0:
+                msg= msg+" jobs Done. Get their outputs '-get %s' before '-clean'"%readableList(self,jobTerm)
             raise CrabException(msg)
         pass
 
