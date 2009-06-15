@@ -54,8 +54,7 @@ class SchedulerLsf(SchedulerLocal) :
 
         if (self.queue):
             sched_param += '-q '+self.queue +' '
-            if (self.res): sched_param += ' -R '+self.res +' '
-
+        if (self.res): sched_param += ' -R '+self.res +' '
         # sched_param+='-cwd '+ str(self.outputDir)  + ' '
         return sched_param
 
