@@ -219,7 +219,7 @@ class TaskLogVisualizer:
         html = "<html><body><h2>Staus of task : " + str(self.taskname) + "</h2>\n "
         html += '<table cellspacing="10">\n'
 
-        st = ['Job','Status','Destination','Job_exit_code','Exe_exit_code','Ended']
+        st = ['Job','Status','Action','Destination','Job_exit_code','Exe_exit_code','Ended']
         html += "<tr>"
         for s in st:
             html += '<th align="left">%s</b></th>\n'%s
@@ -227,6 +227,7 @@ class TaskLogVisualizer:
 
         for item in nodiparam:
             status   = item.attrs.get("status")
+            action   = item.attrs.get("action")
             site     = item.attrs.get("site")
             ended    = item.attrs.get("ended")
             jec      = item.attrs.get("job_exit")
@@ -236,10 +237,14 @@ class TaskLogVisualizer:
                 ended = 'Yes'
             elif ended == 'N':
                 ended = 'No'
+            ## temporary workaround 
+            if action == 'Terminated': status = 'Done'
+            if action == 'SubRequested' : status = 'Submitting'
 
             html += "<tr>"
             html += "<td align='left'>%s</td>"%(jobid)
             html += "<td align='left'>%s</td>"%(status)
+            html += "<td align='left'>%s</td>"%(action)
             html += "<td align='left'>%s</td>"%(site)
             if jec != 'None':
                 html += "<td align='left'>%s</td>"%(jec)
