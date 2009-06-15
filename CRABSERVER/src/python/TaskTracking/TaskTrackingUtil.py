@@ -5,34 +5,7 @@ import re
 class TaskTrackingUtil:
 
     def __init__(self):
- #       self.allow_anonymous = str(auth)
         pass
-    def convertStatus( self, status ):
-        """
-        _convertStatus_
-        U  : undefined
-        C  : created
-        S  : submitted
-        SR : enqueued by the scheduler
-        R  : running
-        A  : Aborted
-        D  : Done
-        K  : killed
-        E  : erased from the scheduler queue (also disappeared...)
-        DA : finished but with some failures (aka Done Failed in GLite or Held for condor)
-        UE : user ended (retrieved by th user)
-        """
-        stateconverting = { \
-                    'R': 'Running', 'SD': 'Done', 'DA': 'Done (Failed)', \
-                    'E': 'Done', 'SR': 'Ready', 'A': 'Aborted', \
-                    'SS': 'Scheduled', 'U': 'Unknown', 'SW': 'Waiting', \
-                    'K': 'Killed', 'S': 'Submitted', 'SU': 'Submitted', \
-                    'NotSubmitted': 'NotSubmitted', 'C': 'Created', \
-                    'UE': 'Cleared'
-                          }
-        if status in stateconverting:
-            return stateconverting[status]
-        return 'Unknown'
 
     def getNameFromProxy(self, path):
         """

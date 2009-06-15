@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.150 2009/05/21 11:16:11 mcinquil Exp $"
-__version__ = "$Revision: 1.150 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.152 2009/06/10 13:26:46 mcinquil Exp $"
+__version__ = "$Revision: 1.152 $"
 
 import os
 import time
@@ -895,15 +895,13 @@ class TaskTrackingComponent:
                          stato, joboff, resubmitting, sId, action ]
             dictStateTot.setdefault(job, vect)
 
-            if stato in ["E","UE"]:
+            if stato in ["E"]:
                 if (eec == "0" or eec == "" or eec == "NULL") and jec == "0":
                     dictReportTot['JobSuccess'] += 1
                     dictStateTot[job][3] = 1
                     dictStateTot[job][8] = 'Y'
                 elif not resubmitting:
                     dictReportTot['JobFailed'] += 1
-                    if stato == "E":
-                        dictStateTot[job][0] = "Done (Failed)"
                     dictStateTot[job][3] = 1
                     dictStateTot[job][8] = 'Y'
                 else:
@@ -916,9 +914,7 @@ class TaskTrackingComponent:
                 else:
                     dictReportTot['JobInProgress'] += 1
                     dictStateTot[job][8] = 'N'
-            #elif stato == "A":
-            #        dictReportTot['JobFailed'] += 1
-            elif (not resubmitting) and joboff == 'Y' and internalstatus != "Killing":
+            elif (not resubmitting) and joboff == 'Y':
                 dictReportTot['JobFailed'] += 1
                 dictStateTot[job][3] = 1
                 dictStateTot[job][8] = 'Y'
@@ -926,7 +922,6 @@ class TaskTrackingComponent:
                 if (internalstatus in ["failed", "finished"] and not resubmitting) \
                   or internalstatus == "reallyFinished":
                    countNotSubmitted += 1
-                   dictStateTot[job][6] = "NS"
                    dictReportTot['JobFailed'] += 1
                    dictStateTot[job][0] = "CannotSubmit"
                    dictStateTot[job][8] = 'Y'
@@ -938,15 +933,6 @@ class TaskTrackingComponent:
             else:
                 dictReportTot['JobInProgress'] += 1
                 dictStateTot[job][8] = 'N'
-
-         #   ## case for killing jobs:
-         #   if (not stato in ['K', 'A']) and internalstatus == "Killing":
-         #       dictStateTot[job][0] = "Killing"
-         #       dictStateTot[job][6] = "KK"
-         #   ## case for submitting jobs
-         #   if stato in ['C'] and internalstatus == "Submitting":
-         #       dictStateTot[job][0] = "Submitting"
-         #       dictStateTot[job][6] = "CS"
 
         ttdb.statusUpdated(mySession.bossLiteDB, taskName)
         if len(updateStateTerminated) > 0:
