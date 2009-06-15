@@ -16,7 +16,7 @@ class Killer(Actor):
         task = common._db.getTask(self.range)
         toBeKilled = []
         for job  in task.jobs:
-           if job.runningJob['state'] in ['SubSuccess','SubRequest']:
+           if job.runningJob['state'] in ['SubSuccess','SubRequested']:
                toBeKilled.append(job['jobId'])
            else:
                common.logger.info("Not possible to kill Job #"+str(job['jobId'])+\

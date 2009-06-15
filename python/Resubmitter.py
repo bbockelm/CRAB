@@ -33,7 +33,7 @@ class Resubmitter(Submitter):
             else:
                 common.logger.info('Job #'+`nj`+' last action was '+str(job.runningJob['state'])+' actual status is '\
                         +str(job.runningJob['statusScheduler'])+' must be killed (-kill) before resubmission')
-                if (job.runningJob['state']=='KillRequest'): common.logger.info('\t\tthe previous Kill request is being processed')
+                if (job.runningJob['state']=='KillRequested'): common.logger.info('\t\tthe previous Kill request is being processed')
 
 
         if len(nj_list) == 0 :

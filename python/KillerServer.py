@@ -37,7 +37,7 @@ class KillerServer(Actor):
         toBeKilled = []
         for job  in task.jobs:
            #if job.runningJob['status'] not in ['C','E','KK','K','SU','SA','NS']: # commented for fast-kill at registration ,'SSE']:
-           if job.runningJob['state'] in ['SubSuccess','SubRequest']:
+           if job.runningJob['state'] in ['SubSuccess','SubRequested']:
                toBeKilled.append(job['jobId'])
            else:
                common.logger.info("Not possible to kill Job #"+str(job['jobId'])+\
@@ -59,7 +59,7 @@ class KillerServer(Actor):
  
             # printout the command result
             common.scheduler.cancel(toBeKilled)
-            common._db.updateRunJob_(toBeKilled, [{'state':'KillRequest'}]*len(toBeKilled))
+            common._db.updateRunJob_(toBeKilled, [{'state':'KillRequested'}]*len(toBeKilled))
 
             common.logger.info("Kill request for %d jobs succesfully sent to the server\n"%len(toBeKilled) ) 
 
