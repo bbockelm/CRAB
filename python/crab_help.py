@@ -427,7 +427,7 @@ to activate the split run based (each job will access a different run) use I<spl
 
 =item B<output_file *>
 
-the output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1 (default is 0 == file included). The Edm output produced via PoolOutputModule can be automatically added by setting B<get_edm_output> = 1 (default is 0 == no)
+the output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1 (default is 0 == file included). The Edm output produced via PoolOutputModule can be automatically added by setting B<get_edm_output> = 1 (default is 0 == no). B<warning> it is not allowed to have a PoolOutputSource and not save it somewhere, since it is a waste of resource on the WN. In case you really want to do that, and if you really know what you are doing (hint: you dont!) you can user I<ignore_edm_output=1>.
 
 =item B<skip_TFileService_output>
 
