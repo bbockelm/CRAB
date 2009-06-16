@@ -12,6 +12,8 @@ from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReader
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 from ProdCommon.DataMgmt.DBS.DBSWriter import DBSWriter,DBSWriterObjects
 import sys
+from DBSAPI.dbsApiException import DbsException
+from DBSAPI.dbsApi import DbsApi
 
 class Publisher(Actor):
     def __init__(self, cfg_params):
@@ -85,12 +87,14 @@ class Publisher(Actor):
         
     def importParentDataset(self,globalDBS, datasetpath):
         """
-        """ 
+        """
+        print " patch for importParentDataset: datasetpath = ", datasetpath
+        """
         dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
         
         try:
-            #dbsWriter.importDatasetWithoutParentage(globalDBS, self.datasetpath, self.DBSURL) 
-            dbsWriter.importDataset(globalDBS, self.datasetpath, self.DBSURL)
+            #dbsWriter.importDatasetWithoutParentage(globalDBS, datasetpath, self.DBSURL) 
+            dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL)
         except DBSWriterError, ex:
             msg = "Error importing dataset to be processed into local DBS\n"
             msg += "Source Dataset: %s\n" % datasetpath
@@ -99,6 +103,23 @@ class Publisher(Actor):
             common.logger.info(msg)
             common.logger.debug(str(ex))
             return 1
+        return 0
+        """
+        try:
+            args={}
+            args['url']=self.DBSURL
+            args['mode']='POST'
+            block = ""
+            api = DbsApi(args)
+            #api.migrateDatasetContents(srcURL, dstURL, path, block , False)
+            api.migrateDatasetContents(globalDBS, self.DBSURL, datasetpath, block , False)
+
+        except DbsException, ex:
+            print "Caught API Exception %s: %s "  % (ex.getClassName(), ex.getErrorMessage() )
+            if ex.getErrorCode() not in (None, ""):
+                print "DBS Exception Error Code: ", ex.getErrorCode()
+            return 1
+        print "Done"
         return 0
           
     def publishDataset(self,file):
