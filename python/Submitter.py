@@ -27,7 +27,7 @@ class Submitter(Actor):
                 self.nsjobs = eval(val)
             elif (type(eval(val)) is tuple)or( type(eval(val)) is int and eval(val)<0 ) :
                 self.chosenJobsList = parsed_range
-                self.nsjobs = len(chosenJobsList)
+                self.nsjobs = len(self.chosenJobsList)
             else:
                 msg = 'Bad submission option <'+str(val)+'>\n'
                 msg += '      Must be an integer or "all"'
