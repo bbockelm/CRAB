@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.18 2009/05/04 21:45:43 ewv Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: writeCfg.py,v 1.19 2009/05/05 15:29:38 ewv Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import getopt
 import imp
@@ -39,9 +39,9 @@ def main(argv) :
     """
     writeCfg
 
-    - Read in existing, user supplied cfg or pycfg file
-    - Modify job specific parameters based on environment variables
-    - Write out modified cfg or pycfg file
+    - Read in existing, user supplied cfg or pickled pycfg file
+    - Modify job specific parameters based on environment variables and arguments.xml
+    - Write out modified cfg or pickled pycfg file
 
     required parameters: none
 
@@ -113,11 +113,10 @@ def main(argv) :
                 skipEvents = int(elem.getAttribute("SkipEvents"))
             if elem.getAttribute("FirstEvent"):
                 firstEvent = int(elem.getAttribute("FirstEvent"))
-            if elem.getAttribute("CompHEPFirstEvent"):
-                compHEPFirstEvent = int(elem.getAttribute("CompHEPFirstEvent"))
             if elem.getAttribute("FirstRun"):
                 firstRun = int(elem.getAttribute("FirstRun"))
 
+            generator      = str(elem.getAttribute('Generator'))
             inputFiles     = str(elem.getAttribute('InputFiles'))
             parentFiles    = str(elem.getAttribute('ParentFiles'))
 
@@ -154,10 +153,15 @@ def main(argv) :
 
     if skipEvents:
         inModule.setSkipEvents(skipEvents)
-    if firstEvent != -1:
+
+    # Set "skip events" for various generators
+    if generator == 'comphep':
+        cmsProcess.source.CompHEPFirstEvent = CfgTypes.int32(firstEvent)
+    elif generator == 'lhe':
+        cmsProcess.LHESource.skipEvents = CfgTypes.untracked(CfgTypes.uint32(firstEvent))
+    elif firstEvent != -1: # (Old? Madgraph)
         cmsProcess.source.firstEvent = CfgTypes.untracked(CfgTypes.uint32(firstEvent))
-    if compHEPFirstEvent:
-        cmsProcess.source.CompHEPFirstEvent = CfgTypes.int32(compHEPFirstEvent)
+
     if inputFiles:
         inputFileNames = inputFiles.split(',')
         inModule.setFileNames(*inputFileNames)

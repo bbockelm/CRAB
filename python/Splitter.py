@@ -57,13 +57,13 @@ class JobSplitter:
               self.list_of_args - File(s) job will run on (a list of lists)
         """
 
-        jobDestination=[]  
+        jobDestination=[]
         self.checkUserSettings()
         if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
             msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
             raise CrabException(msg)
- 
-        blockSites = self.args['blockSites'] 
+
+        blockSites = self.args['blockSites']
         pubdata = self.args['pubdata']
         filesbyblock=pubdata.getFiles()
 
@@ -126,7 +126,7 @@ class JobSplitter:
         parString = ""
         pString = ""
         filesEventCount = 0
-        msg='' 
+        msg=''
 
         # ---- Iterate over the blocks in the dataset until ---- #
         # ---- we've met the requested total # of events    ---- #
@@ -266,7 +266,7 @@ class JobSplitter:
                         pString_tmp=''
                         if self.useParent==1:
                             for f in parent : pString_tmp +=  f + ','
-                        pString =  pString_tmp 
+                        pString =  pString_tmp
                         parString =  file + ','
                     pass # END if
                 pass # END while (iterate over files in the block)
@@ -276,7 +276,7 @@ class JobSplitter:
         if (eventsRemaining > 0 and jobCount < totalNumberOfJobs ):
             common.logger.info("Could not run on all requested events because some blocks not hosted at allowed sites.")
         common.logger.info(str(jobCount)+" job(s) can run on "+str(totalEventCount)+" events.\n")
- 
+
         # skip check on  block with no sites  DD
         if noBboundary == 0 : self.checkBlockNoSite(blocks,jobsOfBlock,blockSites)
 
@@ -292,7 +292,7 @@ class JobSplitter:
 
         # keep trace of block with no sites to print a warning at the end
 
-    def checkBlockNoSite(self,blocks,jobsOfBlock,blockSites):   
+    def checkBlockNoSite(self,blocks,jobsOfBlock,blockSites):
         # screen output
         screenOutput = "List of jobs and available destination sites:\n\n"
         noSiteBlock = []
@@ -338,37 +338,37 @@ class JobSplitter:
             common.logger.info(msg)
 
         if bloskNoSite == allBlock:
-            raise CrabException('No jobs created') 
+            raise CrabException('No jobs created')
 
         return
 
 
 ########################################################################
-    def jobSplittingByRun(self): 
+    def jobSplittingByRun(self):
         """
         """
-        from sets import Set  
+        from sets import Set
         from WMCore.JobSplitting.RunBased import RunBased
         from WMCore.DataStructs.Workflow import Workflow
         from WMCore.DataStructs.File import File
         from WMCore.DataStructs.Fileset import Fileset
         from WMCore.DataStructs.Subscription import Subscription
         from WMCore.JobSplitting.SplitterFactory import SplitterFactory
-        from WMCore.DataStructs.Run import Run 
+        from WMCore.DataStructs.Run import Run
 
         self.checkUserSettings()
-        blockSites = self.args['blockSites'] 
+        blockSites = self.args['blockSites']
         pubdata = self.args['pubdata']
 
         if self.selectNumberOfJobs == 0 :
             self.theNumberOfJobs = 9999999
         blocks = {}
-        runList = [] 
+        runList = []
         thefiles = Fileset(name='FilesToSplit')
         fileList = pubdata.getListFiles()
         for f in fileList:
             block = f['Block']['Name']
-            try: 
+            try:
                 f['Block']['StorageElementList'].extend(blockSites[block])
             except:
                 continue
@@ -376,13 +376,13 @@ class JobSplitter:
             [ wmbsFile['locations'].add(x) for x in blockSites[block] ]
             wmbsFile['block'] = block
             runNum = f['RunsList'][0]['RunNumber']
-            runList.append(runNum) 
+            runList.append(runNum)
             myRun = Run(runNumber=runNum)
             wmbsFile.addRun( myRun )
             thefiles.addFile(
                 wmbsFile
                 )
- 
+
         work = Workflow()
         subs = Subscription(
         fileset = thefiles,
@@ -391,8 +391,8 @@ class JobSplitter:
         type = "Processing")
         splitter = SplitterFactory()
         jobfactory = splitter(subs)
-        
-        #loop over all runs 
+
+        #loop over all runs
         set = Set(runList)
         list_of_lists = []
         jobDestination = []
@@ -400,13 +400,13 @@ class JobSplitter:
         for jobGroup in  jobfactory():
             if count <  self.theNumberOfJobs:
                 res = self.getJobInfo(jobGroup)
-                parString = '' 
+                parString = ''
                 for file in res['lfns']:
                     parString += file + ','
                 fullString = parString[:-1]
-                list_of_lists.append([fullString,str(-1),str(0)])     
+                list_of_lists.append([fullString,str(-1),str(0)])
                 #need to check single file location
-                jobDestination.append(res['locations'])   
+                jobDestination.append(res['locations'])
                 count +=1
        # prepare dict output
         dictOut = {}
@@ -419,21 +419,21 @@ class JobSplitter:
 
     def getJobInfo( self,jobGroup ):
         res = {}
-        lfns = []         
-        locations = []         
+        lfns = []
+        locations = []
         tmp_check=0
         for job in jobGroup.jobs:
             for file in job.getFiles():
-                lfns.append(file['lfn']) 
+                lfns.append(file['lfn'])
                 for loc in file['locations']:
                     if tmp_check < 1 :
                         locations.append(loc)
-                tmp_check = tmp_check + 1 
-                ### qui va messo il check per la locations 
-        res['lfns'] = lfns 
-        res['locations'] = locations 
-        return res                
-       
+                tmp_check = tmp_check + 1
+                ### qui va messo il check per la locations
+        res['lfns'] = lfns
+        res['locations'] = locations
+        return res
+
 ########################################################################
     def jobSplittingNoInput(self):
         """
@@ -493,10 +493,11 @@ class JobSplitter:
                 ## pythia first run
                 args.append(str(firstRun)+str(i))
             if (generator in managedGenerators):
-                if (generator == 'comphep' and i == 0):
+               args.append(generator)
+               if (generator == 'comphep' and i == 0):
                     # COMPHEP is brain-dead and wants event #'s like 1,100,200,300
                     args.append('1')
-                else:
+               else:
                     args.append(str(i*self.eventsPerJob))
             args.append(str(self.eventsPerJob))
             self.list_of_args.append(args)
@@ -506,9 +507,11 @@ class JobSplitter:
         dictOut['params'] = ['MaxEvents']
         if (firstRun):
             dictOut['params'] = ['FirstRun','MaxEvents']
-            if ( generator in managedGenerators ) : dictOut['params'] = ['FirstRun', 'FirstEvent', 'MaxEvents'] 
-        else:  
-            if (generator in managedGenerators) : dictOut['params'] = ['FirstEvent', 'MaxEvents']
+            if ( generator in managedGenerators ) :
+                dictOut['params'] = ['FirstRun', 'Generator', 'FirstEvent', 'MaxEvents']
+        else:
+            if (generator in managedGenerators) :
+                dictOut['params'] = ['Generator', 'FirstEvent', 'MaxEvents']
         dictOut['args'] = self.list_of_args
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
@@ -546,9 +549,9 @@ class JobSplitter:
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
         return dictOut
- 
 
-    def jobSplittingByLumi(self): 
+
+    def jobSplittingByLumi(self):
         """
         """
         return
@@ -556,12 +559,12 @@ class JobSplitter:
         """
         Define key splittingType matrix
         """
-        SplitAlogs = { 
-                     'EventBased'           : self.jobSplittingByEvent, 
+        SplitAlogs = {
+                     'EventBased'           : self.jobSplittingByEvent,
                      'RunBased'             : self.jobSplittingByRun,
-                     'LumiBased'            : self.jobSplittingByLumi, 
-                     'NoInput'              : self.jobSplittingNoInput, 
+                     'LumiBased'            : self.jobSplittingByLumi,
+                     'NoInput'              : self.jobSplittingNoInput,
                      'ForScript'            : self.jobSplittingForScript
-                     }  
+                     }
         return SplitAlogs
 

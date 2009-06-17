@@ -45,7 +45,7 @@ class Cmssw(JobType):
 
         self.version = self.scram.getSWVersion()
         common.logger.log(10-1,"CMSSW version is: "+str(self.version))
-        
+
         try:
             type, self.CMSSW_major, self.CMSSW_minor, self.CMSSW_patch = tuple(self.version.split('_'))
         except:
@@ -88,7 +88,7 @@ class Cmssw(JobType):
         if self.debug_wrapper == 1: self.debugWrap='--debug'
 
         ## now the application
-        self.managedGenerators = ['madgraph','comphep']
+        self.managedGenerators = ['madgraph', 'comphep', 'lhe']
         self.generator = cfg_params.get('CMSSW.generator','pythia').lower()
         self.executable = cfg_params.get('CMSSW.executable','cmsRun')
         common.logger.log(10-1, "CMSSW::CMSSW(): executable = "+self.executable)
@@ -398,7 +398,7 @@ class Cmssw(JobType):
         common._db.updateJob_(listID,listField)
         self.zipTarFile()
         return
-      
+
     def addXMLfile(self):
 
         import tarfile
@@ -414,7 +414,7 @@ class Cmssw(JobType):
             msg = 'Could not add %s to %s \n'%(self.argsFile,self.tarNameWithPath)
             msg += str(exc)
             raise CrabException(msg)
-  
+
     def CreateXML(self):
         """
         """
@@ -527,7 +527,7 @@ class Cmssw(JobType):
             if not self.pset is None:
                 cfg_file = common.work_space.jobDir()+self.configFilename()
                 tar.add(cfg_file,self.configFilename())
-           
+
             try:
                 crab_cfg_file = common.work_space.shareDir()+'/crab.cfg'
                 tar.add(crab_cfg_file,'crab.cfg')
@@ -570,10 +570,10 @@ class Cmssw(JobType):
             msg = 'Could not create tar-ball %s \n'%self.tarNameWithPath
             msg += str(exc)
             raise CrabException(msg)
-  
-    def zipTarFile(self):  
 
-        cmd = "gzip -c %s > %s "%(self.tarNameWithPath,self.tgzNameWithPath) 
+    def zipTarFile(self):
+
+        cmd = "gzip -c %s > %s "%(self.tarNameWithPath,self.tgzNameWithPath)
         res=runCommand(cmd)
 
         tarballinfo = os.stat(self.tgzNameWithPath)

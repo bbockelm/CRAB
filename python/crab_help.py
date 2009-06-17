@@ -24,7 +24,7 @@ The most useful general options (use '-h' to get complete help):
   -getoutput|-get [range]                 -- get back the output of all jobs: if range is defined, only of selected jobs.
   -extend                                 -- Extend an existing task to run on new fileblocks if there.
   -publish                                -- after the getouput, publish the data user in a local DBS instance.
-  -checkPublication [dbs_url datasetpath] -- checks if a dataset is published in a DBS. 
+  -checkPublication [dbs_url datasetpath] -- checks if a dataset is published in a DBS.
   -kill [range]                           -- kill submitted jobs.
   -resubmit [range]                       -- resubmit killed/aborted/retrieved jobs.
   -copyData [range]                       -- copy locally the output stored on remote SE.
@@ -459,7 +459,7 @@ First run to be generated in a generation jobs. Relevant only for no-input workf
 =item B<generator>
 
 Name of the generator your MC job is using. Some generators require CRAB to skip events, others do not.
-Possible values are pythia, comphep, and madgraph. This will skip events in your generator input file.
+Possible values are pythia (default), comphep, lhe, and madgraph. This will skip events in your generator input file.
 
 =item B<executable>
 
@@ -531,7 +531,7 @@ If you want to copy the output in a not_official_CMS remote site you have to spe
 =item B<user_remote_dir>
 
 To be used with <copy_data>=1 and <storage_element> official CMS sites.
-This is the directory or tree of directories where your output will be stored. This directory will be created under the mountpoint ( which will be discover by CRAB if an official CMS storage Element has been used, or taken from the crab.cfg as specified by the user). B<NOTE> This part of the path will be used as logical file name of your files in the case of publication without using an official CMS storage Element. Generally it should start with "/store".  
+This is the directory or tree of directories where your output will be stored. This directory will be created under the mountpoint ( which will be discover by CRAB if an official CMS storage Element has been used, or taken from the crab.cfg as specified by the user). B<NOTE> This part of the path will be used as logical file name of your files in the case of publication without using an official CMS storage Element. Generally it should start with "/store".
 
 =item B<storage_path>
 
@@ -550,7 +550,7 @@ To choose the storage port specify I<storage_port> = N (default is 8443) .
 
 =item B<local_stage_out *>
 
-This option enables the local stage out of produced output to the "close storage element" where the job is running, in case of failure of the remote copy to the Storage element decided by the user in che crab.cfg. It has to be used with the copy_data option. In the case of backup copy, the publication of data is forbidden. Set I<local_stage_out> = 1   
+This option enables the local stage out of produced output to the "close storage element" where the job is running, in case of failure of the remote copy to the Storage element decided by the user in che crab.cfg. It has to be used with the copy_data option. In the case of backup copy, the publication of data is forbidden. Set I<local_stage_out> = 1
 
 =item B<publish_data*>
 
