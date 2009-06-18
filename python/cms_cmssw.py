@@ -46,8 +46,14 @@ class Cmssw(JobType):
         self.version = self.scram.getSWVersion()
         common.logger.log(10-1,"CMSSW version is: "+str(self.version))
 
+        version_array = self.version.split('_')
+        self.CMSSW_major = 0
+        self.CMSSW_minor = 0
+        self.CMSSW_patch = 0
         try:
-            type, self.CMSSW_major, self.CMSSW_minor, self.CMSSW_patch = tuple(self.version.split('_'))
+            self.CMSSW_major = int(version_array[1])
+            self.CMSSW_minor = int(version_array[2])
+            self.CMSSW_patch = int(version_array[3])
         except:
             msg = "Cannot parse CMSSW version string: " + self.version + " for major and minor release number!"
             raise CrabException(msg)
@@ -127,6 +133,9 @@ class Cmssw(JobType):
                 msg ="ERROR. file "+self.scriptExe+" not found"
                 raise CrabException(msg)
             self.additional_inbox_files.append(string.strip(self.scriptExe))
+
+        self.AdditionalArgs = cfg_params.get('USER.script_arguments',None)
+        if self.AdditionalArgs : self.AdditionalArgs = string.replace(self.AdditionalArgs,',',' ')
 
         if self.datasetPath == None and self.pset == None and self.scriptExe == '' :
             msg ="Error. script_exe  not defined"
@@ -379,7 +388,7 @@ class Cmssw(JobType):
                     argu[self.dict['params'][i]]=jobParams[id][i]
                 # just for debug
                 str_argu += concString.join(jobParams[id])
-            listDictions.append(argu)
+            if argu != '': listDictions.append(argu)
             job_ToSave['arguments']= str(job+1)
             job_ToSave['dlsDestination']= self.jobDestination[id]
             listField.append(job_ToSave)
@@ -687,7 +696,9 @@ class Cmssw(JobType):
             txt += 'echo "IncrementSeeds:<$IncrementSeeds>"\n'
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
-
+        else: 
+            txt += '\n'
+            txt += 'export AdditionalArgs=%s\n'%(self.AdditionalArgs)
 
         return txt
 
@@ -796,7 +807,7 @@ class Cmssw(JobType):
     def executableArgs(self):
         # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
         if self.scriptExe:
-            return self.scriptExe + " $NJob"
+            return self.scriptExe + " $NJob $AdditionalArgs" 
         else:
             ex_args = ""
             ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
