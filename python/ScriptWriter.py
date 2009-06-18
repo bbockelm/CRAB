@@ -48,6 +48,8 @@ class ScriptWriter:
         if debug==1 : self.debug_wrapper='--debug'
 
         self.scriptName = cfg_params.get('CRAB.jobtype').upper()+'.sh'  
+ 
+        self.pset = cfg_params.get('CMSSW.pset','None')
 
         return
 
@@ -221,16 +223,18 @@ class ScriptWriter:
         Returns part of the script that runs writeCfg.py on the WN
         """
         # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
-        txt = "# Rewrite cfg for this job\n"
-
-        if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or self.CMSSW_major > 2: #  py in,  py out for 2_1_x
-          txt += "echo  $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.py pset.py\n"
-          txt += "python $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.py pset.py\n"
-        elif self.CMSSW_major >= 2:                                                   # cfg in,  py out for 2_0_x
-          txt += "echo  $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.cfg pset.py\n"
-          txt += "python $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.cfg pset.py\n"
-        else:                                                                         # cfg in, cfg out for 1_x_y
-          txt += "echo  $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.cfg pset.cfg\n"
-          txt += "python $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.cfg pset.cfg\n"
+        txt='' 
+        if str(self.pset).upper() != 'NONE':  
+            txt += "# Rewrite cfg for this job\n"
+       
+            if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or self.CMSSW_major > 2: #  py in,  py out for 2_1_x
+              txt += "echo  $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.py pset.py\n"
+              txt += "python $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.py pset.py\n"
+            elif self.CMSSW_major >= 2:                                                   # cfg in,  py out for 2_0_x
+              txt += "echo  $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.cfg pset.py\n"
+              txt += "python $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.cfg pset.py\n"
+            else:                                                                         # cfg in, cfg out for 1_x_y
+              txt += "echo  $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.cfg pset.cfg\n"
+              txt += "python $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.cfg pset.cfg\n"
 
         return txt
