@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.19 2009/05/05 15:29:38 ewv Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: writeCfg.py,v 1.20 2009/06/17 20:58:08 ewv Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import getopt
 import imp
@@ -158,7 +158,8 @@ def main(argv) :
     if generator == 'comphep':
         cmsProcess.source.CompHEPFirstEvent = CfgTypes.int32(firstEvent)
     elif generator == 'lhe':
-        cmsProcess.LHESource.skipEvents = CfgTypes.untracked(CfgTypes.uint32(firstEvent))
+        cmsProcess.source.skipEvents = CfgTypes.untracked(CfgTypes.uint32(firstEvent))
+        cmsProcess.source.firstEvent = CfgTypes.untracked(CfgTypes.uint32(firstEvent+1))
     elif firstEvent != -1: # (Old? Madgraph)
         cmsProcess.source.firstEvent = CfgTypes.untracked(CfgTypes.uint32(firstEvent))
 
