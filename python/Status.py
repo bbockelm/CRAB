@@ -119,7 +119,9 @@ class Status(Actor):
                          'Unknown',
                          'Done (Failed)',
                          'Cleared',
-                         'Retrieved'
+                         'Retrieved',
+                         'NotSubmitted',
+                         'CannotSubmit'
                           ]
 
         jobs = common._db.nJobs('list')
@@ -144,6 +146,12 @@ class Status(Actor):
                         elif st == 'Done' or st == 'Done (Failed)' :
                             msg+=  ">>>>>>>>> %i Jobs %s\n " % (len(list_ID), str(st))
                             msg+=  "\tRetrieve them with: crab -getoutput <List of jobs>\n"
+                            msg+=  "\tList of jobs: %s \n" % readableList(self,list_ID)
+                        elif st in ['NotSubmitted','CannotSubmit']:
+                            msg+=  ">>>>>>>>> %i Jobs %s\n " % (len(list_ID), str(st))
+                            msg+=  "\tCheck if they match resources with: crab -match <List of jobs>\n"
+                            msg+=  "\tIf not, check data location (eg your data is just on T1's)\n"
+                            msg+=  "\tand software version installation (eg the version you are using has been deprecared and is beeing removed\n"
                             msg+=  "\tList of jobs: %s \n" % readableList(self,list_ID)
                         else   :
                             msg+=  ">>>>>>>>> %i Jobs %s \n " % (len(list_ID), str(st))
