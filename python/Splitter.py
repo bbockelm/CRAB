@@ -435,21 +435,9 @@ class JobSplitter:
         return res
 
 ########################################################################
-    def jobSplittingNoInput(self):
+    def prepareSplittingNoInput(self):
         """
-        Perform job splitting based on number of event per job
         """
-        common.logger.debug('Splitting per events')
-        self.checkUserSettings()
-        jobDestination=[]
-        if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
-            msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
-            raise CrabException(msg)
-
-        managedGenerators =self.args['managedGenerators']
-        generator = self.args['generator']
-        firstRun = self.cfg_params.get('CMSSW.first_run',None)
-
         if (self.selectEventsPerJob):
             common.logger.info('Required '+str(self.eventsPerJob)+' events per job ')
         if (self.selectNumberOfJobs):
@@ -471,6 +459,24 @@ class JobSplitter:
         elif (self.selectNumberOfJobs) :
             self.total_number_of_jobs = self.theNumberOfJobs
             self.eventsPerJob = int(self.total_number_of_events/self.total_number_of_jobs)
+
+
+    def jobSplittingNoInput(self):
+        """
+        Perform job splitting based on number of event per job
+        """
+        common.logger.debug('Splitting per events')
+        self.checkUserSettings()
+        jobDestination=[]
+        if ( (self.selectTotalNumberEvents + self.selectEventsPerJob + self.selectNumberOfJobs) != 2 ):
+            msg = 'Must define exactly two of total_number_of_events, events_per_job, or number_of_jobs.'
+            raise CrabException(msg)
+
+        managedGenerators =self.args['managedGenerators']
+        generator = self.args['generator']
+        firstRun = self.cfg_params.get('CMSSW.first_run',None)
+
+        self.prepareSplittingNoInput()
 
         common.logger.debug('N jobs  '+str(self.total_number_of_jobs))
 
@@ -531,21 +537,27 @@ class JobSplitter:
         common.logger.debug('Splitting per job')
         common.logger.info('Required '+str(self.theNumberOfJobs)+' jobs in total ')
 
-        self.total_number_of_jobs = self.theNumberOfJobs
+#        self.total_number_of_jobs = self.theNumberOfJobs
+
+        self.prepareSplittingNoInput()
 
         common.logger.debug('N jobs  '+str(self.total_number_of_jobs))
 
         common.logger.info(str(self.total_number_of_jobs)+' jobs can be created')
 
         # argument is seed number.$i
-        #self.list_of_args = []
+        self.list_of_args = []
         for i in range(self.total_number_of_jobs):
+            args=[]
             jobDestination.append([""])
-        #   self.list_of_args.append([str(i)])
+            if self.eventsPerJob != 0 :
+                args.append(str(self.eventsPerJob))
+                self.list_of_args.append(args)
 
        # prepare dict output
         dictOut = {}
-        dictOut['args'] = [] # self.list_of_args
+        dictOut['params'] = ['MaxEvents']
+        dictOut['args'] =  self.list_of_args
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
         return dictOut

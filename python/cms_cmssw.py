@@ -14,7 +14,7 @@ class Cmssw(JobType):
         common.logger.debug('CMSSW::__init__')
         self.skip_blocks = skip_blocks
         self.argsList = 1
-
+        self.NumEvents=0
         self._params = {}
         self.cfg_params = cfg_params
 
@@ -386,6 +386,7 @@ class Cmssw(JobType):
                 argu = {'JobID': job+1}
                 for i in range(len(jobParams[id])):
                     argu[self.dict['params'][i]]=jobParams[id][i]
+                    if len(jobParams[id])==1: self.NumEvents = jobParams[id][i]
                 # just for debug
                 str_argu += concString.join(jobParams[id])
             if argu != '': listDictions.append(argu)
@@ -698,8 +699,8 @@ class Cmssw(JobType):
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
         else: 
             txt += '\n'
-            txt += 'export AdditionalArgs=%s\n'%(self.AdditionalArgs)
-
+            if self.AdditionalArgs: txt += 'export AdditionalArgs=%s\n'%(self.AdditionalArgs)
+            if int(self.NumEvents) != 0: txt += 'export MaxEvents=%s\n'%str(self.NumEvents)
         return txt
 
     def wsUntarSoftware(self, nj=0):
