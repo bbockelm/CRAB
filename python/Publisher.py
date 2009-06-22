@@ -88,8 +88,6 @@ class Publisher(Actor):
     def importParentDataset(self,globalDBS, datasetpath):
         """
         """
-        print " patch for importParentDataset: datasetpath = ", datasetpath
-        """
         dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
         
         try:
@@ -105,6 +103,7 @@ class Publisher(Actor):
             return 1
         return 0
         """
+        print " patch for importParentDataset: datasetpath = ", datasetpath
         try:
             args={}
             args['url']=self.DBSURL
@@ -121,7 +120,7 @@ class Publisher(Actor):
             return 1
         print "Done"
         return 0
-          
+        """  
     def publishDataset(self,file):
         """
         """
