@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.167 2009/06/02 19:20:45 ewv Exp $"
-__version__ = "$Revision: 1.167 $"
+__revision__ = "$Id: FatWorker.py,v 1.168 2009/06/02 21:31:27 ewv Exp $"
+__version__ = "$Revision: 1.168 $"
 
 import string
 import sys, os
@@ -411,43 +411,77 @@ class FatWorker(Thread):
 
             # submit now
             errorTrace = ''
-            try:
-                if len(sub_bulk)>0:
-                    count = 1
-                    for sub_list in sub_bulk:
+            if len(sub_bulk)>0:
+                count = 1
+                for sub_list in sub_bulk:
+                    try:
                         self.blSchedSession.submit(task['id'], sub_list, reqs_jobs[ii])
                         self.log.info("Worker submitted sub collection # %s "%count)
                         count += 1
+                    except BossLiteError, e:
+                        logMsg = "Worker %s. Problem submitting task %s collection %s. "%(self.myName, self.taskName, count)
+                        logMsg += str(e.description())
+                        self.log.info( logMsg )
+                        errorTrace = str( BossLiteLogger( task, e ) )
+                        try:
+                            self.preLog(logMsg, str(e.description()), 0, errorTrace)
+                        except Exception, ee:
+                            self.log.error("Problem logging information: [%s]"%str(ee))
+                    ## could be loaded just the sub_list jobs...
                     task = self.blDBsession.load( task['id'], sub_jobs[ii] )
-                else:
-                    task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
-            except BossLiteError, e:
-                logMsg = "Worker %s. Problem submitting task %s jobs. "%(self.myName, self.taskName)
-                logMsg += str(e.description())
-                self.log.info( logMsg )
-                errorTrace = str( BossLiteLogger( task, e ) )
-                self.log.info(errorTrace)
+                    # check if submitted
+                    self.log.info("Worker %s. Errors: [%s]" %(self.myName, str(errorTrace)) )
+                    if len(errorTrace) == 0:
+                        self.log.info("Worker %s. Setting sub success for %s " %(self.myName, str(len(sub_list))) )
+                        parentIds = []
+                        for j in task.jobs:
+                            self.blDBsession.getRunningInstance(j)
+                            if j.runningJob['schedulerId'] and j['jobId'] in sub_list:
+                                submitted.append(j['jobId'])
+                                if j['jobId'] in unsubmitted: unsubmitted.remove(j['jobId'])
+                                j.runningJob['status'] = 'S'
+                                j.runningJob['statusScheduler'] = 'Submitted'
+                                j.runningJob['state'] = 'SubSuccess'
+                                parentIds.append( j.runningJob['schedulerParentId'] )
+                        self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
+                        #self.blDBsession.updateDB( task )
+                        self.SendMLpost( task, sub_jobs[ii] )
+                        self.blDBsession.updateDB( task )
+                    errorTrace = ''
+            else:
                 try:
-                    self.preLog(logMsg, str(e.description()), 0, errorTrace)
-                except Exception, ee:
-                    self.log.error("Problem logging information: [%s]"%str(ee))
+                    task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
+                except BossLiteError, e:
+                    logMsg = "Worker %s. Problem submitting task %s jobs. "%(self.myName, self.taskName)
+                    logMsg += str(e.description())
+                    self.log.info( logMsg )
+                    errorTrace = str( BossLiteLogger( task, e ) )
+                    self.log.info(errorTrace)
+                    try:
+                        self.preLog(logMsg, str(e.description()), 0, errorTrace)
+                    except Exception, ee:
+                        self.log.error("Problem logging information: [%s]"%str(ee))
 
-            # check if submitted
-            if len(errorTrace) == 0:
-                parentIds = []
-                for j in task.jobs:
-                    self.blDBsession.getRunningInstance(j)
-                    if j.runningJob['schedulerId']:
-                        submitted.append(j['jobId'])
-                        if j['jobId'] in unsubmitted: unsubmitted.remove(j['jobId'])
-                        j.runningJob['status'] = 'S'
-                        j.runningJob['statusScheduler'] = 'Submitted'
-                        j.runningJob['state'] = 'SubSuccess'
-                        parentIds.append( j.runningJob['schedulerParentId'] )
-                self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
-#                self.blDBsession.updateDB( task )
-                self.SendMLpost( task, sub_jobs[ii] )
-        self.blDBsession.updateDB( task )
+                # check if submitted
+                self.log.info("Worker %s. Errors: [%s]" %(self.myName, str(errorTrace)) )
+                if len(errorTrace) == 0:
+                    self.log.info("Worker %s. Setting sub success for %s " %(self.myName, str(len(task.jobs))) )
+                    parentIds = []
+                    for j in task.jobs:
+                        self.blDBsession.getRunningInstance(j)
+                        if j.runningJob['schedulerId']:
+                            submitted.append(j['jobId'])
+                            if j['jobId'] in unsubmitted: unsubmitted.remove(j['jobId'])
+                            j.runningJob['status'] = 'S'
+                            j.runningJob['statusScheduler'] = 'Submitted'
+                            j.runningJob['state'] = 'SubSuccess'
+                            parentIds.append( j.runningJob['schedulerParentId'] )
+                    self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
+                    #self.blDBsession.updateDB( task )
+                    self.SendMLpost( task, sub_jobs[ii] )
+                    self.blDBsession.updateDB( task )
+
+        #self.blDBsession.updateDB( task )
         return submitted, unsubmitted, errorTrace
 
 
