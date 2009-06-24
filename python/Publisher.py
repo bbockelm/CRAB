@@ -75,6 +75,7 @@ class Publisher(Actor):
                 self.dataset_to_import.append(dataset)
         ###        
             
+        self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',0)
         self.skipOcheck=cfg_params.get('CMSSW.publish_zero_event',0)
     
         self.SEName=''
@@ -91,8 +92,12 @@ class Publisher(Actor):
         dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
         
         try:
-            #dbsWriter.importDatasetWithoutParentage(globalDBS, datasetpath, self.DBSURL) 
-            dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL)
+            if (self.import_all_parents=='1'):
+                common.logger.info("--->>> Importing all parents level")
+                dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL)
+            else:
+                common.logger.info("--->>> Importing only the datasetpath " + datasetpath)
+                dbsWriter.importDatasetWithoutParentage(globalDBS, datasetpath, self.DBSURL) 
         except DBSWriterError, ex:
             msg = "Error importing dataset to be processed into local DBS\n"
             msg += "Source Dataset: %s\n" % datasetpath
