@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.68 2009/05/26 16:53:23 spiga Exp $"
-__version__ = "$Revision: 1.68 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.69 2009/06/09 13:12:06 slacapra Exp $"
+__version__ = "$Revision: 1.69 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -184,6 +184,9 @@ class SchedulerGlite(SchedulerGrid):
             itr4 = replicas
         return itr4
 
+    def delegateProxy(self):
+        self.boss().delegateProxy()   
+        return
 
     def wsExitFunc(self):
         """

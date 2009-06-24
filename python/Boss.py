@@ -141,6 +141,15 @@ class Boss:
 
         return
 
+    def delegateProxy(self): 
+        """ 
+        """ 
+        try:
+            self.schedSession().getSchedulerInterface().delegateProxy()
+        except SchedulerError, err :
+            common.logger.debug("delegateProxy: " +str(traceback.format_exc()))
+            raise CrabException('delegateProxy: '+str(err))
+
     def queryEverything(self,taskid):
         """
         Query needed info of all jobs with specified taskid

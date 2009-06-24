@@ -182,6 +182,12 @@ class Submitter(Actor):
 
         if len(matched)>0:
             common.logger.info(str(len(matched))+" blocks of jobs will be submitted")
+            common.logger.debug("Delegating proxy ")
+            try:
+                common.scheduler.delegateProxy()
+            except CrabException:
+                common.logger.debug("Plroxy delegation failed ")
+
             for ii in matched:
                 common.logger.debug('Submitting jobs '+str(self.sub_jobs[ii]))
 
@@ -210,7 +216,6 @@ class Submitter(Actor):
                 common._db.updateRunJob_(listId, listRunField)
                 self.stateChange(listId,"SubSuccess")
                 self.SendMLpost(self.sub_jobs[ii])
-
         else:
             common.logger.info("The whole task doesn't found compatible site ")
 

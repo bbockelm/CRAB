@@ -287,6 +287,9 @@ class Scheduler :
             self.boss().submit(task['id'],sub_list,req)
         return
 
+    def delegateProxy(self):
+        return
+     
     def queryEverything(self,taskid):
         """
         Query needed info of all jobs with specified boss taskid
