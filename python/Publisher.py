@@ -75,7 +75,7 @@ class Publisher(Actor):
                 self.dataset_to_import.append(dataset)
         ###        
             
-        self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',0)
+        self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',1)
         self.skipOcheck=cfg_params.get('CMSSW.publish_zero_event',0)
     
         self.SEName=''

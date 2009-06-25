@@ -565,7 +565,7 @@ N.B 1) if you are using an official CMS site to stored data, the remote dir will
 2) if you are using a not official CMS site to store data, you have to check the <lfn>, that will be part of the logical file name of you published files, in order to be able to re-read the data.
 
 =item B<publish_with_import_all_parents>
-To publish your data in your local DBS importing also the complete parents tree, set publish_with_import_all_parents=1. Default value is zero.
+To publish your data in your local DBS importing also the complete parents tree, set publish_with_import_all_parents=1, otherwise 0. In this last case only the dataset that you have analyzed will be imported as parent in your local DBS. Default value is 1.
 
 =item B<publish_data_name>
 
