@@ -905,7 +905,11 @@ class Cmssw(JobType):
 
         req = req + ' && (other.GlueHostNetworkAdapterOutboundIP)'
         if ( common.scheduler.name() == "glitecoll" ) or ( common.scheduler.name() == "glite"):
-            req += ' && other.GlueCEStateStatus == "Production" '
+            ## 25-Jun-2009 SL: patch to use Cream enabled WMS
+            if ( self.cfg_params.get('GRID.use_cream',None) ):
+                req += ' && (other.GlueCEStateStatus == "Production" || other.GlueCEStateStatus == "Special")'
+            else:
+                req += ' && other.GlueCEStateStatus == "Production" '
 
         return req
 
@@ -913,9 +917,9 @@ class Cmssw(JobType):
         """ return the config filename """
         # FUTURE: Can remove cfg mode for CMSSW >= 2_1_x
         if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
-          return self.name()+'.py'
+            return self.name()+'.py'
         else:
-          return self.name()+'.cfg'
+            return self.name()+'.cfg'
 
     def wsSetupCMSOSGEnvironment_(self):
         """
