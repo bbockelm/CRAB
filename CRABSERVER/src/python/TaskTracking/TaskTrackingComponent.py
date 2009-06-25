@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.153 2009/06/15 09:19:44 mcinquil Exp $"
-__version__ = "$Revision: 1.153 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.154 2009/06/15 09:47:49 spiga Exp $"
+__version__ = "$Revision: 1.154 $"
 
 import os
 import time
@@ -881,7 +881,8 @@ class TaskTrackingComponent:
             if action in ["SubSuccess", "KillFailed"]:
                 if stato in ["SD","E","DA"]:
                     updateStateTerminated.append(job)
-                elif stato in ["A"]:
+            if action in ["SubSuccess", "KillFailed", "Terminated"]:
+                if stato in ["A"]:
                     updateStateAborted.append(job)
 
             resubmitting, MaxResub, Resub, internalstatus = \
