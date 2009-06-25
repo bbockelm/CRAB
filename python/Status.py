@@ -70,8 +70,7 @@ class Status(Actor):
             if exe_exit_code == 'None' :  exe_exit_code = ''
             if job_exit_code == 'None' :  job_exit_code = ''
             if job.runningJob['state'] == 'SubRequested' : jobStatus = 'Submitting'
-            if job.runningJob['state'] == 'Terminated' and job.runningJob['status'] in ['E','DA'] : 
-                jobStatus = 'Done'
+            if job.runningJob['state'] == 'Terminated': jobStatus = 'Done'
             #This is needed for StandAlone
             if job.runningJob['status'] in ['SD','DA'] : 
                 listId.append(id)
