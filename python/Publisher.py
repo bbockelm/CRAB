@@ -92,7 +92,7 @@ class Publisher(Actor):
         dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
         
         try:
-            if (self.import_all_parents=='1'):
+            if (self.import_all_parents==1):
                 common.logger.info("--->>> Importing all parents level")
                 dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL)
             else:
