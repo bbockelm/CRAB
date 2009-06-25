@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.169 2009/06/23 16:47:54 mcinquil Exp $"
-__version__ = "$Revision: 1.169 $"
+__revision__ = "$Id: FatWorker.py,v 1.170 2009/06/24 21:10:36 spiga Exp $"
+__version__ = "$Revision: 1.170 $"
 
 import string
 import sys, os
@@ -52,6 +52,7 @@ class FatWorker(Thread):
         self.taskName = self.configs['taskname']
         self.wdir = self.configs['wdir']
         self.glexec = self.configs['glexec']
+        self.glexecWrapper = self.configs['glexecWrapper']
         self.condorQCacheDir = self.configs['CondorQCacheDir']
 
         self.resubCount = int(self.configs['retries'])
@@ -269,6 +270,7 @@ class FatWorker(Thread):
             self.log.info('Path to glexec: %s' % self.glexec)
             schedulerConfig['tmpDir']    = condorTemp
             schedulerConfig['useGlexec'] = True
+            schedulerConfig['glexecWrapper']    = self.glexecWrapper
             schedulerConfig['glexec']    = self.glexec
             schedulerConfig['CondorQCacheDir']    = self.condorQCacheDir
         elif schedulerConfig['name'] == 'arc':

@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.83 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.83 2009/06/02 19:20:45 ewv Exp $"
+__version__ = "$Revision: 1.84 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.84 2009/06/02 21:31:27 ewv Exp $"
 
 import os, pickle, time, copy
 
@@ -49,6 +49,7 @@ class CrabServerWorkerComponent:
         self.args.setdefault('uiConfigWMS', None)
         self.args.setdefault('configFileName', None)
         self.args.setdefault('glexecPath', None)
+        self.args.setdefault('glexecWrapper', None)
         self.args.setdefault('CondorQCacheDir', None)
 
         # SE support parameters
@@ -234,6 +235,7 @@ class CrabServerWorkerComponent:
         workerCfg['EDG_retry_count'] = int(self.args.get('EDG_retry_count', 3) )
         workerCfg['EDG_shallow_retry_count'] = int(self.args.get('EDG_shallow_retry_count', 3) )
         workerCfg['glexec'] = self.args.get('glexecPath', '')
+        workerCfg['glexecWrapper'] = self.args.get('glexecWrapper', '')
         workerCfg['CondorQCacheDir'] = self.args.get('CondorQCacheDir', '')
 
         # Specific WMS choice
