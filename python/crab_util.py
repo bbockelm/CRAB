@@ -515,7 +515,7 @@ def getLocalDomain(self):
     Get local domain name
     """
     import socket
-    tmp=socket.gethostname()
+    tmp=socket.getfqdn()
     dot=string.find(tmp,'.')
     if (dot==-1):
         msg='Unkown domain name. Cannot use local scheduler'
