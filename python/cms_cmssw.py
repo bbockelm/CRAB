@@ -46,14 +46,8 @@ class Cmssw(JobType):
         self.version = self.scram.getSWVersion()
         common.logger.log(10-1,"CMSSW version is: "+str(self.version))
 
-        version_array = self.version.split('_')
-        self.CMSSW_major = 0
-        self.CMSSW_minor = 0
-        self.CMSSW_patch = 0
         try:
-            self.CMSSW_major = int(version_array[1])
-            self.CMSSW_minor = int(version_array[2])
-            self.CMSSW_patch = int(version_array[3])
+            type, self.CMSSW_major, self.CMSSW_minor, self.CMSSW_patch = tuple(self.version.split('_'))
         except:
             msg = "Cannot parse CMSSW version string: " + self.version + " for major and minor release number!"
             raise CrabException(msg)
@@ -583,8 +577,15 @@ class Cmssw(JobType):
 
     def zipTarFile(self):
 
-        cmd = "gzip -c %s > %s "%(self.tarNameWithPath,self.tgzNameWithPath)
-        res=runCommand(cmd)
+        import gzip
+        f_in = open(self.tarNameWithPath, 'rb')
+        f_out = gzip.open(self.tgzNameWithPath, 'wb')
+        f_out.writelines(f_in)
+        f_out.close()
+        f_in.close()
+
+        # cmd = "gzip -c %s > %s "%(self.tarNameWithPath,self.tgzNameWithPath)
+        # res=runCommand(cmd)
 
         tarballinfo = os.stat(self.tgzNameWithPath)
         if ( tarballinfo.st_size > self.MaxTarBallSize*1024*1024 ) :
@@ -594,6 +595,7 @@ class Cmssw(JobType):
             msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
             msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/CrabServer#CRABSERVER_for_Users'
             raise CrabException(msg)
+        os.remove(self.tarNameWithPath)
 
         ## create tar-ball with ML stuff
 
