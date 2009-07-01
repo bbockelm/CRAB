@@ -220,7 +220,8 @@ class Scheduler :
             self.proxyValid=1
             return
         CredAPI_config =  { 'credential':'Proxy',\
-                            'myProxySvr': self.proxyServer \
+                            'myProxySvr': self.proxyServer, \
+                            'logger': common.logger() \
                           }
         from ProdCommon.Credential.CredentialAPI import CredentialAPI
         CredAPI = CredentialAPI(CredAPI_config)

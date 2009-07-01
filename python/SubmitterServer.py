@@ -163,7 +163,8 @@ class SubmitterServer( Submitter ):
                           'serverDN'   : self.server_dn,\
                           'shareDir'   : common.work_space.shareDir() ,\
                           'userName'   : getUserName(),\
-                          'serverName' : self.server_name \
+                          'serverName' : self.server_name, \
+                          'logger'     : common.logger() \
                           }
              try:
                  CredAPI =  CredentialAPI( configAPI )            

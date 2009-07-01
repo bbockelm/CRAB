@@ -40,7 +40,8 @@ class ServerCommunicator:
         CliServerParams(self)
         self.crab_task_name = common.work_space.topDir().split('/')[-2] # nice task name "crab_0_..."
 
-        configAPI = {'credential' : credentialType }
+        configAPI = {'credential' : credentialType, \
+                     'logger' : common.logger() }
          
         CredAPI =  CredentialAPI( configAPI )            
         try:
