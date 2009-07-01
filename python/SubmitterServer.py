@@ -34,7 +34,9 @@ class SubmitterServer( Submitter ):
             self.storage_path = '/'+self.storage_path
 
         self.taskuuid = str(common._db.queryTask('name'))
-        
+ 
+        self.copyTout= ' -t 600 '    
+       
 	return
 
     def run(self):
@@ -125,7 +127,7 @@ class SubmitterServer( Submitter ):
             dest = os.path.join(self.remotedir, os.path.basename(filetocopy))
             common.logger.debug("Sending "+ os.path.basename(filetocopy) +" to "+ self.storage_name)
             try:
-                sbi.copy( source, dest)
+                sbi.copy( source, dest, opt=self.copyTout)
             except AuthorizationException, ex:
                 common.logger.debug(str(ex.detail))
                 msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
