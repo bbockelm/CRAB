@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.154 2009/06/15 09:47:49 spiga Exp $"
-__version__ = "$Revision: 1.154 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.155 2009/06/25 16:26:28 mcinquil Exp $"
+__version__ = "$Revision: 1.155 $"
 
 import os
 import time
@@ -355,14 +355,14 @@ class TaskTrackingComponent:
         if event == "CRAB_Cmd_Mgr:GetOutputNotification":
             if payload != "" and payload != None:
                 taskName, listjob = payload.split('::')
-                logBuf = self.__log(logBuf, "Cleared jobs: " + str(jobstr) + \
+                logBuf = self.__log(logBuf, "Cleared jobs: " + str(listjob) + \
                                             " for task " + str(taskName) )
                 try:
                     self.setActionStatus(taskName, eval(listjob), "Cleared")
                 except Exception, ex:
                     logBuf = self.__log(logBuf, "Exception raised: " + str(ex) )
                     logBuf = self.__log(logBuf, str(traceback.format_exc()) )
-                _loginfo.setdefault('range', str(jobstr))
+                _loginfo.setdefault('range', str(listjob))
             else:
                 logBuf = self.__log(logBuf, "No task specified for " + str(event) )
             self.__appendDbgInfo(taskName, _loginfo)
