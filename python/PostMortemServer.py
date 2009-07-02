@@ -71,10 +71,10 @@ class PostMortemServer(PostMortem):
                     common.logger.info('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
                 else:
                     common.logger.info('Logging info for job '+ str(id) +' not retrieved. Tring to get loggingInfo manually')
-                    PostMortem.collectLogging(self)
+                    PostMortem.collectOneLogging(self,id)
             else:
                 common.logger.info('Warning: job # ' + str(id) + ' not killed or aborted! Will get loggingInfo manually ')
-                PostMortem.collectLogging(self)
+                PostMortem.collectOneLogging(self,id)
         return
 
 

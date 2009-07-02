@@ -21,27 +21,31 @@ class PostMortem(Actor):
 
         self.collectLogging()
 
+    def collectOneLogging(self, id):
+        job=self.up_task.getJob(id)
+        if not job: #id not in self.all_jobs:
+            common.logger.info('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
+            return
+        elif job.runningJob['state'] == 'Created':
+            common.logger.info('Warning: job # ' + str(id) + ' just Created ! Not possible to ask for postMortem ')
+        else:  
+            fname = self.fname_base + str(id) + '.LoggingInfo'
+            if os.path.exists(fname):
+                common.logger.info('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
+                return
+            common.scheduler.loggingInfo(id,fname)
+            fl = open(fname, 'r')
+            out = "".join(fl.readlines())  
+            fl.close()
+            reason = self.decodeLogging(out)
+            common.logger.info('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
+        return
+        
 
     def collectLogging(self):
         self.up_task = common._db.getTask( self.nj_list )
         for id in self.nj_list:
-            job=self.up_task.getJob(id)
-            if not job: #id not in self.all_jobs:
-                common.logger.info('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
-                continue
-            elif job.runningJob['status'] == 'C':
-                common.logger.info('Warning: job # ' + str(id) + ' just Created ! Not possible to ask for postMortem ')
-            else:  
-                fname = self.fname_base + str(id) + '.LoggingInfo'
-                if os.path.exists(fname):
-                    common.logger.info('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
-                    continue
-                common.scheduler.loggingInfo(id,fname)
-                fl = open(fname, 'r')
-                out = "".join(fl.readlines())  
-                fl.close()
-                reason = self.decodeLogging(out)
-                common.logger.info('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
+            self.collectOneLogging(id)
         return
         
     def decodeLogging(self, out):
