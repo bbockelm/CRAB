@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.40 2009/07/01 09:04:43 spiga Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.41 2009/07/01 16:03:37 spiga Exp $"
+__version__ = "$Revision: 1.41 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -27,7 +27,9 @@ class GetOutputServer( GetOutput, StatusServer ):
 
         if self.storage_path[0] != '/':
             self.storage_path = '/'+self.storage_path
-   
+
+        self.copyTout= ' -t 600 '    
+  
         return
 
 
@@ -108,7 +110,7 @@ class GetOutputServer( GetOutput, StatusServer ):
             dest = destFiles[i]
             common.logger.debug( "retrieving "+ str(source) +" to "+ str(dest) )
             try:
-                sbi.copy( source, dest )
+                sbi.copy( source, dest , opt=self.copyTout)
                 if i < len(filesToRetrieve):
                     filesAndJodId[ filesToRetrieve[i] ] = dest
             except Exception, ex:
