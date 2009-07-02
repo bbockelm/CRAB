@@ -67,6 +67,10 @@ class Status(Actor):
             ended = str(job['closed'])  
             printline=''
             if dest == 'None' :  dest = ''
+            from ProdCommon.SiteDB.CmsSiteMapper import CECmsMap
+            ce_cms = CECmsMap()
+            dest = ce_cms[dest]
+
             if exe_exit_code == 'None' :  exe_exit_code = ''
             if job_exit_code == 'None' :  job_exit_code = ''
             if job.runningJob['state'] == 'SubRequested' : jobStatus = 'Submitting'
