@@ -48,7 +48,8 @@ class Status(Actor):
         task_unique_name = str(up_task['name'])
         ended = None
 
-        run_jobToSave = {'state' :'Terminated'}
+        run_jobToSaveTerm = {'state' :'Terminated'}
+        run_jobToSaveAbort = {'state' :'Aborted'}
         jobToSave = {'closed' :'Y'}
         listId=[]
         listRunField=[]
@@ -76,10 +77,15 @@ class Status(Actor):
             if job.runningJob['state'] == 'SubRequested' : jobStatus = 'Submitting'
             if job.runningJob['state'] == 'Terminated': jobStatus = 'Done'
             #This is needed for StandAlone
-            if job.runningJob['status'] in ['SD','DA'] : 
+            if job.runningJob['status'] in ['SD'] : 
                 listId.append(id)
-                listRunField.append(run_jobToSave)
+                listRunField.append(run_jobToSaveTerm)
                 listJobField.append(jobToSave)
+            elif job.runningJob['status'] in ['DA'] : 
+                listId.append(id)
+                listRunField.append(run_jobToSaveAbort)
+                listJobField.append(jobToSave)
+
             if (self.verbose) :printline+="%-6s %-18s %-14s %-36s %-13s %-16s %-4s" % (id,jobStatus,jobState,dest,exe_exit_code,job_exit_code,ended)
             else: printline+="%-6s %-18s %-36s %-13s %-16s " % (id,jobStatus,dest,exe_exit_code,job_exit_code)
             toPrint.append(printline)
