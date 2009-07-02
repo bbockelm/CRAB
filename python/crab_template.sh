@@ -103,7 +103,7 @@ if [ $res -ne 0 ];then
 #  exit
 
   echo "ERROR ==> executable not found on WN `hostname`"
-  job_exit_code=50110
+  job_exit_code=10035
   func_exit
 else
   echo "ok executable found"
