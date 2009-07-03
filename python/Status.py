@@ -136,6 +136,9 @@ class Status(Actor):
 
         jobs = common._db.nJobs('list')
         WrapExitCode = list(set(self.wrapErrorList))
+
+        task = common._db.getTask()
+
         msg=  " %i Total Jobs \n" % (len(jobs))
         list_ID=[]
         for c in WrapExitCode:
@@ -155,8 +158,16 @@ class Status(Actor):
                             msg+=  "\tList of jobs: %s \n" % readableList(self,list_ID)
                         elif st == 'Done' or st == 'Done (Failed)' :
                             msg+=  ">>>>>>>>> %i Jobs %s\n " % (len(list_ID), str(st))
-                            msg+=  "\tRetrieve them with: crab -getoutput <List of jobs>\n"
-                            msg+=  "\tList of jobs: %s \n" % readableList(self,list_ID)
+                            terminatedListId=[]
+                            notTerminatedListId=[]
+                            for id in list_ID:
+                                job = task.jobs[id-1]
+                                if job.runningJob['state']=='Terminated': terminatedListId.append(id)
+                                else: notTerminatedListId.append(id)
+                            msg+=  "\tJobs still in final phase: cannot retrieve them, yet\n"
+                            msg+=  "\tList of jobs: %s \n" % readableList(self,notTerminatedListId)
+                            msg+=  "\tJobs terminated: retrieve them with: crab -getoutput <List of jobs>\n"
+                            msg+=  "\tList of jobs: %s \n" % readableList(self,terminatedListId)
                         elif st in ['NotSubmitted','CannotSubmit']:
                             msg+=  ">>>>>>>>> %i Jobs %s\n " % (len(list_ID), str(st))
                             msg+=  "\tCheck if they match resources with: crab -match <List of jobs>\n"
