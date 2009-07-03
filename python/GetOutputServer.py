@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.41 2009/07/01 16:03:37 spiga Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.42 2009/07/02 13:27:14 spiga Exp $"
+__version__ = "$Revision: 1.42 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -137,6 +137,8 @@ class GetOutputServer( GetOutput, StatusServer ):
             try:
                 csCommunicator.outputRetrieved(self.taskuuid, retrievedFilesJodId)
             except Exception, e:
+                msg = "Client Server comunication failed about outputRetrieved: jobs "+(str(retrievedFilesJodId))
+                common.logger.debug( msg)
                 pass
         return
 
