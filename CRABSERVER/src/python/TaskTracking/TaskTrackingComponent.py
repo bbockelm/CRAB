@@ -95,7 +95,7 @@ class TaskTrackingComponent:
                                                 "ComponentLog")
         # create log handler
         logHandler = RotatingFileHandler(self.args['Logfile'],
-                                         "a", 1000000, 7)
+                                         "a", 1000000, 10)
 
         # define log format
         logFormatter = logging.Formatter("%(asctime)s:%(message)s")
@@ -365,6 +365,7 @@ class TaskTrackingComponent:
                 _loginfo.setdefault('range', str(listjob))
             else:
                 logBuf = self.__log(logBuf, "No task specified for " + str(event) )
+            logging.info(logBuf)
             self.__appendDbgInfo(taskName, _loginfo)
             return
 
@@ -632,6 +633,7 @@ class TaskTrackingComponent:
                         logging.error('Problem loading job running info')
                     if jobbe['jobId'] in joblist or joblist =="all":
                         jobbe.runningJob['state'] = value
+                logging.info("Updating the db for jobs %s" %str(joblist))
                 mySession.updateDB(taskObj)
                 self.singleTaskPoll(taskObj, TaskStateAPI(), taskname, mySession)
         except Exception, ex:
@@ -879,7 +881,7 @@ class TaskTrackingComponent:
             del jobbe
 
             if action in ["SubSuccess", "KillFailed"]:
-                if stato in ["SD","E","DA"]:
+                if stato in ["E"]:  #["SD","E","DA"]:
                     updateStateTerminated.append(job)
             if action in ["SubSuccess", "KillFailed", "Terminated"]:
                 if stato in ["A"]:
