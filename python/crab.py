@@ -100,7 +100,7 @@ class Crab:
         self.UseServer = False
         if opts.has_key('-use_server'):
             self.UseServer = opts['-use_server']
-            if self.UseServer:
+            if self.UseServer==1:
                 opts['-server_name']='default'
         if opts.has_key('-server_name'):
             srvName = opts.get('-server_name', None)
