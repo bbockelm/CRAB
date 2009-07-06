@@ -164,10 +164,12 @@ class Status(Actor):
                                 job = task.jobs[id-1]
                                 if job.runningJob['state']=='Terminated': terminatedListId.append(id)
                                 else: notTerminatedListId.append(id)
-                            msg+=  "\tJobs still in final phase: cannot retrieve them, yet\n"
-                            msg+=  "\tList of jobs: %s \n" % readableList(self,notTerminatedListId)
-                            msg+=  "\tJobs terminated: retrieve them with: crab -getoutput <List of jobs>\n"
-                            msg+=  "\tList of jobs: %s \n" % readableList(self,terminatedListId)
+                            if len(notTerminatedListId)>0:
+                                msg+=  "\tJobs still in final phase: cannot retrieve them, yet\n"
+                                msg+=  "\tList of jobs: %s \n" % readableList(self,notTerminatedListId)
+                            if len(terminatedListId)>0:
+                                msg+=  "\tJobs terminated: retrieve them with: crab -getoutput <List of jobs>\n"
+                                msg+=  "\tList of jobs: %s \n" % readableList(self,terminatedListId)
                         elif st in ['NotSubmitted','CannotSubmit']:
                             msg+=  ">>>>>>>>> %i Jobs %s\n " % (len(list_ID), str(st))
                             msg+=  "\tCheck if they match resources with: crab -match <List of jobs>\n"
