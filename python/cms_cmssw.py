@@ -77,9 +77,12 @@ class Cmssw(JobType):
         elif string.lower(tmp)=='none':
             self.datasetPath = None
             self.selectNoInput = 1
+            self.primaryDataset = 'null'
         else:
             self.datasetPath = tmp
             self.selectNoInput = 0
+            self.primaryDataset = self.datasetPath.split("/")[1]
+            self.dataTier = self.datasetPath.split("/")[2]
 
         self.dataTiers = []
 
@@ -179,9 +182,35 @@ class Cmssw(JobType):
 
         self.firstRun = cfg_params.get('CMSSW.first_run',None)
 
-        # Copy/return
+        # Copy/return/publish
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
         self.return_data = int(cfg_params.get('USER.return_data',0))
+        ### FEDE ###
+        self.publish_data = int(cfg_params.get('USER.publish_data',0))
+        if (self.publish_data == 1):
+            if not cfg_params.has_key('USER.publish_data_name'):
+                raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
+            else:
+                self.processedDataset = cfg_params['USER.publish_data_name']
+            #### check of lenght of datasetname to publish ####
+                common.logger.debug("test 100 char limit on datasetname")
+                user = getUserName()
+                common.logger.debug("user = " + user)
+                len_user_name = len(user)
+                common.logger.debug("len_user_name = " + str(len_user_name)) 
+                len_processedDataset = len(self.processedDataset)
+                common.logger.debug("processedDataset " + self.processedDataset)
+                common.logger.debug("len_processedDataset = " + str(len_processedDataset))
+                if (self.datasetPath != None ):
+                   len_primary = len(self.primaryDataset)
+                   common.logger.debug("primaryDataset = " + self.primaryDataset)
+                   common.logger.debug("len_primary = " + str(len_primary))
+                   #common.logger.info("59 - len_user_name - len_primary = " + str(59 - len_user_name - len_primary))
+                   if (len_processedDataset > (59 - len_user_name - len_primary)):
+                      raise CrabException("Warning: publication name too long. USER.publish_data_name has to be < " + str(59 - len_user_name - len_primary) + " characters")
+                else:
+                   if (len_processedDataset > (59 - len_user_name) / 2): 
+                       raise CrabException("Warning: publication name too long. USER.publish_data_name has to be < " + str((59 - len_user_name) / 2) + " characters")
 
         self.conf = {}
         self.conf['pubdata'] = None
@@ -673,17 +702,17 @@ class Cmssw(JobType):
         # Prepare job-specific part
         job = common.job_list[nj]
         if (self.datasetPath):
-            self.primaryDataset = self.datasetPath.split("/")[1]
-            DataTier = self.datasetPath.split("/")[2]
+            #self.primaryDataset = self.datasetPath.split("/")[1]
+            #DataTier = self.datasetPath.split("/")[2]
             txt += '\n'
             txt += 'DatasetPath='+self.datasetPath+'\n'
 
             txt += 'PrimaryDataset='+self.primaryDataset +'\n'
-            txt += 'DataTier='+DataTier+'\n'
+            txt += 'DataTier='+self.dataTier+'\n'
             txt += 'ApplicationFamily=cmsRun\n'
 
         else:
-            self.primaryDataset = 'null'
+            #self.primaryDataset = 'null'
             txt += 'DatasetPath=MCDataTier\n'
             txt += 'PrimaryDataset=null\n'
             txt += 'DataTier=null\n'
@@ -987,11 +1016,10 @@ class Cmssw(JobType):
         """
 
         txt = ''
-        publish_data = int(self.cfg_params.get('USER.publish_data',0))
-        #if (publish_data == 1):
+        #publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (self.copy_data == 1):
             txt = '\n#Written by cms_cmssw::wsModifyReport\n'
-            publish_data = int(self.cfg_params.get('USER.publish_data',0))
+            #publish_data = int(self.cfg_params.get('USER.publish_data',0))
 
 
             txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'
@@ -1009,9 +1037,9 @@ class Cmssw(JobType):
 
 
             args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH'
-            if (publish_data == 1):
-                processedDataset = self.cfg_params['USER.publish_data_name']
-                txt += 'ProcessedDataset='+processedDataset+'\n'
+            if (self.publish_data == 1):
+                #processedDataset = self.cfg_params['USER.publish_data_name']
+                txt += 'ProcessedDataset='+self.processedDataset+'\n'
                 txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
                 args += ' UserProcessedDataset $USER-$ProcessedDataset-$PSETHASH'
 
