@@ -155,10 +155,13 @@ class SchedulerGrid(Scheduler):
         txt += "echo $out_files\n"
         txt += jbt.outList()
          
-        txt += 'if [ $JobRunCount ] && [ `expr $JobRunCount - 1` -gt 0 ]; then \n'
+        txt += 'if [ $JobRunCount ] && [ `expr $JobRunCount - 1` -gt 0 ] && [ $Glidein_MonitorID ]; then \n'
         txt += '   attempt=`expr $JobRunCount - 1` \n'
-        txt += '   MonitorJobID=${NJob}_'+self.environment_unique_identifier+'_${attempt}\n'
-        txt += '   SyncGridJobId='+self.environment_unique_identifier+'_${attempt}\n'
+        txt += '   MonitorJobID=${NJob}_${Glidein_MonitorID}__${attempt}\n'
+        txt += '   SyncGridJobId=${Glidein_MonitorID}__${attempt}\n'
+        txt += 'elif [ $Glidein_MonitorID  ]; then \n'
+        txt += '   MonitorJobID=${NJob}_${Glidein_MonitorID}\n'
+        txt += '   SyncGridJobId=${Glidein_MonitorID}\n'
         txt += 'else \n'
         txt += '   MonitorJobID=${NJob}_'+self.environment_unique_identifier+'\n'
         txt += '   SyncGridJobId='+self.environment_unique_identifier+'\n'
