@@ -77,11 +77,11 @@ class Status(Actor):
             if job.runningJob['state'] == 'SubRequested' : jobStatus = 'Submitting'
             if job.runningJob['state'] == 'Terminated': jobStatus = 'Done'
             #This is needed for StandAlone
-            if job.runningJob['status'] in ['SD'] : 
+            if job.runningJob['status'] in ['SD','DA'] : 
                 listId.append(id)
                 listRunField.append(run_jobToSaveTerm)
                 listJobField.append(jobToSave)
-            elif job.runningJob['status'] in ['DA'] : 
+            elif job.runningJob['status'] in ['A'] : 
                 listId.append(id)
                 listRunField.append(run_jobToSaveAbort)
                 listJobField.append(jobToSave)
