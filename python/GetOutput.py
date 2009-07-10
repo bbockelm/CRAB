@@ -237,6 +237,27 @@ class GetOutput(Actor):
         else:
             if codeValue.has_key('applicationReturnCodeOrig'):
                 codeValue.pop("applicationReturnCodeOrig")
+                
+        #### Filling BOSS DB with SE name and LFN, for edm and not_edm files ####        
+        if (len(jobReport.files) != 0):
+            for f in jobReport.files:
+                if f['LFN']:
+                    codeValue["lfn"] = f['LFN']
+                if f['SEName']:    
+                    codeValue["storage"] = f['SEName']
+                    
+        if (len(jobReport.analysisFiles) != 0):
+            for aFile in jobReport.analysisFiles:
+                if aFile['LFN']:
+                    codeValue["lfn"] = aFile['LFN']
+                if aFile['SEName']:    
+                    codeValue["storage"] = aFile['SEName']
+                    
+        if not codeValue.has_key('storage'):
+            codeValue["storage"] = ''
+        if not codeValue.has_key('lfn'):
+            codeValue["lfn"] = ''
+         
         return codeValue
 
     def moveOutput(self,id, max_id,path,file):
