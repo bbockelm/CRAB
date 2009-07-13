@@ -19,10 +19,11 @@ class Cmssw(JobType):
         self.cfg_params = cfg_params
 
         ### Temporary patch to automatically skip the ISB size check:
-        server=self.cfg_params.get('CRAB.server_name',None)
+        self.server = self.cfg_params.get('CRAB.server_name',None) or \
+                      self.cfg_params.get('CRAB.use_server',0)
         size = 9.5
-        if server or common.scheduler.name().upper() in ['LSF','CAF']: size = 99999
-        ### D.S.
+        if self.server or common.scheduler.name().upper() in ['LSF','CAF']:
+            size = 99999
         self.MaxTarBallSize = float(self.cfg_params.get('GRID.maxtarballsize',size))
 
         # number of jobs requested to be created, limit obj splitting
@@ -197,7 +198,7 @@ class Cmssw(JobType):
                 user = getUserName()
                 common.logger.debug("user = " + user)
                 len_user_name = len(user)
-                common.logger.debug("len_user_name = " + str(len_user_name)) 
+                common.logger.debug("len_user_name = " + str(len_user_name))
                 len_processedDataset = len(self.processedDataset)
                 common.logger.debug("processedDataset " + self.processedDataset)
                 common.logger.debug("len_processedDataset = " + str(len_processedDataset))
@@ -209,7 +210,7 @@ class Cmssw(JobType):
                    if (len_processedDataset > (59 - len_user_name - len_primary)):
                       raise CrabException("Warning: publication name too long. USER.publish_data_name has to be < " + str(59 - len_user_name - len_primary) + " characters")
                 else:
-                   if (len_processedDataset > (59 - len_user_name) / 2): 
+                   if (len_processedDataset > (59 - len_user_name) / 2):
                        raise CrabException("Warning: publication name too long. USER.publish_data_name has to be < " + str((59 - len_user_name) / 2) + " characters")
 
         self.conf = {}
@@ -389,6 +390,8 @@ class Cmssw(JobType):
 
         if njobs==0:
             raise CrabException("Ask to split "+str(njobs)+" jobs: aborting")
+        if not self.server and njobs > 500:
+            raise CrabException("The CRAB client will not submit more than 500 jobs. You must use the server mode.")
 
         # create the empty structure
         for i in range(njobs):
@@ -728,7 +731,7 @@ class Cmssw(JobType):
             txt += 'echo "IncrementSeeds:<$IncrementSeeds>"\n'
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
-        else: 
+        else:
             txt += '\n'
             if self.AdditionalArgs: txt += 'export AdditionalArgs=%s\n'%(self.AdditionalArgs)
             if int(self.NumEvents) != 0: txt += 'export MaxEvents=%s\n'%str(self.NumEvents)
@@ -839,7 +842,7 @@ class Cmssw(JobType):
     def executableArgs(self):
         # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
         if self.scriptExe:
-            return self.scriptExe + " $NJob $AdditionalArgs" 
+            return self.scriptExe + " $NJob $AdditionalArgs"
         else:
             ex_args = ""
             ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
