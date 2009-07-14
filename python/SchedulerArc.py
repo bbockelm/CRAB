@@ -11,7 +11,7 @@ from Scheduler import Scheduler
 from crab_exceptions import *
 from Boss import Boss
 import common
-import string, time, os, socket
+import string, time, os
 from crab_util import *
 from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser, \
                                                       SEBlackWhiteListParser
@@ -32,7 +32,7 @@ class SchedulerArc(SchedulerGrid):
 
     def envUniqueID(self):
         taskHash = sha.new(common._db.queryTask('name')).hexdigest()
-        id = 'https://' + socket.gethostname() + '/' + taskHash + '/${NJob}'
+        id = 'https://' + common.scheduler.name() + '/' + taskHash + '/${NJob}'
         msg = 'JobID for ML monitoring is created for ARC scheduler: %s' % id
         common.logger.debug(msg)
         return id

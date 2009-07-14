@@ -324,7 +324,7 @@ class Submitter(Actor):
                 rb = common.scheduler.name()
             elif common.scheduler.name().upper() in ['ARC']:
                 taskHash = sha.new(common._db.queryTask('name')).hexdigest()
-                jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
+                jobId = str(jj) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(jj)
                 msg += ('JobID for ML monitoring is created for ARC scheduler: %s\n'%str(jobId))
                 rb = 'ARC'
             else:
