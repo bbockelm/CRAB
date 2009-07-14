@@ -276,7 +276,7 @@ class TaskTrackingComponent:
         if event == "CrabServerWorkerComponent:SubmitNotSucceeded":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, str(event.split(":")[1]) + ": %s" % payload)
-                taskName, taskStatus, reason = payload.split("::")
+                taskName, taskStatus, reason, eecode = payload.split("::")
                 self.unsetResubmitting(taskName)
                 _loginfo.setdefault('txt', str(reason))  
                 _loginfo.setdefault('code', str(taskStatus))
@@ -603,7 +603,7 @@ class TaskTrackingComponent:
         mySession.bossLiteDB.close()
         del mySession
 
-    def setActionStatus(self, taskname, joblist, value):
+    def setActionStatus(self, taskname, joblist, value, update_flag = 1):
         """
         setActionStatus
         """
@@ -626,16 +626,20 @@ class TaskTrackingComponent:
             if taskObj is None:
                 logging.info("Unable to load task [%s]."%(taskname))
             else:
+                temp_upd = []
                 for jobbe in taskObj.jobs:
-                    try:
-                        mySession.getRunningInstance(jobbe)
-                    except JobError, ex:
-                        logging.error('Problem loading job running info')
                     if jobbe['jobId'] in joblist or joblist =="all":
-                        jobbe.runningJob['state'] = value
-                logging.info("Updating the db for jobs %s" %str(joblist))
+                        try:
+                            mySession.getRunningInstance(jobbe)
+                            jobbe.runningJob['state'] = str(value)
+                            temp_upd += [jobbe['jobId']]
+                        except JobError, ex:
+                            logging.error('Problem loading job running info')
+                logging.info("Updating at [%s] the db for jobs %s -> %s {%s}" %(str(value), str(joblist), str(temp_upd), str(taskname)) )
                 mySession.updateDB(taskObj)
-                self.singleTaskPoll(taskObj, TaskStateAPI(), taskname, mySession)
+                logging.info("db updated {%s}"%str(taskname))
+                if update_flag == 1:
+                    self.singleTaskPoll(taskObj, TaskStateAPI(), taskname, mySession)
         except Exception, ex:
             logging.error( "Exception raised: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
@@ -880,13 +884,6 @@ class TaskTrackingComponent:
                 site  = jobbe.runningJob['destination'].split(":")[0]
             del jobbe
 
-            if action in ["SubSuccess", "KillFailed"]:
-                if stato in ["E"]:  #["SD","E","DA"]:
-                    updateStateTerminated.append(job)
-            if action in ["SubSuccess", "KillFailed", "Terminated"]:
-                if stato in ["A"]:
-                    updateStateAborted.append(job)
-
             resubmitting, MaxResub, Resub, internalstatus = \
                         ttdb.checkNSubmit(mySession.bossLiteDB, taskName, job)
             vect = []
@@ -896,6 +893,16 @@ class TaskTrackingComponent:
             else:
                 vect = [ sstat, eec, jec, 0, Resub, site, \
                          stato, joboff, resubmitting, sId, action ]
+
+            if action in ["SubSuccess", "KillFailed"]:
+                if stato in ["E"]:  #["SD","E","DA"]:
+                    updateStateTerminated.append(job)
+                    vect[10] = "Terminated"
+            if action in ["SubSuccess", "KillFailed", "Terminated"]:
+                if stato in ["A"]:
+                    updateStateAborted.append(job)
+                    vect[10] = "Aborted"
+
             dictStateTot.setdefault(job, vect)
 
             if stato in ["E"]:
@@ -939,9 +946,9 @@ class TaskTrackingComponent:
 
         ttdb.statusUpdated(mySession.bossLiteDB, taskName)
         if len(updateStateTerminated) > 0:
-            self.setActionStatus(taskName, updateStateTerminated, "Terminated")
+            self.setActionStatus(taskName, updateStateTerminated, "Terminated", 0)
         if len(updateStateAborted) > 0:
-            self.setActionStatus(taskName, updateStateAborted, "Aborted")
+            self.setActionStatus(taskName, updateStateAborted, "Aborted", 0)
 
 
         return dictStateTot, dictReportTot, countNotSubmitted, countCreated
