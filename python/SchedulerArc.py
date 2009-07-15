@@ -140,7 +140,7 @@ class SchedulerArc(SchedulerGrid):
                 se_list.append(se)
         # FIXME: Check that se_list contains at least one SE!
 
-        ce_list = self.listMatch(se_list, 'False')
+        ce_list = self.listMatch(se_list, False)
 
         xrsl = ""
         if len(ce_list) > 0:
