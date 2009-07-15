@@ -19,8 +19,8 @@ import popen2
 import os
 import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.37 2009/05/26 16:53:23 spiga Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.38 2009/06/09 13:12:06 slacapra Exp $"
+__version__ = "$Revision: 1.38 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -40,6 +40,18 @@ class SchedulerCondorCommon(SchedulerGrid):
         Configure the scheduler with the config settings from the user
         """
         # FIXME: Get rid of try/except and use get() instead
+
+        if not os.environ.has_key('EDG_WL_LOCATION'):
+            # This is an ugly hack needed for SchedulerGrid.configure() to
+            # work!
+            os.environ['EDG_WL_LOCATION'] = ''
+
+        if not os.environ.has_key('X509_USER_PROXY'):
+            # Set X509_USER_PROXY to the default location.  We'll do this
+            # because in functions called by Scheduler.checkProxy()
+            # voms-proxy-info will be called with '-file $X509_USER_PROXY',
+            # so if X509_USER_PROXY isn't set, it won't work.
+            os.environ['X509_USER_PROXY'] = '/tmp/x509up_u' + str(os.getuid())
 
         SchedulerGrid.configure(self, cfgParams)
         if not cfgParams.get('CRAB.server_name',None):
