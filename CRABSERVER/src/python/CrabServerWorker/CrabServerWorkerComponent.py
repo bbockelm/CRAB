@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.84 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.84 2009/06/02 21:31:27 ewv Exp $"
+__version__ = "$Revision: 1.85 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.85 2009/06/25 15:34:26 ewv Exp $"
 
 import os, pickle, time, copy
 
@@ -350,7 +350,7 @@ class CrabServerWorkerComponent:
                 # Propagate info emulating a message in FW results queue
                 logging.info("Resubmission has no more attempts: give up with job %s"%job['name'])
                 status, reason = ("6", "Command for job %s has no more attempts. Give up."%job['name'])
-                payload = "%s::%s::%s"%(taskName, status, reason)
+                payload = "%s::%s::%s::%s"%(taskName, status, reason, job['name'])
                 self.fwResultsQ.put(('', "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
                 return
 

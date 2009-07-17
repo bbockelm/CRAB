@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.170 2009/06/24 21:10:36 spiga Exp $"
-__version__ = "$Revision: 1.170 $"
+__revision__ = "$Id: FatWorker.py,v 1.171 2009/06/25 15:34:26 ewv Exp $"
+__version__ = "$Revision: 1.171 $"
 
 import string
 import sys, os
@@ -206,7 +206,7 @@ class FatWorker(Thread):
             reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
             self.sendResult(status, reason, reason)
             self.log.info( traceback.format_exc() )
-            pload = self.taskName + "::" + str(status) + "::" + reason
+            pload = self.taskName + "::" + str(status) + "::" + reason + "::-1"
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:SubmitNotSucceeded", pload))
 
         if status == 0:
