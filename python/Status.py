@@ -40,6 +40,7 @@ class Status(Actor):
         task = common._db.getTask()
         upTask = common.scheduler.queryEverything(task['id'])
         self.compute(upTask,display)
+           
 
     def compute(self, up_task, display=True ):
 
@@ -68,9 +69,9 @@ class Status(Actor):
             ended = str(job['closed'])  
             printline=''
             if dest == 'None' :  dest = ''
-            from ProdCommon.SiteDB.CmsSiteMapper import CECmsMap
-            ce_cms = CECmsMap()
-            dest = ce_cms[dest]
+    #        from ProdCommon.SiteDB.CmsSiteMapper import CECmsMap
+    #        ce_cms = CECmsMap()
+    #        dest = ce_cms[dest]
 
             if exe_exit_code == 'None' :  exe_exit_code = ''
             if job_exit_code == 'None' :  job_exit_code = ''
