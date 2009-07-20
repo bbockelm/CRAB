@@ -286,6 +286,8 @@ class ServerCommunicator:
         if 'CRAB.se_remote_dir' in self.cfg_params:
             miniCfg['CRAB.se_remote_dir'] = str(self.cfg_params['CRAB.se_remote_dir']) 
 
+        miniCfg['CAF.queue'] = self.cfg_params.get('CAF.queue','cmscaf1nw')
+        miniCfg['CAF.resources'] = self.cfg_params.get('CAF.resource', 'cmscaf')
         ## JDL requirements specific data. Scheduler dependant
         miniCfg['EDG.max_wall_time'] = self.cfg_params.get('GRID.max_wall_clock_time', None)
         miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('GRID.max_cpu_time', '130')
