@@ -96,7 +96,10 @@ class PsetManipulator:
         if not self.cfg.data.outputModules:
             return None
         poolOutputModule = self.cfg.data.outputModules
+        # FIXME: Still a "bug" here in that only one name is returned and the POM can be in any order
         for out in poolOutputModule:
+            if poolOutputModule[out].type_() != "PoolOutputModule":
+                continue
             return poolOutputModule[out].fileName.value()
 
     def getBadFilesSetting(self):
