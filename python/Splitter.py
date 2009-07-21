@@ -9,9 +9,9 @@ class JobSplitter:
         self.args=args
         #self.maxEvents
         # init BlackWhiteListParser
-        seWhiteList = cfg_params.get('GRID.se_white_list',[])
+        self.seWhiteList = cfg_params.get('GRID.se_white_list',[])
         seBlackList = cfg_params.get('GRID.se_black_list',[])
-        self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger())
+        self.blackWhiteListParser = SEBlackWhiteListParser(self.seWhiteList, seBlackList, common.logger())
 
 
     def checkUserSettings(self):
@@ -42,6 +42,18 @@ class JobSplitter:
             self.total_number_of_events = 0
             self.selectTotalNumberEvents = 0
 
+
+    def ComputeSubBlockSites( self, blockSites ):
+        """
+        """
+        sub_blockSites = {}
+        for k,v in blockSites.iteritems():
+            sites=self.blackWhiteListParser.checkWhiteList(v)
+            if sites : sub_blockSites[k]=v
+        if len(sub_blockSites) < 1:
+            msg = 'WARNING: the sites %s is not hosting any part of data.'%self.seWhiteList
+            raise CrabException(msg)
+        return sub_blockSites
 
 ########################################################################
     def jobSplittingByEvent( self ):
@@ -76,6 +88,17 @@ class JobSplitter:
 
         self.useParent = int(self.cfg_params.get('CMSSW.use_parent',0))
         noBboundary = int(self.cfg_params.get('CMSSW.no_block_boundary',0))
+
+        if noBboundary == 1:
+            if self.total_number_of_events== -1:
+                msg = 'You are selecting no_block_boundary=1 which does not allow to set total_number_of_events=-1\n'
+                msg +='\tYou shoud get the number of event from DBS web interface and use it for your configuration.'                     
+                raise CrabException(msg) 
+            if len(self.seWhiteList.split(',')) != 1:
+                msg = 'You are selecting no_block_boundary=1 which requires to choose one and only one site.\n'
+                msg += "\tPlease set se_white_list with the site's storage element name."
+                raise  CrabException(msg)  
+            blockSites = self.ComputeSubBlockSites(blockSites)    
 
         # ---- Handle the possible job splitting configurations ---- #
         if (self.selectTotalNumberEvents):
