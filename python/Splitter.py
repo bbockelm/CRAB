@@ -94,7 +94,7 @@ class JobSplitter:
                 msg = 'You are selecting no_block_boundary=1 which does not allow to set total_number_of_events=-1\n'
                 msg +='\tYou shoud get the number of event from DBS web interface and use it for your configuration.'                     
                 raise CrabException(msg) 
-            if len(self.seWhiteList.split(',')) != 1:
+            if len(self.seWhiteList) == 0 or  len(self.seWhiteList.split(',')) != 1:
                 msg = 'You are selecting no_block_boundary=1 which requires to choose one and only one site.\n'
                 msg += "\tPlease set se_white_list with the site's storage element name."
                 raise  CrabException(msg)  
@@ -342,21 +342,21 @@ class JobSplitter:
                 virgola = ","
             for block in bloskNoSite:
                 msg += ' ' + str(block) + virgola
-            msg += '\n               Related jobs:\n                 '
+            msg += '\n\t\tRelated jobs:\n                 '
             virgola = ""
             if len(noSiteBlock) > 1:
                 virgola = ","
             for range_jobs in noSiteBlock:
                 msg += str(range_jobs) + virgola
-            msg += '\n               will not be submitted and this block of data can not be analyzed!\n'
+            msg += '\n\t\twill not be submitted and this block of data can not be analyzed!\n'
             if self.cfg_params.has_key('GRID.se_white_list'):
-                msg += 'WARNING: SE White List: '+self.cfg_params['GRID.se_white_list']+'\n'
-                msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\n'
-                msg += 'Please check if the dataset is available at this site!)\n'
+                msg += '\tWARNING: SE White List: '+self.cfg_params['GRID.se_white_list']+'\n'
+                msg += '\t(Hint: By whitelisting you force the job to run at this particular site(s).\n'
+                msg += '\tPlease check if the dataset is available at this site!)'
             if self.cfg_params.has_key('GRID.ce_white_list'):
-                msg += 'WARNING: CE White List: '+self.cfg_params['GRID.ce_white_list']+'\n'
-                msg += '(Hint: By whitelisting you force the job to run at this particular site(s).\n'
-                msg += 'Please check if the dataset is available at this site!)\n'
+                msg += '\tWARNING: CE White List: '+self.cfg_params['GRID.ce_white_list']+'\n'
+                msg += '\t(Hint: By whitelisting you force the job to run at this particular site(s).\n'
+                msg += '\tPlease check if the dataset is available at this site!)\n'
 
             common.logger.info(msg)
 
