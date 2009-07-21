@@ -34,8 +34,7 @@ class Cmssw(JobType):
         self.scriptExe = ''
         self.executable = ''
         self.executable_arch = self.scram.getArch()
-        self.tgz_name = 'default.tar.gz'
-        self.tar_name = 'default.tar'
+        self.tgz_name = 'default.tgz'
         self.scriptName = 'CMSSW.sh'
         self.pset = ''
         self.datasetPath = ''
@@ -251,10 +250,11 @@ class Cmssw(JobType):
         self.argsFile= '%s/arguments.xml'%common.work_space.shareDir()
         self.rootArgsFilename= 'arguments'
         # modify Pset only the first time
-        if (isNew and self.pset != None): self.ModifyPset()
+        if isNew:
+            if self.pset != None: self.ModifyPset()
 
-        ## Prepare inputSandbox TarBall (only the first time)
-        self.tarNameWithPath = self.getTarBall(self.executable)
+            ## Prepare inputSandbox TarBall (only the first time)
+            self.tarNameWithPath = self.getTarBall(self.executable)
 
 
     def ModifyPset(self):
@@ -430,27 +430,26 @@ class Cmssw(JobType):
         if len(listDictions):
             if exist==False: self.CreateXML()
             self.addEntry(listDictions)
-            self.addXMLfile()
+           # self.zipXMLfile()
         common._db.updateJob_(listID,listField)
-        self.zipTarFile()
         return
 
-    def addXMLfile(self):
+   # def zipXMLfile(self):
 
-        import tarfile
-        try:
-            tar = tarfile.open(self.tarNameWithPath, "a")
-            tar.add(self.argsFile, os.path.basename(self.argsFile))
-            tar.close()
-        except IOError, exc:
-            msg = 'Could not add %s to %s \n'%(self.argsFile,self.tarNameWithPath)
-            msg += str(exc)
-            raise CrabException(msg)
-        except tarfile.TarError, exc:
-            msg = 'Could not add %s to %s \n'%(self.argsFile,self.tarNameWithPath)
-            msg += str(exc)
-            raise CrabException(msg)
-
+    #    import tarfile
+    #    try:
+    #        tar = tarfile.open(self.tarNameWithPath, "a")
+    #        tar.add(self.argsFile, os.path.basename(self.argsFile))
+    #        tar.close()
+    #    except IOError, exc:
+    #        msg = 'Could not add %s to %s \n'%(self.argsFile,self.tarNameWithPath)
+    #        msg += str(exc)
+    #        raise CrabException(msg)
+    #    except tarfile.TarError, exc:
+    #        msg = 'Could not add %s to %s \n'%(self.argsFile,self.tarNameWithPath)
+    #        msg += str(exc)
+    #        raise CrabException(msg)
+    
     def CreateXML(self):
         """
         """
@@ -481,14 +480,14 @@ class Cmssw(JobType):
         """
         Return the TarBall with lib and exe
         """
-        self.tarNameWithPath = common.work_space.pathForTgz()+self.tar_name
-        if os.path.exists(self.tarNameWithPath):
-            return self.tarNameWithPath
+        self.tgzNameWithPath = common.work_space.pathForTgz()+self.tgz_name
+        if os.path.exists(self.tgzNameWithPath):
+            return self.tgzNameWithPath
 
         # Prepare a tar gzipped file with user binaries.
         self.buildTar_(exe)
 
-        return string.strip(self.tarNameWithPath)
+        return string.strip(self.tgzNameWithPath)
 
     def buildTar_(self, executable):
 
@@ -503,8 +502,7 @@ class Cmssw(JobType):
 
         import tarfile
         try: # create tar ball
-            #tar = tarfile.open(self.tgzNameWithPath, "w:gz")
-            tar = tarfile.open(self.tarNameWithPath, "w")
+            tar = tarfile.open(self.tgzNameWithPath, "w:gz")
             ## First find the executable
             if (self.executable != ''):
                 exeWithPath = self.scram.findFile_(executable)
@@ -595,29 +593,17 @@ class Cmssw(JobType):
             for file in self.additional_inbox_files:
                 tar.add(file,string.split(file,'/')[-1])
             tar.dereference=False
-            common.logger.log(10-1,"Files in "+self.tarNameWithPath+" : "+str(tar.getnames()))
+            common.logger.log(10-1,"Files in "+self.tgzNameWithPath+" : "+str(tar.getnames()))
 
             tar.close()
         except IOError, exc:
-            msg = 'Could not create tar-ball %s \n'%self.tarNameWithPath
+            msg = 'Could not create tar-ball %s \n'%self.tgzNameWithPath
             msg += str(exc)
             raise CrabException(msg)
         except tarfile.TarError, exc:
-            msg = 'Could not create tar-ball %s \n'%self.tarNameWithPath
+            msg = 'Could not create tar-ball %s \n'%self.tgzNameWithPath
             msg += str(exc)
             raise CrabException(msg)
-
-    def zipTarFile(self):
-
-        import gzip
-        f_in = open(self.tarNameWithPath, 'rb')
-        f_out = gzip.open(self.tgzNameWithPath, 'wb')
-        f_out.writelines(f_in)
-        f_out.close()
-        f_in.close()
-
-        # cmd = "gzip -c %s > %s "%(self.tarNameWithPath,self.tgzNameWithPath)
-        # res=runCommand(cmd)
 
         tarballinfo = os.stat(self.tgzNameWithPath)
         if ( tarballinfo.st_size > self.MaxTarBallSize*1024*1024 ) :
@@ -627,7 +613,6 @@ class Cmssw(JobType):
             msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
             msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/CrabServer#CRABSERVER_for_Users'
             raise CrabException(msg)
-        os.remove(self.tarNameWithPath)
 
         ## create tar-ball with ML stuff
 
@@ -860,6 +845,8 @@ class Cmssw(JobType):
         inp_box = []
         if os.path.isfile(self.tgzNameWithPath):
             inp_box.append(self.tgzNameWithPath)
+        if os.path.isfile(self.argsFile):
+            inp_box.append(self.argsFile)
         inp_box.append(common.work_space.jobDir() + self.scriptName)
         return inp_box
 
