@@ -302,7 +302,7 @@ class Cmssw(JobType):
                         if int(self.cfg_params.get('CMSSW.ignore_edm_output',0)):
                             msg += "    CMSSW.ignore_edm_output==1 : Hope you know what you are doing...\n"
                             common.logger.info(msg)
-                        else msg:
+                        else :
                             raise CrabException(msg)
 
             if (PsetEdit.getBadFilesSetting()):
