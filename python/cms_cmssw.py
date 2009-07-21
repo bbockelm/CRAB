@@ -278,30 +278,32 @@ class Cmssw(JobType):
                         common.logger.info("Adding "+tfsOutput+" (from TFileService) to list of output files")
                     pass
                 pass
-            ## If present and requested, add PoolOutputModule to output files
+            # If present and requested, add PoolOutputModule to output files
             edmOutput = PsetEdit.getPoolOutputModule()
             if int(self.cfg_params.get('CMSSW.get_edm_output',0)):
                 if edmOutput:
-                    if edmOutput in self.output_file:
-                        common.logger.debug("Output from PoolOutputModule "+edmOutput+" already in output files")
-                    else:
-                        self.output_file.append(edmOutput)
-                        common.logger.info("Adding "+edmOutput+" (from PoolOutputModule) to list of output files")
-                    pass
-                pass
-            # not required: check anyhow if present, to avoid accidental T2 overload
+                    for outputFile in edmOutput:
+                        if outputFile in self.output_file:
+                            common.logger.debug("Output from PoolOutputModule "+edmOutput+" already in output files")
+                        else:
+                            self.output_file.append(outputFile)
+                            common.logger.info("Adding "+outputFile+" (from PoolOutputModule) to list of output files")
+            # not requested, check anyhow to avoid accidental T2 overload
             else:
-                if edmOutput and (edmOutput not in self.output_file):
-                    msg = "ERROR: a PoolOutputModule is present in your ParameteSet %s \n"%self.pset
-                    msg +="         but the file produced ( %s ) is not in the list of output files\n"%edmOutput
-                    msg += "WARNING: please remove it. If you want to keep it, add the file to output_files or use CMSSW.get_edm_output\n"
-                    if int(self.cfg_params.get('CMSSW.ignore_edm_output',0)):
-                        msg +=" CMSSW.ignore_edm_output==True : Hope you know what you are doing...\n"
-                        common.logger.info(msg)
-                    else:
-                        raise CrabException(msg)
-                pass
-            pass
+                if edmOutput:
+                    missedFiles = []
+                    for outputFile in edmOutput:
+                        if outputFile not in self.output_file:
+                            missedFiles.append(outputFile)
+                    if missedFiles:
+                        msg  = "ERROR: PoolOutputModule(s) are present in your ParameteSet %s \n"%self.pset
+                        msg += "    but the file(s) produced ( %s ) are not in the list of output files\n" % ', '.join(missedFiles)
+                        msg += "WARNING: please remove them. If you want to keep them, add the file(s) to output_files or use CMSSW.get_edm_output = 1\n"
+                        if int(self.cfg_params.get('CMSSW.ignore_edm_output',0)):
+                            msg += "    CMSSW.ignore_edm_output==1 : Hope you know what you are doing...\n"
+                            common.logger.info(msg)
+                        else msg:
+                            raise CrabException(msg)
 
             if (PsetEdit.getBadFilesSetting()):
                 msg = "WARNING: You have set skipBadFiles to True. This will continue processing on some errors and you may not be notified."

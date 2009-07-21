@@ -12,6 +12,7 @@ from ProdCommon.CMSConfigTools.ConfigAPI.CfgInterface import CfgInterface
 from FWCore.ParameterSet.DictTypes import SortedKeysDict
 from FWCore.ParameterSet.Modules   import Service
 from FWCore.ParameterSet.Types     import *
+from FWCore.ParameterSet.Modules   import OutputModule
 
 import FWCore.ParameterSet.Types   as CfgTypes
 import FWCore.ParameterSet.Modules as CfgModules
@@ -93,14 +94,10 @@ class PsetManipulator:
 
     def getPoolOutputModule(self):
         """ Get Output filename from PoolOutputModule and return it. If not existing, return None """
-        if not self.cfg.data.outputModules:
-            return None
-        poolOutputModule = self.cfg.data.outputModules
-        # FIXME: Still a "bug" here in that only one name is returned and the POM can be in any order
-        for out in poolOutputModule:
-            if poolOutputModule[out].type_() != "PoolOutputModule":
-                continue
-            return poolOutputModule[out].fileName.value()
+        outputFinder = PoolOutputFinder()
+        for p  in self.cfg.data.endpaths.itervalues():
+            p.visit(outputFinder)
+        return outputFinder.getList()
 
     def getBadFilesSetting(self):
         setting = False
@@ -110,3 +107,16 @@ class PsetManipulator:
         except AttributeError:
             pass # Either no source or no setting of skipBadFiles
         return setting
+
+class PoolOutputFinder(object):
+
+    def __init__(self):
+        self._poolList = []
+    def enter(self,visitee):
+        if isinstance(visitee,OutputModule) and visitee.type_() == "PoolOutputModule":
+            self._poolList.append(visitee.fileName.value())
+    def leave(self,visitee):
+        pass
+
+    def getList(self):
+        return self._poolList
