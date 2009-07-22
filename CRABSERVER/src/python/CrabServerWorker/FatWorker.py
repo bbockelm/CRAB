@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.172 2009/07/17 19:29:16 mcinquil Exp $"
-__version__ = "$Revision: 1.172 $"
+__revision__ = "$Id: FatWorker.py,v 1.173 2009/07/20 15:57:02 spiga Exp $"
+__version__ = "$Revision: 1.173 $"
 
 import string
 import sys, os
@@ -864,7 +864,7 @@ class FatWorker(Thread):
         sched_param= ''
         resDir= "/".join((task['globalSandbox'].split(',')[0]).split('/')[:-1])
         queue =  self.cfg_params.get('CAF.queue','cmscaf1nw')
-        res =  self.cfg_params.get('CAF.resource', 'type==SLC5_64 || type==SLC4_64')
+        res =  self.cfg_params.get('CAF.resource', '"type==SLC5_64 || type==SLC4_64"')
         if (queue):
             sched_param += '-q '+queue +' '
         if (res): sched_param += ' -R '+res +' '

@@ -25,7 +25,7 @@ class SchedulerCaf(SchedulerLsf) :
         """
         SchedulerLsf.configure(self, cfg_params)
         self.queue = cfg_params.get(self.name().upper()+'.queue','cmscaf1nw')
-        self.res = cfg_params.get(self.name().upper()+'.resource','type==SLC5_64 || type==SLC4_64')
+        self.res = cfg_params.get(self.name().upper()+'.resource','"type==SLC5_64 || type==SLC4_64"')
         self.pool = cfg_params.get('USER.storage_pool','cmscafuser')
 
     def wsSetupEnvironment(self):
