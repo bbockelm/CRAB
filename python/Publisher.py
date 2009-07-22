@@ -268,6 +268,11 @@ class Publisher(Actor):
         
         file_list = glob.glob(self.resDir+"crab_fjr*.xml")
         ## Select only those fjr that are succesfull
+        if (len(file_list)==0):
+            common.logger.info("--->>> "+self.resDir+" empty: no file to publish on DBS")
+            self.exit_status = '1'
+            return self.exit_status
+
         good_list=[]
         for fjr in file_list:
             reports = readJobReport(fjr)
@@ -331,7 +336,7 @@ class Publisher(Actor):
             return self.exit_status
 
         else:
-            common.logger.info("--->>> "+self.resDir+" empty: no file to publish on DBS")
+            common.logger.info("--->>> No valid files to publish on DBS. Your jobs do not report exit codes = 0")
             self.exit_status = '1'
             return self.exit_status
     
