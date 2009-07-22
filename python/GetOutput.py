@@ -57,17 +57,17 @@ class GetOutput(Actor):
             if self.jobs == 'all': 
                 self.list_id= list_id_done
                 if len(self.up_task.jobs)>len(self.list_id): 
-                    msg = '\nOnly %d jobs will be retrieved '% (len(self.list_id))
+                    msg = 'Only %d jobs will be retrieved '% (len(self.list_id))
                     msg += ' from %d requested.\n'%(len(self.up_task.jobs))
-                    msg += ' (for details: crab -status)' 
+                    msg += '\t(for details: crab -status)' 
                     common.logger.info(msg)
             else:
                 for id in self.jobs:
                     if id in list_id_done: self.list_id.append(id)   
                 if len(self.jobs) > len(self.list_id):
-                    msg = '\nOnly %d jobs will be retrieved '% (len(self.list_id))
+                    msg = 'Only %d jobs will be retrieved '% (len(self.list_id))
                     msg += ' from %d requested.\n'%(len(self.jobs))
-                    msg += ' (for details: crab -status)' 
+                    msg += '\t(for details: crab -status)' 
                     common.logger.info(msg)
         if not os.path.isdir(self.logDir) or not os.path.isdir(self.outDir):
             msg =  ' Output or Log dir not found!! check '+self.logDir+' and '+self.outDir
