@@ -21,8 +21,10 @@ class SubmitterServer( Submitter ):
         self.cfg_params = cfg_params
         self.submitRange = []
         self.credentialType = 'Proxy' 
+        self.copyTout= ' -t 600 '    
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.credentialType = 'Token' 
+            self.copyTout= ' '    
 
         Submitter.__init__(self, cfg_params, parsed_range, val)      
     
@@ -35,7 +37,6 @@ class SubmitterServer( Submitter ):
 
         self.taskuuid = str(common._db.queryTask('name'))
  
-        self.copyTout= ' -t 600 '    
        
 	return
 
