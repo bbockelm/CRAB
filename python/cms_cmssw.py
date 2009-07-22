@@ -1028,7 +1028,7 @@ class Cmssw(JobType):
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
 
 
-            args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH'
+            args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
             if (self.publish_data == 1):
                 #processedDataset = self.cfg_params['USER.publish_data_name']
                 txt += 'ProcessedDataset='+self.processedDataset+'\n'
