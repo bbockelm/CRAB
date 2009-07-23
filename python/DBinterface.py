@@ -354,7 +354,7 @@ class DBinterface:
                     break
                    
             # Data alignment
-            if rForJ.getAttribute('status') not in ['Created', 'Unknown']: 
+            if rForJ.getAttribute('status') not in ['Unknown']: # ['Created', 'Unknown']: 
                    # update the status  
                 common.logger.debug("Updating DB status for job: " + str(id) + " @: " \
                                       + str(rForJ.getAttribute('status')) )
