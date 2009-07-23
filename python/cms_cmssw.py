@@ -45,9 +45,14 @@ class Cmssw(JobType):
 
         self.version = self.scram.getSWVersion()
         common.logger.log(10-1,"CMSSW version is: "+str(self.version))
-
+        version_array = self.version.split('_')
+        self.CMSSW_major = 0
+        self.CMSSW_minor = 0
+        self.CMSSW_patch = 0
         try:
-            type, self.CMSSW_major, self.CMSSW_minor, self.CMSSW_patch = tuple(self.version.split('_'))
+            self.CMSSW_major = int(version_array[1])
+            self.CMSSW_minor = int(version_array[2])
+            self.CMSSW_patch = int(version_array[3])
         except:
             msg = "Cannot parse CMSSW version string: " + self.version + " for major and minor release number!"
             raise CrabException(msg)
