@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.173 2009/07/20 15:57:02 spiga Exp $"
-__version__ = "$Revision: 1.173 $"
+__revision__ = "$Id: FatWorker.py,v 1.174 2009/07/22 17:57:15 spiga Exp $"
+__version__ = "$Revision: 1.174 $"
 
 import string
 import sys, os
@@ -369,6 +369,8 @@ class FatWorker(Thread):
                 j.runningJob['status'] = 'C'
                 j.runningJob['statusScheduler'] = 'Created'
                 needUpd = True
+            if j['jobId'] in self.cmdRng:
+                j.runningJob['state'] = 'SubRequested'
 
         if len(backupFiles) > 0:
             self.log.info("Backup copy created for %s: %s"%(self.myName, str(backupFiles) ))
