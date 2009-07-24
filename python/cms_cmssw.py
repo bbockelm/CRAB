@@ -289,7 +289,7 @@ class Cmssw(JobType):
                 if edmOutput:
                     for outputFile in edmOutput:
                         if outputFile in self.output_file:
-                            common.logger.debug("Output from PoolOutputModule "+edmOutput+" already in output files")
+                            common.logger.debug("Output from PoolOutputModule "+outputFile+" already in output files")
                         else:
                             self.output_file.append(outputFile)
                             common.logger.info("Adding "+outputFile+" (from PoolOutputModule) to list of output files")
@@ -456,7 +456,7 @@ class Cmssw(JobType):
     #        msg = 'Could not add %s to %s \n'%(self.argsFile,self.tarNameWithPath)
     #        msg += str(exc)
     #        raise CrabException(msg)
-    
+
     def CreateXML(self):
         """
         """
