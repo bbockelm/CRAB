@@ -9,10 +9,14 @@ class GetOutput(Actor):
         self.jobs = args[1]
         
         self.log=0
+
+        dir = os.getcwd()+'/'
         self.outDir = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
         if ( self.outDir[-1] != '/' ) : self.outDir = self.outDir + '/'
+        if ( self.outDir[0] != '/') : self.outDir = dir + self.outDir 
         self.logDir = self.cfg_params.get('USER.logdir' ,common.work_space.resDir())
         if ( self.logDir[-1] != '/' ) : self.logDir = self.logDir + '/'
+        if ( self.logDir[0] != '/') : self.logDir = dir +self.logDir 
         if self.logDir != self.outDir:
             self.log=1
         self.return_data = self.cfg_params.get('USER.return_data',0)
