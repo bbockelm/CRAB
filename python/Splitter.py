@@ -1,6 +1,14 @@
 import common
+from sets import Set
 from crab_exceptions import *
 from crab_util import *
+
+from WMCore.DataStructs.File import File
+from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DataStructs.Run import Run
+from WMCore.DataStructs.Subscription import Subscription
+from WMCore.DataStructs.Workflow import Workflow
+from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 
 class JobSplitter:
@@ -92,13 +100,13 @@ class JobSplitter:
         if noBboundary == 1:
             if self.total_number_of_events== -1:
                 msg = 'You are selecting no_block_boundary=1 which does not allow to set total_number_of_events=-1\n'
-                msg +='\tYou shoud get the number of event from DBS web interface and use it for your configuration.'                     
-                raise CrabException(msg) 
+                msg +='\tYou shoud get the number of event from DBS web interface and use it for your configuration.'
+                raise CrabException(msg)
             if len(self.seWhiteList) == 0 or  len(self.seWhiteList.split(',')) != 1:
                 msg = 'You are selecting no_block_boundary=1 which requires to choose one and only one site.\n'
                 msg += "\tPlease set se_white_list with the site's storage element name."
-                raise  CrabException(msg)  
-            blockSites = self.ComputeSubBlockSites(blockSites)    
+                raise  CrabException(msg)
+            blockSites = self.ComputeSubBlockSites(blockSites)
 
         # ---- Handle the possible job splitting configurations ---- #
         if (self.selectTotalNumberEvents):
@@ -370,14 +378,6 @@ class JobSplitter:
     def jobSplittingByRun(self):
         """
         """
-        from sets import Set
-        from WMCore.JobSplitting.RunBased import RunBased
-        from WMCore.DataStructs.Workflow import Workflow
-        from WMCore.DataStructs.File import File
-        from WMCore.DataStructs.Fileset import Fileset
-        from WMCore.DataStructs.Subscription import Subscription
-        from WMCore.JobSplitting.SplitterFactory import SplitterFactory
-        from WMCore.DataStructs.Run import Run
 
         self.checkUserSettings()
         blockSites = self.args['blockSites']
@@ -588,8 +588,87 @@ class JobSplitter:
 
     def jobSplittingByLumi(self):
         """
+        Split task into jobs by Lumi section paying attention to which
+        lumis should be run (according to the analysis dataset).
+        This uses WMBS job splitting which does not split files over jobs
+        so the job will have AT LEAST as many lumis as requested, perhaps
+        more
         """
-        return
+
+        common.logger.debug('Splitting by Lumi')
+        self.checkUserSettings() # FIXME need one for lumis
+
+        blockSites = self.args['blockSites']
+        pubdata = self.args['pubdata']
+
+        if self.selectNumberOfJobs == 0 :
+            self.theNumberOfJobs = 9999999
+        lumisPerFile  = pubdata.getLumis()
+
+        # Make the list of WMBS files for job splitter
+        fileList = pubdata.getListFiles()
+        thefiles = Fileset(name='FilesToSplit')
+        for jobFile in fileList:
+            block = jobFile['Block']['Name']
+            try:
+                jobFile['Block']['StorageElementList'].extend(blockSites[block])
+            except:
+                continue
+            wmbsFile = File(jobFile['LogicalFileName'])
+            [ wmbsFile['locations'].add(x) for x in blockSites[block] ]
+            wmbsFile['block'] = block
+            for lumi in lumisPerFile[jobFile['LogicalFileName']]:
+                wmbsFile.addRun(Run(lumi[0], lumi[1]))
+            thefiles.addFile(wmbsFile)
+
+        work = Workflow()
+        subs = Subscription(fileset    = thefiles,    workflow = work,
+                            split_algo = 'LumiBased', type     = "Processing")
+        splitter = SplitterFactory()
+        jobFactory = splitter(subs)
+
+        list_of_lists = []
+        jobDestination = []
+        jobCount = 0
+        self.theNumberOfJobs = 20 #FIXME
+        for jobGroup in  jobFactory(lumis_per_job = 50): #FIXME
+            for job in jobGroup.jobs:
+                if jobCount <  self.theNumberOfJobs:
+                    lumis = []
+                    lfns  = []
+                    locations = []
+                    firstFile = True
+                    # Collect information from all the files
+                    for jobFile in job.getFiles():
+                        if firstFile:  # Get locations from first file in the job
+                            for loc in jobFile['locations']:
+                                locations.append(loc)
+                            firstFile = False
+                        # Accumulate Lumis from all files
+                        for lumiList in jobFile['runs']:
+                            theRun = lumiList.run
+                            for theLumi in list(lumiList):
+                                lumis.append( (theRun, theLumi) )
+
+                        lfns.append(jobFile['lfn'])
+                    fileString = ','.join(lfns)
+                    lumiString = compressLumiString(lumis)
+                    common.logger.debug('Job %s will run on %s files and %s lumis '
+                        % (jobCount, len(lfns), len(lumis) ))
+                    list_of_lists.append([fileString, str(-1), str(0), lumiString])
+
+                    jobDestination.append(locations)
+                    jobCount += 1
+        # Prepare dict output matching back to non-WMBS job creation
+        dictOut = {}
+        dictOut['params'] = ['InputFiles', 'MaxEvents', 'SkipEvents', 'Lumis']
+        dictOut['args'] = list_of_lists
+        dictOut['jobDestination'] = jobDestination
+        dictOut['njobs'] = jobCount
+
+        return dictOut
+
+
     def Algos(self):
         """
         Define key splittingType matrix
@@ -602,4 +681,44 @@ class JobSplitter:
                      'ForScript'            : self.jobSplittingForScript
                      }
         return SplitAlogs
+
+
+
+def compressLumiString(lumis):
+    """
+    Turn a list of 2-tuples of run/lumi numbers into a list of the format
+    R1:L1,R2:L2-R3:L3 which is acceptable to CMSSW LumiBlockRange variable
+    """
+
+    lumis.sort()
+    parts = []
+    startRange = None
+    endRange = None
+
+    for lumiBlock in lumis:
+        if not startRange: # This is the first one
+            startRange = lumiBlock
+            endRange = lumiBlock
+        elif lumiBlock == endRange: # Same Lumi (different files?)
+            pass
+        elif lumiBlock[0] == endRange[0] and lumiBlock[1] == endRange[1] + 1: # This is a continuation
+            endRange = lumiBlock
+        else: # This is the start of a new range
+            part = ':'.join(map(str, startRange))
+            if startRange != endRange:
+                part += '-' + ':'.join(map(str, endRange))
+            parts.append(part)
+            startRange = lumiBlock
+            endRange = lumiBlock
+
+    # Put out what's left
+    if startRange:
+        part = ':'.join(map(str, startRange))
+        if startRange != endRange:
+            part += '-' + ':'.join(map(str, endRange))
+        parts.append(part)
+
+    output = ','.join(parts)
+    return output
+
 
