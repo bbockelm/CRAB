@@ -89,7 +89,8 @@ class Cmssw(JobType):
             self.primaryDataset = self.datasetPath.split("/")[1]
             self.dataTier = self.datasetPath.split("/")[2]
 
-        self.dataTiers = []
+        # Analysis dataset is primary/processed/tier/definition
+        self.ads = len(self.datasetPath.split("/")) > 3
 
         self.debugWrap=''
         self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
@@ -243,12 +244,14 @@ class Cmssw(JobType):
                 self.algo = 'NoInput'
                 self.conf['managedGenerators']=self.managedGenerators
                 self.conf['generator']=self.generator
+        elif self.ads:
+            self.algo = 'LumiBased'
         elif splitByRun ==1:
             self.algo = 'RunBased'
         else:
             self.algo = 'EventBased'
+        common.logger.debug("Job splitting method: %s" % self.algo)
 
-#        self.algo = 'LumiBased'
         splitter = JobSplitter(self.cfg_params,self.conf)
         self.dict = splitter.Algos()[self.algo]()
 
