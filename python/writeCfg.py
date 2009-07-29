@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.20 2009/06/17 20:58:08 ewv Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: writeCfg.py,v 1.21 2009/06/19 18:46:54 ewv Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import getopt
 import imp
@@ -119,6 +119,7 @@ def main(argv) :
             generator      = str(elem.getAttribute('Generator'))
             inputFiles     = str(elem.getAttribute('InputFiles'))
             parentFiles    = str(elem.getAttribute('ParentFiles'))
+            lumis          = str(elem.getAttribute('Lumis'))
 
   # Read Input cfg or python cfg file, FUTURE: Get rid cfg mode
 
@@ -171,6 +172,10 @@ def main(argv) :
     if parentFiles:
         parentFileNames = parentFiles.split(',')
         inModule.setSecondaryFileNames(*parentFileNames)
+
+    if lumis:
+        lumiRanges = lumis.split(',')
+        inModule.setLumisToProcess(*lumiRanges)
 
     # Pythia parameters
     if (firstRun):
