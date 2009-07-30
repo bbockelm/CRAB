@@ -389,45 +389,49 @@ B<[CMSSW]>
 
 =item B<datasetpath *>
 
-the path of processed dataset as defined on the DBS. It comes with the format I</PrimaryDataset/DataTier/Process> . In case no input is needed I<None> must be specified.
-
-=item B<ads *>
-
-you may want to run over an AnalysisDataSet. After define the related path in I<datasetpath>, take care to specify ads=1.
+The path of the processed or analysis dataset as defined in DBS. It comes with the format I</PrimaryDataset/DataTier/Process[/OptionalADS]>. If no input is needed I<None> must be specified. When running on an analysis dataset, the job splitting must be specified by luminosity block rather than event. Analysis datasets are only treated accurately on a lumi-by-lumi level with CMSSW 3_1_x and later.
 
 =item B<runselection *>
 
-within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 .
+Within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 .
 
 =item B<use_parent *>
 
-within a dataset you can ask to run over the related parent files too. E.g., this will give you access to the RAW data while running over a RECO sample. Setting use_parent=1 CRAB determines the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
+Within a dataset you can ask to run over the related parent files too. E.g., this will give you access to the RAW data while running over a RECO sample. Setting use_parent=1 CRAB determines the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
 
 =item B<pset *>
 
-the ParameterSet to be used. Both .cfg and .py parameter sets are supported for the relevant versions of CMSSW.
+The ParameterSet to be used. Both .cfg and .py parameter sets are supported for the relevant versions of CMSSW.
 
 =item I<Of the following three parameter exactly two must be used, otherwise CRAB will complain.>
 
 =item B<total_number_of_events *>
 
-the number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in case of no input. In this case, the total number of events will be used to split the task in jobs, together with I<event_per_job>.
+The number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in case of no input. In this case, the total number of events will be used to split the task in jobs, together with I<events_per_job>.
 
 =item B<events_per_job*>
 
-number of events to be accessed by each job. Since a job cannot cross the boundary of a fileblock it might be that the actual number of events per job is not exactly what you asked for. It can be used also with No input.
+The number of events to be accessed by each job. Since a job cannot cross the boundary of a fileblock it might be that the actual number of events per job is not exactly what you asked for. It can be used also with no input.
+
+=item B<total_number_of_lumis *>
+
+The number of luminosity blocks to be processed. This option is only valid when using analysis datasets. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for. Two of I<total_number_of_lumis>, I<lumis_per_job>, and I<number_of_jobs> must be supplied to run on an analysis dataset.
+
+=item B<lumis_per_job*>
+
+The number of luminosity blocks to be accessed by each job. This option is only valid when using analysis datasets. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for.
 
 =item B<number_of_jobs *>
 
-Define the number of job to be run for the task. The number of event for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input.
+Define the number of jobs to be run for the task. The number of event for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input.
 
 =item B<split_by_run *>
 
-to activate the split run based (each job will access a different run) use I<split_by_run>=1. You can definfe also I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not yet available.
+To activate the split run based (each job will access a different run) use I<split_by_run>=1. You can also define I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not yet available.
 
 =item B<output_file *>
 
-the output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1 (default is 0 == file included). The Edm output produced via PoolOutputModule can be automatically added by setting B<get_edm_output> = 1 (default is 0 == no). B<warning> it is not allowed to have a PoolOutputSource and not save it somewhere, since it is a waste of resource on the WN. In case you really want to do that, and if you really know what you are doing (hint: you dont!) you can user I<ignore_edm_output=1>.
+The output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1 (default is 0 == file included). The Edm output produced via PoolOutputModule can be automatically added by setting B<get_edm_output> = 1 (default is 0 == no). B<warning> it is not allowed to have a PoolOutputSource and not save it somewhere, since it is a waste of resource on the WN. In case you really want to do that, and if you really know what you are doing (hint: you dont!) you can user I<ignore_edm_output=1>.
 
 =item B<skip_TFileService_output>
 
@@ -565,6 +569,7 @@ N.B 1) if you are using an official CMS site to stored data, the remote dir will
 2) if you are using a not official CMS site to store data, you have to check the <lfn>, that will be part of the logical file name of you published files, in order to be able to re-read the data.
 
 =item B<publish_with_import_all_parents>
+
 To publish your data in your local DBS importing also the complete parents tree, set publish_with_import_all_parents=1, otherwise 0. In this last case only the dataset that you have analyzed will be imported as parent in your local DBS. Default value is 1.
 
 =item B<publish_data_name>
