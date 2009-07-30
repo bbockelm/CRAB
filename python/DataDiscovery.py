@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+__revision__ = "$Id: writeCfg.py,v 1.22 2009/07/29 21:20:03 ewv Exp $"
+__version__ = "$Revision: 1.22 $"
+
 import exceptions
 import DBSAPI.dbsApi
 from DBSAPI.dbsApiException import *
@@ -242,6 +246,13 @@ class DataDiscovery:
         max events
         """
         return self.maxEvents
+
+
+    def getMaxLumis(self):
+        """
+        Return the number of lumis in the dataset
+        """
+        return self.maxLumis
 
 
     def getEventsPerBlock(self):

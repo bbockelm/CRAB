@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.21 2009/06/19 18:46:54 ewv Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: writeCfg.py,v 1.22 2009/07/29 21:20:03 ewv Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import getopt
 import imp
@@ -174,8 +174,11 @@ def main(argv) :
         inModule.setSecondaryFileNames(*parentFileNames)
 
     if lumis:
-        lumiRanges = lumis.split(',')
-        inModule.setLumisToProcess(*lumiRanges)
+        if CMSSW_major < 3: # FUTURE: Can remove this check
+            print "Cannot skip lumis for CMSSW 2_x"
+        else:
+            lumiRanges = lumis.split(',')
+            inModule.setLumisToProcess(*lumiRanges)
 
     # Pythia parameters
     if (firstRun):

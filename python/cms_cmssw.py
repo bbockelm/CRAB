@@ -1,3 +1,7 @@
+
+__revision__ = "$Id: writeCfg.py,v 1.22 2009/07/29 21:20:03 ewv Exp $"
+__version__ = "$Revision: 1.22 $"
+
 from JobType import JobType
 from crab_exceptions import *
 from crab_util import *
@@ -91,6 +95,11 @@ class Cmssw(JobType):
 
         # Analysis dataset is primary/processed/tier/definition
         self.ads = len(self.datasetPath.split("/")) > 3
+
+        # FUTURE: Can remove this check
+        if self.ads and self.CMSSW_major < 3:
+            common.logger.info('Warning: Analysis dataset support is incomplete in CMSSW 2_x.')
+            common.logger.info('  Only file level, not lumi level, granularity is supported.')
 
         self.debugWrap=''
         self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))

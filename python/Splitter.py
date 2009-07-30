@@ -1,3 +1,7 @@
+
+__revision__ = "$Id: writeCfg.py,v 1.22 2009/07/29 21:20:03 ewv Exp $"
+__version__ = "$Revision: 1.22 $"
+
 import common
 from sets import Set
 from crab_exceptions import *
@@ -15,6 +19,14 @@ class JobSplitter:
     def __init__( self, cfg_params,  args ):
         self.cfg_params = cfg_params
         self.args=args
+
+        self.lumisPerJob = -1
+        self.totalNLumis = 0
+        self.theNumberOfJobs = 0
+        self.limitNJobs = False
+        self.limitTotalLumis = False
+        self.limitJobLumis = False
+
         #self.maxEvents
         # init BlackWhiteListParser
         self.seWhiteList = cfg_params.get('GRID.se_white_list',[])
@@ -49,6 +61,36 @@ class JobSplitter:
         else:
             self.total_number_of_events = 0
             self.selectTotalNumberEvents = 0
+
+
+    def checkLumiSettings(self):
+        """
+        Check to make sure the user has specified enough information to
+        perform splitting by Lumis to run the job
+        """
+        settings = 0
+        if self.cfg_params.has_key('CMSSW.lumis_per_job'):
+            self.lumisPerJob =int( self.cfg_params['CMSSW.lumis_per_job'])
+            self.limitJobLumis = True
+            settings += 1
+
+        if self.cfg_params.has_key('CMSSW.number_of_jobs'):
+            self.theNumberOfJobs =int( self.cfg_params['CMSSW.number_of_jobs'])
+            self.limitNJobs = True
+            settings += 1
+
+        if self.cfg_params.has_key('CMSSW.total_number_of_lumis'):
+            self.totalNLumis = int(self.cfg_params['CMSSW.total_number_of_lumis'])
+            self.limitTotalLumis = (self.totalNLumis != -1)
+            settings += 1
+
+        if settings != 2:
+            msg = 'When running on analysis datasets you must specify two and only two of:\n'
+            msg = '  number_of_jobs, lumis_per_job, total_number_of_lumis'
+            raise CrabException(msg)
+        if self.limitNJobs and self.limitJobLumis:
+            self.limitTotalLumis = True
+            self.totalNLumis = self.lumisPerJob * self.theNumberOfJobs
 
 
     def ComputeSubBlockSites( self, blockSites ):
@@ -596,13 +638,11 @@ class JobSplitter:
         """
 
         common.logger.debug('Splitting by Lumi')
-        self.checkUserSettings() # FIXME need one for lumis
+        self.checkLumiSettings()
 
         blockSites = self.args['blockSites']
         pubdata = self.args['pubdata']
 
-        if self.selectNumberOfJobs == 0 :
-            self.theNumberOfJobs = 9999999
         lumisPerFile  = pubdata.getLumis()
 
         # Make the list of WMBS files for job splitter
@@ -621,6 +661,7 @@ class JobSplitter:
                 wmbsFile.addRun(Run(lumi[0], lumi[1]))
             thefiles.addFile(wmbsFile)
 
+        # Create the factory and workflow
         work = Workflow()
         subs = Subscription(fileset    = thefiles,    workflow = work,
                             split_algo = 'LumiBased', type     = "Processing")
@@ -630,35 +671,51 @@ class JobSplitter:
         list_of_lists = []
         jobDestination = []
         jobCount = 0
-        self.theNumberOfJobs = 20 #FIXME
-        for jobGroup in  jobFactory(lumis_per_job = 50): #FIXME
+        lumisCreated = 0
+
+        if not self.limitJobLumis:
+            self.lumisPerJob = pubdata.getMaxLumis() // self.theNumberOfJobs + 1
+            common.logger.info('Each job will process about %s lumis.' %
+                                self.lumisPerJob)
+
+        for jobGroup in  jobFactory(lumis_per_job = self.lumisPerJob):
             for job in jobGroup.jobs:
-                if jobCount <  self.theNumberOfJobs:
-                    lumis = []
-                    lfns  = []
-                    locations = []
-                    firstFile = True
-                    # Collect information from all the files
-                    for jobFile in job.getFiles():
-                        if firstFile:  # Get locations from first file in the job
-                            for loc in jobFile['locations']:
-                                locations.append(loc)
-                            firstFile = False
-                        # Accumulate Lumis from all files
-                        for lumiList in jobFile['runs']:
-                            theRun = lumiList.run
-                            for theLumi in list(lumiList):
-                                lumis.append( (theRun, theLumi) )
+                if (self.limitNJobs and jobCount >= self.theNumberOfJobs):
+                    common.logger.info('Limit on number of jobs reached.')
+                    break
+                if (self.limitTotalLumis and lumisCreated >= self.totalNLumis):
+                    common.logger.info('Limit on number of lumis reached.')
+                    break
+                lumis = []
+                lfns  = []
+                locations = []
+                firstFile = True
+                # Collect information from all the files
+                for jobFile in job.getFiles():
+                    if firstFile:  # Get locations from first file in the job
+                        for loc in jobFile['locations']:
+                            locations.append(loc)
+                        firstFile = False
+                    # Accumulate Lumis from all files
+                    for lumiList in jobFile['runs']:
+                        theRun = lumiList.run
+                        for theLumi in list(lumiList):
+                            lumis.append( (theRun, theLumi) )
 
-                        lfns.append(jobFile['lfn'])
-                    fileString = ','.join(lfns)
-                    lumiString = compressLumiString(lumis)
-                    common.logger.debug('Job %s will run on %s files and %s lumis '
-                        % (jobCount, len(lfns), len(lumis) ))
-                    list_of_lists.append([fileString, str(-1), str(0), lumiString])
+                    lfns.append(jobFile['lfn'])
+                fileString = ','.join(lfns)
+                lumiString = compressLumiString(lumis)
+                list_of_lists.append([fileString, str(-1), str(0), lumiString])
 
-                    jobDestination.append(locations)
-                    jobCount += 1
+                jobDestination.append(locations)
+                jobCount += 1
+                lumisCreated += len(lumis)
+                common.logger.debug('Job %s will run on %s files and %s lumis '
+                    % (jobCount, len(lfns), len(lumis) ))
+
+        common.logger.info('%s jobs created to run on %s lumis' %
+                              (jobCount, lumisCreated))
+
         # Prepare dict output matching back to non-WMBS job creation
         dictOut = {}
         dictOut['params'] = ['InputFiles', 'MaxEvents', 'SkipEvents', 'Lumis']
