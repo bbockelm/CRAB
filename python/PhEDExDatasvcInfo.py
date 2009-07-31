@@ -137,7 +137,13 @@ class PhEDExDatasvcInfo:
             raise CrabException(msg)
         if self.publish_data_name == '' and int(self.usenamespace) == 1:
            self.publish_data_name = "DefaultDataset"
-        if int(self.publish_data) == 1 or int(self.usenamespace) == 1:
+        if int(self.publish_data) == 1:
+            if self.sched in ['CAF']: l_User=True 
+            primaryDataset = self.computePrimaryDataset()
+            ### added the case lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name, publish=True)
+            ### for the publication in order to be able to check the lfn length  
+            lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name, publish=True)  + '/${PSETHASH}/'    
+        elif int(self.usenamespace) == 1:
             if self.sched in ['CAF']: l_User=True 
             primaryDataset = self.computePrimaryDataset()
             lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name)  + '/${PSETHASH}/'    
