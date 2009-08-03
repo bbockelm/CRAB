@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.85 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.85 2009/06/25 15:34:26 ewv Exp $"
+__version__ = "$Revision: 1.86 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.86 2009/07/17 19:29:16 mcinquil Exp $"
 
 import os, pickle, time, copy
 
@@ -366,7 +366,7 @@ class CrabServerWorkerComponent:
     def forceDequeuing(self, payload):
         # FAST-KILL
         try:
-            taskUniqName, fake_proxy, rng = payload.split(':')
+            taskUniqName, rng = payload.split(':')
         except Exception, e:
             logging.info('Failed to split the payload for the Kill request:%s'%payload)
             return

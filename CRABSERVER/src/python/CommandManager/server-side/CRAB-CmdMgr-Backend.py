@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.19 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.19 2008/07/09 14:13:36 farinafa Exp $"
+__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.14 2008/07/15 08:59:51 farinafa Exp $"
 
 import os
 import time
@@ -267,7 +267,7 @@ class CRAB_AS_beckend:
 
                 # WARNING: the field proxy is not needed for BossLite, 
                 #    as it is included in the task object
-                msg = taskUniqName + ':' + 'fake_proxy' + ':' + cmdRng 
+                msg = taskUniqName + ':' + cmdRng 
                 self.ms.publish("KillTask", msg)
 
 

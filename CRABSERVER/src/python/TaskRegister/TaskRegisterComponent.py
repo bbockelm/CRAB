@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.13 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.13 2008/12/05 10:51:34 spiga Exp $"
+__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.14 2009/02/19 17:07:58 mcinquil Exp $"
 
 import os
 import pickle
@@ -165,7 +165,7 @@ class TaskRegisterComponent:
         if event == "CRAB_Cmd_Mgr:NewTask":
             self.newTaskRegistration(payload)
         elif event == "KillTask":
-            taskUniqName, fake_proxy, cmdRng = payload.split(':')
+            taskUniqName, cmdRng = payload.split(':')
             self.killingRequestes[taskUniqName] = cmdRng
         # usual stuff
         elif event == "TaskRegisterComponent:StartDebug":
