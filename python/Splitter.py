@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: writeCfg.py,v 1.22 2009/07/29 21:20:03 ewv Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Splitter.py,v 1.27 2009/07/30 18:45:44 ewv Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import common
 from sets import Set
@@ -86,7 +86,7 @@ class JobSplitter:
 
         if settings != 2:
             msg = 'When running on analysis datasets you must specify two and only two of:\n'
-            msg = '  number_of_jobs, lumis_per_job, total_number_of_lumis'
+            msg += '  number_of_jobs, lumis_per_job, total_number_of_lumis'
             raise CrabException(msg)
         if self.limitNJobs and self.limitJobLumis:
             self.limitTotalLumis = True

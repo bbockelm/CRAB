@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.327 2009/07/30 18:45:44 ewv Exp $"
-__version__ = "$Revision: 1.327 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.328 2009/07/31 16:21:12 fanzago Exp $"
+__version__ = "$Revision: 1.328 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -94,7 +94,7 @@ class Cmssw(JobType):
             self.dataTier = self.datasetPath.split("/")[2]
 
         # Analysis dataset is primary/processed/tier/definition
-        self.ads = len(self.datasetPath.split("/")) > 3
+        self.ads = len(self.datasetPath.split("/")) > 4
 
         # FUTURE: Can remove this check
         if self.ads and self.CMSSW_major < 3:
@@ -207,7 +207,7 @@ class Cmssw(JobType):
                 raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
             else:
                 self.processedDataset = cfg_params['USER.publish_data_name']
-        """   
+        """
             #### check of length of datasetname to publish ####
                 common.logger.debug("test 100 char limit on datasetname")
                 print "test 100 char limit on datasetname"
@@ -218,9 +218,9 @@ class Cmssw(JobType):
                     length = len(file)
                     if length > len_file:
                         len_file = length
-                print "len_file = ", len_file        
+                print "len_file = ", len_file
                 common.logger.debug("len_file = " + str(len_file))
-                ###    
+                ###
                 user = getUserName()
                 len_user_name = len(user)
                 common.logger.debug("user = " + user)
@@ -231,7 +231,7 @@ class Cmssw(JobType):
                 common.logger.debug("processedDataset " + self.processedDataset)
                 common.logger.debug("len_processedDataset = " + str(len_processedDataset))
                 print "len_processedDataset = ", len_processedDataset
-                
+
                 if (self.datasetPath != None ):
                    len_primary = len(self.primaryDataset)
                    common.logger.debug("primaryDataset = " + self.primaryDataset)
@@ -248,7 +248,7 @@ class Cmssw(JobType):
                    #    raise CrabException("Warning: publication name too long. USER.publish_data_name has to be < " + str((59 - len_user_name) / 2) + " characters")
                    if (len_processedDataset > (450 - len_user_name -len_file) / 2):
                        raise CrabException("Warning: publication name too long. USER.publish_data_name has to be < " + str((450 - len_user_name - len_file) / 2) + " characters")
-        """               
+        """
 
         self.conf = {}
         self.conf['pubdata'] = None
