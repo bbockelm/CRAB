@@ -80,16 +80,16 @@ echo "*** Installing cron script "
 
 cat > /etc/cron.daily/myproxyDelegation.cron <<EOF
 
-if ! [ $PROXY_PASSW ]; then
+if ! [ \$PROXY_PASSW ]; then
  echo "PROXY_PASSW not specified. voms-proxy cannot be created"
  exit 1
 fi
 
-echo $PROXY_PASSW | voms-proxy-init -cert /etc/grid-security/hostcert.pem \
-    -key /etc/grid-security/hostkey.pem -voms cms -out $crabhome/server_proxy \
+echo \$PROXY_PASSW | voms-proxy-init -cert /etc/grid-security/hostcert.pem \\
+    -key /etc/grid-security/hostkey.pem -voms cms -out $crabhome/server_proxy \\
     -pwstdin -valid 13:00  
 
-if [ $? -ne 0 ]; then
+if [ \$? -ne 0 ]; then
     echo " Unable to create VOMS proxy for the server"
     exit 1
 fi
@@ -97,7 +97,7 @@ fi
 chown $crabuser $crabhome/server_proxy
 chmod 700 $crabhome/server_proxy
 
-myproxy-init -d -n -s $MYPROXY_SERVER --cert $crabhome/server_proxy --key $crabhome/server_proxy
+myproxy-init -d -n -s \$MYPROXY_SERVER --cert $crabhome/server_proxy --key $crabhome/server_proxy
 
 EOF
 
@@ -131,6 +131,10 @@ case $command in
         install ;;
     uninstall )
         uninstall ;;
+    * )
+        echo " Command needed. For usage see :"
+        echo " $0 -help"
+        exit 1 ;;
 esac
 exit 0
 
