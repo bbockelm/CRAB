@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.328 2009/07/31 16:21:12 fanzago Exp $"
-__version__ = "$Revision: 1.328 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.329 2009/08/06 21:34:15 ewv Exp $"
+__version__ = "$Revision: 1.329 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -94,7 +94,9 @@ class Cmssw(JobType):
             self.dataTier = self.datasetPath.split("/")[2]
 
         # Analysis dataset is primary/processed/tier/definition
-        self.ads = len(self.datasetPath.split("/")) > 4
+        self.ads = False
+        if self.datasetPath:
+            self.ads = len(self.datasetPath.split("/")) > 4
 
         # FUTURE: Can remove this check
         if self.ads and self.CMSSW_major < 3:
