@@ -432,8 +432,8 @@ def gethnUserNameFromSiteDB():
     params = { 'cacheduration' : 24,
                'logger' : common.logger() }
     mySiteDB = SiteDBJSON(params)
-    msg_ = "there is no user name associated to DN %s in SiteDB.\n"
-    msg_ += "You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB" % userdn
+    msg_ = "there is no user name associated to DN %s in SiteDB.\n" % userdn
+    msg_ += "You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB"
     try:
         hnUserName = mySiteDB.dnUserName(dn=userdn)
     except Exception, text:
