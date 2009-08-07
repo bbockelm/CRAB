@@ -171,8 +171,8 @@ class Crab:
         Creates a string describing program options either given in
         the command line or their default values.
         """
-        server= 'OFF' 
-        if self.UseServer==1: server = 'ON' 
+        server= 'OFF'
+        if self.UseServer==1: server = 'ON'
         local = time.ctime(time.time())
         UTC = time.asctime(time.gmtime()).split(' ')[:-1]
         tzone = time.tzname[0]
@@ -516,7 +516,7 @@ class Crab:
                                        self.cfg_params,
                                        ncjobs, skip_blocks, isNew, firstJob)
                 self.actions[opt] = self.creator
-                 
+
                 # create jobs in the DB
                 common._db.createJobs_(self.creator.nJobsL(),isNew)
 
@@ -678,7 +678,7 @@ class Crab:
             elif ( opt == '-publish' ):
                 from Publisher import Publisher
                 self.actions[opt] = Publisher(self.cfg_params)
-            
+
             elif ( opt == '-checkPublication' ):
                 from InspectDBS import InspectDBS
                 self.actions[opt] = InspectDBS(self.cfg_params)
@@ -688,19 +688,19 @@ class Crab:
                     jobs = common._db.nJobs("list")
                 else:
                     jobs = self.parseRange_(val)
-                
+
                 if (self.UseServer== 1):
                     from StatusServer import StatusServer
                     status = StatusServer(self.cfg_params)
                 else:
                  #   from Status import Status
                  #   status = Status(self.cfg_params)
-                    status=None  
+                    status=None
                 from CopyData import CopyData
                 self.actions[opt] = CopyData(self.cfg_params, jobs,status)
-  
+
             elif ( opt == '-validateCfg' ):
-                from ValidateCfg import ValidateCfg     
+                from ValidateCfg import ValidateCfg
                 config= {'pset' : self.cfg_params.get('CMSSW.pset','None')}
                 if val :
                     config['pset']=val
@@ -722,7 +722,7 @@ class Crab:
                     #from Status import Status
                     #Status(self.cfg_params).query(display=False)
                     pass
-                from Reporter import Reporter     
+                from Reporter import Reporter
                 self.actions[opt] = Reporter(self.cfg_params)
 
             pass
@@ -838,6 +838,22 @@ if __name__ == '__main__':
     except ImportError:
         pass # too bad, you'll get the warning
 
+    # Remove libraries which over-ride CRAB libs
+    badPaths = []
+    if os.environ.has_key('DBSCMD_HOME'): # CMSSW's DBS, remove last bit of path
+        badPaths.append('/'.join(os.environ['DBSCMD_HOME'].split('/')[:-1]))
+
+    def pathIsGood(checkPath):
+        """
+        Filter function for badPaths
+        """
+        for badPath in badPaths:
+            if checkPath.find(badPath) != -1:
+                return False
+        return True
+
+    sys.path = filter(pathIsGood, sys.path)
+
     # Parse command-line options and create a dictionary with
     # key-value pairs.
     options = parseOptions(sys.argv[1:])
@@ -851,13 +867,13 @@ if __name__ == '__main__':
         crab.initialize_(options)
         crab.run()
         del crab
-        print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
+        print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)
     except CrabException, e:
         del crab
         print '\n' + common.prog_name + ': ' + str(e) + '\n'
         if common.logger:
             common.logger.debug('ERROR: '+str(e)+'\n')
-            print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
+            print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)
             pass
         pass
         sys.exit(1)
