@@ -6,6 +6,7 @@
 
 import string, sys, os, time
 import ConfigParser, re, popen2, select, fcntl
+import statvfs
 
 import common
 from crab_exceptions import CrabException
@@ -58,10 +59,10 @@ def loadConfig(file, config):
     for sec in cp.sections():
         for opt in cp.options(sec):
             ## temporary check. Allow compatibility
-            new_sec = sec 
+            new_sec = sec
             if sec == 'EDG':
                 print ('\tWARNING: The [EDG] section is now deprecated.\n\tPlease remove it and use [GRID] instead.\n')
-                new_sec = 'GRID'   
+                new_sec = 'GRID'
             config[new_sec+'.'+opt] = string.strip(cp.get(sec,opt))
     return config
 
@@ -378,31 +379,33 @@ def bulkControl(self,list):
         sub_bulk.append(list)
 
     return sub_bulk
-###########################################################################
+
 
 def getUserName():
     """
     extract user name from either SiteDB or Unix
     """
     if common.scheduler.name().upper() in ['LSF', 'CAF']:
-       common.logger.log(10-1,"Using as username the Unix user name")
-       UserName=UnixUserName()
+        common.logger.log(10-1, "Using as username the Unix user name")
+        userName = unixUserName()
     else :
-       UserName=gethnUserNameFromSiteDB() 
+        userName = gethnUserNameFromSiteDB()
 
-    return UserName
+    return userName
 
-def UnixUserName():
+
+def unixUserName():
     """
     extract username from whoami
     """
     try:
-        UserName = runCommand("whoami")
-        UserName = string.strip(UserName)
+        userName = runCommand("whoami")
+        userName = string.strip(userName)
     except:
         msg = "Error. Problem with whoami command"
         raise CrabException(msg)
-    return UserName
+    return userName
+
 
 def getDN():
     """
@@ -418,6 +421,7 @@ def getDN():
         raise CrabException(msg)
     return userdn.split('\n')[0]
 
+
 def gethnUserNameFromSiteDB():
     """
     extract user name from SiteDB
@@ -425,23 +429,23 @@ def gethnUserNameFromSiteDB():
     from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
     hnUserName = None
     userdn = getDN()
-    dict={ 'cacheduration' : 24, \
-           'logger' : common.logger() } 
-    mySiteDB = SiteDBJSON(dict)
-    msg_ = "there is no user name associated to DN %s in SiteDB. You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB" % userdn
+    params = { 'cacheduration' : 24,
+               'logger' : common.logger() }
+    mySiteDB = SiteDBJSON(params)
+    msg_ = "there is no user name associated to DN %s in SiteDB.\n"
+    msg_ += "You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB" % userdn
     try:
         hnUserName = mySiteDB.dnUserName(dn=userdn)
-    except:
-        msg = "Error. Problem extracting user name from SiteDB"
-        msg += "\n Check that you are registered in SiteDB, see https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB\n"
-        msg += 'or %s'%msg_
+    except Exception, text:
+        msg = "Error extracting user name from SiteDB: %s\n" % text
+        msg += " Check that you are registered in SiteDB, see https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB\n"
+        msg += ' or %s' % msg_
         raise CrabException(msg)
     if not hnUserName:
-        msg = "Error. %s"%msg_
+        msg = "Error. %s" % msg_
         raise CrabException(msg)
     return hnUserName
 
-###################################################################33
 
 def numberFile(file, txt):
     """
@@ -527,8 +531,6 @@ def getLocalDomain(self):
 # Brian Bockelman bbockelm@cse.unl.edu
 # Module to check the avaialble disk space on a specified directory.
 #
-import os
-import statvfs
 
 def has_freespace(dir_name, needed_space_kilobytes):
      enough_unix_quota = False
