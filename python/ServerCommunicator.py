@@ -160,16 +160,16 @@ class ServerCommunicator:
         """
         return self._genericCommand('kill', blTaskName, rng)
 
-    def cleanJobs(self, blTaskName, rng):
+    def cleanTask(self, blTaskName):
         """
-        _cleanJobs_
+        _cleanTask_
         Force the server to clean the jobs on the server.
 
         Accepts in input:
              - the bossLite object representing the task (jobs are assumed to be RunningJobs)
              - the range of the submission as specified by the user at the command line
         """
-        return self._genericCommand('clean', blTaskName, rng)
+        return self._genericCommand('clean', blTaskName, 'all')
 
     def getStatus(self, blTaskName, statusFile=None, statusFamilyType='status'):
         """

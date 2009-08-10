@@ -2,45 +2,24 @@ from Actor import *
 from crab_exceptions import *
 import common
 import string
+from ServerCommunicator import ServerCommunicator
+from StatusServer import StatusServer
 
-class CleanerServer(Actor):
+class CleanerServer(Cleaner):
+
     def __init__(self, cfg_params):
         """
         constructor
         """
+        Cleaner.__init__(self, cfg_params)
         self.cfg_params = cfg_params
 
-    def check(self):
-        """
-        Check whether no job is still running or not yet retrieved
-        """
-        # get updated status from server 
-        try:
-            from StatusServer import StatusServer
-            stat = StatusServer(self.cfg_params)
-            stat.resynchClientSide()
-        except:
-            pass
+        # init client server params...
+        CliServerParams(self)
+        return
 
     def run(self):
-        """
-        remove all
-
-        if common.jobDB.nJobs()>0:
-            self.check()
-
-        countEnded = 0
-        for nj in range(common.jobDB.nJobs()):
-            if common.jobDB.status(nj) in ['Y','K', 'A', 'C']:
-                countEnded += 1
-        if countEnded == common.jobDB.nJobs():
-            tempWorkSpace = common.work_space.topDir()
-            common.scheduler.clean()
-            common.work_space.delete()
-            print ( 'crab. directory '+tempWorkSpace+' removed' )
-        else:
-            common.logger.info ( 'Impossible to remove: not all jobs are yet finished\n      (you maight kill these jobs and then clean the task)')
-        """
+        ############## Temporary trick (till the right version get tested) ####
         msg=''  
         msg+='functionality not yet available for the server. Work in progres \n' 
         msg+='only local worling directory will be removed'
@@ -48,3 +27,32 @@ class CleanerServer(Actor):
         common.logger.info(msg) 
         common.work_space.delete()
         print 'directory '+common.work_space.topDir()+' removed'
+        return
+
+        ############## CliSer version ####################
+        # get updated status from server
+        try:
+            stat = StatusServer(self.cfg_params)
+            stat.resynchClientSide()
+        except:
+            pass
+        
+        # check whether the action is allowable
+        Cleaner.check()
+
+        # notify the server to clean the task 
+        csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
+        taskuuid = str(common._db.queryTask('name'))
+
+        try:
+            csCommunicator.cleanTask(taskuuid)
+        except Exception, e:
+            msg = "Client Server comunication failed about cleanJobs: task " + taskuuid
+            common.logger.debug( msg)
+            pass
+
+        # remove local structures
+        common.work_space.delete()
+        print 'directory '+common.work_space.topDir()+' removed'
+        return
+
