@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.34 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.34 2009/01/26 10:37:52 mcinquil Exp $"
+__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.35 2009/08/03 12:14:24 farinafa Exp $"
 
 import os
 import time
@@ -194,10 +194,6 @@ class CRAB_AS_beckend:
             20 error while publishing the message
         """
 
-        # TODO? # Fabio
-        # Put here some routing for the messages 'submit'->CW, 'kill'->CW+JK, ...
-        # Postponed
-
         try:
             cmdName = self.wdir + '/' + taskUniqName + '_spec/cmd.xml'
 
@@ -216,10 +212,8 @@ class CRAB_AS_beckend:
             cmdKind = str(xmlCmd.getAttribute('Command'))
             cmdRng = str(xmlCmd.getAttribute('Range'))
 
-            # TODO not yet used, but available
             cmdFlavour = str(xmlCmd.getAttribute('Flavour'))
             cmdType = str(xmlCmd.getAttribute('Type'))
-
 
 
             msg = '%s::%s::%s::%s'%(taskUniqName, str(self.cmdAttempts), str(cmdRng), str(cmdKind))
@@ -245,17 +239,21 @@ class CRAB_AS_beckend:
 
             # kill
             if cmdKind == 'kill':
-                # prepare the killTask payload with the proper range
-                # old killer payload format (as adopted by the killer)
-
-                # WARNING: the field proxy is not needed for BossLite,
-                #    as it is included in the task object
                 msg = taskUniqName + ':' + cmdRng
                 self.ms.publish("KillTask", msg)
-
-
                 self.ms.commit()
                 self.log.info("NewCommand Kill "+taskUniqName)
+                return 0
+
+            # clean
+            if cmdKind == 'clean':
+                # Clean triggered through task-life manager.
+                # Once invoked the task get scheduled for cleaning as if it is
+                # stored on the server for a long time
+                msg = taskUniqName
+                self.ms.publish("CRAB_Cmd_Mgr:CleanRequest", msg)
+                self.ms.commit()
+                self.log.info("NewCommand Clean "+taskUniqName)
                 return 0
 
             # complete here with additional message classes

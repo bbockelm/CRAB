@@ -19,17 +19,6 @@ class CleanerServer(Cleaner):
         return
 
     def run(self):
-        ############## Temporary trick (till the right version get tested) ####
-        msg=''  
-        msg+='functionality not yet available for the server. Work in progres \n' 
-        msg+='only local worling directory will be removed'
-        #msg+='planned for CRAB_2_5_0'
-        common.logger.info(msg) 
-        common.work_space.delete()
-        print 'directory '+common.work_space.topDir()+' removed'
-        return
-
-        ############## CliSer version ####################
         # get updated status from server
         try:
             stat = StatusServer(self.cfg_params)
@@ -50,6 +39,13 @@ class CleanerServer(Cleaner):
             msg = "Client Server comunication failed about cleanJobs: task " + taskuuid
             common.logger.debug( msg)
             pass
+
+        # TODO remove these lines once the integration completed
+        msg=''
+        msg+='functionality not yet available for the server. Work in progres \n'
+        msg+='only local working directory will be removed'
+        common.logger.info(msg)
+        # TODO - end
 
         # remove local structures
         common.work_space.delete()
