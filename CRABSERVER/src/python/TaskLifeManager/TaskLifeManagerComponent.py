@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.40 2008/12/08 13:03:00 spiga Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.41 2009/03/06 09:10:40 mcinquil Exp $"
+__version__ = "$Revision: 1.41 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -185,6 +185,11 @@ class TaskLifeManagerComponent:
                 logging.info( "problems deleting osb for job " + str(jobstr) )
             return
 
+        if event == "CRAB_Cmd_Mgr:CleanRequest":
+            logging.info("Clean requested for task: " + str(payload) )
+            self.cleanTask(payload)
+            return
+
         # start debug event
         if event == "TaskLifeManager:StartDebug":
             logging.getLogger().setLevel(logging.DEBUG)
@@ -240,6 +245,22 @@ class TaskLifeManagerComponent:
                     logging.debug( str(traceback.format_exc()) )
                     logging.info( "problems deleting osb for job " + str(idjob) )
 
+
+    def cleanTask(self, taskName):
+        mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+
+        # Probably not needed, ask to Mattia about
+        # tlapi = TaskLifeAPI()
+        # tlapi.archiveBliteTask(mySession, taskName)
+        # tlapi.archiveServerTask(taskName, mySession.bossLiteDB)
+
+        # delete the osb files, but first get the 'all' range for the task
+        task = mySession.loadTaskByName(taskName)
+        rng = str( range(1, len(task.jobs) + 1) )
+        self.deleteRetrievedOSB(taskName, rng )
+
+        # once the poll will execut then the task will be cleaned silently
+        pass
 
     def pollOldTask(self, oldness = ''):
         """
@@ -360,6 +381,7 @@ class TaskLifeManagerComponent:
         self.ms.subscribeTo("TaskLifeManager:EndDebug")
         self.ms.subscribeTo("TaskLifeManager::poll")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:GetOutputNotification")
+        self.ms.subscribeTo("CRAB_Cmd_Mgr:CleanRequest")
 
         # generate first polling cycle
         self.ms.remove("TaskLifeManager::poll")
