@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.18 2009/02/19 17:07:58 mcinquil Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.19 2009/02/20 11:34:19 mcinquil Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import string
 import sys, os
@@ -16,6 +16,7 @@ import traceback
 import commands
 from threading import Thread
 from xml.dom import minidom
+import sha
 
 from MessageService.MessageService import MessageService
 from ProdAgentDB.Config import defaultConfig as dbConfig
@@ -27,6 +28,7 @@ from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 
 from CrabServerWorker.CrabWorkerAPI import CrabWorkerAPI
+
 class RegisterWorker(Thread):
     def __init__(self, logger, FWname, threadAttributes):
         Thread.__init__(self)
@@ -378,26 +380,25 @@ class RegisterWorker(Thread):
         return file
 
     def getProxyFileMyProxy(self):
-        from CrabServer.myproxyDelegation import myProxyDelegationServerside as myproxyService
-        import sha # to compose secure proxy name
-        #
-        ##TODO check if these are set in the main component and/or transfered from client-side
-        srvKeyPath = self.configs.get('X509_KEY', '~/.globus/hostkey.pem')
-        srvCertPath = self.configs.get('X509_CERT', '~/.globus/hostcert.pem')
-        pf = os.path.join(self.configs['ProxiesDir'], sha.new(self.proxySubject).hexdigest() ) # proxy filename
-        #
-        myproxySrv = self.cfg_params.get('EDG.proxy_server', 'myproxy-fts.cern.ch') # from client
-        ## retrieve the proxy
+        """
+        """
+ 
+        proxyFilename = os.path.join(self.configs['ProxiesDir'], sha.new(self.proxySubject).hexdigest() ) 
+
+        vo = self.cfg_params.get('VO', 'cms')
+        role = self.cfg_params.get('EDG.role', None)
+        group = self.cfg_params.get('EDG.group', None)
+        proxyServer = cfg_params.get("GRID.proxy_server", 'myproxy.cern.ch')
+
         try:
-            mp = myproxyService(srvKeyPath, srvCertPath, myproxySrv) # this could be turned into a class attribute
-            mp.getDelegatedProxy(pf, proxyArgs=self.cfg_params['EDG.proxyInfos'])
-            # proxyInfos not a default, strictly required ( stores VOMS extensions), from client
-            return pf
+            # force the CredAPI to refer to the same MyProxy server used by the client 
+            self.CredAPI.myproxyServer = proxyServer
+            self.CredAPI.logonMyProxy(proxyFilename, self.proxySubject, vo, group, role)
         except Exception, e:
             self.log.info("Error while retrieving proxy for %s: %s"%(self.proxySubject, str(e) ))
             self.log.info( traceback.format_exc() )
-            pass
-        return None
+            return None
 
+        return proxyFile
 
 
