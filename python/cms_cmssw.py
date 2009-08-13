@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.329 2009/08/06 21:34:15 ewv Exp $"
-__version__ = "$Revision: 1.329 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.330 2009/08/07 15:13:49 ewv Exp $"
+__version__ = "$Revision: 1.330 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -762,7 +762,7 @@ class Cmssw(JobType):
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
         else:
             txt += '\n'
-            if self.AdditionalArgs: txt += 'export AdditionalArgs=%s\n'%(self.AdditionalArgs)
+            if self.AdditionalArgs: txt += 'export AdditionalArgs=\"%s\"\n'%(self.AdditionalArgs)
             if int(self.NumEvents) != 0: txt += 'export MaxEvents=%s\n'%str(self.NumEvents)
         return txt
 
