@@ -96,6 +96,11 @@ class Scheduler :
             common.logger.info(msg)
             raise CrabException(msg)
 
+        if ( int(self.publish_data) == 1 and self._name == 'lsf'):
+            msg = 'Error: data publication is not allowed with lsf scheduler, but only with grid scheduler or caf\n'
+            common.logger.info(msg)
+            raise CrabException(msg)
+            
         if ( int(self.local_stage) == 1 and int(self.publish_data) == 1 ):
             msg = 'Error: currently the publication is not supported with the local stage out. Work in progress....\n'
             common.logger.info(msg)
