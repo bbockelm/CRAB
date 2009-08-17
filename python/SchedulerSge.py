@@ -105,8 +105,10 @@ class SchedulerSge(SchedulerLocal) :
             sched_param= ''
             if (self.queue):
                 sched_param += '-q '+self.queue +' '
-                if (self.res): sched_param += ' -l '+self.res +' '
-            pass
+            if (self.res): sched_param += self.res +' '
+        
+
+        pass
 
         #default is request 2G memory and 48 hours CPU time
         #sched_param += ' -V -l h_vmem=2G -l h_cpu=172800 '
