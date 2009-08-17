@@ -385,7 +385,7 @@ def getUserName():
     """
     extract user name from either SiteDB or Unix
     """
-    if common.scheduler.name().upper() in ['LSF', 'CAF']:
+    if common.scheduler.name().upper() in ['LSF', 'CAF', 'SGE']:
         common.logger.log(10-1, "Using as username the Unix user name")
         userName = unixUserName()
     else :
