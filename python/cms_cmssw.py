@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.330 2009/08/07 15:13:49 ewv Exp $"
-__version__ = "$Revision: 1.330 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.331 2009/08/13 13:09:59 spiga Exp $"
+__version__ = "$Revision: 1.331 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -434,8 +434,6 @@ class Cmssw(JobType):
 
         if njobs==0:
             raise CrabException("Ask to split "+str(njobs)+" jobs: aborting")
-        if not self.server and njobs > 500:
-            raise CrabException("The CRAB client will not submit more than 500 jobs. You must use the server mode.")
 
         # create the empty structure
         for i in range(njobs):

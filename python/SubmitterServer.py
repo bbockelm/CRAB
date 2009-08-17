@@ -3,41 +3,41 @@ from crab_util import *
 import common
 from ApmonIf import ApmonIf
 
-import os, errno, time, sys, re 
+import os, errno, time, sys, re
 import commands, traceback
 import zlib
 
 from Submitter import Submitter
-from ServerCommunicator import ServerCommunicator 
+from ServerCommunicator import ServerCommunicator
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 from ProdCommon.Storage.SEAPI.Exceptions import *
 
- 
+
 class SubmitterServer( Submitter ):
     def __init__(self, cfg_params, parsed_range, val):
         self.srvCfg = {}
         self.cfg_params = cfg_params
         self.submitRange = []
-        self.credentialType = 'Proxy' 
-        self.copyTout= ' -t 600 '    
+        self.credentialType = 'Proxy'
+        self.copyTout= ' -t 600 '
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
-            self.credentialType = 'Token' 
-            self.copyTout= ' '    
+            self.credentialType = 'Token'
+            self.copyTout= ' '
 
-        Submitter.__init__(self, cfg_params, parsed_range, val)      
-    
+        Submitter.__init__(self, cfg_params, parsed_range, val)
+
         # init client server params...
-        CliServerParams(self)       
+        CliServerParams(self)
 
         # path fix
         if self.storage_path[0]!='/':
             self.storage_path = '/'+self.storage_path
 
         self.taskuuid = str(common._db.queryTask('name'))
- 
-       
+        self.limitJobs = False
+
 	return
 
     def run(self):
@@ -51,26 +51,26 @@ class SubmitterServer( Submitter ):
         self.BuildJobList()
 
         self.submitRange = self.nj_list
-     
-        check = self.checkIfCreate() 
+
+        check = self.checkIfCreate()
 
         if check == 0 :
 
             self.remotedir = os.path.join(self.storage_path, self.taskuuid)
             self.manageCredential()
-            
-            # check if it is the first submission  
-            isFirstSubmission =  common._db.checkIfNeverSubmittedBefore() 
+
+            # check if it is the first submission
+            isFirstSubmission =  common._db.checkIfNeverSubmittedBefore()
 
 	    # standard submission to the server
 	    self.performSubmission(isFirstSubmission)
-        
+
             stop = time.time()
             common.logger.debug("Submission Time: "+str(stop - start))
 
-            msg = 'Total of %d jobs submitted'%len(self.submitRange) 
+            msg = 'Total of %d jobs submitted'%len(self.submitRange)
             common.logger.info(msg)
- 
+
 	return
 
     def moveISB_SEAPI(self):
@@ -78,18 +78,18 @@ class SubmitterServer( Submitter ):
         common.logger.debug("Task name: " + self.taskuuid)
         isblist = common._db.queryTask('globalSandbox').split(',')
         common.logger.debug("List of ISB files: " +str(isblist) )
-        
+
         # init SE interface
         common.logger.info("Starting sending the project to the storage "+str(self.storage_name)+"...")
-        try:  
+        try:
             seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
         except Exception, ex:
             common.logger.debug(str(ex))
             msg = "ERROR : Unable to create SE destination interface \n"
             msg +="Project "+ self.taskuuid +" not Submitted \n"
             raise CrabException(msg)
-          
-        try:  
+
+        try:
             loc = SElement("localhost", "local")
         except Exception, ex:
             common.logger.debug(str(ex))
@@ -100,13 +100,13 @@ class SubmitterServer( Submitter ):
 
         ### it should not be there... To move into SE API. DS
 
-        # create remote dir for gsiftp 
+        # create remote dir for gsiftp
         if self.storage_proto in ['gridftp','rfio']:
             try:
-                action = SBinterface( seEl )  
+                action = SBinterface( seEl )
                 action.createDir( self.remotedir )
             except AlreadyExistsException, ex:
-                msg = "Project %s already exist on the Storage Element \n"%self.taskuuid 
+                msg = "Project %s already exist on the Storage Element \n"%self.taskuuid
                 msg +='\t%s'%str(ex)
                 common.logger.debug(msg)
             except OperationException, ex:
@@ -124,7 +124,7 @@ class SubmitterServer( Submitter ):
         sbi = SBinterface( loc, seEl )
 
         for filetocopy in isblist:
-            source = os.path.abspath(filetocopy) 
+            source = os.path.abspath(filetocopy)
             dest = os.path.join(self.remotedir, os.path.basename(filetocopy))
             common.logger.debug("Sending "+ os.path.basename(filetocopy) +" to "+ self.storage_name)
             try:
@@ -146,16 +146,16 @@ class SubmitterServer( Submitter ):
         return
 
 
-    def manageCredential(self): 
+    def manageCredential(self):
         """
-        Prepare configuration and Call credential API 
+        Prepare configuration and Call credential API
         """
         common.logger.info("Registering credential to the server : %s"%self.server_name)
-        # only for temporary back-comp. 
-        if  self.credentialType == 'Proxy': 
+        # only for temporary back-comp.
+        if  self.credentialType == 'Proxy':
              # for proxy all works as before....
              self.moveProxy()
-             # myProxyMoveProxy() # check within the API ( Proxy.py ) 
+             # myProxyMoveProxy() # check within the API ( Proxy.py )
         else:
              from ProdCommon.Credential.CredentialAPI import CredentialAPI
              myproxyserver = self.cfg_params.get('GRID.proxy_server', 'myproxy.cern.ch')
@@ -168,8 +168,8 @@ class SubmitterServer( Submitter ):
                           'logger'     : common.logger() \
                           }
              try:
-                 CredAPI =  CredentialAPI( configAPI )            
-             except Exception, err : 
+                 CredAPI =  CredentialAPI( configAPI )
+             except Exception, err :
                  common.logger.debug("Configuring Credential API: " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
              if not CredAPI.checkCredential(Time=12) :
@@ -180,7 +180,7 @@ class SubmitterServer( Submitter ):
                     raise CrabException(str(ex))
 
              try:
-                 dict = CredAPI.registerCredential() 
+                 dict = CredAPI.registerCredential()
              except Exception, err:
                  common.logger.debug("Registering Credentials : " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
@@ -191,7 +191,7 @@ class SubmitterServer( Submitter ):
     # TO REMOVE
     def moveProxy( self ):
         WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
-        ## Temporary... to remove soon  
+        ## Temporary... to remove soon
         common.scheduler.checkProxy(minTime=100)
         try:
             common.logger.debug("Registering a valid proxy to the server:")
@@ -224,10 +224,10 @@ class SubmitterServer( Submitter ):
         self.cfg_params['CRAB.se_remote_dir'] = self.remotedir
 
         if firstSubmission==True:
- 
-            TotJob = common._db.nJobs() 
+
+            TotJob = common._db.nJobs()
             # move the sandbox
-            self.moveISB_SEAPI() 
+            self.moveISB_SEAPI()
 
             # first time submit
             try:
@@ -241,7 +241,7 @@ class SubmitterServer( Submitter ):
                 msg += str(e)
                 raise CrabException(msg)
 
-            # TODO fix not needed first field 
+            # TODO fix not needed first field
             subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,TotJob)
         else:
             # subsequent submissions and resubmit
@@ -256,7 +256,7 @@ class SubmitterServer( Submitter ):
         if subOutcome != 0:
             msg = "ClientServer ERROR: %d raised during the communication.\n"%subOutcome
             self.stateChange( self.submitRange, "Created" )
-            common.logger.debug(msg) 
+            common.logger.debug(msg)
             raise CrabException('ERROR Jobs NOT submitted.')
 
         del csCommunicator

@@ -13,7 +13,7 @@ from TerminalController import TerminalController
 class Submitter(Actor):
     def __init__(self, cfg_params, parsed_range, val):
         self.cfg_params = cfg_params
-
+        self.limitJobs = True
         # get user request
         self.nsjobs = -1
         self.chosenJobsList = None
@@ -53,6 +53,7 @@ class Submitter(Actor):
         # get the first not already submitted
         self.complete_List = common._db.nJobs('list')
         common.logger.debug('Total jobs '+str(len(self.complete_List)))
+
         jobSetForSubmission = 0
         jobSkippedInSubmission = []
         tmp_jList = self.complete_List
@@ -85,6 +86,10 @@ class Submitter(Actor):
         # submit N from last submitted job
         common.logger.debug('nj_list '+str(nj_list))
         self.nj_list = nj_list
+        if self.limitJobs and len(self.nj_list) > 500:
+            msg = "The CRAB client will not submit more than 500 jobs.\n"
+            msg += "Use the server mode or submit your jobs in smaller groups"
+            raise CrabException(msg)
         return
 
     def run(self):
