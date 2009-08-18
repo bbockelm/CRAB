@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.25 2009/05/26 10:23:01 spiga Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.26 2009/05/26 16:53:23 spiga Exp $"
+__version__ = "$Revision: 1.26 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -76,14 +76,14 @@ class SchedulerCondor(SchedulerLocal) :
         """
         Return scheduler-specific parameters
         """
+        req = ''
+        if self.EDG_addJdlParam:
+            if self.EDG_addJdlParam[-1] == '':
+                self.EDG_addJdlParam = self.EDG_addJdlParam[:-1]
+            for p in self.EDG_addJdlParam:
+                req += p.strip()+';\n'
 
-        index = int(common._db.nJobs()) - 1
-        schedParam = ''
-
-        for i in range(index):
-            pass
-
-        return schedParam
+        return req
 
 
     def realSchedParams(self, cfg_params):
@@ -175,3 +175,14 @@ fi
 """
 
         return txt
+
+
+    def sched_fix_parameter(self):
+        """
+        Returns string with requirements and scheduler-specific parameters
+        """
+
+        if self.EDG_requirements:
+            req = self.EDG_requirements
+            taskReq = {'commonRequirements':req}
+            common._db.updateTask_(taskReq)

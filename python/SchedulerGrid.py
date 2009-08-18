@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.110 2009/06/05 14:35:13 spiga Exp $"
-__version__ = "$Revision: 1.110 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.112 2009/07/09 19:14:30 ewv Exp $"
+__version__ = "$Revision: 1.112 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -59,10 +59,6 @@ class SchedulerGrid(Scheduler):
         if (self.EDG_ce_white_list): self.EDG_ce_white_list = string.split(self.EDG_ce_white_list,',')
 
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
-        self.EDG_requirements = cfg_params.get('GRID.requirements',None)
-        self.EDG_addJdlParam = cfg_params.get('GRID.additional_jdl_parameters',None)
-
-        if (self.EDG_addJdlParam): self.EDG_addJdlParam = string.split(self.EDG_addJdlParam,';')
 
         self.EDG_retry_count = cfg_params.get('GRID.retry_count',0)
         self.EDG_shallow_retry_count= cfg_params.get('GRID.shallow_retry_count',-1)
@@ -154,7 +150,7 @@ class SchedulerGrid(Scheduler):
         txt += "out_files=out_files_${NJob}; export out_files\n"
         txt += "echo $out_files\n"
         txt += jbt.outList()
-         
+
         txt += 'if [ $JobRunCount ] && [ `expr $JobRunCount - 1` -gt 0 ] && [ $Glidein_MonitorID ]; then \n'
         txt += '   attempt=`expr $JobRunCount - 1` \n'
         txt += '   MonitorJobID=${NJob}_${Glidein_MonitorID}__${attempt}\n'
@@ -188,7 +184,7 @@ class SchedulerGrid(Scheduler):
         txt += '    echo "SyncCE=$NORDUGRID_CE" >> $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'elif [ $VO_CMS_SW_DIR ]; then \n'
-        txt += '    middleware=LCG \n'         
+        txt += '    middleware=LCG \n'
         txt += '    if  [ $GLIDEIN_Gatekeeper ]; then \n'
         txt += '        echo "SyncCE=`echo $GLIDEIN_Gatekeeper | sed -e s/:2119//`" >> $RUNTIME_AREA/$repo \n'
         txt += '    else \n'

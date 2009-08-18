@@ -59,6 +59,11 @@ class Scheduler :
         seWhiteList = cfg_params.get('GRID.se_white_list',[])
         seBlackList = cfg_params.get('GRID.se_black_list',[])
         self.dontCheckMyProxy=int(cfg_params.get("GRID.dont_check_myproxy",0))
+        self.EDG_requirements = cfg_params.get('GRID.requirements',None)
+        self.EDG_addJdlParam = cfg_params.get('GRID.additional_jdl_parameters',None)
+        if (self.EDG_addJdlParam):
+            self.EDG_addJdlParam = string.split(self.EDG_addJdlParam,';')
+
         self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger())
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
@@ -295,7 +300,7 @@ class Scheduler :
 
     def delegateProxy(self):
         return
-     
+
     def queryEverything(self,taskid):
         """
         Query needed info of all jobs with specified boss taskid
