@@ -25,6 +25,7 @@ import sha # Good for python 2.4, replaced with hashlib in 2.5
 #  corresponding part of the job script ('ws' stands for 'write script').
 #
 
+
 class SchedulerArc(SchedulerGrid):
     def __init__(self, name='ARC'):
         SchedulerGrid.__init__(self,name)
@@ -43,7 +44,13 @@ class SchedulerArc(SchedulerGrid):
         Return dictionary with specific parameters, to use
         with real scheduler
         """
-        return {}
+        xrsl = ''
+        if cfg_params.has_key("GRID.max_cpu_time"):
+            xrsl += '(cpuTime=%s)' % cfg_params["GRID.max_cpu_time"]
+        if cfg_params.has_key("GRID.additional_xrsl_parameters"):
+            xrsl += cfg_params["GRID.additional_xrsl_parameters"]
+
+        return {'user_xrsl': xrsl}
 
 
     def configure(self,cfg_params):
