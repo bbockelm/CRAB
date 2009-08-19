@@ -62,6 +62,10 @@ wget --no-check-certificate  $repo_url/py2-pysqlite.tgz
 echo ">> downloading pyOpenSSL CRAB web page"
 wget --no-check-certificate  $repo_url/pyOpenSSL-0.6-python2.4.tar.gz
 
+## download simplejson
+echo ">> downloading simplejson CRAB web page"
+wget --no-check-certificate  $repo_url/simplejson.tgz
+
 ## download DBS API
 echo ">> downloading DBS API tag ${DBSAPItag} from CVS DBS/Clients/PythonAPI"
 cvs co -r ${DBSAPItag} -d DBSAPI COMP/DBS/Clients/Python
