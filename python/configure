@@ -36,6 +36,9 @@ rm py2-pysqlite.tgz
 tar zxvf pyOpenSSL-0.6-python2.4.tar.gz  > /dev/null 2>&1
 rm pyOpenSSL-0.6-python2.4.tar.gz > /dev/null 2>&1
 
+tar zxvf simplejson.tgz > /dev/null 2>&1
+rm simplejson.tgz 
+
 ## go to $TopDir
 cd ..
 
@@ -91,6 +94,13 @@ export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHON
 ## partially hardcoded path for python version "2.4"
 ## need to do something like:
 #export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python`echo $PYTHON_VERSION | cut -f1,2 -d.`/site-packages:\${PYTHONPATH}
+
+## simplejson
+export CRABSIMPLEJSON=\${EXTERNALDIR}/simplejson 
+export CRAB_SIMPLEJSON_VERSION="2.0.9"
+export CRAB_SIMPLEJSON_ROOT=\$CRABSIMPLEJSON/\$CRAB_SIMPLEJSON_VERSION
+
+export PYTHONPATH=\${CRAB_SIMPLEJSON_ROOT}/lib/python2.4/site-packages:\$PYTHONPATH
 
 ## pyOpenssl
 export PyOpenSSLPYTHON=\${EXTERNALDIR}
@@ -152,6 +162,13 @@ setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHON
 ## partially hardcoded path for python version "2.4"
 ## need to do something like:
 #setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python`echo $PYTHON_VERSION | cut -f1,2 -d.`/site-packages:\${PYTHONPATH}
+
+## simplejson
+setenv CRABSIMPLEJSON \${EXTERNALDIR}/simplejson 
+setenv CRAB_SIMPLEJSON_VERSION "2.0.9"
+setenv CRAB_SIMPLEJSON_ROOT \$CRABSIMPLEJSON/\$CRAB_SIMPLEJSON_VERSION
+
+setenv PYTHONPATH \${CRAB_SIMPLEJSON_ROOT}/lib/python2.4/site-packages:\$PYTHONPATH
 
 ## pyOpenssl
 setenv PyOpenSSLPYTHON \${EXTERNALDIR}
