@@ -25,8 +25,9 @@ class Cmssw(JobType):
         ### Temporary patch to automatically skip the ISB size check:
         self.server = self.cfg_params.get('CRAB.server_name',None) or \
                       self.cfg_params.get('CRAB.use_server',0)
+        self.local  = common.scheduler.name().upper() in ['LSF','CAF','CONDOR','SGE']
         size = 9.5
-        if self.server or common.scheduler.name().upper() in ['LSF','CAF']:
+        if self.server or self.local:
             size = 99999
         self.MaxTarBallSize = float(self.cfg_params.get('GRID.maxtarballsize',size))
 
@@ -432,8 +433,10 @@ class Cmssw(JobType):
         njobs = self.dict['njobs']
         self.jobDestination = self.dict['jobDestination']
 
-        if njobs==0:
-            raise CrabException("Ask to split "+str(njobs)+" jobs: aborting")
+        if njobs == 0:
+            raise CrabException("Asked to split zero jobs: aborting")
+        if not self.server and not self.local and njobs > 500:
+            raise CrabException("The CRAB client will not submit more than 500 jobs. You must use the server mode.")
 
         # create the empty structure
         for i in range(njobs):
