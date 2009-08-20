@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: writeCfg.py,v 1.22 2009/07/29 21:20:03 ewv Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.33 2009/07/30 18:45:44 ewv Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -88,7 +88,7 @@ class DataDiscovery:
         #       Attributes
         self.datasetPath = datasetPath
         # Analysis dataset is primary/processed/tier/definition
-        self.ads = len(self.datasetPath.split("/")) > 3
+        self.ads = len(self.datasetPath.split("/")) > 4
         self.cfg_params = cfg_params
         self.skipBlocks = skipAnBlocks
 
