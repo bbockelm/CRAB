@@ -4,6 +4,7 @@ import common
 import string
 from ServerCommunicator import ServerCommunicator
 from StatusServer import StatusServer
+from Cleaner import Cleaner
 
 class CleanerServer(Cleaner):
 
@@ -36,7 +37,8 @@ class CleanerServer(Cleaner):
         try:
             csCommunicator.cleanTask(taskuuid)
         except Exception, e:
-            msg = "Client Server comunication failed about cleanJobs: task " + taskuuid
+            msg = "Client Server comunication failed about cleanJobs: task \n" + taskuuid
+            msg += "Only local working directory will be removed."
             common.logger.debug( msg)
             pass
 
