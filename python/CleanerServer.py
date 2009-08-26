@@ -1,5 +1,6 @@
 from Actor import *
 from crab_exceptions import *
+from crab_util import *
 import common
 import string
 from ServerCommunicator import ServerCommunicator
@@ -28,7 +29,7 @@ class CleanerServer(Cleaner):
             pass
         
         # check whether the action is allowable
-        Cleaner.check()
+        self.check()
 
         # notify the server to clean the task 
         csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)

@@ -99,8 +99,11 @@ class WorkSpace:
 
         if os.path.exists(self._top_dir):
             import shutil
-            shutil.rmtree(self._top_dir)
-            pass
+            try:
+                shutil.rmtree(self._top_dir)
+            except :
+                msg = 'Problem removing whole workspace. Please remove the remaining files manually.'
+                raise CrabException(msg)
         return
 
     def cwdDir(self):
