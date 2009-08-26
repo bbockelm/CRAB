@@ -1,6 +1,6 @@
 #
 # CRAB-Proxy makefile
-# $Id: Makefile,v 1.2 2008/03/13 15:40:39 farinafa Exp $
+# $Id: Makefile,v 1.1 2008/04/16 17:22:11 farinafa Exp $
 # Fabio Farina 2007/12/10 
 
 PYHOME = /home/crab/sw_area/slc4_ia32_gcc345/external/python/2.4.3
@@ -25,7 +25,6 @@ install:
 	mkdir -p ../bin/client
 	cp CRAB_Server_API.py ../bin/client/.
 	cp _CRAB_Server_API.so ../bin/client/.
-	cp ServerCommunicator.py ../bin/client/. 
 
 clean:
 	rm -f *.o  $(O_NAME) *.so

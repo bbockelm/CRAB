@@ -1,6 +1,6 @@
 #
 # CRAB-Proxy makefile
-# $Id: Makefile,v 1.4 2008/07/08 14:26:59 farinafa Exp $
+# $Id: Makefile,v 1.5 2008/11/27 17:00:33 mcinquil Exp $
 # Fabio Farina 2007/12/10 
 
 O_NAME = CRAB-CmdMgr-Frontend
@@ -33,20 +33,10 @@ install:
 	echo "Installing server-side files"
 	mkdir -p ../bin/server
 	cp $(O_NAME) ../bin/server
-	cp CRAB-CmdMgr-Backend.py ../bin/server
-	cp CmdMgrComponent.py ../bin/server
-	cp JabberThread.py ../bin/server
-	cp Startup.py ../bin/server
-	cp __init__.py ../bin/server
 
 install_lib:
 	echo "Installing server-side libs"
 	mkdir -p ../bin/server
-	cp CRAB-CmdMgr-Backend.py ../bin/server
-	cp CmdMgrComponent.py ../bin/server
-	cp JabberThread.py ../bin/server
-	cp Startup.py ../bin/server
-	cp __init__.py ../bin/server
 	cp _FrontendLoader.so ../bin/server
 	cp FrontendLoader.py ../bin/server
 
