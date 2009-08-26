@@ -26,7 +26,7 @@ class JobXml:
         self.JOBEXIT        = "job_exit"
         self.JOBREPORT      = "Job"
         self.JOBCLEARED     = "cleared"
-        self.ALLOWED_STATES = ("Done(failed)","Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "CannotSubmit","Killing","Killed","Submitting","Done (Failed)", "Created", "Cancelled by user", "EXIT", "RUN")
+        self.ALLOWED_STATES = ("Done(failed)","Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "CannotSubmit","Killing","Killed","Submitting","Done (Failed)", "Created", "Cancelled by user", "EXIT", "RUN", "Abandoned")
         self.SITE           = "site"
         self.RESUB          = "resubmit" 
         self.STATCODE       = "sched_status"
@@ -179,7 +179,7 @@ class CreateXmlJobReport:
         self.ENDED          = "ended"
         self.THRESHOLDREQ   = "thresholdRequested"
         self.TOTJOB         = "totJob"
-        self.ALLOWED_STATES = ("Done(failed)","Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "CannotSubmit","Killed","Submitting", "Done (Failed)", "Created", "Cancelled by user", "EXIT", "RUN")
+        self.ALLOWED_STATES = ("Done(failed)","Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "CannotSubmit","Killed","Submitting", "Done (Failed)", "Created", "Cancelled by user", "EXIT", "RUN", "Abandoned")
         self.COUNT          = 'count'
         self.SITE           = "site"
         self.RESUB          = "resubmit"
