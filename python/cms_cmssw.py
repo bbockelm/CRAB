@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.331 2009/08/13 13:09:59 spiga Exp $"
-__version__ = "$Revision: 1.331 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.333 2009/08/20 15:46:52 ewv Exp $"
+__version__ = "$Revision: 1.333 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -62,18 +62,15 @@ class Cmssw(JobType):
             msg = "Cannot parse CMSSW version string: " + self.version + " for major and minor release number!"
             raise CrabException(msg)
 
-        if self.CMSSW_major < 1 or (self.CMSSW_major == 1 and self.CMSSW_minor < 5):
-            msg = "CRAB supports CMSSW >= 1_5_x only. Use an older CRAB version."
+        if self.CMSSW_major < 2 or (self.CMSSW_major == 2 and self.CMSSW_minor < 1):
+            msg = "CRAB supports CMSSW >= 2_1_x only. Use an older CRAB version."
             raise CrabException(msg)
             """
             As CMSSW versions are dropped we can drop more code:
-            1.X dropped: drop support for running .cfg on WN
-            2.0 dropped: drop all support for cfg here and in writeCfg
-            2.0 dropped: Recheck the random number seed support
+            2.x dropped: drop check for lumi range setting
             """
 
         ### collect Data cards
-
 
         ### Temporary: added to remove input file control in the case of PU
         self.dataset_pu = cfg_params.get('CMSSW.dataset_pu', None)
@@ -666,11 +663,8 @@ class Cmssw(JobType):
         Returns part of a job script which prepares
         the execution environment for the job 'nj'.
         """
-        # FUTURE: Drop support for .cfg when possible
-        if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
-            psetName = 'pset.py'
-        else:
-            psetName = 'pset.cfg'
+        psetName = 'pset.py'
+
         # Prepare JobType-independent part
         txt = '\n#Written by cms_cmssw::wsSetupEnvironment\n'
         txt += 'echo ">>> setup environment"\n'
@@ -833,12 +827,8 @@ class Cmssw(JobType):
         txt += '\n'
 
         if self.pset != None:
-            # FUTURE: Drop support for .cfg when possible
-            if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
-                psetName = 'pset.py'
-            else:
-                psetName = 'pset.cfg'
-            # FUTURE: Can simply for 2_1_x and higher
+            psetName = 'pset.py'
+
             txt += '\n'
             if self.debug_wrapper == 1:
                 txt += 'echo "***** cat ' + psetName + ' *********"\n'
@@ -848,11 +838,8 @@ class Cmssw(JobType):
                 txt += 'echo "***********************" \n'
                 txt += 'which edmConfigHash \n'
                 txt += 'echo "***********************" \n'
-            if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
-                txt += 'edmConfigHash ' + psetName + ' \n'
-                txt += 'PSETHASH=`edmConfigHash ' + psetName + '` \n'
-            else:
-                txt += 'PSETHASH=`edmConfigHash < ' + psetName + '` \n'
+            txt += 'edmConfigHash ' + psetName + ' \n'
+            txt += 'PSETHASH=`edmConfigHash ' + psetName + '` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
             #### FEDE temporary fix for noEdm files #####
             txt += 'if [ -z "$PSETHASH" ]; then \n'
@@ -870,18 +857,10 @@ class Cmssw(JobType):
             return self.executable
 
     def executableArgs(self):
-        # FUTURE: This function tests the CMSSW version. Can be simplified as we drop support for old versions
         if self.scriptExe:
             return self.scriptExe + " $NJob $AdditionalArgs"
         else:
-            ex_args = ""
-            ex_args += " -j $RUNTIME_AREA/crab_fjr_$NJob.xml"
-            # Type of config file depends on CMSSW version
-            if self.CMSSW_major >= 2 :
-                ex_args += " -p pset.py"
-            else:
-                ex_args += " -p pset.cfg"
-            return ex_args
+            return " -j $RUNTIME_AREA/crab_fjr_$NJob.xml -p pset.py"
 
     def inputSandbox(self, nj):
         """
@@ -981,11 +960,7 @@ class Cmssw(JobType):
 
     def configFilename(self):
         """ return the config filename """
-        # FUTURE: Can remove cfg mode for CMSSW >= 2_1_x
-        if (self.CMSSW_major >= 2 and self.CMSSW_minor >= 1) or (self.CMSSW_major >= 3):
-            return self.name()+'.py'
-        else:
-            return self.name()+'.cfg'
+        return self.name()+'.py'
 
     def wsSetupCMSOSGEnvironment_(self):
         """

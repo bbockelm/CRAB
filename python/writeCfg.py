@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.22 2009/07/29 21:20:03 ewv Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: writeCfg.py,v 1.23 2009/07/30 18:45:44 ewv Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import getopt
 import imp
@@ -121,28 +121,19 @@ def main(argv) :
             parentFiles    = str(elem.getAttribute('ParentFiles'))
             lumis          = str(elem.getAttribute('Lumis'))
 
-  # Read Input cfg or python cfg file, FUTURE: Get rid cfg mode
+  # Read Input python config file
 
-    if fileName.endswith('py'):
-        handle = open(fileName, 'r')
-        try:   # Nested form for Python < 2.5
-            try:
-                print "Importing .py file"
-                cfo = imp.load_source("pycfg", fileName, handle)
-                cmsProcess = cfo.process
-            except Exception, ex:
-                msg = "Your pycfg file is not valid python: %s" % str(ex)
-                raise ConfigException(msg)
-        finally:
-            handle.close()
-    else:
+    handle = open(fileName, 'r')
+    try:   # Nested form for Python < 2.5
         try:
-            print "Importing .cfg file"
-            cfo = include(fileName)
-            cmsProcess = cfo
+            print "Importing .py file"
+            cfo = imp.load_source("pycfg", fileName, handle)
+            cmsProcess = cfo.process
         except Exception, ex:
-            msg =  "The cfg file is not valid, %s\n" % str(ex)
+            msg = "Your pycfg file is not valid python: %s" % str(ex)
             raise ConfigException(msg)
+    finally:
+        handle.close()
 
     cfg = CfgInterface(cmsProcess)
 
@@ -184,83 +175,42 @@ def main(argv) :
     if (firstRun):
         inModule.setFirstRun(firstRun)
 
-    incrementSeedList = []
-    preserveSeedList  = []
-
-    if incrementSeeds:
-        incrementSeedList = incrementSeeds.split(',')
-    if preserveSeeds:
-        preserveSeedList  = preserveSeeds.split(',')
-
-    # FUTURE: This function tests the CMSSW version and presence of old-style seed specification.
-    # Reduce when we drop support for old versions
-    if cfg.data.services.has_key('RandomNumberGeneratorService'): # There are random #'s to deal with
+    # Check if there are random #'s to deal with
+    if cfg.data.services.has_key('RandomNumberGeneratorService'):
         print "RandomNumberGeneratorService found, will attempt to change seeds"
+        from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
         ranGenerator = cfg.data.services['RandomNumberGeneratorService']
-        ranModules   = getattr(ranGenerator, "moduleSeeds", None)
-        oldSource    = getattr(ranGenerator, "sourceSeed",  None)
-        if ranModules != None or oldSource != None:     # Old format present, no matter the CMSSW version
-            print "Old-style random number seeds found, will be changed."
-            if oldSource != None:
-                sourceSeed = int(ranGenerator.sourceSeed.value())
-                if ('sourceSeed' in preserveSeedList) or ('theSource' in preserveSeedList):
-                    pass
-                elif ('sourceSeed' in incrementSeedList) or ('theSource' in incrementSeedList):
-                    ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(sourceSeed+nJob))
-                else:
-                    ranGenerator.sourceSeed = CfgTypes.untracked(CfgTypes.uint32(MyRandom.randint(1, _MAXINT)))
+        randSvc = RandomNumberServiceHelper(ranGenerator)
 
-            for seed in incrementSeedList:
-                curSeed = getattr(ranGenerator.moduleSeeds, seed, None)
-                if curSeed:
-                    curValue = int(curSeed.value())
-                    setattr(ranGenerator.moduleSeeds, seed, CfgTypes.untracked(CfgTypes.uint32(curValue+nJob)))
-                    preserveSeedList.append(seed)
+        incrementSeedList = []
+        preserveSeedList  = []
 
-            if ranModules != None:
-                for seed in ranGenerator.moduleSeeds.parameterNames_():
-                    if seed not in preserveSeedList:
-                        curSeed = getattr(ranGenerator.moduleSeeds, seed, None)
-                        if curSeed:
-                            curValue = int(curSeed.value())
-                            setattr(ranGenerator.moduleSeeds, seed,
-                                    CfgTypes.untracked(CfgTypes.uint32(MyRandom.randint(1,_MAXINT))))
-        elif CMSSW_major > 2 or (CMSSW_major == 2 and CMSSW_minor >= 1): # Treatment for  seeds, CMSSW 2_1_x and later
-            print "New-style random number seeds found, will be changed."
-            from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
-            randSvc = RandomNumberServiceHelper(ranGenerator)
+        if incrementSeeds:
+            incrementSeedList = incrementSeeds.split(',')
+        if preserveSeeds:
+            preserveSeedList  = preserveSeeds.split(',')
 
-            # Increment requested seed sets
-            for seedName in incrementSeedList:
-                curSeeds = randSvc.getNamedSeed(seedName)
-                newSeeds = [x+nJob for x in curSeeds]
-                randSvc.setNamedSeed(seedName, *newSeeds)
-                preserveSeedList.append(seedName)
+        # Increment requested seed sets
+        for seedName in incrementSeedList:
+            curSeeds = randSvc.getNamedSeed(seedName)
+            newSeeds = [x+nJob for x in curSeeds]
+            randSvc.setNamedSeed(seedName, *newSeeds)
+            preserveSeedList.append(seedName)
 
-            # Randomize remaining seeds
-            randSvc.populate(*preserveSeedList)
-        else:
-            print "Neither old nor new seed format found!"
+        # Randomize remaining seeds
+        randSvc.populate(*preserveSeedList)
 
-      # End version specific code
-
-    # Write out new config file in one format or the other, FUTURE: Get rid of cfg mode
+    # Write out new config file
     outFile = open(outFileName,"w")
-    if outFileName.endswith('py'):
-        outFile.write("import FWCore.ParameterSet.Config as cms\n")
-        outFile.write("import pickle\n")
-        outFile.write("pickledCfg=\"\"\"%s\"\"\"\n" % pickle.dumps(cmsProcess))
-        outFile.write("process = pickle.loads(pickledCfg)\n")
-        if (debug):
-            print "writeCfg output (May not be exact):"
-            print "import FWCore.ParameterSet.Config as cms"
-            print cmsProcess.dumpPython()
-    else:
-        outFile.write(cfg.data.dumpConfig())
-        if (debug):
-            print "writeCfg output:"
-            print str(cfg.data.dumpConfig())
+    outFile.write("import FWCore.ParameterSet.Config as cms\n")
+    outFile.write("import pickle\n")
+    outFile.write("pickledCfg=\"\"\"%s\"\"\"\n" % pickle.dumps(cmsProcess))
+    outFile.write("process = pickle.loads(pickledCfg)\n")
     outFile.close()
+    if (debug):
+        print "writeCfg output (May not be exact):"
+        print "import FWCore.ParameterSet.Config as cms"
+        print cmsProcess.dumpPython()
 
 
 if __name__ == '__main__' :
