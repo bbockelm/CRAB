@@ -37,7 +37,7 @@ class Crab:
                              '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-createJdl','-printJdl', '-publish', '-checkPublication',
                              '-copyData', '-renewCredential', '-extend','-validateCfg',
-                             '-report' ]
+                             '-report', '-refreshCache' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -724,6 +724,9 @@ class Crab:
                     pass
                 from Reporter import Reporter
                 self.actions[opt] = Reporter(self.cfg_params)
+            elif ( opt == '-refreshCache' ):
+                from Refresher import Refresher
+                self.actions[opt] = Refresher()
 
             pass
         return
