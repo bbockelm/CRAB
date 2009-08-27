@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.333 2009/08/20 15:46:52 ewv Exp $"
-__version__ = "$Revision: 1.333 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.334 2009/08/27 12:42:23 ewv Exp $"
+__version__ = "$Revision: 1.334 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -299,7 +299,18 @@ class Cmssw(JobType):
 
     def ModifyPset(self):
         import PsetManipulator as pp
+
+        # If pycfg_params set, fake out the config script
+        # to make it think it was called with those args
+        pycfg_params = self.cfg_params.get('CMSSW.pycfg_params',None)
+        if pycfg_params:
+            trueArgv = sys.argv
+            sys.argv = [self.pset]
+            sys.argv.extend(pycfg_params.split(' '))
         PsetEdit = pp.PsetManipulator(self.pset)
+        if pycfg_params: # Restore original sys.argv
+            sys.argv = trueArgv
+
         try:
             # Add FrameworkJobReport to parameter-set, set max events.
             # Reset later for data jobs by writeCFG which does all modifications

@@ -403,6 +403,10 @@ Within a dataset you can ask to run over the related parent files too. E.g., thi
 
 The ParameterSet to be used. Both .cfg and .py parameter sets are supported for the relevant versions of CMSSW.
 
+=item B<pycfg_params *>
+
+These parameters are passed to the python config file, as explained in https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideAboutPythonConfigFile#Passing_Command_Line_Arguments_T
+
 =item I<Of the following three parameter exactly two must be used, otherwise CRAB will complain.>
 
 =item B<total_number_of_events *>
