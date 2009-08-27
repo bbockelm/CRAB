@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.19 2009/02/20 11:34:19 mcinquil Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.20 2009/08/12 10:14:27 farinafa Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import string
 import sys, os
@@ -48,7 +48,7 @@ class RegisterWorker(Thread):
         self.local_queue = self.configs['messageQueue']
 
         self.cfg_params = {}
-        self.CredAPI = CredentialAPI({'credential':self.configs['credentialType']}) 
+        self.CredAPI = CredentialAPI({'credential':self.configs['credentialType'], 'logger':self.log}) 
         self.cmdRng = "[]"
 
         # run the worker
@@ -339,8 +339,7 @@ class RegisterWorker(Thread):
         #    return 0
 
         try:
-            self.credential = self.getProxyFile()
-            #assocFile = self.getProxyFileMyProxy()
+            self.credential = self.getProxy()
         except Exception, e:
             reason = "Warning: error while linking the proxy file for task %s."%self.taskName
             self.log.info(reason)
@@ -355,50 +354,25 @@ class RegisterWorker(Thread):
             self.sendResult(status, reason, reason)
         return status
 
-    def getProxyFile(self):
-        """
-        """
-        file = None  
-        #if  self.configs['single_mode'] : 
-           ## To be implemented in order to support single mode 
-           # file = self.CredAPI.getCredential() 
-           # return 0
-           # pass
-        #else: 
-        proxyDir = self.configs['ProxiesDir']
-        pfList = [ os.path.join(proxyDir, q)  for q in os.listdir(proxyDir) if q[0]!="." ]
-        ps = '' 
-        for pf in pfList:
-            try:
-                ps = self.CredAPI.getSubject(pf)
-            except Exception, e:
-                self.log.info( traceback.format_exc() )
-                continue
-            if self.owner in ps :
-                file=pf
-                break  
-        return file
-
-    def getProxyFileMyProxy(self):
+    def getProxy(self):
         """
         """
  
-        proxyFilename = os.path.join(self.configs['ProxiesDir'], sha.new(self.proxySubject).hexdigest() ) 
+        proxyFilename = os.path.join(self.configs['ProxiesDir'], sha.new(self.owner).hexdigest() ) 
 
         vo = self.cfg_params.get('VO', 'cms')
         role = self.cfg_params.get('EDG.role', None)
         group = self.cfg_params.get('EDG.group', None)
-        proxyServer = cfg_params.get("GRID.proxy_server", 'myproxy.cern.ch')
+        proxyServer = self.cfg_params.get("GRID.proxy_server", 'myproxy.cern.ch')
 
         try:
             # force the CredAPI to refer to the same MyProxy server used by the client 
-            self.CredAPI.myproxyServer = proxyServer
-            self.CredAPI.logonMyProxy(proxyFilename, self.proxySubject, vo, group, role)
+            self.CredAPI.credObj.myproxyServer = proxyServer
+            self.CredAPI.logonMyProxy(proxyFilename, self.owner, vo, group, role)
         except Exception, e:
-            self.log.info("Error while retrieving proxy for %s: %s"%(self.proxySubject, str(e) ))
+            self.log.info("Error while retrieving proxy for %s: %s"%(self.owner, str(e) ))
             self.log.info( traceback.format_exc() )
             return None
 
-        return proxyFile
-
+        return proxyFilename
 

@@ -13,7 +13,7 @@ from ServerCommunicator import ServerCommunicator
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 from ProdCommon.Storage.SEAPI.Exceptions import *
-
+from ProdCommon.Credential.CredentialAPI import CredentialAPI
 
 class SubmitterServer( Submitter ):
     def __init__(self, cfg_params, parsed_range, val):
@@ -151,27 +151,36 @@ class SubmitterServer( Submitter ):
         Prepare configuration and Call credential API
         """
         common.logger.info("Registering credential to the server : %s"%self.server_name)
-        # only for temporary back-comp.
+
+        myproxyserver = self.cfg_params.get('GRID.proxy_server', 'myproxy.cern.ch')
+        configAPI = {'credential' : self.credentialType, \
+                     'myProxySvr' : myproxyserver,\
+                     'serverDN'   : self.server_dn,\
+                     'shareDir'   : common.work_space.shareDir() ,\
+                     'userName'   : getUserName(),\
+                     'serverName' : self.server_name, \
+                     'logger'     : common.logger() \
+                     }
+
+        try:
+             CredAPI =  CredentialAPI( configAPI )
+        except Exception, err :
+             common.logger.debug("Configuring Credential API: " +str(traceback.format_exc()))
+             raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
+
+
         if  self.credentialType == 'Proxy':
-             # for proxy all works as before....
-             self.moveProxy()
-             # myProxyMoveProxy() # check within the API ( Proxy.py )
+             # Proxy delegation through MyProxy, 4 days lifetime minimum 
+             if not CredAPI.checkMyProxy(Time=4, checkRetrieverRenewer=True) :
+                common.logger.info("Please renew MyProxy delegated proxy:\n")
+                try:
+                    CredAPI.credObj.serverDN = self.server_dn
+                    CredAPI.ManualRenewMyProxy()
+                except Exception, ex:
+                    common.logger.debug("Delegating Credentials to MyProxy : " +str(traceback.format_exc()))
+                    raise CrabException(str(ex))
         else:
-             from ProdCommon.Credential.CredentialAPI import CredentialAPI
-             myproxyserver = self.cfg_params.get('GRID.proxy_server', 'myproxy.cern.ch')
-             configAPI = {'credential' : self.credentialType, \
-                          'myProxySvr' : myproxyserver,\
-                          'serverDN'   : self.server_dn,\
-                          'shareDir'   : common.work_space.shareDir() ,\
-                          'userName'   : getUserName(),\
-                          'serverName' : self.server_name, \
-                          'logger'     : common.logger() \
-                          }
-             try:
-                 CredAPI =  CredentialAPI( configAPI )
-             except Exception, err :
-                 common.logger.debug("Configuring Credential API: " +str(traceback.format_exc()))
-                 raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
+             # Kerberos token movement
              if not CredAPI.checkCredential(Time=12) :
                 common.logger.info("Please renew the token:\n")
                 try:
@@ -184,35 +193,9 @@ class SubmitterServer( Submitter ):
              except Exception, err:
                  common.logger.debug("Registering Credentials : " +str(traceback.format_exc()))
                  raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
-             self.cfg_params['GRID.proxyInfos'] = dict
 
         common.logger.info("Credential successfully delegated to the server.\n")
 	return
-    # TO REMOVE
-    def moveProxy( self ):
-        WorkDirName = os.path.basename(os.path.split(common.work_space.topDir())[0])
-        ## Temporary... to remove soon
-        common.scheduler.checkProxy(minTime=100)
-        try:
-            common.logger.debug("Registering a valid proxy to the server:")
-            flag = " --myproxy"
-            cmd = 'asap-user-register --server '+str(self.server_name) + flag
-            attempt = 3
-            while attempt:
-                common.logger.debug(" executing:\n    " + cmd)
-                status, outp = commands.getstatusoutput(cmd)
-                common.logger.debug(outp)
-                if status == 0:
-                    break
-                else:
-                    attempt = attempt - 1
-                if (attempt == 0):
-                    raise CrabException("ASAP ERROR: Unable to ship a valid proxy to the server "+str(self.server_name)+"\n")
-        except:
-            msg = "ASAP ERROR: Unable to ship a valid proxy to the server \n"
-            msg +="Project "+str(self.taskuuid)+" not Submitted \n"
-            raise CrabException(msg)
-        return
 
     def performSubmission(self, firstSubmission=True):
         # create the communication session with the server frontend
@@ -225,7 +208,7 @@ class SubmitterServer( Submitter ):
 
         if firstSubmission==True:
 
-            TotJob = common._db.nJobs()
+            totJob = common._db.nJobs()
             # move the sandbox
             self.moveISB_SEAPI()
 
@@ -242,7 +225,7 @@ class SubmitterServer( Submitter ):
                 raise CrabException(msg)
 
             # TODO fix not needed first field
-            subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,TotJob)
+            subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange, totJob)
         else:
             # subsequent submissions and resubmit
             self.stateChange( self.submitRange, "SubRequested" )
