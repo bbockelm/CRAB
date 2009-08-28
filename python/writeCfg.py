@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.23 2009/07/30 18:45:44 ewv Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: writeCfg.py,v 1.24 2009/08/27 12:42:23 ewv Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import getopt
 import imp
@@ -39,9 +39,9 @@ def main(argv) :
     """
     writeCfg
 
-    - Read in existing, user supplied cfg or pickled pycfg file
+    - Read in existing, user supplied pycfg or pickled pycfg file
     - Modify job specific parameters based on environment variables and arguments.xml
-    - Write out modified cfg or pickled pycfg file
+    - Write out pickled pycfg file
 
     required parameters: none
 

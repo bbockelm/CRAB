@@ -325,7 +325,7 @@ Clean up (i.e. erase) the task working directory after a check whether there are
 
 =item B<-refreshCache>
 
-Clean up (i.e. erase) the SiteDb, WMS and CrabServer caches in your submitting directory  
+Clean up (i.e. erase) the SiteDb, WMS and CrabServer caches in your submitting directory
 
 =item B<-help [format] | -h [format]>
 
@@ -405,7 +405,7 @@ Within a dataset you can ask to run over the related parent files too. E.g., thi
 
 =item B<pset *>
 
-The ParameterSet to be used. Both .cfg and .py parameter sets are supported for the relevant versions of CMSSW.
+The python ParameterSet to be used.
 
 =item B<pycfg_params *>
 
@@ -503,7 +503,7 @@ Any additional input file you want to ship to WN: comma separated list. IMPORTAN
 
 =item B<script_exe>
 
-A user script that will be run on WN (instead of default cmsrun). It is up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (e.g. scram is in the path) and that the modified pset.cfg will be placed in the working directory, with name CMSSW.py . The user must ensure that a job report named crab_fjr.xml will be written. This can be guaranteed by passing the arguments "-j crab_fjr.xml" to cmsRun in the script. The script itself will be added automatically to the input sandbox so user MUST NOT add it within the B<USER.additional_input_files>.
+A user script that will be run on WN (instead of default cmsrun). It is up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (e.g. scram is in the path) and that the modified pset.py will be placed in the working directory, with name CMSSW.py . The user must ensure that a job report named crab_fjr.xml will be written. This can be guaranteed by passing the arguments "-j crab_fjr.xml" to cmsRun in the script. The script itself will be added automatically to the input sandbox so user MUST NOT add it within the B<USER.additional_input_files>.
 
 =item B<script_arguments>
 
