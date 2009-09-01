@@ -611,10 +611,10 @@ def check_unix_quota(dir_name, needed_space_kilobytes):
              filesystem = info[0]
              has_info = False
          if len(info) == 6:
-             used, limit = info[0], info[1]
+             used, limit = info[0], max(info[1], info[2])
              has_info = True
          if len(info) == 7:
-             filesystem, used, limit = info[0], info[1], info[3]
+             filesystem, used, limit = info[0], info[1], max(info[2], info[3])
              has_info = True
          if has_info:
             if filesystem != fs:
