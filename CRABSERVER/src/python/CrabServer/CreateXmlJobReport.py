@@ -65,12 +65,6 @@ class JobXml:
         jobrep = self.doc.createElement(self.JOBREPORT)
         jobrep.setAttribute(self.JOBID, str(self.jobid))
 
-        allowed = status in self.ALLOWED_STATES
-	
-	if not allowed:
-            errmsg = "Status [" + status + "] not allowed"
-            raise RuntimeError, errmsg
-        
         jobrep.setAttribute(self.STATUS, self.status)
         jobrep.setAttribute(self.EXITSTATUS, str(self.exitstatus))
         jobrep.setAttribute(self.JOBEXIT, str(self.jobexit))
