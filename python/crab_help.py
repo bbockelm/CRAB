@@ -723,10 +723,6 @@ The LSF queue you want to use: if none, the default one will be used. For CAF, t
 
 The resources to be used within a LSF queue. Again, for CAF, the right one is selected.
 
-=item B<copyCommand>
-
-To define the command to be used to copy both Input and Output sandboxes to final location. Default is cp
-
 =back
 
 =head1 FILES
