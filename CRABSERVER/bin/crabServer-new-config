@@ -71,6 +71,7 @@ crabServerConfiguration = {
     'configFileName': '',
     'CacheDir':'',
     'credentialType':'Proxy',
+    'scheduler':'gLite',
     'ProxiesDir':'/tmp/del_proxies/',
     'crabServerschemaLocation' : "$CRAB_SERVER_ROOT/share/CrabServerDB.sql",
     'storageName':'localhost',
