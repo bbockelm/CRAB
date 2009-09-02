@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.21 2009/08/27 14:02:31 farinafa Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.22 2009/08/28 09:21:16 farinafa Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import string
 import sys, os
@@ -50,6 +50,7 @@ class RegisterWorker(Thread):
         self.cfg_params = {}
         self.CredAPI = CredentialAPI({'credential':self.configs['credentialType'], 'logger':self.log}) 
         self.cmdRng = "[]"
+        self.schedName= self.configs['scheduler'].upper()
 
         # run the worker
         try:
@@ -132,7 +133,8 @@ class RegisterWorker(Thread):
             self.cmdRng =  str( cmdXML.getAttribute('Range') )
             self.owner = str( cmdXML.getAttribute('Subject') )
 
-            self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
+            ## This is to make the scheduler configurable from user
+            #self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
 
             self.flavour = str( cmdXML.getAttribute('Flavour') )
             self.type = str( cmdXML.getAttribute('Type') )

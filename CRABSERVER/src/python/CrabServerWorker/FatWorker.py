@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.175 2009/07/23 08:35:18 mcinquil Exp $"
-__version__ = "$Revision: 1.175 $"
+__revision__ = "$Id: FatWorker.py,v 1.176 2009/08/10 21:08:22 ewv Exp $"
+__version__ = "$Revision: 1.176 $"
 
 import string
 import sys, os
@@ -71,6 +71,9 @@ class FatWorker(Thread):
         ##Initialization to allow lsf@caf
         self.cpCmd = self.configs['cpCmd']
         self.rfioServer = self.configs['rfioServer']
+
+        self.schedName= self.configs['scheduler'].upper()
+
 
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, pool=self.configs['blSessionPool'])
@@ -212,7 +215,9 @@ class FatWorker(Thread):
 
         if status == 0:
             cmdXML = doc.getElementsByTagName("TaskCommand")[0]
-            self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
+
+            ## This is to make the scheduler configurable from user
+            #self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
             ## already set in the message
             # self.cmdRng =  eval( cmdXML.getAttribute('Range'), {}, {} )
             ##

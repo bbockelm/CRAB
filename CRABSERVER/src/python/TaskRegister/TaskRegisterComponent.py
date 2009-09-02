@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.14 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.14 2009/02/19 17:07:58 mcinquil Exp $"
+__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.15 2009/08/03 12:14:25 farinafa Exp $"
 
 import os
 import pickle
@@ -294,6 +294,8 @@ class TaskRegisterComponent:
         workerCfg['blSessionPool'] = self.sessionPool
         workerCfg['credentialType'] = self.args.setdefault('credentialType',None ) 
         workerCfg['single_user'] = self.args.setdefault('singleUser',None ) 
+        workerCfg['scheduler'] = self.args.setdefault('scheduler','glite' )
+
         return workerCfg
         
     def getRangeFromXml(self, wdir, taskName):

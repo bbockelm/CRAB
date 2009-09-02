@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.86 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.86 2009/07/17 19:29:16 mcinquil Exp $"
+__version__ = "$Revision: 1.87 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.87 2009/08/03 12:14:24 farinafa Exp $"
 
 import os, pickle, time, copy
 
@@ -237,6 +237,8 @@ class CrabServerWorkerComponent:
         workerCfg['glexec'] = self.args.get('glexecPath', '')
         workerCfg['glexecWrapper'] = self.args.get('glexecWrapper', '')
         workerCfg['CondorQCacheDir'] = self.args.get('CondorQCacheDir', '')
+
+        workerCfg['scheduler'] = self.args.setdefault('scheduler','glite' )
 
         # Specific WMS choice
         workerCfg['wmsEndpoint'] = ''
