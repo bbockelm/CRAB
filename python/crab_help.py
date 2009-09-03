@@ -323,7 +323,7 @@ Print a short report about the task, namely the total number of events and files
 
 Clean up (i.e. erase) the task working directory after a check whether there are still running jobs. In case, you are notified and asked to kill them or retrieve their output. B<Warning> this will possibly delete also the output produced by the task (if any)!
 
-=item B<-refreshCache>
+=item B<-cleanCache>
 
 Clean up (i.e. erase) the SiteDb, WMS and CrabServer caches in your submitting directory
 
