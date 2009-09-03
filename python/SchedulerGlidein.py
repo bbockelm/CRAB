@@ -2,8 +2,8 @@
 Glidein specific portions of the interface to the BossLite scheduler
 """
 
-__revision__ = "$Id: SchedulerGlidein.py,v 1.15 2008/09/29 21:14:28 ewv Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: SchedulerGlidein.py,v 1.17 2009/06/11 19:25:12 ewv Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from SchedulerCondorCommon import SchedulerCondorCommon
 import common
@@ -15,7 +15,9 @@ class SchedulerGlidein(SchedulerCondorCommon):
 
     def __init__(self):
         SchedulerCondorCommon.__init__(self,"GLIDEIN")
+        self.environment_unique_identifier = '$Glidein_MonitorID'
         return
+
 
     def sched_parameter(self, i, task):
         """
@@ -32,10 +34,11 @@ class SchedulerGlidein(SchedulerCondorCommon):
         if (self.EDG_clock_time):
             jobParams += '+MaxWallTimeMins = '+self.EDG_clock_time+'; '
         else:
-            jobParams += '+MaxWallTimeMins = 120; '
+            jobParams += '+MaxWallTimeMins = 1440; '
 
         common._db.updateTask_({'jobType':jobParams})
         return jobParams # Not sure I even need to return anything
+
 
     def listMatch(self, seList, full, onlyOSG=False):
         """
@@ -44,3 +47,8 @@ class SchedulerGlidein(SchedulerCondorCommon):
         ceDest = SchedulerCondorCommon.listMatch(self, seList, full, onlyOSG=False)
         return ceDest
 
+
+    def envUniqueID(self):
+        msg = 'JobID for ML monitoring is created for Glidein scheduler: %s'%id
+        common.logger.debug(msg)
+        return '$Glidein_MonitorID'

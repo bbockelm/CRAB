@@ -203,11 +203,14 @@ class Status(Actor):
         job_status_reason = str(job.runningJob['statusReason'])
         job_last_time = str(job.runningJob['startTime'])
         msg = '' 
-        if common.scheduler.name().upper() in ['CONDOR_G','GLIDEIN']:
+        if common.scheduler.name().upper() in ['CONDOR_G']:
             WMS = 'OSG'
             taskHash = sha.new(common._db.queryTask('name')).hexdigest()
             jobId = str(id) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(id)
-            msg += ('JobID for ML monitoring is created for CONDOR_G scheduler: %s\n'%jobId)
+        elif common.scheduler.name().upper() in ['GLIDEIN']:
+            WMS = common.scheduler.name()
+            jobId = str(id) + '_https://' + str(jid)
+            msg += ('JobID for ML monitoring is created for glideinWMS scheduler: %s\n'%jobId)
         elif common.scheduler.name().upper() in ['LSF','CAF']:
             WMS = common.scheduler.name()
             jobId=str(id)+"_https://"+common.scheduler.name()+":/"+str(jid)+"-"+string.replace(task_unique_name,"_","-")
@@ -243,6 +246,7 @@ class Status(Actor):
             'StatusEnterTime': job_last_time, \
             'StatusDestination': dest }
         msg += ('%s\n'%str(params))
+
         common.apmon.sendToML(params)
 
         return msg
