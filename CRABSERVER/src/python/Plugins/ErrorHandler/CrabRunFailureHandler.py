@@ -74,9 +74,9 @@ class CrabRunFailureHandler(HandlerInterface):
             logging.error(msg)
         return textmsg
 
-    def DelayedResubmission(self):
+    def DelayedResubmission(self, delay=120):
         " resubmit with a delay of X seconds "
-        delay = 120 # seconds
+        # delay = 120 # seconds
         delay = convertSeconds(delay) 
         logging.info(">CrabRunFailureHandler<: re-submitting with delay (h:m:s) "+ str(delay))
         payload = str(self.taskId)+'::'+str(self.jobId) 
