@@ -219,7 +219,7 @@ EOF
 
 echo "*** Creating cmsXXX local users: "
 /usr/sbin/groupadd cms
-for i in {0..4}; do
+for i in {0..7}; do
     for j in {0..9}; do
         for k in {0..9}; do
             echo -n "cms$i$j$k "
