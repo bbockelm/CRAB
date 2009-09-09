@@ -229,7 +229,7 @@ for i in {0..7}; do
 done
 echo;
 mkdir -p /etc/grid-security/gridmapdir/
-for i in {0..4}; do
+for i in {0..7}; do
   for j in {0..9}; do
       for k in {0..9}; do
           touch /etc/grid-security/gridmapdir/cms$i$j$k
