@@ -171,8 +171,17 @@ class SchedulerArc(SchedulerGrid):
         return xrsl
 
 
-#    def wsInitialEnvironment(self):
-#        return ''
+    def wsInitialEnvironment(self):
+        """ 
+        Code generated here will get executed before anything else in
+        the job scripts
+        """
+        txt =  'if [ -n ""$TMPDIR ] && [ -d $TMPDIR ]; then\n'
+        txt += '    echo Moving to $TMPDIR\n'
+        txt += '    cp $ARC_INPUTFILES $TMPDIR\n'
+        txt += '    cd $TMPDIR\n'
+        txt += 'fi\n'
+        return txt
 
 
     def wsExitFunc(self):
@@ -199,6 +208,11 @@ class SchedulerArc(SchedulerGrid):
         txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
         txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
+        txt += '    if [ $RUNTIME_AREA != $HOME ]; then\n'
+        txt += '        cd $RUNTIME_AREA\n'
+        txt += '        cp $ARC_OUTPUTFILES $HOME\n'
+        txt += '        rm -rf *\n'
+        txt += '    fi\n'
         txt += '    exit $job_exit_code\n'
         txt += '}\n'
         return txt
