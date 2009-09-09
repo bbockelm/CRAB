@@ -90,6 +90,7 @@ componentFields = {
 
     "CrabServerWorker" : {
     'ComponentDir':None,
+    'GlexecPath':'/full/path/to/glexec',
     'maxThreads':'5',
     },
 

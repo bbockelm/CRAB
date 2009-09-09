@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.176 2009/08/10 21:08:22 ewv Exp $"
-__version__ = "$Revision: 1.176 $"
+__revision__ = "$Id: FatWorker.py,v 1.177 2009/09/02 14:22:54 spiga Exp $"
+__version__ = "$Revision: 1.177 $"
 
 import string
 import sys, os
@@ -859,7 +859,7 @@ class FatWorker(Thread):
         ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
         ceString = ','.join(ceDest)
         seString = ','.join(seDest)
-        myschedName = getfqdn() 
+        myschedName = getfqdn()
         schedParam  = '+DESIRED_Gatekeepers = "' + ceString + '"; '
         schedParam += '+DESIRED_Archs = "INTEL,X86_64"; '
         schedParam += '+DESIRED_SEs = "' + seString + '"; '
@@ -870,7 +870,7 @@ class FatWorker(Thread):
             schedParam += '+MaxWallTimeMins = %s; ' % \
                           self.cfg_params['EDG.max_wall_time']
         else:
-             schedParam += '+MaxWallTimeMins = 1440; '
+            schedParam += '+MaxWallTimeMins = 1440; '
 
         return schedParam, ceDest
 
