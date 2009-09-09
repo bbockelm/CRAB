@@ -64,9 +64,9 @@ if  homeDir == None:
 
 
 # core fields not associated to components
-  
+
 crabServerConfiguration = {
-    'WMSserviceList':'', 
+    'WMSserviceList':'',
     'baseConfUrl': '',
     'configFileName': '',
     'CacheDir':'',
@@ -90,7 +90,9 @@ componentFields = {
 
     "CrabServerWorker" : {
     'ComponentDir':None,
-    'GlexecPath':'/full/path/to/glexec',
+    'glexec':'/full/path/to/glexec',
+    'glexecWrapper':'/full/path/to/glexec wrapper script',
+    'renewProxy':'/full/path/to/proxy renewal script',
     'maxThreads':'5',
     },
 
@@ -157,7 +159,7 @@ componentFields = {
 # call ProdAgent configuration tool
 
 print "Creating ProdAgent configuration\n"
- 
+
 #os.system("prodAgent-new-config --components=JobSubmitter,JobTracking,ErrorHandler,RssFeeder,JobKiller,GetOutput,HTTPFrontend")
 #os.system("prodAgent-new-config --components=JobTracking,GetOutput,ErrorHandler,JobKiller,HTTPFrontend")
 os.system("prodAgent-new-config --components=JobTracking,GetOutput,JobKiller")
