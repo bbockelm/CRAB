@@ -66,21 +66,47 @@ mkdir -p $myarea
 export MYTESTAREA=`readlink -f $myarea`;
 mkdir -p $MYTESTAREA/GFTP_RPMs
 
+wget -nv -O ${MYTESTAREA}/CA_RPM_list.html http://glitesoft.cern.ch/LCG-CAs/current/
+CA_RPM_list=`grep rpm ${MYTESTAREA}/CA_RPM_list.html | sed 's/.*[^A-Za-z0-9\.\_\-]\(.*\.rpm\)[^A-Za-z0-9\.\_\-].*/\1/'`;
+rm -f ${MYTESTAREA}/CA_RPM_list.html
+
+LCG_RPM_list="lcg-vomscerts-5.4.0-1.noarch.rpm"
+
 GFTP_RPM_list="glite-initscript-globus-gridftp-1.0.0-1.noarch.rpm"
-VDT_RPM_list="vdt_globus_data_server-VDT1.6.0x86_rhas_4-3.i386.rpm";
+VDT_RPM_list="vdt_globus_data_server-VDT1.6.1x86_rhas_4-7.i386.rpm vdt_globus_essentials-VDT1.6.1x86_rhas_4-7.i386.rpm"; 
+## VDT_RPM_list="vdt_globus_data_server-VDT1.6.1x86_rhas_4-3.i386.rpm ";
 
 LCMAPS_RPM_list="glite-security-lcmaps-1.3.14-2.slc4.i386.rpm"
 GLITE_U_RPM_list="glite-security-lcmaps-plugins-basic-1.3.7-2.slc4.i386.rpm glite-security-voms-api-cpp-1.8.3-3.slc4.i386.rpm glite-security-voms-api-c-1.8.3-4.slc4.i386.rpm glite-security-lcmaps-plugins-voms-1.3.7-2.slc4.i386.rpm glite-security-voms-clients-1.7.22-1.slc4.i386.rpm "
 GLITE_R_RPM_list="glite-security-lcas-plugins-voms-1.3.3-1.slc4.i386.rpm glite-security-lcmaps-interface-1.3.14-1.slc4.i386.rpm glite-security-lcas-1.3.7-0.slc4.i386.rpm glite-security-lcas-interface-1.3.6-1.slc4.i386.rpm glite-security-lcas-plugins-check-executable-1.2.1-1.slc4.i386.rpm glite-security-lcmaps-plugins-verify-proxy-1.2.8-1.slc4.i386.rpm "
-GT4_RPM_list="org.glite.security.lcas-lcmaps-gt4-interface-0.0.13-1.slc4.i386.rpm"
-XALAN_RPM_list="xalan-c-1.10.0-1.slc4.i686.rpm"
 
+GT4_RPM_list="org.glite.security.lcas-lcmaps-gt4-interface-0.0.13-1.slc4.i386.rpm"
+
+XALAN_RPM_list="xalan-c-1.10.0-1.slc4.i686.rpm"
 LOG4_RPM_list="log4cpp-0.3.4b-1.slc4.i386.rpm"
 XERCES_RPM_list="xerces-c-2.7.0-1.slc4.i686.rpm"
 
+API_RPM_list="gridsite-shared-1.1.18.1-1.i386.rpm"
+GRIDSITEDEV_RPM_list="gridsite-devel-1.1.18.1-1.i386.rpm"
 
 
-echo "*** Downloading to $MYTESTAREA/GFTP_RPMs the RPMs :"; echo $GFTP_RPM_list 
+echo "*** Downloading to $MYTESTAREA/GFTP_RPMs the RPMs :"; echo $CA_RPM_list;
+for arpm in $CA_RPM_list; do
+    if ! wget -nv -O $MYTESTAREA/GFTP_RPMs/$arpm http://linuxsoft.cern.ch/LCG-CAs/current/RPMS.production/$arpm; then
+        echo Exiting $0
+        exit
+    fi 
+done
+
+echo "*** Downloading to $MYTESTAREA/GFTP_RPMs the RPMs :"; echo $LCG_RPM_list;
+for arpm in $LCG_RPM_list; do
+    if ! wget -nv -O $MYTESTAREA/GFTP_RPMs/$arpm http://glitesoft.cern.ch/EGEE/gLite/R3.1/generic/sl4/i386/RPMS.updates/$arpm; then
+        echo Exiting $0
+        exit
+    fi
+done
+
+echo "*** Downloading to $MYTESTAREA/GFTP_RPMs the RPMs :"; echo $GFTP_RPM_list; 
 for arpm in $GFTP_RPM_list; do
     if ! wget -O $MYTESTAREA/GFTP_RPMs/$arpm http://linuxsoft.cern.ch/EGEE/gLite/R3.1/glite-UI/sl4/i386/RPMS.release/$arpm; then
         echo Exiting $0
@@ -152,10 +178,23 @@ for arpm in $XERCES_RPM_list; do
     fi
 done
 
+echo "*** Downloading to $MYTESTAREA/GFTP_RPMs the RPMs :"; echo $API_RPM_list;
+for arpm in $API_RPM_list; do
+    wget -nv -O $MYTESTAREA//GFTP_RPMs/$arpm http://glitesoft.cern.ch/EGEE/gLite/R3.1/generic/sl4/i386/RPMS.release/$arpm
+done
+
+echo "*** Downloading to $MYTESTAREA//GFTP_RPMs the RPMs :"; echo $GRIDSITEDEV_RPM_list;
+for arpm in $GRIDSITEDEV_RPM_list; do
+    wget -nv -O $MYTESTAREA//GFTP_RPMs/$arpm http://eticssoft.web.cern.ch/eticssoft/repository/org.glite/org.gridsite.core/1.1.18/slc4_ia32_gcc346/$arpm
+done
+
+
+
+
 echo "*** Checking already installed RPMs (it may takes some time...)";
 rpm -qa > ${MYTESTAREA}/PresentRPM.list
 echo -n > ${MYTESTAREA}/WantedGFtpRPM.list
-List="$GFTP_RPM_list $VDT_RPM_list $LCMAPS_RPM_list $GLITE_U_RPM_list $GLITE_R_RPM_list $GT4_RPM_list $XALAN_RPM_list $LOG4_RPM_list $XERCES_RPM_list"
+List="$CA_RPM_list $LCG_RPM_list $GFTP_RPM_list $VDT_RPM_list $LCMAPS_RPM_list $GLITE_U_RPM_list $GLITE_R_RPM_list $GT4_RPM_list $XALAN_RPM_list $LOG4_RPM_list $XERCES_RPM_list"
 for arpm in $List; do
     echo $arpm >> ${MYTESTAREA}/WantedGFtpRPM.list
 done
