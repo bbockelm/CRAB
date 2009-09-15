@@ -18,10 +18,11 @@ from CRAB_Server_API import CRAB_Server_Session as C_AS_Session
 from xml.dom import minidom
 import os
 import commands
+import traceback
 
 class ServerCommunicator:
     """
-    Common interface for the interaction between the Crab client and the server Web Service    
+    Common interface for the interaction between the Crab client and the server Web Service
     """
     def __init__(self, serverName, serverPort, cfg_params, proxyPath=None):
         """
@@ -29,23 +30,23 @@ class ServerCommunicator:
         """
 
         self.ServerTwiki = 'https://twiki.cern.ch/twiki/bin/view/CMS/CrabServerForUsers#Server_available_for_users'
-       
+
         self.asSession = C_AS_Session(serverName, serverPort)
         self.cfg_params = cfg_params
         self.userSubj = ''
         self.serverName = serverName
         credentialType = 'Proxy'
-        if common.scheduler.name().upper() in ['CAF','LSF']: 
+        if common.scheduler.name().upper() in ['CAF','LSF']:
             credentialType = 'Token'
         CliServerParams(self)
         self.crab_task_name = common.work_space.topDir().split('/')[-2] # nice task name "crab_0_..."
 
         configAPI = {'credential' : credentialType, \
                      'logger' : common.logger() }
-         
-        CredAPI =  CredentialAPI( configAPI )            
+
+        CredAPI =  CredentialAPI( configAPI )
         try:
-            self.userSubj = CredAPI.getSubject() 
+            self.userSubj = CredAPI.getSubject()
         except Exception, err:
             common.logger.debug("Getting Credential Subject: " +str(traceback.format_exc()))
             raise CrabException("Error Getting Credential Subject")
@@ -58,11 +59,11 @@ class ServerCommunicator:
     def submitNewTask(self, blTaskName, blXml, rng, TotJob):
         """
         _submitNewTask_
-        Send a new task to the server to be submitted. 
-        
-        Accepts in input: 
-             - the bossLite object representing the task (jobs are assumed to be RunningJobs)  
-             - the range of the submission as specified by the user at the command line 
+        Send a new task to the server to be submitted.
+
+        Accepts in input:
+             - the bossLite object representing the task (jobs are assumed to be RunningJobs)
+             - the range of the submission as specified by the user at the command line
         """
 
         if not blXml:
@@ -79,30 +80,30 @@ class ServerCommunicator:
             raise CrabException('Error while creating the Command XML')
             return -4
 
-        ret = -1  
+        ret = -1
         ret = self.asSession.transferTaskAndSubmit(blXml, cmdXML, blTaskName)
-       
+
         if ret == 0:
              # success
              logMsg = 'Task %s successfully submitted to server %s'%(self.crab_task_name, self.serverName)
              common.logger.info(logMsg+'\n')
         else:
-             self.checkServerResponse(ret)    
+             self.checkServerResponse(ret)
 
         return ret
 
-    def checkServerResponse(self, ret): 
+    def checkServerResponse(self, ret):
         """
         analyze the server return codes
         """
-        
+
         logMsg = ''
         if ret == 10:
             # overlaod
             logMsg = 'Error The server %s refused to accept the task %s because it is overloaded\n'%(self.serverName, self.crab_task_name)
             logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
         elif ret == 14:
-            # Draining 
+            # Draining
             logMsg  = 'Error The server %s refused to accept the task %s because it is Draining out\n'%(self.serverName, self.crab_task_name)
             logMsg += '\t remaining jobs due to scheduled maintainence\n'
             logMsg += '\t For Further infos please contact the server Admin: %s'%self.server_admin
@@ -127,16 +128,16 @@ class ServerCommunicator:
             logMsg  = 'Error You are using a wrong client version for server: %s\n'%self.serverName
             logMsg += '\t For further informations about "Servers available for users" please check here:\n \t%s '%self.ServerTwiki
         else:
-            logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret) 
+            logMsg = 'Unexpected return code from server %s: %d'%(self.serverName, ret)
 
         # print loggings
         if logMsg != '':
             # reset server choice
             opsToBeSaved={'serverName' : '' }
             common._db.updateTask_(opsToBeSaved)
-            common.logger.info(logMsg) 
+            common.logger.info(logMsg)
         return ret
-         
+
     def subsequentJobSubmit(self, blTaskName, rng):
         """
         _subsequentJobSubmit_
@@ -194,7 +195,7 @@ class ServerCommunicator:
             f = open(statusFile, 'w')
             f.write(statusMsg)
             f.close()
-            return statusFile 
+            return statusFile
         return statusMsg
 
     def outputRetrieved(self, blTaskName, rng):
@@ -217,18 +218,18 @@ class ServerCommunicator:
              - the bossLite object representing the task (jobs are assumed to be RunningJobs)
              - the range of the submission as specified by the user at the command line
         """
-        # get the status in 
+        # get the status in
         raise NotImplementedError
         return None
 
 ###################################################
     # Auxiliary methods
 ###################################################
-    
+
     def _createXMLcommand(self, taskUName, cmdSpec='status', rng='all', newTaskAddIns=False, flavour='analysis', type='fullySpecified',jobs='-1'):
         xmlString = ''
         cfile = minidom.Document()
-            
+
         ver = common.prog_version_str
         node = cfile.createElement("TaskCommand")
         node.setAttribute("Task", str(taskUName) )
@@ -236,10 +237,10 @@ class ServerCommunicator:
         node.setAttribute("Command", str(cmdSpec) )
         node.setAttribute("Range", str(rng) )
         node.setAttribute("TotJob", str(jobs) )
-        node.setAttribute("Scheduler", str(self.cfg_params['CRAB.scheduler']) ) 
+        node.setAttribute("Scheduler", str(self.cfg_params['CRAB.scheduler']) )
         node.setAttribute("Flavour", str(flavour) )
-        node.setAttribute("Type", str(type) ) 
-        node.setAttribute("ClientVersion", str(ver) ) 
+        node.setAttribute("Type", str(type) )
+        node.setAttribute("ClientVersion", str(ver) )
 
         ## Only Temporary. it should be at Server level
         removeT1bL = self.cfg_params.get("GRID.remove_default_blacklist", 0 )
@@ -278,13 +279,13 @@ class ServerCommunicator:
         if 'GRID.role' in self.cfg_params:
             miniCfg['EDG.role'] = str( self.cfg_params['GRID.role'] )
 
-        miniCfg['cfgFileNameCkSum'] = makeCksum(common.work_space.cfgFileName()) 
+        miniCfg['cfgFileNameCkSum'] = makeCksum(common.work_space.cfgFileName())
         if 'cfgFileNameCkSum' in self.cfg_params:
             miniCfg['cfgFileNameCkSum'] = str(self.cfg_params['cfgFileNameCkSum'])
 
         miniCfg['CRAB.se_remote_dir'] = ''
         if 'CRAB.se_remote_dir' in self.cfg_params:
-            miniCfg['CRAB.se_remote_dir'] = str(self.cfg_params['CRAB.se_remote_dir']) 
+            miniCfg['CRAB.se_remote_dir'] = str(self.cfg_params['CRAB.se_remote_dir'])
 
         miniCfg['CAF.queue'] = self.cfg_params.get('CAF.queue','cmscaf1nw')
         miniCfg['CAF.resources'] = self.cfg_params.get('CAF.resource', 'cmscaf')
@@ -304,7 +305,7 @@ class ServerCommunicator:
         miniCfg['threshold'] = self.cfg_params.get('USER.thresholdlevel', 100)
 
         miniCfg['CMSSW_version'] = self.scram.getSWVersion()
-        
+
         ## put here other fields if needed
         node.setAttribute("CfgParamDict", str(miniCfg) )
         cfile.appendChild(node)
@@ -321,15 +322,15 @@ class ServerCommunicator:
         if not cmdXML:
             raise CrabException('Error while creating the Command XML')
             return -3
-        
+
         ret = -1
         ret = self.asSession.sendCommand(cmdXML, blTaskName)
         logMsg = ''
-        debugMsg = ''  
+        debugMsg = ''
         if ret == 0:
              # success
              debugMsg = 'Command successfully sent to server %s for task %s'%(self.serverName, self.crab_task_name)
         else:
              self.checkServerResponse(ret)
         return ret
-    
+
