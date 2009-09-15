@@ -214,7 +214,7 @@ class ProxyLife:
     ###############################################
     ######     PUBLIC CALLABLE METHODS       ######
 
-    def pollProxies(self,credConfig):
+    def pollProxies(self, credConfig):
         """
         __pollProxies__
 
@@ -244,7 +244,7 @@ class ProxyLife:
                     logging.info( str(traceback.format_exc()) )
                     continue
 
-                ## credentialt expired ##
+                ## credential expired ##
                 if timeleft <= 0:
                     logging.info( "Credential expired [%s]: %s s"% (proxyfull, str(timeleft)) )
 
@@ -269,14 +269,29 @@ class ProxyLife:
                 elif timeleft <= self.minimumleft:
                     logging.info("Credential still valid for: %s s"% str(timeleft))
 
-                    tasksbymail = tlapi.getTaskList(proxyfull, mySession.bossLiteDB)
-                    for mail, tasks in tasksbymail.iteritems():
-                        ## notify the expired proxy
-                        if not self.notified(proxyfull):
-                            logging.info( "Renew your credential: %s"% str(mail))
-                            self.notifyExpiring(mail, tasks, timeleft)
-                            self.notify(proxyfull)
-                    self.decleaned(proxyfull)
+                    ## proxy renewal through myproxy delegation ##
+                    delegatedtimeleft = 0
+                    if credConfig['credential'] == 'Proxy': 
+                        logging.info("Trying to renew proxy [%s]"% str(proxyfull))
+                        try:
+                            CredAPI.renewalMyProxy(proxyfull)
+                            delegatedtimeleft = CredAPI.getTimeLeft(proxyfull)
+                            logging.info("Renewed credential still valid for: %s s"% str(delegatedtimeleft))
+                        except Exception, exc:
+                            logging.info("Problem renewing proxy : %s"% str(exc))
+                            import traceback
+                            logging.info( str(traceback.format_exc()) )
+                            delegatedtimeleft = 0
+
+                    if delegatedtimeleft <= timeleft: 
+                        tasksbymail = tlapi.getTaskList(proxyfull, mySession.bossLiteDB)
+                        for mail, tasks in tasksbymail.iteritems():
+                            ## notify the expired proxy
+                            if not self.notified(proxyfull):
+                                logging.info( "Renew your credential: %s"% str(mail))
+                                self.notifyExpiring(mail, tasks, timeleft)
+                                self.notify(proxyfull)
+                        self.decleaned(proxyfull)
 
                 ## long proxy, do nothing ##
                 else:
