@@ -28,7 +28,7 @@ class ServerCommunicator:
         Open the communication with an Analysis Server by passing the server URL and the port
         """
 
-        self.ServerTwiki = 'https://twiki.cern.ch/twiki/bin/view/CMS/CrabServer#Server_available_for_users'
+        self.ServerTwiki = 'https://twiki.cern.ch/twiki/bin/view/CMS/CrabServerForUsers#Server_available_for_users'
        
         self.asSession = C_AS_Session(serverName, serverPort)
         self.cfg_params = cfg_params
