@@ -21,7 +21,7 @@ class SubmitterServer( Submitter ):
         self.cfg_params = cfg_params
         self.submitRange = []
         self.credentialType = 'Proxy'
-        self.copyTout= ' -t 600 '
+        self.copyTout= setLcgTimeout()
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.credentialType = 'Token'
             self.copyTout= ' '
@@ -225,7 +225,7 @@ class SubmitterServer( Submitter ):
 
         if firstSubmission==True:
 
-            TotJob = common._db.nJobs()
+            totJob = common._db.nJobs()
             # move the sandbox
             self.moveISB_SEAPI()
 
@@ -242,7 +242,7 @@ class SubmitterServer( Submitter ):
                 raise CrabException(msg)
 
             # TODO fix not needed first field
-            subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,TotJob)
+            subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,totJob)
         else:
             # subsequent submissions and resubmit
             self.stateChange( self.submitRange, "SubRequested" )
