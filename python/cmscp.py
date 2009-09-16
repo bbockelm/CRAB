@@ -232,6 +232,9 @@ class cmscp:
                 print '\t surl %s \n'%surl
                     
         destination=os.path.dirname(file_backup[0])
+        ### FEDE added check for final /
+        if ( destination[-1] != '/' ) : destination = destination + '/'
+        #####################################
         self.params['destination']=destination
             
         if self.debug:
@@ -643,6 +646,9 @@ class cmscp:
                 txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
                 #txt += 'export LFNBaseName='+lfn+'\n'
                 txt += 'export SE='+se+'\n'
+                ### FEDE per CopyData ####
+
+                txt += 'export endpoint='+self.params['destination']+'\n'
                 
                 if dict['erCode'] != '0':
                     cmscp_exit_status = dict['erCode']

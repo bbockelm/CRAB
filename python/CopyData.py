@@ -11,8 +11,14 @@ class CopyData(Actor):
         """
         self.cfg_params = cfg_params
         self.nj_list = nj_list
+        
+        ### default is the copy local
+        self.copy_local = 1
+        
+        if common.logger.debug: print 'CopyData __init__() : \n'
+        
         if (cfg_params.get('USER.copy_data',0) == '0') :
-            msg  = 'Cannot copy output locally if it has not \n'
+            msg  = 'Cannot copy output if it has not \n'
             msg += '\tbeen stored to SE via USER.copy_data=1'
             raise CrabException(msg)
 
@@ -24,122 +30,114 @@ class CopyData(Actor):
                          'LSF'      : 'rfio' , \
                          'CONDOR_G' : 'srmv2' , \
                          'GLITE'    : 'srm-lcg' , \
-                         'CONDOR'    : 'srmv2',  \
+                         'CONDOR'   : 'srmv2',  \
                          'SGE'      : 'srmv2', \
                          'ARC'      : 'srmv2' \
                        }  
         self.protocol = protocolDict[common.scheduler.name().upper()]  
-        self.destinationTier = None
-        self.destinationDir= None
-        self.destinationTURL = None
-        target =None 
-        if target:
-	    if  target.find('://'):
-	        self.destinationTier,self.destinationDir = target.split('://') 
-	    elif target.find(':'):
-	        if (target.find('T2_') + target.find('T1_') + target.find('T3_') >= -1) :          
-	            self.destinationTier=target.split(":")[0]
-                else:
-                    self.destinationTURL = target
-            else:
-                self.destinationTURL = target
-        else:
-            pass
         
+        if (cfg_params.get("USER.storage_element").upper() != 'LOCAL'):
+           self.copy_local = 0
+
+        if common.logger.debug: 
+            print "------ self.protocol = ", self.protocol
+            print "------ USER.storage_element = ", cfg_params.get("USER.storage_element")
+            print "------ self.copy_local = " , self.copy_local  
+           
 
     def run(self):
- 
-        results = self.copyLocal() 
-        self.parseResults( results )          
+        """
+        default is the copy of output to the local dir res in crabDir
+        """
 
+        results = self.copy()
+        self.parseResults( results )          
         return 
 
-    def copyLocal(self):
+        
+    def copy(self):
         """
-        prepare to copy the pre staged output to local
+        1) local copy:  USER.storage_element=local, the output will be copied under crab_working_dir/res dir
+        2) copy to a remote SE: USER.storage_element, USER.storage_path and USER.user_remote_dir used as in the crab.cfg
+           if the storage_path and the user_remote_dir are not specified by command line, the value written in the crab.cfg are used 
         """
-        # FIXME DS. we'll use the proper DB info once filled..
-        # output files to be returned via sandbox or copied to SE
+
         output_file = []
         tmp = self.cfg_params.get('CMSSW.output_file',None)
         if tmp.find(',') >= 0:
             [output_file.append(x.strip()) for x in tmp.split(',')]
         else: output_file.append( tmp.strip() )
 
-        InfileList = self.checkAvailableList(output_file)
+        to_copy = {}
+        results = {}
+        
+        to_copy = self.checkAvailableList(output_file)
 
-        from PhEDExDatasvcInfo import PhEDExDatasvcInfo
-
-        stageout = PhEDExDatasvcInfo(self.cfg_params)
-        endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
-
-        if not self.destinationTURL:
-            self.destinationTURL = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
-         
-        cmscpConfig = {
-                        "source": endpoint,
-                        "destinationDir": self.destinationTURL,
-                        "inputFileList": InfileList,
+        if (self.copy_local == 1):
+            outputDir = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
+            print "Copy file locally:"
+            print "------ outputDir = ",  outputDir
+            dest = {"destinationDir": outputDir}
+        else:
+            from PhEDExDatasvcInfo import PhEDExDatasvcInfo
+            stageout = PhEDExDatasvcInfo(self.cfg_params)
+            endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
+            print "Copy file to remote SE:"
+            print "------ endpoint = ", endpoint
+            dest = {"destination": endpoint}
+            
+        
+        for key in to_copy.keys():
+            cmscpConfig = {
+                        "source": key,
+                        "inputFileList": to_copy[key],
                         "protocol": self.protocol
                       }  
-        if self.protocol is "srmv2":
-            cmscpConfig.setdefault("option", " -retry_timeout=480000 -retry_num=3 ")
-        elif self.protocol is "srm-lcg":
-            if checkLcgUtils() >= 17:
-                cmscpConfig.setdefault("option", "-b -D srmv2 --srm-timeout 2400 --sendreceive-timeout 240 --connect-timeout 240 --verbose")
-            else:
-                cmscpConfig.setdefault("option", "-b -D srmv2  -t 2400 --verbose")
-        elif self.protocol is "rfio":
-            pass
-
-        results = self.performCopy(cmscpConfig)
-     
+            if (self.protocol == "srmv2"):
+                cmscpConfig.setdefault("option", " -retry_timeout=480000 -retry_num=3 ")
+            elif (self.protocol == "srm-lcg"):
+                cmscpConfig.setdefault("option", " -b -D srmv2  -t 2400 --verbose ")
+            elif (self.protocol == "rfio"):
+                pass
+            cmscpConfig.update(dest)
+            print "------ source = ", key
+            print "------ files = ", to_copy[key]
+            if common.logger.debug: 
+                print "------ cmscpConfig = ", cmscpConfig
+            
+            results.update(self.performCopy(cmscpConfig))
         return results
-
-    def copyRemote(self):
-        """ 
-        prepare to copy from SE1 o SE2
-        """ 
-        results = 'work in progress' 
-        '''   
-	if self.destinationTier :
-		if (self.destinationDir)
-			self.outDir = Phedex(self.destinationTier, self.destinationDir)
-		else:
-			self.uno, self.lfn ... = Phedex(self.destinationTier)
-			self.outDir= self.uno + self.lfn
-	else:	
-                self.outDir = self.destinationTURL
-		pass
-
-
-        # to be implemeted
-        cmscpConfig = {
-                        "source": '',
-                        "inputFileList":'', 
-                        "protocol":'',
-                        "option":''
-                      }  
-
-        results = self.performCopy(cmscpConfig)
-        '''
-        return  results
-
+        
     def checkAvailableList(self, output_file):
         '''
         check if asked list of jobs 
-        already produce output to move  
+        already produce output to move 
+        returns a dictionary {with endpoint, fileList} 
         '''
       
+        if common.logger.debug: print "CopyData in checkAvailableList() "
         # loop over jobs
+        
         task=common._db.getTask(self.nj_list)
         allMatch={}
-        InfileList = ''
+        to_copy={}
+        
         for job in task.jobs:
-            id_job = job['jobId'] 
+            InfileList = ''
             if ( job.runningJob['status'] in ['E','UE'] and job.runningJob[ 'wrapperReturnCode'] == 0):
+                id_job = job['jobId'] 
+                if common.logger.debug: print "------ id_job = ", id_job
+                endpoint = job.runningJob['storage']
                 for of in output_file:
-                    InfileList += '%s,'%numberFile(of, id_job)
+                     ### to be changed with os.path.basename(job.runningJob['lfn'])
+                     files = numberFile(of, id_job)
+                     InfileList += '%s,'%files
+                if common.logger.debug: print "------ InfileList = ", InfileList
+                if to_copy.has_key(endpoint):     
+                    to_copy[endpoint] = to_copy[endpoint] + InfileList
+                else:
+                    to_copy[endpoint] = InfileList
+                     
             elif ( job.runningJob['status'] in ['E','UE'] and job.runningJob['wrapperReturnCode'] != 0):
                 common.logger.info("Not possible copy outputs of Job # %s : Wrapper Exit Code is %s" \
                                       %(str(job['jobId']),str(job.runningJob['wrapperReturnCode'])))
@@ -148,16 +146,20 @@ class CopyData(Actor):
                                        %(str(job['jobId']),str(job.runningJob['statusScheduler'])))
             pass
 
-        if (InfileList == '') :
+        if (len(to_copy) == 0) :
             raise CrabException("No files to copy")
-          
-        return InfileList[:-1] 
-
+        
+        for key in to_copy.keys():
+            to_copy[key] = to_copy[key][:-1]
+        if common.logger.debug: print "------ to_copy = ", to_copy 
+        return to_copy 
 
     def performCopy(self, dict):
         """
         call the cmscp class and do the copy
         """
+        print "--->>> in performCopy"
+        
         from cmscp import cmscp
         doCopy = cmscp(dict)
 

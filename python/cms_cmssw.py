@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.333 2009/08/20 15:46:52 ewv Exp $"
-__version__ = "$Revision: 1.333 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.333.2.1 2009/09/16 13:23:34 spiga Exp $"
+__version__ = "$Revision: 1.333.2.1 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -203,7 +203,6 @@ class Cmssw(JobType):
         # Copy/return/publish
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
         self.return_data = int(cfg_params.get('USER.return_data',0))
-        ### FEDE ###
         self.publish_data = int(cfg_params.get('USER.publish_data',0))
         if (self.publish_data == 1):
             if not cfg_params.has_key('USER.publish_data_name'):
@@ -1051,10 +1050,8 @@ class Cmssw(JobType):
         """
 
         txt = ''
-        #publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (self.copy_data == 1):
             txt = '\n#Written by cms_cmssw::wsModifyReport\n'
-            #publish_data = int(self.cfg_params.get('USER.publish_data',0))
 
 
             txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'
@@ -1066,14 +1063,16 @@ class Cmssw(JobType):
             txt += 'echo ">>> Modify Job Report:" \n'
             txt += 'chmod a+x $RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
             txt += 'echo "SE = $SE"\n'
-            txt += 'echo "SE_PATH = $SE_PATH"\n'
+            #### FEDE changing SE_PATH with the endpoint
+            txt += 'echo "endpoint = $endpoint"\n'
+            txt += 'SE_PATH=$endpoint\n'
+            txt += 'echo "SE_PATH = $endpoint"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
 
 
             args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
             if (self.publish_data == 1):
-                #processedDataset = self.cfg_params['USER.publish_data_name']
                 txt += 'ProcessedDataset='+self.processedDataset+'\n'
                 txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
                 args += ' UserProcessedDataset $USER-$ProcessedDataset-$PSETHASH'
