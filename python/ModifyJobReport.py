@@ -71,8 +71,11 @@ def modifyFile(file):
     pref =  str.split(str(file['PFN']), '.root')[0]
     suff = str.split(str(file['PFN']), pref)[1]
     
-    newPfn = diz['se_name'] + diz['se_path'] + pref + '_' + diz['n_job'] + suff
+    ### FEDE changing se_path with  the endpoint
+    #newPfn = diz['se_name'] + diz['se_path'] + pref + '_' + diz['n_job'] + suff
+    newPfn = diz['se_path'] + pref + '_' + diz['n_job'] + suff
     print "newPfn = ", newPfn
+    #########################
 
     newLfn = diz['for_lfn'] + pref + '_' + diz['n_job'] + suff
     print "newLfn = ", newLfn

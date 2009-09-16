@@ -247,15 +247,23 @@ class GetOutput(Actor):
             for f in jobReport.files:
                 if f['LFN']:
                     codeValue["lfn"] = f['LFN']
-                if f['SEName']:    
-                    codeValue["storage"] = f['SEName']
+                ### FEDE to have the endpoint in the boss db ###    
+                #if f['SEName']:    
+                #    codeValue["storage"] = f['SEName']
+                if f['PFN']:    
+                    codeValue["storage"] = os.path.dirname(f['PFN'])+'/' 
+                ##########    
                     
         if (len(jobReport.analysisFiles) != 0):
             for aFile in jobReport.analysisFiles:
                 if aFile['LFN']:
                     codeValue["lfn"] = aFile['LFN']
-                if aFile['SEName']:    
-                    codeValue["storage"] = aFile['SEName']
+                ### FEDE to have the endpoint in the boss db ###    
+                #if aFile['SEName']:    
+                #    codeValue["storage"] = aFile['SEName']
+                if aFile['PFN']:   
+                    codeValue["storage"] = os.path.dirname(aFile['PFN'])+'/'
+                #########    
                     
         if not codeValue.has_key('storage'):
             codeValue["storage"] = ''

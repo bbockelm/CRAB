@@ -76,6 +76,9 @@ class PhEDExDatasvcInfo:
  
         #extract the PFN for the given node,LFN,protocol
         endpoint = self.getStageoutPFN()
+        ### FEDE added a check for the final / 
+        if ( endpoint[-1] != '/' ) : endpoint = endpoint + '/'
+        ######################################
    
         #extract SE name an SE_PATH (needed for publication)
         SE, SE_PATH, User = self.splitEndpoint(endpoint)

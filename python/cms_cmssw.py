@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.335 2009/08/27 12:58:30 ewv Exp $"
-__version__ = "$Revision: 1.335 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.336 2009/09/08 22:07:59 mcinquil Exp $"
+__version__ = "$Revision: 1.336 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -1037,10 +1037,8 @@ class Cmssw(JobType):
         """
 
         txt = ''
-        #publish_data = int(self.cfg_params.get('USER.publish_data',0))
         if (self.copy_data == 1):
             txt = '\n#Written by cms_cmssw::wsModifyReport\n'
-            #publish_data = int(self.cfg_params.get('USER.publish_data',0))
 
 
             txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'
@@ -1052,14 +1050,16 @@ class Cmssw(JobType):
             txt += 'echo ">>> Modify Job Report:" \n'
             txt += 'chmod a+x $RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
             txt += 'echo "SE = $SE"\n'
-            txt += 'echo "SE_PATH = $SE_PATH"\n'
+            #### FEDE changing SE_PATH with the endpoint
+            txt += 'echo "endpoint = $endpoint"\n'
+            txt += 'SE_PATH=$endpoint\n'
+            txt += 'echo "SE_PATH = $endpoint"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-
+            
 
             args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
             if (self.publish_data == 1):
-                #processedDataset = self.cfg_params['USER.publish_data_name']
                 txt += 'ProcessedDataset='+self.processedDataset+'\n'
                 txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
                 args += ' UserProcessedDataset $USER-$ProcessedDataset-$PSETHASH'
