@@ -351,7 +351,7 @@ class cmscp:
             try :
                 ErCode, msg = self.checkFileExist( sbi_source, sbi_dest, filetocopy, options )
             except Exception, ex:
-                ErCode = -1
+                ErCode = '60307'
                 msg = str(ex)  
             if ErCode == '0':
                 ErCode, msg = self.makeCopy( sbi, filetocopy , options, protocol,sbi_dest )
