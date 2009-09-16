@@ -312,11 +312,15 @@ class Submitter(Actor):
             jobId = ''
             localId = ''
             jid = str(job.runningJob['schedulerId'])
-            if common.scheduler.name().upper() in ['CONDOR_G','GLIDEIN']:
+            if common.scheduler.name().upper() in ['CONDOR_G']:
                 rb = 'OSG'
                 taskHash = sha.new(common._db.queryTask('name')).hexdigest()
                 jobId = str(jj) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(jj)
                 msg += ('JobID for ML monitoring is created for CONDOR_G scheduler: %s \n'%str(jobId))
+            elif common.scheduler.name().upper() in ['GLIDEIN']:
+                rb = common.scheduler.name()
+                jobId = str(jj) + '_https://' + str(jid)
+                msg += ('JobID for ML monitoring is created for GLIDEIN scheduler: %s \n'%str(jobId))
             elif common.scheduler.name().upper() in ['LSF', 'CAF']:
                 jobId= str(jj) + "_https://"+common.scheduler.name()+":/"+jid+"-"+string.replace(str(task['name']),"_","-")
                 msg += ('JobID for ML monitoring is created for LSF scheduler: %s\n'%str(jobId))
@@ -325,8 +329,8 @@ class Submitter(Actor):
             elif common.scheduler.name().upper() in ['CONDOR']:
                 taskHash = sha.new(common._db.queryTask('name')).hexdigest()
                 jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
-                msg += ('JobID for ML monitoring is created for CONDOR scheduler: %s\n'%str(jobId))
                 rb = common.scheduler.name()
+                msg += ('JobID for ML monitoring is created for CONDOR scheduler: %s\n'%str(jobId))
             elif common.scheduler.name().upper() in ['ARC']:
                 taskHash = sha.new(common._db.queryTask('name')).hexdigest()
                 jobId = str(jj) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(jj)
