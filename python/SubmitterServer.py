@@ -21,7 +21,7 @@ class SubmitterServer( Submitter ):
         self.cfg_params = cfg_params
         self.submitRange = []
         self.credentialType = 'Proxy'
-        self.copyTout= ' -t 600 '
+        self.copyTout= setLcgTimeout()
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.credentialType = 'Token'
             self.copyTout= ' '
