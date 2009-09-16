@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
 
     L = sys.argv[1:]
-    if len(L) < 20:
+    if len(L) < 21:
         print "Error: wrong number of arguments passed to the ModifyJobreport. Please check your script"
         sys.exit(1)
     diz={}
@@ -160,41 +160,61 @@ if __name__ == '__main__':
         UserProcessedDataset=''
     print "UserProcessedDataset = ", UserProcessedDataset
     
-    #### FEDE ####
+    #### Adding AnalysisFile ####
     if (len(report.files) == 0) and (len(report.analysisFiles) == 0):
        print "no EDM_output file or NO_EDM_output to modify"
-       sys.exit(1)
-    ####
-    if (len(report.files) != 0):
-        for f in report.files:
-            if (string.find(f['PFN'], ':') != -1):
-                tmp_path = string.split(f['PFN'], ':')
-                f['PFN'] = tmp_path[1]
-            if not os.path.exists(f['PFN']):
-                print "Error: Cannot find file: %s " % f['PFN']
-                sys.exit(1)
-            #Generate per file stats
-            addFileStats(f)
+       print "Adding a no EDM_output file"
+       files=str.split(str(diz['file_list']), ',')
+       #print "files = ", files 
+       for file in files:
+           split = str.split(str(file), '/')
+           if (len(split) > 0):
+               file_name = split[len(split)-1]
+           else:
+               file_name = file    
 
-            datasetinfo=f.newDataset()
-            datasetinfo['PrimaryDataset'] = diz['PrimaryDataset'] 
-            datasetinfo['DataTier'] = "USER" 
-            datasetinfo['ProcessedDataset'] = UserProcessedDataset 
-            datasetinfo['ApplicationFamily'] = diz['ApplicationFamily'] 
-            datasetinfo['ApplicationName'] = diz['ApplicationName'] 
-            datasetinfo['ApplicationVersion'] = diz['cmssw_version'] 
-            datasetinfo['PSetHash'] = diz['psethash']
-            datasetinfo['PSetContent'] = "TOBEADDED"
-            
-            ### to check if the job output is composed by more files
-            modifyFile(f)    
+           report.newAnalysisFile()
+           for aFile in report.analysisFiles:
+               if (aFile['SEName'] == None):
+                   aFile['SEName']=diz['se_name']
+               if (aFile['LFN'] == None):    
+                   aFile['LFN']=diz['for_lfn']+file_name
+               if (aFile['PFN'] == None):    
+                   aFile['PFN']=diz['se_path']+file_name
+           report.save()
+        
+       report.write("NewFrameworkJobReport.xml")         
+    else:
+        if (len(report.files) != 0):
+            for f in report.files:
+                if (string.find(f['PFN'], ':') != -1):
+                    tmp_path = string.split(f['PFN'], ':')
+                    f['PFN'] = tmp_path[1]
+                if not os.path.exists(f['PFN']):
+                    print "Error: Cannot find file: %s " % f['PFN']
+                    sys.exit(1)
+                #Generate per file stats
+                addFileStats(f)
 
-    if (len(report.analysisFiles) != 0):
-        for aFile in report.analysisFiles:
-            aFile['PFN'] = os.path.basename(aFile['FileName'])
-            modifyFile(aFile)
-    # After modifying the report, you can then save it to a file.
-    report.write("NewFrameworkJobReport.xml")
+                datasetinfo=f.newDataset()
+                datasetinfo['PrimaryDataset'] = diz['PrimaryDataset'] 
+                datasetinfo['DataTier'] = "USER" 
+                datasetinfo['ProcessedDataset'] = UserProcessedDataset 
+                datasetinfo['ApplicationFamily'] = diz['ApplicationFamily'] 
+                datasetinfo['ApplicationName'] = diz['ApplicationName'] 
+                datasetinfo['ApplicationVersion'] = diz['cmssw_version'] 
+                datasetinfo['PSetHash'] = diz['psethash']
+                datasetinfo['PSetContent'] = "TOBEADDED"
+                ### to check if the job output is composed by more files
+                modifyFile(f)    
+
+        if (len(report.analysisFiles) != 0):
+            for aFile in report.analysisFiles:
+                aFile['PFN'] = os.path.basename(aFile['FileName'])
+                modifyFile(aFile)
+                
+        # After modifying the report, you can then save it to a file.
+        report.write("NewFrameworkJobReport.xml")
     
 
 
