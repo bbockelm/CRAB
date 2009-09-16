@@ -665,6 +665,26 @@ def CE2CMS(dests):
     CEDestination = [ce_cms[d] for d in dests]
     return CEDestination
 
+def checkLcgUtils( self ):
+    """
+    _checkLcgUtils_
+    check the lcg-utils version and report
+    """
+    import commands
+    cmd = "lcg-cp --version | grep lcg_util"
+    status, output = commands.getstatusoutput( cmd )
+    num_ver = -1
+    if output.find("not found") == -1 or status == 0:
+        temp = output.split("-")
+        version = ""
+        if len(temp) >= 2:
+            version = output.split("-")[1]
+            temp = version.split(".")
+            if len(temp) >= 1:
+                num_ver = int(temp[0])*10
+                num_ver += int(temp[1])
+    return num_ver
+
 ####################################
 if __name__ == '__main__':
     print 'sys.argv[1] =',sys.argv[1]

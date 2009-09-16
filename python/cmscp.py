@@ -82,6 +82,26 @@ class cmscp:
             results = self.copy(self.params['inputFileList'], self.params['protocol'], self.params['option'] )
             return results
 
+    def checkLcgUtils( self ):
+        """
+        _checkLcgUtils_
+        check the lcg-utils version and report
+        """
+        import commands
+        cmd = "lcg-cp --version | grep lcg_util"
+        status, output = commands.getstatusoutput( cmd )
+        num_ver = -1
+        if output.find("not found") == -1 or status == 0:
+            temp = output.split("-")
+            version = ""
+            if len(temp) >= 2:
+                version = output.split("-")[1]
+                temp = version.split(".")
+                if len(temp) >= 1:
+                    num_ver = int(temp[0])*10
+                    num_ver += int(temp[1])
+        return num_ver
+
     def setProtocol( self, middleware ):
         """
         define the allowed potocols based on $middlware
@@ -94,6 +114,10 @@ class cmscp:
         
         lcgOpt={'srmv1':'-b -D srmv1  -t 2400 --verbose',
                 'srmv2':'-b -D srmv2  -t 2400 --verbose'}
+        if self.checkLcgUtils() >= 17:
+            lcgOpt={'srmv1':'-b -D srmv1 --srm-timeout 2400 --sendreceive-timeout 240 --connect-timeout 240 --verbose',
+                    'srmv2':'-b -D srmv2 --srm-timeout 2400 --sendreceive-timeout 240 --connect-timeout 240 --verbose'}
+
         srmOpt={'srmv1':' -report ./srmcp.report -retry_timeout 480000 -retry_num 3 -streams_num=1 ',
                 'srmv2':' -report=./srmcp.report -retry_timeout=480000 -retry_num=3 '}
         rfioOpt=''

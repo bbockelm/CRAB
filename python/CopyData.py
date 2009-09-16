@@ -85,7 +85,10 @@ class CopyData(Actor):
         if self.protocol is "srmv2":
             cmscpConfig.setdefault("option", " -retry_timeout=480000 -retry_num=3 ")
         elif self.protocol is "srm-lcg":
-            cmscpConfig.setdefault("option", "-b -D srmv2  -t 2400 --verbose")
+            if checkLcgUtils() >= 17:
+                cmscpConfig.setdefault("option", "-b -D srmv2 --srm-timeout 2400 --sendreceive-timeout 240 --connect-timeout 240 --verbose")
+            else:
+                cmscpConfig.setdefault("option", "-b -D srmv2  -t 2400 --verbose")
         elif self.protocol is "rfio":
             pass
 
