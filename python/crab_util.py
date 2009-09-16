@@ -665,7 +665,7 @@ def CE2CMS(dests):
     CEDestination = [ce_cms[d] for d in dests]
     return CEDestination
 
-def checkLcgUtils( self ):
+def checkLcgUtils( ):
     """
     _checkLcgUtils_
     check the lcg-utils version and report
@@ -684,6 +684,13 @@ def checkLcgUtils( self ):
                 num_ver = int(temp[0])*10
                 num_ver += int(temp[1])
     return num_ver
+
+def setLcgTimeout( ):
+    """
+    """
+    opt = ' -t 600 ' 
+    if checkLcgUtils() >= 17: opt=' --connect-timeout 600 '
+    return opt
 
 ####################################
 if __name__ == '__main__':
