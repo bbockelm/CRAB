@@ -611,10 +611,10 @@ def check_unix_quota(dir_name, needed_space_kilobytes):
              filesystem = info[0]
              has_info = False
          if len(info) == 6:
-             used, limit = info[0], info[1]
+             used, limit = info[0], max(info[1], info[2])
              has_info = True
          if len(info) == 7:
-             filesystem, used, limit = info[0], info[1], info[3]
+             filesystem, used, limit = info[0], info[1], max(info[2], info[3])
              has_info = True
          if has_info:
             if filesystem != fs:
@@ -664,6 +664,33 @@ def CE2CMS(dests):
     ce_cms = CECmsMap()
     CEDestination = [ce_cms[d] for d in dests]
     return CEDestination
+
+def checkLcgUtils( ):
+    """
+    _checkLcgUtils_
+    check the lcg-utils version and report
+    """
+    import commands
+    cmd = "lcg-cp --version | grep lcg_util"
+    status, output = commands.getstatusoutput( cmd )
+    num_ver = -1
+    if output.find("not found") == -1 or status == 0:
+        temp = output.split("-")
+        version = ""
+        if len(temp) >= 2:
+            version = output.split("-")[1]
+            temp = version.split(".")
+            if len(temp) >= 1:
+                num_ver = int(temp[0])*10
+                num_ver += int(temp[1])
+    return num_ver
+
+def setLcgTimeout( ):
+    """
+    """
+    opt = ' -t 600 ' 
+    if checkLcgUtils() >= 17: opt=' --connect-timeout 600 '
+    return opt
 
 ####################################
 if __name__ == '__main__':
