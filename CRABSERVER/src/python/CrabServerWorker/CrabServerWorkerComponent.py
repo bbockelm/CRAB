@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.87 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.87 2009/08/03 12:14:24 farinafa Exp $"
+__version__ = "$Revision: 1.88 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.88 2009/09/02 14:22:54 spiga Exp $"
 
 import os, pickle, time, copy
 
@@ -236,6 +236,7 @@ class CrabServerWorkerComponent:
         workerCfg['EDG_shallow_retry_count'] = int(self.args.get('EDG_shallow_retry_count', 3) )
         workerCfg['glexec'] = self.args.get('glexecPath', '')
         workerCfg['glexecWrapper'] = self.args.get('glexecWrapper', '')
+        workerCfg['renewProxy'] = self.args.get('renewProxy', '')
         workerCfg['CondorQCacheDir'] = self.args.get('CondorQCacheDir', '')
 
         workerCfg['scheduler'] = self.args.setdefault('scheduler','glite' )
