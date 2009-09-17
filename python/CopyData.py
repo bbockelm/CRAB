@@ -15,7 +15,7 @@ class CopyData(Actor):
         ### default is the copy local
         self.copy_local = 1
         
-        if common.logger.debug: print 'CopyData __init__() : \n'
+        common.logger.debug("CopyData __init__() : \n")
         
         if (cfg_params.get('USER.copy_data',0) == '0') :
             msg  = 'Cannot copy output if it has not \n'
@@ -39,10 +39,9 @@ class CopyData(Actor):
         if (cfg_params.get("USER.storage_element").upper() != 'LOCAL'):
            self.copy_local = 0
 
-        if common.logger.debug: 
-            print "------ self.protocol = ", self.protocol
-            print "------ USER.storage_element = ", cfg_params.get("USER.storage_element")
-            print "------ self.copy_local = " , self.copy_local  
+        common.logger.debug("------ self.protocol = " + self.protocol)
+        common.logger.debug("------ USER.storage_element = " + cfg_params.get("USER.storage_element"))
+        common.logger.debug("------ self.copy_local = " + str(self.copy_local))  
            
 
     def run(self):
@@ -96,8 +95,7 @@ class CopyData(Actor):
             cmscpConfig.update(dest)
             print "------ source = ", key
             print "------ files = ", to_copy[key]
-            if common.logger.debug: 
-                print "------ cmscpConfig = ", cmscpConfig
+            common.logger.debug("------ cmscpConfig = " + str(cmscpConfig))
             
             results.update(self.performCopy(cmscpConfig))
         return results
@@ -109,7 +107,7 @@ class CopyData(Actor):
         returns a dictionary {with endpoint, fileList} 
         '''
       
-        if common.logger.debug: print "CopyData in checkAvailableList() "
+        common.logger.debug("CopyData in checkAvailableList() ")
         # loop over jobs
         
         task=common._db.getTask(self.nj_list)
@@ -120,13 +118,13 @@ class CopyData(Actor):
             InfileList = ''
             if ( job.runningJob['status'] in ['E','UE'] and job.runningJob[ 'wrapperReturnCode'] == 0):
                 id_job = job['jobId'] 
-                if common.logger.debug: print "------ id_job = ", id_job
+                common.logger.debug("------ id_job = " + str(id_job))
                 endpoint = job.runningJob['storage']
                 output_files = job.runningJob['lfn']
-                if common.logger.debug: print "------ output_files = ", job.runningJob['lfn']
+                common.logger.debug("------ output_files = " + str(job.runningJob['lfn']))
                 for file in output_files:
                      InfileList += '%s,'%os.path.basename(file)
-                if common.logger.debug: print "------ InfileList = ", InfileList
+                common.logger.debug("------ InfileList = " + str(InfileList))
                 if to_copy.has_key(endpoint):     
                     to_copy[endpoint] = to_copy[endpoint] + InfileList
                 else:
@@ -145,15 +143,13 @@ class CopyData(Actor):
         
         for key in to_copy.keys():
             to_copy[key] = to_copy[key][:-1]
-        if common.logger.debug: print "------ to_copy = ", to_copy 
+        common.logger.debug("------ to_copy = " + str(to_copy)) 
         return to_copy 
 
     def performCopy(self, dict):
         """
         call the cmscp class and do the copy
         """
-        print "--->>> in performCopy"
-        
         from cmscp import cmscp
         doCopy = cmscp(dict)
 
