@@ -62,16 +62,10 @@ class CopyData(Actor):
            if the storage_path and the user_remote_dir are not specified by command line, the value written in the crab.cfg are used 
         """
 
-        output_file = []
-        tmp = self.cfg_params.get('CMSSW.output_file',None)
-        if tmp.find(',') >= 0:
-            [output_file.append(x.strip()) for x in tmp.split(',')]
-        else: output_file.append( tmp.strip() )
-
         to_copy = {}
         results = {}
         
-        to_copy = self.checkAvailableList(output_file)
+        to_copy = self.checkAvailableList()
 
         if (self.copy_local == 1):
             outputDir = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
@@ -108,7 +102,7 @@ class CopyData(Actor):
             results.update(self.performCopy(cmscpConfig))
         return results
         
-    def checkAvailableList(self, output_file):
+    def checkAvailableList(self):
         '''
         check if asked list of jobs 
         already produce output to move 
@@ -128,10 +122,10 @@ class CopyData(Actor):
                 id_job = job['jobId'] 
                 if common.logger.debug: print "------ id_job = ", id_job
                 endpoint = job.runningJob['storage']
-                for of in output_file:
-                     ### to be changed with os.path.basename(job.runningJob['lfn'])
-                     files = numberFile(of, id_job)
-                     InfileList += '%s,'%files
+                output_files = job.runningJob['lfn']
+                if common.logger.debug: print "------ output_files = ", job.runningJob['lfn']
+                for file in output_files:
+                     InfileList += '%s,'%os.path.basename(file)
                 if common.logger.debug: print "------ InfileList = ", InfileList
                 if to_copy.has_key(endpoint):     
                     to_copy[endpoint] = to_copy[endpoint] + InfileList
