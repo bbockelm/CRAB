@@ -9,18 +9,30 @@ class CopyData(Actor):
         """
         constructor
         """
-        self.cfg_params = cfg_params
-        self.nj_list = nj_list
-        
-        ### default is the copy local
-        self.copy_local = 1
-        
         common.logger.debug("CopyData __init__() : \n")
         
         if (cfg_params.get('USER.copy_data',0) == '0') :
             msg  = 'Cannot copy output if it has not \n'
             msg += '\tbeen stored to SE via USER.copy_data=1'
             raise CrabException(msg)
+            
+        self.cfg_params = cfg_params
+        self.nj_list = nj_list
+        
+        ### default is the copy local
+        self.copy_local = 1
+        self.dest_se = cfg_params.get("CRAB.dest_se", 'local')
+        self.dest_endpoint = cfg_params.get("CRAB.dest_endpoint", 'local')
+        
+        if ((self.dest_se != 'local') and (self.dest_endpoint != 'local')):
+            msg  = 'You can specify only a parameter with CopyData option \n'
+            msg += '1) The dest_se in the case of official CMS SE (i.e -dest_se=T2_IT_Legnaro)\n'
+            msg += '2) The complete endpoint for not official SE (i.e -dest_endpoint=srm://<se_name>:<port>/xxx/yyy/)\n'
+            msg += '3) if you do not specify parameters, the output will be copied in your UI under crab_working_dir/res \n' 
+            raise CrabException(msg)
+            
+        if ((self.dest_se != 'local') or (self.dest_endpoint != 'local')):
+           self.copy_local = 0
 
         # update local DB
         if StatusObj:# this is to avoid a really strange segv
@@ -35,10 +47,8 @@ class CopyData(Actor):
                          'ARC'      : 'srmv2' \
                        }  
         self.protocol = protocolDict[common.scheduler.name().upper()]  
-        
-        if (cfg_params.get("USER.storage_element").upper() != 'LOCAL'):
-           self.copy_local = 0
-
+       
+       
         common.logger.debug("------ self.protocol = " + self.protocol)
         common.logger.debug("------ USER.storage_element = " + cfg_params.get("USER.storage_element"))
         common.logger.debug("------ self.copy_local = " + str(self.copy_local))  
@@ -53,18 +63,17 @@ class CopyData(Actor):
         self.parseResults( results )          
         return 
 
-        
     def copy(self):
         """
-        1) local copy:  USER.storage_element=local, the output will be copied under crab_working_dir/res dir
-        2) copy to a remote SE: USER.storage_element, USER.storage_path and USER.user_remote_dir used as in the crab.cfg
-           if the storage_path and the user_remote_dir are not specified by command line, the value written in the crab.cfg are used 
+        1) local copy: it is the default. The output will be copied under crab_working_dir/res dir
+        2) copy to a remote SE specifying -dest_se (official CMS remote SE) 
+           or -dest_endpoint (not official, needed the complete endpoint) 
         """
 
         to_copy = {}
         results = {}
         
-        to_copy = self.checkAvailableList()
+        lfn, to_copy = self.checkAvailableList()
 
         if (self.copy_local == 1):
             outputDir = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
@@ -72,12 +81,20 @@ class CopyData(Actor):
             print "------ outputDir = ",  outputDir
             dest = {"destinationDir": outputDir}
         else:
-            from PhEDExDatasvcInfo import PhEDExDatasvcInfo
-            stageout = PhEDExDatasvcInfo(self.cfg_params)
-            endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
+            if (self.dest_se != 'local'):
+                from PhEDExDatasvcInfo import PhEDExDatasvcInfo
+                phedexCfg={'storage_element': self.dest_se}
+                stageout = PhEDExDatasvcInfo(config=phedexCfg)
+                self.endpoint = stageout.getStageoutPFN()
+                tmp = string.lstrip(lfn,'/store') + '/'
+                common.logger.debug("------ tmp = " + tmp)
+                self.endpoint = self.endpoint + tmp
+            else:
+                self.endpoint = self.dest_endpoint
+                                 
             print "Copy file to remote SE:"
-            print "------ endpoint = ", endpoint
-            dest = {"destination": endpoint}
+            print "------ endpoint = ", self.endpoint
+            dest = {"destination": self.endpoint}
             
         
         for key in to_copy.keys():
@@ -86,12 +103,12 @@ class CopyData(Actor):
                         "inputFileList": to_copy[key],
                         "protocol": self.protocol
                       }  
-            if (self.protocol == "srmv2"):
-                cmscpConfig.setdefault("option", " -retry_timeout=480000 -retry_num=3 ")
-            elif (self.protocol == "srm-lcg"):
-                cmscpConfig.setdefault("option", " -b -D srmv2  -t 2400 --verbose ")
-            elif (self.protocol == "rfio"):
-                pass
+            #if (self.protocol == "srmv2"):
+            #    cmscpConfig.setdefault("option", " -retry_timeout=480000 -retry_num=3 ")
+            #elif (self.protocol == "srm-lcg"):
+            #    cmscpConfig.setdefault("option", " -b -D srmv2  -t 2400 --verbose ")
+            #elif (self.protocol == "rfio"):
+            #    pass
             cmscpConfig.update(dest)
             print "------ source = ", key
             print "------ files = ", to_copy[key]
@@ -124,6 +141,7 @@ class CopyData(Actor):
                 common.logger.debug("------ output_files = " + str(job.runningJob['lfn']))
                 for file in output_files:
                      InfileList += '%s,'%os.path.basename(file)
+                     lfn = os.path.dirname(file)
                 common.logger.debug("------ InfileList = " + str(InfileList))
                 if to_copy.has_key(endpoint):     
                     to_copy[endpoint] = to_copy[endpoint] + InfileList
@@ -144,7 +162,7 @@ class CopyData(Actor):
         for key in to_copy.keys():
             to_copy[key] = to_copy[key][:-1]
         common.logger.debug("------ to_copy = " + str(to_copy)) 
-        return to_copy 
+        return lfn, to_copy 
 
     def performCopy(self, dict):
         """
