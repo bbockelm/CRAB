@@ -223,7 +223,8 @@ class ProxyLife:
         logging.info( "Start proxy's polling...." )
         from ProdCommon.Credential.CredentialAPI import CredentialAPI
         CredAPI = CredentialAPI( credConfig )
-         
+        CredAPI.credObj.myproxyServer = '$MYPROXY_SERVER'
+ 
         mySession = BossLiteAPI("MySQL", self.bossCfgDB)
         tlapi = TaskLifeAPI()
 
