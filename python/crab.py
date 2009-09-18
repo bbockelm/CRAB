@@ -359,6 +359,13 @@ class Crab:
             elif ( opt == '-scheduler' ):
                 pass
 
+            ### for CopyData option
+            elif ( opt == '-dest_se' ):
+                pass
+            elif ( opt == '-dest_endpoint' ):
+                pass
+            #########    
+                
             elif string.find(opt,'.') == -1:
                 print common.prog_name+'. Unrecognized option '+opt
                 processHelpOptions()
