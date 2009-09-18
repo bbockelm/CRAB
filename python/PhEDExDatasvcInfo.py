@@ -7,32 +7,45 @@ from urlparse import urlparse
 from LFNBaseName import *
 
 class PhEDExDatasvcInfo:
-    def __init__( self , cfg_params ):
+    def __init__( self , cfg_params=None, config=None ):
  
         ## PhEDEx Data Service URL
-        url="https://cmsweb.cern.ch/phedex/datasvc/xml/prod"
-        self.datasvc_url = cfg_params.get("USER.datasvc_url",url)
+        self.datasvc_url="https://cmsweb.cern.ch/phedex/datasvc/xml/prod"
 
         self.FacOps_savannah = 'https://savannah.cern.ch/support/?func=additem&group=cmscompinfrasup'
         stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo#Stageout_and_publication' 
         self.dataPub_faq = 'https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabForPublication'
 
+        self.usePhedex = True 
+
+        if config!=None:
+            self.checkConfig(config)  
+        else:
+            self.checkCfgConfig(cfg_params)  
+
+        self.sched = common.scheduler.name().upper() 
+        self.protocol = self.srm_version
+ 
+
+    def checkConfig(self,config):
+        """
+        """
+        self.srm_version = config.get("srm_version",'srmv2')
+        self.node = config.get('storage_element',None)
+        self.lfn='/store/'
+
+    def checkCfgConfig(self,cfg_params):
+        """
+        """
+        self.datasvc_url = cfg_params.get("USER.datasvc_url",self.datasvc_url)
         self.srm_version = cfg_params.get("USER.srm_version",'srmv2')
         self.node = cfg_params.get('USER.storage_element',None)
-        
 
-
-        self.user_lfn = cfg_params.get("USER.lfn",'')
         self.publish_data = cfg_params.get("USER.publish_data",0)
         self.usenamespace = cfg_params.get("USER.usenamespace",0)
         self.user_remote_dir = cfg_params.get("USER.user_remote_dir",'')
         if self.user_remote_dir:
             if ( self.user_remote_dir[-1] != '/' ) : self.user_remote_dir = self.user_remote_dir + '/'
-        if self.user_lfn:    
-            msg  = 'Warning: lfn has been deprecated, CRAB will ignore it.\n'
-            msg += '\t Please use only user_remote_dir removing lfn from your crab.cfg\n'
-            msg += '\t For further information please visit : \n\t%s'%stage_out_faq 
-            common.logger.info(msg)
           
         self.datasetpath = cfg_params.get("CMSSW.datasetpath")
         self.publish_data_name = cfg_params.get('USER.publish_data_name','')
@@ -43,7 +56,6 @@ class PhEDExDatasvcInfo:
             if ( self.user_se_path[-1] != '/' ) : self.user_se_path = self.user_se_path + '/'
                                                     
         #check if using "private" Storage
-        self.usePhedex = True 
         if not self.node :
             msg = 'Please specify the storage_element name in your crab.cfg section [USER].\n'
             msg +='\tFor further information please visit : %s'%stage_out_faq 
@@ -55,8 +67,6 @@ class PhEDExDatasvcInfo:
             msg += '\t must specify both user_remote_dir and storage_path in the crab.cfg section [USER].\n '
             msg += '\t For further information please visit : \n\t%s'%stage_out_faq
             raise CrabException(msg)
-        self.sched = common.scheduler.name().upper() 
-        self.protocol = self.srm_version
 
         self.forced_path = '/store/user/'
         if self.sched in ['CAF','LSF']:
