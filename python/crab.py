@@ -841,10 +841,12 @@ if __name__ == '__main__':
     except ImportError:
         pass # too bad, you'll get the warning
 
-    # Remove libraries which over-ride CRAB libs
+    # Remove libraries which over-ride CRAB libs and DBS_CONFIG setting
     badPaths = []
     if os.environ.has_key('DBSCMD_HOME'): # CMSSW's DBS, remove last bit of path
         badPaths.append('/'.join(os.environ['DBSCMD_HOME'].split('/')[:-1]))
+    if os.environ.has_key('DBS_CLIENT_CONFIG'):
+        del os.environ['DBS_CLIENT_CONFIG']
 
     def pathIsGood(checkPath):
         """
