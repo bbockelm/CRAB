@@ -17,13 +17,13 @@ class PhEDExDatasvcInfo:
         self.dataPub_faq = 'https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabForPublication'
 
         self.usePhedex = True 
+        self.sched = common.scheduler.name().upper() 
 
         if config!=None:
             self.checkConfig(config)  
         else:
             self.checkCfgConfig(cfg_params)  
 
-        self.sched = common.scheduler.name().upper() 
         self.protocol = self.srm_version
  
 
