@@ -75,17 +75,20 @@ class Scram:
         if os.environ.has_key("CMSSW_VERSION"):
             ver= os.environ["CMSSW_VERSION"]
         ##SL Else take  sw version from scramArea/.SCRAM/Environment
-        if os.path.exists(envFileName):
-            reVer=re.compile( r'SCRAM_PROJECTVERSION=(\S*)' )
-            envFile = open(envFileName,'r')
-            lines = envFile.readlines()
-            for line in lines:
-                if reVer.search(line):
-                    ver=reVer.search(line).groups()[0]
-                    break
-                pass
-            envFile.close()
-        else:
+        if ver == '':
+            common.logger.debug("$CMSSW_VERSION variable not defined...trying with scramArea/.SCRAM/Environment file.")
+            if os.path.exists(envFileName):
+                reVer=re.compile( r'SCRAM_PROJECTVERSION=(\S*)' )
+                envFile = open(envFileName,'r')
+                lines = envFile.readlines()
+                for line in lines:
+                    if reVer.search(line):
+                        ver=reVer.search(line).groups()[0]
+                        break
+                    pass
+                envFile.close()
+            else: common.logger.debug('file %s not found'%envFileName)
+        if ver == '':
             msg  = 'Cannot find sw version:\n'
             msg += 'Did you do cmsenv from your working area or is your area corrupt?\n'
             raise CrabException(msg)
