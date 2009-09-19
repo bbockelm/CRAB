@@ -114,13 +114,13 @@ fi
 echo "ExeStart=$executable" >>  $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
 #cat  pset.py
-echo ">>> $executable started at `date`"
+echo ">>> $executable started at `date -u`"
 start_exe_time=`date +%s`
 #CRAB run_executable
 executable_exit_status=$?
 CPU_INFOS=`tail -n 1 cpu_timing.txt`
 stop_exe_time=`date +%s`
-echo ">>> $executable ended at `date`"
+echo ">>> $executable ended at `date -u`"
 
 #### dashboard add timestamp!
 echo "ExeEnd=$executable" >> $RUNTIME_AREA/$repo
