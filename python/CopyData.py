@@ -48,11 +48,7 @@ class CopyData(Actor):
                        }  
         self.protocol = protocolDict[common.scheduler.name().upper()]  
        
-       
-        common.logger.debug("------ self.protocol = " + self.protocol)
-        common.logger.debug("------ USER.storage_element = " + cfg_params.get("USER.storage_element"))
-        common.logger.debug("------ self.copy_local = " + str(self.copy_local))  
-           
+        common.logger.debug("Protocol = %s; Destination SE = %s; Destination Endpoint = %s."%(self.protocol,self.dest_se,self.dest_endpoint))
 
     def run(self):
         """
@@ -77,8 +73,7 @@ class CopyData(Actor):
 
         if (self.copy_local == 1):
             outputDir = self.cfg_params.get('USER.outputdir' ,common.work_space.resDir())
-            print "Copy file locally:"
-            print "------ outputDir = ",  outputDir
+            common.logger.info("Copy file locally.\n\tOutput dir: %s"%outputDir)
             dest = {"destinationDir": outputDir}
         else:
             if (self.dest_se != 'local'):
@@ -87,15 +82,13 @@ class CopyData(Actor):
                 stageout = PhEDExDatasvcInfo(config=phedexCfg)
                 self.endpoint = stageout.getStageoutPFN()
                 tmp = string.lstrip(lfn,'/store') + '/'
-                common.logger.debug("------ tmp = " + tmp)
+                common.logger.log(10-1,"Source LFN = %s"%tmp)
                 self.endpoint = self.endpoint + tmp
             else:
                 self.endpoint = self.dest_endpoint
                                  
-            print "Copy file to remote SE:"
-            print "------ endpoint = ", self.endpoint
+            common.logger.info("Copy file to remote SE.\n\tEndpoint: %s"%self.endpoint)
             dest = {"destination": self.endpoint}
-            
         
         for key in to_copy.keys():
             cmscpConfig = {
@@ -110,9 +103,9 @@ class CopyData(Actor):
             #elif (self.protocol == "rfio"):
             #    pass
             cmscpConfig.update(dest)
-            print "------ source = ", key
-            print "------ files = ", to_copy[key]
-            common.logger.debug("------ cmscpConfig = " + str(cmscpConfig))
+            common.logger.log(10-1,"Source = %s"%key)
+            common.logger.log(10-1,"Files = %s"%to_copy[key])
+            common.logger.log(10-1,"CmscpConfig = %s"%str(cmscpConfig))
             
             results.update(self.performCopy(cmscpConfig))
         return results
@@ -130,25 +123,25 @@ class CopyData(Actor):
         task=common._db.getTask(self.nj_list)
         allMatch={}
         to_copy={}
-        
+        lfn=''
         for job in task.jobs:
             InfileList = ''
-            if ( job.runningJob['status'] in ['E','UE'] and job.runningJob[ 'wrapperReturnCode'] == 0):
+            if ( job.runningJob['state'] == 'Cleared' and job.runningJob[ 'wrapperReturnCode'] == 0):
                 id_job = job['jobId'] 
-                common.logger.debug("------ id_job = " + str(id_job))
+                common.logger.log(10-1,"job_id = %s"%str(id_job))
                 endpoint = job.runningJob['storage']
                 output_files = job.runningJob['lfn']
-                common.logger.debug("------ output_files = " + str(job.runningJob['lfn']))
+                common.logger.log(10-1,"Output_files = %s"%str(job.runningJob['lfn']))
                 for file in output_files:
-                     InfileList += '%s,'%os.path.basename(file)
-                     lfn = os.path.dirname(file)
-                common.logger.debug("------ InfileList = " + str(InfileList))
+                    InfileList += '%s,'%os.path.basename(file)
+                    lfn = os.path.dirname(file)
+                common.logger.log(10-1,"InfileList = %s"%str(InfileList))
                 if to_copy.has_key(endpoint):     
                     to_copy[endpoint] = to_copy[endpoint] + InfileList
                 else:
                     to_copy[endpoint] = InfileList
                      
-            elif ( job.runningJob['status'] in ['E','UE'] and job.runningJob['wrapperReturnCode'] != 0):
+            elif ( job.runningJob['state'] == 'Cleared' and job.runningJob['wrapperReturnCode'] != 0):
                 common.logger.info("Not possible copy outputs of Job # %s : Wrapper Exit Code is %s" \
                                       %(str(job['jobId']),str(job.runningJob['wrapperReturnCode'])))
             else: 
@@ -161,7 +154,8 @@ class CopyData(Actor):
         
         for key in to_copy.keys():
             to_copy[key] = to_copy[key][:-1]
-        common.logger.debug("------ to_copy = " + str(to_copy)) 
+        common.logger.debug(" to_copy = %s"%str(to_copy)) 
+
         return lfn, to_copy 
 
     def performCopy(self, dict):
@@ -190,7 +184,7 @@ class CopyData(Actor):
             if file:
                 txt = 'success' 
                 if dict['erCode'] != '0': txt = 'failed'
-                msg = 'Copy %s for file: %s \n'%(txt,file)
-                if txt == 'failed': msg += 'Copy failed because : %s'%dict['reason']
+                msg = 'Copy %s for file: %s '%(txt,file)
+                if txt == 'failed': msg += '\n\tCopy failed because : %s'%dict['reason']
                 common.logger.info( msg )
         return 
