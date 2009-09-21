@@ -27,7 +27,8 @@ The most useful general options (use '-h' to get complete help):
   -checkPublication [dbs_url datasetpath] -- checks if a dataset is published in a DBS.
   -kill [range]                           -- kill submitted jobs.
   -resubmit [range]                       -- resubmit killed/aborted/retrieved jobs.
-  -copyData [range]                       -- copy locally the output stored on remote SE.
+  -copyData [range [dest_se or dest_endpoint]] -- copy locally (in crab_working_dir/res dir) or on a remote SE your produced output, 
+                                                  already stored on remote SE. 
   -renewCredential                        -- renew credential on the server.
   -clean                                  -- gracefully cleanup the directory of a task.
   -match|-testJdl [range]                 -- check if resources exist which are compatible with jdl.
@@ -287,9 +288,15 @@ Create new jobs for an existing task, checking if new blocks are available for t
 
 Kill (cancel) jobs which have been submitted to the scheduler. A range B<must> be used in all cases, no default value is set.
 
-=item B<-copyData [range]>
+=item B<-copyData [range -dest_se=the official SE name or -dest_endpoint=the complete endpoint of the remote SE]>
 
-Copy locally (on current working directory) the output previously stored on remote SE by the jobs. Of course, only if copy_data option has been set.
+Option that can be used only if your output have been previously copied by CRAB on a remote SE.  
+By default the copyData copies your output from the remote SE locally on the current CRAB working directory (under res). Otherwise you can copy the output from the remote SE to another one, specifying either -dest_se=<the remote SE official name> or -dest_endpoint=<the complete endpoint of remote SE>. If dest_se is used, CRAB finds the correct path where the output can be stored.
+
+Example: crab -copyData  --> output copied to crab_working_dir/res directory
+         crab -copyData -dest_se=T2_IT_Legnaro -->  output copied to the legnaro SE, directory discovered by CRAB
+         crab -copyData -dest_endpoint=srm://<se_name>:8443/xxx/yyyy/zzzz --> output copied to the se <se_name> under 
+         /xxx/yyyy/zzzz directory. 
 
 =item B<-renewCredential >
 
