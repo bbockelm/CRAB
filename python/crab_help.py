@@ -494,6 +494,10 @@ The URL of the DBS query page. For expert only.
 
 To enable CRAB to show data hosted on Tier1s sites specify I<show_prod> = 1. By default those data are masked.
 
+=item B<subscribed>
+
+By setting the flag I<subscribed> = 1 only the replicas that are subscribed to its site are considered.The default is to return all replicas. The intended use of this flag is to avoid sending jobs to sites based on data that is being moved or deleted (and thus not subscribed).
+
 =item B<no_block_boundary>
 
 To remove fileblock boundaries in job splitting specify I<no_block_boundary> = 1.
