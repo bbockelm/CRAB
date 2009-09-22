@@ -39,7 +39,8 @@ class DLSInfo:
         self.cfg_params = cfg_params
         self.showCAF = False
         self.showProd = False
-
+        subscribed =int(self.cfg_params.get('CMSSW.subscribed', 0))  
+        if subscribed == 1: self.subscribed = True
         showProd = int(self.cfg_params.get('CMSSW.show_prod', 0)) 
         if showProd == 1: self.showProd = True
 
@@ -81,7 +82,7 @@ class DLSInfo:
         """               
         ##
         try:
-            entryList=self.api.getLocations(fileblocks,longList=True,showCAF=self.showCAF,showProd=self.showProd)
+            entryList=self.api.getLocations(fileblocks,longList=True,showCAF=self.showCAF,showProd=self.showProd,subscribed=self.subscribed)
         except dlsApi.DlsApiError, inst:
             raise DLSNoReplicas(fileblocks)
         results = {} 
@@ -102,7 +103,7 @@ class DLSInfo:
         """
         ##
         try:
-            entryList=self.api.getLocations([fileblocks],showCAF=self.showCAF)
+            entryList=self.api.getLocations([fileblocks],showCAF=self.showCAF,subscribed=self.subscribed)
         except dlsApi.DlsApiError, inst:
             raise DLSNoReplicas(fileblocks)
 
