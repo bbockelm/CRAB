@@ -94,10 +94,12 @@ class Publisher(Actor):
         try:
             if (self.import_all_parents==1):
                 common.logger.info("--->>> Importing all parents level")
-                dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL)
+                ### to skip the ProdCommon api exception in the case of block without location
+                ### skipNoSiteError=True
+                dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True)
             else:
                 common.logger.info("--->>> Importing only the datasetpath " + datasetpath)
-                dbsWriter.importDatasetWithoutParentage(globalDBS, datasetpath, self.DBSURL) 
+                dbsWriter.importDatasetWithoutParentage(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True) 
         except DBSWriterError, ex:
             msg = "Error importing dataset to be processed into local DBS\n"
             msg += "Source Dataset: %s\n" % datasetpath
