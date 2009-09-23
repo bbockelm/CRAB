@@ -99,7 +99,7 @@ class Crab:
         srvName = 'default'
         self.UseServer = False
         if opts.has_key('-use_server'):
-            self.UseServer = opts['-use_server']
+            self.UseServer = int(opts['-use_server'])
             if self.UseServer==1:
                 opts['-server_name']='default'
         if opts.has_key('-server_name'):
