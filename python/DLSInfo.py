@@ -39,6 +39,7 @@ class DLSInfo:
         self.cfg_params = cfg_params
         self.showCAF = False
         self.showProd = False
+        self.subscribed = False    
         subscribed =int(self.cfg_params.get('CMSSW.subscribed', 0))  
         if subscribed == 1: self.subscribed = True
         showProd = int(self.cfg_params.get('CMSSW.show_prod', 0)) 
