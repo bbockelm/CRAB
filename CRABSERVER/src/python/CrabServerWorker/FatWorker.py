@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.178 2009/09/09 20:08:53 ewv Exp $"
-__version__ = "$Revision: 1.178 $"
+__revision__ = "$Id: FatWorker.py,v 1.179 2009/09/09 21:14:35 ewv Exp $"
+__version__ = "$Revision: 1.179 $"
 
 import string
 import sys, os
@@ -335,8 +335,17 @@ class FatWorker(Thread):
         if self.schedName.upper() in ['LSF','CAF']:
             username = task['name'].split('_')[0]
             credential = '%s::%s'%(username,credential)
+
         basePath = task['outputDirectory']
-        if task['startDirectory'] != '': basePath = task['outputDirectory'].split(task['startDirectory'])[1]
+        if task['startDirectory'] != '':
+            try : 
+                basePath = task['outputDirectory'].split(task['startDirectory'])[1]
+            except Exception, ex:
+                logMsg = "Worker %s. Error while correcting base path for task %s."%(self.myName, self.taskName)
+                logMsg += "outputDirectory used as base path. Submission continues.\n"
+                logMsg += str(ex)
+                self.log.info( logMsg )
+
         for j in task.jobs:
             if j['jobId'] in self.cmdRng and j.runningJob['closed'] == 'Y':
                 # backup for job output (tgz files only, less load)
