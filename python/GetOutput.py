@@ -43,11 +43,14 @@ class GetOutput(Actor):
         #self.up_task = common.scheduler.queryEverything(1) 
         self.up_task = common._db.getTask() 
         list_id_done=[]
+        list_id_done_not_term=[]
         self.list_id=[]
         self.all_id =[]    
         for job in self.up_task.jobs:
             if (job.runningJob['state'] == 'Terminated'):
                 list_id_done.append(job['jobId'])  
+            elif job.runningJob['status'] in ['Done', 'Done (Failed)']:
+                list_id_done_not_term.append(job['jobId'])
             self.all_id.append(job['jobId'])  
         check = -1 
         if self.jobs != 'all': check = len( set(self.jobs).intersection(set(list_id_done)) )  
@@ -55,7 +58,10 @@ class GetOutput(Actor):
             msg=''  
             list_jobs=self.jobs 
             if self.jobs == 'all': list_jobs=self.all_id 
-            msg += 'Jobs %s are not in Done status. It is not possible yet to retrieve the output.'% readableList(self,list_jobs)
+            msg += 'Jobs %s are not in Done status. It is not possible yet to retrieve the output. \n'% readableList(self,list_jobs)
+            if len(list_id_done) > 0:
+                msg += '  Retrieve the jobs if those are in Done status and Terminatedi action. \n'
+                msg += '  To know the action of a job run: "crab -status v " \n'
             raise CrabException(msg)
         else:
             if self.jobs == 'all': 
