@@ -118,7 +118,7 @@ class PostMortemServer(PostMortem):
             return False
         # cleaning remote logging info file 
         try:
-            common.logger.debug( "Cleaning remote file [%s] " + str(remotelog) )
+            common.logger.debug( "Cleaning remote file [%s] " %( str(remotelog) ) )
             sbi.delete(remotelog)
         except Exception, ex:
             msg = "WARNING: Unable to clean remote logging-info file %s \n"%remotelog
