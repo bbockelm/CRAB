@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.44 2009/07/22 17:55:18 spiga Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.44.2.1 2009/09/16 13:26:24 spiga Exp $"
+__version__ = "$Revision: 1.44.2.1 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -71,7 +71,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         # list of file to retrieve
         osbTemplate = remotedir + '/out_files_%s.tgz'
         osbFiles = [osbTemplate % str(jid) for jid in filesToRetrieve]
-        if self.cfg_params['CRAB.scheduler'].lower() in ["condor_g", "glidein"]:
+        if self.cfg_params['CRAB.scheduler'].lower() in ["condor_g"]:
             osbTemplate = remotedir + '/CMSSW_%s.stdout'
             osbFiles.extend([osbTemplate % str(jid) for jid in filesToRetrieve])
             osbTemplate = remotedir + '/CMSSW_%s.stderr'
@@ -81,7 +81,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         copyHere = self.outDir
         destTemplate = copyHere+'/out_files_%s.tgz'
         destFiles = [ destTemplate % str(jid) for jid in filesToRetrieve ]
-        if self.cfg_params['CRAB.scheduler'].lower() in ["condor_g","glidein"]:
+        if self.cfg_params['CRAB.scheduler'].lower() in ["condor_g"]:
             destTemplate = copyHere + '/CMSSW_%s.stdout'
             destFiles.extend([destTemplate % str(jid) for jid in filesToRetrieve])
             destTemplate = copyHere + '/CMSSW_%s.stderr'
