@@ -404,9 +404,10 @@ class Crab:
         elif aRange=='0':
             return result
 
-        subRanges = str(aRange).split(',') # DEPRECATED # Fabio #string.split(aRange, ',')
+        subRanges = string.strip(aRange).split(',') # DEPRECATED # Fabio #string.split(aRange, ',')
+          
         for subRange in subRanges:
-            result = result+self.parseSimpleRange_(subRange)
+            if subRange != '':result = result+self.parseSimpleRange_(subRange)
 
         if self.checkUniqueness_(result):
             return result
