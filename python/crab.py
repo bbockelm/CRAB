@@ -99,7 +99,7 @@ class Crab:
         srvName = 'default'
         self.UseServer = False
         if opts.has_key('-use_server'):
-            self.UseServer = opts['-use_server']
+            self.UseServer = int(opts['-use_server'])
             if self.UseServer==1:
                 opts['-server_name']='default'
         if opts.has_key('-server_name'):
@@ -404,9 +404,10 @@ class Crab:
         elif aRange=='0':
             return result
 
-        subRanges = str(aRange).split(',') # DEPRECATED # Fabio #string.split(aRange, ',')
+        subRanges = string.strip(aRange).split(',') # DEPRECATED # Fabio #string.split(aRange, ',')
+          
         for subRange in subRanges:
-            result = result+self.parseSimpleRange_(subRange)
+            if subRange != '':result = result+self.parseSimpleRange_(subRange)
 
         if self.checkUniqueness_(result):
             return result
