@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.18 2009/02/19 17:07:58 mcinquil Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.19 2009/02/20 11:34:19 mcinquil Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import string
 import sys, os
@@ -304,7 +304,11 @@ class RegisterWorker(Thread):
                 while (checkCount > 0):
                     sbi = SBinterface( self.seEl )
                     ###VERY Termporary: FIXME
-                    fileFound = sbi.checkExists(remoteFile, username+self.credential)
+                    try:
+                        fileFound = sbi.checkExists(remoteFile, username+self.credential)
+                    except Exception, e:
+                        self.log.info( "Error while checking staged sandbox: %s"%str(e) )
+                        fileFound = False
                     ###VERY Termporary: FIXME
                     if fileFound == True: break
                     checkCount -= 1
