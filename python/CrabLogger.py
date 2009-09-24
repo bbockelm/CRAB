@@ -1,4 +1,4 @@
-import logging,time
+import logging,time,sys
 import common
 
 class CrabLogger:
@@ -27,7 +27,7 @@ class CrabLogger:
         for x in self.logger.handlers:
             if x.__class__==logging.StreamHandler: streamenPresent=True
         if not streamenPresent:
-            self.ch=logging.StreamHandler()
+            self.ch=logging.StreamHandler(sys.stdout)
             ch_formatter = logging.Formatter("%(name)s  %(message)s")
             ch_level=logging.INFO
             if common.debugLevel > 0:ch_level=logging.DEBUG
