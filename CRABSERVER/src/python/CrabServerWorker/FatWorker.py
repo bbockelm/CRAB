@@ -6,11 +6,12 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.174 2009/07/22 17:57:15 spiga Exp $"
-__version__ = "$Revision: 1.174 $"
+__revision__ = "$Id: FatWorker.py,v 1.176 2009/08/10 21:08:22 ewv Exp $"
+__version__ = "$Revision: 1.176 $"
 
 import string
 import sys, os
+from socket import getfqdn
 import time
 from threading import Thread
 from MessageService.MessageService import MessageService
@@ -327,7 +328,15 @@ class FatWorker(Thread):
             username = task['name'].split('_')[0]
             credential = '%s::%s'%(username,credential)
         basePath = task['outputDirectory']
-        if task['startDirectory'] != '': basePath = task['outputDirectory'].split(task['startDirectory'])[1]
+        if task['startDirectory'] != '':
+            try : 
+                basePath = task['outputDirectory'].split(task['startDirectory'])[1]
+            except Exception, ex:
+                logMsg = "Worker %s. Error while correcting base path for task %s."%(self.myName, self.taskName)
+                logMsg += "outputDirectory used as base path. Submission continues.\n"
+                logMsg += str(ex)
+                self.log.info( logMsg )
+
         for j in task.jobs:
             if j['jobId'] in self.cmdRng and j.runningJob['closed'] == 'Y':
                 # backup for job output (tgz files only, less load)
@@ -741,10 +750,13 @@ class FatWorker(Thread):
 
         for job in task.jobs:
             jj, jobId, localId , jid = (job['jobId'], '', '', str(job.runningJob['schedulerId']) )
-            if self.bossSchedName in ['SchedulerCondorG', 'SchedulerGlidein']:
+            if self.bossSchedName in ['SchedulerCondorG']:
                 hash = self.cfg_params['cfgFileNameCkSum'] #makeCksum(common.work_space.cfgFileName())
                 rb = 'OSG'
                 jobId = str(jj) + '_' + hash + '_' + jid
+            elif self.bossSchedName == 'SchedulerGlidein':
+                rb = self.schedName
+                jobId = str(jj) + '_https://' + str(jid)
             elif self.bossSchedName == 'SchedulerLsf':
                 jobId = str(jj) +"_https://"+self.schedName+":/" + jid + "-" + taskId.replace("_", "-")
                 rb = self.schedName
@@ -849,15 +861,19 @@ class FatWorker(Thread):
                                           self.log)
         ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
         ceString = ','.join(ceDest)
+        seString = ','.join(seDest)
+        myschedName = getfqdn() 
         schedParam  = '+DESIRED_Gatekeepers = "' + ceString + '"; '
         schedParam += '+DESIRED_Archs = "INTEL,X86_64"; '
+        schedParam += '+DESIRED_SEs = "' + seString + '"; '
         schedParam += "Requirements = stringListMember(GLIDEIN_Gatekeeper,DESIRED_Gatekeepers) &&  stringListMember(Arch,DESIRED_Archs); "
+        schedParam += '+Glidein_MonitorID = "https://'+ myschedName + '//$(Cluster).$(Process)"; '
 
         if self.cfg_params['EDG.max_wall_time']:
             schedParam += '+MaxWallTimeMins = %s; ' % \
                           self.cfg_params['EDG.max_wall_time']
         else:
-             schedParam += '+MaxWallTimeMins = 120; '
+            schedParam += '+MaxWallTimeMins = 1440; '
 
         return schedParam, ceDest
 
