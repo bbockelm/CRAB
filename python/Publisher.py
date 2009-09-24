@@ -106,7 +106,7 @@ class Publisher(Actor):
             msg += "Source DBS: %s\n" % globalDBS
             msg += "Destination DBS: %s\n" % self.DBSURL
             common.logger.info(msg)
-            common.logger.debug(str(ex))
+            common.logger.info(str(ex))
             return 1
         return 0
         """
@@ -158,7 +158,7 @@ class Publisher(Actor):
             self.exit_status = '0'
         except IndexError:
             self.exit_status = '1'
-            msg = "Error: No file to publish in xml file"+file+" file"  
+            msg = "Error: No EDM file to publish in xml file"+file+" file"  
             common.logger.info(msg)
             return self.exit_status
 
