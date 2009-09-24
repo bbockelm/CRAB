@@ -26,7 +26,7 @@ class JobXml:
         self.JOBEXIT        = "job_exit"
         self.JOBREPORT      = "Job"
         self.JOBCLEARED     = "cleared"
-        self.ALLOWED_STATES = ("Done(failed)","Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "CannotSubmit","Killing","Killed","Submitting","Done (Failed)", "Created", "Cancelled by user", "EXIT", "RUN")
+        self.ALLOWED_STATES = ("Done(failed)","Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "CannotSubmit","Killing","Killed","Submitting","Done (Failed)", "Created", "Cancelled by user", "EXIT", "RUN", "Abandoned")
         self.SITE           = "site"
         self.RESUB          = "resubmit" 
         self.STATCODE       = "sched_status"
@@ -65,12 +65,6 @@ class JobXml:
         jobrep = self.doc.createElement(self.JOBREPORT)
         jobrep.setAttribute(self.JOBID, str(self.jobid))
 
-        allowed = status in self.ALLOWED_STATES
-	
-	if not allowed:
-            errmsg = "Status [" + status + "] not allowed"
-            raise RuntimeError, errmsg
-        
         jobrep.setAttribute(self.STATUS, self.status)
         jobrep.setAttribute(self.EXITSTATUS, str(self.exitstatus))
         jobrep.setAttribute(self.JOBEXIT, str(self.jobexit))
@@ -179,7 +173,7 @@ class CreateXmlJobReport:
         self.ENDED          = "ended"
         self.THRESHOLDREQ   = "thresholdRequested"
         self.TOTJOB         = "totJob"
-        self.ALLOWED_STATES = ("Done(failed)","Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "CannotSubmit","Killed","Submitting", "Done (Failed)", "Created", "Cancelled by user", "EXIT", "RUN")
+        self.ALLOWED_STATES = ("Done(failed)","Running","Aborted","Cancelled","Cleared","Done","Ready","Submitted","Scheduled","Unknown","Waiting", "CannotSubmit","Killed","Submitting", "Done (Failed)", "Created", "Cancelled by user", "EXIT", "RUN", "Abandoned")
         self.COUNT          = 'count'
         self.SITE           = "site"
         self.RESUB          = "resubmit"
