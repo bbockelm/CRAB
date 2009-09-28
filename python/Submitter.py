@@ -191,7 +191,7 @@ class Submitter(Actor):
             try:
                 common.scheduler.delegateProxy()
             except CrabException:
-                common.logger.debug("Plroxy delegation failed ")
+                common.logger.debug("Proxy delegation failed ")
 
             for ii in matched:
                 common.logger.debug('Submitting jobs '+str(self.sub_jobs[ii]))

@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.15 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.15 2009/08/03 12:14:25 farinafa Exp $"
+__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.16 2009/09/02 14:21:33 spiga Exp $"
 
 import os
 import pickle
@@ -50,6 +50,9 @@ class TaskRegisterComponent:
         self.args.setdefault('storageName', 'localhost')
         self.args.setdefault('storagePort', '')
         self.args.setdefault('storagePath', self.args["CacheDir"])
+
+        # specific delegation strategy for glExex
+        self.args.setdefault('glExecDelegation', 'false')
 
         self.args.update(args)
         
@@ -295,6 +298,8 @@ class TaskRegisterComponent:
         workerCfg['credentialType'] = self.args.setdefault('credentialType',None ) 
         workerCfg['single_user'] = self.args.setdefault('singleUser',None ) 
         workerCfg['scheduler'] = self.args.setdefault('scheduler','glite' )
+
+        workerCfg['glExecDelegation'] = self.args['glExecDelegation']
 
         return workerCfg
         

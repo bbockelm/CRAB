@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.22 2009/08/28 09:21:16 farinafa Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.23 2009/09/02 14:21:33 spiga Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import string
 import sys, os
@@ -51,6 +51,8 @@ class RegisterWorker(Thread):
         self.CredAPI = CredentialAPI({'credential':self.configs['credentialType'], 'logger':self.log}) 
         self.cmdRng = "[]"
         self.schedName= self.configs['scheduler'].upper()
+
+        self.useGlExecDelegation = self.configs['glExecDelegation'] == 'true'
 
         # run the worker
         try:
@@ -380,6 +382,28 @@ class RegisterWorker(Thread):
             self.log.info("Error while retrieving proxy for %s: %s"%(self.owner, str(e) ))
             self.log.info( traceback.format_exc() )
             return None
+
+        if self.useGlExecDelegation == True:
+            #### TODO
+            #### Sanjay fix here
+
+            # userId = ...
+            # serverUserId = ...
+
+            #newProxyfilename = '/tmp/%s'%userId 
+            #### Suggestion: probably settint ProxyCache folder as 'del_proxy' counterpart is enough, 
+            #### then only a change of ownership is required
+
+            #cmd = 'mv %s %s'%(proxyFilename, newProxyfilename)
+            #cmd += && chown %s %s'%(serverUserId, newProxyfilename)
+            #ret = os.system(cmd) 
+            #if ret != 0:
+            #    self.log.info( "Error while moving proxy %s for glExec"%proxyFilename )
+            #    return None
+
+            # proxyFilename = newProxyfilename
+            pass
+
 
         return proxyFilename
 

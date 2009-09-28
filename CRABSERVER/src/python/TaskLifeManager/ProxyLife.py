@@ -19,13 +19,16 @@ from ProdCommon.BossLite.Common.Exceptions import TaskError
 
 class ProxyLife:
 
-    def __init__(self, dBlite, path, dictSE, minim = 3600*36):
+    def __init__(self, dBlite, path, dictSE, additionalParams={}, minim = 3600*36):
         self.proxiespath = path
         if minim < 3600*6:
             minim = 3600*6
         self.minimumleft = minim
         self.bossCfgDB = dBlite
         self.dictSE = dictSE
+
+        # stuff needed for glExec renewal technicalities
+        self.useGlExecDelegation = additionalParams.get("glExecDelegation", 'false')=='true' 
 
         # register
         self.ms = MessageService()
@@ -221,6 +224,9 @@ class ProxyLife:
         loops on the proxies and makes related actions
         """
         logging.info( "Start proxy's polling...." )
+
+         
+
         from ProdCommon.Credential.CredentialAPI import CredentialAPI
         CredAPI = CredentialAPI( credConfig )
         CredAPI.credObj.myproxyServer = '$MYPROXY_SERVER'
@@ -274,6 +280,14 @@ class ProxyLife:
                     delegatedtimeleft = 0
                     if credConfig['credential'] == 'Proxy': 
                         logging.info("Trying to renew proxy [%s]"% str(proxyfull))
+
+                        if self.useGlExecDelegation == True:
+                            # glExec renewal specific parts
+                            # TODO
+                            # Sanjay fix here
+                            # change the proxy ownership so that CrabServer can renew it
+                            pass
+
                         try:
                             CredAPI.renewalMyProxy(proxyfull)
                             delegatedtimeleft = CredAPI.getTimeLeft(proxyfull)
@@ -283,6 +297,13 @@ class ProxyLife:
                             import traceback
                             logging.info( str(traceback.format_exc()) )
                             delegatedtimeleft = 0
+
+                        if self.useGlExecDelegation == True:
+                            # glExec renewal specific parts
+                            # TODO
+                            # Sanjay fix here
+                            # set again the proxy ownership for glExec
+                            pass
 
                     if delegatedtimeleft <= timeleft: 
                         tasksbymail = tlapi.getTaskList(proxyfull, mySession.bossLiteDB)

@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.41 2009/03/06 09:10:40 mcinquil Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.42 2009/08/10 15:08:58 farinafa Exp $"
+__version__ = "$Revision: 1.42 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -72,6 +72,7 @@ class TaskLifeManagerComponent:
         self.args.setdefault("ProxiesDir", "/tmp/del_proxies")
         self.args.setdefault("credentialType", "Proxy")
         self.args.setdefault("checkProxy", "off")
+        self.args.setdefault('glExecDelegation', 'false')
         # update parameters
         self.args.update(args)
 
@@ -140,11 +141,17 @@ class TaskLifeManagerComponent:
                     "mail": self.args['eMailAdmin'],  \
                     "drop": self.args['CacheDir']
                   }
+
+        # Add "glExecDelegation" to pass it to the thread
         self.credentialCfg = {
-                        "credential": self.args['credentialType']
+                        "credential": self.args['credentialType'], \
                         }
 
-        self.procheck = ProxyLife(self.bossCfgDB, self.proxypath, dictSE)
+        additionalParams = {
+                        "glExecDelegation": self.args['glExecDelegation'], \
+                        }
+
+        self.procheck = ProxyLife(self.bossCfgDB, self.proxypath, dictSE, additionalParams)
 
     ##########################################################################
     # handle events
