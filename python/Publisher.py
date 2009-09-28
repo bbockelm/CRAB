@@ -94,12 +94,27 @@ class Publisher(Actor):
         try:
             if (self.import_all_parents==1):
                 common.logger.info("--->>> Importing all parents level")
+                start = time.time()
+                common.logger.debug("start import time: " + str(start))
                 ### to skip the ProdCommon api exception in the case of block without location
                 ### skipNoSiteError=True
-                dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True)
+                #dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True)
+                ### calling dbs api directly
+                dbsWriter.dbs.migrateDatasetContents(globalDBS, self.DBSURL, datasetpath)
+                stop = time.time()
+                common.logger.debug("stop import time: " + str(stop))
+                common.logger.info("--->>> duration of all parents import (sec): "+str(stop - start))
+                                                                
             else:
                 common.logger.info("--->>> Importing only the datasetpath " + datasetpath)
-                dbsWriter.importDatasetWithoutParentage(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True) 
+                start = time.time()
+                #dbsWriter.importDatasetWithoutParentage(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True) 
+                ### calling dbs api directly
+                common.logger.debug("start import time: " + str(start))
+                dbsWriter.dbs.migrateDatasetContents(globalDBS, self.DBSURL, datasetpath, noParentsReadOnly = True )
+                stop = time.time()
+                common.logger.debug("stop import time: " + str(stop))
+                common.logger.info("--->>> duration of first level parent import (sec): "+str(stop - start))
         except DBSWriterError, ex:
             msg = "Error importing dataset to be processed into local DBS\n"
             msg += "Source Dataset: %s\n" % datasetpath
@@ -109,25 +124,7 @@ class Publisher(Actor):
             common.logger.info(str(ex))
             return 1
         return 0
-        """
-        print " patch for importParentDataset: datasetpath = ", datasetpath
-        try:
-            args={}
-            args['url']=self.DBSURL
-            args['mode']='POST'
-            block = ""
-            api = DbsApi(args)
-            #api.migrateDatasetContents(srcURL, dstURL, path, block , False)
-            api.migrateDatasetContents(globalDBS, self.DBSURL, datasetpath, block , False)
 
-        except DbsException, ex:
-            print "Caught API Exception %s: %s "  % (ex.getClassName(), ex.getErrorMessage() )
-            if ex.getErrorCode() not in (None, ""):
-                print "DBS Exception Error Code: ", ex.getErrorCode()
-            return 1
-        print "Done"
-        return 0
-        """  
     def publishDataset(self,file):
         """
         """
