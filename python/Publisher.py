@@ -204,6 +204,7 @@ class Publisher(Actor):
         """
            input:  xml file, processedDataset
         """
+        common.logger.debug("FJR = %s"%file)
         try:
             jobReport = readJobReport(file)[0]
             self.exit_status = '0'
@@ -245,9 +246,11 @@ class Publisher(Actor):
                     filestopublish.append(file)
        
         jobReport.files = filestopublish
+        for file in filestopublish:
+            common.logger.debug("--->>> LFN of file to publish =  " + str(file['LFN']))
         ### if all files of FJR have number of events = 0
         if (len(filestopublish) == 0):
-           return None
+            return None
            
         #// DBS to contact
         dbswriter = DBSWriter(self.DBSURL)
@@ -255,9 +258,9 @@ class Publisher(Actor):
         Blocks=None
         try:
             Blocks=dbswriter.insertFiles(jobReport)
-            common.logger.info("Inserting file in blocks = %s"%Blocks)
+            common.logger.debug("--->>> Inserting file in blocks = %s"%Blocks)
         except DBSWriterError, ex:
-            common.logger.info("Insert file error: %s"%ex)
+            common.logger.debug("--->>> Insert file error: %s"%ex)
         return Blocks
 
     def run(self):
@@ -266,6 +269,7 @@ class Publisher(Actor):
         """
         
         file_list = glob.glob(self.resDir+"crab_fjr*.xml")
+        
         ## Select only those fjr that are succesfull
         if (len(file_list)==0):
             common.logger.info("--->>> "+self.resDir+" empty: no file to publish on DBS")
@@ -294,7 +298,6 @@ class Publisher(Actor):
 
             common.logger.info("--->>> Start files publication")
             for file in file_list:
-                common.logger.debug( "file = "+file)
                 Blocks=self.publishAJobReport(file,self.processedData)
                 if Blocks:
                     for x in Blocks: # do not allow multiple entries of the same block
