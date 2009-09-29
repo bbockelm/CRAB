@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.113.2.1 2009/09/16 13:26:24 spiga Exp $"
-__version__ = "$Revision: 1.113.2.1 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.113.2.2 2009/09/29 16:16:12 spiga Exp $"
+__version__ = "$Revision: 1.113.2.2 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -259,7 +259,7 @@ class SchedulerGrid(Scheduler):
             cmscp_args = ' --destination $endpoint --inputFileList $file_list'
             cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
             if self.space_tocken:
-                cmscp_args +=' --option space_tocken=$s'%self.space_tocken  
+                cmscp_args +=' --option space_tocken=%s'%str(self.space_tocken)  
             txt += 'echo "python cmscp.py %s "\n'%cmscp_args
             txt += 'python cmscp.py %s \n'%cmscp_args
             if self.debug_wrapper==1:
