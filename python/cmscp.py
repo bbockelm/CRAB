@@ -510,6 +510,10 @@ class cmscp:
         ErCode = '0'
         msg = ''
 
+        if  self.params['option'].find('space_token'): 
+            space_tocken=self.params['option'].split('=')[1] 
+            if protocol == 'srmv2': option = '%s -space_tocken=%s'%(option,space_tocken)
+            if protocol == 'srm-lcg': option = '%s -S %s'%(option,space_tocken)
         try:
             sbi.copy( source_file , dest_file , opt = option)
         except TransferException, ex:
