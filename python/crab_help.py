@@ -271,6 +271,16 @@ Retrieve the output declared by the user via the output sandbox. By default the 
 =item B<-publish>
 
 Publish user output in a local DBS instance after the retrieval of output. By default publish uses the dbs_url_for_publication specified in the crab.cfg file, otherwise you can supply it as an argument of this option.
+Warnings about publication:
+
+CRAB publishes only EDM files (in the FJR they are written in the tag <File>)
+
+By default the publication of files containing 0 events is desabled. If you want to enable it you have to set the parameter [USER].publish_zero_event=1 in crab.cfg.
+
+CRAB publishes in the same USER dataset more EDM files if they are produced by a job and written in the tag <File> of FJR.
+
+It is not possible for the user to select only one file to publish, nor to publish two files in two different USER datasets.
+
 
 =item B<-checkPublication [-USER.dbs_url_for_publication=dbs_url -USER.dataset_to_check=datasetpath -debug]>
 
