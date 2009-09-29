@@ -510,6 +510,10 @@ class cmscp:
         ErCode = '0'
         msg = ''
 
+        if  self.params['option'].find('space_token'): 
+            space_tocken=self.params['option'].split('=')[1] 
+            if protocol == 'srmv2': option = '%s -space_tocken=%s'%(option,space_tocken)
+            if protocol == 'srm-lcg': option = '%s -S %s'%(option,space_tocken)
         try:
             sbi.copy( source_file , dest_file , opt = option)
         except TransferException, ex:
@@ -644,6 +648,7 @@ class cmscp:
                 txt += 'echo "StorageElement: '+se+'"\n'
                 txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
+                #txt += 'export LFNBaseName='+lfn+'\n'
                 txt += 'export SE='+se+'\n'
                 ### FEDE per CopyData ####
 
