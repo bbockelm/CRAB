@@ -119,6 +119,11 @@ class SubmitterServer( Submitter ):
                 msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
+            except TransferException, ex:
+                common.logger.debug(str(ex.detail))
+                msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
+                msg +="Project "+ self.taskuuid +" not Submitted \n"
+                raise CrabException(msg)
 
         ## copy ISB ##
         sbi = SBinterface( loc, seEl )
