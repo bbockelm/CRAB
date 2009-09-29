@@ -123,11 +123,16 @@ class PhEDExDatasvcInfo:
            # SE_PATH = endpoint.split(host)[1]
             SE = self.node
             SE_PATH = self.user_se_path + self.user_remote_dir 
-            try:
-                USER = (self.lfn.split('user')[1]).split('/')[1]
-            except:
-                pass
-
+            if self.lfn.find('user'):
+                try:
+                    USER = (self.lfn.split('user')[1]).split('/')[1]
+                except:
+                    pass
+            if self.lfn.find('group'):
+                try:
+                    USER = (self.lfn.split('group')[1]).split('/')[1]
+                except:
+                    pass
         return SE, SE_PATH, USER 
    
 
