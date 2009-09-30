@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.23 2009/09/02 14:21:33 spiga Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.25 2009/09/30 o1:17:31 hriahi Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import string
 import sys, os
@@ -15,7 +15,10 @@ import time
 import traceback
 import commands
 from threading import Thread
+import threading
 from xml.dom import minidom
+import pickle
+
 import sha
 
 from MessageService.MessageService import MessageService
@@ -29,8 +32,13 @@ from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 
 from CrabServerWorker.CrabWorkerAPI import CrabWorkerAPI
 
+# WMCORE
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMFactory import WMFactory
+from WMCore.WMInit import WMInit
+
 class RegisterWorker(Thread):
-    def __init__(self, logger, FWname, threadAttributes):
+    def __init__(self, logger, FWname, threadAttributes, SharedMsgService):
         Thread.__init__(self)
 
         ## Worker Properties
@@ -46,13 +54,16 @@ class RegisterWorker(Thread):
         self.blDBsession = BossLiteAPI('MySQL', pool=self.configs['blSessionPool'])
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
         self.local_queue = self.configs['messageQueue']
-
+        
         self.cfg_params = {}
-        self.CredAPI = CredentialAPI({'credential':self.configs['credentialType'], 'logger':self.log}) 
+        self.CredAPI = CredentialAPI({'credential':self.configs['credentialType'], 'logger':self.log})
         self.cmdRng = "[]"
         self.schedName= self.configs['scheduler'].upper()
 
         self.useGlExecDelegation = self.configs['glExecDelegation'] == 'true'
+      
+        # Shared newMsgService Object
+        self.newMsgService = SharedMsgService
 
         # run the worker
         try:
@@ -86,32 +97,92 @@ class RegisterWorker(Thread):
         else:
             reconstructedTask = self.alterPath(reconstructedTask)
 
-        # register jobs of the task object on the server (we_job)
-        registeredTask = self.registerTask(reconstructedTask)
-        if registeredTask != 0:
-            self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
-            return
+        # Only for fully specified task
+        if self.type == 'fullySpecified':
 
-        # check if the ISB are where they should
-        if self.inputFileCheck(reconstructedTask) == False:
-             self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
-             return
+             # register jobs of the task object on the server (we_job)
+             registeredTask = self.registerTask(reconstructedTask)
+             if registeredTask != 0:
+                 self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
+                 return
 
-        if self.type == 'fullySpecified': # default by client side to backward compatibility
-           payload = self.taskName +"::"+ str(self.configs['retries']) +"::"+ self.cmdRng
-           self.local_queue.put( (self.myName, "TaskRegisterComponent:NewTaskRegistered", payload) )
-        else:
-           id = 'taskid'
-           wmbs = WMBSInterface(_input_stuff_)
-           result = wmbs.run()
+             # check if the ISB are where they should
+             if self.inputFileCheck(reconstructedTask) == False:
+                 self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
+                 return
 
-           # interact with WMBS ... + messaggio "ritorna qui tra n-ore"
-           # prepare a payload for the interaction message
-           # self.local_queue.put( (self.myName, "TaskRegisterComponent:msgXYZ", payload) )
+             payload = self.taskName +"::"+ str(self.configs['retries']) +"::"+ self.cmdRng
+             self.local_queue.put( (self.myName, "TaskRegisterComponent:NewTaskRegistered", payload) )
+
+ 
+ 
+        # Distinguish task type - WMCore interaction 
+        if self.type == 'partiallySpecified':
+
+            if not self.sendToWMComponent() == 0:
+                self.local_queue.put((self.myName, "RegisterWorkerComponent:WorkerFailsToRegisterPartially", self.taskName))
+                return
+
+            payload = self.taskName +"::"+ str(self.configs['retries']) +"::"+ self.cmdRng
+            self.local_queue.put( (self.myName, "TaskRegisterComponent:NewTaskRegisteredPartially", payload) )
 
         self.log.info("RegisterWorker %s finished"%self.myName)
         return
 
+
+    def sendToWMComponent(self):
+
+        # Get configuration
+        self.init = WMInit()
+        self.init.setLogging()
+        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
+            os.getenv('DIALECT'), os.getenv("DBSOCK"))
+
+        # Workflow creation
+        wf = Workflow(spec = self.taskName+".xml", owner = self.owner,\
+               name = "wf_"+self.taskName, task = self.taskName)
+        try:
+
+            wf.create()
+            self.log.info("WorkFlow created has Id:%s"%wf.id)
+
+        except Exception, e:
+
+            logMsg = ("Problem when creating WF for %s" \
+                      %self.taskName)
+            logMsg += str(e)
+            logging.info( logMsg )
+            logging.debug( traceback.format_exc() )
+            return 
+
+        self.myThread = threading.currentThread()
+     
+        # CRAB sends a message to the FeederManager, with a dataset to watch
+        self.myThread.transaction.begin()
+        FManagerdict = {'FeederType':'Feeder','dataset':self.dataset}
+        FManagerSent = pickle.dumps(FManagerdict)
+        msg = {'name':'AddDatasetWatch','payload':FManagerSent}
+        self.newMsgService.publish(msg)
+        WFManagerdict = {'WorkflowId' : wf.id ,'FilesetMatch': \
+                self.dataset,'SplitAlgo':'FileBased','Type':'processing'}
+        WFManagerSent = pickle.dumps(WFManagerdict)
+        msg = {'name' : 'AddWorkflowToManage', \
+                'payload' : WFManagerSent}
+        self.newMsgService.publish(msg)
+        self.myThread.transaction.commit()
+
+        # CRAB sends Locations messages to the WorkflowManager
+        self.myThread.transaction.begin()
+        WFManagerLocdict = {'WorkflowId' : wf.id ,'FilesetMatch': \
+                  self.dataset,'Valid':'true','Locations': self.location}
+        WFManagerLocSent = pickle.dumps(WFManagerLocdict)
+        msg = {'name' : 'AddToWorkflowManagementLocationList', \
+                    'payload' : WFManagerLocSent}
+        self.newMsgService.publish(msg)
+        self.myThread.transaction.commit()
+        self.newMsgService.finish()
+        return 0
+          
     def sendResult(self, status, reason, logMsg):
         self.log.info(logMsg)
         msg = self.myName + "::" + self.taskName + "::"
@@ -140,6 +211,10 @@ class RegisterWorker(Thread):
 
             self.flavour = str( cmdXML.getAttribute('Flavour') )
             self.type = str( cmdXML.getAttribute('Type') )
+
+            self.dataset = self.cfg_params['CMSSW.datasetpath']
+            self.location = self.cfg_params['EDG.se_white_list']
+
         except Exception, e:
             status = 6
             reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
@@ -166,6 +241,7 @@ class RegisterWorker(Thread):
 
             taskObj = self.blDBsession.declare(taskSpecFile, self.credential)
             taskObj['user_proxy'] = self.credential
+
         except Exception, e:
             status = 6
             reason = "Error while declaring task %s, it will not be processed"%self.taskName
@@ -175,6 +251,7 @@ class RegisterWorker(Thread):
             return None
 
         return taskObj
+
 
     def alterPath(self, taskObj):
         """
@@ -192,6 +269,7 @@ class RegisterWorker(Thread):
         6) CAF
         7) GLIDEIN
         """
+        remoteSBlistTemp = []
         self.log.info('Worker %s altering paths'%self.myName)
 
         remoteSBlist = [ os.path.basename(f) for f in taskObj['globalSandbox'].split(',') ]
@@ -200,7 +278,22 @@ class RegisterWorker(Thread):
         #if self.cfg_params['CRAB.se_remote_dir'] == "":
         #    remoteSBlist = [ os.path.join( '/'+self.cfg_params['CRAB.se_remote_dir'], f ) for f in remoteSBlist ]
         #else:
-        remoteSBlist = [ os.path.join( os.path.join(self.configs['storagePath'], self.taskName), f ) for f in remoteSBlist ]
+
+        if self.type == 'partiallySpecified' and ( self.schedName == 'CAF' \
+                   or self.schedName == 'LSF' ):
+            for f in remoteSBlist:
+                self.log.info("file is %s "%f)
+                if f == 'arguments.xml':
+                    remoteSBlistTemp.append(os.path.join(self.wdir, \
+             self.taskName)+'_spec/arguments.xml' )
+                else:
+                    remoteSBlistTemp.append(os.path.join( os.path.join\
+             (self.configs['storagePath'], self.taskName), f ))
+        else:
+            remoteSBlistTemp = [ os.path.join( os.path.join(self.configs['storagePath'], \
+                self.taskName), f ) for f in remoteSBlist ]
+
+        remoteSBlist = remoteSBlistTemp
         self.log.info(str(remoteSBlist))
 
         if len(remoteSBlist) > 0:
@@ -217,7 +310,7 @@ class RegisterWorker(Thread):
                 self.log.info('Worker %s  Scheduler %s  Not Known  '%(self.myName, self.schedName))
                 return None
 
-            # correct the task attributes w.r.t. the Preamble
+            #correct the task attributes
             taskObj['globalSandbox'] = ','.join( remoteSBlist )
             taskObj['startDirectory'] = self.preamble
             taskObj['outputDirectory'] = self.preamble + self.cfg_params['CRAB.se_remote_dir']
@@ -225,16 +318,20 @@ class RegisterWorker(Thread):
 
             self.log.debug("Worker %s. Reference Preamble: %s"%(self.myName, taskObj['outputDirectory']) )
 
-            for j in taskObj.jobs:
-                j['executable'] = os.path.basename(j['executable'])
-                j['outputFiles'] = [ os.path.basename(of) for of in j['outputFiles']  ]
 
-                jid = taskObj.jobs.index(j)
-                if 'crab_fjr_%d.xml'%(jid+1) not in j['outputFiles']:
-                    j['outputFiles'].append('crab_fjr_%d.xml'%(jid+1))
-                    #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
-                if '.BrokerInfo' not in j['outputFiles']:
-                    j['outputFiles'].append('.BrokerInfo')
+            # Complete job information only for fully specified task    
+            if self.type == "fullySpecified":
+
+                for j in taskObj.jobs:
+                    j['executable'] = os.path.basename(j['executable']) 
+                    j['outputFiles'] = [ os.path.basename(of) for of in j['outputFiles']  ]
+
+                    jid = taskObj.jobs.index(j)
+                    if 'crab_fjr_%d.xml'%(jid+1) not in j['outputFiles']:
+                        j['outputFiles'].append('crab_fjr_%d.xml'%(jid+1))
+                        #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
+                    if '.BrokerInfo' not in j['outputFiles']:
+                        j['outputFiles'].append('.BrokerInfo')
 
             # save changes
             try:
@@ -315,7 +412,6 @@ class RegisterWorker(Thread):
                     except Exception, e:
                         self.log.info( "Error while checking staged sandbox: %s"%str(e) )
                         fileFound = False
-
                     ###VERY Termporary: FIXME
                     if fileFound == True: break
                     checkCount -= 1
@@ -366,8 +462,8 @@ class RegisterWorker(Thread):
     def getProxy(self):
         """
         """
- 
-        proxyFilename = os.path.join(self.configs['ProxiesDir'], sha.new(self.owner).hexdigest() ) 
+
+        proxyFilename = os.path.join(self.configs['ProxiesDir'], sha.new(self.owner).hexdigest() )
 
         vo = self.cfg_params.get('VO', 'cms')
         role = self.cfg_params.get('EDG.role', None)
@@ -390,13 +486,13 @@ class RegisterWorker(Thread):
             # userId = ...
             # serverUserId = ...
 
-            #newProxyfilename = '/tmp/%s'%userId 
-            #### Suggestion: probably settint ProxyCache folder as 'del_proxy' counterpart is enough, 
+            #newProxyfilename = '/tmp/%s'%userId
+            #### Suggestion: probably settint ProxyCache folder as 'del_proxy' counterpart is enough,
             #### then only a change of ownership is required
 
             #cmd = 'mv %s %s'%(proxyFilename, newProxyfilename)
             #cmd += && chown %s %s'%(serverUserId, newProxyfilename)
-            #ret = os.system(cmd) 
+            #ret = os.system(cmd)
             #if ret != 0:
             #    self.log.info( "Error while moving proxy %s for glExec"%proxyFilename )
             #    return None
@@ -404,6 +500,6 @@ class RegisterWorker(Thread):
             # proxyFilename = newProxyfilename
             pass
 
-
         return proxyFilename
+
 
