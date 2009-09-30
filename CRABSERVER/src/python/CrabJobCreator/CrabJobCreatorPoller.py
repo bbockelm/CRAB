@@ -5,13 +5,13 @@ The actual wmbsDB poll / Subscription split / Task Extension algorithm.
 It will be parallelized if needed through WorkQueue using a new class.
 """
 __all__ = []
-__revision__ = "$Id: CrabJobCreatorPoller.py,v 0 \
-            2009/09/22 23:21:44 riahi Exp $"
-__version__ = "$Revision: 0 $"
-
+__revision__ = "$Id: CrabJobCreatorPollerPoller.py,v 0.2 \
+            2009/09/30 01:21:44 hriahi Exp $"
+__version__ = "$Revision: 0.2 $"
 
 import logging
 import os
+import sha
 from xml.dom import minidom
 from IMProv.IMProvNode import IMProvNode
 import traceback
@@ -28,6 +28,11 @@ from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 
 # Task and job objects
 from ProdCommon.BossLite.DbObjects.Job import Job
+from ProdCommon.Credential.CredentialAPI import CredentialAPI
+
+from ProdCommon.Storage.SEAPI.SElement import SElement
+from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
+from ProdCommon.Storage.SEAPI.Exceptions import *
 
 # CrabServer
 from CrabServerWorker.CrabWorkerAPI import CrabWorkerAPI
@@ -40,7 +45,7 @@ SUBSWATCH = {}
 
 class CrabJobCreatorPoller(BaseWorkerThread):
     """
-    Regular worker for the CrabJobCreator. Check wmbsDB for subscription, if matching  
+    Regular worker for the CrabJobCreatorPoller. Check wmbsDB for subscription, if matching  
     split it and extend task.
     """
 
@@ -52,19 +57,28 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
         # BossLite attributes
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, makePool=True)
-        self.sessionPool = self.blDBsession.bossLiteDB.getPool()
+        self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
 
         # Server configuration attributes
         self.config = config 
+
+        # Transfer parameter
+        self.copyTout = ' -t 600 '
 
         # Tasks attributes
         self.cmdRng = "[]"
         self.taskToComplete = None 
         self.listArguments = [] 
+        self.cfgParams = {}     
+        self.owner = None
+        self.credential = None
 
-        # DB session 
-        self.blSession = BossLiteAPI('MySQL', pool=self.sessionPool)
-        self.cwdb = CrabWorkerAPI( self.blSession.bossLiteDB )
+        # Arguments.xml path
+        self.pathFile = None
+
+        # Credential attributes
+        self.credAPI = CredentialAPI(\
+{'credential':self.config.CrabJobCreator.credentialType, 'logger':self.log})
  
     def setup(self, parameters):
         """
@@ -76,12 +90,16 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                                 dbinterface = myThread.dbi)
 
         self.getSubscription = daofactory(classname = "ListToSplit")
-        self.getTaskByJobGroup = daofactory(classname = "LoadTaskNameByJgId")
+        self.getTaskByJobGroup = daofactory(classname = "LoadTaskNameByJgid")
 
         factory = WMFactory("msgService", "WMCore.MsgService."+ \
                              myThread.dialect)
         self.newMsgService = myThread.factory['msgService'].\
                              loadObject("MsgService")
+
+        myThread.transaction.begin()
+        self.newMsgService.registerAs("NewComponent")
+        myThread.transaction.commit()
 
 
 
@@ -94,25 +112,29 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         for dest in jobGroups:
             dlsDest.extend(dest.getLocationsForJobs())
 
+        logging.debug("DEST GOT %s" %dlsDest)
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
-        # Load task name from wmcore db by jobgroup id
+        # Load task name for wmcore db by jobgroup id
         taskName = self.getTaskByJobGroup.execute(jobGroups[0].id)[0]
 
         myThread.transaction.commit()
+        logging.debug("Task To Load %s" %taskName)
 
         try:
-            self.taskToComplete = self.blSession.loadTaskByName( taskName )
+            self.taskToComplete = self.blDBsession.loadTaskByName( taskName )
         except Exception, ex:
-            logging.info("Unable to load task [%s]."%(taskName))
-            logging.info( "Exception raised: " + str(ex) )
-            logging.info( str(traceback.format_exc()) )
+            logging.debug("Unable to load task [%s]." %(taskName))
+            logging.debug( "Exception raised: " + str(ex) )
+            logging.debug( str(traceback.format_exc()) )
+            self.markTaskAsNotSubmitted( 'all' )
             return 
 
+        logging.debug("Task loaded [%s]" %self.taskToComplete['name'])
+
         # Build job dict.s
-        jobs = []
         rjAttrs = {}
         attrtemp = {'processStatus': 'created', 'status': 'C', 'taskId': '1' , \
           'submission': '1', 'statusScheduler': 'Created', 'jobId': '', \
@@ -149,34 +171,41 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                 job['submissionNumber'] = subn - 1
             else :
                 job['submissionNumber'] = subn
-            jobs.append(job)
 
-        self.taskToComplete.addJobs(jobs)
+            self.taskToComplete.addJob(job)
 
         # Fill running job information
         for job in self.taskToComplete.jobs:
-            
+
             attrs = rjAttrs[ str(job['name']) ]
 
+
             try:
-                self.blSession.getRunningInstance( job, attrs )
+                self.blDBsession.getRunningInstance( job, attrs )
             except Exception, e:
-                logMsg = ("Problem generating RunningJob %s.%s."%( \
-                           self.taskToComplete['name'], job['name']) )
+                logMsg = ("Problem generating RunningJob %s.%s.%s."%( \
+                           self.taskToComplete['name'], job['name']\
+                               , job['jobId']) )
                 logMsg += str(e)
                 logging.info( logMsg )
                 logging.debug( traceback.format_exc() )
-                return
+                self.markTaskAsNotSubmitted(\
+                         job['jobId'])
+                continue 
 
             try:                
-                self.blSession.updateDB( job )
+                self.blDBsession.updateDB( job )
             except Exception, e:
-                logMsg = ("Problem generating updating bosslite DB with %s"\
-                         %job['name']) 
+                logMsg = ("Problem updating bosslite DB with %s of id %s"\
+                         %(job['name'], job['jobId'])) 
                 logMsg += str(e) 
                 logging.info( logMsg )
                 logging.debug( traceback.format_exc() )
-                return
+                self.markTaskAsNotSubmitted(\
+                      job['jobId'])
+                continue 
+
+        logging.debug("Bosslite DB Update Ends ")
 
         # Argument.xml creation
         self.listArguments = []
@@ -191,10 +220,15 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             self.listArguments.append(tempArg)
             tempArg = {}
 
-        # reconstruct command structures
+        # Reconstruct command structures
         if not self.parseCommandXML() == 0:
+            self.markTaskAsNotSubmitted( 'all' )
             return
 
+        self.pathFile = self.config.CrabJobCreator.wdir \
+      + '/'+ self.taskToComplete['name']+'_spec/arguments.xml'
+
+        # Create argument.xml
         try:
 
             self.createXML()
@@ -206,6 +240,12 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             logging.info( logMsg )
             logging.debug( traceback.format_exc() )
             logging.debug("Argument.xml creation failed")
+            self.markTaskAsNotSubmitted( 'all' )
+            return
+
+        # Copy arguments.xml from a local FS to gridftp server  
+        if self.config.CrabJobCreator.Protocol == 'gridftp':
+            self.copyFile()
 
         # Create jobs in CrabWorkerDB
         if not self.registerJobs() == 0:
@@ -218,7 +258,6 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
         # Send message 
         myThread.transaction.begin()
-        self.newMsgService.registerAs("CrabJobCreator")
         msg = {'name':'CrabJobCreatorComponent:NewTaskRegistered'\
               , 'payload':payload}
         self.newMsgService.publish(msg)
@@ -226,6 +265,192 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         self.newMsgService.finish()
 
         return 0 
+
+    def copyFile(self):
+        """
+        Copy arguments file from local path to gridftp server
+        """
+
+        # pair proxy to task
+        if not self.associateProxyToTask() == 0 :
+            self.markTaskAsNotSubmitted( 'all' )
+            return
+
+        # init SE interface
+        logging.info("Starting copying to %s " \
+     %str(self.config.CrabJobCreator.StorageName))
+        try:
+            seEl = SElement(self.config.CrabJobCreator.StorageName\
+                 , self.config.CrabJobCreator.Protocol, \
+                  self.config.CrabJobCreator.storagePort)
+
+        except Exception, ex:
+            logMsg = ("ERROR : Unable to create \
+   SE destination interface for %s" %self.taskToComplete['name'])
+            logMsg += str(ex)
+            logging.info( logMsg )
+            logging.debug( traceback.format_exc() )
+            self.markTaskAsNotSubmitted( 'all' )
+            return 
+
+        try:
+            loc = SElement("localhost", "local")
+        except Exception, ex:    
+            logMsg = ("ERROR : Unable to create SE source interface for %s" \
+               %self.taskToComplete['name'])
+            logMsg += str(ex)
+            logging.info( logMsg )
+            logging.debug( traceback.format_exc() )
+            self.markTaskAsNotSubmitted( 'all' )
+            return 
+         
+        sbi = SBinterface( loc, seEl )
+
+        source = os.path.abspath(self.pathFile)
+        dest = os.path.join(self.cfgParams['CRAB.se_remote_dir']\
+           , os.path.basename(self.pathFile))
+
+        logging.debug("Copying From " + source + "To" + dest)
+
+        try:
+            sbi.copy( source, dest, proxy=self.credential, opt=self.copyTout)
+        except AuthorizationException, ex:
+            logging.debug(str(ex.detail))
+            msg = "ERROR: Unable to copy file on the Storage Element: %s " \
+                 % str(ex)
+            msg += "File for "+ self.taskToComplete['name'] +" not copied \n"
+            logging.debug(msg)
+            self.markTaskAsNotSubmitted( 'all' )
+            return 
+        except Exception, ex:
+            logging.debug( str(ex) )
+            self.markTaskAsNotSubmitted( 'all' ) 
+            return
+
+    def markTaskAsNotSubmitted(self, cmdRng):
+        """
+        Marks cmdRng jobs for taskToComplete as not submitted 
+        """
+
+        if cmdRng == 'all':
+            cmdRng = [ j['jobId'] for j in self.taskToComplete.jobs ]
+        else:
+            cmdRng = [cmdRng] 
+
+        if self.taskToComplete is not None:
+   
+            # register we_Jobs
+            jobSpecId = []
+            for job in self.taskToComplete.jobs:
+                jobName = job['name']
+                cacheArea = os.path.join( \
+        self.config.CrabJobCreator.wdir, str(\
+             self.taskToComplete['name'] + '_spec'), jobName )
+                jobDetails = {'id':jobName, 'job_type':\
+              'Processing', 'cache':cacheArea, \
+          'owner':self.taskToComplete['name'], 'status': 'create', \
+    'max_retries':self.config.CrabJobCreator.maxRetries, 'max_racers':1 }
+
+                try:
+                    if self.cwdb.existsWEJob(jobName) == False:
+                        self.cwdb.registerWEJob(jobDetails)
+                        if job['jobId'] in cmdRng and \
+                     job['jobId'] not in jobSpecId:
+                            jobSpecId.append(jobName)
+                except Exception, e:
+                    logging.error(str(e))
+                    logging.error(traceback.format_exc())
+                    continue
+
+            # mark as failed
+            self.cwdb.stopResubmission(jobSpecId)
+
+            for jId in jobSpecId:
+                try:
+                    self.cwdb.updateWEStatus(jId, 'reallyFinished')
+                except Exception, e:
+                    logging.error(str(e))
+                    logging.error(traceback.format_exc())
+                    continue
+            logging.info('Task %s successfully marked '\
+                 %self.taskToComplete['name'])
+
+        else:
+
+            logging.info("Fallback not submitted marking for '%s'"\
+                  %self.taskToComplete['name'])
+            for jobbe in cmdRng:
+                jobName = self.taskToComplete['name'] + "_job" + str(jobbe)
+                try:
+                    if not self.cwdb.existsWEJob(jobName):
+                        cacheArea = os.path.join( \
+self.config.CrabJobCreator.wdir, str(self.taskToComplete['name'] \
+                  + '_spec'), jobName )
+                        jobDetails = {'id':jobName, 'job_type':'Processing', \
+'cache':cacheArea, 'owner':self.taskToComplete['name'], 'status': \
+'reallyFinished', 'max_retries':self.config.CrabJobCreator.maxRetries, \
+                          'max_racers':1 }
+                        self.cwdb.registerWEJob(jobDetails)
+                    else:
+                        self.cwdb.updateWEStatus(jId, 'reallyFinished')
+                except Exception, e:
+                    logging.error(str(e))
+                    logging.error(traceback.format_exc())
+
+        return
+
+
+    def associateProxyToTask(self):
+        """
+        Performs the proxy <--> task association.
+        """
+        logging.info('Poller %s pairing task and proxy'\
+                 %self.taskToComplete['name'])
+
+        try:
+            self.credential = self.getProxy()
+        except Exception, e:
+            reason = "Warning: error while linking the proxy file for task %s.\
+         " % self.taskToComplete['name']
+            reason += str(e) 
+            logging.info(reason)
+            logging.info( traceback.format_exc() )
+
+        if  self.credential :
+            logging.info("Project -> Task association: %s -> %s\
+        "%(self.taskToComplete['name'], self.credential) )
+            status = 0
+        else:
+            status = 20
+            reason = "Unable to locate a proper proxy for the task %s" \
+                   % (self.taskToComplete['name'])
+        return status
+
+    def getProxy(self):
+        """
+        """
+
+        proxyFilename = os.path.join(\
+self.config.CrabJobCreator.ProxiesDir, sha.new(self.owner).hexdigest() )
+
+        vo = self.cfgParams.get('VO', 'cms')
+        role = self.cfgParams.get('EDG.role', None)
+        group = self.cfgParams.get('EDG.group', None)
+        proxyServer = self.cfgParams.get("GRID.proxy_server", 'myproxy.cern.ch')
+
+        try:
+            # force the CredAPI to refer to the same MyProxy 
+            # server used by the client 
+            self.credAPI.credObj.myproxyServer = proxyServer
+            self.credAPI.logonMyProxy\
+ (proxyFilename, self.owner, vo, group, role)
+        except Exception, e:
+            self.log.info("Error while retrieving proxy for %s: %s"\
+             %(self.owner, str(e) ))
+            self.log.info( traceback.format_exc() )
+            return None
+
+        return proxyFilename
 
     def parseCommandXML(self):
         """
@@ -238,11 +463,13 @@ class CrabJobCreatorPoller(BaseWorkerThread):
           '_spec/cmd.xml' )
         
         try:
-        
             doc = minidom.parse(cmdSpecFile)
             cmdXML = doc.getElementsByTagName("TaskCommand")[0]
+            self.cfgParams = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
+
             self.cmdRng =  str( cmdXML.getAttribute('Range') )
-        
+            self.owner = str( cmdXML.getAttribute('Subject') )
+
         except Exception, e:
             status = 6       
             reason = "Error while parsing command XML for task %s, \
@@ -257,9 +484,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         Create xml file
         """
         result = IMProvNode( 'arguments' )
-        file( self.config.CrabJobCreator.wdir+'/'+\
-           self.taskToComplete['name']+'_spec/arguments.xml' , 'w')\
-           .write(str(result))
+        file( self.pathFile , 'w').write(str(result))
         return
 
     def addEntry(self):
@@ -269,20 +494,15 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         add an entry to the xml file
         """
         from IMProv.IMProvLoader import loadIMProvFile
-        improvDoc = loadIMProvFile( \
-           self.config.CrabJobCreator.wdir+'/'+\
-           self.taskToComplete['name']+'_spec/arguments.xml' )
+        improvDoc = loadIMProvFile( self.pathFile ) 
 
         entrname = 'Job'
         for dictions in self.listArguments:
             report = IMProvNode(entrname , None, **dictions)
             improvDoc.addNode(report) 
-        file( self.config.CrabJobCreator.wdir+'/'+\
-          self.taskToComplete['name']+\
-          '_spec/arguments.xml' , 'w').write(str(improvDoc))
+        file( self.pathFile , 'w').write(str(improvDoc))
         return
-
-
+ 
     def registerJobs(self):
         """
         Register taskToComplete jobs
@@ -296,9 +516,9 @@ class CrabJobCreatorPoller(BaseWorkerThread):
      self.config.CrabJobCreator.wdir, \
      self.taskToComplete['name'] + '_spec', jobName )
             weStatus = 'create'
-            if job['jobId'] in ranges :
+            if job['jobId'] in ranges : 
                 weStatus = 'Submitting'
-
+             
 
             jobDetails = {
                           'id':jobName, 'job_type':\
@@ -312,12 +532,13 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
             try:
                 jobAlreadyRegistered = self.cwdb.existsWEJob(jobName)
+       
             except Exception, e:
                 logMsg = ('Error while checking job registration: \
                   assuming %s as not registered' % jobName)
                 logMsg +=  str(e)
                 logging.info ( logMsg )
-                logging.debug( traceback.format_exc() )
+                logging.debug( traceback.format_exc() ) 
                 jobAlreadyRegistered = False
 
             if jobAlreadyRegistered == True:
@@ -331,10 +552,10 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                 logMsg +=  traceback.format_exc()
                 logging.info (logMsg)
                 return 1
+
             logging.debug('Registration for %s performed'%jobName)
         return 0
-
-    
+ 
     def databaseWork(self):
         """
         Queries DB for all subscriptions, if matching calls
@@ -352,12 +573,12 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
         logging.info('I found these new subscriptions %s to split'%pickSub)
 
+  
+        # Create dictionary of subscriptions that will be processd 
         for sub in pickSub:
 
             # if subscription is found in SUBSWATCH means 
             # that it is still processed by the last thread 
-            # OR the extension failed before and the splitting 
-            # work is already done
             if sub not in SUBSWATCH:            
 
                 # Load the subscrition to split 
@@ -379,7 +600,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                 try:
                     # Get splitting algo for a WF from wmbs DB
                     # files_per_job will be moved to the client 
-                    jobGroups = jobFactory(files_per_job = 100)
+                    jobGroups = jobFactory(files_per_job = 1)
                 except Exception, e:
                     logMsg = ("Problem when splitting %s" \
                               %str(sub))              
@@ -388,27 +609,22 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                     logging.debug( traceback.format_exc() )
                     continue 
 
+
                 # Number of job 0 - exit and try again next time 
                 if len(jobGroups[0].jobs)==0:
                     continue 
 
                 # Add jobgroup to the list of subscriptions to process  
                 SUBSWATCH[sub] = jobGroups
-         
-        # Loop on all subscription recently found 
-        # and the ones for which the extension failed previously 
-        for subId in SUBSWATCH.keys():
- 
-            # To parallelize this work if needed
-            if self.taskExtension(SUBSWATCH[subId]) == 0:
-                del SUBSWATCH[subId]
 
-        # Release bossLite session        
-        self.blSession.bossLiteDB.close()
-        del self.blSession 
+        # Loop on all subscription recently found 
+        for subId in SUBSWATCH.keys(): 
+            if self.taskExtension(SUBSWATCH[subId]) == 0:
+                logging.debug("WORK succeeds to END")
+            del SUBSWATCH[subId]
 
         logging.info('databases work ends')
-       
+    
     def algorithm(self, parameters):
         """
         Queries DB for all watched subscription, if matching split subscription and extend task information. 
