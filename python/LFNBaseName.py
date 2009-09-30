@@ -16,7 +16,10 @@ def LFNBase(forced_path, PrimaryDataset='',ProcessedDataset='',merged=True,publi
         PrimaryDataset = ProcessedDataset
     if PrimaryDataset != '':
         if ( PrimaryDataset[0] == '/' ):  PrimaryDataset=PrimaryDataset[1:]  
-    lfnbase = os.path.join(forced_path, getUserName(), PrimaryDataset, ProcessedDataset)
+    if forced_path.find('store/group')>0:
+        lfnbase = os.path.join(forced_path, PrimaryDataset, ProcessedDataset)
+    else:
+        lfnbase = os.path.join(forced_path, getUserName(), PrimaryDataset, ProcessedDataset)
     if (publish == True):
         checkLength(lfnbase, forced_path, PrimaryDataset, ProcessedDataset)
     return lfnbase
