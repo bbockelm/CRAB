@@ -68,7 +68,7 @@ class SchedulingLogic:
                  'retryCounter':None, 'deadline': time.time(), 'priority':0 }
         # taskName is redundant but its useful, instead of using schedMap*.items() tuples
         
-        if event in ['TaskRegisterComponent:NewTaskRegistered', 'CRAB_Cmd_Mgr:NewCommand']:
+        if event in ['CrabJobCreatorComponent:NewTaskRegistered','TaskRegisterComponent:NewTaskRegistered', 'CRAB_Cmd_Mgr:NewCommand']:
             if taskName in self.schedMapSubmissions:
                 qItem.update( self.schedMapSubmissions[taskName] )
             # fill the queueItem attributes
