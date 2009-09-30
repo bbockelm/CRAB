@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.88 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.88 2009/09/02 14:22:54 spiga Exp $"
+__version__ = "$Revision: 1.90 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.90 2009/09/30 01:29:16 hriahi Exp $"
 
 import os, pickle, time, copy
 
@@ -88,6 +88,8 @@ class CrabServerWorkerComponent:
         if self.args['CacheDir']:
             self.wdir = self.args['CacheDir']
 
+
+
         self.maxAttempts = int( self.args.get('maxRetries', 3) )
         self.maxThreads = int( self.args.get('maxThreads', 5) )
 
@@ -104,6 +106,7 @@ class CrabServerWorkerComponent:
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, makePool=True)
         self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
 
+
         logging.info("-----------------------------------------")
         logging.info("CrabServerWorkerComponent ver2 Started...")
         logging.info("Component dropbox working directory: %s\n"%self.wdir)
@@ -115,14 +118,22 @@ class CrabServerWorkerComponent:
         _startComponent_
         Start up the component
         """
+
+
         self.ms = MessageService()
+
         self.ms.registerAs("CrabServerWorkerComponent")
+
+        # Proxy support
+        self.ms.subscribeTo("CrabJobCreatorComponent:NewTaskRegistered")
+        self.ms.publish("ProxySubscribe","CrabJobCreatorComponent:NewTaskRegistered")
 
         self.ms.subscribeTo("TaskRegisterComponent:NewTaskRegistered")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewCommand")
 
         self.ms.subscribeTo("CrabServerWorkerComponent:Submission")
         self.ms.subscribeTo("CrabServerWorkerComponent:FatWorkerResult")
+
 
         self.ms.subscribeTo("KillTask")
         self.ms.subscribeTo("ResubmitJob")
@@ -137,7 +148,9 @@ class CrabServerWorkerComponent:
         self.dematerializeStatus()
         try:
             while True:
+
                 type, payload = self.ms.get( wait = False )
+ 
                 # perform here scheduling activities
                 self.schedLogic.applySchedulingLogic()
 
@@ -169,7 +182,7 @@ class CrabServerWorkerComponent:
         logging.debug("Event: %s %s" % (event, payload))
 
         # enqueue task submissions and perform them
-        if event in ["TaskRegisterComponent:NewTaskRegistered", "ResubmitJob", "CRAB_Cmd_Mgr:NewCommand"]:
+        if event in ["CrabJobCreatorComponent:NewTaskRegistered", "TaskRegisterComponent:NewTaskRegistered", "ResubmitJob", "CRAB_Cmd_Mgr:NewCommand"]:
             try:
                 self.initUiConfigs()
             except Exception, exc:
@@ -184,6 +197,7 @@ class CrabServerWorkerComponent:
 
         elif event == "CrabServerWorkerComponent:Submission":
             self.triggerSubmissionWorker(payload)
+
 
         # worker feedbacks
         elif event == "CrabServerWorkerComponent:FatWorkerResult":
@@ -238,7 +252,6 @@ class CrabServerWorkerComponent:
         workerCfg['glexecWrapper'] = self.args.get('glexecWrapper', '')
         workerCfg['renewProxy'] = self.args.get('renewProxy', '')
         workerCfg['CondorQCacheDir'] = self.args.get('CondorQCacheDir', '')
-
         workerCfg['scheduler'] = self.args.setdefault('scheduler','glite' )
 
         # Specific WMS choice
@@ -309,7 +322,7 @@ class CrabServerWorkerComponent:
         taskName, cmdRng, siteToBan, retryCounter = ('', '[]', '', '2')
         command = ''
 
-        if event == 'TaskRegisterComponent:NewTaskRegistered':
+        if event == 'TaskRegisterComponent:NewTaskRegistered' or event == 'CrabJobCreatorComponent:NewTaskRegistered':
             taskName, retryCounter, cmdRng = items[0:3]
         if (event == 'CRAB_Cmd_Mgr:NewCommand') and (items[3] in ['submit','resubmit']):
             taskName, retryCounter, cmdRng = items[0:3]
