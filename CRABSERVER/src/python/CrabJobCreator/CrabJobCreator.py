@@ -4,8 +4,8 @@
 The CrabJobCreator itself, set up event listeners and work event thread
 """
 __all__ = []
-__revision__ = "$Id: CrabJobCreator.py,v 0 2009/09/22 00:46:10 riahi Exp $"
-__version__ = "$Revision: 0 $"
+__revision__ = "$Id: CrabJobCreator.py,v 1.2 2009/09/30 01:52:07 hriahi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading
@@ -30,10 +30,10 @@ class CrabJobCreator(Harness):
         Add required worker modules to work threads
         """
         # use a factory to dynamically load handlers.
-        factory = WMFactory('generic')
-        self.messages['AddTaskToRegister'] = \
-            factory.loadObject(\
-                "CrabJobCreator.Handler.AddTaskToRegister", self)
+        #factory = WMFactory('generic')
+        #self.messages['AddTaskToRegister'] = \
+        #    factory.loadObject(\
+        #        "CrabJobCreator.Handler.AddTaskToRegister", self)
         
         # Add event loop to worker manager
         myThread = threading.currentThread()
