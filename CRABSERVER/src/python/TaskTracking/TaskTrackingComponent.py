@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.155 2009/06/25 16:26:28 mcinquil Exp $"
-__version__ = "$Revision: 1.155 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.159 2009/09/30 01:17:31 hriahi Exp $"
+__version__ = "$Revision: 1.159 $"
 
 import os
 import time
@@ -231,7 +231,7 @@ class TaskTrackingComponent:
             return
 
         # task registered in the db
-        if event == "TaskRegisterComponent:NewTaskRegistered":
+        if event == "TaskRegisterComponent:NewTaskRegistered" or "CrabJobCreatorComponent:NewTaskRegistered":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "Submitting Task: %s" % str(taskName) )
                 taskname, maxtry, listjob = payload.split("::")
@@ -1134,6 +1134,7 @@ class TaskTrackingComponent:
           none
 
         """
+
         # create message service instances
         self.ms = MessageService()
         self.msThread = MessageService()
@@ -1146,6 +1147,10 @@ class TaskTrackingComponent:
             logging.error("Problem registering component\n [%s]"%str(ex))
             logging.error(str(traceback.format_exc()))
             sys.exit(1)
+
+        # Proxy support
+        self.ms.subscribeTo("CrabJobCreatorComponent:NewTaskRegistered")
+        self.ms.publish("ProxySubscribe","CrabJobCreatorComponent:NewTaskRegistered")
 
         # subscribe to messages
         self.ms.subscribeTo("TaskTracking:StartDebug")
@@ -1177,8 +1182,10 @@ class TaskTrackingComponent:
 
         # wait for messages
         while True:
+
             messageType, payload = self.ms.get()
             logging.info("GOT MESSAGE: [%s]" %(messageType))
+
             try:
                 self.__call__(messageType, payload)
             except Exception, ex:
