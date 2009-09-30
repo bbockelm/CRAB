@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.16 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.16 2009/09/02 14:21:33 spiga Exp $"
+__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.19 2009/09/30 01:07:58 hriahi Exp $"
 
 import os
 import pickle
@@ -26,6 +26,9 @@ from TaskRegister.RegisterWorker import *
 # CW DB API
 from CrabServerWorker.CrabWorkerAPI import CrabWorkerAPI
 
+# WMCORE 
+from WMCore.WMFactory import WMFactory
+from WMCore.WMInit import WMInit
 
 class TaskRegisterComponent:
     """
@@ -87,6 +90,12 @@ class TaskRegisterComponent:
 
         self.sharedQueue = Queue.Queue()
 
+        # Get configuration
+        self.init = WMInit()
+        self.init.setLogging()
+        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
+            os.getenv('DIALECT'), os.getenv("DBSOCK"))
+
         logging.info(" ")
         logging.info("Starting component...")
         pass
@@ -104,6 +113,16 @@ class TaskRegisterComponent:
         self.ms.subscribeTo("TaskRegisterComponent:EndDebug")
         self.ms.subscribeTo("KillTask")
 
+        # TaskRegister registration in WMCore.MsgService
+        self.myThread = threading.currentThread()
+        self.factory = WMFactory("msgService", "WMCore.MsgService."+ \
+                             self.myThread.dialect)
+        self.newMsgService = self.myThread.factory['msgService'].loadObject("MsgService")
+        self.myThread.transaction.begin()
+        self.newMsgService.registerAs("TaskRegisterComponent")
+        self.myThread.transaction.commit()
+
+
         #self.dematerializeStatus()
         #
         # non blocking call event handler loop
@@ -118,11 +137,17 @@ class TaskRegisterComponent:
                         taskUniqName = pload.split("::")[0]
 
                         # free resource if no more needed
-                        if evt in ["TaskRegisterComponent:NewTaskRegistered"] and taskUniqName not in self.killingRequestes:
+                        if evt in ["TaskRegisterComponent:NewTaskRegisteredPartially"]:
+                                self.availWorkersIds.append(senderId)
+                                logging.info("Task %s registred Partially"%taskUniqName) 
+                        elif evt in ["TaskRegisterComponent:NewTaskRegistered"] and taskUniqName not in self.killingRequestes:
                                 self.availWorkersIds.append(senderId)
                                 self.ms.publish(evt, pload)
                                 logging.info("Publish Event: %s %s" % (evt, pload))
                                 self.ms.commit()
+                        elif evt in ["RegisterWorkerComponent:WorkerFailsToRegisterPartially"]:
+                                logging.info("Task %s failed partially"%taskUniqName)
+                                self.availWorkersIds.append(senderId) 
                         elif evt in ["RegisterWorkerComponent:RegisterWorkerFailed"]:
                                 logging.info("Task %s failed"%taskUniqName)
                                 self.markTaskAsNotSubmitted(taskUniqName, 'all')
@@ -196,7 +221,8 @@ class TaskRegisterComponent:
         workerCfg['credentialType'] = self.args['credentialType']
         workerCfg['storagePath'] = self.args['storagePath']
         try:
-            self.workerSet[thrName] = RegisterWorker(logging, thrName, workerCfg)
+            # Shared newMsgService object passed to thread
+            self.workerSet[thrName] = RegisterWorker(logging, thrName, workerCfg, self.newMsgService)
         except Exception, e:
             logging.info('Unable to allocate registration thread: %s'%thrName)
             logging.info(traceback.format_exc())
