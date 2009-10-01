@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.337 2009/09/16 15:49:01 fanzago Exp $"
-__version__ = "$Revision: 1.337 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.338 2009/09/17 16:45:57 fanzago Exp $"
+__version__ = "$Revision: 1.338 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -199,8 +199,6 @@ class Cmssw(JobType):
             for tmp in tmpList:
                 tmp.strip()
                 self.incrementSeeds.append(tmp)
-
-        self.firstRun = cfg_params.get('CMSSW.first_run',None)
 
         # Copy/return/publish
         self.copy_data = int(cfg_params.get('USER.copy_data',0))

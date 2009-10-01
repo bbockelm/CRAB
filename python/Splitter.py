@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.27 2009/07/30 18:45:44 ewv Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Splitter.py,v 1.28 2009/08/06 21:34:15 ewv Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import common
 from sets import Set
@@ -539,7 +539,7 @@ class JobSplitter:
 
         managedGenerators =self.args['managedGenerators']
         generator = self.args['generator']
-        firstRun = self.cfg_params.get('CMSSW.first_run',None)
+        firstRun = self.cfg_params.get('CMSSW.first_run', 1)
 
         self.prepareSplittingNoInput()
 
@@ -558,11 +558,10 @@ class JobSplitter:
         self.list_of_args = []
         for i in range(self.total_number_of_jobs):
             ## Since there is no input, any site is good
-            jobDestination.append([""]) #must be empty to write correctly the xml
+            jobDestination.append([""]) # must be empty to correctly write the XML
             args=[]
-            if (firstRun):
-                ## pythia first run
-                args.append(str(firstRun)+str(i))
+            if (firstRun): # Pythia first run
+                args.append(str(int(firstRun)+i))
             if (generator in managedGenerators):
                args.append(generator)
                if (generator == 'comphep' and i == 0):
