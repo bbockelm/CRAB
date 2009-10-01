@@ -27,8 +27,8 @@ The most useful general options (use '-h' to get complete help):
   -checkPublication [dbs_url datasetpath] -- checks if a dataset is published in a DBS.
   -kill [range]                           -- kill submitted jobs.
   -resubmit [range]                       -- resubmit killed/aborted/retrieved jobs.
-  -copyData [range [dest_se or dest_endpoint]] -- copy locally (in crab_working_dir/res dir) or on a remote SE your produced output, 
-                                                  already stored on remote SE. 
+  -copyData [range [dest_se or dest_endpoint]] -- copy locally (in crab_working_dir/res dir) or on a remote SE your produced output,
+                                                  already stored on remote SE.
   -renewCredential                        -- renew credential on the server.
   -clean                                  -- gracefully cleanup the directory of a task.
   -match|-testJdl [range]                 -- check if resources exist which are compatible with jdl.
@@ -300,13 +300,13 @@ Kill (cancel) jobs which have been submitted to the scheduler. A range B<must> b
 
 =item B<-copyData [range -dest_se=the official SE name or -dest_endpoint=the complete endpoint of the remote SE]>
 
-Option that can be used only if your output have been previously copied by CRAB on a remote SE.  
+Option that can be used only if your output have been previously copied by CRAB on a remote SE.
 By default the copyData copies your output from the remote SE locally on the current CRAB working directory (under res). Otherwise you can copy the output from the remote SE to another one, specifying either -dest_se=<the remote SE official name> or -dest_endpoint=<the complete endpoint of remote SE>. If dest_se is used, CRAB finds the correct path where the output can be stored.
 
 Example: crab -copyData  --> output copied to crab_working_dir/res directory
          crab -copyData -dest_se=T2_IT_Legnaro -->  output copied to the legnaro SE, directory discovered by CRAB
-         crab -copyData -dest_endpoint=srm://<se_name>:8443/xxx/yyyy/zzzz --> output copied to the se <se_name> under 
-         /xxx/yyyy/zzzz directory. 
+         crab -copyData -dest_endpoint=srm://<se_name>:8443/xxx/yyyy/zzzz --> output copied to the se <se_name> under
+         /xxx/yyyy/zzzz directory.
 
 =item B<-renewCredential >
 
@@ -483,7 +483,11 @@ See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserv
 
 =item B<first_run>
 
-First run to be generated in a generation jobs. Relevant only for no-input workflow.
+Relevant only for Monte Carlo production. The first job will generate events with this run number, subsequent jobs will
+increment the run number. Failing to set this number means CMSSW will not be able to read multiple such files as they
+will all have the same run and event numbers. This check in CMSSW can be bypassed by setting
+I<process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')> in the input source, should you need to
+read files produced without setting first_run.
 
 =item B<generator>
 
