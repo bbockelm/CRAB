@@ -483,7 +483,7 @@ See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserv
 
 =item B<first_run>
 
-Relevant only for Monte Carlo production. The first job will generate events with this run number, subsequent jobs will
+Relevant only for Monte Carlo production for which it defaults to 1. The first job will generate events with this run number, subsequent jobs will
 increment the run number. Failing to set this number means CMSSW will not be able to read multiple such files as they
 will all have the same run and event numbers. This check in CMSSW can be bypassed by setting
 I<process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')> in the input source, should you need to
