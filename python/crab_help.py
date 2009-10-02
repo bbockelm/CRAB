@@ -389,7 +389,7 @@ The type of the job to be executed: I<cmssw> jobtypes are supported
 
 =item B<scheduler *>
 
-The scheduler to be used: I<glitecoll> is the more efficient grid scheduler and should be used. Other choice are I<glite>, same as I<glitecoll> but without bulk submission (and so slower) or I<condor_g> (see specific paragraph) or I<edg> which is the former Grid scheduler, which will be dismissed in some future
+The scheduler to be used: I<glitecoll> is the more efficient grid scheduler and should be used. Other choice are I<glite>, same as I<glitecoll> but without bulk submission (and so slower) or I<condor_g> (see specific paragraph) or I<edg> which is the former Grid scheduler, which will be dismissed in some future.  In addition, there's an I<arc> scheduler to be used with the NorduGrid ARC middleware.
 From version 210, also local scheduler are supported, for the time being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities.
 
 =item B<use_server>
@@ -680,7 +680,11 @@ Any other requirements to be add to JDL. Must be written in compliance with JDL 
 =item B<additional_jdl_parameters:>
 
 Any other parameters you want to add to jdl file:semicolon separated list, each
-item B<must> be complete, including the closing ";".
+item B<must> be complete, including the closing ";". (For the I<arc> scheduler, use B<additional_xrsl_parameters> instead!)
+
+=item B<additional_xrsl_parameters:>
+
+Any other parameters you want to add to the xRSL code when submitting jobs (arc scheduler only!).
 
 =item B<wms_service>
 
