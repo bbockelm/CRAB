@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.25 2009/09/30 o1:17:31 hriahi Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.26 2009/10/04 00:23:06 hriahi Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import string
 import sys, os
@@ -36,6 +36,7 @@ from CrabServerWorker.CrabWorkerAPI import CrabWorkerAPI
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMFactory import WMFactory
 from WMCore.WMInit import WMInit
+from WMCore.DAOFactory import DAOFactory
 
 class RegisterWorker(Thread):
     def __init__(self, logger, FWname, threadAttributes, SharedMsgService):
@@ -138,6 +139,14 @@ class RegisterWorker(Thread):
         self.init.setDatabaseConnection(os.getenv("DATABASE"), \
             os.getenv('DIALECT'), os.getenv("DBSOCK"))
 
+        self.myThread = threading.currentThread()
+
+        # Make Queury
+        self.daofactory = DAOFactory(package = "WMCore.WMBS" , \
+              logger = self.myThread.logger, \
+              dbinterface = self.myThread.dbi)
+        self.locationNew = self.daofactory(classname = "Locations.New")
+
         # Workflow creation
         wf = Workflow(spec = self.taskName+".xml", owner = self.owner,\
                name = "wf_"+self.taskName, task = self.taskName)
@@ -154,8 +163,6 @@ class RegisterWorker(Thread):
             logging.info( logMsg )
             logging.debug( traceback.format_exc() )
             return 
-
-        self.myThread = threading.currentThread()
      
         # CRAB sends a message to the FeederManager, with a dataset to watch
         self.myThread.transaction.begin()
@@ -172,14 +179,19 @@ class RegisterWorker(Thread):
         self.myThread.transaction.commit()
 
         # CRAB sends Locations messages to the WorkflowManager
-        self.myThread.transaction.begin()
-        WFManagerLocdict = {'WorkflowId' : wf.id ,'FilesetMatch': \
-                  self.dataset,'Valid':'true','Locations': self.location}
-        WFManagerLocSent = pickle.dumps(WFManagerLocdict)
-        msg = {'name' : 'AddToWorkflowManagementLocationList', \
-                    'payload' : WFManagerLocSent}
-        self.newMsgService.publish(msg)
-        self.myThread.transaction.commit()
+        if self.location:
+            self.myThread.transaction.begin()
+            locations = self.location.split(",")
+            for loc in locations:
+               self.locationNew.execute(siteName = loc)
+
+            WFManagerLocdict = {'WorkflowId' : wf.id ,'FilesetMatch': \
+                      self.dataset,'Valid':'true','Locations': self.location}
+            WFManagerLocSent = pickle.dumps(WFManagerLocdict)
+            msg = {'name' : 'AddToWorkflowManagementLocationList', \
+                        'payload' : WFManagerLocSent}
+            self.newMsgService.publish(msg)
+            self.myThread.transaction.commit()
         self.newMsgService.finish()
         return 0
           
