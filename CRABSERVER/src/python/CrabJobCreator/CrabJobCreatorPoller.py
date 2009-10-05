@@ -7,7 +7,7 @@ It will be parallelized if needed through WorkQueue using a new class.
 __all__ = []
 __revision__ = "$Id: CrabJobCreatorPollerPoller.py,v 0.2 \
             2009/09/30 01:21:44 hriahi Exp $"
-__version__ = "$Revision: 0.2 $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import os
@@ -78,7 +78,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
         # Credential attributes
         self.credAPI = CredentialAPI(\
-{'credential':self.config.CrabJobCreator.credentialType, 'logger':self.log})
+{'credential':self.config.CrabJobCreator.credentialType})
  
     def setup(self, parameters):
         """
@@ -90,16 +90,13 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                                 dbinterface = myThread.dbi)
 
         self.getSubscription = daofactory(classname = "ListToSplit")
-        self.getTaskByJobGroup = daofactory(classname = "LoadTaskNameByJgid")
+        self.getTaskByJobGroup = daofactory(classname = "LoadTaskNameByJgId")
 
         factory = WMFactory("msgService", "WMCore.MsgService."+ \
                              myThread.dialect)
         self.newMsgService = myThread.factory['msgService'].\
                              loadObject("MsgService")
 
-        myThread.transaction.begin()
-        self.newMsgService.registerAs("NewComponent")
-        myThread.transaction.commit()
 
 
 
@@ -255,6 +252,10 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         payload = self.taskToComplete['name'] +"::"+ \
           str(self.config.CrabJobCreator.maxRetries) +"::"+ \
           str(self.cmdRng)
+
+        myThread.transaction.begin()
+        self.newMsgService.registerAs("NewComponent")
+        myThread.transaction.commit()
 
         # Send message 
         myThread.transaction.begin()
