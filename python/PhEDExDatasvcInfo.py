@@ -70,7 +70,7 @@ class PhEDExDatasvcInfo:
 
         self.forced_path = '/store/user/'
         if self.sched in ['CAF','LSF']:
-            self.protocol = 'direct'
+            self.srm_version = 'direct'
             self.SE = {'CAF':'caf.cern.ch', 'LSF':''}
             if self.sched == 'CAF': self.forced_path = '/store/caf/user/'
             
