@@ -45,12 +45,19 @@ class SchedulerArc(SchedulerGrid):
         with real scheduler
         """
         xrsl = ''
+
         if cfg_params.has_key("GRID.max_cpu_time"):
             xrsl += '(cpuTime=%s)' % cfg_params["GRID.max_cpu_time"]
+
         if cfg_params.has_key('GRID.max_wall_clock_time'):
             xrsl += '(wallTime=%s)' % cfg_params['GRID.max_wall_clock_time']
+
         if cfg_params.has_key("GRID.additional_xrsl_parameters"):
+            common.logger.warning("additional_xrsl_parameters is deprecated; use 'additional_jdl_parameters' instead!")
             xrsl += cfg_params["GRID.additional_xrsl_parameters"]
+
+        if cfg_params.has_key("GRID.additional_jdl_parameters"):
+            xrsl += cfg_params["GRID.additional_jdl_parameters"]
 
         return {'user_xrsl': xrsl}
 
