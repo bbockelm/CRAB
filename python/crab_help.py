@@ -238,6 +238,50 @@ scheduler = condor_g
 
 =back
 
+
+=head1 HOW TO RUN ON NORDUGRID ARC
+
+The ARC scheduler can be used to submit jobs to sites running the NorduGrid
+ARC grid middleware. To use it you'll need to have the ARC client
+installed.
+
+=head2 B<CRAB configuration for ARC mode:>
+
+The ARC scheduler requires some changes to crab.cfg:
+
+=over 2
+
+=item B<scheduler:>
+
+Select the ARC scheduler:
+scheduler = arc
+ 
+=item B<requirements>, B<additional_jdl_parameters:>
+
+Use xrsl code instead of jdl for these parameters.
+
+=item B<max_cpu_time>, B<max_wall_clock_time:> 
+
+For parameters max_cpu_time and max_wall_clock_time, you can use
+units, e.g.  "72 hours" or "3 days", just like with the xrsl attributes
+cpuTime and wallTime.  Note that you'll have to use quotes (") in
+this case! If no unit is given, minutes is assumed by default.
+
+=back
+
+=head2 B<CRAB Commands:>
+
+Most CRAB commands behave approximately the same with the ARC scheduler, with only some minor differences:
+
+=over 2
+
+=item B<*> B<-printJdl|-createJdl> will print xrsl code instead of jdl.
+
+=back
+
+
+
+
 =head1 COMMANDS
 
 =over 4
@@ -680,11 +724,7 @@ Any other requirements to be add to JDL. Must be written in compliance with JDL 
 =item B<additional_jdl_parameters:>
 
 Any other parameters you want to add to jdl file:semicolon separated list, each
-item B<must> be complete, including the closing ";". (For the I<arc> scheduler, use B<additional_xrsl_parameters> instead!)
-
-=item B<additional_xrsl_parameters:>
-
-Any other parameters you want to add to the xRSL code when submitting jobs (arc scheduler only!).
+item B<must> be complete, including the closing ";".
 
 =item B<wms_service>
 
