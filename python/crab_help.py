@@ -264,8 +264,7 @@ Use xrsl code instead of jdl for these parameters.
 
 For parameters max_cpu_time and max_wall_clock_time, you can use
 units, e.g.  "72 hours" or "3 days", just like with the xrsl attributes
-cpuTime and wallTime.  Note that you'll have to use quotes (") in
-this case! If no unit is given, minutes is assumed by default.
+cpuTime and wallTime. If no unit is given, minutes is assumed by default.
 
 =back
 
