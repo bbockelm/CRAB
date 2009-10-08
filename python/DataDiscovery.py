@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.33 2009/07/30 18:45:44 ewv Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.34 2009/08/20 09:25:58 spiga Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -117,8 +117,9 @@ class DataDiscovery:
                           'glidein':  global_url,\
                           'lsf':      global_url,\
                           'caf':      caf_url,\
-                          'sge':      global_url,
-                          'arc':      global_url
+                          'sge':      global_url,\
+                          'arc':      global_url,\
+                          'pbs':      global_url
                           }
 
         dbs_url_default = dbs_url_map[(common.scheduler.name()).lower()]

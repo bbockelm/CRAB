@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.338 2009/09/17 16:45:57 fanzago Exp $"
-__version__ = "$Revision: 1.338 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.339 2009/10/01 22:00:40 ewv Exp $"
+__version__ = "$Revision: 1.339 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -25,7 +25,7 @@ class Cmssw(JobType):
         ### Temporary patch to automatically skip the ISB size check:
         self.server = self.cfg_params.get('CRAB.server_name',None) or \
                       self.cfg_params.get('CRAB.use_server',0)
-        self.local  = common.scheduler.name().upper() in ['LSF','CAF','CONDOR','SGE']
+        self.local  = common.scheduler.name().upper() in ['LSF','CAF','CONDOR','SGE','PBS']
         size = 9.5
         if self.server or self.local:
             size = 99999
@@ -702,6 +702,10 @@ class Cmssw(JobType):
         txt += self.wsSetupCMSLCGEnvironment_()
 
         txt += 'elif [ $middleware == ARC ]; then\n'
+        txt += self.wsSetupCMSLCGEnvironment_()
+
+        #Setup PBS Environment
+        txt += 'elif [ $middleware == SGE ]; then\n'
         txt += self.wsSetupCMSLCGEnvironment_()
 
         txt += 'fi\n'

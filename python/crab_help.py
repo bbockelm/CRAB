@@ -779,17 +779,17 @@ Temporary useful parameter to allow the WMSAuthorisation handling. Specifying I<
 
 =back
 
-B<[LSF]> or B<[CAF]>
+B<[LSF]> or B<[CAF]> or B<[PBS]>
 
 =over 4
 
 =item B<queue>
 
-The LSF queue you want to use: if none, the default one will be used. For CAF, the proper queue will be automatically selected.
+The LSF/PBS queue you want to use: if none, the default one will be used. For CAF, the proper queue will be automatically selected.
 
 =item B<resource>
 
-The resources to be used within a LSF queue. Again, for CAF, the right one is selected.
+The resources to be used within a LSF/PBS queue. Again, for CAF, the right one is selected.
 
 =back
 

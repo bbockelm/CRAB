@@ -39,6 +39,9 @@ rm pyOpenSSL-0.6-python2.4.tar.gz > /dev/null 2>&1
 tar zxvf simplejson.tgz > /dev/null 2>&1
 rm simplejson.tgz 
 
+tar zxvf pbs_python.tgz > /dev/null 2>&1
+rm pbs_python.tgz
+
 ## go to $TopDir
 cd ..
 
@@ -105,6 +108,14 @@ export PYTHONPATH=\${CRAB_SIMPLEJSON_ROOT}/lib/python2.4/site-packages:\$PYTHONP
 ## pyOpenssl
 export PyOpenSSLPYTHON=\${EXTERNALDIR}
 export PYTHONPATH=\${PYTHONPATH}:\${PyOpenSSLPYTHON}
+
+## pbs_python
+export CRABPBSPYTHON=\${EXTERNALDIR}/pbs_python
+export CRAB_PBSPYTHON_VERSION="3.2.0"
+export CRAB_PBSPYTHON_ROOT=\${CRABPBSPYTHON}/\${CRAB_PBSPYTHON_VERSION}
+
+export PYTHONPATH=\${CRAB_PBSPYTHON_ROOT}/lib/python2.4/site-packages/pbs:\$PYTHONPATH
+
 
 EOF
 
@@ -173,6 +184,14 @@ setenv PYTHONPATH \${CRAB_SIMPLEJSON_ROOT}/lib/python2.4/site-packages:\$PYTHONP
 ## pyOpenssl
 setenv PyOpenSSLPYTHON \${EXTERNALDIR}
 setenv PYTHONPATH \${PYTHONPATH}:\${PyOpenSSLPYTHON}
+
+## pbs_python
+setenv CRABPBSPYTHON \${EXTERNALDIR}/pbs_python
+setenv CRAB_PBSPYTHON_VERSION "3.2.0"
+setenv CRAB_PBSPYTHON_ROOT \${CRABPBSPYTHON}/\${CRAB_PBSPYTHON_VERSION}
+
+setenv PYTHONPATH \${CRAB_PBSPYTHON_ROOT}/lib/python2.4/site-packages/pbs:\$PYTHONPATH
+
 
 EOF
 return

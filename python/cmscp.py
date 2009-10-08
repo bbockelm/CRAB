@@ -128,6 +128,8 @@ class cmscp:
                                  (self.params['srm_version'],srmOpt[self.params['srm_version']])]
         elif middleware.lower() in ['lsf','caf']:
             supported_protocol = [('rfio',rfioOpt)]
+        elif middleware.lower() in ['pbs']:
+            supported_protocol = [('rfio',rfioOpt),('local','')]
         elif middleware.lower() in ['arc']:
             supported_protocol = [('srmv2','-debug'),('srmv1','-debug')]
         else:

@@ -69,9 +69,9 @@ class PhEDExDatasvcInfo:
             raise CrabException(msg)
 
         self.forced_path = '/store/user/'
-        if self.sched in ['CAF','LSF']:
+        if self.sched in ['CAF','LSF','PBS']:
             self.srm_version = 'direct'
-            self.SE = {'CAF':'caf.cern.ch', 'LSF':''}
+            self.SE = {'CAF':'caf.cern.ch', 'LSF':'', 'PBS':''}
             if self.sched == 'CAF': self.forced_path = '/store/caf/user/'
             
         if not self.usePhedex: 
@@ -258,7 +258,7 @@ class PhEDExDatasvcInfo:
                 msg+='       OriginalSubmission: stageout path is not retrieved from %s \n'%fullurl
                 raise CrabException(msg)
         else:
-            if self.sched in ['CAF','LSF'] :
+            if self.sched in ['CAF','LSF','PBS'] :
                 stageoutpfn = self.user_se_path+self.lfn 
             else: 
                 stageoutpfn = 'srm://'+self.node+':'+self.user_port+self.user_se_path+self.lfn 

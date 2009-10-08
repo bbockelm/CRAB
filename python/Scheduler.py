@@ -38,6 +38,7 @@ class Scheduler :
         self._boss = Boss()
         self.protocolDict = { 'CAF'      : 'rfio' , \
                               'LSF'      : 'rfio' , \
+                              'PBS'      : 'rfio' , \
                               'CONDOR_G' : 'srmv2' , \
                               'GLITE'    : 'srm-lcg' , \
                               'CONDOR'    : 'srmv2',  \
