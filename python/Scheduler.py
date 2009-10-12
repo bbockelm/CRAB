@@ -41,6 +41,7 @@ class Scheduler :
                               'PBS'      : 'rfio' , \
                               'CONDOR_G' : 'srmv2' , \
                               'GLITE'    : 'srm-lcg' , \
+                              'GLIDEIN'  : 'srm-lcg' , \
                               'CONDOR'    : 'srmv2',  \
                               'SGE'      : 'srmv2', \
                               'ARC'      : 'srmv2'
@@ -65,6 +66,7 @@ class Scheduler :
         if (self.EDG_addJdlParam):
             self.EDG_addJdlParam = string.split(self.EDG_addJdlParam,';')
 
+        self.pset = cfg_params.get('CMSSW.pset',None)
         self.blackWhiteListParser = SEBlackWhiteListParser(seWhiteList, seBlackList, common.logger())
 
         self.return_data = int(cfg_params.get('USER.return_data',0))
@@ -164,6 +166,15 @@ class Scheduler :
     def checkRemoteDir(self, endpoint, fileList):
         """
         """
+        ## temporary hack for OctX:
+        if endpoint.find('${PSETHASH}')>1:
+            try:
+                psethash = runCommand('edmConfigHash < %s'%self.pset) 
+                endpoint= string.replace(endpoint,'${PSETHASH}',psethash)    
+            except:
+                msg =  'Problems trying remote dir check... \n'
+                msg += '\tPlease check stage out configuration parameters.\n'
+                raise CrabException(msg)
         remoteListTmp = self.listRemoteDir(endpoint)
         if remoteListTmp == -1:
             msg =  'Problems trying remote dir check... \n'
@@ -185,7 +196,7 @@ class Scheduler :
                     msg += '\tPlease change directory or remove the actual content.\n'
                     raise CrabException(msg)
         else:
-            msg = 'Remote is empty or not existis\n'
+            msg = 'Remote directory is empty or not existis\n'
             common.logger.debug(msg)
         return
 
