@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.113.2.3 2009/09/29 16:50:45 spiga Exp $"
-__version__ = "$Revision: 1.113.2.3 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.115 2009/09/29 22:01:39 spiga Exp $"
+__version__ = "$Revision: 1.115 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -47,8 +47,9 @@ class SchedulerGrid(Scheduler):
 
         removeT1bL = cfg_params.get("GRID.remove_default_blacklist", 0 )
 
-        T1_BL = ["fnal.gov", "gridka.de" ,"w-ce01.grid.sinica.edu.tw", "w-ce02.grid.sinica.edu.tw", "lcg00125.grid.sinica.edu.tw",\
-                  "gridpp.rl.ac.uk" , "cclcgceli03.in2p3.fr","cclcgceli04.in2p3.fr" , "pic.es", "cnaf", "cern.ch"]
+        # T1_BL = ["fnal.gov", "gridka.de" ,"w-ce01.grid.sinica.edu.tw", "w-ce02.grid.sinica.edu.tw", "lcg00125.grid.sinica.edu.tw",\
+        #           "gridpp.rl.ac.uk" , "cclcgceli03.in2p3.fr","cclcgceli04.in2p3.fr" , "pic.es", "cnaf", "cern.ch"]
+        T1_BL = ["T0", "T1"]
         if int(removeT1bL) == 1:
             T1_BL = []
         self.EDG_ce_black_list = cfg_params.get('GRID.ce_black_list',None)
