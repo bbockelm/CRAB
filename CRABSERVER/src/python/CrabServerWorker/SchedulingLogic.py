@@ -124,7 +124,10 @@ class SchedulingLogic:
         if len(schedList) > 0:
             self.log.debug("Scheduling order (submit): %s"%str(schedList)) 
             for s in schedList:
-                payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])  
+                payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng']) 
+                if len(s['bannedSites']) > 0:
+                    payload += '::'+ str(s['bannedSites'])
+ 
                 del self.schedMapSubmissions[ s['taskName'] ] 
                 self.messageQueue.put( ('schedThr', "CrabServerWorkerComponent:Submission", payload) ) 
         return

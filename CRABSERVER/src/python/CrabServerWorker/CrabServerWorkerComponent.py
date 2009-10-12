@@ -5,7 +5,7 @@ _CrabServerWorkerComponent_
 """
 
 __version__ = "$Revision: 1.90 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.90 2009/09/30 01:29:16 hriahi Exp $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.90 2009/09/30 00:02:44 riahi Exp $"
 
 import os, pickle, time, copy
 
@@ -243,7 +243,7 @@ class CrabServerWorkerComponent:
         workerCfg['maxRetries'] = self.maxAttempts
         workerCfg['se_dynBList'] = []
         workerCfg['ce_dynBList'] = []
-        if siteToBan : workerCfg['ce_dynBList'].append(siteToBan)
+        if siteToBan : workerCfg['ce_dynBList'].append( eval(siteToBan, {}, {}) )
         workerCfg['cpCmd'] = self.args.get('cpCmd', 'cp')
         workerCfg['rfioServer'] = self.args.get('rfioServer', '')
         workerCfg['EDG_retry_count'] = int(self.args.get('EDG_retry_count', 3) )
@@ -371,7 +371,9 @@ class CrabServerWorkerComponent:
                 return
 
         if len(taskName) > 0 :
-            self.swSchedQ.put( (event, taskName, cmdRng, str(retryCounter), siteToBan) )
+            schedEntry = (event, taskName, cmdRng, str(retryCounter), siteToBan)
+            logging.debug( "Scheduling entry: %s" % str(schedEntry) )
+            self.swSchedQ.put( schedEntry )
         else:
             if command != '' :
                 MsgLog  = "Empty task name. Bad format scheduling request. Task will be skipped"
