@@ -684,6 +684,10 @@ To be used in case of unexpected job crash when the sdtout and stderr files are 
 
 Set it to 1 to skip the check of free space left on your working directory before attempting to get the output back. Default is 0 (=False)
 
+=item B<check_user_remote_dir>
+
+Submitting a job when the same output is already staged in the same target StorageElemet is a source of sure failure. By setting I<check_user_remote_dir>=1  crab will check the content of remote location before the submission.
+
 =back
 
 B<[GRID]>
