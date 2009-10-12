@@ -27,8 +27,14 @@ The most useful general options (use '-h' to get complete help):
   -checkPublication [dbs_url datasetpath] -- checks if a dataset is published in a DBS.
   -kill [range]                           -- kill submitted jobs.
   -resubmit [range]                       -- resubmit killed/aborted/retrieved jobs.
+<<<<<<< crab_help.py
+  -forceResubmit [range]                  -- resubmit jobs regardless to their status.
+  -copyData [range [dest_se or dest_endpoint]] -- copy locally (in crab_working_dir/res dir) or on a remote SE your produced output, 
+                                                  already stored on remote SE. 
+=======
   -copyData [range [dest_se or dest_endpoint]] -- copy locally (in crab_working_dir/res dir) or on a remote SE your produced output,
                                                   already stored on remote SE.
+>>>>>>> 1.124
   -renewCredential                        -- renew credential on the server.
   -clean                                  -- gracefully cleanup the directory of a task.
   -match|-testJdl [range]                 -- check if resources exist which are compatible with jdl.
@@ -332,6 +338,10 @@ Check if a dataset is published in a DBS. This option is automaticaly called at 
 =item B<-resubmit [range]>
 
 Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax.
+
+=item B<-forceResubmit [range]>
+
+iSame as -resubmit but without any check about the actual status of the job: please use with caution, you can have problem if both the original job and the resubmitted ones actually run and tries to write the output ona a SE. This command is meant to be used if the killing is not possible or not working but you know that the job failed or will. See I<range> below for syntax.
 
 =item B<-extend>
 

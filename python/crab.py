@@ -33,7 +33,7 @@ class Crab:
         # The order of main_actions is important !
         self.main_actions = [ '-create', '-submit' ]
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput','-get',
-                             '-resubmit' , '-testJdl',
+                             '-resubmit', '-forceResubmit', '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-createJdl','-printJdl', '-publish', '-checkPublication',
                              '-copyData', '-renewCredential', '-extend','-validateCfg',
@@ -625,6 +625,25 @@ class Crab:
                     else:
                         from Resubmitter import Resubmitter
                         self.actions[opt] = Resubmitter(self.cfg_params, jobs)
+                else:
+                    common.logger.info("Warning: with '-resubmit' you _MUST_ specify a job range or 'all'")
+                    common.logger.info("WARNING: _all_ job specified in the range will be resubmitted!!!")
+                    pass
+                pass
+
+            elif ( opt == '-forceResubmit' ):
+                if val:
+                    if val=='all':
+                        jobs = common._db.nJobs('list')
+                    else:
+                        jobs = self.parseRange_(val)
+
+                    if (self.UseServer== 1):
+                        from ResubmitterServerForced import ResubmitterServerForced
+                        self.actions[opt] = ResubmitterServerForced(self.cfg_params, jobs)
+                    else:
+                        from ResubmitterForced import ResubmitterForced
+                        self.actions[opt] = ResubmitterForced(self.cfg_params, jobs)
                 else:
                     common.logger.info("Warning: with '-resubmit' you _MUST_ specify a job range or 'all'")
                     common.logger.info("WARNING: _all_ job specified in the range will be resubmitted!!!")
