@@ -21,8 +21,17 @@ def LFNBase(forced_path, PrimaryDataset='',ProcessedDataset='',merged=True,publi
     else:
         lfnbase = os.path.join(forced_path, getUserName(), PrimaryDataset, ProcessedDataset)
     if (publish == True):
+        checkSlash(ProcessedDataset)
         checkLength(lfnbase, forced_path, PrimaryDataset, ProcessedDataset)
     return lfnbase
+
+def checkSlash(ProcessedDataset):
+    """
+    check if [USER].publish_data_name contains not allowed slash
+    """
+    
+    if (str(ProcessedDataset).find("/") > -1):
+            raise CrabException("Warning: [USER] publication_data_name contains a '/' characters that is not allowed. Please change the publication_data_name value")
 
 def checkLength(lfnbase, forced_path, PrimaryDataset, ProcessedDataset):
     """
