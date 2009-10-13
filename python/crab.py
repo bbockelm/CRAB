@@ -172,7 +172,7 @@ class Crab:
         the command line or their default values.
         """
         server= 'OFF'
-        if self.UseServer==1: server = 'ON'
+        if self.UseServer==1: server = 'ON (%s)' % self.cfg_params['CRAB.server_name']
         local = time.ctime(time.time())
         UTC = time.asctime(time.gmtime()).split(' ')[:-1]
         tzone = time.tzname[0]
