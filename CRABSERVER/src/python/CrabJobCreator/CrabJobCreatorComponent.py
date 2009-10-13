@@ -73,7 +73,7 @@ class CrabJobCreatorComponent:
             self.wdir = self.args['CacheDir']
         self.maxThreads = int( self.args.get('maxThreads', 5) )
 
-        # shared sessions and queue
+        # shared sessions 
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, makePool=True)
         self.sessionPool = self.blDBsession.bossLiteDB.getPool()
         self.workerPool = self.blDBsession.bossLiteDB.getPool()
@@ -89,9 +89,6 @@ class CrabJobCreatorComponent:
                              self.myThread.dialect)
         self.newMsgService = self.myThread.factory['msgService']\
                           .loadObject("MsgService")
-        self.myThread.transaction.begin()
-        self.newMsgService.registerAs("CrabJobCreatorComponent")
-        self.myThread.transaction.commit()
 
         self.ms = MessageService()
 
