@@ -245,7 +245,7 @@ class ServerCommunicator:
         removeT1bL = self.cfg_params.get("GRID.remove_default_blacklist", 0 )
         T1_BL = "fnal.gov, gridka.de ,w-ce01.grid.sinica.edu.tw, w-ce02.grid.sinica.edu.tw, \
                  lcg00125.grid.sinica.edu.tw, \
-                 gridpp.rl.ac.uk, cclcgceli03.in2p3.fr, cclcgceli04.in2p3.fr, pic.es, cnaf"
+                 gridpp.rl.ac.uk, cclcgceli03.in2p3.fr, cclcgceli04.in2p3.fr, pic.es, cnaf,cern.ch"
         if removeT1bL == '1': T1_BL = ''
 
         # create a mini-cfg to be transfered to the server

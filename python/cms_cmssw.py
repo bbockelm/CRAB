@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.333.2.2 2009/09/16 16:28:24 fanzago Exp $"
-__version__ = "$Revision: 1.333.2.2 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.333.2.3 2009/09/17 16:45:24 fanzago Exp $"
+__version__ = "$Revision: 1.333.2.3 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -1200,6 +1200,9 @@ class Cmssw(JobType):
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
         txt += 'export filesToCheck\n'
+        taskinfo={}
+        taskinfo['outfileBasename'] = self.output_file
+        common._db.updateTask_(taskinfo)
 
         if list : return self.output_file
         return txt
