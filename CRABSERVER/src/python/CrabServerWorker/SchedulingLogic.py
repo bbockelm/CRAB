@@ -66,14 +66,16 @@ class SchedulingLogic:
         
         qItem = {'taskName':taskName, 'rng':[], 'bannedSites':[], \
                  'retryCounter':None, 'deadline': time.time(), 'priority':0 }
-        # taskName is redundant but its useful, instead of using schedMap*.items() tuples
-        
+
+        qItem['rng'] = list(set( qItem['rng'] + cmdRngList ))
+        if len(siteToBan) > 0 :
+            qItem['bannedSites'] = list(set( qItem['bannedSites'] + siteToBan.split(',') ))
+
         if event in ['CrabJobCreatorComponent:NewTaskRegistered','TaskRegisterComponent:NewTaskRegistered', 'CRAB_Cmd_Mgr:NewCommand']:
             if taskName in self.schedMapSubmissions:
                 qItem.update( self.schedMapSubmissions[taskName] )
+
             # fill the queueItem attributes
-            qItem['rng'] = list(set( qItem['rng'] + cmdRngList ))
-            qItem['bannedSites'] = list(set( qItem['bannedSites'] + siteToBan.split(',') ))
             if qItem['retryCounter'] is None or \
                 (event=='CRAB_Cmd_Mgr:NewCommand' and int(retryCounter)>int(qItem['retryCounter']) ):
                     # set if there is no counter or be polite in case of subsequent submissions 
@@ -84,9 +86,8 @@ class SchedulingLogic:
         elif event == 'ResubmitJob':
             if taskName in self.schedMapResubmissions:
                 qItem.update( self.schedMapResubmissions[taskName] )
+
             # fill attributes            
-            qItem['rng'] = list(set( qItem['rng'] + cmdRngList ))
-            qItem['bannedSites'] = list(set( qItem['bannedSites'] + siteToBan.split(',') ))
             qItem['retryCounter'] = retryCounter
             qItem['deadline'] = time.time() + self.sleepTime
             
