@@ -2,6 +2,8 @@ from Submitter import Submitter
 import common
 from crab_util import *
 from crab_exceptions import *
+from PhEDExDatasvcInfo import PhEDExDatasvcInfo
+
 
 class Resubmitter(Submitter):
     def __init__(self, cfg_params, jobs):
@@ -9,17 +11,26 @@ class Resubmitter(Submitter):
 
         nj_list = []
 
+        self.copy_data = int(cfg_params.get('USER.copy_data',0))
+        self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',0))
         nj_list = self.checkAllowedJob(jobs,nj_list)
-
         common.logger.info('Jobs '+str(nj_list)+' will be resubmitted')
         Submitter.__init__(self, cfg_params, nj_list, 'range')
 
         return
 
+    def checkRemoteDir(self,task):
+
+        if self.copy_data==1: 
+            stageout = PhEDExDatasvcInfo(self.cfg_params)
+            endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
+            common.scheduler.checkRemoteDir(endpoint,eval(task['outfileBasename']))
+
+
     def checkAllowedJob(self,jobs,nj_list):
         listRunField=[]
-
         task=common._db.getTask(jobs)
+        if self.check_RemoteDir == 1 : self.checkRemoteDir(task)
         for job in task.jobs:
             st = job.runningJob['state']
             nj = int(job['jobId'])
