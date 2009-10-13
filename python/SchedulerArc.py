@@ -25,7 +25,6 @@ import sha # Good for python 2.4, replaced with hashlib in 2.5
 #  corresponding part of the job script ('ws' stands for 'write script').
 #
 
-
 class SchedulerArc(SchedulerGrid):
     def __init__(self, name='ARC'):
         SchedulerGrid.__init__(self,name)
@@ -47,10 +46,16 @@ class SchedulerArc(SchedulerGrid):
         xrsl = ''
 
         if cfg_params.has_key("GRID.max_cpu_time"):
-            xrsl += '(cpuTime="%s")' % cfg_params["GRID.max_cpu_time"]
+            s = cfg_params["GRID.max_cpu_time"]
+            if s.strip()[0] not in ['"', "'"] and s.strip()[-1] not in ['"', "'"]:
+                s = '"' + s.strip() + '"'
+            xrsl += '(cpuTime=%s)' % s
 
         if cfg_params.has_key('GRID.max_wall_clock_time'):
-            xrsl += '(wallTime="%s")' % cfg_params['GRID.max_wall_clock_time']
+            s = cfg_params["GRID.max_wall_clock_time"]
+            if s.strip()[0] not in ['"', "'"] and s.strip()[-1] not in ['"', "'"]:
+                s = '"' + s.strip() + '"'
+            xrsl += '(wallTime=%s)' % s
 
         if cfg_params.has_key("GRID.additional_xrsl_parameters"):
             common.logger.warning("additional_xrsl_parameters is deprecated; use 'additional_jdl_parameters' instead!")
