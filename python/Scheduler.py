@@ -170,7 +170,7 @@ class Scheduler :
         if endpoint.find('${PSETHASH}')>1:
             try:
                 psethash = runCommand('edmConfigHash < %s'%self.pset) 
-                endpoint= string.replace(endpoint,'${PSETHASH}/',psethash)    
+                endpoint= string.replace(endpoint,'${PSETHASH}/',psethash) 
             except:
                 msg =  'Problems trying remote dir check... \n'
                 msg += '\tPlease check stage out configuration parameters.\n'
@@ -205,7 +205,7 @@ class Scheduler :
         """
         protocol = self.protocolDict[common.scheduler.name().upper()]
         try:
-            Storage = SElement( FullPath(endpoint), protocol )
+            Storage = SElement( FullPath(string.strip(endpoint)), protocol )
         except ProtocolUnknown, ex:
             remoteList = -1
             msg  = 'Warning : %s '% str(ex)

@@ -30,7 +30,7 @@ class Resubmitter(Submitter):
     def checkAllowedJob(self,jobs,nj_list):
         listRunField=[]
         task=common._db.getTask(jobs)
-        if self.check_RemoteDir == 1 : self.checkRemoteDir(task)
+ #       if self.check_RemoteDir == 1 : self.checkRemoteDir(task)
         for job in task.jobs:
             st = job.runningJob['state']
             nj = int(job['jobId'])
