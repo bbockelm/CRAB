@@ -89,6 +89,11 @@ componentFields = {
     'maxThreads':'5',
     },
 
+    "CrabJobCreator" : {
+    'ComponentDir':None,
+    'maxThreads':'5',
+    },
+
     "CrabServerWorker" : {
     'ComponentDir':None,
     'glexec':'/full/path/to/glexec',
