@@ -170,7 +170,7 @@ class Scheduler :
         if endpoint.find('${PSETHASH}')>1:
             try:
                 psethash = runCommand('edmConfigHash < %s'%self.pset) 
-                endpoint= string.replace(endpoint,'${PSETHASH}',psethash)    
+                endpoint= string.replace(endpoint,'${PSETHASH}/',psethash)    
             except:
                 msg =  'Problems trying remote dir check... \n'
                 msg += '\tPlease check stage out configuration parameters.\n'
