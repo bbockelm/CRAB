@@ -193,7 +193,8 @@ class Scheduler :
                 if i in metaList :
                     msg  = 'Warning: You are asking to stage out on a remote directory \n'
                     msg += '\twhich already contains files with same name.\n'
-                    msg += '\tPlease change directory or remove the actual content.\n'
+                    msg += '\tPlease change directory or remove the actual content following this HowTo:\n'
+                    msg += '\thttps://twiki.cern.ch/twiki/bin/view/CMS/CheckUserRemoteDir\n'
                     raise CrabException(msg)
         else:
             msg = 'Remote directory is empty or not existis\n'
