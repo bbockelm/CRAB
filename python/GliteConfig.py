@@ -12,8 +12,8 @@ import os, time
 class GliteConfig:
     def __init__(self, RB):
         common.logger.debug('Calling GliteConfig with WMS= '+str(RB))
-       # self.url = 'http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/useful_script/'
-        self.url ='https://cmsweb.cern.ch/crabconf/'
+        self.url ='http://cmsdoc.cern.ch/cms/LCG/crab/config/'
+      #  self.url ='https://cmsweb.cern.ch/crabconf/'
         self.configFileName = 'glite_wms_'+str(RB)+'.conf'
         self.theConfig = self.getConfig_()
         pass

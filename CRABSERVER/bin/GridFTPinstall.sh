@@ -217,7 +217,7 @@ fi
 # old address: http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/GridFTPinstall.tar.gz
 mkdir -p $MYTESTAREA/GFTP_CFGfiles
 echo "*** Downloading to $MYTESTAREA/GFTP_CFGfiles defaults config files tarball"
-if ! wget --no-check-certificate -O $MYTESTAREA/GFTP_CFGfiles/GridFTPinstall.tar.gz https://cmsweb.cern.ch/crabconf/GridFTPinstall.tar.gz; then
+if ! wget --no-check-certificate -O $MYTESTAREA/GFTP_CFGfiles/GridFTPinstall.tar.gz http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/Repository/GridFTPinstall.tar.gz; then
     echo Exiting from $0
     exit
 fi

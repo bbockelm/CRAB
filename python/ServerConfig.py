@@ -11,7 +11,9 @@ class ServerConfig:
         serverName = string.lower(serverName)
         common.logger.debug('Calling ServerConfig '+serverName)
 
-        self.url ='https://cmsweb.cern.ch/crabconf/'
+        self.url ='http://cmsdoc.cern.ch/cms/LCG/crab/config/'
+      #  self.url ='https://cmsweb.cern.ch/crabconf/'
+
         # self.url ='http://www.pd.infn.it/~lacaprar/Computing/'
         if 'default' in  serverName:
             common.logger.debug('getting serverlist from web')
