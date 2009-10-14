@@ -28,7 +28,7 @@ class SchedulerLsf(SchedulerLocal) :
         return
 
     def envUniqueID(self):
-        id = "https://"+common.scheduler.name()+":/${LSB_BATCH_JID}-"+ \
+        id = "https://"+common.scheduler.name().upper()+":/${LSB_BATCH_JID}-"+ \
             string.replace(common._db.queryTask('name'),"_","-")
         return id
 
