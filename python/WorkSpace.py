@@ -107,25 +107,39 @@ class WorkSpace:
         return
 
     def cwdDir(self):
-        return self._cwd_dir + '/'
+        if (self._cwd_dir[-1] != '/'):
+           self._cwd_dir = self._cwd_dir + '/'
+        return self._cwd_dir
 
     def topDir(self):
-        return self._top_dir + '/'
+        if (self._top_dir[-1] != '/'):
+           self._top_dir = self._top_dir + '/'
+        return self._top_dir 
 
     def logDir(self):
-        return self._log_dir + '/'
+        if (self._log_dir[-1] != '/'):
+           self._log_dir = self._log_dir + '/'
+        return self._log_dir
 
     def jobDir(self):
-        return self._job_dir + '/'
+        if (self._job_dir[-1] != '/'):
+           self._job_dir = self._job_dir + '/'
+        return self._job_dir
 
     def resDir(self):
-        return self._res_dir + '/'
+        if (self._res_dir[-1] != '/'):
+           self._res_dir = self._res_dir + '/'
+        return self._res_dir
 
     def shareDir(self):
-        return self._share_dir + '/'
+        if (self._share_dir[-1] != '/'):
+           self._share_dir = self._share_dir + '/'
+        return self._share_dir
         
     def pathForTgz(self):
-        return self._pathForTgz + '/'
+        if (self._pathForTgz[-1] != '/'):
+           self._pathForTgz = self._pathForTgz + '/'
+        return self._pathForTgz
         
     def task_uuid(self):
         return self.uuid
