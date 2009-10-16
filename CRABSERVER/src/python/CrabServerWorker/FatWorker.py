@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.179 2009/09/09 21:14:35 ewv Exp $"
-__version__ = "$Revision: 1.179 $"
+__revision__ = "$Id: FatWorker.py,v 1.180 2009/09/23 13:29:21 farinafa Exp $"
+__version__ = "$Revision: 1.180 $"
 
 import string
 import sys, os
@@ -430,6 +430,10 @@ class FatWorker(Thread):
         except BossLiteError, e:
             logMsg = "Worker %s. Problem Delegating Proxy for task %s. "%(self.myName, self.taskName)
             logMsg += str(e.description())
+            self.log.info( logMsg )
+        except Exception, ee:
+            logMsg = "Worker %s. Unexpected exception Delegating Proxy for task %s. "%(self.myName, self.taskName)
+            logMsg += str(ee.description())
             self.log.info( logMsg )
 
         for ii in matched:
