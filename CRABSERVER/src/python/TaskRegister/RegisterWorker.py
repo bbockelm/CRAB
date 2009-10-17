@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.26 2009/10/04 14:28:42 riahi Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.27 2009/10/15 13:25:54 spiga Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import string
 import sys, os
@@ -287,23 +287,11 @@ class RegisterWorker(Thread):
         remoteSBlist = [ os.path.basename(f) for f in taskObj['globalSandbox'].split(',') ]
         self.log.info("[%s]" %self.cfg_params['CRAB.se_remote_dir'])
         self.log.info("[%s]" %self.configs['storagePath'])
-        #if self.cfg_params['CRAB.se_remote_dir'] == "":
-        #    remoteSBlist = [ os.path.join( '/'+self.cfg_params['CRAB.se_remote_dir'], f ) for f in remoteSBlist ]
-        #else:
-
-        if self.type == 'partiallySpecified' and ( self.schedName == 'CAF' \
-                   or self.schedName == 'LSF' ):
-            for f in remoteSBlist:
-                self.log.info("file is %s "%f)
-                if f == 'arguments.xml':
-                    remoteSBlistTemp.append(os.path.join(self.wdir, \
-             self.taskName)+'_spec/arguments.xml' )
-                else:
-                    remoteSBlistTemp.append(os.path.join( os.path.join\
-             (self.configs['storagePath'], self.taskName), f ))
-        else:
-            remoteSBlistTemp = [ os.path.join( os.path.join(self.configs['storagePath'], \
+        remoteSBlistTemp = [ os.path.join( os.path.join(self.configs['storagePath'], \
                 self.taskName), f ) for f in remoteSBlist ]
+        if self.type == 'partiallySpecified' :
+            remoteSBlistTemp.append(os.path.join( os.path.join(self.configs['storagePath'], \
+                self.taskName), 'arguments.xml' )) 
 
         remoteSBlist = remoteSBlistTemp
         self.log.info(str(remoteSBlist))
