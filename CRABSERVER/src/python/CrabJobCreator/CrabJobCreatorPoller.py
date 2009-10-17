@@ -7,7 +7,7 @@ It will be parallelized if needed through WorkQueue using a new class.
 __all__ = []
 __revision__ = "$Id: CrabJobCreatorPollerPoller.py,v 1.2 \
             2009/09/30 01:21:44 hriahi Exp $"
-__version__ = "$Revision: 1.2 $"
+__version__ = "$Revision: 1.4 $"
 
 import logging
 import os
@@ -62,8 +62,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
 
         # Transfer parameter
-        self.copyTout = ' -t 600 '
-
+        self.copyTout = self.config['copyTout']
         # Tasks attributes
         self.cmdRng = "[]"
         self.taskToComplete = None 
@@ -214,7 +213,8 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             tempArg['MaxEvents'] = jI['input_files'][0]['events']
             tempArg['JobID'] = (jobGroups[0].jobs).index(jI) + 1
             tempArg['InputFiles'] = jI['input_files'][0]['lfn']
-            tempArg['SkipEvents'] = jI['mask']['FirstEvent']
+            tempArg['SkipEvents'] = 0
+            if jI['mask']['FirstEvent']:tempArg['SkipEvents'] = jI['mask']['FirstEvent']
             self.listArguments.append(tempArg)
             tempArg = {}
 
@@ -225,7 +225,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             self.markTaskAsNotSubmitted( 'all' )
             return
 
-        self.pathFile = self.config['wdir'] \
+        self.pathFile = self.config['CacheDir'] \
       + '/'+ self.taskToComplete['name']+'_spec/arguments.xml'
 
         logging.info("Creating XML")
@@ -246,8 +246,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             return
         logging.info("Copying file")
         # Copy arguments.xml from a local FS to gridftp server  
-        if self.config['SEproto'] == 'gridftp':
-            self.copyFile()
+        self.copyFile()
 
         logging.info("Registering job")
         # Create jobs in CrabWorkerDB
@@ -276,10 +275,6 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         Copy arguments file from local path to gridftp server
         """
 
-        # pair proxy to task
-        if not self.associateProxyToTask() == 0 :
-            self.markTaskAsNotSubmitted( 'all' )
-            return
 
         # init SE interface
         logging.info("Starting copying to %s " \
@@ -312,13 +307,13 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         sbi = SBinterface( loc, seEl )
 
         source = os.path.abspath(self.pathFile)
-        dest = os.path.join(self.cfgParams['CRAB.se_remote_dir']\
-           , os.path.basename(self.pathFile))
+        dest = os.path.join(self.config['storagePath'],\
+          self.taskToComplete['name'] , os.path.basename(self.pathFile))
 
         logging.info("Copying From " + source + "To" + dest)
 
         try:
-            sbi.copy( source, dest, proxy=self.credential, opt=self.copyTout)
+            sbi.copy( source, dest, proxy=self.taskToComplete['user_proxy'], opt=self.copyTout)
         except AuthorizationException, ex:
             logging.info(str(ex.detail))
             msg = "ERROR: Unable to copy file on the Storage Element: %s " \
@@ -349,7 +344,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             for job in self.taskToComplete.jobs:
                 jobName = job['name']
                 cacheArea = os.path.join( \
-        self.config['wdir'], str(\
+        self.config['CacheDir'], str(\
              self.taskToComplete['name'] + '_spec'), jobName )
                 jobDetails = {'id':jobName, 'job_type':\
               'Processing', 'cache':cacheArea, \
@@ -389,7 +384,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                 try:
                     if not self.cwdb.existsWEJob(jobName):
                         cacheArea = os.path.join( \
-self.config['wdir'], str(self.taskToComplete['name'] \
+self.config['CacheDir'], str(self.taskToComplete['name'] \
                   + '_spec'), jobName )
                         jobDetails = {'id':jobName, 'job_type':'Processing', \
 'cache':cacheArea, 'owner':self.taskToComplete['name'], 'status': \
@@ -405,65 +400,13 @@ self.config['wdir'], str(self.taskToComplete['name'] \
         return
 
 
-    def associateProxyToTask(self):
-        """
-        Performs the proxy <--> task association.
-        """
-        logging.info('Poller %s pairing task and proxy'\
-                 %self.taskToComplete['name'])
-
-        try:
-            self.credential = self.getProxy()
-        except Exception, e:
-            reason = "Warning: error while linking the proxy file for task %s.\
-         " % self.taskToComplete['name']
-            reason += str(e) 
-            logging.info(reason)
-            logging.info( traceback.format_exc() )
-
-        if  self.credential :
-            logging.info("Project -> Task association: %s -> %s\
-        "%(self.taskToComplete['name'], self.credential) )
-            status = 0
-        else:
-            status = 20
-            reason = "Unable to locate a proper proxy for the task %s" \
-                   % (self.taskToComplete['name'])
-        return status
-
-    def getProxy(self):
-        """
-        """
-
-        proxyFilename = os.path.join(\
-self.config['ProxiesDir'], sha.new(self.owner).hexdigest() )
-
-        vo = self.cfgParams.get('VO', 'cms')
-        role = self.cfgParams.get('EDG.role', None)
-        group = self.cfgParams.get('EDG.group', None)
-        proxyServer = self.cfgParams.get("GRID.proxy_server", 'myproxy.cern.ch')
-
-        try:
-            # force the CredAPI to refer to the same MyProxy 
-            # server used by the client 
-            self.credAPI.credObj.myproxyServer = proxyServer
-            self.credAPI.logonMyProxy\
- (proxyFilename, self.owner, vo, group, role)
-        except Exception, e:
-            self.log.info("Error while retrieving proxy for %s: %s"\
-             %(self.owner, str(e) ))
-            self.log.info( traceback.format_exc() )
-            return None
-
-        return proxyFilename
-
     def parseCommandXML(self):
         """
         Parse configuration files
         """
         status = 0
         cmdSpecFile = os.path.join(\
-          self.config['wdir'], \
+          self.config['CacheDir'], \
           self.taskToComplete['name']  + \
           '_spec/cmd.xml' )
         
@@ -518,7 +461,7 @@ self.config['ProxiesDir'], sha.new(self.owner).hexdigest() )
         for job in self.taskToComplete.jobs:
             jobName = job['name']
             cacheArea = os.path.join( \
-     self.config['wdir'], \
+     self.config['CacheDir'], \
      self.taskToComplete['name'] + '_spec', jobName )
             weStatus = 'create'
             if job['jobId'] in ranges : 
