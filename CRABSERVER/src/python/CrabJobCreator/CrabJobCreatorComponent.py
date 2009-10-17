@@ -40,6 +40,7 @@ class CrabJobCreatorComponent:
         self.args.setdefault('Logfile', None)
         self.args.setdefault('CacheDir', None)
         self.args.setdefault('ProxiesDir', None)
+        self.args.setdefault('CopyTimeOut', '')
 
         # SE support parameters
         # Protocol = local cannot be the default. Any default allowd 
@@ -69,8 +70,6 @@ class CrabJobCreatorComponent:
 
         ## volatile properties
         self.wdir = self.args['ComponentDir']
-        if self.args['CacheDir']: 
-            self.wdir = self.args['CacheDir']
         self.maxThreads = int( self.args.get('maxThreads', 5) )
 
         # shared sessions 
@@ -179,15 +178,12 @@ class CrabJobCreatorComponent:
         workerCfg['messageService'] = self.newMsgService
         workerCfg['blSessionPool'] = self.sessionPool
         workerCfg['blWorkerPool'] = self.workerPool
-        workerCfg['credentialType'] = \
-          self.args.setdefault('credentialType',None )
-        workerCfg['single_user'] = self.args.setdefault('singleUser', None )
         workerCfg['scheduler'] = self.args.setdefault('scheduler','glite' )
-        workerCfg['glExecDelegation'] = self.args['glExecDelegation']
         workerCfg['ProxiesDir'] = self.args['ProxiesDir']
         workerCfg['credentialType'] = self.args['credentialType']
         workerCfg['storagePath'] = self.args['storagePath']
-
+        workerCfg['CacheDir']=self.args["CacheDir"]
+        workerCfg['copyTout']=self.args["CopyTimeOut"]
         return workerCfg
  
     def newJobUpdate(self, event, payload, workerCfg):
