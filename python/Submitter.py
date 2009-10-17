@@ -34,7 +34,9 @@ class Submitter(Actor):
                 msg += '      Generic range is not allowed"'
                 raise CrabException(msg)
             pass
-
+        self.cmdline_nsjobs = self.nsjobs
+#wmbs
+        self.cmdline_nsjobs = self.nsjobs
         self.seWhiteList = cfg_params.get('GRID.se_white_list',[])
         self.seBlackList = cfg_params.get('GRID.se_black_list',[])
         self.datasetPath=self.cfg_params['CMSSW.datasetpath']
@@ -43,9 +45,13 @@ class Submitter(Actor):
         self.scram = Scram.Scram(cfg_params)
         return
 
-    def BuildJobList(self):
+#wmbs
+    def BuildJobList(self,type=0):
         # total jobs
         nj_list = []
+        if type==1: # and job_list non c'e'
+            self.nj_list = [1,2,3]
+            return
         # build job list
         from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
         self.blackWhiteListParser = SEBlackWhiteListParser(self.seWhiteList, self.seBlackList, common.logger())
@@ -123,19 +129,24 @@ class Submitter(Actor):
             if (njs < len(self.nj_list) or len(self.nj_list)==0):
                 self.submissionError()
 
-
-    def checkIfCreate(self):
+#wmbs
+    def checkIfCreate(self,type=0):
         """
         """
         code = 0
-        totalCreatedJobs = 0
         task=common._db.getTask()
-        for job in task.jobs:
-            if job.runningJob['state'] == 'Created': totalCreatedJobs +=1
-
-        if (totalCreatedJobs==0):
-            common.logger.info("No jobs to be submitted: first create them")
-            code = 1
+        if type == 1 and len(task.jobs)==0:
+            if task['jobType']=='Submitted':
+                common.logger.info("No Request to be submitted: first create it.\n")
+                code=1
+        else:
+            totalCreatedJobs = 0
+            for job in task.jobs:
+                if job.runningJob['state'] == 'Created': totalCreatedJobs +=1
+       
+            if (totalCreatedJobs==0):
+                common.logger.info("No jobs to be submitted: first create them")
+                code = 1
         return code
 
 

@@ -146,6 +146,12 @@ class Crab:
         common.logger = CrabLogger(args)
         common.logger.info(self.headerString_())
 
+        ## wmbs
+        self.automation=self.cfg_params.get('WMBS.automation','0')
+	if int(self.automation)==1 and self.UseServer!=1:
+            msg  ='ERROR: if you want run automated WorkFlow you must use the server\n' 
+            msg  +='\tPlease check your configuration.'  
+            raise CrabException(msg)
         common.apmon = ApmonIf()
 
         self.createScheduler_()
@@ -480,20 +486,36 @@ class Crab:
                     msg  = 'Submission will still take into account the number of jobs specified on the command line!\n'
                     common.logger.info(msg)
                 ncjobs = 'all'
+            #wmbs 
+                if int(self.automation) == 1:
+                    msg  = 'Your jobs will be created on the server. Jobs informations will be known later.'
+                    common.logger.info(msg)
+             # wmbs 
+                    from Requestor import Requestor
+                    # Instantiate Creator object
+                    self.creator = Requestor(self.job_type_name,
+                                           self.cfg_params,
+                                           ncjobs)
+                    self.actions[opt] = self.creator
+                
+                    # Create and initialize JobList
+                    common.job_list = JobList(1,self.creator.jobType())
 
-                from Creator import Creator
-                # Instantiate Creator object
-                self.creator = Creator(self.job_type_name,
-                                       self.cfg_params,
-                                       ncjobs)
-                self.actions[opt] = self.creator
-
-                # create jobs in the DB
-                common._db.createJobs_(self.creator.nJobsL())
-
-                # Create and initialize JobList
-                common.job_list = JobList(common._db.nJobs(),
-                                          self.creator.jobType())
+                else:
+                    from Creator import Creator
+                    # Instantiate Creator object
+                    self.creator = Creator(self.job_type_name,
+                                           self.cfg_params,
+                                           ncjobs)
+                    self.actions[opt] = self.creator
+                
+                    # create jobs in the DB
+                    common._db.createJobs_(self.creator.nJobsL())
+                    # Create and initialize JobList
+                    common.job_list = JobList(common._db.nJobs(),
+                                                    self.creator.jobType())
+                    ## jobs specs not needed if using WMBS      
+                    self.creator.writeJobsSpecsToDB()
 
                 taskinfo={}
                 taskinfo['cfgName'] = common.work_space.jobDir()+"/"+self.creator.jobType().configFilename()
@@ -501,7 +523,6 @@ class Crab:
 
                 common.job_list.setScriptNames(self.job_type_name+'.sh')
                 common.job_list.setCfgNames(self.creator.jobType().configFilename())
-                self.creator.writeJobsSpecsToDB()
                 common._db.updateTask_(taskinfo)
                 pass
 

@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.340 2009/10/08 15:15:17 mcinquil Exp $"
-__version__ = "$Revision: 1.340 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.341 2009/10/13 08:21:23 spiga Exp $"
+__version__ = "$Revision: 1.341 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -264,31 +264,34 @@ class Cmssw(JobType):
         ## Perform the data location and discovery (based on DBS/DLS)
         ## SL: Don't if NONE is specified as input (pythia use case)
         blockSites = {}
-        if self.datasetPath:
-            blockSites = self.DataDiscoveryAndLocation(cfg_params)
-        #DBSDLS-end
-        self.conf['blockSites']=blockSites
-
-        ## Select Splitting
-        splitByRun = int(cfg_params.get('CMSSW.split_by_run',0))
-
-        if self.selectNoInput:
-            if self.pset == None:
-                self.algo = 'ForScript'
+#wmbs
+        self.automation = int(self.cfg_params.get('WMBS.automation',0))
+        if self.automation == 0:
+            if self.datasetPath:
+                blockSites = self.DataDiscoveryAndLocation(cfg_params)
+            #DBSDLS-end
+            self.conf['blockSites']=blockSites
+ 
+            ## Select Splitting
+            splitByRun = int(cfg_params.get('CMSSW.split_by_run',0))
+ 
+            if self.selectNoInput:
+                if self.pset == None:
+                    self.algo = 'ForScript'
+                else:
+                    self.algo = 'NoInput'
+                    self.conf['managedGenerators']=self.managedGenerators
+                    self.conf['generator']=self.generator
+            elif self.ads:
+                self.algo = 'LumiBased'
+            elif splitByRun ==1:
+                self.algo = 'RunBased'
             else:
-                self.algo = 'NoInput'
-                self.conf['managedGenerators']=self.managedGenerators
-                self.conf['generator']=self.generator
-        elif self.ads:
-            self.algo = 'LumiBased'
-        elif splitByRun ==1:
-            self.algo = 'RunBased'
-        else:
-            self.algo = 'EventBased'
-        common.logger.debug("Job splitting method: %s" % self.algo)
-
-        splitter = JobSplitter(self.cfg_params,self.conf)
-        self.dict = splitter.Algos()[self.algo]()
+                self.algo = 'EventBased'
+            common.logger.debug("Job splitting method: %s" % self.algo)
+      
+            splitter = JobSplitter(self.cfg_params,self.conf)
+            self.dict = splitter.Algos()[self.algo]()
 
         self.argsFile= '%s/arguments.xml'%common.work_space.shareDir()
         self.rootArgsFilename= 'arguments'
@@ -530,8 +533,12 @@ class Cmssw(JobType):
         return
 
     def numberOfJobs(self):
-        return self.dict['njobs']
-
+#wmbs
+        if self.automation==0:  
+           return self.dict['njobs']
+        else:
+           return None
+           
     def getTarBall(self, exe):
         """
         Return the TarBall with lib and exe

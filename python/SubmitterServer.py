@@ -22,6 +22,11 @@ class SubmitterServer( Submitter ):
         self.submitRange = []
         self.credentialType = 'Proxy'
         self.copyTout= setLcgTimeout()
+   #wmbs
+        self.type = int(cfg_params.get('WMBS.automation',0))
+        self.taskType = 'fullySpecified'
+        if self.type==1: self.taskType='partiallySpecified'
+        print self.type
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.credentialType = 'Token'
             self.copyTout= ' '
@@ -47,12 +52,13 @@ class SubmitterServer( Submitter ):
         common.logger.debug("SubmitterServer::run() called")
 
         start = time.time()
-
-        self.BuildJobList()
+#wmbs
+        self.BuildJobList(self.type)
 
         self.submitRange = self.nj_list
 
-        check = self.checkIfCreate()
+        ## wmbs 
+        check = self.checkIfCreate(self.type) 
 
         if check == 0 :
 
@@ -67,10 +73,13 @@ class SubmitterServer( Submitter ):
 
             stop = time.time()
             common.logger.debug("Submission Time: "+str(stop - start))
-
-            msg = 'Total of %d jobs submitted'%len(self.submitRange)
+            #wmbs
+            if self.type ==0 :msg = 'Total of %d jobs submitted'%len(self.submitRange) 
+            else: msg='Request submitted to the server.'
             common.logger.info(msg)
-
+            
+            if int(self.type)==1: 
+                common._db.updateTask_({'jobType':'Submitted'})
 	return
 
     def moveISB_SEAPI(self):
@@ -213,7 +222,7 @@ class SubmitterServer( Submitter ):
 
         if firstSubmission==True:
 
-            totJob = common._db.nJobs()
+            TotJob = common._db.nJobs()
             # move the sandbox
             self.moveISB_SEAPI()
 
@@ -230,7 +239,7 @@ class SubmitterServer( Submitter ):
                 raise CrabException(msg)
 
             # TODO fix not needed first field
-            subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange, totJob)
+            subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,TotJob,taskType=self.taskType)
         else:
             # subsequent submissions and resubmit
             self.stateChange( self.submitRange, "SubRequested" )

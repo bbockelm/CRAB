@@ -56,7 +56,8 @@ class ServerCommunicator:
     # Interactions with the server
 ###################################################
 
-    def submitNewTask(self, blTaskName, blXml, rng, TotJob):
+# wmbs
+    def submitNewTask(self, blTaskName, blXml, rng, TotJob,taskType='fullySpecified'):
         """
         _submitNewTask_
         Send a new task to the server to be submitted.
@@ -65,6 +66,7 @@ class ServerCommunicator:
              - the bossLite object representing the task (jobs are assumed to be RunningJobs)
              - the range of the submission as specified by the user at the command line
         """
+
 
         if not blXml:
             raise CrabException('Error while serializing task object to XML')
@@ -75,7 +77,8 @@ class ServerCommunicator:
             return -3
 
         cmdXML = None
-        cmdXML = self._createXMLcommand(blTaskName, 'submit', rng, newTaskAddIns=True,jobs=TotJob)
+        cmdXML = self._createXMLcommand(blTaskName, 'submit', rng, newTaskAddIns=True,jobs=TotJob,type=taskType)
+
         if not cmdXML:
             raise CrabException('Error while creating the Command XML')
             return -4

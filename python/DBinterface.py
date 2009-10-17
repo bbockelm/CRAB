@@ -325,6 +325,20 @@ class DBinterface:
     def deserXmlStatus(self, reportList):
 
         task = self.getTask()
+        if int(self.cfg_params.get('WMBS.automation',0)) == 1:
+            if len(reportList) ==0:
+                msg = 'You are using CRAB with WMBS the server is still creating your jobs.\n'
+                msg += '\tPlease wait...'
+                raise CrabException(msg)
+            newJobs =  len(reportList) - len(task.jobs)
+            if newJobs != 0:
+                isNew=True  
+                if not len(task.jobs):isNew=False
+                jobL=[]   
+                for i in range(1,newJobs+1):
+                    jobL.append(len(task.jobs)+i) 
+                self.createJobs_(jobL,isNew)
+
         for job in task.jobs:
             if not job.runningJob:
                 raise CrabException( "Missing running object for job %s"%str(job['jobId']) )
