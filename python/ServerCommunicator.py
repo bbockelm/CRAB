@@ -309,6 +309,11 @@ class ServerCommunicator:
         miniCfg['threshold'] = self.cfg_params.get('USER.thresholdlevel', 100)
 
         miniCfg['CMSSW_version'] = self.scram.getSWVersion()
+#WMBS
+        miniCfg['feeder'] = self.cfg_params.get('WMBS.feeder', 'Feeder')
+        miniCfg['splitting_algorithm'] = self.cfg_params.get('WMBS.splitting_algorithm','FileBased')
+
+        miniCfg['CMSSW_version'] = self.scram.getSWVersion()
 
         ## put here other fields if needed
         node.setAttribute("CfgParamDict", str(miniCfg) )
