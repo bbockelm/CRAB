@@ -239,6 +239,28 @@ for i in {0..9}; do
   done
 done
 
+echo "*** Configuring LCAS-LCMAPS"
+if ! /opt/glite/sbin/gt4-interface-install.sh install; then
+    echo  Exiting from $0
+fi
+
+#/opt/glite/etc/lcas/lcas.db
+if ! [ -e /opt/glite/etc/lcas/lcas.db ]; then
+    mkdir -p /opt/glite/etc/lcas;
+    if cp $MYTESTAREA/GFTP_CFGfiles/lcas.db /opt/glite/etc/lcas/; then
+        echo " *** /opt/glite/etc/lcas/lcas.db created";
+    fi
+fi
+
+#/opt/glite/etc/lcmaps/lcmaps.db
+if ! [ -e /opt/glite/etc/lcmaps/lcmaps.db ]; then
+    mkdir -p /opt/glite/etc/lcmaps;
+    if cp $MYTESTAREA/GFTP_CFGfiles/lcmaps.db /opt/glite/etc/lcmaps/; then
+        echo "*** /opt/glite/etc/lcmaps/lcmaps.db created";
+    fi
+fi
+
+echo "*** Creating mapfiles"
 #/etc/grid-security/grid-mapfile
 if ! [ -e /etc/grid-security/grid-mapfile ]; then
     if cp $MYTESTAREA/GFTP_CFGfiles/grid-mapfile  /etc/grid-security/; then
