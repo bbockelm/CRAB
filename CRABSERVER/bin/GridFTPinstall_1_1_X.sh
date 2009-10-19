@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ `whoami` != 'root' ]; then
     echo "You must to be root in order to do rpm install."
@@ -87,59 +87,57 @@ YUMOPTIONS="install -y"
 
 ### check if yum is installed
 if ! which yum; then
+    echo
     echo Unable to locate Yum package manager. Exiting $0
     exit 1
 fi
 
-### check if yum has the right repositories
+echo "Yum options: "$YUMOPTIONS
 
-YUM_REPO="http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.1/"
+### check if yum has the right repositories
+YUM_REPO="http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.1";
 if [ $SO_FAMILY == "5" ]; then 
-    YUM_REPO="http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/"
+    YUM_REPO="http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2"
 fi
 
 if ! [ -e /etc/yum.repos.d/lcg-CA.repo ]; then
     echo "Downloading lcg-CA.repo into /etc/yum.repos.d/lcg-CA.repo"
     wget -O /etc/yum.repos.d/lcg-CA.repo $YUM_REPO/lcg-CA.repo
+fi
 
-if ! [ -e /etc/yum.repos.d/gliteUI.repo ]; then
-    echo "Downloading gliteUI.repo into /etc/yum.repos.d/gliteUI.repo"
-    wget -O /etc/yum.repos.d/gliteUI.repo $YUM_REPO/gliteUI.repo
+if ! [ -e /etc/yum.repos.d/glite-UI.repo ]; then
+    echo "Downloading glite-UI.repo into /etc/yum.repos.d/glite-UI.repo"
+    wget -O /etc/yum.repos.d/glite-UI.repo $YUM_REPO/glite-UI.repo
+fi
 
 ### install packages
 
 echo "*** Installing CAs and VOMS certificates :";
-if ! yum `echo -n $YUMOPTIONS` lcg-CA lcg-vomscerts 2>&1 > 1_cavoms.log; then
+if ! yum $YUMOPTIONS lcg-CA lcg-vomscerts 2>&1; then
     echo Exiting $0
     exit 1
 fi
 
 echo "*** Installing GridFtp essentials :";
-if ! yum $YUMOPTIONS glite-initscript-globus-gridftp 2>&1 > 2_gridftp.log; then
+if ! yum $YUMOPTIONS glite-initscript-globus-gridftp 2>&1; then
     echo Exiting $0
     exit 1
 fi
 
-echo "*** Installing GT4 interface for lcas-lcmaps :";
-if ! yum $YUMOPTIONS glite-security-lcas-lcmaps-gt4-interface 2>&1 > 3_lcas_lcmaps_interface.log; then
-    echo Exiting $0
-    exit 1
-fi
+echo "*** Installing GT4 interface for lcas-lcmaps, LCAS plugins, LCMAPS plugins :";
+PACKLIST="
+glite-security-lcas-lcmaps-gt4-interface
+glite-security-lcas-plugins-voms glite-security-lcas-plugins-check-executable 
+glite-security-lcmaps-plugins-basic glite-security-lcmaps-plugins-voms glite-security-lcmaps-plugins-verify-proxy
+"
 
-echo "*** Installing LCAS plugins :";
-if ! yum $YUMOPTIONS glite-security-lcas-plugins-voms glite-security-lcas-plugins-check-executable 2>&1 > 4_lcas.log; then
-    echo Exiting $0
-    exit 1
-fi
-
-echo "*** Installing LCMAPS plugins :";
-if ! yum $YUMOPTIONS glite-security-lcmaps-plugins-basic glite-security-lcmaps-plugins-voms glite-security-lcmaps-plugins-verify-proxy 2>&1 > 5_lcmaps.log; then
+if ! yum $YUMOPTIONS $PACKLIST 2>&1; then
     echo Exiting $0
     exit 1
 fi
 
 echo "*** Installing VOMS APIs :";
-if ! yum $YUMOPTIONS glite-security-voms-api-c glite-security-voms-api-cpp 2>&1 > 6_vomsapi.log; then
+if ! yum $YUMOPTIONS glite-security-voms-api-c glite-security-voms-api-cpp 2>&1; then
     echo Exiting $0
     exit 1
 fi
@@ -156,27 +154,28 @@ if [ $SO_FAMILY == "5" ] && [ $ARCH_FAMILY == "ia32" ] ; then
     GRIDSITE_RPM="gridsite-shared-1.5.10-1.i386.rpm"
     GRIDSITEDEV_RPM="gridsite-devel-1.5.10-1.i386.rpm"
     GRIDSITE_REPO="http://eticssoft.web.cern.ch/eticssoft/repository/org.glite/org.gridsite.core/1.5.10/sl5_ia32_gcc412/"
+fi
 
 # for SLC5 and x86_64
 if [ $SO_FAMILY == "5" ] && [ $ARCH_FAMILY == "x86_64" ] ; then 
     GRIDSITE_RPM="gridsite-shared-1.5.10-1.sl5.x86_64.rpm"
     GRIDSITEDEV_RPM="gridsite-devel-1.5.10-1.x86_64.rpm"
     GRIDSITE_REPO="http://eticssoft.web.cern.ch/eticssoft/repository/org.glite/org.gridsite.core/1.5.10/sl5_x86_64_gcc412/"
-
+fi
 
 echo "***\t Downloading to $MYTESTAREA/GFTP_RPMs the RPMs :" $GRIDSITE_RPM $GRIDSITEDEV_RPM;
-if ! wget -nv -O $MYTESTAREA//GFTP_RPMs/$GRIDSITE_RPM $GRIDSITE_REPO$GRIDSITE_RPM; then
+if ! wget -nv -O $MYTESTAREA/GFTP_RPMs/$GRIDSITE_RPM $GRIDSITE_REPO$GRIDSITE_RPM; then
     echo Exiting from $0
     exit 1
 fi
 
-if ! wget -nv -O $MYTESTAREA//GFTP_RPMs/$GRIDSITEDEV_RPM $GRIDSITE_REPO$GRIDSITEDEV_RPM; then
+if ! wget -nv -O $MYTESTAREA/GFTP_RPMs/$GRIDSITEDEV_RPM $GRIDSITE_REPO$GRIDSITEDEV_RPM; then
     echo Exiting from $0
     exit 1
 fi
 
 echo "***\t Installing " $GRIDSITE_RPM $GRIDSITEDEV_RPM;
-rpm -Uvh $GRIDSITE_RPM $GRIDSITEDEV_RPM  2>&1 > 7_gridsite.log 
+rpm -Uvh --force $MYTESTAREA/GFTP_RPMs/$GRIDSITE_RPM $MYTESTAREA/GFTP_RPMs/$GRIDSITEDEV_RPM  2>&1  
 rpmresult=$?
 if [[ $rpmresult -ne 0 ]];then
     echo "===> RPM installation failed, exit code $rpmresult. Exiting..."
@@ -184,8 +183,8 @@ if [[ $rpmresult -ne 0 ]];then
 fi
 
 # old address: http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/GridFTPinstall.tar.gz
-CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab"
-#CMS_SERVER="https://cmsweb.cern.ch/crabconf"
+#CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab"
+CMS_SERVER="https://cmsweb.cern.ch/crabconf"
 
 mkdir -p $MYTESTAREA/GFTP_CFGfiles
 echo "*** Downloading to $MYTESTAREA/GFTP_CFGfiles defaults config files tarball"
@@ -256,7 +255,7 @@ fi
 
 echo "*** GridFTP installation completed"
 echo ""
-if ! [[ -e /etc/grid-security/hostkey.pem && -e /etc/grid-security/hostcert.pem ]]; then 
+if ! [ -e /etc/grid-security/hostkey.pem ] && [ -e /etc/grid-security/hostcert.pem ]; then 
     ls /etc/grid-security/hostkey.pem /etc/grid-security/hostcert.pem
     echo " ==> Please remember to copy the machine certificate to the /etc/grid-security/ directory"
     echo "     with the correct permission settings "
@@ -282,8 +281,8 @@ mv $MYTESTAREA/GFTP_CFGfiles/globus-gridftp .
 echo " ==> Start GridFTP server daemon through the following script:"
 echo "     globus-gridftp start"
 echo ""
-
 }
+
 ################
 ### Unistall and cleanup
 ################
