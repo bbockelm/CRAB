@@ -7,7 +7,7 @@ It will be parallelized if needed through WorkQueue using a new class.
 __all__ = []
 __revision__ = "$Id: CrabJobCreatorPollerPoller.py,v 1.2 \
             2009/09/30 01:21:44 hriahi Exp $"
-__version__ = "$Revision: 1.4 $"
+__version__ = "$Revision: 1.5 $"
 
 import logging
 import os
@@ -126,7 +126,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         rjAttrs = {}
         attrtemp = {'processStatus': 'created', 'status': 'C', 'taskId': '1' , \
           'submission': '1', 'statusScheduler': 'Created', 'jobId': '', \
-          'state': 'SubRequested', 'closed': 'N'}
+          'state': 'Created', 'closed': 'N'}
         tempDict = {'executable': 'CMSSW.sh', 'outputFiles': [], 'name': '', \
           'standardError': '', 'submissionNumber': '1', 'standardOutput': '', \
           'jobId': '', 'wmbsJobId': '', 'arguments': '', 'taskId':'1' , \
@@ -455,7 +455,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
         """
         Register taskToComplete jobs
         """
-
+        cmdRng_tmp=[]
         ranges = eval(self.cmdRng)
 
         for job in self.taskToComplete.jobs:
@@ -464,10 +464,11 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
      self.config['CacheDir'], \
      self.taskToComplete['name'] + '_spec', jobName )
             weStatus = 'create'
-            if job['jobId'] in ranges : 
-                weStatus = 'Submitting'
-             
-
+            if len(ranges)>0: 
+                if job['jobId'] in ranges : weStatus = 'Submitting'
+            else:
+                weStatus = 'Submitting'              
+                cmdRng_tmp.append(job['jobId'])  
             jobDetails = {
                           'id':jobName, 'job_type':\
                      'Processing', 'cache':cacheArea, \
@@ -502,7 +503,9 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
                 return 1
 
             logging.info('Registration for %s performed'%jobName)
+        if len(ranges) < 1: self.cmdRng=cmdRng_tmp
         return 0
+ 
  
     def databaseWork(self):
         """
