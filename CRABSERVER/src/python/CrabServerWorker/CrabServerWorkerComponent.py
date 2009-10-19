@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.90 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.90 2009/09/30 00:02:44 riahi Exp $"
+__version__ = "$Revision: 1.91 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.91 2009/10/12 16:15:54 farinafa Exp $"
 
 import os, pickle, time, copy
 
@@ -435,13 +435,10 @@ class CrabServerWorkerComponent:
             self.materializeStatus()
             return
         # cold restart for crashes
-        delay = -1
         for t in self.taskPool:
             type, payload = self.taskPool[t]
-            delay += 1
-            dT = delay/float(self.maxThreads)
-            waitTime = '%s:%s:%s'%(str(dT/3600).zfill(2), str((dT/60)%60).zfill(2), str(dT%60).zfill(2))
-            logging.info("Publishing " + str(type))
+            waitTime = '00:02:00'
+            logging.info("Publishing %s with delay %s"%( str(type), waitTime ))
             self.ms.publish(type, payload, waitTime)
             self.ms.commit()
         self.taskPool = {}
