@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.28 2009/10/17 14:39:34 spiga Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.29 2009/10/19 11:52:12 riahi Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import string
 import sys, os
@@ -227,9 +227,8 @@ class RegisterWorker(Thread):
             self.flavour = str( cmdXML.getAttribute('Flavour') )
             self.type = str( cmdXML.getAttribute('Type') )
 
-            if self.type == 'partiallySpecified':
-                self.feeder = self.cfg_params['WMBS.feeder']
-                self.splitAlgo = self.cfg_params['WMBS.SplitAlgo']  
+            self.feeder = self.cfg_params.get('feeder','Feeder')
+            self.splitAlgo = self.cfg_params.get('SplitAlgo','FileBased')
 
             self.dataset = self.cfg_params['CMSSW.datasetpath']
             self.location = self.cfg_params['EDG.se_white_list']
