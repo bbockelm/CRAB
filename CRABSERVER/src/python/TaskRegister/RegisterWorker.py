@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.27 2009/10/15 13:25:54 spiga Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.28 2009/10/17 14:39:34 spiga Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import string
 import sys, os
@@ -148,7 +148,7 @@ class RegisterWorker(Thread):
         self.locationNew = self.daofactory(classname = "Locations.New")
 
         # Workflow creation
-        wf = Workflow(spec = self.taskName+".xml", owner = self.owner,\
+        wf = Workflow(spec = self.taskName+".xml", owner = self.owner, \
                name = "wf_"+self.taskName, task = self.taskName)
         try:
 
@@ -166,12 +166,15 @@ class RegisterWorker(Thread):
      
         # CRAB sends a message to the FeederManager, with a dataset to watch
         self.myThread.transaction.begin()
-        FManagerdict = {'FeederType':'Feeder','dataset':self.dataset}
+        FManagerdict = {'FeederType':self.feeder, 'dataset':self.dataset}
         FManagerSent = pickle.dumps(FManagerdict)
-        msg = {'name':'AddDatasetWatch','payload':FManagerSent}
+        msg = {'name':'AddDatasetWatch', 'payload':FManagerSent}
         self.newMsgService.publish(msg)
-        WFManagerdict = {'WorkflowId' : wf.id ,'FilesetMatch': \
-                self.dataset,'SplitAlgo':'FileBased','Type':'processing'}
+
+        WFManagerdict = {'WorkflowId' : wf.id , 'FilesetMatch': \
+                self.dataset + ':' + self.feeder ,'SplitAlgo':self.splitAlgo , 'Type':'processing'}
+
+
         WFManagerSent = pickle.dumps(WFManagerdict)
         msg = {'name' : 'AddWorkflowToManage', \
                 'payload' : WFManagerSent}
@@ -185,8 +188,8 @@ class RegisterWorker(Thread):
             for loc in locations:
                self.locationNew.execute(siteName = loc)
 
-            WFManagerLocdict = {'WorkflowId' : wf.id ,'FilesetMatch': \
-                      self.dataset,'Valid':'true','Locations': self.location}
+            WFManagerLocdict = {'WorkflowId' : wf.id , 'FilesetMatch': \
+                      self.dataset,'Valid':'true', 'Locations': self.location}
             WFManagerLocSent = pickle.dumps(WFManagerLocdict)
             msg = {'name' : 'AddToWorkflowManagementLocationList', \
                         'payload' : WFManagerLocSent}
@@ -223,6 +226,10 @@ class RegisterWorker(Thread):
 
             self.flavour = str( cmdXML.getAttribute('Flavour') )
             self.type = str( cmdXML.getAttribute('Type') )
+
+            if self.type == 'partiallySpecified':
+                self.feeder = self.cfg_params['WMBS.feeder']
+                self.splitAlgo = self.cfg_params['WMBS.SplitAlgo']  
 
             self.dataset = self.cfg_params['CMSSW.datasetpath']
             self.location = self.cfg_params['EDG.se_white_list']
