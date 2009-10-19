@@ -34,9 +34,6 @@ class Submitter(Actor):
                 msg += '      Generic range is not allowed"'
                 raise CrabException(msg)
             pass
-        self.cmdline_nsjobs = self.nsjobs
-#wmbs
-        self.cmdline_nsjobs = self.nsjobs
         self.seWhiteList = cfg_params.get('GRID.se_white_list',[])
         self.seBlackList = cfg_params.get('GRID.se_black_list',[])
         self.datasetPath=self.cfg_params['CMSSW.datasetpath']
@@ -49,15 +46,17 @@ class Submitter(Actor):
     def BuildJobList(self,type=0):
         # total jobs
         nj_list = []
-        if type==1: # and job_list non c'e'
-            self.nj_list = [1,2,3]
+        self.complete_List = common._db.nJobs('list')
+        if type==1 and len(self.complete_List) < 1 :
+            self.nj_list =[]
+            if self.chosenJobsList: self.nj_list = self.chosenJobsList  
+            print self.nj_list 
             return
         # build job list
         from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
         self.blackWhiteListParser = SEBlackWhiteListParser(self.seWhiteList, self.seBlackList, common.logger())
         common.logger.debug('nsjobs '+str(self.nsjobs))
         # get the first not already submitted
-        self.complete_List = common._db.nJobs('list')
         common.logger.debug('Total jobs '+str(len(self.complete_List)))
 
         jobSetForSubmission = 0
