@@ -31,8 +31,11 @@ class SchedulerArc(SchedulerGrid):
         return
 
     def envUniqueID(self):
-        taskHash = sha.new(common._db.queryTask('name')).hexdigest()
-        id = 'https://' + common.scheduler.name() + '/' + taskHash + '/${NJob}'
+        """ 
+        Generate shell expression for the 'MonitorJobID' used to identify
+        the job at Dashboard; we'll use the arcId.
+        """
+        id = 'gsiftp://${NORDUGRID_CE}:2811/jobs/${HOME##*/}'
         msg = 'JobID for ML monitoring is created for ARC scheduler: %s' % id
         common.logger.debug(msg)
         return id
@@ -239,51 +242,7 @@ class SchedulerArc(SchedulerGrid):
         return tags
 
 
-    def submit(self,list,task):
-        """ submit to scheduler a list of jobs """
-        if (not len(list)):
-            common.logger.info("No sites where to submit jobs")
-        req=str(self.sched_parameter(list[0],task))
-
-        ### reduce collection size...if needed
-        new_list = bulkControl(self,list)
-
-        for sub_list in new_list:
-            self.boss().submit(task['id'],sub_list,req)
-        return
-
-        
-    def queryEverything(self,taskid):
-        """
-        Query needed info of all jobs with specified boss taskid
-        """
-        return self.boss().queryEverything(taskid)
-
-
-    def cancel(self,ids):
-        """
-        Cancel the job(s) with ids (a list of id's)
-        """
-        self._boss.cancel(ids)
-        return
-
-
-    def decodeLogInfo(self, file):
-        """
-        Parse logging info file and return main info
-        """
-        return
-
-
-    def writeJDL(self, list, task):
-        """
-        Materialize JDL for a list of jobs
-        """
-        # FIXME: Is this function being used?
-        req=str(self.sched_parameter(list[0],task))
-        new_list = bulkControl(self,list)
-        jdl=[]
-        for sub_list in new_list:
-            tmp_jdl =  self.boss().writeJDL(task['id'], sub_list, req)
-            jdl.append(tmp_jdl)
-        return jdl
+    def loggingInfo(self,list_id,outfile ):
+        """ return logging info about job nj """
+        print 'loggingInfo', list_id
+        return self.boss().LoggingInfo(list_id,outfile)
