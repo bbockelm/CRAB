@@ -45,7 +45,7 @@ A script to install/uninstall and configure the GridFTP service.
 
 * Installation Syntax:
 
-GridFTPrpms.sh install -path </your/dir> [-so <SL(C) ver>] [-arch <your arch>]
+GridFTPinstall_1_1_X.sh install -path </your/dir> [-so <SL(C) ver>] [-arch <your arch>]
 
 -path </your/dir>            : location of where the installation must be done 
 
@@ -55,7 +55,7 @@ GridFTPrpms.sh install -path </your/dir> [-so <SL(C) ver>] [-arch <your arch>]
 
 * Uninstall Syntax:
 
-GridFTPrpms.sh uninstall -path </your/dir>
+GridFTPinstall_1_1_X.sh uninstall -path </your/dir>
 
 EOF_HELP
             exit 1
