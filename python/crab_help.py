@@ -593,11 +593,15 @@ Name of the working directory for the current task. By default, a name I<crab_0_
 
 =item B<thresholdLevel>
 
-This has to be a value between 0 and 100, that indicates the percentage of task completeness (jobs in a ended state are complete, even if failed). The server will notify the user by e-mail (look at the field: B<eMail>) when the task will reach the specified threshold. Works just with the server_mode = 1.
+This has to be a value between 0 and 100, that indicates the percentage of task completeness (jobs in a ended state are complete, even if failed). The server will notify the user by e-mail (look at the field: B<eMail>) when the task will reach the specified threshold. Works just when using the server.
 
 =item B<eMail>
 
-The server will notify the specified e-mail when the task will reaches the specified B<thresholdLevel>. A notification is also sent when the task will reach the 100\% of completeness. This field can also be a list of e-mail: "B<eMail = user1@cern.ch, user2@cern.ch>". Works just with the server_mode = 1.
+The server will notify the specified e-mail when the task will reaches the specified B<thresholdLevel>. A notification is also sent when the task will reach the 100\% of completeness. This field can also be a list of e-mail: "B<eMail = user1@cern.ch, user2@cern.ch>". Works just when using the server.
+
+=item B<client>
+
+Specify the client that can be used to interact with the server in B<CRAB.server_name>. The default is the value in the server configuration.
 
 =item B<return_data *>
 

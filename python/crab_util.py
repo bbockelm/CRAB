@@ -355,7 +355,11 @@ def CliServerParams(self):
 
     self.storage_name = str(self.srvCfg['storageName'])
     self.storage_path = str(self.srvCfg['storagePath'])
+
     self.storage_proto = str(self.srvCfg['storageProtocol'])
+    if self.cfg_params.has_key('USER.client'):
+        self.storage_proto = self.cfg_params['USER.client'].lower()
+
     self.storage_port = str(self.srvCfg['storagePort'])
 
 def bulkControl(self,list):
