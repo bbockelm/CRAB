@@ -109,8 +109,8 @@ class SubmitterServer( Submitter ):
 
         ### it should not be there... To move into SE API. DS
 
-        # create remote dir for gsiftp
-        if self.storage_proto in ['gridftp','rfio']:
+        # create remote dir for gsiftp - client dependent
+        if self.storage_proto in ['gridftp','rfio','uberftp']:
             try:
                 action = SBinterface( seEl )
                 action.createDir( self.remotedir )
