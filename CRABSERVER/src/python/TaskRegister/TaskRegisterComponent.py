@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.19 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.19 2009/09/30 01:07:58 hriahi Exp $"
+__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.18 2009/09/30 00:19:38 riahi Exp $"
 
 import os
 import pickle
@@ -150,6 +150,7 @@ class TaskRegisterComponent:
                                 self.availWorkersIds.append(senderId) 
                         elif evt in ["RegisterWorkerComponent:RegisterWorkerFailed"]:
                                 logging.info("Task %s failed"%taskUniqName)
+                                self.availWorkersIds.append(senderId)  
                                 self.markTaskAsNotSubmitted(taskUniqName, 'all')
                         elif taskUniqName in self.killingRequestes:
                                 logging.info("Task %s killed by user"%taskUniqName)
