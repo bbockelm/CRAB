@@ -15,7 +15,6 @@ fi
 #defaults
 
 SO_FAMILY="4"
-ARCH_FAMILY="ia32"
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -33,10 +32,6 @@ while [ $# -gt 0 ]; do
             [ $# -gt 1 ] || { echo "Option \`$1' requires an argument" 1>&2; exit 1;  }
             SO_FAMILY="$2"
             shift; shift ;;
-        -arch )
-            [ $# -gt 1 ] || { echo "Option \`$1' requires an argument" 1>&2; exit 1;  }
-            ARCH_FAMILY="$2"
-            shift; shift ;;
         -help )
             cat << \EOF_HELP
 
@@ -45,13 +40,11 @@ A script to install/uninstall and configure the GridFTP service.
 
 * Installation Syntax:
 
-GridFTPinstall_1_1_X.sh install -path </your/dir> [-so <SL(C) ver>] [-arch <your arch>]
+GridFTPinstall_1_1_X.sh install -path </your/dir> [-so <SL(C) ver>] 
 
 -path </your/dir>            : location of where the installation must be done 
 
 -so <SL version>             : version for the used OS, allowed values are 4 or 5 [default 4]
-
--arch <your architecture>    : adopted architecture, allowed values are ia32 or x86_64 [default ia32]   
 
 * Uninstall Syntax:
 
@@ -113,7 +106,13 @@ fi
 ### install packages
 
 echo "*** Installing CAs and VOMS certificates :";
-if ! yum $YUMOPTIONS lcg-CA lcg-vomscerts 2>&1; then
+if ! yum $YUMOPTIONS lcg-CA 2>&1; then
+    echo Exiting $0
+    exit 1
+fi
+
+# this exists only for glite 3.1
+if [ $SO_FAMILY == "4" ] && ! yum $YUMOPTIONS lcg-vomscerts 2>&1; then
     echo Exiting $0
     exit 1
 fi
@@ -149,15 +148,8 @@ GRIDSITE_RPM="gridsite-shared-1.1.18.1-1.i386.rpm"
 GRIDSITEDEV_RPM="gridsite-devel-1.1.18.1-1.i386.rpm"
 GRIDSITE_REPO="http://eticssoft.web.cern.ch/eticssoft/repository/org.glite/org.gridsite.core/1.1.18/slc4_ia32_gcc346/"
 
-# for SLC5 and ia32
-if [ $SO_FAMILY == "5" ] && [ $ARCH_FAMILY == "ia32" ] ; then
-    GRIDSITE_RPM="gridsite-shared-1.5.10-1.i386.rpm"
-    GRIDSITEDEV_RPM="gridsite-devel-1.5.10-1.i386.rpm"
-    GRIDSITE_REPO="http://eticssoft.web.cern.ch/eticssoft/repository/org.glite/org.gridsite.core/1.5.10/sl5_ia32_gcc412/"
-fi
-
 # for SLC5 and x86_64
-if [ $SO_FAMILY == "5" ] && [ $ARCH_FAMILY == "x86_64" ] ; then 
+if [ $SO_FAMILY == "5" ] ; then 
     GRIDSITE_RPM="gridsite-shared-1.5.10-1.sl5.x86_64.rpm"
     GRIDSITEDEV_RPM="gridsite-devel-1.5.10-1.x86_64.rpm"
     GRIDSITE_REPO="http://eticssoft.web.cern.ch/eticssoft/repository/org.glite/org.gridsite.core/1.5.10/sl5_x86_64_gcc412/"
@@ -327,7 +319,7 @@ for arpm in `ls $MYTESTAREA/GFTP_RPMs/*.rpm`; do
 done
 
 echo "*** Removing Yum packages"
-echo "\t NOTE: lcg-CA lcg-vomscerts packages won't be removed"
+echo "\t NOTE: lcg-CA lcg-vomscerts packages won't be removed automatically"
 
 YUMOPTIONS="remove -y"
 
