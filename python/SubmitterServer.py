@@ -109,7 +109,7 @@ class SubmitterServer( Submitter ):
 
         ### it should not be there... To move into SE API. DS
 
-        # create remote dir for gsiftp - client dependent
+        # create remote dir for gsiftp
         if self.storage_proto in ['gridftp','rfio','uberftp']:
             try:
                 action = SBinterface( seEl )
@@ -137,6 +137,76 @@ class SubmitterServer( Submitter ):
         ## copy ISB ##
         sbi = SBinterface( loc, seEl )
 
+        # can copy a list of files
+        if self.storage_proto in ['globus']:
+            #print "[moveISB_SEAPI] doing globus-url-copy"
+            # construct a list of absolute paths of input files             
+            # and the destinations to copy them to
+            sourcesList = []
+            destsList = []
+            for filetocopy in isblist:
+                sourcesList.append(os.path.abspath(filetocopy))             
+                destsList.append(os.path.join(self.remotedir, os.path.basename(filetocopy)))
+
+            # construct logging information
+            toCopy = "\n".join([t[0] + " to " + t[1] for t in map(None, sourcesList, destsList)]) + "\n"
+            common.logger.debug("Sending:\n " + toCopy)                     
+              
+            # try to do the copy        
+            copy_res = None
+            try:
+                copy_res = sbi.copy( sourcesList, destsList, opt=self.copyTout)        
+            except AuthorizationException, ex:
+                common.logger.debug(str(ex.detail))                         
+                msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
+                msg +="Project "+ self.taskuuid +" not Submitted \n"        
+                raise CrabException(msg)
+            except Exception, ex:                                           
+                common.logger.debug(str(ex))                                
+                import traceback
+                common.logger.debug(str(traceback.format_exc()))
+                msg = "ERROR : Unable to ship the project to the server %s\n"%str(ex)
+                msg +="Project "+ self.taskuuid +" not Submitted \n"
+                raise CrabException(msg)                                    
+            if copy_res is None:
+                raise CrabException("Unkown Error: Unable to ship the project to the server!")
+            else:
+                ## evaluating copy results
+                copy_err_list = []
+                for ll in map(None, copy_res, sourcesList):
+                    exitcode = int(ll[0][0])
+                    if exitcode == 0:
+                        pass
+                    else:
+                        copy_err_list.append( [ ll[1], ll[0][1] ] )
+                ## now raise an exception, but the submission could be retried
+                if len(copy_err_list) > 0:
+                    msg = "ERROR : Unable to ship the project to the server\n"
+                    for problem in copy_err_list:
+                        msg += "              Problem transferring [%s]:  '%s'\n" %(problem[0],problem[1])
+                    msg += "Project "+ self.taskuuid +" not Submitted \n"
+                    raise CrabException(msg)
+                  
+        # cannot copy a list of files, need to do                           
+        # each file in turn
+        else:   
+            for filetocopy in isblist:                                      
+                source = os.path.abspath(filetocopy)
+                dest = os.path.join(self.remotedir, os.path.basename(filetocopy))              
+                common.logger.debug("Sending "+ os.path.basename(filetocopy) +" to "+ self.storage_name)
+                try:
+                    sbi.copy( source, dest, opt=self.copyTout)
+                except AuthorizationException, ex:
+                    common.logger.debug(str(ex.detail))                     
+                    msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
+                    msg +="Project "+ self.taskuuid +" not Submitted \n"
+                    raise CrabException(msg)
+                except Exception, ex:
+                    common.logger.debug(str(ex))
+                    msg = "ERROR : Unable to ship the project to the server %s\n"%str(ex)
+                    msg +="Project "+ self.taskuuid +" not Submitted \n"    
+                    raise CrabException(msg)                                
+        """
         for filetocopy in isblist:
             source = os.path.abspath(filetocopy)
             dest = os.path.join(self.remotedir, os.path.basename(filetocopy))
@@ -153,7 +223,7 @@ class SubmitterServer( Submitter ):
                 msg = "ERROR : Unable to ship the project to the server %s\n"%str(ex)
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
-
+        """
         ## if here then project submitted ##
         msg = 'Project '+ self.taskuuid +' files successfully submitted to the supporting storage element.\n'
         common.logger.debug(msg)

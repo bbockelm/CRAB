@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.44.2.1 2009/09/16 13:26:24 spiga Exp $"
-__version__ = "$Revision: 1.44.2.1 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.46 2009/09/24 19:10:52 ewv Exp $"
+__version__ = "$Revision: 1.46 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -105,21 +105,69 @@ class GetOutputServer( GetOutput, StatusServer ):
         ## copy ISB ##
         sbi = SBinterface( seEl, loc )
 
-        # retrieve them from SE
         filesAndJodId = {}
-        for i in xrange(len(osbFiles)):
-            source = osbFiles[i]
-            dest = destFiles[i]
-            common.logger.debug( "retrieving "+ str(source) +" to "+ str(dest) )
+
+        if self.storage_proto in ['globus']:
+            #print "[moveISB_SEAPI] doing globus-url-copy"
+            # construct a list of absolute paths of input files             
+            # and the destinations to copy them to
+            sourcesList = []
+            destsList = []
+            for i in xrange(len(osbFiles)):
+                sourcesList.append(osbFiles[i])
+                destsList.append(destFiles[i])
+                #if i < len(filesToRetrieve):
+                #    filesAndJodId[ filesToRetrieve[i] ] = osbFiles[i]
+
+            # construct logging information
+            toCopy = "\n".join([t[0] + " to " + t[1] for t in map(None, sourcesList, destsList)]) + "\n"
+            common.logger.debug("Retrieving:\n " + toCopy)
+
+            # try to do the copy
+            copy_res = None
             try:
-                sbi.copy( source, dest , opt=self.copyTout)
-                if i < len(filesToRetrieve):
-                    filesAndJodId[ filesToRetrieve[i] ] = dest
+                copy_res = sbi.copy( sourcesList, destsList, opt=self.copyTout)
             except Exception, ex:
                 msg = "WARNING: Unable to retrieve output file %s \n" % osbFiles[i]
                 msg += str(ex)
                 common.logger.debug(msg)
-                continue
+                import traceback
+                common.logger.debug( str(traceback.format_exc()) )
+            if copy_res is not None:
+                ## evaluating copy results
+                copy_err_list = []
+                count = 0
+                #print copy_res
+                for ll in map(None, copy_res, sourcesList):
+                    exitcode = int(ll[0][0])
+                    if exitcode == 0:
+                        filesAndJodId[ filesToRetrieve[count] ] = osbFiles[count]
+                    else:
+                        copy_err_list.append( [ ll[1], ll[0][1] ] )
+                    count += 1
+                ## now raise an exception, but the submission could be retried
+                if len(copy_err_list) > 0:
+                    msg = "ERROR : Unable to retrieve output file \n"
+                    for problem in copy_err_list:
+                        msg += "              Problem transferring [%s]:  '%s'\n" %(problem[0],problem[1])
+                    #raise CrabException(msg)
+        else:
+            # retrieve them from SE
+            for i in xrange(len(osbFiles)):
+                source = osbFiles[i]
+                dest = destFiles[i]
+                common.logger.debug( "retrieving "+ str(source) +" to "+ str(dest) )
+                try:
+                    sbi.copy( source, dest , opt=self.copyTout)
+                    if i < len(filesToRetrieve):
+                        filesAndJodId[ filesToRetrieve[i] ] = dest
+                except Exception, ex:
+                    msg = "WARNING: Unable to retrieve output file %s \n" % osbFiles[i]
+                    msg += str(ex)
+                    common.logger.debug(msg)
+                    import traceback
+                    common.logger.debug( str(traceback.format_exc()) )
+                    continue
 
         return filesAndJodId
 
