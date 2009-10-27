@@ -658,10 +658,6 @@ All the details about how to use this functionality are written in https://twiki
 N.B 1) if you are using an official CMS site to stored data, the remote dir will be not considered. The directory where data will be stored is decided by CRAB, following the CMS policy in order to be able to re-read published data.
 2) if you are using a not official CMS site to store data, you have to check the <lfn>, that will be part of the logical file name of you published files, in order to be able to re-read the data.
 
-=item B<publish_with_import_all_parents>
-
-To publish your data in your local DBS importing also the complete parents tree, set publish_with_import_all_parents=1, otherwise 0. In this last case only the dataset that you have analyzed will be imported as parent in your local DBS. Default value is 1.
-
 =item B<publish_data_name>
 
 You produced output will be published in your local DBS with dataset name <primarydataset>/<publish_data_name>/USER

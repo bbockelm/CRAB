@@ -75,7 +75,7 @@ class Publisher(Actor):
                 self.dataset_to_import.append(dataset)
         ###        
             
-        self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',1)
+        #self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',1)
         self.skipOcheck=cfg_params.get('CMSSW.publish_zero_event',0)
     
         self.SEName=''
@@ -92,19 +92,20 @@ class Publisher(Actor):
         dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
         
         try:
-            if (self.import_all_parents==1):
-                common.logger.info("--->>> Importing all parents level")
-                start = time.time()
-                common.logger.debug("start import time: " + str(start))
-                ### to skip the ProdCommon api exception in the case of block without location
-                ### skipNoSiteError=True
-                #dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True)
-                ### calling dbs api directly
-                dbsWriter.dbs.migrateDatasetContents(globalDBS, self.DBSURL, datasetpath)
-                stop = time.time()
-                common.logger.debug("stop import time: " + str(stop))
-                common.logger.info("--->>> duration of all parents import (sec): "+str(stop - start))
-                                                                
+            #if (self.import_all_parents==1):
+            common.logger.info("--->>> Importing all parents level")
+            start = time.time()
+            common.logger.debug("start import time: " + str(start))
+            ### to skip the ProdCommon api exception in the case of block without location
+            ### skipNoSiteError=True
+            #dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True)
+            ### calling dbs api directly
+            dbsWriter.dbs.migrateDatasetContents(globalDBS, self.DBSURL, datasetpath)
+            stop = time.time()
+            common.logger.debug("stop import time: " + str(stop))
+            common.logger.info("--->>> duration of all parents import (sec): "+str(stop - start))
+            ## still not removing the code, but TODO for the final release...
+            """                                                    
             else:
                 common.logger.info("--->>> Importing only the datasetpath " + datasetpath)
                 start = time.time()
@@ -115,6 +116,7 @@ class Publisher(Actor):
                 stop = time.time()
                 common.logger.debug("stop import time: " + str(stop))
                 common.logger.info("--->>> duration of first level parent import (sec): "+str(stop - start))
+            """
         except DBSWriterError, ex:
             msg = "Error importing dataset to be processed into local DBS\n"
             msg += "Source Dataset: %s\n" % datasetpath
