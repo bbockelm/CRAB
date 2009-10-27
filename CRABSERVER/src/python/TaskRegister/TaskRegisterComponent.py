@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.18 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.18 2009/09/30 00:19:38 riahi Exp $"
+__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.19 2009/10/24 16:30:47 riahi Exp $"
 
 import os
 import pickle
@@ -136,26 +136,27 @@ class TaskRegisterComponent:
                         senderId, evt, pload = self.sharedQueue.get_nowait()
                         taskUniqName = pload.split("::")[0]
 
-                        # free resource if no more needed
+                        # dealloc threadId
+                        if senderId not in self.availWorkersIds:
+                            self.availWorkersIds.append(senderId)
+
+                        # dispatch the messages and update status 
                         if evt in ["TaskRegisterComponent:NewTaskRegisteredPartially"]:
-                                self.availWorkersIds.append(senderId)
                                 logging.info("Task %s registred Partially"%taskUniqName) 
                         elif evt in ["TaskRegisterComponent:NewTaskRegistered"] and taskUniqName not in self.killingRequestes:
-                                self.availWorkersIds.append(senderId)
                                 self.ms.publish(evt, pload)
                                 logging.info("Publish Event: %s %s" % (evt, pload))
                                 self.ms.commit()
                         elif evt in ["RegisterWorkerComponent:WorkerFailsToRegisterPartially"]:
                                 logging.info("Task %s failed partially"%taskUniqName)
-                                self.availWorkersIds.append(senderId) 
                         elif evt in ["RegisterWorkerComponent:RegisterWorkerFailed"]:
                                 logging.info("Task %s failed"%taskUniqName)
-                                self.availWorkersIds.append(senderId)  
                                 self.markTaskAsNotSubmitted(taskUniqName, 'all')
                         elif taskUniqName in self.killingRequestes:
                                 logging.info("Task %s killed by user"%taskUniqName)
                                 self.markTaskAsNotSubmitted(taskUniqName, self.killingRequestes[taskUniqName])
                                 del self.killingRequestes[taskUniqName]
+
                     except Queue.Empty, e:
                         logging.debug("Queue empty: " + str(e))
                         break
