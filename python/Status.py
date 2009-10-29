@@ -185,7 +185,7 @@ class Status(Actor):
                                     notTerminatedListId.append(id)
                             if len(notTerminatedListId)>0:
                                 msg+=  " >>>>>>>>> %i Jobs %s\n" % (len(notTerminatedListId), str(st))
-                                msg+=  "\tJobs still in final phase: cannot retrieve them, yet (few minutes of delay can occur when using the server) \n"
+                                msg+=  "\tJobs not completely processed: cannot retrieve them, yet (few minutes of delay can occur when using the server) \n"
                                 msg+=  "\tList of jobs: %s \n" % readableList(self,notTerminatedListId)
                             #    if st in ['Cleared']:
                             #        st = 'Done'
