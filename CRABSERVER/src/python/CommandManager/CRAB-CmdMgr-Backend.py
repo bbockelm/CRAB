@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.35 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.35 2009/08/03 12:14:24 farinafa Exp $"
+__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.36 2009/08/10 14:10:02 farinafa Exp $"
 
 import os
 import time
@@ -284,6 +284,10 @@ class CRAB_AS_beckend:
             prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/xmlReportFile.xml"
         elif statusType == "serverLogging":
             prjUName_fRep = self.wdir + "/" + taskUniqName + "_spec/internalog.xml"
+        elif statusType == "isServerDrained":
+            retStatus = "false"
+            if self.jabber.go_on_accepting_load != 1: 
+                retStatus =  "true"
         else:
             prjUName_fRep = None
             retStatus = "Error: unrecognized kind of status information required"

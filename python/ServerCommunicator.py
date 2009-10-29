@@ -212,6 +212,9 @@ class ServerCommunicator:
         """
         return self._genericCommand('outputRetrieved', blTaskName, rng)
 
+    def checkDrainMode(self, blTaskName='null'):
+        return self.getStatus( blTaskName, statusFamilyType='isServerDrained')
+
     def postMortemInfos(self, blTaskName, rng):
         """
         _postMortemInfos_

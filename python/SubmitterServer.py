@@ -5,7 +5,7 @@ from ApmonIf import ApmonIf
 
 import os, errno, time, sys, re
 import commands, traceback
-import zlib
+import zlib, base64
 
 from Submitter import Submitter
 from ServerCommunicator import ServerCommunicator
@@ -230,6 +230,25 @@ class SubmitterServer( Submitter ):
         return
 
 
+    def checkIfDrained(self, csCommunicator):
+        isDrained = False
+
+        try:
+            drainStatus = csCommunicator.checkDrainMode(self.taskuuid)
+            drainStatus += "="*( len(drainStatus)%8 )
+            drainStatus = zlib.decompress( base64.urlsafe_b64decode(drainStatus) )
+            isDrained = ( drainStatus == "true")
+        except Exception, e:
+            common.logger.debug("Problem while checking server drain mode. The server will be assumed as available.")
+            common.logger.debug( traceback.format_exc() )
+            isDrained = False
+
+        if isDrained == True:
+           msg = "Server is in Drain mode. Unable to submit new tasks."
+           raise CrabException(msg)
+
+        return isDrained
+
     def manageCredential(self):
         """
         Prepare configuration and Call credential API
@@ -291,6 +310,9 @@ class SubmitterServer( Submitter ):
         self.cfg_params['CRAB.se_remote_dir'] = self.remotedir
 
         if firstSubmission==True:
+            # check if the server is in drain mode
+            if self.checkIfDrained(csCommunicator)==True:
+                return
 
             TotJob = common._db.nJobs()
             # move the sandbox
