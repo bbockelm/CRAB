@@ -73,7 +73,7 @@ class Scheduler :
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
         self.publish_data = cfg_params.get("USER.publish_data",0)
         self.local_stage = int(cfg_params.get('USER.local_stage_out',0))
-        self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',0))
+        self.check_RemoteDir =  int(cfg_params.get('USER.check_user_remote_dir',1))
 
         if int(self.copy_data) == 1:
             self.SE = cfg_params.get('USER.storage_element',None)

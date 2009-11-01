@@ -639,7 +639,7 @@ Set it to 1 to skip the check of free space left on your working directory befor
 
 =item B<check_user_remote_dir>
 
-Submitting a job when the same output is already staged in the same target StorageElemet is a source of sure failure. By setting I<check_user_remote_dir>=1  crab will check the content of remote location before the submission.
+To avoid stage out failures CRAB checks the remote location content at the creation time. By setting I<check_user_remote_dir>=0  crab will skip the check.
 
 =back
 
