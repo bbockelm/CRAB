@@ -27,14 +27,9 @@ The most useful general options (use '-h' to get complete help):
   -checkPublication [dbs_url datasetpath] -- checks if a dataset is published in a DBS.
   -kill [range]                           -- kill submitted jobs.
   -resubmit [range]                       -- resubmit killed/aborted/retrieved jobs.
-<<<<<<< crab_help.py
   -forceResubmit [range]                  -- resubmit jobs regardless to their status.
   -copyData [range [dest_se or dest_endpoint]] -- copy locally (in crab_working_dir/res dir) or on a remote SE your produced output, 
                                                   already stored on remote SE. 
-=======
-  -copyData [range [dest_se or dest_endpoint]] -- copy locally (in crab_working_dir/res dir) or on a remote SE your produced output,
-                                                  already stored on remote SE.
->>>>>>> 1.124
   -renewCredential                        -- renew credential on the server.
   -clean                                  -- gracefully cleanup the directory of a task.
   -match|-testJdl [range]                 -- check if resources exist which are compatible with jdl.
@@ -696,7 +691,7 @@ Set it to 1 to skip the check of free space left on your working directory befor
 
 =item B<check_user_remote_dir>
 
-Submitting a job when the same output is already staged in the same target StorageElemet is a source of sure failure. By setting I<check_user_remote_dir>=1  crab will check the content of remote location before the submission.
+To avoid stage out failures CRAB checks the remote location content at the creation time. By setting I<check_user_remote_dir>=0  crab will skip the check.
 
 =back
 
