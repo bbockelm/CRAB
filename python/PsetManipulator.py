@@ -66,18 +66,23 @@ class PsetManipulator:
 
     def psetWriter(self, name):
         """
-        Write out modified CMSSW.cfg
+        Write out modified CMSSW.py
         """
 
-        # FUTURE: Can drop cfg mode for CMSSW < 2_1_x
+        pklFileName=common.work_space.jobDir()+name+".pkl"
+        pklFile = open(pklFileName,"w")
+        myPickle = pickle.Pickler(pklFile)
+        myPickle.dump(self.cmsProcess)
+        pklFile.close()
+        pklFile = open(pklFileName,"rb")
         outFile = open(common.work_space.jobDir()+name,"w")
-        if name.endswith('py'):
-            outFile.write("import FWCore.ParameterSet.Config as cms\n")
-            outFile.write("import pickle\n")
-            outFile.write("pickledCfg=\"\"\"%s\"\"\"\n" % pickle.dumps(self.cmsProcess))
-            outFile.write("process = pickle.loads(pickledCfg)\n")
-        else:
-            outFile.write(self.cfg.data.dumpConfig())
+        outFile.write("import FWCore.ParameterSet.Config as cms\n")
+        outFile.write("import pickle\n")
+        outFile.write("pickledCfg=\"\"\"")
+        outFile.write(pklFile.read())
+        outFile.write("\"\"\"\n")
+        outFile.write("process = pickle.loads(pickledCfg)\n")
+        pklFile.close()
         outFile.close()
 
         return
