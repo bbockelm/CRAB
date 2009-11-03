@@ -66,6 +66,9 @@ repo=jobreport.txt
 
 #CRAB setup_jobtype_environment
 
+echo "WNHostName=`hostname`" | tee -a $RUNTIME_AREA/$repo
+dumpStatus $RUNTIME_AREA/$repo
+
 #
 # END OF SETUP ENVIRONMENT
 #
@@ -96,12 +99,6 @@ echo ">>> Executable $executable"
 which $executable
 res=$?
 if [ $res -ne 0 ];then
-#  echo "SET_EXE 1 ==> ERROR executable not found on WN `hostname`"
-#  echo "JOB_EXIT_STATUS = 50110"
-#  echo "JobExitStatus=50110" | tee -a $RUNTIME_AREA/$repo
-#  dumpStatus $RUNTIME_AREA/$repo
-#  exit
-
   echo "ERROR ==> executable not found on WN `hostname`"
   job_exit_code=10035
   func_exit
@@ -109,11 +106,11 @@ else
   echo "ok executable found"
 fi
 
-#echo "SET_EXE 0 ==> ok executable found"
-
 echo "ExeStart=$executable" >>  $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
-#cat  pset.py
+# cp pset.py pippo.py
+# echo "print process.dumpPython()" >> pippo.py
+# python  pippo.py
 echo ">>> $executable started at `date -u`"
 start_exe_time=`date +%s`
 #CRAB run_executable
