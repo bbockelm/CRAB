@@ -26,7 +26,6 @@ class SubmitterServer( Submitter ):
         self.type = int(cfg_params.get('WMBS.automation',0))
         self.taskType = 'fullySpecified'
         if self.type==1: self.taskType='partiallySpecified'
-        print self.type
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.credentialType = 'Token'
             self.copyTout= ' '

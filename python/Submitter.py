@@ -50,7 +50,6 @@ class Submitter(Actor):
         if type==1 and len(self.complete_List) < 1 :
             self.nj_list =[]
             if self.chosenJobsList: self.nj_list = self.chosenJobsList  
-            print self.nj_list 
             return
         # build job list
         from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
