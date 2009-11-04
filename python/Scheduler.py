@@ -180,6 +180,8 @@ class Scheduler :
             msg =  'Problems trying remote dir check... \n'
             msg += '\tPlease check stage out configuration parameters.\n'
             raise CrabException(msg)
+        elif remoteListTmp is False:
+            return
         if remoteListTmp:
             listJob = common._db.nJobs('list')
             remoteList = []
