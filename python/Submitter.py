@@ -256,6 +256,9 @@ class Submitter(Actor):
         msg += '\tPlease check if :\n'
         msg += '\t\t -- the dataset is available at this site!\n'
         msg += '\t\t -- the CMSSW version is available at this site!)\n'
+        msg += '\tPlease have also a look at Site Status Page for CMS sites,\n'
+        msg += '\t  to check if the sites hosting your data are ok\n'
+        msg += '\t  http://dashb-ssb.cern.ch/dashboard/request.py/siteviewhome\n'
         common.logger.info(msg)
 
         return
