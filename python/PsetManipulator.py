@@ -9,13 +9,15 @@ from crab_util import *
 from crab_exceptions import *
 
 from ProdCommon.CMSConfigTools.ConfigAPI.CfgInterface import CfgInterface
+from FWCore.ParameterSet.Config    import include
 from FWCore.ParameterSet.DictTypes import SortedKeysDict
+from FWCore.ParameterSet.Modules   import OutputModule
 from FWCore.ParameterSet.Modules   import Service
 from FWCore.ParameterSet.Types     import *
-from FWCore.ParameterSet.Modules   import OutputModule
 
 import FWCore.ParameterSet.Types   as CfgTypes
 import FWCore.ParameterSet.Modules as CfgModules
+import FWCore.ParameterSet.Config  as cms
 
 class PsetManipulator:
     def __init__(self, pset):
@@ -24,31 +26,24 @@ class PsetManipulator:
         """
 
         self.pset = pset
-        #convert Pset
-        from FWCore.ParameterSet.Config import include
+
         common.logger.debug("PsetManipulator::__init__: PSet file = "+self.pset)
-        # FUTURE: Can drop cfg mode for CMSSW < 2_1_x
-        if self.pset.endswith('py'):
-            handle = open(self.pset, 'r')
-            try:   # Nested form for Python < 2.5
-                try:
-                    self.cfo = imp.load_source("pycfg", self.pset, handle)
-                    self.cmsProcess = self.cfo.process
-                except Exception, ex:
-                    msg = "Your config file is not valid python: %s" % str(ex)
-                    raise CrabException(msg)
-            finally:
-                handle.close()
-        else:
+        handle = open(self.pset, 'r')
+        try:   # Nested form for Python < 2.5
             try:
-                self.cfo = include(self.pset)
-                self.cmsProcess = self.cfo
+                self.cfo = imp.load_source("pycfg", self.pset, handle)
+                self.cmsProcess = self.cfo.process
             except Exception, ex:
-                msg =  "Your cfg file is not valid, %s\n" % str(ex)
-                msg += "  https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabFaq#Problem_with_ParameterSet_parsin\n"
-                msg += "  may help you understand the problem."
+                msg = "Your config file is not valid python: %s" % str(ex)
                 raise CrabException(msg)
+        finally:
+            handle.close()
+
         self.cfg = CfgInterface(self.cmsProcess)
+        try: # Quiet the output
+            self.cfg.data.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(100)
+        except AttributeError:
+            pass
 
     def maxEvent(self, maxEv):
         """
