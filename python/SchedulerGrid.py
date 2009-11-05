@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.115 2009/09/29 22:01:39 spiga Exp $"
-__version__ = "$Revision: 1.115 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.116 2009/10/12 15:37:36 slacapra Exp $"
+__version__ = "$Revision: 1.116 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -70,15 +70,15 @@ class SchedulerGrid(Scheduler):
         self.EDG_cpu_time = cfg_params.get('GRID.max_cpu_time', '130')
 
         # Add EDG_WL_LOCATION to the python path
-        if not os.environ.has_key('EDG_WL_LOCATION'):
-            msg = "Error: the EDG_WL_LOCATION variable is not set."
-            raise CrabException(msg)
-        path = os.environ['EDG_WL_LOCATION']
-
-        libPath=os.path.join(path, "lib")
-        sys.path.append(libPath)
-        libPath=os.path.join(path, "lib", "python")
-        sys.path.append(libPath)
+        if not self.CRAB_useServer and not self.CRAB_serverName:
+            if not os.environ.has_key('EDG_WL_LOCATION'):
+                msg = "Error: the EDG_WL_LOCATION variable is not set."
+                raise CrabException(msg)
+            path = os.environ['EDG_WL_LOCATION']
+            libPath=os.path.join(path, "lib")
+            sys.path.append(libPath)
+            libPath=os.path.join(path, "lib", "python")
+            sys.path.append(libPath)
 
         self.checkProxy()
         return
@@ -260,7 +260,7 @@ class SchedulerGrid(Scheduler):
             cmscp_args = ' --destination $endpoint --inputFileList $file_list'
             cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
             if self.space_tocken:
-                cmscp_args +=' --option space_tocken=%s'%str(self.space_tocken)  
+                cmscp_args +=' --option space_tocken=%s'%str(self.space_tocken)
             txt += 'echo "python cmscp.py %s "\n'%cmscp_args
             txt += 'python cmscp.py %s \n'%cmscp_args
             if self.debug_wrapper==1:

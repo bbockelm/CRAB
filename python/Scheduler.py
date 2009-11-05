@@ -58,6 +58,8 @@ class Scheduler :
 
     def configure(self, cfg_params):
         self._boss.configure(cfg_params)
+        self.CRAB_useServer = cfg_params.get('CRAB.use_server',0)
+        self.CRAB_serverName = cfg_params.get('CRAB.server_name',None)
         seWhiteList = cfg_params.get('GRID.se_white_list',[])
         seBlackList = cfg_params.get('GRID.se_black_list',[])
         self.dontCheckMyProxy=int(cfg_params.get("GRID.dont_check_myproxy",0))
@@ -108,7 +110,7 @@ class Scheduler :
             msg = 'Error: data publication is not allowed with lsf scheduler, but only with grid scheduler or caf\n'
             common.logger.info(msg)
             raise CrabException(msg)
-            
+
         if ( int(self.local_stage) == 1 and int(self.publish_data) == 1 ):
             msg = 'Error: currently the publication is not supported with the local stage out. Work in progress....\n'
             common.logger.info(msg)
@@ -169,8 +171,8 @@ class Scheduler :
         ## temporary hack for OctX:
         if endpoint.find('${PSETHASH}')>1:
             try:
-                psethash = runCommand('edmConfigHash < %s'%self.pset) 
-                endpoint= string.replace(endpoint,'${PSETHASH}/',psethash)    
+                psethash = runCommand('edmConfigHash < %s'%self.pset)
+                endpoint= string.replace(endpoint,'${PSETHASH}/',psethash)
             except:
                 msg =  'Problems trying remote dir check... \n'
                 msg += '\tPlease check stage out configuration parameters.\n'
