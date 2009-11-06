@@ -4,7 +4,7 @@
 _CrabJobCreatorComponent_
 
 """
-__version__ = "$Revision: 1.2 $"
+__version__ = "$Revision: 1.3 $"
 __revision__ = "$Id: CrabJobCreatorComponent.py,\
                 v 1.2 2009/10/13 15:19:38 riahi Exp $"
 
@@ -53,6 +53,7 @@ class CrabJobCreatorComponent:
         # specific delegation strategy for glExex
         self.args.setdefault('glExecDelegation', 'false')
 
+        self.args.setdefault('PollInterval',60)
         self.args.update(args)
         
         # define log file
@@ -71,6 +72,7 @@ class CrabJobCreatorComponent:
         ## volatile properties
         self.wdir = self.args['ComponentDir']
         self.maxThreads = int( self.args.get('maxThreads', 5) )
+        self.timePoolDB = self.args['PollInterval']
 
         # shared sessions 
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, makePool=True)
@@ -92,7 +94,6 @@ class CrabJobCreatorComponent:
         self.ms = MessageService()
 
         self.workerCfg = {}
-        self.timepoolDB = 60 
         logging.info(" ")
         logging.info("Starting component...")
     
@@ -116,7 +117,7 @@ class CrabJobCreatorComponent:
         self.workerCfg = self.prepareBaseStatus()      
         compWMObject = WMObject()
         manager = WorkerThreadManager(compWMObject)
-        manager.addWorker(CrabJobCreatorPoller(self.workerCfg), self.timepoolDB)
+        manager.addWorker(CrabJobCreatorPoller(self.workerCfg), float(self.timePoolDB))
         #######################################
 
         try:  
