@@ -92,6 +92,7 @@ componentFields = {
     "CrabJobCreator" : {
     'ComponentDir':None,
     'maxThreads':'5',
+    'PollInterval' : '120',
     },
 
     "CrabServerWorker" : {
