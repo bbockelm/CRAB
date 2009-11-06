@@ -61,13 +61,13 @@ class CrabWorkerAPI:
         """
         sqlStr = "select count(*) from we_Job where id = '" +str(jobId)+ "';"
         tupla = self.dbSession.select(sqlStr)
-        if type(tupla[0]) is not int:
+
+        if str(tupla[0][0]) == "1":
+            return True
+
+        elif str(tupla[0][0]) == "0":
             return False
 
-        if int(tupla[0]) == 1:
-            return True
-        elif int(tupla[0]) == 0:
-            return False
         else:
             raise Exception("More then one entry has been found: "+str(tupla))
 
