@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.29 2009/10/19 11:52:12 riahi Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.31 2009/11/06 12:36:40 hriahi Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import string
 import sys, os
@@ -189,7 +189,7 @@ class RegisterWorker(Thread):
                self.locationNew.execute(siteName = loc)
 
             WFManagerLocdict = {'WorkflowId' : wf.id , 'FilesetMatch': \
-                      self.dataset,'Valid':'true', 'Locations': self.location}
+                      self.dataset + ':' + self.feeder,'Valid':'true', 'Locations': self.location}
             WFManagerLocSent = pickle.dumps(WFManagerLocdict)
             msg = {'name' : 'AddToWorkflowManagementLocationList', \
                         'payload' : WFManagerLocSent}
@@ -228,7 +228,7 @@ class RegisterWorker(Thread):
             self.type = str( cmdXML.getAttribute('Type') )
 
             self.feeder = self.cfg_params.get('feeder','Feeder')
-            self.splitAlgo = self.cfg_params.get('SplitAlgo','FileBased')
+            self.splitAlgo = self.cfg_params.get('splitting_algorithm','FileBased')
 
             self.dataset = self.cfg_params['CMSSW.datasetpath']
             self.location = self.cfg_params['EDG.se_white_list']
