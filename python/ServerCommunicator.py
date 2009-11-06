@@ -315,6 +315,8 @@ class ServerCommunicator:
 #WMBS
         miniCfg['feeder'] = self.cfg_params.get('WMBS.feeder', 'Feeder')
         miniCfg['splitting_algorithm'] = self.cfg_params.get('WMBS.splitting_algorithm','FileBased')
+        miniCfg['split_per_job'] = self.cfg_params.get('WMBS.split_per_job','files_per_job')
+        miniCfg['split_value'] = self.cfg_params.get('WMBS.split_value',1)
 
         miniCfg['CMSSW_version'] = self.scram.getSWVersion()
 
