@@ -5,9 +5,9 @@ The actual wmbsDB poll / Subscription split / Task Extension algorithm.
 It will be parallelized if needed through WorkQueue using a new class.
 """
 __all__ = []
-__revision__ = "$Id: CrabJobCreatorPollerPoller.py,v 1.2 \
-            2009/09/30 01:21:44 hriahi Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: CrabJobCreatorPoller.py,v 1.3 \
+            2009/11/06 12:21:44 hriahi Exp $"
+__version__ = "$Revision: 1.0 $"
 
 import logging
 import os
@@ -54,7 +54,6 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
-
         self.config = config 
 
         # BossLite attributes
@@ -63,6 +62,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
         # Transfer parameter
         self.copyTout = self.config['copyTout']
+
         # Tasks attributes
         self.cmdRng = "[]"
         self.taskToComplete = None 
@@ -88,13 +88,20 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)
 
-        self.getSubscription = daofactory(classname = "ListToSplit")
         self.getTaskByJobGroup = daofactory(classname = "LoadTaskNameByJgId")
+        self.getTaskBySubscription = daofactory(classname = "LoadTaskNameBySubId")
+
+        WMBSdao = DAOFactory(package = "WMCore.WMBS",
+                                logger = self.logger,
+                                dbinterface = myThread.dbi)
+        
+        self.getListSubscription = WMBSdao(classname = "Subscriptions.ListIncomplete")
 
     def taskExtension(self, jobGroups):
         """
         Extension work
         """
+
         dlsDest = []
 
         for dest in jobGroups:
@@ -133,32 +140,32 @@ class CrabJobCreatorPoller(BaseWorkerThread):
           'dlsDestination': dlsDest , 'closed' :'N'} 
 
         jobCounter = 0
+        jobNumber = len(self.taskToComplete.getJobs())
+        logging.info(" This task has already %s jobs" %jobNumber)
+
         for jI in jobGroups[0].jobs:
 
             jobCounter += 1
-            logging.info("THE JOB IS %s" %jI['id'])
 
             tempDict["outputFiles"] = []
             tempDict["outputFiles"].extend(['out_files_'+\
-                   str((jobGroups[0].jobs).index(jI)+1)+'.tgz','crab_fjr_'+\
-                   str((jobGroups[0].jobs).index(jI)+1)+'.xml','.BrokerInfo'])
+                   str((jobGroups[0].jobs).index(jI)+1+jobNumber)+'.tgz','crab_fjr_'+\
+                   str((jobGroups[0].jobs).index(jI)+1+jobNumber)+'.xml','.BrokerInfo'])
             tempDict["name"] = self.taskToComplete['name']+ \
-                   '_job'+str((jobGroups[0].jobs).index(jI)+1)
+                   '_job'+str((jobGroups[0].jobs).index(jI)+1+jobNumber)
             tempDict["standardError"] = 'CMSSW_'+ str((jobGroups[0].jobs).\
                     index(jI)+1)+'.stderr'
             tempDict["standardOutput"] = 'CMSSW_'+str((jobGroups[0].jobs).\
                     index(jI)+1)+'.stdout'
-            tempDict["jobId"] = (jobGroups[0].jobs).index(jI) + 1
+            tempDict["jobId"] = (jobGroups[0].jobs).index(jI) + 1 + jobNumber
             tempDict["wmbsJobId"] = jI['id']
-            tempDict['arguments'] = (jobGroups[0].jobs).index(jI) + 1
+            tempDict['arguments'] = (jobGroups[0].jobs).index(jI) + 1 + jobNumber
             tempDict['taskId'] =  self.taskToComplete['id']
             rjAttrs[tempDict["name"]] = attrtemp
             rjAttrs[tempDict["name"]]['jobId'] = \
-              (jobGroups[0].jobs).index(jI) + 1
+              (jobGroups[0].jobs).index(jI) + 1 + jobNumber
 
-
-            logging.info("THE JOB DICT is %s" %tempDict)
-
+            logging.debug("THE JOB DICT is %s" %tempDict)
  
             job = Job( tempDict )
             subn = int( job['submissionNumber'] )
@@ -167,43 +174,48 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             else :
                 job['submissionNumber'] = subn
 
-            logging.info("THE JOB obj id %s" %job['wmbsJobId'])
+            if jobNumber > 0 :
 
-            self.taskToComplete.addJob(job)
+                self.taskToComplete.appendJob(job)
+
+            else:
+
+                self.taskToComplete.addJob(job)
 
         # Fill running job information
         for job in self.taskToComplete.jobs:
 
-            attrs = rjAttrs[ str(job['name']) ]
+            if str(job['name']) in rjAttrs:
 
+                attrs = rjAttrs[ str(job['name']) ]
 
-            try:
-                self.blDBsession.getRunningInstance( job, attrs )
-            except Exception, e:
-                logMsg = ("Problem generating RunningJob %s.%s.%s."%( \
-                           self.taskToComplete['name'], job['name']\
-                               , job['jobId']) )
-                logMsg += str(e)
-                logging.info( logMsg )
-                logging.info( traceback.format_exc() )
-                self.markTaskAsNotSubmitted(\
-                         job['jobId'])
-                continue 
+                try:
+                    self.blDBsession.getRunningInstance( job, attrs )
+                except Exception, e:
+                    logMsg = ("Problem generating RunningJob %s.%s.%s."%( \
+                               self.taskToComplete['name'], job['name']\
+                                   , job['jobId']) )
+                    logMsg += str(e)
+                    logging.info( logMsg )
+                    logging.info( traceback.format_exc() )
+                    self.markTaskAsNotSubmitted(\
+                             job['jobId'])
+                    continue 
 
-            try:                
-                self.blDBsession.updateDB( job )
-            except Exception, e:
-                logMsg = ("Problem updating bosslite DB with %s of id %s"\
-                         %(job['name'], job['jobId'])) 
-                logMsg += str(e) 
-                logging.info( logMsg )
-                logging.info( traceback.format_exc() )
-                self.markTaskAsNotSubmitted(\
-                      job['jobId'])
-                continue 
+                try:                
+                    self.blDBsession.updateDB( job )
+                except Exception, e:
+                    logMsg = ("Problem updating bosslite DB with %s of id %s"\
+                             %(job['name'], job['jobId'])) 
+                    logMsg += str(e) 
+                    logging.info( logMsg )
+                    logging.info( traceback.format_exc() )
+                    self.markTaskAsNotSubmitted(\
+                          job['jobId'])
+                    continue 
 
         logging.info("Bosslite DB Update Ends ")
-
+ 
         # Argument.xml creation
         self.listArguments = []
         tempArg = {}
@@ -211,7 +223,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         for jI in jobGroups[0].jobs:
 
             tempArg['MaxEvents'] = jI['input_files'][0]['events']
-            tempArg['JobID'] = (jobGroups[0].jobs).index(jI) + 1
+            tempArg['JobID'] = (jobGroups[0].jobs).index(jI) + 1 + jobNumber
             tempArg['InputFiles'] = jI['input_files'][0]['lfn']
             tempArg['SkipEvents'] = 0
             if jI['mask']['FirstEvent']:tempArg['SkipEvents'] = jI['mask']['FirstEvent']
@@ -233,8 +245,16 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         # Create argument.xml
         try:
 
-            self.createXML()
-            self.addEntry()
+            file( self.pathFile )
+
+        except IOError, e:
+
+            logMsg = ("File doesn't exist...")
+            logging.info( logMsg )
+            logging.info( traceback.format_exc() ) 
+            result = IMProvNode( 'arguments' )
+            file( self.pathFile , 'w').write(str(result))
+
 
         except:
             logMsg = ("Problem creating argument.xml for %s"\
@@ -244,16 +264,35 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             logging.info("Argument.xml creation failed")
             self.markTaskAsNotSubmitted( 'all' )
             return
-        logging.info("Copying file")
+
+        # Add entry in xml file
+        self.addEntry()
+
         # Copy arguments.xml from a local FS to gridftp server  
+        logging.info("Copying file")
         self.copyFile()
 
-        logging.info("Registering job")
+
         # Create jobs in CrabWorkerDB
+        logging.info("Registering job")
         if not self.registerJobs() == 0:
             return
 
-        logging.info("Sending message")
+        # Building cmdRng
+        logging.debug("Rng needed %s and length %s" %(self.cmdRng,len(eval(self.cmdRng))))
+
+        if jobNumber > 0:
+
+            logging.debug("Building new job rangs after %s" %jobNumber)
+            tmp = [] 
+            for i in eval(self.cmdRng):
+
+                if int(i) > jobNumber :
+                    tmp.append(i)
+
+            self.cmdRng = tmp
+            logging.debug("Try to submit %s" %self.cmdRng)   
+
         # Payload will be received by CW and TT 
         payload = self.taskToComplete['name'] +"::"+ \
           str(self.config['retries']) +"::"+ \
@@ -413,7 +452,6 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
         try:
             doc = minidom.parse(cmdSpecFile)
             cmdXML = doc.getElementsByTagName("TaskCommand")[0]
-            self.cfgParams = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
 
             self.cmdRng =  str( cmdXML.getAttribute('Range') )
             self.owner = str( cmdXML.getAttribute('Subject') )
@@ -426,14 +464,6 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
             logging.info( reason )
             logging.info( traceback.format_exc() )
         return status
-
-    def createXML(self):
-        """
-        Create xml file
-        """
-        result = IMProvNode( 'arguments' )
-        file( self.pathFile , 'w').write(str(result))
-        return
 
     def addEntry(self):
         """
@@ -466,9 +496,10 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
             weStatus = 'create'
             if len(ranges)>0: 
                 if job['jobId'] in ranges : weStatus = 'Submitting'
+
             else:
+                logging.info('Registration %s' %jobName)
                 weStatus = 'Submitting'              
-                cmdRng_tmp.append(job['jobId'])  
             jobDetails = {
                           'id':jobName, 'job_type':\
                      'Processing', 'cache':cacheArea, \
@@ -477,9 +508,10 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
                           'max_retries': self.config['retries']\
                           , 'max_racers':1 \
                          }
-            jobAlreadyRegistered = False
+            jobAlreadyRegistered = True 
 
             try:
+                logging.info('%s will be verified' %jobName)             
                 jobAlreadyRegistered = self.cwdb.existsWEJob(jobName)
        
             except Exception, e:
@@ -491,6 +523,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
                 jobAlreadyRegistered = False
 
             if jobAlreadyRegistered == True:
+                logging.info('%s already registred' %jobName)
                 continue
 
             logging.info('Registering %s'%jobName)
@@ -502,9 +535,42 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
                 logging.info (logMsg)
                 return 1
 
+            cmdRng_tmp.append(job['jobId'])
             logging.info('Registration for %s performed'%jobName)
-        if len(ranges) < 1: self.cmdRng=cmdRng_tmp
+        if len(ranges) < 1: self.cmdRng=str(cmdRng_tmp)
         return 0
+
+    def getSplitParam(self, subId):
+        """
+        Get split parameters for a subId from the client 
+        """
+
+        
+        # Load task name for wmcore db by subscription id
+        taskName = self.getTaskBySubscription.execute(subId)[0]
+
+        status = 0
+        cmdSpecFile = os.path.join(\
+          self.config['CacheDir'], \
+          taskName  + \
+          '_spec/cmd.xml' )
+
+        try:
+            doc = minidom.parse(cmdSpecFile)
+            cmdXML = doc.getElementsByTagName("TaskCommand")[0]
+            cfgParams = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
+
+            splitPerJob = cfgParams.get('split_per_job','files_per_job')
+            splitValue = cfgParams.get('split_value',1)
+
+        except Exception, e:
+            status = 6
+            reason = "Error while parsing XML file for task %s, \
+             it will not be processed" % taskName
+            reason += str(e)
+            logging.info( reason )
+            logging.info( traceback.format_exc() )
+        return splitPerJob, splitValue 
  
  
     def databaseWork(self):
@@ -515,12 +581,8 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
         logging.info("starting DB Pool now...")
 
         myThread = threading.currentThread()
-        #myThread.transaction.begin()
 
-        # Only subscriptions for closed filesets and not splitted yet are got
-        pickSub = self.getSubscription.execute()
-
-        #myThread.transaction.commit()
+        pickSub = self.getListSubscription.execute()
 
         logging.info('I found these new subscriptions %s to split'%pickSub)
 
@@ -549,9 +611,10 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
                 jobFactory = splitter(package = "WMCore.WMBS",
                                   subscription = subscriptionToSplit)
                 try:
-                    # Get splitting algo for a WF from wmbs DB
-                    # files_per_job will be moved to the client 
-                    jobGroups = jobFactory(files_per_job = 1)
+                    splitPerJob, splittingValue = self.getSplitParam( sub )
+                    kwargs = { splitPerJob : splittingValue }
+                    jobGroups = jobFactory( **kwargs )
+                    #jobGroups = jobFactory( events_per_job = 10 )
                 except Exception, e:
                     logMsg = ("Problem when splitting %s" \
                               %str(sub))              
@@ -559,7 +622,6 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
                     logging.info( logMsg )
                     logging.info( traceback.format_exc() )
                     continue 
-
 
                 # Number of job 0 - exit and try again next time 
                 if len(jobGroups[0].jobs)==0:
@@ -572,7 +634,6 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
         for subId in SUBSWATCH.keys(): 
             if self.taskExtension(SUBSWATCH[subId]) == 0:
                 logging.info("WORK succeeds to END")
-                # TEST
                 del SUBSWATCH[subId]
 
         logging.info('databases work ends')
