@@ -333,7 +333,7 @@ class DBinterface:
             newJobs =  len(reportList) - len(task.jobs)
             if newJobs != 0:
                 isNew=True  
-                if not len(task.jobs):isNew=False
+                if len(task.jobs):isNew=False
                 jobL=[]   
                 for i in range(1,newJobs+1):
                     jobL.append(len(task.jobs)+i) 
