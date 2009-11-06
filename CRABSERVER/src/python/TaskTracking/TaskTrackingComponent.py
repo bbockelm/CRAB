@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.159 2009/09/30 01:17:31 hriahi Exp $"
-__version__ = "$Revision: 1.159 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.160 2009/11/06 12:16:38 hriahi Exp $"
+__version__ = "$Revision: 1.160 $"
 
 import os
 import time
@@ -231,7 +231,7 @@ class TaskTrackingComponent:
             return
 
         # task registered in the db
-        if event == "TaskRegisterComponent:NewTaskRegistered" or "CrabJobCreatorComponent:NewTaskRegistered":
+        if event == "TaskRegisterComponent:NewTaskRegistered" :
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "Submitting Task: %s" % str(taskName) )
                 taskname, maxtry, listjob = payload.split("::")
@@ -245,11 +245,29 @@ class TaskTrackingComponent:
             self.__appendDbgInfo(taskname, _loginfo)
             return
 
+        if event == "CrabJobCreatorComponent:NewTaskRegistered" :
+            if payload != None or payload != "" or len(payload) > 0:
+                logBuf = self.__log(logBuf, "Submitting Task: %s" % str(taskName) )
+                taskname, maxtry, listjob = payload.split("::")
+                self.reviveTask(taskName)
+                self.updateTaskStatus( taskname, self.taskState[1] )
+                self.processSubmitted(taskname)
+                logBuf = self.__log(logBuf, "              task updated.")
+                _loginfo.setdefault('range', str(listjob))
+            else:
+                logBuf = self.__log(logBuf, "ERROR: empty payload from [" +event+ "]!!!!")
+            logging.info(logBuf)
+            self.__appendDbgInfo(taskname, _loginfo)
+            return
+
         # submission performed ##HERE
         if event == "CrabServerWorkerComponent:CrabWorkPerformed":
             if payload != None or payload != "" or len(payload) > 0:
+
+
                 logBuf = self.__log(logBuf, "CrabWorkPerformed: %s" % payload)
                 taskName, textreason = payload.split("::")
+
                 self.updateTaskStatus( taskName, self.taskState[3])
                 self.updateProxyName(taskName)
                 self.processSubmitted(taskName)
@@ -1000,6 +1018,7 @@ class TaskTrackingComponent:
                         self.prepareTaskFailed( taskName, uuid, eMail, status, userName)
                     else:
                         ## lite task load in memory
+
                         try:
                             taskObj = mySession.loadTaskByName( taskName )
                         except TaskError, te:
