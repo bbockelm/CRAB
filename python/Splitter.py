@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.28 2009/08/06 21:34:15 ewv Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Splitter.py,v 1.29 2009/10/01 22:00:40 ewv Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import common
 from sets import Set
@@ -539,7 +539,7 @@ class JobSplitter:
 
         managedGenerators =self.args['managedGenerators']
         generator = self.args['generator']
-        firstRun = self.cfg_params.get('CMSSW.first_run', 1)
+        firstLumi = self.cfg_params.get('CMSSW.first_lumi', 1)
 
         self.prepareSplittingNoInput()
 
@@ -560,8 +560,8 @@ class JobSplitter:
             ## Since there is no input, any site is good
             jobDestination.append([""]) # must be empty to correctly write the XML
             args=[]
-            if (firstRun): # Pythia first run
-                args.append(str(int(firstRun)+i))
+            if (firstLumi): # Pythia first lumi
+                args.append(str(int(firstLumi)+i))
             if (generator in managedGenerators):
                args.append(generator)
                if (generator == 'comphep' and i == 0):
@@ -575,10 +575,10 @@ class JobSplitter:
 
         dictOut = {}
         dictOut['params'] = ['MaxEvents']
-        if (firstRun):
-            dictOut['params'] = ['FirstRun','MaxEvents']
-            if ( generator in managedGenerators ) :
-                dictOut['params'] = ['FirstRun', 'Generator', 'FirstEvent', 'MaxEvents']
+        if (firstLumi):
+            dictOut['params'] = ['FirstLumi','MaxEvents']
+            if (generator in managedGenerators):
+                dictOut['params'] = ['FirstLumi', 'Generator', 'FirstEvent', 'MaxEvents']
         else:
             if (generator in managedGenerators) :
                 dictOut['params'] = ['Generator', 'FirstEvent', 'MaxEvents']

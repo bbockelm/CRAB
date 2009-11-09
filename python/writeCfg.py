@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.24 2009/08/27 12:42:23 ewv Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: writeCfg.py,v 1.25 2009/08/28 18:56:43 ewv Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import getopt
 import imp
@@ -102,6 +102,8 @@ def main(argv) :
     firstEvent = -1
     compHEPFirstEvent = 0
     firstRun   = 0
+    # FUTURE: Remove firstRun
+    firstLumi  = 0
 
     dom = xml.dom.minidom.parse(os.environ['RUNTIME_AREA']+'/arguments.xml')
 
@@ -115,6 +117,8 @@ def main(argv) :
                 firstEvent = int(elem.getAttribute("FirstEvent"))
             if elem.getAttribute("FirstRun"):
                 firstRun = int(elem.getAttribute("FirstRun"))
+            if elem.getAttribute("FirstLumi"):
+                firstLumi = int(elem.getAttribute("FirstLumi"))
 
             generator      = str(elem.getAttribute('Generator'))
             inputFiles     = str(elem.getAttribute('InputFiles'))
@@ -174,6 +178,8 @@ def main(argv) :
     # Pythia parameters
     if (firstRun):
         inModule.setFirstRun(firstRun)
+    if (firstLumi):
+        inModule.setFirstLumi(firstLumi)
 
     # Check if there are random #'s to deal with
     if cfg.data.services.has_key('RandomNumberGeneratorService'):

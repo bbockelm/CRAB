@@ -28,8 +28,8 @@ The most useful general options (use '-h' to get complete help):
   -kill [range]                           -- kill submitted jobs.
   -resubmit [range]                       -- resubmit killed/aborted/retrieved jobs.
   -forceResubmit [range]                  -- resubmit jobs regardless to their status.
-  -copyData [range [dest_se or dest_endpoint]] -- copy locally (in crab_working_dir/res dir) or on a remote SE your produced output, 
-                                                  already stored on remote SE. 
+  -copyData [range [dest_se or dest_endpoint]] -- copy locally (in crab_working_dir/res dir) or on a remote SE your produced output,
+                                                  already stored on remote SE.
   -renewCredential                        -- renew credential on the server.
   -clean                                  -- gracefully cleanup the directory of a task.
   -match|-testJdl [range]                 -- check if resources exist which are compatible with jdl.
@@ -256,12 +256,12 @@ The ARC scheduler requires some changes to crab.cfg:
 
 Select the ARC scheduler:
 scheduler = arc
- 
+
 =item B<requirements>, B<additional_jdl_parameters:>
 
 Use xrsl code instead of jdl for these parameters.
 
-=item B<max_cpu_time>, B<max_wall_clock_time:> 
+=item B<max_cpu_time>, B<max_wall_clock_time:>
 
 For parameters max_cpu_time and max_wall_clock_time, you can use
 units, e.g.  "72 hours" or "3 days", just like with the xrsl attributes
@@ -529,13 +529,13 @@ CMSSW config file. I<preserve_seeds=sourceSeed,g4SimHits> will leave the Pythia 
 
 See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserve_seeds> are randomly set for each job.
 
-=item B<first_run>
+=item B<first_lumi>
 
-Relevant only for Monte Carlo production for which it defaults to 1. The first job will generate events with this run number, subsequent jobs will
-increment the run number. Failing to set this number means CMSSW will not be able to read multiple such files as they
-will all have the same run and event numbers. This check in CMSSW can be bypassed by setting
+Relevant only for Monte Carlo production for which it defaults to 1. The first job will generate events with this lumi block number, subsequent jobs will
+increment the lumi block number. Setting this number to 0 (not recommend) means CMSSW will not be able to read multiple such files as they
+will all have the same run, lumi and event numbers. This check in CMSSW can be bypassed by setting
 I<process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')> in the input source, should you need to
-read files produced without setting first_run.
+read files produced without setting first_run (in old versions of CRAB) or first_lumi.
 
 =item B<generator>
 
