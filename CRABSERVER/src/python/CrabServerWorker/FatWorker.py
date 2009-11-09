@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.181 2009/10/16 14:45:28 farinafa Exp $"
-__version__ = "$Revision: 1.181 $"
+__revision__ = "$Id: FatWorker.py,v 1.182 2009/10/24 10:49:37 mcinquil Exp $"
+__version__ = "$Revision: 1.182 $"
 
 import string
 import sys, os
@@ -163,6 +163,7 @@ class FatWorker(Thread):
             logMsg = "WorkerError %s. Task %s. listMatch."%(self.myName, self.taskName)
             self.preLog(mess = "Failure in pre-submission init", err = logMsg, exc = exc)
             self.sendResult(errStatus, errMsg, logMsg, e)
+            return
 
         self.log.info("FatWorker %s performing submission"%self.myName)
         try:
