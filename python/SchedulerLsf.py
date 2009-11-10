@@ -46,6 +46,15 @@ class SchedulerLsf(SchedulerLocal) :
                  }
         return  params
 
+    def wsSetupEnvironment(self):
+        """
+        Returns part of a job script which does scheduler-specific work.
+        """
+        txt = SchedulerLocal.wsSetupEnvironment(self)
+        #this is needed to support slc4->slc5 migration
+        txt += 'export RFIO_PORT=5001\n'
+        txt += '\n'
+        return txt
     def sched_parameter(self,i,task):
         """
         Returns parameter scheduler-specific, to use with BOSS .
