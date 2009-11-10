@@ -28,15 +28,15 @@ class SchedulerCaf(SchedulerLsf) :
         self.res = cfg_params.get(self.name().upper()+'.resource','"type==SLC5_64 || type==SLC4_64"')
         self.pool = cfg_params.get('USER.storage_pool','cmscafuser')
 
-    def wsSetupEnvironment(self):
-        """
-        Returns part of a job script which does scheduler-specific work.
-        """
-        txt = SchedulerLsf.wsSetupEnvironment(self)
-        txt += '# CAF specific stuff\n'
-        #txt += 'export STAGE_SVCCLASS=cmscaf \n'
-        txt += '\n'
-        return txt
+#    def wsSetupEnvironment(self):
+#        """
+#        Returns part of a job script which does scheduler-specific work.
+#        """
+#        txt = SchedulerLsf.wsSetupEnvironment(self)
+#        txt += '# CAF specific stuff\n'
+#        #txt += 'export STAGE_SVCCLASS=cmscaf \n'
+#        txt += '\n'
+#        return txt
 
     def wsCopyOutput(self):
         ### default is the name of the storage pool 

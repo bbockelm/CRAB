@@ -23,12 +23,13 @@ class SchedulerLsf(SchedulerLocal) :
     def configure(self, cfg_params):
         SchedulerLocal.configure(self, cfg_params)
         self.outputDir = cfg_params.get('USER.outputdir' ,common.work_space.resDir())
+        self.res = cfg_params.get(self.name().upper()+'.resource','"type==SLC5_64 || type==SLC4_64"')
 
         self.pool = cfg_params.get('USER.storage_pool',None)
         return
 
     def envUniqueID(self):
-        id = "https://"+common.scheduler.name()+":/${LSB_BATCH_JID}-"+ \
+        id = "https://"+common.scheduler.name().upper()+":/${LSB_BATCH_JID}-"+ \
             string.replace(common._db.queryTask('name'),"_","-")
         return id
 
@@ -46,6 +47,15 @@ class SchedulerLsf(SchedulerLocal) :
                  }
         return  params
 
+    def wsSetupEnvironment(self):
+        """
+        Returns part of a job script which does scheduler-specific work.
+        """
+        txt = SchedulerLocal.wsSetupEnvironment(self)
+        #this is needed to support slc4->slc5 migration
+        txt += 'export RFIO_PORT=5001\n'
+        txt += '\n'
+        return txt
     def sched_parameter(self,i,task):
         """
         Returns parameter scheduler-specific, to use with BOSS .
