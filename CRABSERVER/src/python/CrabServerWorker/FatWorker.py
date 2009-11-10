@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.182 2009/10/24 10:49:37 mcinquil Exp $"
-__version__ = "$Revision: 1.182 $"
+__revision__ = "$Id: FatWorker.py,v 1.183 2009/11/09 13:24:21 farinafa Exp $"
+__version__ = "$Revision: 1.183 $"
 
 import string
 import sys, os
@@ -352,7 +352,7 @@ class FatWorker(Thread):
                 # backup for job output (tgz files only, less load)
                 for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
                     try:
-                        check=bk_sbi.checkExists(source=orig)
+                        check=bk_sbi.checkExists(source=orig, proxy=task['user_proxy'])
                     except Exception, ex:
                         logMsg = "Worker %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
                         j['name'], self.taskName)
