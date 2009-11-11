@@ -22,4 +22,6 @@ if [ -z "$CMSSW_VERSION" ]; then
   echo ''
 else
   python $CRABPYTHON/multicrab.py $*
+  /usr/bin/env sh ./multicrab.exe
+  rm ./multicrab.exe
 fi

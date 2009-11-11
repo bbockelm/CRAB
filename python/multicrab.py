@@ -168,10 +168,18 @@ class MultiCrab:
 
         # read crab.cfg file and search for storage_path
         crab_cfg_params = loadConfig(crab_cfg,{})
+        # also USER.ui_working_dir USER.outputdir and USER.logdir need special treatment
         if cfg_params.has_key("COMMON"):
             self.user_remote_dir = cfg_params["COMMON"].get("user.user_remote_dir", crab_cfg_params.get("USER.user_remote_dir",None))
+            self.outputdir = cfg_params["COMMON"].get("user.outputdir", crab_cfg_params.get("USER.outputdir",None))
+            self.logdir = cfg_params["COMMON"].get("user.logdir", crab_cfg_params.get("USER.logdir",None))
+            self.ui_working_dir = cfg_params["COMMON"].get("user.ui_working_dir", crab_cfg_params.get("USER.ui_working_dir",None))
         else:
             self.user_remote_dir = crab_cfg_params.get("USER.user_remote_dir",None)
+            self.outputdir = crab_cfg_params.get("USER.outputdir",None)
+            self.logdir = crab_cfg_params.get("USER.logdir",None)
+            self.ui_working_dir = crab_cfg_params.get("USER.ui_working_dir",None)
+
         return
 
     def loadMultiConfig(self, file):
@@ -192,6 +200,8 @@ class MultiCrab:
 
     def run(self):
         #run crabs
+        runFileName = 'multicrab.exe'
+        runFile = open(runFileName,"w")
         for sec in self.cfg_params_dataset:
             options={}
             if self.flag_continue:
@@ -205,28 +215,51 @@ class MultiCrab:
                     tmp="-"+string.upper(opt.split(".")[0])+"."+opt.split(".")[1]
                 
                 options[tmp]=self.cfg_params_dataset[sec][opt]
+
             # add section to storage_path if exist in crab.cfg
             if not self.cfg_params_dataset.has_key("USER.user_remote_dir") and self.user_remote_dir:
                 options["-USER.user_remote_dir"]=self.user_remote_dir+"/"+sec
+            # also for ui_working_dir
+            if not self.cfg_params_dataset.has_key("USER.ui_working_dir") and self.ui_working_dir:
+                options["-USER.ui_working_dir"]=self.ui_working_dir+"/"+sec
+            # also for logDir
+            if not self.cfg_params_dataset.has_key("USER.logdir") and self.logdir:
+                options["-USER.logdir"]=self.logdir+"/"+sec
+            # also for outputdir
+            if not self.cfg_params_dataset.has_key("USER.outputdir") and self.outputdir:
+                options["-USER.outputdir"]=self.outputdir+"/"+sec
+
             # Input options (command)
             for opt in self.opts:
                 options[opt]=self.opts[opt]
                 if self.flag_continue and options.has_key("-cfg"):
                     del options['-cfg']
                 pass
-            crab = Crab()
-            try:
-                crab.initialize_(options)
-                crab.run()
-                del crab
-                print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
-                print '\n##############################  E N D  ####################################\n'
-            except CrabException, e:
-                del crab
-                print '\n' + common.prog_name + ': ' + str(e) + '\n'
-                pass
-            pass
-            if (common.logger): common.logger.delete()
+
+            # write crab command to be executed later...
+            cmd='crab '
+            for o in options:
+                cmd+=str(o)+" "+str(options[o])+" "
+            cmd+="\n"
+            # print cmd
+
+            runFile.write(cmd)
+
+            # SL this does not work for complex, multi include pset.py 
+
+            # crab = Crab()
+            # try:
+            #     crab.initialize_(options)
+            #     crab.run()
+            #     del crab
+            #     print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
+            #     print '\n##############################  E N D  ####################################\n'
+            # except CrabException, e:
+            #     del crab
+            #     print '\n' + common.prog_name + ': ' + str(e) + '\n'
+            #     pass
+            # pass
+            # if (common.logger): common.logger.delete()
         pass
         
 
