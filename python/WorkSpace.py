@@ -53,7 +53,7 @@ class WorkSpace:
 
         if not os.path.exists(self._top_dir):
             try:
-                os.mkdir(self._top_dir)
+                os.makedirs(self._top_dir)
             except OSError:
                 msg = 'Cannot create '+str(self._top_dir) +' directory.\n'
                 raise CrabException(msg)
@@ -69,7 +69,7 @@ class WorkSpace:
         if self._user_out_dir != '':
             if not os.path.exists(self._user_out_dir):
                 try: 
-                    os.mkdir(self._user_out_dir)
+                    os.makedirs(self._user_out_dir)
                 except:
                     msg = 'Cannot mkdir ' + self._user_out_dir + ' Check permission'
                     raise CrabException(msg)
@@ -80,7 +80,7 @@ class WorkSpace:
         if self._user_log_dir != '':
             if not os.path.exists(self._user_log_dir):
                 try:
-                    os.mkdir(self._user_log_dir)
+                    os.makedirs(self._user_log_dir)
                 except:
                     msg = 'Cannot mkdir ' + self._user_log_dir + ' Check permission'
                     raise CrabException(msg)
