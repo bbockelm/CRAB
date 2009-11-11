@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.46 2009/09/24 19:10:52 ewv Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.47 2009/10/27 13:49:04 mcinquil Exp $"
+__version__ = "$Revision: 1.47 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -108,7 +108,6 @@ class GetOutputServer( GetOutput, StatusServer ):
         filesAndJodId = {}
 
         if self.storage_proto in ['globus']:
-            #print "[moveISB_SEAPI] doing globus-url-copy"
             # construct a list of absolute paths of input files             
             # and the destinations to copy them to
             sourcesList = []
@@ -137,7 +136,6 @@ class GetOutputServer( GetOutput, StatusServer ):
                 ## evaluating copy results
                 copy_err_list = []
                 count = 0
-                #print copy_res
                 for ll in map(None, copy_res, sourcesList):
                     exitcode = int(ll[0][0])
                     if exitcode == 0:
@@ -145,12 +143,10 @@ class GetOutputServer( GetOutput, StatusServer ):
                     else:
                         copy_err_list.append( [ ll[1], ll[0][1] ] )
                     count += 1
-                ## now raise an exception, but the submission could be retried
                 if len(copy_err_list) > 0:
                     msg = "ERROR : Unable to retrieve output file \n"
                     for problem in copy_err_list:
                         msg += "              Problem transferring [%s]:  '%s'\n" %(problem[0],problem[1])
-                    #raise CrabException(msg)
         else:
             # retrieve them from SE
             for i in xrange(len(osbFiles)):
