@@ -239,6 +239,7 @@ class MultiCrab:
             # write crab command to be executed later...
             cmd='crab '
             for o in options:
+                if options[o]==None: options[o]=""
                 cmd+=str(o)+" "+str(options[o])+" "
             cmd+="\n"
             # print cmd
