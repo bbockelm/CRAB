@@ -181,6 +181,7 @@ class Scheduler :
         if remoteListTmp == -1:
             msg =  'Problems trying remote dir check... \n'
             msg += '\tPlease check stage out configuration parameters.\n'
+            msg += '\tand the SE status in SAM test web page: http://lxarda16.cern.ch/dashboard/request.py/samvisualization \n'
             raise CrabException(msg)
         elif remoteListTmp is False:
             return
@@ -213,7 +214,7 @@ class Scheduler :
             Storage = SElement( FullPath(string.strip(endpoint)), protocol )
         except ProtocolUnknown, ex:
             remoteList = -1
-            msg  = 'Warning : %s '% str(ex)
+            msg = 'Warning: '+str(ex)+'\n\t'+str(ex.output)+'\n'
             common.logger.info(msg)
             dbgMsg = traceback.format_exc()
             common.logger.debug(dbgMsg)
@@ -221,7 +222,7 @@ class Scheduler :
             action = SBinterface( Storage )
         except Exception, ex:
             remoteList = -1
-            msg  = 'Warinig : %s '% str(ex)
+            msg = 'Warning: '+str(ex)+'\n\t'+str(ex.output)+'\n'
             common.logger.info(msg)
             dbgMsg = traceback.format_exc()
             common.logger.debug(dbgMsg)
@@ -229,7 +230,7 @@ class Scheduler :
             remoteList = action.dirContent()
         except Exception, ex:
             remoteList = -1
-            msg  = 'Warning : %s '% str(ex)
+            msg = 'Warning: '+str(ex)+'\n\t'+str(ex.output)+'\n'
             common.logger.info(msg)
             dbgMsg = traceback.format_exc()
             common.logger.debug(dbgMsg)
