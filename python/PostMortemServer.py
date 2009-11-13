@@ -15,6 +15,10 @@ class PostMortemServer(PostMortem):
         # init client server params...
         CliServerParams(self)        
 
+        self.copyTout= setLcgTimeout()
+        if common.scheduler.name().upper() in ['LSF', 'CAF']:
+            self.copyTout= ' '
+
         if self.storage_path[0]!='/':
             self.storage_path = '/'+self.storage_path
         
@@ -51,30 +55,78 @@ class PostMortemServer(PostMortem):
         ## get the list of jobs to get logging.info skimmed by failed status
         logginable = self.skimDeadList()
 
-        ## iter over each asked job and print warning if not in skimmed list
-        for id in self.nj_list:
-            if id not in self.all_jobs:
-                common.logger.info('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
-                continue
-            elif id in logginable:  
-                fname = self.fname_base + str(id) + '.LoggingInfo'
-                if os.path.exists(fname):
-                    common.logger.info('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
-                    continue
-                ## retrieving & processing logging info
-                if self.retrieveFile( sbi, id, fname):
-                    ## decode logging info
-                    fl = open(fname, 'r')
-                    out = "".join(fl.readlines())  
-                    fl.close()
-                    reason = self.decodeLogging(out)
-                    common.logger.info('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
-                else:
-                    common.logger.info('Logging info for job '+ str(id) +' not retrieved. Tring to get loggingInfo manually')
+        if self.storage_proto in ['globus']:
+            for id in self.nj_list:
+                if id not in self.all_jobs:
+                    common.logger.info('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
+                elif id not in logginable:
+                    common.logger.info('Warning: job # ' + str(id) + ' not killed or aborted! Will get loggingInfo manually ')
                     PostMortem.collectOneLogging(self,id)
-            else:
-                common.logger.info('Warning: job # ' + str(id) + ' not killed or aborted! Will get loggingInfo manually ')
-                PostMortem.collectOneLogging(self,id)
+            # construct a list of absolute paths of input files             
+            # and the destinations to copy them to
+            sourcesList = []
+            destsList = []
+            self.taskuuid = str(common._db.queryTask('name'))
+            common.logger.debug( "Starting globus retrieval for task name: " + self.taskuuid)
+            remotedir = os.path.join(self.storage_path, self.taskuuid)
+            for i in logginable:
+                remotelog = remotedir + '/loggingInfo_'+str(i)+'.log'
+                sourcesList.append(remotelog)
+                fname = self.fname_base + str(i) + '.LoggingInfo'
+                destsList.append(fname)
+
+            # try to do the copy
+            copy_res = None
+            try:
+                copy_res = sbi.copy( sourcesList, destsList, opt=self.copyTout)
+            except Exception, ex:
+                msg = "WARNING: Unable to retrieve logging info file %s \n" % osbFiles[i]
+                msg += str(ex)
+                common.logger.debug(msg)
+                import traceback
+                common.logger.debug( str(traceback.format_exc()) )
+            if copy_res is not None:
+                ## evaluating copy results
+                copy_err_list = []
+                count = 0
+                for ll in map(None, copy_res, sourcesList):
+                    exitcode = int(ll[0][0])
+                    if exitcode == 0:
+                        ## decode logging info
+                        fl = open(destsList[count], 'r')
+                        out = "".join(fl.readlines())
+                        fl.close()
+                        reason = self.decodeLogging(out)
+                        common.logger.info('Logging info for job '+ str(logginable[count]) +': '+str(reason)+'\n      written to '+str(destsList[count])+' \n' )
+                    else:
+                        common.logger.info('Logging info for job '+ str(logginable[count]) +' not retrieved. Tring to get loggingInfo manually')
+                        PostMortem.collectOneLogging(self,logginable[count])
+                    count += 1
+        else:
+            ## iter over each asked job and print warning if not in skimmed list
+            for id in self.nj_list:
+                if id not in self.all_jobs:
+                    common.logger.info('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
+                    continue
+                elif id in logginable:  
+                    fname = self.fname_base + str(id) + '.LoggingInfo'
+                    if os.path.exists(fname):
+                        common.logger.info('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
+                        continue
+                    ## retrieving & processing logging info
+                    if self.retrieveFile( sbi, id, fname):
+                        ## decode logging info
+                        fl = open(fname, 'r')
+                        out = "".join(fl.readlines())  
+                        fl.close()
+                        reason = self.decodeLogging(out)
+                        common.logger.info('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
+                    else:
+                        common.logger.info('Logging info for job '+ str(id) +' not retrieved. Tring to get loggingInfo manually')
+                        PostMortem.collectOneLogging(self,id)
+                else:
+                    common.logger.info('Warning: job # ' + str(id) + ' not killed or aborted! Will get loggingInfo manually ')
+                    PostMortem.collectOneLogging(self,id)
         return
 
 
