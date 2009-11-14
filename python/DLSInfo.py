@@ -55,8 +55,9 @@ class DLSInfo:
                           'glidein':  global_url,\
                           'lsf':      global_url,\
                           'caf':      caf_url,\
-                          'sge':      global_url,
-                          'arc':      global_url
+                          'sge':      global_url,\
+                          'arc':      global_url,\
+                          'pbs':      global_url
                           }
         dbs_url_default = dbs_url_map[(common.scheduler.name()).lower()]
 
