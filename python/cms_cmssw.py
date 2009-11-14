@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.341 2009/10/13 08:21:23 spiga Exp $"
-__version__ = "$Revision: 1.341 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.342 2009/10/17 14:58:09 spiga Exp $"
+__version__ = "$Revision: 1.342 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -712,7 +712,7 @@ class Cmssw(JobType):
         txt += self.wsSetupCMSLCGEnvironment_()
 
         #Setup PBS Environment
-        txt += 'elif [ $middleware == SGE ]; then\n'
+        txt += 'elif [ $middleware == PBS ]; then\n'
         txt += self.wsSetupCMSLCGEnvironment_()
 
         txt += 'fi\n'
