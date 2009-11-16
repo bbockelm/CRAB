@@ -368,7 +368,7 @@ Check if the job can find compatible resources. It is equivalent of doing I<edg-
 
 Just print the job identifier, which can be the SID (Grid job identifier) of the job(s) or the taskId if you are using CRAB with the server or local scheduler Id. If [range] is "full", the the SID of all the jobs are printed, also in the case of submission with server.
 
-=item B<-printJdl [range]>
+=item B<-createJdl [range]>
 
 Collect the full Job Description in a file located under share directory. The file base name is File- .
 
