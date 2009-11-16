@@ -340,7 +340,7 @@ iSame as -resubmit but without any check about the actual status of the job: ple
 
 =item B<-extend>
 
-Create new jobs for an existing task, checking if new blocks are available for the given dataset.
+Create new jobs for an existing task, checking if new blocks are published for the given dataset.
 
 =item B<-kill [range]>
 
