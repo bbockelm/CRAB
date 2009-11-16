@@ -1,7 +1,7 @@
 #!/bin/sh 
 
 #Call setup_mysql.sh to export DB variables
-source $CRABSERVERBASE/bin/setup_mysql.sh
+source $CRAB_SERVER_ROOT/bin/setup_mysql.sh
 
 #Create wmbs database
 mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "${SQLCREATE}"
