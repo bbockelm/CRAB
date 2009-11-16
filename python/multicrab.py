@@ -240,7 +240,8 @@ class MultiCrab:
             cmd='crab '
             for o in options:
                 if options[o]==None: options[o]=""
-                cmd+=str(o)+" "+str(options[o])+" "
+                elif str(options[o])[0]=="-": options[o]='"\\'+str(options[o])+'"'
+                cmd+=str(o)+' '+str(options[o])+' '
             cmd+="\n"
             # print cmd
 
