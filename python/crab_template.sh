@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# put STDERR to STDOUT 
+exec 2>&1
+
 #CRAB title
 
 #
