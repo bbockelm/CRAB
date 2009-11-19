@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.34 2009/08/20 09:25:58 spiga Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.35 2009/10/08 15:15:17 mcinquil Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -124,7 +124,7 @@ class DataDiscovery:
 
         dbs_url_default = dbs_url_map[(common.scheduler.name()).lower()]
         dbs_url=  self.cfg_params.get('CMSSW.dbs_url', dbs_url_default)
-        common.logger.debug("Accessing DBS at: "+dbs_url)
+        common.logger.info("Accessing DBS at: "+dbs_url)
 
         ## check if runs are selected
         runselection = []
