@@ -530,7 +530,7 @@ class Crab:
 
                 if val and val != 'all':
                     self.parseRange_(val)
-                    msg  = 'Per default, CRAB will extend the task with all jobs as specified in the crab.cfg file, not the command line!'
+                    msg  = 'By default, CRAB will extend the task with all jobs as specified in the crab.cfg file, not the command line!'
                     msg  += 'Submission will still take into account the command line\n'
                     common.logger.info(msg)
 
