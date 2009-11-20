@@ -23,6 +23,11 @@ class SchedulerLocal(Scheduler) :
 
         # pay attention to the default, here is 0 while Scheduler it is 10 minutes # Fabio
         self.minimal_job_duration = int(cfg_params.get('USER.minimal_job_duration', 0)) 
+        if self.minimal_job_duration > 60 :
+            msg = 'Warning: requested minimal_job_duration greater than allowed upper bound! '
+            msg+= 'The field will be set to 60 minutes'
+            common.logger.info(msg)
+            self.minimal_job_duration = 60
 
         if (cfg_params.has_key(self.name()+'.env_id')): self.environment_unique_identifier = cfg_params[self.name()+'.env_id']
         ## is this ok?
