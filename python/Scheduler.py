@@ -124,6 +124,7 @@ class Scheduler :
             self.debugWrap='--debug'
             self.loc_stage_out='--local_stage'
 
+        self.minimal_job_duration = int(cfg_params.get('USER.minimal_job_duration',10))
         return
 
     def boss(self):
@@ -398,12 +399,23 @@ class Scheduler :
         txt += '        final_list=$filesToCheck" .BrokerInfo"\n'
         txt += '    fi\n'
         txt += '    TIME_WRAP_END=`date +%s`\n'
-        txt += '    let "TIME_WRAP = TIME_WRAP_END - TIME_WRAP_INI" \n'
+        txt += '    let "TIME_WRAP = TIME_WRAP_END - TIME_WRAP_INI" \n\n'
+        # padding for minimal job duration
+        txt += '    let "MIN_JOB_DURATION = 60*%d" \n'%self.minimal_job_duration
+        txt += '    let "PADDING_DURATION = MIN_JOB_DURATION - TIME_WRAP" \n'
+        txt += '    if [ $PADDING_DURATION -gt 0 ]; then \n'
+        txt += '        echo ">>> padding time: Sleeping the wrapper for $PADDING_DURATION seconds"\n'
+        txt += '        sleep $PADDING_DURATION\n'
+        txt += '        TIME_WRAP_END=`date +%s`\n'
+        txt += '        let "TIME_WRAP = TIME_WRAP_END - TIME_WRAP_INI" \n'
+        txt += '    else \n'
+        txt += '        echo ">>> padding time: Wrapper lasting more than $MIN_JOB_DURATION seconds. No sleep required."\n'
+        txt += '    fi\n\n'
+        # call timing FJR filling
         txt += '    if [ $PYTHONPATH ]; then \n'
         txt += '       if [ ! -s $RUNTIME_AREA/fillCrabFjr.py ]; then \n'
         txt += '           echo "WARNING: it is not possible to create crab_fjr.xml to final report" \n'
         txt += '       else \n'
-        # call timing FJR filling
         txt += '           set -- $CPU_INFOS \n'
         txt += '           echo "CrabUserCpuTime=$1" >>  $RUNTIME_AREA/$repo \n'
         txt += '           echo "CrabSysCpuTime=$2" >>  $RUNTIME_AREA/$repo \n'

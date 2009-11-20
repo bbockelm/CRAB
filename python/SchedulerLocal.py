@@ -21,6 +21,9 @@ class SchedulerLocal(Scheduler) :
 
         self.res = cfg_params.get(name+'.resource',None)
 
+        # pay attention to the default, here is 0 while Scheduler it is 10 minutes # Fabio
+        self.minimal_job_duration = int(cfg_params.get('USER.minimal_job_duration', 0)) 
+
         if (cfg_params.has_key(self.name()+'.env_id')): self.environment_unique_identifier = cfg_params[self.name()+'.env_id']
         ## is this ok?
         localDomainName = getLocalDomain(self)
@@ -184,12 +187,23 @@ class SchedulerLocal(Scheduler) :
         txt += '        fi\n'
         txt += '    done\n'
         txt += '    export TIME_WRAP_END=`date +%s`\n'
-        txt += '    let "TIME_WRAP = TIME_WRAP_END - TIME_WRAP_END_INI" \n'
+        txt += '    let "TIME_WRAP = TIME_WRAP_END - TIME_WRAP_END_INI" \n\n'
+        # padding for minimal job duration
+        txt += '    let "MIN_JOB_DURATION = 60*%d" \n'%self.minimal_job_duration
+        txt += '    let "PADDING_DURATION = MIN_JOB_DURATION - TIME_WRAP" \n'
+        txt += '    if [ $PADDING_DURATION -gt 0 ]; then \n'
+        txt += '        echo ">>> padding time: Sleeping the wrapper for $PADDING_DURATION seconds"\n'
+        txt += '        sleep $PADDING_DURATION\n'
+        txt += '        TIME_WRAP_END=`date +%s`\n'
+        txt += '        let "TIME_WRAP = TIME_WRAP_END - TIME_WRAP_INI" \n'
+        txt += '    else \n'
+        txt += '        echo ">>> padding time: Wrapper lasting more than $MIN_JOB_DURATION seconds. No sleep required."\n'
+        txt += '    fi\n\n'
+        # call timing FJR filling
         txt += '    if [ $PYTHONPATH ]; then \n'
         txt += '       if [ ! -s $RUNTIME_AREA/fillCrabFjr.py ]; then \n'
         txt += '           echo "WARNING: it is not possible to create crab_fjr.xml to final report" \n'
         txt += '       else \n'
-        # call timing FJR filling
         txt += '           python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --timing $TIME_WRAP $TIME_EXE $TIME_STAGEOUT \n'
         txt += '           echo "CrabWrapperTime=$TIME_WRAP" >> $RUNTIME_AREA/$repo \n'
         txt += '           if [ $TIME_STAGEOUT -lt 0 ]; then \n'
