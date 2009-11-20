@@ -513,9 +513,9 @@ class cmscp:
         msg = ''
 
         if  self.params['option'].find('space_token')>0: 
-            space_tocken=self.params['option'].split('=')[1] 
-            if protocol == 'srmv2': option = '%s -space_tocken=%s'%(option,space_tocken)
-            if protocol == 'srm-lcg': option = '%s -S %s'%(option,space_tocken)
+            space_token=self.params['option'].split('=')[1] 
+            if protocol == 'srmv2': option = '%s -space_token=%s'%(option,space_token)
+            if protocol == 'srm-lcg': option = '%s -S %s'%(option,space_token)
         try:
             sbi.copy( source_file , dest_file , opt = option)
         except TransferException, ex:
