@@ -727,7 +727,10 @@ class FatWorker(Thread):
         """
         Prepare DashBoard information
         """
+       # gridName = self.owner
         
+        #self.log.info(gridName)
+      #  gridName = '/'+"/".join(gridName.split('/')[1:-1])
         VO = self.cfg_params['VO']
         taskType = 'analysis'
         datasetPath = self.cfg_params['CMSSW.datasetpath']
@@ -740,6 +743,7 @@ class FatWorker(Thread):
                   'JSToolVersion': os.environ['CRAB_SERVER_VERSION'], \
                   'tool_ui': os.environ['HOSTNAME'], \
                   'scheduler': self.schedName, \
+                  #'GridName': str(gridName), \
                   'GridName': str(self.owner), \
                   'taskType': taskType, \
                   'vo': VO, \
@@ -795,6 +799,8 @@ class FatWorker(Thread):
                       'localId' : localId}
             params.update(infos)
             self.apmon.sendToML(params)
+       #     self.log.info (params)
+
         return
 
 #########################################################
