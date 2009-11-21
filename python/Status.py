@@ -98,7 +98,7 @@ class Status(Actor):
             else: printline+="%-6s %-18s %-36s %-13s %-16s " % (id,jobStatus,dest,exe_exit_code,job_exit_code)
             toPrint.append(printline)
 
-            if jobStatus is not None:
+            if jobStatus is not None and job.runningJob['schedulerId'] is not None:
                 msg += self.dataToDash(job,id,taskId,task_unique_name,dest,jobStatus)
         common.logger.log(10-1,msg)
         #This is needed for StandAlone
