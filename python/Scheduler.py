@@ -124,12 +124,8 @@ class Scheduler :
             self.debugWrap='--debug'
             self.loc_stage_out='--local_stage'
 
-        self.minimal_job_duration = int(cfg_params.get('USER.minimal_job_duration',10))
-        if self.minimal_job_duration > 60 :
-            msg = 'Warning: requested minimal_job_duration greater than allowed upper bound! '
-            msg+= 'The field will be set to 60 minutes'
-            common.logger.info(msg)
-            self.minimal_job_duration = 60
+        # Time padding for minimal job duration. 
+        self.minimal_job_duration = 10
 
         return
 
