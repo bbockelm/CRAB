@@ -112,7 +112,8 @@ class PhEDExDatasvcInfo:
                 # python > 2.4
                 # SE = urlparse(url).hostname 
                 scheme, host, path, params, query, fragment = urlparse(url)
-                SE = host.split(':')[0]
+             #   SE = host.split(':')[0]
+                SE = self.getAuthoritativeSE()
                 SE_PATH = endpoint.split(host)[1]
             USER = (query.split('user')[1]).split('/')[1]
         else:
@@ -180,21 +181,19 @@ class PhEDExDatasvcInfo:
             primarydataset = self.publish_data_name
         return primarydataset
     
-    def lfn2pfn(self):
+    def domPhedex(self,params,datasvc_baseUrl):
         """
         PhEDEx Data Service lfn2pfn call
  
-        input:   LFN,node name,protocol
+        input:   params,datasvc_baseUrl
         returns: DOM object with the content of the PhEDEx Data Service call
         """  
-        params = {'node' : self.node , 'lfn': self.lfn , 'protocol': self.protocol}
         params = urllib.urlencode(params)
-        datasvc_lfn2pfn="%s/lfn2pfn"%self.datasvc_url
         try:
-            urlresults = urllib.urlopen(datasvc_lfn2pfn, params)
+            urlresults = urllib.urlopen(datasvc_baseUrl, params)
             urlresults = parse(urlresults)
         except IOError:
-            msg="Unable to access PhEDEx Data Service at %s"%datasvc_lfn2pfn
+            msg="Unable to access PhEDEx Data Service at %s"%datasvc_baseUrl
             raise CrabException(msg)
         except:
             urlresults = None
@@ -238,8 +237,10 @@ class PhEDExDatasvcInfo:
         returns: PFN 
         """
         if self.usePhedex:
+            params = {'node' : self.node , 'lfn': self.lfn , 'protocol': self.protocol}
+            datasvc_lfn2pfn="%s/lfn2pfn"%self.datasvc_url
             fullurl="%s/lfn2pfn?node=%s&lfn=%s&protocol=%s"%(self.datasvc_url,self.node,self.lfn,self.protocol) 
-            domlfn2pfn = self.lfn2pfn()
+            domlfn2pfn = self.domPhedex(params,datasvc_lfn2pfn)
             if not domlfn2pfn :
                 msg="Unable to get info from %s"%fullurl
                 raise CrabException(msg)
@@ -265,6 +266,34 @@ class PhEDExDatasvcInfo:
 
         return stageoutpfn 
 
+    def getAuthoritativeSE(self):
+        """
+        input:   node name
+        returns: AuthoritativeSE 
+        """
+        params = {'node' : self.node }
+        datasvc_nodes="%s/nodes"%self.datasvc_url
+        fullurl="%s/nodes/?node=%s"%(self.datasvc_url,self.node) 
+        domnodes = self.domPhedex(params,datasvc_nodes)
+
+        if not domnodes :
+            msg="Unable to get info from %s"%fullurl
+            raise CrabException(msg)
+
+        errormsg = self.parse_error(domnodes)
+        if errormsg: 
+            msg="Error extracting info from %s due to: %s"%(fullurl,errormsg)
+            raise CrabException(msg)
+        result = domnodes.getElementsByTagName('phedex')
+        if not result:
+              return []
+        result = result[0]
+        se = None
+        node = result.getElementsByTagName('node')
+        for m in node:
+            se=m.getAttribute("se")
+            if se:
+                return se
 
 
 if __name__ == '__main__':
