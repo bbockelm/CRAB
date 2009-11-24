@@ -168,7 +168,7 @@ class SchedulerLocal(Scheduler) :
             txt += 'export TIME_STAGEOUT=-1 \n'
         return txt
 
-    def wsExitFunc_comm(self):
+    def wsExitFunc_common(self):
         """
         """
         txt = ''

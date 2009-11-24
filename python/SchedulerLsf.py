@@ -101,7 +101,7 @@ class SchedulerLsf(SchedulerLocal) :
         txt += '#\n\n'
 
         txt += 'func_exit() { \n'
-        txt += self.wsExitFunc_common()
+        txt += SchedulerLocal.wsExitFunc_common(self)
 
         txt += '    cp *.${LSB_BATCH_JID}.out CMSSW_${NJob}.stdout \n'
         txt += '    cp *.${LSB_BATCH_JID}.err CMSSW_${NJob}.stderr \n'
