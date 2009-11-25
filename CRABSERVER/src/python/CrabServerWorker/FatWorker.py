@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.186 2009/11/21 14:33:14 mcinquil Exp $"
-__version__ = "$Revision: 1.186 $"
+__revision__ = "$Id: FatWorker.py,v 1.187 2009/11/25 14:00:10 farinafa Exp $"
+__version__ = "$Revision: 1.187 $"
 
 import string
 import sys, os
@@ -752,7 +752,7 @@ class FatWorker(Thread):
                   'taskId': self.taskName, \
                   'datasetFull': datasetPath, \
                   'ApplicationVersion':appVersion , \
-                  'submissionSource': self.submissionSource, \
+                  'resubmitter': self.submissionSource, \
                   'exe': executable }
 
         return params
