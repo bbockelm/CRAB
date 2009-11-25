@@ -123,9 +123,11 @@ class SchedulingLogic:
 
         # SJF/Min-Min: lambda x,y:  cmp(x['deadline'], y['deadline']) or cmp(len(x['rng']), len(y['rng'])) ) 
         if len(schedList) > 0:
-            self.log.debug("Scheduling order (submit): %s"%str(schedList)) 
+            self.log.debug("Scheduling order (submit): %s"%str(schedList))
+            submissionSource = 'user'
+ 
             for s in schedList:
-                payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng']) 
+                payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])+'::'+submissionSource 
                 if len(s['bannedSites']) > 0:
                     payload += '::'+ str(s['bannedSites'])
  
@@ -144,10 +146,10 @@ class SchedulingLogic:
             
             # TODO: turn this to debug once verified everything works correctly # Fabio
             self.log.info("Scheduling order (resubmit): %s"%str(schedList)) 
-            #
+            submissionSource = 'auto'
  
             for s in schedList:
-                payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])
+                payload = s['taskName'] +'::'+ str(s['retryCounter']) +'::'+ str(s['rng'])+'::'+submissionSource
                 del self.schedMapResubmissions[ s['taskName'] ] 
                 self.messageQueue.put( ('schedThr', "CrabServerWorkerComponent:Submission", payload) ) 
         return

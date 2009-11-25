@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.184 2009/11/10 15:06:02 farinafa Exp $"
-__version__ = "$Revision: 1.184 $"
+__revision__ = "$Id: FatWorker.py,v 1.186 2009/11/21 14:33:14 mcinquil Exp $"
+__version__ = "$Revision: 1.186 $"
 
 import string
 import sys, os
@@ -59,6 +59,7 @@ class FatWorker(Thread):
 
         self.resubCount = int(self.configs['retries'])
         self.cmdRng = [] + self.configs['submissionRange']
+        self.submissionSource = self.configs['submissionSource']
 
         self.se_blackL = [] + self.configs['se_dynBList']
         self.se_whiteL = []
@@ -751,7 +752,9 @@ class FatWorker(Thread):
                   'taskId': self.taskName, \
                   'datasetFull': datasetPath, \
                   'ApplicationVersion':appVersion , \
+                  'submissionSource': self.submissionSource, \
                   'exe': executable }
+
         return params
 
     def SendMLpost(self, taskFull, allList):

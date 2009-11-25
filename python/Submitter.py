@@ -289,6 +289,7 @@ class Submitter(Actor):
                   'user': getUserName(),
                   'taskId': str(taskId),
                   'datasetFull': self.datasetPath,
+                  'submissionSource': 'user', \
                   'exe': self.executable }
 
         return params

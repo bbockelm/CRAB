@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.91 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.91 2009/10/12 16:15:54 farinafa Exp $"
+__version__ = "$Revision: 1.92 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.92 2009/10/19 11:16:28 spiga Exp $"
 
 import os, pickle, time, copy
 
@@ -229,9 +229,9 @@ class CrabServerWorkerComponent:
             return
 
         items = payload.split('::')
-        taskUniqName, resubCount, cmdRng = items[0:3]
+        taskUniqName, resubCount, cmdRng, submSource = items[0:4]
         siteToBan = ''
-        if len(items) == 4: siteToBan = items[3]
+        if len(items) == 5: siteToBan = items[4]
 
         thrName = self.availWorkersIds.pop(0)
         self.taskPool[thrName] = ("CrabServerWorkerComponent:Submission", payload)
@@ -253,6 +253,7 @@ class CrabServerWorkerComponent:
         workerCfg['renewProxy'] = self.args.get('renewProxy', '')
         workerCfg['CondorQCacheDir'] = self.args.get('CondorQCacheDir', '')
         workerCfg['scheduler'] = self.args.setdefault('scheduler','glite' )
+        workerCfg['submissionSource'] = submSource
 
         # Specific WMS choice
         workerCfg['wmsEndpoint'] = ''
