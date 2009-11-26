@@ -174,7 +174,7 @@ class Scheduler :
         ## temporary hack for OctX:
         if endpoint.find('${PSETHASH}')>1:
             try:
-                psethash = runCommand('edmConfigHash < %s'%self.pset)
+                psethash = runCommand('edmConfigHash < %s| tail -1'%self.pset)
                 endpoint= string.replace(endpoint,'${PSETHASH}/',psethash)
             except:
                 msg =  'Problems trying remote dir check... \n'
