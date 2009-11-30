@@ -37,7 +37,7 @@ class Crab:
                              '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-createJdl','-printJdl', '-publish', '-checkPublication',
                              '-copyData', '-renewCredential', '-extend','-validateCfg',
-                             '-report', '-cleanCache' ]
+                             '-report', '-cleanCache', '-stopWorkflow' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -618,6 +618,16 @@ class Crab:
                     from Killer import Killer
                     self.actions[opt] = Killer(self.cfg_params,jobs)
 
+            elif ( opt == '-stopWorkflow' ):
+
+                if self.UseServer==1 and int(self.automation)==1:
+                    from WorkflowHandler import WorkflowHandler
+                    self.actions[opt] = WorkflowHandler(self.cfg_params)
+
+                else:
+
+                    raise CrabException("ERROR: you can use this command only if you are running an automated workflow using CRABSERVER")
+                    pass
 
             elif ( opt == '-getoutput' or opt == '-get'):
 
