@@ -1,8 +1,9 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.36 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.36 2009/08/10 14:10:02 farinafa Exp $"
+__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.37 2009/10/29 18:01:44 farinafa Exp $"
 
+import threading
 import os
 import time
 import getopt
@@ -19,6 +20,11 @@ import traceback
 from ProdAgentCore.Configuration import loadProdAgentConfiguration
 from MessageService.MessageService import MessageService
 from JabberThread import JabberThread
+
+# WMCORE 
+from WMCore.WMFactory import WMFactory
+from WMCore.WMInit import WMInit
+from WMCore.WMBS.Workflow import Workflow
 
 class CRAB_AS_beckend:
     """
@@ -47,6 +53,21 @@ class CRAB_AS_beckend:
 
         self.initLogging()
         self.log.debug("wdir: %s, attempts: %s commands"%(self.wdir, self.cmdAttempts))
+
+        # Get configuration
+        self.init = WMInit()
+        self.init.setLogging()
+        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
+            os.getenv('DIALECT'), os.getenv("DBSOCK"))
+
+        # CRAB_CmdMgr registration in WMCore.MsgService
+        self.myThread = threading.currentThread()
+        self.factory = WMFactory("msgService", "WMCore.MsgService."+ \
+                             self.myThread.dialect)
+        self.newMsgService = self.myThread.factory['msgService'].loadObject("MsgService")
+        self.myThread.transaction.begin()
+        self.newMsgService.registerAs("CRAB_CmdMgr")
+        self.myThread.transaction.commit()
 
         self.ms = MessageService()
         self.ms.registerAs("CRAB_CmdMgr")
@@ -245,6 +266,12 @@ class CRAB_AS_beckend:
                 self.log.info("NewCommand Kill "+taskUniqName)
                 return 0
 
+            # StopWorkflow 
+            if cmdKind == 'StopWorkflow':
+                self.stopWorkflow(taskUniqName)
+                self.log.info("NewCommand StopWorkflow "+taskUniqName)
+                return 0
+
             # clean
             if cmdKind == 'clean':
                 # Clean triggered through task-life manager.
@@ -346,4 +373,67 @@ class CRAB_AS_beckend:
 
         return taskDir
 
+################################
+    def stopWorkflow(self, taskName):
+        """
+        Contact workflowManager component to remove the workflow from management 
+        """
+
+        self.myThread = threading.currentThread()
+
+        # Get configuration
+        self.init = WMInit()
+        self.init.setLogging()
+        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
+            os.getenv('DIALECT'), os.getenv("DBSOCK"))
+
+        self.log.info("Stopping workflow %s"%taskName)
+
+        # Workflow creation
+        wf = Workflow(name = "wf_"+taskName)
+
+        try:
+            self.log.info("Loading workflow with name %s" %("wf_"+taskName))
+            wf.load()
+            self.log.info("WorkFlow loaded has Id:%s"%wf.id)
+
+        except Exception, e:
+
+            logMsg = ("Problem when loading WF for %s" \
+                      %("wf_"+taskName))
+            logMsg += str(e)
+            self.log.info( logMsg )
+            self.log.debug( traceback.format_exc() )
+            return
+
+        dataset, feeder = self.getWorkflowParameterFromXml(self.wdir, taskName)
+
+        # CRAB sends a message to the WorkflowManager to remove the workflow from management
+        self.myThread.transaction.begin()
+        WFManagerdict = {'WorkflowId' : wf.id , 'FilesetMatch': \
+                dataset + ':' + feeder }
+
+        WFManagerSent = pickle.dumps(WFManagerdict)
+        msg = {'name' : 'RemoveWorkflowFromManagement', \
+                'payload' : WFManagerSent}
+        self.newMsgService.publish(msg)
+        self.myThread.transaction.commit()
+        self.newMsgService.finish()
+
+    def getWorkflowParameterFromXml(self, wdir, taskName):
+        from xml.dom import minidom
+        status = 0
+        cmdSpecFile = os.path.join(wdir, taskName + '_spec/cmd.xml' )
+        try:
+            doc = minidom.parse(cmdSpecFile)
+            cmdXML = doc.getElementsByTagName("TaskCommand")[0]
+            self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
+            dataset = self.cfg_params['CMSSW.datasetpath']
+            feeder = self.cfg_params.get('feeder','Feeder')
+
+        except Exception, e:
+            return None,None
+        return dataset, feeder
+
+################################
 
