@@ -7,7 +7,7 @@ It will be parallelized if needed through WorkQueue using a new class.
 __all__ = []
 __revision__ = "$Id: CrabJobCreatorPoller.py,v 1.3 \
             2009/11/06 12:21:44 hriahi Exp $"
-__version__ = "$Revision: 1.0 $"
+__version__ = "$Revision: 1.7 $"
 
 import logging
 import os
@@ -88,14 +88,18 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)
 
+
         self.getTaskByJobGroup = daofactory(classname = "LoadTaskNameByJgId")
         self.getTaskBySubscription = daofactory(classname = "LoadTaskNameBySubId")
+        self.getListToSplit = daofactory(classname = "ListToSplit")
+
 
         WMBSdao = DAOFactory(package = "WMCore.WMBS",
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)
         
         self.getListSubscription = WMBSdao(classname = "Subscriptions.ListIncomplete")
+        
 
     def taskExtension(self, jobGroups):
         """
@@ -275,15 +279,26 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
         # Create jobs in CrabWorkerDB
         logging.info("Registering job")
-        if not self.registerJobs() == 0:
-            return
 
+        if self.command == "StopWorkflow":
+            return 0
+
+        else:    
+
+            try:
+
+                if not self.registerJobs() == 0:
+                    return
+
+            except Exception,ex:
+                logging.info(ex)
+             
         # Building cmdRng
         logging.debug("Rng needed %s and length %s" %(self.cmdRng,len(eval(self.cmdRng))))
 
         if jobNumber > 0:
 
-            logging.debug("Building new job rangs after %s" %jobNumber)
+            logging.info("Building new job rangs after %s" %jobNumber)
             tmp = [] 
             for i in eval(self.cmdRng):
 
@@ -455,6 +470,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
 
             self.cmdRng =  str( cmdXML.getAttribute('Range') )
             self.owner = str( cmdXML.getAttribute('Subject') )
+            self.command= str( cmdXML.getAttribute('Command') )
 
         except Exception, e:
             status = 6       
@@ -486,6 +502,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
         Register taskToComplete jobs
         """
         cmdRng_tmp=[]
+
         ranges = eval(self.cmdRng)
 
         for job in self.taskToComplete.jobs:
@@ -511,6 +528,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
             jobAlreadyRegistered = True 
 
             try:
+
                 logging.info('%s will be verified' %jobName)             
                 jobAlreadyRegistered = self.cwdb.existsWEJob(jobName)
        
@@ -582,7 +600,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
 
         myThread = threading.currentThread()
 
-        pickSub = self.getListSubscription.execute()
+        pickSub = self.getListToSplit.execute()
 
         logging.info('I found these new subscriptions %s to split'%pickSub)
 
