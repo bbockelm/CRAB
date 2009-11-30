@@ -13,7 +13,7 @@ class PhEDExDatasvcInfo:
         self.datasvc_url="https://cmsweb.cern.ch/phedex/datasvc/xml/prod"
 
         self.FacOps_savannah = 'https://savannah.cern.ch/support/?func=additem&group=cmscompinfrasup'
-        stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo#Stageout_and_publication' 
+        self.stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo#Stageout_and_publication' 
         self.dataPub_faq = 'https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabForPublication'
 
         self.usePhedex = True 
@@ -58,14 +58,14 @@ class PhEDExDatasvcInfo:
         #check if using "private" Storage
         if not self.node :
             msg = 'Please specify the storage_element name in your crab.cfg section [USER].\n'
-            msg +='\tFor further information please visit : %s'%stage_out_faq 
+            msg +='\tFor further information please visit : %s'%self.stage_out_faq 
             raise CrabException(msg)
         if (self.node.find('T1_') + self.node.find('T2_')+self.node.find('T3_')) == -3: self.usePhedex = False 
 
         if not self.usePhedex and ( self.user_remote_dir == '' or self.user_se_path == '' ):
             msg = 'You are asking to stage out without using CMS Storage Name convention. In this case you \n' 
             msg += '\t must specify both user_remote_dir and storage_path in the crab.cfg section [USER].\n '
-            msg += '\t For further information please visit : \n\t%s'%stage_out_faq
+            msg += '\t For further information please visit : \n\t%s'%self.stage_out_faq
             raise CrabException(msg)
 
         self.forced_path = '/store/user/'
