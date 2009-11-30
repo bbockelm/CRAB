@@ -164,6 +164,12 @@ class ServerCommunicator:
         """
         return self._genericCommand('kill', blTaskName, rng)
 
+    def StopWorkflow(self, blTaskName):
+        """
+        _StopWorkflow_
+        """
+        return self._genericCommand('StopWorkflow', blTaskName, 'all')
+
     def cleanTask(self, blTaskName):
         """
         _cleanTask_
