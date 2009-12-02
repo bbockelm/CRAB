@@ -283,7 +283,13 @@ class SubmitterServer( Submitter ):
                     raise CrabException(str(ex))
         else:
              # Kerberos token movement
-             if not CredAPI.checkCredential(Time=12) :
+             try:
+                 val= CredAPI.checkCredential(Time=12) 
+             except Exception, ex:
+                 common.logger.debug("IO %s "% str(traceback.format_exc()))
+                 raise CrabException(str(ex))
+  
+             if not val :
                 common.logger.info("Please renew the token:\n")
                 try:
                     CredAPI.ManualRenewCredential()
