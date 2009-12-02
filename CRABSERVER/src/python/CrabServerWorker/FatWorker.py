@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.187 2009/11/25 14:00:10 farinafa Exp $"
-__version__ = "$Revision: 1.187 $"
+__revision__ = "$Id: FatWorker.py,v 1.188 2009/11/25 14:06:33 farinafa Exp $"
+__version__ = "$Revision: 1.188 $"
 
 import string
 import sys, os
@@ -74,8 +74,8 @@ class FatWorker(Thread):
         self.cpCmd = self.configs['cpCmd']
         self.rfioServer = self.configs['rfioServer']
 
-        self.schedName= self.configs['scheduler'].upper()
-
+        self.defaultSchedName = self.configs['defaultScheduler'].upper()
+        self.supportedScheds = [] + self.configs['supportedSchedulers']
 
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, pool=self.configs['blSessionPool'])
@@ -219,8 +219,13 @@ class FatWorker(Thread):
         if status == 0:
             cmdXML = doc.getElementsByTagName("TaskCommand")[0]
 
-            ## This is to make the scheduler configurable from user
-            #self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
+            # Make the scheduler configurable from user with fallback
+            requestedScheduler = str(cmdXML.getAttribute('Scheduler')).upper()
+            if requestedScheduler in self.supportedScheds:
+                self.schedName = requestedScheduler
+            else:
+                self.schedName = self.defaultSchedName
+     
             ## already set in the message
             # self.cmdRng =  eval( cmdXML.getAttribute('Range'), {}, {} )
             ##
@@ -267,6 +272,7 @@ class FatWorker(Thread):
                               'CAF':'SchedulerLsf'}[self.schedName]
         schedulerConfig = {'name': self.bossSchedName, 'user_proxy':taskObj['user_proxy']}
 
+        self.log.info('Allocating %s scheduler' % schedulerConfig['name'] )
         if schedulerConfig['name'] in ['SchedulerGLiteAPI']:
             schedulerConfig['config'] = self.configs['serviceFile']
             ##self.wdir + '/glite_wms_%s.conf' % self.configs['rb'] ## TODO
@@ -295,6 +301,7 @@ class FatWorker(Thread):
             exc = traceback.format_exc()
             status = 6
             reason = "Unable to create a BossLite Session because of the following error: \n "
+            self.log.info(exc)
             self.sendResult(status, reason, reason, e, exc, True)
         return status
 
