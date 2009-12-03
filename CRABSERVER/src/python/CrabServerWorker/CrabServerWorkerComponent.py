@@ -4,15 +4,14 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.93 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.93 2009/11/25 14:00:04 farinafa Exp $"
+__version__ = "$Revision: 1.94 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.94 2009/12/02 21:03:51 ewv Exp $"
 
-import os, pickle, time, copy
+import os, pickle, time
 
 import logging
 from logging.handlers import RotatingFileHandler
 import traceback
-from xml.dom import minidom
 import Queue
 
 from ProdAgentCore.Configuration import ProdAgentConfiguration
@@ -28,6 +27,8 @@ from CrabServerWorker.FatWorker import FatWorker
 from CrabServerWorker.SchedulingLogic import SchedulingLogic, scheduleRequests, descheduleRequests
 
 from CrabWorkerAPI import CrabWorkerAPI
+
+from WMCore.Services.Service import Service
 
 class CrabServerWorkerComponent:
     """
@@ -53,7 +54,7 @@ class CrabServerWorkerComponent:
         self.args.setdefault('CondorQCacheDir', None)
 
         # SE support parameters
-        # Protocol = local cannot be the default. Any default allowd
+        # Protocol = local cannot be the default. Any default allowed
         # for this parameter... it must be defined from config file.
         self.args.setdefault('Protocol', '')
         self.args.setdefault('storageName', 'localhost')
@@ -88,8 +89,6 @@ class CrabServerWorkerComponent:
         if self.args['CacheDir']:
             self.wdir = self.args['CacheDir']
 
-
-
         self.maxAttempts = int( self.args.get('maxRetries', 3) )
         self.maxThreads = int( self.args.get('maxThreads', 5) )
 
@@ -106,7 +105,6 @@ class CrabServerWorkerComponent:
         self.blDBsession = BossLiteAPI('MySQL', dbConfig, makePool=True)
         self.cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
 
-
         logging.info("-----------------------------------------")
         logging.info("CrabServerWorkerComponent ver2 Started...")
         logging.info("Component dropbox working directory: %s\n"%self.wdir)
@@ -119,9 +117,7 @@ class CrabServerWorkerComponent:
         Start up the component
         """
 
-
         self.ms = MessageService()
-
         self.ms.registerAs("CrabServerWorkerComponent")
 
         # Proxy support
@@ -133,7 +129,6 @@ class CrabServerWorkerComponent:
 
         self.ms.subscribeTo("CrabServerWorkerComponent:Submission")
         self.ms.subscribeTo("CrabServerWorkerComponent:FatWorkerResult")
-
 
         self.ms.subscribeTo("KillTask")
         self.ms.subscribeTo("ResubmitJob")
@@ -160,7 +155,7 @@ class CrabServerWorkerComponent:
                         senderId, evt, pload = self.fwResultsQ.get_nowait()
                         logging.info("Publishing " + str(evt))
                         self.ms.publish(evt, pload)
-                        logging.debug("Publish Event: %s %s" % (evt, pload))
+                        logging.debug("Publish Event: %s %s %s" % (senderId, evt, pload))
                     except Queue.Empty, e: break
 
                 # standard event handler
@@ -197,7 +192,6 @@ class CrabServerWorkerComponent:
 
         elif event == "CrabServerWorkerComponent:Submission":
             self.triggerSubmissionWorker(payload)
-
 
         # worker feedbacks
         elif event == "CrabServerWorkerComponent:FatWorkerResult":
@@ -267,7 +261,7 @@ class CrabServerWorkerComponent:
         # Worker Factory
         try:
             self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
-        except Exception, e:
+        except Exception:
             logging.info('Unable to allocate submission thread: %s'%thrName)
             logging.info(traceback.format_exc())
         return
@@ -281,6 +275,9 @@ class CrabServerWorkerComponent:
         status = int(status)
 
         ## Free submission resources
+        # variables not used
+        del taskUniqName, reasoin
+        
         if len(workerName)>0:
             # useful to discriminate message from - to the main component (eg. resub failure feedback)
             self.availWorkersIds.append(workerName)
@@ -360,10 +357,10 @@ class CrabServerWorkerComponent:
             if retryCounter <= 0:
                 # no more re-submission attempts, give up.
                 try:
-                   self.cwdb.updateWEStatus( job['name'], 'reallyFinished' )
+                    self.cwdb.updateWEStatus( job['name'], 'reallyFinished' )
                 except Exception, e:
-                   logging.info("Error while declaring WF-Entities failed for job %sfailed "%job['name'])
-                   logging.info(str(e))
+                    logging.info("Error while declaring WF-Entities failed for job %sfailed "%job['name'])
+                    logging.info(str(e))
 
                 # Propagate info emulating a message in FW results queue
                 logging.info("Resubmission has no more attempts: give up with job %s"%job['name'])
@@ -378,20 +375,21 @@ class CrabServerWorkerComponent:
             self.swSchedQ.put( schedEntry )
         else:
             if command != '' :
-                MsgLog  = "Empty task name. Bad format scheduling request. Task will be skipped"
-                MsgLog += "\t\t event = %s, payload =  %s"%(str(event), str(items))
-                logging.info( MgLog )
+                msgLog  = "Empty task name. Bad format scheduling request. Task will be skipped"
+                msgLog += "\t\t event = %s, payload =  %s"%(str(event), str(items))
+                logging.info( msgLog )
         return
 
     def forceDequeuing(self, payload):
         # FAST-KILL
         try:
             taskUniqName, rng = payload.split(':')
-        except Exception, e:
+        except Exception:
             logging.info('Failed to split the payload for the Kill request:%s'%payload)
             return
 
         # remove stuff from persistence tables
+        del rng # not used
         if taskUniqName in self.workerSet: del self.workerSet[taskUniqName]
         if taskUniqName in self.taskPool:  del self.taskPool[taskUniqName]
 
@@ -399,10 +397,9 @@ class CrabServerWorkerComponent:
         self.swDeschedQ.put(taskUniqName)
 
         # check whether the task has been previously registered
-        taskObj = None
         try:
-            taskObj = self.blDBsession.loadTaskByName(taskUniqName)
-        except Exception, e:
+            self.blDBsession.loadTaskByName(taskUniqName)
+        except Exception:
             logging.info('Error while loading %s for fast kill'%taskUniqName )
 
         return
@@ -485,7 +482,6 @@ class CrabServerWorkerComponent:
                 logging.info("WARNING: configuration file '%s' not found!"%(self.args['uiConfigWMS']))
         elif self.args["baseConfUrl"] != "" and self.args["baseConfUrl"] != None:
             ## periodic download of configuration file
-            from WMCore.Services.Service import Service
             wmcorecache = {}
             wmcorecache['logger'] = logging.getLogger()
             wmcorecache['endpoint'] = self.args["baseConfUrl"]

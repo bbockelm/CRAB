@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.188 2009/11/25 14:06:33 farinafa Exp $"
-__version__ = "$Revision: 1.188 $"
+__revision__ = "$Id: FatWorker.py,v 1.189 2009/12/02 21:03:51 ewv Exp $"
+__version__ = "$Revision: 1.189 $"
 
 import string
 import sys, os
@@ -135,6 +135,7 @@ class FatWorker(Thread):
         self.log.info("FatWorker %s allocating submission system session"%self.myName)
         if not self.allocateBossLiteSchedulerSession(taskObj) == 0:
             self.log.info("Scheduler allocation failed")
+            self.markJobsAsFailed(taskObj, self.cmdRng)
             return
 
         self.log.info('FatWorker %s preparing submission'%self.myName)
@@ -145,6 +146,7 @@ class FatWorker(Thread):
             if len(newRange) == 0 :
                 raise Exception('Empty range submission temptative')
         except Exception, e:
+            self.markJobsAsFailed(taskObj, self.cmdRng)
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s. preSubmissionCheck."%(self.myName, self.taskName)
@@ -159,6 +161,7 @@ class FatWorker(Thread):
             if len(matched)==0:
                 raise Exception("Unable to submit jobs %s: no sites matched!"%(str(sub_jobs)))
         except Exception, e:
+            self.markJobsAsFailed(taskObj, self.cmdRng)
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s. listMatch."%(self.myName, self.taskName)
@@ -170,10 +173,8 @@ class FatWorker(Thread):
         try:
             submittedJobs, nonSubmittedJobs, errorTrace = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
 
-            #if len(nonSubmittedJobs) > 0:
-            #    self.setAction(taskObj, nonSubmittedJobs, "SubFailed")
-
         except Exception, e:
+            self.markJobsAsFailed(taskObj, self.cmdRng)
             exc = str( traceback.format_exc() )
             self.log.info( exc )
             logMsg = "WorkerError %s. Task %s."%(self.myName, self.taskName)
@@ -186,6 +187,7 @@ class FatWorker(Thread):
             ## added blite safe connection to the DB
             self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
         except Exception, e:
+            self.markJobsAsFailed(taskObj, self.cmdRng)
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
             logMsg = "WorkerError %s. Task %s. postSubmission."%(self.myName, self.taskName)
@@ -304,20 +306,6 @@ class FatWorker(Thread):
             self.log.info(exc)
             self.sendResult(status, reason, reason, e, exc, True)
         return status
-
-
-    def setAction(self, task, joblist, action):
-        """
-        _setAction_
-        """
-        for j in task.jobs:
-            if j['jobId'] in joblist:
-                try:
-                    self.blDBsession.getRunningInstance(j)
-                except Exception, exc: ## TODO handle proper exception
-                    self.log.error("Problem extracting running job for %s: '%s'"%(str(j),str(exc)))
-                j.runningJob['state'] = action
-        self.blDBsession.updateDB( task )
 
 
 ####################################
@@ -547,24 +535,13 @@ class FatWorker(Thread):
             self.preLog(mess = messagelog)
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName+"::"+messagelog))
 
-            onDemandRegDone = False
             self.log.info("Submitted jobs: " + str(submittedJobs))
             for j in taskObj.jobs:
                 if j['jobId'] in submittedJobs:
-                    state_we_job = ""
                     try:
-                        ## get internal server job status (not blite status)
-                        state_we_job = self.cwdb.getWEStatus( j['name'] )
-                    except Exception, ex:
-                        logMsg = "Problem Loading Job Status (we_job) : \n"
-                        logMsg +=  traceback.format_exc()
-                        self.log.info(logMsg)
-                    try:
-                        # update the job status properly
-                        #if state_we_job == 'Submitting':
                         self.cwdb.updateWEStatus( j['name'], 'inProgress' )
                     except Exception, ex:
-                        logMsg = "Problem changing status to "+str(j['name'])+"\n"
+                        logMsg = "Problem changing status for job "+str(j['name'])+"\n"
                         logMsg +=  traceback.format_exc()
                         self.log.info(logMsg)
                         continue
@@ -581,7 +558,6 @@ class FatWorker(Thread):
                 self.sendResult(-2, "Partial Success for %s"%self.taskName, "Worker %s. %s"%(self.myName, messagelog))
 
             # propagate the re-submission attempt
-            self.cmdRng = ','.join(map(str, resubmissionList))
             self.resubCount -= 1
             if self.resubCount > 0:
                 payload = self.taskName+"::"+str(self.resubCount)+"::"+str(resubmissionList)
@@ -590,34 +566,9 @@ class FatWorker(Thread):
 
             payload = self.taskName+"::"+str(resubmissionList)
             self.local_queue.put((self.myName, "SubmissionFailed", payload))
-            try:
-                jobSpecId = []
-                toMarkAsFailed = list(set(resubmissionList+unmatchedJobs + nonSubmittedJobs + skippedJobs))
-                for j in taskObj.jobs:
-                    if j['jobId'] in toMarkAsFailed:
-                        jobSpecId.append(j['name'])
-                        try:
-                            self.blDBsession.getRunningInstance(j)
-                        except Exception, exc: ## TODO handle proper exception
-                            self.log.error("Problem extracting running job for %s: '%s'"%(str(j),str(exc)))
-                        self.log.info("Changing status for %s "%str(j['jobId']))
-                        j.runningJob['state'] = "SubFailed"
-                        j.runningJob['closed'] = "Y"
-                self.blDBsession.updateDB( taskObj )
-
-
-                for jId in jobSpecId:
-                    try:
-                        self.cwdb.updateWEStatus(jId, 'reallyFinished')
-                    except Exception, e:
-                        logMsg = "Problem updating WE status:\n"
-                        logMsg +=  traceback.format_exc()
-                        self.log.info (logMsg)
-                        continue
-            except Exception,e:
-                logMsg = "Unable to mark failed jobs in WorkFlow Entities \n "
-                logMsg +=  traceback.format_exc()
-                self.log.info (logMsg)
+            toMarkAsFailed = list(set(resubmissionList+unmatchedJobs + nonSubmittedJobs + skippedJobs))
+            self.markJobsAsFailed(taskObj, toMarkAsFailed)
+            
             # Give up message
             reason = "Worker %s has no more attempts: give up with task %s"%(self.myName, self.taskName)
             self.log.info( reason )
@@ -631,6 +582,34 @@ class FatWorker(Thread):
 ####################################
     # Auxiliary methods
 ####################################
+
+    def markJobsAsFailed(self, taskObj, toMarkAsFailed):
+        jobSpecId = []
+        for j in taskObj.jobs:
+            if j['jobId'] in toMarkAsFailed:
+                try:
+                    self.blDBsession.getRunningInstance(j)
+                    jobSpecId.append(j['name'])
+                except Exception, exc: ## TODO handle proper exception
+                    self.log.error("Problem extracting running job for %s: '%s'"%(str(j),str(exc)))
+                    continue
+                        
+                self.log.debug("Changing status for %s "%str(j['jobId']))
+                j.runningJob['state'] = "SubFailed"
+                j.runningJob['closed'] = "Y"
+
+        self.blDBsession.updateDB( taskObj )
+
+        for jId in jobSpecId:
+            try:
+                self.cwdb.updateWEStatus(jId, 'reallyFinished')
+            except Exception, e:
+                logMsg = "Problem updating WE status:\n"
+                logMsg +=  traceback.format_exc()
+                self.log.info (logMsg)
+                continue
+        return
+
     def submissionListCreation(self, taskObj, jobRng):
         '''
            Matchmaking process. Inherited from CRAB-SA
