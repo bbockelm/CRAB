@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.19 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.19 2009/10/24 16:30:47 riahi Exp $"
+__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.20 2009/10/27 14:59:00 farinafa Exp $"
 
 import os
 import pickle
@@ -122,8 +122,6 @@ class TaskRegisterComponent:
         self.newMsgService.registerAs("TaskRegisterComponent")
         self.myThread.transaction.commit()
 
-
-        #self.dematerializeStatus()
         #
         # non blocking call event handler loop
         # this allows us to perform actions even if there are no messages
@@ -152,6 +150,9 @@ class TaskRegisterComponent:
                         elif evt in ["RegisterWorkerComponent:RegisterWorkerFailed"]:
                                 logging.info("Task %s failed"%taskUniqName)
                                 self.markTaskAsNotSubmitted(taskUniqName, 'all')
+                                self.ms.publish(evt, pload)
+                                logging.info("Publish Event: %s %s" % (evt, pload))
+                                self.ms.commit()
                         elif taskUniqName in self.killingRequestes:
                                 logging.info("Task %s killed by user"%taskUniqName)
                                 self.markTaskAsNotSubmitted(taskUniqName, self.killingRequestes[taskUniqName])
@@ -235,75 +236,74 @@ class TaskRegisterComponent:
         # load task and init CW APIs Session
         taskObj = None
         cwdb = None
-        try:
-            taskObj = self.blDBsession.loadTaskByName(taskUniqName)
-        except TaskError, te:
-            logging.error("Problem loading task '%s': %s" %(taskUniqName,str(te)))
-        except Exception, exc:
-            logging.error("Generic exception when loading task from blite: %s" %str(exc))
 
         try:
-            cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
-            if taskObj is not None:
-                if cmdRng == 'all':
-                    cmdRng = [ j['jobId'] for j in taskObj.jobs ]
-                else:
-                    cmdRng = eval(cmdRng, {}, {}) 
+            taskObj = self.blDBsession.loadTaskByName(taskUniqName)
+            if taskObj is None:
+                raise TaskError("loadTaskByName returned a None object")
+
+            # parse range
+            if cmdRng == 'all':
+                cmdRng = [ j['jobId'] for j in taskObj.jobs ]
             else:
-                cmdRng = eval(str(self.getRangeFromXml(self.wdir, taskUniqName)), {}, {})
+                cmdRng = eval(cmdRng, {}, {})
+
+        except TaskError, te:
+            logging.error("Problem loading task '%s': %s" %(taskUniqName, str(te) ) )
+            return
+        except Exception, exc:
+            logging.error("Generic exception when loading task from blite: %s" %str(exc))
+            return
+ 
+        try:
+            cwdb = CrabWorkerAPI( self.blDBsession.bossLiteDB )
         except Exception, e:
-            logging.info('Unable to allocate CW API Session or unable to load %s.'%taskUniqName)
+            logging.info('Unable to allocate CW API Session for task  %s.'%taskUniqName)
             logging.info(traceback.format_exc())
             return
 
-        if taskObj is not None:
-            # register we_Jobs
-            jobSpecId = []
-            for job in taskObj.jobs:
-                jobName = job['name']
+        jobSpecId = []
+
+        ## set job status, close running instances and prepare SpecIds for we_ tables
+        for j in taskObj.jobs:
+            if j['jobId'] in cmdRng:
+                jobName = j['name']
+                jobSpecId.append(jobName)
+
+                # close running jobs and mark state 
+                try:
+                    self.blDBsession.getRunningInstance(j)
+                except Exception, exc: 
+                    logMsg = "Problem extracting runningJob for %s: '%s'"%(str(j), str(exc))
+                    logMsg += "Creating a new runningJob instance"
+                    self.log.error(logMsg)
+                    self.blDBsession.getNewRunningInstance(j)
+
+                j.runningJob['state'] = "SubFailed"
+                j.runningJob['closed'] = "Y"
+
+                # mark we_Jobs  
                 cacheArea = os.path.join( self.wdir, str(taskUniqName + '_spec'), jobName )
                 jobDetails = {'id':jobName, 'job_type':'Processing', 'cache':cacheArea, \
                               'owner':taskUniqName, 'status': 'create', \
                               'max_retries':self.args['maxRetries'], 'max_racers':1 }
 
                 try:
-                    if cwdb.existsWEJob(jobName) == True:
-                        continue
-                    cwdb.registerWEJob(jobDetails)
-                    if job['jobId'] in cmdRng:
-                        jobSpecId.append(jobName)
-                except Exception, e:
-                    logging.error(str(e))
-                    logging.error(traceback.format_exc())
-                    continue
-
-            # mark as failed
-            cwdb.stopResubmission(jobSpecId)
-            for jId in jobSpecId:
-                try:
-                    cwdb.updateWEStatus(jId, 'reallyFinished')
-                except Exception, e:
-                    logging.error(str(e))
-                    logging.error(traceback.format_exc())
-                    continue
-            logging.info('Task %s successfully marked as fast-killed'%taskUniqName)
-        else:
-            logging.error("Fallback not submitted marking for '%s'"%taskUniqName)
-            for jobbe in cmdRng:
-                jobName = taskUniqName + "_job" + str(jobbe)
-                try:
                     if not cwdb.existsWEJob(jobName):
-                        cacheArea = os.path.join( self.wdir, str(taskUniqName + '_spec'), jobName )
-                        jobDetails = {'id':jobName, 'job_type':'Processing', 'cache':cacheArea, \
-                                      'owner':taskUniqName, 'status': 'reallyFinished', \
-                                      'max_retries':self.args['maxRetries'], 'max_racers':1 }
                         cwdb.registerWEJob(jobDetails)
-                    else:
-                        cwdb.updateWEStatus(jId, 'reallyFinished')
+                    cwdb.updateWEStatus(jobName, 'reallyFinished')
                 except Exception, e:
                     logging.error(str(e))
                     logging.error(traceback.format_exc())
 
+        try: 
+            self.blDBsession.updateDB( taskObj )
+            cwdb.stopResubmission(jobSpecId)
+        except Exception, e:
+            logging.error(str(e))
+            logging.error(traceback.format_exc())
+
+        logging.info('Task %s successfully marked as fast-killed'%taskUniqName)
         return 
 
 ################################

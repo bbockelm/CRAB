@@ -4,7 +4,7 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.160 2009/11/06 12:16:38 hriahi Exp $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.160 2009/11/06 12:16:10 riahi Exp $"
 __version__ = "$Revision: 1.160 $"
 
 import os
@@ -283,6 +283,18 @@ class TaskTrackingComponent:
         if event == "CrabServerWorkerComponent:CrabWorkFailed":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "CrabWorkFailed: %s" % payload)
+                self.updateProxyName(taskName)
+                self.updateTaskStatus(taskName, self.taskState[2])
+            else:
+                logBuf = self.__log(logBuf, "ERROR: empty payload from '"+str(event)+"'!!!!")
+            logging.info(logBuf)
+            return
+
+        # registration failed ##HERE 
+        if event == "RegisterWorkerComponent:RegisterWorkerFailed":
+            if payload != None or payload != "" or len(payload) > 0:
+                taskName = pload.split("::")[0]
+                logBuf = self.__log(logBuf, "RegisterWorkerFailed: %s" % taskName)
                 self.updateProxyName(taskName)
                 self.updateTaskStatus(taskName, self.taskState[2])
             else:
@@ -1179,6 +1191,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkPerformed")
         self.ms.subscribeTo("CrabServerWorkerComponent:CrabWorkFailed")
         self.ms.subscribeTo("TaskRegisterComponent:NewTaskRegistered")
+        self.ms.subscribeTo("RegisterWorkerComponent:RegisterWorkerFailed")
         self.ms.subscribeTo("CrabServerWorkerComponent:SubmitNotSucceeded")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:NewTask")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:GetOutputNotification")
