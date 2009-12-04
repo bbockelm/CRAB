@@ -223,6 +223,10 @@ class cmscp:
             print '\t tfc %s '%tfc
             print "\t self.params['inputFilesList'] %s \n"%self.params['inputFilesList']
                 
+        if (str(self.params['lfn']).find("/store/") != -1):
+            temp = str(self.params['lfn']).split("/store/")
+            self.params['lfn']= "/store/temp/" + temp[1]
+            
         file_backup=[]
         for input in self.params['inputFilesList']:
             file = self.params['lfn'] + os.path.basename(input)
@@ -234,9 +238,7 @@ class cmscp:
                 print '\t surl %s \n'%surl
                     
         destination=os.path.dirname(file_backup[0])
-        ### FEDE added check for final /
         if ( destination[-1] != '/' ) : destination = destination + '/'
-        #####################################
         self.params['destination']=destination
             
         if self.debug:
@@ -246,7 +248,7 @@ class cmscp:
               
         for prot, opt in self.setProtocol( self.params['middleware'] ):
             if self.debug: print '\tIn LocalCopy trying the stage out with %s utils \n'%prot
-            localCopy_results = self.copy( self.params['inputFileList'], prot, opt )
+            localCopy_results = self.copy( self.params['inputFileList'], prot, opt, backup='yes' )
             if localCopy_results.keys() == [''] or localCopy_results.keys() == '' :
                 results.update(localCopy_results)
             else:
@@ -314,7 +316,7 @@ class cmscp:
 
         return Source_SE, Destination_SE
 
-    def copy( self, list_file, protocol, options ):
+    def copy( self, list_file, protocol, options, backup='no' ):
         """
         Make the real file copy using SE API
         """
@@ -360,6 +362,8 @@ class cmscp:
                 msg = str(ex)  
             if ErCode == '0':
                 ErCode, msg = self.makeCopy( sbi, filetocopy , options, protocol,sbi_dest )
+                if (ErCode == '0') and (backup == 'yes'):
+                    ErCode = '60308'
             if self.debug : print '\tCopy results for %s is %s'%( os.path.basename(filetocopy), ErCode)
             results.update( self.updateReport(filetocopy, ErCode, msg))
         return results
@@ -639,7 +643,7 @@ class cmscp:
             reason="'%s'"%reason
             if file:
                 if dict['lfn']=='':
-                    lfn = '$LFNBaseName/'+os.path.basename(file)
+                    lfn = '$LFNBaseName'+os.path.basename(file)
                     se  = '$SE'
                 else:
                     lfn = dict['lfn']+os.path.basename(file)
@@ -650,9 +654,11 @@ class cmscp:
                 txt += 'echo "StorageElement: '+se+'"\n'
                 txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
-                #txt += 'export LFNBaseName='+lfn+'\n'
+                LFNBaseName = os.path.dirname(lfn)
+                if (LFNBaseName[-1] != '/'):
+                   LFNBaseName = LFNBaseName + '/'
+                txt += 'export LFNBaseName='+LFNBaseName+'\n'
                 txt += 'export SE='+se+'\n'
-                ### FEDE per CopyData ####
 
                 txt += 'export endpoint='+self.params['destination']+'\n'
                 
@@ -661,10 +667,9 @@ class cmscp:
             else:
                 txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 cmscp_exit_status = dict['erCode']
-                cmscp_exit_status = dict['erCode']
         txt += '\n'
         txt += 'export StageOutExitStatus='+str(cmscp_exit_status)+'\n'
-        txt +=  'echo "StageOutExitStatus = '+str(cmscp_exit_status)+'" | tee -a $RUNTIME_AREA/$repo\n'
+        txt += 'echo "StageOutExitStatus = '+str(cmscp_exit_status)+'" | tee -a $RUNTIME_AREA/$repo\n'
         outFile.write(str(txt))
         outFile.close()
         return

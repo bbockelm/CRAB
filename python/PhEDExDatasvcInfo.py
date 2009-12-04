@@ -86,9 +86,7 @@ class PhEDExDatasvcInfo:
  
         #extract the PFN for the given node,LFN,protocol
         endpoint = self.getStageoutPFN()
-        ### FEDE added a check for the final / 
         if ( endpoint[-1] != '/' ) : endpoint = endpoint + '/'
-        ######################################
    
         #extract SE name an SE_PATH (needed for publication)
         SE, SE_PATH, User = self.splitEndpoint(endpoint)
@@ -169,6 +167,7 @@ class PhEDExDatasvcInfo:
         else:
             if self.sched in ['CAF','LSF']: l_User=True 
             lfn = LFNBase(self.forced_path,self.user_remote_dir)
+        if ( lfn[-1] != '/' ) : lfn = lfn + '/'
         return lfn
  
     def computePrimaryDataset(self):
@@ -264,6 +263,7 @@ class PhEDExDatasvcInfo:
             else: 
                 stageoutpfn = 'srm://'+self.node+':'+self.user_port+self.user_se_path+self.lfn 
 
+        if ( stageoutpfn[-1] != '/' ) : stageoutpfn = stageoutpfn + '/'
         return stageoutpfn 
 
     def getAuthoritativeSE(self):

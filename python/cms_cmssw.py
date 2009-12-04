@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.342 2009/10/17 14:58:09 spiga Exp $"
-__version__ = "$Revision: 1.342 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.343 2009/11/14 14:02:44 mcinquil Exp $"
+__version__ = "$Revision: 1.343 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -203,7 +203,6 @@ class Cmssw(JobType):
         # Copy/return/publish
         self.copy_data = int(cfg_params.get('USER.copy_data',0))
         self.return_data = int(cfg_params.get('USER.return_data',0))
-        ### FEDE ###
         self.publish_data = int(cfg_params.get('USER.publish_data',0))
         if (self.publish_data == 1):
             if not cfg_params.has_key('USER.publish_data_name'):
@@ -1055,7 +1054,7 @@ class Cmssw(JobType):
             txt = '\n#Written by cms_cmssw::wsModifyReport\n'
 
 
-            txt += 'if [ $StageOutExitStatus -eq 0 ]; then\n'
+            txt += 'if [ $StageOutExitStatus -eq 0 ] || [ $StageOutExitStatus -eq 60308 ] ; then\n'
             txt += '    FOR_LFN=$LFNBaseName\n'
             txt += 'else\n'
             txt += '    FOR_LFN=/copy_problems/ \n'
@@ -1070,7 +1069,7 @@ class Cmssw(JobType):
             txt += 'echo "SE_PATH = $endpoint"\n'
             txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
-            
+
 
             args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
             if (self.publish_data == 1):
