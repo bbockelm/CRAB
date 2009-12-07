@@ -158,6 +158,31 @@ def findLastWorkDir(dir_prefix, where = None):
     return wdir
 
 ###########################################################################
+def checkCRABVersion(current, url = "http://cmsdoc.cern.ch/cms/LCG/crab/config/", fileName = "prova1"):
+    """
+    _checkCRABVersion_
+
+    compare current release with allowed releases
+    format of allowed release:  ['2.6.5','2.6.6','2.7.*']
+    """
+    match_result = False
+    from Downloader import Downloader
+    blacklist = Downloader(url, os.getcwd())
+    result = blacklist.config(fileName)
+    current_dot = current.split('.')
+    for version in result:
+        if version.find('.') != -1:
+            version_dot = version.split('.')
+            for compare in map(None, current_dot, version_dot):
+                if compare[1].find('*') != -1:
+                    return True
+                elif int(compare[0]) != int(compare[1]):
+                    break
+        elif version == '*':
+            return True
+    return False
+
+###########################################################################
 def importName(module_name, name):
     """
     Import a named object from a Python module,

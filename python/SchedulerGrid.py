@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.116 2009/10/12 15:37:36 slacapra Exp $"
-__version__ = "$Revision: 1.116 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.117 2009/11/05 00:07:31 ewv Exp $"
+__version__ = "$Revision: 1.117 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -12,6 +12,7 @@ from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 import common
 from PhEDExDatasvcInfo import PhEDExDatasvcInfo
 from JobList import JobList
+from Downloader import Downloader
 
 import os, sys, time
 
@@ -45,18 +46,28 @@ class SchedulerGrid(Scheduler):
         self.group = cfg_params.get("GRID.group", None)
         self.role = cfg_params.get("GRID.role", None)
 
-        removeT1bL = cfg_params.get("GRID.remove_default_blacklist", 0 )
+
+        removeBList = cfg_params.get("GRID.remove_default_blacklist", 0 )
+        blackAnaOps = []
+        if int(removeBList) == 0:
+            blacklist = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/", os.getcwd())
+            result = blacklist.config("ce_black_list_enforced.conf")
+            if result != None:
+                blackAnaOps = result
+            common.logger.debug("Enforced black list: %s "%str(blacklist))
+        else:
+            common.logger.info("WARNING: Skipping default black list!")
 
         # T1_BL = ["fnal.gov", "gridka.de" ,"w-ce01.grid.sinica.edu.tw", "w-ce02.grid.sinica.edu.tw", "lcg00125.grid.sinica.edu.tw",\
         #           "gridpp.rl.ac.uk" , "cclcgceli03.in2p3.fr","cclcgceli04.in2p3.fr" , "pic.es", "cnaf", "cern.ch"]
-        T1_BL = ["T0", "T1"]
-        if int(removeT1bL) == 1:
-            T1_BL = []
+        #T1_BL = ["T0", "T1"]
+        #if int(removeT1bL) == 1:
+        #    T1_BL = []
         self.EDG_ce_black_list = cfg_params.get('GRID.ce_black_list',None)
         if (self.EDG_ce_black_list):
             self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',') + T1_BL
         else :
-            if int(removeT1bL) == 0: self.EDG_ce_black_list = T1_BL
+            if int(removeBList) == 0: self.EDG_ce_black_list = blackAnaOps
         self.EDG_ce_white_list = cfg_params.get('GRID.ce_white_list',None)
         if (self.EDG_ce_white_list): self.EDG_ce_white_list = string.split(self.EDG_ce_white_list,',')
 

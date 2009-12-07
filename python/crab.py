@@ -146,6 +146,13 @@ class Crab:
         common.logger = CrabLogger(args)
         common.logger.info(self.headerString_())
 
+        ## disallow old client releases
+        if checkCRABVersion(self.version()) is False:
+            msg = 'ERROR: you are using an old client release\n'
+            msg += '\tPlease upgrade to a more recent version:\n'
+            msg += '\thttps://twiki.cern.ch/twiki/bin/viewauth/CMS/SWGuideCrab#How_to_get_CRAB'
+            raise CrabException(msg)
+
         ## wmbs
         self.automation=self.cfg_params.get('WMBS.automation','0')
 	if int(self.automation)==1 and self.UseServer!=1:
