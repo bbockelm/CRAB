@@ -14,7 +14,7 @@ class Downloader:
 
     def downloadConfig(self, cacheFile, type = "txt/csv"):
         self.wmcorecache['type'] = type
-        common.logger.debug("Downloading file [%s] to [%s]." %(str(self.wmcorecache['endpoint']),(str(self.wmcorecache['cachepath'])+cacheFile)))
+        common.logger.debug("Downloading file [%s] to [%s]." %(str(self.wmcorecache['endpoint']),(str(self.wmcorecache['cachepath'])+"/"+cacheFile)))
         servo = Service( self.wmcorecache )
         return servo.refreshCache( cacheFile, cacheFile )
 
