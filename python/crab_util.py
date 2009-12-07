@@ -158,7 +158,7 @@ def findLastWorkDir(dir_prefix, where = None):
     return wdir
 
 ###########################################################################
-def checkCRABVersion(current, url = "http://cmsdoc.cern.ch/cms/LCG/crab/config/", fileName = "prova1"):
+def checkCRABVersion(current, url = "http://cmsdoc.cern.ch/cms/LCG/crab/config/", fileName = "allowed_releases.conf"):
     """
     _checkCRABVersion_
 
