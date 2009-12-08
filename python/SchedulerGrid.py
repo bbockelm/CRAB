@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.117 2009/11/05 00:07:31 ewv Exp $"
-__version__ = "$Revision: 1.117 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.118 2009/12/07 18:15:58 mcinquil Exp $"
+__version__ = "$Revision: 1.118 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -51,7 +51,7 @@ class SchedulerGrid(Scheduler):
         blackAnaOps = []
         if int(removeBList) == 0:
             blacklist = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/", os.getcwd())
-            result = blacklist.config("ce_black_list_enforced.conf")
+            result = blacklist.config("site_black_list.conf")
             if result != None:
                 blackAnaOps = result
             common.logger.debug("Enforced black list: %s "%str(blacklist))
