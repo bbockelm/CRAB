@@ -51,6 +51,10 @@ mkdir -p external
 cd external
 
 ## download sqlite
+echo ">> downloading python2.4 from CRAB web page"
+wget --no-check-certificate $repo_url/python.tgz
+
+## download sqlite
 echo ">> downloading sqlite from CRAB web page"
 wget --no-check-certificate $repo_url/sqlite.tgz
 

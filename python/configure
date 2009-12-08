@@ -27,6 +27,9 @@ function configureCrab {
 ## prapare the crab env
 cd $ExtDir
 
+tar zxvf python.tgz > /dev/null 2>&1
+rm python.tgz
+
 tar zxvf sqlite.tgz > /dev/null 2>&1
 rm sqlite.tgz
 
