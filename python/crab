@@ -17,6 +17,7 @@ export LD_LIBRARY_PATH=${GLITE_LOCATION}/lib:${LD_LIBRARY_PATH}
 # to fix a problem with OSG 
 export VOMS_PROXY_INFO_DONT_VERIFY_AC=1
 
+
 # to be removed asap
 if [ -z "$CMSSW_VERSION" ]; then
   echo ''
@@ -24,5 +25,7 @@ if [ -z "$CMSSW_VERSION" ]; then
   echo '(see also: https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo#Setup_local_Environment)'
   echo ''
 else
+export PATH=$CMSSW_DATA_PATH/../external/python/2.4.2-cms/bin:${PATH}:
+export LD_LIBRARY_PATH=$CMSSW_DATA_PATH/../external/python/2.4.2-cms/lib:${LD_LIBRARY_PATH}
   python $CRABPYTHON/crab.py $*
 fi
