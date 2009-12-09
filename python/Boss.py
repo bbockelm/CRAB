@@ -45,6 +45,7 @@ class Boss:
         ## Add here the map for others Schedulers (LSF/CAF/CondorG)
         SchedMap = {'glite':    'SchedulerGLiteAPI',
                     'glitecoll':'SchedulerGLiteAPI',\
+                    'glite_slc5':'SchedulerGLite',\
                     'condor':   'SchedulerCondor',\
                     'condor_g': 'SchedulerCondorG',\
                     'glidein':  'SchedulerGlidein',\
