@@ -27,6 +27,9 @@ function configureCrab {
 ## prapare the crab env
 cd $ExtDir
 
+tar zxvf crablib.tgz > /dev/null 2>&1
+rm crablib.tgz
+
 tar zxvf python.tgz > /dev/null 2>&1
 rm python.tgz
 
@@ -90,7 +93,7 @@ export CRABPY2_PYSQLITE_VERSION="2.3.2"
 export CRABPY2_PYSQLITE_REVISION="1008"
 export CRABPY2_PYSQLITE_ROOT=\$CRABPYSQLITE/\$CRABPY2_PYSQLITE_VERSION
 
-export LD_LIBRARY_PATH=\$CRABPY2_PYSQLITE_ROOT/lib:\$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=\$CRABPY2_PYSQLITE_ROOT/lib:\$EXTERNALDIR/crablib:\$LD_LIBRARY_PATH
 
 export PYTHON_VERSION=2.3.4 
 export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHONPATH
@@ -149,7 +152,7 @@ setenv CRABSQLITE_VERSION "3.3.5"
 setenv CRABSQLITE_ROOT \$CRABSQLITE/\$CRABSQLITE_VERSION
 
 setenv PATH \${CRABSQLITE_ROOT}/bin:\${PATH}
-setenv LD_LIBRARY_PATH \${LD_LIBRARY_PATH}:\${CRABSQLITE_ROOT}/lib
+setenv LD_LIBRARY_PATH \${LD_LIBRARY_PATH}:\${CRABSQLITE_ROOT}/lib:\$EXTERNALDIR/crablib
 
 
 ## py2sql

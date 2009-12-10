@@ -50,7 +50,11 @@ EOF
 mkdir -p external
 cd external
 
-## download sqlite
+## download crablib
+echo ">> downloading crablib from CRAB web page"
+wget --no-check-certificate $repo_url/crablib.tgz
+
+## download python
 echo ">> downloading python2.4 from CRAB web page"
 wget --no-check-certificate $repo_url/python.tgz
 
