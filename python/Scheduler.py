@@ -175,12 +175,12 @@ class Scheduler :
                 msg =  'Problems trying remote dir check... \n'
                 msg += '\tPlease check stage out configuration parameters.\n'
                 raise CrabException(msg)
-        remoteListTmp = self.listRemoteDir(endpoint)
-        if remoteListTmp == -1:
-            msg =  'Problems trying remote dir check... \n'
-            msg += '\tPlease check stage out configuration parameters.\n'
+        try:
+            remoteListTmp = self.listRemoteDir(endpoint)
+        except Exception, ex:
+            msg =  'Problems trying remote dir check: \n\t%s'%str(ex)
             raise CrabException(msg)
-        elif remoteListTmp is False:
+        if remoteListTmp is False:
             return
         if remoteListTmp:
             listJob = common._db.nJobs('list')
@@ -209,28 +209,19 @@ class Scheduler :
         protocol = self.protocolDict[common.scheduler.name().upper()]
         try:
             Storage = SElement( FullPath(string.strip(endpoint)), protocol )
-        except ProtocolUnknown, ex:
-            remoteList = -1
-            msg  = 'Warning : %s '% str(ex)
-            common.logger.info(msg)
-            dbgMsg = traceback.format_exc()
-            common.logger.debug(dbgMsg)
+        except Exception, ex:
+            common.logger.debug(traceback.format_exc())
+            raise Exception(str(ex))
         try:
             action = SBinterface( Storage )
         except Exception, ex:
-            remoteList = -1
-            msg  = 'Warinig : %s '% str(ex)
-            common.logger.info(msg)
-            dbgMsg = traceback.format_exc()
-            common.logger.debug(dbgMsg)
+            common.logger.debug(traceback.format_exc())
+            raise Exception(str(ex))
         try:
             remoteList = action.dirContent()
         except Exception, ex:
-            remoteList = -1
-            msg  = 'Warning : %s '% str(ex)
-            common.logger.info(msg)
-            dbgMsg = traceback.format_exc()
-            common.logger.debug(dbgMsg)
+            common.logger.debug(traceback.format_exc())
+            raise Exception(str(ex))
 
         return remoteList
 
