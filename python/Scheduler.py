@@ -171,6 +171,7 @@ class Scheduler :
     def checkRemoteDir(self, endpoint, fileList):
         """
         """
+        common.logger.info('Checking remote location')
         ## temporary hack for OctX:
         if endpoint.find('${PSETHASH}')>1:
             try:
