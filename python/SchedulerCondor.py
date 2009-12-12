@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.26 2009/05/26 16:53:23 spiga Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.27 2009/08/18 15:00:37 ewv Exp $"
+__version__ = "$Revision: 1.27 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -11,7 +11,7 @@ from crab_exceptions import CrabException
 import common
 import os
 import socket
-import sha
+from crab_util import hashlib_wrap
 
 class SchedulerCondor(SchedulerLocal) :
     """
@@ -68,7 +68,7 @@ class SchedulerCondor(SchedulerLocal) :
         return
 
     def envUniqueID(self):
-        taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+        taskHash = hashlib_wrap(common._db.queryTask('name'))
         id = "https://" + socket.gethostname() + '/' + taskHash + "/${NJob}"
         return id
 

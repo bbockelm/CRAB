@@ -1,7 +1,6 @@
 from Actor import *
 import common
 import string, os, time
-import sha
 from crab_util import *
 
 
@@ -251,7 +250,7 @@ class Status(Actor):
         msg = '' 
         if common.scheduler.name().upper() in ['CONDOR_G']:
             WMS = 'OSG'
-            taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+            taskHash = hashlib_wrap(common._db.queryTask('name'))
             jobId = str(id) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(id)
         elif common.scheduler.name().upper() in ['GLIDEIN']:
             WMS = common.scheduler.name()

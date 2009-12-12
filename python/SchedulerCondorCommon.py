@@ -6,7 +6,7 @@ For a history of this code, see that file.
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import CrabException
-from crab_util import runCommand
+from crab_util import runCommand, hashlib_wrap
 
 from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
 from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser
@@ -15,12 +15,12 @@ import Scram
 import CondorGLoggingInfo
 import common
 
-import popen2
+#import popen2
 import os
-import sha # Good for python 2.4, replaced with hashlib in 2.5
+#import sha # Good for python 2.4, replaced with hashlib in 2.5
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.38 2009/06/09 13:12:06 slacapra Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.39 2009/07/15 16:40:58 ewv Exp $"
+__version__ = "$Revision: 1.39 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -96,7 +96,7 @@ class SchedulerCondorCommon(SchedulerGrid):
         return
 
     def envUniqueID(self):
-        taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+        taskHash = hashlib_wrap(common._db.queryTask('name'))
         id = 'https://' + self.name() + '/' + taskHash + '/${NJob}'
         msg = 'JobID for ML monitoring is created for OSG scheduler: %s'%id
         common.logger.debug( msg)
@@ -320,10 +320,12 @@ class SchedulerCondorCommon(SchedulerGrid):
         """
 
         cmd = 'condor_config_val '+name
-        out = popen2.Popen3(cmd, 1)
-        exitCode = out.wait()
-        cmdOut = out.fromchild.readline().strip()
-        if exitCode != 0 :
+        cmdOut = runCommand(cmd)
+        if cmdOut: 
+       # out = popen2.Popen3(cmd, 1)
+       # exitCode = out.wait()
+       # cmdOut = out.fromchild.readline().strip()
+       # if exitCode != 0 :
             cmdOut = str(default)
 
         return cmdOut

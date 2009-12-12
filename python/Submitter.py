@@ -4,7 +4,6 @@ import common
 from ApmonIf import ApmonIf
 #from random import random
 import time
-import sha
 import socket
 import Scram
 from ProgressBar import ProgressBar
@@ -327,7 +326,7 @@ class Submitter(Actor):
             jid = str(job.runningJob['schedulerId'])
             if common.scheduler.name().upper() in ['CONDOR_G']:
                 rb = 'OSG'
-                taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+                taskHash = hashlib_wrap(common._db.queryTask('name'))
                 jobId = str(jj) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(jj)
                 msg += ('JobID for ML monitoring is created for CONDOR_G scheduler: %s \n'%str(jobId))
             elif common.scheduler.name().upper() in ['GLIDEIN']:
@@ -340,7 +339,7 @@ class Submitter(Actor):
                 rb = common.scheduler.name()
                 localId = jid
             elif common.scheduler.name().upper() in ['CONDOR']:
-                taskHash = sha.new(common._db.queryTask('name')).hexdigest()
+                taskHash = hashlib_wrap(common._db.queryTask('name'))
                 jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
                 rb = common.scheduler.name()
                 msg += ('JobID for ML monitoring is created for CONDOR scheduler: %s\n'%str(jobId))
