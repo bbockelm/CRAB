@@ -255,7 +255,7 @@ def runCommand(command, printout=0, timeout=None):
             p.wait()
             p.stdout.close()
         except OSError, err :
-            logging.warning(
+            common.logger.info(
                 'Warning: an error occurred killing subprocess [%s]' \
                 % str(err) )
 
@@ -265,15 +265,16 @@ def runCommand(command, printout=0, timeout=None):
         p.wait()
         p.stdout.close()
     except OSError, err:
-        common.logger.warning( 'Warning: an error occurred closing subprocess [%s] %s  %s' \
+        common.logger.info( 'Warning: an error occurred closing subprocess [%s] %s  %s' \
                          % (str(err), ''.join(outc), p.returncode ))
 
     returncode = p.returncode
     if returncode != 0 :
         msg = 'Command: %s \n failed with exit code %s \n'%(command,returncode)
         msg = + str(''.join(outc))
-        raise CrabException(msg)
-
+        common.logger.info( msg )
+        return
+ 
     return ''.join(outc)
 
 
@@ -717,6 +718,19 @@ def setLcgTimeout( ):
     opt = ' -t 600 ' 
     if checkLcgUtils() >= 17: opt=' --connect-timeout 600 '
     return opt
+
+def hashlib_wrap( string ):
+    '''
+    enable python2.4 / python2.6 compatibility
+    '''
+    try:
+        from hashlib import sha1 
+        h=sha1(string)  
+    except:
+        from sha import sha  
+        h=sha.new(string)
+
+    return h.hexdigest()
 
 ####################################
 if __name__ == '__main__':
