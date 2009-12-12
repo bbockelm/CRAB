@@ -5,8 +5,9 @@
 ###########################################################################
 
 import string, sys, os, time
-import ConfigParser, re, popen2, select, fcntl
+import ConfigParser, re, select, fcntl
 import statvfs
+from subprocess import Popen, PIPE, STDOUT
 
 import common
 from crab_exceptions import CrabException
@@ -204,77 +205,77 @@ def makeNonBlocking(fd):
 	    fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.FNDELAY)
 
 ###########################################################################
-def runCommand(cmd, printout=0, timeout=-1):
+def setPgid():
     """
-    Run command 'cmd'.
-    Returns command stdoutput+stderror string on success,
-    or None if an error occurred.
-    Following recipe on http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52296
+    preexec_fn for Popen to set subprocess pgid
+
     """
 
-    if printout:
-        common.logger.info(cmd)
-    else:
-        common.logger.log(10-1,cmd)
-        pass
+    os.setpgid( os.getpid(), 0 )
 
-    child = popen2.Popen3(cmd, 1) # capture stdout and stderr from command
-    child.tochild.close()             # don't need to talk to child
-    outfile = child.fromchild
-    outfd = outfile.fileno()
-    errfile = child.childerr
-    errfd = errfile.fileno()
-    makeNonBlocking(outfd)            # don't deadlock!
-    makeNonBlocking(errfd)
-    outdata = []
-    errdata = []
-    outeof = erreof = 0
+def runCommand(command, printout=0, timeout=None):
+    """
+    _executeCommand_
 
-    if timeout > 0 :
-        maxwaittime = time.time() + timeout
+    Util it execute the command provided in a popen object with a timeout
+    """
 
-    err = -1
-    while (timeout == -1 or time.time() < maxwaittime):
-        ready = select.select([outfd,errfd],[],[]) # wait for input
-        if outfd in ready[0]:
-            outchunk = outfile.read()
-            if outchunk == '': outeof = 1
-            outdata.append(outchunk)
-        if errfd in ready[0]:
-            errchunk = errfile.read()
-            if errchunk == '': erreof = 1
-            errdata.append(errchunk)
-        if outeof and erreof:
-            err = child.wait()
+    start = time.time()
+    p = Popen( command, shell=True, \
+               stdin=PIPE, stdout=PIPE, stderr=STDOUT, \
+               close_fds=True, preexec_fn=setPgid )
+
+    # playing with fd
+    fd = p.stdout.fileno()
+    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
+    # return values
+    timedOut = False
+    outc = []
+
+    while 1:
+        (r, w, e) = select.select([fd], [], [], timeout)
+
+        if fd not in r :
+            timedOut = True
             break
-        select.select([],[],[],.01) # give a little time for buffers to fill
-    if err == -1:
-        # kill the pid
-        common.logger.info('killing process '+(cmd)+' with timeout '+str(timeout))
-        os.kill (child.pid, 9)
-        err = child.wait()
 
-    cmd_out = string.join(outdata,"")
-    cmd_err = string.join(errdata,"")
+        read = p.stdout.read()
+        if read != '' :
+            outc.append( read )
+        else :
+            break
 
-    if err:
-        common.logger.info('`'+cmd+'`\n   failed with exit code '
-                           +`err`+'='+`(err&0xff)`+'(signal)+'
-                           +`(err>>8)`+'(status)')
-        common.logger.info(cmd_out)
-        common.logger.info(cmd_err)
-        return None
+    if timedOut :
+        stop = time.time()
+        try:
+            os.killpg( os.getpgid(p.pid), signal.SIGTERM)
+            os.kill( p.pid, signal.SIGKILL)
+            p.wait()
+            p.stdout.close()
+        except OSError, err :
+            logging.warning(
+                'Warning: an error occurred killing subprocess [%s]' \
+                % str(err) )
 
-#    cmd_out = string.join(outdata,"")
-#    cmd_err = string.join(errdata,"")
-    cmd_out = cmd_out + cmd_err
-    if printout:
-        common.logger.info(cmd_out)
-    else:
-        common.logger.log(10-1,cmd_out)
-        pass
-    #print "<"+cmd_out+">"
-    return cmd_out
+        raise TimeOut( command, ''.join(outc), timeout, start, stop )
+
+    try:
+        p.wait()
+        p.stdout.close()
+    except OSError, err:
+        common.logger.warning( 'Warning: an error occurred closing subprocess [%s] %s  %s' \
+                         % (str(err), ''.join(outc), p.returncode ))
+
+    returncode = p.returncode
+    if returncode != 0 :
+        msg = 'Command: %s \n failed with exit code %s \n'%(command,returncode)
+        msg = + str(''.join(outc))
+        raise CrabException(msg)
+
+    return ''.join(outc)
+
 
 ####################################
 def makeCksum(filename) :
@@ -597,8 +598,7 @@ def check_mount(dir_name, needed_space_kilobytes):
      return dev_free/1024 > needed_space_kilobytes
 
 def check_quota(dir_name, needed_space_kilobytes):
-     _, fd, _ = os.popen3("/usr/bin/fs lq %s" % dir_name)
-     results = fd.read()
+     results = runCommand("/usr/bin/fs lq %s" % dir_name)
      if fd.close():
          raise Exception("Unable to query the file system quota!")
      try:
@@ -610,8 +610,7 @@ def check_quota(dir_name, needed_space_kilobytes):
          return Exception("Unable to parse AFS output.")
 
 def check_partition(dir_name, needed_space_kilobytes):
-     _, fd, _ = os.popen3("/usr/bin/fs diskfree %s" % dir_name)
-     results = fd.read()
+     results = runCommand("/usr/bin/fs diskfree %s" % dir_name)
      if fd.close():
          raise Exception("Unable to query the file system quota!")
      try:
@@ -622,13 +621,11 @@ def check_partition(dir_name, needed_space_kilobytes):
          raise Exception("Unable to parse AFS output.")
 
 def check_unix_quota(dir_name, needed_space_kilobytes):
-     _, fd, _ = os.popen3("df %s" % dir_name)
-     results = fd.read()
+     results = runCommand("df %s" % dir_name)
      if fd.close():
          raise Exception("Unable to query the filesystem with df.")
      fs = results.split('\n')[1].split()[0]
-     _, fd, _ = os.popen3("quota -Q -u -g")
-     results = fd.read()
+     results = runCommand("quota -Q -u -g")
      if fd.close():
          raise Exception("Unable to query the quotas.")
      has_info = False

@@ -8,7 +8,6 @@ Adds to the FJR the WrapperExitCode and the ExeExitCode
 """
 import os, string
 import sys
-import popen2
 
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
 from ProdCommon.FwkJobRep.FwkJobReport import FwkJobReport
