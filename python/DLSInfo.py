@@ -49,6 +49,7 @@ class DLSInfo:
         global_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
         caf_url = "http://cmsdbsprod.cern.ch/cms_dbs_caf_analysis_01/servlet/DBSServlet"
         dbs_url_map  =   {'glite':    global_url,
+                          'glite_slc5':global_url,\
                           'glitecoll':global_url,\
                           'condor':   global_url,\
                           'condor_g': global_url,\

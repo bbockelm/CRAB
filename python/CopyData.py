@@ -1,5 +1,5 @@
-__revision__ = "$Id: ResultsFeeder.py,v 1.16 2009/07/15 14:08:03 ewv Exp $"
-__version__  = "$Revision: 1.16 $"
+__revision__ = "$Id: CopyData.py,v 1.21 2009/09/29 14:02:26 ewv Exp $"
+__version__  = "$Revision: 1.21 $"
 
 from Actor import *
 from crab_util import *
@@ -45,6 +45,7 @@ class CopyData(Actor):
                          'LSF'      : 'rfio',
                          'CONDOR_G' : 'srmv2',
                          'GLITE'    : 'srm-lcg',
+                         'GLITE_SLC5'    : 'srm-lcg',
                          'GLIDEIN'  : 'srm-lcg',
                          'CONDOR'   : 'srmv2',
                          'SGE'      : 'srmv2',

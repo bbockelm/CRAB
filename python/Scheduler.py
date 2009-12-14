@@ -41,6 +41,7 @@ class Scheduler :
                               'PBS'      : 'rfio' , \
                               'CONDOR_G' : 'srmv2' , \
                               'GLITE'    : 'srm-lcg' , \
+                              'GLITE_SLC5'    : 'srm-lcg' , \
                               'GLIDEIN'  : 'srm-lcg' , \
                               'CONDOR'    : 'srmv2',  \
                               'SGE'      : 'srmv2', \

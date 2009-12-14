@@ -844,7 +844,8 @@ class Crab:
             raise CrabException(msg)
         self.scheduler_name = self.cfg_params["CRAB.scheduler"]
         ### just temporary... will disappear
-        if self.scheduler_name.lower()=='glitecoll': self.scheduler_name='glite'
+        if self.scheduler_name.lower() in ['glitecoll','glite_slc5']: self.scheduler_name='glite'
+                                          
 
         klass_name = 'Scheduler' + string.capitalize(self.scheduler_name)
         file_name = klass_name

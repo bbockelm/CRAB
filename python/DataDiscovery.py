@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.35 2009/10/08 15:15:17 mcinquil Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.36 2009/11/19 18:04:20 spiga Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -111,6 +111,7 @@ class DataDiscovery:
         global_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
         caf_url = "http://cmsdbsprod.cern.ch/cms_dbs_caf_analysis_01/servlet/DBSServlet"
         dbs_url_map  =   {'glite':    global_url,
+                          'glite_slc5':global_url,\
                           'glitecoll':global_url,\
                           'condor':   global_url,\
                           'condor_g': global_url,\
