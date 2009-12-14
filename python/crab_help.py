@@ -382,7 +382,7 @@ Dump technical information about jobs: for developers only.
 
 =item B<-report>
 
-Print a short report about the task, namely the total number of events and files processed/requested/available, the name of the datasetpath, a summary of the status of the jobs, the list of runs and lumi sections, and so on. In principle it should contain all the info needed for analysis. Work in progress.
+Print a short report about the task, namely the total number of events and files processed/requested/available, the name of the dataset path, a summary of the status of the jobs, and so on. A summary file of the runs and luminosity sections processed is written to res/. In principle -report should generate all the info needed for an analysis. Work in progress.
 
 =item B<-clean [dir]>
 
