@@ -265,15 +265,15 @@ class SubmitterServer( Submitter ):
                      }
 
         try:
-             CredAPI =  CredentialAPI( configAPI )
+            CredAPI =  CredentialAPI( configAPI )
         except Exception, err :
-             common.logger.debug("Configuring Credential API: " +str(traceback.format_exc()))
-             raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
+            common.logger.debug("Configuring Credential API: " +str(traceback.format_exc()))
+            raise CrabException("ERROR: Unable to configure Credential Client API  %s\n"%str(err))
 
 
         if  self.credentialType == 'Proxy':
-             # Proxy delegation through MyProxy, 4 days lifetime minimum 
-             if not CredAPI.checkMyProxy(Time=4, checkRetrieverRenewer=True) :
+            # Proxy delegation through MyProxy, 4 days lifetime minimum 
+            if not CredAPI.checkMyProxy(Time=4, checkRetrieverRenewer=True) :
                 common.logger.info("Please renew MyProxy delegated proxy:\n")
                 try:
                     CredAPI.credObj.serverDN = self.server_dn
@@ -282,25 +282,25 @@ class SubmitterServer( Submitter ):
                     common.logger.debug("Delegating Credentials to MyProxy : " +str(traceback.format_exc()))
                     raise CrabException(str(ex))
         else:
-             # Kerberos token movement
-             try:
-                 val= CredAPI.checkCredential(Time=12) 
-             except Exception, ex:
-                 common.logger.debug("IO %s "% str(traceback.format_exc()))
-                 raise CrabException(str(ex))
+            # Kerberos token movement
+            try:
+                val= CredAPI.checkCredential(Time=12) 
+            except Exception, ex:
+                common.logger.debug("IO %s "% str(traceback.format_exc()))
+                raise CrabException(str(ex))
   
-             if not val :
+            if not val :
                 common.logger.info("Please renew the token:\n")
                 try:
                     CredAPI.ManualRenewCredential()
                 except Exception, ex:
                     raise CrabException(str(ex))
 
-             try:
-                 dict = CredAPI.registerCredential()
-             except Exception, err:
-                 common.logger.debug("Registering Credentials : " +str(traceback.format_exc()))
-                 raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
+            try:
+                dict = CredAPI.registerCredential()
+            except Exception, err:
+                common.logger.debug("Registering Credentials : " +str(traceback.format_exc()))
+                raise CrabException("ERROR: Unable to register %s delegating server: %s\n"%(self.credentialType,self.server_name ))
 
         common.logger.info("Credential successfully delegated to the server.\n")
 	return
