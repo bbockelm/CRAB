@@ -35,6 +35,21 @@ remove_working_dir() {
     fi
 }
 
+### DUMP ORIGINAL ENVIRONMENT BEFORE CMSSW CUSTOMIZATIOn
+dumpEnv(){
+
+env >> AllEnv.txt
+echo '#!/bin/bash'  >> CacheEnv.sh
+cat AllEnv.txt |
+(
+while read line
+do
+echo export $line >> CacheEnv.sh
+done
+)
+}
+
+
 #CRAB func_exit
 
 
@@ -42,6 +57,8 @@ remove_working_dir() {
 
 RUNTIME_AREA=`pwd`
 export RUNTIME_AREA
+
+dumpEnv
 
 echo "Today is `date`"
 echo "Job submitted on host `hostname`"
