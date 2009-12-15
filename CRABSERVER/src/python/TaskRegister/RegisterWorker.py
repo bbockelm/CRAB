@@ -6,7 +6,7 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.31 2009/11/06 12:36:40 hriahi Exp $"
+__revision__ = "$Id: RegisterWorker.py,v 1.31 2009/11/06 12:22:21 riahi Exp $"
 __version__ = "$Revision: 1.31 $"
 
 import string
@@ -163,17 +163,19 @@ class RegisterWorker(Thread):
             logging.info( logMsg )
             logging.debug( traceback.format_exc() )
             return 
-     
+
+
         # CRAB sends a message to the FeederManager, with a dataset to watch
+
         self.myThread.transaction.begin()
-        FManagerdict = {'FeederType':self.feeder, 'dataset':self.dataset}
+        FManagerdict = {'FeederType':self.feeder, 'dataset':self.dataset, 'FileType':self.processing, 'StartRun':self.startRun}
+
         FManagerSent = pickle.dumps(FManagerdict)
         msg = {'name':'AddDatasetWatch', 'payload':FManagerSent}
         self.newMsgService.publish(msg)
 
         WFManagerdict = {'WorkflowId' : wf.id , 'FilesetMatch': \
-                self.dataset + ':' + self.feeder ,'SplitAlgo':self.splitAlgo , 'Type':'processing'}
-
+                self.dataset + ':' + self.feeder + ':' + self.processing + ':' + self.startRun ,'SplitAlgo':self.splitAlgo , 'Type':'processing'}
 
         WFManagerSent = pickle.dumps(WFManagerdict)
         msg = {'name' : 'AddWorkflowToManage', \
@@ -189,7 +191,7 @@ class RegisterWorker(Thread):
                self.locationNew.execute(siteName = loc)
 
             WFManagerLocdict = {'WorkflowId' : wf.id , 'FilesetMatch': \
-                      self.dataset + ':' + self.feeder,'Valid':'true', 'Locations': self.location}
+                      self.dataset + ':' + self.feeder + ':' + self.processing + ':' + self.startRun ,'Valid':'true', 'Locations': self.location}
             WFManagerLocSent = pickle.dumps(WFManagerLocdict)
             msg = {'name' : 'AddToWorkflowManagementLocationList', \
                         'payload' : WFManagerLocSent}
@@ -214,6 +216,7 @@ class RegisterWorker(Thread):
         self.log.info('Worker %s parsing creation command'%self.myName)
         cmdSpecFile = os.path.join(self.wdir, self.taskName + '_spec/cmd.xml' )
         try:
+
             doc = minidom.parse(cmdSpecFile)
             cmdXML = doc.getElementsByTagName("TaskCommand")[0]
 
@@ -228,12 +231,16 @@ class RegisterWorker(Thread):
             self.type = str( cmdXML.getAttribute('Type') )
 
             self.feeder = self.cfg_params.get('feeder','Feeder')
+            self.processing = self.cfg_params.get('processing','bulk')
+            self.startRun = self.cfg_params.get('startrun','0')
+
             self.splitAlgo = self.cfg_params.get('splitting_algorithm','FileBased')
 
             self.dataset = self.cfg_params['CMSSW.datasetpath']
             self.location = self.cfg_params['EDG.se_white_list']
 
         except Exception, e:
+
             status = 6
             reason = "Error while parsing command XML for task %s, it will not be processed"%self.taskName
             self.sendResult(status, reason, reason)
