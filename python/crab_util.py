@@ -273,7 +273,7 @@ def runCommand(command, printout=0, timeout=None):
         msg = 'Command: %s \n failed with exit code %s \n'%(command,returncode)
         msg = + str(''.join(outc))
         common.logger.info( msg )
-        return
+        return None
  
     return ''.join(outc)
 
@@ -600,7 +600,7 @@ def check_mount(dir_name, needed_space_kilobytes):
 
 def check_quota(dir_name, needed_space_kilobytes):
      results = runCommand("/usr/bin/fs lq %s" % dir_name)
-     if fd.close():
+     if not results :
          raise Exception("Unable to query the file system quota!")
      try:
          results = results.split('\n')[1].split()
@@ -612,7 +612,7 @@ def check_quota(dir_name, needed_space_kilobytes):
 
 def check_partition(dir_name, needed_space_kilobytes):
      results = runCommand("/usr/bin/fs diskfree %s" % dir_name)
-     if fd.close():
+     if not results :
          raise Exception("Unable to query the file system quota!")
      try:
          results = results.split('\n')[1].split()
@@ -623,7 +623,7 @@ def check_partition(dir_name, needed_space_kilobytes):
 
 def check_unix_quota(dir_name, needed_space_kilobytes):
      results = runCommand("df %s" % dir_name)
-     if fd.close():
+     if not results :
          raise Exception("Unable to query the filesystem with df.")
      fs = results.split('\n')[1].split()[0]
      results = runCommand("quota -Q -u -g")
