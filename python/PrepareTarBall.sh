@@ -51,6 +51,10 @@ EOF
 mkdir -p external
 cd external
 
+## download crablib TEMPORARY HACK
+echo ">> downloading crablib from CRAB web page"
+wget --no-check-certificate $repo_url/crablib.tgz
+
 ## download pbs_python
 echo ">> downloading pbs_python from CRAB web page"
 wget --no-check-certificate $repo_url/pbs_python.tgz
