@@ -1,5 +1,5 @@
-__revision__ = "$Id: CopyData.py,v 1.21 2009/09/29 14:02:26 ewv Exp $"
-__version__  = "$Revision: 1.21 $"
+__revision__ = "$Id: CopyData.py,v 1.22 2009/12/14 17:39:21 spiga Exp $"
+__version__  = "$Revision: 1.22 $"
 
 from Actor import *
 from crab_util import *
@@ -131,7 +131,7 @@ class CopyData(Actor):
         lfn=''
         for job in task.jobs:
             InfileList = ''
-            if ( job.runningJob['state'] == 'Cleared' and job.runningJob[ 'wrapperReturnCode'] == 0):
+            if ( job.runningJob['state'] == 'Cleared' and ( job.runningJob[ 'wrapperReturnCode'] == 0 or job.runningJob[ 'wrapperReturnCode'] == 60308)):
                 id_job = job['jobId']
                 common.logger.log(10-1,"job_id = %s"%str(id_job))
                 endpoint = job.runningJob['storage']
