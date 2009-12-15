@@ -1,9 +1,8 @@
 
-__revision__ = "$Id: Splitter.py,v 1.29.2.1 2009/11/09 22:23:37 ewv Exp $"
-__version__ = "$Revision: 1.29.2.1 $"
+__revision__ = "$Id: Splitter.py,v 1.30 2009/12/14 22:33:54 ewv Exp $"
+__version__ = "$Revision: 1.30 $"
 
 import common
-from sets import Set
 from crab_exceptions import *
 from crab_util import *
 
@@ -458,7 +457,6 @@ class JobSplitter:
         jobfactory = splitter(subs)
 
         #loop over all runs
-        set = Set(runList)
         list_of_lists = []
         jobDestination = []
         count = 0
