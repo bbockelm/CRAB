@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.344 2009/12/04 12:08:21 fanzago Exp $"
-__version__ = "$Revision: 1.344 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.345 2009/12/14 17:39:21 spiga Exp $"
+__version__ = "$Revision: 1.345 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -17,7 +17,7 @@ class Cmssw(JobType):
         JobType.__init__(self, 'CMSSW')
         common.logger.debug('CMSSW::__init__')
         self.skip_blocks = skip_blocks
-        self.argsList = 1
+        self.argsList = 2
         self.NumEvents=0
         self._params = {}
         self.cfg_params = cfg_params
@@ -474,7 +474,7 @@ class Cmssw(JobType):
                 # just for debug
                 str_argu += concString.join(jobParams[id])
             if argu != '': listDictions.append(argu)
-            job_ToSave['arguments']= str(job+1)
+            job_ToSave['arguments']= '%d %d'%( (job+1), 0) 
             job_ToSave['dlsDestination']= self.jobDestination[id]
             listField.append(job_ToSave)
             from ProdCommon.SiteDB.CmsSiteMapper import CmsSEMap
@@ -740,7 +740,7 @@ class Cmssw(JobType):
         txt += 'fi \n'
         # Handle the arguments:
         txt += "\n"
-        txt += "## number of arguments (first argument always jobnumber)\n"
+        txt += "## number of arguments (first argument always jobnumber, the second is the resubmission number)\n"
         txt += "\n"
         txt += "if [ $nargs -lt "+str(self.argsList)+" ]\n"
         txt += "then\n"
@@ -924,7 +924,7 @@ class Cmssw(JobType):
         txt += '\n'
 
         for fileWithSuffix in (self.output_file):
-            output_file_num = numberFile(fileWithSuffix, '$NJob')
+            output_file_num = numberFile(fileWithSuffix, '$OutUniqueID')
             txt += '\n'
             txt += '# check output file\n'
             txt += 'if [ -e ./'+fileWithSuffix+' ] ; then\n'
@@ -945,7 +945,7 @@ class Cmssw(JobType):
             txt += 'fi\n'
         file_list = []
         for fileWithSuffix in (self.output_file):
-             file_list.append(numberFile('$SOFTWARE_DIR/'+fileWithSuffix, '$NJob'))
+             file_list.append(numberFile('$SOFTWARE_DIR/'+fileWithSuffix, '$OutUniqueID'))
 
         txt += 'file_list="'+string.join(file_list,',')+'"\n'
         txt += '\n'
@@ -1071,7 +1071,7 @@ class Cmssw(JobType):
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
 
 
-            args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $NJob for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
+            args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $OutUniqueID for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
             if (self.publish_data == 1):
                 txt += 'ProcessedDataset='+self.processedDataset+'\n'
                 txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'

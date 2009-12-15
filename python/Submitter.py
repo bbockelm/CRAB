@@ -204,6 +204,9 @@ class Submitter(Actor):
             for ii in matched:
                 common.logger.debug('Submitting jobs '+str(self.sub_jobs[ii]))
 
+                # fix arguments for unique naming of the output
+                common._db.updateResubAttribs(self.sub_jobs[ii])
+
                 try:
                     common.scheduler.submit(self.sub_jobs[ii],task)
                 except CrabException:

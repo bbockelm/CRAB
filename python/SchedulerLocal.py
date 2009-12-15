@@ -69,6 +69,9 @@ class SchedulerLocal(Scheduler) :
         txt += 'shift $nargs\n'
         txt += "# job number (first parameter for job wrapper)\n"
         txt += "NJob=${args[0]}; export NJob\n"
+        txt += "NResub=${args[1]}; export NResub\n"
+        txt += 'OutUniqueID=_$NResub\n'
+        txt += 'OutUniqueID=$NJob$OutUniqueID; export OutUniqueID\n'
 
         txt += "out_files=out_files_${NJob}; export out_files\n"
         txt += "echo $out_files\n"

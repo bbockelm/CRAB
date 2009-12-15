@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.189 2009/12/02 21:03:51 ewv Exp $"
-__version__ = "$Revision: 1.189 $"
+__revision__ = "$Id: FatWorker.py,v 1.190 2009/12/03 10:24:26 farinafa Exp $"
+__version__ = "$Revision: 1.190 $"
 
 import string
 import sys, os
@@ -445,6 +445,14 @@ class FatWorker(Thread):
             if len(sub_bulk)>0:
                 count = 1
                 for sub_list in sub_bulk:
+                    # update arguments for unique output naming 
+                    for j in task.jobs:
+                        if j['jobId'] in sub_list[ii]:
+                            self.blDBsession.getRunningInstance(j)
+                            newArgs = "%d %d"%(j.runningJob['jobId'], j.runningJob['submission'])
+                            j['arguments'] = newArgs
+                    self.blDBsession.updateDB( task )
+
                     try:
                         self.blSchedSession.submit(task['id'], sub_list, reqs_jobs[ii])
                         self.log.info("Worker submitted sub collection # %s "%count)
@@ -475,11 +483,18 @@ class FatWorker(Thread):
                                 j.runningJob['state'] = 'SubSuccess'
                                 parentIds.append( j.runningJob['schedulerParentId'] )
                         self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
-                        #self.blDBsession.updateDB( task )
                         self.SendMLpost( task, sub_jobs[ii] )
                         self.blDBsession.updateDB( task )
                     errorTrace = ''
             else:
+                # update arguments for unique output naming
+                for j in task.jobs:
+                    if j['jobId'] in sub_jobs[ii]:
+                        self.blDBsession.getRunningInstance(j)
+                        newArgs = "%d %d"%(j.runningJob['jobId'], j.runningJob['submission'])
+                        j['arguments'] = newArgs
+                self.blDBsession.updateDB( task )
+
                 try:
                     task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
                 except BossLiteError, e:
@@ -508,11 +523,9 @@ class FatWorker(Thread):
                             j.runningJob['state'] = 'SubSuccess'
                             parentIds.append( j.runningJob['schedulerParentId'] )
                     self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
-                    #self.blDBsession.updateDB( task )
                     self.SendMLpost( task, sub_jobs[ii] )
                     self.blDBsession.updateDB( task )
 
-        #self.blDBsession.updateDB( task )
         return submitted, unsubmitted, errorTrace
 
 

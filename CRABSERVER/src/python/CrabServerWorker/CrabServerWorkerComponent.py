@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.94 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.94 2009/12/02 21:03:51 ewv Exp $"
+__version__ = "$Revision: 1.95 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.95 2009/12/03 10:24:26 farinafa Exp $"
 
 import os, pickle, time
 
@@ -276,7 +276,7 @@ class CrabServerWorkerComponent:
 
         ## Free submission resources
         # variables not used
-        del taskUniqName, reasoin
+        del taskUniqName, reason
         
         if len(workerName)>0:
             # useful to discriminate message from - to the main component (eg. resub failure feedback)

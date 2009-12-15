@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.118 2009/12/07 18:15:58 mcinquil Exp $"
-__version__ = "$Revision: 1.118 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.119 2009/12/08 09:22:06 mcinquil Exp $"
+__version__ = "$Revision: 1.119 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -159,6 +159,9 @@ class SchedulerGrid(Scheduler):
         txt += 'shift $nargs\n'
         txt += "# job number (first parameter for job wrapper)\n"
         txt += "NJob=${args[0]}; export NJob\n"
+        txt += "NResub=${args[1]}; export NResub\n"
+        txt += 'OutUniqueID=_$NResub\n'
+        txt += 'OutUniqueID=$NJob$OutUniqueID; export OutUniqueID\n'
 
         txt += "out_files=out_files_${NJob}; export out_files\n"
         txt += "echo $out_files\n"

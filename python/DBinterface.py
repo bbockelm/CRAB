@@ -410,4 +410,15 @@ class DBinterface:
                 return False
         return True
 
+    # Method to update arguments w.r.t. resubmission number in order to grant unique output 
+    def updateResubAttribs(self, jobsL):
+        task = self.getTask(jobsL)
+        for j in task.jobs:
+            common.bossSession.getRunningInstance(j)
+            newArgs = "%d %d"%(j.runningJob['jobId'], j.runningJob['submission'])
+            j['arguments'] = newArgs
+            
+        common.bossSession.updateDB(task) 
+        return
+
 
