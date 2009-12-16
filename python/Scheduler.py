@@ -14,6 +14,7 @@ from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
 from ProdCommon.Storage.SEAPI.SBinterface import *
 from ProdCommon.Storage.SEAPI.Exceptions import *
+import Scram
 
 #
 #  Naming convention:
@@ -41,7 +42,7 @@ class Scheduler :
                               'PBS'      : 'rfio' , \
                               'CONDOR_G' : 'srmv2' , \
                               'GLITE'    : 'srmv2' , \
-                              'GLIDEIN'  : 'srm-lcg' , \
+                              'GLIDEIN'  : 'srmv2' , \
                               'CONDOR'   : 'srmv2',  \
                               'SGE'      : 'srmv2', \
                               'ARC'      : 'srmv2'
@@ -57,6 +58,7 @@ class Scheduler :
         return {}
 
     def configure(self, cfg_params):
+        self.scram = Scram.Scram(cfg_params)
         self._boss.configure(cfg_params)
         seWhiteList = cfg_params.get('GRID.se_white_list',[])
         seBlackList = cfg_params.get('GRID.se_black_list',[])
@@ -169,8 +171,12 @@ class Scheduler :
         common.logger.info('Checking remote location')
         ## temporary hack for OctX:
         if endpoint.find('${PSETHASH}')>1:
+            scramArea=self.scram.getSWArea_()   
+            cwd=''
+            if self.pset.find('/') == -1: cwd ='%s/'%os.getcwd()
             try:
-                psethash = runCommand('edmConfigHash < %s'%self.pset) 
+                cmd=' cd %s ; eval `scram runtime -sh` ; edmConfigHash < %s%s '%(scramArea,cwd,self.pset)
+                psethash = runCommand(cmd) 
                 endpoint= string.replace(endpoint,'${PSETHASH}/',psethash) 
             except:
                 msg =  'Problems trying remote dir check... \n'
@@ -405,6 +411,9 @@ class Scheduler :
         txt += '           echo "CrabStageoutTime=$TIME_STAGEOUT" >> $RUNTIME_AREA/$repo \n'
         txt += '       fi\n'
         txt += '    fi\n'
+        txt += '    echo "Disk space used:"\n'
+        txt += '    echo "du -sh $RUNTIME_AREA"\n'
+        txt += '    du -sh $RUNTIME_AREA \n\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo \n\n'
         return txt
 
