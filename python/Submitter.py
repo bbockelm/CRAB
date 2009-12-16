@@ -8,6 +8,11 @@ import socket
 import Scram
 from ProgressBar import ProgressBar
 from TerminalController import TerminalController
+try:
+    from hashlib import sha1
+except:
+    from sha import sha as sha1
+
 
 class Submitter(Actor):
     def __init__(self, cfg_params, parsed_range, val):
@@ -329,7 +334,7 @@ class Submitter(Actor):
             jid = str(job.runningJob['schedulerId'])
             if common.scheduler.name().upper() in ['CONDOR_G']:
                 rb = 'OSG'
-                taskHash = hashlib_wrap(common._db.queryTask('name'))
+                taskHash =  sha1(common._db.queryTask('name')).hexdigest() 
                 jobId = str(jj) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(jj)
                 msg += ('JobID for ML monitoring is created for CONDOR_G scheduler: %s \n'%str(jobId))
             elif common.scheduler.name().upper() in ['GLIDEIN']:
@@ -342,7 +347,7 @@ class Submitter(Actor):
                 rb = common.scheduler.name()
                 localId = jid
             elif common.scheduler.name().upper() in ['CONDOR']:
-                taskHash = hashlib_wrap(common._db.queryTask('name'))
+                taskHash = sha1(common._db.queryTask('name')).hexdigest() 
                 jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
                 rb = common.scheduler.name()
                 msg += ('JobID for ML monitoring is created for CONDOR scheduler: %s\n'%str(jobId))

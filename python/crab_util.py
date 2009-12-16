@@ -719,18 +719,6 @@ def setLcgTimeout( ):
     if checkLcgUtils() >= 17: opt=' --connect-timeout 600 '
     return opt
 
-def hashlib_wrap( string ):
-    '''
-    enable python2.4 / python2.6 compatibility
-    '''
-    try:
-        from hashlib import sha1 
-        h=sha1(string)  
-    except:
-        import sha  
-        h=sha.new(string)
-
-    return h.hexdigest()
 
 ####################################
 if __name__ == '__main__':
