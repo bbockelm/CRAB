@@ -727,7 +727,7 @@ def hashlib_wrap( string ):
         from hashlib import sha1 
         h=sha1(string)  
     except:
-        from sha import sha  
+        import sha  
         h=sha.new(string)
 
     return h.hexdigest()
