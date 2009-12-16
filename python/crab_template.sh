@@ -37,16 +37,9 @@ remove_working_dir() {
 
 ### DUMP ORIGINAL ENVIRONMENT BEFORE CMSSW CUSTOMIZATIOn
 dumpEnv(){
-
-env >> AllEnv.txt
-echo '#!/bin/bash'  >> CacheEnv.sh
-cat AllEnv.txt |
-(
-while read line
-do
-echo export $line >> CacheEnv.sh
-done
-)
+echo export PATH=$PATH >> CacheEnv.sh
+echo export LD_LIBRARY_PATH=$LD_LIBRARY_PATH >> CacheEnv.sh
+echo export PYTHONPATH=$PYTHONPATH >> CacheEnv.sh
 }
 
 
