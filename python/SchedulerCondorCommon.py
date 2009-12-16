@@ -17,14 +17,15 @@ import common
 
 #import popen2
 import os
-#import sha # Good for python 2.4, replaced with hashlib in 2.5
+
+# FUTURE: for python 2.4 & 2.6
 try:
     from hashlib import sha1
 except:
     from sha import sha as sha1
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.40 2009/12/12 16:35:39 spiga Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.41 2009/12/16 17:37:28 ewv Exp $"
+__version__ = "$Revision: 1.41 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """

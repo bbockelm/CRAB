@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.28 2009/12/12 16:35:39 spiga Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.29 2009/12/16 17:37:28 ewv Exp $"
+__version__ = "$Revision: 1.29 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -11,6 +11,8 @@ from crab_exceptions import CrabException
 import common
 import os
 import socket
+
+# FUTURE: for python 2.4 & 2.6
 try:
     from hashlib import sha1
 except:
