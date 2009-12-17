@@ -114,7 +114,8 @@ class PoolOutputFinder(object):
         self._poolList = []
     def enter(self,visitee):
         if isinstance(visitee,OutputModule) and visitee.type_() == "PoolOutputModule":
-            self._poolList.append(visitee.fileName.value())
+            filename=visitee.fileName.value().split(":")[-1]
+            self._poolList.append(filename)
     def leave(self,visitee):
         pass
 
