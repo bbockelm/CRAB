@@ -249,10 +249,11 @@ class GetOutput(Actor):
                 codeValue.pop("applicationReturnCodeOrig")
                 
         #### Filling BOSS DB with SE name and LFN, for edm and not_edm files ####        
+        lfns=[]
         if (len(jobReport.files) != 0):
             for f in jobReport.files:
                 if f['LFN']:
-                    codeValue["lfn"] = f['LFN']
+                    lfns.append(f['LFN'])
                 ### FEDE to have the endpoint in the boss db ###    
                 #if f['SEName']:    
                 #    codeValue["storage"] = f['SEName']
@@ -263,7 +264,7 @@ class GetOutput(Actor):
         if (len(jobReport.analysisFiles) != 0):
             for aFile in jobReport.analysisFiles:
                 if aFile['LFN']:
-                    codeValue["lfn"] = aFile['LFN']
+                    lfns.append(aFile['LFN'])
                 ### FEDE to have the endpoint in the boss db ###    
                 #if aFile['SEName']:    
                 #    codeValue["storage"] = aFile['SEName']
@@ -273,8 +274,7 @@ class GetOutput(Actor):
                     
         if not codeValue.has_key('storage'):
             codeValue["storage"] = ''
-        if not codeValue.has_key('lfn'):
-            codeValue["lfn"] = ''
+        codeValue["lfn"] = lfns
          
         return codeValue
 
