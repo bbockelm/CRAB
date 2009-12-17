@@ -422,6 +422,9 @@ class Scheduler :
         txt += '           echo "CrabStageoutTime=$TIME_STAGEOUT" >> $RUNTIME_AREA/$repo \n'
         txt += '       fi\n'
         txt += '    fi\n'
+        txt += '    echo "Disk space used:"\n'
+        txt += '    echo "du -sh $RUNTIME_AREA"\n'
+        txt += '    du -sh $RUNTIME_AREA \n\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo \n\n'
         return txt
 
