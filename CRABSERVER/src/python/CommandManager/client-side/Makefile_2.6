@@ -1,15 +1,15 @@
 #
 # CRAB-Proxy makefile
-# $Id: Makefile,v 1.2 2009/08/26 09:02:11 farinafa Exp $
+# $Id: Makefile_2.6,v 1.1 2009/12/18 14:00:27 farinafa Exp $
 # Fabio Farina 2007/12/10 
 
 .PHONY:all install
 
 # Things for python 2.6 
-PYHOME=/afs/cern.ch/cms/sw/slc5_ia32_gcc434/external/python/2.6.4-cms
-BOOST_HOME=/afs/cern.ch/cms/sw/slc5_ia32_gcc434/external/boost/1.40.0-cms
+PYHOME = /afs/cern.ch/cms/sw/slc5_ia32_gcc434/external/python/2.6.4-cms
+BOOST_HOME = /afs/cern.ch/cms/sw/slc5_ia32_gcc434/external/boost/1.40.0-cms
 
-boost_cflags=-g -pthread -fPIC -I/usr/include/libxml2 \
+boost_cflags = -g -pthread -fPIC -I/usr/include/libxml2 \
 	       -DBOOST_PYTHON_DYNAMIC_LIB -I$(BOOST_HOME)/include \
                -I$(PYHOME)/include/python2.6 -I. 
 
@@ -23,33 +23,13 @@ cli_objs = CRAB_Proxy_API.o stdsoap2.o soapCRAB_ProxySOAPProxy.o soapC.o CRAB_Pr
 .cpp.o: 
 	g++ -c $(boost_cflags) $< -o $@
 
-#CRAB_ProxySOAP.nsmap.o: CRAB_ProxySOAP.nsmap.cpp
-#	g++ -c $(boost_cflags) CRAB_ProxySOAP.nsmap.cpp
-
-#soapC.o: soapC.cpp soapH.h
-#	g++ -c $(boost_cflags) soapC.cpp
-
-#soapCRAB_ProxySOAPProxy.o: soapCRAB_ProxySOAPProxy.cpp soapCRAB_ProxySOAPProxy.h
-#	g++ -c $(boost_cflags) soapCRAB_ProxySOAPProxy.cpp
-
-#stdsoap2.o: stdsoap2.cpp stdsoap2.h
-#	g++ -c $(boost_cflags) stdsoap2.cpp
-
-#CRAB_Proxy_API.o: CRAB_Proxy_API.cpp  CRAB_Proxy_API.h
-#	g++ -c $(boost_cflags) CRAB_Proxy_API.cpp   
-
-#CRAB_Server_API_1_1.o: CRAB_Server_API_1_1.cpp
-#	g++ -c $(boost_cflags) CRAB_Server_API_1_1.cpp 
-
-
 all: CRAB_Server_API_1_1.o $(cli_objs) 
 	g++ -o CRAB_Server_API_1_1.so -module -shared $(boost_libs) -L. -Wl,-R. CRAB_Server_API_1_1.o $(cli_objs)
  
 install:
 	echo "Installing client-side files"
 	mkdir -p ../bin/client
-	cp CRAB_Server_API.py ../bin/client/.
-	cp _CRAB_Server_API.so ../bin/client/.
+	cp CRAB_Server_API_1_1.so ../bin/client/.
 
 clean:
 	rm -f *.o  $(O_NAME) *.so
