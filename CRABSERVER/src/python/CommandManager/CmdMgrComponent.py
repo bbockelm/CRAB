@@ -64,15 +64,11 @@ class CmdMgrComponent:
     def startComponent(self, testMode=False):
         self.setEnvironment()
         
-        ## prepare the Frontend # old way
-        # self.cmd += cdir + '/CRAB-CmdMgr-Frontend %s 2>&1 >> %s'%(self.port, self.stdoutFile)
-        # logging.info(self.cmd)
-        # stat, out = commands.getstatusoutput(self.cmd)
-        # logging.info('Frontend outcome: %s %s'%(stat, out))
-        ### 
-
         try:
-            import FrontendLoader
+            if (sys.version_info[0] + .1 * sys.version_info[1]) < 2.6 :
+                import FrontendLoader
+            else:
+                import FrontendLoader_1_1 as FrontendLoader
         except Exception, e:
             logging.info('Error while importing Frontend module')
             logging.info( traceback.format_exc() )
