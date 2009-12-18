@@ -13,12 +13,15 @@ from crab_util import *
 import common
 import Scram
 from ProdCommon.Credential.CredentialAPI import CredentialAPI
-from CRAB_Server_API import CRAB_Server_Session as C_AS_Session
-# from CRAB_Server_fastAPI import CRAB_Server_https as C_AS_Session
 from xml.dom import minidom
-import os
+import os, sys
 import commands
 import traceback
+
+if (sys.version_info[0] + .1 * sys.version_info[1]) < 2.6 : 
+    from CRAB_Server_API import CRAB_Server_Session as C_AS_Session
+else:
+    from CRAB_Server_API_1_1 import CRAB_Server_Session as C_AS_Session
 
 class ServerCommunicator:
     """

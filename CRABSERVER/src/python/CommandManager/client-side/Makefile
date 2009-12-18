@@ -1,6 +1,6 @@
 #
 # CRAB-Proxy makefile
-# $Id: Makefile,v 1.1 2008/04/16 17:22:11 farinafa Exp $
+# $Id: Makefile,v 1.2 2009/08/26 09:02:11 farinafa Exp $
 # Fabio Farina 2007/12/10 
 
 PYHOME = /home/crab/sw_area/slc4_ia32_gcc345/external/python/2.4.3
@@ -13,6 +13,8 @@ LIBS=-lssl -lcrypto -lxml2 -lpthread -lpython2.4
 SERVER_LIBS =-L/opt/glite/lib -L/opt/globus/lib -L$(PYHOME)/lib
 
 all: client install 
+
+# to recreate the swig interface: swig -c++ -python -o CRAB_Server_API.cpp CRAB_Server_API.i
 
 client: CRAB_Proxy_API.h
 	g++ -c -o CRAB_Server_API.o CRAB_Server_API.cpp $(CFLAGS) $(IFLAGS)
