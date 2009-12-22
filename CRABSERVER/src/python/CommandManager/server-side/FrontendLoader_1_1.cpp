@@ -2,7 +2,9 @@
 
 #ifndef RUN_SER_GUARD
 #define RUN_SER_GUARD
-int run_service(int port, char* logFile);
+extern "C" { 
+   #include "server2.h"
+}
 #endif
 
 BOOST_PYTHON_MODULE(FrontendLoader_1_1)
