@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.345 2009/12/14 17:39:21 spiga Exp $"
-__version__ = "$Revision: 1.345 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.346 2009/12/15 13:13:41 farinafa Exp $"
+__version__ = "$Revision: 1.346 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -270,10 +270,10 @@ class Cmssw(JobType):
                 blockSites = self.DataDiscoveryAndLocation(cfg_params)
             #DBSDLS-end
             self.conf['blockSites']=blockSites
- 
+
             ## Select Splitting
             splitByRun = int(cfg_params.get('CMSSW.split_by_run',0))
- 
+
             if self.selectNoInput:
                 if self.pset == None:
                     self.algo = 'ForScript'
@@ -288,7 +288,7 @@ class Cmssw(JobType):
             else:
                 self.algo = 'EventBased'
             common.logger.debug("Job splitting method: %s" % self.algo)
-      
+
             splitter = JobSplitter(self.cfg_params,self.conf)
             self.dict = splitter.Algos()[self.algo]()
 
@@ -474,7 +474,7 @@ class Cmssw(JobType):
                 # just for debug
                 str_argu += concString.join(jobParams[id])
             if argu != '': listDictions.append(argu)
-            job_ToSave['arguments']= '%d %d'%( (job+1), 0) 
+            job_ToSave['arguments']= '%d %d'%( (job+1), 0)
             job_ToSave['dlsDestination']= self.jobDestination[id]
             listField.append(job_ToSave)
             from ProdCommon.SiteDB.CmsSiteMapper import CmsSEMap
@@ -533,11 +533,11 @@ class Cmssw(JobType):
 
     def numberOfJobs(self):
 #wmbs
-        if self.automation==0:  
+        if self.automation==0:
            return self.dict['njobs']
         else:
            return None
-           
+
     def getTarBall(self, exe):
         """
         Return the TarBall with lib and exe
@@ -688,6 +688,9 @@ class Cmssw(JobType):
         # Prepare JobType-independent part
         txt = '\n#Written by cms_cmssw::wsSetupEnvironment\n'
         txt += 'echo ">>> setup environment"\n'
+        txt += 'echo "set SCRAM ARCH to ' + self.executable_arch + '"\n'
+        txt += 'export SCRAM_ARCH=' + self.executable_arch + '\n'
+        txt += 'echo "SCRAM_ARCH = $SCRAM_ARCH"\n'
         txt += 'if [ $middleware == LCG ] || [ $middleware == CAF ] || [ $middleware == LSF ]; then \n'
         txt += self.wsSetupCMSLCGEnvironment_()
         txt += 'elif [ $middleware == OSG ]; then\n'
