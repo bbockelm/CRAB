@@ -200,7 +200,7 @@ class Scheduler :
                     metaList.append('%s'%numberFile(file,id))
             for i in remoteList:
                 if i in metaList :
-                    msg  = 'Warning: You are asking to stage out on a remote directory \n'
+                    msg  = 'You are asking to stage out on a remote directory \n'
                     msg += '\twhich already contains files with same name.\n'
                     msg += '\tPlease change directory or remove the actual content following this HowTo:\n'
                     msg += '\thttps://twiki.cern.ch/twiki/bin/view/CMS/CheckUserRemoteDir\n'
