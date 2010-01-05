@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.346 2009/12/15 13:13:41 farinafa Exp $"
-__version__ = "$Revision: 1.346 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.347 2009/12/23 14:29:34 ewv Exp $"
+__version__ = "$Revision: 1.347 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -1185,16 +1185,15 @@ class Cmssw(JobType):
             msg ="WARNING: no output files name have been defined!!\n"
             msg+="\tno output files will be reported back/staged\n"
             common.logger.info(msg)
+        
         if (self.return_data == 1):
-            for file in (self.output_file+self.output_file_sandbox):
-                listOutFiles.append(numberFile(file, '$NJob'))
-            listOutFiles.append(stdout)
-            listOutFiles.append(stderr)
-        else:
-            for file in (self.output_file_sandbox):
-                listOutFiles.append(numberFile(file, '$NJob'))
-            listOutFiles.append(stdout)
-            listOutFiles.append(stderr)
+            for file in (self.output_file):
+                listOutFiles.append(numberFile(file, '$OutUniqueID'))
+        for file in (self.output_file_sandbox):
+            listOutFiles.append(numberFile(file, '$NJob'))
+        listOutFiles.append(stdout)
+        listOutFiles.append(stderr)
+
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
         txt += 'export filesToCheck\n'
