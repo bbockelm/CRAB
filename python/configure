@@ -28,22 +28,22 @@ function configureCrab {
 cd $ExtDir
 
 ## TEMPORARY HACK
-tar zxvf crablib.tgz > /dev/null 2>&1
+tar zxf crablib.tgz 
 rm crablib.tgz
 
-tar zxvf sqlite.tgz > /dev/null 2>&1
+tar zxf sqlite.tgz 
 rm sqlite.tgz
 
-tar zxvf py2-pysqlite.tgz > /dev/null 2>&1
+tar zxf py2-pysqlite.tgz 
 rm py2-pysqlite.tgz
 
-tar zxvf pyOpenSSL-0.6-python2.4.tar.gz  > /dev/null 2>&1
-rm pyOpenSSL-0.6-python2.4.tar.gz > /dev/null 2>&1
+tar zxf pyOpenSSL-0.6-python2.4.tar.gz 
+rm pyOpenSSL-0.6-python2.4.tar.gz
 
-tar zxvf simplejson.tgz > /dev/null 2>&1
+tar zxf simplejson.tgz 
 rm simplejson.tgz 
 
-tar zxvf pbs_python.tgz > /dev/null 2>&1
+tar zxf pbs_python.tgz 
 rm pbs_python.tgz
 
 ## go to $TopDir
