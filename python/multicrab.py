@@ -235,7 +235,6 @@ class MultiCrab:
                 if self.flag_continue and options.has_key("-cfg"):
                     del options['-cfg']
                 pass
-<<<<<<< multicrab.py
 
             # write crab command to be executed later...
             cmd='crab '
@@ -266,34 +265,6 @@ class MultiCrab:
             #     pass
             # pass
             # if (common.logger): common.logger.delete()
-=======
-
-            # write crab command to be executed later...
-            cmd='crab '
-            for o in options:
-                if options[o]==None: options[o]=""
-                cmd+=str(o)+'='+str(options[o])+' '
-            cmd+="\n"
-            # print cmd
-
-            runFile.write(cmd)
-
-            # SL this does not work for complex, multi include pset.py 
-
-            # crab = Crab()
-            # try:
-            #     crab.initialize_(options)
-            #     crab.run()
-            #     del crab
-            #     print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)  
-            #     print '\n##############################  E N D  ####################################\n'
-            # except CrabException, e:
-            #     del crab
-            #     print '\n' + common.prog_name + ': ' + str(e) + '\n'
-            #     pass
-            # pass
-            # if (common.logger): common.logger.delete()
->>>>>>> 1.19
         pass
         
 
