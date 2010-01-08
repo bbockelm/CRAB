@@ -4,10 +4,10 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.95 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.95 2009/12/03 10:24:26 farinafa Exp $"
+__version__ = "$Revision: 1.96 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.96 2009/12/15 13:13:40 farinafa Exp $"
 
-import os, pickle, time
+import os, pickle, time, datetime
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -491,8 +491,14 @@ class CrabServerWorkerComponent:
             wmcorecache['type'] = "txt/csv"        ## ??
             if self.args['configFileName'] != "" and self.args['configFileName'] != None:
                 logging.info("Downloading configuration...")
-                servo = Service( wmcorecache )
-                servo.refreshCache(self.args['configFileName'], self.args['configFileName'])
+		servo = Service( wmcorecache )
+		# Check if "cache" is expired of the file doesn't exist...
+		t = datetime.datetime.now() - datetime.timedelta(hours = wmcorecache['cacheduration'])
+                fullPathTmp = "%s/%s" % (self.wdir, self.args['configFileName'])
+                if not os.path.exists(fullPathTmp) or os.path.getmtime(fullPathTmp) < time.mktime(t.timetuple()):
+                    logging.debug("%s expired, refreshing cache" % fullPathTmp)
+                    # using getData() method an existing file will be automatically overwritten by the new one 
+                    servo.getData(fullPathTmp, self.args['configFileName'] )
             else:
                 logging.info("WARNING: configuration file name not found!")
         else:
