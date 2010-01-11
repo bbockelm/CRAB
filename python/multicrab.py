@@ -216,6 +216,9 @@ class MultiCrab:
                 
                 options[tmp]=self.cfg_params_dataset[sec][opt]
 
+            # protect against no user_remote_dir
+            if not self.user_remote_dir: 
+                self.user_remote_dir = "./"
             # add section to storage_path if exist in crab.cfg
             if not self.cfg_params_dataset.has_key("USER.user_remote_dir") and self.user_remote_dir:
                 options["-USER.user_remote_dir"]=self.user_remote_dir+"/"+sec
