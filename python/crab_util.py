@@ -271,7 +271,7 @@ def runCommand(command, printout=0, timeout=None):
     returncode = p.returncode
     if returncode != 0 :
         msg = 'Command: %s \n failed with exit code %s \n'%(command,returncode)
-        msg = + str(''.join(outc))
+        msg += str(''.join(outc))
         common.logger.info( msg )
         return None
  
