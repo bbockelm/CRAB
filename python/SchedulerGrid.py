@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.119 2009/12/08 09:22:06 mcinquil Exp $"
-__version__ = "$Revision: 1.119 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.120 2009/12/15 13:13:40 farinafa Exp $"
+__version__ = "$Revision: 1.120 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -65,7 +65,7 @@ class SchedulerGrid(Scheduler):
         #    T1_BL = []
         self.EDG_ce_black_list = cfg_params.get('GRID.ce_black_list',None)
         if (self.EDG_ce_black_list):
-            self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',') + T1_BL
+            self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',')
         else :
             if int(removeBList) == 0: self.EDG_ce_black_list = blackAnaOps
         self.EDG_ce_white_list = cfg_params.get('GRID.ce_white_list',None)
