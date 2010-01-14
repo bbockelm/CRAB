@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.71 2009/06/25 10:40:26 slacapra Exp $"
-__version__ = "$Revision: 1.71 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.72 2010/01/13 18:40:41 spiga Exp $"
+__version__ = "$Revision: 1.72 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -228,6 +228,7 @@ class SchedulerGlite(SchedulerGrid):
         txt += '    else\n'
         txt += '        tar zcvf ${out_files}.tgz CMSSW_${NJob}.stdout CMSSW_${NJob}.stderr\n'
         txt += '    fi\n'
+        txt += '    python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --errorcode $job_exit_code \n'
         txt += '    exit $job_exit_code\n'
 
         txt += '}\n'
