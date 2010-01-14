@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.30 2009/12/14 22:33:54 ewv Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Splitter.py,v 1.31 2009/12/15 13:19:13 spiga Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import common
 from crab_exceptions import *
@@ -410,7 +410,16 @@ class JobSplitter:
             common.logger.info(msg)
 
         if bloskNoSite == allBlock:
-            raise CrabException('No jobs created')
+            msg += 'Requested jobs cannot be Created! \n'
+            if self.cfg_params.has_key('GRID.se_white_list'):
+                msg += '\tWARNING: SE White List: '+self.cfg_params['GRID.se_white_list']+'\n'
+                msg += '\t(Hint: By whitelisting you force the job to run at this particular site(s).\n'
+                msg += '\tPlease check if the dataset is available at this site!)'
+            if self.cfg_params.has_key('GRID.ce_white_list'):
+                msg += '\tWARNING: CE White List: '+self.cfg_params['GRID.ce_white_list']+'\n'
+                msg += '\t(Hint: By whitelisting you force the job to run at this particular site(s).\n'
+                msg += '\tPlease check if the dataset is available at this site!)\n'
+            raise CrabException(msg)
 
         return
 
