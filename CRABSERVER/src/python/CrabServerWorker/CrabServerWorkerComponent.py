@@ -7,7 +7,7 @@ _CrabServerWorkerComponent_
 __version__ = "$Revision: 1.96 $"
 __revision__ = "$Id: CrabServerWorkerComponent.py,v 1.96 2009/12/15 13:13:40 farinafa Exp $"
 
-import os, pickle, time, datetime
+import os, pickle, time
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -108,7 +108,17 @@ class CrabServerWorkerComponent:
         logging.info("-----------------------------------------")
         logging.info("CrabServerWorkerComponent ver2 Started...")
         logging.info("Component dropbox working directory: %s\n"%self.wdir)
-
+        
+        # Init WMCore.Services.Service
+        self.wmcorecache = {}
+        self.wmcorecache['logger'] = logging.getLogger()
+        self.wmcorecache['endpoint'] = self.args["baseConfUrl"]
+        self.wmcorecache['cachepath'] = self.wdir
+        self.wmcorecache['cacheduration'] = 2
+        self.wmcorecache['timeout'] = 20
+        self.wmcorecache['type'] = "txt/csv"            
+        self.servo = Service( self.wmcorecache )
+        
         pass
 
     def startComponent(self):
@@ -178,12 +188,6 @@ class CrabServerWorkerComponent:
 
         # enqueue task submissions and perform them
         if event in ["CrabJobCreatorComponent:NewTaskRegistered", "TaskRegisterComponent:NewTaskRegistered", "ResubmitJob", "CRAB_Cmd_Mgr:NewCommand"]:
-            try:
-                self.initUiConfigs()
-            except Exception, exc:
-                logging.info(str(exc))
-                logging.info(traceback.format_exc())
-
             self.enqueueForSubmission(event, payload)
 
         # fast-kill tasks
@@ -455,8 +459,9 @@ class CrabServerWorkerComponent:
         if self.args['uiConfigWMS'] != "" and self.args['uiConfigWMS'] != None:
             workerCfg['serviceFile'] = self.args['uiConfigWMS']
         elif self.args['configFileName'] != "" and self.args['configFileName'] != None:
-            workerCfg['serviceFile'] = os.path.join( self.wdir, self.args['configFileName'] )
-
+            # refresh cache
+            workerCfg['serviceFile'] = self.servo.refreshCache( self.args['configFileName'], self.args['configFileName'], openfile=False)
+        
         workerCfg['actionType'] = actionType
         workerCfg['retries'] = int( self.args.get('maxRetries', 3) )
 
@@ -465,42 +470,4 @@ class CrabServerWorkerComponent:
 
         workerCfg['credentialType'] = self.args['credentialType']
         return workerCfg
-
-################################
-#   Auxiliary Methods
-################################
-
-    def initUiConfigs(self):
-        """
-        Download the UI Configuration files for the different Schedulers
-        These files will be used by Submitting threads to address to correct Brokers
-        """
-
-        if self.args['uiConfigWMS'] != "" and self.args['uiConfigWMS'] != None:
-            ## file not to be downloaded - manually mantained
-            if not os.path.exists( self.args['uiConfigWMS'] ):
-                logging.info("WARNING: configuration file '%s' not found!"%(self.args['uiConfigWMS']))
-        elif self.args["baseConfUrl"] != "" and self.args["baseConfUrl"] != None:
-            ## periodic download of configuration file
-            wmcorecache = {}
-            wmcorecache['logger'] = logging.getLogger()
-            wmcorecache['endpoint'] = self.args["baseConfUrl"]
-            wmcorecache['cachepath'] = self.wdir   ## cache area
-            wmcorecache['cacheduration'] = 0.5     ## half an hour
-            wmcorecache['timeout'] = 20            ## seconds
-            wmcorecache['type'] = "txt/csv"        ## ??
-            if self.args['configFileName'] != "" and self.args['configFileName'] != None:
-                logging.info("Downloading configuration...")
-		servo = Service( wmcorecache )
-		# Check if "cache" is expired of the file doesn't exist...
-		t = datetime.datetime.now() - datetime.timedelta(hours = wmcorecache['cacheduration'])
-                fullPathTmp = "%s/%s" % (self.wdir, self.args['configFileName'])
-                if not os.path.exists(fullPathTmp) or os.path.getmtime(fullPathTmp) < time.mktime(t.timetuple()):
-                    logging.debug("%s expired, refreshing cache" % fullPathTmp)
-                    # using getData() method an existing file will be automatically overwritten by the new one 
-                    servo.getData(fullPathTmp, self.args['configFileName'] )
-            else:
-                logging.info("WARNING: configuration file name not found!")
-        else:
-            logging.info("WARNING: service configuration not found!")
 
