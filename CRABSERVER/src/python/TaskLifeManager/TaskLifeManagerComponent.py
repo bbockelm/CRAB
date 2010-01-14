@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.42 2009/08/10 15:08:58 farinafa Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.43 2009/09/28 15:22:29 farinafa Exp $"
+__version__ = "$Revision: 1.43 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -184,6 +184,7 @@ class TaskLifeManagerComponent:
             logging.info("Deleting osb of task: " + str(taskname) + \
                          " for jobs " + str(jobstr) )
             try:
+                self.markJobsAsCleared( taskname, jobstr )
                 self.deleteRetrievedOSB( taskname, jobstr )
             except Exception, ex:
                 import traceback
@@ -252,6 +253,29 @@ class TaskLifeManagerComponent:
                     logging.debug( str(traceback.format_exc()) )
                     logging.info( "problems deleting osb for job " + str(idjob) )
 
+
+    def markJobsAsCleared(self, taskName, strJobs):
+        mySession = BossLiteAPI("MySQL", self.bossCfgDB)
+        
+        jobList = eval(strJobs)
+        task = mySession.loadTaskByName(taskName)
+      
+        for j in task.jobs:
+            if j['jobId'] in jobList:
+                # close running jobs and mark state
+                try:
+                    mySession.getRunningInstance(j)
+                except Exception, exc:
+                    logMsg = "Problem extracting runningJob for %s: '%s'"%(str(j), str(exc))
+                    logMsg += "Creating a new runningJob instance"
+                    logging.debug(logMsg)
+                    mySession.getNewRunningInstance(j)
+
+                j.runningJob['state'] = "Cleared"
+                j.runningJob['closed'] = "Y"
+
+        mySession.updateDB( task )
+        pass
 
     def cleanTask(self, taskName):
         mySession = BossLiteAPI("MySQL", self.bossCfgDB)
