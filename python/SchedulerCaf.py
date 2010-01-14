@@ -16,6 +16,7 @@ class SchedulerCaf(SchedulerLsf) :
     def __init__(self):
         SchedulerLsf.__init__(self)
         Scheduler.__init__(self,"CAF")
+        self.OSBsize = 55000000
 
         return
 
@@ -42,4 +43,46 @@ class SchedulerCaf(SchedulerLsf) :
         ### default is the name of the storage pool 
         ### where users can copy job outputs  
         txt=self.wsCopyOutput_comm(self.pool)
+        return txt
+
+    def wsExitFunc(self):
+        """
+        """
+        txt = '\n'
+
+        txt += '#\n'
+        txt += '# EXECUTE THIS FUNCTION BEFORE EXIT \n'
+        txt += '#\n\n'
+        txt += 'func_exit() { \n'
+        txt += self.wsExitFunc_common()
+
+        txt += '    cp *.${LSB_BATCH_JID}.out CMSSW_${NJob}.stdout \n'
+        txt += '    cp *.${LSB_BATCH_JID}.err CMSSW_${NJob}.stderr \n'
+        txt += '    tar zcvf ${out_files}.tgz  ${filesToCheck}\n'
+        txt += '    tmp_size=`ls -gGrta ${out_files}.tgz | awk \'{ print $3 }\'`\n'
+        txt += '    rm ${out_files}.tgz\n'
+        txt += '    size=`expr $tmp_size`\n'
+        txt += '    echo "Total Output dimension: $size"\n'
+        txt += '    limit='+str(self.OSBsize) +' \n'
+        txt += '    echo "WARNING: output files size limit is set to: $limit"\n'
+        txt += '    if [ "$limit" -lt "$size" ]; then\n'
+        txt += '        exceed=1\n'
+        txt += '        job_exit_code=70000\n'
+        txt += '        echo "Output Sanbox too big. Produced output is lost "\n'
+        txt += '    else\n'
+        txt += '        exceed=0\n'
+        txt += '        echo "Total Output dimension $size is fine."\n'
+        txt += '    fi\n'
+
+        txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
+        txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '    if [ $exceed -ne 1 ]; then\n'
+        txt += '        tar zcvf ${out_files}.tgz  ${final_list}\n'
+        txt += '    else\n'
+        txt += '        tar zcvf ${out_files}.tgz CMSSW_${NJob}.stdout CMSSW_${NJob}.stderr\n'
+        txt += '    fi\n'
+        txt += '    python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --errorcode $job_exit_code \n'
+        txt += '    exit $job_exit_code\n'
+        txt += '}\n'
         return txt
