@@ -65,10 +65,9 @@ class CmdMgrComponent:
         self.setEnvironment()
         
         try:
-            if (sys.version_info[0] + .1 * sys.version_info[1]) < 2.6 :
-                import FrontendLoader
-            else:
-                import FrontendLoader_1_1 as FrontendLoader
+            import FrontendLoader
+        except ImportError :
+            import FrontendLoader_1_1 as FrontendLoader
         except Exception, e:
             logging.info('Error while importing Frontend module')
             logging.info( traceback.format_exc() )
