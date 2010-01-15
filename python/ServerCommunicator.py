@@ -17,6 +17,7 @@ from xml.dom import minidom
 import os, sys
 import commands
 import traceback
+from Downloader import Downloader
 
 if (sys.version_info[0] + .1 * sys.version_info[1]) < 2.6 : 
     from CRAB_Server_API import CRAB_Server_Session as C_AS_Session
@@ -258,12 +259,16 @@ class ServerCommunicator:
         node.setAttribute("ClientVersion", str(ver) )
 
         ## Only Temporary. it should be at Server level
-        removeT1bL = self.cfg_params.get("GRID.remove_default_blacklist", 0 )
-        T1_BL = "T0, T1"
-        # T1_BL = "fnal.gov, gridka.de ,w-ce01.grid.sinica.edu.tw, w-ce02.grid.sinica.edu.tw, \
-        #          lcg00125.grid.sinica.edu.tw, \
-        #          gridpp.rl.ac.uk, cclcgceli03.in2p3.fr, cclcgceli04.in2p3.fr, pic.es, cnaf"
-        if removeT1bL == '1': T1_BL = ''
+        removeBList = self.cfg_params.get("GRID.remove_default_blacklist", 0 )
+        blackAnaOps = []
+        if int(removeBList) == 0:
+            blacklist = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/", os.getcwd())
+            result = blacklist.config("site_black_list.conf")
+            if result != None:
+                blackAnaOps = result
+            common.logger.debug("Enforced black list: %s "%str(blacklist))
+        else:
+            common.logger.info("WARNING: Skipping default black list!")
 
         # create a mini-cfg to be transfered to the server
         miniCfg = {}
@@ -273,9 +278,9 @@ class ServerCommunicator:
         if 'GRID.ce_white_list' in self.cfg_params:
             miniCfg['EDG.ce_white_list'] = str( self.cfg_params['GRID.ce_white_list'] )
 
-        miniCfg['EDG.ce_black_list'] = T1_BL
+        miniCfg['EDG.ce_black_list'] = blackAnaOps
         if 'GRID.ce_black_list' in self.cfg_params:
-            if len(T1_BL) > 0:
+            if len(blackAnaOps) > 0:
                 miniCfg['EDG.ce_black_list'] += ", "
             miniCfg['EDG.ce_black_list'] += str( self.cfg_params['GRID.ce_black_list'] )
 
