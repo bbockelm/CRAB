@@ -20,7 +20,7 @@ build:
 	cd $(PYTHON_SRC) && python setup.py build --build-lib=$(LIB_DIR)
 	/bin/cp $(SQL_SRC)/CrabServerDB/*.sql  $(SHARE_DIR)
 #	cd $(PYTHON_SRC)/CommandManager/server-side; make ; cd -	
-	/bin/cp -R $(PYTHON_SRC)/CommandManager/. $(LIB_DIR)/CommandManager
+#	/bin/cp -R $(PYTHON_SRC)/CommandManager/. $(LIB_DIR)/CommandManager
 ifneq ($(BIN_DIR), $(BIN_SRC))
 	/bin/cp -f $(BIN_SRC)/crabServer* $(BIN_DIR)
 	/bin/chmod +x $(BIN_DIR)/*
