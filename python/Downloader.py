@@ -12,21 +12,14 @@ class Downloader:
         self.wmcorecache['timeout'] = 20            ## seconds
         self.wmcorecache['endpoint'] = endpoint
 
-    def downloadConfig(self, cacheFile, type = "txt/csv"):
+    def downloadConfig(self, cacheFile, type = "txt/csv",openf=True):
         self.wmcorecache['type'] = type
         common.logger.debug("Downloading file [%s] to [%s]." %(str(self.wmcorecache['endpoint']),(str(self.wmcorecache['cachepath'])+"/"+cacheFile)))
         servo = Service( self.wmcorecache )
-        return servo.refreshCache( cacheFile, cacheFile )
+        return servo.refreshCache( cacheFile, cacheFile, openfile=openf )
 
     def config(self, fileName = "prova"):
-        f = self.downloadConfig(fileName)
-        l = ''.join( f.readlines() )
-        f.close()
+        return  self.downloadConfig(fileName)
 
-        value = None
-        try:
-            value = eval(l)
-        except SyntaxError, se:
-            common.logger.debug("Problem reading downloaded file %s "%str(fileName))
-
-        return value
+    def filePath(self, fileName = "prova"):
+        return  self.downloadConfig(fileName, openf=False)
