@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.120 2009/12/15 13:13:40 farinafa Exp $"
-__version__ = "$Revision: 1.120 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.121 2010/01/13 20:41:43 spigafi Exp $"
+__version__ = "$Revision: 1.121 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -58,11 +58,6 @@ class SchedulerGrid(Scheduler):
         else:
             common.logger.info("WARNING: Skipping default black list!")
 
-        # T1_BL = ["fnal.gov", "gridka.de" ,"w-ce01.grid.sinica.edu.tw", "w-ce02.grid.sinica.edu.tw", "lcg00125.grid.sinica.edu.tw",\
-        #           "gridpp.rl.ac.uk" , "cclcgceli03.in2p3.fr","cclcgceli04.in2p3.fr" , "pic.es", "cnaf", "cern.ch"]
-        #T1_BL = ["T0", "T1"]
-        #if int(removeT1bL) == 1:
-        #    T1_BL = []
         self.EDG_ce_black_list = cfg_params.get('GRID.ce_black_list',None)
         if (self.EDG_ce_black_list):
             self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',')
