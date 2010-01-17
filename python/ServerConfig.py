@@ -7,42 +7,41 @@ import os, time
 class ServerConfig:
     def __init__(self, serverName):
         import string
-        serverName = string.lower(serverName)
-        common.logger.debug('Calling ServerConfig '+serverName)
+        self.serverName = string.lower(serverName)
+        common.logger.debug('Calling ServerConfig '+self.serverName)
 
         url ='http://cmsdoc.cern.ch/cms/LCG/crab/config/'
 
-        downloader = Downloader(url, os.getcwd())
+        self.downloader = Downloader(url)
           
 
-   def config(self):
+    def config(self):
         """
         """
-        if 'default' in  serverName:
-            serverName = self.selectServer() 
-        if 'server_' in serverName:
-            configFileName = '%s.conf'%serverName
+        if 'default' in  self.serverName:
+            self.serverName = self.selectServer() 
+        if 'server_' in self.serverName:
+            configFileName = '%s.conf'%self.serverName
         else: 
-            configFileName = 'server_%s.conf'%serverName
-
-        serverConfig = downloader.config(configFileName)
-
+            configFileName = 'server_%s.conf'%self.serverName
+ 
+        serverConfig = eval(self.downloader.config(configFileName))
+ 
         if not serverConfig:
             serverConfig = {} 
-        serverConfig['serverGenericName']=serverName
+        serverConfig['serverGenericName']=self.serverName
 
-        return serveConfig
-
+        return serverConfig
+ 
     def selectServer(self):
         """
         """
         common.logger.debug('getting serverlist from web')
         # get a list of available servers 
         serverListFileName ='AvalableServerList'
-
-        ## downloader
-        serverListFile = downloader.config(serverListFileName)
-
+ 
+        serverListFile = self.downloader.config(serverListFileName)
+ 
         if not serverListFile:
             msg = 'List of avalable Server '+serverListFileName+' from '+self.url+' is empty\n'
             msg += 'Please report to CRAB feedback hypernews hn-cms-crabFeedback@cern.ch'
@@ -51,7 +50,7 @@ class ServerConfig:
         serverList=[]
         [serverList.append(string.split(string.strip(it))) for it in serverListFile if (it.strip() and not it.strip()[0]=="#")]
         common.logger.debug('All avaialble servers: '+str(serverList))
-
+ 
         # select servers from client version
         compatibleServerList=[]
         for s in serverList:
@@ -65,16 +64,16 @@ class ServerConfig:
             
             if vv[0]<=common.prog_version and common.prog_version<=vv[1] and common.scheduler.name()==string.lower(s[2]):
                 compatibleServerList.append(s[0])
-
+ 
         common.logger.debug('All avaialble servers compatible with %s: '%common.prog_version_str +str(serverList))
         if len(compatibleServerList)==0: 
             msg = "No compatible server available with client version %s\n"%common.prog_version_str
             msg += "Exiting"
             raise CrabException(msg)
-
+ 
         # if more than one, pick up a random one, waiting for something smarter (SiteDB)
         import random
         serverName = random.choice(compatibleServerList)
         common.logger.debug('Avaialble servers: '+str(compatibleServerList)+' choosen: '+serverName)
-
+ 
         return serverName

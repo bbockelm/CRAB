@@ -168,7 +168,7 @@ def checkCRABVersion(current, url = "http://cmsdoc.cern.ch/cms/LCG/crab/config/"
     """
     match_result = False
     from Downloader import Downloader
-    blacklist = Downloader(url, os.getcwd())
+    blacklist = Downloader(url)
     result =eval(blacklist.config(fileName))
     current_dot = current.split('.')
     for version in result:
