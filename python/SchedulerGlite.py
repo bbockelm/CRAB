@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.73 2010/01/14 10:24:17 spiga Exp $"
-__version__ = "$Revision: 1.73 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.74 2010/01/15 21:16:56 spiga Exp $"
+__version__ = "$Revision: 1.74 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -43,10 +43,9 @@ class SchedulerGlite(SchedulerGrid):
 
 
     def rb_configure(self, RB):
-        common.logger.info('Downloading config files for WMS: '+url)
-        from Downloader import Downloader
         url ='http://cmsdoc.cern.ch/cms/LCG/crab/config/'
-        common.logger.info('Downloading config files for WMS: '+url)
+        from Downloader import Downloader
+        common.logger.debug('Downloading config files for WMS: '+url)
         ## 25-Jun-2009 SL: patch to use Cream enabled WMS
         if ( self.cfg_params.get('GRID.use_cream',None) ):
             RB='CREAM'
