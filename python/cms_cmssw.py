@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.347 2009/12/23 14:29:34 ewv Exp $"
-__version__ = "$Revision: 1.347 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.348 2010/01/05 15:40:57 farinafa Exp $"
+__version__ = "$Revision: 1.348 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -323,7 +323,7 @@ class Cmssw(JobType):
             PsetEdit.skipEvent(0)
             PsetEdit.psetWriter(self.configFilename())
             ## If present, add TFileService to output files
-            if not int(self.cfg_params.get('CMSSW.skip_TFileService_output',0)):
+            if not int(self.cfg_params.get('CMSSW.skip_tfileservice_output',0)):
                 tfsOutput = PsetEdit.getTFileService()
                 if tfsOutput:
                     if tfsOutput in self.output_file:
