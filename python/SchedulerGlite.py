@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.75 2010/01/17 19:01:08 spiga Exp $"
-__version__ = "$Revision: 1.75 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.76 2010/01/17 19:05:52 spiga Exp $"
+__version__ = "$Revision: 1.76 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -50,15 +50,14 @@ class SchedulerGlite(SchedulerGrid):
         if ( self.cfg_params.get('GRID.use_cream',None) ):
             RB='CREAM'
         if not RB: return None
-        glite_config = None
         rb_param_file = None
         configFileName = 'glite_wms_'+str(RB)+'.conf'
 
         results = Downloader(url)
         gliteConfig  = results.filePath(configFileName)
 
-        if (glite_config ):
-            rb_param_file = glite_config
+        if (gliteConfig ):
+            rb_param_file = gliteConfig
         return rb_param_file
 
     def ce_list(self):
