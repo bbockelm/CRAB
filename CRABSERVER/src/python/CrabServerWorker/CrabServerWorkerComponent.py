@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.96 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.96 2009/12/15 13:13:40 farinafa Exp $"
+__version__ = "$Revision: 1.98 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.98 2010/01/14 13:52:19 spigafi Exp $"
 
 import os, pickle, time
 
@@ -52,6 +52,8 @@ class CrabServerWorkerComponent:
         self.args.setdefault('glexecPath', None)
         self.args.setdefault('glexecWrapper', None)
         self.args.setdefault('CondorQCacheDir', None)
+        self.args.setdefault('keyPath', None )
+        self.args.setdefault('certPath', None )
 
         # SE support parameters
         # Protocol = local cannot be the default. Any default allowed
@@ -117,6 +119,9 @@ class CrabServerWorkerComponent:
         self.wmcorecache['cacheduration'] = 2
         self.wmcorecache['timeout'] = 20
         self.wmcorecache['type'] = "txt/csv"            
+        if self.args["keyPath"] and  self.args["certPath"]:
+            self.wmcorecache['cert'] =  self.args["certPath"]   
+            self.wmcorecache['key']  =  self.args["keyPath"]   
         self.servo = Service( self.wmcorecache )
         
         pass
