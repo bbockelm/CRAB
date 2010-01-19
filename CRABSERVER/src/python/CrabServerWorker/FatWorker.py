@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.190 2009/12/03 10:24:26 farinafa Exp $"
-__version__ = "$Revision: 1.190 $"
+__revision__ = "$Id: FatWorker.py,v 1.191 2009/12/15 13:13:40 farinafa Exp $"
+__version__ = "$Revision: 1.191 $"
 
 import string
 import sys, os
@@ -69,6 +69,12 @@ class FatWorker(Thread):
         self.local_queue = self.configs['messageQueue']
         self.role = ''
         self.group = ''
+       
+        self.serviceconfig={}
+        if self.configs['certPath'] and self.configs['keyPath']:
+            self.serviceconfig['cert']=self.configs['certPath']
+            self.serviceconfig['key']=self.configs['keyPath']
+        
 
         ##Initialization to allow lsf@caf
         self.cpCmd = self.configs['cpCmd']
@@ -697,7 +703,7 @@ class FatWorker(Thread):
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
                     seList = distinct_dests[sel]
-                    seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL, self.log)
+                    seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL, self.log, self.serviceconfig)
                     cleanedList = seParser.cleanForBlackWhiteList(seList, 'list')
                     if '' in cleanedList :cleanedList.remove('')
                 voTags=['cms']
@@ -830,14 +836,14 @@ class FatWorker(Thread):
         # Get list of SEs and clean according to white/black list
         seList = task.jobs[i]['dlsDestination']
         seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL,
-                                          self.log)
+                                          self.log, self.serviceconfig)
         seDest   = seParser.cleanForBlackWhiteList(seList, 'list')
 
         # Convert to list of CEs and clean according to white/black list
         onlyOSG = True # change for Glidein
         availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
         ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
-                                          self.log)
+                                          self.log, self.serviceconfig)
         ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
 
         schedParam = "schedulerList = " + ','.join(ceDest) + "; "
@@ -870,7 +876,7 @@ class FatWorker(Thread):
         # Get list of SEs and clean according to white/black list
         seList = task.jobs[i]['dlsDestination']
         seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL,
-                                          self.log)
+                                          self.log, self.serviceconfig)
         seDest   = seParser.cleanForBlackWhiteList(seList, 'list')
 
         # Convert to list of CEs and clean according to white/black list
@@ -880,7 +886,7 @@ class FatWorker(Thread):
         else:
             availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
         ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
-                                          self.log)
+                                          self.log, self.serviceconfig)
         ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
         ceString = ','.join(ceDest)
         seString = ','.join(seDest)
@@ -944,7 +950,7 @@ class FatWorker(Thread):
         Returns string with requirement SE related
         """
         seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL,
-                                          self.log)
+                                          self.log, self.serviceconfig)
         seDest   = seParser.cleanForBlackWhiteList(dest, 'list')
 
         req = ''
@@ -961,7 +967,7 @@ class FatWorker(Thread):
         Returns string with requirement CE related
         """
         ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
-                                          self.log)
+                                          self.log, self.serviceconfig)
 
         self.ce_whiteL = ceParser.whiteList()
         self.ce_blackL = ceParser.blackList()

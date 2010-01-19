@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.98 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.98 2010/01/14 13:52:19 spigafi Exp $"
+__version__ = "$Revision: 1.99 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.99 2010/01/19 15:34:35 spiga Exp $"
 
 import os, pickle, time
 
@@ -258,6 +258,8 @@ class CrabServerWorkerComponent:
         workerCfg['defaultScheduler'] = self.args.setdefault('defaultScheduler','glite' )
         workerCfg['supportedSchedulers'] = self.args.get('supportedSchedulers', '').upper().split(',')
         workerCfg['submissionSource'] = submSource
+        workerCfg['keyPath']  = self.args['keyPath']
+        workerCfg['certPath'] = self.args['certPath']
 
         # Specific WMS choice
         workerCfg['wmsEndpoint'] = ''
