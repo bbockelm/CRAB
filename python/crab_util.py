@@ -575,7 +575,6 @@ def has_freespace(dir_name, needed_space_kilobytes):
      try:
          enough_quota = check_quota(dir_name, needed_space_kilobytes)
      except:
-         raise
          enough_quota = True
      try:
          enough_partition = check_partition(dir_name,
