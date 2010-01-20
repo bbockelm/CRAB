@@ -10,56 +10,36 @@ class CacheCleaner(Actor):
        """
        A class to clean:
        - SiteDB cache
-       - CrabServer cache
-       - WMS cache
+       - Crab cache
        """
-       self.string_app = common.work_space.topDir()[0:len(common.work_space.topDir())-1]
-       self.index = string.rfind(self.string_app, "/")
-       self.submitting_dir = self.string_app[0:self.index] 
-       self.username = gethnUserNameFromSiteDB()
-       self.flag = 0
        return
 
     def run(self):
         common.logger.debug("CacheCleaner::run() called")
         try:
-            #SiteDB cache
-            if os.path.exists(self.submitting_dir+'/SiteDBusername.conf'):
-               cmd = 'rm '+self.submitting_dir+'/SiteDBusername.conf'
-               cmd_out = runCommand(cmd) 
-               self.flag = 1 
-            else:
-               common.logger.debug(self.submitting_dir+'/SiteDBusername.conf'+' not found') 
-
-            if os.path.exists(self.submitting_dir+'/.cms_sitedbcache'):
-               cmd = 'rm -rf '+self.submitting_dir+'/.cms_sitedbcache'
+            sitedbCache= '%s/.cms_sitedbcache'%os.getenv('HOME')
+            if os.path.isdir(sitedbCache):
+               cmd = 'rm -f  %s/*'%sitedbCache
                cmd_out = runCommand(cmd)
-               self.flag = 1
+               common.logger.info('%s Cleaned.'%sitedbCache)
             else:
-               common.logger.debug(self.submitting_dir+'/.cms_sitedbcache'+' not found')
+               common.logger.info('%s not found'%sitedbCache)
+        except Exception, e:
+            common.logger.debug("WARNING: Problem cleaning the SiteDB cache.")
+            common.logger.debug( str(e))
+            common.logger.debug( traceback.format_exc() )
 
-            if os.path.exists('/tmp/jsonparser_'+self.username):
-               cmd = 'rm -rf /tmp/jsonparser_'+self.username 
+           # Crab  cache 
+        try: 
+            crabCache= '%s/.cms_crab'%os.getenv('HOME')
+            if os.path.isdir(crabCache):
+               cmd = 'rm -f  %s/*'%crabCache
                cmd_out = runCommand(cmd)
-               self.flag = 1          
+               common.logger.info('%s Cleaned.'%crabCache)
             else:
-               common.logger.debug('/tmp/jsonparser_'+self.username+' not found')            
-
-            #CrabServer cache and WMS cache
-            if len(glob.glob(os.path.join(self.submitting_dir,'*.conf'))) > 0:
-               cmd = 'rm -rf '+self.submitting_dir+'/*.conf'
-               cmd_out = runCommand(cmd)
-               self.flag = 1 
-            else:
-               common.logger.debug(self.submitting_dir,'*.conf'+' not found')  
-            
-            if self.flag == 1:
-               common.logger.info("Cache cleaned!")
-            else:
-               common.logger.info("Cache already cleaned")
-
+               common.logger.debug('%s not found'%crabCache)
         except Exception, e:
             common.logger.debug("WARNING: Problem cleaning the cache.")
             common.logger.debug( str(e))
             common.logger.debug( traceback.format_exc() )
-            return
+        return
