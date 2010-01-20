@@ -39,6 +39,7 @@ The most useful general options (use '-h' to get complete help):
   -printId [range]                        -- print the job SID or Task Unique ID while using the server.
   -createJdl [range]                      -- provide files with a complete Job Description (JDL).
   -validateCfg [fname]                    -- parse the ParameterSet using the framework's Python API.
+  -cleanCache                             -- clean SiteDB and CRAB caches.
   -continue|-c [dir]                      -- Apply command to task stored in [dir].
   -h [format]                             -- Detailed help. Formats: man (default), tex, html, txt.
   -cfg fname                              -- Configuration file name. Default is 'crab.cfg'.
@@ -390,7 +391,7 @@ Clean up (i.e. erase) the task working directory after a check whether there are
 
 =item B<-cleanCache>
 
-Clean up (i.e. erase) the SiteDb, WMS and CrabServer caches in your submitting directory
+Clean up (i.e. erase) the SiteDb and CRAB cache content.
 
 =item B<-help [format] | -h [format]>
 
