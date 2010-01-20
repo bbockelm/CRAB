@@ -260,7 +260,7 @@ class ServerCommunicator:
 
         ## Only Temporary. it should be at Server level
         removeBList = self.cfg_params.get("GRID.remove_default_blacklist", 0 )
-        blackAnaOps = []
+        blackAnaOps = None 
         if int(removeBList) == 0:
             blacklist = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/")
             result = blacklist.config("site_black_list.conf")
@@ -280,7 +280,7 @@ class ServerCommunicator:
 
         miniCfg['EDG.ce_black_list'] = blackAnaOps
         if 'GRID.ce_black_list' in self.cfg_params:
-            if len(blackAnaOps) > 0:
+            if blackAnaOps:
                 miniCfg['EDG.ce_black_list'] += ", "
             miniCfg['EDG.ce_black_list'] += str( self.cfg_params['GRID.ce_black_list'] )
 

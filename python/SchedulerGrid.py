@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.122 2010/01/15 10:59:26 spiga Exp $"
-__version__ = "$Revision: 1.122 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.123 2010/01/17 19:05:52 spiga Exp $"
+__version__ = "$Revision: 1.123 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -48,7 +48,7 @@ class SchedulerGrid(Scheduler):
 
 
         removeBList = cfg_params.get("GRID.remove_default_blacklist", 0 )
-        blackAnaOps = []
+        blackAnaOps = None
         if int(removeBList) == 0:
             blacklist = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/")
             result = blacklist.config("site_black_list.conf")
@@ -58,11 +58,16 @@ class SchedulerGrid(Scheduler):
         else:
             common.logger.info("WARNING: Skipping default black list!")
 
-        self.EDG_ce_black_list = cfg_params.get('GRID.ce_black_list',None)
-        if (self.EDG_ce_black_list):
+        self.EDG_ce_black_list = None
+        if cfg_params.has_key('GRID.ce_black_list') and cfg_params['GRID.ce_black_list']:
+            self.EDG_ce_black_list = cfg_params.get('GRID.ce_black_list')
+            if int(removeBList) == 0 and blackAnaOps: 
+                self.EDG_ce_black_list += ",%s"%blackAnaOps
+        elif int(removeBList) == 0 and blackAnaOps:
+            self.EDG_ce_black_list = blackAnaOps
+        if self.EDG_ce_black_list:
             self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',')
-        else :
-            if int(removeBList) == 0: self.EDG_ce_black_list = blackAnaOps
+
         self.EDG_ce_white_list = cfg_params.get('GRID.ce_white_list',None)
         if (self.EDG_ce_white_list): self.EDG_ce_white_list = string.split(self.EDG_ce_white_list,',')
 
