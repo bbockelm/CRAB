@@ -24,8 +24,8 @@ try:
 except:
     from sha import sha as sha1
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.41 2009/12/16 17:37:28 ewv Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.42 2009/12/16 17:40:08 ewv Exp $"
+__version__ = "$Revision: 1.42 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -59,7 +59,9 @@ class SchedulerCondorCommon(SchedulerGrid):
             os.environ['X509_USER_PROXY'] = '/tmp/x509up_u' + str(os.getuid())
 
         SchedulerGrid.configure(self, cfgParams)
-        if not cfgParams.get('CRAB.server_name',None):
+        if cfgParams.get('CRAB.server_name',None) or cfgParams.get('CRAB.use_server',None):
+            pass
+        else:
             self.checkCondorSetup()
 
         # init BlackWhiteListParser
