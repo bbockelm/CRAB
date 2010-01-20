@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.191 2009/12/15 13:13:40 farinafa Exp $"
-__version__ = "$Revision: 1.191 $"
+__revision__ = "$Id: FatWorker.py,v 1.192 2010/01/19 20:04:01 spiga Exp $"
+__version__ = "$Revision: 1.192 $"
 
 import string
 import sys, os
@@ -453,7 +453,7 @@ class FatWorker(Thread):
                 for sub_list in sub_bulk:
                     # update arguments for unique output naming 
                     for j in task.jobs:
-                        if j['jobId'] in sub_list[ii]:
+                        if j['jobId'] in sub_list:
                             self.blDBsession.getRunningInstance(j)
                             newArgs = "%d %d"%(j.runningJob['jobId'], j.runningJob['submission'])
                             j['arguments'] = newArgs
