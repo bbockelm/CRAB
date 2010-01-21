@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.36 2009/11/19 18:04:20 spiga Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.37 2009/12/14 17:39:22 spiga Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -214,7 +214,7 @@ class DataDiscovery:
         common.logger.debug("Set of input parameters used for DBS query: %s" % allowedRetriveValue)
         try:
             if len(runselection) <=0 :
-                if useParent==1 or self.splitByRun==1 :
+                if useParent==1 or self.splitByRun==1 or self.ads:
                     if self.ads:
                         files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue)
                     else :

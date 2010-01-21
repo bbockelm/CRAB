@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.348 2010/01/05 15:40:57 farinafa Exp $"
-__version__ = "$Revision: 1.348 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.349 2010/01/18 16:41:30 slacapra Exp $"
+__version__ = "$Revision: 1.349 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -435,7 +435,13 @@ class Cmssw(JobType):
 
 
         # screen output
-        common.logger.info("Requested dataset: " + datasetPath + " has " + str(self.maxEvents) + " events in " + str(len(self.filesbyblock.keys())) + " blocks.\n")
+        if self.ads:
+            common.logger.info("Requested ADS %s has %s block(s)." %
+                               (datasetPath, len(self.filesbyblock.keys())))
+        else:
+            common.logger.info("Requested dataset: " + datasetPath + \
+                " has " + str(self.maxEvents) + " events in " + \
+                str(len(self.filesbyblock.keys())) + " blocks.\n")
 
         return sites
 
@@ -1185,7 +1191,7 @@ class Cmssw(JobType):
             msg ="WARNING: no output files name have been defined!!\n"
             msg+="\tno output files will be reported back/staged\n"
             common.logger.info(msg)
-        
+
         if (self.return_data == 1):
             for file in (self.output_file):
                 listOutFiles.append(numberFile(file, '$OutUniqueID'))
