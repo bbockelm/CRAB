@@ -89,17 +89,21 @@ class Cmssw(JobType):
             self.datasetPath = tmp
             self.selectNoInput = 0
             ll = len(self.datasetPath.split("/"))
-            if (ll < 4):
+            if ll not in [1,4,5]:
                 msg = 'Your datasetpath has a invalid format ' + self.datasetPath + '\n'
                 msg += 'Expected a path in format /PRIMARY/PROCESSED/TIER1-TIER2 or /PRIMARY/PROCESSED/TIER/METHOD for ADS'
                 raise CrabException(msg)
-            self.primaryDataset = self.datasetPath.split("/")[1]
-            self.dataTier = self.datasetPath.split("/")[2]
+            if ll > 1:
+                self.primaryDataset = self.datasetPath.split("/")[1]
+                self.dataTier = self.datasetPath.split("/")[2]
+            else:
+                self.primaryDataset = 'Unknown'
+                self.dataTier = 'Unknown'
 
         # Analysis dataset is primary/processed/tier/definition
         self.ads = False
         if self.datasetPath:
-            self.ads = len(self.datasetPath.split("/")) > 4
+            self.ads = len(self.datasetPath.split("/")) > 4 or len(self.datasetPath.split("/")) == 1
 
         # FUTURE: Can remove this check
         if self.ads and self.CMSSW_major < 3:
@@ -323,7 +327,7 @@ class Cmssw(JobType):
             PsetEdit.skipEvent(0)
             PsetEdit.psetWriter(self.configFilename())
             ## If present, add TFileService to output files
-            if not int(self.cfg_params.get('CMSSW.skip_tfileservice_output',0)):
+            if not int(self.cfg_params.get('CMSSW.skip_TFileService_output',0)):
                 tfsOutput = PsetEdit.getTFileService()
                 if tfsOutput:
                     if tfsOutput in self.output_file:
@@ -435,7 +439,13 @@ class Cmssw(JobType):
 
 
         # screen output
-        common.logger.info("Requested dataset: " + datasetPath + " has " + str(self.maxEvents) + " events in " + str(len(self.filesbyblock.keys())) + " blocks.\n")
+        if self.ads:
+            common.logger.info("Requested ADS %s has %s block(s)." %
+                               (datasetPath, len(self.filesbyblock.keys())))
+        else:
+            common.logger.info("Requested dataset: " + datasetPath + \
+                " has " + str(self.maxEvents) + " events in " + \
+                str(len(self.filesbyblock.keys())) + " blocks.\n")
 
         return sites
 
@@ -1185,7 +1195,7 @@ class Cmssw(JobType):
             msg ="WARNING: no output files name have been defined!!\n"
             msg+="\tno output files will be reported back/staged\n"
             common.logger.info(msg)
-        
+
         if (self.return_data == 1):
             for file in (self.output_file):
                 listOutFiles.append(numberFile(file, '$OutUniqueID'))

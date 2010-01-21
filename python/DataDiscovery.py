@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.36 2009/11/19 18:04:20 spiga Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.37 2009/12/14 17:39:22 spiga Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -88,7 +88,7 @@ class DataDiscovery:
         #       Attributes
         self.datasetPath = datasetPath
         # Analysis dataset is primary/processed/tier/definition
-        self.ads = len(self.datasetPath.split("/")) > 4
+        self.ads = len(self.datasetPath.split("/")) > 4 or len(self.datasetPath.split("/")) == 1
         self.cfg_params = cfg_params
         self.skipBlocks = skipAnBlocks
 
@@ -140,6 +140,7 @@ class DataDiscovery:
         args = {}
         args['url']     = dbs_url
         args['level']   = 'CRITICAL'
+        args['adshome']   = '$HOME/DBSADS'
 
         ## check if has been requested to use the parent info
         useparent = int(self.cfg_params.get('CMSSW.use_parent',0))
@@ -214,7 +215,7 @@ class DataDiscovery:
         common.logger.debug("Set of input parameters used for DBS query: %s" % allowedRetriveValue)
         try:
             if len(runselection) <=0 :
-                if useParent==1 or self.splitByRun==1 :
+                if useParent==1 or self.splitByRun==1 or self.ads:
                     if self.ads:
                         files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue)
                     else :
