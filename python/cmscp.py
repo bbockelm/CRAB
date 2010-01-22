@@ -645,18 +645,19 @@ class cmscp:
                 if dict['lfn']=='':
                     lfn = '$LFNBaseName'+os.path.basename(file)
                     se  = '$SE'
+                    LFNBaseName = '$LFNBaseName'
                 else:
                     lfn = dict['lfn']+os.path.basename(file)
                     se = dict['se']
+                    LFNBaseName = os.path.dirname(lfn)
+                    if (LFNBaseName[-1] != '/'):
+                        LFNBaseName = LFNBaseName + '/'
                 #dict['lfn'] # to be implemented
                 txt += 'echo "Report for File: '+file+'"\n'
                 txt += 'echo "LFN: '+lfn+'"\n'
                 txt += 'echo "StorageElement: '+se+'"\n'
                 txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
-                LFNBaseName = os.path.dirname(lfn)
-                if (LFNBaseName[-1] != '/'):
-                   LFNBaseName = LFNBaseName + '/'
                 txt += 'export LFNBaseName='+LFNBaseName+'\n'
                 txt += 'export SE='+se+'\n'
 
