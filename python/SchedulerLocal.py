@@ -21,8 +21,8 @@ class SchedulerLocal(Scheduler) :
 
         self.res = cfg_params.get(name+'.resource',None)
 
-        # minimal padding time for jobs. For local schedulers is disabled. 
-        # Added for alignment purpose only (and for test) with Grid schedulers 
+        # minimal padding time for jobs. For local schedulers is disabled.
+        # Added for alignment purpose only (and for test) with Grid schedulers
         self.minimal_job_duration = 0
 
         if (cfg_params.has_key(self.name()+'.env_id')): self.environment_unique_identifier = cfg_params[self.name()+'.env_id']
@@ -190,6 +190,15 @@ class SchedulerLocal(Scheduler) :
         txt += '            echo "WARNING: output file $file not found!"\n'
         txt += '        fi\n'
         txt += '    done\n'
+        txt += '    if [ $middleware == OSG ]; then\n'
+        txt += '        final_list=$filesToCheck\n'
+        txt += '        if [ $WORKING_DIR ]; then\n'
+        txt += '            remove_working_dir\n'
+        txt += '        fi\n'
+        txt += '        symlinks -d .\n'
+        txt += '    else\n'
+        txt += '        final_list=$filesToCheck" .BrokerInfo"\n'
+        txt += '    fi\n'
         txt += '    export TIME_WRAP_END=`date +%s`\n'
         txt += '    let "TIME_WRAP = TIME_WRAP_END - TIME_WRAP_END_INI" \n\n'
         # padding for minimal job duration
