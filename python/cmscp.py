@@ -643,7 +643,7 @@ class cmscp:
             reason="'%s'"%reason
             if file:
                 if dict['lfn']=='':
-                    lfn = '$LFNBaseName'+os.path.basename(file)
+                    lfn = '${LFNBaseName}'+os.path.basename(file)
                     se  = '$SE'
                     LFNBaseName = '$LFNBaseName'
                 else:
