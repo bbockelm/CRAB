@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.160 2009/11/06 12:16:10 riahi Exp $"
-__version__ = "$Revision: 1.160 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.161 2009/12/03 13:56:56 farinafa Exp $"
+__version__ = "$Revision: 1.161 $"
 
 import os
 import time
@@ -156,7 +156,11 @@ class TaskTrackingComponent:
         """
         from types import StringType
         if type(message) != StringType:
-            message.setdefault('date', str(time.time()))
+            t = time.time()
+            timestr = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(t) )
+            timestr += str(',%.3f UTC'%t).replace(str(int(t))+'.','') 
+            timestr += time.strftime(" (local %H:%M:%S CET)", time.localtime(t) )
+            message.setdefault('date', timestr)
 
         #path of the logging info file
         filepath = None
