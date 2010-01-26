@@ -202,6 +202,7 @@ class Scheduler :
                 if i in metaList :
                     msg  = 'You are asking to stage out on a remote directory \n'
                     msg += '\twhich already contains files with same name.\n'
+                    msg += '\tThe endpoint is ' + endpoint + '\n'
                     msg += '\tPlease change directory or remove the actual content following this HowTo:\n'
                     msg += '\thttps://twiki.cern.ch/twiki/bin/view/CMS/CheckUserRemoteDir\n'
                     raise CrabException(msg)
