@@ -201,8 +201,11 @@ class ServerCommunicator:
         # get the data and fill the file content
         statusMsg = self.asSession.getTaskStatus(statusFamilyType, blTaskName)
         if 'Error:' in  statusMsg[:6] or len(statusMsg)==0:
-             raise CrabException('Error occurred while retrieving task %s status from server %s'%(self.crab_task_name, self.serverName) )
-             return
+             if statusFamilyType != 'isServerDrained':
+                 raise CrabException('Error in retrieving task %s status from server %s'%(self.crab_task_name, self.serverName) )
+             else:
+                 statusFile = None
+                 statusMMsg = ""
 
         if statusFile is not None:
             f = open(statusFile, 'w')
