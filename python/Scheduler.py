@@ -198,14 +198,16 @@ class Scheduler :
             for id in listJob:
                 for file in fileList :
                     metaList.append('%s'%numberFile(file,id))
-            for i in remoteList:
-                if i in metaList :
-                    msg  = 'You are asking to stage out on a remote directory \n'
-                    msg += '\twhich already contains files with same name.\n'
-                    msg += '\tThe endpoint is ' + endpoint + '\n'
-                    msg += '\tPlease change directory or remove the actual content following this HowTo:\n'
-                    msg += '\thttps://twiki.cern.ch/twiki/bin/view/CMS/CheckUserRemoteDir\n'
-                    raise CrabException(msg)
+            for remote in remoteList:
+                for meta in metaList:
+                    metaPrePost = meta.split('.')
+                    if remote.startswith(metaPrePost[0]) and remote.endswith(metaPrePost[1]): 
+                        msg  = 'You are asking to stage out on a remote directory \n'
+                        msg += '\twhich already contains files with same name.\n'
+                        msg += '\tThe endpoint is ' + endpoint + '\n'
+                        msg += '\tPlease change directory or remove the actual content following this HowTo:\n'
+                        msg += '\thttps://twiki.cern.ch/twiki/bin/view/CMS/CheckUserRemoteDir\n'
+                        raise CrabException(msg)
         else:
             msg = 'Remote directory is empty or not existis\n'
             common.logger.debug(msg)
