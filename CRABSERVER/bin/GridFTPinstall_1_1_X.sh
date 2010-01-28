@@ -13,8 +13,7 @@ if [ $# -eq 0 ]; then
 fi
 
 #defaults
-
-SO_FAMILY="4"
+SLVER=5
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -28,10 +27,9 @@ while [ $# -gt 0 ]; do
             [ $# -gt 1 ] || { echo "Option \`$1' requires an argument" 1>&2; exit 1;  }           
             myarea="$2"
             shift; shift ;;
-        -so )
-            [ $# -gt 1 ] || { echo "Option \`$1' requires an argument" 1>&2; exit 1;  }
-            SO_FAMILY="$2"
-            shift; shift ;;
+        -sl )
+            SLVER="$2"
+            shift; shift ;;        
         -help )
             cat << \EOF_HELP
 
@@ -40,11 +38,10 @@ A script to install/uninstall and configure the GridFTP service.
 
 * Installation Syntax:
 
-GridFTPinstall_1_1_X.sh install -path </your/dir> [-so <SL(C) ver>] 
+GridFTPinstall_1_1_X.sh install -path </your/dir> [-sl <ver>] 
 
 -path </your/dir>            : location of where the installation must be done 
-
--so <SL version>             : version for the used OS, allowed values are 4 or 5 [default 4]
+-sl <ver>                    : Scientific Linux version (default: 5)
 
 * Uninstall Syntax:
 
@@ -57,6 +54,24 @@ EOF_HELP
             echo "$0: argument $1 not supported"; exit 1;;
     esac
 done
+
+##################
+### Packages 
+##################
+
+LCGCA_RPM="lcg-CA"
+
+GRIDFTP_RPM="glite-initscript-globus-gridftp"
+
+LCAS_LCMAPS_RPM="
+glite-security-lcas-lcmaps-gt4-interface
+glite-security-lcas-plugins-voms glite-security-lcas-plugins-check-executable
+glite-security-lcmaps-plugins-basic glite-security-lcmaps-plugins-voms glite-security-lcmaps-plugins-verify-proxy
+"
+
+VOMS_RPM="glite-security-voms-api-c glite-security-voms-api-cpp"
+
+GRIDSITE_RPM="gridsite-shared"
 
 
 ##################
@@ -73,7 +88,6 @@ fi
 
 mkdir -p $myarea
 export MYTESTAREA=`readlink -f $myarea`;
-mkdir -p $MYTESTAREA/GFTP_RPMs
 cd $MYTESTAREA
 
 YUMOPTIONS="install -y"
@@ -88,9 +102,10 @@ fi
 echo "Yum options: "$YUMOPTIONS
 
 ### check if yum has the right repositories
-YUM_REPO="http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.1";
-if [ $SO_FAMILY == "5" ]; then 
-    YUM_REPO="http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2"
+YUM_REPO="http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2"
+if [ $SLVER -eq 4 ]; then
+    echo "*** Sourcing repositories for Scientific Linux 4"
+    YUM_REPO="http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.1"
 fi
 
 if ! [ -e /etc/yum.repos.d/lcg-CA.repo ]; then
@@ -98,83 +113,21 @@ if ! [ -e /etc/yum.repos.d/lcg-CA.repo ]; then
     wget -O /etc/yum.repos.d/lcg-CA.repo $YUM_REPO/lcg-CA.repo
 fi
 
-if ! [ -e /etc/yum.repos.d/glite-UI.repo ]; then
-    echo "Downloading glite-UI.repo into /etc/yum.repos.d/glite-UI.repo"
-    wget -O /etc/yum.repos.d/glite-UI.repo $YUM_REPO/glite-UI.repo
+if ! [ -e /etc/yum.repos.d/glite-CREAM.repo ]; then
+    echo "Downloading glite-CREAM.repo into /etc/yum.repos.d/glite-CREAM.repo"
+    wget -O /etc/yum.repos.d/glite-CREAM.repo $YUM_REPO/glite-CREAM.repo
 fi
 
 ### install packages
 
-echo "*** Installing CAs and VOMS certificates :";
-if ! yum $YUMOPTIONS lcg-CA 2>&1; then
-    echo Exiting $0
-    exit 1
-fi
+PACKLIST="$LCGCA_RPM $GRIDFTP_RPM $LCAS_LCMAPS_RPM $VOMS_RPM $GRIDSITE_RPM"
 
-# this exists only for glite 3.1
-if [ $SO_FAMILY == "4" ] && ! yum $YUMOPTIONS lcg-vomscerts 2>&1; then
-    echo Exiting $0
-    exit 1
-fi
-
-echo "*** Installing GridFtp essentials :";
-if ! yum $YUMOPTIONS glite-initscript-globus-gridftp 2>&1; then
-    echo Exiting $0
-    exit 1
-fi
-
-echo "*** Installing GT4 interface for lcas-lcmaps, LCAS plugins, LCMAPS plugins :";
-PACKLIST="
-glite-security-lcas-lcmaps-gt4-interface
-glite-security-lcas-plugins-voms glite-security-lcas-plugins-check-executable 
-glite-security-lcmaps-plugins-basic glite-security-lcmaps-plugins-voms glite-security-lcmaps-plugins-verify-proxy
-"
-
+echo "*** Installing packages :";
 if ! yum $YUMOPTIONS $PACKLIST 2>&1; then
     echo Exiting $0
     exit 1
 fi
 
-echo "*** Installing VOMS APIs :";
-if ! yum $YUMOPTIONS glite-security-voms-api-c glite-security-voms-api-cpp 2>&1; then
-    echo Exiting $0
-    exit 1
-fi
-
-# download specific RPMs not in repositories and install
-
-echo "*** Installing Gridsite related :"; 
-GRIDSITE_RPM="gridsite-shared-1.1.18.1-1.i386.rpm"
-GRIDSITEDEV_RPM="gridsite-devel-1.1.18.1-1.i386.rpm"
-GRIDSITE_REPO="http://eticssoft.web.cern.ch/eticssoft/repository/org.glite/org.gridsite.core/1.1.18/slc4_ia32_gcc346/"
-
-# for SLC5 and x86_64
-if [ $SO_FAMILY == "5" ] ; then 
-    GRIDSITE_RPM="gridsite-shared-1.5.10-1.sl5.x86_64.rpm"
-    GRIDSITEDEV_RPM="gridsite-devel-1.5.10-1.x86_64.rpm"
-    GRIDSITE_REPO="http://eticssoft.web.cern.ch/eticssoft/repository/org.glite/org.gridsite.core/1.5.10/sl5_x86_64_gcc412/"
-fi
-
-echo "***\t Downloading to $MYTESTAREA/GFTP_RPMs the RPMs :" $GRIDSITE_RPM $GRIDSITEDEV_RPM;
-if ! wget -nv -O $MYTESTAREA/GFTP_RPMs/$GRIDSITE_RPM $GRIDSITE_REPO$GRIDSITE_RPM; then
-    echo Exiting from $0
-    exit 1
-fi
-
-if ! wget -nv -O $MYTESTAREA/GFTP_RPMs/$GRIDSITEDEV_RPM $GRIDSITE_REPO$GRIDSITEDEV_RPM; then
-    echo Exiting from $0
-    exit 1
-fi
-
-echo "***\t Installing " $GRIDSITE_RPM $GRIDSITEDEV_RPM;
-rpm -Uvh --force $MYTESTAREA/GFTP_RPMs/$GRIDSITE_RPM $MYTESTAREA/GFTP_RPMs/$GRIDSITEDEV_RPM  2>&1  
-rpmresult=$?
-if [[ $rpmresult -ne 0 ]];then
-    echo "===> RPM installation failed, exit code $rpmresult. Exiting..."
-    exit 1
-fi
-
-# old address: http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/GridFTPinstall.tar.gz
 #CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab"
 CMS_SERVER="https://cmsweb.cern.ch/crabconf"
 
@@ -192,43 +145,18 @@ if ! tar -C $MYTESTAREA/GFTP_CFGfiles/ -xzvf $MYTESTAREA/GFTP_CFGfiles/GridFTPin
 fi
 
 ### Configuration 
-echo "*** Installing fetch-certificates script "
-mkdir -p /etc/grid-security/certificates
-chmod +r /etc/grid-security/certificates
-
-echo "*** Installing fetch-certificates wrapper "
-mkdir -p /opt/glite/libexec/
-cat > /opt/glite/libexec/fetch-crl.sh <<EOF
-#       Set default value if not known
-yum update lcg-CA
-EOF
-# make the script executable
-chmod a+x /opt/glite/libexec/fetch-crl.sh
-
-echo "*** Adding such script as a cron job "
-cat > /etc/cron.d/fetch-crl <<EOF
-PATH=/sbin:/bin:/usr/sbin:/usr/bin
-2 5,11,17,23 * * * root /opt/glite/libexec/fetch-crl.sh >> /var/log/fetch-crl-cron.log 2>&1
-EOF
-
 echo "*** Creating cmsXXX local users: "
 /usr/sbin/groupadd cms
+mkdir -p /etc/grid-security/gridmapdir/
+
 for i in {0..9}; do
     for j in {0..9}; do
         for k in {0..9}; do
             echo -n "cms$i$j$k "
             /usr/sbin/useradd -g cms -m cms$i$j$k
+            touch /etc/grid-security/gridmapdir/cms$i$j$k
         done
     done
-done
-echo;
-mkdir -p /etc/grid-security/gridmapdir/
-for i in {0..9}; do
-  for j in {0..9}; do
-      for k in {0..9}; do
-          touch /etc/grid-security/gridmapdir/cms$i$j$k
-      done
-  done
 done
 
 echo "*** Configuring LCAS-LCMAPS"
@@ -309,54 +237,35 @@ if ! [ $myarea ]; then
  exit 1
 fi
 
-echo "*** Removing specific RPMs"
-export MYTESTAREA=`readlink -f $myarea`;
-UnInstallList=""
-for arpm in `ls $MYTESTAREA/GFTP_RPMs/*.rpm`; do
-    barerpm=`echo $arpm | rev | cut -c 5- | rev`
-    barerpm=`basename $barerpm`
-    UnInstallList="$UnInstallList $barerpm";
-done
-
-echo "*** Removing Yum packages"
-echo "\t NOTE: lcg-CA lcg-vomscerts packages won't be removed automatically"
-
-YUMOPTIONS="remove -y"
-
-# NOTE: dependencies are removed automatically.
-#       that is, removing a base pkg all the depending pkgs will be removed too 
-YUM_PKG_LIST="glite-security-voms-api-c glite-security-voms-api-cpp
-vdt_globus_data_server glite-security-lcas-interface glite-security-lcmaps"
-
-if ! yum $YUMOPTIONS $YUM_PKG_LIST 2>&1 > uninstall.log; then
+# NOTE: by removing a pkg all the pkgs relying on i will be automatically removed 
+YUMOPTIONS="remove "
+PACKLIST="vdt_globus_data_server glite-security-lcas glite-security-lcmaps"
+ 
+if ! yum $YUMOPTIONS $PACKLIST 2>&1; then
     echo "===> Yum package removal failed. Exiting ..." 
     exit 1
 fi
 
-
-echo "*** UnInstalling "
-rpm -ev $UnInstallList
-unresult=$?
-echo "rpm -ev $UnInstallList"
-if [[ $rpmresult -ne 0 ]]; then
-   echo "===> RPM uninstall failed, exit code: $rpmresult. Exiting..."
-   exit 1
-fi
-
-
 # extract group-cms users:
 echo "*** Removing cmsXXX user"; echo -n "found users: "
-for uu in $(for u in `cat /etc/passwd | awk -F\: '{print $1 }'`; do groups $u | grep -E ^cms | awk -F\: '{print $1 }' ; done ); do echo -n "$uu "; userdel -r $uu; done; echo; 
+USER_LIST=`
+ cat /etc/passwd | awk -F\: '{print $1 }'  | xargs groups | awk -F\: '{print $1 }' | grep ^cms
+`
+for uu in $USER_LIST; do 
+    echo -n "$uu "
+    userdel -r $uu 
+    rm -f /etc/grid-security/gridmapdir/$uu 
+done 
 
-#rm -f $MYTESTAREA/PresentRPM.list
-#rm -f $MYTESTAREA/WantedGFtpRPM.list
-echo "*** Please Remove $MYTESTAREA/GFTP_RPMs"
-#rm -rf $MYTESTAREA/GFTP_RPMs
-echo "*** Please Remove $MYTESTAREA/GFTP_CFGfiles"
-#rm -rf $MYTESTAREA/GFTP_CFGfiles
-echo "*** Cleanup configuration files"
+echo 
+echo "*** Removing LCAS/LCMAPS configuration files"
+rm -rf /opt/glite/etc/lcas/lcas.db
+rm -rf /opt/glite/etc/lcmaps/lcmaps.db
+echo
 
-
+echo "*** Please remove $MYTESTAREA/GFTP_CFGfiles"
+echo 
+echo "*** Uninstall completed"
 }
 #####################################
 case $command in
@@ -364,6 +273,10 @@ case $command in
         install ;;
     uninstall )
         uninstall ;;
+    * )
+        echo " unrecognized command. For usage see :"
+        echo " $0 -help"
+        exit 1
 esac
 exit 0
 
