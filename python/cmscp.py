@@ -663,8 +663,8 @@ class cmscp:
 
                 txt += 'export endpoint='+self.params['destination']+'\n'
                 
-                if dict['erCode'] != '0':
-                    cmscp_exit_status = dict['erCode']
+                #if dict['erCode'] != '0':
+                cmscp_exit_status = dict['erCode']
             else:
                 txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 cmscp_exit_status = dict['erCode']
