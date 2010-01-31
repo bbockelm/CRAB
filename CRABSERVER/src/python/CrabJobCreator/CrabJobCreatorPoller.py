@@ -7,7 +7,7 @@ It will be parallelized if needed through WorkQueue using a new class.
 __all__ = []
 __revision__ = "$Id: CrabJobCreatorPoller.py,v 1.3 \
             2009/11/06 12:21:44 hriahi Exp $"
-__version__ = "$Revision: 1.7 $"
+__version__ = "$Revision: 1.8 $"
 
 import logging
 import os
@@ -15,6 +15,7 @@ import sha
 from xml.dom import minidom
 from IMProv.IMProvNode import IMProvNode
 import traceback
+from WMCore.DataStructs.Fileset import Fileset
 
 # WMCORE
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -88,18 +89,15 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)
 
-
         self.getTaskByJobGroup = daofactory(classname = "LoadTaskNameByJgId")
         self.getTaskBySubscription = daofactory(classname = "LoadTaskNameBySubId")
         self.getListToSplit = daofactory(classname = "ListToSplit")
-
 
         WMBSdao = DAOFactory(package = "WMCore.WMBS",
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)
         
         self.getListSubscription = WMBSdao(classname = "Subscriptions.ListIncomplete")
-        
 
     def taskExtension(self, jobGroups):
         """
@@ -131,6 +129,41 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             self.markTaskAsNotSubmitted( 'all' )
             return 
 
+        # Reconstruct command structures
+        logging.info("Parsing XML")
+
+        if not self.parseCommandXML() == 0:
+            self.markTaskAsNotSubmitted( 'all' )
+            return
+
+        self.pathFile = self.config['CacheDir'] \
+      + '/'+ self.taskToComplete['name']+'_spec/arguments.xml'
+
+        logging.info("Creating XML")
+
+        # Create argument.xml
+        try:
+
+            file(self.pathFile)
+
+        except IOError, e:
+
+            logMsg = ("File doesn't exist...")
+            logging.info( logMsg )
+            logging.info( traceback.format_exc() ) 
+            result = IMProvNode( 'arguments' )
+            file( self.pathFile , 'w').write(str(result))
+
+        except:
+
+            logMsg = ("Problem creating argument.xml for %s"\
+                   %self.taskToComplete['name'])
+            logging.info( logMsg )
+            logging.info( traceback.format_exc() )
+            logging.info("Argument.xml creation failed")
+            self.markTaskAsNotSubmitted( 'all' )
+            return
+
         logging.info("Task loaded [%s]" %self.taskToComplete['name'])
 
         # Build job dict.s
@@ -151,6 +184,9 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
             jobCounter += 1
 
+            if eval(self.cmdRng) and jobCounter > max(eval(self.cmdRng)):
+                continue
+  
             tempDict["outputFiles"] = []
             tempDict["outputFiles"].extend(['out_files_'+\
                    str((jobGroups[0].jobs).index(jI)+1+jobNumber)+'.tgz','crab_fjr_'+\
@@ -179,11 +215,9 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                 job['submissionNumber'] = subn
 
             if jobNumber > 0 :
-
                 self.taskToComplete.appendJob(job)
 
             else:
-
                 self.taskToComplete.addJob(job)
 
         # Fill running job information
@@ -224,50 +258,40 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         self.listArguments = []
         tempArg = {}
 
+
+        logging.info("JG %s" %jobGroups[0].jobs)
+             
         for jI in jobGroups[0].jobs:
 
-            tempArg['MaxEvents'] = jI['input_files'][0]['events']
             tempArg['JobID'] = (jobGroups[0].jobs).index(jI) + 1 + jobNumber
-            tempArg['InputFiles'] = jI['input_files'][0]['lfn']
+            tempArg['InputFiles'] = "" 
+            tempArg['MaxEvents'] = 0
+
+            for lfnFile in jI.getFiles(type = "lfn"):
+
+                if type(jI['input_files'])==Fileset:     
+
+                    for inputFile in jI['input_files'].files:
+                        tempArg['MaxEvents'] += inputFile['events']
+                        logging.info("increm. max event %s" %tempArg['MaxEvents'])
+                    
+                else:
+
+                    if not jI["mask"].getMaxEvents():
+                        tempArg['MaxEvents'] += jI['input_files'][(jI.getFiles(type = "lfn")).index(lfnFile)]['events']
+                    else:
+                        tempArg['MaxEvents'] = jI["mask"].getMaxEvents()
+
+                if tempArg['InputFiles']:
+                    tempArg['InputFiles'] += "," + lfnFile  
+                else:
+                    tempArg['InputFiles'] = lfnFile 
+
             tempArg['SkipEvents'] = 0
+  
             if jI['mask']['FirstEvent']:tempArg['SkipEvents'] = jI['mask']['FirstEvent']
             self.listArguments.append(tempArg)
             tempArg = {}
-
-        # Reconstruct command structures
-        logging.info("Parsing XML")
-
-        if not self.parseCommandXML() == 0:
-            self.markTaskAsNotSubmitted( 'all' )
-            return
-
-        self.pathFile = self.config['CacheDir'] \
-      + '/'+ self.taskToComplete['name']+'_spec/arguments.xml'
-
-        logging.info("Creating XML")
-
-        # Create argument.xml
-        try:
-
-            file( self.pathFile )
-
-        except IOError, e:
-
-            logMsg = ("File doesn't exist...")
-            logging.info( logMsg )
-            logging.info( traceback.format_exc() ) 
-            result = IMProvNode( 'arguments' )
-            file( self.pathFile , 'w').write(str(result))
-
-
-        except:
-            logMsg = ("Problem creating argument.xml for %s"\
-                   %self.taskToComplete['name'])
-            logging.info( logMsg )
-            logging.info( traceback.format_exc() )
-            logging.info("Argument.xml creation failed")
-            self.markTaskAsNotSubmitted( 'all' )
-            return
 
         # Add entry in xml file
         self.addEntry()
@@ -296,6 +320,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         # Building cmdRng
         logging.debug("Rng needed %s and length %s" %(self.cmdRng,len(eval(self.cmdRng))))
 
+
         if jobNumber > 0:
 
             logging.info("Building new job rangs after %s" %jobNumber)
@@ -308,21 +333,24 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             self.cmdRng = tmp
             logging.debug("Try to submit %s" %self.cmdRng)   
 
-        # Payload will be received by CW and TT 
-        payload = self.taskToComplete['name'] +"::"+ \
-          str(self.config['retries']) +"::"+ \
-          str(self.cmdRng)
+        #Send the payload only of the Rng not null
+        if self.cmdRng:
 
-        # Send message 
-        myThread.transaction.begin()
-        msg = {'name':'CrabJobCreatorComponent:NewTaskRegistered'\
-              , 'payload':payload}
-        self.newMsgService.publish(msg)
-        myThread.transaction.commit()
-        self.newMsgService.finish()
+            # Payload will be received by CW and TT 
+            payload = self.taskToComplete['name'] +"::"+ \
+              str(self.config['retries']) +"::"+ \
+              str(self.cmdRng)
 
-        logging.info("Sending message finish")
-        return 0 
+            # Send message 
+            myThread.transaction.begin()
+            msg = {'name':'CrabJobCreatorComponent:NewTaskRegistered'\
+                  , 'payload':payload}
+            self.newMsgService.publish(msg)
+            myThread.transaction.commit()
+            self.newMsgService.finish()
+
+            logging.info("Sending message finish")
+            return 0 
 
     def copyFile(self):
         """
@@ -367,7 +395,9 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         logging.info("Copying From " + source + "To" + dest)
 
         try:
+
             sbi.copy( source, dest, proxy=self.taskToComplete['user_proxy'], opt=self.copyTout)
+
         except AuthorizationException, ex:
             logging.info(str(ex.detail))
             msg = "ERROR: Unable to copy file on the Storage Element: %s " \
@@ -376,6 +406,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             logging.info(msg)
             self.markTaskAsNotSubmitted( 'all' )
             return 
+
         except Exception, ex:
             logging.info( str(ex) )
             self.markTaskAsNotSubmitted( 'all' ) 
@@ -597,13 +628,10 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
         extension process
         """
         logging.info("starting DB Pool now...")
-
         myThread = threading.currentThread()
-
         pickSub = self.getListToSplit.execute()
 
         logging.info('I found these new subscriptions %s to split'%pickSub)
-
   
         # Create dictionary of subscriptions that will be processd 
         for sub in pickSub:
@@ -629,10 +657,11 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
                 jobFactory = splitter(package = "WMCore.WMBS",
                                   subscription = subscriptionToSplit)
                 try:
+
                     splitPerJob, splittingValue = self.getSplitParam( sub )
-                    kwargs = { splitPerJob : splittingValue }
+                    kwargs = { splitPerJob : int(splittingValue) }
                     jobGroups = jobFactory( **kwargs )
-                    #jobGroups = jobFactory( events_per_job = 10 )
+
                 except Exception, e:
                     logMsg = ("Problem when splitting %s" \
                               %str(sub))              
@@ -641,8 +670,8 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
                     logging.info( traceback.format_exc() )
                     continue 
 
-                # Number of job 0 - exit and try again next time 
-                if len(jobGroups[0].jobs)==0:
+                # Number of job 0 or number of job > limit- exit and try again next time 
+                if len(jobGroups[0].jobs)==0 or len(jobGroups[0].jobs) >= 1000:
                     continue 
 
                 # Add jobgroup to the list of subscriptions to process  
@@ -650,9 +679,12 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
 
         # Loop on all subscription recently found 
         for subId in SUBSWATCH.keys(): 
-            if self.taskExtension(SUBSWATCH[subId]) == 0:
-                logging.info("WORK succeeds to END")
-                del SUBSWATCH[subId]
+
+            #Try more than one time to split subscription 
+            #if self.taskExtension(SUBSWATCH[subId]) == 0:
+            self.taskExtension(SUBSWATCH[subId]) 
+            logging.info("WORK succeeds to END")
+            del SUBSWATCH[subId]
 
         logging.info('databases work ends')
     
