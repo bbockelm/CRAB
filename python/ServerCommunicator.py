@@ -333,7 +333,7 @@ class ServerCommunicator:
         miniCfg['feeder'] = self.cfg_params.get('WMBS.feeder', 'Feeder')
 
         miniCfg['processing'] = self.cfg_params.get('WMBS.processing', 'bulk')
-        miniCfg['startrun'] = self.cfg_params.get('WMBS.startrun', '0')
+        miniCfg['startrun'] = self.cfg_params.get('WMBS.startrun', 'None')
 
         miniCfg['splitting_algorithm'] = self.cfg_params.get('WMBS.splitting_algorithm','FileBased')
         miniCfg['split_per_job'] = self.cfg_params.get('WMBS.split_per_job','files_per_job')

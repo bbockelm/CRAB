@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.31 2009/11/06 12:22:21 riahi Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.32 2009/12/15 23:20:42 riahi Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import string
 import sys, os
@@ -232,7 +232,7 @@ class RegisterWorker(Thread):
 
             self.feeder = self.cfg_params.get('feeder','Feeder')
             self.processing = self.cfg_params.get('processing','bulk')
-            self.startRun = self.cfg_params.get('startrun','0')
+            self.startRun = self.cfg_params.get('startrun','None')
 
             self.splitAlgo = self.cfg_params.get('splitting_algorithm','FileBased')
 
