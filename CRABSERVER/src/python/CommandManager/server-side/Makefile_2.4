@@ -1,6 +1,6 @@
 #
 # CRAB-Proxy makefile
-# $Id: Makefile_2.4,v 1.1 2010/01/15 15:30:07 spiga Exp $
+# $Id: Makefile_2.4,v 1.2 2010/02/02 14:55:51 farinafa Exp $
 # Fabio Farina 2007/12/10 
 
 .PHONY:all install
@@ -25,7 +25,7 @@ cli_objs = server2.o soapC.o soapServer.o stdsoap2.o
 	g++ -c $(boost_cflags) $< -o $@
 
 all: FrontendLoader_1_1.o $(cli_objs)
-	g++ -o FrontendLoader_1_1.so -module -shared $(boost_libs) -L. -Wl,-R. FrontendLoader_1_1.o $(cli_objs)
+	gcc -o FrontendLoader_1_1.so -module -shared $(boost_libs) -L. -Wl,-R. FrontendLoader_1_1.o $(cli_objs)
 
 install:
 	echo "Installing server-side libs"

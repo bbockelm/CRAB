@@ -4,6 +4,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <Python.h>
+#include <stdlib.h>
 
 #define BACKLOG (100) // Max. request backlog 
 #define MAX_THR (4) // Size of thread pool 
@@ -402,82 +403,68 @@ int ns1__getTaskStatus(struct soap *soap, struct ns1__getTaskStatusType *getTask
         char* statusFamilyType;
         char* UUID;
         PyObject *pResult, *locTemp;
-        // FIX TO AVOID PROBLEM DUE TO STATIC DIMENSION --> using malloc
-	char* res; //[ 8192*16 ];
         time_t rawtime;
-
 
    
         locTemp = pInstance;
-	//res = NULL;
-        pthread_mutex_lock(&status_cs); //TODO
+        pthread_mutex_lock(&status_cs); 
  
         statusFamilyType = getTaskStatusRequest->statusType;
         UUID = getTaskStatusRequest->uuid;
 
-        //fprintf(stdout, "DEBUG ----- TaskStatus %s %s\n", statusFamilyType, UUID );
+        //fprintf(stdout, "DEBUG ----- TaskStatus: %s %s\n", statusFamilyType, UUID );
 
 	if (locTemp == NULL)
 	{
 		PyErr_Print();
 		fprintf(stderr, "Error while instantiating gway_getTaskStatus\n");
-		strcpy(res , "\n");
         }
         else
         {
-                //Fix
                 pthread_mutex_lock(&shared_rs);
 		pResult = PyObject_CallMethod(locTemp, "gway_getTaskStatus", "(ss)", statusFamilyType, UUID);
-                //Fix
                 pthread_mutex_unlock(&shared_rs);
+
+                //fprintf(stdout, "DEBUG ----- TaskStatus: %d call \n", pResult );
 
 		if (pResult == NULL)
 		{
 			PyErr_Print();
 			fprintf(stderr, "Error while calling gway_getTaskStatus\n");
-			strcpy(res , "\n");
-                        
 		} 
 		else 
 		{
-			long len =  strlen( PyString_AsString(pResult) );
-			res = (char*)malloc( sizeof(char) * len );
-			strncpy(res, PyString_AsString(pResult), len);
-                        res[len+1] = '\0';
+			// Reference to PyString buffer NOT a COPY, do not modify or deallocate!!!
+                        char* pyStr_buf = PyString_AsString(pResult);
+                        if (pyStr_buf == NULL)
+			{
+	                        PyErr_Print();
+		                fprintf(stderr, "Error while getting result message buffer\n");
+			}
+			else
+			{ 
+                        	ssize_t len = PyString_Size(pResult);
+	                        //fprintf(stdout, "DEBUG ----- TaskStatus: size %d  \n", len );
+
+		                _param_3->getTaskStatusResponse = (char*)malloc( sizeof(char) * len );
+        		        if ( _param_3->getTaskStatusResponse != NULL)
+                		{
+                        		strncpy( _param_3->getTaskStatusResponse , pyStr_buf, len );
+	                	}
+        	        	else
+                		{
+                        		fprintf(stderr, "Error while allocating return code location\n");
+	                	}
+			}
+
                         Py_XDECREF(pResult);
-                        
                 }
 	}
 
-	// construct response
-	if (res != NULL)
-	{
-		_param_3->getTaskStatusResponse = (char*)malloc( sizeof(char) * strlen(res) );
-		if ( _param_3->getTaskStatusResponse != NULL)
-        	{
-                	strncpy( _param_3->getTaskStatusResponse , res, strlen(res) );
-	                //free(res);
-        	}
-	        else
-	        {
-        	        fprintf(stderr, "Error while allocating return code location\n");
-	        }
-                //free(res);
-	}
-	else
-	{
-                fprintf(stderr, "Error while allocating result message location\n");
-	}
-
-        // FREE EACH TIME THE DYNAMIC ALLOCATED MEMORY --> shouldn't cause problem if NULL
-        fprintf(stdout, "Free memory...\n");
-        free(res);
-
-        pthread_mutex_unlock(&status_cs); //TODO
+        pthread_mutex_unlock(&status_cs); 
 
 	time(&rawtime);
 	fprintf(stdout, "GetTaskStatus RPC (len=%d) TStamp: %s", strlen(_param_3->getTaskStatusResponse), asctime(localtime(&rawtime)) );
-
 
 	return SOAP_OK;
 }
