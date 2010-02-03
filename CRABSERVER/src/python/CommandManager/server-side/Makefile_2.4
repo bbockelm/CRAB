@@ -5,13 +5,17 @@
 
 .PHONY:all install
 
-# Things for python 2.4
-LOCATION_I=-I/usr/include/boost -I/usr/include/python2.4
-LOCATION_L=-lboost_python -lpython2.4
+# Things for python 2.4 
+PYHOME=/home/crab/sw_area/slc5_amd64_gcc434/external/python/2.4.2_CMS19-cmp
+BOOST_HOME=/home/crab/sw_area/slc5_amd64_gcc434/external/boost/1.40.0
 
-boost_cflags=-g -pthread -fPIC -I/usr/include/libxml2 -I. -DBOOST_PYTHON_DYNAMIC_LIB $(LOCATION_I)
+boost_cflags=-g -pthread -fPIC -I/usr/include/libxml2 \
+               -DBOOST_PYTHON_DYNAMIC_LIB -I$(BOOST_HOME)/include \
+               -I$(PYHOME)/include/python2.4 -I.
 
-boost_libs=-lxml2 -lpthread -Wl,-rpath-link,. $(LOCATION_L)
+boost_libs=-lxml2 -lpthread -lpython2.4 \
+             -L$(BOOST_HOME)/lib -L$(PYHOME)/lib \
+             -Wl,-rpath-link,. -L$(PYHOME)/lib/python2.4/config/ -lboost_python
 
 cli_objs = server2.o soapC.o soapServer.o stdsoap2.o
 
