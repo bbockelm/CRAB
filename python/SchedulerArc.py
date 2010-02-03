@@ -193,6 +193,7 @@ class SchedulerArc(SchedulerGrid):
         Code generated here will get executed before anything else in
         the job scripts
         """
+        txt = ""
         # When setting env. variables in the xrsl code, spaces has to be
         # escaped by '\':s in ARC 0.6.*.  In ARC 0.8.* however, they must
         # not -- any '\':s in the xrsl code will end up in the final env.
@@ -200,9 +201,10 @@ class SchedulerArc(SchedulerGrid):
         # ProdCommon/BossLite/schedulers/SchedulerARC.decode() will use
         # '\':s. To be compatible with 0.8, we therefore have to remove any
         # remaining '\':s in the values of ARC_INPUTFILES and
-        # ARC_OUTPUTFILES.
-        txt =  "export ARC_INPUTFILES=`tr -d '\\' <<< $ARC_INPUTFILES`\n"
-        txt += "export ARC_OUTPUTFILES=`tr -d '\\' <<< $ARC_OUTPUTFILES`\n"
+        # ARC_OUTPUTFILES.  Use '\\134' for '\' instead of '\\' in the tr
+        # command for portability reasons.
+        txt += "export ARC_INPUTFILES=`tr -d '\\134' <<< $ARC_INPUTFILES`\n"
+        txt += "export ARC_OUTPUTFILES=`tr -d '\\134' <<< $ARC_OUTPUTFILES`\n"
 
         txt += 'if [ -n ""$TMPDIR ] && [ -d $TMPDIR ]; then\n'
         txt += '    echo Moving to $TMPDIR\n'
