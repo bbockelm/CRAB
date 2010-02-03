@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.76 2010/01/17 19:05:52 spiga Exp $"
-__version__ = "$Revision: 1.76 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.77 2010/01/18 10:06:17 spiga Exp $"
+__version__ = "$Revision: 1.77 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -235,3 +235,18 @@ class SchedulerGlite(SchedulerGrid):
 
         txt += '}\n'
         return txt
+
+    def listMatch(self, dest, full):
+        matching='fast'
+        
+        if self.boss().schedulerConfig['name'] == 'SchedulerGLite' :
+            taskId=common._db.getTask()
+            req=str(self.sched_parameter(1,taskId))
+            sites = self.boss().schedSession().matchResources(taskId, requirements=req)
+        else :
+            sites = SchedulerGrid.listMatch(self, dest, full)
+            
+        if full == True: matching='full'
+        common.logger.debug("list of available site ( "+str(matching) +" matching ) : "+str(sites))
+        
+        return sites
