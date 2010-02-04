@@ -53,7 +53,7 @@ class Submitter(Actor):
         self.complete_List = common._db.nJobs('list')
         if type==1 and len(self.complete_List) < 1 :
             self.nj_list =[]
-            if self.chosenJobsList: self.nj_list = self.chosenJobsList  
+            if self.chosenJobsList: self.nj_list = self.chosenJobsList
             return
         # build job list
         from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
@@ -145,7 +145,7 @@ class Submitter(Actor):
             totalCreatedJobs = 0
             for job in task.jobs:
                 if job.runningJob['state'] == 'Created': totalCreatedJobs +=1
-       
+
             if (totalCreatedJobs==0):
                 common.logger.info("No jobs to be submitted: first create them")
                 code = 1
@@ -260,10 +260,11 @@ class Submitter(Actor):
         if removeDefBL == '0':
             msg += '\tNote:  All CMS T1s are BlackListed by default \n'
         msg += '\t(Hint: By whitelisting you force the job to run at this particular site(s).\n'
-        msg += '\tPlease check if :\n'
-        msg += '\t\t -- the dataset is available at this site!\n'
-        msg += '\t\t -- the CMSSW version is available at this site!)\n'
-        msg += '\tPlease have also a look at Site Status Page for CMS sites,\n'
+        msg += '\tPlease check if:\n'
+        msg += '\t\t -- the dataset is available at this site\n'
+        msg += '\t\t -- the CMSSW version is available at this site\n'
+        msg += '\t\t -- grid submission to CERN & FNAL CAFs is not allowed)\n'
+        msg += '\tPlease also look at the Site Status Page for CMS sites,\n'
         msg += '\t  to check if the sites hosting your data are ok\n'
         msg += '\t  http://dashb-ssb.cern.ch/dashboard/request.py/siteviewhome\n'
         common.logger.info(msg)
@@ -334,7 +335,7 @@ class Submitter(Actor):
             jid = str(job.runningJob['schedulerId'])
             if common.scheduler.name().upper() in ['CONDOR_G']:
                 rb = 'OSG'
-                taskHash =  sha1(common._db.queryTask('name')).hexdigest() 
+                taskHash =  sha1(common._db.queryTask('name')).hexdigest()
                 jobId = str(jj) + '_https://' + common.scheduler.name() + '/' + taskHash + '/' + str(jj)
                 msg += ('JobID for ML monitoring is created for CONDOR_G scheduler: %s \n'%str(jobId))
             elif common.scheduler.name().upper() in ['GLIDEIN']:
@@ -347,7 +348,7 @@ class Submitter(Actor):
                 rb = common.scheduler.name()
                 localId = jid
             elif common.scheduler.name().upper() in ['CONDOR']:
-                taskHash = sha1(common._db.queryTask('name')).hexdigest() 
+                taskHash = sha1(common._db.queryTask('name')).hexdigest()
                 jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
                 rb = common.scheduler.name()
                 msg += ('JobID for ML monitoring is created for CONDOR scheduler: %s\n'%str(jobId))
