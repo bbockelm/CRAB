@@ -8,7 +8,6 @@ import DBSAPI.dbsApi
 from DBSAPI.dbsApiException import *
 import common
 from crab_util import *
-from LumiList import LumiList
 import os
 
 
@@ -102,7 +101,7 @@ class DataDiscovery:
         self.maxLumis = 0         # DBS output: total number of lumis
         self.parent = {}          # DBS output: parents of each file
         self.lumis = {}           # DBS output: lumis in each file
-        self.lumiMask = None
+
 
     def fetchDBSInfo(self):
         """
@@ -133,11 +132,6 @@ class DataDiscovery:
         if (self.cfg_params.has_key('CMSSW.runselection')):
             runselection = parseRange2(self.cfg_params['CMSSW.runselection'])
 
-        ## check if lumiMask is set
-        self.lumiMask = self.cfg_params.get('CMSSW.lumi_mask',None)
-        lumiList = None
-        if self.lumiMask:
-            lumiList = LumiList(filename=self.lumiMask)
 
         self.splitByRun = int(self.cfg_params.get('CMSSW.split_by_run', 0))
 
@@ -163,7 +157,7 @@ class DataDiscovery:
         # parse files and fill arrays
         for file in self.files :
             parList  = []
-            fileLumis = [] # List of tuples
+            lumiList = [] # List of tuples
             # skip already analyzed blocks
             fileblock = file['Block']['Name']
             if fileblock not in anFileBlocks :
@@ -171,15 +165,11 @@ class DataDiscovery:
                 # asked retry the list of parent for the given child
                 if useparent==1:
                     parList = [x['LogicalFileName'] for x in file['ParentList']]
-                if self.ads or self.lumiMask:
-                    fileLumis = [ (x['RunNumber'], x['LumiSectionNumber'])
+                if self.ads:
+                    lumiList = [ (x['RunNumber'], x['LumiSectionNumber'])
                                  for x in file['LumiList'] ]
                 self.parent[filename] = parList
-                # For LumiMask, intersection of two lists.
-                if self.lumiMask:
-                    self.lumis[filename] = lumiList.filterLumis(fileLumis)
-                else:
-                    self.lumis[filename] = fileLumis
+                self.lumis[filename] = lumiList
                 if filename.find('.dat') < 0 :
                     events    = file['NumberOfEvents']
                     # Count number of events and lumis per block
@@ -198,7 +188,7 @@ class DataDiscovery:
 
                     # total number of events
                     self.maxEvents += events
-                    self.maxLumis  += len(self.lumis[filename])
+                    self.maxLumis  += len(lumiList)
 
         if  self.skipBlocks and len(self.eventsPerBlock.keys()) == 0:
             msg = "No new fileblocks available for dataset: "+str(self.datasetPath)
@@ -219,13 +209,12 @@ class DataDiscovery:
     def queryDbs(self,api,path=None,runselection=None,useParent=None):
 
         allowedRetriveValue = ['retrive_block', 'retrive_run']
-        if self.ads or self.lumiMask:
-            allowedRetriveValue.append('retrive_lumi')
+        if self.ads: allowedRetriveValue.append('retrive_lumi')
         if useParent == 1: allowedRetriveValue.append('retrive_parent')
         common.logger.debug("Set of input parameters used for DBS query: %s" % allowedRetriveValue)
         try:
             if len(runselection) <=0 :
-                if useParent==1 or self.splitByRun==1 or self.ads or self.lumiMask:
+                if useParent==1 or self.splitByRun==1 or self.ads:
                     if self.ads:
                         files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue)
                     else :

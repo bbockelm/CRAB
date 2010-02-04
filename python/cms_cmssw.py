@@ -100,7 +100,6 @@ class Cmssw(JobType):
         self.ads = False
         if self.datasetPath:
             self.ads = len(self.datasetPath.split("/")) > 4
-        self.lumiMask = self.cfg_params.get('CMSSW.lumi_mask',None)
 
         # FUTURE: Can remove this check
         if self.ads and self.CMSSW_major < 3:
@@ -282,7 +281,7 @@ class Cmssw(JobType):
                     self.algo = 'NoInput'
                     self.conf['managedGenerators']=self.managedGenerators
                     self.conf['generator']=self.generator
-            elif self.ads or self.lumiMask:
+            elif self.ads:
                 self.algo = 'LumiBased'
             elif splitByRun ==1:
                 self.algo = 'RunBased'
@@ -436,8 +435,8 @@ class Cmssw(JobType):
 
 
         # screen output
-        if self.ads or self.lumiMask:
-            common.logger.info("Requested (A)DS %s has %s block(s)." %
+        if self.ads:
+            common.logger.info("Requested ADS %s has %s block(s)." %
                                (datasetPath, len(self.filesbyblock.keys())))
         else:
             common.logger.info("Requested dataset: " + datasetPath + \
