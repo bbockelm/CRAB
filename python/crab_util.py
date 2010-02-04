@@ -213,7 +213,7 @@ def setPgid():
 
     os.setpgid( os.getpid(), 0 )
 
-def runCommand(command, printout=0, timeout=None):
+def runCommand(command, printout=0, timeout=None,errorCode=False):
     """
     _executeCommand_
 
@@ -272,8 +272,12 @@ def runCommand(command, printout=0, timeout=None):
     if returncode != 0 :
         msg = 'Command: %s \n failed with exit code %s \n'%(command,returncode)
         msg += str(''.join(outc))
-        common.logger.info( msg )
-        return None
+        if not errorCode:
+            common.logger.info( msg )
+            return None
+    if errorCode:
+        if returncode is None :returncode=-66666
+        return returncode,''.join(outc) 
  
     return ''.join(outc)
 
@@ -569,22 +573,26 @@ def has_freespace(dir_name, needed_space_kilobytes):
      enough_partition = False
      enough_mount = False
      try:
-         enough_mount = check_mount(dir_name, need_space_kilobytes)
-     except:
+         enough_mount = check_mount(dir_name, needed_space_kilobytes)
+     except Exception,e :
+         common.logger.log(10-1,e) 
          enough_mount = True
      try:
          enough_quota = check_quota(dir_name, needed_space_kilobytes)
-     except:
+     except Exception, e:
+         common.logger.log(10-1,e) 
          enough_quota = True
      try:
          enough_partition = check_partition(dir_name,
              needed_space_kilobytes)
-     except:
+     except Exception, e:
+         common.logger.log(10-1,e) 
          enough_partition = True
      try:
          enough_unix_quota = check_unix_quota(dir_name,
              needed_space_kilobytes)
-     except:
+     except Exception, e:
+         common.logger.log(10-1,e) 
          enough_unix_quota = True
      return enough_mount and enough_quota and enough_partition \
          and enough_unix_quota
@@ -598,56 +606,59 @@ def check_mount(dir_name, needed_space_kilobytes):
      return dev_free/1024 > needed_space_kilobytes
 
 def check_quota(dir_name, needed_space_kilobytes):
-     results = runCommand("/usr/bin/fs lq %s" % dir_name)
-     if not results :
-         raise Exception("Unable to query the file system quota!")
-     try:
-         results = results.split('\n')[1].split()
-         quota, used = results[1:3]
-         avail = int(quota) - int(used)
-         return avail > needed_space_kilobytes
-     except:
-         return Exception("Unable to parse AFS output.")
+     err,results = runCommand("/usr/bin/fs lq %s" % dir_name,errorCode=True)
+     if results and err == 0 :
+         try:
+             results = results.split('\n')[1].split()
+             quota, used = results[1:3]
+             avail = int(quota) - int(used)
+             return avail > needed_space_kilobytes
+         except:
+             raise Exception("Unable to parse AFS output.")
+     elif results and err !=0:
+         raise Exception(results)
 
 def check_partition(dir_name, needed_space_kilobytes):
-     results = runCommand("/usr/bin/fs diskfree %s" % dir_name)
-     if not results :
-         raise Exception("Unable to query the file system quota!")
-     try:
-         results = results.split('\n')[1].split()
-         avail = results[3]
-         return int(avail) > needed_space_kilobytes
-     except:
-         raise Exception("Unable to parse AFS output.")
+     err,results = runCommand("/usr/bin/fs diskfree %s" % dir_name,errorCode=True)
+     if results and err==0:
+         try:
+             results = results.split('\n')[1].split()
+             avail = results[3]
+             return int(avail) > needed_space_kilobytes
+         except:
+             raise Exception("Unable to parse AFS output.")
+     elif results and err !=0:
+         raise Exception(results)
 
 def check_unix_quota(dir_name, needed_space_kilobytes):
-     results = runCommand("df %s" % dir_name)
-     if not results :
-         raise Exception("Unable to query the filesystem with df.")
-     fs = results.split('\n')[1].split()[0]
-     results = runCommand("quota -Q -u -g")
-     if fd.close():
-         raise Exception("Unable to query the quotas.")
-     has_info = False
-     for line in results.splitlines():
-         info = line.split()
-         if info[0] in ['Filesystem', 'Disk']:
-             continue
-         if len(info) == 1:
-             filesystem = info[0]
-             has_info = False
-         if len(info) == 6:
-             used, limit = info[0], max(info[1], info[2])
-             has_info = True
-         if len(info) == 7:
-             filesystem, used, limit = info[0], info[1], max(info[2], info[3])
-             has_info = True
-         if has_info:
-            if filesystem != fs:
-                continue
-            avail = int(limit) - int(used)
-            if avail < needed_space_kilobytes:
-                return False
+     err0, results0 = runCommand("df %s" % dir_name,errorCode=True)
+     if results0 and err0==0:
+         fs = results0.split('\n')[1].split()[0]
+         err,results = runCommand("quota -Q -u -g",errorCode=True)
+         if err != 0:
+             raise Exception(results)
+         has_info = False
+         for line in results.splitlines():
+             info = line.split()
+             if info[0] in ['Filesystem', 'Disk']:
+                 continue
+             if len(info) == 1:
+                 filesystem = info[0]
+                 has_info = False
+             if len(info) == 6:
+                 used, limit = info[0], max(info[1], info[2])
+                 has_info = True
+             if len(info) == 7:
+                 filesystem, used, limit = info[0], info[1], max(info[2], info[3])
+                 has_info = True
+             if has_info:
+                if filesystem != fs:
+                    continue
+                avail = int(limit) - int(used)
+                if avail < needed_space_kilobytes:
+                    return False
+     elif results0 and err0 !=0:
+         raise Exception(results0)
      return True
 
 def getGZSize(gzipfile):
