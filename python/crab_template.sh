@@ -38,6 +38,14 @@ remove_working_dir() {
     fi
 }
 
+### DUMP ORIGINAL ENVIRONMENT BEFORE CMSSW CUSTOMIZATIOn
+dumpEnv(){
+echo export PATH=$PATH >> CacheEnv.sh
+echo export LD_LIBRARY_PATH=$LD_LIBRARY_PATH >> CacheEnv.sh
+echo export PYTHONPATH=$PYTHONPATH >> CacheEnv.sh
+}
+
+
 #CRAB func_exit
 
 
