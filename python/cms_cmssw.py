@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.350 2010/01/21 16:17:13 ewv Exp $"
-__version__ = "$Revision: 1.350 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.351 2010/02/04 16:32:38 ewv Exp $"
+__version__ = "$Revision: 1.351 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -100,6 +100,7 @@ class Cmssw(JobType):
         self.ads = False
         if self.datasetPath:
             self.ads = len(self.datasetPath.split("/")) > 4
+        self.lumiMask = self.cfg_params.get('CMSSW.lumi_mask',None)
 
         # FUTURE: Can remove this check
         if self.ads and self.CMSSW_major < 3:
@@ -281,7 +282,7 @@ class Cmssw(JobType):
                     self.algo = 'NoInput'
                     self.conf['managedGenerators']=self.managedGenerators
                     self.conf['generator']=self.generator
-            elif self.ads:
+            elif self.ads or self.lumiMask:
                 self.algo = 'LumiBased'
             elif splitByRun ==1:
                 self.algo = 'RunBased'
@@ -435,8 +436,8 @@ class Cmssw(JobType):
 
 
         # screen output
-        if self.ads:
-            common.logger.info("Requested ADS %s has %s block(s)." %
+        if self.ads or self.lumiMask:
+            common.logger.info("Requested (A)DS %s has %s block(s)." %
                                (datasetPath, len(self.filesbyblock.keys())))
         else:
             common.logger.info("Requested dataset: " + datasetPath + \

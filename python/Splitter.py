@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.31 2009/12/15 13:19:13 spiga Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Splitter.py,v 1.32 2010/01/14 16:52:15 spiga Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import common
 from crab_exceptions import *
@@ -13,6 +13,7 @@ from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
+from LumiList import LumiList
 
 class JobSplitter:
     def __init__( self, cfg_params,  args ):
@@ -710,7 +711,8 @@ class JobSplitter:
 
                     lfns.append(jobFile['lfn'])
                 fileString = ','.join(lfns)
-                lumiString = compressLumiString(lumis)
+                lumiLister = LumiList(lumis = lumis)
+                lumiString = lumiLister.getCMSSWString()
                 list_of_lists.append([fileString, str(-1), str(0), lumiString])
 
                 jobDestination.append(locations)
@@ -744,44 +746,4 @@ class JobSplitter:
                      'ForScript'            : self.jobSplittingForScript
                      }
         return SplitAlogs
-
-
-
-def compressLumiString(lumis):
-    """
-    Turn a list of 2-tuples of run/lumi numbers into a list of the format
-    R1:L1,R2:L2-R3:L3 which is acceptable to CMSSW LumiBlockRange variable
-    """
-
-    lumis.sort()
-    parts = []
-    startRange = None
-    endRange = None
-
-    for lumiBlock in lumis:
-        if not startRange: # This is the first one
-            startRange = lumiBlock
-            endRange = lumiBlock
-        elif lumiBlock == endRange: # Same Lumi (different files?)
-            pass
-        elif lumiBlock[0] == endRange[0] and lumiBlock[1] == endRange[1] + 1: # This is a continuation
-            endRange = lumiBlock
-        else: # This is the start of a new range
-            part = ':'.join(map(str, startRange))
-            if startRange != endRange:
-                part += '-' + ':'.join(map(str, endRange))
-            parts.append(part)
-            startRange = lumiBlock
-            endRange = lumiBlock
-
-    # Put out what's left
-    if startRange:
-        part = ':'.join(map(str, startRange))
-        if startRange != endRange:
-            part += '-' + ':'.join(map(str, endRange))
-        parts.append(part)
-
-    output = ','.join(parts)
-    return output
-
 
