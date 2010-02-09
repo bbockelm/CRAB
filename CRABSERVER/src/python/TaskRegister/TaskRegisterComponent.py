@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.20 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.20 2009/10/27 14:59:00 farinafa Exp $"
+__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.21 2009/12/03 13:56:56 farinafa Exp $"
 
 import os
 import pickle
@@ -223,6 +223,10 @@ class TaskRegisterComponent:
         workerCfg['ProxiesDir'] = self.args['ProxiesDir']
         workerCfg['credentialType'] = self.args['credentialType']
         workerCfg['storagePath'] = self.args['storagePath']
+
+        workerCfg['defaultScheduler'] = self.args.setdefault('defaultScheduler','glite' )
+        workerCfg['supportedSchedulers'] = self.args.get('supportedSchedulers', '').upper().split(',')
+
         try:
             # Shared newMsgService object passed to thread
             self.workerSet[thrName] = RegisterWorker(logging, thrName, workerCfg, self.newMsgService)

@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.33 2010/01/31 19:13:28 riahi Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.34 2010/02/09 13:16:07 spiga Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import string
 import sys, os
@@ -59,7 +59,9 @@ class RegisterWorker(Thread):
         self.cfg_params = {}
         self.CredAPI = CredentialAPI({'credential':self.configs['credentialType'], 'logger':self.log})
         self.cmdRng = "[]"
-        self.schedName= self.configs['scheduler'].upper()
+
+        self.schedName = self.configs['defaultScheduler'].upper()
+        self.supportedScheds = [] + self.configs['supportedSchedulers']
 
         self.useGlExecDelegation = self.configs['glExecDelegation'] == 'true'
       
@@ -224,8 +226,10 @@ class RegisterWorker(Thread):
             self.cmdRng =  str( cmdXML.getAttribute('Range') )
             self.owner = str( cmdXML.getAttribute('Subject') )
 
-            ## This is to make the scheduler configurable from user
-            #self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
+            # Make the scheduler configurable from user with fallback
+            requestedScheduler = str(cmdXML.getAttribute('Scheduler')).upper()
+            if requestedScheduler in self.supportedScheds:
+                self.schedName = requestedScheduler
 
             self.flavour = str( cmdXML.getAttribute('Flavour') )
             self.type = str( cmdXML.getAttribute('Type') )

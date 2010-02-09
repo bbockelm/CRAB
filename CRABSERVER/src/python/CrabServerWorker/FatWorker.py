@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.195 2010/02/09 13:13:09 spiga Exp $"
-__version__ = "$Revision: 1.195 $"
+__revision__ = "$Id: FatWorker.py,v 1.196 2010/02/09 13:29:45 spigafi Exp $"
+__version__ = "$Revision: 1.196 $"
 
 import string
 import sys, os
@@ -28,6 +28,7 @@ from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 from ProdCommon.BossLite.API.BossLiteAPISched import BossLiteAPISched
 
+from ProdCommon.BossLite.Common.System import executeCommand
 from ProdCommon.BossLite.Common.BossLiteLogger import BossLiteLogger
 from ProdCommon.BossLite.Common.Exceptions import BossLiteError
 
@@ -80,7 +81,7 @@ class FatWorker(Thread):
         self.cpCmd = self.configs['cpCmd']
         self.rfioServer = self.configs['rfioServer']
 
-        self.defaultSchedName = self.configs['defaultScheduler'].upper()
+        self.schedName = self.configs['defaultScheduler'].upper()
         self.supportedScheds = [] + self.configs['supportedSchedulers']
 
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
@@ -231,8 +232,6 @@ class FatWorker(Thread):
             requestedScheduler = str(cmdXML.getAttribute('Scheduler')).upper()
             if requestedScheduler in self.supportedScheds:
                 self.schedName = requestedScheduler
-            else:
-                self.schedName = self.defaultSchedName
      
             ## already set in the message
             # self.cmdRng =  eval( cmdXML.getAttribute('Range'), {}, {} )
@@ -265,13 +264,11 @@ class FatWorker(Thread):
                 self.group = self.cfg_params['EDG.group']
         return status
 
-    def SechdulerGlitePlugin(self):
-        from ProdCommon.BossLite.Common.System import executeCommand
-         
+    def SchedulerGlitePlugin(self):
         scheduler = None
         out, ret =  executeCommand('glite-version')
         if ret != 0 :
-            slef.log.info('Error checking gLite version')
+            self.log.info('Error checking gLite version')
         else:
             if out.strip().startswith('3.1'):
                 scheduler = 'SchedulerGLiteAPI'
@@ -286,7 +283,7 @@ class FatWorker(Thread):
         """
         status = 0
 
-        self.bossSchedName = {'GLITE': self.SechdulerGlitePlugin(),
+        self.bossSchedName = {'GLITE': self.SchedulerGlitePlugin(),
                               'CONDOR_G':'SchedulerCondorG',
                               'GLIDEIN' :'SchedulerGlidein',
                               'ARC':'arc',

@@ -78,7 +78,9 @@ crabServerConfiguration = {
     'storagePort':'',
     'storagePath':None,
     'Protocol':'local',
-    'glExecDelegation':'false'
+    'glExecDelegation':'false',
+    'defaultScheduler':'glite',
+    'supportedSchedulers':'glite,glidein'
 }
 
 # component fields
