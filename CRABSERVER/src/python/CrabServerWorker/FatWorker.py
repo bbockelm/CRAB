@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.194 2010/01/20 18:03:26 spiga Exp $"
-__version__ = "$Revision: 1.194 $"
+__revision__ = "$Id: FatWorker.py,v 1.195 2010/02/09 13:13:09 spiga Exp $"
+__version__ = "$Revision: 1.195 $"
 
 import string
 import sys, os
@@ -697,12 +697,10 @@ class FatWorker(Thread):
                 requirements.append(schedParam)
             elif self.bossSchedName == 'SchedulerLsf':
                 requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
-            elif self.bossSchedName == 'SchedulerGLiteAPI':
+            elif self.bossSchedName in ['SchedulerGLiteAPI', 'SchedulerGLite'] :
                 tags_tmp = str(taskObj['jobType']).split('"')
                 tags = [str(tags_tmp[1]), str(tags_tmp[3])]
                 requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
-            elif self.bossSchedName == 'SchedulerGLite':
-               ## TODO FILIPPO
             else:
                 continue
 
@@ -716,8 +714,10 @@ class FatWorker(Thread):
                 else:
                     unmatched.append(sel)
             elif self.bossSchedName in ['SchedulerGLite']:
-               ## TODO FILIPPO
-            else:
+                sites = self.blSchedSession.getSchedulerInterface().matchResources(taskObj, requirements)
+                if len(sites) > 0: matched.append(sel)
+                else: unmatched.append(sel)
+            else :
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
                     seList = distinct_dests[sel]
@@ -729,6 +729,7 @@ class FatWorker(Thread):
                 sites = self.blSchedSession.getSchedulerInterface().lcgInfo(tags, voTags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL)
                 if len(sites) > 0: matched.append(sel)
                 else: unmatched.append(sel)
+                
             sel += 1
 
         # all done and matched, go on with the submission
